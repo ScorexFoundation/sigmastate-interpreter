@@ -1,6 +1,8 @@
 package sigmastate
 
-trait BlockchainState {
+trait State
+
+trait BlockchainState extends State {
   val height: Int
 }
 
@@ -18,10 +20,12 @@ case object FalseProposition extends PrimitiveDerivableProposition {
 }
 
 
+trait Reducer
 
-object Reducer extends App {
+
+object ReducerExample extends Reducer with App {
   val MaxDepth = 50
-  
+
   def reduce(proposition: SigmaStateProposition, environment: ReducerInput, depth: Int = 0): SigmaStateProposition = {
     assert(depth < MaxDepth)
     proposition match {
