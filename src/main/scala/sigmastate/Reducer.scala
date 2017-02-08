@@ -1,5 +1,7 @@
 package sigmastate
 
+import sigmastate.utxo.SigmaStateTransaction
+
 trait State
 
 trait BlockchainState extends State {
@@ -9,25 +11,35 @@ trait BlockchainState extends State {
 
 case class ReducerInput(override val height: Int, transaction: SigmaStateTransaction) extends BlockchainState
 
-trait PrimitiveDerivableProposition extends SigmaStateProposition
+trait BooleanConstantProposition extends SigmaStateProposition
 
-case object TrueProposition extends PrimitiveDerivableProposition {
+case object TrueProposition extends BooleanConstantProposition {
   override lazy val bytes: Array[Byte] = ???
 }
 
-case object FalseProposition extends PrimitiveDerivableProposition {
+case object FalseProposition extends BooleanConstantProposition {
   override lazy val bytes: Array[Byte] = ???
 }
 
 
-trait Reducer
+trait Reducer {
+  type Input <: State
+
+  val maxDepth: Int
+
+  def reduce(proposition: SigmaStateProposition, environment: Input): SigmaStateProposition
+}
 
 
 object ReducerExample extends Reducer with App {
-  val MaxDepth = 50
+  override type Input = ReducerInput
+  override val maxDepth = 50
+
+  override def reduce(proposition: SigmaStateProposition, environment: ReducerInput): SigmaStateProposition =
+    reduce(proposition, environment, depth = 0)
 
   def reduce(proposition: SigmaStateProposition, environment: ReducerInput, depth: Int = 0): SigmaStateProposition = {
-    assert(depth < MaxDepth)
+    assert(depth < maxDepth)
     proposition match {
       case HeightFromProposition(from) =>
         if (environment.height >= from) TrueProposition else FalseProposition

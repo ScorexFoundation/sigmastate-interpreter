@@ -1,16 +1,18 @@
-package   sigmastate
+package sigmastate.utxo
 
 import io.circe.Json
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.BoxTransaction
 import scorex.core.transaction.box.{Box, BoxUnlocker}
 import scorex.core.transaction.proof.Proof
+import sigmastate.SigmaStateProposition
 
 
 case class SigmaStateBox(override val value: Box.Amount,
                          override val proposition: SigmaStateProposition) extends Box[SigmaStateProposition] {
 
-  override val id: Array[Byte] = ???
+  override val id: Array[Byte] =
+    ???
 
   override type M = SigmaStateBox
 
