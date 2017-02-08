@@ -24,29 +24,21 @@ case object FalseProposition extends BooleanConstantProposition {
 
 trait Reducer {
   type Input <: State
+  type SProp <: StateProposition
 
   val maxDepth: Int
 
-  def reduce(proposition: SigmaStateProposition, environment: Input): SigmaStateProposition
-}
+  def statefulReductions[SP <: SProp](proposition: SP, environment: Input): BooleanConstantProposition
 
-
-object ReducerExample extends Reducer with App {
-  override type Input = ReducerInput
-  override val maxDepth = 50
-
-  override def reduce(proposition: SigmaStateProposition, environment: ReducerInput): SigmaStateProposition =
+  def reduce(proposition: SigmaStateProposition, environment: Input): SigmaStateProposition =
     reduce(proposition, environment, depth = 0)
 
-  def reduce(proposition: SigmaStateProposition, environment: ReducerInput, depth: Int = 0): SigmaStateProposition = {
+
+  def reduce(proposition: SigmaStateProposition, environment: Input, depth: Int = 0): SigmaStateProposition = {
     assert(depth < maxDepth)
+
     proposition match {
-      case HeightFromProposition(from) =>
-        if (environment.height >= from) TrueProposition else FalseProposition
-      case HeightBetweenProposition(from, until) =>
-        if (environment.height >= from && environment.height < until) TrueProposition else FalseProposition
-      case HeightUntilProposition(until) =>
-        if (environment.height < until) TrueProposition else FalseProposition
+      case s: SProp => statefulReductions(s, environment)
 
       case Or(statement1, statement2) =>
         (reduce(statement1, environment, depth + 1), reduce(statement2, environment, depth + 1)) match {
@@ -67,6 +59,24 @@ object ReducerExample extends Reducer with App {
       case cryptoProp: SigmaProofOfKnowledgeProposition[_] => cryptoProp
     }
   }
+}
+
+
+object ReducerExample extends Reducer with App {
+  override type SProp = StateProposition
+  override type Input = ReducerInput
+
+  override val maxDepth = 50
+
+  override def statefulReductions[SP <: StateProposition](proposition: SP, environment: ReducerInput): BooleanConstantProposition =
+    proposition match {
+      case HeightFromProposition(from) =>
+        if (environment.height >= from) TrueProposition else FalseProposition
+      case HeightBetweenProposition(from, until) =>
+        if (environment.height >= from && environment.height < until) TrueProposition else FalseProposition
+      case HeightUntilProposition(until) =>
+        if (environment.height < until) TrueProposition else FalseProposition
+    }
 
   def sign(proposition: SigmaStateProposition, message: Array[Byte]): Array[Byte] = ???
 
