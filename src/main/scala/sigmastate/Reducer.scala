@@ -36,7 +36,7 @@ trait Reducer {
           case (TrueProposition, _) | (_, TrueProposition) => TrueProposition
           case (FalseProposition, st2r) => st2r
           case (st1r, FalseProposition) => st1r
-          case (st1r: SigmaProofOfKnowledgeProposition[_], st2r: SigmaProofOfKnowledgeProposition[_]) => Or(st1r, st2r)
+          case (st1r: SigmaProofOfKnowledgeProposition[_], st2r: SigmaProofOfKnowledgeProposition[_]) => COr(st1r, st2r)
           case (_, _) => ???
         }
       case And(statement1, statement2) =>
@@ -44,7 +44,7 @@ trait Reducer {
           case (FalseProposition, _) | (_, FalseProposition) => FalseProposition
           case (TrueProposition, st2r) => st2r
           case (st1r, TrueProposition) => st1r
-          case (st1r: SigmaProofOfKnowledgeProposition[_], st2r: SigmaProofOfKnowledgeProposition[_]) => And(st1r, st2r)
+          case (st1r: SigmaProofOfKnowledgeProposition[_], st2r: SigmaProofOfKnowledgeProposition[_]) => CAnd(st1r, st2r)
           case (_, _) => ???
         }
       case cryptoProp: SigmaProofOfKnowledgeProposition[_] => cryptoProp

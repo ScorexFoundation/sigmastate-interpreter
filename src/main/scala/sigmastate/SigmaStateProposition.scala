@@ -15,6 +15,10 @@ trait StateProposition extends SigmaStateProposition
 
 trait SigmaProposition extends SigmaStateProposition
 
+case class CAnd(statement1: SigmaProposition, statement2: SigmaProposition) extends SigmaProposition
+
+case class COr(statement1: SigmaProposition, statement2: SigmaProposition) extends SigmaProposition
+
 trait SigmaProofOfKnowledgeProposition[S <: Secret] extends SigmaProposition with ProofOfKnowledgeProposition[S]
 
 trait Proof[CP <: SigmaProposition] {
