@@ -17,6 +17,10 @@ trait SigmaProposition extends SigmaStateProposition
 
 trait SigmaProofOfKnowledgeProposition[S <: Secret] extends SigmaProposition with ProofOfKnowledgeProposition[S]
 
+trait Proof[CP <: SigmaProposition] {
+  def verify(proposition: CP): Boolean
+}
+
 
 class DLogSecret extends Secret {
   override type S = DLogSecret

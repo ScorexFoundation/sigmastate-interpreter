@@ -11,7 +11,14 @@ trait BlockchainState extends State {
 
 case class ReducerInput(override val height: Int, transaction: SigmaStateTransaction) extends BlockchainState
 
-trait BooleanConstantProposition extends SigmaStateProposition
+sealed trait BooleanConstantProposition extends SigmaStateProposition
+
+object BooleanConstantProposition {
+  def fromBoolean(b: Boolean) = b match {
+    case true => TrueProposition
+    case false => FalseProposition
+  }
+}
 
 case object TrueProposition extends BooleanConstantProposition {
   override lazy val bytes: Array[Byte] = ???
@@ -25,6 +32,8 @@ case object FalseProposition extends BooleanConstantProposition {
 trait Reducer {
   type Input <: State
   type SProp <: StateProposition
+  type CProp <: SigmaProposition
+  type CProof <: Proof[CProp]
 
   val maxDepth: Int
 
@@ -59,6 +68,9 @@ trait Reducer {
       case cryptoProp: SigmaProofOfKnowledgeProposition[_] => cryptoProp
     }
   }
+
+  def reduceCryptoStatement(cryptoStatement: CProp, proof: CProof): BooleanConstantProposition =
+    BooleanConstantProposition.fromBoolean(proof.verify(cryptoStatement))
 }
 
 
