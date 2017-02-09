@@ -76,12 +76,12 @@ object ReducerExample extends Reducer with App {
 
   def verify(proposition: SigmaStateProposition, message: Array[Byte], signature: Array[Byte]): Boolean = ???
 
-  val dk1 = DLogPublic(Array.fill(32)(0: Byte))
-  val dk2 = DLogPublic(Array.fill(32)(1: Byte))
+  val dk1 = DLogProposition(Array.fill(32)(0: Byte))
+  val dk2 = DLogProposition(Array.fill(32)(1: Byte))
 
 
   val env = ReducerInput(500, null)
-  assert(reduce(And(HeightFromProposition(500), dk1), env).isInstanceOf[DLogPublic])
+  assert(reduce(And(HeightFromProposition(500), dk1), env).isInstanceOf[DLogProposition])
 
   println(reduce(Or(
     And(HeightUntilProposition(505), And(dk1, dk2)),
