@@ -3,8 +3,7 @@ package sigmastate
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.Box
 import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
-import scorex.core.transaction.state.{Secret, SecretCompanion}
-import scorex.crypto.encode.Base58
+import scorex.core.transaction.state.Secret
 
 
 trait SigmaStateProposition extends Proposition {
@@ -32,19 +31,3 @@ case class Or(statement1: SigmaStateProposition, statement2: SigmaStatePropositi
 case class And(statement1: SigmaStateProposition, statement2: SigmaStateProposition) extends SigmaStateProposition {
   override lazy val bytes: Array[Byte] = ???
 }
-
-
-case class HeightFromProposition(from: Int) extends StateProposition {
-  override lazy val bytes: Array[Byte] = ???
-}
-
-case class HeightUntilProposition(until: Int) extends StateProposition {
-  override lazy val bytes: Array[Byte] = ???
-}
-
-case class HeightBetweenProposition(from: Int, until: Int) extends StateProposition {
-  override lazy val bytes: Array[Byte] = ???
-}
-
-case class TransactionContainsBox(minAmountOpt: Option[Box.Amount], maxAmountOpt: Option[Box.Amount])
-
