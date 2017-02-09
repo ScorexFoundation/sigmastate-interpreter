@@ -80,13 +80,9 @@ object ReducerExample extends Reducer with App {
         if (environment.height < until) TrueProposition else FalseProposition
     }
 
-  def sign(proposition: SigmaStateProposition, message: Array[Byte]): Array[Byte] = ???
-
-  def verify(proposition: SigmaStateProposition, message: Array[Byte], signature: Array[Byte]): Boolean = ???
 
   val dk1 = DLogProposition(Array.fill(32)(0: Byte))
   val dk2 = DLogProposition(Array.fill(32)(1: Byte))
-
 
   val env = ReducerInput(500, null)
   assert(reduceToCrypto(And(HeightFromProposition(500), dk1), env).isInstanceOf[DLogProposition])
