@@ -21,18 +21,18 @@ trait Reducer {
 
   def statefulReductions[SP <: SProp](proposition: SP, environment: Input): BooleanConstantProposition
 
-  def reduce(proposition: SigmaStateProposition, environment: Input): SigmaStateProposition =
-    reduce(proposition, environment, depth = 0)
+  def reduceToCrypto(proposition: SigmaStateProposition, environment: Input): SigmaStateProposition =
+    reduceToCrypto(proposition, environment, depth = 0)
 
 
-  def reduce(proposition: SigmaStateProposition, environment: Input, depth: Int = 0): SigmaStateProposition = {
+  def reduceToCrypto(proposition: SigmaStateProposition, environment: Input, depth: Int = 0): SigmaStateProposition = {
     assert(depth < maxDepth)
 
     proposition match {
       case s: SProp => statefulReductions(s, environment)
 
       case Or(statement1, statement2) =>
-        (reduce(statement1, environment, depth + 1), reduce(statement2, environment, depth + 1)) match {
+        (reduceToCrypto(statement1, environment, depth + 1), reduceToCrypto(statement2, environment, depth + 1)) match {
           case (TrueProposition, _) | (_, TrueProposition) => TrueProposition
           case (FalseProposition, st2r) => st2r
           case (st1r, FalseProposition) => st1r
@@ -40,7 +40,7 @@ trait Reducer {
           case (_, _) => ???
         }
       case And(statement1, statement2) =>
-        (reduce(statement1, environment, depth + 1), reduce(statement2, environment, depth + 1)) match {
+        (reduceToCrypto(statement1, environment, depth + 1), reduceToCrypto(statement2, environment, depth + 1)) match {
           case (FalseProposition, _) | (_, FalseProposition) => FalseProposition
           case (TrueProposition, st2r) => st2r
           case (st1r, TrueProposition) => st1r
@@ -51,7 +51,7 @@ trait Reducer {
     }
   }
 
-  def reduceCryptoStatement(cryptoStatement: CProp, proof: CProof): BooleanConstantProposition =
+  def verifyCryptoStatement(cryptoStatement: CProp, proof: CProof): BooleanConstantProposition =
     BooleanConstantProposition.fromBoolean(proof.verify(cryptoStatement))
 }
 
@@ -81,9 +81,9 @@ object ReducerExample extends Reducer with App {
 
 
   val env = ReducerInput(500, null)
-  assert(reduce(And(HeightFromProposition(500), dk1), env).isInstanceOf[DLogProposition])
+  assert(reduceToCrypto(And(HeightFromProposition(500), dk1), env).isInstanceOf[DLogProposition])
 
-  println(reduce(Or(
+  println(reduceToCrypto(Or(
     And(HeightUntilProposition(505), And(dk1, dk2)),
     And(HeightFromProposition(505), dk1)
   ), env))
