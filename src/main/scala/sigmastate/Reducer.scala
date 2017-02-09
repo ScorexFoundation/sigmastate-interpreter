@@ -10,9 +10,6 @@ trait BlockchainState extends State {
   val height: Int
 }
 
-
-case class ReducerInput(override val height: Int, transaction: SigmaStateTransaction) extends BlockchainState
-
 trait Reducer {
   type Input <: State
   type SProp <: StateProposition
@@ -64,13 +61,15 @@ trait Reducer {
 }
 
 
+case class ReducerExampleInput(override val height: Int, transaction: SigmaStateTransaction) extends BlockchainState
+
 object ReducerExample extends Reducer with App {
   override type SProp = StateProposition
-  override type Input = ReducerInput
+  override type Input = ReducerExampleInput
 
   override val maxDepth = 50
 
-  override def statefulReductions[SP <: StateProposition](proposition: SP, environment: ReducerInput): BooleanConstantProposition =
+  override def statefulReductions[SP <: StateProposition](proposition: SP, environment: ReducerExampleInput): BooleanConstantProposition =
     proposition match {
       case HeightFromProposition(from) =>
         if (environment.height >= from) TrueProposition else FalseProposition
@@ -84,7 +83,7 @@ object ReducerExample extends Reducer with App {
   val dk1 = DLogProposition(Array.fill(32)(0: Byte))
   val dk2 = DLogProposition(Array.fill(32)(1: Byte))
 
-  val env = ReducerInput(500, null)
+  val env = ReducerExampleInput(500, null)
   assert(reduceToCrypto(And(HeightFromProposition(500), dk1), env).isInstanceOf[DLogProposition])
 
   println(reduceToCrypto(Or(

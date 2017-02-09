@@ -1,7 +1,6 @@
 package sigmastate
 
 import scorex.core.serialization.Serializer
-import scorex.core.transaction.box.Box
 import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
 import scorex.core.transaction.state.Secret
 
