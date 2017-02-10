@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
-import sigmastate.BlockchainProposition.Height
 import sigmastate.BlockchainState
+import sigmastate.utxo.UtxoBlockchainProposition.Height
 
 
 class BlockHeader(id: Array[Byte])
