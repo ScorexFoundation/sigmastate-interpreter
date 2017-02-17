@@ -16,7 +16,7 @@ trait Reducer {
   type CProp <: SigmaProposition
   type CProof <: Proof[CProp]
 
-  val maxDepth: Int
+  def maxDepth: Int
 
   def statefulReductions[SP <: SProp](proposition: SP, environment: Input): BooleanConstantProposition
 
@@ -25,7 +25,7 @@ trait Reducer {
 
 
   def reduceToCrypto(proposition: SigmaStateProposition, environment: Input, depth: Int = 0): SigmaStateProposition = {
-    assert(depth < maxDepth)
+    require(depth < maxDepth)
 
     proposition match {
       case s: SProp => statefulReductions(s, environment)
@@ -60,34 +60,3 @@ trait Reducer {
   }
 }
 
-
-case class ReducerExampleInput(override val height: Int, transaction: SigmaStateTransaction) extends BlockchainState
-
-object ReducerExample extends Reducer with App {
-  override type SProp = StateProposition
-  override type Input = ReducerExampleInput
-
-  override val maxDepth = 50
-
-  override def statefulReductions[SP <: StateProposition](proposition: SP, environment: ReducerExampleInput): BooleanConstantProposition =
-    proposition match {
-      case HeightFromProposition(from) =>
-        if (environment.height >= from) TrueProposition else FalseProposition
-      case HeightBetweenProposition(from, until) =>
-        if (environment.height >= from && environment.height < until) TrueProposition else FalseProposition
-      case HeightUntilProposition(until) =>
-        if (environment.height < until) TrueProposition else FalseProposition
-    }
-
-
-  val dk1 = DLogProposition(Array.fill(32)(0: Byte))
-  val dk2 = DLogProposition(Array.fill(32)(1: Byte))
-
-  val env = ReducerExampleInput(500, null)
-  assert(reduceToCrypto(And(HeightFromProposition(500), dk1), env).isInstanceOf[DLogProposition])
-
-  println(reduceToCrypto(Or(
-    And(HeightUntilProposition(505), And(dk1, dk2)),
-    And(HeightFromProposition(505), dk1)
-  ), env))
-}
