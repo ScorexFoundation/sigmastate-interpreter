@@ -11,8 +11,8 @@ val testingDependencies = Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.4.2",
-  "org.scorexfoundation" %% "scorex-core" % "2.0.0-M4"
+  "com.typesafe.akka" %% "akka-actor" % "2.4.+",
+  "org.scorexfoundation" %% "scorex-core" % "2.+"
 ) ++ testingDependencies
 
 
