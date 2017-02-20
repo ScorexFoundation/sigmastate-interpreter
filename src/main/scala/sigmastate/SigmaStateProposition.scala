@@ -4,6 +4,7 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
 import scorex.core.transaction.state.Secret
 
+import Proof.Challenge
 
 trait SigmaStateProposition extends Proposition {
   override def serializer: Serializer[M] = ???
@@ -20,11 +21,14 @@ case class CAnd(statements: SigmaProposition*) extends CompoundSigmaProposition
 case class COr(statements: SigmaProposition*) extends CompoundSigmaProposition
 
 
-
 trait SigmaProofOfKnowledgeProposition[S <: Secret] extends SigmaProposition with ProofOfKnowledgeProposition[S]
 
 trait Proof[CP <: SigmaProposition] {
-  def verify(proposition: CP): Boolean
+  def verify(proposition: CP, challenge: Challenge): Boolean
+}
+
+object Proof {
+  type Challenge = Array[Byte]
 }
 
 case class Or(statement1: SigmaStateProposition, statement2: SigmaStateProposition) extends SigmaStateProposition {

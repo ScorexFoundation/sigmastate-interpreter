@@ -21,7 +21,6 @@ trait Reducer {
   def reduceToCrypto(proposition: SigmaStateProposition, environment: Input): SigmaStateProposition =
     reduceToCrypto(proposition, environment, depth = 0)
 
-
   def reduceToCrypto(proposition: SigmaStateProposition, environment: Input, depth: Int = 0): SigmaStateProposition = {
     require(depth < maxDepth)
 

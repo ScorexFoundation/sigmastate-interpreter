@@ -3,8 +3,8 @@ package sigmastate
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.{Secret, SecretCompanion}
 import scorex.crypto.encode.Base58
-
 import DlogProposition._
+import sigmastate.Proof.Challenge
 
 class DLogSecret extends Secret {
   override type S = DLogSecret
@@ -25,6 +25,11 @@ case class DLogProposition(public: PublicKey) extends SigmaProofOfKnowledgePropo
 
   override def toString = s"DLogKnowledge(${Base58.encode(public)})"
 }
+
+case class SchnorrSignature(signature: Array[Byte]) extends Proof[DLogProposition] {
+  override def verify(proposition: DLogProposition, challenge: Challenge): Boolean = ???
+}
+
 
 object DlogProposition {
   type PublicKey = Array[Byte]
