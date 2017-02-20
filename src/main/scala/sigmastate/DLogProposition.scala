@@ -3,7 +3,7 @@ package sigmastate
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.{Secret, SecretCompanion}
 import scorex.crypto.encode.Base58
-import DlogProposition._
+import DLogProposition._
 import scapi.sigma.rework.Challenge
 import scapi.sigma.rework.DLogProtocol._
 
@@ -27,6 +27,12 @@ case class DLogProposition(public: PublicKey) extends SigmaProofOfKnowledgePropo
   override def toString = s"DLogKnowledge(${Base58.encode(public)})"
 }
 
+object DLogProposition {
+  type PublicKey = Array[Byte]
+  type PrivateKey = Array[Byte]
+  type KeyPair = Array[Byte]
+}
+
 /**
   * TODO: make implementation corresponding to RFC-8032 standard for EdDSA signatures
   * https://tools.ietf.org/html/rfc8032#page-9
@@ -34,17 +40,10 @@ case class DLogProposition(public: PublicKey) extends SigmaProofOfKnowledgePropo
   */
 case class SchnorrSignature(signature: Array[Byte]) extends Proof[DLogProposition] {
   override def verify(proposition: DLogProposition, message: Proof.Challenge): Boolean = {
-    val x: DlogCommonInput = null
+    val x: DLogCommonInput = null
     val a: FirstDLogProverMessage = null
     val z: SecondDLogProverMessage = null
     val sigmaTranscript = DLogTranscript(x, a, Challenge(message), z)
     sigmaTranscript.accepted
   }
-}
-
-
-object DlogProposition {
-  type PublicKey = Array[Byte]
-  type PrivateKey = Array[Byte]
-  type KeyPair = Array[Byte]
 }

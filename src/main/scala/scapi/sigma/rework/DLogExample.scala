@@ -17,10 +17,10 @@ object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
-  case class DlogCommonInput(dlogGroup: DlogGroup, h: GroupElement, override val soundness: Int)
+  case class DLogCommonInput(dlogGroup: DlogGroup, h: GroupElement, override val soundness: Int)
     extends SigmaProtocolCommonInput[DLogSigmaProtocol]
 
-  case class DlogProverInput(w: BigInteger) extends SigmaProtocolPrivateInput[DLogSigmaProtocol]
+  case class DLogProverInput(w: BigInteger) extends SigmaProtocolPrivateInput[DLogSigmaProtocol]
 
   case class FirstDLogProverMessage(ecData: ECElementSendableData) extends FirstProverMessage[DLogSigmaProtocol] {
     override def bytes: Array[Byte] = {
@@ -35,8 +35,8 @@ object DLogProtocol {
     override def bytes: Array[Byte] = z.toByteArray
   }
 
-  class DlogProver(override val publicInput: DlogCommonInput, override val privateInput: DlogProverInput)
-    extends Prover[DLogSigmaProtocol, DlogCommonInput, DlogProverInput] {
+  class DLogProver(override val publicInput: DLogCommonInput, override val privateInput: DLogProverInput)
+    extends Prover[DLogSigmaProtocol, DLogCommonInput, DLogProverInput] {
 
     lazy val group = publicInput.dlogGroup
 
@@ -60,14 +60,14 @@ object DLogProtocol {
     }
   }
 
-  case class DLogActorProver(override val publicInput: DlogCommonInput, override val privateInput: DlogProverInput)
-    extends DlogProver(publicInput, privateInput) with ActorProver[DLogSigmaProtocol, DlogCommonInput, DlogProverInput]
+  case class DLogActorProver(override val publicInput: DLogCommonInput, override val privateInput: DLogProverInput)
+    extends DLogProver(publicInput, privateInput) with ActorProver[DLogSigmaProtocol, DLogCommonInput, DLogProverInput]
 
-  case class DLogTranscript(override val x: DlogCommonInput,
+  case class DLogTranscript(override val x: DLogCommonInput,
                             override val a: FirstDLogProverMessage,
                             override val e: Challenge,
                             override val z: SecondDLogProverMessage)
-    extends SigmaProtocolTranscript[DLogSigmaProtocol, DlogCommonInput] {
+    extends SigmaProtocolTranscript[DLogSigmaProtocol, DLogCommonInput] {
 
 
     override lazy val accepted: Boolean = Try {
@@ -81,15 +81,15 @@ object DLogProtocol {
     }.getOrElse(false)
   }
 
-  abstract class DlogVerifier[DP <: DlogProver](override val publicInput: DlogCommonInput, override val prover: DP)
-    extends Verifier[DLogSigmaProtocol, DlogCommonInput] {
+  abstract class DLogVerifier[DP <: DLogProver](override val publicInput: DLogCommonInput, override val prover: DP)
+    extends Verifier[DLogSigmaProtocol, DLogCommonInput] {
 
     override type P = DP
     override type ST = DLogTranscript
   }
 
-  case class DlogActorVerifier(override val publicInput: DlogCommonInput, override val prover: DLogActorProver)
-    extends DlogVerifier[DLogActorProver](publicInput, prover) {
+  case class DLogActorVerifier(override val publicInput: DLogCommonInput, override val prover: DLogActorProver)
+    extends DLogVerifier[DLogActorProver](publicInput, prover) {
 
     override def transcript: Future[Option[DLogTranscript]] = ???
   }
