@@ -47,12 +47,12 @@ trait Reducer {
     }
   }
 
-  def verifyCryptoStatement(cryptoStatement: CProp, proof: CProof): BooleanConstantProposition =
-    BooleanConstantProposition.fromBoolean(proof.verify(cryptoStatement))
+  def verifyCryptoStatement(cryptoStatement: CProp, proof: CProof, challenge: Proof.Challenge): BooleanConstantProposition =
+    BooleanConstantProposition.fromBoolean(proof.verify(cryptoStatement, challenge))
 
-  def evaluate(proposition: SigmaStateProposition, environment: Input, proof: CProof): Try[Boolean] = Try {
+  def evaluate(proposition: SigmaStateProposition, environment: Input, proof: CProof, challenge: Proof.Challenge): Try[Boolean] = Try {
     val cProp = reduceToCrypto(proposition, environment)
     assert(cProp.isInstanceOf[CProp])
-    verifyCryptoStatement(cProp.asInstanceOf[CProp], proof).value
+    verifyCryptoStatement(cProp.asInstanceOf[CProp], proof, challenge).value
   }
 }
