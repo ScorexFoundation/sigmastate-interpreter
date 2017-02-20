@@ -3,16 +3,16 @@ package sigmastate.utxo
 import sigmastate._
 
 
-case class ReducerExampleInput(override val height: Int) extends BlockchainState
+case class TestingReducerInput(override val height: Int) extends BlockchainState
 
 
-object ReducerExample extends Reducer {
+object TestingReducer extends Reducer {
   override type SProp = StateProposition
-  override type Input = ReducerExampleInput
+  override type Input = TestingReducerInput
 
   override val maxDepth = 50
 
-  override def statefulReductions[SP <: StateProposition](proposition: SP, environment: ReducerExampleInput): BooleanConstantProposition =
+  override def statefulReductions[SP <: StateProposition](proposition: SP, environment: TestingReducerInput): BooleanConstantProposition =
     proposition match {
       case HeightFromProposition(from) =>
         if (environment.height >= from) TrueProposition else FalseProposition
@@ -22,4 +22,3 @@ object ReducerExample extends Reducer {
         if (environment.height < until) TrueProposition else FalseProposition
     }
 }
-

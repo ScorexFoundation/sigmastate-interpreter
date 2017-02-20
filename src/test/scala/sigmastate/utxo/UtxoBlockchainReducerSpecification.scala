@@ -10,14 +10,14 @@ class UtxoBlockchainReducerSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
-  import ReducerExample._
+  import TestingReducer._
 
   property("Reduction to crypto example#1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
         val dk1 = DLogProposition(Array.fill(32)(0: Byte))
 
-        val env = ReducerExampleInput(h)
+        val env = TestingReducerInput(h)
         assert(reduceToCrypto(And(HeightFromProposition(h - 1), dk1), env).isInstanceOf[DLogProposition])
         assert(reduceToCrypto(And(HeightFromProposition(h), dk1), env).isInstanceOf[DLogProposition])
         assert(reduceToCrypto(And(HeightFromProposition(h + 1), dk1), env).isInstanceOf[FalseProposition.type])
@@ -37,7 +37,7 @@ class UtxoBlockchainReducerSpecification extends PropSpec
         val dk1 = DLogProposition(Array.fill(32)(0: Byte))
         val dk2 = DLogProposition(Array.fill(32)(1: Byte))
 
-        val env = ReducerExampleInput(h)
+        val env = TestingReducerInput(h)
 
         assert(reduceToCrypto(Or(
           And(HeightUntilProposition(h + 1), And(dk1, dk2)),

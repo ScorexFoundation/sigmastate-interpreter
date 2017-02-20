@@ -144,7 +144,7 @@ trait SimulatingProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[S
 trait ZeroKnowledgeProofOfKnowledge[SP <: SigmaProtocol[SP]]
 
 trait FiatShamir {
-  def askOracleInstantiation(ask: Array[Byte]): Array[Byte]
+  def askOracleInstantiation(query: Array[Byte]): Array[Byte]
 }
 
 trait NonInteractiveProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP], PI <: SigmaProtocolPrivateInput[SP]]

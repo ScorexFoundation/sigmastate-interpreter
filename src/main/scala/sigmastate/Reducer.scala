@@ -59,4 +59,3 @@ trait Reducer {
     verifyCryptoStatement(cProp.asInstanceOf[CProp], proof).value
   }
 }
-
