@@ -1,7 +1,5 @@
 package sigmastate
 
-import sigmastate.utxo.{HeightBetweenProposition, HeightFromProposition, HeightUntilProposition, SigmaStateTransaction}
-
 import scala.util.Try
 
 trait State

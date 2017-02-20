@@ -26,7 +26,7 @@ case class DLogProposition(public: PublicKey) extends SigmaProofOfKnowledgePropo
   override def toString = s"DLogKnowledge(${Base58.encode(public)})"
 }
 
-object DlogProposition{
+object DlogProposition {
   type PublicKey = Array[Byte]
   type PrivateKey = Array[Byte]
   type KeyPair = Array[Byte]
