@@ -70,7 +70,7 @@ object DLogProtocol {
     extends SigmaProtocolTranscript[DLogSigmaProtocol, DlogCommonInput] {
 
 
-    override def accepted: Boolean = Try {
+    override lazy val accepted: Boolean = Try {
       assert(x.dlogGroup.isMember(x.h))
       val aElem = x.dlogGroup.reconstructElement(true, a.ecData)
       val left = x.dlogGroup.exponentiate(x.dlogGroup.getGenerator, z.z.bigInteger)

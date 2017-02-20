@@ -61,4 +61,24 @@ class UtxoBlockchainReducerSpecification extends PropSpec
       }
     }
   }
+
+  property("Evaluation example #1") {
+    val dk1 = DLogProposition(Array.fill(32)(0: Byte))
+    val dk2 = DLogProposition(Array.fill(32)(1: Byte))
+
+
+    val env1 = TestingReducerInput(101)
+    val env2 = TestingReducerInput(99)
+
+    val prop = Or(
+      And(HeightUntilProposition(100), And(dk1, dk2)),
+      And(HeightFromProposition(100), dk1)
+    )
+
+    val challenge: Proof.Challenge = dk1.bytes
+
+    evaluate(prop, env1, FakeSchnorrSignature, challenge).getOrElse(false) shouldBe true
+
+    evaluate(prop, env2, FakeSchnorrSignature, challenge).getOrElse(false) shouldBe false
+  }
 }

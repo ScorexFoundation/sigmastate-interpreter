@@ -24,7 +24,7 @@ case class COr(statements: SigmaProposition*) extends CompoundSigmaProposition
 trait SigmaProofOfKnowledgeProposition[S <: Secret] extends SigmaProposition with ProofOfKnowledgeProposition[S]
 
 trait Proof[CP <: SigmaProposition] {
-  def verify(proposition: CP, challenge: Challenge): Boolean
+  def verify(proposition: CP, challenge: Proof.Challenge): Boolean
 }
 
 object Proof {
