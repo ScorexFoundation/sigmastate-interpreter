@@ -3,28 +3,26 @@ package scapi
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import edu.biu.scapi.primitives.dlog.openSSL.OpenSSLDlogECF2m
+import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bouncycastle.util.BigIntegers
 
 
 object QuickstartDlog extends App {
-  System.setProperty("java.library.path", System.getProperty("java.library.path") + ":/usr/lib/scapi")
-  val sysPathsField = classOf[ClassLoader].getDeclaredField("sys_paths")
-  sysPathsField.setAccessible(true)
-  sysPathsField.set(null, null)
-  //println(System.getProperty("java.library.path"))
-  System.loadLibrary("OpenSSLJavaInterface")
+  /* System.setProperty("java.library.path", System.getProperty("java.library.path") + ":/usr/lib/scapi")
+   val sysPathsField = classOf[ClassLoader].getDeclaredField("sys_paths")
+   sysPathsField.setAccessible(true)
+   sysPathsField.set(null, null)
+   //println(System.getProperty("java.library.path"))
+   System.loadLibrary("OpenSSLJavaInterface")
+ */
 
-  val dlog = new OpenSSLDlogECF2m("K-233")
+  val dlog = new BcDlogECFp()
   val random = new SecureRandom()
 
   // get the group generator and order
   val g = dlog.getGenerator
 
-  println(dlog.getGenerator)
-  println(dlog.getGenerator)
-  println(dlog.getGenerator)
-  println(dlog.getGenerator)
+  println(s"generator: ${dlog.getGenerator}")
 
   val q = dlog.getOrder
   val qMinusOne = q.subtract(BigInteger.ONE)
@@ -42,6 +40,3 @@ object QuickstartDlog extends App {
 
   println(gMult)
 }
-
-
-
