@@ -6,7 +6,6 @@ import java.security.SecureRandom
 import org.bouncycastle.util.BigIntegers
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import sigmastate.SchnorrSignature
 
 
 class SchnorrSignatureSpecification extends PropSpec
@@ -26,5 +25,4 @@ class SchnorrSignatureSpecification extends PropSpec
       sig.verify(SchnorrSignature.proposition(secret), message) shouldBe true
     }
   }
-
 }
