@@ -7,7 +7,7 @@ import sigmastate._
 case class TestingReducerInput(override val height: Int) extends BlockchainState
 
 
-object TestingReducer extends Reducer {
+object TestingInterpreter extends Interpreter {
   override type SProp = StateProposition
   override type Input = TestingReducerInput
 

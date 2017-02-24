@@ -1,5 +1,8 @@
 package sigmastate
 
+import edu.biu.scapi.primitives.dlog.DlogGroup
+import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
+
 import scala.util.Try
 
 trait State
@@ -8,11 +11,13 @@ trait BlockchainState extends State {
   val height: Int
 }
 
-trait Reducer {
+trait Interpreter {
   type Input <: State
   type SProp <: StateProposition
   type CProp <: SigmaProposition
   type CProof <: Proof[CProp]
+
+  val dlogGroup: DlogGroup = new BcDlogECFp()
 
   def maxDepth: Int
 

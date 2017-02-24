@@ -1,9 +1,9 @@
 package sigmastate.utxo
 
-import sigmastate.{BooleanConstantProposition, Reducer, SigmaProposition}
+import sigmastate.{BooleanConstantProposition, Interpreter, SigmaProposition}
 
 
-abstract class UtxoBlockchainReducer(override val maxDepth: Int) extends Reducer {
+abstract class UtxoBlockchainInterpreter(override val maxDepth: Int) extends Interpreter {
   override type Input = UtxoBlockchainState
   override type SProp = UtxoBlockchainProposition
   override type CProp = SigmaProposition

@@ -10,7 +10,7 @@ class UtxoBlockchainReducerSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
-  import TestingReducer._
+  import TestingInterpreter._
 
   property("Reduction to crypto example#1") {
     forAll() { (h: Int) =>
