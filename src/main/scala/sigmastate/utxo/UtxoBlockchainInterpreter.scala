@@ -4,7 +4,7 @@ import sigmastate.{BooleanConstantProposition, Interpreter, SigmaProposition}
 
 
 abstract class UtxoBlockchainInterpreter(override val maxDepth: Int) extends Interpreter {
-  override type Input = UtxoBlockchainState
+  override type Context = UtxoBlockchainState
   override type SProp = UtxoBlockchainProposition
   override type CProp = SigmaProposition
 

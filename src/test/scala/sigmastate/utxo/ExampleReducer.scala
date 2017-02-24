@@ -9,7 +9,7 @@ case class TestingReducerInput(override val height: Int) extends BlockchainState
 
 object TestingInterpreter extends Interpreter {
   override type SProp = StateProposition
-  override type Input = TestingReducerInput
+  override type Context = TestingReducerInput
 
 
   override type CProp = DLogProposition

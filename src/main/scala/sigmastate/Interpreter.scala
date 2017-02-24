@@ -12,7 +12,7 @@ trait BlockchainState extends State {
 }
 
 trait Interpreter {
-  type Input <: State
+  type Context <: State
   type SProp <: StateProposition
   type CProp <: SigmaProposition
   type CProof <: Proof[CProp]
@@ -21,19 +21,19 @@ trait Interpreter {
 
   def maxDepth: Int
 
-  def statefulReductions[SP <: SProp](proposition: SP, environment: Input): BooleanConstantProposition
+  def statefulReductions[SP <: SProp](proposition: SP, context: Context): BooleanConstantProposition
 
-  def reduceToCrypto(proposition: SigmaStateProposition, environment: Input): SigmaStateProposition =
-    reduceToCrypto(proposition, environment, depth = 0)
+  def reduceToCrypto(proposition: SigmaStateProposition, context: Context): SigmaStateProposition =
+    reduceToCrypto(proposition, context, depth = 0)
 
-  def reduceToCrypto(proposition: SigmaStateProposition, environment: Input, depth: Int = 0): SigmaStateProposition = {
+  def reduceToCrypto(proposition: SigmaStateProposition, context: Context, depth: Int = 0): SigmaStateProposition = {
     require(depth < maxDepth)
 
     proposition match {
-      case s: SProp => statefulReductions(s, environment)
+      case s: SProp => statefulReductions(s, context)
 
       case Or(statement1, statement2) =>
-        (reduceToCrypto(statement1, environment, depth + 1), reduceToCrypto(statement2, environment, depth + 1)) match {
+        (reduceToCrypto(statement1, context, depth + 1), reduceToCrypto(statement2, context, depth + 1)) match {
           case (TrueProposition, _) | (_, TrueProposition) => TrueProposition
           case (FalseProposition, st2r) => st2r
           case (st1r, FalseProposition) => st1r
@@ -41,7 +41,7 @@ trait Interpreter {
           case (_, _) => ???
         }
       case And(statement1, statement2) =>
-        (reduceToCrypto(statement1, environment, depth + 1), reduceToCrypto(statement2, environment, depth + 1)) match {
+        (reduceToCrypto(statement1, context, depth + 1), reduceToCrypto(statement2, context, depth + 1)) match {
           case (FalseProposition, _) | (_, FalseProposition) => FalseProposition
           case (TrueProposition, st2r) => st2r
           case (st1r, TrueProposition) => st1r
@@ -55,8 +55,8 @@ trait Interpreter {
   def verifyCryptoStatement(cryptoStatement: CProp, proof: CProof, challenge: Proof.Challenge): BooleanConstantProposition =
     BooleanConstantProposition.fromBoolean(proof.verify(cryptoStatement, challenge))
 
-  def evaluate(proposition: SigmaStateProposition, environment: Input, proof: CProof, challenge: Proof.Challenge): Try[Boolean] = Try {
-    val cProp = reduceToCrypto(proposition, environment)
+  def evaluate(proposition: SigmaStateProposition, context: Context, proof: CProof, challenge: Proof.Challenge): Try[Boolean] = Try {
+    val cProp = reduceToCrypto(proposition, context)
     assert(cProp.isInstanceOf[CProp])
     verifyCryptoStatement(cProp.asInstanceOf[CProp], proof, challenge).value
   }

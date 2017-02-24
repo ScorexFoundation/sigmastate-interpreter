@@ -4,15 +4,15 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
 import scorex.core.transaction.state.Secret
 
-import Proof.Challenge
-
 trait SigmaStateProposition extends Proposition {
   override def serializer: Serializer[M] = ???
 }
 
 trait StateProposition extends SigmaStateProposition
 
-trait SigmaProposition extends SigmaStateProposition
+trait SigmaProposition extends SigmaStateProposition{
+  type SP >: this.type <: SigmaProposition
+}
 
 trait CompoundSigmaProposition extends SigmaProposition
 
