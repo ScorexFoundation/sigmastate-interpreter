@@ -11,6 +11,7 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import scapi.sigma.rework.Challenge
 import scapi.sigma.rework.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
+import sigmastate.Proof.Challenge
 
 import scala.util.Try
 
@@ -153,4 +154,11 @@ object SchnorrSignature {
     val sb = Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
     SchnorrSignature(sb)
   }
+}
+
+class CAndProof(proofs: Proof[SigmaProposition]*) extends Proof[CAnd] {
+  override def verify(proposition: CAnd, challenge: Proof.Challenge): Boolean =
+    proofs.zip(proposition.statements).forall { case (proof, prop) =>
+      proof.verify(prop, challenge)
+    }
 }

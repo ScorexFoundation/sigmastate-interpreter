@@ -20,7 +20,6 @@ case class CAnd(statements: SigmaProposition*) extends CompoundSigmaProposition
 
 case class COr(statements: SigmaProposition*) extends CompoundSigmaProposition
 
-
 trait SigmaProofOfKnowledgeProposition[S <: Secret] extends SigmaProposition with ProofOfKnowledgeProposition[S]
 
 trait Proof[CP <: SigmaProposition] {
