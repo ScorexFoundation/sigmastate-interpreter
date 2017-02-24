@@ -1,4 +1,4 @@
-package sigmastate.utxo
+package sigmastate
 
 import java.math.BigInteger
 import java.security.SecureRandom
