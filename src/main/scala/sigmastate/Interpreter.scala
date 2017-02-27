@@ -2,6 +2,7 @@ package sigmastate
 
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
+import sigmastate.Proof.Challenge
 
 import scala.util.Try
 
@@ -59,5 +60,27 @@ trait Interpreter {
     val cProp = reduceToCrypto(proposition, context)
     assert(cProp.isInstanceOf[CProp])
     verifyCryptoStatement(cProp.asInstanceOf[CProp], proof, challenge).value
+  }
+}
+
+trait ProverInterpreter extends Interpreter {
+
+  def prove(cryptoStatement: CProp, challenge: Proof.Challenge): CProof
+
+  def prove(proposition: SigmaStateProposition, context: Context, challenge: Proof.Challenge): Try[CProof] = Try {
+    val cProp = reduceToCrypto(proposition, context)
+    assert(cProp.isInstanceOf[CProp])
+    prove(cProp.asInstanceOf[CProp], challenge)
+  }
+}
+
+
+trait DLogProverInterpreter extends ProverInterpreter {
+  override type CProp = SigmaProposition
+
+  override def prove(cryptoStatement: SigmaProposition, challenge: Challenge): CProof = cryptoStatement match {
+    case DLogProposition(_) => ???
+    case CAnd() => ???
+    case COr() => ???
   }
 }

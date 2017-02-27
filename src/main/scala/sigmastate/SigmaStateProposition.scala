@@ -1,6 +1,6 @@
 package sigmastate
 
-import scorex.core.serialization.Serializer
+import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
 import scorex.core.transaction.state.Secret
 
@@ -10,7 +10,7 @@ trait SigmaStateProposition extends Proposition {
 
 trait StateProposition extends SigmaStateProposition
 
-trait SigmaProposition extends SigmaStateProposition{
+trait SigmaProposition extends SigmaStateProposition {
   type SP >: this.type <: SigmaProposition
 }
 
@@ -22,12 +22,16 @@ case class COr(statements: SigmaProposition*) extends CompoundSigmaProposition
 
 trait SigmaProofOfKnowledgeProposition[S <: Secret] extends SigmaProposition with ProofOfKnowledgeProposition[S]
 
-trait Proof[CP <: SigmaProposition] {
+trait Proof[CP <: SigmaProposition] extends BytesSerializable {
   def verify(proposition: CP, challenge: Proof.Challenge): Boolean
 }
 
 object Proof {
   type Challenge = Array[Byte]
+}
+
+trait Prover[SP <: SigmaProofOfKnowledgeProposition[_], P <: Proof[SP]] {
+  def prove(sigmaProp: SP): P
 }
 
 case class Or(statement1: SigmaStateProposition, statement2: SigmaStateProposition) extends SigmaStateProposition {

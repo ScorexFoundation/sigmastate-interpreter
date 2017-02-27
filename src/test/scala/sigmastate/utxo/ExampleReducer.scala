@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import scorex.core.serialization.Serializer
 import sigmastate.Proof.Challenge
 import sigmastate._
 
@@ -32,4 +33,8 @@ object TestingInterpreter extends Interpreter {
 object FakeSchnorrSignature extends Proof[DLogProposition] {
   override def verify(proposition: DLogProposition, challenge: Challenge): Boolean =
     proposition.bytes.sameElements(challenge)
+
+  override type M = this.type
+
+  override def serializer: Serializer[FakeSchnorrSignature.type] = ???
 }

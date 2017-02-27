@@ -111,6 +111,10 @@ case class SchnorrSignature(signature: Array[Byte])(implicit val dlogGroup: Dlog
     val sigmaTranscript = DLogTranscript(x, a, Challenge(hf(message)), z)
     sigmaTranscript.accepted
   }
+
+  override type M = this.type
+
+  override def serializer: Serializer[M] = ???
 }
 
 object SchnorrSignature {
@@ -161,4 +165,8 @@ class CAndProof(proofs: Proof[SigmaProposition]*) extends Proof[CAnd] {
     proofs.zip(proposition.statements).forall { case (proof, prop) =>
       proof.verify(prop, challenge)
     }
+
+  override type M = this.type
+
+  override def serializer: Serializer[M] = ???
 }
