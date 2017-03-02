@@ -64,7 +64,6 @@ trait Interpreter {
 }
 
 trait ProverInterpreter extends Interpreter {
-
   def prove(cryptoStatement: CProp, challenge: Proof.Challenge): CProof
 
   def prove(proposition: SigmaStateProposition, context: Context, challenge: Proof.Challenge): Try[CProof] = Try {
@@ -77,10 +76,5 @@ trait ProverInterpreter extends Interpreter {
 
 trait DLogProverInterpreter extends ProverInterpreter {
   override type CProp = SigmaProposition
-
-  override def prove(cryptoStatement: SigmaProposition, challenge: Challenge): CProof = cryptoStatement match {
-    case DLogProposition(_) => ???
-    case CAnd() => ???
-    case COr() => ???
-  }
+  override type CProof = Proof[CProp]
 }

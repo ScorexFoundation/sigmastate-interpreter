@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import scorex.core.serialization.Serializer
 import sigmastate.Proof.Challenge
+import sigmastate.SigmaProposition.PropositionCode
 import sigmastate._
 
 
@@ -31,6 +32,8 @@ object TestingInterpreter extends Interpreter {
 
 
 object FakeSchnorrSignature extends Proof[DLogProposition] {
+  override val propCode: PropositionCode = DLogProposition.Code
+
   override def verify(proposition: DLogProposition, challenge: Challenge): Boolean =
     proposition.bytes.sameElements(challenge)
 

@@ -12,6 +12,7 @@ import scapi.sigma.rework.Challenge
 import scapi.sigma.rework.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Proof.Challenge
+import sigmastate.SigmaProposition.PropositionCode
 
 import scala.util.Try
 
@@ -66,6 +67,8 @@ class DLogSecret extends Secret {
 
 
 case class DLogProposition(public: PublicKey) extends SigmaProofOfKnowledgeProposition[DLogSecret] {
+  override val code = DLogProposition.Code
+
   override lazy val bytes: PublicKey = public
 
   //todo: refactor
@@ -79,6 +82,8 @@ case class DLogProposition(public: PublicKey) extends SigmaProofOfKnowledgePropo
 }
 
 object DLogProposition {
+  val Code = 102: Byte
+
   type PublicKey = Array[Byte]
   type PrivateKey = Array[Byte]
   type KeyPair = Array[Byte]
@@ -91,6 +96,8 @@ object DLogProposition {
   * @param signature
   */
 case class SchnorrSignature(signature: Array[Byte])(implicit val dlogGroup: DlogGroup) extends Proof[DLogProposition] {
+  override val propCode: PropositionCode = DLogProposition.Code
+
   val soundness = 256
 
   val hf = Blake2b256
@@ -160,7 +167,9 @@ object SchnorrSignature {
   }
 }
 
-class CAndProof(proofs: Proof[SigmaProposition]*) extends Proof[CAnd] {
+case class CAndProof(proofs: Proof[SigmaProposition]*) extends Proof[CAnd]  {
+  override val propCode: PropositionCode = CAnd.Code
+
   override def verify(proposition: CAnd, challenge: Proof.Challenge): Boolean =
     proofs.zip(proposition.statements).forall { case (proof, prop) =>
       proof.verify(prop, challenge)
