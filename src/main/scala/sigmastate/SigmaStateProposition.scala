@@ -4,6 +4,7 @@ import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
 import scorex.core.transaction.state.Secret
 
+
 trait SigmaStateProposition extends Proposition {
   override def serializer: Serializer[M] = ???
 }
@@ -21,7 +22,7 @@ object SigmaProposition {
 
 trait CompoundSigmaProposition extends SigmaProposition
 
-case class CAnd(statements: SigmaProposition*) extends CompoundSigmaProposition {
+case class CAnd[P1, P2](prop1: P1, prop2: P2) extends CompoundSigmaProposition {
   override val code = CAnd.Code
 }
 
@@ -49,8 +50,13 @@ object Proof {
   type Challenge = Array[Byte]
 }
 
-trait Prover[SP <: SigmaProofOfKnowledgeProposition[_], P <: Proof[SP]] {
+trait Prover[S <: Secret, SP <: SigmaProofOfKnowledgeProposition[S]] {
+
+  type P <: Proof[SP]
+
   val propCode: Byte
+
+  def provable(prop: SP): Boolean
 
   def prove(sigmaProp: SP): P
 }
@@ -60,7 +66,17 @@ trait Provers {
 
   val supportedCodes = provers.map(_.propCode)
 
-
+  def prove[S <: Secret](sigmaProp: SigmaProposition): Proof[_ <: SigmaProposition] = sigmaProp match {
+    case CAnd(p1: SigmaProposition, p2: SigmaProposition) => CAndProof(prove(p1), prove(p2))
+    case COr() => ???
+    case pokp: SigmaProofOfKnowledgeProposition[S] =>
+      provers
+        .filter(_.propCode == pokp.code)
+        .map(_.asInstanceOf[Prover[S, SigmaProofOfKnowledgeProposition[S]]])
+        .find(_.provable(pokp))
+        .map(_.prove(pokp))
+        .get
+  }
 }
 
 case class Or(statement1: SigmaStateProposition, statement2: SigmaStateProposition) extends SigmaStateProposition {

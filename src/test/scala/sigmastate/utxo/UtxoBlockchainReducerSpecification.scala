@@ -42,7 +42,7 @@ class UtxoBlockchainReducerSpecification extends PropSpec
         assert(reduceToCrypto(Or(
           And(HeightUntilProposition(h + 1), And(dk1, dk2)),
           And(HeightFromProposition(h + 1), dk1)
-        ), env).isInstanceOf[CAnd])
+        ), env).isInstanceOf[CAnd[DLogProposition, DLogProposition]])
 
         assert(reduceToCrypto(Or(
           And(HeightUntilProposition(h - 1), And(dk1, dk2)),

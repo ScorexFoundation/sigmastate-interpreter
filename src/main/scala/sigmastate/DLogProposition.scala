@@ -11,7 +11,6 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import scapi.sigma.rework.Challenge
 import scapi.sigma.rework.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Proof.Challenge
 import sigmastate.SigmaProposition.PropositionCode
 
 import scala.util.Try
@@ -167,13 +166,14 @@ object SchnorrSignature {
   }
 }
 
-case class CAndProof(proofs: Proof[SigmaProposition]*) extends Proof[CAnd]  {
+
+
+//todo: move to another file
+case class CAndProof[P1 <: SigmaProposition, P2 <: SigmaProposition](proof1: Proof[P1], proof2: Proof[P2]) extends Proof[CAnd[P1, P2]]  {
   override val propCode: PropositionCode = CAnd.Code
 
-  override def verify(proposition: CAnd, challenge: Proof.Challenge): Boolean =
-    proofs.zip(proposition.statements).forall { case (proof, prop) =>
-      proof.verify(prop, challenge)
-    }
+  override def verify(proposition: CAnd[P1, P2], challenge: Proof.Challenge): Boolean =
+    proof1.verify(proposition.prop1, challenge) && proof2.verify(proposition.prop2, challenge)
 
   override type M = this.type
 
