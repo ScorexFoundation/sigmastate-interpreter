@@ -15,8 +15,6 @@ libraryDependencies ++= Seq(
   "org.scorexfoundation" %% "scorex-core" % "2.+"
 ) ++ testingDependencies
 
-//scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
-
 
 
 
