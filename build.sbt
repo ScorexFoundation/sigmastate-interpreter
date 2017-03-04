@@ -1,4 +1,4 @@
-name := "sigma"
+name := "sigma-state"
 
 version := "0.0.1"
 
