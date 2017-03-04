@@ -7,6 +7,7 @@ import edu.biu.scapi.primitives.dlog.cryptopp.CryptoPpDlogZpSafePrime
 import edu.biu.scapi.primitives.dlog.openSSL.OpenSSLDlogECF2m
 import edu.biu.scapi.primitives.hash.cryptopp.CryptoPpSHA256
 import org.bouncycastle.util.BigIntegers
+import scorex.crypto.hash.Blake2b256Unsafe
 
 
 object SpeedTest extends App {
@@ -20,23 +21,21 @@ object SpeedTest extends App {
 
   val random = new SecureRandom()
 
-  val sha256 = new CryptoPpSHA256
+  val sha256 = new Blake2b256Unsafe
   val msgToHash = new Array[Byte](32)
   random.nextBytes(msgToHash)
 
   val hashResult = new Array[Byte](32)
   //heat up
   (1 to 250000).foreach{i =>
-    sha256.update(msgToHash, 0, msgToHash.length)
-    sha256.hashFinal(hashResult, 0)
+    sha256(msgToHash)
   }
 
   val toRun = 100000
 
   val hashTime0 = System.currentTimeMillis()
   (1 to toRun).foreach{i =>
-    sha256.update(msgToHash, 0, msgToHash.length)
-    sha256.hashFinal(hashResult, 0)
+    sha256(msgToHash)
   }
   val hashDelta = System.currentTimeMillis() - hashTime0
   println("time to SHA256: " + hashDelta)

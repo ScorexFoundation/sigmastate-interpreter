@@ -1,7 +1,8 @@
 package sigmastate.utxo
 
+import scapi.sigma.rework.DLogProtocol.{DLogCommonInput, DLogSigmaProtocol}
 import scorex.core.serialization.Serializer
-import sigmastate.Proof.Challenge
+import sigmastate.ProofOfKnowledge.Challenge
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate._
 
@@ -14,7 +15,7 @@ object TestingInterpreter extends Interpreter {
   override type Context = TestingReducerInput
 
 
-  override type CProp = DLogProposition
+  override type CProp = DLogCommonInput
   override type CProof = FakeSchnorrSignature.type
 
   override val maxDepth = 50
@@ -31,10 +32,10 @@ object TestingInterpreter extends Interpreter {
 }
 
 
-object FakeSchnorrSignature extends Proof[DLogProposition] {
-  override val propCode: PropositionCode = DLogProposition.Code
+object FakeSchnorrSignature extends ProofOfKnowledge[DLogSigmaProtocol, DLogCommonInput] {
+  override val propCode: PropositionCode = DLogCommonInput.Code
 
-  override def verify(proposition: DLogProposition, challenge: Challenge): Boolean =
+  override def verify(proposition: DLogCommonInput, challenge: Challenge): Boolean =
     proposition.bytes.sameElements(challenge)
 
   override type M = this.type

@@ -4,6 +4,8 @@ import java.security.SecureRandom
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocolMsg
+import scorex.core.transaction.state.Secret
+import sigmastate.{ProofOfKnowledge, SigmaProofOfKnowledgeProposition}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,7 +48,7 @@ trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] {
   val soundness: Int
 }
 
-trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP]]
+trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP]] extends Secret
 
 /**
   * common interface for both Prover and Verifier
@@ -77,15 +79,15 @@ trait Prover[SP <: SigmaProtocol[SP],
 CI <: SigmaProtocolCommonInput[SP],
 PI <: SigmaProtocolPrivateInput[SP]] extends Party[SP, CI] {
   val privateInput: PI
-
-  def firstMessage: SP#A
-
-  def secondMessage(challenge: Challenge): SP#Z
 }
 
 
 trait InteractiveProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP], PI <: SigmaProtocolPrivateInput[SP]]
-  extends Prover[SP, CI, PI] with InteractiveParty
+  extends Prover[SP, CI, PI] with InteractiveParty {
+
+  def firstMessage: SP#A
+  def secondMessage(challenge: Challenge): SP#Z
+}
 
 //todo: test
 //todo: timeout?
@@ -143,18 +145,13 @@ trait SimulatingProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[S
 
 trait ZeroKnowledgeProofOfKnowledge[SP <: SigmaProtocol[SP]]
 
-trait FiatShamir {
-  def askOracleInstantiation(query: Array[Byte]): Array[Byte]
-}
+trait NonInteractiveProver[SP <: SigmaProtocol[SP],
+  PI <: SigmaProtocolPrivateInput[SP],
+  CI <: SigmaProofOfKnowledgeProposition[SP, PI],
+  P <: ProofOfKnowledge[SP, CI]]
+  extends Prover[SP, CI, PI] {
 
-trait NonInteractiveProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP], PI <: SigmaProtocolPrivateInput[SP]]
-  extends Prover[SP, CI, PI] with FiatShamir
-
-
-trait SigmaSignature[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] extends FiatShamir {
-  val message: Array[Byte]
-
-  def verify(): Boolean
+  def sign(message: Array[Byte]): ProofOfKnowledge[SP, CI]
 }
 
 trait Verifier[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] extends Party[SP, CI] {

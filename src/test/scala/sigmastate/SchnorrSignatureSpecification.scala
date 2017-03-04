@@ -1,11 +1,8 @@
 package sigmastate
 
-import java.math.BigInteger
-import java.security.SecureRandom
-
-import org.bouncycastle.util.BigIntegers
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import scapi.sigma.rework.DLogProtocol.DLogProverInput
 
 
 class SchnorrSignatureSpecification extends PropSpec
@@ -14,15 +11,20 @@ class SchnorrSignatureSpecification extends PropSpec
   with Matchers {
 
   property("sign-verify roundtrip") {
-    forAll() { (message: Array[Byte]) =>
-      val dlog = SchnorrSignature.dlogGroup
+    forAll() { (message: Array[Byte], modifier: Byte) =>
 
-      val qMinusOne = dlog.getOrder.subtract(BigInteger.ONE)
-      val secret: BigInteger = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom())
+      import SchnorrSignature._
 
-      val sig = SchnorrSignature.sign(secret, message)
+      val (pi, ci) = DLogProverInput.random()
+      val (_, ci2) = DLogProverInput.random()
 
-      sig.verify(SchnorrSignature.proposition(secret), message) shouldBe true
+      val sig = SchnorrSignatureSigner(pi).sign(message)
+
+      sig.verify(ci, message) shouldBe true
+      sig.verify(ci, message ++ Array(modifier)) shouldBe false
+      sig.verify(ci, Array(modifier) ++ message) shouldBe false
+
+      sig.verify(ci2, message) shouldBe false
     }
   }
 }

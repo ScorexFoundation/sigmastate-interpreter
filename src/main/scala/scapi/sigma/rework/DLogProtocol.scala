@@ -5,22 +5,74 @@ import java.security.SecureRandom
 
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
+import scorex.core.serialization.Serializer
+import scorex.core.transaction.state.SecretCompanion
+import sigmastate.{EcPointFunctions, SigmaProofOfKnowledgeProposition}
+import sigmastate.SigmaProposition.PropositionCode
 
 import scala.concurrent.Future
 import scala.util.Try
 
 
-object DLogProtocol {
+package object DLogProtocol {
 
-  class DLogSigmaProtocol extends SigmaProtocol[DLogSigmaProtocol] {
+  trait DLogSigmaProtocol extends SigmaProtocol[DLogSigmaProtocol] {
     override type A = FirstDLogProverMessage
     override type Z = SecondDLogProverMessage
   }
 
   case class DLogCommonInput(dlogGroup: DlogGroup, h: GroupElement, override val soundness: Int)
     extends SigmaProtocolCommonInput[DLogSigmaProtocol]
+      with SigmaProofOfKnowledgeProposition[DLogSigmaProtocol, DLogProverInput] {
 
-  case class DLogProverInput(w: BigInteger) extends SigmaProtocolPrivateInput[DLogSigmaProtocol]
+    override val code: PropositionCode = DLogCommonInput.Code
+    override type M = this.type
+
+    override lazy val bytes = {
+      val gw = h.generateSendableData().asInstanceOf[ECElementSendableData]
+      val gwx = gw.getX.toByteArray
+      val gwy = gw.getY.toByteArray
+      gwx ++ gwy
+    }
+  }
+
+
+  object DLogCommonInput {
+    val Code: PropositionCode = 102: Byte
+
+    def fromBytes(bytes:Array[Byte])(implicit dlog: DlogGroup, soundness: Int) = {
+      val (x, y) = EcPointFunctions.decodeBigIntPair(bytes).get
+      val xy = new ECElementSendableData(x, y)
+      val h = dlog.reconstructElement(true, xy)
+      DLogCommonInput(dlog, h, soundness)
+    }
+  }
+
+  case class DLogProverInput(w: BigInteger)(implicit val dlogGroup: DlogGroup)
+    extends SigmaProtocolPrivateInput[DLogSigmaProtocol] {
+
+    override type S = DLogProverInput
+    override type PK = DLogCommonInput
+
+    override def companion: SecretCompanion[DLogProverInput] = ???
+
+    override def publicImage: DLogCommonInput = ???
+
+    override type M = DLogProverInput
+
+    override def serializer: Serializer[DLogProverInput] = ???
+  }
+
+  object DLogProverInput {
+    def random()(implicit dlog:DlogGroup, soundness: Int): (DLogProverInput, DLogCommonInput) = {
+      val g = dlog.getGenerator
+      val qMinusOne = dlog.getOrder.subtract(BigInteger.ONE)
+      val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+      val h = dlog.exponentiate(dlog.getGenerator, w)
+
+      DLogProverInput(w) -> DLogCommonInput(dlog, h, soundness)
+    }
+  }
 
   case class FirstDLogProverMessage(ecData: ECElementSendableData) extends FirstProverMessage[DLogSigmaProtocol] {
     override def bytes: Array[Byte] = {
@@ -35,8 +87,8 @@ object DLogProtocol {
     override def bytes: Array[Byte] = z.toByteArray
   }
 
-  class DLogProver(override val publicInput: DLogCommonInput, override val privateInput: DLogProverInput)
-    extends Prover[DLogSigmaProtocol, DLogCommonInput, DLogProverInput] {
+  class DLogInteractiveProver(override val publicInput: DLogCommonInput, override val privateInput: DLogProverInput)
+    extends InteractiveProver[DLogSigmaProtocol, DLogCommonInput, DLogProverInput] {
 
     lazy val group = publicInput.dlogGroup
 
@@ -61,7 +113,7 @@ object DLogProtocol {
   }
 
   case class DLogActorProver(override val publicInput: DLogCommonInput, override val privateInput: DLogProverInput)
-    extends DLogProver(publicInput, privateInput) with ActorProver[DLogSigmaProtocol, DLogCommonInput, DLogProverInput]
+    extends DLogInteractiveProver(publicInput, privateInput) with ActorProver[DLogSigmaProtocol, DLogCommonInput, DLogProverInput]
 
   case class DLogTranscript(override val x: DLogCommonInput,
                             override val a: FirstDLogProverMessage,
@@ -81,7 +133,7 @@ object DLogProtocol {
     }.getOrElse(false)
   }
 
-  abstract class DLogVerifier[DP <: DLogProver](override val publicInput: DLogCommonInput, override val prover: DP)
+  abstract class DLogVerifier[DP <: DLogInteractiveProver](override val publicInput: DLogCommonInput, override val prover: DP)
     extends Verifier[DLogSigmaProtocol, DLogCommonInput] {
 
     override type P = DP

@@ -1,7 +1,11 @@
 package sigmastate.utxo
 
+import edu.biu.scapi.primitives.dlog.DlogGroup
+import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import scapi.sigma.rework.DLogProtocol.{DLogCommonInput, DLogProverInput}
+import scorex.crypto.hash.Blake2b256
 import sigmastate._
 
 
@@ -12,19 +16,22 @@ class UtxoBlockchainReducerSpecification extends PropSpec
 
   import TestingInterpreter._
 
+  implicit val soundness = 256
+  implicit val dlogGroup: DlogGroup = new BcDlogECFp()
+
   property("Reduction to crypto example#1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
-        val dk1 = DLogProposition(Array.fill(32)(0: Byte))
+        val dk1 = DLogProverInput.random()._2
 
         val env = TestingReducerInput(h)
-        assert(reduceToCrypto(And(HeightFromProposition(h - 1), dk1), env).isInstanceOf[DLogProposition])
-        assert(reduceToCrypto(And(HeightFromProposition(h), dk1), env).isInstanceOf[DLogProposition])
+        assert(reduceToCrypto(And(HeightFromProposition(h - 1), dk1), env).isInstanceOf[DLogCommonInput])
+        assert(reduceToCrypto(And(HeightFromProposition(h), dk1), env).isInstanceOf[DLogCommonInput])
         assert(reduceToCrypto(And(HeightFromProposition(h + 1), dk1), env).isInstanceOf[FalseProposition.type])
 
         assert(reduceToCrypto(Or(HeightFromProposition(h - 1), dk1), env).isInstanceOf[TrueProposition.type])
         assert(reduceToCrypto(Or(HeightFromProposition(h), dk1), env).isInstanceOf[TrueProposition.type])
-        assert(reduceToCrypto(Or(HeightFromProposition(h + 1), dk1), env).isInstanceOf[DLogProposition])
+        assert(reduceToCrypto(Or(HeightFromProposition(h + 1), dk1), env).isInstanceOf[DLogCommonInput])
       }
     }
   }
@@ -34,20 +41,20 @@ class UtxoBlockchainReducerSpecification extends PropSpec
 
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
-        val dk1 = DLogProposition(Array.fill(32)(0: Byte))
-        val dk2 = DLogProposition(Array.fill(32)(1: Byte))
+        val dk1 = DLogProverInput.random()._2
+        val dk2 = DLogProverInput.random()._2
 
         val env = TestingReducerInput(h)
 
         assert(reduceToCrypto(Or(
           And(HeightUntilProposition(h + 1), And(dk1, dk2)),
           And(HeightFromProposition(h + 1), dk1)
-        ), env).isInstanceOf[CAnd[DLogProposition, DLogProposition]])
+        ), env).isInstanceOf[CAnd])
 
         assert(reduceToCrypto(Or(
           And(HeightUntilProposition(h - 1), And(dk1, dk2)),
           And(HeightFromProposition(h - 1), dk1)
-        ), env).isInstanceOf[DLogProposition])
+        ), env).isInstanceOf[DLogCommonInput])
 
         assert(reduceToCrypto(Or(
           And(HeightUntilProposition(h - 1), And(dk1, dk2)),
@@ -63,8 +70,8 @@ class UtxoBlockchainReducerSpecification extends PropSpec
   }
 
   property("Evaluation example #1") {
-    val dk1 = DLogProposition(Array.fill(32)(0: Byte))
-    val dk2 = DLogProposition(Array.fill(32)(1: Byte))
+    val dk1 = DLogProverInput.random()._2
+    val dk2 = DLogProverInput.random()._2
 
 
     val env1 = TestingReducerInput(101)
@@ -75,7 +82,7 @@ class UtxoBlockchainReducerSpecification extends PropSpec
       And(HeightFromProposition(100), dk1)
     )
 
-    val challenge: Proof.Challenge = dk1.bytes
+    val challenge: ProofOfKnowledge.Challenge = dk1.bytes
 
     evaluate(prop, env1, FakeSchnorrSignature, challenge).getOrElse(false) shouldBe true
 
