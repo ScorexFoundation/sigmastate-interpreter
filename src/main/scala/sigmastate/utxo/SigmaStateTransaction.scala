@@ -11,8 +11,7 @@ import sigmastate.SigmaStateProposition
 case class SigmaStateBox(override val value: Box.Amount,
                          override val proposition: UtxoBlockchainProposition) extends Box[SigmaStateProposition] {
 
-  override val id: Array[Byte] =
-    ???
+  override val id: Array[Byte] = ???
 
   override type M = SigmaStateBox
 
