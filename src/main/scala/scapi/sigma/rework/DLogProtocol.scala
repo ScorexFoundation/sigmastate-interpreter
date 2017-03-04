@@ -48,7 +48,7 @@ package object DLogProtocol {
     }
   }
 
-  case class DLogProverInput(w: BigInteger)(implicit val dlogGroup: DlogGroup)
+  case class DLogProverInput(w: BigInteger)(implicit val dlogGroup: DlogGroup, soundness: Int)
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol] {
 
     override type S = DLogProverInput
@@ -56,7 +56,10 @@ package object DLogProtocol {
 
     override def companion: SecretCompanion[DLogProverInput] = ???
 
-    override def publicImage: DLogCommonInput = ???
+    override lazy val publicImage: DLogCommonInput = {
+      val g = dlogGroup.getGenerator
+      DLogCommonInput(dlogGroup, dlogGroup.exponentiate(g, w), soundness)
+    }
 
     override type M = DLogProverInput
 
@@ -68,7 +71,7 @@ package object DLogProtocol {
       val g = dlog.getGenerator
       val qMinusOne = dlog.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-      val h = dlog.exponentiate(dlog.getGenerator, w)
+      val h = dlog.exponentiate(g, w)
 
       DLogProverInput(w) -> DLogCommonInput(dlog, h, soundness)
     }

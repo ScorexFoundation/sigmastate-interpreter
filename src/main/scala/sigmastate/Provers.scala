@@ -5,7 +5,7 @@ import scapi.sigma.rework.NonInteractiveProver
 trait Provers {
   val provers: Map[SigmaProposition.PropositionCode, Seq[NonInteractiveProver[_, _, _, _]]]
 
-  lazy val supportedCodes = provers.keys.toSet
+  lazy val supportedCodes = (provers.keys.toSet ++ Set(CAnd.Code)).ensuring(_.size == provers.size + 1)
 
   def prove[P <: SigmaProposition](sigmaProp: P, message: Array[Byte]): Proof[P] = (sigmaProp match {
     case c: CAnd => CAndProof(c.props.map(p => prove(p, message)): _*)

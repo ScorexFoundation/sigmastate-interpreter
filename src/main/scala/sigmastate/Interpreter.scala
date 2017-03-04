@@ -2,6 +2,10 @@ package sigmastate
 
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
+import scapi.sigma.rework.DLogProtocol.DLogCommonInput
+import scapi.sigma.rework.{DLogProtocol, NonInteractiveProver}
+import sigmastate.ProofOfKnowledge.Challenge
+import sigmastate.SigmaProposition.PropositionCode
 
 import scala.util.Try
 
@@ -76,4 +80,14 @@ trait ProverInterpreter extends Interpreter {
 trait DLogProverInterpreter extends ProverInterpreter {
   override type CProp = SigmaProposition
   override type CProof = Proof[CProp]
+
+  val secrets: Seq[DLogProtocol.DLogProverInput]
+
+  val provers = new Provers {
+    override val provers: Map[PropositionCode, Seq[NonInteractiveProver[_, _, _, _]]] =
+      Map(DLogCommonInput.Code -> secrets.map(SchnorrSignatureSigner.apply))
+  }
+
+  override def prove(cryptoStatement: SigmaProposition, challenge: Challenge): Proof[SigmaProposition] =
+    provers.prove(cryptoStatement, challenge)
 }
