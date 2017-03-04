@@ -5,11 +5,10 @@ import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scapi.sigma.rework.DLogProtocol.{DLogCommonInput, DLogProverInput}
-import scorex.crypto.hash.Blake2b256
 import sigmastate._
 
 
-class UtxoBlockchainReducerSpecification extends PropSpec
+class TestingInterpreterSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers {
@@ -70,12 +69,11 @@ class UtxoBlockchainReducerSpecification extends PropSpec
   }
 
   property("Evaluation example #1") {
-    val dk1 = DLogProverInput.random()._2
-    val dk2 = DLogProverInput.random()._2
+    val dk1 = secrets(0).publicImage
+    val dk2 = secrets(1).publicImage
 
-
-    val env1 = TestingReducerInput(101)
-    val env2 = TestingReducerInput(99)
+    val env1 = TestingReducerInput(99)
+    val env2 = TestingReducerInput(101)
 
     val prop = Or(
       And(HeightUntilProposition(100), And(dk1, dk2)),
@@ -84,8 +82,10 @@ class UtxoBlockchainReducerSpecification extends PropSpec
 
     val challenge: ProofOfKnowledge.Challenge = dk1.bytes
 
-    evaluate(prop, env1, FakeSchnorrSignature, challenge).getOrElse(false) shouldBe true
+    val proof1 = TestingInterpreter.prove(prop, env1, challenge).get
 
-    evaluate(prop, env2, FakeSchnorrSignature, challenge).getOrElse(false) shouldBe false
+    evaluate(prop, env1, proof1, challenge).getOrElse(false) shouldBe true
+
+    evaluate(prop, env2, proof1, challenge).getOrElse(false) shouldBe false
   }
 }

@@ -62,6 +62,7 @@ trait Interpreter {
   def evaluate(proposition: SigmaStateProposition, context: Context, proof: CProof, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
     val cProp = reduceToCrypto(proposition, context)
     assert(cProp.isInstanceOf[CProp])
+    println("cprop: " + cProp)
     verifyCryptoStatement(cProp.asInstanceOf[CProp], proof, challenge).value
   }
 }

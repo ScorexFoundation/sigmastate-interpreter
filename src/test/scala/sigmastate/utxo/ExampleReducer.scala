@@ -1,22 +1,15 @@
 package sigmastate.utxo
 
-import scapi.sigma.rework.DLogProtocol.{DLogCommonInput, DLogSigmaProtocol}
-import scorex.core.serialization.Serializer
-import sigmastate.ProofOfKnowledge.Challenge
-import sigmastate.SigmaProposition.PropositionCode
+import scapi.sigma.rework.DLogProtocol.DLogProverInput
 import sigmastate._
 
 
 case class TestingReducerInput(override val height: Int) extends BlockchainState
 
 
-object TestingInterpreter extends Interpreter {
+object TestingInterpreter extends Interpreter with DLogProverInterpreter {
   override type SProp = StateProposition
   override type Context = TestingReducerInput
-
-
-  override type CProp = DLogCommonInput
-  override type CProof = FakeSchnorrSignature.type
 
   override val maxDepth = 50
 
@@ -29,16 +22,10 @@ object TestingInterpreter extends Interpreter {
       case HeightUntilProposition(until) =>
         if (environment.height < until) TrueProposition else FalseProposition
     }
-}
 
+  override lazy val secrets: Seq[DLogProverInput] = {
+    import SchnorrSignature._
 
-object FakeSchnorrSignature extends ProofOfKnowledge[DLogSigmaProtocol, DLogCommonInput] {
-  override val propCode: PropositionCode = DLogCommonInput.Code
-
-  override def verify(proposition: DLogCommonInput, challenge: Challenge): Boolean =
-    proposition.bytes.sameElements(challenge)
-
-  override type M = this.type
-
-  override def serializer: Serializer[FakeSchnorrSignature.type] = ???
+    Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
+  }
 }

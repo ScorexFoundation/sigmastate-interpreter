@@ -46,7 +46,7 @@ object SchnorrSignature {
 
   implicit val hf = Blake2b256
 
-  implicit val dlogGroup: DlogGroup = new BcDlogECFp()
+  implicit val dlog: DlogGroup = new BcDlogECFp()
 }
 
 case class SchnorrSignatureSigner(privateInput: DLogProverInput)
@@ -55,17 +55,17 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
   import SchnorrSignature._
 
   lazy val proposition: DLogCommonInput = {
-    val g = dlogGroup.getGenerator
-    val gw = dlogGroup.exponentiate(g, privateInput.w)
+    val g = dlog.getGenerator
+    val gw = dlog.exponentiate(g, privateInput.w)
 
-    DLogCommonInput(dlogGroup, gw, soundness)
+    DLogCommonInput(dlog, gw, soundness)
   }
 
   def sign(message: Array[Byte]): SchnorrSignature = {
 
-    val g = dlogGroup.getGenerator
-    val gw = dlogGroup.exponentiate(g, privateInput.w)
-    val commonInput = DLogCommonInput(dlogGroup, gw, soundness)
+    val g = dlog.getGenerator
+    val gw = dlog.exponentiate(g, privateInput.w)
+    val commonInput = DLogCommonInput(dlog, gw, soundness)
 
     val prover = new DLogInteractiveProver(commonInput, privateInput)
 
