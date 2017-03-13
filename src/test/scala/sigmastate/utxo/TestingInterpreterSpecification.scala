@@ -19,7 +19,7 @@ class TestingInterpreterSpecification extends PropSpec
   implicit val soundness = 256
   implicit val dlogGroup: DlogGroup = new BcDlogECFp()
 
-  property("Reduction to crypto example#1") {
+  property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
         val dk1 = DLogNode(DLogProverInput.random()._2.h)
@@ -36,40 +36,44 @@ class TestingInterpreterSpecification extends PropSpec
     }
   }
 
-  /*
-  property("Reduction to crypto example#2") {
+
+  property("Reduction to crypto #2") {
     forAll() { (h: Int) =>
 
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
-        val dk1 = DLogProverInput.random()._2
-        val dk2 = DLogProverInput.random()._2
+        val dk1 = DLogNode(DLogProverInput.random()._2.h)
+        val dk2 = DLogNode(DLogProverInput.random()._2.h)
 
         val env = TestingReducerInput(h)
 
-        assert(reduceToCrypto(Or(
-          And(HeightUntilProposition(h + 1), And(dk1, dk2)),
-          And(HeightFromProposition(h + 1), dk1)
-        ), env).isInstanceOf[CAnd])
+        assert(reduceToCrypto(OR(
+          AND(LE(Height, IntLeaf(h + 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntLeaf(h + 1)), dk1)
+        ), env).get.isInstanceOf[CAND])
 
-        assert(reduceToCrypto(Or(
-          And(HeightUntilProposition(h - 1), And(dk1, dk2)),
-          And(HeightFromProposition(h - 1), dk1)
-        ), env).isInstanceOf[DLogCommonInput])
 
-        assert(reduceToCrypto(Or(
-          And(HeightUntilProposition(h - 1), And(dk1, dk2)),
-          And(HeightFromProposition(h + 1), dk1)
-        ), env).isInstanceOf[FalseProposition.type])
+        assert(reduceToCrypto(OR(
+          AND(LE(Height, IntLeaf(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntLeaf(h - 1)), dk1)
+        ), env).get.isInstanceOf[DLogNode])
 
-        assert(reduceToCrypto(Or(Or(
-          And(HeightUntilProposition(h - 1), And(dk1, dk2)),
-          And(HeightFromProposition(h + 1), dk1)
-        ), HeightBetweenProposition(h - 1, h + 1)), env).isInstanceOf[TrueProposition.type])
+
+        assert(reduceToCrypto(OR(
+          AND(LE(Height, IntLeaf(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntLeaf(h + 1)), dk1)
+        ), env).get.isInstanceOf[FalseConstantTree.type])
+
+        assert(reduceToCrypto(OR(OR(
+          AND(LE(Height, IntLeaf(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntLeaf(h + 1)), dk1)
+        ), AND(GT(Height, IntLeaf(h - 1)), LE(Height, IntLeaf(h + 1)))), env).get.isInstanceOf[TrueConstantTree.type])
+
       }
     }
   }
 
+  /*
   property("Evaluation example #1") {
     val dk1 = secrets(0).publicImage
     val dk2 = secrets(1).publicImage
