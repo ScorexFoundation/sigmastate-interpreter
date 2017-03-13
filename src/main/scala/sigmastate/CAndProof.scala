@@ -2,6 +2,7 @@ package sigmastate
 
 import scorex.core.serialization.Serializer
 
+/*
 case class CAndProof(proofs: Proof[_ <: SigmaProposition]*) extends Proof[CAnd] {
   override val propCode: Byte = CAnd.Code
 
@@ -11,6 +12,6 @@ case class CAndProof(proofs: Proof[_ <: SigmaProposition]*) extends Proof[CAnd] 
 
   override def verify(proposition: CAnd, challenge: ProofOfKnowledge.Challenge): Boolean =
     proofs.zip(proposition.props).forall{ case (proof, prop) =>
-      proof.asInstanceOf[Proof[SigmaProposition]].verify(prop, challenge)
+      proof.verify()
     }
-}
+}*/

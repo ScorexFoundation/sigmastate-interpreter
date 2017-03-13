@@ -5,7 +5,10 @@ import scorex.core.serialization.BytesSerializable
 
 
 trait Proof[P <: SigmaProposition] extends BytesSerializable {
-  def verify(proposition: P, challenge: ProofOfKnowledge.Challenge): Boolean
+  val proposition: P
+  val challenge: ProofOfKnowledge.Challenge
+
+  def verify(): Boolean
 
   val propCode: SigmaProposition.PropositionCode
 }

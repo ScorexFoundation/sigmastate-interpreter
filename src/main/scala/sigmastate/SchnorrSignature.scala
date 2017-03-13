@@ -6,14 +6,12 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import scapi.sigma.rework.{Challenge, NonInteractiveProver}
 import scapi.sigma.rework.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
+import sigmastate.experimental.SchnorrNode
 
 
-/**
-  * TODO: make implementation corresponding to RFC-8032 standard for EdDSA signatures
-  * https://tools.ietf.org/html/rfc8032#page-9
-  *
-  * @param signature
-  */
+// TODO: make implementation corresponding to RFC-8032 standard for EdDSA signatures
+
+/*
 case class SchnorrSignature(signature: Array[Byte])(implicit val dlogGroup: DlogGroup)
   extends ProofOfKnowledge[DLogSigmaProtocol, DLogCommonInput] {
 
@@ -39,7 +37,7 @@ case class SchnorrSignature(signature: Array[Byte])(implicit val dlogGroup: Dlog
   override type M = this.type
 
   override def serializer: Serializer[SchnorrSignature.this.type] = ???
-}
+}*/
 
 object SchnorrSignature {
   implicit val soundness = 256
@@ -50,7 +48,7 @@ object SchnorrSignature {
 }
 
 case class SchnorrSignatureSigner(privateInput: DLogProverInput)
-  extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, DLogCommonInput, SchnorrSignature] {
+  extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, DLogCommonInput, SchnorrNode] {
 
   import SchnorrSignature._
 
@@ -61,7 +59,7 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
     DLogCommonInput(dlog, gw, soundness)
   }
 
-  def sign(message: Array[Byte]): SchnorrSignature = {
+  def sign(message: Array[Byte]): SchnorrNode = {
 
     val g = dlog.getGenerator
     val gw = dlog.exponentiate(g, privateInput.w)
@@ -81,7 +79,7 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
     val zb = z.toByteArray
 
     val sb = Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
-    SchnorrSignature(sb)
+    SchnorrNode(commonInput, hf(message), sb)
   }
 
   override val publicInput: DLogCommonInput = proposition

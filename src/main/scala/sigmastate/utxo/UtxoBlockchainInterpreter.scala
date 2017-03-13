@@ -2,7 +2,9 @@ package sigmastate.utxo
 
 import sigmastate.{BooleanConstantProposition, Interpreter, SigmaProposition}
 
+/*
 
+todo: fix or delete
 abstract class UtxoBlockchainInterpreter(override val maxDepth: Int) extends Interpreter {
   override type CTX = UtxoBlockchainContext
   override type SProp = UtxoBlockchainProposition
@@ -11,3 +13,4 @@ abstract class UtxoBlockchainInterpreter(override val maxDepth: Int) extends Int
   override def statefulReductions[SP <: UtxoBlockchainProposition](proposition: SP,
                                                                    environment: UtxoBlockchainContext): BooleanConstantProposition = ???
 }
+*/
