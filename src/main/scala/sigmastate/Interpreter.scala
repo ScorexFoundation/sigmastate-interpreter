@@ -60,7 +60,7 @@ trait Interpreter {
       def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
         everywherebu(varSubst(context) <+ rels <+ conjs)(exp).get
       }.ensuring(res =>
-        res.isInstanceOf[BooleanConstantProposition] ||
+        res.isInstanceOf[BooleanConstantTree] ||
           res.isInstanceOf[CAND] ||
           res.isInstanceOf[COR] ||
           res.isInstanceOf[DLogNode]

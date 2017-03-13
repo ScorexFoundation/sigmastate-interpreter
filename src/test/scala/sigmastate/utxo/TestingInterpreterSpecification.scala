@@ -25,13 +25,13 @@ class TestingInterpreterSpecification extends PropSpec
         val dk1 = DLogNode(DLogProverInput.random()._2.h)
 
         val env = TestingReducerInput(h)
-        assert(reduceToCrypto(AND(GE(Height, IntLeaf(h - 1)), dk1), env).isInstanceOf[DLogNode])
-        /*assert(reduceToCrypto(And(HeightFromProposition(h), dk1), env).isInstanceOf[DLogCommonInput])
-        assert(reduceToCrypto(And(HeightFromProposition(h + 1), dk1), env).isInstanceOf[FalseProposition.type])
+        assert(reduceToCrypto(AND(GE(Height, IntLeaf(h - 1)), dk1), env).get.isInstanceOf[DLogNode])
+        assert(reduceToCrypto(AND(GE(Height, IntLeaf(h)), dk1), env).get.isInstanceOf[DLogNode])
+        assert(reduceToCrypto(AND(GE(Height, IntLeaf(h + 1)), dk1), env).get.isInstanceOf[FalseConstantTree.type])
 
-        assert(reduceToCrypto(Or(HeightFromProposition(h - 1), dk1), env).isInstanceOf[TrueProposition.type])
-        assert(reduceToCrypto(Or(HeightFromProposition(h), dk1), env).isInstanceOf[TrueProposition.type])
-        assert(reduceToCrypto(Or(HeightFromProposition(h + 1), dk1), env).isInstanceOf[DLogCommonInput])*/
+        assert(reduceToCrypto(OR(GE(Height, IntLeaf(h - 1)), dk1), env).get.isInstanceOf[TrueConstantTree.type])
+        assert(reduceToCrypto(OR(GE(Height, IntLeaf(h)), dk1), env).get.isInstanceOf[TrueConstantTree.type])
+        assert(reduceToCrypto(OR(GE(Height, IntLeaf(h + 1)), dk1), env).get.isInstanceOf[DLogNode])
       }
     }
   }

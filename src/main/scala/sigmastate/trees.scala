@@ -166,6 +166,9 @@ object Rewriters extends App {
   val h2: GroupElement = null
   val h3: GroupElement = null
 
+  val h = 100
+
+
   val t = AND(OR(
     AND(DLogNode(h1), DLogNode(h2)),
     OR(EQ(IntLeaf(100), Height), GT(IntLeaf(100), Height))
