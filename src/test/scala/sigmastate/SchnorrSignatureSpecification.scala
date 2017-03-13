@@ -20,6 +20,7 @@ class SchnorrSignatureSpecification extends PropSpec
 
       val sig = SchnorrSignatureSigner(pi).sign(message)
 
+      println(sig.verify())
       sig.verify() shouldBe true
 
       //todo: uncomment & fix

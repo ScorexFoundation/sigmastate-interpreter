@@ -101,9 +101,8 @@ abstract class UnprovenTree[SP <: SigmaProposition](val proposition: SP, val cha
 
 case class SchnorrNode(override val proposition: DLogCommonInput,
                        override val challenge: Array[Byte], signature: Array[Byte]) extends
-  UnprovenTree[DLogCommonInput](proposition, challenge) with ProofOfKnowledge[DLogSigmaProtocol, DLogCommonInput] {
-
-  import sigmastate.SchnorrSignature._
+  UnprovenTree[DLogCommonInput](proposition, challenge)
+  with ProofOfKnowledge[DLogSigmaProtocol, DLogCommonInput] {
 
   override def verify(): Boolean = {
     //signature is g^r as a pair of points, and z
@@ -117,7 +116,7 @@ case class SchnorrNode(override val proposition: DLogCommonInput,
 
     val z: SecondDLogProverMessage = SecondDLogProverMessage(zb)
 
-    val sigmaTranscript = DLogTranscript(x, a, Challenge(hf(challenge)), z)
+    val sigmaTranscript = DLogTranscript(x, a, Challenge(challenge), z)
     sigmaTranscript.accepted
   }
 
