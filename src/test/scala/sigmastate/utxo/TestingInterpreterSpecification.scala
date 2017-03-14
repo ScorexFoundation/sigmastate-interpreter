@@ -8,6 +8,8 @@ import scapi.sigma.rework.DLogProtocol.{DLogCommonInput, DLogProverInput}
 import sigmastate._
 import sigmastate.experimental._
 
+import scala.util.Random
+
 
 class TestingInterpreterSpecification extends PropSpec
   with PropertyChecks
@@ -35,7 +37,6 @@ class TestingInterpreterSpecification extends PropSpec
       }
     }
   }
-
 
   property("Reduction to crypto #2") {
     forAll() { (h: Int) =>
@@ -73,25 +74,24 @@ class TestingInterpreterSpecification extends PropSpec
     }
   }
 
-  /*
   property("Evaluation example #1") {
-    val dk1 = secrets(0).publicImage
-    val dk2 = secrets(1).publicImage
+    val dk1 = DLogNode(secrets(0).publicImage.h)
+    val dk2 = DLogNode(secrets(1).publicImage.h)
 
     val env1 = TestingReducerInput(99)
     val env2 = TestingReducerInput(101)
 
-    val prop = Or(
-      And(HeightUntilProposition(100), And(dk1, dk2)),
-      And(HeightFromProposition(100), dk1)
+    val prop = OR(
+      AND(LE(Height, IntLeaf(100)), AND(dk1, dk2)),
+      AND(GT(Height, IntLeaf(100)), dk1)
     )
 
-    val challenge: ProofOfKnowledge.Challenge = dk1.bytes
+    val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
     val proof1 = TestingInterpreter.prove(prop, env1, challenge).get
 
     evaluate(prop, env1, proof1, challenge).getOrElse(false) shouldBe true
 
     evaluate(prop, env2, proof1, challenge).getOrElse(false) shouldBe false
-  }*/
+  }
 }

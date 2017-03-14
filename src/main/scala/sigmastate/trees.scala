@@ -1,7 +1,6 @@
 package sigmastate.experimental
 
 import edu.biu.scapi.primitives.dlog.{ECElementSendableData, GroupElement}
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import scapi.sigma.rework.DLogProtocol._
 import scapi.sigma.rework.{Challenge, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.Serializer
@@ -96,12 +95,12 @@ case object SuccessfulProof extends CheckedProof
 case class FailedProof[SP <: SigmaProposition](proposition: SP) extends CheckedProof
 
 
-abstract class UnprovenTree[SP <: SigmaProposition](val proposition: SP, val challenge: Array[Byte])
+abstract class UncheckedTree[SP <: SigmaProposition](val proposition: SP, val challenge: Array[Byte])
   extends Proof[SP] with ProofTree
 
 case class SchnorrNode(override val proposition: DLogCommonInput,
                        override val challenge: Array[Byte], signature: Array[Byte]) extends
-  UnprovenTree[DLogCommonInput](proposition, challenge)
+  UncheckedTree[DLogCommonInput](proposition, challenge)
   with ProofOfKnowledge[DLogSigmaProtocol, DLogCommonInput] {
 
   override def verify(): Boolean = {
@@ -126,27 +125,27 @@ case class SchnorrNode(override val proposition: DLogCommonInput,
   override def serializer: Serializer[M] = ???
 }
 
-case class CAndUnprovenNode(override val proposition: CAnd, override val challenge: Array[Byte], leafs: ProofTree*)
-  extends UnprovenTree(proposition, challenge) {
+case class CAndUncheckedNode(override val proposition: CAND, override val challenge: Array[Byte], leafs: ProofTree*)
+  extends UncheckedTree(proposition, challenge) {
 
   override def verify(): Boolean =
-    leafs.zip(proposition.props).forall { case (proof, prop) =>
+    leafs.zip(proposition.sigmaTrees).forall { case (proof, prop) =>
       proof match {
         case SuccessfulProof => true
         case FailedProof(_) => false
-        case ut: UnprovenTree[_] => ut.challenge.sameElements(this.challenge) && ut.verify()
+        case ut: UncheckedTree[_] => ut.challenge.sameElements(this.challenge) && ut.verify()
       }
     }
 
   override val propCode: PropositionCode = CAnd.Code
   override type M = this.type
 
-  override def serializer: Serializer[CAndUnprovenNode.this.type] = ???
+  override def serializer: Serializer[CAndUncheckedNode.this.type] = ???
 }
 
 //todo: implement
-case class COrUnprovenNode(override val proposition: COr, override val challenge: Array[Byte], leafs: UnprovenTree[_]*)
-  extends UnprovenTree(proposition, challenge) {
+case class COrUncheckedNode(override val proposition: COr, override val challenge: Array[Byte], leafs: UncheckedTree[_]*)
+  extends UncheckedTree(proposition, challenge) {
 
   override def verify(): Boolean = ???
 
@@ -154,7 +153,7 @@ case class COrUnprovenNode(override val proposition: COr, override val challenge
 
   override type M = this.type
 
-  override def serializer: Serializer[COrUnprovenNode.this.type] = ???
+  override def serializer: Serializer[COrUncheckedNode.this.type] = ???
 }
 
 
@@ -174,9 +173,9 @@ object Rewriters extends App {
   ), DLogNode(h3))
 
 
-  def corresponds(sst: SigmaStateTree, pt: UnprovenTree[_]): Boolean = Try {
+  def corresponds(sst: SigmaStateTree, pt: UncheckedTree[_]): Boolean = Try {
     val propNodes = new Tree[SigmaStateTree, SigmaStateTree](sst).nodes
-    val proofNodes = new Tree[UnprovenTree[_], UnprovenTree[_]](pt).nodes
+    val proofNodes = new Tree[UncheckedTree[_], UncheckedTree[_]](pt).nodes
 
     propNodes.zip(proofNodes).forall { case (prop, proof) =>
       proof.proposition == prop

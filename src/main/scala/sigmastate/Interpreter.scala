@@ -2,6 +2,7 @@ package sigmastate
 
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
+import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogCommonInput
@@ -18,7 +19,7 @@ trait Interpreter {
   type CTX <: Context
   type SProp <: StateTree
   type CProp <: SigmaTree
-  type CProof <: UnprovenTree[_]
+  type CProof <: UncheckedTree[_]
 
   val dlogGroup: DlogGroup = new BcDlogECFp()
 
@@ -50,58 +51,59 @@ trait Interpreter {
   }
 
   val proofReduction = rule[ProofTree] {
-    case s: UnprovenTree[_] => s.verify() match {
+    case s: UncheckedTree[_] => s.verify() match {
       case true => SuccessfulProof
       case false => FailedProof(s.proposition)
     }
   }
 
-      //todo: check depth
-      def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
-        everywherebu(varSubst(context) <+ rels <+ conjs)(exp).get
-      }.ensuring(res =>
-        res.isInstanceOf[BooleanConstantTree] ||
-          res.isInstanceOf[CAND] ||
-          res.isInstanceOf[COR] ||
-          res.isInstanceOf[DLogNode]
-      ).asInstanceOf[SigmaStateTree])
+  //todo: check depth
+  def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
+    everywherebu(varSubst(context) <+ rels <+ conjs)(exp).get
+  }.ensuring(res =>
+    res.isInstanceOf[BooleanConstantTree] ||
+      res.isInstanceOf[CAND] ||
+      res.isInstanceOf[COR] ||
+      res.isInstanceOf[DLogNode]
+  ).asInstanceOf[SigmaStateTree])
 
 
-      def verifyCryptoStatement(proof: CProof): Try[CheckedProof] =
-        Try(everywherebu(proofReduction)(proof)
-          .ensuring(_.get.isInstanceOf[CheckedProof])
-          .asInstanceOf[CheckedProof])
+  def verifyCryptoStatement(proof: CProof): Try[CheckedProof] =
+    Try(everywherebu(proofReduction)(proof)
+      .ensuring(_.get.isInstanceOf[CheckedProof])
+      .asInstanceOf[CheckedProof])
 
-      def evaluate(exp: SigmaStateTree, context: CTX, proof: CProof, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
-        val cProp = reduceToCrypto(exp, context).get
-        println("cprop: " + cProp)
+  def evaluate(exp: SigmaStateTree, context: CTX, proof: CProof, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
+    val cProp = reduceToCrypto(exp, context).get
+    println("cprop: " + cProp)
 
-        verifyCryptoStatement(proof).get.isInstanceOf[SuccessfulProof.type]
-      }
+    verifyCryptoStatement(proof).get.isInstanceOf[SuccessfulProof.type]
+  }
+}
+
+trait ProverInterpreter extends Interpreter {
+  def prove(cryptoStatement: CProp, challenge: ProofOfKnowledge.Challenge): CProof
+
+  def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[CProof] = Try {
+    val cProp = reduceToCrypto(exp, context).get
+    println(cProp)
+    assert(cProp.isInstanceOf[CProp])
+    prove(cProp.asInstanceOf[CProp], challenge)
+  }
+}
+
+
+trait DLogProverInterpreter extends ProverInterpreter {
+  override type CProp = SigmaTree
+  override type CProof = UncheckedTree[_]
+
+  val secrets: Seq[DLogProtocol.DLogProverInput]
+
+  val provers = new Provers {
+    override val provers: Map[PropositionCode, Seq[NonInteractiveProver[_, _, _, _]]] =
+      Map(DLogCommonInput.Code -> secrets.map(SchnorrSignatureSigner.apply))
   }
 
-  trait ProverInterpreter extends Interpreter {
-    def prove(cryptoStatement: CProp, challenge: ProofOfKnowledge.Challenge): CProof
-
-    def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[CProof] = Try {
-      val cProp = reduceToCrypto(exp, context)
-      assert(cProp.isInstanceOf[CProp])
-      prove(cProp.asInstanceOf[CProp], challenge)
-    }
-  }
-
-
-  trait DLogProverInterpreter extends ProverInterpreter {
-    override type CProp = SigmaTree
-    override type CProof = UnprovenTree[_]
-
-    val secrets: Seq[DLogProtocol.DLogProverInput]
-
-    val provers = new Provers {
-      override val provers: Map[PropositionCode, Seq[NonInteractiveProver[_, _, _, _]]] =
-        Map(DLogCommonInput.Code -> secrets.map(SchnorrSignatureSigner.apply))
-    }
-
-    override def prove(cryptoStatement: SigmaTree, challenge: Challenge): CProof =
-      provers.prove(cryptoStatement, challenge)
-  }
+  override def prove(cryptoStatement: SigmaTree, challenge: Challenge): CProof =
+    provers.prove(cryptoStatement, challenge)
+}

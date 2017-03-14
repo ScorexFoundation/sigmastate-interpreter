@@ -42,18 +42,18 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.atnos" % "eff-cats_2.12" % "2.0.0-RC26",
   "org.bitbucket.inkytonik.dsinfo" % "dsinfo_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.dsprofile" % "dsprofile_2.12" % "0.4.0",
-  "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.0.0",
+  "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.1.0-SNAPSHOT",
   "org.bitlet" % "weupnp" % "0.1.4",
   "org.consensusresearch" % "scrypto_2.12" % "1.2.0-RC3",
   "org.javassist" % "javassist" % "3.18.2-GA",
   "org.reactivestreams" % "reactive-streams" % "1.0.0",
   "org.reflections" % "reflections" % "0.9.10",
-  "org.rogach" % "scallop_2.12" % "1.0.0",
+  "org.rogach" % "scallop_2.12" % "2.0.5",
   "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
   "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.0.4",
   "org.scala-lang.modules" % "scala-xml_2.12" % "1.0.6",
   "org.scala-sbt" % "test-interface" % "1.0",
-  "org.scalacheck" % "scalacheck_2.12" % "1.13.4",
+  "org.scalacheck" % "scalacheck_2.12" % "1.13.5",
   "org.scalactic" % "scalactic_2.12" % "3.0.1",
   "org.scalatest" % "scalatest_2.12" % "3.0.1",
   "org.scorexfoundation" % "scorex-core_2.12" % "2.0.0-M5",
@@ -67,4 +67,4 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.whispersystems" % "curve25519-java" % "0.3.0",
   "org.yaml" % "snakeyaml" % "1.17"
 )
-// LIBRARY_DEPENDENCIES_HASH ade87e8e26da9188dd6e7127f79ee8d046f661af
+// LIBRARY_DEPENDENCIES_HASH bc5332f212c4871353e6edf1fc8f0425ef5d5d08

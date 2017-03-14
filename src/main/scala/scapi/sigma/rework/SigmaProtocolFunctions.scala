@@ -5,7 +5,7 @@ import java.security.SecureRandom
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocolMsg
 import scorex.core.transaction.state.Secret
-import sigmastate.experimental.UnprovenTree
+import sigmastate.experimental.UncheckedTree
 import sigmastate.{ProofOfKnowledge, SigmaProofOfKnowledgeProposition}
 
 import scala.concurrent.Future
@@ -149,10 +149,10 @@ trait ZeroKnowledgeProofOfKnowledge[SP <: SigmaProtocol[SP]]
 trait NonInteractiveProver[SP <: SigmaProtocol[SP],
   PI <: SigmaProtocolPrivateInput[SP],
   CI <: SigmaProofOfKnowledgeProposition[SP, PI],
-  P <: ProofOfKnowledge[SP, CI] with UnprovenTree[CI]]
+  P <: ProofOfKnowledge[SP, CI] with UncheckedTree[CI]]
   extends Prover[SP, CI, PI] {
 
-  def sign(message: Array[Byte]): ProofOfKnowledge[SP, CI]
+  def sign(message: Array[Byte]): P
 }
 
 trait Verifier[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] extends Party[SP, CI] {
