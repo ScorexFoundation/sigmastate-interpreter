@@ -197,28 +197,3 @@ case class COrUncheckedNode(override val proposition: COR, override val challeng
 
   override def serializer: Serializer[M] = ???
 }
-
-
-//todo: remove code below if not needed
-object Rewriters extends App {
-
-  val h1: GroupElement = null
-  val h2: GroupElement = null
-  val h3: GroupElement = null
-
-  val h = 100
-
-  val t = AND(OR(
-    AND(DLogNode(h1), DLogNode(h2)),
-    OR(EQ(IntLeaf(100), Height), GT(IntLeaf(100), Height))
-  ), DLogNode(h3))
-
-  def corresponds(sst: SigmaStateTree, pt: UncheckedTree[_]): Boolean = Try {
-    val propNodes = new Tree[SigmaStateTree, SigmaStateTree](sst).nodes
-    val proofNodes = new Tree[UncheckedTree[_], UncheckedTree[_]](pt).nodes
-
-    propNodes.zip(proofNodes).forall { case (prop, proof) =>
-      proof.proposition == prop
-    }
-  }.getOrElse(false)
-}
