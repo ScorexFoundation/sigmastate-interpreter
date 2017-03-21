@@ -16,9 +16,9 @@ trait Context
 
 trait Interpreter {
   type CTX <: Context
-  type SProp <: StateTree
-  type CProp <: SigmaTree
-  type CProof <: UncheckedTree[_]
+  type StateT <: StateTree
+  type SigmaT <: SigmaTree
+  type ProofT <: UncheckedTree[_]
 
   val dlogGroup: DlogGroup = new BcDlogECFp()
 
@@ -26,6 +26,7 @@ trait Interpreter {
 
   /**
     * a custom strategy to replace variables with their respective values located in context
+    *
     * @param ctx - a context
     * @return a strategy to rewrite a tree
     */
@@ -72,12 +73,12 @@ trait Interpreter {
   ).asInstanceOf[SigmaStateTree])
 
 
-  def verifyCryptoStatement(proof: CProof): Try[CheckedProof] =
+  def verifyCryptoStatement(proof: ProofT): Try[CheckedProof] =
     Try(everywherebu(proofReduction)(proof)
       .ensuring(_.get.isInstanceOf[CheckedProof])
       .asInstanceOf[CheckedProof])
 
-  def evaluate(exp: SigmaStateTree, context: CTX, proof: CProof, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
+  def evaluate(exp: SigmaStateTree, context: CTX, proof: ProofT, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
     println("cprop: " + cProp)
 
@@ -86,13 +87,13 @@ trait Interpreter {
 }
 
 trait ProverInterpreter extends Interpreter {
-  def prove(cryptoStatement: CProp, challenge: ProofOfKnowledge.Challenge): CProof
+  def prove(cryptoStatement: SigmaT, challenge: ProofOfKnowledge.Challenge): ProofT
 
-  def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[CProof] = Try {
+  def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[ProofT] = Try {
     val cProp = reduceToCrypto(exp, context).get
     println(cProp)
-    assert(cProp.isInstanceOf[CProp])
-    prove(cProp.asInstanceOf[CProp], challenge)
+    assert(cProp.isInstanceOf[SigmaT])
+    prove(cProp.asInstanceOf[SigmaT], challenge)
   }
 }
 
@@ -103,8 +104,8 @@ class ProofTreeBuilder(sigmaTree: SigmaTree, rootChallenge: Array[Byte]) extends
 }
 
 trait DLogProverInterpreter extends ProverInterpreter {
-  override type CProp = SigmaTree
-  override type CProof = UncheckedTree[_]
+  override type SigmaT = SigmaTree
+  override type ProofT = UncheckedTree[_]
 
   val secrets: Seq[DLogProtocol.DLogProverInput]
 
@@ -113,7 +114,7 @@ trait DLogProverInterpreter extends ProverInterpreter {
       Map(DLogCommonInput.Code -> secrets.map(SchnorrSignatureSigner.apply))
   }
 
-  override def prove(cryptoStatement: SigmaTree, challenge: Challenge): CProof =
+  override def prove(cryptoStatement: SigmaTree, challenge: Challenge): ProofT =
     provers.prove(cryptoStatement, challenge)
 }
 
@@ -121,7 +122,7 @@ trait DLogProverInterpreter extends ProverInterpreter {
 case class TInput(height: Int) extends Context
 
 object DLogProverInterpreterTest extends DLogProverInterpreter {
-  override type SProp = StateTree
+  override type StateT = StateTree
   override type CTX = TInput
 
   override val maxDepth = 50
@@ -141,5 +142,5 @@ object DLogProverInterpreterTest extends DLogProverInterpreter {
     DLogNode(secrets.head.publicImage.h))
 
 
-  def main(args:Array[String]):Unit = ???
+  def main(args: Array[String]): Unit = ???
 }

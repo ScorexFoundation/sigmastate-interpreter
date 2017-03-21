@@ -8,7 +8,7 @@ case class TestingReducerInput(height: Int) extends Context
 
 
 object TestingInterpreter extends Interpreter with DLogProverInterpreter {
-  override type SProp = StateTree
+  override type StateT = StateTree
   override type CTX = TestingReducerInput
 
   override val maxDepth = 50
