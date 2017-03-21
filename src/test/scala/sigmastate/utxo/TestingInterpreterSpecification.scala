@@ -73,7 +73,7 @@ class TestingInterpreterSpecification extends PropSpec
     }
   }
 
-    property("Evaluation example #1") {
+  property("Evaluation example #1") {
     val dk1 = DLogNode(secrets(0).publicImage.h)
     val dk2 = DLogNode(secrets(1).publicImage.h)
 

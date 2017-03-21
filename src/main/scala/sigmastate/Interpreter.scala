@@ -81,8 +81,10 @@ trait Interpreter {
   def evaluate(exp: SigmaStateTree, context: CTX, proof: ProofT, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
     println("cprop: " + cProp)
+    println("proof: " + proof)
 
-    verifyCryptoStatement(proof).get.isInstanceOf[SuccessfulProof.type]
+    //verifyCryptoStatement(proof).get.isInstanceOf[SuccessfulProof.type]
+    proof.proposition == cProp && proof.verify()
   }
 }
 
