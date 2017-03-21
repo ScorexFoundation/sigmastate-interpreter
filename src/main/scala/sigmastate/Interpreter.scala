@@ -3,10 +3,12 @@ package sigmastate
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
+import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogProverInput
 import scapi.sigma.rework.DLogProtocol
+
 import scala.util.Try
 
 
@@ -107,8 +109,8 @@ trait ProverInterpreter extends Interpreter {
 object TreeConversion extends Attribution {
   //to be applied bottom up, converts SigmaTree => UnprovenTree
   val convertToUnproven: SigmaTree => UnprovenTree = attr {
-    case CAND(sigmaTrees) => CAndUnproven(None, sigmaTrees.map(convertToUnproven))
-    case COR(sigmaTrees) => COrUnproven(None, sigmaTrees.map(convertToUnproven))
+    case CAND(sigmaTrees) => CAndUnproven(CAND(sigmaTrees), None, sigmaTrees.map(convertToUnproven))
+    case COR(sigmaTrees) => COrUnproven(COR(sigmaTrees), None, sigmaTrees.map(convertToUnproven))
     case ci: DLogNode => SchnorrUnproven(None, simulated = false, ci.toCommonInput)
   }
 
@@ -122,10 +124,9 @@ object TreeConversion extends Attribution {
           val privKey = secrets.find(_.publicImage.h == proposition.h).get
           SchnorrSignatureSigner(privKey).sign(challenge)
       }
-    case CAndUnproven(Some(challenge), children) =>
+    case CAndUnproven(proposition, Some(challenge), children) =>
       val proven = children.map(proving(secrets))
-      //todo: compiler hangs if uncomment
-      CAndUncheckedNode(null: CAND, challenge, proven)
+      CAndUncheckedNode(proposition, challenge, proven)
   }}
 }
 
@@ -184,6 +185,10 @@ object DLogProverInterpreterTest extends DLogProverInterpreter {
 
   def main(args: Array[String]): Unit = {
     val challenge: Array[Byte] = Array.fill(32)(0: Byte)
-    println(prove(example, TInput(100), challenge))
+    val proven = prove(example, TInput(100), challenge).get
+    println(proven)
+
+
+    println(proven.verify())
   }
 }

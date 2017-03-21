@@ -108,6 +108,8 @@ case class FailedProof[SP <: SigmaProposition](proposition: SP) extends CheckedP
 
 
 sealed trait UnprovenTree extends ProofTree {
+  val proposition: SigmaTree
+
   val challengeOpt: Option[Array[Byte]]
 
   def setChallenge(challenge: Array[Byte]): UnprovenTree
@@ -117,18 +119,20 @@ sealed trait UnprovenLeaf extends UnprovenTree {
   val simulated: Boolean
 }
 
-case class CAndUnproven(override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree {
-  override def setChallenge(challenge: Array[Byte]) = CAndUnproven(Some(challenge), children)
+case class CAndUnproven(override val proposition: CAND,
+                        override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree {
+  override def setChallenge(challenge: Array[Byte]) = CAndUnproven(proposition, Some(challenge), children)
 }
 
-case class COrUnproven(override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree {
-  override def setChallenge(challenge: Array[Byte]) = COrUnproven(Some(challenge), children)
+case class COrUnproven(override val proposition: COR,
+                       override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree {
+  override def setChallenge(challenge: Array[Byte]) = COrUnproven(proposition, Some(challenge), children)
 }
 
 
 case class SchnorrUnproven(override val challengeOpt: Option[Array[Byte]] = None,
                            override val simulated: Boolean,
-                           proposition: DLogCommonInput) extends UnprovenLeaf {
+                           override val proposition: DLogCommonInput) extends UnprovenLeaf {
   override def setChallenge(challenge: Array[Byte]) = SchnorrUnproven(Some(challenge), simulated, proposition)
 }
 
@@ -189,12 +193,13 @@ case class COrUncheckedNode(override val proposition: COR, override val challeng
 
   override val propCode: PropositionCode = COR.Code
 
-  override type M = this.type
+  override type M = COrUncheckedNode
 
-  override def serializer: Serializer[COrUncheckedNode.this.type] = ???
+  override def serializer: Serializer[M] = ???
 }
 
 
+//todo: remove code below if not needed
 object Rewriters extends App {
 
   val h1: GroupElement = null
@@ -207,7 +212,6 @@ object Rewriters extends App {
     AND(DLogNode(h1), DLogNode(h2)),
     OR(EQ(IntLeaf(100), Height), GT(IntLeaf(100), Height))
   ), DLogNode(h3))
-
 
   def corresponds(sst: SigmaStateTree, pt: UncheckedTree[_]): Boolean = Try {
     val propNodes = new Tree[SigmaStateTree, SigmaStateTree](sst).nodes
