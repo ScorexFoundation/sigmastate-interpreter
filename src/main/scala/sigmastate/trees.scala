@@ -117,7 +117,7 @@ sealed trait UnprovenLeaf extends UnprovenTree {
   val simulated: Boolean
 }
 
-case class CAndUnproven(override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree{
+case class CAndUnproven(override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree {
   override def setChallenge(challenge: Array[Byte]) = CAndUnproven(Some(challenge), children)
 }
 
@@ -128,7 +128,7 @@ case class COrUnproven(override val challengeOpt: Option[Array[Byte]] = None, ch
 
 case class SchnorrUnproven(override val challengeOpt: Option[Array[Byte]] = None,
                            override val simulated: Boolean,
-                           proposition: DLogCommonInput) extends UnprovenLeaf{
+                           proposition: DLogCommonInput) extends UnprovenLeaf {
   override def setChallenge(challenge: Array[Byte]) = SchnorrUnproven(Some(challenge), simulated, proposition)
 }
 
@@ -164,7 +164,7 @@ case class SchnorrNode(override val proposition: DLogCommonInput,
 }
 
 case class CAndUncheckedNode(override val proposition: CAND, override val challenge: Array[Byte], leafs: Seq[ProofTree])
-  extends UncheckedTree(proposition, challenge) {
+  extends UncheckedTree[CAND](proposition, challenge) {
 
   override def verify(): Boolean =
     leafs.zip(proposition.sigmaTrees).forall { case (proof, prop) =>
@@ -176,9 +176,9 @@ case class CAndUncheckedNode(override val proposition: CAND, override val challe
     }
 
   override val propCode: PropositionCode = CAND.Code
-  override type M = this.type
+  override type M = CAndUncheckedNode
 
-  override def serializer: Serializer[CAndUncheckedNode.this.type] = ???
+  override def serializer: Serializer[M] = ???
 }
 
 //todo: implement
@@ -203,7 +203,6 @@ object Rewriters extends App {
 
   val h = 100
 
-
   val t = AND(OR(
     AND(DLogNode(h1), DLogNode(h2)),
     OR(EQ(IntLeaf(100), Height), GT(IntLeaf(100), Height))
@@ -218,6 +217,4 @@ object Rewriters extends App {
       proof.proposition == prop
     }
   }.getOrElse(false)
-
-
 }

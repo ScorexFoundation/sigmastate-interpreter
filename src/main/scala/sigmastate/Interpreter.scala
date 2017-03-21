@@ -112,7 +112,7 @@ object TreeConversion extends Attribution {
     case ci: DLogNode => SchnorrUnproven(None, simulated = false, ci.toCommonInput)
   }
 
-  /*
+
   val proving: Seq[DLogProtocol.DLogProverInput] => UnprovenTree => UncheckedTree[_] = paramAttr{secrets => {
     case SchnorrUnproven(Some(challenge), simulated, proposition) =>
       simulated match {
@@ -123,8 +123,10 @@ object TreeConversion extends Attribution {
           SchnorrSignatureSigner(privKey).sign(challenge)
       }
     case CAndUnproven(Some(challenge), children) =>
-      CAndUncheckedNode(null, challenge, children.map(proving(secrets)))
-  }}*/
+      val proven = children.map(proving(secrets))
+      //todo: compiler hangs if uncomment
+      CAndUncheckedNode(null: CAND, challenge, proven)
+  }}
 }
 
 trait DLogProverInterpreter extends ProverInterpreter {
@@ -136,7 +138,7 @@ trait DLogProverInterpreter extends ProverInterpreter {
   //to be applied bottom up, marks whether simulation is needed for a sigma-protocol
   val markSimulated = rule[UnprovenTree] {
     case su: SchnorrUnproven =>
-      val secretKnown = secrets.exists(_.publicImage == su.proposition)
+      val secretKnown = secrets.exists(_.publicImage.h == su.proposition.h)
       su.copy(simulated = !secretKnown)
   }
 
@@ -154,7 +156,7 @@ trait DLogProverInterpreter extends ProverInterpreter {
     everywheretd(challengeDisperse)(t).get.asInstanceOf[UnprovenTree]
   }
 
-  override def prove(unproven: UnprovenTree): ProofT = ??? //TreeConversion.proving(secrets)(unproven)
+  override def prove(unproven: UnprovenTree): ProofT = TreeConversion.proving(secrets)(unproven)
 }
 
 
