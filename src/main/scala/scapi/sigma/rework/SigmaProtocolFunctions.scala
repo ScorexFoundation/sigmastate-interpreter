@@ -4,6 +4,7 @@ import java.security.SecureRandom
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocolMsg
+import edu.biu.scapi.primitives.dlog.DlogGroup
 import scorex.core.transaction.state.Secret
 import sigmastate.UncheckedTree
 import sigmastate.{ProofOfKnowledge, SigmaProofOfKnowledgeProposition}
@@ -46,6 +47,7 @@ trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
 
 
 trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] {
+  val dlogGroup: DlogGroup
   val soundness: Int
 }
 

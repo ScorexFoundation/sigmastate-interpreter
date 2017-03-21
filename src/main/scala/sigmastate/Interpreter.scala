@@ -5,12 +5,10 @@ import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import scapi.sigma.rework.DLogProtocol.{DLogCommonInput, DLogProverInput}
-import scapi.sigma.rework.{DLogProtocol, NonInteractiveProver}
-import sigmastate.ProofOfKnowledge.Challenge
-import sigmastate.SigmaProposition.PropositionCode
-
+import scapi.sigma.rework.DLogProtocol.DLogProverInput
+import scapi.sigma.rework.DLogProtocol
 import scala.util.Try
+
 
 trait Context
 
@@ -46,7 +44,7 @@ trait Interpreter {
     case AND(l, r) if l.isInstanceOf[FalseConstantTree.type] => FalseConstantTree
     case AND(l, r) if l.isInstanceOf[TrueConstantTree.type] => r
     case AND(l, r) if l.isInstanceOf[SigmaTree] && r.isInstanceOf[SigmaTree] =>
-      CAND(l.asInstanceOf[SigmaTree], r.asInstanceOf[SigmaTree])
+      CAND(Seq(l.asInstanceOf[SigmaTree], r.asInstanceOf[SigmaTree]))
 
 
     case OR(l, r) if r.isInstanceOf[TrueConstantTree.type] => TrueConstantTree
@@ -87,21 +85,46 @@ trait Interpreter {
 }
 
 trait ProverInterpreter extends Interpreter {
-  def prove(cryptoStatement: SigmaT, challenge: ProofOfKnowledge.Challenge): ProofT
+  protected def prove(unprovenTree: UnprovenTree): ProofT
+
+  def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree
 
   def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[ProofT] = Try {
     val cProp = reduceToCrypto(exp, context).get
     println(cProp)
     assert(cProp.isInstanceOf[SigmaT])
 
-    prove(cProp.asInstanceOf[SigmaT], challenge)
+    val ct = TreeConversion.convertToUnproven(cProp.asInstanceOf[SigmaT]).setChallenge(challenge)
+
+    val toProve = normalizeUnprovenTree(ct)
+
+    println(toProve)
+
+    prove(toProve)
   }
 }
 
-class ProofTreeBuilder(sigmaTree: SigmaTree, rootChallenge: Array[Byte]) extends Attribution {
-  lazy val rules = ???
+object TreeConversion extends Attribution {
+  //to be applied bottom up, converts SigmaTree => UnprovenTree
+  val convertToUnproven: SigmaTree => UnprovenTree = attr {
+    case CAND(sigmaTrees) => CAndUnproven(None, sigmaTrees.map(convertToUnproven))
+    case COR(sigmaTrees) => COrUnproven(None, sigmaTrees.map(convertToUnproven))
+    case ci: DLogNode => SchnorrUnproven(None, simulated = false, ci.toCommonInput)
+  }
 
-  def run(): UnprovenTree = ???
+  /*
+  val proving: Seq[DLogProtocol.DLogProverInput] => UnprovenTree => UncheckedTree[_] = paramAttr{secrets => {
+    case SchnorrUnproven(Some(challenge), simulated, proposition) =>
+      simulated match {
+        case true =>
+          throw new Exception("simulation isn't done yet")
+        case false =>
+          val privKey = secrets.find(_.publicImage.h == proposition.h).get
+          SchnorrSignatureSigner(privKey).sign(challenge)
+      }
+    case CAndUnproven(Some(challenge), children) =>
+      CAndUncheckedNode(null, challenge, children.map(proving(secrets)))
+  }}*/
 }
 
 trait DLogProverInterpreter extends ProverInterpreter {
@@ -123,18 +146,15 @@ trait DLogProverInterpreter extends ProverInterpreter {
       val challenge = cand.challengeOpt.get
       cand.copy(children = cand.children.map(_.setChallenge(challenge)))
 
-    case cor: COrUnproven => ???
+    case cor: COrUnproven if cor.challengeOpt.isDefined => ???
   }
 
-
-
-  val provers = new Provers {
-    override val provers: Map[PropositionCode, Seq[NonInteractiveProver[_, _, _, _]]] =
-      Map(DLogCommonInput.Code -> secrets.map(SchnorrSignatureSigner.apply))
+  override def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree = {
+    val t = everywherebu(markSimulated)(unprovenTree).get.asInstanceOf[UnprovenTree]
+    everywheretd(challengeDisperse)(t).get.asInstanceOf[UnprovenTree]
   }
 
-  override def prove(cryptoStatement: SigmaTree, challenge: Challenge): ProofT =
-    provers.prove(cryptoStatement, challenge)
+  override def prove(unproven: UnprovenTree): ProofT = ??? //TreeConversion.proving(secrets)(unproven)
 }
 
 
@@ -156,10 +176,9 @@ object DLogProverInterpreterTest extends DLogProverInterpreter {
     Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
   }
 
-  val example = CAND(
-    CAND(DLogNode(secrets.head.publicImage.h), DLogNode(secrets.tail.head.publicImage.h)),
-    DLogNode(secrets.head.publicImage.h))
-
+  val example = CAND(Seq(
+    CAND(Seq(DLogNode(secrets.head.publicImage.h), DLogNode(secrets.tail.head.publicImage.h))),
+    DLogNode(secrets.head.publicImage.h)))
 
   def main(args: Array[String]): Unit = {
     val challenge: Array[Byte] = Array.fill(32)(0: Byte)

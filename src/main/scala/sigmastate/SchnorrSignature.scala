@@ -58,7 +58,7 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
     DLogCommonInput(dlog, gw, soundness)
   }
 
-  def sign(message: Array[Byte]): SchnorrNode = {
+  def sign(challenge: Array[Byte]): SchnorrNode = {
 
     val g = dlog.getGenerator
     val gw = dlog.exponentiate(g, privateInput.w)
@@ -68,7 +68,7 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
 
     val fm = prover.firstMessage
 
-    val sm = prover.secondMessage(Challenge(hf(message)))
+    val sm = prover.secondMessage(Challenge(challenge))
 
     val grec = fm.ecData
     val z = sm.z
@@ -78,7 +78,7 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
     val zb = z.toByteArray
 
     val sb = Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
-    SchnorrNode(commonInput, hf(message), sb)
+    SchnorrNode(commonInput, challenge, sb)
   }
 
   override val publicInput: DLogCommonInput = proposition

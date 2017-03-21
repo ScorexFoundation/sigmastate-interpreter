@@ -17,6 +17,9 @@ libraryDependencies ++= Seq(
 ) ++ testingDependencies
 
 
+scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
+
+
 
 
 

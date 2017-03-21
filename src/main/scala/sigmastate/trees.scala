@@ -1,6 +1,7 @@
 package sigmastate
 
-import edu.biu.scapi.primitives.dlog.{ECElementSendableData, GroupElement}
+import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
+import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import scapi.sigma.rework.DLogProtocol._
 import scapi.sigma.rework.{Challenge, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.Serializer
@@ -10,13 +11,14 @@ import sigmastate.SigmaProposition.PropositionCode
 
 import scala.util.Try
 
+
 sealed trait SigmaStateTree extends Product
 
 trait StateTree extends SigmaStateTree
 
 trait SigmaTree extends SigmaStateTree with SigmaProposition
 
-case class CAND(sigmaTrees: SigmaTree*) extends SigmaTree {
+case class CAND(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
   override val code: PropositionCode = CAND.Code
   override type M = this.type
 }
@@ -25,7 +27,7 @@ object CAND {
   val Code = 101: Byte
 }
 
-case class COR(sigmaTrees: SigmaTree*) extends SigmaTree {
+case class COR(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
   override val code: PropositionCode = COR.Code
   override type M = this.type
 }
@@ -46,7 +48,10 @@ case class DLogNode(h: GroupElement)
 
   override def serializer: Serializer[DLogNode.this.type] = ???
 
+  override val dlogGroup: DlogGroup = new BcDlogECFp()
   override val soundness: Int = 256
+
+  lazy val toCommonInput: DLogCommonInput = DLogCommonInput(dlogGroup, h, soundness)
 }
 
 
@@ -158,7 +163,7 @@ case class SchnorrNode(override val proposition: DLogCommonInput,
   override def serializer: Serializer[M] = ???
 }
 
-case class CAndUncheckedNode(override val proposition: CAND, override val challenge: Array[Byte], leafs: ProofTree*)
+case class CAndUncheckedNode(override val proposition: CAND, override val challenge: Array[Byte], leafs: Seq[ProofTree])
   extends UncheckedTree(proposition, challenge) {
 
   override def verify(): Boolean =

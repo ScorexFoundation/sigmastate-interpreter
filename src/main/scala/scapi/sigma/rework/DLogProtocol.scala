@@ -21,7 +21,7 @@ package object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
-  case class DLogCommonInput(dlogGroup: DlogGroup, h: GroupElement, override val soundness: Int)
+  case class DLogCommonInput(override val dlogGroup: DlogGroup, h: GroupElement, override val soundness: Int)
     extends SigmaProtocolCommonInput[DLogSigmaProtocol]
       with SigmaProofOfKnowledgeProposition[DLogSigmaProtocol, DLogProverInput] {
 
