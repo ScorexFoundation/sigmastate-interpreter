@@ -6,7 +6,6 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import scapi.sigma.rework.{Challenge, NonInteractiveProver}
 import scapi.sigma.rework.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.experimental.SchnorrNode
 
 
 // TODO: make implementation corresponding to RFC-8032 standard for EdDSA signatures

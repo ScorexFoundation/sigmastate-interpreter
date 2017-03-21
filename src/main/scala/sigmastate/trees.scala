@@ -1,4 +1,4 @@
-package sigmastate.experimental
+package sigmastate
 
 import edu.biu.scapi.primitives.dlog.{ECElementSendableData, GroupElement}
 import scapi.sigma.rework.DLogProtocol._
@@ -6,7 +6,6 @@ import scapi.sigma.rework.{Challenge, SigmaProtocol, SigmaProtocolCommonInput, S
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import org.bitbucket.inkytonik.kiama.relation._
-import sigmastate._
 import sigmastate.SigmaProposition.PropositionCode
 
 import scala.util.Try
@@ -18,13 +17,21 @@ trait StateTree extends SigmaStateTree
 trait SigmaTree extends SigmaStateTree with SigmaProposition
 
 case class CAND(sigmaTrees: SigmaTree*) extends SigmaTree {
-  override val code: PropositionCode = CAnd.Code
+  override val code: PropositionCode = CAND.Code
   override type M = this.type
 }
 
+object CAND {
+  val Code = 101: Byte
+}
+
 case class COR(sigmaTrees: SigmaTree*) extends SigmaTree {
-  override val code: PropositionCode = COr.Code
+  override val code: PropositionCode = COR.Code
   override type M = this.type
+}
+
+object COR {
+  val Code = 101: Byte
 }
 
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP]]
@@ -95,8 +102,24 @@ case object SuccessfulProof extends CheckedProof
 case class FailedProof[SP <: SigmaProposition](proposition: SP) extends CheckedProof
 
 
-abstract class UncheckedTree[SP <: SigmaProposition](val proposition: SP, val challenge: Array[Byte])
-  extends Proof[SP] with ProofTree
+sealed trait UnprovenTree extends ProofTree
+
+sealed trait UnprovenLeaf extends UnprovenTree{
+  val simulated: Boolean
+}
+
+case class CAndUnproven(challenge: Array[Byte], propositions: DLogCommonInput*)
+
+case class COrUnproven(challenge: Array[Byte], propositions: DLogCommonInput*)
+
+
+case class SchnorrUnproven(proposition: DLogCommonInput,
+                           challenge: Array[Byte], override val simulated:Boolean) extends UnprovenLeaf
+
+
+
+sealed abstract class UncheckedTree[ST <: SigmaTree](val proposition: ST, val challenge: Array[Byte])
+  extends Proof[ST] with ProofTree
 
 case class SchnorrNode(override val proposition: DLogCommonInput,
                        override val challenge: Array[Byte], signature: Array[Byte]) extends
@@ -137,19 +160,19 @@ case class CAndUncheckedNode(override val proposition: CAND, override val challe
       }
     }
 
-  override val propCode: PropositionCode = CAnd.Code
+  override val propCode: PropositionCode = CAND.Code
   override type M = this.type
 
   override def serializer: Serializer[CAndUncheckedNode.this.type] = ???
 }
 
 //todo: implement
-case class COrUncheckedNode(override val proposition: COr, override val challenge: Array[Byte], leafs: UncheckedTree[_]*)
+case class COrUncheckedNode(override val proposition: COR, override val challenge: Array[Byte], leafs: UncheckedTree[_]*)
   extends UncheckedTree(proposition, challenge) {
 
   override def verify(): Boolean = ???
 
-  override val propCode: PropositionCode = COr.Code
+  override val propCode: PropositionCode = COR.Code
 
   override type M = this.type
 

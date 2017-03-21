@@ -2,7 +2,6 @@ package sigmastate.utxo
 
 import scapi.sigma.rework.DLogProtocol.DLogProverInput
 import sigmastate._
-import sigmastate.experimental.{Height, IntLeaf, StateTree, Value}
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 
 case class TestingReducerInput(height: Int) extends Context

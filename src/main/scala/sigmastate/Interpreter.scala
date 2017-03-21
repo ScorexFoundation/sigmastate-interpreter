@@ -5,11 +5,10 @@ import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import scapi.sigma.rework.DLogProtocol.DLogCommonInput
+import scapi.sigma.rework.DLogProtocol.{DLogCommonInput, DLogProverInput}
 import scapi.sigma.rework.{DLogProtocol, NonInteractiveProver}
 import sigmastate.ProofOfKnowledge.Challenge
 import sigmastate.SigmaProposition.PropositionCode
-import sigmastate.experimental._
 
 import scala.util.Try
 
@@ -92,6 +91,11 @@ trait ProverInterpreter extends Interpreter {
   }
 }
 
+class ProofTreeBuilder(sigmaTree: SigmaTree, rootChallenge: Array[Byte]) extends Attribution {
+  lazy val rules = ???
+
+  def run(): UnprovenTree = ???
+}
 
 trait DLogProverInterpreter extends ProverInterpreter {
   override type CProp = SigmaTree
@@ -106,4 +110,31 @@ trait DLogProverInterpreter extends ProverInterpreter {
 
   override def prove(cryptoStatement: SigmaTree, challenge: Challenge): CProof =
     provers.prove(cryptoStatement, challenge)
+}
+
+
+case class TInput(height: Int) extends Context
+
+object DLogProverInterpreterTest extends DLogProverInterpreter {
+  override type SProp = StateTree
+  override type CTX = TInput
+
+  override val maxDepth = 50
+
+  override def varSubst(context: TInput) = rule[Value] {
+    case Height => IntLeaf(context.height)
+  }
+
+  override lazy val secrets: Seq[DLogProverInput] = {
+    import SchnorrSignature._
+
+    Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
+  }
+
+  val example = CAND(
+    CAND(DLogNode(secrets.head.publicImage.h), DLogNode(secrets.tail.head.publicImage.h)),
+    DLogNode(secrets.head.publicImage.h))
+
+
+  def main(args:Array[String]):Unit = ???
 }

@@ -5,7 +5,7 @@ import java.security.SecureRandom
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocolMsg
 import scorex.core.transaction.state.Secret
-import sigmastate.experimental.UncheckedTree
+import sigmastate.UncheckedTree
 import sigmastate.{ProofOfKnowledge, SigmaProofOfKnowledgeProposition}
 
 import scala.concurrent.Future

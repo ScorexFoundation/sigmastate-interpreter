@@ -28,4 +28,4 @@ object SigmaProposition {
 }
 
 trait SigmaProofOfKnowledgeProposition[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP]]
-  extends SigmaProposition with ProofOfKnowledgeProposition[S]  with SigmaProtocolCommonInput[SP]
+  extends SigmaProposition with ProofOfKnowledgeProposition[S]  with SigmaProtocolCommonInput[SP] with SigmaTree

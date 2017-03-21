@@ -4,9 +4,8 @@ import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scapi.sigma.rework.DLogProtocol.{DLogCommonInput, DLogProverInput}
+import scapi.sigma.rework.DLogProtocol.DLogProverInput
 import sigmastate._
-import sigmastate.experimental._
 
 import scala.util.Random
 
@@ -74,7 +73,7 @@ class TestingInterpreterSpecification extends PropSpec
     }
   }
 
-  property("Evaluation example #1") {
+    property("Evaluation example #1") {
     val dk1 = DLogNode(secrets(0).publicImage.h)
     val dk2 = DLogNode(secrets(1).publicImage.h)
 
