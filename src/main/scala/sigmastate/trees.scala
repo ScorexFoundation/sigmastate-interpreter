@@ -6,10 +6,7 @@ import scapi.sigma.rework.DLogProtocol._
 import scapi.sigma.rework.{Challenge, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
-import org.bitbucket.inkytonik.kiama.relation._
 import sigmastate.SigmaProposition.PropositionCode
-
-import scala.util.Try
 
 
 sealed trait SigmaStateTree extends Product
@@ -100,13 +97,6 @@ case object Height extends Variable
 
 trait ProofTree extends Product
 
-sealed trait CheckedProof extends ProofTree
-
-case object SuccessfulProof extends CheckedProof
-
-case class FailedProof[SP <: SigmaProposition](proposition: SP) extends CheckedProof
-
-
 sealed trait UnprovenTree extends ProofTree {
   val proposition: SigmaTree
 
@@ -170,14 +160,13 @@ case class SchnorrNode(override val proposition: DLogCommonInput,
   override def serializer: Serializer[M] = ???
 }
 
-case class CAndUncheckedNode(override val proposition: CAND, override val challenge: Array[Byte], leafs: Seq[ProofTree])
+case class CAndUncheckedNode(override val proposition: CAND, override val challenge: Array[Byte], leafs: Seq[UncheckedTree])
   extends UncheckedSigmaTree[CAND](proposition, challenge) {
 
   override def verify(): Boolean =
     leafs.zip(proposition.sigmaTrees).forall { case (proof, prop) =>
       proof match {
-        case SuccessfulProof => true
-        case FailedProof(_) => false
+        case NoProof => true
         case ut: UncheckedSigmaTree[_] => ut.challenge.sameElements(this.challenge) && ut.verify()
       }
     }
@@ -189,7 +178,7 @@ case class CAndUncheckedNode(override val proposition: CAND, override val challe
 }
 
 //todo: implement
-case class COrUncheckedNode(override val proposition: COR, override val challenge: Array[Byte], leafs: Seq[ProofTree])
+case class COrUncheckedNode(override val proposition: COR, override val challenge: Array[Byte], leafs: Seq[UncheckedTree])
   extends UncheckedSigmaTree(proposition, challenge) {
 
   override def verify(): Boolean = ???
