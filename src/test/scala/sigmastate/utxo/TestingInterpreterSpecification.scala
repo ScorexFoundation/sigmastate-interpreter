@@ -94,12 +94,22 @@ class TestingInterpreterSpecification extends PropSpec
     evaluate(prop, env2, proof1, challenge).getOrElse(false) shouldBe false
   }
 
-  property("Evaluation - always true") {
-    val prop = TrueConstantTree
+  property("Evaluation - no real proving") {
+    val prop1 = TrueConstantTree
+
     val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
     val env = TestingReducerInput(99)
 
-    evaluate(prop, env, proof, challenge).getOrElse(false) shouldBe true
+    evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe true
+
+    val prop2 = OR(TrueConstantTree, FalseConstantTree)
+    evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe true
+
+    val prop3 = AND(TrueConstantTree, TrueConstantTree)
+    evaluate(prop3, env, proof, challenge).getOrElse(false) shouldBe true
+
+    val prop4 = GT(Height, IntLeaf(90))
+    evaluate(prop4, env, proof, challenge).getOrElse(false) shouldBe true
   }
 }
