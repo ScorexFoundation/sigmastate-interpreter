@@ -24,6 +24,11 @@ trait Interpreter {
 
   def maxDepth: Int
 
+  /**
+    * a custom strategy to replace variables with their respective values located in context
+    * @param ctx - a context
+    * @return a strategy to rewrite a tree
+    */
   def varSubst(ctx: CTX): Strategy
 
   val rels = rule[SigmaStateTree] {
