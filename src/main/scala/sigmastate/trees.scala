@@ -52,20 +52,6 @@ case class DLogNode(h: GroupElement)
 }
 
 
-sealed abstract class BooleanConstantTree(val value: Boolean) extends SigmaStateTree
-
-object BooleanConstantTree {
-  def fromBoolean(v: Boolean) = v match {
-    case true => TrueConstantTree
-    case false => FalseConstantTree
-  }
-}
-
-case object TrueConstantTree extends BooleanConstantTree(true)
-
-case object FalseConstantTree extends BooleanConstantTree(false)
-
-
 case class OR(left: SigmaStateTree, right: SigmaStateTree) extends SigmaStateTree
 
 case class AND(left: SigmaStateTree, right: SigmaStateTree) extends SigmaStateTree
@@ -87,6 +73,19 @@ case class EQ(left: SigmaStateTree, right: SigmaStateTree) extends Relation
 trait Value extends StateTree
 
 case class IntLeaf(value: Int) extends Value
+
+sealed abstract class BooleanConstantTree(val value: Boolean) extends Value
+
+object BooleanConstantTree {
+  def fromBoolean(v: Boolean) = v match {
+    case true => TrueConstantTree
+    case false => FalseConstantTree
+  }
+}
+
+case object TrueConstantTree extends BooleanConstantTree(true)
+
+case object FalseConstantTree extends BooleanConstantTree(false)
 
 trait Variable extends Value
 
