@@ -142,5 +142,8 @@ object DLogProverInterpreterTest extends DLogProverInterpreter {
     DLogNode(secrets.head.publicImage.h))
 
 
-  def main(args: Array[String]): Unit = ???
+  def main(args: Array[String]): Unit = {
+    val challenge: Array[Byte] = Array.fill(32)(0: Byte)
+    prove(example, challenge)
+  }
 }

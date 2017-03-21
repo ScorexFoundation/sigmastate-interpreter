@@ -20,13 +20,15 @@ class SchnorrSignatureSpecification extends PropSpec
 
       val sig = SchnorrSignatureSigner(pi).sign(message)
 
-      println(sig.verify())
       sig.verify() shouldBe true
 
-      //todo: uncomment & fix
-      //sig.verify(ci, message ++ Array(modifier)) shouldBe false
-      //sig.verify(ci, Array(modifier) ++ message) shouldBe false
-      //sig.verify(ci2, message) shouldBe false
+      val sigWrong1 = SchnorrNode(sig.proposition, message ++ Array(modifier), sig.signature).verify()
+      val sigWrong2 = SchnorrNode(sig.proposition, Array(modifier) ++ message, sig.signature).verify()
+      val sigWrong3 = SchnorrNode(ci2, message, sig.signature).verify()
+
+      sigWrong1 shouldBe false
+      sigWrong2 shouldBe false
+      sigWrong3 shouldBe false
     }
   }
 }
