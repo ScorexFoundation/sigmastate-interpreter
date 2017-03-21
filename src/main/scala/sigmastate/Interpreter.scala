@@ -93,6 +93,7 @@ trait ProverInterpreter extends Interpreter {
     val cProp = reduceToCrypto(exp, context).get
     println(cProp)
     assert(cProp.isInstanceOf[SigmaT])
+
     prove(cProp.asInstanceOf[SigmaT], challenge)
   }
 }
@@ -108,6 +109,24 @@ trait DLogProverInterpreter extends ProverInterpreter {
   override type ProofT = UncheckedTree[_]
 
   val secrets: Seq[DLogProtocol.DLogProverInput]
+
+  //to be applied bottom up, marks whether simulation is needed for a sigma-protocol
+  val markSimulated = rule[UnprovenTree] {
+    case su: SchnorrUnproven =>
+      val secretKnown = secrets.exists(_.publicImage == su.proposition)
+      su.copy(simulated = !secretKnown)
+  }
+
+  //to be applied down from the top node
+  val challengeDisperse = rule[UnprovenTree] {
+    case cand: CAndUnproven if cand.challengeOpt.isDefined =>
+      val challenge = cand.challengeOpt.get
+      cand.copy(children = cand.children.map(_.setChallenge(challenge)))
+
+    case cor: COrUnproven => ???
+  }
+
+
 
   val provers = new Provers {
     override val provers: Map[PropositionCode, Seq[NonInteractiveProver[_, _, _, _]]] =
@@ -144,6 +163,6 @@ object DLogProverInterpreterTest extends DLogProverInterpreter {
 
   def main(args: Array[String]): Unit = {
     val challenge: Array[Byte] = Array.fill(32)(0: Byte)
-    prove(example, challenge)
+    println(prove(example, TInput(100), challenge))
   }
 }

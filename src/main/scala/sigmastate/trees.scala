@@ -102,20 +102,30 @@ case object SuccessfulProof extends CheckedProof
 case class FailedProof[SP <: SigmaProposition](proposition: SP) extends CheckedProof
 
 
-sealed trait UnprovenTree extends ProofTree
+sealed trait UnprovenTree extends ProofTree {
+  val challengeOpt: Option[Array[Byte]]
 
-sealed trait UnprovenLeaf extends UnprovenTree{
+  def setChallenge(challenge: Array[Byte]): UnprovenTree
+}
+
+sealed trait UnprovenLeaf extends UnprovenTree {
   val simulated: Boolean
 }
 
-case class CAndUnproven(challenge: Array[Byte], propositions: DLogCommonInput*)
+case class CAndUnproven(override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree{
+  override def setChallenge(challenge: Array[Byte]) = CAndUnproven(Some(challenge), children)
+}
 
-case class COrUnproven(challenge: Array[Byte], propositions: DLogCommonInput*)
+case class COrUnproven(override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree {
+  override def setChallenge(challenge: Array[Byte]) = COrUnproven(Some(challenge), children)
+}
 
 
-case class SchnorrUnproven(proposition: DLogCommonInput,
-                           challenge: Array[Byte], override val simulated:Boolean) extends UnprovenLeaf
-
+case class SchnorrUnproven(override val challengeOpt: Option[Array[Byte]] = None,
+                           override val simulated: Boolean,
+                           proposition: DLogCommonInput) extends UnprovenLeaf{
+  override def setChallenge(challenge: Array[Byte]) = SchnorrUnproven(Some(challenge), simulated, proposition)
+}
 
 
 sealed abstract class UncheckedTree[ST <: SigmaTree](val proposition: ST, val challenge: Array[Byte])
@@ -182,7 +192,6 @@ case class COrUncheckedNode(override val proposition: COR, override val challeng
 
 object Rewriters extends App {
 
-
   val h1: GroupElement = null
   val h2: GroupElement = null
   val h3: GroupElement = null
@@ -206,5 +215,4 @@ object Rewriters extends App {
   }.getOrElse(false)
 
 
-  // println(corresponds(te, tp))
 }
