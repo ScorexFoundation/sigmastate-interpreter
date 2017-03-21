@@ -94,7 +94,7 @@ class TestingInterpreterSpecification extends PropSpec
     evaluate(prop, env2, proof1, challenge).getOrElse(false) shouldBe false
   }
 
-  property("Evaluation - no real proving") {
+  property("Evaluation - no real proving - true case") {
     val prop1 = TrueConstantTree
 
     val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -111,5 +111,24 @@ class TestingInterpreterSpecification extends PropSpec
 
     val prop4 = GT(Height, IntLeaf(90))
     evaluate(prop4, env, proof, challenge).getOrElse(false) shouldBe true
+  }
+
+  property("Evaluation - no real proving - false case") {
+    val prop1 = FalseConstantTree
+
+    val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
+    val proof = NoProof
+    val env = TestingReducerInput(99)
+
+    evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe false
+
+    val prop2 = OR(FalseConstantTree, FalseConstantTree)
+    evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe false
+
+    val prop3 = AND(FalseConstantTree, TrueConstantTree)
+    evaluate(prop3, env, proof, challenge).getOrElse(false) shouldBe false
+
+    val prop4 = GT(Height, IntLeaf(100))
+    evaluate(prop4, env, proof, challenge).getOrElse(false) shouldBe false
   }
 }
