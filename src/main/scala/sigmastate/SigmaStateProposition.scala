@@ -9,14 +9,6 @@ trait SigmaStateProposition extends Proposition {
   override def serializer: Serializer[M] = ???
 }
 
-case class Or(statement1: SigmaStateProposition, statement2: SigmaStateProposition) extends SigmaStateProposition {
-  override lazy val bytes: Array[Byte] = ???
-}
-
-case class And(statement1: SigmaStateProposition, statement2: SigmaStateProposition) extends SigmaStateProposition {
-  override lazy val bytes: Array[Byte] = ???
-}
-
 trait StateProposition extends SigmaStateProposition
 
 trait SigmaProposition extends SigmaStateProposition {

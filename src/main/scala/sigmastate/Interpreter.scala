@@ -90,15 +90,9 @@ trait ProverInterpreter extends Interpreter {
 
   def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[ProofT] = Try {
     val cProp = reduceToCrypto(exp, context).get
-    println(cProp)
     assert(cProp.isInstanceOf[SigmaT])
-
     val ct = TreeConversion.convertToUnproven(cProp.asInstanceOf[SigmaT]).setChallenge(challenge)
-
     val toProve = normalizeUnprovenTree(ct)
-
-    println(toProve)
-
     prove(toProve)
   }
 }
