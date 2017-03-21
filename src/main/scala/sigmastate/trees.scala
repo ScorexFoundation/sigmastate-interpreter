@@ -136,13 +136,16 @@ case class SchnorrUnproven(override val challengeOpt: Option[Array[Byte]] = None
   override def setChallenge(challenge: Array[Byte]) = SchnorrUnproven(Some(challenge), simulated, proposition)
 }
 
+sealed trait UncheckedTree extends ProofTree
 
-sealed abstract class UncheckedTree[ST <: SigmaTree](val proposition: ST, val challenge: Array[Byte])
-  extends Proof[ST] with ProofTree
+case object NoProof extends UncheckedTree
+
+abstract class UncheckedSigmaTree[ST <: SigmaTree](val proposition: ST, val challenge: Array[Byte])
+  extends Proof[ST] with UncheckedTree
 
 case class SchnorrNode(override val proposition: DLogCommonInput,
                        override val challenge: Array[Byte], signature: Array[Byte]) extends
-  UncheckedTree[DLogCommonInput](proposition, challenge)
+  UncheckedSigmaTree[DLogCommonInput](proposition, challenge)
   with ProofOfKnowledge[DLogSigmaProtocol, DLogCommonInput] {
 
   override def verify(): Boolean = {
@@ -168,14 +171,14 @@ case class SchnorrNode(override val proposition: DLogCommonInput,
 }
 
 case class CAndUncheckedNode(override val proposition: CAND, override val challenge: Array[Byte], leafs: Seq[ProofTree])
-  extends UncheckedTree[CAND](proposition, challenge) {
+  extends UncheckedSigmaTree[CAND](proposition, challenge) {
 
   override def verify(): Boolean =
     leafs.zip(proposition.sigmaTrees).forall { case (proof, prop) =>
       proof match {
         case SuccessfulProof => true
         case FailedProof(_) => false
-        case ut: UncheckedTree[_] => ut.challenge.sameElements(this.challenge) && ut.verify()
+        case ut: UncheckedSigmaTree[_] => ut.challenge.sameElements(this.challenge) && ut.verify()
       }
     }
 
@@ -186,8 +189,8 @@ case class CAndUncheckedNode(override val proposition: CAND, override val challe
 }
 
 //todo: implement
-case class COrUncheckedNode(override val proposition: COR, override val challenge: Array[Byte], leafs: UncheckedTree[_]*)
-  extends UncheckedTree(proposition, challenge) {
+case class COrUncheckedNode(override val proposition: COR, override val challenge: Array[Byte], leafs: Seq[ProofTree])
+  extends UncheckedSigmaTree(proposition, challenge) {
 
   override def verify(): Boolean = ???
 

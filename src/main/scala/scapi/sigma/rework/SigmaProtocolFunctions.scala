@@ -151,7 +151,7 @@ trait ZeroKnowledgeProofOfKnowledge[SP <: SigmaProtocol[SP]]
 trait NonInteractiveProver[SP <: SigmaProtocol[SP],
   PI <: SigmaProtocolPrivateInput[SP],
   CI <: SigmaProofOfKnowledgeProposition[SP, PI],
-  P <: ProofOfKnowledge[SP, CI] with UncheckedTree[CI]]
+  P <: ProofOfKnowledge[SP, CI] with UncheckedTree]
   extends Prover[SP, CI, PI] {
 
   def sign(message: Array[Byte]): P

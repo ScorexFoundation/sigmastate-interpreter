@@ -3,7 +3,6 @@ package sigmastate
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
-import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogProverInput
@@ -18,7 +17,7 @@ trait Interpreter {
   type CTX <: Context
   type StateT <: StateTree
   type SigmaT <: SigmaTree
-  type ProofT <: UncheckedTree[_]
+  type ProofT <: UncheckedTree
 
   val dlogGroup: DlogGroup = new BcDlogECFp()
 
@@ -55,12 +54,6 @@ trait Interpreter {
     case OR(l, r) if l.isInstanceOf[FalseConstantTree.type] => r
   }
 
-  val proofReduction = rule[ProofTree] {
-    case s: UncheckedTree[_] => s.verify() match {
-      case true => SuccessfulProof
-      case false => FailedProof(s.proposition)
-    }
-  }
 
   //todo: check depth
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
@@ -73,18 +66,20 @@ trait Interpreter {
   ).asInstanceOf[SigmaStateTree])
 
 
-  def verifyCryptoStatement(proof: ProofT): Try[CheckedProof] =
-    Try(everywherebu(proofReduction)(proof)
-      .ensuring(_.get.isInstanceOf[CheckedProof])
-      .asInstanceOf[CheckedProof])
 
   def evaluate(exp: SigmaStateTree, context: CTX, proof: ProofT, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
     println("cprop: " + cProp)
     println("proof: " + proof)
 
-    //verifyCryptoStatement(proof).get.isInstanceOf[SuccessfulProof.type]
-    proof.proposition == cProp && proof.verify()
+    cProp match {
+      case TrueConstantTree  =>  true
+      case FalseConstantTree => false
+      case _ =>
+        //verifyCryptoStatement(proof).get.isInstanceOf[SuccessfulProof.type]
+        val sp = proof.asInstanceOf[UncheckedSigmaTree[_]]
+        sp.proposition == cProp && sp.verify()
+    }
   }
 }
 
@@ -117,7 +112,7 @@ object TreeConversion extends Attribution {
   }
 
 
-  val proving: Seq[DLogProtocol.DLogProverInput] => UnprovenTree => UncheckedTree[_] = paramAttr{secrets => {
+  val proving: Seq[DLogProtocol.DLogProverInput] => UnprovenTree => UncheckedTree = paramAttr{secrets => {
     case SchnorrUnproven(Some(challenge), simulated, proposition) =>
       simulated match {
         case true =>
@@ -134,7 +129,7 @@ object TreeConversion extends Attribution {
 
 trait DLogProverInterpreter extends ProverInterpreter {
   override type SigmaT = SigmaTree
-  override type ProofT = UncheckedTree[_]
+  override type ProofT = UncheckedTree
 
   val secrets: Seq[DLogProtocol.DLogProverInput]
 
@@ -189,8 +184,5 @@ object DLogProverInterpreterTest extends DLogProverInterpreter {
     val challenge: Array[Byte] = Array.fill(32)(0: Byte)
     val proven = prove(example, TInput(100), challenge).get
     println(proven)
-
-
-    println(proven.verify())
   }
 }
