@@ -8,7 +8,7 @@ import scala.collection.mutable
 
 case class UtxoContext(currentHeight: Int,
                        spendingTransaction: SigmaStateTransaction,
-                       self: SigmaStateBox)
+                       self: SigmaStateBox) extends Context
 
 trait UtxoVariable[V <: Value] extends Variable[V]
 
@@ -82,4 +82,20 @@ object UtxoInterpreter extends Interpreter {
   override def varSubst(context: UtxoContext) = fnSubst(context) <+ sbSubst <+ rule[Value] {
     case Height => IntLeaf(context.currentHeight)
   }
+}
+
+
+object UtxoInterpreterTest extends App{
+  import UtxoInterpreter._
+
+  val prop = TxHasOutput(GT(OutputAmount, IntLeaf(10)))
+
+  val outputToSpend = SigmaStateBox(10, prop)
+
+  val newOutput = SigmaStateBox(10, prop)
+  val tx = SigmaStateTransaction(Seq(), Seq(newOutput))
+
+  val context = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = outputToSpend)
+
+  println(reduceToCrypto(prop, context))
 }

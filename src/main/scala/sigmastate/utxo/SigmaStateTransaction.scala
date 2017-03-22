@@ -5,29 +5,30 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.BoxTransaction
 import scorex.core.transaction.box.{Box, BoxUnlocker}
 import scorex.core.transaction.proof.Proof
-import sigmastate.SigmaStateProposition
+import sigmastate.{SigmaStateProposition, SigmaStateTree}
 
 
 case class SigmaStateBox(override val value: Box.Amount,
-                         override val proposition: SigmaStateProposition) extends Box[SigmaStateProposition] {
+                         override val proposition: SigmaStateTree) extends Box[SigmaStateTree] {
 
-  override val id: Array[Byte] = ???
+  override lazy val id: Array[Byte] = ???
 
   override type M = SigmaStateBox
 
   override def serializer: Serializer[SigmaStateBox] = ???
 }
 
-class SigmaStateBoxUnlocker extends BoxUnlocker[SigmaStateProposition] {
+class SigmaStateBoxUnlocker extends BoxUnlocker[SigmaStateTree] {
   override val closedBoxId: Array[Byte] = ???
-  override val boxKey: Proof[SigmaStateProposition] = ???
+  override val boxKey: Proof[SigmaStateTree] = ???
 }
 
-class SigmaStateTransaction extends BoxTransaction[SigmaStateProposition, SigmaStateBox] {
-  override val unlockers: Traversable[SigmaStateBoxUnlocker] = ???
-  override val newBoxes: Traversable[SigmaStateBox] = ???
-  override val fee: Long = ???
-  override val timestamp: Long = ???
+case class SigmaStateTransaction(override val unlockers: Traversable[SigmaStateBoxUnlocker],
+                                 override val newBoxes: Traversable[SigmaStateBox])
+  extends BoxTransaction[SigmaStateTree, SigmaStateBox] {
+
+  override lazy val fee: Long = ???
+  override lazy val timestamp: Long = ???
 
   override type M = SigmaStateTransaction
 

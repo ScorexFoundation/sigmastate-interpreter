@@ -9,9 +9,9 @@ import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import sigmastate.SigmaProposition.PropositionCode
 
 
-sealed trait SigmaStateTree extends Product
+sealed trait SigmaStateTree extends Product with SigmaStateProposition
 
-trait StateTree extends SigmaStateTree
+trait StateTree extends SigmaStateTree with StateProposition
 
 trait SigmaTree extends SigmaStateTree with SigmaProposition
 
