@@ -27,19 +27,19 @@ object UtxoSubstitution {
 
   def fnSubst(utxoContext: UtxoContext) = rule[SigmaStateTree] {
     case hasOut: TxHasOutput =>
-      val ts = hasOut.relation.map{r =>
-        r.left match {
-          case OutputAmount => OutputAmount -> r
+      val ts = hasOut.relation.map { r =>
+        (r.left, r.right) match {
+          case (OutputAmount, _) | (_, OutputAmount) => OutputAmount -> r
           case _ => ???
         }
       }
 
-      val sbs = utxoContext.spendingTransaction.newBoxes.map {out =>
+      val sbs = utxoContext.spendingTransaction.newBoxes.map { out =>
         val amount = out.value
         val bs = mutable.Map[Variable[_], Value]()
 
-        val rs = ts.map{case (v, r) =>
-          v match{
+        val rs = ts.map { case (v, r) =>
+          v match {
             case OutputAmount =>
               bs.put(OutputAmount, IntLeaf(amount))
               r
@@ -50,6 +50,30 @@ object UtxoSubstitution {
       }
 
       OR(sbs.toSeq)
+  }
+
+  def sbSubst = rule[SigmaStateTree] {
+    case sb: ScopedBinding =>
+      val rels = sb.relations.map { r =>
+        val rl = r.left match {
+          case v: Variable[_] =>
+            sb.bindings.get(v) match {
+              case Some(value) => r.swapLeft(value)
+              case None => r
+            }
+          case _ => r
+        }
+
+        rl.right match {
+          case v: Variable[_] =>
+            sb.bindings.get(v) match {
+              case Some(value) => rl.swapRight(value)
+              case None => rl
+            }
+          case _ => rl
+        }
+      }
+      AND(rels)
   }
 }
 
