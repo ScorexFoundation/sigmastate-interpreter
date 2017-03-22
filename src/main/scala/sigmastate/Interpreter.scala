@@ -68,7 +68,6 @@ trait Interpreter {
 
 
     case OR(children) =>
-
       @tailrec
       def iterChildren(children: Seq[SigmaStateTree],
                        currentBuffer: mutable.Buffer[SigmaStateTree]): mutable.Buffer[SigmaStateTree] = {

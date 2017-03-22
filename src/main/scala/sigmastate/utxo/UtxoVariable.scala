@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import sigmastate._
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 
 import scala.collection.mutable
 
@@ -14,8 +14,6 @@ trait UtxoVariable[V <: Value] extends Variable[V]
 
 case object OutputAmount extends Variable[IntLeaf]
 
-//information needed
-
 //todo: more strict-type solution Variable[V] => Value[V]
 case class ScopedBinding(bindings: Map[Variable[_], Value], relations: Seq[Relation]) extends StateTree
 
@@ -23,7 +21,12 @@ trait Function extends StateTree
 
 case class TxHasOutput(relation: Relation*) extends Function
 
-object UtxoSubstitution {
+object UtxoInterpreter extends Interpreter {
+    override type StateT = StateTree
+    override type CTX = UtxoContext
+
+    override val maxDepth = 50
+
 
   def fnSubst(utxoContext: UtxoContext) = rule[SigmaStateTree] {
     case hasOut: TxHasOutput =>
@@ -75,6 +78,8 @@ object UtxoSubstitution {
       }
       AND(rels)
   }
+
+  override def varSubst(context: UtxoContext) = fnSubst(context) <+ sbSubst <+ rule[Value] {
+    case Height => IntLeaf(context.currentHeight)
+  }
 }
-
-
