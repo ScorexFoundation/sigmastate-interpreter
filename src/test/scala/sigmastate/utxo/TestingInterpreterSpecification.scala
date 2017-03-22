@@ -131,4 +131,12 @@ class TestingInterpreterSpecification extends PropSpec
     val prop4 = GT(Height, IntLeaf(100))
     evaluate(prop4, env, proof, challenge).getOrElse(false) shouldBe false
   }
+
+  ignore("Evaluation - Crowdfunding Example") {
+    // (height >= 100 /\ dlog_g x1) \/ (height < 100 /\ has_output(amount >= 100000, proposition = dlog_g x2)
+  }
+
+  ignore("Evaluation - Demurrage Example") {
+
+  }
 }

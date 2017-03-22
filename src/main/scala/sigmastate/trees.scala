@@ -57,17 +57,7 @@ case class OR(left: SigmaStateTree, right: SigmaStateTree) extends SigmaStateTre
 case class AND(left: SigmaStateTree, right: SigmaStateTree) extends SigmaStateTree
 
 
-trait Relation extends StateTree
 
-case class LT(left: SigmaStateTree, right: SigmaStateTree) extends Relation
-
-case class LE(left: SigmaStateTree, right: SigmaStateTree) extends Relation
-
-case class GT(left: SigmaStateTree, right: SigmaStateTree) extends Relation
-
-case class GE(left: SigmaStateTree, right: SigmaStateTree) extends Relation
-
-case class EQ(left: SigmaStateTree, right: SigmaStateTree) extends Relation
 
 
 trait Value extends StateTree
@@ -87,9 +77,23 @@ case object TrueConstantTree extends BooleanConstantTree(true)
 
 case object FalseConstantTree extends BooleanConstantTree(false)
 
-trait Variable extends Value
+trait Variable[V<: Value] extends Value
 
-case object Height extends Variable
+case object Height extends Variable[IntLeaf]
+
+
+sealed trait Relation extends StateTree
+
+case class LT(left: SigmaStateTree, right: SigmaStateTree) extends Relation
+
+case class LE(left: SigmaStateTree, right: SigmaStateTree) extends Relation
+
+case class GT(left: SigmaStateTree, right: SigmaStateTree) extends Relation
+
+case class GE(left: SigmaStateTree, right: SigmaStateTree) extends Relation
+
+case class EQ(left: SigmaStateTree, right: SigmaStateTree) extends Relation
+
 
 
 //Proof tree
