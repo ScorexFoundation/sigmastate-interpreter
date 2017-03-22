@@ -1,16 +1,30 @@
 package sigmastate.utxo
 
-import sigmastate.Variable
+import sigmastate._
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu, everywheretd}
 
-/*
-trait UtxoVariable extends Variable
 
-case object OutputAmount extends Variable
+trait UtxoVariable[V <: Value] extends Variable[V]
 
-trait LocalBinding {
+case object OutputAmount extends Variable[IntLeaf]
 
+//information needed
+trait ScopedBinding {
+  //todo: more strict-type solution Variable[V] => Value[V]
+  val bindings: Map[Variable[_], Value]
+
+  val relations: Seq[Relation]
 }
 
-case class TxHasOutput(relations)
-*/
+trait Function extends StateTree
+case class TxHasOutput(relation: Relation*) extends Function
+
+object UtxoSubstitution{
+  /*
+    val fnSubst = rule[StateTree]{
+      case hasOut: TxHasOutput => hasOut.relation
+    }
+  */
+}
+
 

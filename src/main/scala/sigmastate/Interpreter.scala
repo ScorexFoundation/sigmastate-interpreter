@@ -3,7 +3,7 @@ package sigmastate
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu, everywheretd}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogProverInput
 import scapi.sigma.rework.DLogProtocol
