@@ -3,11 +3,13 @@ package sigmastate
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu, everywheretd}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogProverInput
 import scapi.sigma.rework.DLogProtocol
 
+import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.util.Try
 
 
@@ -40,18 +42,53 @@ trait Interpreter {
   }
 
   val conjs = rule[SigmaStateTree] {
-    case AND(l, r) if r.isInstanceOf[FalseConstantTree.type] => FalseConstantTree
-    case AND(l, r) if r.isInstanceOf[TrueConstantTree.type] => l
-    case AND(l, r) if l.isInstanceOf[FalseConstantTree.type] => FalseConstantTree
-    case AND(l, r) if l.isInstanceOf[TrueConstantTree.type] => r
-    case AND(l, r) if l.isInstanceOf[SigmaTree] && r.isInstanceOf[SigmaTree] =>
-      CAND(Seq(l.asInstanceOf[SigmaTree], r.asInstanceOf[SigmaTree]))
+
+    case AND(children) =>
+
+      @tailrec
+      def iterChildren(children: Seq[SigmaStateTree],
+                       currentBuffer: mutable.Buffer[SigmaStateTree]): mutable.Buffer[SigmaStateTree] = {
+        if(children.isEmpty) currentBuffer else children.head match {
+          case FalseConstantTree => mutable.Buffer(FalseConstantTree)
+          case TrueConstantTree => iterChildren(children.tail, currentBuffer)
+          case s: SigmaStateTree => iterChildren(children.tail, currentBuffer += s)
+        }
+      }
+
+      val reduced = iterChildren(children, mutable.Buffer())
+
+      reduced.size match {
+        case i: Int if i == 0 => TrueConstantTree
+        case i: Int if i == 1 => reduced.head
+        case _ =>
+          if(reduced.forall(_.isInstanceOf[SigmaTree]))
+            CAND(reduced.map(_.asInstanceOf[SigmaTree]))
+          else AND(reduced)
+      }
 
 
-    case OR(l, r) if r.isInstanceOf[TrueConstantTree.type] => TrueConstantTree
-    case OR(l, r) if r.isInstanceOf[FalseConstantTree.type] => l
-    case OR(l, r) if l.isInstanceOf[TrueConstantTree.type] => TrueConstantTree
-    case OR(l, r) if l.isInstanceOf[FalseConstantTree.type] => r
+    case OR(children) =>
+
+      @tailrec
+      def iterChildren(children: Seq[SigmaStateTree],
+                       currentBuffer: mutable.Buffer[SigmaStateTree]): mutable.Buffer[SigmaStateTree] = {
+        if(children.isEmpty) currentBuffer else children.head match {
+          case TrueConstantTree => mutable.Buffer(TrueConstantTree)
+          case FalseConstantTree => iterChildren(children.tail, currentBuffer)
+          case s: SigmaStateTree => iterChildren(children.tail, currentBuffer += s)
+        }
+      }
+
+      val reduced = iterChildren(children, mutable.Buffer())
+
+      reduced.size match {
+        case i: Int if i == 0 => FalseConstantTree
+        case i: Int if i == 1 => reduced.head
+        case _ =>
+          if(reduced.forall(_.isInstanceOf[SigmaTree]))
+            COR(reduced.map(_.asInstanceOf[SigmaTree]))
+          else OR(reduced)
+      }
   }
 
 

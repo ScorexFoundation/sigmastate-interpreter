@@ -52,11 +52,18 @@ case class DLogNode(h: GroupElement)
 }
 
 
-case class OR(left: SigmaStateTree, right: SigmaStateTree) extends SigmaStateTree
+case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree
 
-case class AND(left: SigmaStateTree, right: SigmaStateTree) extends SigmaStateTree
+object OR {
+  def apply(left:SigmaStateTree, right: SigmaStateTree): OR = apply(Seq(left, right))
+}
 
 
+case class AND(children: Seq[SigmaStateTree]) extends SigmaStateTree
+
+object AND {
+  def apply(left:SigmaStateTree, right: SigmaStateTree): AND = apply(Seq(left, right))
+}
 
 
 
