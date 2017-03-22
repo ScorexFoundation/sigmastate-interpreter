@@ -113,7 +113,7 @@ object TreeConversion extends Attribution {
           throw new Exception("simulation isn't done yet")
         case false =>
           val privKey = secrets.find(_.publicImage.h == proposition.h).get
-          SchnorrSignatureSigner(privKey).sign(challenge)
+          SchnorrSignatureSigner(privKey).prove(challenge)
       }
     case CAndUnproven(proposition, Some(challenge), children) =>
       val proven = children.map(proving(secrets))

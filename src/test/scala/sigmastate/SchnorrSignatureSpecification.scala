@@ -21,7 +21,7 @@ class SchnorrSignatureSpecification extends PropSpec
 
       val challenge = Blake2b256(message)
 
-      val sig = SchnorrSignatureSigner(pi).sign(challenge)
+      val sig = SchnorrSignatureSigner(pi).prove(challenge)
 
       sig.verify() shouldBe true
 

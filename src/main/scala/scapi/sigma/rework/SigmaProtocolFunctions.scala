@@ -154,7 +154,7 @@ trait NonInteractiveProver[SP <: SigmaProtocol[SP],
   P <: ProofOfKnowledge[SP, CI] with UncheckedTree]
   extends Prover[SP, CI, PI] {
 
-  def sign(message: Array[Byte]): P
+  def prove(message: Array[Byte]): P
 }
 
 trait Verifier[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] extends Party[SP, CI] {

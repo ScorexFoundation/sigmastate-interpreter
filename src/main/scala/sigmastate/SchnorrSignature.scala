@@ -58,7 +58,7 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
     DLogCommonInput(dlog, gw, soundness)
   }
 
-  def sign(challenge: Array[Byte]): SchnorrNode = {
+  def prove(challenge: Array[Byte]): SchnorrNode = {
 
     val g = dlog.getGenerator
     val gw = dlog.exponentiate(g, privateInput.w)
