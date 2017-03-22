@@ -55,21 +55,20 @@ case class DLogNode(h: GroupElement)
 case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree
 
 object OR {
-  def apply(left:SigmaStateTree, right: SigmaStateTree): OR = apply(Seq(left, right))
+  def apply(left: SigmaStateTree, right: SigmaStateTree): OR = apply(Seq(left, right))
 }
 
 
 case class AND(children: Seq[SigmaStateTree]) extends SigmaStateTree
 
 object AND {
-  def apply(left:SigmaStateTree, right: SigmaStateTree): AND = apply(Seq(left, right))
+  def apply(left: SigmaStateTree, right: SigmaStateTree): AND = apply(Seq(left, right))
 }
-
 
 
 trait Value extends StateTree
 
-case class IntLeaf(value: Int) extends Value
+case class IntLeaf(value: Long) extends Value
 
 sealed abstract class BooleanConstantTree(val value: Boolean) extends Value
 
@@ -84,23 +83,30 @@ case object TrueConstantTree extends BooleanConstantTree(true)
 
 case object FalseConstantTree extends BooleanConstantTree(false)
 
-trait Variable[V<: Value] extends Value
+trait Variable[V <: Value] extends Value
 
 case object Height extends Variable[IntLeaf]
 
 
-sealed trait Relation extends StateTree
+sealed trait Relation extends StateTree {
+  val left: SigmaStateTree
+  val right: SigmaStateTree
+}
 
-case class LT(left: SigmaStateTree, right: SigmaStateTree) extends Relation
+case class LT(override val left: SigmaStateTree,
+              override val right: SigmaStateTree) extends Relation
 
-case class LE(left: SigmaStateTree, right: SigmaStateTree) extends Relation
+case class LE(override val left: SigmaStateTree,
+              override val right: SigmaStateTree) extends Relation
 
-case class GT(left: SigmaStateTree, right: SigmaStateTree) extends Relation
+case class GT(override val left: SigmaStateTree,
+              override val right: SigmaStateTree) extends Relation
 
-case class GE(left: SigmaStateTree, right: SigmaStateTree) extends Relation
+case class GE(override val left: SigmaStateTree,
+              override val right: SigmaStateTree) extends Relation
 
-case class EQ(left: SigmaStateTree, right: SigmaStateTree) extends Relation
-
+case class EQ(override val left: SigmaStateTree,
+              override val right: SigmaStateTree) extends Relation
 
 
 //Proof tree
