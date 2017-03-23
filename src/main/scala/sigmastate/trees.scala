@@ -41,16 +41,26 @@ case class DLogNode(h: GroupElement)
     with SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
   override type M = this.type
-  override val code: PropositionCode = DLogCommonInput.Code
+  override val code: PropositionCode = DLogNode.Code
 
   override def serializer: Serializer[DLogNode.this.type] = ???
 
   override val dlogGroup: DlogGroup = new BcDlogECFp()
   override val soundness: Int = 256
 
-  lazy val toCommonInput: DLogCommonInput = DLogCommonInput(dlogGroup, h, soundness)
+  //lazy val toCommonInput: DLogCommonInput = DLogCommonInput(dlogGroup, h, soundness)
+
+  override lazy val bytes = {
+    val gw = h.generateSendableData().asInstanceOf[ECElementSendableData]
+    val gwx = gw.getX.toByteArray
+    val gwy = gw.getY.toByteArray
+    gwx ++ gwy
+  }
 }
 
+object DLogNode {
+    val Code: PropositionCode = 102: Byte
+}
 
 case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree
 
@@ -173,7 +183,7 @@ case class COrUnproven(override val proposition: COR,
 
 case class SchnorrUnproven(override val challengeOpt: Option[Array[Byte]] = None,
                            override val simulated: Boolean,
-                           override val proposition: DLogCommonInput) extends UnprovenLeaf {
+                           override val proposition: DLogNode) extends UnprovenLeaf {
   override def setChallenge(challenge: Array[Byte]) = SchnorrUnproven(Some(challenge), simulated, proposition)
 }
 
@@ -184,10 +194,10 @@ case object NoProof extends UncheckedTree
 abstract class UncheckedSigmaTree[ST <: SigmaTree](val proposition: ST, val challenge: Array[Byte])
   extends Proof[ST] with UncheckedTree
 
-case class SchnorrNode(override val proposition: DLogCommonInput,
+case class SchnorrNode(override val proposition: DLogNode,
                        override val challenge: Array[Byte], signature: Array[Byte]) extends
-  UncheckedSigmaTree[DLogCommonInput](proposition, challenge)
-  with ProofOfKnowledge[DLogSigmaProtocol, DLogCommonInput] {
+  UncheckedSigmaTree[DLogNode](proposition, challenge)
+  with ProofOfKnowledge[DLogSigmaProtocol, DLogNode] {
 
   override def verify(): Boolean = {
     //signature is g^r as a pair of points, and z
@@ -195,7 +205,7 @@ case class SchnorrNode(override val proposition: DLogCommonInput,
     val gr = new ECElementSendableData(grx, gry)
 
     //h = g^w is a pubkey
-    val x: DLogCommonInput = proposition
+    val x: DLogNode = proposition
 
     val a: FirstDLogProverMessage = FirstDLogProverMessage(gr)
 
@@ -205,7 +215,7 @@ case class SchnorrNode(override val proposition: DLogCommonInput,
     sigmaTranscript.accepted
   }
 
-  override val propCode: SigmaProposition.PropositionCode = DLogCommonInput.Code
+  override val propCode: SigmaProposition.PropositionCode = DLogNode.Code
   override type M = this.type
 
   override def serializer: Serializer[M] = ???

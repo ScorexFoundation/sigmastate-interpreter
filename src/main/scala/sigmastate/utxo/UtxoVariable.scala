@@ -8,7 +8,7 @@ import scapi.sigma.rework.DLogProtocol.DLogProverInput
 import scala.collection.mutable
 
 
-case class UtxoContext(currentHeight: Int,
+case class UtxoContext(currentHeight: Long,
                        spendingTransaction: SigmaStateTransaction,
                        self: SigmaStateBox) extends Context
 
@@ -24,7 +24,7 @@ trait Function extends StateTree
 
 case class TxHasOutput(relation: Relation*) extends Function
 
-object UtxoInterpreter extends Interpreter {
+class UtxoInterpreter extends Interpreter {
     override type StateT = StateTree
     override type CTX = UtxoContext
 
@@ -105,7 +105,6 @@ object UtxoInterpreter extends Interpreter {
 
 //todo: write tests for PropLeaf EQ/NEQ, TxHasOutput reductions, delete this class after
 object UtxoInterpreterTest extends App{
-  import UtxoInterpreter._
   import SchnorrSignature._
 
   val h1 = DLogProverInput.random()._2.h
@@ -121,5 +120,5 @@ object UtxoInterpreterTest extends App{
 
   val context = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = outputToSpend)
 
-  println(reduceToCrypto(prop, context))
+  println(new UtxoInterpreter().reduceToCrypto(prop, context))
 }

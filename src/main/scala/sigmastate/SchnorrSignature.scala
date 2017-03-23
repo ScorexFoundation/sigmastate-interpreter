@@ -47,22 +47,22 @@ object SchnorrSignature {
 }
 
 case class SchnorrSignatureSigner(privateInput: DLogProverInput)
-  extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, DLogCommonInput, SchnorrNode] {
+  extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, DLogNode, SchnorrNode] {
 
   import SchnorrSignature._
 
-  lazy val proposition: DLogCommonInput = {
+  lazy val proposition: DLogNode = {
     val g = dlog.getGenerator
     val gw = dlog.exponentiate(g, privateInput.w)
 
-    DLogCommonInput(dlog, gw, soundness)
+    DLogNode(gw)
   }
 
   def prove(challenge: Array[Byte]): SchnorrNode = {
 
     val g = dlog.getGenerator
     val gw = dlog.exponentiate(g, privateInput.w)
-    val commonInput = DLogCommonInput(dlog, gw, soundness)
+    val commonInput = DLogNode(gw)
 
     val prover = new DLogInteractiveProver(commonInput, privateInput)
 
@@ -81,7 +81,7 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
     SchnorrNode(commonInput, challenge, sb)
   }
 
-  override val publicInput: DLogCommonInput = proposition
+  override val publicInput: DLogNode = proposition
 }
 
 

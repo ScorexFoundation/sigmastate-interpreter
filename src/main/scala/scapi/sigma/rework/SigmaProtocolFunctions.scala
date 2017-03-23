@@ -6,8 +6,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef}
 import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocolMsg
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import scorex.core.transaction.state.Secret
-import sigmastate.UncheckedTree
-import sigmastate.{ProofOfKnowledge, SigmaProofOfKnowledgeProposition}
+import sigmastate.{ProofOfKnowledge, SigmaProofOfKnowledgeProposition, SigmaProofOfKnowledgeTree, UncheckedTree}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -150,7 +149,7 @@ trait ZeroKnowledgeProofOfKnowledge[SP <: SigmaProtocol[SP]]
 
 trait NonInteractiveProver[SP <: SigmaProtocol[SP],
   PI <: SigmaProtocolPrivateInput[SP],
-  CI <: SigmaProofOfKnowledgeProposition[SP, PI],
+  CI <: SigmaProofOfKnowledgeTree[SP, PI],
   P <: ProofOfKnowledge[SP, CI] with UncheckedTree]
   extends Prover[SP, CI, PI] {
 

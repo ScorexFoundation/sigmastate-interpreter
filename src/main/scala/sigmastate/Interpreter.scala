@@ -32,16 +32,16 @@ trait Interpreter {
     */
   def specificPhases(tree: SigmaStateTree, ctx: CTX): SigmaStateTree
 
-  val rels = rule[SigmaStateTree] {
+  val rels = everywherebu(rule[SigmaStateTree] {
     case EQ(l, r) => BooleanConstantTree.fromBoolean(l == r)
     case NEQ(l, r) => BooleanConstantTree.fromBoolean(l != r)
     case GT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value > r.value)
     case GE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value >= r.value)
     case LT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value < r.value)
     case LE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value <= r.value)
-  }
+  })
 
-  val conjs = rule[SigmaStateTree] {
+  val conjs = everywherebu(rule[SigmaStateTree] {
 
     case AND(children) =>
 
@@ -88,12 +88,14 @@ trait Interpreter {
             COR(reduced.map(_.asInstanceOf[SigmaTree]))
           else OR(reduced)
       }
-  }
+  })
 
   //todo: check depth
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
     val afterSpecific = specificPhases(exp, context)
-    everywherebu(rels <+ conjs)(afterSpecific).get
+    val afterRels = rels(afterSpecific).get.asInstanceOf[SigmaStateTree]
+    println("after rels: "+ afterRels)
+    conjs(afterRels).get
   }.ensuring(res =>
     res.isInstanceOf[BooleanConstantTree] ||
       res.isInstanceOf[CAND] ||
@@ -114,6 +116,8 @@ trait Interpreter {
       case _ =>
         //verifyCryptoStatement(proof).get.isInstanceOf[SuccessfulProof.type]
         val sp = proof.asInstanceOf[UncheckedSigmaTree[_]]
+        println(sp.proposition)
+        println("sp.proposition == cProp " + (sp.proposition == cProp) )
         sp.proposition == cProp && sp.verify()
     }
   }
@@ -138,7 +142,7 @@ object TreeConversion extends Attribution {
   val convertToUnproven: SigmaTree => UnprovenTree = attr {
     case CAND(sigmaTrees) => CAndUnproven(CAND(sigmaTrees), None, sigmaTrees.map(convertToUnproven))
     case COR(sigmaTrees) => COrUnproven(COR(sigmaTrees), None, sigmaTrees.map(convertToUnproven))
-    case ci: DLogNode => SchnorrUnproven(None, simulated = false, ci.toCommonInput)
+    case ci: DLogNode => SchnorrUnproven(None, simulated = false, ci)
   }
 
 
