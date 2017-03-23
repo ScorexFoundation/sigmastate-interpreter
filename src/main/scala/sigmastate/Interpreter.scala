@@ -4,7 +4,7 @@ import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
-import scapi.sigma.rework.DLogProtocol.DLogProverInput
+import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 import scapi.sigma.rework.DLogProtocol
 
 import scala.annotation.tailrec

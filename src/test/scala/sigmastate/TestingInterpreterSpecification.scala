@@ -5,7 +5,7 @@ import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scapi.sigma.rework.DLogProtocol.DLogProverInput
+import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 
 import scala.util.Random
 

@@ -1,7 +1,6 @@
 package sigmastate
 
-import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
-import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
+import edu.biu.scapi.primitives.dlog.ECElementSendableData
 import scapi.sigma.rework.DLogProtocol._
 import scapi.sigma.rework.{Challenge, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.Serializer
@@ -36,31 +35,7 @@ object COR {
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP]]
   extends SigmaTree with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
 
-case class DLogNode(h: GroupElement)
-  extends SigmaProtocolCommonInput[DLogSigmaProtocol]
-    with SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
-  override type M = this.type
-  override val code: PropositionCode = DLogNode.Code
-
-  override def serializer: Serializer[DLogNode.this.type] = ???
-
-  override val dlogGroup: DlogGroup = new BcDlogECFp()
-  override val soundness: Int = 256
-
-  //lazy val toCommonInput: DLogCommonInput = DLogCommonInput(dlogGroup, h, soundness)
-
-  override lazy val bytes = {
-    val gw = h.generateSendableData().asInstanceOf[ECElementSendableData]
-    val gwx = gw.getX.toByteArray
-    val gwy = gw.getY.toByteArray
-    gwx ++ gwy
-  }
-}
-
-object DLogNode {
-    val Code: PropositionCode = 102: Byte
-}
 
 case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree
 
@@ -150,8 +125,6 @@ case class NEQ(override val left: SigmaStateTree,
 
   def swapRight(newRight: SigmaStateTree): NEQ = copy(right = newRight)
 }
-
-
 
 
 //Proof tree

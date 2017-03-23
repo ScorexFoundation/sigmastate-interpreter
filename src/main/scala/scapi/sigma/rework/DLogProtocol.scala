@@ -3,11 +3,12 @@ package scapi.sigma.rework
 import java.math.BigInteger
 import java.security.SecureRandom
 
+import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
-import sigmastate.{DLogNode, EcPointFunctions, SigmaProofOfKnowledgeProposition}
+import sigmastate.{EcPointFunctions, SigmaProofOfKnowledgeTree}
 import sigmastate.SigmaProposition.PropositionCode
 
 import scala.concurrent.Future
@@ -21,14 +22,19 @@ package object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
-  /*
-  //todo: delete, it is covered by DLogNode now
-  case class DLogCommonInput(override val dlogGroup: DlogGroup, h: GroupElement, override val soundness: Int)
+  case class DLogNode(h: GroupElement)
     extends SigmaProtocolCommonInput[DLogSigmaProtocol]
-      with SigmaProofOfKnowledgeProposition[DLogSigmaProtocol, DLogProverInput] {
+      with SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
-    override val code: PropositionCode = DLogCommonInput.Code
     override type M = this.type
+    override val code: PropositionCode = DLogNode.Code
+
+    override def serializer: Serializer[DLogNode.this.type] = ???
+
+    override lazy val dlogGroup: DlogGroup = DLogNode.dlogGroup
+    override val soundness: Int = 256
+
+    //lazy val toCommonInput: DLogCommonInput = DLogCommonInput(dlogGroup, h, soundness)
 
     override lazy val bytes = {
       val gw = h.generateSendableData().asInstanceOf[ECElementSendableData]
@@ -38,19 +44,19 @@ package object DLogProtocol {
     }
   }
 
-
-
-  object DLogCommonInput {
+  object DLogNode {
     val Code: PropositionCode = 102: Byte
 
-    def fromBytes(bytes:Array[Byte])(implicit dlog: DlogGroup, soundness: Int) = {
+    lazy val dlogGroup: DlogGroup = new BcDlogECFp()
+
+    def fromBytes(bytes: Array[Byte]): DLogNode = {
       val (x, y) = EcPointFunctions.decodeBigIntPair(bytes).get
       val xy = new ECElementSendableData(x, y)
-      val h = dlog.reconstructElement(true, xy)
-      DLogCommonInput(dlog, h, soundness)
+      val h = dlogGroup.reconstructElement(true, xy)
+      DLogNode(h)
     }
   }
-  */
+
 
   case class DLogProverInput(w: BigInteger)(implicit val dlogGroup: DlogGroup, soundness: Int)
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol] {

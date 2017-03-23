@@ -3,7 +3,7 @@ package sigmastate.utxo
 import sigmastate._
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import scapi.sigma.rework.DLogProtocol.DLogProverInput
+import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 
 import scala.collection.mutable
 
