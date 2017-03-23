@@ -70,6 +70,8 @@ trait Value extends StateTree
 
 case class IntLeaf(value: Long) extends Value
 
+case class PropLeaf(value: SigmaStateTree) extends Value
+
 sealed abstract class BooleanConstantTree(val value: Boolean) extends Value
 
 object BooleanConstantTree {

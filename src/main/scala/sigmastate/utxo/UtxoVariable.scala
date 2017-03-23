@@ -3,6 +3,7 @@ package sigmastate.utxo
 import sigmastate._
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import scapi.sigma.rework.DLogProtocol.DLogProverInput
 
 import scala.collection.mutable
 
@@ -14,6 +15,7 @@ case class UtxoContext(currentHeight: Int,
 trait UtxoVariable[V <: Value] extends Variable[V]
 
 case object OutputAmount extends Variable[IntLeaf]
+case object OutputScript extends Variable[PropLeaf]
 
 //todo: more strict-type solution Variable[V] => Value[V]
 case class ScopedBinding(bindings: Map[Variable[_], Value], relations: Seq[Relation]) extends StateTree
@@ -35,6 +37,7 @@ object UtxoInterpreter extends Interpreter {
         val ts = hasOut.relation.map { r =>
           (r.left, r.right) match {
             case (OutputAmount, _) | (_, OutputAmount) => OutputAmount -> r
+            case (OutputScript, _) | (_, OutputScript) => OutputScript -> r
             case _ => ???
           }
         }
@@ -47,6 +50,9 @@ object UtxoInterpreter extends Interpreter {
             v match {
               case OutputAmount =>
                 bs.put(OutputAmount, IntLeaf(amount))
+                r
+              case OutputScript =>
+                bs.put(OutputScript, PropLeaf(out.proposition))
                 r
               case _ => ???
             }
@@ -96,15 +102,21 @@ object UtxoInterpreter extends Interpreter {
 }
 
 
+
+//todo: write tests for PropLeaf EQ/NEQ, TxHasOutput reductions, delete this class after
 object UtxoInterpreterTest extends App{
   import UtxoInterpreter._
+  import SchnorrSignature._
 
-  val prop = TxHasOutput(EQ(OutputAmount, IntLeaf(10)))
+  val h1 = DLogProverInput.random()._2.h
+  val h2 = DLogProverInput.random()._2.h
+
+  val prop = TxHasOutput(GE(OutputAmount, IntLeaf(10)), EQ(OutputScript, PropLeaf(DLogNode(h2))))
 
   val outputToSpend = SigmaStateBox(10, prop)
 
-  val newOutput1 = SigmaStateBox(5, prop)
-  val newOutput2 = SigmaStateBox(10, prop)
+  val newOutput1 = SigmaStateBox(5, DLogNode(h1))
+  val newOutput2 = SigmaStateBox(10, DLogNode(h2))
   val tx = SigmaStateTransaction(Seq(), Seq(newOutput1, newOutput2))
 
   val context = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = outputToSpend)
