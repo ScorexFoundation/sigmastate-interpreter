@@ -132,6 +132,15 @@ case class EQ(override val left: SigmaStateTree,
   def swapRight(newRight: SigmaStateTree): EQ = copy(right = newRight)
 }
 
+case class NEQ(override val left: SigmaStateTree,
+               override val right: SigmaStateTree) extends Relation {
+  def swapLeft(newLeft: SigmaStateTree): NEQ = copy(left = newLeft)
+
+  def swapRight(newRight: SigmaStateTree): NEQ = copy(right = newRight)
+}
+
+
+
 
 //Proof tree
 

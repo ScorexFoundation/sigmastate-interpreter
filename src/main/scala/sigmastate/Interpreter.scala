@@ -4,7 +4,6 @@ import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
-import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogProverInput
 import scapi.sigma.rework.DLogProtocol
 
@@ -35,6 +34,7 @@ trait Interpreter {
 
   val rels = rule[SigmaStateTree] {
     case EQ(l, r) => BooleanConstantTree.fromBoolean(l == r)
+    case NEQ(l, r) => BooleanConstantTree.fromBoolean(l != r)
     case GT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value > r.value)
     case GE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value >= r.value)
     case LT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value < r.value)
