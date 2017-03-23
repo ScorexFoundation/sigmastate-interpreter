@@ -73,7 +73,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //normally this transaction would invalid, but we're not checking it in this test
     val tx1 = SigmaStateTransaction(Seq(), Seq(tx1Output1, tx1Output2))
 
-    val ctx1 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx1, self = outputToSpend)
+    val ctx1 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx1, self = outputToSpend -> 0)
 
     //project is generating a proof and it is passing verification
     val proofP = projectProver.prove(crowdFundingScript, ctx1, challenge).get.asInstanceOf[verifier.ProofT]
@@ -90,7 +90,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val tx2Output2 = SigmaStateBox(1, DLogNode(projectPubKey))
     val tx2 = SigmaStateTransaction(Seq(), Seq(tx2Output1, tx2Output2))
 
-    val ctx2 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx2, self = outputToSpend)
+    val ctx2 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx2, self = outputToSpend -> 0)
 
     //project cant' generate a proof
     val proofP2Try = projectProver.prove(crowdFundingScript, ctx2, challenge)
@@ -107,7 +107,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val tx3Output2 = SigmaStateBox(1, DLogNode(projectPubKey))
     val tx3 = SigmaStateTransaction(Seq(), Seq(tx3Output1, tx3Output2))
 
-    val ctx3 = UtxoContext(currentHeight = timeout.value, spendingTransaction = tx3, self = outputToSpend)
+    val ctx3 = UtxoContext(currentHeight = timeout.value, spendingTransaction = tx3, self = outputToSpend -> 0)
 
     //project cant' generate a proof
     val proofP3Try = projectProver.prove(crowdFundingScript, ctx3, challenge)
@@ -119,6 +119,6 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   ignore("Evaluation - Demurrage Example") {
-
+    
   }
 }

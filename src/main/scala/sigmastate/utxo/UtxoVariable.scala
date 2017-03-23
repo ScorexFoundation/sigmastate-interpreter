@@ -10,9 +10,11 @@ import scala.collection.mutable
 
 case class UtxoContext(currentHeight: Long,
                        spendingTransaction: SigmaStateTransaction,
-                       self: SigmaStateBox) extends Context
+                       self: (SigmaStateBox, Long)) extends Context
 
 trait UtxoVariable[V <: Value] extends Variable[V]
+
+case object SelfHeight extends UtxoVariable[IntLeaf]
 
 case object OutputAmount extends Variable[IntLeaf]
 case object OutputScript extends Variable[PropLeaf]
@@ -92,6 +94,7 @@ class UtxoInterpreter extends Interpreter {
   def varSubst(context: UtxoContext): Strategy = everywherebu(
     rule[Value] {
     case Height => IntLeaf(context.currentHeight)
+    case SelfHeight => IntLeaf(context.self._2)
   })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext): SigmaStateTree = {
@@ -118,7 +121,7 @@ object UtxoInterpreterTest extends App{
   val newOutput2 = SigmaStateBox(10, DLogNode(h2))
   val tx = SigmaStateTransaction(Seq(), Seq(newOutput1, newOutput2))
 
-  val context = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = outputToSpend)
+  val context = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = outputToSpend -> 90)
 
   println(new UtxoInterpreter().reduceToCrypto(prop, context))
 }
