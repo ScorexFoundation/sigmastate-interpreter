@@ -60,7 +60,6 @@ object UtxoInterpreter extends Interpreter {
   def sbSubst():Strategy = everywherebu{
     rule[SigmaStateTree] {
       case sb: ScopedBinding =>
-        println("sb: " + sb)
         val rels = sb.relations.map { r =>
           val rl = r.left match {
             case v: Variable[_] =>
@@ -81,10 +80,6 @@ object UtxoInterpreter extends Interpreter {
           }
         }
         AND(rels)
-
-      case a:Any =>
-        println("alt: " + a)
-        a
     }
   }
 
@@ -94,7 +89,9 @@ object UtxoInterpreter extends Interpreter {
   })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext): SigmaStateTree = {
-    (fnSubst(context) <+ sbSubst <+ varSubst(context))(tree).get.asInstanceOf[SigmaStateTree]
+    val afterFn = fnSubst(context)(tree).get.asInstanceOf[SigmaStateTree]
+    val afterSb = sbSubst()(afterFn).get.asInstanceOf[SigmaStateTree]
+    varSubst(context)(afterSb).get.asInstanceOf[SigmaStateTree]
   }
 }
 
@@ -111,15 +108,5 @@ object UtxoInterpreterTest extends App{
 
   val context = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = outputToSpend)
 
-  //println(reduceToCrypto(prop, context))
-
-  val afn = everywherebu(fnSubst(context))(prop).get
-
-  println(afn)
-
-  val asub = everywherebu(sbSubst())(afn).get.asInstanceOf[SigmaStateTree]
-
-  println(asub)
-
-  println(reduceToCrypto(asub, context))
+  println(reduceToCrypto(prop, context))
 }
