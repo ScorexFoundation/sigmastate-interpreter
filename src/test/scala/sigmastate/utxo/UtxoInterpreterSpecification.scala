@@ -75,7 +75,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx1 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx1, self = outputToSpend)
 
-    //project is generating a proof and it passing verification
+    //project is generating a proof and it is passing verification
     val proofP = projectProver.prove(crowdFundingScript, ctx1, challenge).get.asInstanceOf[verifier.ProofT]
     verifier.evaluate(crowdFundingScript, ctx1, proofP, challenge).get shouldBe true
 
@@ -100,7 +100,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val proofB2Try = backerProver.prove(crowdFundingScript, ctx2, challenge)
     proofB2Try.isSuccess shouldBe false
 
-    //Second case: height >= timeout
+    //Third case: height >= timeout
 
     //project raised enough money but too late...
     val tx3Output1 = SigmaStateBox(minToRaise.value + 1, DLogNode(projectPubKey))
@@ -113,7 +113,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val proofP3Try = projectProver.prove(crowdFundingScript, ctx3, challenge)
     proofP3Try.isSuccess shouldBe false
 
-    //backer is generating a proof and it passing verification
+    //backer is generating a proof and it is passing verification
     val proofB = backerProver.prove(crowdFundingScript, ctx3, challenge).get.asInstanceOf[verifier.ProofT]
     verifier.evaluate(crowdFundingScript, ctx3, proofB, challenge).get shouldBe true
   }
