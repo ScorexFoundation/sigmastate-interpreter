@@ -18,6 +18,10 @@ class UtxoInterpreterSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
+  ignore("PropLeaf EQ/NEQ"){}
+
+  ignore("TxHasOutput reductions"){}
+
   /**
     * Crowdfunding example:
     * a project declares a need to raise "minToRaise" amount of tokens until some "timeout" height

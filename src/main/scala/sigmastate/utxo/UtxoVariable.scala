@@ -107,25 +107,3 @@ class UtxoInterpreter extends Interpreter {
     varSubst(context)(afterSb).get.asInstanceOf[SigmaStateTree]
   }
 }
-
-
-
-//todo: write tests for PropLeaf EQ/NEQ, TxHasOutput reductions, delete this class after
-object UtxoInterpreterTest extends App{
-  import SchnorrSignature._
-
-  val h1 = DLogProverInput.random()._2.h
-  val h2 = DLogProverInput.random()._2.h
-
-  val prop = TxHasOutput(GE(OutputAmount, IntLeaf(10)), EQ(OutputScript, PropLeaf(DLogNode(h2))))
-
-  val outputToSpend = SigmaStateBox(10, prop)
-
-  val newOutput1 = SigmaStateBox(5, DLogNode(h1))
-  val newOutput2 = SigmaStateBox(10, DLogNode(h2))
-  val tx = SigmaStateTransaction(Seq(), Seq(newOutput1, newOutput2))
-
-  val context = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = outputToSpend -> 90)
-
-  println(new UtxoInterpreter().reduceToCrypto(prop, context))
-}
