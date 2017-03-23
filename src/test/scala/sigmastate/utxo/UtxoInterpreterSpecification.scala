@@ -6,20 +6,12 @@ import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
 
-class UtxoBackerProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter {
+class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter {
   override lazy val secrets: Seq[DLogProverInput] = {
     import SchnorrSignature._
     Seq(DLogProverInput.random()._1)
   }
 }
-
-class UtxoProjectProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter {
-  override lazy val secrets: Seq[DLogProverInput] = {
-    import SchnorrSignature._
-    Seq(DLogProverInput.random()._1)
-  }
-}
-
 
 class UtxoInterpreterSpecification extends PropSpec
   with PropertyChecks
@@ -39,10 +31,10 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
 
     //backer's prover with his private key
-    val backerProver = new UtxoBackerProvingInterpreter
+    val backerProver = new UtxoProvingInterpreter
 
     //project's prover with his private key
-    val projectProver = new UtxoProjectProvingInterpreter
+    val projectProver = new UtxoProvingInterpreter
 
     val backerPubKey = backerProver.secrets.head.publicImage.h
     val projectPubKey = projectProver.secrets.head.publicImage.h
@@ -118,7 +110,13 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.evaluate(crowdFundingScript, ctx3, proofB, challenge).get shouldBe true
   }
 
-  ignore("Evaluation - Demurrage Example") {
-    
+  property("Evaluation - Demurrage Example") {
+    val DemurragePeriod = 100
+    val demurrageCost = 2
+
+    val prover = new UtxoProvingInterpreter
+    val regScript = DLogNode(prover.secrets.head.publicImage.h)
+
+    //val script = OR(regScript, AND()
   }
 }

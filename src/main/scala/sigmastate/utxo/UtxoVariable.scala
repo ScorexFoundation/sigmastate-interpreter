@@ -15,6 +15,8 @@ case class UtxoContext(currentHeight: Long,
 trait UtxoVariable[V <: Value] extends Variable[V]
 
 case object SelfHeight extends UtxoVariable[IntLeaf]
+case object SelfAmount extends UtxoVariable[IntLeaf]
+case object SelfScript extends UtxoVariable[PropLeaf]
 
 case object OutputAmount extends Variable[IntLeaf]
 case object OutputScript extends Variable[PropLeaf]
@@ -95,6 +97,8 @@ class UtxoInterpreter extends Interpreter {
     rule[Value] {
     case Height => IntLeaf(context.currentHeight)
     case SelfHeight => IntLeaf(context.self._2)
+    case SelfAmount => IntLeaf(context.self._1.value)
+    case SelfScript => PropLeaf(context.self._1.proposition)
   })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext): SigmaStateTree = {
