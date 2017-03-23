@@ -94,7 +94,6 @@ trait Interpreter {
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
     val afterSpecific = specificPhases(exp, context)
     val afterRels = rels(afterSpecific).get.asInstanceOf[SigmaStateTree]
-    println("after rels: "+ afterRels)
     conjs(afterRels).get
   }.ensuring(res =>
     res.isInstanceOf[BooleanConstantTree] ||
@@ -107,8 +106,6 @@ trait Interpreter {
 
   def evaluate(exp: SigmaStateTree, context: CTX, proof: ProofT, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
-    println("cprop: " + cProp)
-    println("proof: " + proof)
 
     cProp match {
       case TrueConstantTree  =>  true
@@ -116,8 +113,6 @@ trait Interpreter {
       case _ =>
         //verifyCryptoStatement(proof).get.isInstanceOf[SuccessfulProof.type]
         val sp = proof.asInstanceOf[UncheckedSigmaTree[_]]
-        println(sp.proposition)
-        println("sp.proposition == cProp " + (sp.proposition == cProp) )
         sp.proposition == cProp && sp.verify()
     }
   }
@@ -189,34 +184,4 @@ trait DLogProverInterpreter extends ProverInterpreter {
   }
 
   override def prove(unproven: UnprovenTree): ProofT = TreeConversion.proving(secrets)(unproven)
-}
-
-
-case class TInput(height: Int) extends Context
-
-object DLogProverInterpreterTest extends DLogProverInterpreter {
-  override type StateT = StateTree
-  override type CTX = TInput
-
-  override val maxDepth = 50
-
-  override def specificPhases(tree: SigmaStateTree, context: TInput) = everywherebu(rule[Value] {
-    case Height => IntLeaf(context.height)
-  })(tree).get.asInstanceOf[SigmaStateTree]
-
-  override lazy val secrets: Seq[DLogProverInput] = {
-    import SchnorrSignature._
-
-    Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
-  }
-
-  val example = CAND(Seq(
-    CAND(Seq(DLogNode(secrets.head.publicImage.h), DLogNode(secrets.tail.head.publicImage.h))),
-    DLogNode(secrets.head.publicImage.h)))
-
-  def main(args: Array[String]): Unit = {
-    val challenge: Array[Byte] = Array.fill(32)(0: Byte)
-    val proven = prove(example, TInput(100), challenge).get
-    println(proven)
-  }
 }
