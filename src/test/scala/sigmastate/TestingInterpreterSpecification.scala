@@ -1,14 +1,34 @@
-package sigmastate.utxo
+package sigmastate
 
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
-import org.scalatest.{Matchers, PropSpec}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.rework.DLogProtocol.DLogProverInput
-import sigmastate._
 
 import scala.util.Random
 
+
+case class TestingReducerInput(height: Int) extends Context
+
+
+object TestingInterpreter extends Interpreter with DLogProverInterpreter {
+  override type StateT = StateTree
+  override type CTX = TestingReducerInput
+
+  override val maxDepth = 50
+
+  override def specificPhases(tree: SigmaStateTree, context: TestingReducerInput) = everywherebu(rule[Value] {
+    case Height => IntLeaf(context.height)
+  })(tree).get.asInstanceOf[SigmaStateTree]
+
+  override lazy val secrets: Seq[DLogProverInput] = {
+    import SchnorrSignature._
+
+    Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
+  }
+}
 
 class TestingInterpreterSpecification extends PropSpec
   with PropertyChecks
@@ -130,13 +150,5 @@ class TestingInterpreterSpecification extends PropSpec
 
     val prop4 = GT(Height, IntLeaf(100))
     evaluate(prop4, env, proof, challenge).getOrElse(false) shouldBe false
-  }
-
-  ignore("Evaluation - Crowdfunding Example") {
-    // (height >= 100 /\ dlog_g x1) \/ (height < 100 /\ has_output(amount >= 100000, proposition = dlog_g x2)
-  }
-
-  ignore("Evaluation - Demurrage Example") {
-
   }
 }

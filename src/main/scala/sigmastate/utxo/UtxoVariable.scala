@@ -103,8 +103,9 @@ object UtxoInterpreterTest extends App{
 
   val outputToSpend = SigmaStateBox(10, prop)
 
-  val newOutput = SigmaStateBox(10, prop)
-  val tx = SigmaStateTransaction(Seq(), Seq(newOutput))
+  val newOutput1 = SigmaStateBox(5, prop)
+  val newOutput2 = SigmaStateBox(10, prop)
+  val tx = SigmaStateTransaction(Seq(), Seq(newOutput1, newOutput2))
 
   val context = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = outputToSpend)
 
