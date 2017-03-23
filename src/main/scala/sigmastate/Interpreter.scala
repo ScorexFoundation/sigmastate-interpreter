@@ -26,12 +26,12 @@ trait Interpreter {
   def maxDepth: Int
 
   /**
-    * a custom strategy to replace variables with their respective values located in context
-    *
-    * @param ctx - a context
-    * @return a strategy to rewrite a tree
+    * implementation-specific tree reductions, to be defined in descendants
+    * @param tree - a tree to process-
+    * @param ctx - context instance
+    * @return - processed tree
     */
-  def varSubst(ctx: CTX): Strategy
+  def specificPhases(tree: SigmaStateTree, ctx: CTX): SigmaStateTree
 
   val rels = rule[SigmaStateTree] {
     case EQ(l, r) => BooleanConstantTree.fromBoolean(l == r)
@@ -90,10 +90,10 @@ trait Interpreter {
       }
   }
 
-
   //todo: check depth
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
-    everywherebu(varSubst(context) <+ rels <+ conjs)(exp).get
+    val afterSpecific = specificPhases(exp, context)
+    everywherebu(rels <+ conjs)(afterSpecific).get
   }.ensuring(res =>
     res.isInstanceOf[BooleanConstantTree] ||
       res.isInstanceOf[CAND] ||
@@ -196,9 +196,9 @@ object DLogProverInterpreterTest extends DLogProverInterpreter {
 
   override val maxDepth = 50
 
-  override def varSubst(context: TInput) = rule[Value] {
+  override def specificPhases(tree: SigmaStateTree, context: TInput) = everywherebu(rule[Value] {
     case Height => IntLeaf(context.height)
-  }
+  })(tree).get.asInstanceOf[SigmaStateTree]
 
   override lazy val secrets: Seq[DLogProverInput] = {
     import SchnorrSignature._

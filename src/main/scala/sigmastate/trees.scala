@@ -88,42 +88,47 @@ trait Variable[V <: Value] extends Value
 case object Height extends Variable[IntLeaf]
 
 
-
 sealed trait Relation extends StateTree {
   val left: SigmaStateTree
   val right: SigmaStateTree
 
   def swapLeft(newLeft: SigmaStateTree): Relation
+
   def swapRight(newRight: SigmaStateTree): Relation
 }
 
 case class LT(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation{
+              override val right: SigmaStateTree) extends Relation {
   def swapLeft(newLeft: SigmaStateTree): LT = copy(left = newLeft)
+
   def swapRight(newRight: SigmaStateTree): LT = copy(right = newRight)
 }
 
 case class LE(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation{
+              override val right: SigmaStateTree) extends Relation {
   def swapLeft(newLeft: SigmaStateTree): LE = copy(left = newLeft)
+
   def swapRight(newRight: SigmaStateTree): LE = copy(right = newRight)
 }
 
 case class GT(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation{
+              override val right: SigmaStateTree) extends Relation {
   def swapLeft(newLeft: SigmaStateTree): GT = copy(left = newLeft)
+
   def swapRight(newRight: SigmaStateTree): GT = copy(right = newRight)
 }
 
 case class GE(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation{
+              override val right: SigmaStateTree) extends Relation {
   def swapLeft(newLeft: SigmaStateTree): GE = copy(left = newLeft)
+
   def swapRight(newRight: SigmaStateTree): GE = copy(right = newRight)
 }
 
 case class EQ(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation{
+              override val right: SigmaStateTree) extends Relation {
   def swapLeft(newLeft: SigmaStateTree): EQ = copy(left = newLeft)
+
   def swapRight(newRight: SigmaStateTree): EQ = copy(right = newRight)
 }
 

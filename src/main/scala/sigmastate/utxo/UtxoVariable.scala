@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import sigmastate._
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
+import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 
 import scala.collection.mutable
 
@@ -28,59 +29,72 @@ object UtxoInterpreter extends Interpreter {
     override val maxDepth = 50
 
 
-  def fnSubst(utxoContext: UtxoContext) = rule[SigmaStateTree] {
-    case hasOut: TxHasOutput =>
-      val ts = hasOut.relation.map { r =>
-        (r.left, r.right) match {
-          case (OutputAmount, _) | (_, OutputAmount) => OutputAmount -> r
-          case _ => ???
-        }
-      }
-
-      val sbs = utxoContext.spendingTransaction.newBoxes.map { out =>
-        val amount = out.value
-        val bs = mutable.Map[Variable[_], Value]()
-
-        val rs = ts.map { case (v, r) =>
-          v match {
-            case OutputAmount =>
-              bs.put(OutputAmount, IntLeaf(amount))
-              r
+  def fnSubst(utxoContext: UtxoContext):Strategy = everywherebu {
+    rule[SigmaStateTree] {
+      case hasOut: TxHasOutput =>
+        val ts = hasOut.relation.map { r =>
+          (r.left, r.right) match {
+            case (OutputAmount, _) | (_, OutputAmount) => OutputAmount -> r
             case _ => ???
           }
         }
-        ScopedBinding(bs.toMap, rs)
-      }
 
-      OR(sbs.toSeq)
+        val sbs = utxoContext.spendingTransaction.newBoxes.map { out =>
+          val amount = out.value
+          val bs = mutable.Map[Variable[_], Value]()
+
+          val rs = ts.map { case (v, r) =>
+            v match {
+              case OutputAmount =>
+                bs.put(OutputAmount, IntLeaf(amount))
+                r
+              case _ => ???
+            }
+          }
+          ScopedBinding(bs.toMap, rs)
+        }
+        OR(sbs.toSeq)
+    }
   }
 
-  def sbSubst = rule[SigmaStateTree] {
-    case sb: ScopedBinding =>
-      val rels = sb.relations.map { r =>
-        val rl = r.left match {
-          case v: Variable[_] =>
-            sb.bindings.get(v) match {
-              case Some(value) => r.swapLeft(value)
-              case None => r
-            }
-          case _ => r
-        }
+  def sbSubst():Strategy = everywherebu{
+    rule[SigmaStateTree] {
+      case sb: ScopedBinding =>
+        println("sb: " + sb)
+        val rels = sb.relations.map { r =>
+          val rl = r.left match {
+            case v: Variable[_] =>
+              sb.bindings.get(v) match {
+                case Some(value) => r.swapLeft(value)
+                case None => r
+              }
+            case _ => r
+          }
 
-        rl.right match {
-          case v: Variable[_] =>
-            sb.bindings.get(v) match {
-              case Some(value) => rl.swapRight(value)
-              case None => rl
-            }
-          case _ => rl
+          rl.right match {
+            case v: Variable[_] =>
+              sb.bindings.get(v) match {
+                case Some(value) => rl.swapRight(value)
+                case None => rl
+              }
+            case _ => rl
+          }
         }
-      }
-      AND(rels)
+        AND(rels)
+
+      case a:Any =>
+        println("alt: " + a)
+        a
+    }
   }
 
-  override def varSubst(context: UtxoContext) = fnSubst(context) <+ sbSubst <+ rule[Value] {
+  def varSubst(context: UtxoContext): Strategy = everywherebu(
+    rule[Value] {
     case Height => IntLeaf(context.currentHeight)
+  })
+
+  override def specificPhases(tree: SigmaStateTree, context: UtxoContext): SigmaStateTree = {
+    (fnSubst(context) <+ sbSubst <+ varSubst(context))(tree).get.asInstanceOf[SigmaStateTree]
   }
 }
 
@@ -88,7 +102,7 @@ object UtxoInterpreter extends Interpreter {
 object UtxoInterpreterTest extends App{
   import UtxoInterpreter._
 
-  val prop = TxHasOutput(GT(OutputAmount, IntLeaf(10)))
+  val prop = TxHasOutput(EQ(OutputAmount, IntLeaf(10)))
 
   val outputToSpend = SigmaStateBox(10, prop)
 
@@ -97,5 +111,15 @@ object UtxoInterpreterTest extends App{
 
   val context = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = outputToSpend)
 
-  println(reduceToCrypto(prop, context))
+  //println(reduceToCrypto(prop, context))
+
+  val afn = everywherebu(fnSubst(context))(prop).get
+
+  println(afn)
+
+  val asub = everywherebu(sbSubst())(afn).get.asInstanceOf[SigmaStateTree]
+
+  println(asub)
+
+  println(reduceToCrypto(asub, context))
 }
