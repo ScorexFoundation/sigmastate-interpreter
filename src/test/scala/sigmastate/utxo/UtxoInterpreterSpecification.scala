@@ -18,9 +18,27 @@ class UtxoInterpreterSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
-  ignore("PropLeaf EQ/NEQ"){}
+  property("PropLeaf EQ/NEQ") {
+    val prover1 = new UtxoProvingInterpreter
+    val prover2 = new UtxoProvingInterpreter
 
-  ignore("TxHasOutput reductions"){}
+    val verifier = new UtxoInterpreter
+
+    val h1 = prover1.secrets.head.publicImage.h
+    val h2 = prover2.secrets.head.publicImage.h
+
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+
+
+    verifier.reduceToCrypto(EQ(PropLeaf(DLogNode(h1)), PropLeaf(DLogNode(h1))), ctx)
+      .get.isInstanceOf[TrueConstantTree.type] shouldBe true
+
+    verifier.reduceToCrypto(EQ(PropLeaf(DLogNode(h1)), PropLeaf(DLogNode(h2))), ctx)
+      .get.isInstanceOf[FalseConstantTree.type] shouldBe true
+
+  }
+
+  ignore("TxHasOutput reductions") {}
 
   /**
     * Crowdfunding example:
@@ -72,7 +90,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx1 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx1, self = outputToSpend -> 0)
 
     //project is generating a proof and it is passing verification
-    val proofP = projectProver.prove(crowdFundingScript, ctx1, challenge).get.asInstanceOf[verifier.ProofT]
+    val proofP = projectProver.prove(crowdFundingScript, ctx1, challenge).get
     verifier.evaluate(crowdFundingScript, ctx1, proofP, challenge).get shouldBe true
 
     //backer can't generate a proof
@@ -110,17 +128,79 @@ class UtxoInterpreterSpecification extends PropSpec
     proofP3Try.isSuccess shouldBe false
 
     //backer is generating a proof and it is passing verification
-    val proofB = backerProver.prove(crowdFundingScript, ctx3, challenge).get.asInstanceOf[verifier.ProofT]
+    val proofB = backerProver.prove(crowdFundingScript, ctx3, challenge).get
     verifier.evaluate(crowdFundingScript, ctx3, proofB, challenge).get shouldBe true
   }
 
   property("Evaluation - Demurrage Example") {
-    val DemurragePeriod = 100
+    val demurragePeriod = 100
     val demurrageCost = 2
 
-    val prover = new UtxoProvingInterpreter
-    val regScript = DLogNode(prover.secrets.head.publicImage.h)
+    //a blockchain node veryfing a block containing a spending transaction
+    val verifier = new UtxoInterpreter
 
-    //val script = OR(regScript, AND()
+    //backer's prover with his private key
+    val userProver = new UtxoProvingInterpreter
+
+    val regScript = DLogNode(userProver.secrets.head.publicImage.h)
+
+    val script = OR(
+      regScript,
+      AND(
+        GE(Height, Plus(SelfHeight, IntLeaf(demurragePeriod))),
+        TxHasOutput(GE(OutputAmount, Minus(SelfAmount, IntLeaf(demurrageCost))), EQ(OutputScript, SelfScript))
+      )
+    )
+
+    val outHeight = 100
+    val outValue = 10
+
+    val outputToSpend = SigmaStateBox(outValue, script)
+
+
+    val challenge = Blake2b256("Hello World") //normally challenge to be defined by spending transaction bytes
+
+    //case 1: demurrage time hasn't come yet
+    val tx1 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue, script)))
+
+    val ctx1 = UtxoContext(
+      currentHeight = outHeight + demurragePeriod - 1,
+      spendingTransaction = tx1,
+      self = outputToSpend -> outHeight)
+
+    //user can spend all the money
+    val uProof1 = userProver.prove(script, ctx1, challenge).get
+    verifier.evaluate(script, ctx1, uProof1, challenge).get shouldBe true
+
+    //miner can't spend any money
+    verifier.evaluate(script, ctx1, NoProof, challenge).get shouldBe false
+
+    //case 2: demurrage time has come
+    val ctx2 = UtxoContext(
+      currentHeight = outHeight + demurragePeriod,
+      spendingTransaction = tx1,
+      self = outputToSpend -> outHeight)
+
+    //user can spend all the money
+    val uProof2 = userProver.prove(script, ctx1, challenge).get
+    verifier.evaluate(script, ctx2, uProof2, challenge).get shouldBe true
+
+    //miner can spend "demurrageCost" tokens
+    val tx3 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost, script)))
+    val ctx3 = UtxoContext(
+      currentHeight = outHeight + demurragePeriod,
+      spendingTransaction = tx3,
+      self = outputToSpend -> outHeight)
+
+    verifier.evaluate(script, ctx3, NoProof, challenge).get shouldBe true
+
+    //miner can't spend more
+    val tx4 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost - 1, script)))
+    val ctx4 = UtxoContext(
+      currentHeight = outHeight + demurragePeriod,
+      spendingTransaction = tx4,
+      self = outputToSpend -> outHeight)
+
+    verifier.evaluate(script, ctx4, NoProof, challenge).get shouldBe false
   }
 }

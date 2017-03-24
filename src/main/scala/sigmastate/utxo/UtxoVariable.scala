@@ -3,7 +3,6 @@ package sigmastate.utxo
 import sigmastate._
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 
 import scala.collection.mutable
 
@@ -33,7 +32,6 @@ class UtxoInterpreter extends Interpreter {
     override type CTX = UtxoContext
 
     override val maxDepth = 50
-
 
   def fnSubst(utxoContext: UtxoContext):Strategy = everywherebu {
     rule[SigmaStateTree] {
@@ -93,17 +91,20 @@ class UtxoInterpreter extends Interpreter {
     }
   }
 
+  def ssSubst(context:UtxoContext) = everywherebu(rule[Value] {case SelfScript => PropLeaf(context.self._1.proposition)})
+
   def varSubst(context: UtxoContext): Strategy = everywherebu(
     rule[Value] {
     case Height => IntLeaf(context.currentHeight)
     case SelfHeight => IntLeaf(context.self._2)
     case SelfAmount => IntLeaf(context.self._1.value)
-    case SelfScript => PropLeaf(context.self._1.proposition)
   })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext): SigmaStateTree = {
+
     val afterFn = fnSubst(context)(tree).get.asInstanceOf[SigmaStateTree]
-    val afterSb = sbSubst()(afterFn).get.asInstanceOf[SigmaStateTree]
+    val afterSs = ssSubst(context)(afterFn).get.asInstanceOf[SigmaStateTree]
+    val afterSb = sbSubst()(afterSs).get.asInstanceOf[SigmaStateTree]
     varSubst(context)(afterSb).get.asInstanceOf[SigmaStateTree]
   }
 }

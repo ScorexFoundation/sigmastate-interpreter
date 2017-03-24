@@ -36,7 +36,6 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
   extends SigmaTree with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
 
 
-
 case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree
 
 object OR {
@@ -53,7 +52,9 @@ object AND {
 
 trait Value extends StateTree
 
-case class IntLeaf(value: Long) extends Value
+case class IntLeaf(value: Long) extends Value {
+  require(value >= 0)
+}
 
 case class PropLeaf(value: SigmaStateTree) extends Value
 
@@ -74,15 +75,35 @@ trait Variable[V <: Value] extends Value
 
 case object Height extends Variable[IntLeaf]
 
-
-sealed trait Relation extends StateTree {
+sealed trait Triple extends StateTree {
   val left: SigmaStateTree
   val right: SigmaStateTree
 
+  //todo: define via F-Bounded polymorphism?
   def swapLeft(newLeft: SigmaStateTree): Relation
 
   def swapRight(newRight: SigmaStateTree): Relation
 }
+
+
+//todo: correct name is TwoArgsOperation, add 1-arg operaions as well(e.g. hash functions)
+sealed trait Operation extends Triple
+
+case class Plus(override val left: SigmaStateTree,
+                override val right: SigmaStateTree) extends Relation {
+  def swapLeft(newLeft: SigmaStateTree): Plus = copy(left = newLeft)
+
+  def swapRight(newRight: SigmaStateTree): Plus = copy(right = newRight)
+}
+
+case class Minus(override val left: SigmaStateTree,
+                override val right: SigmaStateTree) extends Relation {
+  def swapLeft(newLeft: SigmaStateTree): Minus = copy(left = newLeft)
+
+  def swapRight(newRight: SigmaStateTree): Minus = copy(right = newRight)
+}
+
+sealed trait Relation extends Triple
 
 case class LT(override val left: SigmaStateTree,
               override val right: SigmaStateTree) extends Relation {

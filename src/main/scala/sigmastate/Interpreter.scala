@@ -4,7 +4,7 @@ import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
-import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
+import scapi.sigma.rework.DLogProtocol.DLogNode
 import scapi.sigma.rework.DLogProtocol
 
 import scala.annotation.tailrec
@@ -39,6 +39,11 @@ trait Interpreter {
     case GE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value >= r.value)
     case LT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value < r.value)
     case LE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value <= r.value)
+  })
+
+  val ops = everywherebu(rule[SigmaStateTree] {
+    case Plus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value + r.value)
+    case Minus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value - r.value)
   })
 
   val conjs = everywherebu(rule[SigmaStateTree] {
@@ -93,7 +98,8 @@ trait Interpreter {
   //todo: check depth
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
     val afterSpecific = specificPhases(exp, context)
-    val afterRels = rels(afterSpecific).get.asInstanceOf[SigmaStateTree]
+    val afterOps = ops(afterSpecific).get.asInstanceOf[SigmaStateTree]
+    val afterRels = rels(afterOps).get.asInstanceOf[SigmaStateTree]
     conjs(afterRels).get
   }.ensuring(res =>
     res.isInstanceOf[BooleanConstantTree] ||
@@ -104,16 +110,17 @@ trait Interpreter {
 
 
 
-  def evaluate(exp: SigmaStateTree, context: CTX, proof: ProofT, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
+  def evaluate(exp: SigmaStateTree, context: CTX, proof: UncheckedTree, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
 
     cProp match {
       case TrueConstantTree  =>  true
       case FalseConstantTree => false
       case _ =>
-        //verifyCryptoStatement(proof).get.isInstanceOf[SuccessfulProof.type]
-        val sp = proof.asInstanceOf[UncheckedSigmaTree[_]]
-        sp.proposition == cProp && sp.verify()
+        proof match{
+          case NoProof => false
+          case sp: UncheckedSigmaTree[_] => sp.proposition == cProp && sp.verify()
+        }
     }
   }
 }
