@@ -132,6 +132,18 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.evaluate(crowdFundingScript, ctx3, proofB, challenge).get shouldBe true
   }
 
+
+  /**
+    * Demurrage currency example.
+    *
+    * The idea is that miners enforce users to combine a guarding script of a user ("regular_script") with a condition
+    * that anyone (presumably, a miner) can spend no more "demurrage_cost" amount of tokens from an output of the user
+    * after "demurrage_period" blocks since output creation. If the user is relocating the money from the output before
+    * that height, the miner can charge according to output lifetime.
+    *
+    * (regular_script) ∨
+    *   (height > (out.height + demurrage_period ) ∧ has_output(value >= out.value − demurrage_cost, script = out.script))
+    */
   property("Evaluation - Demurrage Example") {
     val demurragePeriod = 100
     val demurrageCost = 2
@@ -202,5 +214,15 @@ class UtxoInterpreterSpecification extends PropSpec
       self = outputToSpend -> outHeight)
 
     verifier.evaluate(script, ctx4, NoProof, challenge).get shouldBe false
+
+
+    //miner can spend less
+    val tx5 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost + 1, script)))
+    val ctx5 = UtxoContext(
+      currentHeight = outHeight + demurragePeriod,
+      spendingTransaction = tx5,
+      self = outputToSpend -> outHeight)
+
+    verifier.evaluate(script, ctx5, NoProof, challenge).get shouldBe true
   }
 }
