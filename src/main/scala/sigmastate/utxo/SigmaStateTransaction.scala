@@ -5,7 +5,7 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.BoxTransaction
 import scorex.core.transaction.box.{Box, BoxUnlocker}
 import scorex.core.transaction.proof.Proof
-import sigmastate.{SigmaStateProposition, SigmaStateTree}
+import sigmastate.SigmaStateTree
 
 
 case class SigmaStateBox(override val value: Box.Amount,
