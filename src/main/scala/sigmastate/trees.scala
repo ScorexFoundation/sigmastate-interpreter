@@ -20,7 +20,7 @@ case class CAND(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
 }
 
 object CAND {
-  val Code = 101: Byte
+  val Code: PropositionCode = 101: Byte
 }
 
 case class COR(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
@@ -29,7 +29,7 @@ case class COR(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
 }
 
 object COR {
-  val Code = 101: Byte
+  val Code: PropositionCode = 101: Byte
 }
 
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP]]
@@ -61,10 +61,7 @@ case class PropLeaf(value: SigmaStateTree) extends Value
 sealed abstract class BooleanConstantTree(val value: Boolean) extends Value
 
 object BooleanConstantTree {
-  def fromBoolean(v: Boolean) = v match {
-    case true => TrueConstantTree
-    case false => FalseConstantTree
-  }
+  def fromBoolean(v: Boolean): BooleanConstantTree = if (v) TrueConstantTree else FalseConstantTree
 }
 
 case object TrueConstantTree extends BooleanConstantTree(true)
