@@ -10,8 +10,7 @@ import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 import scala.util.Random
 
 
-case class TestingContext(height: Int,
-                          override val extension: Map[ExtensionRequest.Id, _ <: Triple] = Map()) extends Context
+case class TestingContext(height: Int, override val extension: Map[Byte, _ <: Value] = Map()) extends Context
 
 
 object TestingInterpreter extends Interpreter with DLogProverInterpreter {

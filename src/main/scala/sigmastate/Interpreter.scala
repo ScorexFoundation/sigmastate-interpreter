@@ -7,6 +7,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywher
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogNode
 import scapi.sigma.rework.DLogProtocol
+import scorex.crypto.hash.Blake2b256
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -14,7 +15,7 @@ import scala.util.Try
 
 
 trait Context {
-  val extension: Map[ExtensionRequest.Id, _ <: Triple]
+  val extension: Map[Byte, _ <: Value]
 }
 
 trait Interpreter {
@@ -42,6 +43,9 @@ trait Interpreter {
     case GE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value >= r.value)
     case LT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value < r.value)
     case LE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value <= r.value)
+
+    case Blake2b256Eq(l: ByteArray32Leaf, r: ByteArrayLeaf) =>
+      BooleanConstantTree.fromBoolean(l.value.sameElements(Blake2b256(r.value)))
   })
 
   protected val ops: Strategy = everywherebu(rule[SigmaStateTree] {

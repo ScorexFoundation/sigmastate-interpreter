@@ -56,6 +56,12 @@ case class IntLeaf(value: Long) extends Value {
   require(value >= 0)
 }
 
+case class ByteArrayLeaf(value: Array[Byte]) extends Value
+
+case class ByteArray32Leaf(value: Array[Byte]) extends Value {
+  require(value.length == 32)
+}
+
 case class PropLeaf(value: SigmaStateTree) extends Value
 
 sealed abstract class BooleanConstantTree(val value: Boolean) extends Value
@@ -68,13 +74,7 @@ case object TrueConstantTree extends BooleanConstantTree(true)
 
 case object FalseConstantTree extends BooleanConstantTree(false)
 
-trait ExtensionRequest[V <: Value] extends Value{
-  val id : ExtensionRequest.Id
-}
 
-object ExtensionRequest {
-  type Id = Array[Byte]
-}
 
 trait Variable[V <: Value] extends Value
 
@@ -154,6 +154,14 @@ case class NEQ(override val left: SigmaStateTree,
 
   def replaceRight(newRight: SigmaStateTree): NEQ = copy(right = newRight)
 }
+
+case class Blake2b256Eq(override val left: SigmaStateTree,
+                        override val right: SigmaStateTree) extends Relation {
+  def replaceLeft(newLeft: SigmaStateTree): Blake2b256Eq = copy(left = newLeft)
+
+  def replaceRight(newRight: SigmaStateTree): Blake2b256Eq = copy(right = newRight)
+}
+
 
 
 //Proof tree

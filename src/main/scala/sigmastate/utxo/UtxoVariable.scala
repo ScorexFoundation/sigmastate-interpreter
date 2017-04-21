@@ -6,7 +6,7 @@ import sigmastate._
 case class UtxoContext(currentHeight: Long,
                        spendingTransaction: SigmaStateTransaction,
                        self: (SigmaStateBox, Long),
-                       override val extension: Map[ExtensionRequest.Id, _ <: Triple] = Map()
+                       override val extension: Map[Byte, _ <: Value] = Map()
                       ) extends Context
 
 trait UtxoVariable[V <: Value] extends Variable[V]
