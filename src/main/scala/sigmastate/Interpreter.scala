@@ -4,6 +4,7 @@ import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
+import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogNode
 import scapi.sigma.rework.DLogProtocol
 
@@ -32,7 +33,7 @@ trait Interpreter {
     */
   def specificPhases(tree: SigmaStateTree, ctx: CTX): SigmaStateTree
 
-  val rels = everywherebu(rule[SigmaStateTree] {
+  protected val rels: Strategy = everywherebu(rule[SigmaStateTree] {
     case EQ(l, r) => BooleanConstantTree.fromBoolean(l == r)
     case NEQ(l, r) => BooleanConstantTree.fromBoolean(l != r)
     case GT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value > r.value)
@@ -41,12 +42,12 @@ trait Interpreter {
     case LE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value <= r.value)
   })
 
-  val ops = everywherebu(rule[SigmaStateTree] {
+  protected val ops: Strategy = everywherebu(rule[SigmaStateTree] {
     case Plus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value + r.value)
     case Minus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value - r.value)
   })
 
-  val conjs = everywherebu(rule[SigmaStateTree] {
+  protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {
 
     case AND(children) =>
 
@@ -95,7 +96,7 @@ trait Interpreter {
       }
   })
 
-  //todo: check depth
+  //todo: cost analysis
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
     val afterSpecific = specificPhases(exp, context)
     val afterOps = ops(afterSpecific).get.asInstanceOf[SigmaStateTree]
@@ -107,7 +108,6 @@ trait Interpreter {
       res.isInstanceOf[COR] ||
       res.isInstanceOf[DLogNode]
   ).asInstanceOf[SigmaStateTree])
-
 
 
   def evaluate(exp: SigmaStateTree, context: CTX, proof: UncheckedTree, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
@@ -140,6 +140,7 @@ trait ProverInterpreter extends Interpreter {
 }
 
 object TreeConversion extends Attribution {
+
   //to be applied bottom up, converts SigmaTree => UnprovenTree
   val convertToUnproven: SigmaTree => UnprovenTree = attr {
     case CAND(sigmaTrees) => CAndUnproven(CAND(sigmaTrees), None, sigmaTrees.map(convertToUnproven))
@@ -147,15 +148,13 @@ object TreeConversion extends Attribution {
     case ci: DLogNode => SchnorrUnproven(None, simulated = false, ci)
   }
 
-
   val proving: Seq[DLogProtocol.DLogProverInput] => UnprovenTree => UncheckedTree = paramAttr{secrets => {
     case SchnorrUnproven(Some(challenge), simulated, proposition) =>
-      simulated match {
-        case true =>
-          throw new Exception("simulation isn't done yet")
-        case false =>
-          val privKey = secrets.find(_.publicImage.h == proposition.h).get
-          SchnorrSignatureSigner(privKey).prove(challenge)
+      if (simulated) {
+        throw new Exception("simulation isn't done yet")
+      } else {
+        val privKey = secrets.find(_.publicImage.h == proposition.h).get
+        SchnorrSignatureSigner(privKey).prove(challenge)
       }
     case CAndUnproven(proposition, Some(challenge), children) =>
       val proven = children.map(proving(secrets))
@@ -170,14 +169,14 @@ trait DLogProverInterpreter extends ProverInterpreter {
   val secrets: Seq[DLogProtocol.DLogProverInput]
 
   //to be applied bottom up, marks whether simulation is needed for a sigma-protocol
-  val markSimulated = rule[UnprovenTree] {
+  val markSimulated: Strategy = rule[UnprovenTree] {
     case su: SchnorrUnproven =>
       val secretKnown = secrets.exists(_.publicImage.h == su.proposition.h)
       su.copy(simulated = !secretKnown)
   }
 
   //to be applied down from the top node
-  val challengeDisperse = rule[UnprovenTree] {
+  val challengeDisperse: Strategy = rule[UnprovenTree] {
     case cand: CAndUnproven if cand.challengeOpt.isDefined =>
       val challenge = cand.challengeOpt.get
       cand.copy(children = cand.children.map(_.setChallenge(challenge)))
