@@ -51,7 +51,7 @@ class UtxoInterpreter extends Interpreter {
           val rl = r.left match {
             case v: Variable[_] =>
               sb.bindings.get(v) match {
-                case Some(value) => r.swapLeft(value)
+                case Some(value) => r.replaceLeft(value)
                 case None => r
               }
             case _ => r
@@ -60,7 +60,7 @@ class UtxoInterpreter extends Interpreter {
           rl.right match {
             case v: Variable[_] =>
               sb.bindings.get(v) match {
-                case Some(value) => rl.swapRight(value)
+                case Some(value) => rl.replaceRight(value)
                 case None => rl
               }
             case _ => rl
