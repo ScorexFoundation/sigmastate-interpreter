@@ -10,16 +10,16 @@ import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 import scala.util.Random
 
 
-case class TestingReducerInput(height: Int) extends Context
+case class TestingContext(height: Int) extends Context
 
 
 object TestingInterpreter extends Interpreter with DLogProverInterpreter {
   override type StateT = StateTree
-  override type CTX = TestingReducerInput
+  override type CTX = TestingContext
 
   override val maxDepth = 50
 
-  override def specificPhases(tree: SigmaStateTree, context: TestingReducerInput) = everywherebu(rule[Value] {
+  override def specificPhases(tree: SigmaStateTree, context: TestingContext): SigmaStateTree = everywherebu(rule[Value] {
     case Height => IntLeaf(context.height)
   })(tree).get.asInstanceOf[SigmaStateTree]
 
@@ -45,7 +45,7 @@ class TestingInterpreterSpecification extends PropSpec
       whenever(h > 0 && h < Int.MaxValue - 1) {
         val dk1 = DLogNode(DLogProverInput.random()._2.h)
 
-        val env = TestingReducerInput(h)
+        val env = TestingContext(h)
         assert(reduceToCrypto(AND(GE(Height, IntLeaf(h - 1)), dk1), env).get.isInstanceOf[DLogNode])
         assert(reduceToCrypto(AND(GE(Height, IntLeaf(h)), dk1), env).get.isInstanceOf[DLogNode])
         assert(reduceToCrypto(AND(GE(Height, IntLeaf(h + 1)), dk1), env).get.isInstanceOf[FalseConstantTree.type])
@@ -65,7 +65,7 @@ class TestingInterpreterSpecification extends PropSpec
         val dk1 = DLogNode(DLogProverInput.random()._2.h)
         val dk2 = DLogNode(DLogProverInput.random()._2.h)
 
-        val env = TestingReducerInput(h)
+        val env = TestingContext(h)
 
         assert(reduceToCrypto(OR(
           AND(LE(Height, IntLeaf(h + 1)), AND(dk1, dk2)),
@@ -97,8 +97,8 @@ class TestingInterpreterSpecification extends PropSpec
     val dk1 = DLogNode(secrets(0).publicImage.h)
     val dk2 = DLogNode(secrets(1).publicImage.h)
 
-    val env1 = TestingReducerInput(99)
-    val env2 = TestingReducerInput(101)
+    val env1 = TestingContext(99)
+    val env2 = TestingContext(101)
 
     val prop = OR(
       AND(LE(Height, IntLeaf(100)), AND(dk1, dk2)),
@@ -119,7 +119,7 @@ class TestingInterpreterSpecification extends PropSpec
 
     val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
-    val env = TestingReducerInput(99)
+    val env = TestingContext(99)
 
     evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe true
 
@@ -138,7 +138,7 @@ class TestingInterpreterSpecification extends PropSpec
 
     val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
-    val env = TestingReducerInput(99)
+    val env = TestingContext(99)
 
     evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe false
 
