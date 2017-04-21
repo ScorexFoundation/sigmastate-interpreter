@@ -13,7 +13,9 @@ import scala.collection.mutable
 import scala.util.Try
 
 
-trait Context
+trait Context {
+  val extension: Map[ExtensionRequest.Id, _ <: Triple]
+}
 
 trait Interpreter {
   type CTX <: Context
@@ -126,6 +128,8 @@ trait Interpreter {
 }
 
 trait ProverInterpreter extends Interpreter {
+  protected def enrichContext(ctx: CTX): CTX
+
   protected def prove(unprovenTree: UnprovenTree): ProofT
 
   def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree

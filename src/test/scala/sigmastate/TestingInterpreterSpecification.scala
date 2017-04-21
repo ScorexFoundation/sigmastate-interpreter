@@ -10,7 +10,8 @@ import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 import scala.util.Random
 
 
-case class TestingContext(height: Int) extends Context
+case class TestingContext(height: Int,
+                          override val extension: Map[ExtensionRequest.Id, _ <: Triple] = Map()) extends Context
 
 
 object TestingInterpreter extends Interpreter with DLogProverInterpreter {
@@ -18,6 +19,8 @@ object TestingInterpreter extends Interpreter with DLogProverInterpreter {
   override type CTX = TestingContext
 
   override val maxDepth = 50
+
+  override protected def enrichContext(ctx: TestingContext): TestingContext = ???
 
   override def specificPhases(tree: SigmaStateTree, context: TestingContext): SigmaStateTree = everywherebu(rule[Value] {
     case Height => IntLeaf(context.height)

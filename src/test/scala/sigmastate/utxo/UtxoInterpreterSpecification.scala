@@ -11,6 +11,8 @@ class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter 
     import SchnorrSignature._
     Seq(DLogProverInput.random()._1)
   }
+
+  override protected def enrichContext(ctx: UtxoContext): UtxoContext = ???
 }
 
 class UtxoInterpreterSpecification extends PropSpec

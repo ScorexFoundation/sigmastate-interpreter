@@ -68,6 +68,14 @@ case object TrueConstantTree extends BooleanConstantTree(true)
 
 case object FalseConstantTree extends BooleanConstantTree(false)
 
+trait ExtensionRequest[V <: Value] extends Value{
+  val id : ExtensionRequest.Id
+}
+
+object ExtensionRequest {
+  type Id = Array[Byte]
+}
+
 trait Variable[V <: Value] extends Value
 
 case object Height extends Variable[IntLeaf]
