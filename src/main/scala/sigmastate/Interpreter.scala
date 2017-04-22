@@ -13,9 +13,10 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Try
 
+case class ContextExtension(value: Map[Byte, _ <: Value])
 
 trait Context {
-  val extension: Map[Byte, _ <: Value]
+  val extension: ContextExtension
 }
 
 trait Interpreter {

@@ -11,7 +11,8 @@ import scorex.crypto.hash.Blake2b256
 import scala.util.Random
 
 
-case class TestingContext(height: Int, override val extension: Map[Byte, _ <: Value] = Map()) extends Context
+case class TestingContext(height: Int,
+                          override val extension: ContextExtension = ContextExtension(value = Map())) extends Context
 
 
 object TestingInterpreter extends Interpreter with DLogProverInterpreter {
