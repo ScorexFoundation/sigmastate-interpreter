@@ -172,9 +172,7 @@ class TestingInterpreterSpecification extends PropSpec
     evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe false
 
     val prop3 = EQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(bytes))
-    
-    evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe false
+
+    evaluate(prop3, env, proof, challenge).getOrElse(false) shouldBe false
   }
-
-
 }
