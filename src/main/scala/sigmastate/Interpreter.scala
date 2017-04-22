@@ -43,14 +43,12 @@ trait Interpreter {
     case GE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value >= r.value)
     case LT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value < r.value)
     case LE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value <= r.value)
-
-    case Blake2b256Eq(l: ByteArray32Leaf, r: ByteArrayLeaf) =>
-      BooleanConstantTree.fromBoolean(l.value.sameElements(Blake2b256(r.value)))
   })
 
   protected val ops: Strategy = everywherebu(rule[SigmaStateTree] {
     case Plus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value + r.value)
     case Minus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value - r.value)
+    case CalcBlake2b256(l: ByteArrayLeaf) => ByteArrayLeaf(Blake2b256(l.value))
   })
 
   protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {

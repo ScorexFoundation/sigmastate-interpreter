@@ -6,6 +6,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
+import scorex.crypto.hash.Blake2b256
 
 import scala.util.Random
 
@@ -153,4 +154,27 @@ class TestingInterpreterSpecification extends PropSpec
     val prop4 = GT(Height, IntLeaf(100))
     evaluate(prop4, env, proof, challenge).getOrElse(false) shouldBe false
   }
+
+  property("Evaluation - hash function"){
+    val bytes = "hello world".getBytes
+    val hash = Blake2b256(bytes)
+
+    val prop1 = EQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(hash))
+
+    val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
+    val proof = NoProof
+    val env = TestingContext(99)
+
+    evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe true
+
+    val prop2 = NEQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(hash))
+
+    evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe false
+
+    val prop3 = EQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(bytes))
+    
+    evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe false
+  }
+
+
 }

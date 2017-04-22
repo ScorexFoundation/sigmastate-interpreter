@@ -56,10 +56,11 @@ case class IntLeaf(value: Long) extends Value {
   require(value >= 0)
 }
 
-case class ByteArrayLeaf(value: Array[Byte]) extends Value
-
-case class ByteArray32Leaf(value: Array[Byte]) extends Value {
-  require(value.length == 32)
+case class ByteArrayLeaf(value: Array[Byte]) extends Value{
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case ob: ByteArrayLeaf => value sameElements ob.value
+    case _ => false
+  }
 }
 
 case class PropLeaf(value: SigmaStateTree) extends Value
@@ -80,6 +81,12 @@ trait Variable[V <: Value] extends Value
 
 case object Height extends Variable[IntLeaf]
 
+sealed trait OneArgumentOperation extends StateTree {
+  val operand: SigmaStateTree
+}
+
+case class CalcBlake2b256(operand: SigmaStateTree) extends OneArgumentOperation
+
 /**
   * A tree node with left and right descendants
    */
@@ -95,7 +102,7 @@ sealed trait Triple extends StateTree {
 
 
 //todo: correct name is TwoArgsOperation, add 1-arg operations as well(e.g. hash functions)
-sealed trait Operation extends Triple
+sealed trait TwoArgumentsOperation extends Triple
 
 case class Plus(override val left: SigmaStateTree,
                 override val right: SigmaStateTree) extends Relation {
@@ -153,13 +160,6 @@ case class NEQ(override val left: SigmaStateTree,
   def replaceLeft(newLeft: SigmaStateTree): NEQ = copy(left = newLeft)
 
   def replaceRight(newRight: SigmaStateTree): NEQ = copy(right = newRight)
-}
-
-case class Blake2b256Eq(override val left: SigmaStateTree,
-                        override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): Blake2b256Eq = copy(left = newLeft)
-
-  def replaceRight(newRight: SigmaStateTree): Blake2b256Eq = copy(right = newRight)
 }
 
 
