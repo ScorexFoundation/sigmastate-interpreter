@@ -3,6 +3,7 @@ package sigmastate
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
+import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogNode
@@ -131,7 +132,17 @@ trait Interpreter {
 }
 
 trait ProverInterpreter extends Interpreter {
-  protected def enrichContext(ctx: CTX): CTX
+  def enrichContext(tree: SigmaStateTree): ContextExtension = {
+
+    //todo: report problems with Scala 2.12.2
+    println(new Tree(tree).nodes)
+
+    new Tree(tree).nodes.foreach{ n =>
+      println(n.productPrefix + " ||" + n.productIterator.mkString(","))
+    }
+
+    ContextExtension(Map())
+  }
 
   protected def prove(unprovenTree: UnprovenTree): ProofT
 
@@ -139,7 +150,10 @@ trait ProverInterpreter extends Interpreter {
 
   def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[ProofT] = Try {
     val cProp = reduceToCrypto(exp, context).get
-    assert(cProp.isInstanceOf[SigmaT])
+
+    //todo: fix check - only crypto statements , logical links and context extension
+    //  assert(cProp.isInstanceOf[SigmaT])
+
     val ct = TreeConversion.convertToUnproven(cProp.asInstanceOf[SigmaT]).setChallenge(challenge)
     val toProve = normalizeUnprovenTree(ct)
     prove(toProve)

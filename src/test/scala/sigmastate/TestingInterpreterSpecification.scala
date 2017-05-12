@@ -21,8 +21,6 @@ object TestingInterpreter extends Interpreter with DLogProverInterpreter {
 
   override val maxDepth = 50
 
-  override protected def enrichContext(ctx: TestingContext): TestingContext = ???
-
   override def specificPhases(tree: SigmaStateTree, context: TestingContext): SigmaStateTree = everywherebu(rule[Value] {
     case Height => IntLeaf(context.height)
   })(tree).get.asInstanceOf[SigmaStateTree]

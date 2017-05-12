@@ -85,6 +85,8 @@ trait CustomVariable[V <: Value] extends Variable[Value] {
   val id: Byte
 }
 
+case class CustomByteArray(override val id: Byte) extends CustomVariable[ByteArrayLeaf]
+
 sealed trait OneArgumentOperation extends StateTree {
   val operand: SigmaStateTree
 }

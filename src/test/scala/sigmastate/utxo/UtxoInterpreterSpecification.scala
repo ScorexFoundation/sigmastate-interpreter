@@ -11,8 +11,6 @@ class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter 
     import SchnorrSignature._
     Seq(DLogProverInput.random()._1)
   }
-
-  override protected def enrichContext(ctx: UtxoContext): UtxoContext = ???
 }
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -217,7 +215,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     verifier.evaluate(script, ctx4, NoProof, challenge).get shouldBe false
 
-
     //miner can spend less
     val tx5 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost + 1, script)))
     val ctx5 = UtxoContext(
@@ -226,5 +223,12 @@ class UtxoInterpreterSpecification extends PropSpec
       self = outputToSpend -> outHeight)
 
     verifier.evaluate(script, ctx5, NoProof, challenge).get shouldBe true
+  }
+
+  property("prover enriching context") {
+    val prop = EQ(CalcBlake2b256(CustomByteArray(1: Byte)), ByteArrayLeaf(Array()))
+
+    val prover = new UtxoProvingInterpreter
+    prover.enrichContext(prop)
   }
 }
