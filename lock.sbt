@@ -14,8 +14,8 @@ dependencyOverrides in ThisBuild ++= Set(
   "com.github.mpilquist" % "simulacrum_2.12" % "0.10.0",
   "com.github.swagger-akka-http" % "swagger-akka-http_2.12" % "0.9.1",
   "com.google.code.findbugs" % "annotations" % "2.0.1",
-  "com.google.code.findbugs" % "jsr305" % "3.0.1",
-  "com.google.guava" % "guava" % "19.0",
+  "com.google.code.findbugs" % "jsr305" % "3.0.2",
+  "com.google.guava" % "guava" % "21.0",
   "com.thoughtworks.paranamer" % "paranamer" % "2.8",
   "com.typesafe" % "config" % "1.3.1",
   "com.typesafe" % "ssl-config-core_2.12" % "0.2.1",
@@ -37,18 +37,18 @@ dependencyOverrides in ThisBuild ++= Set(
   "io.swagger" % "swagger-scala-module_2.12" % "1.0.3",
   "javax.validation" % "validation-api" % "1.1.0.Final",
   "javax.ws.rs" % "jsr311-api" % "1.1.1",
-  "jline" % "jline" % "2.14.1",
+  "jline" % "jline" % "2.14.3",
   "org.apache.commons" % "commons-lang3" % "3.2.1",
   "org.atnos" % "eff-cats_2.12" % "2.0.0-RC26",
   "org.bitbucket.inkytonik.dsinfo" % "dsinfo_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.dsprofile" % "dsprofile_2.12" % "0.4.0",
-  "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.1.0-SNAPSHOT",
+  "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.1.0-RC1",
   "org.bitlet" % "weupnp" % "0.1.4",
   "org.consensusresearch" % "scrypto_2.12" % "1.2.0-RC3",
   "org.javassist" % "javassist" % "3.18.2-GA",
   "org.reactivestreams" % "reactive-streams" % "1.0.0",
   "org.reflections" % "reflections" % "0.9.10",
-  "org.rogach" % "scallop_2.12" % "2.0.5",
+  "org.rogach" % "scallop_2.12" % "2.1.1",
   "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
   "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.0.4",
   "org.scala-lang.modules" % "scala-xml_2.12" % "1.0.6",
@@ -67,4 +67,4 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.whispersystems" % "curve25519-java" % "0.3.0",
   "org.yaml" % "snakeyaml" % "1.17"
 )
-// LIBRARY_DEPENDENCIES_HASH bc5332f212c4871353e6edf1fc8f0425ef5d5d08
+// LIBRARY_DEPENDENCIES_HASH f56a23fd0640d2beb8f4f9e7a7a8943c11aab22a

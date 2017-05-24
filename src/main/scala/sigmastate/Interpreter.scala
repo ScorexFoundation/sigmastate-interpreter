@@ -136,9 +136,13 @@ trait ProverInterpreter extends Interpreter {
 
     //todo: report problems with Scala 2.12.2
     println(new Tree(tree).nodes)
+    println("==================")
 
-    new Tree(tree).nodes.foreach{ n =>
+    println("==================")
+    new Tree(tree).nodes.foreach { n =>
       println(n.productPrefix + " ||" + n.productIterator.mkString(","))
+      println(n)
+      println("---")
     }
 
     ContextExtension(Map())

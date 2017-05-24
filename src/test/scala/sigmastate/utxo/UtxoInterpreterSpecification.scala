@@ -225,10 +225,24 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.evaluate(script, ctx5, NoProof, challenge).get shouldBe true
   }
 
+  /**
+    * The script is asking for a hash function preimage. The "proof" could be replayed, so not really a proof.
+    */
+  //todo: implement
   property("prover enriching context") {
     val prop = EQ(CalcBlake2b256(CustomByteArray(1: Byte)), ByteArrayLeaf(Array()))
 
     val prover = new UtxoProvingInterpreter
+    prover.enrichContext(prop)
+  }
+
+  //todo: implement
+  property("context enriching mixed w. crypto") {
+    val prover = new UtxoProvingInterpreter
+    val pubkey = prover.secrets.head.publicImage
+
+    val prop = AND(pubkey, EQ(CalcBlake2b256(CustomByteArray(1: Byte)), ByteArrayLeaf(Array())))
+
     prover.enrichContext(prop)
   }
 }

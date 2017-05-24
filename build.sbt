@@ -2,7 +2,7 @@ name := "sigma-state"
 
 version := "0.0.1"
 
-scalaVersion := "2.12.1"
+scalaVersion := "2.12.2"
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
@@ -13,7 +13,7 @@ val testingDependencies = Seq(
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.scorexfoundation" %% "scorex-core" % "2.+",
-  "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0-SNAPSHOT"
+  "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0-RC1"
 ) ++ testingDependencies
 
 
