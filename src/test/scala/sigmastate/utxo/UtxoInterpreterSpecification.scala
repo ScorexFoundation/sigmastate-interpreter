@@ -245,7 +245,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
     val (proof, ce) = prover.prove(prop, ctx, challenge).get
 
-    //todo: verifier
     val ctxv = ctx.withExtension(ce)
 
     val verifier = new UtxoInterpreter
@@ -253,13 +252,23 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.evaluate(prop, ctxv, proof, challenge).get shouldBe true
   }
 
-  //todo: implement
   property("prover enriching context 2") {
-    val prop = EQ(CalcBlake2b256(Append(CustomByteArray(1: Byte), CustomByteArray(2: Byte))), ByteArrayLeaf(Array()))
-
     val prover = new UtxoProvingInterpreter
-    val ce = prover.enrichContext(prop)
-    println(ce)
+    val preimage1 = prover.contextExtensions.head._2.value
+    val preimage2 = prover.contextExtensions.tail.head._2.value
+    val prop = EQ(CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage2)),
+                                        CustomByteArray(Helpers.tagInt(preimage1)))
+                                        ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
+
+    val challenge = Blake2b256("Hello World")
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val (proof, ce) = prover.prove(prop, ctx, challenge).get
+
+    val ctxv = ctx.withExtension(ce)
+
+    val verifier = new UtxoInterpreter
+    verifier.evaluate(prop, ctx, proof, challenge).get shouldBe false //wrong context
+    verifier.evaluate(prop, ctxv, proof, challenge).get shouldBe true
   }
 
   //todo: implement
