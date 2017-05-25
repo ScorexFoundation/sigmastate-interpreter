@@ -14,7 +14,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Try
 
-case class ContextExtension(value: Map[Byte, _ <: Value])
+case class ContextExtension(value: Map[Int, _ <: Value])
 
 trait Context {
   val extension: ContextExtension
@@ -138,19 +138,21 @@ trait Interpreter {
 }
 
 trait ProverInterpreter extends Interpreter {
+
+  val contextExtensions: Map[Int, ByteArrayLeaf]
+
   def enrichContext(tree: SigmaStateTree): ContextExtension = {
+    val targetName = CustomByteArray.getClass.getSimpleName.replace("$","")
 
-    println(new Tree(tree).nodes)
-    println("==================")
+    val ce = new Tree(tree).nodes.flatMap { n =>
+      if(n.productPrefix == targetName) {
+        val tag = n.productIterator.next().asInstanceOf[Int]
+        println("tag: " + tag)
+        contextExtensions.get(tag).map(v => tag -> v)
+      } else None
+    }.toMap
 
-    println("==================")
-    new Tree(tree).nodes.foreach { n =>
-      println(n.productPrefix + " ||" + n.productIterator.mkString(","))
-      println(n)
-      println("---")
-    }
-
-    ContextExtension(Map())
+    ContextExtension(ce)
   }
 
   protected def prove(unprovenTree: UnprovenTree): ProofT

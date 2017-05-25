@@ -9,10 +9,16 @@ import sigmastate._
 import sigmastate.utils.Helpers
 
 class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter {
+
   override lazy val secrets: Seq[DLogProverInput] = {
     import SchnorrSignature._
     Seq(DLogProverInput.random()._1)
   }
+
+  override val contextExtensions: Map[Int, ByteArrayLeaf] = (1 to 10).map{_ =>
+    val ba = Random.randomBytes(howMany = 75)
+    Helpers.tagInt(ba) -> ByteArrayLeaf(ba)
+  }.toMap
 }
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -232,10 +238,10 @@ class UtxoInterpreterSpecification extends PropSpec
     */
   //todo: implement
   property("prover enriching context") {
-    val preimage = Random.randomBytes(75)
+    val prover = new UtxoProvingInterpreter
+    val preimage = prover.contextExtensions.head._2.value
     val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
 
-    val prover = new UtxoProvingInterpreter
     val ce = prover.enrichContext(prop)
     println(ce)
   }
