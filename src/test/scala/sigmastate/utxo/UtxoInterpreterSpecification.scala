@@ -142,7 +142,7 @@ class UtxoInterpreterSpecification extends PropSpec
     * that height, the miner can charge according to output lifetime.
     *
     * (regular_script) ∨
-    *   (height > (out.height + demurrage_period ) ∧ has_output(value >= out.value − demurrage_cost, script = out.script))
+    * (height > (out.height + demurrage_period ) ∧ has_output(value >= out.value − demurrage_cost, script = out.script))
     */
   property("Evaluation - Demurrage Example") {
     val demurragePeriod = 100
@@ -233,7 +233,17 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = EQ(CalcBlake2b256(CustomByteArray(1: Byte)), ByteArrayLeaf(Array()))
 
     val prover = new UtxoProvingInterpreter
-    prover.enrichContext(prop)
+    val ce = prover.enrichContext(prop)
+    println(ce)
+  }
+
+  //todo: implement
+  property("prover enriching context 2") {
+    val prop = EQ(CalcBlake2b256(Append(CustomByteArray(1: Byte), CustomByteArray(2: Byte))), ByteArrayLeaf(Array()))
+
+    val prover = new UtxoProvingInterpreter
+    val ce = prover.enrichContext(prop)
+    println(ce)
   }
 
   //todo: implement
@@ -242,6 +252,19 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey = prover.secrets.head.publicImage
 
     val prop = AND(pubkey, EQ(CalcBlake2b256(CustomByteArray(1: Byte)), ByteArrayLeaf(Array())))
+
+    prover.enrichContext(prop)
+  }
+
+  //todo: implement
+  property("context enriching mixed w. crypto 2") {
+    val prover = new UtxoProvingInterpreter
+    val pubkey = prover.secrets.head.publicImage
+
+    val prop = AND(
+      pubkey,
+      EQ(CalcBlake2b256(Append(CustomByteArray(1: Byte), CustomByteArray(2: Byte))), ByteArrayLeaf(Array()))
+    )
 
     prover.enrichContext(prop)
   }

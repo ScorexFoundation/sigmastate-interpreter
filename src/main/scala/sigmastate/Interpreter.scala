@@ -50,6 +50,12 @@ trait Interpreter {
   protected val ops: Strategy = everywherebu(rule[SigmaStateTree] {
     case Plus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value + r.value)
     case Minus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value - r.value)
+    case Xor(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
+      assert(l.value.length == r.value.length)
+      ??? //todo: xor calculation
+    case Append(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
+      require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
+      ByteArrayLeaf(l.value ++ r.value)
     case CalcBlake2b256(l: ByteArrayLeaf) => ByteArrayLeaf(Blake2b256(l.value))
   })
 
@@ -134,7 +140,6 @@ trait Interpreter {
 trait ProverInterpreter extends Interpreter {
   def enrichContext(tree: SigmaStateTree): ContextExtension = {
 
-    //todo: report problems with Scala 2.12.2
     println(new Tree(tree).nodes)
     println("==================")
 

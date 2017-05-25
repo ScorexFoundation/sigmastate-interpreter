@@ -124,6 +124,20 @@ case class Minus(override val left: SigmaStateTree,
   def replaceRight(newRight: SigmaStateTree): Minus = copy(right = newRight)
 }
 
+case class Xor(override val left: SigmaStateTree,
+                 override val right: SigmaStateTree) extends Relation {
+  def replaceLeft(newLeft: SigmaStateTree): Xor = copy(left = newLeft)
+
+  def replaceRight(newRight: SigmaStateTree): Xor = copy(right = newRight)
+}
+
+case class Append(override val left: SigmaStateTree,
+               override val right: SigmaStateTree) extends Relation {
+  def replaceLeft(newLeft: SigmaStateTree): Append = copy(left = newLeft)
+
+  def replaceRight(newRight: SigmaStateTree): Append = copy(right = newRight)
+}
+
 sealed trait Relation extends Triple
 
 case class LT(override val left: SigmaStateTree,
