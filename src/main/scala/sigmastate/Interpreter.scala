@@ -127,7 +127,6 @@ trait Interpreter {
 
   def evaluate(exp: SigmaStateTree, context: CTX, proof: UncheckedTree, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
-
     cProp match {
       case TrueConstantTree  =>  true
       case FalseConstantTree => false
@@ -150,7 +149,6 @@ trait ProverInterpreter extends Interpreter {
     val ce = new Tree(tree).nodes.flatMap { n =>
       if(n.productPrefix == targetName) {
         val tag = n.productIterator.next().asInstanceOf[Int]
-        println("tag: " + tag)
         contextExtensions.get(tag).map(v => tag -> v)
       } else None
     }.toMap
@@ -162,29 +160,23 @@ trait ProverInterpreter extends Interpreter {
 
   def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree
 
-  def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[ProofT] = Try {
-    println(exp)
-
+  def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[(ProofT, ContextExtension)] = Try {
     val candidateProp = reduceToCrypto(exp, context).get
 
-    println(candidateProp.isInstanceOf[SigmaT])
-
-    val cProp = (candidateProp.isInstanceOf[SigmaT] match {
-      case true => candidateProp
+    val (cProp, ext) = (candidateProp.isInstanceOf[SigmaT] match {
+      case true => (candidateProp, ContextExtension(Map()))
       case false =>
-        println("enriching")
         val extension = enrichContext(candidateProp)
-        reduceToCrypto(candidateProp, context.withExtension(extension)).get  //todo: no need for full reduction here probably
+        //todo: no need for full reduction here probably
+        (reduceToCrypto(candidateProp, context.withExtension(extension)).get, extension)
     }).ensuring(res =>
-      res.isInstanceOf[BooleanConstantTree] ||
-        res.isInstanceOf[CAND] ||
-        res.isInstanceOf[COR] ||
-        res.isInstanceOf[DLogNode]
-    )
+      res._1.isInstanceOf[BooleanConstantTree] ||
+        res._1.isInstanceOf[CAND] ||
+        res._1.isInstanceOf[COR] ||
+        res._1.isInstanceOf[DLogNode])
 
-    println(cProp)
 
-    cProp match {
+    (cProp match {
       case tree: BooleanConstantTree =>
         tree match {
           case TrueConstantTree => NoProof
@@ -194,7 +186,7 @@ trait ProverInterpreter extends Interpreter {
         val ct = TreeConversion.convertToUnproven(cProp.asInstanceOf[SigmaT]).setChallenge(challenge)
         val toProve = normalizeUnprovenTree(ct)
         prove(toProve)
-    }
+    }, ext)
   }
 }
 

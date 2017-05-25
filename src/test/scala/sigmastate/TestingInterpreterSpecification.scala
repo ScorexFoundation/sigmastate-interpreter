@@ -113,7 +113,7 @@ class TestingInterpreterSpecification extends PropSpec
 
     val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
-    val proof1 = TestingInterpreter.prove(prop, env1, challenge).get
+    val proof1 = TestingInterpreter.prove(prop, env1, challenge).get._1
 
     evaluate(prop, env1, proof1, challenge).getOrElse(false) shouldBe true
 

@@ -8,8 +8,6 @@ import scorex.utils.Random
 import sigmastate._
 import sigmastate.utils.Helpers
 
-import scala.util.Failure
-
 class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter {
 
   override lazy val secrets: Seq[DLogProverInput] = {
@@ -100,7 +98,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx1 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx1, self = outputToSpend -> 0)
 
     //project is generating a proof and it is passing verification
-    val proofP = projectProver.prove(crowdFundingScript, ctx1, challenge).get
+    val proofP = projectProver.prove(crowdFundingScript, ctx1, challenge).get._1
     verifier.evaluate(crowdFundingScript, ctx1, proofP, challenge).get shouldBe true
 
     //backer can't generate a proof
@@ -138,7 +136,7 @@ class UtxoInterpreterSpecification extends PropSpec
     proofP3Try.isSuccess shouldBe false
 
     //backer is generating a proof and it is passing verification
-    val proofB = backerProver.prove(crowdFundingScript, ctx3, challenge).get
+    val proofB = backerProver.prove(crowdFundingScript, ctx3, challenge).get._1
     verifier.evaluate(crowdFundingScript, ctx3, proofB, challenge).get shouldBe true
   }
 
@@ -191,7 +189,7 @@ class UtxoInterpreterSpecification extends PropSpec
       self = outputToSpend -> outHeight)
 
     //user can spend all the money
-    val uProof1 = userProver.prove(script, ctx1, challenge).get
+    val uProof1 = userProver.prove(script, ctx1, challenge).get._1
     verifier.evaluate(script, ctx1, uProof1, challenge).get shouldBe true
 
     //miner can't spend any money
@@ -204,7 +202,7 @@ class UtxoInterpreterSpecification extends PropSpec
       self = outputToSpend -> outHeight)
 
     //user can spend all the money
-    val uProof2 = userProver.prove(script, ctx1, challenge).get
+    val uProof2 = userProver.prove(script, ctx1, challenge).get._1
     verifier.evaluate(script, ctx2, uProof2, challenge).get shouldBe true
 
     //miner can spend "demurrageCost" tokens
@@ -245,11 +243,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val challenge = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
-    val ce = prover.prove(prop, ctx, challenge)
-    println(ce)
-    ce.isSuccess shouldBe true
+    val (proof, ce) = prover.prove(prop, ctx, challenge).get
 
     //todo: verifier
+    val ctxv = ctx.withExtension(ce)
+
+    val verifier = new UtxoInterpreter
+    verifier.evaluate(prop, ctx, proof, challenge).get shouldBe false //wrong context
+    verifier.evaluate(prop, ctxv, proof, challenge).get shouldBe true
   }
 
   //todo: implement
