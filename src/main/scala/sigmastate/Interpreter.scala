@@ -16,15 +16,18 @@ import scala.util.Try
 
 case class ContextExtension(value: Map[Int, _ <: Value])
 
-trait Context {
+trait Context[C <: Context[C]] {
   val extension: ContextExtension
+
+  def withExtension(newExtension: ContextExtension): C
 }
 
 trait Interpreter {
-  type CTX <: Context
+  type CTX <: Context[CTX]
   type StateT <: StateTree
   type SigmaT <: SigmaTree
-  type ProofT <: UncheckedTree
+
+  type ProofT = UncheckedTree  //todo:  ProofT <: UncheckedTree ?
 
   val dlogGroup: DlogGroup = new BcDlogECFp()
 
@@ -38,9 +41,13 @@ trait Interpreter {
     */
   def specificPhases(tree: SigmaStateTree, ctx: CTX): SigmaStateTree
 
+  protected def contextSubst(ctx: CTX): Strategy = everywherebu(rule[SigmaStateTree] {
+    case CustomByteArray(tag: Int) if ctx.extension.value.contains(tag) => ctx.extension.value(tag)
+  })
+
   protected val rels: Strategy = everywherebu(rule[SigmaStateTree] {
-    case EQ(l, r) => BooleanConstantTree.fromBoolean(l == r)
-    case NEQ(l, r) => BooleanConstantTree.fromBoolean(l != r)
+    case EQ(l: Value, r: Value) => BooleanConstantTree.fromBoolean(l == r)
+    case NEQ(l: Value, r: Value) => BooleanConstantTree.fromBoolean(l != r)
     case GT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value > r.value)
     case GE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value >= r.value)
     case LT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value < r.value)
@@ -110,16 +117,12 @@ trait Interpreter {
 
   //todo: cost analysis
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
-    val afterSpecific = specificPhases(exp, context)
+    val afterContextSubst = contextSubst(context)(exp).get.asInstanceOf[SigmaStateTree]
+    val afterSpecific = specificPhases(afterContextSubst, context)
     val afterOps = ops(afterSpecific).get.asInstanceOf[SigmaStateTree]
     val afterRels = rels(afterOps).get.asInstanceOf[SigmaStateTree]
     conjs(afterRels).get
-  }.ensuring(res =>
-    res.isInstanceOf[BooleanConstantTree] ||
-      res.isInstanceOf[CAND] ||
-      res.isInstanceOf[COR] ||
-      res.isInstanceOf[DLogNode]
-  ).asInstanceOf[SigmaStateTree])
+  }.asInstanceOf[SigmaStateTree])
 
 
   def evaluate(exp: SigmaStateTree, context: CTX, proof: UncheckedTree, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
@@ -160,14 +163,38 @@ trait ProverInterpreter extends Interpreter {
   def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree
 
   def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[ProofT] = Try {
-    val cProp = reduceToCrypto(exp, context).get
+    println(exp)
 
-    //todo: fix check - only crypto statements , logical links and context extension
-    //  assert(cProp.isInstanceOf[SigmaT])
+    val candidateProp = reduceToCrypto(exp, context).get
 
-    val ct = TreeConversion.convertToUnproven(cProp.asInstanceOf[SigmaT]).setChallenge(challenge)
-    val toProve = normalizeUnprovenTree(ct)
-    prove(toProve)
+    println(candidateProp.isInstanceOf[SigmaT])
+
+    val cProp = (candidateProp.isInstanceOf[SigmaT] match {
+      case true => candidateProp
+      case false =>
+        println("enriching")
+        val extension = enrichContext(candidateProp)
+        reduceToCrypto(candidateProp, context.withExtension(extension)).get  //todo: no need for full reduction here probably
+    }).ensuring(res =>
+      res.isInstanceOf[BooleanConstantTree] ||
+        res.isInstanceOf[CAND] ||
+        res.isInstanceOf[COR] ||
+        res.isInstanceOf[DLogNode]
+    )
+
+    println(cProp)
+
+    cProp match {
+      case tree: BooleanConstantTree =>
+        tree match {
+          case TrueConstantTree => NoProof
+          case FalseConstantTree => ???
+        }
+      case _ =>
+        val ct = TreeConversion.convertToUnproven(cProp.asInstanceOf[SigmaT]).setChallenge(challenge)
+        val toProve = normalizeUnprovenTree(ct)
+        prove(toProve)
+    }
   }
 }
 

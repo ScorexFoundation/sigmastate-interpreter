@@ -8,6 +8,8 @@ import scorex.utils.Random
 import sigmastate._
 import sigmastate.utils.Helpers
 
+import scala.util.Failure
+
 class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter {
 
   override lazy val secrets: Seq[DLogProverInput] = {
@@ -236,14 +238,18 @@ class UtxoInterpreterSpecification extends PropSpec
   /**
     * The script is asking for a hash function preimage. The "proof" could be replayed, so not really a proof.
     */
-  //todo: implement
   property("prover enriching context") {
     val prover = new UtxoProvingInterpreter
     val preimage = prover.contextExtensions.head._2.value
     val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
 
-    val ce = prover.enrichContext(prop)
+    val challenge = Blake2b256("Hello World")
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val ce = prover.prove(prop, ctx, challenge)
     println(ce)
+    ce.isSuccess shouldBe true
+
+    //todo: verifier
   }
 
   //todo: implement

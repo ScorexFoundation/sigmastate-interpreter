@@ -7,7 +7,9 @@ case class UtxoContext(currentHeight: Long,
                        spendingTransaction: SigmaStateTransaction,
                        self: (SigmaStateBox, Long),
                        override val extension: ContextExtension = ContextExtension(Map())
-                      ) extends Context
+                      ) extends Context[UtxoContext] {
+  override def withExtension(newExtension: ContextExtension): UtxoContext = this.copy(extension = newExtension)
+}
 
 trait UtxoVariable[V <: Value] extends Variable[V]
 

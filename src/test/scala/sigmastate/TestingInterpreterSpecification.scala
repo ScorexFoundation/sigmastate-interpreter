@@ -12,7 +12,9 @@ import scala.util.Random
 
 
 case class TestingContext(height: Int,
-                          override val extension: ContextExtension = ContextExtension(value = Map())) extends Context
+                          override val extension: ContextExtension = ContextExtension(value = Map())) extends Context[TestingContext] {
+  override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
+}
 
 
 object TestingInterpreter extends Interpreter with DLogProverInterpreter {

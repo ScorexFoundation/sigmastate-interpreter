@@ -80,7 +80,6 @@ class UtxoInterpreter extends Interpreter {
     })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext): SigmaStateTree = {
-
     val afterFn = fnSubst(context)(tree).get.asInstanceOf[SigmaStateTree]
     val afterSs = ssSubst(context)(afterFn).get.asInstanceOf[SigmaStateTree]
     val afterSb = sbSubst()(afterSs).get.asInstanceOf[SigmaStateTree]
