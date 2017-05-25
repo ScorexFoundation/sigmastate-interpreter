@@ -4,7 +4,9 @@ import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
+import scorex.utils.Random
 import sigmastate._
+import sigmastate.utils.Helpers
 
 class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter {
   override lazy val secrets: Seq[DLogProverInput] = {
@@ -230,7 +232,8 @@ class UtxoInterpreterSpecification extends PropSpec
     */
   //todo: implement
   property("prover enriching context") {
-    val prop = EQ(CalcBlake2b256(CustomByteArray(1: Byte)), ByteArrayLeaf(Array()))
+    val preimage = Random.randomBytes(75)
+    val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
 
     val prover = new UtxoProvingInterpreter
     val ce = prover.enrichContext(prop)

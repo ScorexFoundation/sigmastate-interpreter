@@ -82,10 +82,10 @@ trait Variable[V <: Value] extends Value
 case object Height extends Variable[IntLeaf]
 
 trait CustomVariable[V <: Value] extends Variable[Value] {
-  val id: Byte
+  val id: Int
 }
 
-case class CustomByteArray(override val id: Byte) extends CustomVariable[ByteArrayLeaf]
+case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArrayLeaf]
 
 sealed trait OneArgumentOperation extends StateTree {
   val operand: SigmaStateTree
