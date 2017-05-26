@@ -15,7 +15,7 @@ class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter 
     Seq(DLogProverInput.random()._1)
   }
 
-  override val contextExtensions: Map[Int, ByteArrayLeaf] = (1 to 10).map{_ =>
+  override val contextExtenders: Map[Int, ByteArrayLeaf] = (1 to 10).map{ _ =>
     val ba = Random.randomBytes(howMany = 75)
     Helpers.tagInt(ba) -> ByteArrayLeaf(ba)
   }.toMap
@@ -98,7 +98,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx1 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx1, self = outputToSpend -> 0)
 
     //project is generating a proof and it is passing verification
-    val proofP = projectProver.prove(crowdFundingScript, ctx1, challenge).get._1
+    val proofP = projectProver.prove(crowdFundingScript, ctx1, challenge).get.proof
     verifier.evaluate(crowdFundingScript, ctx1, proofP, challenge).get shouldBe true
 
     //backer can't generate a proof
@@ -136,7 +136,7 @@ class UtxoInterpreterSpecification extends PropSpec
     proofP3Try.isSuccess shouldBe false
 
     //backer is generating a proof and it is passing verification
-    val proofB = backerProver.prove(crowdFundingScript, ctx3, challenge).get._1
+    val proofB = backerProver.prove(crowdFundingScript, ctx3, challenge).get.proof
     verifier.evaluate(crowdFundingScript, ctx3, proofB, challenge).get shouldBe true
   }
 
@@ -189,7 +189,7 @@ class UtxoInterpreterSpecification extends PropSpec
       self = outputToSpend -> outHeight)
 
     //user can spend all the money
-    val uProof1 = userProver.prove(script, ctx1, challenge).get._1
+    val uProof1 = userProver.prove(script, ctx1, challenge).get.proof
     verifier.evaluate(script, ctx1, uProof1, challenge).get shouldBe true
 
     //miner can't spend any money
@@ -202,7 +202,7 @@ class UtxoInterpreterSpecification extends PropSpec
       self = outputToSpend -> outHeight)
 
     //user can spend all the money
-    val uProof2 = userProver.prove(script, ctx1, challenge).get._1
+    val uProof2 = userProver.prove(script, ctx1, challenge).get.proof
     verifier.evaluate(script, ctx2, uProof2, challenge).get shouldBe true
 
     //miner can spend "demurrageCost" tokens
@@ -238,37 +238,37 @@ class UtxoInterpreterSpecification extends PropSpec
     */
   property("prover enriching context") {
     val prover = new UtxoProvingInterpreter
-    val preimage = prover.contextExtensions.head._2.value
+    val preimage = prover.contextExtenders.head._2.value
     val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
 
     val challenge = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
-    val (proof, ce) = prover.prove(prop, ctx, challenge).get
+    val pr = prover.prove(prop, ctx, challenge).get
 
-    val ctxv = ctx.withExtension(ce)
+    val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new UtxoInterpreter
-    verifier.evaluate(prop, ctx, proof, challenge).get shouldBe false //wrong context
-    verifier.evaluate(prop, ctxv, proof, challenge).get shouldBe true
+    verifier.evaluate(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
+    verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
   }
 
   property("prover enriching context 2") {
     val prover = new UtxoProvingInterpreter
-    val preimage1 = prover.contextExtensions.head._2.value
-    val preimage2 = prover.contextExtensions.tail.head._2.value
+    val preimage1 = prover.contextExtenders.head._2.value
+    val preimage2 = prover.contextExtenders.tail.head._2.value
     val prop = EQ(CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage2)),
                                         CustomByteArray(Helpers.tagInt(preimage1)))
                                         ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
 
     val challenge = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
-    val (proof, ce) = prover.prove(prop, ctx, challenge).get
+    val pr = prover.prove(prop, ctx, challenge).get
 
-    val ctxv = ctx.withExtension(ce)
+    val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new UtxoInterpreter
-    verifier.evaluate(prop, ctx, proof, challenge).get shouldBe false //wrong context
-    verifier.evaluate(prop, ctxv, proof, challenge).get shouldBe true
+    verifier.evaluate(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
+    verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
   }
 
   //todo: implement

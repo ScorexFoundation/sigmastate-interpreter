@@ -139,9 +139,12 @@ trait Interpreter {
   }
 }
 
+case class ProverResult[ProofT <: UncheckedTree](proof: ProofT, extension: ContextExtension)
+
+
 trait ProverInterpreter extends Interpreter {
 
-  val contextExtensions: Map[Int, ByteArrayLeaf]
+  val contextExtenders: Map[Int, ByteArrayLeaf]
 
   def enrichContext(tree: SigmaStateTree): ContextExtension = {
     val targetName = CustomByteArray.getClass.getSimpleName.replace("$","")
@@ -149,7 +152,7 @@ trait ProverInterpreter extends Interpreter {
     val ce = new Tree(tree).nodes.flatMap { n =>
       if(n.productPrefix == targetName) {
         val tag = n.productIterator.next().asInstanceOf[Int]
-        contextExtensions.get(tag).map(v => tag -> v)
+        contextExtenders.get(tag).map(v => tag -> v)
       } else None
     }.toMap
 
@@ -160,7 +163,7 @@ trait ProverInterpreter extends Interpreter {
 
   def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree
 
-  def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[(ProofT, ContextExtension)] = Try {
+  def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[ProverResult[ProofT]] = Try {
     val candidateProp = reduceToCrypto(exp, context).get
 
     val (cProp, ext) = (candidateProp.isInstanceOf[SigmaT] match {
@@ -176,7 +179,7 @@ trait ProverInterpreter extends Interpreter {
         res._1.isInstanceOf[DLogNode])
 
 
-    (cProp match {
+    ProverResult(cProp match {
       case tree: BooleanConstantTree =>
         tree match {
           case TrueConstantTree => NoProof

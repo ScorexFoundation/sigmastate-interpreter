@@ -33,7 +33,7 @@ object TestingInterpreter extends Interpreter with DLogProverInterpreter {
     Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
   }
 
-  override val contextExtensions: Map[Int, ByteArrayLeaf] = Map[Int, ByteArrayLeaf]()
+  override val contextExtenders: Map[Int, ByteArrayLeaf] = Map[Int, ByteArrayLeaf]()
 }
 
 class TestingInterpreterSpecification extends PropSpec
@@ -113,7 +113,7 @@ class TestingInterpreterSpecification extends PropSpec
 
     val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
-    val proof1 = TestingInterpreter.prove(prop, env1, challenge).get._1
+    val proof1 = TestingInterpreter.prove(prop, env1, challenge).get.proof
 
     evaluate(prop, env1, proof1, challenge).getOrElse(false) shouldBe true
 
