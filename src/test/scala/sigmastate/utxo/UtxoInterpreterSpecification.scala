@@ -271,26 +271,53 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
   }
 
-  //todo: implement
   property("context enriching mixed w. crypto") {
     val prover = new UtxoProvingInterpreter
-    val pubkey = prover.secrets.head.publicImage
-
-    val prop = AND(pubkey, EQ(CalcBlake2b256(CustomByteArray(1: Byte)), ByteArrayLeaf(Array())))
-
-    prover.enrichContext(prop)
-  }
-
-  //todo: implement
-  property("context enriching mixed w. crypto 2") {
-    val prover = new UtxoProvingInterpreter
+    val preimage = prover.contextExtenders.head._2.value
     val pubkey = prover.secrets.head.publicImage
 
     val prop = AND(
       pubkey,
-      EQ(CalcBlake2b256(Append(CustomByteArray(1: Byte), CustomByteArray(2: Byte))), ByteArrayLeaf(Array()))
+      EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
     )
 
-    prover.enrichContext(prop)
+    val challenge = Blake2b256("Hello World")
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val pr = prover.prove(prop, ctx, challenge).get
+
+    val ctxv = ctx.withExtension(pr.extension)
+
+    pr.proof.isInstanceOf[SchnorrNode] shouldBe true
+
+    val verifier = new UtxoInterpreter
+    verifier.evaluate(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
+    verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
+  }
+
+  property("context enriching mixed w. crypto 2") {
+    val prover = new UtxoProvingInterpreter
+    val preimage1 = prover.contextExtenders.head._2.value
+    val preimage2 = prover.contextExtenders.tail.head._2.value
+    val pubkey = prover.secrets.head.publicImage
+
+    val prop = AND(
+      pubkey,
+      EQ(
+        CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage1)), CustomByteArray(Helpers.tagInt(preimage2)))),
+        ByteArrayLeaf(Blake2b256(preimage1 ++ preimage2))
+      )
+    )
+
+    val challenge = Blake2b256("Hello World")
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val pr = prover.prove(prop, ctx, challenge).get
+
+    val ctxv = ctx.withExtension(pr.extension)
+
+    pr.proof.isInstanceOf[SchnorrNode] shouldBe true
+
+    val verifier = new UtxoInterpreter
+    verifier.evaluate(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
+    verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
   }
 }
