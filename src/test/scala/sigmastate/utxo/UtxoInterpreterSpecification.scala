@@ -8,6 +8,7 @@ import scorex.utils.Random
 import sigmastate._
 import sigmastate.utils.Helpers
 
+
 class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter {
 
   override lazy val secrets: Seq[DLogProverInput] = {
@@ -15,11 +16,12 @@ class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter 
     Seq(DLogProverInput.random()._1)
   }
 
-  override val contextExtenders: Map[Int, ByteArrayLeaf] = (1 to 10).map{ _ =>
+  override val contextExtenders: Map[Int, ByteArrayLeaf] = (1 to 10).map { _ =>
     val ba = Random.randomBytes(howMany = 75)
     Helpers.tagInt(ba) -> ByteArrayLeaf(ba)
   }.toMap
 }
+
 
 class UtxoInterpreterSpecification extends PropSpec
   with PropertyChecks
@@ -43,9 +45,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
     verifier.reduceToCrypto(EQ(PropLeaf(DLogNode(h1)), PropLeaf(DLogNode(h2))), ctx)
       .get.isInstanceOf[FalseConstantTree.type] shouldBe true
-
   }
 
+  //todo: implement
   ignore("TxHasOutput reductions") {}
 
   /**
@@ -257,8 +259,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val preimage1 = prover.contextExtenders.head._2.value
     val preimage2 = prover.contextExtenders.tail.head._2.value
     val prop = EQ(CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage2)),
-                                        CustomByteArray(Helpers.tagInt(preimage1)))
-                                        ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
+      CustomByteArray(Helpers.tagInt(preimage1)))
+    ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
 
     val challenge = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
