@@ -147,6 +147,14 @@ trait Interpreter {
         }
     }
   }
+
+  def verify(exp: SigmaStateTree,
+             context: CTX,
+             proverResult: ProverResult[ProofT],
+             challenge: ProofOfKnowledge.Challenge): Try[Boolean] = {
+    val ctxv = context.withExtension(proverResult.extension)
+    evaluate(exp, ctxv, proverResult.proof, challenge)
+  }
 }
 
 

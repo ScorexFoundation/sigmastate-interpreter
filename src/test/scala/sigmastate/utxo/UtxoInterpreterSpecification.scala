@@ -343,8 +343,27 @@ class UtxoInterpreterSpecification extends PropSpec
     val x = proverA.contextExtenders.head._2.value
     val hx = ByteArrayLeaf(Blake2b256(x))
 
+    val height1 = 100000
+    val height2 = 50000
 
-    val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyB, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx)))
+    val deadlineA = 1000
+    val deadlineB = 500
+
+    //chain1 script
+    val prop1 = OR(
+      AND(GT(Height, IntLeaf(height1 + deadlineA)), pubkeyA),
+      AND(pubkeyB, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
+    )
+
+    //chain2 script
+    val prop2 = OR(
+      AND(GT(Height, IntLeaf(height2 + deadlineB)), pubkeyB),
+      AND(pubkeyA, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
+    )
+
+    //fake challenge, in a real-life a challenge is to be derived from a spending transaction
+    val challenge = Blake2b256("Hello World")
 
   }
+
 }
