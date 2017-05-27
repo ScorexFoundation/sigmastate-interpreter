@@ -333,12 +333,15 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
   }
 
+  /**
+    * Atomic cross-chain trading example
+    */
   property("atomic cross-chain trading") {
-
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
     val pubkeyA = proverA.secrets.head.publicImage
     val pubkeyB = proverB.secrets.head.publicImage
+    val verifier = new UtxoInterpreter
 
     val x = proverA.contextExtenders.head._2.value
     val hx = ByteArrayLeaf(Blake2b256(x))
@@ -364,6 +367,19 @@ class UtxoInterpreterSpecification extends PropSpec
     //fake challenge, in a real-life a challenge is to be derived from a spending transaction
     val challenge = Blake2b256("Hello World")
 
-  }
+    //A spends coins of B in chain2
+    val ctx1 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val pr = proverA.prove(prop2, ctx1, challenge).get
+    verifier.verify(prop2, ctx1, pr, challenge).get shouldBe true
 
+    //B extracts preimage x of hx
+    val t = pr.extension.values.head
+    val (tx, bx) = (t._1, t._2)
+    val proverB2 = proverB.withContextExtender(tx, bx.asInstanceOf[ByteArrayLeaf])
+
+    //B spends coins of A in chain1 with knowledge of x
+    val ctx2 = UtxoContext(currentHeight = height1 + 1, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val pr2 = proverB2.prove(prop1, ctx2, challenge).get
+    verifier.verify(prop1, ctx2, pr2, challenge).get shouldBe true
+  }
 }
