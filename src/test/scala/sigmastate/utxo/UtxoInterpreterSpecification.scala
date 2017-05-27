@@ -334,7 +334,9 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   /**
-    * Atomic cross-chain trading example
+    * Atomic cross-chain trading example:
+    * Alice(A) has coins in chain 1, Bob(B) has coins in chain 2, they want to exchange them atomically and with no
+    * any trusted mediate.
     */
   property("atomic cross-chain trading") {
     val proverA = new UtxoProvingInterpreter
@@ -374,7 +376,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctxf1 = UtxoContext(currentHeight = height1 + 1, spendingTransaction = null, self = fakeSelf)
     proverB.prove(prop1, ctxf1, challenge).isSuccess shouldBe false
 
-    //A can't withdraw his coins in chain1 (generate a valid proof)
+    //A can't withdraw her coins in chain1 (generate a valid proof)
     proverA.prove(prop1, ctxf1, challenge).isSuccess shouldBe false
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
