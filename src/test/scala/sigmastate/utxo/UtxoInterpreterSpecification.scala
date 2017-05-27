@@ -16,10 +16,20 @@ class UtxoProvingInterpreter extends UtxoInterpreter with DLogProverInterpreter 
     Seq(DLogProverInput.random()._1)
   }
 
-  override val contextExtenders: Map[Int, ByteArrayLeaf] = (1 to 10).map { _ =>
-    val ba = Random.randomBytes(howMany = 75)
+  override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = (1 to 10).map { i =>
+    val ba = Random.randomBytes(75)
     Helpers.tagInt(ba) -> ByteArrayLeaf(ba)
   }.toMap
+
+  def withContextExtender(tag: Int, value: ByteArrayLeaf): UtxoProvingInterpreter = {
+    val s = secrets
+    val ce = contextExtenders
+
+    new UtxoProvingInterpreter {
+      override lazy val secrets: Seq[DLogProverInput] = s
+      override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = ce + (tag -> value)
+    }
+  }
 }
 
 
@@ -321,5 +331,20 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
     verifier.evaluate(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
     verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
+  }
+
+  property("atomic cross-chain trading") {
+
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+    val pubkeyA = proverA.secrets.head.publicImage
+    val pubkeyB = proverB.secrets.head.publicImage
+
+    val x = proverA.contextExtenders.head._2.value
+    val hx = ByteArrayLeaf(Blake2b256(x))
+
+
+    val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyB, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx)))
+
   }
 }
