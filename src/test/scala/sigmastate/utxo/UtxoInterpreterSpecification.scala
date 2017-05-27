@@ -366,9 +366,26 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //fake challenge, in a real-life a challenge is to be derived from a spending transaction
     val challenge = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantTree) -> 0L
+
+    //Preliminary checks:
+
+    //B can't spend coins of A in chain1 (generate a valid proof)
+    val ctxf1 = UtxoContext(currentHeight = height1 + 1, spendingTransaction = null, self = fakeSelf)
+    proverB.prove(prop1, ctxf1, challenge).isSuccess shouldBe false
+
+    //A can't withdraw his coins in chain1 (generate a valid proof)
+    proverA.prove(prop1, ctxf1, challenge).isSuccess shouldBe false
+
+    //B cant't withdraw his coins in chain2 (generate a valid proof)
+    val ctxf2 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = fakeSelf)
+    proverB.prove(prop2, ctxf2, challenge).isSuccess shouldBe false
+
+
+    //Successful run below:
 
     //A spends coins of B in chain2
-    val ctx1 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val ctx1 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = fakeSelf)
     val pr = proverA.prove(prop2, ctx1, challenge).get
     verifier.verify(prop2, ctx1, pr, challenge).get shouldBe true
 
@@ -378,7 +395,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val proverB2 = proverB.withContextExtender(tx, bx.asInstanceOf[ByteArrayLeaf])
 
     //B spends coins of A in chain1 with knowledge of x
-    val ctx2 = UtxoContext(currentHeight = height1 + 1, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val ctx2 = UtxoContext(currentHeight = height1 + 1, spendingTransaction = null, self = fakeSelf)
     val pr2 = proverB2.prove(prop1, ctx2, challenge).get
     verifier.verify(prop1, ctx2, pr2, challenge).get shouldBe true
   }
