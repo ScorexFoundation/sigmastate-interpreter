@@ -337,6 +337,10 @@ class UtxoInterpreterSpecification extends PropSpec
     * Atomic cross-chain trading example:
     * Alice(A) has coins in chain 1, Bob(B) has coins in chain 2, they want to exchange them atomically and with no
     * any trusted mediate.
+    *
+    * Alternative protocol for Bitcoin is described in this forum message,
+    * https://bitcointalk.org/index.php?topic=193281.msg2224949#msg2224949,
+    * this implementation is simpler. In particular, only one transaction(one output) is required per party.
     */
   property("atomic cross-chain trading") {
     val proverA = new UtxoProvingInterpreter
