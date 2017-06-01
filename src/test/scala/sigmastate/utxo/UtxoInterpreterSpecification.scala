@@ -60,6 +60,9 @@ class UtxoInterpreterSpecification extends PropSpec
   //todo: implement
   ignore("TxHasOutput reductions") {}
 
+  //todo: xor random bitstring as well as some externally checked examples
+  ignore("XOR") {}
+
   /**
     * Crowdfunding example:
     * a project declares a need to raise "minToRaise" amount of tokens until some "timeout" height
