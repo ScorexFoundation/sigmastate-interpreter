@@ -69,7 +69,7 @@ trait Interpreter {
     case Minus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value - r.value)
     case Xor(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
       assert(l.value.length == r.value.length)
-      ??? //todo: xor calculation
+      ByteArrayLeaf(l.value.zip(r.value).map(t => (t._1 ^ t._2).toByte))
     case Append(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
       require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
       ByteArrayLeaf(l.value ++ r.value)
