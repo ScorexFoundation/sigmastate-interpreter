@@ -56,12 +56,12 @@ trait Interpreter {
   })
 
   protected val rels: Strategy = everywherebu(rule[SigmaStateTree] {
-    case EQ(l: Value, r: Value) => BooleanConstantTree.fromBoolean(l == r)
-    case NEQ(l: Value, r: Value) => BooleanConstantTree.fromBoolean(l != r)
-    case GT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value > r.value)
-    case GE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value >= r.value)
-    case LT(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value < r.value)
-    case LE(l: IntLeaf, r: IntLeaf) => BooleanConstantTree.fromBoolean(l.value <= r.value)
+    case EQ(l: Value, r: Value) => BooleanConstantNode.fromBoolean(l == r)
+    case NEQ(l: Value, r: Value) => BooleanConstantNode.fromBoolean(l != r)
+    case GT(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value > r.value)
+    case GE(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value >= r.value)
+    case LT(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value < r.value)
+    case LE(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value <= r.value)
   })
 
   protected val ops: Strategy = everywherebu(rule[SigmaStateTree] {
@@ -84,8 +84,8 @@ trait Interpreter {
       def iterChildren(children: Seq[SigmaStateTree],
                        currentBuffer: mutable.Buffer[SigmaStateTree]): mutable.Buffer[SigmaStateTree] = {
         if (children.isEmpty) currentBuffer else children.head match {
-          case FalseConstantTree => mutable.Buffer(FalseConstantTree)
-          case TrueConstantTree => iterChildren(children.tail, currentBuffer)
+          case FalseConstantNode => mutable.Buffer(FalseConstantNode)
+          case TrueConstantNode => iterChildren(children.tail, currentBuffer)
           case s: SigmaStateTree => iterChildren(children.tail, currentBuffer += s)
         }
       }
@@ -93,7 +93,7 @@ trait Interpreter {
       val reduced = iterChildren(children, mutable.Buffer())
 
       reduced.size match {
-        case i: Int if i == 0 => TrueConstantTree
+        case i: Int if i == 0 => TrueConstantNode
         case i: Int if i == 1 => reduced.head
         case _ =>
           if (reduced.forall(_.isInstanceOf[SigmaTree]))
@@ -107,8 +107,8 @@ trait Interpreter {
       def iterChildren(children: Seq[SigmaStateTree],
                        currentBuffer: mutable.Buffer[SigmaStateTree]): mutable.Buffer[SigmaStateTree] = {
         if (children.isEmpty) currentBuffer else children.head match {
-          case TrueConstantTree => mutable.Buffer(TrueConstantTree)
-          case FalseConstantTree => iterChildren(children.tail, currentBuffer)
+          case TrueConstantNode => mutable.Buffer(TrueConstantNode)
+          case FalseConstantNode => iterChildren(children.tail, currentBuffer)
           case s: SigmaStateTree => iterChildren(children.tail, currentBuffer += s)
         }
       }
@@ -116,7 +116,7 @@ trait Interpreter {
       val reduced = iterChildren(children, mutable.Buffer())
 
       reduced.size match {
-        case i: Int if i == 0 => FalseConstantTree
+        case i: Int if i == 0 => FalseConstantNode
         case i: Int if i == 1 => reduced.head
         case _ =>
           if (reduced.forall(_.isInstanceOf[SigmaTree]))
@@ -138,8 +138,8 @@ trait Interpreter {
   def evaluate(exp: SigmaStateTree, context: CTX, proof: UncheckedTree, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
     cProp match {
-      case TrueConstantTree => true
-      case FalseConstantTree => false
+      case TrueConstantNode => true
+      case FalseConstantNode => false
       case _ =>
         proof match {
           case NoProof => false
@@ -189,17 +189,17 @@ trait ProverInterpreter extends Interpreter {
         //todo: no need for full reduction here probably
         (reduceToCrypto(candidateProp, context.withExtension(extension)).get, extension)
     }).ensuring(res =>
-      res._1.isInstanceOf[BooleanConstantTree] ||
+      res._1.isInstanceOf[BooleanConstantNode] ||
         res._1.isInstanceOf[CAND] ||
         res._1.isInstanceOf[COR] ||
         res._1.isInstanceOf[DLogNode])
 
 
     ProverResult(cProp match {
-      case tree: BooleanConstantTree =>
+      case tree: BooleanConstantNode =>
         tree match {
-          case TrueConstantTree => NoProof
-          case FalseConstantTree => ???
+          case TrueConstantNode => NoProof
+          case FalseConstantNode => ???
         }
       case _ =>
         val ct = TreeConversion.convertToUnproven(cProp.asInstanceOf[SigmaT]).setChallenge(challenge)

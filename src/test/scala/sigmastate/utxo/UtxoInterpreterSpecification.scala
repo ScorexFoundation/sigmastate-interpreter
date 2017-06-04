@@ -47,14 +47,14 @@ class UtxoInterpreterSpecification extends PropSpec
     val h1 = prover1.secrets.head.publicImage.h
     val h2 = prover2.secrets.head.publicImage.h
 
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
 
 
     verifier.reduceToCrypto(EQ(PropLeaf(DLogNode(h1)), PropLeaf(DLogNode(h1))), ctx)
-      .get.isInstanceOf[TrueConstantTree.type] shouldBe true
+      .get.isInstanceOf[TrueConstantNode.type] shouldBe true
 
     verifier.reduceToCrypto(EQ(PropLeaf(DLogNode(h1)), PropLeaf(DLogNode(h2))), ctx)
-      .get.isInstanceOf[FalseConstantTree.type] shouldBe true
+      .get.isInstanceOf[FalseConstantNode.type] shouldBe true
   }
 
   //todo: implement
@@ -257,7 +257,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
 
     val challenge = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
     val pr = prover.prove(prop, ctx, challenge).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -276,7 +276,7 @@ class UtxoInterpreterSpecification extends PropSpec
     ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
 
     val challenge = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
     val pr = prover.prove(prop, ctx, challenge).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -297,7 +297,7 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val challenge = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
     val pr = prover.prove(prop, ctx, challenge).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -324,7 +324,7 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val challenge = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantTree) -> 0)
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
     val pr = prover.prove(prop, ctx, challenge).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -375,7 +375,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //fake challenge, in a real-life a challenge is to be derived from a spending transaction
     val challenge = Blake2b256("Hello World")
-    val fakeSelf = SigmaStateBox(0, TrueConstantTree) -> 0L
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
 
     //Preliminary checks:
 

@@ -65,15 +65,15 @@ case class ByteArrayLeaf(value: Array[Byte]) extends Value{
 
 case class PropLeaf(value: SigmaStateTree) extends Value
 
-sealed abstract class BooleanConstantTree(val value: Boolean) extends Value
+sealed abstract class BooleanConstantNode(val value: Boolean) extends Value
 
-object BooleanConstantTree {
-  def fromBoolean(v: Boolean): BooleanConstantTree = if (v) TrueConstantTree else FalseConstantTree
+object BooleanConstantNode {
+  def fromBoolean(v: Boolean): BooleanConstantNode = if (v) TrueConstantNode else FalseConstantNode
 }
 
-case object TrueConstantTree extends BooleanConstantTree(true)
+case object TrueConstantNode extends BooleanConstantNode(true)
 
-case object FalseConstantTree extends BooleanConstantTree(false)
+case object FalseConstantNode extends BooleanConstantNode(false)
 
 
 

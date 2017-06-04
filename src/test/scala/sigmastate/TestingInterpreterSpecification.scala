@@ -54,10 +54,10 @@ class TestingInterpreterSpecification extends PropSpec
         val env = TestingContext(h)
         assert(reduceToCrypto(AND(GE(Height, IntLeaf(h - 1)), dk1), env).get.isInstanceOf[DLogNode])
         assert(reduceToCrypto(AND(GE(Height, IntLeaf(h)), dk1), env).get.isInstanceOf[DLogNode])
-        assert(reduceToCrypto(AND(GE(Height, IntLeaf(h + 1)), dk1), env).get.isInstanceOf[FalseConstantTree.type])
+        assert(reduceToCrypto(AND(GE(Height, IntLeaf(h + 1)), dk1), env).get.isInstanceOf[FalseConstantNode.type])
 
-        assert(reduceToCrypto(OR(GE(Height, IntLeaf(h - 1)), dk1), env).get.isInstanceOf[TrueConstantTree.type])
-        assert(reduceToCrypto(OR(GE(Height, IntLeaf(h)), dk1), env).get.isInstanceOf[TrueConstantTree.type])
+        assert(reduceToCrypto(OR(GE(Height, IntLeaf(h - 1)), dk1), env).get.isInstanceOf[TrueConstantNode.type])
+        assert(reduceToCrypto(OR(GE(Height, IntLeaf(h)), dk1), env).get.isInstanceOf[TrueConstantNode.type])
         assert(reduceToCrypto(OR(GE(Height, IntLeaf(h + 1)), dk1), env).get.isInstanceOf[DLogNode])
       }
     }
@@ -88,12 +88,12 @@ class TestingInterpreterSpecification extends PropSpec
         assert(reduceToCrypto(OR(
           AND(LE(Height, IntLeaf(h - 1)), AND(dk1, dk2)),
           AND(GT(Height, IntLeaf(h + 1)), dk1)
-        ), env).get.isInstanceOf[FalseConstantTree.type])
+        ), env).get.isInstanceOf[FalseConstantNode.type])
 
         assert(reduceToCrypto(OR(OR(
           AND(LE(Height, IntLeaf(h - 1)), AND(dk1, dk2)),
           AND(GT(Height, IntLeaf(h + 1)), dk1)
-        ), AND(GT(Height, IntLeaf(h - 1)), LE(Height, IntLeaf(h + 1)))), env).get.isInstanceOf[TrueConstantTree.type])
+        ), AND(GT(Height, IntLeaf(h - 1)), LE(Height, IntLeaf(h + 1)))), env).get.isInstanceOf[TrueConstantNode.type])
 
       }
     }
@@ -121,7 +121,7 @@ class TestingInterpreterSpecification extends PropSpec
   }
 
   property("Evaluation - no real proving - true case") {
-    val prop1 = TrueConstantTree
+    val prop1 = TrueConstantNode
 
     val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -129,10 +129,10 @@ class TestingInterpreterSpecification extends PropSpec
 
     evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe true
 
-    val prop2 = OR(TrueConstantTree, FalseConstantTree)
+    val prop2 = OR(TrueConstantNode, FalseConstantNode)
     evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe true
 
-    val prop3 = AND(TrueConstantTree, TrueConstantTree)
+    val prop3 = AND(TrueConstantNode, TrueConstantNode)
     evaluate(prop3, env, proof, challenge).getOrElse(false) shouldBe true
 
     val prop4 = GT(Height, IntLeaf(90))
@@ -140,7 +140,7 @@ class TestingInterpreterSpecification extends PropSpec
   }
 
   property("Evaluation - no real proving - false case") {
-    val prop1 = FalseConstantTree
+    val prop1 = FalseConstantNode
 
     val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -148,10 +148,10 @@ class TestingInterpreterSpecification extends PropSpec
 
     evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe false
 
-    val prop2 = OR(FalseConstantTree, FalseConstantTree)
+    val prop2 = OR(FalseConstantNode, FalseConstantNode)
     evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe false
 
-    val prop3 = AND(FalseConstantTree, TrueConstantTree)
+    val prop3 = AND(FalseConstantNode, TrueConstantNode)
     evaluate(prop3, env, proof, challenge).getOrElse(false) shouldBe false
 
     val prop4 = GT(Height, IntLeaf(100))
