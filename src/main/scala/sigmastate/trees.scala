@@ -107,7 +107,6 @@ sealed trait Triple extends StateTree {
 }
 
 
-//todo: correct name is TwoArgsOperation, add 1-arg operations as well(e.g. hash functions)
 sealed trait TwoArgumentsOperation extends Triple
 
 case class Plus(override val left: SigmaStateTree,

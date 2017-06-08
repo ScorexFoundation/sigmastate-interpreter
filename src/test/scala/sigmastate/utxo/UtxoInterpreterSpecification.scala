@@ -3,6 +3,7 @@ package sigmastate.utxo
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
+import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate._
@@ -59,9 +60,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
   //todo: implement
   ignore("TxHasOutput reductions") {}
-
-  //todo: xor random bitstring as well as some externally checked examples
-  ignore("XOR") {}
 
   /**
     * Crowdfunding example:
@@ -255,6 +253,32 @@ class UtxoInterpreterSpecification extends PropSpec
     val prover = new UtxoProvingInterpreter
     val preimage = prover.contextExtenders.head._2.value
     val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
+
+    val challenge = Blake2b256("Hello World")
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
+    val pr = prover.prove(prop, ctx, challenge).get
+
+    val ctxv = ctx.withExtension(pr.extension)
+
+    val verifier = new UtxoInterpreter
+    verifier.evaluate(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
+    verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
+  }
+
+  property("prover enriching context - xor") {
+    val v1 = Base16.decode("abcdef7865")
+    val k1 = Helpers.tagInt(v1)
+
+    val v2 = Base16.decode("10abdca345")
+    val k2 = Helpers.tagInt(v2)
+
+    val r = Base16.decode("bb6633db20")
+
+    val prover = new UtxoProvingInterpreter()
+      .withContextExtender(k1, ByteArrayLeaf(v1))
+      .withContextExtender(k2, ByteArrayLeaf(v2))
+
+    val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeaf(r))
 
     val challenge = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
