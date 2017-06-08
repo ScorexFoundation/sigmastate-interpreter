@@ -6,6 +6,7 @@ import scapi.sigma.rework.{Challenge, SigmaProtocol, SigmaProtocolCommonInput, S
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import sigmastate.SigmaProposition.PropositionCode
+import sigmastate.utils.Helpers
 
 
 sealed trait SigmaStateTree extends Product with SigmaStateProposition
@@ -271,11 +272,27 @@ case class CAndUncheckedNode(override val proposition: CAND, override val challe
   override def serializer: Serializer[M] = ???
 }
 
-//todo: implement
+
 case class COrUncheckedNode(override val proposition: COR, override val challenge: Array[Byte], leafs: Seq[UncheckedTree])
   extends UncheckedSigmaTree(proposition, challenge) {
 
-  override def verify(): Boolean = ???
+  override def verify(): Boolean = {
+    //check challenge
+    leafs.flatMap {
+      _ match {
+        case NoProof => None
+        case ut: UncheckedSigmaTree[_] => Some(ut.challenge)
+      }
+    }.reduce { case (c1, c2) =>
+      Helpers.xor(c1, c2)
+    }.sameElements(challenge)
+
+    //check
+    leafs.forall {
+      case NoProof => true
+      case ut: UncheckedSigmaTree[_] => ut.verify()
+    }
+  }
 
   override val propCode: PropositionCode = COR.Code
 
