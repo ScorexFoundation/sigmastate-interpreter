@@ -253,6 +253,10 @@ case class SchnorrNode(override val proposition: DLogNode,
 case class CAndUncheckedNode(override val proposition: CAND, override val challenge: Array[Byte], leafs: Seq[UncheckedTree])
   extends UncheckedSigmaTree[CAND](proposition, challenge) {
 
+  /**
+    * To verify an AND sigma protocol, we check sub-protocols with the same challenge
+    * @return whether a proof is valid or not
+    */
   override def verify(): Boolean =
     leafs.zip(proposition.sigmaTrees).forall { case (proof, prop) =>
       proof match {

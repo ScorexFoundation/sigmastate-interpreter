@@ -9,6 +9,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogNode
 import scapi.sigma.rework.DLogProtocol
 import scorex.crypto.hash.Blake2b256
+import sigmastate.utils.Helpers
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -69,7 +70,7 @@ trait Interpreter {
     case Minus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value - r.value)
     case Xor(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
       assert(l.value.length == r.value.length)
-      ByteArrayLeaf(l.value.zip(r.value).map(t => (t._1 ^ t._2).toByte))
+      ByteArrayLeaf(Helpers.xor(l.value, r.value))
     case Append(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
       require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
       ByteArrayLeaf(l.value ++ r.value)
