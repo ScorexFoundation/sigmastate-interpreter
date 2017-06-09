@@ -57,7 +57,7 @@ case class IntLeaf(value: Long) extends Value {
   require(value >= 0)
 }
 
-case class ByteArrayLeaf(value: Array[Byte]) extends Value{
+case class ByteArrayLeaf(value: Array[Byte]) extends Value {
   override def equals(obj: scala.Any): Boolean = obj match {
     case ob: ByteArrayLeaf => value sameElements ob.value
     case _ => false
@@ -75,7 +75,6 @@ object BooleanConstantNode {
 case object TrueConstantNode extends BooleanConstantNode(true)
 
 case object FalseConstantNode extends BooleanConstantNode(false)
-
 
 
 trait Variable[V <: Value] extends Value
@@ -96,7 +95,7 @@ case class CalcBlake2b256(operand: SigmaStateTree) extends OneArgumentOperation
 
 /**
   * A tree node with left and right descendants
-   */
+  */
 sealed trait Triple extends StateTree {
   val left: SigmaStateTree
   val right: SigmaStateTree
@@ -118,21 +117,21 @@ case class Plus(override val left: SigmaStateTree,
 }
 
 case class Minus(override val left: SigmaStateTree,
-                override val right: SigmaStateTree) extends Relation {
+                 override val right: SigmaStateTree) extends Relation {
   def replaceLeft(newLeft: SigmaStateTree): Minus = copy(left = newLeft)
 
   def replaceRight(newRight: SigmaStateTree): Minus = copy(right = newRight)
 }
 
 case class Xor(override val left: SigmaStateTree,
-                 override val right: SigmaStateTree) extends Relation {
+               override val right: SigmaStateTree) extends Relation {
   def replaceLeft(newLeft: SigmaStateTree): Xor = copy(left = newLeft)
 
   def replaceRight(newRight: SigmaStateTree): Xor = copy(right = newRight)
 }
 
 case class Append(override val left: SigmaStateTree,
-               override val right: SigmaStateTree) extends Relation {
+                  override val right: SigmaStateTree) extends Relation {
   def replaceLeft(newLeft: SigmaStateTree): Append = copy(left = newLeft)
 
   def replaceRight(newRight: SigmaStateTree): Append = copy(right = newRight)
@@ -181,7 +180,6 @@ case class NEQ(override val left: SigmaStateTree,
 
   def replaceRight(newRight: SigmaStateTree): NEQ = copy(right = newRight)
 }
-
 
 
 //Proof tree
@@ -256,6 +254,7 @@ case class CAndUncheckedNode(override val proposition: CAND, override val challe
 
   /**
     * To verify an AND sigma protocol, we check sub-protocols with the same challenge
+    *
     * @return whether a proof is valid or not
     */
   override def verify(): Boolean =
@@ -283,8 +282,11 @@ case class COrUncheckedNode(override val proposition: COR, override val challeng
         case NoProof => None
         case ut: UncheckedSigmaTree[_] => Some(ut.challenge)
       }
-    }.reduce { case (c1, c2) =>
-      Helpers.xor(c1, c2)
+    }.reduce {
+      {
+        case (c1: Array[Byte], c2: Array[Byte]) =>
+          Helpers.xor(c1, c2)
+      }: ((Array[Byte], Array[Byte]) => Array[Byte])
     }.sameElements(challenge)
 
     //check

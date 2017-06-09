@@ -432,4 +432,23 @@ class UtxoInterpreterSpecification extends PropSpec
     val pr2 = proverB2.prove(prop1, ctx2, challenge).get
     verifier.verify(prop1, ctx2, pr2, challenge).get shouldBe true
   }
+
+  /**
+    * Whether A or B, or both are able to sign a transaction
+    */
+  ignore("simplest linear-sized ring signature") {
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+
+    val pubkeyA = proverA.secrets.head.publicImage
+    val pubkeyB = proverB.secrets.head.publicImage
+
+    val prop = OR(pubkeyA, pubkeyB)
+
+    //fake challenge, in a real-life a challenge is to be derived from a spending transaction
+    val challenge = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+    proverB.prove(prop, ctx, challenge).isSuccess shouldBe true
+  }
 }
