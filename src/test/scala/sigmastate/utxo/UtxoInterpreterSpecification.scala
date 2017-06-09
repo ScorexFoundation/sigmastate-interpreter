@@ -449,6 +449,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val challenge = Blake2b256("Hello World")
     val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
-    proverB.prove(prop, ctx, challenge).isSuccess shouldBe true
+    proverB.prove(prop, ctx, challenge).get
   }
 }

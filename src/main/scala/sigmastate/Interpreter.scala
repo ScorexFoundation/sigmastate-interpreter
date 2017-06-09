@@ -9,6 +9,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.rework.DLogProtocol.DLogNode
 import scapi.sigma.rework.DLogProtocol
 import scorex.crypto.hash.Blake2b256
+import scorex.utils.Random
 import sigmastate.utils.Helpers
 
 import scala.annotation.tailrec
@@ -256,7 +257,16 @@ trait DLogProverInterpreter extends ProverInterpreter {
       val challenge = cand.challengeOpt.get
       cand.copy(children = cand.children.map(_.setChallenge(challenge)))
 
-    case cor: COrUnproven if cor.challengeOpt.isDefined => ???
+    case cor: COrUnproven if cor.challengeOpt.isDefined =>
+      val rootChallenge = cor.challengeOpt.get
+      val challengeSize = rootChallenge.length
+      val randomChallenges = cor.children.tail.map(_ => Random.randomBytes(challengeSize))
+      val realChallenge = Helpers.xor(rootChallenge +: randomChallenges:_*)
+      val childrenChallenges = realChallenge +: randomChallenges
+      assert(Helpers.xor(childrenChallenges:_*).sameElements(rootChallenge))
+      assert(childrenChallenges.size == cor.children.size)
+
+      cor.copy(children = cor.children.zip(childrenChallenges).map{case (ut, ch) => ut.setChallenge(ch)} )
   }
 
   override def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree = {
