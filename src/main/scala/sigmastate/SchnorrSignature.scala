@@ -49,6 +49,16 @@ case class SchnorrSignatureSigner(override val publicInput: DLogNode, privateInp
     val sb = Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
     SchnorrNode(commonInput, challenge, sb)
   }
+
+  /**
+	  This method computes the following calculations:
+      SAMPLE a random z <- Zq
+			COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
+			OUTPUT (a,e,z).
+	**/
+  def simulate(challenge: Array[Byte]): SchnorrNode = {
+    ???
+  }
 }
 
 object SchnorrSignatureSigner {
