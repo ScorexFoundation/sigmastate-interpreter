@@ -232,8 +232,11 @@ object TreeConversion extends Attribution {
       val proven = children.map(proving(secrets))
       CAndUncheckedNode(proposition, challenge, proven)
 
-    //todo: implement
-    case COrUnproven(proposition, Some(challenge), children) => ???
+    case COrUnproven(proposition, Some(challenge), children) =>
+      assert(Helpers.xor(children.map(_.challengeOpt.get):_*).sameElements(challenge))
+
+      val proven = children.map(proving(secrets))
+      COrUncheckedNode(proposition, challenge, proven)
     case _ => ???
   }}
 }
@@ -263,7 +266,6 @@ trait DLogProverInterpreter extends ProverInterpreter {
       val randomChallenges = cor.children.tail.map(_ => Random.randomBytes(challengeSize))
       val realChallenge = Helpers.xor(rootChallenge +: randomChallenges:_*)
       val childrenChallenges = realChallenge +: randomChallenges
-      assert(Helpers.xor(childrenChallenges:_*).sameElements(rootChallenge))
       assert(childrenChallenges.size == cor.children.size)
 
       cor.copy(children = cor.children.zip(childrenChallenges).map{case (ut, ch) => ut.setChallenge(ch)} )

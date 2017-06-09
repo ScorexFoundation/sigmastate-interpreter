@@ -436,7 +436,7 @@ class UtxoInterpreterSpecification extends PropSpec
   /**
     * Whether A or B, or both are able to sign a transaction
     */
-  ignore("simplest linear-sized ring signature") {
+  property("simplest linear-sized ring signature") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
 
@@ -449,6 +449,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val challenge = Blake2b256("Hello World")
     val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
-    proverB.prove(prop, ctx, challenge).get
+    proverA.prove(prop, ctx, challenge).get
   }
 }
