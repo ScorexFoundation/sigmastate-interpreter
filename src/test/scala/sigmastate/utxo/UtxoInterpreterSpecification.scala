@@ -265,6 +265,25 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
   }
 
+  property("prover enriching context 2") {
+    val prover = new UtxoProvingInterpreter
+    val preimage1 = prover.contextExtenders.head._2.value
+    val preimage2 = prover.contextExtenders.tail.head._2.value
+    val prop = EQ(CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage2)),
+      CustomByteArray(Helpers.tagInt(preimage1)))
+    ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
+
+    val challenge = Blake2b256("Hello World")
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
+    val pr = prover.prove(prop, ctx, challenge).get
+
+    val ctxv = ctx.withExtension(pr.extension)
+
+    val verifier = new UtxoInterpreter
+    verifier.evaluate(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
+    verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
+  }
+
   property("prover enriching context - xor") {
     val v1 = Base16.decode("abcdef7865")
     val k1 = Helpers.tagInt(v1)
@@ -279,25 +298,6 @@ class UtxoInterpreterSpecification extends PropSpec
       .withContextExtender(k2, ByteArrayLeaf(v2))
 
     val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeaf(r))
-
-    val challenge = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
-    val pr = prover.prove(prop, ctx, challenge).get
-
-    val ctxv = ctx.withExtension(pr.extension)
-
-    val verifier = new UtxoInterpreter
-    verifier.evaluate(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
-    verifier.evaluate(prop, ctxv, pr.proof, challenge).get shouldBe true
-  }
-
-  property("prover enriching context 2") {
-    val prover = new UtxoProvingInterpreter
-    val preimage1 = prover.contextExtenders.head._2.value
-    val preimage2 = prover.contextExtenders.tail.head._2.value
-    val prop = EQ(CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage2)),
-      CustomByteArray(Helpers.tagInt(preimage1)))
-    ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
 
     val challenge = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)

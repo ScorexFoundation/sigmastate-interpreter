@@ -230,8 +230,11 @@ object TreeConversion extends Attribution {
     case CAndUnproven(proposition, Some(challenge), children) =>
       val proven = children.map(proving(secrets))
       CAndUncheckedNode(proposition, challenge, proven)
-  }
-  }
+
+    //todo: implement
+    case COrUnproven(proposition, Some(challenge), children) => ???
+    case _ => ???
+  }}
 }
 
 trait DLogProverInterpreter extends ProverInterpreter {
