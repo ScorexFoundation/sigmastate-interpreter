@@ -228,6 +228,7 @@ object TreeConversion extends Attribution {
         val privKey = secrets.find(_.publicImage.h == proposition.h).get
         SchnorrSignatureSigner(privKey).prove(challenge)
       }
+
     case CAndUnproven(proposition, Some(challenge), children) =>
       val proven = children.map(proving(secrets))
       CAndUncheckedNode(proposition, challenge, proven)

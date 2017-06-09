@@ -30,6 +30,8 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
     DLogNode(gw)
   }
 
+  override lazy val publicInput: DLogNode = proposition
+
   def prove(challenge: Array[Byte]): SchnorrNode = {
     val g = dlog.getGenerator
     val gw = dlog.exponentiate(g, privateInput.w)
@@ -51,6 +53,4 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
     val sb = Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
     SchnorrNode(commonInput, challenge, sb)
   }
-
-  override val publicInput: DLogNode = proposition
 }

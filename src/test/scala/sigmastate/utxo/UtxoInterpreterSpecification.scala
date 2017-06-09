@@ -436,7 +436,7 @@ class UtxoInterpreterSpecification extends PropSpec
   /**
     * Whether A or B, or both are able to sign a transaction
     */
-  property("simplest linear-sized ring signature") {
+  ignore("simplest linear-sized ring signature") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
 
