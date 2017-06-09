@@ -80,7 +80,7 @@ object ActorParty {
 trait Prover[SP <: SigmaProtocol[SP],
 CI <: SigmaProtocolCommonInput[SP],
 PI <: SigmaProtocolPrivateInput[SP]] extends Party[SP, CI] {
-  val privateInput: PI
+  val privateInputOpt: Option[PI]
 }
 
 

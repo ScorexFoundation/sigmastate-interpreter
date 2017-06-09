@@ -100,7 +100,7 @@ package object DLogProtocol {
     override def bytes: Array[Byte] = z.toByteArray
   }
 
-  class DLogInteractiveProver(override val publicInput: DLogNode, override val privateInput: DLogProverInput)
+  class DLogInteractiveProver(override val publicInput: DLogNode, override val privateInputOpt: Option[DLogProverInput])
     extends InteractiveProver[DLogSigmaProtocol, DLogNode, DLogProverInput] {
 
     lazy val group = publicInput.dlogGroup
@@ -116,6 +116,9 @@ package object DLogProtocol {
     }
 
     override def secondMessage(challenge: Challenge): SecondDLogProverMessage = {
+      assert(privateInputOpt.isDefined)
+      val privateInput = privateInputOpt.get
+
       val q: BigInteger = group.getOrder
       val e: BigInteger = new BigInteger(1, challenge.bytes)
       val ew: BigInteger = e.multiply(privateInput.w).mod(q)
@@ -125,8 +128,8 @@ package object DLogProtocol {
     }
   }
 
-  case class DLogActorProver(override val publicInput: DLogNode, override val privateInput: DLogProverInput)
-    extends DLogInteractiveProver(publicInput, privateInput) with ActorProver[DLogSigmaProtocol, DLogNode, DLogProverInput]
+  case class DLogActorProver(override val publicInput: DLogNode, override val privateInputOpt: Option[DLogProverInput])
+    extends DLogInteractiveProver(publicInput, privateInputOpt) with ActorProver[DLogSigmaProtocol, DLogNode, DLogProverInput]
 
   case class DLogTranscript(override val x: DLogNode,
                             override val a: FirstDLogProverMessage,

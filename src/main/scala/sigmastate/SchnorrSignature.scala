@@ -5,6 +5,7 @@ import edu.biu.scapi.primitives.dlog.DlogGroup
 import scapi.sigma.rework.{Challenge, NonInteractiveProver}
 import scapi.sigma.rework.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
+import sigmastate.SchnorrSignature.dlog
 
 
 // TODO: make implementation corresponding to RFC-8032 standard for EdDSA signatures
@@ -18,26 +19,21 @@ object SchnorrSignature {
   implicit val dlog: DlogGroup = new BcDlogECFp()
 }
 
-case class SchnorrSignatureSigner(privateInput: DLogProverInput)
+case class SchnorrSignatureSigner(override val publicInput: DLogNode, privateInputOpt: Option[DLogProverInput])
   extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, DLogNode, SchnorrNode] {
 
   import SchnorrSignature._
 
-  lazy val proposition: DLogNode = {
-    val g = dlog.getGenerator
-    val gw = dlog.exponentiate(g, privateInput.w)
-
-    DLogNode(gw)
-  }
-
-  override lazy val publicInput: DLogNode = proposition
-
   def prove(challenge: Array[Byte]): SchnorrNode = {
+    assert(privateInputOpt.isDefined)
+
+    val privateInput = privateInputOpt.get
+
     val g = dlog.getGenerator
     val gw = dlog.exponentiate(g, privateInput.w)
     val commonInput = DLogNode(gw)
 
-    val prover = new DLogInteractiveProver(commonInput, privateInput)
+    val prover = new DLogInteractiveProver(commonInput, privateInputOpt)
 
     val fm = prover.firstMessage
 
@@ -52,5 +48,19 @@ case class SchnorrSignatureSigner(privateInput: DLogProverInput)
 
     val sb = Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
     SchnorrNode(commonInput, challenge, sb)
+  }
+}
+
+object SchnorrSignatureSigner {
+  def generate(privateInput: DLogProverInput): SchnorrSignatureSigner = {
+
+    val publicInput: DLogNode = {
+      val g = dlog.getGenerator
+      val gw = dlog.exponentiate(g, privateInput.w)
+
+      DLogNode(gw)
+    }
+
+    SchnorrSignatureSigner(publicInput, Some(privateInput))
   }
 }

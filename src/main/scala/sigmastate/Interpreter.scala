@@ -226,7 +226,7 @@ object TreeConversion extends Attribution {
         throw new Exception("simulation isn't done yet")
       } else {
         val privKey = secrets.find(_.publicImage.h == proposition.h).get
-        SchnorrSignatureSigner(privKey).prove(challenge)
+        SchnorrSignatureSigner.generate(privKey).prove(challenge)
       }
 
     case CAndUnproven(proposition, Some(challenge), children) =>
@@ -234,12 +234,13 @@ object TreeConversion extends Attribution {
       CAndUncheckedNode(proposition, challenge, proven)
 
     case COrUnproven(proposition, Some(challenge), children) =>
-      assert(Helpers.xor(children.map(_.challengeOpt.get):_*).sameElements(challenge))
+      assert(Helpers.xor(children.map(_.challengeOpt.get): _*).sameElements(challenge))
 
       val proven = children.map(proving(secrets))
       COrUncheckedNode(proposition, challenge, proven)
     case _ => ???
-  }}
+  }
+  }
 }
 
 trait DLogProverInterpreter extends ProverInterpreter {
@@ -265,11 +266,11 @@ trait DLogProverInterpreter extends ProverInterpreter {
       val rootChallenge = cor.challengeOpt.get
       val challengeSize = rootChallenge.length
       val randomChallenges = cor.children.tail.map(_ => Random.randomBytes(challengeSize))
-      val realChallenge = Helpers.xor(rootChallenge +: randomChallenges:_*)
+      val realChallenge = Helpers.xor(rootChallenge +: randomChallenges: _*)
       val childrenChallenges = realChallenge +: randomChallenges
       assert(childrenChallenges.size == cor.children.size)
 
-      cor.copy(children = cor.children.zip(childrenChallenges).map{case (ut, ch) => ut.setChallenge(ch)} )
+      cor.copy(children = cor.children.zip(childrenChallenges).map { case (ut, ch) => ut.setChallenge(ch) })
   }
 
   override def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree = {
