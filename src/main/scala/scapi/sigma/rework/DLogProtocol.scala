@@ -103,7 +103,7 @@ package object DLogProtocol {
   class DLogInteractiveProver(override val publicInput: DLogNode, override val privateInputOpt: Option[DLogProverInput])
     extends InteractiveProver[DLogSigmaProtocol, DLogNode, DLogProverInput] {
 
-    lazy val group = publicInput.dlogGroup
+    lazy val group: DlogGroup = publicInput.dlogGroup
 
     var rOpt: Option[BigInteger] = None
 
@@ -116,7 +116,8 @@ package object DLogProtocol {
     }
 
     override def secondMessage(challenge: Challenge): SecondDLogProverMessage = {
-      assert(privateInputOpt.isDefined)
+      assert(privateInputOpt.isDefined, "Secret is not known, can simulate only")
+
       val privateInput = privateInputOpt.get
 
       val q: BigInteger = group.getOrder
@@ -126,6 +127,8 @@ package object DLogProtocol {
       rOpt = None
       SecondDLogProverMessage(z)
     }
+
+
   }
 
   case class DLogActorProver(override val publicInput: DLogNode, override val privateInputOpt: Option[DLogProverInput])
