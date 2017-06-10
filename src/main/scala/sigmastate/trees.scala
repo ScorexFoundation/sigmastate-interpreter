@@ -276,24 +276,26 @@ case class COrUncheckedNode(override val proposition: COR, override val challeng
   extends UncheckedSigmaTree(proposition, challenge) {
 
   override def verify(): Boolean = {
-    //check challenge
-    leafs.flatMap {
+    lazy val challenges = leafs.flatMap {
       _ match {
         case NoProof => None
         case ut: UncheckedSigmaTree[_] => Some(ut.challenge)
       }
-    }.reduce {
+    }
+
+    lazy val challengeCheck = challenges.reduce {
       {
         case (c1: Array[Byte], c2: Array[Byte]) =>
           Helpers.xor(c1, c2)
       }: ((Array[Byte], Array[Byte]) => Array[Byte])
     }.sameElements(challenge)
 
-    //check
-    leafs.forall {
+    lazy val subprotocolsCheck = leafs.forall {
       case NoProof => true
       case ut: UncheckedSigmaTree[_] => ut.verify()
     }
+
+    challengeCheck && subprotocolsCheck
   }
 
   override val propCode: PropositionCode = COR.Code

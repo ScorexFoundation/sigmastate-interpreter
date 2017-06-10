@@ -25,10 +25,10 @@ case class SchnorrSignatureSigner(override val publicInput: DLogNode, privateInp
   def prove(challenge: Array[Byte]): SchnorrNode = {
     val prover = new DLogInteractiveProver(publicInput, privateInputOpt)
 
-    val (fm,sm) = privateInputOpt.isDefined match {
-        //real proving
+    val (fm, sm) = privateInputOpt.isDefined match {
+      //real proving
       case true => prover.firstMessage -> prover.secondMessage(Challenge(challenge))
-        //simulation
+      //simulation
       case false => prover.simulate(Challenge(challenge))
     }
 

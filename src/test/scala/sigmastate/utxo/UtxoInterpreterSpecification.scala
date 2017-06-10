@@ -459,7 +459,6 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, prB, challenge).get shouldBe true
 
     val prC = proverC.prove(prop, ctx, challenge).get
-    println(prC)
     verifier.verify(prop, ctx, prC, challenge).get shouldBe false
   }
 }

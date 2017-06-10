@@ -34,8 +34,6 @@ package object DLogProtocol {
     override lazy val dlogGroup: DlogGroup = DLogNode.dlogGroup
     override val soundness: Int = 256
 
-    //lazy val toCommonInput: DLogCommonInput = DLogCommonInput(dlogGroup, h, soundness)
-
     override lazy val bytes = {
       val gw = h.generateSendableData().asInstanceOf[ECElementSendableData]
       val gwx = gw.getX.toByteArray
