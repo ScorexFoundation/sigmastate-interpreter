@@ -5,6 +5,7 @@ import scapi.sigma.rework.DLogProtocol._
 import scapi.sigma.rework.{Challenge, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
+import scorex.crypto.hash.Blake2b256
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utils.Helpers
 
@@ -219,12 +220,12 @@ sealed trait UncheckedTree extends ProofTree
 
 case object NoProof extends UncheckedTree
 
-abstract class UncheckedSigmaTree[ST <: SigmaTree](val proposition: ST, val challenge: Array[Byte])
+abstract class UncheckedSigmaTree[ST <: SigmaTree](val proposition: ST, val message: Array[Byte])
   extends Proof[ST] with UncheckedTree
 
 case class SchnorrNode(override val proposition: DLogNode,
-                       override val challenge: Array[Byte], signature: Array[Byte]) extends
-  UncheckedSigmaTree[DLogNode](proposition, challenge)
+                       override val message: Array[Byte], signature: Array[Byte]) extends
+  UncheckedSigmaTree[DLogNode](proposition, message)
   with ProofOfKnowledge[DLogSigmaProtocol, DLogNode] {
 
   override def verify(): Boolean = {
@@ -233,13 +234,15 @@ case class SchnorrNode(override val proposition: DLogNode,
     val gr = new ECElementSendableData(grx, gry)
 
     //h = g^w is a pubkey
-    val x: DLogNode = proposition
+    val h: DLogNode = proposition
 
     val a: FirstDLogProverMessage = FirstDLogProverMessage(gr)
 
+    val e = Blake2b256(grx.toByteArray ++ gry.toByteArray ++ message)
+
     val z: SecondDLogProverMessage = SecondDLogProverMessage(zb)
 
-    val sigmaTranscript = DLogTranscript(x, a, Challenge(challenge), z)
+    val sigmaTranscript = DLogTranscript(h, a, Challenge(e), z)
     sigmaTranscript.accepted
   }
 
@@ -249,8 +252,8 @@ case class SchnorrNode(override val proposition: DLogNode,
   override def serializer: Serializer[M] = ???
 }
 
-case class CAndUncheckedNode(override val proposition: CAND, override val challenge: Array[Byte], leafs: Seq[UncheckedTree])
-  extends UncheckedSigmaTree[CAND](proposition, challenge) {
+case class CAndUncheckedNode(override val proposition: CAND, override val message: Array[Byte], leafs: Seq[UncheckedTree])
+  extends UncheckedSigmaTree[CAND](proposition, message) {
 
   /**
     * To verify an AND sigma protocol, we check sub-protocols with the same challenge
@@ -261,7 +264,7 @@ case class CAndUncheckedNode(override val proposition: CAND, override val challe
     leafs.zip(proposition.sigmaTrees).forall { case (proof, prop) =>
       proof match {
         case NoProof => true
-        case ut: UncheckedSigmaTree[_] => ut.challenge.sameElements(this.challenge) && ut.verify()
+        case ut: UncheckedSigmaTree[_] => ut.message.sameElements(this.message) && ut.verify()
       }
     }
 
@@ -272,14 +275,14 @@ case class CAndUncheckedNode(override val proposition: CAND, override val challe
 }
 
 
-case class COrUncheckedNode(override val proposition: COR, override val challenge: Array[Byte], leafs: Seq[UncheckedTree])
-  extends UncheckedSigmaTree(proposition, challenge) {
+case class COrUncheckedNode(override val proposition: COR, override val message: Array[Byte], leafs: Seq[UncheckedTree])
+  extends UncheckedSigmaTree(proposition, message) {
 
   override def verify(): Boolean = {
     lazy val challenges = leafs.flatMap {
       _ match {
         case NoProof => None
-        case ut: UncheckedSigmaTree[_] => Some(ut.challenge)
+        case ut: UncheckedSigmaTree[_] => Some(ut.message)
       }
     }
 
@@ -288,7 +291,7 @@ case class COrUncheckedNode(override val proposition: COR, override val challeng
         case (c1: Array[Byte], c2: Array[Byte]) =>
           Helpers.xor(c1, c2)
       }: ((Array[Byte], Array[Byte]) => Array[Byte])
-    }.sameElements(challenge)
+    }.sameElements(message)
 
     lazy val subprotocolsCheck = leafs.forall {
       case NoProof => true

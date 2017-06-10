@@ -6,7 +6,7 @@ import scorex.core.serialization.BytesSerializable
 
 trait Proof[P <: SigmaProposition] extends BytesSerializable {
   val proposition: P
-  val challenge: ProofOfKnowledge.Challenge
+  val message: ProofOfKnowledge.Message
 
   def verify(): Boolean
 
@@ -17,6 +17,6 @@ trait ProofOfKnowledge[SP <: SigmaProtocol[SP], CI <: SigmaProofOfKnowledgeTree[
   extends Proof[CI]
 
 object ProofOfKnowledge {
-  type Challenge = Array[Byte]
+  type Message = Array[Byte]
 }
 

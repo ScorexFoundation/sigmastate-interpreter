@@ -115,8 +115,8 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.evaluate(crowdFundingScript, ctx1, proofP, challenge).get shouldBe true
 
     //backer can't generate a proof
-    val proofBTry = backerProver.prove(crowdFundingScript, ctx1, challenge)
-    proofBTry.isSuccess shouldBe false
+    val proofBf = backerProver.prove(crowdFundingScript, ctx1, challenge).get
+    verifier.verify(crowdFundingScript, ctx1, proofBf, challenge).get shouldBe false
 
 
     //Second case: height < timeout, project is NOT able to claim amount of tokens not less than required threshold
@@ -145,8 +145,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx3 = UtxoContext(currentHeight = timeout.value, spendingTransaction = tx3, self = outputToSpend -> 0)
 
     //project cant' generate a proof
-    val proofP3Try = projectProver.prove(crowdFundingScript, ctx3, challenge)
-    proofP3Try.isSuccess shouldBe false
+    val proofP3f = projectProver.prove(crowdFundingScript, ctx3, challenge).get
+    verifier.verify(crowdFundingScript, ctx3, proofP3f, challenge).get shouldBe false
 
     //backer is generating a proof and it is passing verification
     val proofB = backerProver.prove(crowdFundingScript, ctx3, challenge).get.proof
@@ -408,12 +408,14 @@ class UtxoInterpreterSpecification extends PropSpec
     proverB.prove(prop1, ctxf1, challenge).isSuccess shouldBe false
 
     //A can't withdraw her coins in chain1 (generate a valid proof)
-    proverA.prove(prop1, ctxf1, challenge).isSuccess shouldBe false
+    println(proverA.prove(prop1, ctxf1, challenge))
+    val prf1 = proverA.prove(prop1, ctxf1, challenge).get
+    verifier.verify(prop1, ctxf1, prf1, challenge).get shouldBe false
+
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
     val ctxf2 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = fakeSelf)
     proverB.prove(prop2, ctxf2, challenge).isSuccess shouldBe false
-
 
     //Successful run below:
 

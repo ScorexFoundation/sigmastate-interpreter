@@ -137,7 +137,7 @@ trait Interpreter {
   }.asInstanceOf[SigmaStateTree])
 
 
-  def evaluate(exp: SigmaStateTree, context: CTX, proof: UncheckedTree, challenge: ProofOfKnowledge.Challenge): Try[Boolean] = Try {
+  def evaluate(exp: SigmaStateTree, context: CTX, proof: UncheckedTree, challenge: ProofOfKnowledge.Message): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
     cProp match {
       case TrueConstantNode => true
@@ -153,7 +153,7 @@ trait Interpreter {
   def verify(exp: SigmaStateTree,
              context: CTX,
              proverResult: ProverResult[ProofT],
-             challenge: ProofOfKnowledge.Challenge): Try[Boolean] = {
+             challenge: ProofOfKnowledge.Message): Try[Boolean] = {
     val ctxv = context.withExtension(proverResult.extension)
     evaluate(exp, ctxv, proverResult.proof, challenge)
   }
@@ -181,7 +181,7 @@ trait ProverInterpreter extends Interpreter {
 
   def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree
 
-  def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Challenge): Try[ProverResult[ProofT]] = Try {
+  def prove(exp: SigmaStateTree, context: CTX, challenge: ProofOfKnowledge.Message): Try[ProverResult[ProofT]] = Try {
     val candidateProp = reduceToCrypto(exp, context).get
 
     val (cProp, ext) = (candidateProp.isInstanceOf[SigmaT] match {
@@ -190,11 +190,11 @@ trait ProverInterpreter extends Interpreter {
         val extension = enrichContext(candidateProp)
         //todo: no need for full reduction here probably
         (reduceToCrypto(candidateProp, context.withExtension(extension)).get, extension)
-    }).ensuring(res =>
+    }).ensuring{res =>
       res._1.isInstanceOf[BooleanConstantNode] ||
         res._1.isInstanceOf[CAND] ||
         res._1.isInstanceOf[COR] ||
-        res._1.isInstanceOf[DLogNode])
+        res._1.isInstanceOf[DLogNode]}
 
 
     ProverResult(cProp match {

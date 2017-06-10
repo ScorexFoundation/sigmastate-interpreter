@@ -111,7 +111,7 @@ class TestingInterpreterSpecification extends PropSpec
       AND(GT(Height, IntLeaf(100)), dk1)
     )
 
-    val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
+    val challenge: ProofOfKnowledge.Message = Array.fill(32)(Random.nextInt(100).toByte)
 
     val proof1 = TestingInterpreter.prove(prop, env1, challenge).get.proof
 
@@ -123,7 +123,7 @@ class TestingInterpreterSpecification extends PropSpec
   property("Evaluation - no real proving - true case") {
     val prop1 = TrueConstantNode
 
-    val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
+    val challenge: ProofOfKnowledge.Message = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
     val env = TestingContext(99)
 
@@ -142,7 +142,7 @@ class TestingInterpreterSpecification extends PropSpec
   property("Evaluation - no real proving - false case") {
     val prop1 = FalseConstantNode
 
-    val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
+    val challenge: ProofOfKnowledge.Message = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
     val env = TestingContext(99)
 
@@ -164,7 +164,7 @@ class TestingInterpreterSpecification extends PropSpec
 
     val prop1 = EQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(hash))
 
-    val challenge: ProofOfKnowledge.Challenge = Array.fill(32)(Random.nextInt(100).toByte)
+    val challenge: ProofOfKnowledge.Message = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
     val env = TestingContext(99)
 
