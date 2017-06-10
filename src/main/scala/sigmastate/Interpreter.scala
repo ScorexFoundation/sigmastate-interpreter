@@ -223,7 +223,7 @@ object TreeConversion extends Attribution {
   val proving: Seq[DLogProtocol.DLogProverInput] => UnprovenTree => UncheckedTree = paramAttr { secrets => {
     case SchnorrUnproven(Some(challenge), simulated, proposition) =>
       if (simulated) {
-        throw new Exception("simulation isn't done yet")
+        SchnorrSignatureSigner(proposition.asInstanceOf[DLogNode],None).prove(challenge)
       } else {
         val privKey = secrets.find(_.publicImage.h == proposition.h).get
         SchnorrSignatureSigner.generate(privKey).prove(challenge)

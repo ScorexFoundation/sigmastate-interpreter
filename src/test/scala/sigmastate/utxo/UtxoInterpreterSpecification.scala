@@ -439,6 +439,8 @@ class UtxoInterpreterSpecification extends PropSpec
   ignore("simplest linear-sized ring signature") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
+    val proverC = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
 
     val pubkeyA = proverA.secrets.head.publicImage
     val pubkeyB = proverB.secrets.head.publicImage
@@ -449,6 +451,15 @@ class UtxoInterpreterSpecification extends PropSpec
     val challenge = Blake2b256("Hello World")
     val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
-    proverA.prove(prop, ctx, challenge).get
+
+    val prA = proverA.prove(prop, ctx, challenge).get
+    verifier.verify(prop, ctx, prA, challenge).get shouldBe true
+
+    val prB = proverB.prove(prop, ctx, challenge).get
+    verifier.verify(prop, ctx, prB, challenge).get shouldBe true
+
+    val prC = proverC.prove(prop, ctx, challenge).get
+    println(prC)
+    verifier.verify(prop, ctx, prC, challenge).get shouldBe false
   }
 }

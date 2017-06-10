@@ -23,13 +23,14 @@ case class SchnorrSignatureSigner(override val publicInput: DLogNode, privateInp
   extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, DLogNode, SchnorrNode] {
 
   def prove(challenge: Array[Byte]): SchnorrNode = {
-    assert(privateInputOpt.isDefined)
-
     val prover = new DLogInteractiveProver(publicInput, privateInputOpt)
 
-    val fm = prover.firstMessage
-
-    val sm = prover.secondMessage(Challenge(challenge))
+    val (fm,sm) = privateInputOpt.isDefined match {
+        //real proving
+      case true => prover.firstMessage -> prover.secondMessage(Challenge(challenge))
+        //simulation
+      case false => prover.simulate(Challenge(challenge))
+    }
 
     val grec = fm.ecData
     val z = sm.z
@@ -37,19 +38,8 @@ case class SchnorrSignatureSigner(override val publicInput: DLogNode, privateInp
     val grxb = grec.getX.toByteArray
     val gryb = grec.getY.toByteArray
     val zb = z.toByteArray
-
     val sb = Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
     SchnorrNode(publicInput, challenge, sb)
-  }
-
-  /**
-	  This method computes the following calculations:
-      SAMPLE a random z <- Zq
-			COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
-			OUTPUT (a,e,z).
-	**/
-  def simulate(challenge: Array[Byte]): SchnorrNode = {
-    ???
   }
 }
 
