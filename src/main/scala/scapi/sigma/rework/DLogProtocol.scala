@@ -108,6 +108,9 @@ package object DLogProtocol {
     var rOpt: Option[BigInteger] = None
 
     override def firstMessage: FirstDLogProverMessage = {
+      assert(privateInputOpt.isDefined, "Secret is not known, can simulate only")
+      assert(rOpt.isEmpty, "Already generated r")
+
       val qMinusOne = group.getOrder.subtract(BigInteger.ONE)
       val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
       rOpt = Some(r)
@@ -128,7 +131,21 @@ package object DLogProtocol {
       SecondDLogProverMessage(z)
     }
 
+    override def simulate(challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
+      assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
+      val qMinusOne = group.getOrder.subtract(BigInteger.ONE)
 
+      //SAMPLE a random z <- Zq
+      val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+
+      //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
+      val e: BigInteger = new BigInteger(1, challenge.bytes)
+      val minusE = group.getOrder.subtract(e)
+      val hToE = group.exponentiate(publicInput.h, minusE)
+      val gToZ = group.exponentiate(group.getGenerator, z)
+      val a = group.multiplyGroupElements(gToZ, hToE)
+      FirstDLogProverMessage(a.generateSendableData().asInstanceOf[ECElementSendableData]) -> SecondDLogProverMessage(z)
+    }
   }
 
   case class DLogActorProver(override val publicInput: DLogNode, override val privateInputOpt: Option[DLogProverInput])

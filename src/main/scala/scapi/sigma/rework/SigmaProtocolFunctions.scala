@@ -89,6 +89,8 @@ trait InteractiveProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[
 
   def firstMessage: SP#A
   def secondMessage(challenge: Challenge): SP#Z
+
+  def simulate(challenge: Challenge): (SP#A, SP#Z)
 }
 
 //todo: test
