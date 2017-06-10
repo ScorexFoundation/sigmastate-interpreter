@@ -120,9 +120,13 @@ trait Interpreter {
       reduced.size match {
         case i: Int if i == 0 => FalseConstantNode
         case i: Int if i == 1 => reduced.head
+        case i: Int if i == 2 =>
+          if (reduced.forall(_.isInstanceOf[SigmaTree]))
+            COR2(reduced.head.asInstanceOf[SigmaTree], reduced.tail.head.asInstanceOf[SigmaTree])
+          else OR(reduced)
         case _ =>
           if (reduced.forall(_.isInstanceOf[SigmaTree]))
-            COR(reduced.map(_.asInstanceOf[SigmaTree]))
+            ??? //todo: COR for > 2 args
           else OR(reduced)
       }
   })
@@ -193,7 +197,7 @@ trait ProverInterpreter extends Interpreter {
     }).ensuring{res =>
       res._1.isInstanceOf[BooleanConstantNode] ||
         res._1.isInstanceOf[CAND] ||
-        res._1.isInstanceOf[COR] ||
+        res._1.isInstanceOf[COR2] ||
         res._1.isInstanceOf[DLogNode]}
 
 
@@ -216,7 +220,7 @@ object TreeConversion extends Attribution {
   //to be applied bottom up, converts SigmaTree => UnprovenTree
   val convertToUnproven: SigmaTree => UnprovenTree = attr {
     case CAND(sigmaTrees) => CAndUnproven(CAND(sigmaTrees), None, sigmaTrees.map(convertToUnproven))
-    case COR(sigmaTrees) => COrUnproven(COR(sigmaTrees), None, sigmaTrees.map(convertToUnproven))
+    case COR2(left, right) => COr2Unproven(COR2(left, right), None, convertToUnproven(left), convertToUnproven(right))
     case ci: DLogNode => SchnorrUnproven(None, simulated = false, ci)
   }
 
@@ -233,11 +237,10 @@ object TreeConversion extends Attribution {
       val proven = children.map(proving(secrets))
       CAndUncheckedNode(proposition, challenge, proven)
 
-    case COrUnproven(proposition, Some(challenge), children) =>
-      assert(Helpers.xor(children.map(_.challengeOpt.get): _*).sameElements(challenge))
+    case COr2Unproven(proposition, Some(challenge), leftChild, rightChild) =>
+      assert(Helpers.xor(leftChild.challengeOpt.get, rightChild.challengeOpt.get).sameElements(challenge))
 
-      val proven = children.map(proving(secrets))
-      COrUncheckedNode(proposition, challenge, proven)
+      COr2UncheckedNode(proposition, challenge, proving(secrets)(leftChild), proving(secrets)(rightChild))
     case _ => ???
   }
   }
@@ -262,7 +265,9 @@ trait DLogProverInterpreter extends ProverInterpreter {
       val challenge = cand.challengeOpt.get
       cand.copy(children = cand.children.map(_.setChallenge(challenge)))
 
-    case cor: COrUnproven if cor.challengeOpt.isDefined =>
+    case cor: COr2Unproven if cor.challengeOpt.isDefined =>
+      ???
+      /*
       val rootChallenge = cor.challengeOpt.get
       val challengeSize = rootChallenge.length
       val randomChallenges = cor.children.tail.map(_ => Random.randomBytes(challengeSize))
@@ -270,7 +275,7 @@ trait DLogProverInterpreter extends ProverInterpreter {
       val childrenChallenges = realChallenge +: randomChallenges
       assert(childrenChallenges.size == cor.children.size)
 
-      cor.copy(children = cor.children.zip(childrenChallenges).map { case (ut, ch) => ut.setChallenge(ch) })
+      cor.copy(children = cor.children.zip(childrenChallenges).map { case (ut, ch) => ut.setChallenge(ch) })*/
   }
 
   override def normalizeUnprovenTree(unprovenTree: UnprovenTree): UnprovenTree = {

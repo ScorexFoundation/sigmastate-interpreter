@@ -25,12 +25,12 @@ object CAND {
   val Code: PropositionCode = 101: Byte
 }
 
-case class COR(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
-  override val code: PropositionCode = COR.Code
+case class COR2(leftTree: SigmaTree, rightTree: SigmaTree) extends SigmaTree {
+  override val code: PropositionCode = COR2.Code
   override type M = this.type
 }
 
-object COR {
+object COR2 {
   val Code: PropositionCode = 101: Byte
 }
 
@@ -204,9 +204,11 @@ case class CAndUnproven(override val proposition: CAND,
   override def setChallenge(challenge: Array[Byte]) = CAndUnproven(proposition, Some(challenge), children)
 }
 
-case class COrUnproven(override val proposition: COR,
-                       override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree {
-  override def setChallenge(challenge: Array[Byte]) = COrUnproven(proposition, Some(challenge), children)
+case class COr2Unproven(override val proposition: COR2,
+                        override val challengeOpt: Option[Array[Byte]] = None,
+                        leftChild: UnprovenTree,
+                        rightChild: UnprovenTree) extends UnprovenTree {
+  override def setChallenge(challenge: Array[Byte]) = COr2Unproven(proposition, Some(challenge), leftChild, rightChild)
 }
 
 
@@ -275,35 +277,28 @@ case class CAndUncheckedNode(override val proposition: CAND, override val messag
 }
 
 
-case class COrUncheckedNode(override val proposition: COR, override val message: Array[Byte], leafs: Seq[UncheckedTree])
+case class COr2UncheckedNode(override val proposition: COR2,
+                             override val message: Array[Byte],
+                             leftChild: UncheckedTree,
+                             rightChild: UncheckedTree
+                            )
   extends UncheckedSigmaTree(proposition, message) {
 
   override def verify(): Boolean = {
-    lazy val challenges = leafs.flatMap {
-      _ match {
-        case NoProof => None
-        case ut: UncheckedSigmaTree[_] => Some(ut.message)
-      }
-    }
+    lazy val noProof = leftChild.isInstanceOf[NoProof.type] && rightChild.isInstanceOf[NoProof.type]
 
-    lazy val challengeCheck = challenges.reduce {
-      {
-        case (c1: Array[Byte], c2: Array[Byte]) =>
-          Helpers.xor(c1, c2)
-      }: ((Array[Byte], Array[Byte]) => Array[Byte])
-    }.sameElements(message)
+    lazy val challengeCheck = Helpers.xor(leftChild.asInstanceOf[UncheckedSigmaTree[_]].message,
+      rightChild.asInstanceOf[UncheckedSigmaTree[_]].message).sameElements(message)
 
-    lazy val subprotocolsCheck = leafs.forall {
-      case NoProof => true
-      case ut: UncheckedSigmaTree[_] => ut.verify()
-    }
+    lazy val subprotocolsCheck = leftChild.asInstanceOf[UncheckedSigmaTree[_]].verify() &&
+      rightChild.asInstanceOf[UncheckedSigmaTree[_]].verify()
 
-    challengeCheck && subprotocolsCheck
+    noProof || (challengeCheck && subprotocolsCheck)
   }
 
-  override val propCode: PropositionCode = COR.Code
+  override val propCode: PropositionCode = COR2.Code
 
-  override type M = COrUncheckedNode
+  override type M = COr2UncheckedNode
 
   override def serializer: Serializer[M] = ???
 }
