@@ -208,7 +208,7 @@ trait ProverInterpreter extends Interpreter {
           case FalseConstantNode => ???
         }
       case _ =>
-        val ct = TreeConversion.convertToUnproven(cProp.asInstanceOf[SigmaT]).setChallenge(challenge)
+        val ct = TreeConversion.convertToUnproven(cProp.asInstanceOf[SigmaT]).withChallenge(challenge)
         val toProve = normalizeUnprovenTree(ct)
         prove(toProve)
     }, ext)
@@ -263,7 +263,7 @@ trait DLogProverInterpreter extends ProverInterpreter {
   val challengeDisperse: Strategy = rule[UnprovenTree] {
     case cand: CAndUnproven if cand.challengeOpt.isDefined =>
       val challenge = cand.challengeOpt.get
-      cand.copy(children = cand.children.map(_.setChallenge(challenge)))
+      cand.copy(children = cand.children.map(_.withChallenge(challenge)))
 
     case cor: COr2Unproven if cor.challengeOpt.isDefined =>
       ???

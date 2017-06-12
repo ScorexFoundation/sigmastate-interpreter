@@ -102,9 +102,9 @@ sealed trait Triple extends StateTree {
   val right: SigmaStateTree
 
   //todo: define via F-Bounded polymorphism?
-  def replaceLeft(newLeft: SigmaStateTree): Relation
+  def withLeft(newLeft: SigmaStateTree): Relation
 
-  def replaceRight(newRight: SigmaStateTree): Relation
+  def withRight(newRight: SigmaStateTree): Relation
 }
 
 
@@ -112,74 +112,74 @@ sealed trait TwoArgumentsOperation extends Triple
 
 case class Plus(override val left: SigmaStateTree,
                 override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): Plus = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): Plus = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): Plus = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): Plus = copy(right = newRight)
 }
 
 case class Minus(override val left: SigmaStateTree,
                  override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): Minus = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): Minus = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): Minus = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): Minus = copy(right = newRight)
 }
 
 case class Xor(override val left: SigmaStateTree,
                override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): Xor = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): Xor = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): Xor = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): Xor = copy(right = newRight)
 }
 
 case class Append(override val left: SigmaStateTree,
                   override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): Append = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): Append = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): Append = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): Append = copy(right = newRight)
 }
 
 sealed trait Relation extends Triple
 
 case class LT(override val left: SigmaStateTree,
               override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): LT = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): LT = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): LT = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): LT = copy(right = newRight)
 }
 
 case class LE(override val left: SigmaStateTree,
               override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): LE = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): LE = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): LE = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): LE = copy(right = newRight)
 }
 
 case class GT(override val left: SigmaStateTree,
               override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): GT = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): GT = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): GT = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): GT = copy(right = newRight)
 }
 
 case class GE(override val left: SigmaStateTree,
               override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): GE = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): GE = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): GE = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): GE = copy(right = newRight)
 }
 
 case class EQ(override val left: SigmaStateTree,
               override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): EQ = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): EQ = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): EQ = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): EQ = copy(right = newRight)
 }
 
 case class NEQ(override val left: SigmaStateTree,
                override val right: SigmaStateTree) extends Relation {
-  def replaceLeft(newLeft: SigmaStateTree): NEQ = copy(left = newLeft)
+  def withLeft(newLeft: SigmaStateTree): NEQ = copy(left = newLeft)
 
-  def replaceRight(newRight: SigmaStateTree): NEQ = copy(right = newRight)
+  def withRight(newRight: SigmaStateTree): NEQ = copy(right = newRight)
 }
 
 
@@ -192,7 +192,7 @@ sealed trait UnprovenTree extends ProofTree {
 
   val challengeOpt: Option[Array[Byte]]
 
-  def setChallenge(challenge: Array[Byte]): UnprovenTree
+  def withChallenge(challenge: Array[Byte]): UnprovenTree
 }
 
 sealed trait UnprovenLeaf extends UnprovenTree {
@@ -201,21 +201,21 @@ sealed trait UnprovenLeaf extends UnprovenTree {
 
 case class CAndUnproven(override val proposition: CAND,
                         override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree {
-  override def setChallenge(challenge: Array[Byte]) = CAndUnproven(proposition, Some(challenge), children)
+  override def withChallenge(challenge: Array[Byte]) = CAndUnproven(proposition, Some(challenge), children)
 }
 
 case class COr2Unproven(override val proposition: COR2,
                         override val challengeOpt: Option[Array[Byte]] = None,
                         leftChild: UnprovenTree,
                         rightChild: UnprovenTree) extends UnprovenTree {
-  override def setChallenge(challenge: Array[Byte]) = COr2Unproven(proposition, Some(challenge), leftChild, rightChild)
+  override def withChallenge(challenge: Array[Byte]) = COr2Unproven(proposition, Some(challenge), leftChild, rightChild)
 }
 
 
 case class SchnorrUnproven(override val challengeOpt: Option[Array[Byte]] = None,
                            override val simulated: Boolean,
                            override val proposition: DLogNode) extends UnprovenLeaf {
-  override def setChallenge(challenge: Array[Byte]) = SchnorrUnproven(Some(challenge), simulated, proposition)
+  override def withChallenge(challenge: Array[Byte]) = SchnorrUnproven(Some(challenge), simulated, proposition)
 }
 
 sealed trait UncheckedTree extends ProofTree
