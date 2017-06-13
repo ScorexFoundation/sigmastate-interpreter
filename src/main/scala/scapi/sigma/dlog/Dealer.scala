@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 import akka.actor.{ActorSystem, Props}
-import edu.biu.scapi.primitives.dlog.miracl.MiraclDlogECF2m
+import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bouncycastle.util.BigIntegers
 import scapi.sigma.rework.SigmaProtocolFunctions.StartInteraction
 
@@ -19,14 +19,6 @@ import scapi.sigma.rework.SigmaProtocolFunctions.StartInteraction
   */
 
 object Dealer extends App {
-  //adding Miracl to libraries being loaded
-  System.setProperty("java.library.path", System.getProperty("java.library.path") + ":/usr/lib/scapi")
-  val sysPathsField = classOf[ClassLoader].getDeclaredField("sys_paths")
-  sysPathsField.setAccessible(true)
-  sysPathsField.set(null, null)
-  //println(System.getProperty("java.library.path"))
-  System.loadLibrary("MiraclJavaInterface")
-
   val sys = ActorSystem("SigmaProtocolExample")
 
   val soundness = 40
@@ -34,7 +26,7 @@ object Dealer extends App {
 
   val random = new SecureRandom()
 
-  val dlog = new MiraclDlogECF2m("K-233")
+  val dlog = new BcDlogECFp()
   val qMinusOne = dlog.getOrder.subtract(BigInteger.ONE)
   val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, random)
   val h = dlog.exponentiate(dlog.getGenerator, w)
