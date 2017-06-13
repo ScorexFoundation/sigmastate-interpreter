@@ -6,7 +6,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef}
 import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocolMsg
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import scorex.core.transaction.state.Secret
-import sigmastate.{ProofOfKnowledge, SigmaProofOfKnowledgeProposition, SigmaProofOfKnowledgeTree, UncheckedTree}
+import sigmastate.{ProofOfKnowledge, SigmaProofOfKnowledgeTree, UncheckedTree}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global

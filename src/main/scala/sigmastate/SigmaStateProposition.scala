@@ -1,8 +1,7 @@
 package sigmastate
 
-import scapi.sigma.rework._
 import scorex.core.serialization.Serializer
-import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
+import scorex.core.transaction.box.proposition.Proposition
 
 
 trait SigmaStateProposition extends Proposition {
@@ -18,6 +17,3 @@ trait SigmaProposition extends SigmaStateProposition {
 object SigmaProposition {
   type PropositionCode = Byte
 }
-
-trait SigmaProofOfKnowledgeProposition[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP]]
-  extends SigmaProposition with ProofOfKnowledgeProposition[S]  with SigmaProtocolCommonInput[SP] with SigmaTree
