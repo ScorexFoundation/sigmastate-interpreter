@@ -18,7 +18,7 @@ object SchnorrSignature {
   implicit val dlog: DlogGroup = new BcDlogECFp()
 }
 
-case class SchnorrSignatureSigner(override val publicInput: DLogNode, privateInputOpt: Option[DLogProverInput])
+case class SchnorrSigner(override val publicInput: DLogNode, privateInputOpt: Option[DLogProverInput])
   extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, DLogNode, SchnorrNode] {
 
   def prove(message: Array[Byte]): SchnorrNode = {
@@ -45,8 +45,8 @@ case class SchnorrSignatureSigner(override val publicInput: DLogNode, privateInp
   }
 }
 
-object SchnorrSignatureSigner {
-  def generate(privateInput: DLogProverInput): SchnorrSignatureSigner = {
+object SchnorrSigner {
+  def generate(privateInput: DLogProverInput): SchnorrSigner = {
 
     val publicInput: DLogNode = {
       val g = dlog.getGenerator
@@ -55,6 +55,6 @@ object SchnorrSignatureSigner {
       DLogNode(gw)
     }
 
-    SchnorrSignatureSigner(publicInput, Some(privateInput))
+    SchnorrSigner(publicInput, Some(privateInput))
   }
 }
