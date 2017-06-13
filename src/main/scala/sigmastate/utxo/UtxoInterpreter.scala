@@ -70,7 +70,7 @@ class UtxoInterpreter extends Interpreter {
     }
   }
 
-  def ssSubst(context: UtxoContext) = everywherebu(rule[Value] { case SelfScript => PropLeaf(context.self._1.proposition) })
+  def ssSubst(context: UtxoContext): Strategy = everywherebu(rule[Value] { case SelfScript => PropLeaf(context.self._1.proposition) })
 
   def varSubst(context: UtxoContext): Strategy = everywherebu(
     rule[Value] {

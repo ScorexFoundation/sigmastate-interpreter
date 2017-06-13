@@ -34,7 +34,7 @@ package object DLogProtocol {
     override lazy val dlogGroup: DlogGroup = DLogNode.dlogGroup
     override val soundness: Int = 256
 
-    override lazy val bytes = {
+    override lazy val bytes: Array[Byte] = {
       val gw = h.generateSendableData().asInstanceOf[ECElementSendableData]
       val gwx = gw.getX.toByteArray
       val gwy = gw.getY.toByteArray
