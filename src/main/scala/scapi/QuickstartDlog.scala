@@ -8,13 +8,6 @@ import org.bouncycastle.util.BigIntegers
 
 
 object QuickstartDlog extends App {
-  /* System.setProperty("java.library.path", System.getProperty("java.library.path") + ":/usr/lib/scapi")
-   val sysPathsField = classOf[ClassLoader].getDeclaredField("sys_paths")
-   sysPathsField.setAccessible(true)
-   sysPathsField.set(null, null)
-   //println(System.getProperty("java.library.path"))
-   System.loadLibrary("OpenSSLJavaInterface")
- */
 
   val dlog = new BcDlogECFp()
   val random = new SecureRandom()
