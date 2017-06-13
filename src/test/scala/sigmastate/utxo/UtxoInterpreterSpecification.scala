@@ -7,6 +7,7 @@ import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate._
+import sigmastate.interpreter.DLogProverInterpreter
 import sigmastate.utils.Helpers
 
 

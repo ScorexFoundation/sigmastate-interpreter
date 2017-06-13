@@ -3,6 +3,8 @@ package sigmastate.utxo
 import sigmastate._
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import sigmastate.interpreter.Interpreter
+
 import scala.collection.mutable
 
 

@@ -7,6 +7,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
+import sigmastate.interpreter.{Context, ContextExtension, DLogProverInterpreter, Interpreter}
 
 import scala.util.Random
 

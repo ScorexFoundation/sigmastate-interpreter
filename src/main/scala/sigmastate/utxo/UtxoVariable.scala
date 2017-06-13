@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
 import sigmastate._
+import sigmastate.interpreter.{Context, ContextExtension}
 
 
 case class UtxoContext(currentHeight: Long,
