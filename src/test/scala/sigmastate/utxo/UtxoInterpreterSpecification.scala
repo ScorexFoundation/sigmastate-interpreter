@@ -15,7 +15,7 @@ class UtxoProvingInterpreter extends UtxoInterpreter with ProverInterpreter {
 
   override lazy val secrets: Seq[DLogProverInput] = {
     import SchnorrSignature._
-    Seq(DLogProverInput.random()._1)
+    (1 to 2).map(_ => DLogProverInput.random()._1)
   }
 
   override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = (1 to 10).map { i =>
@@ -99,7 +99,7 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val outputToSpend = SigmaStateBox(10, crowdFundingScript)
-    val challenge = Blake2b256("Hello World") //normally challenge to be defined by spending transaction bytes
+    val message = Blake2b256("Hello World") //normally message to be defined by spending transaction bytes
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
 
@@ -112,11 +112,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx1 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx1, self = outputToSpend -> 0)
 
     //project is generating a proof and it is passing verification
-    val proofP = projectProver.prove(crowdFundingScript, ctx1, challenge).get.proof
-    verifier.verify(crowdFundingScript, ctx1, proofP, challenge).get shouldBe true
+    val proofP = projectProver.prove(crowdFundingScript, ctx1, message).get.proof
+    verifier.verify(crowdFundingScript, ctx1, proofP, message).get shouldBe true
 
     //backer can't generate a proof
-    val proofBf = backerProver.prove(crowdFundingScript, ctx1, challenge).isFailure shouldBe true
+    val proofBf = backerProver.prove(crowdFundingScript, ctx1, message).isFailure shouldBe true
 
 
     //Second case: height < timeout, project is NOT able to claim amount of tokens not less than required threshold
@@ -128,11 +128,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx2 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx2, self = outputToSpend -> 0)
 
     //project cant' generate a proof
-    val proofP2Try = projectProver.prove(crowdFundingScript, ctx2, challenge)
+    val proofP2Try = projectProver.prove(crowdFundingScript, ctx2, message)
     proofP2Try.isSuccess shouldBe false
 
     //backer can't generate a proof
-    val proofB2Try = backerProver.prove(crowdFundingScript, ctx2, challenge)
+    val proofB2Try = backerProver.prove(crowdFundingScript, ctx2, message)
     proofB2Try.isSuccess shouldBe false
 
     //Third case: height >= timeout
@@ -145,11 +145,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx3 = UtxoContext(currentHeight = timeout.value, spendingTransaction = tx3, self = outputToSpend -> 0)
 
     //project cant' generate a proof
-    val proofP3f = projectProver.prove(crowdFundingScript, ctx3, challenge).isFailure shouldBe true
+    val proofP3f = projectProver.prove(crowdFundingScript, ctx3, message).isFailure shouldBe true
 
     //backer is generating a proof and it is passing verification
-    val proofB = backerProver.prove(crowdFundingScript, ctx3, challenge).get.proof
-    verifier.verify(crowdFundingScript, ctx3, proofB, challenge).get shouldBe true
+    val proofB = backerProver.prove(crowdFundingScript, ctx3, message).get.proof
+    verifier.verify(crowdFundingScript, ctx3, proofB, message).get shouldBe true
   }
 
 
@@ -190,7 +190,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val outputToSpend = SigmaStateBox(outValue, script)
 
 
-    val challenge = Blake2b256("Hello World") //normally challenge to be defined by spending transaction bytes
+    val message = Blake2b256("Hello World") //normally message to be defined by spending transaction bytes
 
     //case 1: demurrage time hasn't come yet
     val tx1 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue, script)))
@@ -201,11 +201,11 @@ class UtxoInterpreterSpecification extends PropSpec
       self = outputToSpend -> outHeight)
 
     //user can spend all the money
-    val uProof1 = userProver.prove(script, ctx1, challenge).get.proof
-    verifier.verify(script, ctx1, uProof1, challenge).get shouldBe true
+    val uProof1 = userProver.prove(script, ctx1, message).get.proof
+    verifier.verify(script, ctx1, uProof1, message).get shouldBe true
 
     //miner can't spend any money
-    verifier.verify(script, ctx1, NoProof, challenge).get shouldBe false
+    verifier.verify(script, ctx1, NoProof, message).get shouldBe false
 
     //case 2: demurrage time has come
     val ctx2 = UtxoContext(
@@ -214,8 +214,8 @@ class UtxoInterpreterSpecification extends PropSpec
       self = outputToSpend -> outHeight)
 
     //user can spend all the money
-    val uProof2 = userProver.prove(script, ctx1, challenge).get.proof
-    verifier.verify(script, ctx2, uProof2, challenge).get shouldBe true
+    val uProof2 = userProver.prove(script, ctx1, message).get.proof
+    verifier.verify(script, ctx2, uProof2, message).get shouldBe true
 
     //miner can spend "demurrageCost" tokens
     val tx3 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost, script)))
@@ -224,7 +224,7 @@ class UtxoInterpreterSpecification extends PropSpec
       spendingTransaction = tx3,
       self = outputToSpend -> outHeight)
 
-    verifier.verify(script, ctx3, NoProof, challenge).get shouldBe true
+    verifier.verify(script, ctx3, NoProof, message).get shouldBe true
 
     //miner can't spend more
     val tx4 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost - 1, script)))
@@ -233,7 +233,7 @@ class UtxoInterpreterSpecification extends PropSpec
       spendingTransaction = tx4,
       self = outputToSpend -> outHeight)
 
-    verifier.verify(script, ctx4, NoProof, challenge).get shouldBe false
+    verifier.verify(script, ctx4, NoProof, message).get shouldBe false
 
     //miner can spend less
     val tx5 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost + 1, script)))
@@ -242,7 +242,7 @@ class UtxoInterpreterSpecification extends PropSpec
       spendingTransaction = tx5,
       self = outputToSpend -> outHeight)
 
-    verifier.verify(script, ctx5, NoProof, challenge).get shouldBe true
+    verifier.verify(script, ctx5, NoProof, message).get shouldBe true
   }
 
   /**
@@ -253,15 +253,15 @@ class UtxoInterpreterSpecification extends PropSpec
     val preimage = prover.contextExtenders.head._2.value
     val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
 
-    val challenge = Blake2b256("Hello World")
+    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
-    val pr = prover.prove(prop, ctx, challenge).get
+    val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, challenge).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, message).get shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
   }
 
   property("prover enriching context 2") {
@@ -272,15 +272,15 @@ class UtxoInterpreterSpecification extends PropSpec
       CustomByteArray(Helpers.tagInt(preimage1)))
     ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
 
-    val challenge = Blake2b256("Hello World")
+    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
-    val pr = prover.prove(prop, ctx, challenge).get
+    val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, challenge).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, message).get shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
   }
 
   property("prover enriching context - xor") {
@@ -298,15 +298,15 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeaf(r))
 
-    val challenge = Blake2b256("Hello World")
+    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
-    val pr = prover.prove(prop, ctx, challenge).get
+    val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, challenge).get shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, challenge).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, message).get shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
   }
 
   property("context enriching mixed w. crypto") {
@@ -319,17 +319,17 @@ class UtxoInterpreterSpecification extends PropSpec
       EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
     )
 
-    val challenge = Blake2b256("Hello World")
+    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
-    val pr = prover.prove(prop, ctx, challenge).get
+    val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     pr.proof.isInstanceOf[SchnorrNode] shouldBe true
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, challenge).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, challenge).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, message).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
   }
 
   property("context enriching mixed w. crypto 2") {
@@ -346,17 +346,17 @@ class UtxoInterpreterSpecification extends PropSpec
       )
     )
 
-    val challenge = Blake2b256("Hello World")
+    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
-    val pr = prover.prove(prop, ctx, challenge).get
+    val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     pr.proof.isInstanceOf[SchnorrNode] shouldBe true
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, challenge).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, challenge).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, message).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
   }
 
   /**
@@ -396,30 +396,30 @@ class UtxoInterpreterSpecification extends PropSpec
       AND(pubkeyA, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
     )
 
-    //fake challenge, in a real-life a challenge is to be derived from a spending transaction
-    val challenge = Blake2b256("Hello World")
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
     val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
 
     //Preliminary checks:
 
     //B can't spend coins of A in chain1 (generate a valid proof)
     val ctxf1 = UtxoContext(currentHeight = height1 + 1, spendingTransaction = null, self = fakeSelf)
-    proverB.prove(prop1, ctxf1, challenge).isSuccess shouldBe false
+    proverB.prove(prop1, ctxf1, message).isSuccess shouldBe false
 
     //A can't withdraw her coins in chain1 (generate a valid proof)
-    println(proverA.prove(prop1, ctxf1, challenge))
-    val prf1 = proverA.prove(prop1, ctxf1, challenge).isFailure shouldBe true
+    println(proverA.prove(prop1, ctxf1, message))
+    val prf1 = proverA.prove(prop1, ctxf1, message).isFailure shouldBe true
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
     val ctxf2 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = fakeSelf)
-    proverB.prove(prop2, ctxf2, challenge).isSuccess shouldBe false
+    proverB.prove(prop2, ctxf2, message).isSuccess shouldBe false
 
     //Successful run below:
 
     //A spends coins of B in chain2
     val ctx1 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = fakeSelf)
-    val pr = proverA.prove(prop2, ctx1, challenge).get
-    verifier.verify(prop2, ctx1, pr, challenge).get shouldBe true
+    val pr = proverA.prove(prop2, ctx1, message).get
+    verifier.verify(prop2, ctx1, pr, message).get shouldBe true
 
     //B extracts preimage x of hx
     val t = pr.extension.values.head
@@ -428,14 +428,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //B spends coins of A in chain1 with knowledge of x
     val ctx2 = UtxoContext(currentHeight = height1 + 1, spendingTransaction = null, self = fakeSelf)
-    val pr2 = proverB2.prove(prop1, ctx2, challenge).get
-    verifier.verify(prop1, ctx2, pr2, challenge).get shouldBe true
+    val pr2 = proverB2.prove(prop1, ctx2, message).get
+    verifier.verify(prop1, ctx2, pr2, message).get shouldBe true
   }
 
   /**
     * Whether A or B, or both are able to sign a transaction
     */
-  property("simplest linear-sized ring signature") {
+  property("simplest linear-sized ring signature (1-out-of-2 OR)") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
     val proverC = new UtxoProvingInterpreter
@@ -446,19 +446,37 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubkeyB)
 
-    //fake challenge, in a real-life a challenge is to be derived from a spending transaction
-    val challenge = Blake2b256("Hello World")
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
     val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, challenge).get
-    verifier.verify(prop, ctx, prA, challenge).get shouldBe true
+    val prA = proverA.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prA, message).get shouldBe true
 
-/*    val prB = proverB.prove(prop, ctx, challenge).get
-    verifier.verify(prop, ctx, prB, challenge).get shouldBe true
+    val prB = proverB.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prB, message).get shouldBe true
 
-    val prC = proverC.prove(prop, ctx, challenge).get
-    verifier.verify(prop, ctx, prC, challenge).get shouldBe false
-*/
+    proverC.prove(prop, ctx, message).isFailure shouldBe true
+  }
+
+  //two secrets are known, nevertheless, one will be simulated
+  property("simplest linear-sized ring signature (2-out-of-2 OR)") {
+    val proverA = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
+
+    val pubkeyA1 = proverA.secrets.head.publicImage
+    val pubkeyA2 = proverA.secrets.tail.head.publicImage
+
+    val prop = OR(pubkeyA1, pubkeyA2)
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+
+    val prA = proverA.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prA, message).get shouldBe true
   }
 }

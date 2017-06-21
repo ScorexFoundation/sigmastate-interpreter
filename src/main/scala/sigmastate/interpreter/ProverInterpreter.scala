@@ -82,6 +82,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   protected def prove(unprovenTree: UnprovenTree, message: Array[Byte]): ProofT = {
     val step1 = markSimulated(unprovenTree).get.asInstanceOf[UnprovenTree]
+    assert(step1.real)
     val step2 = polishSimulated(step1).get.asInstanceOf[UnprovenTree]
     val step3 = challengeSimulated(step2).get.asInstanceOf[UnprovenTree]
     val step4 = simulations(step3).get.asInstanceOf[UnprovenTree]
@@ -184,14 +185,18 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val challenge = and.challengeOpt.get
       and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withChallenge(challenge)))
 
+    case and: CAndUnproven if and.real => and
+
     case or: COr2Unproven =>
       val lc = if (or.leftChild.asInstanceOf[UnprovenTree].simulated)
         or.leftChild.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()) else or.leftChild
       val rc = if (or.rightChild.asInstanceOf[UnprovenTree].simulated)
         or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()) else or.rightChild
       or.copy(leftChild = lc, rightChild = rc)
+
     case su: SchnorrUnproven => su
-    case _ => ???
+
+    case a: Any => println(a); ???
   })
 
   /**
@@ -246,10 +251,12 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case or: COr2Unproven if or.real =>
       assert(or.challengeOpt.isDefined)
       val orChallenge = or.challengeOpt.get
-      if (or.leftChild.asInstanceOf[UnprovenTree].real)
-        or.copy(leftChild = or.leftChild.asInstanceOf[UnprovenTree].withChallenge(Helpers.xor(orChallenge, or.rightChild.asInstanceOf[SchnorrNode].challenge)))
-      else
-        or.copy(rightChild = or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Helpers.xor(orChallenge, or.leftChild.asInstanceOf[SchnorrNode].challenge)))
+      or.leftChild match {
+        case tree: UnprovenTree if tree.real =>
+          or.copy(leftChild = tree.withChallenge(Helpers.xor(orChallenge, or.rightChild.asInstanceOf[SchnorrNode].challenge)))
+        case _ =>
+          or.copy(rightChild = or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Helpers.xor(orChallenge, or.leftChild.asInstanceOf[SchnorrNode].challenge)))
+      }
 
     case su: SchnorrUnproven if su.real =>
       assert(su.challengeOpt.isDefined)
