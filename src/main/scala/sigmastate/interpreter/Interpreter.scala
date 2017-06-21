@@ -1,5 +1,7 @@
 package sigmastate.interpreter
 
+import java.math.BigInteger
+
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.crypto.hash.Blake2b256
@@ -11,6 +13,7 @@ import scala.collection.mutable
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+import scapi.sigma.rework.DLogProtocol.FirstDLogProverMessage
 
 
 
@@ -121,8 +124,21 @@ trait Interpreter {
     conjs(afterRels).get
   }.asInstanceOf[SigmaStateTree])
 
+  /**
+    *     Verifier steps:
+    * 1. Place received challenges "e" and responses "z"  into every leaf.
+    * 2. Bottom-up: compute commitments at every leaf according to a = g^z/h^e. At every COR and CAND node, compute
+    * the commitment as the union of the children's commitments. At every COR node, compute the challenge as the XOR of
+    * the children's challenges. At every CAND node, verify that the children's challenges are all equal. (Note that
+    * there is an opportunity for small savings here, because we don't need to send all the challenges for a CAND --
+    * but let's save that optimization for later.)
+    * 3. Check that the root challenge is equal to the hash of the root commitment and other inputs.
+    */
 
-  def evaluate(exp: SigmaStateTree, context: CTX, proof: UncheckedTree, challenge: ProofOfKnowledge.Message): Try[Boolean] = Try {
+  def verify(exp: SigmaStateTree,
+             context: CTX,
+             proof: UncheckedTree,
+             message: Array[Byte]): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
     cProp match {
       case TrueConstantNode => true
@@ -130,17 +146,86 @@ trait Interpreter {
       case _ =>
         proof match {
           case NoProof => false
-          case sp: UncheckedSigmaTree[_] => sp.proposition == cProp && sp.verify()
+          case sp: UncheckedSigmaTree[_] => {
+
+            assert(sp.proposition == cProp)
+
+            val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
+            val (challenge, rootCommitments) = newRoot match {
+              case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
+              case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
+            }
+            challenge.sameElements(Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message))
+          }
         }
     }
   }
 
+  /**
+    * 2. Bottom-up: compute commitments at every leaf according to a = g^z/h^e. At every COR and CAND node, compute
+    * the commitment as the union of the children's commitments. At every COR node, compute the challenge as the XOR of
+    * the children's challenges. At every CAND node, verify that the children's challenges are all equal. (Note that
+    * there is an opportunity for small savings here, because we don't need to send all the challenges for a CAND --
+    * but let's save that optimization for later.)
+    */
+  val checks: Strategy = everywherebu(rule[UncheckedTree] {
+    case and: CAndUncheckedNode =>
+      //todo: reduce boilerplate below
+
+      val challenges: Seq[Array[Byte]] = and.leafs.map {
+        case u: UncheckedConjecture[_] => u.challengeOpt.get
+        case sn: SchnorrNode => sn.challenge
+      }
+
+      val commitments: Seq[FirstDLogProverMessage] = and.leafs.flatMap {
+        case u: UncheckedConjecture[_] => u.commitments
+        case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
+      }
+
+      val challenge = challenges.head
+
+      assert(challenges.tail.forall(_.sameElements(challenge)))
+
+      and.copy(challengeOpt = Some(challenge), commitments = commitments)
+
+    case or: COr2UncheckedNode =>
+      //todo: refactor boilerplate
+      val (challengeLeft, commitmentsLeft) = or.leftChild match {
+        case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
+        case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
+        case _ => ???
+      }
+      val (challengeRight, commitmentsRight) = or.rightChild match {
+        case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
+        case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
+        case _ => ???
+      }
+      or.copy(
+        challengeOpt = Some(Helpers.xor(challengeLeft, challengeRight)),
+        commitments = commitmentsLeft ++ commitmentsRight)
+
+    case sn: SchnorrNode =>
+      assert(sn.firstMessageOpt.isEmpty)
+
+      val dlog = sn.proposition.dlogGroup
+      val g = dlog.getGenerator
+      val h = sn.proposition.h
+
+      val a = dlog.multiplyGroupElements(
+                dlog.exponentiate(g, sn.secondMessage.z.underlying()),
+                dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
+
+      sn.copy(firstMessageOpt = Some(FirstDLogProverMessage(a)))
+    case _ => ???
+  })
+
+
   def verify(exp: SigmaStateTree,
              context: CTX,
              proverResult: ProverResult[ProofT],
-             challenge: ProofOfKnowledge.Message): Try[Boolean] = {
+             message: Array[Byte]): Try[Boolean] = {
     val ctxv = context.withExtension(proverResult.extension)
-    evaluate(exp, ctxv, proverResult.proof, challenge)
+    verify(exp, ctxv, proverResult.proof, message)
   }
 }
 

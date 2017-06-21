@@ -94,6 +94,11 @@ package object DLogProtocol {
     }
   }
 
+  object FirstDLogProverMessage {
+    def apply(a: GroupElement): FirstDLogProverMessage =
+      FirstDLogProverMessage(a.generateSendableData().asInstanceOf[ECElementSendableData])
+  }
+
   case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage[DLogSigmaProtocol] {
     override def bytes: Array[Byte] = z.toByteArray
   }
@@ -106,27 +111,25 @@ package object DLogProtocol {
     var rOpt: Option[BigInteger] = None
 
     override def firstMessage: FirstDLogProverMessage = {
-      assert(privateInputOpt.isDefined, "Secret is not known, can simulate only")
+      assert(privateInputOpt.isDefined, "Secret is not known")
       assert(rOpt.isEmpty, "Already generated r")
 
-      val qMinusOne = group.getOrder.subtract(BigInteger.ONE)
-      val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+      val (r, fm) = DLogInteractiveProver.firstMessage(publicInput)
       rOpt = Some(r)
-      val a = group.exponentiate(group.getGenerator, r)
-      FirstDLogProverMessage(a.generateSendableData().asInstanceOf[ECElementSendableData])
+      fm
     }
 
     override def secondMessage(challenge: Challenge): SecondDLogProverMessage = {
-      assert(privateInputOpt.isDefined, "Secret is not known, can simulate only")
+      assert(privateInputOpt.isDefined, "Secret is not known")
+      assert(rOpt.isDefined)
+
+      val rnd = rOpt.get
 
       val privateInput = privateInputOpt.get
 
-      val q: BigInteger = group.getOrder
-      val e: BigInteger = new BigInteger(1, challenge.bytes)
-      val ew: BigInteger = e.multiply(privateInput.w).mod(q)
-      val z: BigInteger = rOpt.get.add(ew).mod(q)
+      val sm = DLogInteractiveProver.secondMessage(privateInput, rnd, challenge)
       rOpt = None
-      SecondDLogProverMessage(z)
+      sm
     }
 
     override def simulate(challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
@@ -143,6 +146,24 @@ package object DLogProtocol {
       val gToZ = group.exponentiate(group.getGenerator, z)
       val a = group.multiplyGroupElements(gToZ, hToE)
       FirstDLogProverMessage(a.generateSendableData().asInstanceOf[ECElementSendableData]) -> SecondDLogProverMessage(z)
+    }
+  }
+
+  object DLogInteractiveProver {
+    def firstMessage(publicInput: DLogNode): (BigInteger, FirstDLogProverMessage) = {
+      val group = publicInput.dlogGroup
+      val qMinusOne = group.getOrder.subtract(BigInteger.ONE)
+      val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+      val a = group.exponentiate(group.getGenerator, r)
+      r -> FirstDLogProverMessage(a.generateSendableData().asInstanceOf[ECElementSendableData])
+    }
+
+    def secondMessage(privateInput: DLogProverInput, rnd: BigInteger, challenge:Challenge): SecondDLogProverMessage = {
+      val q: BigInteger = privateInput.dlogGroup.getOrder
+      val e: BigInteger = new BigInteger(1, challenge.bytes)
+      val ew: BigInteger = e.multiply(privateInput.w).mod(q)
+      val z: BigInteger = rnd.add(ew).mod(q)
+      SecondDLogProverMessage(z)
     }
   }
 

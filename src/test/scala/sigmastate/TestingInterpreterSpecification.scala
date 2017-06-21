@@ -7,7 +7,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.rework.DLogProtocol.{DLogNode, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.interpreter.{Context, ContextExtension, DLogProverInterpreter, Interpreter}
+import sigmastate.interpreter.{Context, ContextExtension, Interpreter, ProverInterpreter}
 
 import scala.util.Random
 
@@ -18,7 +18,7 @@ case class TestingContext(height: Int,
 }
 
 
-object TestingInterpreter extends Interpreter with DLogProverInterpreter {
+object TestingInterpreter extends Interpreter with ProverInterpreter {
   override type StateT = StateTree
   override type CTX = TestingContext
 
@@ -112,51 +112,51 @@ class TestingInterpreterSpecification extends PropSpec
       AND(GT(Height, IntLeaf(100)), dk1)
     )
 
-    val challenge: ProofOfKnowledge.Message = Array.fill(32)(Random.nextInt(100).toByte)
+    val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
     val proof1 = TestingInterpreter.prove(prop, env1, challenge).get.proof
 
-    evaluate(prop, env1, proof1, challenge).getOrElse(false) shouldBe true
+    verify(prop, env1, proof1, challenge).getOrElse(false) shouldBe true
 
-    evaluate(prop, env2, proof1, challenge).getOrElse(false) shouldBe false
+    verify(prop, env2, proof1, challenge).getOrElse(false) shouldBe false
   }
 
   property("Evaluation - no real proving - true case") {
     val prop1 = TrueConstantNode
 
-    val challenge: ProofOfKnowledge.Message = Array.fill(32)(Random.nextInt(100).toByte)
+    val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
     val env = TestingContext(99)
 
-    evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop1, env, proof, challenge).getOrElse(false) shouldBe true
 
     val prop2 = OR(TrueConstantNode, FalseConstantNode)
-    evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop2, env, proof, challenge).getOrElse(false) shouldBe true
 
     val prop3 = AND(TrueConstantNode, TrueConstantNode)
-    evaluate(prop3, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop3, env, proof, challenge).getOrElse(false) shouldBe true
 
     val prop4 = GT(Height, IntLeaf(90))
-    evaluate(prop4, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop4, env, proof, challenge).getOrElse(false) shouldBe true
   }
 
   property("Evaluation - no real proving - false case") {
     val prop1 = FalseConstantNode
 
-    val challenge: ProofOfKnowledge.Message = Array.fill(32)(Random.nextInt(100).toByte)
+    val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
     val env = TestingContext(99)
 
-    evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop1, env, proof, challenge).getOrElse(false) shouldBe false
 
     val prop2 = OR(FalseConstantNode, FalseConstantNode)
-    evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop2, env, proof, challenge).getOrElse(false) shouldBe false
 
     val prop3 = AND(FalseConstantNode, TrueConstantNode)
-    evaluate(prop3, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
 
     val prop4 = GT(Height, IntLeaf(100))
-    evaluate(prop4, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop4, env, proof, challenge).getOrElse(false) shouldBe false
   }
 
   property("Evaluation - hash function"){
@@ -165,18 +165,18 @@ class TestingInterpreterSpecification extends PropSpec
 
     val prop1 = EQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(hash))
 
-    val challenge: ProofOfKnowledge.Message = Array.fill(32)(Random.nextInt(100).toByte)
+    val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
     val env = TestingContext(99)
 
-    evaluate(prop1, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop1, env, proof, challenge).getOrElse(false) shouldBe true
 
     val prop2 = NEQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(hash))
 
-    evaluate(prop2, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop2, env, proof, challenge).getOrElse(false) shouldBe false
 
     val prop3 = EQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(bytes))
 
-    evaluate(prop3, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
   }
 }

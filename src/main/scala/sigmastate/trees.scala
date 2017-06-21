@@ -1,9 +1,11 @@
 package sigmastate
 
+import java.math.BigInteger
+
 import edu.biu.scapi.primitives.dlog.ECElementSendableData
 import scapi.sigma.rework.DLogProtocol._
 import scapi.sigma.rework.{Challenge, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import scorex.core.serialization.Serializer
+import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SigmaProposition.PropositionCode
@@ -190,47 +192,80 @@ trait ProofTree extends Product
 sealed trait UnprovenTree extends ProofTree {
   val proposition: SigmaTree
 
+  val simulated: Boolean
+
+  lazy val real: Boolean = !simulated
+
   val challengeOpt: Option[Array[Byte]]
 
   def withChallenge(challenge: Array[Byte]): UnprovenTree
+
+  def withSimulated(newSimulated: Boolean): UnprovenTree
 }
 
 sealed trait UnprovenLeaf extends UnprovenTree {
-  val simulated: Boolean
+  val commitmentOpt: Option[FirstDLogProverMessage]
+}
+
+sealed trait UnprovenConjecture extends UnprovenTree {
+  val childrenCommitments: Seq[FirstDLogProverMessage]
 }
 
 case class CAndUnproven(override val proposition: CAND,
-                        override val challengeOpt: Option[Array[Byte]] = None, children: Seq[UnprovenTree]) extends UnprovenTree {
-  override def withChallenge(challenge: Array[Byte]) = CAndUnproven(proposition, Some(challenge), children)
+                        override val childrenCommitments: Seq[FirstDLogProverMessage] = Seq(),
+                        override val challengeOpt: Option[Array[Byte]] = None,
+                        override val simulated: Boolean,
+                        children: Seq[UnprovenTree]) extends UnprovenConjecture {
+  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
+
+  override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
 case class COr2Unproven(override val proposition: COR2,
+                        override val childrenCommitments: Seq[FirstDLogProverMessage] = Seq(),
                         override val challengeOpt: Option[Array[Byte]] = None,
+                        override val simulated: Boolean,
                         leftChild: UnprovenTree,
-                        rightChild: UnprovenTree) extends UnprovenTree {
-  override def withChallenge(challenge: Array[Byte]) = COr2Unproven(proposition, Some(challenge), leftChild, rightChild)
+                        rightChild: UnprovenTree) extends UnprovenConjecture {
+  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
+
+  override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
+case class SchnorrUnproven(override val proposition: DLogNode,
+                           override val commitmentOpt: Option[FirstDLogProverMessage],
+                           val randomnessOpt: Option[BigInteger],
+                           override val challengeOpt: Option[Array[Byte]] = None,
+                           override val simulated: Boolean) extends UnprovenLeaf {
+  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
 
-case class SchnorrUnproven(override val challengeOpt: Option[Array[Byte]] = None,
-                           override val simulated: Boolean,
-                           override val proposition: DLogNode) extends UnprovenLeaf {
-  override def withChallenge(challenge: Array[Byte]) = SchnorrUnproven(Some(challenge), simulated, proposition)
+  override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
+
 
 sealed trait UncheckedTree extends ProofTree
 
 case object NoProof extends UncheckedTree
 
-abstract class UncheckedSigmaTree[ST <: SigmaTree](val proposition: ST, val message: Array[Byte])
-  extends Proof[ST] with UncheckedTree
+sealed trait UncheckedSigmaTree[ST <: SigmaTree] extends UncheckedTree with BytesSerializable {
+  val proposition: ST
+  val propCode: SigmaProposition.PropositionCode
+}
+
+trait UncheckedConjecture[ST <: SigmaTree] extends UncheckedSigmaTree[ST] {
+  val challengeOpt: Option[Array[Byte]]
+  val commitments: Seq[FirstDLogProverMessage]
+}
+
 
 case class SchnorrNode(override val proposition: DLogNode,
-                       override val message: Array[Byte], signature: Array[Byte]) extends
-  UncheckedSigmaTree[DLogNode](proposition, message)
-  with ProofOfKnowledge[DLogSigmaProtocol, DLogNode] {
+                       firstMessageOpt: Option[FirstDLogProverMessage],
+                       challenge: Array[Byte],
+                       secondMessage: SecondDLogProverMessage)
+  extends UncheckedSigmaTree[DLogNode] {
 
-  override def verify(): Boolean = {
+  /*
+  def verify(): Boolean = {
     //signature is g^r as a pair of points, and z
     val (grx, gry, zb) = EcPointFunctions.decodeBigIntTriple(signature).get
     val gr = new ECElementSendableData(grx, gry)
@@ -240,13 +275,14 @@ case class SchnorrNode(override val proposition: DLogNode,
 
     val a: FirstDLogProverMessage = FirstDLogProverMessage(gr)
 
-    val e = Blake2b256(grx.toByteArray ++ gry.toByteArray ++ message)
+    val e = challenge
 
     val z: SecondDLogProverMessage = SecondDLogProverMessage(zb)
 
     val sigmaTranscript = DLogTranscript(h, a, Challenge(e), z)
     sigmaTranscript.accepted
   }
+  */
 
   override val propCode: SigmaProposition.PropositionCode = DLogNode.Code
   override type M = this.type
@@ -254,9 +290,13 @@ case class SchnorrNode(override val proposition: DLogNode,
   override def serializer: Serializer[M] = ???
 }
 
-case class CAndUncheckedNode(override val proposition: CAND, override val message: Array[Byte], leafs: Seq[UncheckedTree])
-  extends UncheckedSigmaTree[CAND](proposition, message) {
+case class CAndUncheckedNode(override val proposition: CAND,
+                             override val challengeOpt: Option[Array[Byte]],
+                             override val commitments: Seq[FirstDLogProverMessage],
+                             leafs: Seq[ProofTree])
+  extends UncheckedConjecture[CAND] {
 
+  /*
   /**
     * To verify an AND sigma protocol, we check sub-protocols with the same challenge
     *
@@ -266,9 +306,10 @@ case class CAndUncheckedNode(override val proposition: CAND, override val messag
     leafs.zip(proposition.sigmaTrees).forall { case (proof, prop) =>
       proof match {
         case NoProof => true
-        case ut: UncheckedSigmaTree[_] => ut.message.sameElements(this.message) && ut.verify()
+        case ut: UncheckedSigmaTree[_] => ut.challenge.sameElements(this.challenge) && ut.verify()
       }
     }
+    */
 
   override val propCode: PropositionCode = CAND.Code
   override type M = CAndUncheckedNode
@@ -278,22 +319,23 @@ case class CAndUncheckedNode(override val proposition: CAND, override val messag
 
 
 case class COr2UncheckedNode(override val proposition: COR2,
-                             override val message: Array[Byte],
-                             leftChild: UncheckedTree,
-                             rightChild: UncheckedTree
-                            )
-  extends UncheckedSigmaTree(proposition, message) {
+                             override val challengeOpt: Option[Array[Byte]],
+                             override val commitments: Seq[FirstDLogProverMessage],
+                             leftChild: ProofTree,
+                             rightChild: ProofTree) extends UncheckedConjecture[COR2] {
 
-  override def verify(): Boolean = {
+  def verify(): Boolean = {
+    ???
+    /*
     lazy val noProof = leftChild.isInstanceOf[NoProof.type] && rightChild.isInstanceOf[NoProof.type]
 
-    lazy val challengeCheck = Helpers.xor(leftChild.asInstanceOf[UncheckedSigmaTree[_]].message,
-      rightChild.asInstanceOf[UncheckedSigmaTree[_]].message).sameElements(message)
+    lazy val challengeCheck = Helpers.xor(leftChild.asInstanceOf[UncheckedSigmaTree[_]].challenge,
+      rightChild.asInstanceOf[UncheckedSigmaTree[_]].challenge).sameElements(challenge)
 
     lazy val subprotocolsCheck = leftChild.asInstanceOf[UncheckedSigmaTree[_]].verify() &&
       rightChild.asInstanceOf[UncheckedSigmaTree[_]].verify()
 
-    noProof || (challengeCheck && subprotocolsCheck)
+    noProof || (challengeCheck && subprotocolsCheck)*/
   }
 
   override val propCode: PropositionCode = COR2.Code

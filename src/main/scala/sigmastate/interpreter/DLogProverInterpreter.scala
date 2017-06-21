@@ -5,7 +5,7 @@ import sigmastate._
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 
-
+/*
 trait DLogProverInterpreter extends ProverInterpreter {
   override type SigmaT = SigmaTree
   override type ProofT = UncheckedTree
@@ -13,7 +13,7 @@ trait DLogProverInterpreter extends ProverInterpreter {
   val secrets: Seq[DLogProtocol.DLogProverInput]
 
   //to be applied bottom up, marks whether simulation is needed for a sigma-protocol
-  val markSimulated: Strategy = rule[UnprovenTree] {
+  override val markSimulated: Strategy = rule[UnprovenTree] {
     case su: SchnorrUnproven =>
       val secretKnown = secrets.exists(_.publicImage.h == su.proposition.h)
       su.copy(simulated = !secretKnown)
@@ -44,4 +44,4 @@ trait DLogProverInterpreter extends ProverInterpreter {
   }
 
   override def prove(unproven: UnprovenTree): ProofT = proving(secrets)(unproven)
-}
+}*/

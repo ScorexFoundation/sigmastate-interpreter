@@ -21,33 +21,38 @@ object SchnorrSignature {
 case class SchnorrSigner(override val publicInput: DLogNode, privateInputOpt: Option[DLogProverInput])
   extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, DLogNode, SchnorrNode] {
 
-  def prove(message: Array[Byte]): SchnorrNode = {
+  def prove(challenge: Array[Byte]): SchnorrNode = {
     val prover = new DLogInteractiveProver(publicInput, privateInputOpt)
 
     val (fm, sm) = privateInputOpt.isDefined match {
       //real proving
       case true =>
         val firstMsg = prover.firstMessage
-        val e = Blake2b256(firstMsg.ecData.getX.toByteArray ++ firstMsg.ecData.getY.toByteArray ++ message)
+        val e = Blake2b256(firstMsg.ecData.getX.toByteArray ++ firstMsg.ecData.getY.toByteArray ++ challenge)
         firstMsg -> prover.secondMessage(Challenge(e))
       //simulation
-      case false => prover.simulate(Challenge(message))
+      case false => prover.simulate(Challenge(challenge))
     }
 
+    val sb = SchnorrSigner.serialize(fm, sm)
+
+    SchnorrNode(publicInput, None, challenge, sm)
+  }
+}
+
+object SchnorrSigner {
+
+  def serialize(fm: FirstDLogProverMessage, sm: SecondDLogProverMessage): Array[Byte] = {
     val grec = fm.ecData
     val z = sm.z
 
     val grxb = grec.getX.toByteArray
     val gryb = grec.getY.toByteArray
     val zb = z.toByteArray
-    val sb = Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
-    SchnorrNode(publicInput, message, sb)
+    Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
   }
-}
 
-object SchnorrSigner {
   def generate(privateInput: DLogProverInput): SchnorrSigner = {
-
     val publicInput: DLogNode = {
       val g = dlog.getGenerator
       val gw = dlog.exponentiate(g, privateInput.w)
