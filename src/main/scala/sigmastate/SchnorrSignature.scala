@@ -34,9 +34,9 @@ case class SchnorrSigner(override val publicInput: DLogNode, privateInputOpt: Op
       case false => prover.simulate(Challenge(challenge))
     }
 
-    val sb = SchnorrSigner.serialize(fm, sm)
+    //val sb = SchnorrSigner.serialize(fm, sm)
 
-    SchnorrNode(publicInput, None, challenge, sm)
+    SchnorrNode(publicInput, Some(fm), challenge, sm)
   }
 }
 

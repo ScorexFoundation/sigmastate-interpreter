@@ -205,7 +205,6 @@ trait Interpreter {
         commitments = commitmentsLeft ++ commitmentsRight)
 
     case sn: SchnorrNode =>
-      assert(sn.firstMessageOpt.isEmpty)
 
       val dlog = sn.proposition.dlogGroup
       val g = dlog.getGenerator

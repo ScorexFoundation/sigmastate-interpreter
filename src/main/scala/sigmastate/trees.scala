@@ -1,15 +1,11 @@
 package sigmastate
 
 import java.math.BigInteger
-
-import edu.biu.scapi.primitives.dlog.ECElementSendableData
 import scapi.sigma.rework.DLogProtocol._
-import scapi.sigma.rework.{Challenge, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import scapi.sigma.rework.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
-import scorex.crypto.hash.Blake2b256
 import sigmastate.SigmaProposition.PropositionCode
-import sigmastate.utils.Helpers
 
 
 sealed trait SigmaStateTree extends Product with SigmaStateProposition
@@ -215,7 +211,7 @@ case class CAndUnproven(override val proposition: CAND,
                         override val childrenCommitments: Seq[FirstDLogProverMessage] = Seq(),
                         override val challengeOpt: Option[Array[Byte]] = None,
                         override val simulated: Boolean,
-                        children: Seq[UnprovenTree]) extends UnprovenConjecture {
+                        children: Seq[ProofTree]) extends UnprovenConjecture {
   override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
@@ -225,8 +221,8 @@ case class COr2Unproven(override val proposition: COR2,
                         override val childrenCommitments: Seq[FirstDLogProverMessage] = Seq(),
                         override val challengeOpt: Option[Array[Byte]] = None,
                         override val simulated: Boolean,
-                        leftChild: UnprovenTree,
-                        rightChild: UnprovenTree) extends UnprovenConjecture {
+                        leftChild: ProofTree,
+                        rightChild: ProofTree) extends UnprovenConjecture {
   override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
