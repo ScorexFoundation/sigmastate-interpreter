@@ -235,6 +235,12 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case _ => ???
   })
 
+  def extractChallenge(pt: ProofTree): Array[Byte] = pt match {
+    case upt: UnprovenTree => upt.challengeOpt.get
+    case sn: SchnorrNode => sn.challenge
+    case _ => ???
+  }
+
   /**
     * (proving)
     * 6. top-down: compute the challenge for every real child of every real COR and CAND, as follows. If COR, then the
@@ -253,9 +259,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val orChallenge = or.challengeOpt.get
       or.leftChild match {
         case tree: UnprovenTree if tree.real =>
-          or.copy(leftChild = tree.withChallenge(Helpers.xor(orChallenge, or.rightChild.asInstanceOf[SchnorrNode].challenge)))
+          or.copy(leftChild = tree.withChallenge(Helpers.xor(orChallenge, extractChallenge(or.rightChild))))
         case _ =>
-          or.copy(rightChild = or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Helpers.xor(orChallenge, or.leftChild.asInstanceOf[SchnorrNode].challenge)))
+          or.copy(rightChild = or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Helpers.xor(orChallenge, extractChallenge(or.leftChild))))
       }
 
     case su: SchnorrUnproven if su.real =>
@@ -266,7 +272,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     case sn: SchnorrNode => sn
 
-    case a: Any => ???
+    case ut: UnprovenTree => ut
+
+    case a: Any => println(a); ???
   })
 
 

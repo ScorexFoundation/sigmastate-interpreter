@@ -32,6 +32,16 @@ class UtxoProvingInterpreter extends UtxoInterpreter with ProverInterpreter {
       override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = ce + (tag -> value)
     }
   }
+
+  def withSecrets(additionalSecrets: Seq[DLogProverInput]) = {
+    val ce = contextExtenders
+    val s = secrets ++ additionalSecrets
+
+    new UtxoProvingInterpreter {
+      override lazy val secrets: Seq[DLogProverInput] = s
+      override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = ce
+    }
+  }
 }
 
 
@@ -478,5 +488,39 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prA = proverA.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, prA, message).get shouldBe true
+  }
+
+  property("complex sig scheme - OR of two ANDs"){
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+    val proverC = new UtxoProvingInterpreter
+    val proverD = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
+
+    val pubkeyA = proverA.secrets.head.publicImage
+    val pubkeyB = proverB.secrets.head.publicImage
+    val pubkeyC = proverC.secrets.head.publicImage
+    val pubkeyD = proverD.secrets.head.publicImage
+
+    val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyC, pubkeyD))
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+
+    proverA.prove(prop, ctx, message).isFailure shouldBe true
+    proverB.prove(prop, ctx, message).isFailure shouldBe true
+    proverC.prove(prop, ctx, message).isFailure shouldBe true
+    proverD.prove(prop, ctx, message).isFailure shouldBe true
+
+    val proverAB = proverA.withSecrets(Seq(proverB.secrets.head))
+    val pr = proverAB.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, pr, message)
+
+    val proverCD = proverC.withSecrets(Seq(proverD.secrets.head))
+    val pr2 = proverCD.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, pr2, message)
   }
 }
