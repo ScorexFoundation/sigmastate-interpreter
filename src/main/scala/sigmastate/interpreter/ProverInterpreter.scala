@@ -289,26 +289,4 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case s: SchnorrNode => s
     case _ => ???
   }
-
-
-  /*
-  val proving: Seq[DLogProtocol.DLogProverInput] => UnprovenTree => UncheckedTree = paramAttr { secrets => {
-    case SchnorrUnproven(proposition, commitmentOpt, randomnessOpt, Some(challenge), simulated) =>
-      if (simulated) {
-        SchnorrSigner(proposition.asInstanceOf[DLogNode], None).prove(challenge)
-      } else {
-        val privKey = secrets.find(_.publicImage.h == proposition.h).get
-        SchnorrSigner.generate(privKey).prove(challenge)
-      }
-
-    case CAndUnproven(proposition, childredCommitments, Some(challenge), simulated, children) =>
-      val proven = children.map(proving(secrets))
-      CAndUncheckedNode(proposition, challenge, proven)
-
-    case COr2Unproven(proposition, childredCommitments, Some(challenge), simulated, leftChild, rightChild) =>
-      assert(Helpers.xor(leftChild.challengeOpt.get, rightChild.challengeOpt.get).sameElements(challenge))
-
-      COr2UncheckedNode(proposition, challenge, proving(secrets)(leftChild), proving(secrets)(rightChild))
-    case _ => ???
-  }}*/
 }
