@@ -523,4 +523,38 @@ class UtxoInterpreterSpecification extends PropSpec
     val pr2 = proverCD.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, pr2, message)
   }
+
+  property("complex sig scheme - OR of two AND and OR"){
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+    val proverC = new UtxoProvingInterpreter
+    val proverD = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
+
+    val pubkeyA = proverA.secrets.head.publicImage
+    val pubkeyB = proverB.secrets.head.publicImage
+    val pubkeyC = proverC.secrets.head.publicImage
+    val pubkeyD = proverD.secrets.head.publicImage
+
+    val prop = OR(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+
+    proverA.prove(prop, ctx, message).isFailure shouldBe true
+    proverB.prove(prop, ctx, message).isFailure shouldBe true
+
+    val prC = proverC.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prC, message)
+
+    val prD = proverD.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prD, message)
+
+    val proverAB = proverA.withSecrets(Seq(proverB.secrets.head))
+    val pr = proverAB.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, pr, message)
+ }
 }
