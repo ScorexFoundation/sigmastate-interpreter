@@ -81,10 +81,6 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     */
 
   protected def prove(unprovenTree: UnprovenTree, message: Array[Byte]): ProofT = {
-    import sext._
-
-    println("unproven:" + unprovenTree.treeString)
-
     val step1 = markSimulated(unprovenTree).get.asInstanceOf[UnprovenTree]
     assert(step1.real)
     val step2 = polishSimulated(step1).get.asInstanceOf[UnprovenTree]
@@ -103,9 +99,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     val step6 = proving(step5).get.asInstanceOf[ProofTree]
 
-    val unchecked = convertToUnchecked(step6)
-    println("unchecked:" + unchecked.treeString)
-    unchecked
+    convertToUnchecked(step6)
   }
 
   def prove(exp: SigmaStateTree, context: CTX, message: Array[Byte]): Try[ProverResult[ProofT]] = Try {
@@ -193,11 +187,20 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     case and: CAndUnproven if and.real => and
 
-    case or: COr2Unproven =>
+    case or: COr2Unproven if or.real =>
       val lc = if (or.leftChild.asInstanceOf[UnprovenTree].simulated)
         or.leftChild.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()) else or.leftChild
       val rc = if (or.rightChild.asInstanceOf[UnprovenTree].simulated)
         or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()) else or.rightChild
+      or.copy(leftChild = lc, rightChild = rc)
+
+    case or: COr2Unproven if or.simulated =>
+      assert(or.challengeOpt.isDefined)
+
+      val lc = if (or.leftChild.asInstanceOf[UnprovenTree].simulated)
+        or.leftChild.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()) else or.leftChild
+
+      val rc = or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Helpers.xor(or.challengeOpt.get, extractChallenge(lc)))
       or.copy(leftChild = lc, rightChild = rc)
 
     case su: SchnorrUnproven => su

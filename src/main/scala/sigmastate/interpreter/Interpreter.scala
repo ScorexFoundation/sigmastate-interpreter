@@ -153,8 +153,9 @@ trait Interpreter {
               case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
               case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
             }
-            challenge.sameElements(Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message))
 
+            val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
+            challenge.sameElements(expectedChallenge)
         }
     }
   }

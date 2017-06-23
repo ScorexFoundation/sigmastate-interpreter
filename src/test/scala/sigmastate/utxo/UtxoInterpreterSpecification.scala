@@ -524,7 +524,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr2, message).get shouldBe true
   }
 
-  ignore("complex sig scheme - OR of AND and OR") {
+  property("complex sig scheme - OR of AND and OR") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
     val proverC = new UtxoProvingInterpreter
