@@ -81,6 +81,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     */
 
   protected def prove(unprovenTree: UnprovenTree, message: Array[Byte]): ProofT = {
+    import sext._
+
+    println("unproven:" + unprovenTree.treeString)
+
     val step1 = markSimulated(unprovenTree).get.asInstanceOf[UnprovenTree]
     assert(step1.real)
     val step2 = polishSimulated(step1).get.asInstanceOf[UnprovenTree]
@@ -99,7 +103,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     val step6 = proving(step5).get.asInstanceOf[ProofTree]
 
-    convertToUnchecked(step6)
+    val unchecked = convertToUnchecked(step6)
+    println("unchecked:" + unchecked.treeString)
+    unchecked
   }
 
   def prove(exp: SigmaStateTree, context: CTX, message: Array[Byte]): Try[ProverResult[ProofT]] = Try {
@@ -291,9 +297,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   //converts ProofTree => UncheckedTree
   val convertToUnchecked: ProofTree => UncheckedTree = attr {
     case and: CAndUnproven =>
-      CAndUncheckedNode(and.proposition, None, Seq(), and.children)
+      CAndUncheckedNode(and.proposition, None, Seq(), and.children.map(convertToUnchecked))
     case or: COr2Unproven =>
-      COr2UncheckedNode(or.proposition, None, Seq(), or.leftChild, or.rightChild)
+      COr2UncheckedNode(or.proposition, None, Seq(), convertToUnchecked(or.leftChild), convertToUnchecked(or.rightChild))
     case s: SchnorrNode => s
     case _ => ???
   }

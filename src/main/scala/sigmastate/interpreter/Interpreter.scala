@@ -16,7 +16,6 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import scapi.sigma.rework.DLogProtocol.FirstDLogProverMessage
 
 
-
 trait Interpreter {
   type CTX <: Context[CTX]
   type StateT <: StateTree
@@ -125,7 +124,7 @@ trait Interpreter {
   }.asInstanceOf[SigmaStateTree])
 
   /**
-    *     Verifier steps:
+    * Verifier steps:
     * 1. Place received challenges "e" and responses "z"  into every leaf.
     * 2. Bottom-up: compute commitments at every leaf according to a = g^z/h^e. At every COR and CAND node, compute
     * the commitment as the union of the children's commitments. At every COR node, compute the challenge as the XOR of
@@ -146,8 +145,7 @@ trait Interpreter {
       case _ =>
         proof match {
           case NoProof => false
-          case sp: UncheckedSigmaTree[_] => {
-
+          case sp: UncheckedSigmaTree[_] =>
             assert(sp.proposition == cProp)
 
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
@@ -156,7 +154,7 @@ trait Interpreter {
               case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
             }
             challenge.sameElements(Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message))
-          }
+
         }
     }
   }
@@ -193,7 +191,7 @@ trait Interpreter {
       val (challengeLeft, commitmentsLeft) = or.leftChild match {
         case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
         case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
-        case _ => ???
+        case a: Any => println(a); ???
       }
       val (challengeRight, commitmentsRight) = or.rightChild match {
         case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
@@ -211,8 +209,8 @@ trait Interpreter {
       val h = sn.proposition.h
 
       val a = dlog.multiplyGroupElements(
-                dlog.exponentiate(g, sn.secondMessage.z.underlying()),
-                dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
+        dlog.exponentiate(g, sn.secondMessage.z.underlying()),
+        dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
 
       sn.copy(firstMessageOpt = Some(FirstDLogProverMessage(a)))
     case _ => ???
