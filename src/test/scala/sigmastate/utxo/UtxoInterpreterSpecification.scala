@@ -651,4 +651,41 @@ class UtxoInterpreterSpecification extends PropSpec
     val pr = proverA.prove(prop, ctx2, message).get
     verifier.verify(prop, ctx1, prA, message).get shouldBe true
   }
+
+  property("complex sig scheme - OR of OR and AND w. predicate") {
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+    val proverC = new UtxoProvingInterpreter
+    val proverD = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
+
+    val pubkeyA = proverA.secrets.head.publicImage
+    val pubkeyB = proverB.secrets.head.publicImage
+    val pubkeyC = proverC.secrets.head.publicImage
+    val pubkeyD = proverD.secrets.head.publicImage
+
+    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntLeaf(500))))
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx1 = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+
+    val prA = proverA.prove(prop, ctx1, message).get
+    verifier.verify(prop, ctx1, prA, message).get shouldBe true
+    val prB = proverB.prove(prop, ctx1, message).get
+    verifier.verify(prop, ctx1, prB, message).get shouldBe true
+    proverC.prove(prop, ctx1, message).isFailure shouldBe true
+
+
+    val ctx2 = UtxoContext(currentHeight = 501, spendingTransaction = null, self = fakeSelf)
+
+    val prA2 = proverA.prove(prop, ctx2, message).get
+    verifier.verify(prop, ctx2, prA2, message).get shouldBe true
+    val prB2 = proverB.prove(prop, ctx2, message).get
+    verifier.verify(prop, ctx2, prB2, message).get shouldBe true
+    val prC2 = proverC.prove(prop, ctx2, message).get
+    verifier.verify(prop, ctx2, prC2, message).get shouldBe true
+  }
 }
