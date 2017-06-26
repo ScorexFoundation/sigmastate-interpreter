@@ -647,6 +647,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx1, prA, message).get shouldBe true
     val prB = proverB.prove(prop, ctx1, message).get
     verifier.verify(prop, ctx1, prB, message).get shouldBe true
+    proverC.prove(prop, ctx1, message).isFailure shouldBe true
 
     val ctx2 = UtxoContext(currentHeight = 501, spendingTransaction = null, self = fakeSelf)
     val prC = proverC.prove(prop, ctx2, message).get
