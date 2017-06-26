@@ -629,6 +629,7 @@ class UtxoInterpreterSpecification extends PropSpec
   property("complex sig scheme - OR w. predicate") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
+    val proverC = new UtxoProvingInterpreter
 
     val verifier = new UtxoInterpreter
 
@@ -648,8 +649,8 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx1, prB, message).get shouldBe true
 
     val ctx2 = UtxoContext(currentHeight = 501, spendingTransaction = null, self = fakeSelf)
-    val pr = proverA.prove(prop, ctx2, message).get
-    verifier.verify(prop, ctx1, prA, message).get shouldBe true
+    val prC = proverC.prove(prop, ctx2, message).get
+    verifier.verify(prop, ctx2, prC, message).get shouldBe true
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate") {
