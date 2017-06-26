@@ -435,7 +435,7 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   //two secrets are known, nevertheless, one will be simulated
-  property("simplest linear-sized ring signature (1-out-of-2 OR)") {
+  property("simplest linear-sized ring signature (1-out-of-2 OR), both secrets known") {
     val proverA = new UtxoProvingInterpreter
 
     val verifier = new UtxoInterpreter
@@ -624,5 +624,31 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prD = proverD.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, prD, message).get shouldBe true
+  }
+
+  property("complex sig scheme - OR w. predicate") {
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
+
+    val pubkeyA = proverA.secrets.head.publicImage
+    val pubkeyB = proverB.secrets.head.publicImage
+
+    val prop = OR(pubkeyA, pubkeyB, GT(Height, IntLeaf(500)))
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+
+    val ctx1 = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+    val prA = proverA.prove(prop, ctx1, message).get
+    verifier.verify(prop, ctx1, prA, message).get shouldBe true
+    val prB = proverB.prove(prop, ctx1, message).get
+    verifier.verify(prop, ctx1, prB, message).get shouldBe true
+
+    val ctx2 = UtxoContext(currentHeight = 501, spendingTransaction = null, self = fakeSelf)
+    val pr = proverA.prove(prop, ctx2, message).get
+    verifier.verify(prop, ctx1, prA, message).get shouldBe true
   }
 }

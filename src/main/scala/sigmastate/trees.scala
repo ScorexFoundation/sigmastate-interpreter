@@ -38,8 +38,10 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 
 case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree
 
+
 object OR {
   def apply(left: SigmaStateTree, right: SigmaStateTree): OR = apply(Seq(left, right))
+  def apply(arg1: SigmaStateTree, arg2: SigmaStateTree, arg3: SigmaStateTree): OR = apply(Seq(arg1, arg2, arg3))
 }
 
 
