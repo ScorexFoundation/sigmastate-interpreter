@@ -269,12 +269,12 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case or: COrUnproven if or.real =>
       assert(or.challengeOpt.isDefined)
       val rootChallenge = or.challengeOpt.get
-      val challenge = Helpers.xor((rootChallenge +: or.children.flatMap(extractChallenge)):_*)
+      val challenge = Helpers.xor(rootChallenge +: or.children.flatMap(extractChallenge):_*)
 
-      or.copy(children = or.children.map(c => c match{
+      or.copy(children = or.children.map {
         case r: UnprovenTree if r.real => r.withChallenge(challenge)
         case p: ProofTree => p
-      }))
+      })
 
     case su: SchnorrUnproven if su.real =>
       assert(su.challengeOpt.isDefined)

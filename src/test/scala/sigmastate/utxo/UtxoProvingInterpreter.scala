@@ -7,8 +7,8 @@ import sigmastate.interpreter.ProverInterpreter
 import sigmastate.utils.Helpers
 
 class UtxoProvingInterpreter extends UtxoInterpreter with ProverInterpreter {
-  implicit val dlog = DLogNode.dlogGroup
-  implicit val soundness: Int = 256
+  private implicit val dlog = DLogNode.dlogGroup
+  private implicit val soundness: Int = 256
 
   override lazy val secrets: Seq[DLogProverInput] = {
     (1 to 4).map(_ => DLogProverInput.random()._1)

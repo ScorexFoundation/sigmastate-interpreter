@@ -261,26 +261,6 @@ case class SchnorrNode(override val proposition: DLogNode,
                        secondMessage: SecondDLogProverMessage)
   extends UncheckedSigmaTree[DLogNode] {
 
-  /*
-  def verify(): Boolean = {
-    //signature is g^r as a pair of points, and z
-    val (grx, gry, zb) = EcPointFunctions.decodeBigIntTriple(signature).get
-    val gr = new ECElementSendableData(grx, gry)
-
-    //h = g^w is a pubkey
-    val h: DLogNode = proposition
-
-    val a: FirstDLogProverMessage = FirstDLogProverMessage(gr)
-
-    val e = challenge
-
-    val z: SecondDLogProverMessage = SecondDLogProverMessage(zb)
-
-    val sigmaTranscript = DLogTranscript(h, a, Challenge(e), z)
-    sigmaTranscript.accepted
-  }
-  */
-
   override val propCode: SigmaProposition.PropositionCode = DLogNode.Code
   override type M = this.type
 
@@ -293,21 +273,6 @@ case class CAndUncheckedNode(override val proposition: CAND,
                              leafs: Seq[ProofTree])
   extends UncheckedConjecture[CAND] {
 
-  /*
-  /**
-    * To verify an AND sigma protocol, we check sub-protocols with the same challenge
-    *
-    * @return whether a proof is valid or not
-    */
-  override def verify(): Boolean =
-    leafs.zip(proposition.sigmaTrees).forall { case (proof, prop) =>
-      proof match {
-        case NoProof => true
-        case ut: UncheckedSigmaTree[_] => ut.challenge.sameElements(this.challenge) && ut.verify()
-      }
-    }
-    */
-
   override val propCode: PropositionCode = CAND.Code
   override type M = CAndUncheckedNode
 
@@ -319,20 +284,6 @@ case class COr2UncheckedNode(override val proposition: COR,
                              override val challengeOpt: Option[Array[Byte]],
                              override val commitments: Seq[FirstDLogProverMessage],
                              children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
-
-  def verify(): Boolean = {
-    ???
-    /*
-    lazy val noProof = leftChild.isInstanceOf[NoProof.type] && rightChild.isInstanceOf[NoProof.type]
-
-    lazy val challengeCheck = Helpers.xor(leftChild.asInstanceOf[UncheckedSigmaTree[_]].challenge,
-      rightChild.asInstanceOf[UncheckedSigmaTree[_]].challenge).sameElements(challenge)
-
-    lazy val subprotocolsCheck = leftChild.asInstanceOf[UncheckedSigmaTree[_]].verify() &&
-      rightChild.asInstanceOf[UncheckedSigmaTree[_]].verify()
-
-    noProof || (challengeCheck && subprotocolsCheck)*/
-  }
 
   override val propCode: PropositionCode = COR.Code
 
