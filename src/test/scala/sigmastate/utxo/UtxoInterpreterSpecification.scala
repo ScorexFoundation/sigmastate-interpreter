@@ -434,16 +434,47 @@ class UtxoInterpreterSpecification extends PropSpec
     proverC.prove(prop, ctx, message).isFailure shouldBe true
   }
 
+  property("simplest linear-sized ring signature (1-out-of-3 OR)") {
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+    val proverC = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkeyA = proverA.secrets.head.publicImage
+    val pubkeyB = proverB.secrets.head.publicImage
+    val pubkeyC = proverC.secrets.head.publicImage
+
+    val prop = OR(pubkeyA, pubkeyB, pubkeyC)
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+
+    val prA = proverA.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prA, message).get shouldBe true
+
+    val prB = proverB.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prB, message).get shouldBe true
+
+    val prC = proverC.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prC, message).get shouldBe true
+  }
+
+
+
   //two secrets are known, nevertheless, one will be simulated
-  property("simplest linear-sized ring signature (1-out-of-2 OR), both secrets known") {
+  property("simplest linear-sized ring signature (1-out-of-4 OR), all secrets are known") {
     val proverA = new UtxoProvingInterpreter
 
     val verifier = new UtxoInterpreter
 
     val pubkeyA1 = proverA.secrets.head.publicImage
-    val pubkeyA2 = proverA.secrets.tail.head.publicImage
+    val pubkeyA2 = proverA.secrets(1).publicImage
+    val pubkeyA3 = proverA.secrets(2).publicImage
+    val pubkeyA4 = proverA.secrets(3).publicImage
 
-    val prop = OR(pubkeyA1, pubkeyA2)
+    val prop = OR(Seq(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))
 
     //fake message, in a real-life a message is to be derived from a spending transaction
     val message = Blake2b256("Hello World")

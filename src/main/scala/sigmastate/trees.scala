@@ -23,12 +23,12 @@ object CAND {
   val Code: PropositionCode = 101: Byte
 }
 
-case class COR2(leftTree: SigmaTree, rightTree: SigmaTree) extends SigmaTree {
-  override val code: PropositionCode = COR2.Code
+case class COR(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
+  override val code: PropositionCode = COR.Code
   override type M = this.type
 }
 
-object COR2 {
+object COR {
   val Code: PropositionCode = 101: Byte
 }
 
@@ -219,12 +219,11 @@ case class CAndUnproven(override val proposition: CAND,
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
-case class COr2Unproven(override val proposition: COR2,
+case class COrUnproven(override val proposition: COR,
                         override val childrenCommitments: Seq[FirstDLogProverMessage] = Seq(),
                         override val challengeOpt: Option[Array[Byte]] = None,
                         override val simulated: Boolean,
-                        leftChild: ProofTree,
-                        rightChild: ProofTree) extends UnprovenConjecture {
+                        children: Seq[ProofTree]) extends UnprovenConjecture {
   override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
@@ -316,11 +315,10 @@ case class CAndUncheckedNode(override val proposition: CAND,
 }
 
 
-case class COr2UncheckedNode(override val proposition: COR2,
+case class COr2UncheckedNode(override val proposition: COR,
                              override val challengeOpt: Option[Array[Byte]],
                              override val commitments: Seq[FirstDLogProverMessage],
-                             leftChild: ProofTree,
-                             rightChild: ProofTree) extends UncheckedConjecture[COR2] {
+                             children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
 
   def verify(): Boolean = {
     ???
@@ -336,7 +334,7 @@ case class COr2UncheckedNode(override val proposition: COR2,
     noProof || (challengeCheck && subprotocolsCheck)*/
   }
 
-  override val propCode: PropositionCode = COR2.Code
+  override val propCode: PropositionCode = COR.Code
 
   override type M = COr2UncheckedNode
 

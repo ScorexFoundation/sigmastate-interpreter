@@ -103,13 +103,8 @@ trait Interpreter {
       reduced.size match {
         case i: Int if i == 0 => FalseConstantNode
         case i: Int if i == 1 => reduced.head
-        case i: Int if i == 2 =>
-          if (reduced.forall(_.isInstanceOf[SigmaTree]))
-            COR2(reduced.head.asInstanceOf[SigmaTree], reduced.tail.head.asInstanceOf[SigmaTree])
-          else OR(reduced)
         case _ =>
-          if (reduced.forall(_.isInstanceOf[SigmaTree]))
-            ??? //todo: COR for > 2 args
+          if (reduced.forall(_.isInstanceOf[SigmaTree])) COR(reduced.map(_.asInstanceOf[SigmaTree]))
           else OR(reduced)
       }
   })
@@ -188,20 +183,21 @@ trait Interpreter {
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 
     case or: COr2UncheckedNode =>
-      //todo: refactor boilerplate
-      val (challengeLeft, commitmentsLeft) = or.leftChild match {
-        case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
-        case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
+      val challenges = or.children map {
+        case u: UncheckedConjecture[_] => u.challengeOpt.get
+        case sn: SchnorrNode => sn.challenge
         case a: Any => println(a); ???
       }
-      val (challengeRight, commitmentsRight) = or.rightChild match {
-        case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
-        case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
+
+      val commitments = or.children flatMap {
+        case u: UncheckedConjecture[_] => u.commitments
+        case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
         case _ => ???
       }
+
       or.copy(
-        challengeOpt = Some(Helpers.xor(challengeLeft, challengeRight)),
-        commitments = commitmentsLeft ++ commitmentsRight)
+        challengeOpt = Some(Helpers.xor(challenges:_*)),
+        commitments = commitments)
 
     case sn: SchnorrNode =>
 

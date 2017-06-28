@@ -114,7 +114,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     }).ensuring { res =>
       res._1.isInstanceOf[BooleanConstantNode] ||
         res._1.isInstanceOf[CAND] ||
-        res._1.isInstanceOf[COR2] ||
+        res._1.isInstanceOf[COR] ||
         res._1.isInstanceOf[DLogNode]
     }
 
@@ -141,9 +141,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case and: CAndUnproven =>
       val simulated = and.children.exists(_.asInstanceOf[UnprovenTree].simulated)
       and.copy(simulated = simulated)
-    case or: COr2Unproven =>
-      val simulated = or.leftChild.asInstanceOf[UnprovenTree].simulated &&
-        or.rightChild.asInstanceOf[UnprovenTree].simulated
+    case or: COrUnproven =>
+      val simulated = or.children.forall(_.asInstanceOf[UnprovenTree].simulated)
       or.copy(simulated = simulated)
     case su: SchnorrUnproven =>
       val secretKnown = secrets.exists(_.publicImage.h == su.proposition.h)
@@ -153,22 +152,27 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   /**
     * 2. top-down: mark every child of a simulated node "simulated." If two or more children of a real COR
-    * are real,mark all but one simulated.
+    * are real, mark all but one simulated.
     */
 
   val polishSimulated: Strategy = everywheretd(rule[UnprovenTree] {
     case and: CAndUnproven =>
       if (and.simulated) and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
       else and
-    case or: COr2Unproven =>
+    case or: COrUnproven =>
       if (or.simulated) {
-        or.copy(
-          leftChild = or.leftChild.asInstanceOf[UnprovenTree].withSimulated(true),
-          rightChild = or.rightChild.asInstanceOf[UnprovenTree].withSimulated(true))
+        or.copy(children = or.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
       } else {
-        if (or.leftChild.asInstanceOf[UnprovenTree].real && or.rightChild.asInstanceOf[UnprovenTree].real)
-          or.copy(rightChild = or.rightChild.asInstanceOf[UnprovenTree].withSimulated(true))
-        else or
+        val newChildren = or.children.foldLeft((Seq[UnprovenTree](),false)){case ((children, realFound), child) =>
+          val cut = child.asInstanceOf[UnprovenTree]
+          (realFound, cut.real) match {
+            case (true, true) =>  (children :+ cut.withSimulated(true), true)
+            case (true, false) => (children :+ cut, true)
+            case (false, true) => (children :+ cut, true)
+            case (false, false) => (children :+ cut, false)
+          }
+        }._1
+        or.copy(children = newChildren)
       }
     case su: SchnorrUnproven => su
     case _ => ???
@@ -187,21 +191,20 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     case and: CAndUnproven if and.real => and
 
-    case or: COr2Unproven if or.real =>
-      val lc = if (or.leftChild.asInstanceOf[UnprovenTree].simulated)
-        or.leftChild.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()) else or.leftChild
-      val rc = if (or.rightChild.asInstanceOf[UnprovenTree].simulated)
-        or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()) else or.rightChild
-      or.copy(leftChild = lc, rightChild = rc)
+    case or: COrUnproven if or.real =>
+      or.copy(children = or.children.map(c => c.asInstanceOf[UnprovenTree].real match {
+        case true => c
+        case false => c.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes())
+      }))
 
-    case or: COr2Unproven if or.simulated =>
+    case or: COrUnproven if or.simulated =>
       assert(or.challengeOpt.isDefined)
 
-      val lc = if (or.leftChild.asInstanceOf[UnprovenTree].simulated)
-        or.leftChild.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()) else or.leftChild
-
-      val rc = or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Helpers.xor(or.challengeOpt.get, extractChallenge(lc)))
-      or.copy(leftChild = lc, rightChild = rc)
+      val t = or.children.tail.map(_.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()))
+      val toXor:Seq[Array[Byte]] = or.challengeOpt.get +: t.map(_.challengeOpt.get)
+      val h = or.children.head.asInstanceOf[UnprovenTree]
+        .withChallenge(Helpers.xor(toXor:_*))
+      or.copy(children = h +: t)
 
     case su: SchnorrUnproven => su
 
@@ -224,8 +227,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       }
       and.copy(childrenCommitments = commitments)
 
-    case or: COr2Unproven =>
-      val commitments = Seq(or.leftChild, or.rightChild).flatMap {
+    case or: COrUnproven =>
+      val commitments = or.children.flatMap {
         case ul: UnprovenLeaf => Seq(ul.commitmentOpt.get)
         case uc: UnprovenConjecture => uc.childrenCommitments
         case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
@@ -244,9 +247,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case _ => ???
   })
 
-  def extractChallenge(pt: ProofTree): Array[Byte] = pt match {
-    case upt: UnprovenTree => upt.challengeOpt.get
-    case sn: SchnorrNode => sn.challenge
+  def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
+    case upt: UnprovenTree => upt.challengeOpt
+    case sn: SchnorrNode => Some(sn.challenge)
     case _ => ???
   }
 
@@ -263,15 +266,15 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val andChallenge = and.challengeOpt.get
       and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withChallenge(andChallenge)))
 
-    case or: COr2Unproven if or.real =>
+    case or: COrUnproven if or.real =>
       assert(or.challengeOpt.isDefined)
-      val orChallenge = or.challengeOpt.get
-      or.leftChild match {
-        case tree: UnprovenTree if tree.real =>
-          or.copy(leftChild = tree.withChallenge(Helpers.xor(orChallenge, extractChallenge(or.rightChild))))
-        case _ =>
-          or.copy(rightChild = or.rightChild.asInstanceOf[UnprovenTree].withChallenge(Helpers.xor(orChallenge, extractChallenge(or.leftChild))))
-      }
+      val rootChallenge = or.challengeOpt.get
+      val challenge = Helpers.xor((rootChallenge +: or.children.flatMap(extractChallenge)):_*)
+
+      or.copy(children = or.children.map(c => c match{
+        case r: UnprovenTree if r.real => r.withChallenge(challenge)
+        case p: ProofTree => p
+      }))
 
     case su: SchnorrUnproven if su.real =>
       assert(su.challengeOpt.isDefined)
@@ -291,8 +294,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   val convertToUnproven: SigmaTree => UnprovenTree = attr {
     case CAND(sigmaTrees) =>
       CAndUnproven(CAND(sigmaTrees), Seq(), None, simulated = false, sigmaTrees.map(convertToUnproven))
-    case COR2(left, right) =>
-      COr2Unproven(COR2(left, right), Seq(), None, simulated = false, convertToUnproven(left), convertToUnproven(right))
+    case COR(children) =>
+      COrUnproven(COR(children), Seq(), None, simulated = false, children.map(convertToUnproven))
     case ci: DLogNode =>
       SchnorrUnproven(ci, None, None, None, simulated = false)
   }
@@ -301,8 +304,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   val convertToUnchecked: ProofTree => UncheckedTree = attr {
     case and: CAndUnproven =>
       CAndUncheckedNode(and.proposition, None, Seq(), and.children.map(convertToUnchecked))
-    case or: COr2Unproven =>
-      COr2UncheckedNode(or.proposition, None, Seq(), convertToUnchecked(or.leftChild), convertToUnchecked(or.rightChild))
+    case or: COrUnproven =>
+      COr2UncheckedNode(or.proposition, None, Seq(), or.children.map(convertToUnchecked))
     case s: SchnorrNode => s
     case _ => ???
   }

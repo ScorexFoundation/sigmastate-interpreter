@@ -11,7 +11,7 @@ class UtxoProvingInterpreter extends UtxoInterpreter with ProverInterpreter {
   implicit val soundness: Int = 256
 
   override lazy val secrets: Seq[DLogProverInput] = {
-    (1 to 2).map(_ => DLogProverInput.random()._1)
+    (1 to 4).map(_ => DLogProverInput.random()._1)
   }
 
   override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = (1 to 10).map { i =>
