@@ -1,4 +1,4 @@
-package scapi.sigma.rework
+package scapi.sigma
 
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -6,16 +6,17 @@ import java.security.SecureRandom
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
+import scapi.sigma.rework._
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
-import sigmastate.{EcPointFunctions, SigmaProofOfKnowledgeTree}
 import sigmastate.SigmaProposition.PropositionCode
+import sigmastate.{EcPointFunctions, SigmaProofOfKnowledgeTree}
 
 import scala.concurrent.Future
 import scala.util.Try
 
+object DLogProtocol {
 
-package object DLogProtocol {
 
   trait DLogSigmaProtocol extends SigmaProtocol[DLogSigmaProtocol] {
     override type A = FirstDLogProverMessage
@@ -28,8 +29,6 @@ package object DLogProtocol {
 
     override type M = this.type
     override val code: PropositionCode = DLogNode.Code
-
-    override def serializer: Serializer[DLogNode.this.type] = ???
 
     override lazy val dlogGroup: DlogGroup = DLogNode.dlogGroup
     override val soundness: Int = 256
@@ -75,7 +74,7 @@ package object DLogProtocol {
   }
 
   object DLogProverInput {
-    def random()(implicit dlog:DlogGroup, soundness: Int): (DLogProverInput, DLogNode) = {
+    def random()(implicit dlog: DlogGroup, soundness: Int): (DLogProverInput, DLogNode) = {
       val g = dlog.getGenerator
       val qMinusOne = dlog.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
@@ -158,7 +157,7 @@ package object DLogProtocol {
       r -> FirstDLogProverMessage(a.generateSendableData().asInstanceOf[ECElementSendableData])
     }
 
-    def secondMessage(privateInput: DLogProverInput, rnd: BigInteger, challenge:Challenge): SecondDLogProverMessage = {
+    def secondMessage(privateInput: DLogProverInput, rnd: BigInteger, challenge: Challenge): SecondDLogProverMessage = {
       val q: BigInteger = privateInput.dlogGroup.getOrder
       val e: BigInteger = new BigInteger(1, challenge.bytes)
       val ew: BigInteger = e.multiply(privateInput.w).mod(q)
@@ -200,4 +199,5 @@ package object DLogProtocol {
 
     override def transcript: Future[Option[DLogTranscript]] = ???
   }
+
 }

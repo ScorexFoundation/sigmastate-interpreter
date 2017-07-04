@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 
-import edu.biu.scapi.primitives.dlog.DlogGroup
+import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
@@ -13,7 +13,9 @@ import scala.collection.mutable
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
-import scapi.sigma.rework.DLogProtocol.FirstDLogProverMessage
+import scapi.sigma.DLogProtocol.FirstDLogProverMessage
+import scapi.sigma.FirstDiffieHellmanTupleProverMessage
+import scapi.sigma.rework.FirstProverMessage
 
 
 trait Interpreter {
@@ -147,6 +149,7 @@ trait Interpreter {
             val (challenge, rootCommitments) = newRoot match {
               case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
               case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
+              case dh: DiffieHellmanTupleUncheckedNode => (dh.challenge, Seq(dh.firstMessageOpt.get))
             }
 
             val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
@@ -169,11 +172,13 @@ trait Interpreter {
       val challenges: Seq[Array[Byte]] = and.leafs.map {
         case u: UncheckedConjecture[_] => u.challengeOpt.get
         case sn: SchnorrNode => sn.challenge
+        case dh: DiffieHellmanTupleUncheckedNode => dh.challenge
       }
 
-      val commitments: Seq[FirstDLogProverMessage] = and.leafs.flatMap {
+      val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
         case u: UncheckedConjecture[_] => u.commitments
         case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
+        case dh: DiffieHellmanTupleUncheckedNode => Seq(dh.firstMessageOpt.get)
       }
 
       val challenge = challenges.head
@@ -186,12 +191,14 @@ trait Interpreter {
       val challenges = or.children map {
         case u: UncheckedConjecture[_] => u.challengeOpt.get
         case sn: SchnorrNode => sn.challenge
+        case dh: DiffieHellmanTupleUncheckedNode => dh.challenge
         case a: Any => println(a); ???
       }
 
       val commitments = or.children flatMap {
         case u: UncheckedConjecture[_] => u.commitments
         case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
+        case dh: DiffieHellmanTupleUncheckedNode => Seq(dh.firstMessageOpt.get)
         case _ => ???
       }
 
@@ -210,6 +217,31 @@ trait Interpreter {
         dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
 
       sn.copy(firstMessageOpt = Some(FirstDLogProverMessage(a)))
+
+    //todo: check that g,h belong to the group
+    //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
+    case dh: DiffieHellmanTupleUncheckedNode =>
+      val dlog = dh.proposition.dlogGroup
+
+      val g = dh.proposition.g
+      val h = dh.proposition.h
+      val u = dh.proposition.u
+      val v = dh.proposition.v
+
+      val z = dh.secondMessage.z
+
+      val e = new BigInteger(1, dh.challenge)
+
+      val gToZ = dlog.exponentiate(g, z)
+      val hToZ = dlog.exponentiate(h, z)
+
+      val uToE = dlog.exponentiate(u, e)
+      val vToE = dlog.exponentiate(v, e)
+
+      val a = dlog.multiplyGroupElements(gToZ, dlog.getInverse(uToE)).generateSendableData().asInstanceOf[ECElementSendableData]
+      val b = dlog.multiplyGroupElements(hToZ, dlog.getInverse(vToE)).generateSendableData().asInstanceOf[ECElementSendableData]
+      dh.copy(firstMessageOpt = Some(FirstDiffieHellmanTupleProverMessage(a,b)))
+
     case _ => ???
   })
 

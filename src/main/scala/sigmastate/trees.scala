@@ -1,8 +1,10 @@
 package sigmastate
 
 import java.math.BigInteger
-import scapi.sigma.rework.DLogProtocol._
-import scapi.sigma.rework.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+
+import scapi.sigma.DLogProtocol._
+import scapi.sigma.{DiffieHellmanTupleNode, FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage}
+import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import sigmastate.SigmaProposition.PropositionCode
@@ -202,15 +204,15 @@ sealed trait UnprovenTree extends ProofTree {
 }
 
 sealed trait UnprovenLeaf extends UnprovenTree {
-  val commitmentOpt: Option[FirstDLogProverMessage]
+  val commitments: Seq[FirstProverMessage[_]]
 }
 
 sealed trait UnprovenConjecture extends UnprovenTree {
-  val childrenCommitments: Seq[FirstDLogProverMessage]
+  val childrenCommitments: Seq[FirstProverMessage[_]]
 }
 
 case class CAndUnproven(override val proposition: CAND,
-                        override val childrenCommitments: Seq[FirstDLogProverMessage] = Seq(),
+                        override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
                         override val challengeOpt: Option[Array[Byte]] = None,
                         override val simulated: Boolean,
                         children: Seq[ProofTree]) extends UnprovenConjecture {
@@ -220,7 +222,7 @@ case class CAndUnproven(override val proposition: CAND,
 }
 
 case class COrUnproven(override val proposition: COR,
-                        override val childrenCommitments: Seq[FirstDLogProverMessage] = Seq(),
+                        override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
                         override val challengeOpt: Option[Array[Byte]] = None,
                         override val simulated: Boolean,
                         children: Seq[ProofTree]) extends UnprovenConjecture {
@@ -230,15 +232,28 @@ case class COrUnproven(override val proposition: COR,
 }
 
 case class SchnorrUnproven(override val proposition: DLogNode,
-                           override val commitmentOpt: Option[FirstDLogProverMessage],
+                           val commitmentOpt: Option[FirstDLogProverMessage],
                            val randomnessOpt: Option[BigInteger],
                            override val challengeOpt: Option[Array[Byte]] = None,
                            override val simulated: Boolean) extends UnprovenLeaf {
+
+  override lazy val commitments: Seq[FirstDLogProverMessage] = commitmentOpt.map(c => Seq(c)).getOrElse(Seq())
+
   override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
+case class DiffieHellmanTupleUnproven(override val proposition: DiffieHellmanTupleNode,
+                                      override val commitments: Seq[FirstDiffieHellmanTupleProverMessage],
+                                      randomnessOpt: Option[BigInteger],
+                                      override val challengeOpt: Option[Array[Byte]] = None,
+                                      override val simulated: Boolean
+                                     ) extends UnprovenLeaf {
+  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
+
+  override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+}
 
 sealed trait UncheckedTree extends ProofTree
 
@@ -251,7 +266,7 @@ sealed trait UncheckedSigmaTree[ST <: SigmaTree] extends UncheckedTree with Byte
 
 trait UncheckedConjecture[ST <: SigmaTree] extends UncheckedSigmaTree[ST] {
   val challengeOpt: Option[Array[Byte]]
-  val commitments: Seq[FirstDLogProverMessage]
+  val commitments: Seq[FirstProverMessage[_]]
 }
 
 
@@ -267,9 +282,21 @@ case class SchnorrNode(override val proposition: DLogNode,
   override def serializer: Serializer[M] = ???
 }
 
+case class DiffieHellmanTupleUncheckedNode(override val proposition: DiffieHellmanTupleNode,
+                       firstMessageOpt: Option[FirstDiffieHellmanTupleProverMessage],
+                       challenge: Array[Byte],
+                       secondMessage: SecondDiffieHellmanTupleProverMessage)
+  extends UncheckedSigmaTree[DiffieHellmanTupleNode] {
+
+  override val propCode: SigmaProposition.PropositionCode = DiffieHellmanTupleNode.Code
+  override type M = DiffieHellmanTupleUncheckedNode
+
+  override def serializer: Serializer[M] = ???
+}
+
 case class CAndUncheckedNode(override val proposition: CAND,
                              override val challengeOpt: Option[Array[Byte]],
-                             override val commitments: Seq[FirstDLogProverMessage],
+                             override val commitments: Seq[FirstProverMessage[_]],
                              leafs: Seq[ProofTree])
   extends UncheckedConjecture[CAND] {
 
@@ -282,7 +309,7 @@ case class CAndUncheckedNode(override val proposition: CAND,
 
 case class COr2UncheckedNode(override val proposition: COR,
                              override val challengeOpt: Option[Array[Byte]],
-                             override val commitments: Seq[FirstDLogProverMessage],
+                             override val commitments: Seq[FirstProverMessage[_]],
                              children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
 
   override val propCode: PropositionCode = COR.Code

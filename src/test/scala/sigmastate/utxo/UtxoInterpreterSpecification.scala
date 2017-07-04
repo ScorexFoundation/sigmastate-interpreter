@@ -2,7 +2,8 @@ package sigmastate.utxo
 
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scapi.sigma.rework.DLogProtocol.DLogNode
+import scapi.sigma.DLogProtocol.DLogNode
+import scapi.sigma.DiffieHellmanTupleNode
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
@@ -20,8 +21,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val h1 = prover1.secrets.head.publicImage.h
-    val h2 = prover2.secrets.head.publicImage.h
+    val h1 = prover1.dlogSecrets.head.publicImage.h
+    val h2 = prover2.dlogSecrets.head.publicImage.h
 
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
 
@@ -54,8 +55,8 @@ class UtxoInterpreterSpecification extends PropSpec
     //project's prover with his private key
     val projectProver = new UtxoProvingInterpreter
 
-    val backerPubKey = backerProver.secrets.head.publicImage.h
-    val projectPubKey = projectProver.secrets.head.publicImage.h
+    val backerPubKey = backerProver.dlogSecrets.head.publicImage.h
+    val projectPubKey = projectProver.dlogSecrets.head.publicImage.h
 
     val timeout = IntLeaf(100)
     val minToRaise = IntLeaf(1000)
@@ -148,7 +149,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //backer's prover with his private key
     val userProver = new UtxoProvingInterpreter
 
-    val regScript = DLogNode(userProver.secrets.head.publicImage.h)
+    val regScript = DLogNode(userProver.dlogSecrets.head.publicImage.h)
 
     val script = OR(
       regScript,
@@ -286,7 +287,7 @@ class UtxoInterpreterSpecification extends PropSpec
   property("context enriching mixed w. crypto") {
     val prover = new UtxoProvingInterpreter
     val preimage = prover.contextExtenders.head._2.value
-    val pubkey = prover.secrets.head.publicImage
+    val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = AND(
       pubkey,
@@ -310,7 +311,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prover = new UtxoProvingInterpreter
     val preimage1 = prover.contextExtenders.head._2.value
     val preimage2 = prover.contextExtenders.tail.head._2.value
-    val pubkey = prover.secrets.head.publicImage
+    val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = AND(
       pubkey,
@@ -345,8 +346,8 @@ class UtxoInterpreterSpecification extends PropSpec
   property("atomic cross-chain trading") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
     val verifier = new UtxoInterpreter
 
     val x = proverA.contextExtenders.head._2.value
@@ -415,8 +416,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val proverC = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val prop = OR(pubkeyA, pubkeyB)
 
@@ -440,9 +441,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val proverC = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
-    val pubkeyC = proverC.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
+    val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val prop = OR(pubkeyA, pubkeyB, pubkeyC)
 
@@ -469,10 +470,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val pubkeyA1 = proverA.secrets.head.publicImage
-    val pubkeyA2 = proverA.secrets(1).publicImage
-    val pubkeyA3 = proverA.secrets(2).publicImage
-    val pubkeyA4 = proverA.secrets(3).publicImage
+    val pubkeyA1 = proverA.dlogSecrets.head.publicImage
+    val pubkeyA2 = proverA.dlogSecrets(1).publicImage
+    val pubkeyA3 = proverA.dlogSecrets(2).publicImage
+    val pubkeyA4 = proverA.dlogSecrets(3).publicImage
 
     val prop = OR(Seq(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))
 
@@ -493,10 +494,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
-    val pubkeyC = proverC.secrets.head.publicImage
-    val pubkeyD = proverD.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
+    val pubkeyC = proverC.dlogSecrets.head.publicImage
+    val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyC, pubkeyD))
 
@@ -510,11 +511,11 @@ class UtxoInterpreterSpecification extends PropSpec
     proverC.prove(prop, ctx, message).isFailure shouldBe true
     proverD.prove(prop, ctx, message).isFailure shouldBe true
 
-    val proverAB = proverA.withSecrets(Seq(proverB.secrets.head))
+    val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
     val pr = proverAB.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, pr, message).get shouldBe true
 
-    val proverCD = proverC.withSecrets(Seq(proverD.secrets.head))
+    val proverCD = proverC.withSecrets(Seq(proverD.dlogSecrets.head))
     val pr2 = proverCD.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, pr2, message).get shouldBe true
   }
@@ -527,10 +528,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
-    val pubkeyC = proverC.secrets.head.publicImage
-    val pubkeyD = proverD.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
+    val pubkeyC = proverC.dlogSecrets.head.publicImage
+    val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val prop = OR(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
@@ -548,7 +549,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prD = proverD.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, prD, message).get shouldBe true
 
-    val proverAB = proverA.withSecrets(Seq(proverB.secrets.head))
+    val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
     val pr = proverAB.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, pr, message).get shouldBe true
   }
@@ -561,10 +562,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
-    val pubkeyC = proverC.secrets.head.publicImage
-    val pubkeyD = proverD.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
+    val pubkeyC = proverC.dlogSecrets.head.publicImage
+    val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val prop = AND(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
@@ -578,11 +579,11 @@ class UtxoInterpreterSpecification extends PropSpec
     proverC.prove(prop, ctx, message).isFailure shouldBe true
     proverD.prove(prop, ctx, message).isFailure shouldBe true
 
-    val proverAC = proverA.withSecrets(Seq(proverC.secrets.head))
+    val proverAC = proverA.withSecrets(Seq(proverC.dlogSecrets.head))
     val pr = proverAC.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, pr, message).get shouldBe true
 
-    val proverBD = proverB.withSecrets(Seq(proverD.secrets.head))
+    val proverBD = proverB.withSecrets(Seq(proverD.dlogSecrets.head))
     val pr2 = proverBD.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, pr2, message).get shouldBe true
   }
@@ -595,10 +596,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
-    val pubkeyC = proverC.secrets.head.publicImage
-    val pubkeyD = proverD.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
+    val pubkeyC = proverC.dlogSecrets.head.publicImage
+    val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val prop = AND(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
@@ -612,14 +613,14 @@ class UtxoInterpreterSpecification extends PropSpec
     proverC.prove(prop, ctx, message).isFailure shouldBe true
     proverD.prove(prop, ctx, message).isFailure shouldBe true
 
-    val proverAB = proverA.withSecrets(Seq(proverB.secrets.head))
+    val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
     proverAB.prove(prop, ctx, message).isFailure shouldBe true
 
-    val proverABC = proverAB.withSecrets(Seq(proverC.secrets.head))
+    val proverABC = proverAB.withSecrets(Seq(proverC.dlogSecrets.head))
     val prABC = proverABC.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, prABC, message).get shouldBe true
 
-    val proverABD = proverAB.withSecrets(Seq(proverC.secrets.head))
+    val proverABD = proverAB.withSecrets(Seq(proverC.dlogSecrets.head))
     val prABD = proverABD.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, prABD, message).get shouldBe true
   }
@@ -632,10 +633,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
-    val pubkeyC = proverC.secrets.head.publicImage
-    val pubkeyD = proverD.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
+    val pubkeyC = proverC.dlogSecrets.head.publicImage
+    val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val prop = OR(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
@@ -664,8 +665,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val prop = OR(pubkeyA, pubkeyB, GT(Height, IntLeaf(500)))
 
@@ -693,10 +694,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val pubkeyA = proverA.secrets.head.publicImage
-    val pubkeyB = proverB.secrets.head.publicImage
-    val pubkeyC = proverC.secrets.head.publicImage
-    val pubkeyD = proverD.secrets.head.publicImage
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
+    val pubkeyC = proverC.dlogSecrets.head.publicImage
+    val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntLeaf(500))))
 
@@ -720,5 +721,72 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx2, prB2, message).get shouldBe true
     val prC2 = proverC.prove(prop, ctx2, message).get
     verifier.verify(prop, ctx2, prC2, message).get shouldBe true
+  }
+
+  property("DH tuple"){
+    val prover = new UtxoProvingInterpreter
+    val fakeProver = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
+
+    val secret = prover.dhSecrets.head
+
+    val ci = secret.commonInput
+
+    val prop = DiffieHellmanTupleNode(ci.g, ci.h, ci.u, ci.v)
+    val wrongProp = DiffieHellmanTupleNode(ci.g, ci.h, ci.u, ci.u)
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+
+    val pr = prover.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, pr, message).get shouldBe true
+
+    fakeProver.prove(prop, ctx, message).isSuccess shouldBe false
+    prover.prove(wrongProp, ctx, message).isSuccess shouldBe false
+  }
+
+  property("DH tuple - simulation"){
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
+
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubdhB = proverB.dhSecrets.head.publicImage
+
+    val prop = OR(pubkeyA, pubdhB)
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+
+    val prA = proverA.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prA, message).get shouldBe true
+  }
+
+  property("DH tuple and DLOG"){
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
+
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubdhA = proverA.dhSecrets.head.publicImage
+
+    val prop = AND(pubkeyA, pubdhA)
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+
+    val prA = proverA.prove(prop, ctx, message).get
+    verifier.verify(prop, ctx, prA, message).get shouldBe true
+
+    proverB.prove(prop, ctx, message).isSuccess shouldBe false
   }
 }
