@@ -29,6 +29,7 @@ case class ScopedBinding(bindings: Map[Variable[_], Value], relations: Seq[Relat
 
 trait Function extends StateTree
 
+//todo: make a variant with output index
 case class TxHasOutput(relation: Relation*) extends Function
 
 
