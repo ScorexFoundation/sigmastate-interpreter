@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import scapi.sigma.rework.{Challenge, SigmaProtocolPrivateInput}
+import scapi.sigma.rework.{Challenge, FirstProverMessage, SigmaProtocolPrivateInput}
 import scapi.sigma.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.Helpers
@@ -90,7 +90,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     //step 5 - compute root challenge
     val commitments = step4 match {
-      case ul: UnprovenLeaf => ul.commitments
+      case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
       case uc: UnprovenConjecture => uc.childrenCommitments
     }
 
@@ -232,7 +232,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   val simulations: Strategy = everywherebu(rule[ProofTree] {
     case and: CAndUnproven =>
       val commitments = and.children.flatMap {
-        case ul: UnprovenLeaf => ul.commitments
+        case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
         case uc: UnprovenConjecture => uc.childrenCommitments
         case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
         case dh: DiffieHellmanTupleUncheckedNode => Seq(dh.firstMessageOpt.get)
@@ -242,7 +242,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     case or: COrUnproven =>
       val commitments = or.children.flatMap {
-        case ul: UnprovenLeaf => ul.commitments
+        case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
         case uc: UnprovenConjecture => uc.childrenCommitments
         case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
         case dh: DiffieHellmanTupleUncheckedNode => Seq(dh.firstMessageOpt.get)
@@ -267,7 +267,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         DiffieHellmanTupleUncheckedNode(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
       } else {
         val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(dhu.proposition)
-        dhu.copy(commitments = Seq(fm), randomnessOpt = Some(r))
+        dhu.copy(commitmentOpt = Some(fm), randomnessOpt = Some(r))
       }
 
     case _ => ???
@@ -341,7 +341,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case ci: DLogNode =>
       SchnorrUnproven(ci, None, None, None, simulated = false)
     case dh: DiffieHellmanTupleNode =>
-      DiffieHellmanTupleUnproven(dh, Seq(), None, None, simulated = false)
+      DiffieHellmanTupleUnproven(dh, None, None, None, simulated = false)
   }
 
   //converts ProofTree => UncheckedTree

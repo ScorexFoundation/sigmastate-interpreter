@@ -204,7 +204,7 @@ sealed trait UnprovenTree extends ProofTree {
 }
 
 sealed trait UnprovenLeaf extends UnprovenTree {
-  val commitments: Seq[FirstProverMessage[_]]
+  val commitmentOpt: Option[FirstProverMessage[_]]
 }
 
 sealed trait UnprovenConjecture extends UnprovenTree {
@@ -232,12 +232,10 @@ case class COrUnproven(override val proposition: COR,
 }
 
 case class SchnorrUnproven(override val proposition: DLogNode,
-                           val commitmentOpt: Option[FirstDLogProverMessage],
-                           val randomnessOpt: Option[BigInteger],
+                           override val commitmentOpt: Option[FirstDLogProverMessage],
+                           randomnessOpt: Option[BigInteger],
                            override val challengeOpt: Option[Array[Byte]] = None,
                            override val simulated: Boolean) extends UnprovenLeaf {
-
-  override lazy val commitments: Seq[FirstDLogProverMessage] = commitmentOpt.map(c => Seq(c)).getOrElse(Seq())
 
   override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
 
@@ -245,7 +243,7 @@ case class SchnorrUnproven(override val proposition: DLogNode,
 }
 
 case class DiffieHellmanTupleUnproven(override val proposition: DiffieHellmanTupleNode,
-                                      override val commitments: Seq[FirstDiffieHellmanTupleProverMessage],
+                                      override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Array[Byte]] = None,
                                       override val simulated: Boolean
