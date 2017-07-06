@@ -172,10 +172,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       if (or.simulated) {
         or.copy(children = or.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
       } else {
-        val newChildren = or.children.foldLeft((Seq[UnprovenTree](),false)){case ((children, realFound), child) =>
+        val newChildren = or.children.foldLeft((Seq[UnprovenTree](), false)) { case ((children, realFound), child) =>
           val cut = child.asInstanceOf[UnprovenTree]
           (realFound, cut.real) match {
-            case (true, true) =>  (children :+ cut.withSimulated(true), true)
+            case (true, true) => (children :+ cut.withSimulated(true), true)
             case (true, false) => (children :+ cut, true)
             case (false, true) => (children :+ cut, true)
             case (false, false) => (children :+ cut, false)
@@ -211,9 +211,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       assert(or.challengeOpt.isDefined)
 
       val t = or.children.tail.map(_.asInstanceOf[UnprovenTree].withChallenge(Random.randomBytes()))
-      val toXor:Seq[Array[Byte]] = or.challengeOpt.get +: t.map(_.challengeOpt.get)
+      val toXor: Seq[Array[Byte]] = or.challengeOpt.get +: t.map(_.challengeOpt.get)
       val h = or.children.head.asInstanceOf[UnprovenTree]
-        .withChallenge(Helpers.xor(toXor:_*))
+        .withChallenge(Helpers.xor(toXor: _*))
       or.copy(children = h +: t)
 
     case su: SchnorrUnproven => su
@@ -234,8 +234,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val commitments = and.children.flatMap {
         case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
         case uc: UnprovenConjecture => uc.childrenCommitments
-        case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
-        case dh: DiffieHellmanTupleUncheckedNode => Seq(dh.firstMessageOpt.get)
+        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
+        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
         case _ => ???
       }
       and.copy(childrenCommitments = commitments)
@@ -244,9 +244,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val commitments = or.children.flatMap {
         case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
         case uc: UnprovenConjecture => uc.childrenCommitments
-        case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
-        case dh: DiffieHellmanTupleUncheckedNode => Seq(dh.firstMessageOpt.get)
-        case a:Any => ???
+        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
+        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
+        case a: Any => ???
       }
       or.copy(childrenCommitments = commitments)
 
@@ -296,7 +296,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case or: COrUnproven if or.real =>
       assert(or.challengeOpt.isDefined)
       val rootChallenge = or.challengeOpt.get
-      val challenge = Helpers.xor(rootChallenge +: or.children.flatMap(extractChallenge):_*)
+      val challenge = Helpers.xor(rootChallenge +: or.children.flatMap(extractChallenge): _*)
 
       or.copy(children = or.children.map {
         case r: UnprovenTree if r.real => r.withChallenge(challenge)

@@ -148,8 +148,8 @@ trait Interpreter {
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
             val (challenge, rootCommitments) = newRoot match {
               case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
-              case sn: SchnorrNode => (sn.challenge, Seq(sn.firstMessageOpt.get))
-              case dh: DiffieHellmanTupleUncheckedNode => (dh.challenge, Seq(dh.firstMessageOpt.get))
+              case sn: SchnorrNode => (sn.challenge, sn.firstMessageOpt.toSeq)
+              case dh: DiffieHellmanTupleUncheckedNode => (dh.challenge, dh.firstMessageOpt.toSeq)
             }
 
             val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
@@ -177,8 +177,8 @@ trait Interpreter {
 
       val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
         case u: UncheckedConjecture[_] => u.commitments
-        case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
-        case dh: DiffieHellmanTupleUncheckedNode => Seq(dh.firstMessageOpt.get)
+        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
+        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
       }
 
       val challenge = challenges.head
@@ -197,13 +197,13 @@ trait Interpreter {
 
       val commitments = or.children flatMap {
         case u: UncheckedConjecture[_] => u.commitments
-        case sn: SchnorrNode => Seq(sn.firstMessageOpt.get)
-        case dh: DiffieHellmanTupleUncheckedNode => Seq(dh.firstMessageOpt.get)
+        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
+        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
         case _ => ???
       }
 
       or.copy(
-        challengeOpt = Some(Helpers.xor(challenges:_*)),
+        challengeOpt = Some(Helpers.xor(challenges: _*)),
         commitments = commitments)
 
     case sn: SchnorrNode =>
@@ -240,12 +240,11 @@ trait Interpreter {
 
       val a = dlog.multiplyGroupElements(gToZ, dlog.getInverse(uToE)).generateSendableData().asInstanceOf[ECElementSendableData]
       val b = dlog.multiplyGroupElements(hToZ, dlog.getInverse(vToE)).generateSendableData().asInstanceOf[ECElementSendableData]
-      dh.copy(firstMessageOpt = Some(FirstDiffieHellmanTupleProverMessage(a,b)))
+      dh.copy(firstMessageOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
 
     case _ => ???
   })
-
-
+  
   def verify(exp: SigmaStateTree,
              context: CTX,
              proverResult: ProverResult[ProofT],

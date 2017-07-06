@@ -43,6 +43,7 @@ case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree
 
 object OR {
   def apply(left: SigmaStateTree, right: SigmaStateTree): OR = apply(Seq(left, right))
+
   def apply(arg1: SigmaStateTree, arg2: SigmaStateTree, arg3: SigmaStateTree): OR = apply(Seq(arg1, arg2, arg3))
 }
 
@@ -222,10 +223,10 @@ case class CAndUnproven(override val proposition: CAND,
 }
 
 case class COrUnproven(override val proposition: COR,
-                        override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
-                        override val challengeOpt: Option[Array[Byte]] = None,
-                        override val simulated: Boolean,
-                        children: Seq[ProofTree]) extends UnprovenConjecture {
+                       override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
+                       override val challengeOpt: Option[Array[Byte]] = None,
+                       override val simulated: Boolean,
+                       children: Seq[ProofTree]) extends UnprovenConjecture {
   override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
@@ -281,9 +282,9 @@ case class SchnorrNode(override val proposition: DLogNode,
 }
 
 case class DiffieHellmanTupleUncheckedNode(override val proposition: DiffieHellmanTupleNode,
-                       firstMessageOpt: Option[FirstDiffieHellmanTupleProverMessage],
-                       challenge: Array[Byte],
-                       secondMessage: SecondDiffieHellmanTupleProverMessage)
+                                           firstMessageOpt: Option[FirstDiffieHellmanTupleProverMessage],
+                                           challenge: Array[Byte],
+                                           secondMessage: SecondDiffieHellmanTupleProverMessage)
   extends UncheckedSigmaTree[DiffieHellmanTupleNode] {
 
   override val propCode: SigmaProposition.PropositionCode = DiffieHellmanTupleNode.Code
