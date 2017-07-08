@@ -23,8 +23,8 @@ class SigmaStateBoxUnlocker extends BoxUnlocker[SigmaStateTree] {
   override val boxKey: Proof[SigmaStateTree] = ???
 }
 
-case class SigmaStateTransaction(override val unlockers: Traversable[SigmaStateBoxUnlocker],
-                                 override val newBoxes: Traversable[SigmaStateBox])
+case class SigmaStateTransaction(override val unlockers: Seq[SigmaStateBoxUnlocker],
+                                 override val newBoxes: Seq[SigmaStateBox])
   extends BoxTransaction[SigmaStateTree, SigmaStateBox] {
 
   override lazy val fee: Long = ???

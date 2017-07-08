@@ -32,4 +32,5 @@ trait Function extends StateTree
 //todo: make a variant with output index
 case class TxHasOutput(relation: Relation*) extends Function
 
+case class TxOutput(outIndex: Int, relation: Relation*) extends Function
 

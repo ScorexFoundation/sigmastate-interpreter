@@ -17,32 +17,11 @@ class UtxoInterpreter extends Interpreter {
   def fnSubst(utxoContext: UtxoContext): Strategy = everywherebu {
     rule[SigmaStateTree] {
       case hasOut: TxHasOutput =>
-        val ts = hasOut.relation.map { r =>
-          (r.left, r.right) match {
-            case (OutputAmount, _) | (_, OutputAmount) => OutputAmount -> r
-            case (OutputScript, _) | (_, OutputScript) => OutputScript -> r
-            case _ => ???
-          }
+        val s = utxoContext.spendingTransaction.newBoxes.size
+        val outConditions = (0 until s).map { idx =>
+          TxOutput(idx, hasOut.relation:_*)
         }
-
-        val sbs = utxoContext.spendingTransaction.newBoxes.map { out =>
-          val amount = out.value
-          val bs = mutable.Map[Variable[_], Value]()
-
-          val rs = ts.map { case (v, r) =>
-            v match {
-              case OutputAmount =>
-                bs.put(OutputAmount, IntLeaf(amount))
-                r
-              case OutputScript =>
-                bs.put(OutputScript, PropLeaf(out.proposition))
-                r
-              case _ => ???
-            }
-          }
-          ScopedBinding(bs.toMap, rs)
-        }
-        OR(sbs.toSeq)
+        OR(outConditions)
     }
   }
 
@@ -72,7 +51,36 @@ class UtxoInterpreter extends Interpreter {
     }
   }
 
-  def ssSubst(context: UtxoContext): Strategy = everywherebu(rule[Value] { case SelfScript => PropLeaf(context.self._1.proposition) })
+  def ssSubst(context: UtxoContext): Strategy = everywherebu(rule[SigmaStateTree] {
+    case SelfScript => PropLeaf(context.self._1.proposition)
+
+
+    case idxOut: TxOutput =>
+      val ts = idxOut.relation.map { r =>
+        (r.left, r.right) match {
+          case (OutputAmount, _) | (_, OutputAmount) => OutputAmount -> r
+          case (OutputScript, _) | (_, OutputScript) => OutputScript -> r
+          case _ => ???
+        }
+      }
+
+      val out = context.spendingTransaction.newBoxes(idxOut.outIndex)
+      val amount = out.value
+      val bs = mutable.Map[Variable[_], Value]()
+
+      val rs = ts.map { case (v, r) =>
+        v match {
+          case OutputAmount =>
+            bs.put(OutputAmount, IntLeaf(amount))
+            r
+          case OutputScript =>
+            bs.put(OutputScript, PropLeaf(out.proposition))
+            r
+          case _ => ???
+        }
+      }
+      ScopedBinding(bs.toMap, rs)
+  })
 
   def varSubst(context: UtxoContext): Strategy = everywherebu(
     rule[Value] {
