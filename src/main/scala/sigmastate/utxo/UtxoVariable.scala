@@ -24,8 +24,6 @@ case object OutputAmount extends Variable[IntLeaf]
 
 case object OutputScript extends Variable[PropLeaf]
 
-//todo: more strict-type solution Variable[V] => Value[V]
-case class ScopedBinding(bindings: Map[Variable[_], Value], relations: Seq[Relation]) extends StateTree
 
 trait Function extends StateTree
 

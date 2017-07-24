@@ -25,35 +25,8 @@ class UtxoInterpreter extends Interpreter {
     }
   }
 
-  def sbSubst(): Strategy = everywherebu {
-    rule[SigmaStateTree] {
-      case sb: ScopedBinding =>
-        val rels = sb.relations.map { r =>
-          val rl = r.left match {
-            case v: Variable[_] =>
-              sb.bindings.get(v) match {
-                case Some(value) => r.withLeft(value)
-                case None => r
-              }
-            case _ => r
-          }
-
-          rl.right match {
-            case v: Variable[_] =>
-              sb.bindings.get(v) match {
-                case Some(value) => rl.withRight(value)
-                case None => rl
-              }
-            case _ => rl
-          }
-        }
-        AND(rels)
-    }
-  }
-
   def ssSubst(context: UtxoContext): Strategy = everywherebu(rule[SigmaStateTree] {
     case SelfScript => PropLeaf(context.self._1.proposition)
-
 
     case idxOut: TxOutput =>
       val ts = idxOut.relation.map { r =>
@@ -66,20 +39,39 @@ class UtxoInterpreter extends Interpreter {
 
       val out = context.spendingTransaction.newBoxes(idxOut.outIndex)
       val amount = out.value
-      val bs = mutable.Map[Variable[_], Value]()
+      val bindings = mutable.Map[Variable[_], Value]()
 
-      val rs = ts.map { case (v, r) =>
+      val relations = ts.map { case (v, r) =>
         v match {
           case OutputAmount =>
-            bs.put(OutputAmount, IntLeaf(amount))
+            bindings.put(OutputAmount, IntLeaf(amount))
             r
           case OutputScript =>
-            bs.put(OutputScript, PropLeaf(out.proposition))
+            bindings.put(OutputScript, PropLeaf(out.proposition))
             r
           case _ => ???
         }
       }
-      ScopedBinding(bs.toMap, rs)
+      val rels = relations.map { r =>
+        val rl = r.left match {
+          case v: Variable[_] =>
+            bindings.get(v) match {
+              case Some(value) => r.withLeft(value)
+              case None => r
+            }
+          case _ => r
+        }
+
+        rl.right match {
+          case v: Variable[_] =>
+            bindings.get(v) match {
+              case Some(value) => rl.withRight(value)
+              case None => rl
+            }
+          case _ => rl
+        }
+      }
+      AND(rels)
   })
 
   def varSubst(context: UtxoContext): Strategy = everywherebu(
@@ -92,7 +84,6 @@ class UtxoInterpreter extends Interpreter {
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext): SigmaStateTree = {
     val afterFn = fnSubst(context)(tree).get.asInstanceOf[SigmaStateTree]
     val afterSs = ssSubst(context)(afterFn).get.asInstanceOf[SigmaStateTree]
-    val afterSb = sbSubst()(afterSs).get.asInstanceOf[SigmaStateTree]
-    varSubst(context)(afterSb).get.asInstanceOf[SigmaStateTree]
+    varSubst(context)(afterSs).get.asInstanceOf[SigmaStateTree]
   }
 }
