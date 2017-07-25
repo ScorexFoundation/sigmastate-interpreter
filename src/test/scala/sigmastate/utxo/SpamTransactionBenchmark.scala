@@ -14,17 +14,17 @@ object SpamTransactionBenchmark extends App {
   val propToCompare = OR((1 to 100).map(_ => pubKey))
 
   val spamPubKey = prover.dlogSecrets.tail.head.publicImage
-  val spamProp = OR((1 to 100).map(_ => spamPubKey))
+  val spamProp = OR((1 to 100).map(_ => pubKey) :+ spamPubKey)
 
   val spamScript =
     TxHasOutput(GE(OutputAmount, IntLeaf(10)), EQ(OutputScript, PropLeaf(propToCompare)))
 
-  val txOutputs = ((1 to 9999) map (_ => SigmaStateBox(1, spamProp))) :+ SigmaStateBox(11, propToCompare)
+  val txOutputs = ((1 to 9999) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
   val tx = SigmaStateTransaction(Seq(), txOutputs)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   val message = Blake2b256("Hello World")
-  val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+  val fakeSelf = SigmaStateBox(0, propToCompare) -> 0L
   val ctx = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = fakeSelf)
 
   val pt0 = System.currentTimeMillis()
