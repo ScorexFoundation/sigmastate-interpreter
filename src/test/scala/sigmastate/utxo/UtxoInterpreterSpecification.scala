@@ -46,7 +46,7 @@ class UtxoInterpreterSpecification extends PropSpec
     */
   property("Evaluation - Crowdfunding Example") {
 
-    //a blockchain node veryfing a block containing a spending transaction
+    //a blockchain node verifying a block containing a spending transaction
     val verifier = new UtxoInterpreter
 
     //backer's prover with his private key
