@@ -113,6 +113,8 @@ trait Interpreter {
 
   //todo: cost analysis
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
+    require(exp.cost <= 1000000)
+
     val afterContextSubst = contextSubst(context)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context)
     val afterOps = operations(afterSpecific).get.asInstanceOf[SigmaStateTree]
@@ -253,7 +255,3 @@ trait Interpreter {
     verify(exp, ctxv, proverResult.proof, message)
   }
 }
-
-
-
-

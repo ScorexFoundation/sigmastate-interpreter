@@ -10,13 +10,17 @@ import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import sigmastate.SigmaProposition.PropositionCode
 
 
-sealed trait SigmaStateTree extends Product with SigmaStateProposition
+sealed trait SigmaStateTree extends Product with SigmaStateProposition {
+  val cost: Int
+}
 
 trait StateTree extends SigmaStateTree with StateProposition
 
 trait SigmaTree extends SigmaStateTree with SigmaProposition
 
 case class CAND(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
+  override val cost: Int = sigmaTrees.map(_.cost).sum
+
   override val code: PropositionCode = CAND.Code
   override type M = this.type
 }
@@ -26,6 +30,8 @@ object CAND {
 }
 
 case class COR(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
+  override val cost: Int = sigmaTrees.map(_.cost).sum
+
   override val code: PropositionCode = COR.Code
   override type M = this.type
 }
@@ -38,7 +44,9 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
   extends SigmaTree with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
 
 
-case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree
+case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree{
+  override val cost: Int = children.map(_.cost).sum
+}
 
 
 object OR {
@@ -48,7 +56,9 @@ object OR {
 }
 
 
-case class AND(children: Seq[SigmaStateTree]) extends SigmaStateTree
+case class AND(children: Seq[SigmaStateTree]) extends SigmaStateTree{
+  override val cost: Int = children.map(_.cost).sum
+}
 
 object AND {
   def apply(left: SigmaStateTree, right: SigmaStateTree): AND = apply(Seq(left, right))
@@ -59,16 +69,23 @@ trait Value extends StateTree
 
 case class IntLeaf(value: Long) extends Value {
   require(value >= 0)
+
+  override val cost: Int = 1
 }
 
 case class ByteArrayLeaf(value: Array[Byte]) extends Value {
+
+  override val cost: Int = (value.length / 1024 + 1) * 10
+
   override def equals(obj: scala.Any): Boolean = obj match {
     case ob: ByteArrayLeaf => value sameElements ob.value
     case _ => false
   }
 }
 
-case class PropLeaf(value: SigmaStateTree) extends Value
+case class PropLeaf(value: SigmaStateTree) extends Value{
+  override val cost: Int = value.cost + 1
+}
 
 sealed abstract class BooleanConstantNode(val value: Boolean) extends Value
 
@@ -76,26 +93,36 @@ object BooleanConstantNode {
   def fromBoolean(v: Boolean): BooleanConstantNode = if (v) TrueConstantNode else FalseConstantNode
 }
 
-case object TrueConstantNode extends BooleanConstantNode(true)
+case object TrueConstantNode extends BooleanConstantNode(true){
+  override val cost: Int = 1
+}
 
-case object FalseConstantNode extends BooleanConstantNode(false)
+case object FalseConstantNode extends BooleanConstantNode(false){
+  override val cost: Int = 1
+}
 
 
 trait Variable[V <: Value] extends Value
 
-case object Height extends Variable[IntLeaf]
+case object Height extends Variable[IntLeaf]{
+  override val cost: Int = 1
+}
 
 trait CustomVariable[V <: Value] extends Variable[Value] {
   val id: Int
 }
 
-case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArrayLeaf]
+case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArrayLeaf]{
+  override val cost: Int = 1
+}
 
 sealed trait OneArgumentOperation extends StateTree {
   val operand: SigmaStateTree
 }
 
-case class CalcBlake2b256(operand: SigmaStateTree) extends OneArgumentOperation
+case class CalcBlake2b256(operand: SigmaStateTree) extends OneArgumentOperation{
+  override val cost: Int = operand.cost
+}
 
 /**
   * A tree node with left and right descendants
@@ -103,6 +130,8 @@ case class CalcBlake2b256(operand: SigmaStateTree) extends OneArgumentOperation
 sealed trait Triple extends StateTree {
   val left: SigmaStateTree
   val right: SigmaStateTree
+
+  override val cost: Int = left.cost + right.cost + 1
 
   //todo: define via F-Bounded polymorphism?
   def withLeft(newLeft: SigmaStateTree): Relation
@@ -115,6 +144,7 @@ sealed trait TwoArgumentsOperation extends Triple
 
 case class Plus(override val left: SigmaStateTree,
                 override val right: SigmaStateTree) extends Relation {
+
   def withLeft(newLeft: SigmaStateTree): Plus = copy(left = newLeft)
 
   def withRight(newRight: SigmaStateTree): Plus = copy(right = newRight)

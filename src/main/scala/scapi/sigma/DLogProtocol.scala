@@ -27,6 +27,8 @@ object DLogProtocol {
     extends SigmaProtocolCommonInput[DLogSigmaProtocol]
       with SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
+    override val cost: Int = 10000
+
     override type M = this.type
     override val code: PropositionCode = DLogNode.Code
 

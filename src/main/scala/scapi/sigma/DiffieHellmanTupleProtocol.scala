@@ -71,6 +71,8 @@ case class DiffieHellmanTupleNode(g: GroupElement, h: GroupElement, u: GroupElem
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
 
+  override val cost: Int = 20000
+
   override type M = DiffieHellmanTupleNode
   override val code: PropositionCode = DiffieHellmanTupleNode.Code
 
