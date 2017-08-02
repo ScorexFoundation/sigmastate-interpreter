@@ -42,7 +42,7 @@ trait Interpreter {
     case CustomByteArray(tag: Int) if ctx.extension.values.contains(tag) => ctx.extension.values(tag)
   })
 
-  protected val rels: Strategy = everywherebu(rule[SigmaStateTree] {
+  protected val relations: Strategy = everywherebu(rule[SigmaStateTree] {
     case EQ(l: Value, r: Value) => BooleanConstantNode.fromBoolean(l == r)
     case NEQ(l: Value, r: Value) => BooleanConstantNode.fromBoolean(l != r)
     case GT(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value > r.value)
@@ -51,7 +51,7 @@ trait Interpreter {
     case LE(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value <= r.value)
   })
 
-  protected val ops: Strategy = everywherebu(rule[SigmaStateTree] {
+  protected val operations: Strategy = everywherebu(rule[SigmaStateTree] {
     case Plus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value + r.value)
     case Minus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value - r.value)
     case Xor(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
@@ -115,14 +115,14 @@ trait Interpreter {
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
     val afterContextSubst = contextSubst(context)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context)
-    val afterOps = ops(afterSpecific).get.asInstanceOf[SigmaStateTree]
-    val afterRels = rels(afterOps).get.asInstanceOf[SigmaStateTree]
+    val afterOps = operations(afterSpecific).get.asInstanceOf[SigmaStateTree]
+    val afterRels = relations(afterOps).get.asInstanceOf[SigmaStateTree]
     conjs(afterRels).get
   }.asInstanceOf[SigmaStateTree])
 
   /**
     * Verifier steps:
-    * 1. Place received challenges "e" and responses "z"  into every leaf.
+    * 1. Place received challenges "e" and responses "z" into every leaf.
     * 2. Bottom-up: compute commitments at every leaf according to a = g^z/h^e. At every COR and CAND node, compute
     * the commitment as the union of the children's commitments. At every COR node, compute the challenge as the XOR of
     * the children's challenges. At every CAND node, verify that the children's challenges are all equal. (Note that

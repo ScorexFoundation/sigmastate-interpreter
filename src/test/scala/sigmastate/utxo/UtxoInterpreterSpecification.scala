@@ -91,7 +91,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(crowdFundingScript, ctx1, proofP, message).get shouldBe true
 
     //backer can't generate a proof
-    val proofBf = backerProver.prove(crowdFundingScript, ctx1, message).isFailure shouldBe true
+    backerProver.prove(crowdFundingScript, ctx1, message).isFailure shouldBe true
 
 
     //Second case: height < timeout, project is NOT able to claim amount of tokens not less than required threshold
