@@ -19,7 +19,7 @@ object SpamTransactionBenchmark extends App {
   val spamScript =
     TxHasOutput(GE(OutputAmount, IntLeaf(10)), EQ(OutputScript, PropLeaf(propToCompare)))
 
-  val txOutputs = ((1 to 9999) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
+  val txOutputs = ((1 to 9) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
   val tx = SigmaStateTransaction(Seq(), txOutputs)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
