@@ -6,6 +6,7 @@ import sigmastate._
 import sigmastate.utils.Helpers
 
 
+//todo: convert to test
 object CustomByteArrayBenchmark extends App {
   val ba = Random.randomBytes(100000000)
 
@@ -19,10 +20,7 @@ object CustomByteArrayBenchmark extends App {
 
   val message = Blake2b256("Hello World")
   val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
-  val pr = prover.prove(spamScript, ctx, message).get
 
-  val ctxv = ctx.withExtension(pr.extension)
-
-  val verifier = new UtxoInterpreter
-  verifier.verify(spamScript, ctxv, pr.proof, message).get
+  //prover is honest...
+  assert(prover.prove(spamScript, ctx, message).isFailure)
 }
