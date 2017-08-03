@@ -45,7 +45,7 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 
 
 case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree{
-  override val cost: Int = children.map(_.cost).sum
+  override val cost: Int = children.length + children.map(_.cost).sum
 }
 
 
@@ -57,7 +57,7 @@ object OR {
 
 
 case class AND(children: Seq[SigmaStateTree]) extends SigmaStateTree{
-  override val cost: Int = children.map(_.cost).sum
+  override val cost: Int = children.length + children.map(_.cost).sum
 }
 
 object AND {
