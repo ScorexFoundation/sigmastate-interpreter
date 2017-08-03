@@ -15,10 +15,10 @@ class UtxoInterpreter extends Interpreter {
   override val maxDepth = 50
 
   private def replaceTxOut(idxOut: TxOutput, context: UtxoContext): AND = {
-    val ts = idxOut.relation.map { r =>
-      (r.left, r.right) match {
-        case (OutputAmount, _) | (_, OutputAmount) => OutputAmount -> r
-        case (OutputScript, _) | (_, OutputScript) => OutputScript -> r
+    val ts = idxOut.relation.map { rel =>
+      (rel.left, rel.right) match {
+        case (OutputAmount, _) | (_, OutputAmount) => OutputAmount -> rel
+        case (OutputScript, _) | (_, OutputScript) => OutputScript -> rel
         case _ => ???
       }
     }
@@ -60,15 +60,24 @@ class UtxoInterpreter extends Interpreter {
     AND(rels)
   }
 
-  def ssSubst(context: UtxoContext): Strategy = everywherebu(rule[SigmaStateTree] {
-    case SelfScript => PropLeaf(context.self._1.proposition)
+  def ssSubst(context: UtxoContext, cost: Mut[Int]): Strategy = everywherebu(rule[SigmaStateTree] {
+    case SelfScript =>
+      val leaf = PropLeaf(context.self._1.proposition)
+      cost.value = cost.value + leaf.cost
+      assert(cost.value <= 1000000)
+      leaf
 
     case hasOut: TxHasOutput =>
       val s = context.spendingTransaction.newBoxes.size
       val outConditions = (0 until s).map { idx =>
         val out = TxOutput(idx, hasOut.relation:_*)
-        replaceTxOut(out, context)
+        val and = replaceTxOut(out, context)
+        cost.value = cost.value + and.cost
+        assert(cost.value <= 1000000)
+        and
       }
+      cost.value = cost.value + outConditions.length
+      assert(cost.value <= 1000000)
       OR(outConditions)
 
     case idxOut: TxOutput => replaceTxOut(idxOut, context)
@@ -82,7 +91,7 @@ class UtxoInterpreter extends Interpreter {
     })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext, cost: Mut[Int]): SigmaStateTree = {
-    val afterSs = ssSubst(context)(tree).get.asInstanceOf[SigmaStateTree]
+    val afterSs = ssSubst(context, cost)(tree).get.asInstanceOf[SigmaStateTree]
     varSubst(context)(afterSs).get.asInstanceOf[SigmaStateTree]
   }
 }

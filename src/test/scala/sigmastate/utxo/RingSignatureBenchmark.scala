@@ -9,7 +9,7 @@ object RingSignatureBenchmark extends App {
   val verifier = new UtxoInterpreter
   val secret = prover.dlogSecrets.head
 
-  val simulated = (1 to 9).map {_ =>
+  val simulated = (1 to 99).map {_ =>
     new UtxoProvingInterpreter().dlogSecrets.head.publicImage
   }
 
@@ -20,6 +20,8 @@ object RingSignatureBenchmark extends App {
 
   val publicImages = secret.publicImage +: simulated
   val prop = OR(publicImages)
+
+  println("cost of ring sig: " + prop.cost)
 
   println(s"Ring signature benchmark for a ring of size ${publicImages.length}")
 

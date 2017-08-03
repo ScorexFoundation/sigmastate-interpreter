@@ -117,6 +117,7 @@ trait Interpreter {
       }
   })
 
+  @specialized
   case class Mut[A](var value: A) {}
 
   //todo: cost analysis
@@ -129,7 +130,6 @@ trait Interpreter {
     val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
     val afterOps = operations(afterSpecific).get.asInstanceOf[SigmaStateTree]
     val afterRels = relations(afterOps).get.asInstanceOf[SigmaStateTree]
-    println("ac2: " + additionalCost)
     conjs(afterRels).get
   }.asInstanceOf[SigmaStateTree])
 
