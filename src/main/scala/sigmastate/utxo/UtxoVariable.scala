@@ -13,7 +13,7 @@ case class UtxoContext(currentHeight: Long,
 }
 
 trait UtxoVariable[V <: Value] extends Variable[V] {
-  override val cost: Int = 1 //todo: imprecise, especially for SelfScipr
+  override val cost: Int = 1 //todo: imprecise, especially for SelfScipt
 }
 
 case object SelfHeight extends UtxoVariable[IntLeaf]
@@ -34,9 +34,9 @@ case object OutputScript extends Variable[PropLeaf] {
 trait Function extends StateTree
 
 case class TxHasOutput(relation: Relation*) extends Function {
-  override val cost: Int = 0 //todo: imprecise
+  override val cost: Int = relation.length //todo: imprecise
 }
 
 case class TxOutput(outIndex: Int, relation: Relation*) extends Function {
-  override val cost: Int = relation.map(_.cost).sum //todo: imprecise
+  override val cost: Int = relation.length //todo: imprecise
 }

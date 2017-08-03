@@ -24,9 +24,10 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
 
   override val maxDepth = 50
 
-  override def specificPhases(tree: SigmaStateTree, context: TestingContext): SigmaStateTree = everywherebu(rule[Value] {
-    case Height => IntLeaf(context.height)
-  })(tree).get.asInstanceOf[SigmaStateTree]
+  override def specificPhases(tree: SigmaStateTree, context: TestingContext, cost: Mut[Int]): SigmaStateTree =
+    everywherebu(rule[Value] {
+      case Height => IntLeaf(context.height)
+    })(tree).get.asInstanceOf[SigmaStateTree]
 
   override lazy val secrets: Seq[DLogProverInput] = {
     import SchnorrSignature._
@@ -159,7 +160,7 @@ class TestingInterpreterSpecification extends PropSpec
     verify(prop4, env, proof, challenge).getOrElse(false) shouldBe false
   }
 
-  property("Evaluation - hash function"){
+  property("Evaluation - hash function") {
     val bytes = "hello world".getBytes
     val hash = Blake2b256(bytes)
 

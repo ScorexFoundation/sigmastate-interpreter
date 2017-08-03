@@ -11,10 +11,10 @@ object SpamTransactionBenchmark extends App {
   val secret = prover.dlogSecrets.head
   val pubKey = secret.publicImage
 
-  val propToCompare = OR((1 to 100).map(_ => pubKey))
+  val propToCompare = OR((1 to 99).map(_ => pubKey))
 
   val spamPubKey = prover.dlogSecrets.tail.head.publicImage
-  val spamProp = OR((1 to 100).map(_ => pubKey) :+ spamPubKey)
+  val spamProp = OR((1 to 98).map(_ => pubKey) :+ spamPubKey)
 
   val spamScript =
     TxHasOutput(GE(OutputAmount, IntLeaf(10)), EQ(OutputScript, PropLeaf(propToCompare)))
@@ -33,7 +33,6 @@ object SpamTransactionBenchmark extends App {
   val proof = prover.prove(spamScript, ctx, message).get
   val pt = System.currentTimeMillis()
   println(s"Prover time: ${(pt-pt0)/1000.0} seconds")
-
 
   val verifier = new UtxoInterpreter
   val vt0 = System.currentTimeMillis()

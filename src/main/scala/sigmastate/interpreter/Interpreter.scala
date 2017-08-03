@@ -36,11 +36,17 @@ trait Interpreter {
     * @param ctx  - context instance
     * @return - processed tree
     */
-  def specificPhases(tree: SigmaStateTree, ctx: CTX): SigmaStateTree
+  def specificPhases(tree: SigmaStateTree, ctx: CTX, cost: Mut[Int]): SigmaStateTree
 
-  protected def contextSubst(ctx: CTX): Strategy = everywherebu(rule[SigmaStateTree] {
-    case CustomByteArray(tag: Int) if ctx.extension.values.contains(tag) => ctx.extension.values(tag)
-  })
+  protected def contextSubst(ctx: CTX, cost: Mut[Int]): Strategy = {
+    everywherebu(rule[SigmaStateTree] {
+      case CustomByteArray(tag: Int) if ctx.extension.values.contains(tag) =>
+        val value = ctx.extension.values(tag)
+        cost.value = cost.value + value.cost
+        assert(cost.value <= 1000000)
+        value
+    })
+  }
 
   protected val relations: Strategy = everywherebu(rule[SigmaStateTree] {
     case EQ(l: Value, r: Value) => BooleanConstantNode.fromBoolean(l == r)
@@ -111,14 +117,19 @@ trait Interpreter {
       }
   })
 
+  case class Mut[A](var value: A) {}
+
   //todo: cost analysis
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
     require(exp.cost <= 1000000)
 
-    val afterContextSubst = contextSubst(context)(exp).get.asInstanceOf[SigmaStateTree]
-    val afterSpecific = specificPhases(afterContextSubst, context)
+    val additionalCost = Mut(0)
+
+    val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
+    val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
     val afterOps = operations(afterSpecific).get.asInstanceOf[SigmaStateTree]
     val afterRels = relations(afterOps).get.asInstanceOf[SigmaStateTree]
+    println("ac2: " + additionalCost)
     conjs(afterRels).get
   }.asInstanceOf[SigmaStateTree])
 
@@ -246,7 +257,7 @@ trait Interpreter {
 
     case _ => ???
   })
-  
+
   def verify(exp: SigmaStateTree,
              context: CTX,
              proverResult: ProverResult[ProofT],
