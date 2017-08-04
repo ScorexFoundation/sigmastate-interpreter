@@ -29,9 +29,17 @@ object CostTable {
     //PropLeaf declaration cost, wrapped script cost to be added as well.
     val PropLeafDeclaration = 500
 
-    //Cost of Blake256 body (ByteArrayLeaf is only possible atm) is multiplied by factor
-    val Blake256bFactor = 10
+    //Cost of Blake256 declaration
+    val Blake256bDeclaration = 10
 
-    val DlogCost = 10000
+    val Dlog = 10000
+
+    val TxHasOutputDeclaration = 100
+    val TxOutputDeclaration = 100
+
+    val OutputScript = 100
+    val OutputAmount = 1
+
+    val SelfVariableDeclaration = 1
   }
 }

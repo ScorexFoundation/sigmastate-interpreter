@@ -121,7 +121,7 @@ sealed trait OneArgumentOperation extends StateTree {
 }
 
 case class CalcBlake2b256(operand: SigmaStateTree) extends OneArgumentOperation {
-  override val cost: Int = operand.cost * Cost.Blake256bFactor
+  override val cost: Int = operand.cost + Cost.Blake256bDeclaration
 }
 
 /**
