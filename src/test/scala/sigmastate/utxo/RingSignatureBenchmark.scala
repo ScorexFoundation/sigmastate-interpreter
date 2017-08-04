@@ -9,7 +9,7 @@ object RingSignatureBenchmark extends App {
   val verifier = new UtxoInterpreter
   val secret = prover.dlogSecrets.head
 
-  val simulated = (1 to 99).map {_ =>
+  val simulated = (1 to 99).map { _ =>
     new UtxoProvingInterpreter().dlogSecrets.head.publicImage
   }
 
@@ -28,10 +28,10 @@ object RingSignatureBenchmark extends App {
   val pt0 = System.currentTimeMillis()
   val proof = prover.prove(prop, ctx, message).get
   val pt = System.currentTimeMillis()
-  println(s"Prover time: ${(pt-pt0)/1000.0} seconds")
+  println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
   val vt0 = System.currentTimeMillis()
   verifier.verify(prop, ctx, proof, message)
   val vt = System.currentTimeMillis()
-  println(s"Verifier time: ${(vt-vt0)/1000.0} seconds")
+  println(s"Verifier time: ${(vt - vt0) / 1000.0} seconds")
 }

@@ -8,7 +8,7 @@ import sigmastate.utils.Helpers
 
 //todo: convert to test
 object CustomByteArrayBenchmark extends App {
-  val ba = Random.randomBytes(100000000)
+  val ba = Random.randomBytes(5000000)
 
   val tag = Helpers.tagInt(ba)
 

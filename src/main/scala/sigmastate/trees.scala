@@ -8,6 +8,7 @@ import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommo
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import sigmastate.SigmaProposition.PropositionCode
+import sigmastate.utxo.CostTable.Cost
 
 
 sealed trait SigmaStateTree extends Product with SigmaStateProposition {
@@ -19,7 +20,7 @@ trait StateTree extends SigmaStateTree with StateProposition
 trait SigmaTree extends SigmaStateTree with SigmaProposition
 
 case class CAND(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
-  override val cost: Int = sigmaTrees.map(_.cost).sum
+  override val cost: Int = sigmaTrees.map(_.cost).sum + sigmaTrees.length * Cost.AndPerChild + Cost.AndDeclaration
 
   override val code: PropositionCode = CAND.Code
   override type M = this.type
@@ -30,7 +31,7 @@ object CAND {
 }
 
 case class COR(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
-  override val cost: Int = sigmaTrees.map(_.cost).sum
+  override val cost: Int = sigmaTrees.map(_.cost).sum + sigmaTrees.length * Cost.OrPerChild + Cost.OrDeclaration
 
   override val code: PropositionCode = COR.Code
   override type M = this.type
@@ -44,8 +45,8 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
   extends SigmaTree with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
 
 
-case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree{
-  override val cost: Int = children.length + children.map(_.cost).sum
+case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree {
+  override val cost: Int = children.map(_.cost).sum + children.length * Cost.OrPerChild + Cost.OrDeclaration
 }
 
 
@@ -55,9 +56,8 @@ object OR {
   def apply(arg1: SigmaStateTree, arg2: SigmaStateTree, arg3: SigmaStateTree): OR = apply(Seq(arg1, arg2, arg3))
 }
 
-
-case class AND(children: Seq[SigmaStateTree]) extends SigmaStateTree{
-  override val cost: Int = children.length + children.map(_.cost).sum
+case class AND(children: Seq[SigmaStateTree]) extends SigmaStateTree {
+  override val cost: Int = children.map(_.cost).sum + children.length * Cost.AndPerChild + Cost.AndDeclaration
 }
 
 object AND {
@@ -75,7 +75,7 @@ case class IntLeaf(value: Long) extends Value {
 
 case class ByteArrayLeaf(value: Array[Byte]) extends Value {
 
-  override val cost: Int = (value.length / 1024 + 1) * 10
+  override val cost: Int = (value.length / 1024.0).ceil.round.toInt * Cost.ByteArrayPerKilobyte
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case ob: ByteArrayLeaf => value sameElements ob.value
@@ -83,8 +83,8 @@ case class ByteArrayLeaf(value: Array[Byte]) extends Value {
   }
 }
 
-case class PropLeaf(value: SigmaStateTree) extends Value{
-  override val cost: Int = value.cost + 1
+case class PropLeaf(value: SigmaStateTree) extends Value {
+  override val cost: Int = value.cost + Cost.PropLeafDeclaration
 }
 
 sealed abstract class BooleanConstantNode(val value: Boolean) extends Value
@@ -93,35 +93,35 @@ object BooleanConstantNode {
   def fromBoolean(v: Boolean): BooleanConstantNode = if (v) TrueConstantNode else FalseConstantNode
 }
 
-case object TrueConstantNode extends BooleanConstantNode(true){
-  override val cost: Int = 1
+case object TrueConstantNode extends BooleanConstantNode(true) {
+  override val cost: Int = Cost.ConstantNode
 }
 
-case object FalseConstantNode extends BooleanConstantNode(false){
-  override val cost: Int = 1
+case object FalseConstantNode extends BooleanConstantNode(false) {
+  override val cost: Int = Cost.ConstantNode
 }
 
 
 trait Variable[V <: Value] extends Value
 
-case object Height extends Variable[IntLeaf]{
-  override val cost: Int = 1
+case object Height extends Variable[IntLeaf] {
+  override val cost: Int = Cost.HeightAccess
 }
 
 trait CustomVariable[V <: Value] extends Variable[Value] {
   val id: Int
 }
 
-case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArrayLeaf]{
-  override val cost: Int = 1
+case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArrayLeaf] {
+  override val cost: Int = Cost.ByteArrayDeclaration
 }
 
 sealed trait OneArgumentOperation extends StateTree {
   val operand: SigmaStateTree
 }
 
-case class CalcBlake2b256(operand: SigmaStateTree) extends OneArgumentOperation{
-  override val cost: Int = operand.cost
+case class CalcBlake2b256(operand: SigmaStateTree) extends OneArgumentOperation {
+  override val cost: Int = operand.cost * Cost.Blake256bFactor
 }
 
 /**
@@ -131,7 +131,7 @@ sealed trait Triple extends StateTree {
   val left: SigmaStateTree
   val right: SigmaStateTree
 
-  override val cost: Int = left.cost + right.cost + 1
+  override val cost: Int = left.cost + right.cost + Cost.TripleDeclaration
 
   //todo: define via F-Bounded polymorphism?
   def withLeft(newLeft: SigmaStateTree): Relation

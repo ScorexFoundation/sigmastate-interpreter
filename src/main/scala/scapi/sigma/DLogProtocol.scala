@@ -10,6 +10,7 @@ import scapi.sigma.rework._
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
 import sigmastate.SigmaProposition.PropositionCode
+import sigmastate.utxo.CostTable.Cost
 import sigmastate.{EcPointFunctions, SigmaProofOfKnowledgeTree}
 
 import scala.concurrent.Future
@@ -27,7 +28,7 @@ object DLogProtocol {
     extends SigmaProtocolCommonInput[DLogSigmaProtocol]
       with SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
-    override val cost: Int = 10000
+    override val cost: Int = Cost.DlogCost
 
     override type M = this.type
     override val code: PropositionCode = DLogNode.Code

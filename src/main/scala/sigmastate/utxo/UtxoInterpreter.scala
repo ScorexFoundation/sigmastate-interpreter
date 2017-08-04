@@ -57,6 +57,7 @@ class UtxoInterpreter extends Interpreter {
         case _ => rl
       }
     }
+    println("rels: " + rels)
     AND(rels)
   }
 

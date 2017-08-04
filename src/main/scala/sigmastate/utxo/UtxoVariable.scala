@@ -27,7 +27,7 @@ case object OutputAmount extends Variable[IntLeaf] {
 }
 
 case object OutputScript extends Variable[PropLeaf] {
-  override val cost: Int = 1 //todo: imprecise
+  override val cost: Int = 10 //todo: imprecise
 }
 
 

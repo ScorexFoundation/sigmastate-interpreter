@@ -7,7 +7,7 @@ import sigmastate._
 object SpamTransactionBenchmark extends App {
 
   val prover = new UtxoProvingInterpreter
-  
+
   val propToCompare = OR((1 to 99).map(_ => IntLeaf(5)))
 
   val spamProp = OR((1 to 98).map(_ => IntLeaf(5)) :+ IntLeaf(6))
@@ -17,7 +17,7 @@ object SpamTransactionBenchmark extends App {
 
   println(spamScript.cost)
 
-  val txOutputs = ((1 to 2449) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
+  val txOutputs = ((1 to 1599) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
   val tx = SigmaStateTransaction(Seq(), txOutputs)
 
   //fake message, in a real-life a message is to be derived from a spending transaction

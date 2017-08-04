@@ -11,6 +11,7 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
 import sigmastate.SigmaProofOfKnowledgeTree
 import sigmastate.SigmaProposition.PropositionCode
+import sigmastate.utxo.CostTable.Cost
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
   override type A = FirstDiffieHellmanTupleProverMessage
@@ -71,7 +72,7 @@ case class DiffieHellmanTupleNode(g: GroupElement, h: GroupElement, u: GroupElem
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
 
-  override val cost: Int = 20000
+  override val cost: Int = Cost.DlogCost * 2
 
   override type M = DiffieHellmanTupleNode
   override val code: PropositionCode = DiffieHellmanTupleNode.Code
@@ -80,7 +81,6 @@ case class DiffieHellmanTupleNode(g: GroupElement, h: GroupElement, u: GroupElem
 
   override lazy val dlogGroup: DlogGroup = DLogNode.dlogGroup
   override val soundness: Int = 256
-
 }
 
 object DiffieHellmanTupleNode {
