@@ -24,7 +24,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
 
   override val maxDepth = 50
 
-  override def specificPhases(tree: SigmaStateTree, context: TestingContext, cost: Mut[Int]): SigmaStateTree =
+  override def specificPhases(tree: SigmaStateTree, context: TestingContext, cost: CostAccumulator): SigmaStateTree =
     everywherebu(rule[Value] {
       case Height => IntLeaf(context.height)
     })(tree).get.asInstanceOf[SigmaStateTree]

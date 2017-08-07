@@ -61,11 +61,10 @@ class UtxoInterpreter extends Interpreter {
     AND(rels)
   }
 
-  def ssSubst(context: UtxoContext, cost: Mut[Int]): Strategy = everywherebu(rule[SigmaStateTree] {
+  def ssSubst(context: UtxoContext, cost: CostAccumulator): Strategy = everywherebu(rule[SigmaStateTree] {
     case SelfScript =>
       val leaf = PropLeaf(context.self._1.proposition)
-      cost.value = cost.value + leaf.cost
-      assert(cost.value <= 1000000)
+      cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
     case hasOut: TxHasOutput =>
@@ -73,12 +72,10 @@ class UtxoInterpreter extends Interpreter {
       val outConditions = (0 until s).map { idx =>
         val out = TxOutput(idx, hasOut.relation:_*)
         val and = replaceTxOut(out, context)
-        cost.value = cost.value + and.cost
-        assert(cost.value <= 1000000)
+        cost.addCost(and.cost).ensuring(_.isRight)
         and
       }
-      cost.value = cost.value + outConditions.length
-      assert(cost.value <= 1000000)
+      cost.addCost(outConditions.length).ensuring(_.isRight)
       OR(outConditions)
 
     case idxOut: TxOutput => replaceTxOut(idxOut, context)
@@ -91,7 +88,7 @@ class UtxoInterpreter extends Interpreter {
       case SelfAmount => IntLeaf(context.self._1.value)
     })
 
-  override def specificPhases(tree: SigmaStateTree, context: UtxoContext, cost: Mut[Int]): SigmaStateTree = {
+  override def specificPhases(tree: SigmaStateTree, context: UtxoContext, cost: CostAccumulator): SigmaStateTree = {
     val afterSs = ssSubst(context, cost)(tree).get.asInstanceOf[SigmaStateTree]
     varSubst(context)(afterSs).get.asInstanceOf[SigmaStateTree]
   }

@@ -36,14 +36,13 @@ trait Interpreter {
     * @param ctx  - context instance
     * @return - processed tree
     */
-  def specificPhases(tree: SigmaStateTree, ctx: CTX, cost: Mut[Int]): SigmaStateTree
+  def specificPhases(tree: SigmaStateTree, ctx: CTX, cost: CostAccumulator): SigmaStateTree
 
-  protected def contextSubst(ctx: CTX, cost: Mut[Int]): Strategy = {
+  protected def contextSubst(ctx: CTX, cost: CostAccumulator): Strategy = {
     everywherebu(rule[SigmaStateTree] {
       case CustomByteArray(tag: Int) if ctx.extension.values.contains(tag) =>
         val value = ctx.extension.values(tag)
-        cost.value = cost.value + value.cost
-        assert(cost.value <= 1000000)
+        cost.addCost(value.cost).ensuring(_.isRight)
         value
     })
   }
@@ -118,13 +117,19 @@ trait Interpreter {
   })
 
   @specialized
-  case class Mut[A](var value: A) {}
+  case class CostAccumulator(initialValue: Int, limit: Int) {
+    require(initialValue <= limit)
+    private var value: Int = initialValue
+
+    def addCost(delta: Int): Either[Int, Int] = {
+      value = value + delta
+      if (value <= limit) Right(limit) else Left(limit)
+    }
+  }
 
   //todo: cost analysis
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
-    require(exp.cost <= 1000000)
-
-    val additionalCost = Mut(0)
+    val additionalCost = CostAccumulator(exp.cost, 1000000)
 
     val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
