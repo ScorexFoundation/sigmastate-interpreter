@@ -12,8 +12,6 @@ class UtxoInterpreter extends Interpreter {
   override type StateT = StateTree
   override type CTX = UtxoContext
 
-  override val maxDepth = 50
-
   private def replaceTxOut(idxOut: TxOutput, context: UtxoContext): AND = {
     val ts = idxOut.relation.map { rel =>
       (rel.left, rel.right) match {

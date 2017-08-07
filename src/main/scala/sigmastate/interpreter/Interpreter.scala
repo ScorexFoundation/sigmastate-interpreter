@@ -16,6 +16,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
+import sigmastate.utxo.CostTable
 
 
 trait Interpreter {
@@ -27,7 +28,7 @@ trait Interpreter {
 
   val dlogGroup: DlogGroup = new BcDlogECFp()
 
-  def maxDepth: Int
+  def maxCost: Int = CostTable.ScriptLimit
 
   /**
     * implementation-specific tree reductions, to be defined in descendants
@@ -129,7 +130,7 @@ trait Interpreter {
 
   //todo: cost analysis
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
-    val additionalCost = CostAccumulator(exp.cost, 1000000)
+    val additionalCost = CostAccumulator(exp.cost, maxCost)
 
     val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
