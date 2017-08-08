@@ -130,7 +130,6 @@ trait Interpreter {
     }
   }
 
-  //todo: cost analysis
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
     val additionalCost = CostAccumulator(exp.cost, maxCost)
 
