@@ -14,7 +14,7 @@ object CostTable {
     //(and CustomByteArray being converted to ByteArrayLeaf)
     val ByteArrayDeclaration = 1
 
-    val ByteArrayPerKilobyte = 100
+    val ByteArrayPerKilobyte = 200
 
     val TripleDeclaration = 1
 

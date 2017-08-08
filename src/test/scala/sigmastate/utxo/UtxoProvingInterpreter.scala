@@ -9,7 +9,7 @@ import sigmastate.interpreter.ProverInterpreter
 import sigmastate.utils.Helpers
 
 class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
-  extends UtxoInterpreter with ProverInterpreter {
+  extends UtxoInterpreter(maxCost) with ProverInterpreter {
 
   private implicit val dlog = DLogNode.dlogGroup
   private implicit val soundness: Int = 256
@@ -34,7 +34,7 @@ class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
     val s = secrets
     val ce = contextExtenders
 
-    new UtxoProvingInterpreter {
+    new UtxoProvingInterpreter(maxCost) {
       override lazy val secrets = s
       override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = ce + (tag -> value)
     }
@@ -44,7 +44,7 @@ class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
     val ce = contextExtenders
     val s = secrets ++ additionalSecrets
 
-    new UtxoProvingInterpreter {
+    new UtxoProvingInterpreter(maxCost) {
       override lazy val secrets = s
       override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = ce
     }
