@@ -8,7 +8,7 @@ import sigmastate.interpreter.Interpreter
 import scala.collection.mutable
 
 
-class UtxoInterpreter extends Interpreter {
+class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends Interpreter {
   override type StateT = StateTree
   override type CTX = UtxoContext
 

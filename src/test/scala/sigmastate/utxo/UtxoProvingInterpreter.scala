@@ -8,7 +8,9 @@ import sigmastate.ByteArrayLeaf
 import sigmastate.interpreter.ProverInterpreter
 import sigmastate.utils.Helpers
 
-class UtxoProvingInterpreter extends UtxoInterpreter with ProverInterpreter {
+class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
+  extends UtxoInterpreter with ProverInterpreter {
+
   private implicit val dlog = DLogNode.dlogGroup
   private implicit val soundness: Int = 256
 

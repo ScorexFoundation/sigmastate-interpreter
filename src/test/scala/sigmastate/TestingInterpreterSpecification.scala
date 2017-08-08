@@ -8,6 +8,7 @@ import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.DLogProtocol.{DLogNode, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.interpreter.{Context, ContextExtension, Interpreter, ProverInterpreter}
+import sigmastate.utxo.CostTable
 
 import scala.util.Random
 
@@ -21,6 +22,8 @@ case class TestingContext(height: Int,
 object TestingInterpreter extends Interpreter with ProverInterpreter {
   override type StateT = StateTree
   override type CTX = TestingContext
+
+  override val maxCost = CostTable.ScriptLimit
 
   override def specificPhases(tree: SigmaStateTree, context: TestingContext, cost: CostAccumulator): SigmaStateTree =
     everywherebu(rule[Value] {

@@ -16,7 +16,6 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
-import sigmastate.utxo.CostTable
 
 
 trait Interpreter {
@@ -28,12 +27,15 @@ trait Interpreter {
 
   val dlogGroup: DlogGroup = new BcDlogECFp()
 
-  def maxCost: Int = CostTable.ScriptLimit
+  /**
+    * Max cost of a script interpreter can accept
+    */
+  def maxCost: Int
 
   /**
-    * implementation-specific tree reductions, to be defined in descendants
+    * Implementation-specific tree reductions, to be defined in descendants
     *
-    * @param tree - a tree to process-
+    * @param tree - a tree to process
     * @param ctx  - context instance
     * @return - processed tree
     */
