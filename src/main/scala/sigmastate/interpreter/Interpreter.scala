@@ -18,6 +18,8 @@ import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
 
 
+
+
 trait Interpreter {
   type CTX <: Context[CTX]
   type StateT <: StateTree
@@ -118,17 +120,6 @@ trait Interpreter {
           else OR(reduced)
       }
   })
-
-  @specialized
-  case class CostAccumulator(initialValue: Int, limit: Int) {
-    require(initialValue <= limit)
-    private var value: Int = initialValue
-
-    def addCost(delta: Int): Either[Int, Int] = {
-      value = value + delta
-      if (value <= limit) Right(limit) else Left(limit)
-    }
-  }
 
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
     val additionalCost = CostAccumulator(exp.cost, maxCost)
