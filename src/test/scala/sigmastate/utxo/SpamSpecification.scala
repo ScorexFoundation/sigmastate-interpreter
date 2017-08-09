@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe}
@@ -26,7 +27,7 @@ class SpamSpecification extends PropSpec
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 2000000).foreach(_ => hf(block))
+    (1 to 3000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -124,32 +125,38 @@ class SpamSpecification extends PropSpec
   }
 
   property("transaction with many outputs") {
-    val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 10)
+    forAll(Gen.choose(10, 279), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
+      whenever(orCnt > 10 && outCnt > 200) {
+        println("(orCnt, outCnt): " + orCnt + ", " + outCnt)
+        val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
 
-    val propToCompare = OR((1 to 99).map(_ => IntLeaf(5)))
+        val propToCompare = OR((1 to orCnt).map(_ => IntLeaf(5)))
 
-    val spamProp = OR((1 to 98).map(_ => IntLeaf(5)) :+ IntLeaf(6))
+        val spamProp = OR((1 until orCnt).map(_ => IntLeaf(5)) :+ IntLeaf(6))
 
-    val spamScript =
-      TxHasOutput(GE(OutputAmount, IntLeaf(10)), EQ(OutputScript, PropLeaf(propToCompare)))
+        val spamScript =
+          TxHasOutput(GE(OutputAmount, IntLeaf(10)), EQ(OutputScript, PropLeaf(propToCompare)))
 
-    println(spamScript.cost)
+        println(spamScript.cost)
 
-    val txOutputs = ((1 to 1599) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
-    val tx = SigmaStateTransaction(Seq(), txOutputs)
+        val txOutputs = ((1 to outCnt) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
+        val tx = SigmaStateTransaction(Seq(), txOutputs)
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
-    val fakeSelf = SigmaStateBox(0, propToCompare) -> 0L
-    val ctx = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = fakeSelf)
+        //fake message, in a real-life a message is to be derived from a spending transaction
+        val message = Blake2b256("Hello World")
+        val fakeSelf = SigmaStateBox(0, propToCompare) -> 0L
+        val ctx = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = fakeSelf)
 
-    val pt0 = System.currentTimeMillis()
-    val proof = prover.prove(spamScript, ctx, message).get
-    val pt = System.currentTimeMillis()
-    println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
+        val pt0 = System.currentTimeMillis()
+        prover.prove(spamScript, ctx, message).map { proof =>
+          val pt = System.currentTimeMillis()
+          println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
-    val verifier = new UtxoInterpreter
-    val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, message))
-    terminated shouldBe true
+          val verifier = new UtxoInterpreter
+          val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, message))
+          terminated shouldBe true
+        }
+      }
+    }
   }
 }
