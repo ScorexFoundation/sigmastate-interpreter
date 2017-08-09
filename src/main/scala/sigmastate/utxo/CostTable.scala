@@ -2,7 +2,11 @@ package sigmastate.utxo
 
 
 object CostTable {
+  //Maximum cost of a script
   val ScriptLimit = 1000000
+
+  //Maximum number of expressions in initial(non-reduced script)
+  val MaxExpressions = 300
 
   object Cost {
     //Node which holds true/false

@@ -40,6 +40,36 @@ class SpamSpecification extends PropSpec
     verifier.verify(spamScript, ctxv, pr.proof, message).isFailure shouldBe true
   }
 
+  property("big byte array with a lot of operations") {
+    val ba = Random.randomBytes(5000000)
+
+    val tag = Helpers.tagInt(ba)
+
+    val prover = new UtxoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(tag, ByteArrayLeaf(ba))
+
+    val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256(CustomByteArray(tag))){case (script, _) =>
+      CalcBlake2b256(script)
+    }
+
+    val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayLeaf(Array.fill(32)(0: Byte))))
+
+    val message = Blake2b256("Hello World")
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueConstantNode) -> 0)
+
+    val prt = prover.prove(spamScript, ctx, message)
+    prt.isSuccess shouldBe true
+
+    val pr = prt.get
+
+    val ctxv = ctx.withExtension(pr.extension)
+
+    val vt0 = System.currentTimeMillis()
+    val verifier = new UtxoInterpreter
+    println(verifier.verify(spamScript, ctxv, pr.proof, message))
+    val vt = System.currentTimeMillis()
+    println(s"Verifier time: ${(vt - vt0) / 1000.0} seconds")
+  }
+
   property("ring signature") {
     val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 2)
     val verifier = new UtxoInterpreter

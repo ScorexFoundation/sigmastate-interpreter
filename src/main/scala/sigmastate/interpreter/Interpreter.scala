@@ -4,6 +4,7 @@ import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
+import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.utils.Helpers
@@ -16,6 +17,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
+import sigmastate.utxo.CostTable
 
 
 
@@ -122,10 +124,13 @@ trait Interpreter {
   })
 
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
+    require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
+
     val additionalCost = CostAccumulator(exp.cost, maxCost)
 
     val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
+
     val afterOps = operations(afterSpecific).get.asInstanceOf[SigmaStateTree]
     val afterRels = relations(afterOps).get.asInstanceOf[SigmaStateTree]
     conjs(afterRels).get
@@ -213,9 +218,7 @@ trait Interpreter {
         case _ => ???
       }
 
-      or.copy(
-        challengeOpt = Some(Helpers.xor(challenges: _*)),
-        commitments = commitments)
+      or.copy(challengeOpt = Some(Helpers.xor(challenges: _*)), commitments = commitments)
 
     case sn: SchnorrNode =>
 
