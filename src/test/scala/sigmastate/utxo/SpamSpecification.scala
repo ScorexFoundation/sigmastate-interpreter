@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe}
 import scorex.utils.Random
 import sigmastate.utils.Helpers
 import sigmastate._
@@ -15,6 +15,28 @@ class SpamSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers {
+
+  //we assume that verifier must finish verification of any script in less time than 2M hash calculations
+  // (for the Blake2b256 hash function over a single block input)
+  val Timeout = {
+    val block = Array.fill(16)(0: Byte)
+    val hf = new Blake2b256Unsafe
+
+    //just in case to heat up JVM
+    (1 to 1000000).foreach(_ => hf(block))
+
+    val t0 = System.currentTimeMillis()
+    (1 to 2000000).foreach(_ => hf(block))
+    val t = System.currentTimeMillis()
+    t - t0
+  }
+
+  def termination[T](fn: () => T): (T, Boolean) = {
+    val t0 = System.currentTimeMillis()
+    val res = fn()
+    val t = System.currentTimeMillis()
+    (res, (t - t0) < Timeout)
+  }
 
   property("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
@@ -37,7 +59,10 @@ class SpamSpecification extends PropSpec
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new UtxoInterpreter
-    verifier.verify(spamScript, ctxv, pr.proof, message).isFailure shouldBe true
+    val (res, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, message))
+
+    res.isFailure shouldBe true
+    terminated shouldBe true
   }
 
   property("big byte array with a lot of operations") {
@@ -47,7 +72,7 @@ class SpamSpecification extends PropSpec
 
     val prover = new UtxoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(tag, ByteArrayLeaf(ba))
 
-    val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256(CustomByteArray(tag))){case (script, _) =>
+    val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256(CustomByteArray(tag))) { case (script, _) =>
       CalcBlake2b256(script)
     }
 
@@ -63,19 +88,17 @@ class SpamSpecification extends PropSpec
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val vt0 = System.currentTimeMillis()
     val verifier = new UtxoInterpreter
-    println(verifier.verify(spamScript, ctxv, pr.proof, message))
-    val vt = System.currentTimeMillis()
-    println(s"Verifier time: ${(vt - vt0) / 1000.0} seconds")
+    val (_, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, message))
+    terminated shouldBe true
   }
 
-  property("ring signature") {
+  property("ring signature - maximum ok ring size") {
     val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 2)
     val verifier = new UtxoInterpreter
     val secret = prover.dlogSecrets.head
 
-    val simulated = (1 to 99).map { _ =>
+    val simulated = (1 to 98).map { _ =>
       new UtxoProvingInterpreter().dlogSecrets.head.publicImage
     }
 
@@ -96,10 +119,8 @@ class SpamSpecification extends PropSpec
     val pt = System.currentTimeMillis()
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
-    val vt0 = System.currentTimeMillis()
-    verifier.verify(prop, ctx, proof, message).isFailure shouldBe true
-    val vt = System.currentTimeMillis()
-    println(s"Verifier time: ${(vt - vt0) / 1000.0} seconds")
+    val (_, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
+    terminated shouldBe true
   }
 
   property("transaction with many outputs") {
@@ -128,9 +149,7 @@ class SpamSpecification extends PropSpec
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
     val verifier = new UtxoInterpreter
-    val vt0 = System.currentTimeMillis()
-    verifier.verify(spamScript, ctx, proof, message)
-    val vt = System.currentTimeMillis()
-    println(s"Verifier time: ${(vt - vt0) / 1000.0} seconds")
+    val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, message))
+    terminated shouldBe true
   }
 }
