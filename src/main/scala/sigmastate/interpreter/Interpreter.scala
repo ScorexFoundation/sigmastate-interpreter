@@ -128,9 +128,12 @@ trait Interpreter {
 
     val additionalCost = CostAccumulator(exp.cost, maxCost)
 
+    //in these two phases a tree could be expanded, so additionalCost accumulator is passed to ensure
+    // that cost of script is not exploding
     val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
 
+    //in phases below, a tree could be reduced only
     val afterOps = operations(afterSpecific).get.asInstanceOf[SigmaStateTree]
     val afterRels = relations(afterOps).get.asInstanceOf[SigmaStateTree]
     conjs(afterRels).get

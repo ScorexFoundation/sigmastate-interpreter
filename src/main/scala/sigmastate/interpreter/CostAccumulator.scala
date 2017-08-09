@@ -11,7 +11,7 @@ package sigmastate.interpreter
 case class CostAccumulator(initialValue: Int, limit: Int) {
   require(initialValue <= limit)
 
-  private var value: Int = initialValue
+  private var mutVal : Int = initialValue
 
   /**
     * Adds cost to a current hidden mutable value
@@ -20,7 +20,9 @@ case class CostAccumulator(initialValue: Int, limit: Int) {
     *         Left(.) means value goes over the limit, Right(.) means okay.
     */
   def addCost(delta: Int): Either[Int, Int] = {
-    value = value + delta
-    if (value <= limit) Right(limit) else Left(limit)
+    mutVal = mutVal + delta
+    if (mutVal <= limit) Right(limit) else Left(limit)
   }
+
+  def value = mutVal
 }
