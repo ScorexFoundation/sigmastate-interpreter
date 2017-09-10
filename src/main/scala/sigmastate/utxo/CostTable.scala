@@ -44,6 +44,8 @@ object CostTable {
     val OutputScript = 100
     val OutputAmount = 1
 
+    val TxOutBytes = 10
+
     val SelfVariableDeclaration = 1
   }
 }

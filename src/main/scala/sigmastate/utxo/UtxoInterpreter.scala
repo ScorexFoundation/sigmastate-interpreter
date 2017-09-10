@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import com.google.common.primitives.Bytes
 import sigmastate._
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
@@ -61,6 +62,12 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   def ssSubst(context: UtxoContext, cost: CostAccumulator): Strategy = everywherebu(rule[SigmaStateTree] {
     case SelfScript =>
       val leaf = PropLeaf(context.self._1.proposition)
+      cost.addCost(leaf.cost).ensuring(_.isRight)
+      leaf
+
+    case TxOutBytes =>
+      val outBytes = Bytes.concat(context.spendingTransaction.newBoxes.map(_.bytes):_*)
+      val leaf = ByteArrayLeaf(outBytes)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 

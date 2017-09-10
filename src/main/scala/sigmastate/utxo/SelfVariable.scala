@@ -13,31 +13,35 @@ case class UtxoContext(currentHeight: Long,
   override def withExtension(newExtension: ContextExtension): UtxoContext = this.copy(extension = newExtension)
 }
 
-trait UtxoVariable[V <: Value] extends Variable[V] {
-  override def cost: Int = Cost.SelfVariableDeclaration //todo: imprecise, especially for SelfScipt
+trait SelfVariable[V <: Value] extends Variable[V] {
+  override def cost: Int = Cost.SelfVariableDeclaration
 }
 
-case object SelfHeight extends UtxoVariable[IntLeaf]
+case object SelfHeight extends SelfVariable[IntLeaf]
 
-case object SelfAmount extends UtxoVariable[IntLeaf]
+case object SelfAmount extends SelfVariable[IntLeaf]
 
-case object SelfScript extends UtxoVariable[PropLeaf]
+case object SelfScript extends SelfVariable[PropLeaf]
 
 case object OutputAmount extends Variable[IntLeaf] {
-  override def cost: Int = Cost.OutputAmount
+  override val cost: Int = Cost.OutputAmount
 }
 
 case object OutputScript extends Variable[PropLeaf] {
-  override def cost: Int = Cost.OutputScript
+  override val cost: Int = Cost.OutputScript
+}
+
+case object TxOutBytes extends Variable[ByteArrayLeaf] {
+  override val cost: Int = Cost.TxOutBytes
 }
 
 
 trait Function extends StateTree
 
 case class TxHasOutput(relation: Relation*) extends Function {
-  override def cost: Int = relation.length + Cost.TxHasOutputDeclaration
+  override val cost: Int = relation.length + Cost.TxHasOutputDeclaration
 }
 
 case class TxOutput(outIndex: Int, relation: Relation*) extends Function {
-  override def cost: Int = relation.length + Cost.TxOutputDeclaration
+  override val cost: Int = relation.length + Cost.TxOutputDeclaration
 }

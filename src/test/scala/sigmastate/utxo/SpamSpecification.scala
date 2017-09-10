@@ -17,7 +17,7 @@ class SpamSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
-  //we assume that verifier must finish verification of any script in less time than 2M hash calculations
+  //we assume that verifier must finish verification of any script in less time than 3M hash calculations
   // (for the Blake2b256 hash function over a single block input)
   val Timeout = {
     val block = Array.fill(16)(0: Byte)
@@ -127,7 +127,6 @@ class SpamSpecification extends PropSpec
   property("transaction with many outputs") {
     forAll(Gen.choose(10, 279), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
       whenever(orCnt > 10 && outCnt > 200) {
-        println("(orCnt, outCnt): " + orCnt + ", " + outCnt)
         val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
 
         val propToCompare = OR((1 to orCnt).map(_ => IntLeaf(5)))
@@ -136,8 +135,6 @@ class SpamSpecification extends PropSpec
 
         val spamScript =
           TxHasOutput(GE(OutputAmount, IntLeaf(10)), EQ(OutputScript, PropLeaf(propToCompare)))
-
-        println(spamScript.cost)
 
         val txOutputs = ((1 to outCnt) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
         val tx = SigmaStateTransaction(Seq(), txOutputs)
