@@ -65,6 +65,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
+    //todo: cache the bytes as a lazy val in the transaction
     case TxOutBytes =>
       val outBytes = Bytes.concat(context.spendingTransaction.newBoxes.map(_.bytes):_*)
       val leaf = ByteArrayLeaf(outBytes)
