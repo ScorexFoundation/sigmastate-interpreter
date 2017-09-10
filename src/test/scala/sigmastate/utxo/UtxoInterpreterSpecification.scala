@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import com.google.common.primitives.Bytes
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scapi.sigma.DLogProtocol.DLogNode
@@ -788,5 +789,51 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, prA, message).get shouldBe true
 
     proverB.prove(prop, ctx, message).isSuccess shouldBe false
+  }
+
+
+  property("mixing scenario") {
+    val proverA = new UtxoProvingInterpreter
+    val proverB = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
+
+    val pubkeyA = proverA.dlogSecrets.head.publicImage
+    val pubkeyA2 = proverA.dlogSecrets.head.publicImage
+
+    val pubkeyB = proverB.dlogSecrets.head.publicImage
+    val pubkeyB2 = proverB.dlogSecrets.head.publicImage
+
+    val newBox1 = SigmaStateBox(10, pubkeyB2)
+    val newBox2 = SigmaStateBox(10, pubkeyA2)
+
+    val newBoxes = Seq(newBox1, newBox2)
+
+    val properBytes = Bytes.concat(newBoxes.map(_.bytes):_*)
+
+    val properHash = Blake2b256(properBytes)
+
+    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+
+    def mixingRequestProp(sender: DLogNode, timeout: Int) = OR(
+      AND(LE(Height, IntLeaf(timeout)), EQ(CalcBlake2b256(TxOutBytes), ByteArrayLeaf(properHash))),
+      AND(GT(Height, IntLeaf(timeout)), sender)
+    )
+
+    //fake message, in a real-life a message is to be derived from a spending transaction
+    val message = Blake2b256("Hello World")
+    val fakeSelf = SigmaStateBox(0, TrueConstantNode) -> 0L
+    val ctx = UtxoContext(currentHeight = 50, spendingTransaction, self = fakeSelf)
+
+    //before timeout
+    val prA = proverA.prove(mixingRequestProp(pubkeyA, 100), ctx, message).get
+    verifier.verify(mixingRequestProp(pubkeyA, 100), ctx, prA, message).get shouldBe true
+    verifier.verify(mixingRequestProp(pubkeyB, 100), ctx, prA, message).get shouldBe true
+
+    //after timeout
+    val prA2 = proverA.prove(mixingRequestProp(pubkeyA, 40), ctx, message).get
+    println(prA2)
+    verifier.verify(mixingRequestProp(pubkeyA, 40), ctx, prA2, message).get shouldBe true
+    verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, message).isSuccess shouldBe false
   }
 }

@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import com.google.common.primitives.Longs
 import io.circe.Json
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.BoxTransaction
@@ -7,15 +8,23 @@ import scorex.core.transaction.box.{Box, BoxUnlocker}
 import scorex.core.transaction.proof.Proof
 import sigmastate.SigmaStateTree
 
+import scala.util.Try
 
-case class SigmaStateBox(override val value: Box.Amount,
+
+case class SigmaStateBox(override val value: Long,
                          override val proposition: SigmaStateTree) extends Box[SigmaStateTree] {
 
   override lazy val id: Array[Byte] = ???
 
   override type M = SigmaStateBox
 
-  override def serializer: Serializer[SigmaStateBox] = ???
+  //todo: implement
+  override def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {
+    override def toBytes(obj: SigmaStateBox): Array[Byte] =
+      Longs.toByteArray(obj.value) ++ obj.proposition.toString.getBytes
+
+    override def parseBytes(bytes: Array[Byte]): Try[SigmaStateBox] = ???
+  }
 }
 
 class SigmaStateBoxUnlocker extends BoxUnlocker[SigmaStateTree] {
