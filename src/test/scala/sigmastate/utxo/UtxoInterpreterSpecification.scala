@@ -121,7 +121,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx3 = UtxoContext(currentHeight = timeout.value, spendingTransaction = tx3, self = outputToSpend -> 0)
 
     //project cant' generate a proof
-    val proofP3f = projectProver.prove(crowdFundingScript, ctx3, message).isFailure shouldBe true
+    projectProver.prove(crowdFundingScript, ctx3, message).isFailure shouldBe true
 
     //backer is generating a proof and it is passing verification
     val proofB = backerProver.prove(crowdFundingScript, ctx3, message).get.proof
@@ -384,7 +384,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //A can't withdraw her coins in chain1 (generate a valid proof)
     println(proverA.prove(prop1, ctxf1, message))
-    val prf1 = proverA.prove(prop1, ctxf1, message).isFailure shouldBe true
+    proverA.prove(prop1, ctxf1, message).isFailure shouldBe true
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
     val ctxf2 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = fakeSelf)
@@ -462,8 +462,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val prC = proverC.prove(prop, ctx, message).get
     verifier.verify(prop, ctx, prC, message).get shouldBe true
   }
-
-
 
   //two secrets are known, nevertheless, one will be simulated
   property("simplest linear-sized ring signature (1-out-of-4 OR), all secrets are known") {
@@ -691,14 +689,12 @@ class UtxoInterpreterSpecification extends PropSpec
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
     val proverC = new UtxoProvingInterpreter
-    val proverD = new UtxoProvingInterpreter
 
     val verifier = new UtxoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
-    val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntLeaf(500))))
 
@@ -790,7 +786,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     proverB.prove(prop, ctx, message).isSuccess shouldBe false
   }
-
 
   property("mixing scenario") {
     val proverA = new UtxoProvingInterpreter
