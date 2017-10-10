@@ -787,7 +787,7 @@ class UtxoInterpreterSpecification extends PropSpec
     proverB.prove(prop, ctx, message).isSuccess shouldBe false
   }
 
-  property("mixing scenario") {
+  property("mixing scenario w. timeout") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
 
