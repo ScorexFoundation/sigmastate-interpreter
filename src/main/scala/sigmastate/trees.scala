@@ -87,17 +87,17 @@ case class PropLeaf(value: SigmaStateTree) extends Value {
   override def cost: Int = value.cost + Cost.PropLeafDeclaration
 }
 
-sealed abstract class BooleanConstantNode(val value: Boolean) extends Value
+sealed abstract class BooleanLeaf(val value: Boolean) extends Value
 
-object BooleanConstantNode {
-  def fromBoolean(v: Boolean): BooleanConstantNode = if (v) TrueConstantNode else FalseConstantNode
+object BooleanLeaf {
+  def fromBoolean(v: Boolean): BooleanLeaf = if (v) TrueLeaf else FalseLeaf
 }
 
-case object TrueConstantNode extends BooleanConstantNode(true) {
+case object TrueLeaf extends BooleanLeaf(true) {
   override def cost: Int = Cost.ConstantNode
 }
 
-case object FalseConstantNode extends BooleanConstantNode(false) {
+case object FalseLeaf extends BooleanLeaf(false) {
   override def cost: Int = Cost.ConstantNode
 }
 

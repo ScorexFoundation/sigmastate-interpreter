@@ -55,12 +55,12 @@ trait Interpreter {
   }
 
   protected val relations: Strategy = everywherebu(rule[SigmaStateTree] {
-    case EQ(l: Value, r: Value) => BooleanConstantNode.fromBoolean(l == r)
-    case NEQ(l: Value, r: Value) => BooleanConstantNode.fromBoolean(l != r)
-    case GT(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value > r.value)
-    case GE(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value >= r.value)
-    case LT(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value < r.value)
-    case LE(l: IntLeaf, r: IntLeaf) => BooleanConstantNode.fromBoolean(l.value <= r.value)
+    case EQ(l: Value, r: Value) => BooleanLeaf.fromBoolean(l == r)
+    case NEQ(l: Value, r: Value) => BooleanLeaf.fromBoolean(l != r)
+    case GT(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value > r.value)
+    case GE(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value >= r.value)
+    case LT(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value < r.value)
+    case LE(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value <= r.value)
   })
 
   protected val operations: Strategy = everywherebu(rule[SigmaStateTree] {
@@ -83,8 +83,8 @@ trait Interpreter {
       def iterChildren(children: Seq[SigmaStateTree],
                        currentBuffer: mutable.Buffer[SigmaStateTree]): mutable.Buffer[SigmaStateTree] = {
         if (children.isEmpty) currentBuffer else children.head match {
-          case FalseConstantNode => mutable.Buffer(FalseConstantNode)
-          case TrueConstantNode => iterChildren(children.tail, currentBuffer)
+          case FalseLeaf => mutable.Buffer(FalseLeaf)
+          case TrueLeaf => iterChildren(children.tail, currentBuffer)
           case s: SigmaStateTree => iterChildren(children.tail, currentBuffer += s)
         }
       }
@@ -92,7 +92,7 @@ trait Interpreter {
       val reduced = iterChildren(children, mutable.Buffer())
 
       reduced.size match {
-        case i: Int if i == 0 => TrueConstantNode
+        case i: Int if i == 0 => TrueLeaf
         case i: Int if i == 1 => reduced.head
         case _ =>
           if (reduced.forall(_.isInstanceOf[SigmaTree]))
@@ -106,8 +106,8 @@ trait Interpreter {
       def iterChildren(children: Seq[SigmaStateTree],
                        currentBuffer: mutable.Buffer[SigmaStateTree]): mutable.Buffer[SigmaStateTree] = {
         if (children.isEmpty) currentBuffer else children.head match {
-          case TrueConstantNode => mutable.Buffer(TrueConstantNode)
-          case FalseConstantNode => iterChildren(children.tail, currentBuffer)
+          case TrueLeaf => mutable.Buffer(TrueLeaf)
+          case FalseLeaf => iterChildren(children.tail, currentBuffer)
           case s: SigmaStateTree => iterChildren(children.tail, currentBuffer += s)
         }
       }
@@ -115,7 +115,7 @@ trait Interpreter {
       val reduced = iterChildren(children, mutable.Buffer())
 
       reduced.size match {
-        case i: Int if i == 0 => FalseConstantNode
+        case i: Int if i == 0 => FalseLeaf
         case i: Int if i == 1 => reduced.head
         case _ =>
           if (reduced.forall(_.isInstanceOf[SigmaTree])) COR(reduced.map(_.asInstanceOf[SigmaTree]))
@@ -156,8 +156,8 @@ trait Interpreter {
              message: Array[Byte]): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
     cProp match {
-      case TrueConstantNode => true
-      case FalseConstantNode => false
+      case TrueLeaf => true
+      case FalseLeaf => false
       case _ =>
         proof match {
           case NoProof => false

@@ -113,7 +113,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         //todo: no need for full reduction here probably
         (reduceToCrypto(candidateProp, context.withExtension(extension)).get, extension)
     }).ensuring { res =>
-      res._1.isInstanceOf[BooleanConstantNode] ||
+      res._1.isInstanceOf[BooleanLeaf] ||
         res._1.isInstanceOf[CAND] ||
         res._1.isInstanceOf[COR] ||
         res._1.isInstanceOf[DLogNode] ||
@@ -122,10 +122,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
 
     ProverResult(cProp match {
-      case tree: BooleanConstantNode =>
+      case tree: BooleanLeaf =>
         tree match {
-          case TrueConstantNode => NoProof
-          case FalseConstantNode => ???
+          case TrueLeaf => NoProof
+          case FalseLeaf => ???
         }
       case _ =>
         val ct = convertToUnproven(cProp.asInstanceOf[SigmaT])
