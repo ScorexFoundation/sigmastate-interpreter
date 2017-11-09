@@ -24,5 +24,5 @@ case class CostAccumulator(initialValue: Int, limit: Int) {
     if (mutVal <= limit) Right(limit) else Left(limit)
   }
 
-  def value = mutVal
+  def value: Int = mutVal
 }
