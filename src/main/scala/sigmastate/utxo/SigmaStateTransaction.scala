@@ -14,7 +14,7 @@ import scala.util.Try
 case class SigmaStateBox(override val value: Long,
                          override val proposition: SigmaStateTree) extends Box[SigmaStateTree] {
 
-  override lazy val id: Array[Byte] = ???
+  override lazy val id = ???
 
   override type M = SigmaStateBox
 

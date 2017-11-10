@@ -3,14 +3,18 @@ package sigmastate.utxo
 import sigmastate._
 import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.UtxoContext.Height
 
-
-case class UtxoContext(currentHeight: Long,
+case class UtxoContext(currentHeight: Height,
                        spendingTransaction: SigmaStateTransaction,
-                       self: (SigmaStateBox, Long),
+                       self: (SigmaStateBox, Height),
                        override val extension: ContextExtension = ContextExtension(Map())
                       ) extends Context[UtxoContext] {
   override def withExtension(newExtension: ContextExtension): UtxoContext = this.copy(extension = newExtension)
+}
+
+object UtxoContext {
+  type Height = Long
 }
 
 trait SelfVariable[V <: Value] extends Variable[V] {
