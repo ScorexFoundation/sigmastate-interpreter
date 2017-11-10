@@ -61,7 +61,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
   def ssSubst(context: UtxoContext, cost: CostAccumulator): Strategy = everywherebu(rule[SigmaStateTree] {
     case SelfScript =>
-      val leaf = PropLeaf(context.self._1.proposition)
+      val leaf = PropLeaf(context.self.box.proposition)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
@@ -89,8 +89,8 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   def varSubst(context: UtxoContext): Strategy = everywherebu(
     rule[Value] {
       case Height => IntLeaf(context.currentHeight)
-      case SelfHeight => IntLeaf(context.self._2)
-      case SelfAmount => IntLeaf(context.self._1.value)
+      case SelfHeight => IntLeaf(context.self.metadata.creationHeight)
+      case SelfAmount => IntLeaf(context.self.box.value)
     })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext, cost: CostAccumulator): SigmaStateTree = {

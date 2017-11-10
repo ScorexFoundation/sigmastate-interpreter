@@ -7,6 +7,7 @@ import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe}
 import scorex.utils.Random
 import sigmastate.utils.Helpers
 import sigmastate._
+import BoxHelpers.boxWithMetadata
 
 
 /**
@@ -19,7 +20,7 @@ class SpamSpecification extends PropSpec
 
   //we assume that verifier must finish verification of any script in less time than 3M hash calculations
   // (for the Blake2b256 hash function over a single block input)
-  val Timeout = {
+  val Timeout: Long = {
     val block = Array.fill(16)(0: Byte)
     val hf = new Blake2b256Unsafe
 
@@ -39,6 +40,7 @@ class SpamSpecification extends PropSpec
     (res, (t - t0) < Timeout)
   }
 
+
   property("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
     val ba = Random.randomBytes(10000000)
@@ -50,7 +52,7 @@ class SpamSpecification extends PropSpec
     val spamScript = EQ(CalcBlake2b256(CustomByteArray(tag)), CalcBlake2b256(CustomByteArray(tag)))
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueLeaf) -> 0)
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
 
     val prt = prover.prove(spamScript, ctx, message)
     prt.isSuccess shouldBe true
@@ -80,7 +82,7 @@ class SpamSpecification extends PropSpec
     val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayLeaf(Array.fill(32)(0: Byte))))
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = SigmaStateBox(0, TrueLeaf) -> 0)
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
 
     val prt = prover.prove(spamScript, ctx, message)
     prt.isSuccess shouldBe true
@@ -105,7 +107,7 @@ class SpamSpecification extends PropSpec
 
     //fake message, in a real-life a message is to be derived from a spending transaction
     val message = Blake2b256("Hello World")
-    val fakeSelf = SigmaStateBox(0, TrueLeaf) -> 0L
+    val fakeSelf = boxWithMetadata(0, TrueLeaf)
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     val publicImages = secret.publicImage +: simulated
@@ -141,7 +143,7 @@ class SpamSpecification extends PropSpec
 
         //fake message, in a real-life a message is to be derived from a spending transaction
         val message = Blake2b256("Hello World")
-        val fakeSelf = SigmaStateBox(0, propToCompare) -> 0L
+        val fakeSelf = boxWithMetadata(0, propToCompare)
         val ctx = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = fakeSelf)
 
         val pt0 = System.currentTimeMillis()
