@@ -6,13 +6,25 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.BoxTransaction
 import scorex.core.transaction.box.{Box, BoxUnlocker}
 import scorex.core.transaction.proof.Proof
-import sigmastate.SigmaStateTree
+import sigmastate.{NonNegativeIntLeaf, PropLeaf, SigmaStateTree, Value}
+import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
 
 import scala.util.Try
 
 
 case class SigmaStateBox(override val value: Long,
-                         override val proposition: SigmaStateTree) extends Box[SigmaStateTree] {
+                         override val proposition: SigmaStateTree,
+                         additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value] = Map()
+                        ) extends Box[SigmaStateTree] {
+  import sigmastate.utxo.SigmaStateBox._
+
+  def get(identifier: RegisterIdentifier): Option[_ <: Value] = {
+    identifier match {
+      case R1 => Some(NonNegativeIntLeaf(value))
+      case R2 => Some(PropLeaf(proposition))
+      case n: NonMandatoryIdentifier => additionalRegisters.get(n)
+    }
+  }
 
   override lazy val id = ???
 
@@ -26,6 +38,23 @@ case class SigmaStateBox(override val value: Long,
     override def parseBytes(bytes: Array[Byte]): Try[SigmaStateBox] = ???
   }
 }
+
+object SigmaStateBox {
+  sealed trait RegisterIdentifier
+  sealed trait NonMandatoryIdentifier extends RegisterIdentifier
+
+  object R1 extends RegisterIdentifier
+  object R2 extends RegisterIdentifier
+  object R3 extends RegisterIdentifier with NonMandatoryIdentifier
+  object R4 extends RegisterIdentifier with NonMandatoryIdentifier
+  object R5 extends RegisterIdentifier with NonMandatoryIdentifier
+  object R6 extends RegisterIdentifier with NonMandatoryIdentifier
+  object R7 extends RegisterIdentifier with NonMandatoryIdentifier
+  object R8 extends RegisterIdentifier with NonMandatoryIdentifier
+  object R9 extends RegisterIdentifier with NonMandatoryIdentifier
+  object R10 extends RegisterIdentifier with NonMandatoryIdentifier
+}
+
 
 class SigmaStateBoxUnlocker extends BoxUnlocker[SigmaStateTree] {
   override val closedBoxId: Array[Byte] = ???

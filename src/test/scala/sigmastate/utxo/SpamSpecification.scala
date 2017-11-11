@@ -131,12 +131,12 @@ class SpamSpecification extends PropSpec
       whenever(orCnt > 10 && outCnt > 200) {
         val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
 
-        val propToCompare = OR((1 to orCnt).map(_ => IntLeaf(5)))
+        val propToCompare = OR((1 to orCnt).map(_ => NonNegativeIntLeaf(5)))
 
-        val spamProp = OR((1 until orCnt).map(_ => IntLeaf(5)) :+ IntLeaf(6))
+        val spamProp = OR((1 until orCnt).map(_ => NonNegativeIntLeaf(5)) :+ NonNegativeIntLeaf(6))
 
         val spamScript =
-          TxHasOutput(GE(OutputAmount, IntLeaf(10)), EQ(OutputScript, PropLeaf(propToCompare)))
+          TxHasOutput(GE(OutputAmount, NonNegativeIntLeaf(10)), EQ(OutputScript, PropLeaf(propToCompare)))
 
         val txOutputs = ((1 to outCnt) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
         val tx = SigmaStateTransaction(Seq(), txOutputs)

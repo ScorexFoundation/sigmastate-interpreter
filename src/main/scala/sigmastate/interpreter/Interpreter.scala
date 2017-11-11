@@ -57,15 +57,15 @@ trait Interpreter {
   protected val relations: Strategy = everywherebu(rule[SigmaStateTree] {
     case EQ(l: Value, r: Value) => BooleanLeaf.fromBoolean(l == r)
     case NEQ(l: Value, r: Value) => BooleanLeaf.fromBoolean(l != r)
-    case GT(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value > r.value)
-    case GE(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value >= r.value)
-    case LT(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value < r.value)
-    case LE(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value <= r.value)
+    case GT(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => BooleanLeaf.fromBoolean(l.value > r.value)
+    case GE(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => BooleanLeaf.fromBoolean(l.value >= r.value)
+    case LT(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => BooleanLeaf.fromBoolean(l.value < r.value)
+    case LE(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => BooleanLeaf.fromBoolean(l.value <= r.value)
   })
 
   protected val operations: Strategy = everywherebu(rule[SigmaStateTree] {
-    case Plus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value + r.value)
-    case Minus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value - r.value)
+    case Plus(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => NonNegativeIntLeaf(l.value + r.value)
+    case Minus(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => NonNegativeIntLeaf(l.value - r.value)
     case Xor(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
       assert(l.value.length == r.value.length)
       ByteArrayLeaf(Helpers.xor(l.value, r.value))

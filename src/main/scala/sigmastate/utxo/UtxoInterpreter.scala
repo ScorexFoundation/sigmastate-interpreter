@@ -29,7 +29,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
     val relations = ts.map { case (v, r) =>
       v match {
         case OutputAmount =>
-          bindings.put(OutputAmount, IntLeaf(amount))
+          bindings.put(OutputAmount, NonNegativeIntLeaf(amount))
           r
         case OutputScript =>
           bindings.put(OutputScript, PropLeaf(out.proposition))
@@ -88,9 +88,9 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
   def varSubst(context: UtxoContext): Strategy = everywherebu(
     rule[Value] {
-      case Height => IntLeaf(context.currentHeight)
-      case SelfHeight => IntLeaf(context.self.metadata.creationHeight)
-      case SelfAmount => IntLeaf(context.self.box.value)
+      case Height => NonNegativeIntLeaf(context.currentHeight)
+      case SelfHeight => NonNegativeIntLeaf(context.self.metadata.creationHeight)
+      case SelfAmount => NonNegativeIntLeaf(context.self.box.value)
     })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext, cost: CostAccumulator): SigmaStateTree = {

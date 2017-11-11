@@ -68,10 +68,15 @@ object AND {
 trait Value extends StateTree
 
 case class IntLeaf(value: Long) extends Value {
-  require(value >= 0)
-
   override def cost: Int = 1
 }
+
+//todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
+case class NonNegativeIntLeaf(value: Long) extends Value {
+  require(value >= 0)
+  override def cost: Int = 1
+}
+
 
 case class ByteArrayLeaf(value: Array[Byte]) extends Value {
 
@@ -104,7 +109,7 @@ case object FalseLeaf extends BooleanLeaf(false) {
 
 trait Variable[V <: Value] extends Value
 
-case object Height extends Variable[IntLeaf] {
+case object Height extends Variable[NonNegativeIntLeaf] {
   override def cost: Int = Cost.HeightAccess
 }
 

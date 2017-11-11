@@ -25,13 +25,13 @@ trait SelfVariable[V <: Value] extends Variable[V] {
   override def cost: Int = Cost.SelfVariableDeclaration
 }
 
-case object SelfHeight extends SelfVariable[IntLeaf]
+case object SelfHeight extends SelfVariable[NonNegativeIntLeaf]
 
-case object SelfAmount extends SelfVariable[IntLeaf]
+case object SelfAmount extends SelfVariable[NonNegativeIntLeaf]
 
 case object SelfScript extends SelfVariable[PropLeaf]
 
-case object OutputAmount extends Variable[IntLeaf] {
+case object OutputAmount extends Variable[NonNegativeIntLeaf] {
   override val cost: Int = Cost.OutputAmount
 }
 

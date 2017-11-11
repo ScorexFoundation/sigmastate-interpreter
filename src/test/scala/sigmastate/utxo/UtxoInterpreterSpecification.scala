@@ -62,8 +62,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val backerPubKey = backerProver.dlogSecrets.head.publicImage.h
     val projectPubKey = projectProver.dlogSecrets.head.publicImage.h
 
-    val timeout = IntLeaf(100)
-    val minToRaise = IntLeaf(1000)
+    val timeout = NonNegativeIntLeaf(100)
+    val minToRaise = NonNegativeIntLeaf(1000)
 
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
@@ -159,8 +159,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val script = OR(
       regScript,
       AND(
-        GE(Height, Plus(SelfHeight, IntLeaf(demurragePeriod))),
-        TxHasOutput(GE(OutputAmount, Minus(SelfAmount, IntLeaf(demurrageCost))), EQ(OutputScript, SelfScript))
+        GE(Height, Plus(SelfHeight, NonNegativeIntLeaf(demurragePeriod))),
+        TxHasOutput(GE(OutputAmount, Minus(SelfAmount, NonNegativeIntLeaf(demurrageCost))), EQ(OutputScript, SelfScript))
       )
     )
 
@@ -363,13 +363,13 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //chain1 script
     val prop1 = OR(
-      AND(GT(Height, IntLeaf(height1 + deadlineA)), pubkeyA),
+      AND(GT(Height, NonNegativeIntLeaf(height1 + deadlineA)), pubkeyA),
       AND(pubkeyB, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
     )
 
     //chain2 script
     val prop2 = OR(
-      AND(GT(Height, IntLeaf(height2 + deadlineB)), pubkeyB),
+      AND(GT(Height, NonNegativeIntLeaf(height2 + deadlineB)), pubkeyB),
       AND(pubkeyA, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
     )
 
@@ -659,7 +659,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
-    val prop = OR(pubkeyA, pubkeyB, GT(Height, IntLeaf(500)))
+    val prop = OR(pubkeyA, pubkeyB, GT(Height, NonNegativeIntLeaf(500)))
 
     //fake message, in a real-life a message is to be derived from a spending transaction
     val message = Blake2b256("Hello World")
@@ -687,7 +687,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
-    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntLeaf(500))))
+    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, NonNegativeIntLeaf(500))))
 
     //fake message, in a real-life a message is to be derived from a spending transaction
     val message = Blake2b256("Hello World")
@@ -798,8 +798,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
 
     def mixingRequestProp(sender: DLogNode, timeout: Int) = OR(
-      AND(LE(Height, IntLeaf(timeout)), EQ(CalcBlake2b256(TxOutBytes), ByteArrayLeaf(properHash))),
-      AND(GT(Height, IntLeaf(timeout)), sender)
+      AND(LE(Height, NonNegativeIntLeaf(timeout)), EQ(CalcBlake2b256(TxOutBytes), ByteArrayLeaf(properHash))),
+      AND(GT(Height, NonNegativeIntLeaf(timeout)), sender)
     )
 
     //fake message, in a real-life a message is to be derived from a spending transaction
