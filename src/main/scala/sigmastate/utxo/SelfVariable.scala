@@ -5,7 +5,7 @@ import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.UtxoContext.Height
 
-case class BoxMetadata(creationHeight: Height)
+case class BoxMetadata(creationHeight: Height, boxIndex: Short)
 
 case class BowWithMetadata(box: SigmaStateBox, metadata: BoxMetadata)
 

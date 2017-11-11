@@ -17,7 +17,7 @@ class UtxoInterpreterSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
-  val fakeSelf = boxWithMetadata(0, TrueLeaf, 0)
+  private val fakeSelf = boxWithMetadata(0, TrueLeaf)
 
   property("PropLeaf EQ/NEQ") {
     val prover1 = new UtxoProvingInterpreter
@@ -78,7 +78,7 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val outputToSpend = SigmaStateBox(10, crowdFundingScript)
-    val outputWithMetadata = BowWithMetadata(outputToSpend, BoxMetadata(0))
+    val outputWithMetadata = BowWithMetadata(outputToSpend, BoxMetadata(0, 0))
     val message = Blake2b256("Hello World") //normally message to be defined by spending transaction bytes
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
@@ -167,9 +167,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val outHeight = 100
     val outValue = 10
 
-    val outputToSpend = SigmaStateBox(outValue, script)
-
-
     val message = Blake2b256("Hello World") //normally message to be defined by spending transaction bytes
 
     //case 1: demurrage time hasn't come yet
@@ -234,7 +231,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf, 0))
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -253,7 +250,7 @@ class UtxoInterpreterSpecification extends PropSpec
     ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf, 0))
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -279,7 +276,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeaf(r))
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf, 0))
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -300,7 +297,7 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf, 0))
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -327,7 +324,7 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf, 0))
+    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
     val ctxv = ctx.withExtension(pr.extension)
