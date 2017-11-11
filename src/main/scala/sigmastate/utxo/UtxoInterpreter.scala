@@ -72,7 +72,14 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
           val leaf = PropLeaf(box.value.box.proposition)
           cost.addCost(leaf.cost).ensuring(_.isRight)
           leaf
-        case BoxField.Register(id) => box.value.box.get(id).get
+        case BoxField.Bytes =>
+          val leaf = ByteArrayLeaf(box.value.box.bytes)
+          cost.addCost(leaf.cost).ensuring(_.isRight)
+          leaf
+        case BoxField.Register(id) =>
+          val leaf = box.value.box.get(id).get
+          cost.addCost(leaf.cost).ensuring(_.isRight)
+          leaf
       }
 
 

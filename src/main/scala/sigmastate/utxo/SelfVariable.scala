@@ -34,6 +34,7 @@ object BoxField {
   object Height extends Field[NonNegativeIntLeaf]
   object Amount extends Field[NonNegativeIntLeaf]
   object Script extends Field[PropLeaf]
+  object Bytes  extends Field[ByteArrayLeaf]
 
   case class Register[V <: Value](registerId: RegisterIdentifier) extends Field[V]
 }
@@ -50,18 +51,6 @@ object Self extends BoxLeaf(null) {
 
   override type M = this.type
 }
-
-/*
-trait SelfVariable[V <: Value] extends Variable[V] {
-  override def cost: Int = Cost.SelfVariableDeclaration
-}
-
-case object SelfHeight extends SelfVariable[NonNegativeIntLeaf]
-
-case object SelfAmount extends SelfVariable[NonNegativeIntLeaf]
-
-case object SelfScript extends SelfVariable[PropLeaf]
-*/
 
 case object OutputAmount extends Variable[NonNegativeIntLeaf] {
   override val cost: Int = Cost.OutputAmount
