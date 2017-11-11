@@ -7,11 +7,11 @@ import sigmastate.utxo.UtxoContext.Height
 
 case class BoxMetadata(creationHeight: Height, boxIndex: Short)
 
-case class BowWithMetadata(box: SigmaStateBox, metadata: BoxMetadata)
+case class BoxWithMetadata(box: SigmaStateBox, metadata: BoxMetadata)
 
 case class UtxoContext(currentHeight: Height,
                        spendingTransaction: SigmaStateTransaction,
-                       self: BowWithMetadata,
+                       self: BoxWithMetadata,
                        override val extension: ContextExtension = ContextExtension(Map())
                       ) extends Context[UtxoContext] {
   override def withExtension(newExtension: ContextExtension): UtxoContext = this.copy(extension = newExtension)

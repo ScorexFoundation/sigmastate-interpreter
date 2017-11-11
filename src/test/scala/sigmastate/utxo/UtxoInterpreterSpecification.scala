@@ -78,7 +78,7 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val outputToSpend = SigmaStateBox(10, crowdFundingScript)
-    val outputWithMetadata = BowWithMetadata(outputToSpend, BoxMetadata(0, 0))
+    val outputWithMetadata = BoxWithMetadata(outputToSpend, BoxMetadata(0, 0))
     val message = Blake2b256("Hello World") //normally message to be defined by spending transaction bytes
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
