@@ -142,16 +142,16 @@ sealed trait Triple extends StateTree {
   override def cost: Int = left.cost + right.cost + Cost.TripleDeclaration
 
   //todo: define via F-Bounded polymorphism?
-  def withLeft(newLeft: SigmaStateTree): Relation
+  def withLeft(newLeft: SigmaStateTree): Triple
 
-  def withRight(newRight: SigmaStateTree): Relation
+  def withRight(newRight: SigmaStateTree): Triple
 }
 
 
 sealed trait TwoArgumentsOperation extends Triple
 
 case class Plus(override val left: SigmaStateTree,
-                override val right: SigmaStateTree) extends Relation {
+                override val right: SigmaStateTree) extends TwoArgumentsOperation {
 
   def withLeft(newLeft: SigmaStateTree): Plus = copy(left = newLeft)
 
@@ -159,21 +159,21 @@ case class Plus(override val left: SigmaStateTree,
 }
 
 case class Minus(override val left: SigmaStateTree,
-                 override val right: SigmaStateTree) extends Relation {
+                 override val right: SigmaStateTree) extends TwoArgumentsOperation {
   def withLeft(newLeft: SigmaStateTree): Minus = copy(left = newLeft)
 
   def withRight(newRight: SigmaStateTree): Minus = copy(right = newRight)
 }
 
 case class Xor(override val left: SigmaStateTree,
-               override val right: SigmaStateTree) extends Relation {
+               override val right: SigmaStateTree) extends TwoArgumentsOperation {
   def withLeft(newLeft: SigmaStateTree): Xor = copy(left = newLeft)
 
   def withRight(newRight: SigmaStateTree): Xor = copy(right = newRight)
 }
 
 case class Append(override val left: SigmaStateTree,
-                  override val right: SigmaStateTree) extends Relation {
+                  override val right: SigmaStateTree) extends TwoArgumentsOperation {
   def withLeft(newLeft: SigmaStateTree): Append = copy(left = newLeft)
 
   def withRight(newRight: SigmaStateTree): Append = copy(right = newRight)
