@@ -77,6 +77,9 @@ case class NonNegativeIntLeaf(value: Long) extends Value {
   override def cost: Int = 1
 }
 
+case class ByteLeaf(value: Byte) extends Value {
+  override def cost: Int = 1
+}
 
 case class ByteArrayLeaf(value: Array[Byte]) extends Value {
 
