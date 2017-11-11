@@ -39,7 +39,9 @@ object BoxField {
   case class Register[V <: Value](registerId: RegisterIdentifier) extends Field[V]
 }
 
-case class Extract[V <: Value](box: BoxLeaf, field: BoxField.Field[V]) extends Variable[V] {
+trait Transformer[IV <: Value, OV <: Value] extends Variable[OV]
+
+case class Extract[V <: Value](box: BoxLeaf, field: BoxField.Field[V]) extends Transformer[BoxLeaf, V]{
   override def cost: Int = 10
 
   override type M = this.type
