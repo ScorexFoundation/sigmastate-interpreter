@@ -60,10 +60,21 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   }
 
   def ssSubst(context: UtxoContext, cost: CostAccumulator): Strategy = everywherebu(rule[SigmaStateTree] {
-    case SelfScript =>
-      val leaf = PropLeaf(context.self.box.proposition)
-      cost.addCost(leaf.cost).ensuring(_.isRight)
-      leaf
+    case Self => BoxLeaf(context.self)
+
+    case Extract(box: BoxLeaf, field: BoxField.Field[_]) =>
+      field match {
+        case BoxField.Height =>
+          NonNegativeIntLeaf(box.value.metadata.creationHeight)
+        case BoxField.Amount =>
+          NonNegativeIntLeaf(box.value.box.value)
+        case BoxField.Script =>
+          val leaf = PropLeaf(box.value.box.proposition)
+          cost.addCost(leaf.cost).ensuring(_.isRight)
+          leaf
+        case BoxField.Register(id) => box.value.box.get(id).get
+      }
+
 
     //todo: cache the bytes as a lazy val in the transaction
     case TxOutBytes =>
@@ -89,8 +100,6 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   def varSubst(context: UtxoContext): Strategy = everywherebu(
     rule[Value] {
       case Height => NonNegativeIntLeaf(context.currentHeight)
-      case SelfHeight => NonNegativeIntLeaf(context.self.metadata.creationHeight)
-      case SelfAmount => NonNegativeIntLeaf(context.self.box.value)
     })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext, cost: CostAccumulator): SigmaStateTree = {
