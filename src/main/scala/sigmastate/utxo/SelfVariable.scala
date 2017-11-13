@@ -47,8 +47,7 @@ case class Extract[V <: Value](box: BoxLeaf, field: BoxField.Field[V]) extends T
   override type M = this.type
 }
 
-object Self extends BoxLeaf(null) {
-
+object Self extends BoxLeaf(value = ???) {
   override def cost: Int = 10
 
   override type M = this.type
