@@ -52,7 +52,7 @@ class SpamSpecification extends PropSpec
     val spamScript = EQ(CalcBlake2b256(CustomByteArray(tag)), CalcBlake2b256(CustomByteArray(tag)))
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
 
     val prt = prover.prove(spamScript, ctx, message)
     prt.isSuccess shouldBe true
@@ -82,7 +82,7 @@ class SpamSpecification extends PropSpec
     val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayLeaf(Array.fill(32)(0: Byte))))
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
 
     val prt = prover.prove(spamScript, ctx, message)
     prt.isSuccess shouldBe true
@@ -108,7 +108,7 @@ class SpamSpecification extends PropSpec
     //fake message, in a real-life a message is to be derived from a spending transaction
     val message = Blake2b256("Hello World")
     val fakeSelf = boxWithMetadata(0, TrueLeaf)
-    val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
 
     val publicImages = secret.publicImage +: simulated
     val prop = OR(publicImages)
@@ -144,7 +144,7 @@ class SpamSpecification extends PropSpec
         //fake message, in a real-life a message is to be derived from a spending transaction
         val message = Blake2b256("Hello World")
         val fakeSelf = boxWithMetadata(0, propToCompare)
-        val ctx = UtxoContext(currentHeight = 100, spendingTransaction = tx, self = fakeSelf)
+        val ctx = UtxoContext(currentHeight = 100, Seq(), spendingTransaction = tx, self = fakeSelf)
 
         val pt0 = System.currentTimeMillis()
         prover.prove(spamScript, ctx, message).map { proof =>

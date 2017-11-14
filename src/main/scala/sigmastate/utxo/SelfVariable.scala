@@ -11,6 +11,7 @@ case class BoxMetadata(creationHeight: Height, boxIndex: Short)
 case class BoxWithMetadata(box: SigmaStateBox, metadata: BoxMetadata)
 
 case class UtxoContext(currentHeight: Height,
+                       boxesToSpend: Seq[BoxWithMetadata],
                        spendingTransaction: SigmaStateTransaction,
                        self: BoxWithMetadata,
                        override val extension: ContextExtension = ContextExtension(Map())
@@ -70,7 +71,8 @@ case class ExtractRegister[V <: Value](registerId: RegisterIdentifier) extends E
   override type M = this.type
 }
 
-case class RunExtract[V <: Value, E <: Extract[V]](boxLeaf: BoxLeaf, extractor: E) extends Transformer[BoxLeaf, V] {
+case class RunExtract[V <: Value, E <: Extract[V]](operand: BoxLeaf, extractor: E)
+  extends OneArgumentOperation with Transformer[BoxLeaf, V] {
   override def cost: Int = 10
 
   override type M = this.type
@@ -82,8 +84,18 @@ case class Collection[V <: Value](values: Seq[V]) extends Value {
   override type M = this.type
 }
 
-case class MapCollection[IV <: Value, OV <: Value](collection: Collection[IV], mapper: Transformer[IV, OV])
-  extends Transformer[Collection[IV], Collection[OV]] {
+//todo: inheritance?
+case class MapCollection[IV <: Value](collection: Collection[IV], mapper: OneArgumentOperation) extends Value {
+
+  override def cost: Int = 10
+
+  override type M = this.type
+}
+
+object Inputs extends Collection[BoxLeaf](values = null)
+object Outputs extends Collection[BoxLeaf](values = null)
+
+case class Exists[V <: Value](collection: Collection[V], relation: Relation) extends Transformer[V, BooleanLeaf] {
 
   override def cost: Int = 10
 
@@ -94,7 +106,6 @@ case class MapCollection[IV <: Value, OV <: Value](collection: Collection[IV], m
 todo: implement
 
 object Forall
-object Exists
 object FoldLeft
 object Append
 object Slice

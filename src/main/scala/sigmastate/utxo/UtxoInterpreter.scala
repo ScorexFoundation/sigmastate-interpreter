@@ -60,6 +60,17 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   }
 
   def ssSubst(context: UtxoContext, cost: CostAccumulator): Strategy = everywherebu(rule[SigmaStateTree] {
+    case Inputs => Collection(context.boxesToSpend.map(BoxLeaf.apply))
+
+    case Outputs => Collection(context.spendingTransaction.newBoxes
+      .zipWithIndex
+      .map{case (b, i) => BoxWithMetadata(b, BoxMetadata(context.currentHeight, i.toShort))}
+      .map(BoxLeaf.apply))
+
+    case MapCollection(collection, mapper) => ???
+
+    case Exists(collection, relation) => ???
+
     case Self => BoxLeaf(context.self)
 
     case RunExtract(box, extractor) =>

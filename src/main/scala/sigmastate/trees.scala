@@ -124,7 +124,7 @@ case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArra
   override def cost: Int = Cost.ByteArrayDeclaration
 }
 
-sealed trait OneArgumentOperation extends StateTree {
+trait OneArgumentOperation extends StateTree {
   val operand: SigmaStateTree
 }
 
