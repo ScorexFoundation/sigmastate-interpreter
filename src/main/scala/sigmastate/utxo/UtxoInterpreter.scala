@@ -62,22 +62,24 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   def ssSubst(context: UtxoContext, cost: CostAccumulator): Strategy = everywherebu(rule[SigmaStateTree] {
     case Self => BoxLeaf(context.self)
 
-    case Extract(box: BoxLeaf, field: BoxField.Field[_]) =>
-      field match {
-        case BoxField.Height =>
+    case RunExtract(box, extractor) =>
+      cost.addCost(extractor.cost).ensuring(_.isRight)
+
+      extractor match {
+        case ExtractHeight =>
           NonNegativeIntLeaf(box.value.metadata.creationHeight)
-        case BoxField.Amount =>
+        case ExtractAmount =>
           NonNegativeIntLeaf(box.value.box.value)
-        case BoxField.Script =>
+        case ExtractScript =>
           val leaf = PropLeaf(box.value.box.proposition)
           cost.addCost(leaf.cost).ensuring(_.isRight)
           leaf
-        case BoxField.Bytes =>
+        case ExtractBytes =>
           val leaf = ByteArrayLeaf(box.value.box.bytes)
           cost.addCost(leaf.cost).ensuring(_.isRight)
           leaf
-        case BoxField.Register(id) =>
-          val leaf = box.value.box.get(id).get
+        case ExtractRegister(rid) =>
+          val leaf = box.value.box.get(rid).get
           cost.addCost(leaf.cost).ensuring(_.isRight)
           leaf
       }

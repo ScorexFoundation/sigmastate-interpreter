@@ -10,7 +10,6 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.utils.Helpers
 import BoxHelpers.boxWithMetadata
-import sigmastate.utxo.BoxField.Script
 
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -162,9 +161,10 @@ class UtxoInterpreterSpecification extends PropSpec
     val script = OR(
       regScript,
       AND(
-        GE(Height, Plus(Extract(Self, BoxField.Height), NonNegativeIntLeaf(demurragePeriod))),
-        TxHasOutput(GE(OutputAmount, Minus(Extract(Self, BoxField.Amount), NonNegativeIntLeaf(demurrageCost))),
-          EQ(OutputScript, Extract(Self, BoxField.Script)))
+        GE(Height, Plus(RunExtract[NonNegativeIntLeaf, Extract[NonNegativeIntLeaf]](Self, ExtractHeight),
+                        NonNegativeIntLeaf(demurragePeriod))),
+        TxHasOutput(GE(OutputAmount, Minus(RunExtract[NonNegativeIntLeaf, Extract[NonNegativeIntLeaf]](Self, ExtractAmount), NonNegativeIntLeaf(demurrageCost))),
+          EQ(OutputScript, RunExtract[PropLeaf, Extract[PropLeaf]](Self, ExtractScript)))
       )
     )
 
@@ -789,7 +789,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = AND(pubkey, TxHasOutput(EQ(OutputScript, Extract(Self, Script))))
+    //val prop = AND(pubkey, TxHasOutput(EQ(OutputScript, Extract(Self, Script))))
 
   }
 }

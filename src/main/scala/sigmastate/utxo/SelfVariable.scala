@@ -36,40 +36,70 @@ object BoxLeaf {
   def apply(b: BoxWithMetadata) = BoxLeafInstantiation(b)
 }
 
-object BoxField {
+trait Transformer[IV <: Value, +OV <: Value] extends Variable[OV]
 
-  sealed trait Field[+V <: Value]
+sealed abstract class Extract[+V <: Value] extends Transformer[BoxLeaf, V]
 
-  object Height extends Field[NonNegativeIntLeaf]
+case object ExtractHeight extends Extract[NonNegativeIntLeaf] {
+  override def cost: Int = 10
 
-  object Amount extends Field[NonNegativeIntLeaf]
-
-  object Script extends Field[PropLeaf]
-
-  object Bytes extends Field[ByteArrayLeaf]
-
-  case class Register[V <: Value](registerId: RegisterIdentifier) extends Field[V]
+  override type M = this.type
 }
 
-trait Transformer[IV <: Value, OV <: Value] extends Variable[OV]
+case object ExtractAmount extends Extract[NonNegativeIntLeaf] {
+  override def cost: Int = 10
 
-case class Extract[V <: Value](box: BoxLeaf, field: BoxField.Field[V]) extends Transformer[BoxLeaf, V] {
+  override type M = this.type
+}
+
+case object ExtractScript extends Extract[PropLeaf] {
+  override def cost: Int = 10
+
+  override type M = this.type
+}
+
+case object ExtractBytes extends Extract[ByteArrayLeaf] {
+  override def cost: Int = 10
+
+  override type M = this.type
+}
+
+case class ExtractRegister[V <: Value](registerId: RegisterIdentifier) extends Extract[V] {
+  override def cost: Int = 10
+
+  override type M = this.type
+}
+
+case class RunExtract[V <: Value, E <: Extract[V]](boxLeaf: BoxLeaf, extractor: E) extends Transformer[BoxLeaf, V] {
+  override def cost: Int = 10
+
+  override type M = this.type
+}
+
+case class Collection[V <: Value](values: Seq[V]) extends Value {
+  override def cost: Int = values.map(_.cost).sum
+
+  override type M = this.type
+}
+
+case class MapCollection[IV <: Value, OV <: Value](collection: Collection[IV], mapper: Transformer[IV, OV])
+  extends Transformer[Collection[IV], Collection[OV]] {
+
   override def cost: Int = 10
 
   override type M = this.type
 }
 
 /*
-case class Collection[V <: Value](values: Seq[V])
+todo: implement
 
-case class Map[IV, OV](collection: Collection[IV], mapper: Transformer[IV, OV])
-  extends Transformer[Collection[IV], Collection[OV]] {
-
-  override def cost: Int = 10
-
-  override type M = this.type
-}*/
-
+object Forall
+object Exists
+object FoldLeft
+object Append
+object Slice
+object ByIndex
+*/
 
 case object Self extends BoxLeaf {
   override lazy val value = ???

@@ -110,7 +110,7 @@ case object FalseLeaf extends BooleanLeaf(false) {
 }
 
 
-trait Variable[V <: Value] extends Value
+trait Variable[+V <: Value] extends Value
 
 case object Height extends Variable[NonNegativeIntLeaf] {
   override def cost: Int = Cost.HeightAccess
