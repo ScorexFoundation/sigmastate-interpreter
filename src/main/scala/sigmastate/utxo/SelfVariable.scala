@@ -29,25 +29,41 @@ case class BoxLeaf(value: BoxWithMetadata) extends Value {
 }
 
 object BoxField {
+
   sealed trait Field[+V <: Value]
 
   object Height extends Field[NonNegativeIntLeaf]
+
   object Amount extends Field[NonNegativeIntLeaf]
+
   object Script extends Field[PropLeaf]
-  object Bytes  extends Field[ByteArrayLeaf]
+
+  object Bytes extends Field[ByteArrayLeaf]
 
   case class Register[V <: Value](registerId: RegisterIdentifier) extends Field[V]
 }
 
 trait Transformer[IV <: Value, OV <: Value] extends Variable[OV]
 
-case class Extract[V <: Value](box: BoxLeaf, field: BoxField.Field[V]) extends Transformer[BoxLeaf, V]{
+case class Extract[V <: Value](box: BoxLeaf, field: BoxField.Field[V]) extends Transformer[BoxLeaf, V] {
   override def cost: Int = 10
 
   override type M = this.type
 }
 
-object Self extends BoxLeaf(value = ???) {
+/*
+case class Collection[V <: Value](values: Seq[V])
+
+case class Map[IV, OV](collection: Collection[IV], mapper: Transformer[IV, OV])
+  extends Transformer[Collection[IV], Collection[OV]] {
+
+  override def cost: Int = 10
+
+  override type M = this.type
+}*/
+
+
+object Self extends BoxLeaf(value = null) {
   override def cost: Int = 10
 
   override type M = this.type

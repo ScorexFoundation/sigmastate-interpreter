@@ -19,6 +19,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
   private val fakeSelf = boxWithMetadata(0, TrueLeaf)
 
+  //fake message, in a real-life a message is to be derived from a spending transaction
+  val message = Blake2b256("Hello World")
+
   property("PropLeaf EQ/NEQ") {
     val prover1 = new UtxoProvingInterpreter
     val prover2 = new UtxoProvingInterpreter
@@ -79,7 +82,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val outputToSpend = SigmaStateBox(10, crowdFundingScript)
     val outputWithMetadata = BoxWithMetadata(outputToSpend, BoxMetadata(0, 0))
-    val message = Blake2b256("Hello World") //normally message to be defined by spending transaction bytes
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
 
@@ -168,8 +170,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val outHeight = 100
     val outValue = 10
 
-    val message = Blake2b256("Hello World") //normally message to be defined by spending transaction bytes
-
     //case 1: demurrage time hasn't come yet
     val tx1 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue, script)))
 
@@ -231,7 +231,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val preimage = prover.contextExtenders.head._2.value
     val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
 
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
@@ -250,7 +249,6 @@ class UtxoInterpreterSpecification extends PropSpec
       CustomByteArray(Helpers.tagInt(preimage1)))
     ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
 
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
@@ -276,7 +274,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeaf(r))
 
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
@@ -297,7 +294,6 @@ class UtxoInterpreterSpecification extends PropSpec
       EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
     )
 
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
@@ -324,7 +320,6 @@ class UtxoInterpreterSpecification extends PropSpec
       )
     )
 
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, message).get
 
@@ -374,9 +369,6 @@ class UtxoInterpreterSpecification extends PropSpec
       AND(pubkeyA, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
     )
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
-
     //Preliminary checks:
 
     //B can't spend coins of A in chain1 (generate a valid proof)
@@ -423,8 +415,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubkeyB)
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, message).get
@@ -448,8 +438,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubkeyB, pubkeyC)
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, message).get
@@ -475,8 +463,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(Seq(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, message).get
@@ -498,8 +484,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyC, pubkeyD))
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     proverA.prove(prop, ctx, message).isFailure shouldBe true
@@ -531,8 +515,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     proverA.prove(prop, ctx, message).isFailure shouldBe true
@@ -564,8 +546,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     proverA.prove(prop, ctx, message).isFailure shouldBe true
@@ -597,8 +577,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     proverA.prove(prop, ctx, message).isFailure shouldBe true
@@ -633,8 +611,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, message).get
@@ -662,9 +638,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubkeyB, GT(Height, NonNegativeIntLeaf(500)))
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
-
     val ctx1 = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
     val prA = proverA.prove(prop, ctx1, message).get
     verifier.verify(prop, ctx1, prA, message).get shouldBe true
@@ -690,8 +663,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, NonNegativeIntLeaf(500))))
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx1 = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx1, message).get
@@ -724,8 +695,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = DiffieHellmanTupleNode(ci.g, ci.h, ci.u, ci.v)
     val wrongProp = DiffieHellmanTupleNode(ci.g, ci.h, ci.u, ci.u)
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, message).get
@@ -746,8 +715,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubdhB)
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, message).get
@@ -765,8 +732,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(pubkeyA, pubdhA)
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, message).get
@@ -803,8 +768,6 @@ class UtxoInterpreterSpecification extends PropSpec
       AND(GT(Height, NonNegativeIntLeaf(timeout)), sender)
     )
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 50, spendingTransaction, self = fakeSelf)
 
     //before timeout
@@ -817,5 +780,9 @@ class UtxoInterpreterSpecification extends PropSpec
     println(prA2)
     verifier.verify(mixingRequestProp(pubkeyA, 40), ctx, prA2, message).get shouldBe true
     verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, message).isSuccess shouldBe false
+  }
+
+  ignore("register - counter") {
+
   }
 }
