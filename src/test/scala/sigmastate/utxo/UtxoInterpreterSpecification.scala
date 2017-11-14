@@ -20,7 +20,7 @@ class UtxoInterpreterSpecification extends PropSpec
   private val fakeSelf = boxWithMetadata(0, TrueLeaf)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
-  val message = Blake2b256("Hello World")
+  val fakeMessage = Blake2b256("Hello World")
 
   property("PropLeaf EQ/NEQ") {
     val prover1 = new UtxoProvingInterpreter
@@ -94,11 +94,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx1 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx1, self = outputWithMetadata)
 
     //project is generating a proof and it is passing verification
-    val proofP = projectProver.prove(crowdFundingScript, ctx1, message).get.proof
-    verifier.verify(crowdFundingScript, ctx1, proofP, message).get shouldBe true
+    val proofP = projectProver.prove(crowdFundingScript, ctx1, fakeMessage).get.proof
+    verifier.verify(crowdFundingScript, ctx1, proofP, fakeMessage).get shouldBe true
 
     //backer can't generate a proof
-    backerProver.prove(crowdFundingScript, ctx1, message).isFailure shouldBe true
+    backerProver.prove(crowdFundingScript, ctx1, fakeMessage).isFailure shouldBe true
 
 
     //Second case: height < timeout, project is NOT able to claim amount of tokens not less than required threshold
@@ -110,11 +110,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx2 = UtxoContext(currentHeight = timeout.value - 1, spendingTransaction = tx2, self = outputWithMetadata)
 
     //project cant' generate a proof
-    val proofP2Try = projectProver.prove(crowdFundingScript, ctx2, message)
+    val proofP2Try = projectProver.prove(crowdFundingScript, ctx2, fakeMessage)
     proofP2Try.isSuccess shouldBe false
 
     //backer can't generate a proof
-    val proofB2Try = backerProver.prove(crowdFundingScript, ctx2, message)
+    val proofB2Try = backerProver.prove(crowdFundingScript, ctx2, fakeMessage)
     proofB2Try.isSuccess shouldBe false
 
     //Third case: height >= timeout
@@ -127,11 +127,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx3 = UtxoContext(currentHeight = timeout.value, spendingTransaction = tx3, self = outputWithMetadata)
 
     //project cant' generate a proof
-    projectProver.prove(crowdFundingScript, ctx3, message).isFailure shouldBe true
+    projectProver.prove(crowdFundingScript, ctx3, fakeMessage).isFailure shouldBe true
 
     //backer is generating a proof and it is passing verification
-    val proofB = backerProver.prove(crowdFundingScript, ctx3, message).get.proof
-    verifier.verify(crowdFundingScript, ctx3, proofB, message).get shouldBe true
+    val proofB = backerProver.prove(crowdFundingScript, ctx3, fakeMessage).get.proof
+    verifier.verify(crowdFundingScript, ctx3, proofB, fakeMessage).get shouldBe true
   }
 
 
@@ -179,11 +179,11 @@ class UtxoInterpreterSpecification extends PropSpec
       self = boxWithMetadata(outValue, script, outHeight))
 
     //user can spend all the money
-    val uProof1 = userProver.prove(script, ctx1, message).get.proof
-    verifier.verify(script, ctx1, uProof1, message).get shouldBe true
+    val uProof1 = userProver.prove(script, ctx1, fakeMessage).get.proof
+    verifier.verify(script, ctx1, uProof1, fakeMessage).get shouldBe true
 
     //miner can't spend any money
-    verifier.verify(script, ctx1, NoProof, message).get shouldBe false
+    verifier.verify(script, ctx1, NoProof, fakeMessage).get shouldBe false
 
     //case 2: demurrage time has come
     val ctx2 = UtxoContext(
@@ -192,8 +192,8 @@ class UtxoInterpreterSpecification extends PropSpec
       self = boxWithMetadata(outValue, script, outHeight))
 
     //user can spend all the money
-    val uProof2 = userProver.prove(script, ctx1, message).get.proof
-    verifier.verify(script, ctx2, uProof2, message).get shouldBe true
+    val uProof2 = userProver.prove(script, ctx1, fakeMessage).get.proof
+    verifier.verify(script, ctx2, uProof2, fakeMessage).get shouldBe true
 
     //miner can spend "demurrageCost" tokens
     val tx3 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost, script)))
@@ -202,7 +202,7 @@ class UtxoInterpreterSpecification extends PropSpec
       spendingTransaction = tx3,
       self = boxWithMetadata(outValue, script, outHeight))
 
-    verifier.verify(script, ctx3, NoProof, message).get shouldBe true
+    verifier.verify(script, ctx3, NoProof, fakeMessage).get shouldBe true
 
     //miner can't spend more
     val tx4 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost - 1, script)))
@@ -211,7 +211,7 @@ class UtxoInterpreterSpecification extends PropSpec
       spendingTransaction = tx4,
       self = boxWithMetadata(outValue, script, outHeight))
 
-    verifier.verify(script, ctx4, NoProof, message).get shouldBe false
+    verifier.verify(script, ctx4, NoProof, fakeMessage).get shouldBe false
 
     //miner can spend less
     val tx5 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost + 1, script)))
@@ -220,7 +220,7 @@ class UtxoInterpreterSpecification extends PropSpec
       spendingTransaction = tx5,
       self = boxWithMetadata(outValue, script, outHeight))
 
-    verifier.verify(script, ctx5, NoProof, message).get shouldBe true
+    verifier.verify(script, ctx5, NoProof, fakeMessage).get shouldBe true
   }
 
   /**
@@ -232,13 +232,13 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
 
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
-    val pr = prover.prove(prop, ctx, message).get
+    val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, message).get shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, fakeMessage).get shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
 
   property("prover enriching context 2") {
@@ -250,13 +250,13 @@ class UtxoInterpreterSpecification extends PropSpec
     ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
 
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
-    val pr = prover.prove(prop, ctx, message).get
+    val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, message).get shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, fakeMessage).get shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
 
   property("prover enriching context - xor") {
@@ -275,13 +275,13 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeaf(r))
 
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
-    val pr = prover.prove(prop, ctx, message).get
+    val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, message).get shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, fakeMessage).get shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
 
   property("context enriching mixed w. crypto") {
@@ -295,15 +295,15 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
-    val pr = prover.prove(prop, ctx, message).get
+    val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     pr.proof.isInstanceOf[SchnorrNode] shouldBe true
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, message).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, fakeMessage).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
 
   property("context enriching mixed w. crypto 2") {
@@ -321,15 +321,15 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val ctx = UtxoContext(currentHeight = 0, spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
-    val pr = prover.prove(prop, ctx, message).get
+    val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     pr.proof.isInstanceOf[SchnorrNode] shouldBe true
 
     val verifier = new UtxoInterpreter
-    verifier.verify(prop, ctx, pr.proof, message).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, message).get shouldBe true
+    verifier.verify(prop, ctx, pr.proof, fakeMessage).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
 
   /**
@@ -373,22 +373,22 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //B can't spend coins of A in chain1 (generate a valid proof)
     val ctxf1 = UtxoContext(currentHeight = height1 + 1, spendingTransaction = null, self = fakeSelf)
-    proverB.prove(prop1, ctxf1, message).isSuccess shouldBe false
+    proverB.prove(prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //A can't withdraw her coins in chain1 (generate a valid proof)
-    println(proverA.prove(prop1, ctxf1, message))
-    proverA.prove(prop1, ctxf1, message).isFailure shouldBe true
+    println(proverA.prove(prop1, ctxf1, fakeMessage))
+    proverA.prove(prop1, ctxf1, fakeMessage).isFailure shouldBe true
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
     val ctxf2 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = fakeSelf)
-    proverB.prove(prop2, ctxf2, message).isSuccess shouldBe false
+    proverB.prove(prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
     //Successful run below:
 
     //A spends coins of B in chain2
     val ctx1 = UtxoContext(currentHeight = height2 + 1, spendingTransaction = null, self = fakeSelf)
-    val pr = proverA.prove(prop2, ctx1, message).get
-    verifier.verify(prop2, ctx1, pr, message).get shouldBe true
+    val pr = proverA.prove(prop2, ctx1, fakeMessage).get
+    verifier.verify(prop2, ctx1, pr, fakeMessage).get shouldBe true
 
     //B extracts preimage x of hx
     val t = pr.extension.values.head
@@ -397,8 +397,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //B spends coins of A in chain1 with knowledge of x
     val ctx2 = UtxoContext(currentHeight = height1 + 1, spendingTransaction = null, self = fakeSelf)
-    val pr2 = proverB2.prove(prop1, ctx2, message).get
-    verifier.verify(prop1, ctx2, pr2, message).get shouldBe true
+    val pr2 = proverB2.prove(prop1, ctx2, fakeMessage).get
+    verifier.verify(prop1, ctx2, pr2, fakeMessage).get shouldBe true
   }
 
   /**
@@ -417,13 +417,13 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prA, message).get shouldBe true
+    val prA = proverA.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
 
-    val prB = proverB.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prB, message).get shouldBe true
+    val prB = proverB.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prB, fakeMessage).get shouldBe true
 
-    proverC.prove(prop, ctx, message).isFailure shouldBe true
+    proverC.prove(prop, ctx, fakeMessage).isFailure shouldBe true
   }
 
   property("simplest linear-sized ring signature (1-out-of-3 OR)") {
@@ -440,14 +440,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prA, message).get shouldBe true
+    val prA = proverA.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
 
-    val prB = proverB.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prB, message).get shouldBe true
+    val prB = proverB.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prB, fakeMessage).get shouldBe true
 
-    val prC = proverC.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prC, message).get shouldBe true
+    val prC = proverC.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prC, fakeMessage).get shouldBe true
   }
 
   //two secrets are known, nevertheless, one will be simulated
@@ -465,8 +465,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prA, message).get shouldBe true
+    val prA = proverA.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
   }
 
   property("complex sig scheme - OR of two ANDs") {
@@ -486,18 +486,18 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    proverA.prove(prop, ctx, message).isFailure shouldBe true
-    proverB.prove(prop, ctx, message).isFailure shouldBe true
-    proverC.prove(prop, ctx, message).isFailure shouldBe true
-    proverD.prove(prop, ctx, message).isFailure shouldBe true
+    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverC.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverD.prove(prop, ctx, fakeMessage).isFailure shouldBe true
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
-    val pr = proverAB.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, pr, message).get shouldBe true
+    val pr = proverAB.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
 
     val proverCD = proverC.withSecrets(Seq(proverD.dlogSecrets.head))
-    val pr2 = proverCD.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, pr2, message).get shouldBe true
+    val pr2 = proverCD.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr2, fakeMessage).get shouldBe true
   }
 
   property("complex sig scheme - OR of AND and OR") {
@@ -517,18 +517,18 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    proverA.prove(prop, ctx, message).isFailure shouldBe true
-    proverB.prove(prop, ctx, message).isFailure shouldBe true
+    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
 
-    val prC = proverC.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prC, message).get shouldBe true
+    val prC = proverC.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prC, fakeMessage).get shouldBe true
 
-    val prD = proverD.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prD, message).get shouldBe true
+    val prD = proverD.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prD, fakeMessage).get shouldBe true
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
-    val pr = proverAB.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, pr, message).get shouldBe true
+    val pr = proverAB.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 
   property("complex sig scheme - AND of two ORs") {
@@ -548,18 +548,18 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    proverA.prove(prop, ctx, message).isFailure shouldBe true
-    proverB.prove(prop, ctx, message).isFailure shouldBe true
-    proverC.prove(prop, ctx, message).isFailure shouldBe true
-    proverD.prove(prop, ctx, message).isFailure shouldBe true
+    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverC.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverD.prove(prop, ctx, fakeMessage).isFailure shouldBe true
 
     val proverAC = proverA.withSecrets(Seq(proverC.dlogSecrets.head))
-    val pr = proverAC.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, pr, message).get shouldBe true
+    val pr = proverAC.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
 
     val proverBD = proverB.withSecrets(Seq(proverD.dlogSecrets.head))
-    val pr2 = proverBD.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, pr2, message).get shouldBe true
+    val pr2 = proverBD.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr2, fakeMessage).get shouldBe true
   }
 
   property("complex sig scheme - AND of AND and OR") {
@@ -579,21 +579,21 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    proverA.prove(prop, ctx, message).isFailure shouldBe true
-    proverB.prove(prop, ctx, message).isFailure shouldBe true
-    proverC.prove(prop, ctx, message).isFailure shouldBe true
-    proverD.prove(prop, ctx, message).isFailure shouldBe true
+    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverC.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverD.prove(prop, ctx, fakeMessage).isFailure shouldBe true
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
-    proverAB.prove(prop, ctx, message).isFailure shouldBe true
+    proverAB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
 
     val proverABC = proverAB.withSecrets(Seq(proverC.dlogSecrets.head))
-    val prABC = proverABC.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prABC, message).get shouldBe true
+    val prABC = proverABC.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prABC, fakeMessage).get shouldBe true
 
     val proverABD = proverAB.withSecrets(Seq(proverC.dlogSecrets.head))
-    val prABD = proverABD.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prABD, message).get shouldBe true
+    val prABD = proverABD.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prABD, fakeMessage).get shouldBe true
   }
 
   property("complex sig scheme - OR of two ORs") {
@@ -613,17 +613,17 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prA, message).get shouldBe true
+    val prA = proverA.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
 
-    val prB = proverB.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prB, message).get shouldBe true
+    val prB = proverB.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prB, fakeMessage).get shouldBe true
 
-    val prC = proverC.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prC, message).get shouldBe true
+    val prC = proverC.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prC, fakeMessage).get shouldBe true
 
-    val prD = proverD.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prD, message).get shouldBe true
+    val prD = proverD.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prD, fakeMessage).get shouldBe true
   }
 
   property("complex sig scheme - OR w. predicate") {
@@ -639,15 +639,15 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(pubkeyA, pubkeyB, GT(Height, NonNegativeIntLeaf(500)))
 
     val ctx1 = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
-    val prA = proverA.prove(prop, ctx1, message).get
-    verifier.verify(prop, ctx1, prA, message).get shouldBe true
-    val prB = proverB.prove(prop, ctx1, message).get
-    verifier.verify(prop, ctx1, prB, message).get shouldBe true
-    proverC.prove(prop, ctx1, message).isFailure shouldBe true
+    val prA = proverA.prove(prop, ctx1, fakeMessage).get
+    verifier.verify(prop, ctx1, prA, fakeMessage).get shouldBe true
+    val prB = proverB.prove(prop, ctx1, fakeMessage).get
+    verifier.verify(prop, ctx1, prB, fakeMessage).get shouldBe true
+    proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
     val ctx2 = UtxoContext(currentHeight = 501, spendingTransaction = null, self = fakeSelf)
-    val prC = proverC.prove(prop, ctx2, message).get
-    verifier.verify(prop, ctx2, prC, message).get shouldBe true
+    val prC = proverC.prove(prop, ctx2, fakeMessage).get
+    verifier.verify(prop, ctx2, prC, fakeMessage).get shouldBe true
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate") {
@@ -665,21 +665,21 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx1 = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx1, message).get
-    verifier.verify(prop, ctx1, prA, message).get shouldBe true
-    val prB = proverB.prove(prop, ctx1, message).get
-    verifier.verify(prop, ctx1, prB, message).get shouldBe true
-    proverC.prove(prop, ctx1, message).isFailure shouldBe true
+    val prA = proverA.prove(prop, ctx1, fakeMessage).get
+    verifier.verify(prop, ctx1, prA, fakeMessage).get shouldBe true
+    val prB = proverB.prove(prop, ctx1, fakeMessage).get
+    verifier.verify(prop, ctx1, prB, fakeMessage).get shouldBe true
+    proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
 
     val ctx2 = UtxoContext(currentHeight = 501, spendingTransaction = null, self = fakeSelf)
 
-    val prA2 = proverA.prove(prop, ctx2, message).get
-    verifier.verify(prop, ctx2, prA2, message).get shouldBe true
-    val prB2 = proverB.prove(prop, ctx2, message).get
-    verifier.verify(prop, ctx2, prB2, message).get shouldBe true
-    val prC2 = proverC.prove(prop, ctx2, message).get
-    verifier.verify(prop, ctx2, prC2, message).get shouldBe true
+    val prA2 = proverA.prove(prop, ctx2, fakeMessage).get
+    verifier.verify(prop, ctx2, prA2, fakeMessage).get shouldBe true
+    val prB2 = proverB.prove(prop, ctx2, fakeMessage).get
+    verifier.verify(prop, ctx2, prB2, fakeMessage).get shouldBe true
+    val prC2 = proverC.prove(prop, ctx2, fakeMessage).get
+    verifier.verify(prop, ctx2, prC2, fakeMessage).get shouldBe true
   }
 
   property("DH tuple"){
@@ -697,11 +697,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    val pr = prover.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, pr, message).get shouldBe true
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
 
-    fakeProver.prove(prop, ctx, message).isSuccess shouldBe false
-    prover.prove(wrongProp, ctx, message).isSuccess shouldBe false
+    fakeProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+    prover.prove(wrongProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   property("DH tuple - simulation"){
@@ -717,8 +717,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prA, message).get shouldBe true
+    val prA = proverA.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
   }
 
   property("DH tuple and DLOG"){
@@ -734,10 +734,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext(currentHeight = 1, spendingTransaction = null, self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, message).get
-    verifier.verify(prop, ctx, prA, message).get shouldBe true
+    val prA = proverA.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
 
-    proverB.prove(prop, ctx, message).isSuccess shouldBe false
+    proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   property("mixing scenario w. timeout") {
@@ -771,15 +771,15 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx = UtxoContext(currentHeight = 50, spendingTransaction, self = fakeSelf)
 
     //before timeout
-    val prA = proverA.prove(mixingRequestProp(pubkeyA, 100), ctx, message).get
-    verifier.verify(mixingRequestProp(pubkeyA, 100), ctx, prA, message).get shouldBe true
-    verifier.verify(mixingRequestProp(pubkeyB, 100), ctx, prA, message).get shouldBe true
+    val prA = proverA.prove(mixingRequestProp(pubkeyA, 100), ctx, fakeMessage).get
+    verifier.verify(mixingRequestProp(pubkeyA, 100), ctx, prA, fakeMessage).get shouldBe true
+    verifier.verify(mixingRequestProp(pubkeyB, 100), ctx, prA, fakeMessage).get shouldBe true
 
     //after timeout
-    val prA2 = proverA.prove(mixingRequestProp(pubkeyA, 40), ctx, message).get
+    val prA2 = proverA.prove(mixingRequestProp(pubkeyA, 40), ctx, fakeMessage).get
     println(prA2)
-    verifier.verify(mixingRequestProp(pubkeyA, 40), ctx, prA2, message).get shouldBe true
-    verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, message).isSuccess shouldBe false
+    verifier.verify(mixingRequestProp(pubkeyA, 40), ctx, prA2, fakeMessage).get shouldBe true
+    verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).isSuccess shouldBe false
   }
 
   ignore("register - counter") {
