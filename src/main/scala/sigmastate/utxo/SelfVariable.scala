@@ -22,10 +22,18 @@ object UtxoContext {
   type Height = Long
 }
 
-case class BoxLeaf(value: BoxWithMetadata) extends Value {
+trait BoxLeaf extends Value {
+  val value: BoxWithMetadata
+
   override def cost: Int = 10
 
   override type M = this.type
+}
+
+case class BoxLeafInstantiation(override val value: BoxWithMetadata) extends BoxLeaf
+
+object BoxLeaf {
+  def apply(b: BoxWithMetadata) = BoxLeafInstantiation(b)
 }
 
 object BoxField {
@@ -63,7 +71,9 @@ case class Map[IV, OV](collection: Collection[IV], mapper: Transformer[IV, OV])
 }*/
 
 
-object Self extends BoxLeaf(value = null) {
+case object Self extends BoxLeaf {
+  override lazy val value = ???
+
   override def cost: Int = 10
 
   override type M = this.type

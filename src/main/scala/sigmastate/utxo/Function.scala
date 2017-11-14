@@ -7,10 +7,12 @@ import sigmastate.utxo.CostTable.Cost
 
 trait Function extends StateTree
 
+//todo: replace with exists on collection
 case class TxHasOutput(relation: Relation*) extends Function {
   override val cost: Int = relation.length + Cost.TxHasOutputDeclaration
 }
 
+//todo: derive from BoxLeaf
 case class TxOutput(outIndex: Int, relation: Relation*) extends Function {
   override val cost: Int = relation.length + Cost.TxOutputDeclaration
 }

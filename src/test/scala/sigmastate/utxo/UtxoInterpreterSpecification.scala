@@ -10,6 +10,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.utils.Helpers
 import BoxHelpers.boxWithMetadata
+import sigmastate.utxo.BoxField.Script
 
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -783,6 +784,12 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   ignore("register - counter") {
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val prop = AND(pubkey, TxHasOutput(EQ(OutputScript, Extract(Self, Script))))
 
   }
 }
