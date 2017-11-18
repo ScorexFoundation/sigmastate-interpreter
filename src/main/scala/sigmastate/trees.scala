@@ -65,64 +65,94 @@ object AND {
 }
 
 
-trait Value extends StateTree
+trait Value extends StateTree {
+  type WrappedValue
 
-case class IntLeaf(value: Long) extends Value {
-  override def cost: Int = 1
+  def evaluated: Boolean = ???
+}
+
+ trait EvaluatedValue[V <: Value] extends Value {self: V =>
+  val value: V#WrappedValue
+  override lazy val evaluated = true
+}
+ trait NotReadyValue[V <: Value] extends Value {self: V =>
+  override lazy val evaluated = false
 }
 
 //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
-case class NonNegativeIntLeaf(value: Long) extends Value {
-  require(value >= 0)
-  override def cost: Int = 1
+sealed trait IntLeaf extends Value {
+  override type WrappedValue = Long
 }
 
-case class ByteLeaf(value: Byte) extends Value {
+case class IntLeafConstant(value: Long) extends IntLeaf with EvaluatedValue[IntLeaf] {
   override def cost: Int = 1
 }
+trait NotReadyValueIntLeaf extends IntLeaf with NotReadyValue[IntLeaf]
 
-case class ByteArrayLeaf(value: Array[Byte]) extends Value {
+case object Height extends NotReadyValueIntLeaf {
+  override def cost: Int = Cost.HeightAccess
+}
+
+
+sealed trait ByteArrayLeaf extends Value {
+  override type WrappedValue = Array[Byte]
+}
+
+case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[ByteArrayLeaf] with ByteArrayLeaf {
 
   override def cost: Int = (value.length / 1024.0).ceil.round.toInt * Cost.ByteArrayPerKilobyte
 
   override def equals(obj: scala.Any): Boolean = obj match {
-    case ob: ByteArrayLeaf => value sameElements ob.value
+    case ob: ByteArrayLeafConstant => value sameElements ob.value
     case _ => false
   }
 }
 
-case class PropLeaf(value: SigmaStateTree) extends Value {
+trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[ByteArrayLeaf]
+
+
+sealed trait PropLeaf extends Value {
+  override type WrappedValue = SigmaStateTree
+}
+
+case class PropLeafConstant(value: SigmaStateTree) extends EvaluatedValue[PropLeaf] with PropLeaf {
   override def cost: Int = value.cost + Cost.PropLeafDeclaration
 }
 
-sealed abstract class BooleanLeaf(val value: Boolean) extends Value
+trait NotReadyValueProp extends PropLeaf with NotReadyValue[PropLeaf]
 
-object BooleanLeaf {
-  def fromBoolean(v: Boolean): BooleanLeaf = if (v) TrueLeaf else FalseLeaf
+
+
+sealed trait BooleanLeaf extends Value {
+  override type WrappedValue = Boolean
 }
 
-case object TrueLeaf extends BooleanLeaf(true) {
+sealed abstract class BooleanLeafConstant(val value: Boolean) extends BooleanLeaf with EvaluatedValue[BooleanLeaf]
+
+object BooleanLeafConstant {
+  def fromBoolean(v: Boolean): BooleanLeafConstant = if (v) TrueLeaf else FalseLeaf
+}
+
+case object TrueLeaf extends BooleanLeafConstant(true) {
   override def cost: Int = Cost.ConstantNode
 }
 
-case object FalseLeaf extends BooleanLeaf(false) {
+case object FalseLeaf extends BooleanLeafConstant(false) {
   override def cost: Int = Cost.ConstantNode
 }
 
+trait NotReadyValueBoolean extends BooleanLeaf with NotReadyValue[BooleanLeaf]
 
-trait Variable[+V <: Value] extends Value
 
-case object Height extends Variable[NonNegativeIntLeaf] {
-  override def cost: Int = Cost.HeightAccess
-}
-
-trait CustomVariable[V <: Value] extends Variable[Value] {
+trait CustomVariable[V <: Value] extends NotReadyValue[V] {self: V =>
   val id: Int
 }
 
-case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArrayLeaf] {
+case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArrayLeaf] with NotReadyValueByteArray {
   override def cost: Int = Cost.ByteArrayDeclaration
 }
+
+
 
 trait OneArgumentOperation extends StateTree {
   val operand: SigmaStateTree

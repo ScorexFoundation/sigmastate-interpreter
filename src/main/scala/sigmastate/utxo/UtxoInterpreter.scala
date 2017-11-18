@@ -24,22 +24,22 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
     val out = context.spendingTransaction.newBoxes(idxOut.outIndex)
     val amount = out.value
-    val bindings = mutable.Map[Variable[_], Value]()
+    val bindings = mutable.Map[NotReadyValue[_], Value]()
 
     val relations = ts.map { case (v, r) =>
       v match {
         case OutputAmount =>
-          bindings.put(OutputAmount, NonNegativeIntLeaf(amount))
+          bindings.put(OutputAmount, IntLeafConstant(amount))
           r
         case OutputScript =>
-          bindings.put(OutputScript, PropLeaf(out.proposition))
+          bindings.put(OutputScript, PropLeafConstant(out.proposition))
           r
         case _ => ???
       }
     }
     val rels = relations.map { r =>
       val rl = r.left match {
-        case v: Variable[_] =>
+        case v: NotReadyValue[_] =>
           bindings.get(v) match {
             case Some(value) => r.withLeft(value)
             case None => r
@@ -48,7 +48,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       }
 
       rl.right match {
-        case v: Variable[_] =>
+        case v: NotReadyValue[_] =>
           bindings.get(v) match {
             case Some(value) => rl.withRight(value)
             case None => rl
@@ -64,42 +64,36 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
     case Outputs => Collection(context.spendingTransaction.newBoxes
       .zipWithIndex
-      .map{case (b, i) => BoxWithMetadata(b, BoxMetadata(context.currentHeight, i.toShort))}
+      .map { case (b, i) => BoxWithMetadata(b, BoxMetadata(context.currentHeight, i.toShort)) }
       .map(BoxLeaf.apply))
-
-    case MapCollection(collection, mapper) => ???
-
-    case Exists(collection, relation) => ???
 
     case Self => BoxLeaf(context.self)
 
-    case RunExtract(box, extractor) =>
-      cost.addCost(extractor.cost).ensuring(_.isRight)
+    case ExtractHeight(box) =>
+      IntLeafConstant(box.value.metadata.creationHeight)
 
-      extractor match {
-        case ExtractHeight =>
-          NonNegativeIntLeaf(box.value.metadata.creationHeight)
-        case ExtractAmount =>
-          NonNegativeIntLeaf(box.value.box.value)
-        case ExtractScript =>
-          val leaf = PropLeaf(box.value.box.proposition)
-          cost.addCost(leaf.cost).ensuring(_.isRight)
-          leaf
-        case ExtractBytes =>
-          val leaf = ByteArrayLeaf(box.value.box.bytes)
-          cost.addCost(leaf.cost).ensuring(_.isRight)
-          leaf
-        case ExtractRegister(rid) =>
-          val leaf = box.value.box.get(rid).get
-          cost.addCost(leaf.cost).ensuring(_.isRight)
-          leaf
-      }
+    case ExtractAmount(box) =>
+      IntLeafConstant(box.value.box.value)
 
+    case ExtractScript(box) =>
+      val leaf = PropLeafConstant(box.value.box.proposition)
+      cost.addCost(leaf.cost).ensuring(_.isRight)
+      leaf
+
+    case ExtractBytes(box) =>
+      val leaf = ByteArrayLeafConstant(box.value.box.bytes)
+      cost.addCost(leaf.cost).ensuring(_.isRight)
+      leaf
+
+    case ExtractRegisterAsIntLeaf(box, rid) =>
+      val leaf = box.value.box.get(rid).get
+      cost.addCost(leaf.cost).ensuring(_.isRight)
+      leaf
 
     //todo: cache the bytes as a lazy val in the transaction
     case TxOutBytes =>
-      val outBytes = Bytes.concat(context.spendingTransaction.newBoxes.map(_.bytes):_*)
-      val leaf = ByteArrayLeaf(outBytes)
+      val outBytes = Bytes.concat(context.spendingTransaction.newBoxes.map(_.bytes): _*)
+      val leaf = ByteArrayLeafConstant(outBytes)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
@@ -108,7 +102,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
     case hasOut: TxHasOutput =>
       val s = context.spendingTransaction.newBoxes.size
       val outConditions = (0 until s).map { idx =>
-        val out = TxOutput(idx, hasOut.relation:_*)
+        val out = TxOutput(idx, hasOut.relation: _*)
         val and = replaceTxOut(out, context)
         cost.addCost(and.cost).ensuring(_.isRight)
         and
@@ -119,7 +113,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
   def varSubst(context: UtxoContext): Strategy = everywherebu(
     rule[Value] {
-      case Height => NonNegativeIntLeaf(context.currentHeight)
+      case Height => IntLeafConstant(context.currentHeight)
     })
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext, cost: CostAccumulator): SigmaStateTree = {

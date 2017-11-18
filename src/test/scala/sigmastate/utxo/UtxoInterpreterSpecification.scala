@@ -34,10 +34,10 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
 
 
-    verifier.reduceToCrypto(EQ(PropLeaf(DLogNode(h1)), PropLeaf(DLogNode(h1))), ctx)
+    verifier.reduceToCrypto(EQ(PropLeafConstant(DLogNode(h1)), PropLeafConstant(DLogNode(h1))), ctx)
       .get.isInstanceOf[TrueLeaf.type] shouldBe true
 
-    verifier.reduceToCrypto(EQ(PropLeaf(DLogNode(h1)), PropLeaf(DLogNode(h2))), ctx)
+    verifier.reduceToCrypto(EQ(PropLeafConstant(DLogNode(h1)), PropLeafConstant(DLogNode(h2))), ctx)
       .get.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
@@ -65,8 +65,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val backerPubKey = backerProver.dlogSecrets.head.publicImage.h
     val projectPubKey = projectProver.dlogSecrets.head.publicImage.h
 
-    val timeout = NonNegativeIntLeaf(100)
-    val minToRaise = NonNegativeIntLeaf(1000)
+    val timeout = IntLeafConstant(100)
+    val minToRaise = IntLeafConstant(1000)
 
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
@@ -75,7 +75,7 @@ class UtxoInterpreterSpecification extends PropSpec
         Seq(
           LT(Height, timeout),
           DLogNode(projectPubKey),
-          TxHasOutput(GE(OutputAmount, minToRaise), EQ(OutputScript, PropLeaf(DLogNode(projectPubKey))))
+          TxHasOutput(GE(OutputAmount, minToRaise), EQ(OutputScript, PropLeafConstant(DLogNode(projectPubKey))))
         )
       )
     )
@@ -161,10 +161,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val script = OR(
       regScript,
       AND(
-        GE(Height, Plus(RunExtract[NonNegativeIntLeaf, Extract[NonNegativeIntLeaf]](Self, ExtractHeight),
-                        NonNegativeIntLeaf(demurragePeriod))),
-        TxHasOutput(GE(OutputAmount, Minus(RunExtract[NonNegativeIntLeaf, Extract[NonNegativeIntLeaf]](Self, ExtractAmount), NonNegativeIntLeaf(demurrageCost))),
-          EQ(OutputScript, RunExtract[PropLeaf, Extract[PropLeaf]](Self, ExtractScript)))
+        GE(Height, Plus(ExtractHeight(Self), IntLeafConstant(demurragePeriod))),
+        TxHasOutput(GE(OutputAmount, Minus(ExtractAmount(Self), IntLeafConstant(demurrageCost))),
+          EQ(OutputScript, ExtractScript(Self)))
       )
     )
 
@@ -235,7 +234,7 @@ class UtxoInterpreterSpecification extends PropSpec
   property("prover enriching context") {
     val prover = new UtxoProvingInterpreter
     val preimage = prover.contextExtenders.head._2.value
-    val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
+    val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
 
     val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -253,7 +252,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val preimage2 = prover.contextExtenders.tail.head._2.value
     val prop = EQ(CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage2)),
       CustomByteArray(Helpers.tagInt(preimage1)))
-    ), ByteArrayLeaf(Blake2b256(preimage2 ++ preimage1)))
+    ), ByteArrayLeafConstant(Blake2b256(preimage2 ++ preimage1)))
 
     val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -275,10 +274,10 @@ class UtxoInterpreterSpecification extends PropSpec
     val r = Base16.decode("bb6633db20")
 
     val prover = new UtxoProvingInterpreter()
-      .withContextExtender(k1, ByteArrayLeaf(v1))
-      .withContextExtender(k2, ByteArrayLeaf(v2))
+      .withContextExtender(k1, ByteArrayLeafConstant(v1))
+      .withContextExtender(k2, ByteArrayLeafConstant(v2))
 
-    val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeaf(r))
+    val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeafConstant(r))
 
     val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -297,7 +296,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(
       pubkey,
-      EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeaf(Blake2b256(preimage)))
+      EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
     )
 
     val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -322,7 +321,7 @@ class UtxoInterpreterSpecification extends PropSpec
       pubkey,
       EQ(
         CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage1)), CustomByteArray(Helpers.tagInt(preimage2)))),
-        ByteArrayLeaf(Blake2b256(preimage1 ++ preimage2))
+        ByteArrayLeafConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
 
@@ -355,7 +354,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
 
     val x = proverA.contextExtenders.head._2.value
-    val hx = ByteArrayLeaf(Blake2b256(x))
+    val hx = ByteArrayLeafConstant(Blake2b256(x))
 
     val height1 = 100000
     val height2 = 50000
@@ -365,13 +364,13 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //chain1 script
     val prop1 = OR(
-      AND(GT(Height, NonNegativeIntLeaf(height1 + deadlineA)), pubkeyA),
+      AND(GT(Height, IntLeafConstant(height1 + deadlineA)), pubkeyA),
       AND(pubkeyB, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
     )
 
     //chain2 script
     val prop2 = OR(
-      AND(GT(Height, NonNegativeIntLeaf(height2 + deadlineB)), pubkeyB),
+      AND(GT(Height, IntLeafConstant(height2 + deadlineB)), pubkeyB),
       AND(pubkeyA, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
     )
 
@@ -399,7 +398,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //B extracts preimage x of hx
     val t = pr.extension.values.head
     val (tx, bx) = (t._1, t._2)
-    val proverB2 = proverB.withContextExtender(tx, bx.asInstanceOf[ByteArrayLeaf])
+    val proverB2 = proverB.withContextExtender(tx, bx.asInstanceOf[ByteArrayLeafConstant])
 
     //B spends coins of A in chain1 with knowledge of x
     val ctx2 = UtxoContext(currentHeight = height1 + 1, Seq(), spendingTransaction = null, self = fakeSelf)
@@ -642,7 +641,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
-    val prop = OR(pubkeyA, pubkeyB, GT(Height, NonNegativeIntLeaf(500)))
+    val prop = OR(pubkeyA, pubkeyB, GT(Height, IntLeafConstant(500)))
 
     val ctx1 = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
     val prA = proverA.prove(prop, ctx1, fakeMessage).get
@@ -667,7 +666,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
-    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, NonNegativeIntLeaf(500))))
+    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntLeafConstant(500))))
 
     val ctx1 = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
 
@@ -770,8 +769,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
 
     def mixingRequestProp(sender: DLogNode, timeout: Int) = OR(
-      AND(LE(Height, NonNegativeIntLeaf(timeout)), EQ(CalcBlake2b256(TxOutBytes), ByteArrayLeaf(properHash))),
-      AND(GT(Height, NonNegativeIntLeaf(timeout)), sender)
+      AND(LE(Height, IntLeafConstant(timeout)), EQ(CalcBlake2b256(TxOutBytes), ByteArrayLeafConstant(properHash))),
+      AND(GT(Height, IntLeafConstant(timeout)), sender)
     )
 
     val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)

@@ -1,7 +1,7 @@
 package playground
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
-
+/*
 object FreeDemo extends App{
 
   sealed trait Value {
@@ -72,4 +72,4 @@ object FreeDemo extends App{
   val exp2 = Plus(Sum(Inc(RandomColl)), IntLeafConstant(5))
 
   println(reduce(exp2).flatMap(reduce))
-}
+}*/

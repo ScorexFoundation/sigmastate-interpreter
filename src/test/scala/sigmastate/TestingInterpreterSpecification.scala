@@ -27,7 +27,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
 
   override def specificPhases(tree: SigmaStateTree, context: TestingContext, cost: CostAccumulator): SigmaStateTree =
     everywherebu(rule[Value] {
-      case Height => NonNegativeIntLeaf(context.height)
+      case Height => IntLeafConstant(context.height)
     })(tree).get.asInstanceOf[SigmaStateTree]
 
   override lazy val secrets: Seq[DLogProverInput] = {
@@ -36,7 +36,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
     Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
   }
 
-  override val contextExtenders: Map[Int, ByteArrayLeaf] = Map[Int, ByteArrayLeaf]()
+  override val contextExtenders: Map[Int, ByteArrayLeafConstant] = Map[Int, ByteArrayLeafConstant]()
 }
 
 class TestingInterpreterSpecification extends PropSpec
@@ -55,13 +55,13 @@ class TestingInterpreterSpecification extends PropSpec
         val dk1 = DLogNode(DLogProverInput.random()._2.h)
 
         val env = TestingContext(h)
-        assert(reduceToCrypto(AND(GE(Height, NonNegativeIntLeaf(h - 1)), dk1), env).get.isInstanceOf[DLogNode])
-        assert(reduceToCrypto(AND(GE(Height, NonNegativeIntLeaf(h)), dk1), env).get.isInstanceOf[DLogNode])
-        assert(reduceToCrypto(AND(GE(Height, NonNegativeIntLeaf(h + 1)), dk1), env).get.isInstanceOf[FalseLeaf.type])
+        assert(reduceToCrypto(AND(GE(Height, IntLeafConstant(h - 1)), dk1), env).get.isInstanceOf[DLogNode])
+        assert(reduceToCrypto(AND(GE(Height, IntLeafConstant(h)), dk1), env).get.isInstanceOf[DLogNode])
+        assert(reduceToCrypto(AND(GE(Height, IntLeafConstant(h + 1)), dk1), env).get.isInstanceOf[FalseLeaf.type])
 
-        assert(reduceToCrypto(OR(GE(Height, NonNegativeIntLeaf(h - 1)), dk1), env).get.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(OR(GE(Height, NonNegativeIntLeaf(h)), dk1), env).get.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(OR(GE(Height, NonNegativeIntLeaf(h + 1)), dk1), env).get.isInstanceOf[DLogNode])
+        assert(reduceToCrypto(OR(GE(Height, IntLeafConstant(h - 1)), dk1), env).get.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(OR(GE(Height, IntLeafConstant(h)), dk1), env).get.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(OR(GE(Height, IntLeafConstant(h + 1)), dk1), env).get.isInstanceOf[DLogNode])
       }
     }
   }
@@ -77,26 +77,26 @@ class TestingInterpreterSpecification extends PropSpec
         val env = TestingContext(h)
 
         assert(reduceToCrypto(OR(
-          AND(LE(Height, NonNegativeIntLeaf(h + 1)), AND(dk1, dk2)),
-          AND(GT(Height, NonNegativeIntLeaf(h + 1)), dk1)
+          AND(LE(Height, IntLeafConstant(h + 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntLeafConstant(h + 1)), dk1)
         ), env).get.isInstanceOf[CAND])
 
 
         assert(reduceToCrypto(OR(
-          AND(LE(Height, NonNegativeIntLeaf(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, NonNegativeIntLeaf(h - 1)), dk1)
+          AND(LE(Height, IntLeafConstant(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntLeafConstant(h - 1)), dk1)
         ), env).get.isInstanceOf[DLogNode])
 
 
         assert(reduceToCrypto(OR(
-          AND(LE(Height, NonNegativeIntLeaf(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, NonNegativeIntLeaf(h + 1)), dk1)
+          AND(LE(Height, IntLeafConstant(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntLeafConstant(h + 1)), dk1)
         ), env).get.isInstanceOf[FalseLeaf.type])
 
         assert(reduceToCrypto(OR(OR(
-          AND(LE(Height, NonNegativeIntLeaf(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, NonNegativeIntLeaf(h + 1)), dk1)
-        ), AND(GT(Height, NonNegativeIntLeaf(h - 1)), LE(Height, NonNegativeIntLeaf(h + 1)))), env).get.isInstanceOf[TrueLeaf.type])
+          AND(LE(Height, IntLeafConstant(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntLeafConstant(h + 1)), dk1)
+        ), AND(GT(Height, IntLeafConstant(h - 1)), LE(Height, IntLeafConstant(h + 1)))), env).get.isInstanceOf[TrueLeaf.type])
 
       }
     }
@@ -110,8 +110,8 @@ class TestingInterpreterSpecification extends PropSpec
     val env2 = TestingContext(101)
 
     val prop = OR(
-      AND(LE(Height, NonNegativeIntLeaf(100)), AND(dk1, dk2)),
-      AND(GT(Height, NonNegativeIntLeaf(100)), dk1)
+      AND(LE(Height, IntLeafConstant(100)), AND(dk1, dk2)),
+      AND(GT(Height, IntLeafConstant(100)), dk1)
     )
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -138,7 +138,7 @@ class TestingInterpreterSpecification extends PropSpec
     val prop3 = AND(TrueLeaf, TrueLeaf)
     verify(prop3, env, proof, challenge).getOrElse(false) shouldBe true
 
-    val prop4 = GT(Height, NonNegativeIntLeaf(90))
+    val prop4 = GT(Height, IntLeafConstant(90))
     verify(prop4, env, proof, challenge).getOrElse(false) shouldBe true
   }
 
@@ -157,7 +157,7 @@ class TestingInterpreterSpecification extends PropSpec
     val prop3 = AND(FalseLeaf, TrueLeaf)
     verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
 
-    val prop4 = GT(Height, NonNegativeIntLeaf(100))
+    val prop4 = GT(Height, IntLeafConstant(100))
     verify(prop4, env, proof, challenge).getOrElse(false) shouldBe false
   }
 
@@ -165,7 +165,7 @@ class TestingInterpreterSpecification extends PropSpec
     val bytes = "hello world".getBytes
     val hash = Blake2b256(bytes)
 
-    val prop1 = EQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(hash))
+    val prop1 = EQ(CalcBlake2b256(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -173,11 +173,11 @@ class TestingInterpreterSpecification extends PropSpec
 
     verify(prop1, env, proof, challenge).getOrElse(false) shouldBe true
 
-    val prop2 = NEQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(hash))
+    val prop2 = NEQ(CalcBlake2b256(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
 
     verify(prop2, env, proof, challenge).getOrElse(false) shouldBe false
 
-    val prop3 = EQ(CalcBlake2b256(ByteArrayLeaf(bytes)), ByteArrayLeaf(bytes))
+    val prop3 = EQ(CalcBlake2b256(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(bytes))
 
     verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
   }

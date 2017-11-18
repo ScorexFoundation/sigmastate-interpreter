@@ -37,46 +37,56 @@ object BoxLeaf {
   def apply(b: BoxWithMetadata) = BoxLeafInstantiation(b)
 }
 
-trait Transformer[IV <: Value, +OV <: Value] extends Variable[OV]
+trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV]{self: OV => }
 
-sealed abstract class Extract[+V <: Value] extends Transformer[BoxLeaf, V]
+sealed abstract class Extract[V <: Value] extends Transformer[BoxLeaf, V]{self: V =>
+  val box: BoxLeaf
+}
 
-case object ExtractHeight extends Extract[NonNegativeIntLeaf] {
+case class ExtractHeight(box:BoxLeaf) extends Extract[IntLeaf] with NotReadyValueIntLeaf {
   override def cost: Int = 10
 
   override type M = this.type
 }
 
-case object ExtractAmount extends Extract[NonNegativeIntLeaf] {
+case class ExtractAmount(box:BoxLeaf) extends Extract[IntLeaf] with NotReadyValueIntLeaf {
   override def cost: Int = 10
 
   override type M = this.type
 }
 
-case object ExtractScript extends Extract[PropLeaf] {
+case class ExtractScript(box:BoxLeaf) extends Extract[PropLeaf] with NotReadyValueProp {
   override def cost: Int = 10
 
   override type M = this.type
 }
 
-case object ExtractBytes extends Extract[ByteArrayLeaf] {
+case class ExtractBytes(box:BoxLeaf) extends Extract[ByteArrayLeaf] with NotReadyValueByteArray {
   override def cost: Int = 10
 
   override type M = this.type
 }
 
-case class ExtractRegister[V <: Value](registerId: RegisterIdentifier) extends Extract[V] {
+abstract class ExtractRegisterAs[V <: Value] extends Extract[V]{self: V =>
+  val registerId: RegisterIdentifier
+
   override def cost: Int = 10
 
   override type M = this.type
 }
 
-case class RunExtract[V <: Value, E <: Extract[V]](operand: BoxLeaf, extractor: E)
-  extends OneArgumentOperation with Transformer[BoxLeaf, V] {
-  override def cost: Int = 10
+case class ExtractRegisterAsIntLeaf(box: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[IntLeaf] with NotReadyValueIntLeaf
 
-  override type M = this.type
-}
+case class ExtractRegisterAsBooleanLeaf(box: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[IntLeaf] with NotReadyValueIntLeaf
+
+case class ExtractRegisterAsByteArrayLeaf(box: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[IntLeaf] with NotReadyValueIntLeaf
+
+case class ExtractRegisterAsPropLeaf(box: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[IntLeaf] with NotReadyValueIntLeaf
+
 
 case class Collection[V <: Value](values: Seq[V]) extends Value {
   override def cost: Int = values.map(_.cost).sum
@@ -84,23 +94,11 @@ case class Collection[V <: Value](values: Seq[V]) extends Value {
   override type M = this.type
 }
 
-//todo: inheritance?
-case class MapCollection[IV <: Value](collection: Collection[IV], mapper: OneArgumentOperation) extends Value {
-
-  override def cost: Int = 10
-
-  override type M = this.type
-}
 
 object Inputs extends Collection[BoxLeaf](values = null)
 object Outputs extends Collection[BoxLeaf](values = null)
 
-case class Exists[V <: Value](collection: Collection[V], relation: Relation) extends Transformer[V, BooleanLeaf] {
 
-  override def cost: Int = 10
-
-  override type M = this.type
-}
 
 /*
 todo: implement
@@ -120,14 +118,14 @@ case object Self extends BoxLeaf {
   override type M = this.type
 }
 
-case object OutputAmount extends Variable[NonNegativeIntLeaf] {
+case object OutputAmount extends NotReadyValueIntLeaf {
   override val cost: Int = Cost.OutputAmount
 }
 
-case object OutputScript extends Variable[PropLeaf] {
+case object OutputScript extends NotReadyValueProp {
   override val cost: Int = Cost.OutputScript
 }
 
-case object TxOutBytes extends Variable[ByteArrayLeaf] {
+case object TxOutBytes extends NotReadyValueByteArray {
   override val cost: Int = Cost.TxOutBytes
 }

@@ -6,7 +6,7 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
-import sigmastate._
+import sigmastate.{EvaluatedValue, IntLeaf, _}
 import sigmastate.utils.Helpers
 
 import scala.annotation.tailrec
@@ -55,24 +55,24 @@ trait Interpreter {
   }
 
   protected val relations: Strategy = everywherebu(rule[SigmaStateTree] {
-    case EQ(l: Value, r: Value) => BooleanLeaf.fromBoolean(l == r)
-    case NEQ(l: Value, r: Value) => BooleanLeaf.fromBoolean(l != r)
-    case GT(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => BooleanLeaf.fromBoolean(l.value > r.value)
-    case GE(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => BooleanLeaf.fromBoolean(l.value >= r.value)
-    case LT(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => BooleanLeaf.fromBoolean(l.value < r.value)
-    case LE(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => BooleanLeaf.fromBoolean(l.value <= r.value)
+    case EQ(l: Value, r: Value) => BooleanLeafConstant.fromBoolean(l == r)
+    case NEQ(l: Value, r: Value) => BooleanLeafConstant.fromBoolean(l != r)
+    case GT(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value > r.value)
+    case GE(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value >= r.value)
+    case LT(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value < r.value)
+    case LE(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value <= r.value)
   })
 
   protected val operations: Strategy = everywherebu(rule[SigmaStateTree] {
-    case Plus(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => NonNegativeIntLeaf(l.value + r.value)
-    case Minus(l: NonNegativeIntLeaf, r: NonNegativeIntLeaf) => NonNegativeIntLeaf(l.value - r.value)
-    case Xor(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
+    case Plus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value + r.value)
+    case Minus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value - r.value)
+    case Xor(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
       assert(l.value.length == r.value.length)
-      ByteArrayLeaf(Helpers.xor(l.value, r.value))
-    case Append(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
+      ByteArrayLeafConstant(Helpers.xor(l.value, r.value))
+    case Append(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
       require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
-      ByteArrayLeaf(l.value ++ r.value)
-    case CalcBlake2b256(l: ByteArrayLeaf) => ByteArrayLeaf(Blake2b256(l.value))
+      ByteArrayLeafConstant(l.value ++ r.value)
+    case CalcBlake2b256(l: ByteArrayLeafConstant) => ByteArrayLeafConstant(Blake2b256(l.value))
   })
 
   protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {

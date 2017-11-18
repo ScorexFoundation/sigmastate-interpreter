@@ -6,7 +6,7 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.BoxTransaction
 import scorex.core.transaction.box.{Box, BoxUnlocker}
 import scorex.core.transaction.proof.Proof
-import sigmastate.{NonNegativeIntLeaf, PropLeaf, SigmaStateTree, Value}
+import sigmastate._
 import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
 
 import scala.util.Try
@@ -20,8 +20,8 @@ case class SigmaStateBox(override val value: Long,
 
   def get(identifier: RegisterIdentifier): Option[_ <: Value] = {
     identifier match {
-      case R1 => Some(NonNegativeIntLeaf(value))
-      case R2 => Some(PropLeaf(proposition))
+      case R1 => Some(IntLeafConstant(value))
+      case R2 => Some(PropLeafConstant(proposition))
       case n: NonMandatoryIdentifier => additionalRegisters.get(n)
     }
   }
