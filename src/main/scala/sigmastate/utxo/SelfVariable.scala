@@ -31,9 +31,10 @@ trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV]{self: OV =
 case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], mapper: Transformer[IV, OV])
   extends Transformer[CollectionLeaf[IV], CollectionLeaf[OV]] with CollectionLeaf[OV] {self: CollectionLeaf[OV] =>
 
-  override def function(input: EvaluatedValue[CollectionLeaf[IV]]): CollectionLeaf[OV] = ???
+  override def function(cl: EvaluatedValue[CollectionLeaf[IV]]): CollectionLeaf[OV] =
+      ConcreteCollection(cl.value.map(el => mapper.function(el.asInstanceOf[EvaluatedValue[IV]])))
 
-  override def cost: Int = ???
+  override def cost: Int = 1
 
   override type M = this.type
 }

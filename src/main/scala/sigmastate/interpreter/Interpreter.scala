@@ -17,7 +17,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
-import sigmastate.utxo.CostTable
+import sigmastate.utxo.{CostTable, MapCollection, Sum}
 
 
 
@@ -73,6 +73,14 @@ trait Interpreter {
       require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
       ByteArrayLeafConstant(l.value ++ r.value)
     case CalcBlake2b256(l: ByteArrayLeafConstant) => ByteArrayLeafConstant(Blake2b256(l.value))
+  })
+
+  protected val functions: Strategy = everywherebu(rule[SigmaStateTree] {
+    case m@MapCollection(coll, mapper) if coll.evaluated =>
+      m.function(coll.asInstanceOf[ConcreteCollection[Value]])
+    case sum@Sum(coll) if coll.evaluated =>
+      coll.asInstanceOf[ConcreteCollection[IntLeaf]].value.foldLeft(sum.zero: IntLeaf){case (s: IntLeaf,i: IntLeaf) =>
+        sum.folder(s,i): IntLeaf}
   })
 
   protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {
@@ -132,9 +140,10 @@ trait Interpreter {
     // that cost of script is not exploding
     val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
+    val afterFunctions = functions(afterSpecific).get.asInstanceOf[SigmaStateTree]
 
     //in phases below, a tree could be reduced only
-    val afterOps = operations(afterSpecific).get.asInstanceOf[SigmaStateTree]
+    val afterOps = operations(afterFunctions).get.asInstanceOf[SigmaStateTree]
     val afterRels = relations(afterOps).get.asInstanceOf[SigmaStateTree]
     conjs(afterRels).get
   }.asInstanceOf[SigmaStateTree])

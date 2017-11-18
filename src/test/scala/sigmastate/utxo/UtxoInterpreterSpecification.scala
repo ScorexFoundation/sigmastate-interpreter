@@ -786,15 +786,15 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).isSuccess shouldBe false
   }
 
-  property("register - counter") {
+  property("map + sum") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = AND(pubkey, MapCollection(Outputs, ExtractAmountFn))
+    val prop = AND(pubkey, GT(Sum(MapCollection(Outputs, ExtractAmountFn)), IntLeafConstant(20)))
 
-    val newBox1 = SigmaStateBox(10, pubkey)
+    val newBox1 = SigmaStateBox(11, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)
     val newBoxes = Seq(newBox1, newBox2)
 
@@ -803,8 +803,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
-
-    println(pr)
-
+    verifier.verify(prop, ctx, pr, fakeMessage)
   }
 }
