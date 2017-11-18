@@ -8,6 +8,7 @@ import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommo
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import sigmastate.SigmaProposition.PropositionCode
+import sigmastate.utxo.BoxLeaf
 import sigmastate.utxo.CostTable.Cost
 
 
@@ -142,6 +143,29 @@ case object FalseLeaf extends BooleanLeafConstant(false) {
 }
 
 trait NotReadyValueBoolean extends BooleanLeaf with NotReadyValue[BooleanLeaf]
+
+
+sealed trait CollectionLeaf[V <: Value] extends Value{
+  override type WrappedValue = Seq[V]
+}
+
+case class ConcreteCollection[V <: Value](value: Seq[V]) extends CollectionLeaf[V] with EvaluatedValue[CollectionLeaf[V]]{
+  val cost = value.size
+  lazy val isLazy = value.exists(_.isInstanceOf[NotReadyValue[_]] == true)
+  override lazy val evaluated = !isLazy
+}
+trait LazyCollection [V <: Value] extends CollectionLeaf[V] with NotReadyValue[LazyCollection[V]]
+
+
+case object Inputs extends LazyCollection[BoxLeaf]{
+  val cost = 1
+}
+
+case object Outputs extends LazyCollection[BoxLeaf]{
+  val cost = 1
+}
+
+
 
 
 trait CustomVariable[V <: Value] extends NotReadyValue[V] {self: V =>

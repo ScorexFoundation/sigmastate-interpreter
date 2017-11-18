@@ -88,15 +88,6 @@ case class ExtractRegisterAsPropLeaf(box: BoxLeaf, registerId: RegisterIdentifie
   extends ExtractRegisterAs[IntLeaf] with NotReadyValueIntLeaf
 
 
-case class Collection[V <: Value](values: Seq[V]) extends Value {
-  override def cost: Int = values.map(_.cost).sum
-
-  override type M = this.type
-}
-
-
-object Inputs extends Collection[BoxLeaf](values = null)
-object Outputs extends Collection[BoxLeaf](values = null)
 
 
 
