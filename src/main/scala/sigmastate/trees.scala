@@ -248,7 +248,7 @@ case class Append(override val left: SigmaStateTree,
   def withRight(newRight: SigmaStateTree): Append = copy(right = newRight)
 }
 
-sealed trait Relation extends Triple
+sealed trait Relation extends Triple with NotReadyValueBoolean
 
 case class LT(override val left: SigmaStateTree,
               override val right: SigmaStateTree) extends Relation {

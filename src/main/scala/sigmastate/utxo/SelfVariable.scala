@@ -39,6 +39,11 @@ case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], ma
   override type M = this.type
 }
 
+case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation*) extends NotReadyValueBoolean {
+  override val cost = input.cost + relations.size
+}
+
+
 trait Fold[IV <: Value] extends NotReadyValue[IV] {self: IV =>
   val input: CollectionLeaf[IV]
   val folder: (IV, IV) => IV
