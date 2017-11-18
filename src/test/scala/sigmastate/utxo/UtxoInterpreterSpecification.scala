@@ -782,18 +782,29 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //after timeout
     val prA2 = proverA.prove(mixingRequestProp(pubkeyA, 40), ctx, fakeMessage).get
-    println(prA2)
     verifier.verify(mixingRequestProp(pubkeyA, 40), ctx, prA2, fakeMessage).get shouldBe true
     verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).isSuccess shouldBe false
   }
 
-  ignore("register - counter") {
+  property("register - counter") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    //val prop = AND(pubkey, TxHasOutput(EQ(OutputScript, Extract(Self, Script))))
+    val prop = AND(pubkey, MapCollection(Outputs, ExtractAmountFn))
+
+    val newBox1 = SigmaStateBox(10, pubkey)
+    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBoxes = Seq(newBox1, newBox2)
+
+    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+
+    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+
+    println(pr)
 
   }
 }

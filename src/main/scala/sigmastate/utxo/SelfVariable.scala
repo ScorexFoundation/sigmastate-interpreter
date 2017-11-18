@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate._
+import sigmastate.{NotReadyValueIntLeaf, _}
 import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
@@ -28,7 +28,7 @@ trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV]{self: OV =
   def function(input: EvaluatedValue[IV]): OV
 }
 
-case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], val mapper: Transformer[IV, OV])
+case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], mapper: Transformer[IV, OV])
   extends Transformer[CollectionLeaf[IV], CollectionLeaf[OV]] with CollectionLeaf[OV] {self: CollectionLeaf[OV] =>
 
   override def function(input: EvaluatedValue[CollectionLeaf[IV]]): CollectionLeaf[OV] = ???
@@ -36,6 +36,22 @@ case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], va
   override def cost: Int = ???
 
   override type M = this.type
+}
+
+trait Fold[IV <: Value] extends NotReadyValue[IV] {self: IV =>
+  val input: CollectionLeaf[IV]
+  val folder: (IV, IV) => IV
+  val zero: IV
+}
+
+case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
+  val folder = {case (s, i) =>
+    (s, i) match {
+      case (si: IntLeafConstant, ii: IntLeafConstant) => IntLeafConstant(si.value + ii.value)
+      case _ => UnknownIntLeaf
+    }
+  }: (IntLeaf, IntLeaf) => IntLeaf
+  val zero = IntLeafConstant(0)
 }
 
 sealed abstract class Extract[V <: Value] extends Transformer[BoxLeaf, V]{self: V =>
@@ -51,6 +67,7 @@ sealed trait ExtractHeight extends Extract[IntLeaf] with NotReadyValueIntLeaf {
 }
 
 case class ExtractHeightInst(box: BoxLeaf) extends ExtractHeight
+case object ExtractHeightFn extends ExtractHeight
 
 sealed trait ExtractAmount extends Extract[IntLeaf] with NotReadyValueIntLeaf {
   override def cost: Int = 10
@@ -61,6 +78,8 @@ sealed trait ExtractAmount extends Extract[IntLeaf] with NotReadyValueIntLeaf {
 }
 
 case class ExtractAmountInst(box: BoxLeaf) extends ExtractAmount
+case object ExtractAmountFn extends ExtractAmount
+
 
 sealed trait ExtractScript extends Extract[PropLeaf] with NotReadyValueProp {
   override def cost: Int = 10
