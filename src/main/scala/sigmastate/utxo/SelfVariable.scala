@@ -23,65 +23,66 @@ object UtxoContext {
   type Height = Long
 }
 
-trait BoxLeaf extends Value {
-  val value: BoxWithMetadata
-
-  override def cost: Int = 10
-
-  override type M = this.type
-}
-
-case class BoxLeafInstantiation(override val value: BoxWithMetadata) extends BoxLeaf
-
-object BoxLeaf {
-  def apply(b: BoxWithMetadata) = BoxLeafInstantiation(b)
-}
 
 trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV]{self: OV =>
-  def function: IV => OV = ???
+  def function(input: EvaluatedValue[IV]): OV
 }
 
 case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], val mapper: Transformer[IV, OV])
   extends Transformer[CollectionLeaf[IV], CollectionLeaf[OV]] with CollectionLeaf[OV] {self: CollectionLeaf[OV] =>
 
-  override def function: (CollectionLeaf[IV]) => CollectionLeaf[OV] = ???
+  override def function(input: EvaluatedValue[CollectionLeaf[IV]]): CollectionLeaf[OV] = ???
 
   override def cost: Int = ???
 
   override type M = this.type
 }
 
-//case class CallTransformer[IV <: Value, OV <: Value](input: IV,
-//                                                     transformer: Transformer[IV, OV]) extends NotReadyValue[OV]
-
 sealed abstract class Extract[V <: Value] extends Transformer[BoxLeaf, V]{self: V =>
-  val box: BoxLeaf
-
+  override def function(box: EvaluatedValue[BoxLeaf]): V
 }
 
-case class ExtractHeight(box:BoxLeaf) extends Extract[IntLeaf] with NotReadyValueIntLeaf {
+sealed trait ExtractHeight extends Extract[IntLeaf] with NotReadyValueIntLeaf {
   override def cost: Int = 10
 
   override type M = this.type
+
+  override def function(box: EvaluatedValue[BoxLeaf]): IntLeaf = IntLeafConstant(box.value.metadata.creationHeight)
 }
 
-case class ExtractAmount(box:BoxLeaf) extends Extract[IntLeaf] with NotReadyValueIntLeaf {
+case class ExtractHeightInst(box: BoxLeaf) extends ExtractHeight
+
+sealed trait ExtractAmount extends Extract[IntLeaf] with NotReadyValueIntLeaf {
   override def cost: Int = 10
 
   override type M = this.type
+
+  override def function(box: EvaluatedValue[BoxLeaf]): IntLeaf = IntLeafConstant(box.value.box.value)
 }
 
-case class ExtractScript(box:BoxLeaf) extends Extract[PropLeaf] with NotReadyValueProp {
+case class ExtractAmountInst(box: BoxLeaf) extends ExtractAmount
+
+sealed trait ExtractScript extends Extract[PropLeaf] with NotReadyValueProp {
   override def cost: Int = 10
 
   override type M = this.type
+
+  override def function(box: EvaluatedValue[BoxLeaf]): PropLeaf = PropLeafConstant(box.value.box.proposition)
 }
 
-case class ExtractBytes(box:BoxLeaf) extends Extract[ByteArrayLeaf] with NotReadyValueByteArray {
+case class ExtractScriptInst(box: BoxLeaf) extends ExtractScript
+
+
+sealed trait ExtractBytes extends Extract[ByteArrayLeaf] with NotReadyValueByteArray {
   override def cost: Int = 10
 
   override type M = this.type
+
+  override def function(box: EvaluatedValue[BoxLeaf]): ByteArrayLeaf = ByteArrayLeafConstant(box.value.box.bytes)
 }
+
+case class ExtractBytesInst(box: EvaluatedValue[BoxLeaf]) extends ExtractBytes
+
 
 abstract class ExtractRegisterAs[V <: Value] extends Extract[V]{self: V =>
   val registerId: RegisterIdentifier
@@ -89,6 +90,8 @@ abstract class ExtractRegisterAs[V <: Value] extends Extract[V]{self: V =>
   override def cost: Int = 10
 
   override type M = this.type
+
+  override def function(box: EvaluatedValue[BoxLeaf]): V = box.value.box.get(registerId).get.asInstanceOf[V]
 }
 
 case class ExtractRegisterAsIntLeaf(box: BoxLeaf, registerId: RegisterIdentifier)
@@ -117,11 +120,8 @@ object Slice
 object ByIndex
 */
 
-case object Self extends BoxLeaf {
-  override lazy val value = ???
-
+case object Self extends NotReadyValueBoxLeaf {
   override def cost: Int = 10
-
   override type M = this.type
 }
 

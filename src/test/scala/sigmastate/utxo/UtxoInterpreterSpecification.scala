@@ -161,9 +161,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val script = OR(
       regScript,
       AND(
-        GE(Height, Plus(ExtractHeight(Self), IntLeafConstant(demurragePeriod))),
-        TxHasOutput(GE(OutputAmount, Minus(ExtractAmount(Self), IntLeafConstant(demurrageCost))),
-          EQ(OutputScript, ExtractScript(Self)))
+        GE(Height, Plus(ExtractHeightInst(Self), IntLeafConstant(demurragePeriod))),
+        TxHasOutput(GE(OutputAmount, Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
+          EQ(OutputScript, ExtractScriptInst(Self)))
       )
     )
 

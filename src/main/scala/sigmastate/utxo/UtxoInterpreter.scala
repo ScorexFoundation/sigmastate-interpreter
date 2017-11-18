@@ -60,33 +60,32 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   }
 
   def ssSubst(context: UtxoContext, cost: CostAccumulator): Strategy = everywherebu(rule[SigmaStateTree] {
-    case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxLeaf.apply))
+    case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxLeafConstant.apply))
 
     case Outputs => ConcreteCollection(context.spendingTransaction.newBoxes
       .zipWithIndex
       .map { case (b, i) => BoxWithMetadata(b, BoxMetadata(context.currentHeight, i.toShort)) }
-      .map(BoxLeaf.apply))
+      .map(BoxLeafConstant.apply))
 
-    case Self => BoxLeaf(context.self)
+    case Self => BoxLeafConstant(context.self)
 
-    case ExtractHeight(box) =>
-      IntLeafConstant(box.value.metadata.creationHeight)
+      //todo: reduce boilerplate below
+    case ex@ExtractHeightInst(box: BoxLeafConstant) => ex.function(box)
 
-    case ExtractAmount(box) =>
-      IntLeafConstant(box.value.box.value)
+    case ex@ExtractAmountInst(box: BoxLeafConstant) => ex.function(box)
 
-    case ExtractScript(box) =>
-      val leaf = PropLeafConstant(box.value.box.proposition)
+    case ex@ExtractScriptInst(box: BoxLeafConstant) =>
+      val leaf = ex.function(box)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
-    case ExtractBytes(box) =>
-      val leaf = ByteArrayLeafConstant(box.value.box.bytes)
+    case ex@ExtractBytesInst(box: BoxLeafConstant) =>
+      val leaf = ex.function(box)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
-    case ExtractRegisterAsIntLeaf(box, rid) =>
-      val leaf = box.value.box.get(rid).get
+    case ex@ExtractRegisterAsIntLeaf(box: BoxLeafConstant, rid) =>
+      val leaf = ex.function(box)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 

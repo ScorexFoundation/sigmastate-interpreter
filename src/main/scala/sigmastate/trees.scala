@@ -8,7 +8,7 @@ import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommo
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import sigmastate.SigmaProposition.PropositionCode
-import sigmastate.utxo.BoxLeaf
+import sigmastate.utxo.BoxWithMetadata
 import sigmastate.utxo.CostTable.Cost
 
 
@@ -146,6 +146,17 @@ case object FalseLeaf extends BooleanLeafConstant(false) {
 }
 
 trait NotReadyValueBoolean extends BooleanLeaf with NotReadyValue[BooleanLeaf]
+
+
+sealed trait BoxLeaf extends Value {
+  override type WrappedValue = BoxWithMetadata
+}
+
+case class BoxLeafConstant(value: BoxWithMetadata) extends BoxLeaf with EvaluatedValue[BoxLeaf]{
+  override def cost: Int = 10
+}
+
+trait NotReadyValueBoxLeaf extends BoxLeaf with NotReadyValue[BoxLeaf]
 
 
 trait CollectionLeaf[V <: Value] extends Value {
