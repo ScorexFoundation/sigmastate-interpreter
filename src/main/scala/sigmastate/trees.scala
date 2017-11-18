@@ -72,11 +72,14 @@ trait Value extends StateTree {
   def evaluated: Boolean = ???
 }
 
- trait EvaluatedValue[V <: Value] extends Value {self: V =>
+trait EvaluatedValue[V <: Value] extends Value {
+  self: V =>
   val value: V#WrappedValue
   override lazy val evaluated = true
 }
- trait NotReadyValue[V <: Value] extends Value {self: V =>
+
+trait NotReadyValue[V <: Value] extends Value {
+  self: V =>
   override lazy val evaluated = false
 }
 
@@ -88,6 +91,7 @@ sealed trait IntLeaf extends Value {
 case class IntLeafConstant(value: Long) extends IntLeaf with EvaluatedValue[IntLeaf] {
   override def cost: Int = 1
 }
+
 trait NotReadyValueIntLeaf extends IntLeaf with NotReadyValue[IntLeaf]
 
 case object Height extends NotReadyValueIntLeaf {
@@ -123,7 +127,6 @@ case class PropLeafConstant(value: SigmaStateTree) extends EvaluatedValue[PropLe
 trait NotReadyValueProp extends PropLeaf with NotReadyValue[PropLeaf]
 
 
-
 sealed trait BooleanLeaf extends Value {
   override type WrappedValue = Boolean
 }
@@ -145,37 +148,36 @@ case object FalseLeaf extends BooleanLeafConstant(false) {
 trait NotReadyValueBoolean extends BooleanLeaf with NotReadyValue[BooleanLeaf]
 
 
-sealed trait CollectionLeaf[V <: Value] extends Value{
+trait CollectionLeaf[V <: Value] extends Value {
   override type WrappedValue = Seq[V]
 }
 
-case class ConcreteCollection[V <: Value](value: Seq[V]) extends CollectionLeaf[V] with EvaluatedValue[CollectionLeaf[V]]{
+case class ConcreteCollection[V <: Value](value: Seq[V]) extends CollectionLeaf[V] with EvaluatedValue[CollectionLeaf[V]] {
   val cost = value.size
   lazy val isLazy = value.exists(_.isInstanceOf[NotReadyValue[_]] == true)
   override lazy val evaluated = !isLazy
 }
-trait LazyCollection [V <: Value] extends CollectionLeaf[V] with NotReadyValue[LazyCollection[V]]
+
+trait LazyCollection[V <: Value] extends CollectionLeaf[V] with NotReadyValue[LazyCollection[V]]
 
 
-case object Inputs extends LazyCollection[BoxLeaf]{
+case object Inputs extends LazyCollection[BoxLeaf] {
   val cost = 1
 }
 
-case object Outputs extends LazyCollection[BoxLeaf]{
+case object Outputs extends LazyCollection[BoxLeaf] {
   val cost = 1
 }
 
 
-
-
-trait CustomVariable[V <: Value] extends NotReadyValue[V] {self: V =>
+trait CustomVariable[V <: Value] extends NotReadyValue[V] {
+  self: V =>
   val id: Int
 }
 
 case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArrayLeaf] with NotReadyValueByteArray {
   override def cost: Int = Cost.ByteArrayDeclaration
 }
-
 
 
 trait OneArgumentOperation extends StateTree {

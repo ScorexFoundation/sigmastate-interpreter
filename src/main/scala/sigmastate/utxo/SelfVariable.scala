@@ -37,10 +37,26 @@ object BoxLeaf {
   def apply(b: BoxWithMetadata) = BoxLeafInstantiation(b)
 }
 
-trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV]{self: OV => }
+trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV]{self: OV =>
+  def function: IV => OV = ???
+}
+
+case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], val mapper: Transformer[IV, OV])
+  extends Transformer[CollectionLeaf[IV], CollectionLeaf[OV]] with CollectionLeaf[OV] {self: CollectionLeaf[OV] =>
+
+  override def function: (CollectionLeaf[IV]) => CollectionLeaf[OV] = ???
+
+  override def cost: Int = ???
+
+  override type M = this.type
+}
+
+//case class CallTransformer[IV <: Value, OV <: Value](input: IV,
+//                                                     transformer: Transformer[IV, OV]) extends NotReadyValue[OV]
 
 sealed abstract class Extract[V <: Value] extends Transformer[BoxLeaf, V]{self: V =>
   val box: BoxLeaf
+
 }
 
 case class ExtractHeight(box:BoxLeaf) extends Extract[IntLeaf] with NotReadyValueIntLeaf {
