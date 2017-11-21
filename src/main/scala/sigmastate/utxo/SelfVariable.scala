@@ -234,13 +234,14 @@ case object Self extends NotReadyValueBoxLeaf {
   override type M = this.type
 }
 
+/*
 case object OutputAmount extends NotReadyValueIntLeaf {
   override val cost: Int = Cost.OutputAmount
 }
 
 case object OutputScript extends NotReadyValueProp {
   override val cost: Int = Cost.OutputScript
-}
+}*/
 
 case object TxOutBytes extends NotReadyValueByteArray {
   override val cost: Int = Cost.TxOutBytes

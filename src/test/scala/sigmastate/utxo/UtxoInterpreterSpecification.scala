@@ -809,6 +809,28 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage)
   }
 
+
+  ignore("map + sum + minus") {
+
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val prop = ??? //todo: fix AND(pubkey, GT(Sum(MapCollection(Outputs, Minus(ExtractAmountFn, IntLeafConstant(5)))), IntLeafConstant(20)))
+
+    val newBox1 = SigmaStateBox(11, pubkey)
+    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBoxes = Seq(newBox1, newBox2)
+
+    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+
+    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage)
+  }
+
   property("exists"){
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
