@@ -7,8 +7,9 @@ import scapi.sigma.{DiffieHellmanTupleNode, FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
+import scorex.crypto.hash.Blake2b256
 import sigmastate.SigmaProposition.PropositionCode
-import sigmastate.utxo.BoxWithMetadata
+import sigmastate.utxo.{BoxWithMetadata, Transformer, TransformerInstantiation}
 import sigmastate.utxo.CostTable.Cost
 
 
@@ -46,7 +47,7 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
   extends SigmaTree with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
 
 
-case class OR(children: Seq[SigmaStateTree]) extends SigmaStateTree {
+case class OR(children: Seq[SigmaStateTree]) extends NotReadyValueBoolean {
   override def cost: Int = children.map(_.cost).sum + children.length * Cost.OrPerChild + Cost.OrDeclaration
 }
 
@@ -57,7 +58,7 @@ object OR {
   def apply(arg1: SigmaStateTree, arg2: SigmaStateTree, arg3: SigmaStateTree): OR = apply(Seq(arg1, arg2, arg3))
 }
 
-case class AND(children: Seq[SigmaStateTree]) extends SigmaStateTree {
+case class AND(children: Seq[SigmaStateTree]) extends NotReadyValueBoolean {
   override def cost: Int = children.map(_.cost).sum + children.length * Cost.AndPerChild + Cost.AndDeclaration
 }
 
@@ -193,103 +194,121 @@ case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArra
 }
 
 
-trait OneArgumentOperation extends StateTree {
-  val operand: SigmaStateTree
+sealed trait CalcBlake2b256 extends Transformer[ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
+  override def function(bal: EvaluatedValue[ByteArrayLeaf]): ByteArrayLeaf =
+    ByteArrayLeafConstant(Blake2b256(bal.value))
+
 }
 
-case class CalcBlake2b256(operand: SigmaStateTree) extends OneArgumentOperation {
-  override def cost: Int = operand.cost + Cost.Blake256bDeclaration
+case class CalcBlake2b256Inst(input: ByteArrayLeaf)
+  extends CalcBlake2b256 with TransformerInstantiation[ByteArrayLeaf, ByteArrayLeaf]{
+
+  override def cost: Int = input.cost + Cost.Blake256bDeclaration
 }
+
+case object CalcBlake2b256Fn extends CalcBlake2b256 {
+  override def cost: Int = Cost.Blake256bDeclaration
+
+  override def instantiate(input: ByteArrayLeaf) = CalcBlake2b256Inst(input)
+
+  override type M = this.type
+}
+
 
 /**
   * A tree node with left and right descendants
   */
-sealed trait Triple extends StateTree {
-  val left: SigmaStateTree
-  val right: SigmaStateTree
+sealed trait Triple[LIV <: Value, RIV <: Value, OV <: Value] extends NotReadyValue[OV] {self: OV =>
+  val left: LIV
+  val right: RIV
 
   override def cost: Int = left.cost + right.cost + Cost.TripleDeclaration
 
-  //todo: define via F-Bounded polymorphism?
-  def withLeft(newLeft: SigmaStateTree): Triple
+  def withLeft(newLeft: LIV): Triple[LIV, RIV, OV]
 
-  def withRight(newRight: SigmaStateTree): Triple
+  def withRight(newRight: RIV): Triple[LIV, RIV, OV]
 }
 
 
-sealed trait TwoArgumentsOperation extends Triple
+sealed trait TwoArgumentsOperation[LIV <: Value, RIV <: Value, OV <: Value] extends Triple[LIV, RIV, OV]{self : OV => }
 
-case class Plus(override val left: SigmaStateTree,
-                override val right: SigmaStateTree) extends TwoArgumentsOperation {
+case class Plus(override val left: IntLeaf,
+                override val right: IntLeaf)
+  extends TwoArgumentsOperation[IntLeaf, IntLeaf, IntLeaf] with NotReadyValueIntLeaf {
 
-  def withLeft(newLeft: SigmaStateTree): Plus = copy(left = newLeft)
+  def withLeft(newLeft: IntLeaf): Plus = copy(left = newLeft)
 
-  def withRight(newRight: SigmaStateTree): Plus = copy(right = newRight)
+  def withRight(newRight: IntLeaf): Plus = copy(right = newRight)
 }
 
-case class Minus(override val left: SigmaStateTree,
-                 override val right: SigmaStateTree) extends TwoArgumentsOperation {
-  def withLeft(newLeft: SigmaStateTree): Minus = copy(left = newLeft)
+case class Minus(override val left: IntLeaf,
+                 override val right: IntLeaf)
+  extends TwoArgumentsOperation[IntLeaf, IntLeaf, IntLeaf] with NotReadyValueIntLeaf {
 
-  def withRight(newRight: SigmaStateTree): Minus = copy(right = newRight)
+  def withLeft(newLeft: IntLeaf): Minus = copy(left = newLeft)
+
+  def withRight(newRight: IntLeaf): Minus = copy(right = newRight)
 }
 
-case class Xor(override val left: SigmaStateTree,
-               override val right: SigmaStateTree) extends TwoArgumentsOperation {
-  def withLeft(newLeft: SigmaStateTree): Xor = copy(left = newLeft)
+case class Xor(override val left: ByteArrayLeaf,
+               override val right: ByteArrayLeaf)
+  extends TwoArgumentsOperation[ByteArrayLeaf, ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
 
-  def withRight(newRight: SigmaStateTree): Xor = copy(right = newRight)
+  def withLeft(newLeft: ByteArrayLeaf): Xor = copy(left = newLeft)
+  def withRight(newRight: ByteArrayLeaf): Xor = copy(right = newRight)
 }
 
-case class Append(override val left: SigmaStateTree,
-                  override val right: SigmaStateTree) extends TwoArgumentsOperation {
-  def withLeft(newLeft: SigmaStateTree): Append = copy(left = newLeft)
+case class Append(override val left: ByteArrayLeaf,
+                  override val right: ByteArrayLeaf)
+  extends TwoArgumentsOperation[ByteArrayLeaf, ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
 
-  def withRight(newRight: SigmaStateTree): Append = copy(right = newRight)
+  def withLeft(newLeft: ByteArrayLeaf): Append = copy(left = newLeft)
+
+  def withRight(newRight: ByteArrayLeaf): Append = copy(right = newRight)
 }
 
-sealed trait Relation extends Triple with NotReadyValueBoolean
+sealed trait Relation[LIV <: Value, RIV <: Value] extends Triple[LIV, RIV, BooleanLeaf] with NotReadyValueBoolean
 
-case class LT(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation {
-  def withLeft(newLeft: SigmaStateTree): LT = copy(left = newLeft)
+case class LT(override val left: IntLeaf,
+              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf] {
 
-  def withRight(newRight: SigmaStateTree): LT = copy(right = newRight)
+  def withLeft(newLeft: IntLeaf): LT = copy(left = newLeft)
+
+  def withRight(newRight: IntLeaf): LT = copy(right = newRight)
 }
 
-case class LE(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation {
-  def withLeft(newLeft: SigmaStateTree): LE = copy(left = newLeft)
+case class LE(override val left: IntLeaf,
+              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf] {
+  def withLeft(newLeft: IntLeaf): LE = copy(left = newLeft)
 
-  def withRight(newRight: SigmaStateTree): LE = copy(right = newRight)
+  def withRight(newRight: IntLeaf): LE = copy(right = newRight)
 }
 
-case class GT(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation {
-  def withLeft(newLeft: SigmaStateTree): GT = copy(left = newLeft)
+case class GT(override val left: IntLeaf,
+              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf] {
+  def withLeft(newLeft: IntLeaf): GT = copy(left = newLeft)
 
-  def withRight(newRight: SigmaStateTree): GT = copy(right = newRight)
+  def withRight(newRight: IntLeaf): GT = copy(right = newRight)
 }
 
-case class GE(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation {
-  def withLeft(newLeft: SigmaStateTree): GE = copy(left = newLeft)
+case class GE(override val left: IntLeaf,
+              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf] {
+  def withLeft(newLeft: IntLeaf): GE = copy(left = newLeft)
 
-  def withRight(newRight: SigmaStateTree): GE = copy(right = newRight)
+  def withRight(newRight: IntLeaf): GE = copy(right = newRight)
 }
 
-case class EQ(override val left: SigmaStateTree,
-              override val right: SigmaStateTree) extends Relation {
-  def withLeft(newLeft: SigmaStateTree): EQ = copy(left = newLeft)
+case class EQ[V<: Value](override val left: V,
+              override val right: V) extends Relation[V, V] {
+  def withLeft(newLeft: V): EQ[V] = copy(left = newLeft)
 
-  def withRight(newRight: SigmaStateTree): EQ = copy(right = newRight)
+  def withRight(newRight: V): EQ[V] = copy(right = newRight)
 }
 
-case class NEQ(override val left: SigmaStateTree,
-               override val right: SigmaStateTree) extends Relation {
-  def withLeft(newLeft: SigmaStateTree): NEQ = copy(left = newLeft)
+case class NEQ[V<: Value](override val left: V, override val right: V) extends Relation[V, V] {
+  def withLeft(newLeft: V): NEQ[V] = copy(left = newLeft)
 
-  def withRight(newRight: SigmaStateTree): NEQ = copy(right = newRight)
+  def withRight(newRight: V): NEQ[V] = copy(right = newRight)
 }
 
 

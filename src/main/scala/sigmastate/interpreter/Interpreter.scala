@@ -6,7 +6,7 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
-import sigmastate.{EvaluatedValue, IntLeaf, _}
+import sigmastate.{IntLeaf, _}
 import sigmastate.utils.Helpers
 
 import scala.annotation.tailrec
@@ -72,7 +72,7 @@ trait Interpreter {
     case Append(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
       require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
       ByteArrayLeafConstant(l.value ++ r.value)
-    case CalcBlake2b256(l: ByteArrayLeafConstant) => ByteArrayLeafConstant(Blake2b256(l.value))
+    case c@CalcBlake2b256Inst(l: ByteArrayLeafConstant) if l.evaluated => c.function(l)
   })
 
   protected val functions: Strategy = everywherebu(rule[SigmaStateTree] {

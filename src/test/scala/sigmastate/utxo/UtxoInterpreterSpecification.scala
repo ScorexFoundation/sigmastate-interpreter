@@ -75,7 +75,8 @@ class UtxoInterpreterSpecification extends PropSpec
         Seq(
           LT(Height, timeout),
           DLogNode(projectPubKey),
-          TxHasOutput(GE(OutputAmount, minToRaise), EQ(OutputScript, PropLeafConstant(DLogNode(projectPubKey))))
+          Exists(Outputs, GE(ExtractAmountFn, minToRaise), EQ(ExtractScriptFn, PropLeafConstant(DLogNode(projectPubKey))))
+          //TxHasOutput(GE(OutputAmount, minToRaise), EQ(OutputScript, PropLeafConstant(DLogNode(projectPubKey))))
         )
       )
     )
@@ -162,8 +163,10 @@ class UtxoInterpreterSpecification extends PropSpec
       regScript,
       AND(
         GE(Height, Plus(ExtractHeightInst(Self), IntLeafConstant(demurragePeriod))),
-        TxHasOutput(GE(OutputAmount, Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
-          EQ(OutputScript, ExtractScriptInst(Self)))
+        Exists(Outputs, GE(ExtractAmountFn, Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
+            EQ(ExtractScriptFn, ExtractScriptInst(Self)))
+        //TxHasOutput(GE(OutputAmount, Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
+        //  EQ(OutputScript, ExtractScriptInst(Self)))
       )
     )
 
@@ -234,7 +237,7 @@ class UtxoInterpreterSpecification extends PropSpec
   property("prover enriching context") {
     val prover = new UtxoProvingInterpreter
     val preimage = prover.contextExtenders.head._2.value
-    val prop = EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
+    val prop = EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
 
     val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -250,7 +253,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prover = new UtxoProvingInterpreter
     val preimage1 = prover.contextExtenders.head._2.value
     val preimage2 = prover.contextExtenders.tail.head._2.value
-    val prop = EQ(CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage2)),
+    val prop = EQ(CalcBlake2b256Inst(Append(CustomByteArray(Helpers.tagInt(preimage2)),
       CustomByteArray(Helpers.tagInt(preimage1)))
     ), ByteArrayLeafConstant(Blake2b256(preimage2 ++ preimage1)))
 
@@ -296,7 +299,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(
       pubkey,
-      EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
+      EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
     )
 
     val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -320,7 +323,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = AND(
       pubkey,
       EQ(
-        CalcBlake2b256(Append(CustomByteArray(Helpers.tagInt(preimage1)), CustomByteArray(Helpers.tagInt(preimage2)))),
+        CalcBlake2b256Inst(Append(CustomByteArray(Helpers.tagInt(preimage1)), CustomByteArray(Helpers.tagInt(preimage2)))),
         ByteArrayLeafConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
@@ -365,13 +368,13 @@ class UtxoInterpreterSpecification extends PropSpec
     //chain1 script
     val prop1 = OR(
       AND(GT(Height, IntLeafConstant(height1 + deadlineA)), pubkeyA),
-      AND(pubkeyB, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
+      AND(pubkeyB, EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(x))), hx))
     )
 
     //chain2 script
     val prop2 = OR(
       AND(GT(Height, IntLeafConstant(height2 + deadlineB)), pubkeyB),
-      AND(pubkeyA, EQ(CalcBlake2b256(CustomByteArray(Helpers.tagInt(x))), hx))
+      AND(pubkeyA, EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(x))), hx))
     )
 
     //Preliminary checks:
@@ -769,7 +772,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
 
     def mixingRequestProp(sender: DLogNode, timeout: Int) = OR(
-      AND(LE(Height, IntLeafConstant(timeout)), EQ(CalcBlake2b256(TxOutBytes), ByteArrayLeafConstant(properHash))),
+      AND(LE(Height, IntLeafConstant(timeout)), EQ(CalcBlake2b256Inst(TxOutBytes), ByteArrayLeafConstant(properHash))),
       AND(GT(Height, IntLeafConstant(timeout)), sender)
     )
 
@@ -804,5 +807,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage)
+  }
+
+  property("exists"){
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val prop = Exists(Outputs, GT(Plus(ExtractAmountFn, IntLeafConstant(5)), IntLeafConstant(10)))
+
+    //todo: finish
   }
 }

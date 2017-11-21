@@ -84,7 +84,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
-    case ex@ExtractRegisterAsIntLeaf(box: BoxLeafConstant, rid) =>
+    case ex@ExtractRegisterAsIntLeafInst(box: BoxLeafConstant, rid) =>
       val leaf = ex.function(box)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
@@ -96,6 +96,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
+      /*
     case idxOut: TxOutput => replaceTxOut(idxOut, context)
 
     case hasOut: TxHasOutput =>
@@ -108,6 +109,10 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       }
       cost.addCost(outConditions.length).ensuring(_.isRight)
       OR(outConditions)
+    */
+
+    case e@Exists(coll, rels) if e.evaluated =>
+      e.function(coll.asInstanceOf[EvaluatedValue[CollectionLeaf[Value]]])
   })
 
   def varSubst(context: UtxoContext): Strategy = everywherebu(
