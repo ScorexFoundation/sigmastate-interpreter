@@ -67,7 +67,7 @@ case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], ma
   override type M = this.type
 }
 
-case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: List[Relation[_ <: Value, _ <: Value]])
+case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ <: Value, _ <: Value]*)
   extends TransformerInstantiation[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
 
   override def transformationReady: Boolean =
@@ -155,8 +155,8 @@ sealed trait ExtractScript extends Extract[PropLeaf] with NotReadyValueProp {
   override type M = this.type
 
   override def function(box: EvaluatedValue[BoxLeaf]): PropLeaf = {
-    println("script: " + box.value.box.proposition)
-    PropLeafConstant(box.value.box.proposition)
+    println(new String(box.value.box.propositionBytes))
+    PropLeafConstant(box.value)
   }
 }
 

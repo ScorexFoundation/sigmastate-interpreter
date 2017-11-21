@@ -21,7 +21,7 @@ case class SigmaStateBox(override val value: Long,
   def get(identifier: RegisterIdentifier): Option[_ <: Value] = {
     identifier match {
       case R1 => Some(IntLeafConstant(value))
-      case R2 => Some(PropLeafConstant(proposition))
+      case R2 => Some(PropLeafConstant(propositionBytes))
       case n: NonMandatoryIdentifier => additionalRegisters.get(n)
     }
   }
@@ -30,10 +30,12 @@ case class SigmaStateBox(override val value: Long,
 
   override type M = SigmaStateBox
 
-  //todo: implement
+  //todo: implement real
+  val propositionBytes = proposition.toString.getBytes
+
   override def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {
     override def toBytes(obj: SigmaStateBox): Array[Byte] =
-      Longs.toByteArray(obj.value) ++ obj.proposition.toString.getBytes
+      Longs.toByteArray(obj.value) ++ obj.propositionBytes
 
     override def parseBytes(bytes: Array[Byte]): Try[SigmaStateBox] = ???
   }

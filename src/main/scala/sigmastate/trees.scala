@@ -120,12 +120,25 @@ case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[Byte
 
 trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[ByteArrayLeaf]
 
+
+//todo: merge with ByteArrayLeaf?
+
 sealed trait PropLeaf extends Value {
-  override type WrappedValue = SigmaStateTree
+  override type WrappedValue = Array[Byte]
 }
 
-case class PropLeafConstant(value: SigmaStateTree) extends EvaluatedValue[PropLeaf] with PropLeaf {
-  override def cost: Int = value.cost + Cost.PropLeafDeclaration
+case class PropLeafConstant(value: Array[Byte]) extends EvaluatedValue[PropLeaf] with PropLeaf {
+  override def cost: Int = value.length + Cost.PropLeafDeclaration
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case ob: PropLeafConstant => value sameElements ob.value
+    case _ => false
+  }
+}
+
+object PropLeafConstant {
+  def apply(value: BoxWithMetadata): PropLeafConstant = new PropLeafConstant(value.box.propositionBytes)
+  def apply(value: SigmaStateTree): PropLeafConstant = new PropLeafConstant(value.toString.getBytes)
 }
 
 trait NotReadyValueProp extends PropLeaf with NotReadyValue[PropLeaf]
