@@ -106,6 +106,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   def prove(exp: SigmaStateTree, context: CTX, message: Array[Byte]): Try[ProverResult[ProofT]] = Try {
     val candidateProp = reduceToCrypto(exp, context).get
 
+    println(candidateProp)
+
     val (cProp, ext) = (candidateProp.isInstanceOf[SigmaT] match {
       case true => (candidateProp, ContextExtension(Map()))
       case false =>

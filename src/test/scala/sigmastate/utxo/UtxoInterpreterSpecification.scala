@@ -835,7 +835,19 @@ class UtxoInterpreterSpecification extends PropSpec
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
+    val pubkey = prover.dlogSecrets.head.publicImage
+
     val prop = Exists(Outputs, GT(Plus(ExtractAmountFn, IntLeafConstant(5)), IntLeafConstant(10)))
+
+    val newBox1 = SigmaStateBox(11, pubkey)
+    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBoxes = Seq(newBox1, newBox2)
+
+    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+
+    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
 
     //todo: finish
   }

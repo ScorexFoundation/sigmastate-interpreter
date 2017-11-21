@@ -6,6 +6,10 @@ import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import sigmastate.utxo.UtxoContext.Height
 
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+
+
+
 case class BoxMetadata(creationHeight: Height, boxIndex: Short)
 
 case class BoxWithMetadata(box: SigmaStateBox, metadata: BoxMetadata)
@@ -61,19 +65,21 @@ case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], ma
 case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ <: Value, _ <: Value]*)
   extends TransformerInstantiation[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
 
-  override val cost = input.cost + relations.size
+  override lazy val evaluated: Boolean =
+    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
 
-  override def function(input: EvaluatedValue[CollectionLeaf[IV]]): BooleanLeaf =
-    OR(input.value.map { el =>
-      AND(relations.map { r =>
-        r
-      })
+  override val cost: Int = input.cost + relations.size
+
+  override def function(input: EvaluatedValue[CollectionLeaf[IV]]): BooleanLeaf = {
+    def rl(arg: IV) = everywherebu(rule[Transformer[IV, _ <: Value]] {
+      case t: Transformer[IV, _] => t.instantiate(arg)
     })
+
+    OR(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[BooleanLeaf]))
+  }
 
   override type M = this.type
 }
-
-//Exists(Outputs, GT(ExtractAmountFn, IntLeafConstant(10)))
 
 
 trait Fold[IV <: Value] extends NotReadyValue[IV] {
@@ -233,15 +239,6 @@ case object Self extends NotReadyValueBoxLeaf {
 
   override type M = this.type
 }
-
-/*
-case object OutputAmount extends NotReadyValueIntLeaf {
-  override val cost: Int = Cost.OutputAmount
-}
-
-case object OutputScript extends NotReadyValueProp {
-  override val cost: Int = Cost.OutputScript
-}*/
 
 case object TxOutBytes extends NotReadyValueByteArray {
   override val cost: Int = Cost.TxOutBytes

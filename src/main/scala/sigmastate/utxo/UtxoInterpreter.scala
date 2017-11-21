@@ -7,7 +7,6 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import sigmastate.interpreter.{CostAccumulator, Interpreter}
 
 
-
 class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends Interpreter {
   override type StateT = StateTree
   override type CTX = UtxoContext
@@ -22,10 +21,33 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
     case Self => BoxLeafConstant(context.self)
 
-      //todo: reduce boilerplate below
-    case ex@ExtractHeightInst(box: BoxLeafConstant) => ex.function(box)
 
-    case ex@ExtractAmountInst(box: BoxLeafConstant) => ex.function(box)
+    //todo: cache the bytes as a lazy val in the transaction
+    case TxOutBytes =>
+      val outBytes = Bytes.concat(context.spendingTransaction.newBoxes.map(_.bytes): _*)
+      val leaf = ByteArrayLeafConstant(outBytes)
+      cost.addCost(leaf.cost).ensuring(_.isRight)
+      leaf
+
+    case e@Exists(coll, _) if e.evaluated =>
+      e.function(coll.asInstanceOf[EvaluatedValue[CollectionLeaf[Value]]])
+
+    case m@MapCollection(coll, mapper) if coll.evaluated =>
+      m.function(coll.asInstanceOf[ConcreteCollection[Value]])
+
+    case sum@Sum(coll) if coll.evaluated =>
+      coll.asInstanceOf[ConcreteCollection[IntLeaf]].value.foldLeft(sum.zero: IntLeaf) { case (s: IntLeaf, i: IntLeaf) =>
+        sum.folder(s, i): IntLeaf
+      }
+  })
+
+  def functions(cost:CostAccumulator): Strategy = everywherebu(rule[Value]{
+    //todo: reduce boilerplate below
+    case ex@ExtractHeightInst(box: BoxLeafConstant) =>
+      ex.function(box)
+
+    case ex@ExtractAmountInst(box: BoxLeafConstant) =>
+      ex.function(box)
 
     case ex@ExtractScriptInst(box: BoxLeafConstant) =>
       val leaf = ex.function(box)
@@ -41,16 +63,6 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       val leaf = ex.function(box)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
-
-    //todo: cache the bytes as a lazy val in the transaction
-    case TxOutBytes =>
-      val outBytes = Bytes.concat(context.spendingTransaction.newBoxes.map(_.bytes): _*)
-      val leaf = ByteArrayLeafConstant(outBytes)
-      cost.addCost(leaf.cost).ensuring(_.isRight)
-      leaf
-
-    case e@Exists(coll, rels) if e.evaluated =>
-      e.function(coll.asInstanceOf[EvaluatedValue[CollectionLeaf[Value]]])
   })
 
   def varSubst(context: UtxoContext): Strategy = everywherebu(
@@ -60,6 +72,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
   override def specificPhases(tree: SigmaStateTree, context: UtxoContext, cost: CostAccumulator): SigmaStateTree = {
     val afterSs = ssSubst(context, cost)(tree).get.asInstanceOf[SigmaStateTree]
-    varSubst(context)(afterSs).get.asInstanceOf[SigmaStateTree]
+    val afterVar = varSubst(context)(afterSs).get.asInstanceOf[SigmaStateTree]
+    functions(cost)(afterVar).get.asInstanceOf[SigmaStateTree]
   }
 }

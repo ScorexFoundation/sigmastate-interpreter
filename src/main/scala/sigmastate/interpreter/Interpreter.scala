@@ -6,7 +6,7 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
-import sigmastate.{IntLeaf, _}
+import sigmastate._
 import sigmastate.utils.Helpers
 
 import scala.annotation.tailrec
@@ -17,9 +17,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
-import sigmastate.utxo.{CostTable, MapCollection, Sum}
-
-
+import sigmastate.utxo.CostTable
 
 
 trait Interpreter {
@@ -29,7 +27,7 @@ trait Interpreter {
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
 
-  val dlogGroup: DlogGroup = new BcDlogECFp()
+  lazy val dlogGroup: DlogGroup = new BcDlogECFp()
 
   /**
     * Max cost of a script interpreter can accept
@@ -73,14 +71,6 @@ trait Interpreter {
       require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
       ByteArrayLeafConstant(l.value ++ r.value)
     case c@CalcBlake2b256Inst(l: ByteArrayLeafConstant) if l.evaluated => c.function(l)
-  })
-
-  protected val functions: Strategy = everywherebu(rule[SigmaStateTree] {
-    case m@MapCollection(coll, mapper) if coll.evaluated =>
-      m.function(coll.asInstanceOf[ConcreteCollection[Value]])
-    case sum@Sum(coll) if coll.evaluated =>
-      coll.asInstanceOf[ConcreteCollection[IntLeaf]].value.foldLeft(sum.zero: IntLeaf){case (s: IntLeaf,i: IntLeaf) =>
-        sum.folder(s,i): IntLeaf}
   })
 
   protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {
@@ -140,10 +130,9 @@ trait Interpreter {
     // that cost of script is not exploding
     val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
-    val afterFunctions = functions(afterSpecific).get.asInstanceOf[SigmaStateTree]
 
     //in phases below, a tree could be reduced only
-    val afterOps = operations(afterFunctions).get.asInstanceOf[SigmaStateTree]
+    val afterOps = operations(afterSpecific).get.asInstanceOf[SigmaStateTree]
     val afterRels = relations(afterOps).get.asInstanceOf[SigmaStateTree]
     conjs(afterRels).get
   }.asInstanceOf[SigmaStateTree])
