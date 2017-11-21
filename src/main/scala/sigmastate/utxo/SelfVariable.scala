@@ -30,7 +30,7 @@ object UtxoContext {
 
 trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV] {
   self: OV =>
-  val abstractTransformation = false
+  val abstractTransformation = true
 
   def function(input: EvaluatedValue[IV]): OV
 
@@ -41,7 +41,9 @@ trait TransformerInstantiation[IV <: Value, OV <: Value] extends Transformer[IV,
   self: OV =>
   val input: IV
 
-  override val abstractTransformation = true
+  def transformationReady: Boolean = input.evaluated
+
+  override val abstractTransformation = false
 
   override def instantiate(input: IV) = this
 
@@ -54,6 +56,9 @@ trait TransformerInstantiation[IV <: Value, OV <: Value] extends Transformer[IV,
 case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], mapper: Transformer[IV, OV])
   extends TransformerInstantiation[CollectionLeaf[IV], CollectionLeaf[OV]] with CollectionLeaf[OV] {
 
+  override def transformationReady: Boolean =
+    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
+
   override def function(cl: EvaluatedValue[CollectionLeaf[IV]]): CollectionLeaf[OV] =
     ConcreteCollection(cl.value.map(el => mapper.function(el.asInstanceOf[EvaluatedValue[IV]])))
 
@@ -62,10 +67,10 @@ case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], ma
   override type M = this.type
 }
 
-case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ <: Value, _ <: Value]*)
+case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: List[Relation[_ <: Value, _ <: Value]])
   extends TransformerInstantiation[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
 
-  override lazy val evaluated: Boolean =
+  override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
 
   override val cost: Int = input.cost + relations.size
@@ -82,7 +87,7 @@ case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ 
 }
 
 
-trait Fold[IV <: Value] extends NotReadyValue[IV] {
+trait Fold[IV <: Value] extends TransformerInstantiation[CollectionLeaf[IV], IV] with NotReadyValue[IV] {
   self: IV =>
   val input: CollectionLeaf[IV]
   val folder: (IV, IV) => IV
@@ -90,6 +95,10 @@ trait Fold[IV <: Value] extends NotReadyValue[IV] {
 }
 
 case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
+
+  override def transformationReady: Boolean =
+    input.evaluated && input.asInstanceOf[ConcreteCollection[IntLeaf]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
+
   val folder = {
     case (s, i) =>
       (s, i) match {
@@ -98,6 +107,10 @@ case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf
       }
   }: (IntLeaf, IntLeaf) => IntLeaf
   val zero = IntLeafConstant(0)
+
+  override def function(input: EvaluatedValue[CollectionLeaf[IntLeaf]]): IntLeaf = ??? //todo: impl
+
+  override type M = this.type
 }
 
 sealed abstract class Extract[V <: Value] extends Transformer[BoxLeaf, V] {
@@ -141,7 +154,10 @@ sealed trait ExtractScript extends Extract[PropLeaf] with NotReadyValueProp {
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[BoxLeaf]): PropLeaf = PropLeafConstant(box.value.box.proposition)
+  override def function(box: EvaluatedValue[BoxLeaf]): PropLeaf = {
+    println("script: " + box.value.box.proposition)
+    PropLeafConstant(box.value.box.proposition)
+  }
 }
 
 case class ExtractScriptInst(input: BoxLeaf) extends ExtractScript with TransformerInstantiation[BoxLeaf, PropLeaf]

@@ -57,10 +57,14 @@ trait Interpreter {
       BooleanLeafConstant.fromBoolean(l == r)
     case NEQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
       BooleanLeafConstant.fromBoolean(l != r)
-    case GT(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value > r.value)
-    case GE(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value >= r.value)
-    case LT(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value < r.value)
-    case LE(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value <= r.value)
+    case GT(l: IntLeafConstant, r: IntLeafConstant) =>
+      BooleanLeafConstant.fromBoolean(l.value > r.value)
+    case GE(l: IntLeafConstant, r: IntLeafConstant) =>
+      BooleanLeafConstant.fromBoolean(l.value >= r.value)
+    case LT(l: IntLeafConstant, r: IntLeafConstant) =>
+      BooleanLeafConstant.fromBoolean(l.value < r.value)
+    case LE(l: IntLeafConstant, r: IntLeafConstant) =>
+      BooleanLeafConstant.fromBoolean(l.value <= r.value)
   })
 
   protected val operations: Strategy = everywherebu(rule[SigmaStateTree] {

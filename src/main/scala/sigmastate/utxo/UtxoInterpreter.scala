@@ -29,13 +29,15 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
-    case e@Exists(coll, _) if e.evaluated =>
-      e.function(coll.asInstanceOf[EvaluatedValue[CollectionLeaf[Value]]])
+    case e: Exists[_] if e.transformationReady => e.input match {
+      case c: ConcreteCollection[_] => e.function(c)
+      case _ => ???
+    }
 
-    case m@MapCollection(coll, mapper) if coll.evaluated =>
+    case m@MapCollection(coll, mapper) if m.transformationReady =>
       m.function(coll.asInstanceOf[ConcreteCollection[Value]])
 
-    case sum@Sum(coll) if coll.evaluated =>
+    case sum@Sum(coll) if sum.transformationReady =>
       coll.asInstanceOf[ConcreteCollection[IntLeaf]].value.foldLeft(sum.zero: IntLeaf) { case (s: IntLeaf, i: IntLeaf) =>
         sum.folder(s, i): IntLeaf
       }
@@ -43,16 +45,16 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
   def functions(cost:CostAccumulator): Strategy = everywherebu(rule[Value]{
     //todo: reduce boilerplate below
+    case ex@ExtractScriptInst(box: BoxLeafConstant) =>
+      val leaf = ex.function(box)
+      cost.addCost(leaf.cost).ensuring(_.isRight)
+      leaf
+
     case ex@ExtractHeightInst(box: BoxLeafConstant) =>
       ex.function(box)
 
     case ex@ExtractAmountInst(box: BoxLeafConstant) =>
       ex.function(box)
-
-    case ex@ExtractScriptInst(box: BoxLeafConstant) =>
-      val leaf = ex.function(box)
-      cost.addCost(leaf.cost).ensuring(_.isRight)
-      leaf
 
     case ex@ExtractBytesInst(box: BoxLeafConstant) =>
       val leaf = ex.function(box)

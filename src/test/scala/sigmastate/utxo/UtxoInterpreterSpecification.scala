@@ -75,8 +75,7 @@ class UtxoInterpreterSpecification extends PropSpec
         Seq(
           LT(Height, timeout),
           DLogNode(projectPubKey),
-          Exists(Outputs, GE(ExtractAmountFn, minToRaise), EQ(ExtractScriptFn, PropLeafConstant(DLogNode(projectPubKey))))
-          //TxHasOutput(GE(OutputAmount, minToRaise), EQ(OutputScript, PropLeafConstant(DLogNode(projectPubKey))))
+          Exists(Outputs, List(GE(ExtractAmountFn, minToRaise), EQ(ExtractScriptFn, PropLeafConstant(DLogNode(projectPubKey)))))
         )
       )
     )
@@ -163,16 +162,15 @@ class UtxoInterpreterSpecification extends PropSpec
       regScript,
       AND(
         GE(Height, Plus(ExtractHeightInst(Self), IntLeafConstant(demurragePeriod))),
-        Exists(Outputs, GE(ExtractAmountFn, Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
-            EQ(ExtractScriptFn, ExtractScriptInst(Self)))
-        //TxHasOutput(GE(OutputAmount, Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
-        //  EQ(OutputScript, ExtractScriptInst(Self)))
+        Exists(Outputs, List(GE(ExtractAmountFn, Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
+                              EQ(ExtractScriptFn, ExtractScriptInst(Self))))
       )
     )
 
     val outHeight = 100
     val outValue = 10
 
+    /*
     //case 1: demurrage time hasn't come yet
     val tx1 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue, script)))
 
@@ -199,16 +197,17 @@ class UtxoInterpreterSpecification extends PropSpec
     //user can spend all the money
     val uProof2 = userProver.prove(script, ctx1, fakeMessage).get.proof
     verifier.verify(script, ctx2, uProof2, fakeMessage).get shouldBe true
+*/
 
     //miner can spend "demurrageCost" tokens
-    val tx3 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost, script)))
+    val tx3 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost, script.copy())))
     val ctx3 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
       Seq(),
       spendingTransaction = tx3,
-      self = boxWithMetadata(outValue, script, outHeight))
+      self = boxWithMetadata(outValue, script.copy(), outHeight))
 
-    verifier.verify(script, ctx3, NoProof, fakeMessage).get shouldBe true
+    verifier.verify(script.copy(), ctx3, NoProof, fakeMessage).get shouldBe true
 
     //miner can't spend more
     val tx4 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost - 1, script)))
@@ -837,10 +836,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, GT(Plus(ExtractAmountFn, IntLeafConstant(5)), IntLeafConstant(10)))
+    val prop = Exists(Outputs, List(GT(Plus(ExtractAmountFn, IntLeafConstant(5)), IntLeafConstant(10))))
 
-    val newBox1 = SigmaStateBox(11, pubkey)
-    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBox1 = SigmaStateBox(16, pubkey)
+    val newBox2 = SigmaStateBox(15, pubkey)
     val newBoxes = Seq(newBox1, newBox2)
 
     val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
@@ -848,7 +847,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
-
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
     //todo: finish
   }
 }

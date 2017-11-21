@@ -75,7 +75,9 @@ trait Value extends StateTree {
 
 trait EvaluatedValue[V <: Value] extends Value {
   self: V =>
+
   val value: V#WrappedValue
+
   override lazy val evaluated = true
 }
 
@@ -117,7 +119,6 @@ case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[Byte
 }
 
 trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[ByteArrayLeaf]
-
 
 sealed trait PropLeaf extends Value {
   override type WrappedValue = SigmaStateTree
@@ -168,8 +169,8 @@ trait CollectionLeaf[V <: Value] extends Value {
 
 case class ConcreteCollection[V <: Value](value: Seq[V]) extends CollectionLeaf[V] with EvaluatedValue[CollectionLeaf[V]] {
   val cost = value.size
-  lazy val isLazy = value.exists(_.isInstanceOf[NotReadyValue[_]] == true)
-  override lazy val evaluated = !isLazy
+ // lazy val isLazy = value.exists(_.isInstanceOf[NotReadyValue[_]] == true)
+ // override lazy val evaluated = !isLazy
 }
 
 trait LazyCollection[V <: Value] extends CollectionLeaf[V] with NotReadyValue[LazyCollection[V]]

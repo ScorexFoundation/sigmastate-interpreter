@@ -136,8 +136,8 @@ class SpamSpecification extends PropSpec
         val spamProp = OR((1 until orCnt).map(_ => IntLeafConstant(5)) :+ IntLeafConstant(6))
 
         val spamScript =
-          Exists(Outputs, GE(ExtractAmountFn, IntLeafConstant(10)), EQ(ExtractScriptFn, PropLeafConstant(propToCompare)))
-          //TxHasOutput(GE(OutputAmount, IntLeafConstant(10)), EQ(OutputScript, PropLeafConstant(propToCompare)))
+          Exists(Outputs, List(GE(ExtractAmountFn, IntLeafConstant(10)),
+                                EQ(ExtractScriptFn, PropLeafConstant(propToCompare))))
 
 
         val txOutputs = ((1 to outCnt) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
