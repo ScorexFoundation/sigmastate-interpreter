@@ -4,7 +4,7 @@ import scapi.sigma.DLogProtocol.{DLogNode, DLogProverInput}
 import scapi.sigma.DiffieHellmanTupleProverInput
 import scapi.sigma.rework.SigmaProtocolPrivateInput
 import scorex.utils.Random
-import sigmastate.ByteArrayLeaf
+import sigmastate.ByteArrayLeafConstant
 import sigmastate.interpreter.ProverInterpreter
 import sigmastate.utils.Helpers
 
@@ -25,18 +25,18 @@ class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
   lazy val dhSecrets: Seq[DiffieHellmanTupleProverInput] =
     secrets.filter(_.isInstanceOf[DiffieHellmanTupleProverInput]).asInstanceOf[Seq[DiffieHellmanTupleProverInput]]
 
-  override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = (1 to 10).map { i =>
+  override lazy val contextExtenders: Map[Int, ByteArrayLeafConstant] = (1 to 10).map { i =>
     val ba = Random.randomBytes(75)
-    Helpers.tagInt(ba) -> ByteArrayLeaf(ba)
+    Helpers.tagInt(ba) -> ByteArrayLeafConstant(ba)
   }.toMap
 
-  def withContextExtender(tag: Int, value: ByteArrayLeaf): UtxoProvingInterpreter = {
+  def withContextExtender(tag: Int, value: ByteArrayLeafConstant): UtxoProvingInterpreter = {
     val s = secrets
     val ce = contextExtenders
 
     new UtxoProvingInterpreter(maxCost) {
       override lazy val secrets = s
-      override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = ce + (tag -> value)
+      override lazy val contextExtenders: Map[Int, ByteArrayLeafConstant] = ce + (tag -> value)
     }
   }
 
@@ -46,7 +46,7 @@ class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
 
     new UtxoProvingInterpreter(maxCost) {
       override lazy val secrets = s
-      override lazy val contextExtenders: Map[Int, ByteArrayLeaf] = ce
+      override lazy val contextExtenders: Map[Int, ByteArrayLeafConstant] = ce
     }
   }
 }

@@ -30,7 +30,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   val secrets: Seq[SigmaProtocolPrivateInput[_]]
 
-  val contextExtenders: Map[Int, ByteArrayLeaf]
+  val contextExtenders: Map[Int, ByteArrayLeafConstant]
 
   def enrichContext(tree: SigmaStateTree): ContextExtension = {
     val targetName = CustomByteArray.getClass.getSimpleName.replace("$", "")
@@ -106,6 +106,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   def prove(exp: SigmaStateTree, context: CTX, message: Array[Byte]): Try[ProverResult[ProofT]] = Try {
     val candidateProp = reduceToCrypto(exp, context).get
 
+    println(candidateProp)
+
     val (cProp, ext) = (candidateProp.isInstanceOf[SigmaT] match {
       case true => (candidateProp, ContextExtension(Map()))
       case false =>
@@ -113,7 +115,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         //todo: no need for full reduction here probably
         (reduceToCrypto(candidateProp, context.withExtension(extension)).get, extension)
     }).ensuring { res =>
-      res._1.isInstanceOf[BooleanLeaf] ||
+      res._1.isInstanceOf[BooleanLeafConstant] ||
         res._1.isInstanceOf[CAND] ||
         res._1.isInstanceOf[COR] ||
         res._1.isInstanceOf[DLogNode] ||
@@ -122,7 +124,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
 
     ProverResult(cProp match {
-      case tree: BooleanLeaf =>
+      case tree: BooleanLeafConstant =>
         tree match {
           case TrueLeaf => NoProof
           case FalseLeaf => ???

@@ -20,8 +20,6 @@ import scapi.sigma.rework.FirstProverMessage
 import sigmastate.utxo.CostTable
 
 
-
-
 trait Interpreter {
   type CTX <: Context[CTX]
   type StateT <: StateTree
@@ -29,7 +27,7 @@ trait Interpreter {
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
 
-  val dlogGroup: DlogGroup = new BcDlogECFp()
+  lazy val dlogGroup: DlogGroup = new BcDlogECFp()
 
   /**
     * Max cost of a script interpreter can accept
@@ -55,24 +53,30 @@ trait Interpreter {
   }
 
   protected val relations: Strategy = everywherebu(rule[SigmaStateTree] {
-    case EQ(l: Value, r: Value) => BooleanLeaf.fromBoolean(l == r)
-    case NEQ(l: Value, r: Value) => BooleanLeaf.fromBoolean(l != r)
-    case GT(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value > r.value)
-    case GE(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value >= r.value)
-    case LT(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value < r.value)
-    case LE(l: IntLeaf, r: IntLeaf) => BooleanLeaf.fromBoolean(l.value <= r.value)
+    case EQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+      BooleanLeafConstant.fromBoolean(l == r)
+    case NEQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+      BooleanLeafConstant.fromBoolean(l != r)
+    case GT(l: IntLeafConstant, r: IntLeafConstant) =>
+      BooleanLeafConstant.fromBoolean(l.value > r.value)
+    case GE(l: IntLeafConstant, r: IntLeafConstant) =>
+      BooleanLeafConstant.fromBoolean(l.value >= r.value)
+    case LT(l: IntLeafConstant, r: IntLeafConstant) =>
+      BooleanLeafConstant.fromBoolean(l.value < r.value)
+    case LE(l: IntLeafConstant, r: IntLeafConstant) =>
+      BooleanLeafConstant.fromBoolean(l.value <= r.value)
   })
 
   protected val operations: Strategy = everywherebu(rule[SigmaStateTree] {
-    case Plus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value + r.value)
-    case Minus(l: IntLeaf, r: IntLeaf) => IntLeaf(l.value - r.value)
-    case Xor(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
+    case Plus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value + r.value)
+    case Minus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value - r.value)
+    case Xor(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
       assert(l.value.length == r.value.length)
-      ByteArrayLeaf(Helpers.xor(l.value, r.value))
-    case Append(l: ByteArrayLeaf, r: ByteArrayLeaf) =>
+      ByteArrayLeafConstant(Helpers.xor(l.value, r.value))
+    case Append(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
       require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
-      ByteArrayLeaf(l.value ++ r.value)
-    case CalcBlake2b256(l: ByteArrayLeaf) => ByteArrayLeaf(Blake2b256(l.value))
+      ByteArrayLeafConstant(l.value ++ r.value)
+    case c@CalcBlake2b256Inst(l: ByteArrayLeafConstant) if l.evaluated => c.function(l)
   })
 
   protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {
