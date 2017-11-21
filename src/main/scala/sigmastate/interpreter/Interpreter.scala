@@ -53,8 +53,10 @@ trait Interpreter {
   }
 
   protected val relations: Strategy = everywherebu(rule[SigmaStateTree] {
-    case EQ(l: Value, r: Value) => BooleanLeafConstant.fromBoolean(l == r)
-    case NEQ(l: Value, r: Value) => BooleanLeafConstant.fromBoolean(l != r)
+    case EQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+      BooleanLeafConstant.fromBoolean(l == r)
+    case NEQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+      BooleanLeafConstant.fromBoolean(l != r)
     case GT(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value > r.value)
     case GE(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value >= r.value)
     case LT(l: IntLeafConstant, r: IntLeafConstant) => BooleanLeafConstant.fromBoolean(l.value < r.value)
