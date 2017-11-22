@@ -18,7 +18,7 @@ import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
-import scorex.crypto.authds.avltree.batch.{BatchAVLVerifier, Lookup}
+import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.utxo.CostTable
 
 

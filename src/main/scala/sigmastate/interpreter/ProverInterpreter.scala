@@ -112,7 +112,6 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         val extension = enrichContext(candidateProp)
         //todo: no need for full reduction here probably
         val reduced = reduceToCrypto(candidateProp, context.withExtension(extension)).get
-        println(reduced)
         (reduced, extension)
     }).ensuring { res =>
       res._1.isInstanceOf[BooleanLeafConstant] ||
