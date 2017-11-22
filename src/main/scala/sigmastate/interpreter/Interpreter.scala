@@ -84,12 +84,12 @@ trait Interpreter {
     case AND(children) =>
 
       @tailrec
-      def iterChildren(children: Seq[SigmaStateTree],
-                       currentBuffer: mutable.Buffer[SigmaStateTree]): mutable.Buffer[SigmaStateTree] = {
+      def iterChildren(children: Seq[BooleanLeaf],
+                       currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
         if (children.isEmpty) currentBuffer else children.head match {
           case FalseLeaf => mutable.Buffer(FalseLeaf)
           case TrueLeaf => iterChildren(children.tail, currentBuffer)
-          case s: SigmaStateTree => iterChildren(children.tail, currentBuffer += s)
+          case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
         }
       }
 
@@ -107,12 +107,12 @@ trait Interpreter {
 
     case OR(children) =>
       @tailrec
-      def iterChildren(children: Seq[SigmaStateTree],
-                       currentBuffer: mutable.Buffer[SigmaStateTree]): mutable.Buffer[SigmaStateTree] = {
+      def iterChildren(children: Seq[BooleanLeaf],
+                       currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
         if (children.isEmpty) currentBuffer else children.head match {
           case TrueLeaf => mutable.Buffer(TrueLeaf)
           case FalseLeaf => iterChildren(children.tail, currentBuffer)
-          case s: SigmaStateTree => iterChildren(children.tail, currentBuffer += s)
+          case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
         }
       }
 

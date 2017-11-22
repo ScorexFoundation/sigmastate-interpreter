@@ -127,13 +127,14 @@ class SpamSpecification extends PropSpec
   }
 
   property("transaction with many outputs") {
-    forAll(Gen.choose(10, 279), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
+    forAll(Gen.choose(10, 200), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
       whenever(orCnt > 10 && outCnt > 200) {
         val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
 
-        val propToCompare = OR((1 to orCnt).map(_ => IntLeafConstant(5)))
+        val propToCompare = OR((1 to orCnt).map(_ => EQ(IntLeafConstant(6), IntLeafConstant(5)) ))
 
-        val spamProp = OR((1 until orCnt).map(_ => IntLeafConstant(5)) :+ IntLeafConstant(6))
+        val spamProp = OR((1 until orCnt).map(_ => EQ(IntLeafConstant(6), IntLeafConstant(5))) :+
+                            EQ(IntLeafConstant(6), IntLeafConstant(6)))
 
         val spamScript =
           Exists(Outputs, GE(ExtractAmountFn, IntLeafConstant(10)),

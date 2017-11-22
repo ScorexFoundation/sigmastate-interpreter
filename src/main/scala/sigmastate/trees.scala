@@ -19,7 +19,7 @@ sealed trait SigmaStateTree extends Product with SigmaStateProposition {
 
 trait StateTree extends SigmaStateTree with StateProposition
 
-trait SigmaTree extends SigmaStateTree with SigmaProposition
+trait SigmaTree extends SigmaStateTree with SigmaProposition with NotReadyValueBoolean
 
 case class CAND(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
   override def cost: Int = sigmaTrees.map(_.cost).sum + sigmaTrees.length * Cost.AndPerChild + Cost.AndDeclaration
@@ -47,23 +47,23 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
   extends SigmaTree with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
 
 
-case class OR(children: Seq[SigmaStateTree]) extends NotReadyValueBoolean {
+case class OR(children: Seq[BooleanLeaf]) extends NotReadyValueBoolean {
   override def cost: Int = children.map(_.cost).sum + children.length * Cost.OrPerChild + Cost.OrDeclaration
 }
 
 
 object OR {
-  def apply(left: SigmaStateTree, right: SigmaStateTree): OR = apply(Seq(left, right))
+  def apply(left: BooleanLeaf, right: BooleanLeaf): OR = apply(Seq(left, right))
 
-  def apply(arg1: SigmaStateTree, arg2: SigmaStateTree, arg3: SigmaStateTree): OR = apply(Seq(arg1, arg2, arg3))
+  def apply(arg1: BooleanLeaf, arg2: BooleanLeaf, arg3: BooleanLeaf): OR = apply(Seq(arg1, arg2, arg3))
 }
 
-case class AND(children: Seq[SigmaStateTree]) extends NotReadyValueBoolean {
+case class AND(children: Seq[BooleanLeaf]) extends NotReadyValueBoolean {
   override def cost: Int = children.map(_.cost).sum + children.length * Cost.AndPerChild + Cost.AndDeclaration
 }
 
 object AND {
-  def apply(left: SigmaStateTree, right: SigmaStateTree): AND = apply(Seq(left, right))
+  def apply(left: BooleanLeaf, right: BooleanLeaf): AND = apply(Seq(left, right))
 }
 
 
@@ -182,8 +182,6 @@ trait CollectionLeaf[V <: Value] extends Value {
 
 case class ConcreteCollection[V <: Value](value: Seq[V]) extends CollectionLeaf[V] with EvaluatedValue[CollectionLeaf[V]] {
   val cost = value.size
- // lazy val isLazy = value.exists(_.isInstanceOf[NotReadyValue[_]] == true)
- // override lazy val evaluated = !isLazy
 }
 
 trait LazyCollection[V <: Value] extends CollectionLeaf[V] with NotReadyValue[LazyCollection[V]]

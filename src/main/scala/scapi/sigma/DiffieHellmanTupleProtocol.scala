@@ -9,7 +9,7 @@ import scapi.sigma.DLogProtocol._
 import scapi.sigma.rework._
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
-import sigmastate.SigmaProofOfKnowledgeTree
+import sigmastate.{NotReadyValueBoolean, SigmaProofOfKnowledgeTree}
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 

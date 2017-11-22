@@ -11,7 +11,7 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.{EcPointFunctions, SigmaProofOfKnowledgeTree}
+import sigmastate.{EcPointFunctions, NotReadyValueBoolean, SigmaProofOfKnowledgeTree}
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -19,7 +19,7 @@ import scala.util.Try
 object DLogProtocol {
 
 
-  trait DLogSigmaProtocol extends SigmaProtocol[DLogSigmaProtocol] {
+  trait DLogSigmaProtocol extends SigmaProtocol[DLogSigmaProtocol]{
     override type A = FirstDLogProverMessage
     override type Z = SecondDLogProverMessage
   }
