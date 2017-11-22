@@ -7,6 +7,7 @@ import scapi.sigma.{DiffieHellmanTupleNode, FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
+import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.{BoxWithMetadata, Transformer, TransformerInstantiation}
@@ -91,7 +92,7 @@ sealed trait IntLeaf extends Value {
   override type WrappedValue = Long
 }
 
-case class IntLeafConstant(value: Long) extends IntLeaf with EvaluatedValue[IntLeaf]{
+case class IntLeafConstant(value: Long) extends IntLeaf with EvaluatedValue[IntLeaf] {
   override val cost = 1
 }
 
@@ -101,7 +102,7 @@ case object Height extends NotReadyValueIntLeaf {
   override def cost: Int = Cost.HeightAccess
 }
 
-case object UnknownIntLeaf extends NotReadyValueIntLeaf{
+case object UnknownIntLeaf extends NotReadyValueIntLeaf {
   override val cost = 1
 }
 
@@ -150,10 +151,28 @@ case class PropLeafConstant(value: Array[Byte]) extends EvaluatedValue[PropLeaf]
 
 object PropLeafConstant {
   def apply(value: BoxWithMetadata): PropLeafConstant = new PropLeafConstant(value.box.propositionBytes)
+
   def apply(value: SigmaStateTree): PropLeafConstant = new PropLeafConstant(value.toString.getBytes)
 }
 
 trait NotReadyValueProp extends PropLeaf with NotReadyValue[PropLeaf]
+
+
+case class AvlTreeData(startingDigest: ADDigest,
+                       keyLength: Int,
+                       valueLengthOpt: Option[Int],
+                       maxNumOperations: Option[Int] = None,
+                       maxDeletes: Option[Int] = None)
+
+sealed trait AvlTreeLeaf extends Value {
+  override type WrappedValue = AvlTreeData
+}
+
+case class AvlTreeLeafConstant(value: AvlTreeData) extends AvlTreeLeaf with EvaluatedValue[AvlTreeLeaf] {
+  override val cost = 50
+}
+
+trait NotReadyValueAvlTree extends AvlTreeLeaf with NotReadyValue[AvlTreeLeaf]
 
 
 sealed trait BooleanLeaf extends Value {
@@ -181,7 +200,7 @@ sealed trait BoxLeaf extends Value {
   override type WrappedValue = BoxWithMetadata
 }
 
-case class BoxLeafConstant(value: BoxWithMetadata) extends BoxLeaf with EvaluatedValue[BoxLeaf]{
+case class BoxLeafConstant(value: BoxWithMetadata) extends BoxLeaf with EvaluatedValue[BoxLeaf] {
   override def cost: Int = 10
 }
 
@@ -225,7 +244,7 @@ sealed trait CalcBlake2b256 extends Transformer[ByteArrayLeaf, ByteArrayLeaf] wi
 }
 
 case class CalcBlake2b256Inst(input: ByteArrayLeaf)
-  extends CalcBlake2b256 with TransformerInstantiation[ByteArrayLeaf, ByteArrayLeaf]{
+  extends CalcBlake2b256 with TransformerInstantiation[ByteArrayLeaf, ByteArrayLeaf] {
 
   override def cost: Int = input.cost + Cost.Blake256bDeclaration
 }
@@ -242,7 +261,8 @@ case object CalcBlake2b256Fn extends CalcBlake2b256 {
 /**
   * A tree node with left and right descendants
   */
-sealed trait Triple[LIV <: Value, RIV <: Value, OV <: Value] extends NotReadyValue[OV] {self: OV =>
+sealed trait Triple[LIV <: Value, RIV <: Value, OV <: Value] extends NotReadyValue[OV] {
+  self: OV =>
   val left: LIV
   val right: RIV
 
@@ -254,7 +274,9 @@ sealed trait Triple[LIV <: Value, RIV <: Value, OV <: Value] extends NotReadyVal
 }
 
 
-sealed trait TwoArgumentsOperation[LIV <: Value, RIV <: Value, OV <: Value] extends Triple[LIV, RIV, OV]{self : OV => }
+sealed trait TwoArgumentsOperation[LIV <: Value, RIV <: Value, OV <: Value] extends Triple[LIV, RIV, OV] {
+  self: OV =>
+}
 
 case class Plus(override val left: IntLeaf,
                 override val right: IntLeaf)
@@ -279,6 +301,7 @@ case class Xor(override val left: ByteArrayLeaf,
   extends TwoArgumentsOperation[ByteArrayLeaf, ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
 
   def withLeft(newLeft: ByteArrayLeaf): Xor = copy(left = newLeft)
+
   def withRight(newRight: ByteArrayLeaf): Xor = copy(right = newRight)
 }
 
@@ -322,14 +345,14 @@ case class GE(override val left: IntLeaf,
   def withRight(newRight: IntLeaf): GE = copy(right = newRight)
 }
 
-case class EQ[V<: Value](override val left: V,
-              override val right: V) extends Relation[V, V] {
+case class EQ[V <: Value](override val left: V,
+                          override val right: V) extends Relation[V, V] {
   def withLeft(newLeft: V): EQ[V] = copy(left = newLeft)
 
   def withRight(newRight: V): EQ[V] = copy(right = newRight)
 }
 
-case class NEQ[V<: Value](override val left: V, override val right: V) extends Relation[V, V] {
+case class NEQ[V <: Value](override val left: V, override val right: V) extends Relation[V, V] {
   def withLeft(newLeft: V): NEQ[V] = copy(left = newLeft)
 
   def withRight(newRight: V): NEQ[V] = copy(right = newRight)
