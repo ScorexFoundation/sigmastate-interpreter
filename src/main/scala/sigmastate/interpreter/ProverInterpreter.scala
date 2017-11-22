@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import scapi.sigma.rework.{Challenge, FirstProverMessage, SigmaProtocolPrivateInput}
+import scapi.sigma.rework.{Challenge, SigmaProtocolPrivateInput}
 import scapi.sigma.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.Helpers
@@ -106,14 +106,14 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   def prove(exp: SigmaStateTree, context: CTX, message: Array[Byte]): Try[ProverResult[ProofT]] = Try {
     val candidateProp = reduceToCrypto(exp, context).get
 
-    println(candidateProp)
-
     val (cProp, ext) = (candidateProp.isInstanceOf[SigmaT] match {
       case true => (candidateProp, ContextExtension(Map()))
       case false =>
         val extension = enrichContext(candidateProp)
         //todo: no need for full reduction here probably
-        (reduceToCrypto(candidateProp, context.withExtension(extension)).get, extension)
+        val reduced = reduceToCrypto(candidateProp, context.withExtension(extension)).get
+        println(reduced)
+        (reduced, extension)
     }).ensuring { res =>
       res._1.isInstanceOf[BooleanLeafConstant] ||
         res._1.isInstanceOf[CAND] ||

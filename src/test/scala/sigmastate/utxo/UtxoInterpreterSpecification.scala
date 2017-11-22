@@ -12,7 +12,7 @@ import sigmastate.utils.Helpers
 import BoxHelpers.boxWithMetadata
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import sigmastate.utxo.SigmaStateBox.R3
+import sigmastate.utxo.SigmaStateBox.{R3, R4}
 
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -939,7 +939,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val digest = avlProver.digest
     val proof = avlProver.generateProof()
 
-    val treeData = AvlTreeData(digest, 32, None)
+    val treeData = new AvlTreeData(digest, 32, None)
 
     val prop = IsMember(ExtractRegisterAsAvlTreeLeafInst(Self, R3),
                         ByteArrayLeafConstant(key),
@@ -956,5 +956,46 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+  }
+
+  property("avl tree - prover provides proof"){
+
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
+
+    val key = Blake2b256("hello world")
+    avlProver.performOneOperation(Insert(ADKey @@ key, ADValue @@ key))
+    avlProver.generateProof()
+
+    avlProver.performOneOperation(Lookup(ADKey @@ key))
+
+    val digest = avlProver.digest
+    val proof = avlProver.generateProof()
+
+    val treeData = new AvlTreeData(digest, 32, None)
+
+    val proofTag = Helpers.tagInt(proof)
+
+    val prover = new UtxoProvingInterpreter().withContextExtender(proofTag, ByteArrayLeafConstant(proof))
+    val verifier = new UtxoInterpreter
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val prop = IsMember(ExtractRegisterAsAvlTreeLeafInst(Self, R3),
+      ExtractRegisterAsByteArrayLeafInst(Self, R4),
+      CustomByteArray(proofTag))
+
+    val newBox1 = SigmaStateBox(10, pubkey)
+    val newBoxes = IndexedSeq(newBox1)
+
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+
+    val s = BoxWithMetadata(
+      SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeLeafConstant(treeData), R4 -> ByteArrayLeafConstant(key))),
+      BoxMetadata(5, 0))
+
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = s)
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+
+    val ctxv = ctx.withExtension(pr.extension)
+    verifier.verify(prop, ctxv, pr, fakeMessage).get shouldBe true
   }
 }

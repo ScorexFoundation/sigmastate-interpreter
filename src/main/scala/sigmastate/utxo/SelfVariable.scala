@@ -10,7 +10,11 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 
 case class BoxMetadata(creationHeight: Height, boxIndex: Short)
 
-case class BoxWithMetadata(box: SigmaStateBox, metadata: BoxMetadata)
+class BoxWithMetadata(val box: SigmaStateBox, val metadata: BoxMetadata)
+
+object BoxWithMetadata{
+  def apply(box: SigmaStateBox, metadata: BoxMetadata): BoxWithMetadata = new BoxWithMetadata(box, metadata)
+}
 
 case class UtxoContext(currentHeight: Height,
                        boxesToSpend: IndexedSeq[BoxWithMetadata],

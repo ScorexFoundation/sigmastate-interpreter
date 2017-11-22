@@ -60,12 +60,17 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
-    case ex@ExtractRegisterAsIntLeafInst(box: BoxLeafConstant, rid) =>
+    case ex@ExtractRegisterAsIntLeafInst(box: BoxLeafConstant, _) =>
       val leaf = ex.function(box)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
 
-    case ex@ExtractRegisterAsAvlTreeLeafInst(box: BoxLeafConstant, rid) =>
+    case ex@ExtractRegisterAsByteArrayLeafInst(box: BoxLeafConstant, _) =>
+      val leaf = ex.function(box)
+      cost.addCost(leaf.cost).ensuring(_.isRight)
+      leaf
+
+    case ex@ExtractRegisterAsAvlTreeLeafInst(box: BoxLeafConstant, _) =>
       val leaf = ex.function(box)
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf

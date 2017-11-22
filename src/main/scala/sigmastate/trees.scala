@@ -159,11 +159,11 @@ object PropLeafConstant {
 trait NotReadyValueProp extends PropLeaf with NotReadyValue[PropLeaf]
 
 
-case class AvlTreeData(startingDigest: ADDigest,
-                       keyLength: Int,
-                       valueLengthOpt: Option[Int],
-                       maxNumOperations: Option[Int] = None,
-                       maxDeletes: Option[Int] = None)
+class AvlTreeData(val startingDigest: ADDigest,
+                  val keyLength: Int,
+                  val valueLengthOpt: Option[Int],
+                  val maxNumOperations: Option[Int] = None,
+                  val maxDeletes: Option[Int] = None)
 
 sealed trait AvlTreeLeaf extends Value {
   override type WrappedValue = AvlTreeData
