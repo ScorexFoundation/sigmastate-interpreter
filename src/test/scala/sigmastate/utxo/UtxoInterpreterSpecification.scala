@@ -773,7 +773,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
     def mixingRequestProp(sender: DLogNode, timeout: Int) = OR(
-      AND(LE(Height, IntLeafConstant(timeout)), EQ(CalcBlake2b256Inst(TxOutBytes), ByteArrayLeafConstant(properHash))),
+      AND(LE(Height, IntLeafConstant(timeout)),
+          EQ(CalcBlake2b256Inst(SumBytes(MapCollection(Outputs, ExtractBytesFn), EmptyByteArray)),
+              ByteArrayLeafConstant(properHash))),
       AND(GT(Height, IntLeafConstant(timeout)), sender)
     )
 

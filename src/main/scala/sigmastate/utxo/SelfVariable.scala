@@ -2,7 +2,6 @@ package sigmastate.utxo
 
 import sigmastate.{NotReadyValueIntLeaf, _}
 import sigmastate.interpreter.{Context, ContextExtension}
-import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import sigmastate.utxo.UtxoContext.Height
 
@@ -123,7 +122,7 @@ trait Fold[IV <: Value] extends TransformerInstantiation[CollectionLeaf[IV], IV]
   val zero: IV
 
   override val cost = (input match {
-    case c: EvaluatedValue[CollectionLeaf[IntLeaf]] => c.value.map(_.cost).sum
+    case c: EvaluatedValue[CollectionLeaf[IV]] => c.value.map(_.cost).sum
     case _ => 10
   }) + zero.cost
 }
@@ -153,10 +152,13 @@ case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf
 }
 
 case class SumBytes(override val input: CollectionLeaf[ByteArrayLeaf],
-                    zero: ByteArrayLeafConstant) extends Fold[ByteArrayLeaf] with NotReadyValueByteArray {
+                    zero: ByteArrayLeaf) extends Fold[ByteArrayLeaf] with NotReadyValueByteArray {
 
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[ByteArrayLeaf]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
+    input.evaluated &&
+      input.asInstanceOf[ConcreteCollection[ByteArrayLeaf]].value.forall(_.isInstanceOf[EvaluatedValue[_]]) &&
+      zero.isInstanceOf[EvaluatedValue[ByteArrayLeaf]]
+
 
   val folder = {
     case (s, i) =>
@@ -307,8 +309,4 @@ case object Self extends NotReadyValueBoxLeaf {
   override def cost: Int = 10
 
   override type M = this.type
-}
-
-case object TxOutBytes extends NotReadyValueByteArray {
-  override val cost: Int = Cost.TxOutBytes
 }

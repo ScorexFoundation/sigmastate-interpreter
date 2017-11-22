@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Bytes
 import sigmastate._
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
@@ -22,13 +21,6 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
     case Self => BoxLeafConstant(context.self)
 
     case EmptyByteArray => ByteArrayLeafConstant(Array.emptyByteArray)
-
-    //todo: cache the bytes as a lazy val in the transaction
-    case TxOutBytes =>
-      val outBytes = Bytes.concat(context.spendingTransaction.newBoxes.map(_.bytes): _*)
-      val leaf = ByteArrayLeafConstant(outBytes)
-      cost.addCost(leaf.cost).ensuring(_.isRight)
-      leaf
 
     case e: Exists[_] if e.transformationReady => e.input match {
       case c: ConcreteCollection[_] => e.function(c)
