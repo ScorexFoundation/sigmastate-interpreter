@@ -121,7 +121,7 @@ trait Fold[IV <: Value] extends TransformerInstantiation[CollectionLeaf[IV], IV]
   val folder: (IV, IV) => IV
   val zero: IV
 
-  override val cost = (input match {
+  override lazy val cost = (input match {
     case c: EvaluatedValue[CollectionLeaf[IV]] => c.value.map(_.cost).sum
     case _ => 10
   }) + zero.cost
