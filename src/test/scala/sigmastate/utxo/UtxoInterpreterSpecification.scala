@@ -832,6 +832,27 @@ class UtxoInterpreterSpecification extends PropSpec
     //todo: finish
   }
 
+  property("forall"){
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val prop = ForAll(Outputs, EQ(ExtractAmountFn, IntLeafConstant(10)))
+
+    val newBox1 = SigmaStateBox(10, pubkey)
+    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBoxes = Seq(newBox1, newBox2)
+
+    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+
+    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    //todo: finish
+  }
+
   property("counter") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
@@ -842,6 +863,29 @@ class UtxoInterpreterSpecification extends PropSpec
                                   Plus(ExtractRegisterAsIntLeafInst(Self, R3), IntLeafConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(3)))
+    val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
+    val newBoxes = Seq(newBox1, newBox2)
+
+    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntLeafConstant(5))), BoxMetadata(5, 0))
+
+    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = s)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+  }
+
+  ignore("counter - no register in outputs") {
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val prop = Exists(Outputs, EQ(ExtractRegisterAsIntLeaf(R3),
+      Plus(ExtractRegisterAsIntLeafInst(Self, R3), IntLeafConstant(1))))
+
+    val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
     val newBoxes = Seq(newBox1, newBox2)
 

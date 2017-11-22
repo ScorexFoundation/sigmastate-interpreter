@@ -9,7 +9,6 @@ import sigmastate.utxo.UtxoContext.Height
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 
 
-
 case class BoxMetadata(creationHeight: Height, boxIndex: Short)
 
 case class BoxWithMetadata(box: SigmaStateBox, metadata: BoxMetadata)
@@ -87,6 +86,35 @@ case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ 
 
   override type M = this.type
 }
+
+case class ForAll[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ <: Value, _ <: Value]*)
+  extends TransformerInstantiation[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
+
+  override def transformationReady: Boolean =
+    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
+
+  override val cost: Int = input.cost + relations.size
+
+  //todo: cost
+  override def function(input: EvaluatedValue[CollectionLeaf[IV]]): BooleanLeaf = {
+    def rl(arg: IV) = everywherebu(rule[Transformer[IV, _ <: Value]] {
+      case t: Transformer[IV, _] => t.instantiate(arg)
+    })
+
+    AND(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[BooleanLeaf]))
+  }
+
+  override type M = this.type
+}
+
+/*
+todo: implement
+
+object Forall
+object Append
+object Slice
+object ByIndex
+*/
 
 
 trait Fold[IV <: Value] extends TransformerInstantiation[CollectionLeaf[IV], IV] with NotReadyValue[IV] {
@@ -242,16 +270,6 @@ case class ExtractRegisterAsPropLeaf(registerId: RegisterIdentifier)
 
 //todo: extract as box leaf
 
-
-/*
-todo: implement
-
-object Forall
-object FoldLeft
-object Append
-object Slice
-object ByIndex
-*/
 
 case object Self extends NotReadyValueBoxLeaf {
   override def cost: Int = 10

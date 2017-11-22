@@ -34,6 +34,11 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       case _ => ???
     }
 
+    case f: ForAll[_] if f.transformationReady => f.input match {
+      case c: ConcreteCollection[_] => f.function(c)
+      case _ => ???
+    }
+
     case m@MapCollection(coll, mapper) if m.transformationReady =>
       m.function(coll.asInstanceOf[ConcreteCollection[Value]])
 
