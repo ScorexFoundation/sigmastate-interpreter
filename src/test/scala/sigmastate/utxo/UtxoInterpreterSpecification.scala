@@ -147,8 +147,7 @@ class UtxoInterpreterSpecification extends PropSpec
     * (regular_script) ∨
     * (height > (out.height + demurrage_period ) ∧ has_output(value >= out.value − demurrage_cost, script = out.script))
     */
-  //todo: fix
-  ignore("Evaluation - Demurrage Example") {
+  property("Evaluation - Demurrage Example") {
     val demurragePeriod = 100
     val demurrageCost = 2
 

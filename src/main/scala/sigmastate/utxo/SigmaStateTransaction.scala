@@ -12,7 +12,7 @@ import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
 import scala.util.Try
 
 
-case class SigmaStateBox(override val value: Long,
+class SigmaStateBox(override val value: Long,
                          override val proposition: SigmaStateTree,
                          additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value] = Map()
                         ) extends Box[SigmaStateTree] {
@@ -42,6 +42,11 @@ case class SigmaStateBox(override val value: Long,
 }
 
 object SigmaStateBox {
+  def apply(value: Long,
+            proposition: SigmaStateTree,
+            additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value] = Map()): SigmaStateBox =
+    new SigmaStateBox(value, proposition, additionalRegisters)
+
   sealed trait RegisterIdentifier
   sealed trait NonMandatoryIdentifier extends RegisterIdentifier
 

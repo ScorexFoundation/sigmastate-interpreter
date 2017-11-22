@@ -110,7 +110,6 @@ case class ForAll[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ 
 /*
 todo: implement
 
-object Forall
 object Append
 object Slice
 object ByIndex
