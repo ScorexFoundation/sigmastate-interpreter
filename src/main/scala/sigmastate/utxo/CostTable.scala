@@ -20,7 +20,10 @@ object CostTable {
 
     val ByteArrayPerKilobyte = 200
 
-    val TripleDeclaration = 1
+    val TripleDeclaration = 3
+
+    val QuadrupleDeclaration = 4
+
 
 
     val AndDeclaration = 1

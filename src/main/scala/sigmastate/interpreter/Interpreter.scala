@@ -17,6 +17,8 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
+import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import scorex.crypto.authds.avltree.batch.{BatchAVLVerifier, Lookup}
 import sigmastate.utxo.CostTable
 
 
@@ -65,6 +67,11 @@ trait Interpreter {
       BooleanLeafConstant.fromBoolean(l.value < r.value)
     case LE(l: IntLeafConstant, r: IntLeafConstant) =>
       BooleanLeafConstant.fromBoolean(l.value <= r.value)
+
+    //todo: cost
+    case IsMember(tree: AvlTreeLeafConstant, key: ByteArrayLeafConstant, proof: ByteArrayLeafConstant) =>
+      val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
+      BooleanLeafConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
   })
 
   protected val operations: Strategy = everywherebu(rule[SigmaStateTree] {

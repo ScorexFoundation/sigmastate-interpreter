@@ -7,8 +7,9 @@ import scapi.sigma.{DiffieHellmanTupleNode, FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
-import scorex.crypto.authds.ADDigest
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.authds.{ADDigest, SerializedAdProof}
+import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
+import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.{BoxWithMetadata, Transformer, TransformerInstantiation}
 import sigmastate.utxo.CostTable.Cost
@@ -170,6 +171,15 @@ sealed trait AvlTreeLeaf extends Value {
 
 case class AvlTreeLeafConstant(value: AvlTreeData) extends AvlTreeLeaf with EvaluatedValue[AvlTreeLeaf] {
   override val cost = 50
+
+  def createVerifier(proof: SerializedAdProof) =
+    new BatchAVLVerifier[Digest32, Blake2b256Unsafe](
+      value.startingDigest,
+      proof,
+      value.keyLength,
+      value.valueLengthOpt,
+      value.maxNumOperations,
+      value.maxDeletes)
 }
 
 trait NotReadyValueAvlTree extends AvlTreeLeaf with NotReadyValue[AvlTreeLeaf]
@@ -256,6 +266,7 @@ case object CalcBlake2b256Fn extends CalcBlake2b256 {
 
   override type M = this.type
 }
+
 
 
 /**
@@ -356,6 +367,45 @@ case class NEQ[V <: Value](override val left: V, override val right: V) extends 
   def withLeft(newLeft: V): NEQ[V] = copy(left = newLeft)
 
   def withRight(newRight: V): NEQ[V] = copy(right = newRight)
+}
+
+/**
+  * A tree node with three descendants
+  */
+sealed trait Quadruple[IV1 <: Value, IV2 <: Value, IV3 <: Value, OV <: Value] extends NotReadyValue[OV] {
+  self: OV =>
+
+  val first: IV1
+  val second: IV2
+  val third: IV3
+
+  override def cost: Int = first.cost + second.cost + third.cost + Cost.QuadrupleDeclaration
+
+  def withFirst(newFirst: IV1): Quadruple[IV1, IV2, IV3, OV]
+
+  def withSecond(newSecond: IV2): Quadruple[IV1, IV2, IV3, OV]
+
+  def withThird(newThird: IV2): Quadruple[IV1, IV2, IV3, OV]
+}
+
+sealed trait Relation3[IV1 <: Value, IV2 <: Value, IV3 <: Value]
+  extends Quadruple[IV1, IV2, IV3, BooleanLeaf] with NotReadyValueBoolean
+
+/**
+  *
+  * @param first - tree
+  * @param second - key
+  * @param third - proof
+  */
+case class IsMember(override val first: AvlTreeLeaf,
+                    override val second: ByteArrayLeaf,
+                    override val third: ByteArrayLeaf) extends Relation3[AvlTreeLeaf, ByteArrayLeaf, ByteArrayLeaf] {
+
+  def withFirst(newFirst: AvlTreeLeaf): IsMember = this.copy(first = newFirst)
+
+  def withSecond(newSecond: ByteArrayLeaf): IsMember = this.copy(second = newSecond)
+
+  def withThird(newThird: ByteArrayLeaf): IsMember = this.copy(third = newThird)
 }
 
 
