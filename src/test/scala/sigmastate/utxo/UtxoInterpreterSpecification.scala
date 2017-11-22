@@ -10,6 +10,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.utils.Helpers
 import BoxHelpers.boxWithMetadata
+import sigmastate.utxo.SigmaStateBox.R3
 
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -810,28 +811,6 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage)
   }
 
-
-  ignore("map + sum + minus") {
-
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
-
-    val pubkey = prover.dlogSecrets.head.publicImage
-
-    val prop = ??? //todo: fix AND(pubkey, GT(Sum(MapCollection(Outputs, Minus(ExtractAmountFn, IntLeafConstant(5)))), IntLeafConstant(20)))
-
-    val newBox1 = SigmaStateBox(11, pubkey)
-    val newBox2 = SigmaStateBox(10, pubkey)
-    val newBoxes = Seq(newBox1, newBox2)
-
-    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
-
-    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
-
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage)
-  }
-
   property("exists"){
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
@@ -851,5 +830,28 @@ class UtxoInterpreterSpecification extends PropSpec
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
     //todo: finish
+  }
+
+  property("counter") {
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val prop = Exists(Outputs, EQ(ExtractRegisterAsIntLeaf(R3),
+                                  Plus(ExtractRegisterAsIntLeafInst(Self, R3), IntLeafConstant(1))))
+
+    val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(3)))
+    val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
+    val newBoxes = Seq(newBox1, newBox2)
+
+    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntLeafConstant(5))), BoxMetadata(5, 0))
+
+    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = s)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 }

@@ -53,7 +53,8 @@ trait TransformerInstantiation[IV <: Value, OV <: Value] extends Transformer[IV,
   }
 }
 
-case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV], mapper: Transformer[IV, OV])
+case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV],
+                                                   mapper: Transformer[IV, OV])
   extends TransformerInstantiation[CollectionLeaf[IV], CollectionLeaf[OV]] with CollectionLeaf[OV] {
 
   override def transformationReady: Boolean =
@@ -75,6 +76,7 @@ case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ 
 
   override val cost: Int = input.cost + relations.size
 
+  //todo: cost
   override def function(input: EvaluatedValue[CollectionLeaf[IV]]): BooleanLeaf = {
     def rl(arg: IV) = everywherebu(rule[Transformer[IV, _ <: Value]] {
       case t: Transformer[IV, _] => t.instantiate(arg)
@@ -191,7 +193,8 @@ abstract class ExtractRegisterAs[V <: Value] extends Extract[V] {
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[BoxLeaf]): V = box.value.box.get(registerId).get.asInstanceOf[V]
+  override def function(box: EvaluatedValue[BoxLeaf]): V =
+    box.value.box.get(registerId).get.asInstanceOf[V]
 }
 
 case class ExtractRegisterAsIntLeafInst(input: BoxLeaf, registerId: RegisterIdentifier)
