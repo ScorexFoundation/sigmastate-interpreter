@@ -118,6 +118,7 @@ case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[Byte
   }
 }
 
+
 trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[ByteArrayLeaf]
 
 
@@ -177,10 +178,10 @@ trait NotReadyValueBoxLeaf extends BoxLeaf with NotReadyValue[BoxLeaf]
 
 
 trait CollectionLeaf[V <: Value] extends Value {
-  override type WrappedValue = Seq[V]
+  override type WrappedValue = IndexedSeq[V]
 }
 
-case class ConcreteCollection[V <: Value](value: Seq[V]) extends CollectionLeaf[V] with EvaluatedValue[CollectionLeaf[V]] {
+case class ConcreteCollection[V <: Value](value: IndexedSeq[V]) extends CollectionLeaf[V] with EvaluatedValue[CollectionLeaf[V]] {
   val cost = value.size
 }
 

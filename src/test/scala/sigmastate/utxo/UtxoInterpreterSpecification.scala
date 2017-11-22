@@ -32,7 +32,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val h1 = prover1.dlogSecrets.head.publicImage.h
     val h2 = prover2.dlogSecrets.head.publicImage.h
 
-    val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
 
 
     verifier.reduceToCrypto(EQ(PropLeafConstant(DLogNode(h1)), PropLeafConstant(DLogNode(h1))), ctx)
@@ -90,9 +90,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val tx1Output2 = SigmaStateBox(1, DLogNode(projectPubKey))
 
     //normally this transaction would invalid, but we're not checking it in this test
-    val tx1 = SigmaStateTransaction(Seq(), Seq(tx1Output1, tx1Output2))
+    val tx1 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
 
-    val ctx1 = UtxoContext(currentHeight = timeout.value - 1, Seq(), spendingTransaction = tx1, self = outputWithMetadata)
+    val ctx1 = UtxoContext(currentHeight = timeout.value - 1, IndexedSeq(), spendingTransaction = tx1, self = outputWithMetadata)
 
     //project is generating a proof and it is passing verification
     val proofP = projectProver.prove(crowdFundingScript, ctx1, fakeMessage).get.proof
@@ -106,9 +106,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val tx2Output1 = SigmaStateBox(minToRaise.value - 1, DLogNode(projectPubKey))
     val tx2Output2 = SigmaStateBox(1, DLogNode(projectPubKey))
-    val tx2 = SigmaStateTransaction(Seq(), Seq(tx2Output1, tx2Output2))
+    val tx2 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx2Output1, tx2Output2))
 
-    val ctx2 = UtxoContext(currentHeight = timeout.value - 1, Seq(), spendingTransaction = tx2, self = outputWithMetadata)
+    val ctx2 = UtxoContext(currentHeight = timeout.value - 1, IndexedSeq(), spendingTransaction = tx2, self = outputWithMetadata)
 
     //project cant' generate a proof
     val proofP2Try = projectProver.prove(crowdFundingScript, ctx2, fakeMessage)
@@ -123,9 +123,9 @@ class UtxoInterpreterSpecification extends PropSpec
     //project raised enough money but too late...
     val tx3Output1 = SigmaStateBox(minToRaise.value + 1, DLogNode(projectPubKey))
     val tx3Output2 = SigmaStateBox(1, DLogNode(projectPubKey))
-    val tx3 = SigmaStateTransaction(Seq(), Seq(tx3Output1, tx3Output2))
+    val tx3 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx3Output1, tx3Output2))
 
-    val ctx3 = UtxoContext(currentHeight = timeout.value, Seq(), spendingTransaction = tx3, self = outputWithMetadata)
+    val ctx3 = UtxoContext(currentHeight = timeout.value, IndexedSeq(), spendingTransaction = tx3, self = outputWithMetadata)
 
     //project cant' generate a proof
     projectProver.prove(crowdFundingScript, ctx3, fakeMessage).isFailure shouldBe true
@@ -172,11 +172,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val outValue = 10
 
     //case 1: demurrage time hasn't come yet
-    val tx1 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue, script)))
+    val tx1 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(SigmaStateBox(outValue, script)))
 
     val ctx1 = UtxoContext(
       currentHeight = outHeight + demurragePeriod - 1,
-      Seq(),
+      IndexedSeq(),
       spendingTransaction = tx1,
       self = boxWithMetadata(outValue, script, outHeight))
 
@@ -190,7 +190,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //case 2: demurrage time has come
     val ctx2 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
-      Seq(),
+      IndexedSeq(),
       spendingTransaction = tx1,
       self = boxWithMetadata(outValue, script, outHeight))
 
@@ -199,10 +199,10 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(script, ctx2, uProof2, fakeMessage).get shouldBe true
 
     //miner can spend "demurrageCost" tokens
-    val tx3 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost, script)))
+    val tx3 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(SigmaStateBox(outValue - demurrageCost, script)))
     val ctx3 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
-      Seq(),
+      IndexedSeq(),
       spendingTransaction = tx3,
       self = boxWithMetadata(outValue, script, outHeight))
 
@@ -212,20 +212,20 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(script, ctx3, NoProof, fakeMessage).get shouldBe true
 
     //miner can't spend more
-    val tx4 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost - 1, script)))
+    val tx4 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(SigmaStateBox(outValue - demurrageCost - 1, script)))
     val ctx4 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
-      Seq(),
+      IndexedSeq(),
       spendingTransaction = tx4,
       self = boxWithMetadata(outValue, script, outHeight))
 
     verifier.verify(script, ctx4, NoProof, fakeMessage).get shouldBe false
 
     //miner can spend less
-    val tx5 = SigmaStateTransaction(Seq(), Seq(SigmaStateBox(outValue - demurrageCost + 1, script)))
+    val tx5 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(SigmaStateBox(outValue - demurrageCost + 1, script)))
     val ctx5 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
-      Seq(),
+      IndexedSeq(),
       spendingTransaction = tx5,
       self = boxWithMetadata(outValue, script, outHeight))
 
@@ -240,7 +240,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val preimage = prover.contextExtenders.head._2.value
     val prop = EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
 
-    val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -258,7 +258,7 @@ class UtxoInterpreterSpecification extends PropSpec
       CustomByteArray(Helpers.tagInt(preimage1)))
     ), ByteArrayLeafConstant(Blake2b256(preimage2 ++ preimage1)))
 
-    val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -283,7 +283,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeafConstant(r))
 
-    val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -303,7 +303,7 @@ class UtxoInterpreterSpecification extends PropSpec
       EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
     )
 
-    val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -329,7 +329,7 @@ class UtxoInterpreterSpecification extends PropSpec
       )
     )
 
-    val ctx = UtxoContext(currentHeight = 0, Seq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -381,7 +381,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //Preliminary checks:
 
     //B can't spend coins of A in chain1 (generate a valid proof)
-    val ctxf1 = UtxoContext(currentHeight = height1 + 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctxf1 = UtxoContext(currentHeight = height1 + 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
     proverB.prove(prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //A can't withdraw her coins in chain1 (generate a valid proof)
@@ -389,13 +389,13 @@ class UtxoInterpreterSpecification extends PropSpec
     proverA.prove(prop1, ctxf1, fakeMessage).isFailure shouldBe true
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
-    val ctxf2 = UtxoContext(currentHeight = height2 + 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctxf2 = UtxoContext(currentHeight = height2 + 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
     proverB.prove(prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
     //Successful run below:
 
     //A spends coins of B in chain2
-    val ctx1 = UtxoContext(currentHeight = height2 + 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx1 = UtxoContext(currentHeight = height2 + 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
     val pr = proverA.prove(prop2, ctx1, fakeMessage).get
     verifier.verify(prop2, ctx1, pr, fakeMessage).get shouldBe true
 
@@ -405,7 +405,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val proverB2 = proverB.withContextExtender(tx, bx.asInstanceOf[ByteArrayLeafConstant])
 
     //B spends coins of A in chain1 with knowledge of x
-    val ctx2 = UtxoContext(currentHeight = height1 + 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx2 = UtxoContext(currentHeight = height1 + 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
     val pr2 = proverB2.prove(prop1, ctx2, fakeMessage).get
     verifier.verify(prop1, ctx2, pr2, fakeMessage).get shouldBe true
   }
@@ -424,7 +424,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubkeyB)
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
@@ -447,7 +447,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubkeyB, pubkeyC)
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
@@ -472,7 +472,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(Seq(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
@@ -493,7 +493,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyC, pubkeyD))
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
@@ -524,7 +524,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
@@ -555,7 +555,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
@@ -586,7 +586,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
@@ -620,7 +620,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
@@ -647,14 +647,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubkeyB, GT(Height, IntLeafConstant(500)))
 
-    val ctx1 = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx1 = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
     val prA = proverA.prove(prop, ctx1, fakeMessage).get
     verifier.verify(prop, ctx1, prA, fakeMessage).get shouldBe true
     val prB = proverB.prove(prop, ctx1, fakeMessage).get
     verifier.verify(prop, ctx1, prB, fakeMessage).get shouldBe true
     proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
-    val ctx2 = UtxoContext(currentHeight = 501, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx2 = UtxoContext(currentHeight = 501, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
     val prC = proverC.prove(prop, ctx2, fakeMessage).get
     verifier.verify(prop, ctx2, prC, fakeMessage).get shouldBe true
   }
@@ -672,7 +672,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntLeafConstant(500))))
 
-    val ctx1 = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx1 = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx1, fakeMessage).get
     verifier.verify(prop, ctx1, prA, fakeMessage).get shouldBe true
@@ -681,7 +681,7 @@ class UtxoInterpreterSpecification extends PropSpec
     proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
 
-    val ctx2 = UtxoContext(currentHeight = 501, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx2 = UtxoContext(currentHeight = 501, IndexedSeq  (), spendingTransaction = null, self = fakeSelf)
 
     val prA2 = proverA.prove(prop, ctx2, fakeMessage).get
     verifier.verify(prop, ctx2, prA2, fakeMessage).get shouldBe true
@@ -704,7 +704,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = DiffieHellmanTupleNode(ci.g, ci.h, ci.u, ci.v)
     val wrongProp = DiffieHellmanTupleNode(ci.g, ci.h, ci.u, ci.u)
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
@@ -724,7 +724,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubdhB)
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
@@ -741,7 +741,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(pubkeyA, pubdhA)
 
-    val ctx = UtxoContext(currentHeight = 1, Seq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
@@ -764,20 +764,20 @@ class UtxoInterpreterSpecification extends PropSpec
     val newBox1 = SigmaStateBox(10, pubkeyB2)
     val newBox2 = SigmaStateBox(10, pubkeyA2)
 
-    val newBoxes = Seq(newBox1, newBox2)
+    val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val properBytes = Bytes.concat(newBoxes.map(_.bytes):_*)
 
     val properHash = Blake2b256(properBytes)
 
-    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
     def mixingRequestProp(sender: DLogNode, timeout: Int) = OR(
       AND(LE(Height, IntLeafConstant(timeout)), EQ(CalcBlake2b256Inst(TxOutBytes), ByteArrayLeafConstant(properHash))),
       AND(GT(Height, IntLeafConstant(timeout)), sender)
     )
 
-    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = fakeSelf)
 
     //before timeout
     val prA = proverA.prove(mixingRequestProp(pubkeyA, 100), ctx, fakeMessage).get
@@ -800,11 +800,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val newBox1 = SigmaStateBox(11, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)
-    val newBoxes = Seq(newBox1, newBox2)
+    val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage)
@@ -820,11 +820,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val newBox1 = SigmaStateBox(16, pubkey)
     val newBox2 = SigmaStateBox(15, pubkey)
-    val newBoxes = Seq(newBox1, newBox2)
+    val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
@@ -841,11 +841,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)
-    val newBoxes = Seq(newBox1, newBox2)
+    val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
@@ -863,11 +863,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(11, pubkey)
-    val newBoxes = Seq(newBox1, newBox2)
+    val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = fakeSelf)
 
     prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
@@ -883,13 +883,13 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(3)))
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
-    val newBoxes = Seq(newBox1, newBox2)
+    val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
     val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntLeafConstant(5))), BoxMetadata(5, 0))
 
-    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = s)
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = s)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
@@ -906,13 +906,13 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
-    val newBoxes = Seq(newBox1, newBox2)
+    val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
     val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntLeafConstant(5))), BoxMetadata(5, 0))
 
-    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = s)
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = s)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true

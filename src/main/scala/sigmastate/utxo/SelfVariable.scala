@@ -14,7 +14,7 @@ case class BoxMetadata(creationHeight: Height, boxIndex: Short)
 case class BoxWithMetadata(box: SigmaStateBox, metadata: BoxMetadata)
 
 case class UtxoContext(currentHeight: Height,
-                       boxesToSpend: Seq[BoxWithMetadata],
+                       boxesToSpend: IndexedSeq[BoxWithMetadata],
                        spendingTransaction: SigmaStateTransaction,
                        self: BoxWithMetadata,
                        override val extension: ContextExtension = ContextExtension(Map())
@@ -110,9 +110,9 @@ case class ForAll[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ 
 /*
 todo: implement
 
+object ByIndex
 object Append
 object Slice
-object ByIndex
 */
 
 
