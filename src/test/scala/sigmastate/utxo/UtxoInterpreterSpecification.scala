@@ -853,6 +853,26 @@ class UtxoInterpreterSpecification extends PropSpec
     //todo: finish
   }
 
+
+  property("forall - fail"){
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val prop = ForAll(Outputs, EQ(ExtractAmountFn, IntLeafConstant(10)))
+
+    val newBox1 = SigmaStateBox(10, pubkey)
+    val newBox2 = SigmaStateBox(11, pubkey)
+    val newBoxes = Seq(newBox1, newBox2)
+
+    val spendingTransaction = SigmaStateTransaction(Seq(), newBoxes)
+
+    val ctx = UtxoContext(currentHeight = 50, Seq(), spendingTransaction, self = fakeSelf)
+
+    prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+  }
+
   property("counter") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
