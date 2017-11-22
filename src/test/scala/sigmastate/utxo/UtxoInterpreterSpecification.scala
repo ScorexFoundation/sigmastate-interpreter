@@ -681,7 +681,7 @@ class UtxoInterpreterSpecification extends PropSpec
     proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
 
-    val ctx2 = UtxoContext(currentHeight = 501, IndexedSeq  (), spendingTransaction = null, self = fakeSelf)
+    val ctx2 = UtxoContext(currentHeight = 501, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
     val prA2 = proverA.prove(prop, ctx2, fakeMessage).get
     verifier.verify(prop, ctx2, prA2, fakeMessage).get shouldBe true

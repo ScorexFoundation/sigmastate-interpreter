@@ -89,11 +89,11 @@ trait NotReadyValue[V <: Value] extends Value {
 //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
 sealed trait IntLeaf extends Value {
   override type WrappedValue = Long
-
-  override def cost: Int = 1
 }
 
-case class IntLeafConstant(value: Long) extends IntLeaf with EvaluatedValue[IntLeaf]
+case class IntLeafConstant(value: Long) extends IntLeaf with EvaluatedValue[IntLeaf]{
+  override val cost = 1
+}
 
 trait NotReadyValueIntLeaf extends IntLeaf with NotReadyValue[IntLeaf]
 
@@ -101,7 +101,9 @@ case object Height extends NotReadyValueIntLeaf {
   override def cost: Int = Cost.HeightAccess
 }
 
-case object UnknownIntLeaf extends NotReadyValueIntLeaf
+case object UnknownIntLeaf extends NotReadyValueIntLeaf{
+  override val cost = 1
+}
 
 
 sealed trait ByteArrayLeaf extends Value {
@@ -121,6 +123,15 @@ case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[Byte
 
 trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[ByteArrayLeaf]
 
+case object UnknownByteArrayLeaf extends NotReadyValueByteArray {
+  override def cost: Int = 1
+}
+
+case object EmptyByteArray extends ByteArrayLeaf with NotReadyValueByteArray {
+  override def cost: Int = 1
+
+  override type M = this.type
+}
 
 //todo: merge with ByteArrayLeaf?
 

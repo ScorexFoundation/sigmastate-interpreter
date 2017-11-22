@@ -21,6 +21,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
     case Self => BoxLeafConstant(context.self)
 
+    case EmptyByteArray => ByteArrayLeafConstant(Array.emptyByteArray)
 
     //todo: cache the bytes as a lazy val in the transaction
     case TxOutBytes =>
@@ -39,13 +40,14 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       case _ => ???
     }
 
-    case m@MapCollection(coll, mapper) if m.transformationReady =>
+    case m@MapCollection(coll, _) if m.transformationReady =>
       m.function(coll.asInstanceOf[ConcreteCollection[Value]])
 
     case sum@Sum(coll) if sum.transformationReady =>
-      coll.asInstanceOf[ConcreteCollection[IntLeaf]].value.foldLeft(sum.zero: IntLeaf) { case (s: IntLeaf, i: IntLeaf) =>
-        sum.folder(s, i): IntLeaf
-      }
+      sum.function(coll.asInstanceOf[ConcreteCollection[IntLeaf]])
+
+    case sum@SumBytes(coll, _) if sum.transformationReady =>
+      sum.function(coll.asInstanceOf[ConcreteCollection[ByteArrayLeaf]])
   })
 
   def functions(cost:CostAccumulator): Strategy = everywherebu(rule[Value]{

@@ -121,9 +121,15 @@ trait Fold[IV <: Value] extends TransformerInstantiation[CollectionLeaf[IV], IV]
   val input: CollectionLeaf[IV]
   val folder: (IV, IV) => IV
   val zero: IV
+
+  override val cost = (input match {
+    case c: EvaluatedValue[CollectionLeaf[IntLeaf]] => c.value.map(_.cost).sum
+    case _ => 10
+  }) + zero.cost
 }
 
 case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
+
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IntLeaf]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
@@ -137,7 +143,34 @@ case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf
   }: (IntLeaf, IntLeaf) => IntLeaf
   val zero = IntLeafConstant(0)
 
-  override def function(input: EvaluatedValue[CollectionLeaf[IntLeaf]]): IntLeaf = ??? //todo: impl
+  override def function(input: EvaluatedValue[CollectionLeaf[IntLeaf]]): IntLeaf = {
+    input.value.foldLeft(zero: IntLeaf) {case (s: IntLeaf, i: IntLeaf) =>
+      folder(s, i): IntLeaf
+    }
+  }
+
+  override type M = this.type
+}
+
+case class SumBytes(override val input: CollectionLeaf[ByteArrayLeaf],
+                    zero: ByteArrayLeafConstant) extends Fold[ByteArrayLeaf] with NotReadyValueByteArray {
+
+  override def transformationReady: Boolean =
+    input.evaluated && input.asInstanceOf[ConcreteCollection[ByteArrayLeaf]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
+
+  val folder = {
+    case (s, i) =>
+      (s, i) match {
+        case (si: ByteArrayLeafConstant, ii: ByteArrayLeafConstant) => ByteArrayLeafConstant(si.value ++ ii.value)
+        case _ => UnknownByteArrayLeaf
+      }
+  }: (ByteArrayLeaf, ByteArrayLeaf) => ByteArrayLeaf
+
+  override def function(input: EvaluatedValue[CollectionLeaf[ByteArrayLeaf]]): ByteArrayLeaf = {
+    input.value.foldLeft(zero: ByteArrayLeaf) {case (s: ByteArrayLeaf, i: ByteArrayLeaf) =>
+      folder(s, i): ByteArrayLeaf
+    }
+  }
 
   override type M = this.type
 }
