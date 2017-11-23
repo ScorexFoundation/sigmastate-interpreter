@@ -225,7 +225,7 @@ case class ConcreteCollection[V <: Value](value: IndexedSeq[V]) extends Collecti
   val cost = value.size
 }
 
-trait LazyCollection[V <: Value] extends CollectionLeaf[V] with NotReadyValue[LazyCollection[V]]
+trait LazyCollection[V <: Value] extends CollectionLeaf[V] with NotReadyValue[CollectionLeaf[V]]
 
 
 case object Inputs extends LazyCollection[BoxLeaf] {
