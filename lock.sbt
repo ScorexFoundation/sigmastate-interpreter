@@ -13,8 +13,8 @@ dependencyOverrides in ThisBuild ++= Set(
   "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.8.9",
   "com.github.mpilquist" % "simulacrum_2.12" % "0.10.0",
   "com.github.swagger-akka-http" % "swagger-akka-http_2.12" % "0.10.0",
-  "com.google.code.findbugs" % "jsr305" % "3.0.2",
-  "com.google.guava" % "guava" % "21.0",
+  "com.google.code.findbugs" % "jsr305" % "3.0.1",
+  "com.google.guava" % "guava" % "20.0",
   "com.iheart" % "ficus_2.12" % "1.4.1",
   "com.thoughtworks.paranamer" % "paranamer" % "2.8",
   "com.typesafe" % "config" % "1.3.1",
@@ -41,13 +41,13 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.apache.commons" % "commons-lang3" % "3.2.1",
   "org.bitbucket.inkytonik.dsinfo" % "dsinfo_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.dsprofile" % "dsprofile_2.12" % "0.4.0",
-  "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.1.0",
+  "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.1.0-SNAPSHOT",
   "org.bitlet" % "weupnp" % "0.1.4",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.58",
   "org.javassist" % "javassist" % "3.21.0-GA",
   "org.reactivestreams" % "reactive-streams" % "1.0.0",
   "org.reflections" % "reflections" % "0.9.11",
-  "org.rogach" % "scallop_2.12" % "2.1.1",
+  "org.rogach" % "scallop_2.12" % "2.0.5",
   "org.rudogma" % "supertagged_2.12" % "1.3",
   "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
   "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.0.4",
@@ -68,4 +68,4 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.whispersystems" % "curve25519-java" % "0.4.1",
   "org.yaml" % "snakeyaml" % "1.17"
 )
-// LIBRARY_DEPENDENCIES_HASH 09b3e69c290747bbea8043e5c9a3cedd265a0f4d
+// LIBRARY_DEPENDENCIES_HASH d35646de414aed5e3fb129ac7f6e3d352c162b25
