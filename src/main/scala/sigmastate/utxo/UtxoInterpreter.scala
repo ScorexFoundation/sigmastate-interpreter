@@ -43,38 +43,12 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   })
 
   def functions(cost:CostAccumulator): Strategy = everywherebu(rule[Value]{
-    //todo: reduce boilerplate below
-    case ex@ExtractScriptInst(box: BoxLeafConstant) =>
-      val leaf = ex.function(box)
+    case inst: TransformerInstantiation[BoxLeaf, _]
+      if inst.input.isInstanceOf[BoxLeafConstant] =>
+
+      val leaf = inst.function(inst.input.asInstanceOf[BoxLeafConstant])
       cost.addCost(leaf.cost).ensuring(_.isRight)
       leaf
-
-    case ex@ExtractHeightInst(box: BoxLeafConstant) =>
-      ex.function(box)
-
-    case ex@ExtractAmountInst(box: BoxLeafConstant) =>
-      ex.function(box)
-
-    case ex@ExtractBytesInst(box: BoxLeafConstant) =>
-      val leaf = ex.function(box)
-      cost.addCost(leaf.cost).ensuring(_.isRight)
-      leaf
-
-    case ex@ExtractRegisterAsIntLeafInst(box: BoxLeafConstant, _) =>
-      val leaf = ex.function(box)
-      cost.addCost(leaf.cost).ensuring(_.isRight)
-      leaf
-
-    case ex@ExtractRegisterAsByteArrayLeafInst(box: BoxLeafConstant, _) =>
-      val leaf = ex.function(box)
-      cost.addCost(leaf.cost).ensuring(_.isRight)
-      leaf
-
-    case ex@ExtractRegisterAsAvlTreeLeafInst(box: BoxLeafConstant, _) =>
-      val leaf = ex.function(box)
-      cost.addCost(leaf.cost).ensuring(_.isRight)
-      leaf
-
   })
 
   def varSubst(context: UtxoContext): Strategy = everywherebu(
