@@ -11,7 +11,7 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.{EcPointFunctions, SigmaProofOfKnowledgeTree}
+import sigmastate.{EcPointFunctions, GroupElementConstant, GroupElementLeaf, SigmaProofOfKnowledgeTree}
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -24,7 +24,7 @@ object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
-  case class ProveDlog(h: GroupElement)
+  case class ProveDlog(value: GroupElementLeaf)
     extends SigmaProtocolCommonInput[DLogSigmaProtocol]
       with SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
@@ -36,6 +36,9 @@ object DLogProtocol {
     override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup
     override val soundness: Int = 256
 
+    //todo: fix, we should consider that class parameter could be not evaluated
+    lazy val h = value.asInstanceOf[GroupElementConstant].value
+
     override lazy val bytes: Array[Byte] = {
       val gw = h.generateSendableData().asInstanceOf[ECElementSendableData]
       val gwx = gw.getX.toByteArray
@@ -45,6 +48,9 @@ object DLogProtocol {
   }
 
   object ProveDlog {
+
+    def apply(h: GroupElement): ProveDlog = ProveDlog(GroupElementConstant(h))
+
     val Code: PropositionCode = 102: Byte
 
     lazy val dlogGroup: DlogGroup = new BcDlogECFp()
