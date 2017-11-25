@@ -297,4 +297,17 @@ case class ExtractRegisterAsAvlTree(registerId: RegisterIdentifier)
     ExtractRegisterAsAvlTreeLeafInst(input, registerId)
 }
 
+
+case class ExtractRegisterAsGroupElementInst(input: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[GroupElementLeaf]
+    with TransformerInstantiation[BoxLeaf, GroupElementLeaf]
+    with NotReadyValueGroupElement
+
+case class ExtractRegisterAsGroupElement(registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[GroupElementLeaf] with NotReadyValueGroupElement {
+
+  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, GroupElementLeaf] =
+    ExtractRegisterAsGroupElementInst(input, registerId)
+}
+
 //todo: extract as box leaf

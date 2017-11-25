@@ -150,7 +150,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case su: SchnorrUnproven =>
       val secretKnown = secrets
         .filter(_.isInstanceOf[DLogProverInput])
-        .exists(_.asInstanceOf[DLogProverInput].publicImage.h == su.proposition.h)
+        .exists(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
       su.copy(simulated = !secretKnown)
     case dhu: DiffieHellmanTupleUnproven =>
       val secretKnown = secrets
@@ -308,7 +308,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       assert(su.challengeOpt.isDefined)
       val privKey = secrets
         .filter(_.isInstanceOf[DLogProverInput])
-        .find(_.asInstanceOf[DLogProverInput].publicImage.h == su.proposition.h)
+        .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
         .get.asInstanceOf[DLogProverInput]
       val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, Challenge(su.challengeOpt.get))
       SchnorrNode(su.proposition, None, su.challengeOpt.get, z)

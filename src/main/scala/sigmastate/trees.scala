@@ -7,7 +7,7 @@ import scapi.sigma.DLogProtocol._
 import scapi.sigma.{DiffieHellmanTupleNode, FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
-import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
+import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
 import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
@@ -187,7 +187,7 @@ trait NotReadyValueAvlTree extends AvlTreeLeaf with NotReadyValue[AvlTreeLeaf]
 
 
 
-sealed trait GroupElementLeaf extends Value {
+sealed trait GroupElementLeaf extends Value with Proposition {
   override type WrappedValue = GroupElement
 }
 

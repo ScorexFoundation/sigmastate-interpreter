@@ -34,6 +34,8 @@ class SigmaStateBox(override val value: Long,
   val propositionBytes = proposition.toString.getBytes
 
   override def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {
+
+    //todo: serialize registers
     override def toBytes(obj: SigmaStateBox): Array[Byte] =
       Longs.toByteArray(obj.value) ++ obj.propositionBytes
 

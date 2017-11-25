@@ -10,6 +10,7 @@ import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate._
 import sigmastate.utils.Helpers
 import BoxHelpers.boxWithMetadata
+import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import sigmastate.utxo.SigmaStateBox.{R3, R4}
@@ -19,6 +20,8 @@ class UtxoInterpreterSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers {
+  
+  implicit def grElemcovert(leafConstant: GroupElementConstant): GroupElement = leafConstant.value 
 
   private val fakeSelf = boxWithMetadata(0, TrueLeaf)
 
@@ -31,16 +34,16 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val verifier = new UtxoInterpreter
 
-    val h1 = prover1.dlogSecrets.head.publicImage.h
-    val h2 = prover2.dlogSecrets.head.publicImage.h
+    val h1 = prover1.dlogSecrets.head.publicImage
+    val h2 = prover2.dlogSecrets.head.publicImage
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
 
 
-    verifier.reduceToCrypto(EQ(PropLeafConstant(ProveDlog(h1)), PropLeafConstant(ProveDlog(h1))), ctx)
+    verifier.reduceToCrypto(EQ(PropLeafConstant(h1), PropLeafConstant(h1)), ctx)
       .get.isInstanceOf[TrueLeaf.type] shouldBe true
 
-    verifier.reduceToCrypto(EQ(PropLeafConstant(ProveDlog(h1)), PropLeafConstant(ProveDlog(h2))), ctx)
+    verifier.reduceToCrypto(EQ(PropLeafConstant(h1), PropLeafConstant(h2)), ctx)
       .get.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
@@ -65,20 +68,20 @@ class UtxoInterpreterSpecification extends PropSpec
     //project's prover with his private key
     val projectProver = new UtxoProvingInterpreter
 
-    val backerPubKey = backerProver.dlogSecrets.head.publicImage.h
-    val projectPubKey = projectProver.dlogSecrets.head.publicImage.h
+    val backerPubKey = backerProver.dlogSecrets.head.publicImage
+    val projectPubKey = projectProver.dlogSecrets.head.publicImage
 
     val timeout = IntLeafConstant(100)
     val minToRaise = IntLeafConstant(1000)
 
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
-      AND(GE(Height, timeout), ProveDlog(backerPubKey)),
+      AND(GE(Height, timeout), backerPubKey),
       AND(
         Seq(
           LT(Height, timeout),
-          ProveDlog(projectPubKey),
-          Exists(Outputs, GE(ExtractAmountFn, minToRaise), EQ(ExtractScriptFn, PropLeafConstant(ProveDlog(projectPubKey))))
+          projectPubKey,
+          Exists(Outputs, GE(ExtractAmountFn, minToRaise), EQ(ExtractScriptFn, PropLeafConstant(projectPubKey)))
         )
       )
     )
@@ -88,8 +91,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
 
-    val tx1Output1 = SigmaStateBox(minToRaise.value, ProveDlog(projectPubKey))
-    val tx1Output2 = SigmaStateBox(1, ProveDlog(projectPubKey))
+    val tx1Output1 = SigmaStateBox(minToRaise.value, projectPubKey)
+    val tx1Output2 = SigmaStateBox(1, projectPubKey)
 
     //normally this transaction would invalid, but we're not checking it in this test
     val tx1 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
@@ -106,8 +109,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //Second case: height < timeout, project is NOT able to claim amount of tokens not less than required threshold
 
-    val tx2Output1 = SigmaStateBox(minToRaise.value - 1, ProveDlog(projectPubKey))
-    val tx2Output2 = SigmaStateBox(1, ProveDlog(projectPubKey))
+    val tx2Output1 = SigmaStateBox(minToRaise.value - 1, projectPubKey)
+    val tx2Output2 = SigmaStateBox(1, projectPubKey)
     val tx2 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx2Output1, tx2Output2))
 
     val ctx2 = UtxoContext(currentHeight = timeout.value - 1, IndexedSeq(), spendingTransaction = tx2, self = outputWithMetadata)
@@ -123,8 +126,8 @@ class UtxoInterpreterSpecification extends PropSpec
     //Third case: height >= timeout
 
     //project raised enough money but too late...
-    val tx3Output1 = SigmaStateBox(minToRaise.value + 1, ProveDlog(projectPubKey))
-    val tx3Output2 = SigmaStateBox(1, ProveDlog(projectPubKey))
+    val tx3Output1 = SigmaStateBox(minToRaise.value + 1, projectPubKey)
+    val tx3Output2 = SigmaStateBox(1, projectPubKey)
     val tx3 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx3Output1, tx3Output2))
 
     val ctx3 = UtxoContext(currentHeight = timeout.value, IndexedSeq(), spendingTransaction = tx3, self = outputWithMetadata)
@@ -159,14 +162,14 @@ class UtxoInterpreterSpecification extends PropSpec
     //backer's prover with his private key
     val userProver = new UtxoProvingInterpreter
 
-    val regScript = ProveDlog(userProver.dlogSecrets.head.publicImage.h)
+    val regScript = userProver.dlogSecrets.head.publicImage
 
     val script = OR(
       regScript,
       AND(
         GE(Height, Plus(ExtractHeightInst(Self), IntLeafConstant(demurragePeriod))),
         Exists(Outputs, GE(ExtractAmountFn, Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
-                        EQ(ExtractScriptFn, ExtractScriptInst(Self)))
+          EQ(ExtractScriptFn, ExtractScriptInst(Self)))
       )
     )
 
@@ -693,7 +696,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx2, prC2, fakeMessage).get shouldBe true
   }
 
-  property("DH tuple"){
+  property("DH tuple") {
     val prover = new UtxoProvingInterpreter
     val fakeProver = new UtxoProvingInterpreter
 
@@ -715,7 +718,7 @@ class UtxoInterpreterSpecification extends PropSpec
     prover.prove(wrongProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  property("DH tuple - simulation"){
+  property("DH tuple - simulation") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
 
@@ -732,7 +735,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
   }
 
-  property("DH tuple and DLOG"){
+  property("DH tuple and DLOG") {
     val proverA = new UtxoProvingInterpreter
     val proverB = new UtxoProvingInterpreter
 
@@ -768,7 +771,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val properBytes = Bytes.concat(newBoxes.map(_.bytes):_*)
+    val properBytes = Bytes.concat(newBoxes.map(_.bytes): _*)
 
     val properHash = Blake2b256(properBytes)
 
@@ -776,8 +779,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = OR(
       AND(LE(Height, IntLeafConstant(timeout)),
-          EQ(CalcBlake2b256Inst(SumBytes(MapCollection(Outputs, ExtractBytesFn), EmptyByteArray)),
-              ByteArrayLeafConstant(properHash))),
+        EQ(CalcBlake2b256Inst(SumBytes(MapCollection(Outputs, ExtractBytesFn), EmptyByteArray)),
+          ByteArrayLeafConstant(properHash))),
       AND(GT(Height, IntLeafConstant(timeout)), sender)
     )
 
@@ -814,7 +817,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage)
   }
 
-  property("exists"){
+  property("exists") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
@@ -835,7 +838,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //todo: finish
   }
 
-  property("forall"){
+  property("forall") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
@@ -857,7 +860,7 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
 
-  property("forall - fail"){
+  property("forall - fail") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
@@ -883,7 +886,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = Exists(Outputs, EQ(ExtractRegisterAsIntLeaf(R3),
-                                  Plus(ExtractRegisterAsIntLeafInst(Self, R3), IntLeafConstant(1))))
+      Plus(ExtractRegisterAsIntLeafInst(Self, R3), IntLeafConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(3)))
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
@@ -922,7 +925,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 
-  property("avl tree - simplest case"){
+  property("avl tree - simplest case") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
@@ -942,8 +945,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val treeData = new AvlTreeData(digest, 32, None)
 
     val prop = IsMember(ExtractRegisterAsAvlTreeLeafInst(Self, R3),
-                        ByteArrayLeafConstant(key),
-                        ByteArrayLeafConstant(proof))
+      ByteArrayLeafConstant(key),
+      ByteArrayLeafConstant(proof))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
@@ -958,7 +961,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 
-  property("avl tree - prover provides proof"){
+  property("avl tree - prover provides proof") {
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
 
@@ -997,5 +1000,30 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctxv = ctx.withExtension(pr.extension)
     verifier.verify(prop, ctxv, pr, fakeMessage).get shouldBe true
+  }
+
+  property("prove keys from registers") {
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey1 = prover.dlogSecrets.head.publicImage
+    val pubkey2 = prover.dlogSecrets(1).publicImage
+    val pubkey3 = prover.dlogSecrets(2).publicImage
+
+    
+    val prop = AND(ProveDlog(ExtractRegisterAsGroupElementInst(Self, R3)),
+                    ProveDlog(ExtractRegisterAsGroupElementInst(Self, R4)))
+
+
+    val newBox1 = SigmaStateBox(10, pubkey3)
+    val newBoxes = IndexedSeq(newBox1)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value)), BoxMetadata(5, 0))
+
+
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = s)
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 }
