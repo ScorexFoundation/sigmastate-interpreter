@@ -1,33 +1,13 @@
 package sigmastate.utxo
 
 import sigmastate.{NotReadyValueIntLeaf, _}
-import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
-import sigmastate.utxo.UtxoContext.Height
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 
 
-case class BoxMetadata(creationHeight: Height, boxIndex: Short)
 
-class BoxWithMetadata(val box: SigmaStateBox, val metadata: BoxMetadata)
 
-object BoxWithMetadata{
-  def apply(box: SigmaStateBox, metadata: BoxMetadata): BoxWithMetadata = new BoxWithMetadata(box, metadata)
-}
-
-case class UtxoContext(currentHeight: Height,
-                       boxesToSpend: IndexedSeq[BoxWithMetadata],
-                       spendingTransaction: SigmaStateTransaction,
-                       self: BoxWithMetadata,
-                       override val extension: ContextExtension = ContextExtension(Map())
-                      ) extends Context[UtxoContext] {
-  override def withExtension(newExtension: ContextExtension): UtxoContext = this.copy(extension = newExtension)
-}
-
-object UtxoContext {
-  type Height = Long
-}
 
 
 trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV] {
@@ -318,10 +298,3 @@ case class ExtractRegisterAsAvlTree(registerId: RegisterIdentifier)
 }
 
 //todo: extract as box leaf
-
-
-case object Self extends NotReadyValueBoxLeaf {
-  override def cost: Int = 10
-
-  override type M = this.type
-}

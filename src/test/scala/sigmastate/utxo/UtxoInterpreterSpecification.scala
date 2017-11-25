@@ -998,8 +998,4 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctxv = ctx.withExtension(pr.extension)
     verifier.verify(prop, ctxv, pr, fakeMessage).get shouldBe true
   }
-
-  property(""){
-    val prop = Exists(Outputs, EQ(ExtractScriptFn, ExtractRegisterAsPropLeafInst(Self, R3)))
-  }
 }

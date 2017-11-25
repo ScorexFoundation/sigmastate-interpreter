@@ -216,6 +216,12 @@ case class BoxLeafConstant(value: BoxWithMetadata) extends BoxLeaf with Evaluate
 
 trait NotReadyValueBoxLeaf extends BoxLeaf with NotReadyValue[BoxLeaf]
 
+case object Self extends NotReadyValueBoxLeaf {
+  override def cost: Int = 10
+
+  override type M = this.type
+}
+
 
 trait CollectionLeaf[V <: Value] extends Value {
   override type WrappedValue = IndexedSeq[V]
