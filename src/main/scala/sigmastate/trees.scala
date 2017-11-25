@@ -2,6 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 
+import edu.biu.scapi.primitives.dlog.GroupElement
 import scapi.sigma.DLogProtocol._
 import scapi.sigma.{DiffieHellmanTupleNode, FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
@@ -183,6 +184,19 @@ case class AvlTreeLeafConstant(value: AvlTreeData) extends AvlTreeLeaf with Eval
 }
 
 trait NotReadyValueAvlTree extends AvlTreeLeaf with NotReadyValue[AvlTreeLeaf]
+
+
+
+sealed trait GroupElementLeaf extends Value {
+  override type WrappedValue = GroupElement
+}
+
+case class GroupElementConstant(value: GroupElement) extends GroupElementLeaf with EvaluatedValue[GroupElementLeaf] {
+  override val cost = 10
+}
+
+trait NotReadyValueGroupElement extends GroupElementLeaf with NotReadyValue[GroupElementLeaf]
+
 
 
 sealed trait BooleanLeaf extends Value {
@@ -461,7 +475,7 @@ case class COrUnproven(override val proposition: COR,
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
-case class SchnorrUnproven(override val proposition: DLogNode,
+case class SchnorrUnproven(override val proposition: ProveDlog,
                            override val commitmentOpt: Option[FirstDLogProverMessage],
                            randomnessOpt: Option[BigInteger],
                            override val challengeOpt: Option[Array[Byte]] = None,
@@ -498,13 +512,13 @@ trait UncheckedConjecture[ST <: SigmaTree] extends UncheckedSigmaTree[ST] {
 }
 
 
-case class SchnorrNode(override val proposition: DLogNode,
+case class SchnorrNode(override val proposition: ProveDlog,
                        firstMessageOpt: Option[FirstDLogProverMessage],
                        challenge: Array[Byte],
                        secondMessage: SecondDLogProverMessage)
-  extends UncheckedSigmaTree[DLogNode] {
+  extends UncheckedSigmaTree[ProveDlog] {
 
-  override val propCode: SigmaProposition.PropositionCode = DLogNode.Code
+  override val propCode: SigmaProposition.PropositionCode = ProveDlog.Code
   override type M = this.type
 
   override def serializer: Serializer[M] = ???

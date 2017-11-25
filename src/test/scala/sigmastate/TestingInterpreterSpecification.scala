@@ -5,7 +5,7 @@ import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scapi.sigma.DLogProtocol.{DLogNode, DLogProverInput}
+import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.interpreter._
 import sigmastate.utxo.CostTable
@@ -52,16 +52,16 @@ class TestingInterpreterSpecification extends PropSpec
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
-        val dk1 = DLogNode(DLogProverInput.random()._2.h)
+        val dk1 = ProveDlog(DLogProverInput.random()._2.h)
 
         val env = TestingContext(h)
-        assert(reduceToCrypto(AND(GE(Height, IntLeafConstant(h - 1)), dk1), env).get.isInstanceOf[DLogNode])
-        assert(reduceToCrypto(AND(GE(Height, IntLeafConstant(h)), dk1), env).get.isInstanceOf[DLogNode])
+        assert(reduceToCrypto(AND(GE(Height, IntLeafConstant(h - 1)), dk1), env).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(AND(GE(Height, IntLeafConstant(h)), dk1), env).get.isInstanceOf[ProveDlog])
         assert(reduceToCrypto(AND(GE(Height, IntLeafConstant(h + 1)), dk1), env).get.isInstanceOf[FalseLeaf.type])
 
         assert(reduceToCrypto(OR(GE(Height, IntLeafConstant(h - 1)), dk1), env).get.isInstanceOf[TrueLeaf.type])
         assert(reduceToCrypto(OR(GE(Height, IntLeafConstant(h)), dk1), env).get.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(OR(GE(Height, IntLeafConstant(h + 1)), dk1), env).get.isInstanceOf[DLogNode])
+        assert(reduceToCrypto(OR(GE(Height, IntLeafConstant(h + 1)), dk1), env).get.isInstanceOf[ProveDlog])
       }
     }
   }
@@ -71,8 +71,8 @@ class TestingInterpreterSpecification extends PropSpec
 
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
-        val dk1 = DLogNode(DLogProverInput.random()._2.h)
-        val dk2 = DLogNode(DLogProverInput.random()._2.h)
+        val dk1 = ProveDlog(DLogProverInput.random()._2.h)
+        val dk2 = ProveDlog(DLogProverInput.random()._2.h)
 
         val env = TestingContext(h)
 
@@ -85,7 +85,7 @@ class TestingInterpreterSpecification extends PropSpec
         assert(reduceToCrypto(OR(
           AND(LE(Height, IntLeafConstant(h - 1)), AND(dk1, dk2)),
           AND(GT(Height, IntLeafConstant(h - 1)), dk1)
-        ), env).get.isInstanceOf[DLogNode])
+        ), env).get.isInstanceOf[ProveDlog])
 
 
         assert(reduceToCrypto(OR(
@@ -103,8 +103,8 @@ class TestingInterpreterSpecification extends PropSpec
   }
 
   property("Evaluation example #1") {
-    val dk1 = DLogNode(secrets(0).publicImage.h)
-    val dk2 = DLogNode(secrets(1).publicImage.h)
+    val dk1 = ProveDlog(secrets(0).publicImage.h)
+    val dk2 = ProveDlog(secrets(1).publicImage.h)
 
     val env1 = TestingContext(99)
     val env2 = TestingContext(101)

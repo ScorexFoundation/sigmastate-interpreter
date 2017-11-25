@@ -117,7 +117,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       res._1.isInstanceOf[BooleanLeafConstant] ||
         res._1.isInstanceOf[CAND] ||
         res._1.isInstanceOf[COR] ||
-        res._1.isInstanceOf[DLogNode] ||
+        res._1.isInstanceOf[ProveDlog] ||
         res._1.isInstanceOf[DiffieHellmanTupleNode]
     }
 
@@ -339,7 +339,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       CAndUnproven(CAND(sigmaTrees), Seq(), None, simulated = false, sigmaTrees.map(convertToUnproven))
     case COR(children) =>
       COrUnproven(COR(children), Seq(), None, simulated = false, children.map(convertToUnproven))
-    case ci: DLogNode =>
+    case ci: ProveDlog =>
       SchnorrUnproven(ci, None, None, None, simulated = false)
     case dh: DiffieHellmanTupleNode =>
       DiffieHellmanTupleUnproven(dh, None, None, None, simulated = false)

@@ -79,7 +79,7 @@ case class DiffieHellmanTupleNode(g: GroupElement, h: GroupElement, u: GroupElem
 
   override def serializer: Serializer[DiffieHellmanTupleNode] = ???
 
-  override lazy val dlogGroup: DlogGroup = DLogNode.dlogGroup
+  override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup
   override val soundness: Int = 256
 }
 

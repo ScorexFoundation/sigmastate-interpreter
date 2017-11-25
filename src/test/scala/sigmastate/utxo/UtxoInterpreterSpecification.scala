@@ -3,7 +3,7 @@ package sigmastate.utxo
 import com.google.common.primitives.Bytes
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scapi.sigma.DLogProtocol.DLogNode
+import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.DiffieHellmanTupleNode
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
@@ -37,10 +37,10 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
 
 
-    verifier.reduceToCrypto(EQ(PropLeafConstant(DLogNode(h1)), PropLeafConstant(DLogNode(h1))), ctx)
+    verifier.reduceToCrypto(EQ(PropLeafConstant(ProveDlog(h1)), PropLeafConstant(ProveDlog(h1))), ctx)
       .get.isInstanceOf[TrueLeaf.type] shouldBe true
 
-    verifier.reduceToCrypto(EQ(PropLeafConstant(DLogNode(h1)), PropLeafConstant(DLogNode(h2))), ctx)
+    verifier.reduceToCrypto(EQ(PropLeafConstant(ProveDlog(h1)), PropLeafConstant(ProveDlog(h2))), ctx)
       .get.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
@@ -73,12 +73,12 @@ class UtxoInterpreterSpecification extends PropSpec
 
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
-      AND(GE(Height, timeout), DLogNode(backerPubKey)),
+      AND(GE(Height, timeout), ProveDlog(backerPubKey)),
       AND(
         Seq(
           LT(Height, timeout),
-          DLogNode(projectPubKey),
-          Exists(Outputs, GE(ExtractAmountFn, minToRaise), EQ(ExtractScriptFn, PropLeafConstant(DLogNode(projectPubKey))))
+          ProveDlog(projectPubKey),
+          Exists(Outputs, GE(ExtractAmountFn, minToRaise), EQ(ExtractScriptFn, PropLeafConstant(ProveDlog(projectPubKey))))
         )
       )
     )
@@ -88,8 +88,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
 
-    val tx1Output1 = SigmaStateBox(minToRaise.value, DLogNode(projectPubKey))
-    val tx1Output2 = SigmaStateBox(1, DLogNode(projectPubKey))
+    val tx1Output1 = SigmaStateBox(minToRaise.value, ProveDlog(projectPubKey))
+    val tx1Output2 = SigmaStateBox(1, ProveDlog(projectPubKey))
 
     //normally this transaction would invalid, but we're not checking it in this test
     val tx1 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
@@ -106,8 +106,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //Second case: height < timeout, project is NOT able to claim amount of tokens not less than required threshold
 
-    val tx2Output1 = SigmaStateBox(minToRaise.value - 1, DLogNode(projectPubKey))
-    val tx2Output2 = SigmaStateBox(1, DLogNode(projectPubKey))
+    val tx2Output1 = SigmaStateBox(minToRaise.value - 1, ProveDlog(projectPubKey))
+    val tx2Output2 = SigmaStateBox(1, ProveDlog(projectPubKey))
     val tx2 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx2Output1, tx2Output2))
 
     val ctx2 = UtxoContext(currentHeight = timeout.value - 1, IndexedSeq(), spendingTransaction = tx2, self = outputWithMetadata)
@@ -123,8 +123,8 @@ class UtxoInterpreterSpecification extends PropSpec
     //Third case: height >= timeout
 
     //project raised enough money but too late...
-    val tx3Output1 = SigmaStateBox(minToRaise.value + 1, DLogNode(projectPubKey))
-    val tx3Output2 = SigmaStateBox(1, DLogNode(projectPubKey))
+    val tx3Output1 = SigmaStateBox(minToRaise.value + 1, ProveDlog(projectPubKey))
+    val tx3Output2 = SigmaStateBox(1, ProveDlog(projectPubKey))
     val tx3 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx3Output1, tx3Output2))
 
     val ctx3 = UtxoContext(currentHeight = timeout.value, IndexedSeq(), spendingTransaction = tx3, self = outputWithMetadata)
@@ -159,7 +159,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //backer's prover with his private key
     val userProver = new UtxoProvingInterpreter
 
-    val regScript = DLogNode(userProver.dlogSecrets.head.publicImage.h)
+    val regScript = ProveDlog(userProver.dlogSecrets.head.publicImage.h)
 
     val script = OR(
       regScript,
@@ -774,7 +774,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    def mixingRequestProp(sender: DLogNode, timeout: Int) = OR(
+    def mixingRequestProp(sender: ProveDlog, timeout: Int) = OR(
       AND(LE(Height, IntLeafConstant(timeout)),
           EQ(CalcBlake2b256Inst(SumBytes(MapCollection(Outputs, ExtractBytesFn), EmptyByteArray)),
               ByteArrayLeafConstant(properHash))),

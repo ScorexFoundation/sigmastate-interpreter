@@ -11,7 +11,7 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.{EcPointFunctions, NotReadyValueBoolean, SigmaProofOfKnowledgeTree}
+import sigmastate.{EcPointFunctions, SigmaProofOfKnowledgeTree}
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -24,16 +24,16 @@ object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
-  case class DLogNode(h: GroupElement)
+  case class ProveDlog(h: GroupElement)
     extends SigmaProtocolCommonInput[DLogSigmaProtocol]
       with SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
     override val cost: Int = Cost.Dlog
 
     override type M = this.type
-    override val code: PropositionCode = DLogNode.Code
+    override val code: PropositionCode = ProveDlog.Code
 
-    override lazy val dlogGroup: DlogGroup = DLogNode.dlogGroup
+    override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup
     override val soundness: Int = 256
 
     override lazy val bytes: Array[Byte] = {
@@ -44,16 +44,16 @@ object DLogProtocol {
     }
   }
 
-  object DLogNode {
+  object ProveDlog {
     val Code: PropositionCode = 102: Byte
 
     lazy val dlogGroup: DlogGroup = new BcDlogECFp()
 
-    def fromBytes(bytes: Array[Byte]): DLogNode = {
+    def fromBytes(bytes: Array[Byte]): ProveDlog = {
       val (x, y) = EcPointFunctions.decodeBigIntPair(bytes).get
       val xy = new ECElementSendableData(x, y)
       val h = dlogGroup.reconstructElement(true, xy)
-      DLogNode(h)
+      ProveDlog(h)
     }
   }
 
@@ -62,13 +62,13 @@ object DLogProtocol {
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol] {
 
     override type S = DLogProverInput
-    override type PK = DLogNode
+    override type PK = ProveDlog
 
     override def companion: SecretCompanion[DLogProverInput] = ???
 
-    override lazy val publicImage: DLogNode = {
+    override lazy val publicImage: ProveDlog = {
       val g = dlogGroup.getGenerator
-      DLogNode(dlogGroup.exponentiate(g, w))
+      ProveDlog(dlogGroup.exponentiate(g, w))
     }
 
     override type M = DLogProverInput
@@ -77,13 +77,13 @@ object DLogProtocol {
   }
 
   object DLogProverInput {
-    def random()(implicit dlog: DlogGroup, soundness: Int): (DLogProverInput, DLogNode) = {
+    def random()(implicit dlog: DlogGroup, soundness: Int): (DLogProverInput, ProveDlog) = {
       val g = dlog.getGenerator
       val qMinusOne = dlog.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
       val h = dlog.exponentiate(g, w)
 
-      DLogProverInput(w) -> DLogNode(h)
+      DLogProverInput(w) -> ProveDlog(h)
     }
   }
 
@@ -105,8 +105,8 @@ object DLogProtocol {
     override def bytes: Array[Byte] = z.toByteArray
   }
 
-  class DLogInteractiveProver(override val publicInput: DLogNode, override val privateInputOpt: Option[DLogProverInput])
-    extends InteractiveProver[DLogSigmaProtocol, DLogNode, DLogProverInput] {
+  class DLogInteractiveProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
+    extends InteractiveProver[DLogSigmaProtocol, ProveDlog, DLogProverInput] {
 
     lazy val group: DlogGroup = publicInput.dlogGroup
 
@@ -152,7 +152,7 @@ object DLogProtocol {
   }
 
   object DLogInteractiveProver {
-    def firstMessage(publicInput: DLogNode): (BigInteger, FirstDLogProverMessage) = {
+    def firstMessage(publicInput: ProveDlog): (BigInteger, FirstDLogProverMessage) = {
       val group = publicInput.dlogGroup
       val qMinusOne = group.getOrder.subtract(BigInteger.ONE)
       val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
@@ -169,14 +169,14 @@ object DLogProtocol {
     }
   }
 
-  case class DLogActorProver(override val publicInput: DLogNode, override val privateInputOpt: Option[DLogProverInput])
-    extends DLogInteractiveProver(publicInput, privateInputOpt) with ActorProver[DLogSigmaProtocol, DLogNode, DLogProverInput]
+  case class DLogActorProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
+    extends DLogInteractiveProver(publicInput, privateInputOpt) with ActorProver[DLogSigmaProtocol, ProveDlog, DLogProverInput]
 
-  case class DLogTranscript(override val x: DLogNode,
+  case class DLogTranscript(override val x: ProveDlog,
                             override val a: FirstDLogProverMessage,
                             override val e: Challenge,
                             override val z: SecondDLogProverMessage)
-    extends SigmaProtocolTranscript[DLogSigmaProtocol, DLogNode] {
+    extends SigmaProtocolTranscript[DLogSigmaProtocol, ProveDlog] {
 
 
     override lazy val accepted: Boolean = Try {
@@ -190,14 +190,14 @@ object DLogProtocol {
     }.getOrElse(false)
   }
 
-  abstract class DLogVerifier[DP <: DLogInteractiveProver](override val publicInput: DLogNode, override val prover: DP)
-    extends Verifier[DLogSigmaProtocol, DLogNode] {
+  abstract class DLogVerifier[DP <: DLogInteractiveProver](override val publicInput: ProveDlog, override val prover: DP)
+    extends Verifier[DLogSigmaProtocol, ProveDlog] {
 
     override type P = DP
     override type ST = DLogTranscript
   }
 
-  case class DLogActorVerifier(override val publicInput: DLogNode, override val prover: DLogActorProver)
+  case class DLogActorVerifier(override val publicInput: ProveDlog, override val prover: DLogActorProver)
     extends DLogVerifier[DLogActorProver](publicInput, prover) {
 
     override def transcript: Future[Option[DLogTranscript]] = ???
