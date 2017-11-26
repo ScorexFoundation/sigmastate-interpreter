@@ -4,7 +4,7 @@ import com.google.common.primitives.Bytes
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.DiffieHellmanTupleNode
+import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate._
@@ -706,8 +706,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ci = secret.commonInput
 
-    val prop = DiffieHellmanTupleNode(ci.g, ci.h, ci.u, ci.v)
-    val wrongProp = DiffieHellmanTupleNode(ci.g, ci.h, ci.u, ci.u)
+    val prop = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)
+    val wrongProp = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.u)
 
     val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 

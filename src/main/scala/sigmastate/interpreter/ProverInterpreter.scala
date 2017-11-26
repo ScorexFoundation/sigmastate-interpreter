@@ -10,7 +10,7 @@ import sigmastate.utils.Helpers
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import scapi.sigma.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleNode, DiffieHellmanTupleProverInput}
+import scapi.sigma.{DiffieHellmanTupleInteractiveProver, ProveDiffieHellmanTuple, DiffieHellmanTupleProverInput}
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 
@@ -118,7 +118,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         res._1.isInstanceOf[CAND] ||
         res._1.isInstanceOf[COR] ||
         res._1.isInstanceOf[ProveDlog] ||
-        res._1.isInstanceOf[DiffieHellmanTupleNode]
+        res._1.isInstanceOf[ProveDiffieHellmanTuple]
     }
 
 
@@ -341,7 +341,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       COrUnproven(COR(children), Seq(), None, simulated = false, children.map(convertToUnproven))
     case ci: ProveDlog =>
       SchnorrUnproven(ci, None, None, None, simulated = false)
-    case dh: DiffieHellmanTupleNode =>
+    case dh: ProveDiffieHellmanTuple =>
       DiffieHellmanTupleUnproven(dh, None, None, None, simulated = false)
   }
 

@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scapi.sigma.DLogProtocol._
-import scapi.sigma.{DiffieHellmanTupleNode, FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage}
+import scapi.sigma.{ProveDiffieHellmanTuple, FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
@@ -486,7 +486,7 @@ case class SchnorrUnproven(override val proposition: ProveDlog,
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
-case class DiffieHellmanTupleUnproven(override val proposition: DiffieHellmanTupleNode,
+case class DiffieHellmanTupleUnproven(override val proposition: ProveDiffieHellmanTuple,
                                       override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Array[Byte]] = None,
@@ -524,13 +524,13 @@ case class SchnorrNode(override val proposition: ProveDlog,
   override def serializer: Serializer[M] = ???
 }
 
-case class DiffieHellmanTupleUncheckedNode(override val proposition: DiffieHellmanTupleNode,
+case class DiffieHellmanTupleUncheckedNode(override val proposition: ProveDiffieHellmanTuple,
                                            firstMessageOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                            challenge: Array[Byte],
                                            secondMessage: SecondDiffieHellmanTupleProverMessage)
-  extends UncheckedSigmaTree[DiffieHellmanTupleNode] {
+  extends UncheckedSigmaTree[ProveDiffieHellmanTuple] {
 
-  override val propCode: SigmaProposition.PropositionCode = DiffieHellmanTupleNode.Code
+  override val propCode: SigmaProposition.PropositionCode = ProveDiffieHellmanTuple.Code
   override type M = DiffieHellmanTupleUncheckedNode
 
   override def serializer: Serializer[M] = ???
