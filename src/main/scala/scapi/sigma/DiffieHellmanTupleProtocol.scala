@@ -9,7 +9,7 @@ import scapi.sigma.DLogProtocol._
 import scapi.sigma.rework._
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
-import sigmastate.SigmaProofOfKnowledgeTree
+import sigmastate.{GroupElementConstant, GroupElementLeaf, SigmaProofOfKnowledgeTree}
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 
@@ -42,7 +42,9 @@ object DiffieHellmanTupleProverInput {
     val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
     val u = dlog.exponentiate(g, w)
     val v = dlog.exponentiate(h, w)
-    val ci = ProveDiffieHellmanTuple(g, h, u, v)
+    val ci = ProveDiffieHellmanTuple(
+      GroupElementConstant(g), GroupElementConstant(h),
+      GroupElementConstant(u), GroupElementConstant(v))
     DiffieHellmanTupleProverInput(w, ci)
   }
 }
@@ -68,7 +70,10 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger)
 }
 
 // Common input: (g,h,u,v)
-case class ProveDiffieHellmanTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement)
+case class ProveDiffieHellmanTuple(gv: GroupElementLeaf,
+                                   hv: GroupElementLeaf,
+                                   uv: GroupElementLeaf,
+                                   vv: GroupElementLeaf)
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
 
@@ -81,6 +86,13 @@ case class ProveDiffieHellmanTuple(g: GroupElement, h: GroupElement, u: GroupEle
 
   override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup
   override val soundness: Int = 256
+
+
+  //todo: fix code below , we should consider that class parameters could be not evaluated
+  lazy val g: GroupElement = gv.asInstanceOf[GroupElementConstant].value
+  lazy val h: GroupElement = hv.asInstanceOf[GroupElementConstant].value
+  lazy val u: GroupElement = uv.asInstanceOf[GroupElementConstant].value
+  lazy val v: GroupElement = vv.asInstanceOf[GroupElementConstant].value
 }
 
 object ProveDiffieHellmanTuple {
