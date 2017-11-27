@@ -27,7 +27,7 @@ trait TransformerInstantiation[IV <: Value, OV <: Value] extends Transformer[IV,
 
   override val abstractTransformation = false
 
-  override def instantiate(input: IV) = this
+  override def instantiate(input: IV): TransformerInstantiation[IV, OV] with OV = this
 
   def evaluate(): OV = input match {
     case ev: EvaluatedValue[IV] => function(ev)
