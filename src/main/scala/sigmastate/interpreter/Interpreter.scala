@@ -88,28 +88,8 @@ trait Interpreter {
 
   protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {
 
-    case AND(children) =>
-
-      @tailrec
-      def iterChildren(children: Seq[BooleanLeaf],
-                       currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
-        if (children.isEmpty) currentBuffer else children.head match {
-          case FalseLeaf => mutable.Buffer(FalseLeaf)
-          case TrueLeaf => iterChildren(children.tail, currentBuffer)
-          case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
-        }
-      }
-
-      val reduced = iterChildren(children, mutable.Buffer())
-
-      reduced.size match {
-        case i: Int if i == 0 => TrueLeaf
-        case i: Int if i == 1 => reduced.head
-        case _ =>
-          if (reduced.forall(_.isInstanceOf[SigmaTree]))
-            CAND(reduced.map(_.asInstanceOf[SigmaTree]))
-          else AND(reduced)
-      }
+    case a: AND if a.transformationReady =>
+      a.function(a.input.asInstanceOf[ConcreteCollection[BooleanLeaf]])
 
 
     case OR(children) =>
@@ -132,6 +112,14 @@ trait Interpreter {
           if (reduced.forall(_.isInstanceOf[SigmaTree])) COR(reduced.map(_.asInstanceOf[SigmaTree]))
           else OR(reduced)
       }
+  })
+
+  def reduceNew(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
+    require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
+
+    val additionalCost = CostAccumulator(exp.cost, maxCost)
+
+    ???
   })
 
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({

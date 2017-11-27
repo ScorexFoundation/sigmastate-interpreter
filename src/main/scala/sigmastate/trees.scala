@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scapi.sigma.DLogProtocol._
-import scapi.sigma.{ProveDiffieHellmanTuple, FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage}
+import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
@@ -14,6 +14,9 @@ import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.{BoxWithMetadata, Transformer, TransformerInstantiation}
 import sigmastate.utxo.CostTable.Cost
+
+import scala.annotation.tailrec
+import scala.collection.mutable
 
 
 sealed trait SigmaStateTree extends Product with SigmaStateProposition {
@@ -61,11 +64,47 @@ object OR {
   def apply(arg1: BooleanLeaf, arg2: BooleanLeaf, arg3: BooleanLeaf): OR = apply(Seq(arg1, arg2, arg3))
 }
 
-case class AND(children: Seq[BooleanLeaf]) extends NotReadyValueBoolean {
-  override def cost: Int = children.map(_.cost).sum + children.length * Cost.AndPerChild + Cost.AndDeclaration
+case class AND(input: CollectionLeaf[BooleanLeaf])
+  extends TransformerInstantiation[CollectionLeaf[BooleanLeaf], BooleanLeaf] with NotReadyValueBoolean {
+
+  override def cost: Int = input match {
+    case c: EvaluatedValue[CollectionLeaf[BooleanLeaf]] =>
+      c.value.map(_.cost).sum + c.value.length * Cost.AndPerChild + Cost.AndDeclaration
+    case _ => Cost.AndDeclaration
+  }
+
+  //todo: reduce such boilerplate around AND/OR, folders, map etc
+  override def transformationReady: Boolean =
+    input.evaluated && input.asInstanceOf[ConcreteCollection[BooleanLeaf]].value.forall(_.evaluated)
+
+  override def function(input: EvaluatedValue[CollectionLeaf[BooleanLeaf]]) = {
+    @tailrec
+    def iterChildren(children: Seq[BooleanLeaf],
+                     currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
+      if (children.isEmpty) currentBuffer else children.head match {
+        case FalseLeaf => mutable.Buffer(FalseLeaf)
+        case TrueLeaf => iterChildren(children.tail, currentBuffer)
+        case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
+      }
+    }
+
+    val reduced = iterChildren(input.value, mutable.Buffer())
+
+    reduced.size match {
+      case i: Int if i == 0 => TrueLeaf
+      case i: Int if i == 1 => reduced.head
+      case _ =>
+        if (reduced.forall(_.isInstanceOf[SigmaTree]))
+          CAND(reduced.map(_.asInstanceOf[SigmaTree]))
+        else AND(reduced)
+    }
+  }
+
+  override type M = this.type
 }
 
 object AND {
+  def apply(children: Seq[BooleanLeaf]): AND = new AND(ConcreteCollection(children.toIndexedSeq))
   def apply(left: BooleanLeaf, right: BooleanLeaf): AND = apply(Seq(left, right))
 }
 
@@ -273,7 +312,6 @@ case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArra
 sealed trait CalcBlake2b256 extends Transformer[ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
   override def function(bal: EvaluatedValue[ByteArrayLeaf]): ByteArrayLeaf =
     ByteArrayLeafConstant(Blake2b256(bal.value))
-
 }
 
 case class CalcBlake2b256Inst(input: ByteArrayLeaf)
