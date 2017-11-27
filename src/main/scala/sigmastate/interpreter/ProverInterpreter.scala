@@ -114,13 +114,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         val reduced = reduceToCrypto(candidateProp, context.withExtension(extension)).get
         (reduced, extension)
     }).ensuring { res =>
-      res._1.isInstanceOf[BooleanLeafConstant] ||
-        res._1.isInstanceOf[CAND] ||
-        res._1.isInstanceOf[COR] ||
-        res._1.isInstanceOf[ProveDlog] ||
-        res._1.isInstanceOf[ProveDiffieHellmanTuple]
+      res._1.isInstanceOf[BooleanLeaf] && res._1.asInstanceOf[BooleanLeaf].evaluated
     }
-
 
     ProverResult(cProp match {
       case tree: BooleanLeafConstant =>

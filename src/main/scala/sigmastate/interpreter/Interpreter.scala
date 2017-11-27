@@ -167,9 +167,10 @@ trait Interpreter {
              message: Array[Byte]): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
     cProp match {
+
       case TrueLeaf => true
       case FalseLeaf => false
-      case _ =>
+      case b: BooleanLeaf if b.evaluated =>
         proof match {
           case NoProof => false
           case sp: UncheckedSigmaTree[_] =>
@@ -185,6 +186,7 @@ trait Interpreter {
             val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
             challenge.sameElements(expectedChallenge)
         }
+      case other: SigmaStateTree => false
     }
   }
 
