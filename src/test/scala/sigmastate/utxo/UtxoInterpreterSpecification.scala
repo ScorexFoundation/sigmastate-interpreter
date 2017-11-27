@@ -864,7 +864,6 @@ class UtxoInterpreterSpecification extends PropSpec
 
   property("forall - fail") {
     val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 

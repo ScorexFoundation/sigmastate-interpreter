@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
-import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
+import edu.biu.scapi.primitives.dlog.DlogGroup
+import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
 import scapi.sigma.DiffieHellmanTupleProverInput
 import scapi.sigma.rework.SigmaProtocolPrivateInput
 import scorex.utils.Random
@@ -11,7 +12,7 @@ import sigmastate.utils.Helpers
 class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
   extends UtxoInterpreter(maxCost) with ProverInterpreter {
 
-  private implicit val dlog = ProveDlog.dlogGroup
+  private implicit val dlog: DlogGroup = ProveDlog.dlogGroup
   private implicit val soundness: Int = 256
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_]] = {
