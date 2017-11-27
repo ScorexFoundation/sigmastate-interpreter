@@ -9,8 +9,6 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.utils.Helpers
 
-import scala.annotation.tailrec
-import scala.collection.mutable
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
