@@ -22,7 +22,7 @@ sealed trait SigmaStateTree extends Product with SigmaStateProposition {
 
 trait StateTree extends SigmaStateTree with StateProposition
 
-trait SigmaTree extends SigmaStateTree with SigmaProposition with NotReadyValueBoolean
+trait SigmaTree extends SigmaStateTree with SigmaProposition with FakeBoolean
 
 case class CAND(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
   override def cost: Int = sigmaTrees.map(_.cost).sum + sigmaTrees.length * Cost.AndPerChild + Cost.AndDeclaration
@@ -219,6 +219,9 @@ case object FalseLeaf extends BooleanLeafConstant(false) {
 
 trait NotReadyValueBoolean extends BooleanLeaf with NotReadyValue[BooleanLeaf]
 
+trait FakeBoolean extends BooleanLeaf with NotReadyValue[BooleanLeaf]{
+  override lazy val evaluated = true
+}
 
 sealed trait BoxLeaf extends Value {
   override type WrappedValue = BoxWithMetadata
