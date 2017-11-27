@@ -53,12 +53,50 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
   extends SigmaTree with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
 
 
-case class OR(children: Seq[BooleanLeaf]) extends NotReadyValueBoolean {
-  override def cost: Int = children.map(_.cost).sum + children.length * Cost.OrPerChild + Cost.OrDeclaration
+//todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
+case class OR(input: CollectionLeaf[BooleanLeaf])
+  extends TransformerInstantiation[CollectionLeaf[BooleanLeaf], BooleanLeaf] with NotReadyValueBoolean {
+
+
+  override def cost: Int = input match {
+    case c: EvaluatedValue[CollectionLeaf[BooleanLeaf]] =>
+      c.value.map(_.cost).sum + c.value.length * Cost.AndPerChild + Cost.AndDeclaration
+    case _ => Cost.AndDeclaration
+  }
+
+  //todo: reduce such boilerplate around AND/OR, folders, map etc
+  override def transformationReady: Boolean =
+    input.evaluated && input.asInstanceOf[ConcreteCollection[BooleanLeaf]].value.forall(_.evaluated)
+
+  override def function(input: EvaluatedValue[CollectionLeaf[BooleanLeaf]]) = {
+    @tailrec
+    def iterChildren(children: Seq[BooleanLeaf],
+                     currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
+      if (children.isEmpty) currentBuffer else children.head match {
+        case TrueLeaf => mutable.Buffer(TrueLeaf)
+        case FalseLeaf => iterChildren(children.tail, currentBuffer)
+        case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
+      }
+    }
+
+    val reduced = iterChildren(input.value, mutable.Buffer())
+
+    reduced.size match {
+      case i: Int if i == 0 => FalseLeaf
+      case i: Int if i == 1 => reduced.head
+      case _ =>
+        if (reduced.forall(_.isInstanceOf[SigmaTree])) COR(reduced.map(_.asInstanceOf[SigmaTree]))
+        else OR(reduced)
+    }
+  }
+
+  override type M = this.type
 }
 
 
 object OR {
+  def apply(children: Seq[BooleanLeaf]): OR = OR(ConcreteCollection(children.toIndexedSeq))
+
   def apply(left: BooleanLeaf, right: BooleanLeaf): OR = apply(Seq(left, right))
 
   def apply(arg1: BooleanLeaf, arg2: BooleanLeaf, arg3: BooleanLeaf): OR = apply(Seq(arg1, arg2, arg3))

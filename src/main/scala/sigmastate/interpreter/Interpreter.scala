@@ -88,30 +88,11 @@ trait Interpreter {
 
   protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {
 
-    case a: AND if a.transformationReady =>
-      a.function(a.input.asInstanceOf[ConcreteCollection[BooleanLeaf]])
+    case a@AND(children) if a.transformationReady =>
+      a.function(children.asInstanceOf[ConcreteCollection[BooleanLeaf]])
 
-
-    case OR(children) =>
-      @tailrec
-      def iterChildren(children: Seq[BooleanLeaf],
-                       currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
-        if (children.isEmpty) currentBuffer else children.head match {
-          case TrueLeaf => mutable.Buffer(TrueLeaf)
-          case FalseLeaf => iterChildren(children.tail, currentBuffer)
-          case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
-        }
-      }
-
-      val reduced = iterChildren(children, mutable.Buffer())
-
-      reduced.size match {
-        case i: Int if i == 0 => FalseLeaf
-        case i: Int if i == 1 => reduced.head
-        case _ =>
-          if (reduced.forall(_.isInstanceOf[SigmaTree])) COR(reduced.map(_.asInstanceOf[SigmaTree]))
-          else OR(reduced)
-      }
+    case o@OR(children) if o.transformationReady =>
+      o.function(children.asInstanceOf[ConcreteCollection[BooleanLeaf]])
   })
 
   def reduceNew(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
