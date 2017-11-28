@@ -153,7 +153,7 @@ trait Interpreter {
             val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
             challenge.sameElements(expectedChallenge)
         }
-      case other: SigmaStateTree => false
+      case _: SigmaStateTree => false
     }
   }
 

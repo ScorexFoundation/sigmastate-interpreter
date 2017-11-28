@@ -373,14 +373,11 @@ case object CalcBlake2b256Fn extends CalcBlake2b256 {
   */
 sealed trait Triple[LIV <: Value, RIV <: Value, OV <: Value] extends NotReadyValue[OV] {
   self: OV =>
+
   val left: LIV
   val right: RIV
 
   override def cost: Int = left.cost + right.cost + Cost.TripleDeclaration
-
-  def withLeft(newLeft: LIV): Triple[LIV, RIV, OV]
-
-  def withRight(newRight: RIV): Triple[LIV, RIV, OV]
 }
 
 
@@ -390,83 +387,38 @@ sealed trait TwoArgumentsOperation[LIV <: Value, RIV <: Value, OV <: Value] exte
 
 case class Plus(override val left: IntLeaf,
                 override val right: IntLeaf)
-  extends TwoArgumentsOperation[IntLeaf, IntLeaf, IntLeaf] with NotReadyValueIntLeaf {
-
-  def withLeft(newLeft: IntLeaf): Plus = copy(left = newLeft)
-
-  def withRight(newRight: IntLeaf): Plus = copy(right = newRight)
-}
+  extends TwoArgumentsOperation[IntLeaf, IntLeaf, IntLeaf] with NotReadyValueIntLeaf
 
 case class Minus(override val left: IntLeaf,
                  override val right: IntLeaf)
-  extends TwoArgumentsOperation[IntLeaf, IntLeaf, IntLeaf] with NotReadyValueIntLeaf {
-
-  def withLeft(newLeft: IntLeaf): Minus = copy(left = newLeft)
-
-  def withRight(newRight: IntLeaf): Minus = copy(right = newRight)
-}
+  extends TwoArgumentsOperation[IntLeaf, IntLeaf, IntLeaf] with NotReadyValueIntLeaf
 
 case class Xor(override val left: ByteArrayLeaf,
                override val right: ByteArrayLeaf)
-  extends TwoArgumentsOperation[ByteArrayLeaf, ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
-
-  def withLeft(newLeft: ByteArrayLeaf): Xor = copy(left = newLeft)
-
-  def withRight(newRight: ByteArrayLeaf): Xor = copy(right = newRight)
-}
+  extends TwoArgumentsOperation[ByteArrayLeaf, ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray
 
 case class Append(override val left: ByteArrayLeaf,
                   override val right: ByteArrayLeaf)
-  extends TwoArgumentsOperation[ByteArrayLeaf, ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
-
-  def withLeft(newLeft: ByteArrayLeaf): Append = copy(left = newLeft)
-
-  def withRight(newRight: ByteArrayLeaf): Append = copy(right = newRight)
-}
+  extends TwoArgumentsOperation[ByteArrayLeaf, ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray
 
 sealed trait Relation[LIV <: Value, RIV <: Value] extends Triple[LIV, RIV, BooleanLeaf] with NotReadyValueBoolean
 
 case class LT(override val left: IntLeaf,
-              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf] {
-
-  def withLeft(newLeft: IntLeaf): LT = copy(left = newLeft)
-
-  def withRight(newRight: IntLeaf): LT = copy(right = newRight)
-}
+              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf]
 
 case class LE(override val left: IntLeaf,
-              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf] {
-  def withLeft(newLeft: IntLeaf): LE = copy(left = newLeft)
-
-  def withRight(newRight: IntLeaf): LE = copy(right = newRight)
-}
+              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf]
 
 case class GT(override val left: IntLeaf,
-              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf] {
-  def withLeft(newLeft: IntLeaf): GT = copy(left = newLeft)
-
-  def withRight(newRight: IntLeaf): GT = copy(right = newRight)
-}
+              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf]
 
 case class GE(override val left: IntLeaf,
-              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf] {
-  def withLeft(newLeft: IntLeaf): GE = copy(left = newLeft)
-
-  def withRight(newRight: IntLeaf): GE = copy(right = newRight)
-}
+              override val right: IntLeaf) extends Relation[IntLeaf, IntLeaf]
 
 case class EQ[V <: Value](override val left: V,
-                          override val right: V) extends Relation[V, V] {
-  def withLeft(newLeft: V): EQ[V] = copy(left = newLeft)
+                          override val right: V) extends Relation[V, V]
 
-  def withRight(newRight: V): EQ[V] = copy(right = newRight)
-}
-
-case class NEQ[V <: Value](override val left: V, override val right: V) extends Relation[V, V] {
-  def withLeft(newLeft: V): NEQ[V] = copy(left = newLeft)
-
-  def withRight(newRight: V): NEQ[V] = copy(right = newRight)
-}
+case class NEQ[V <: Value](override val left: V, override val right: V) extends Relation[V, V]
 
 /**
   * A tree node with three descendants
@@ -479,12 +431,6 @@ sealed trait Quadruple[IV1 <: Value, IV2 <: Value, IV3 <: Value, OV <: Value] ex
   val third: IV3
 
   override def cost: Int = first.cost + second.cost + third.cost + Cost.QuadrupleDeclaration
-
-  def withFirst(newFirst: IV1): Quadruple[IV1, IV2, IV3, OV]
-
-  def withSecond(newSecond: IV2): Quadruple[IV1, IV2, IV3, OV]
-
-  def withThird(newThird: IV2): Quadruple[IV1, IV2, IV3, OV]
 }
 
 sealed trait Relation3[IV1 <: Value, IV2 <: Value, IV3 <: Value]
@@ -498,15 +444,7 @@ sealed trait Relation3[IV1 <: Value, IV2 <: Value, IV3 <: Value]
   */
 case class IsMember(override val first: AvlTreeLeaf,
                     override val second: ByteArrayLeaf,
-                    override val third: ByteArrayLeaf) extends Relation3[AvlTreeLeaf, ByteArrayLeaf, ByteArrayLeaf] {
-
-  def withFirst(newFirst: AvlTreeLeaf): IsMember = this.copy(first = newFirst)
-
-  def withSecond(newSecond: ByteArrayLeaf): IsMember = this.copy(second = newSecond)
-
-  def withThird(newThird: ByteArrayLeaf): IsMember = this.copy(third = newThird)
-}
-
+                    override val third: ByteArrayLeaf) extends Relation3[AvlTreeLeaf, ByteArrayLeaf, ByteArrayLeaf]
 
 //Proof tree
 
