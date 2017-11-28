@@ -6,10 +6,6 @@ import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 
 
-
-
-
-
 trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV] {
   self: OV =>
   val abstractTransformation = true
@@ -40,8 +36,9 @@ case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV],
   extends TransformerInstantiation[CollectionLeaf[IV], CollectionLeaf[OV]] with CollectionLeaf[OV] {
 
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
+    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
+  //todo: it will fail on FakeBoolean(SigmaTree) instances, the same problem for other similar places
   override def function(cl: EvaluatedValue[CollectionLeaf[IV]]): CollectionLeaf[OV] =
     ConcreteCollection(cl.value.map(el => mapper.function(el.asInstanceOf[EvaluatedValue[IV]])))
 
@@ -54,7 +51,7 @@ case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ 
   extends TransformerInstantiation[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
 
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
+    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
   override val cost: Int = input.cost + relations.size
 
@@ -74,7 +71,7 @@ case class ForAll[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ 
   extends TransformerInstantiation[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
 
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
+    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
   override val cost: Int = input.cost + relations.size
 
@@ -115,7 +112,7 @@ case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf
 
 
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IntLeaf]].value.forall(_.isInstanceOf[EvaluatedValue[_]])
+    input.evaluated && input.asInstanceOf[ConcreteCollection[IntLeaf]].value.forall(_.evaluated)
 
   val folder = {
     case (s, i) =>
@@ -140,7 +137,7 @@ case class SumBytes(override val input: CollectionLeaf[ByteArrayLeaf],
 
   override def transformationReady: Boolean =
     input.evaluated &&
-      input.asInstanceOf[ConcreteCollection[ByteArrayLeaf]].value.forall(_.isInstanceOf[EvaluatedValue[_]]) &&
+      input.asInstanceOf[ConcreteCollection[ByteArrayLeaf]].value.forall(_.evaluated) &&
       zero.isInstanceOf[EvaluatedValue[ByteArrayLeaf]]
 
 
