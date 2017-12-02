@@ -321,7 +321,8 @@ trait CollectionLeaf[V <: Value] extends Value {
   override type WrappedValue = IndexedSeq[V]
 }
 
-case class ConcreteCollection[V <: Value](value: IndexedSeq[V]) extends CollectionLeaf[V] with EvaluatedValue[CollectionLeaf[V]] {
+case class ConcreteCollection[V <: Value](value: IndexedSeq[V])
+  extends CollectionLeaf[V] with EvaluatedValue[CollectionLeaf[V]] {
   val cost = value.size
 }
 
@@ -339,10 +340,10 @@ case object Outputs extends LazyCollection[BoxLeaf] {
 
 trait CustomVariable[V <: Value] extends NotReadyValue[V] {
   self: V =>
-  val id: Int
+  val id: Byte
 }
 
-case class CustomByteArray(override val id: Int) extends CustomVariable[ByteArrayLeaf] with NotReadyValueByteArray {
+case class CustomByteArray(override val id: Byte) extends CustomVariable[ByteArrayLeaf] with NotReadyValueByteArray {
   override def cost: Int = Cost.ByteArrayDeclaration
 }
 

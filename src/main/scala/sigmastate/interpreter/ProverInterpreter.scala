@@ -30,14 +30,16 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   val secrets: Seq[SigmaProtocolPrivateInput[_]]
 
-  val contextExtenders: Map[Int, ByteArrayLeafConstant]
+  val contextExtenders: Map[Byte, ByteArrayLeafConstant]
+
+  val ownExtension = ContextExtension(contextExtenders)
 
   def enrichContext(tree: SigmaStateTree): ContextExtension = {
     val targetName = CustomByteArray.getClass.getSimpleName.replace("$", "")
 
     val ce = new Tree(tree).nodes.flatMap { n =>
       if (n.productPrefix == targetName) {
-        val tag = n.productIterator.next().asInstanceOf[Int]
+        val tag = n.productIterator.next().asInstanceOf[Byte]
         contextExtenders.get(tag).map(v => tag -> v)
       } else None
     }.toMap
@@ -104,29 +106,18 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   }
 
   def prove(exp: SigmaStateTree, context: CTX, message: Array[Byte]): Try[ProverResult[ProofT]] = Try {
-    val candidateProp = reduceToCrypto(exp, context).get
+    val reducedProp = reduceToCrypto(exp, context.withExtension(ownExtension)).get
 
-    val (cProp, ext) = (candidateProp.isInstanceOf[SigmaT] match {
-      case true => (candidateProp, ContextExtension(Map()))
-      case false =>
-        val extension = enrichContext(candidateProp)
-        //todo: no need for full reduction here probably
-        val reduced = reduceToCrypto(candidateProp, context.withExtension(extension)).get
-        (reduced, extension)
-    }).ensuring { res =>
-      res._1.isInstanceOf[BooleanLeaf] && res._1.asInstanceOf[BooleanLeaf].evaluated
-    }
-
-    ProverResult(cProp match {
+    ProverResult(reducedProp match {
       case tree: BooleanLeafConstant =>
         tree match {
           case TrueLeaf => NoProof
           case FalseLeaf => ???
         }
       case _ =>
-        val ct = convertToUnproven(cProp.asInstanceOf[SigmaT])
+        val ct = convertToUnproven(reducedProp.asInstanceOf[SigmaT])
         prove(ct, message)
-    }, ext)
+    }, ownExtension)
   }
 
   /**

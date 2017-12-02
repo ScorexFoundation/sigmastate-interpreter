@@ -36,7 +36,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
     Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
   }
 
-  override val contextExtenders: Map[Int, ByteArrayLeafConstant] = Map[Int, ByteArrayLeafConstant]()
+  override val contextExtenders: Map[Byte, ByteArrayLeafConstant] = Map[Byte, ByteArrayLeafConstant]()
 }
 
 class TestingInterpreterSpecification extends PropSpec

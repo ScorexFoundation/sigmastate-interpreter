@@ -26,18 +26,18 @@ class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
   lazy val dhSecrets: Seq[DiffieHellmanTupleProverInput] =
     secrets.filter(_.isInstanceOf[DiffieHellmanTupleProverInput]).asInstanceOf[Seq[DiffieHellmanTupleProverInput]]
 
-  override lazy val contextExtenders: Map[Int, ByteArrayLeafConstant] = (1 to 10).map { i =>
+  override lazy val contextExtenders: Map[Byte, ByteArrayLeafConstant] = (1 to 10).map { i =>
     val ba = Random.randomBytes(75)
-    Helpers.tagInt(ba) -> ByteArrayLeafConstant(ba)
+    i.toByte -> ByteArrayLeafConstant(ba)
   }.toMap
 
-  def withContextExtender(tag: Int, value: ByteArrayLeafConstant): UtxoProvingInterpreter = {
+  def withContextExtender(tag: Byte, value: ByteArrayLeafConstant): UtxoProvingInterpreter = {
     val s = secrets
     val ce = contextExtenders
 
     new UtxoProvingInterpreter(maxCost) {
       override lazy val secrets = s
-      override lazy val contextExtenders: Map[Int, ByteArrayLeafConstant] = ce + (tag -> value)
+      override lazy val contextExtenders: Map[Byte, ByteArrayLeafConstant] = ce + (tag -> value)
     }
   }
 
@@ -47,7 +47,7 @@ class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
 
     new UtxoProvingInterpreter(maxCost) {
       override lazy val secrets = s
-      override lazy val contextExtenders: Map[Int, ByteArrayLeafConstant] = ce
+      override lazy val contextExtenders: Map[Byte, ByteArrayLeafConstant] = ce
     }
   }
 }

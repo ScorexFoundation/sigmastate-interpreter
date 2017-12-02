@@ -8,7 +8,6 @@ import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate._
-import sigmastate.utils.Helpers
 import BoxHelpers.boxWithMetadata
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -244,8 +243,8 @@ class UtxoInterpreterSpecification extends PropSpec
     */
   property("prover enriching context") {
     val prover = new UtxoProvingInterpreter
-    val preimage = prover.contextExtenders.head._2.value
-    val prop = EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
+    val preimage = prover.contextExtenders(1: Byte).value
+    val prop = EQ(CalcBlake2b256Inst(CustomByteArray(1)), ByteArrayLeafConstant(Blake2b256(preimage)))
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -259,11 +258,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
   property("prover enriching context 2") {
     val prover = new UtxoProvingInterpreter
-    val preimage1 = prover.contextExtenders.head._2.value
-    val preimage2 = prover.contextExtenders.tail.head._2.value
-    val prop = EQ(CalcBlake2b256Inst(Append(CustomByteArray(Helpers.tagInt(preimage2)),
-      CustomByteArray(Helpers.tagInt(preimage1)))
-    ), ByteArrayLeafConstant(Blake2b256(preimage2 ++ preimage1)))
+    val preimage1 = prover.contextExtenders(1).value
+    val preimage2 = prover.contextExtenders(2).value
+    val prop = EQ(CalcBlake2b256Inst(Append(CustomByteArray(2), CustomByteArray(1))),
+                  ByteArrayLeafConstant(Blake2b256(preimage2 ++ preimage1)))
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -277,10 +275,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
   property("prover enriching context - xor") {
     val v1 = Base16.decode("abcdef7865")
-    val k1 = Helpers.tagInt(v1)
+    val k1 = 21: Byte
 
     val v2 = Base16.decode("10abdca345")
-    val k2 = Helpers.tagInt(v2)
+    val k2 = 22: Byte
 
     val r = Base16.decode("bb6633db20")
 
@@ -302,12 +300,12 @@ class UtxoInterpreterSpecification extends PropSpec
 
   property("context enriching mixed w. crypto") {
     val prover = new UtxoProvingInterpreter
-    val preimage = prover.contextExtenders.head._2.value
+    val preimage = prover.contextExtenders(1).value
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = AND(
       pubkey,
-      EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(preimage))), ByteArrayLeafConstant(Blake2b256(preimage)))
+      EQ(CalcBlake2b256Inst(CustomByteArray(1)), ByteArrayLeafConstant(Blake2b256(preimage)))
     )
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -324,14 +322,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
   property("context enriching mixed w. crypto 2") {
     val prover = new UtxoProvingInterpreter
-    val preimage1 = prover.contextExtenders.head._2.value
-    val preimage2 = prover.contextExtenders.tail.head._2.value
+    val preimage1 = prover.contextExtenders(1).value
+    val preimage2 = prover.contextExtenders(2).value
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = AND(
       pubkey,
       EQ(
-        CalcBlake2b256Inst(Append(CustomByteArray(Helpers.tagInt(preimage1)), CustomByteArray(Helpers.tagInt(preimage2)))),
+        CalcBlake2b256Inst(Append(CustomByteArray(1), CustomByteArray(2))),
         ByteArrayLeafConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
@@ -364,7 +362,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val verifier = new UtxoInterpreter
 
-    val x = proverA.contextExtenders.head._2.value
+    val x = proverA.contextExtenders(1).value
     val hx = ByteArrayLeafConstant(Blake2b256(x))
 
     val height1 = 100000
@@ -376,13 +374,13 @@ class UtxoInterpreterSpecification extends PropSpec
     //chain1 script
     val prop1 = OR(
       AND(GT(Height, IntLeafConstant(height1 + deadlineA)), pubkeyA),
-      AND(pubkeyB, EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(x))), hx))
+      AND(pubkeyB, EQ(CalcBlake2b256Inst(CustomByteArray(1)), hx))
     )
 
     //chain2 script
     val prop2 = OR(
       AND(GT(Height, IntLeafConstant(height2 + deadlineB)), pubkeyB),
-      AND(pubkeyA, EQ(CalcBlake2b256Inst(CustomByteArray(Helpers.tagInt(x))), hx))
+      AND(pubkeyA, EQ(CalcBlake2b256Inst(CustomByteArray(1)), hx))
     )
 
     //Preliminary checks:
@@ -407,9 +405,8 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop2, ctx1, pr, fakeMessage).get shouldBe true
 
     //B extracts preimage x of hx
-    val t = pr.extension.values.head
-    val (tx, bx) = (t._1, t._2)
-    val proverB2 = proverB.withContextExtender(tx, bx.asInstanceOf[ByteArrayLeafConstant])
+    val t = pr.extension.values(1)
+    val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[ByteArrayLeafConstant])
 
     //B spends coins of A in chain1 with knowledge of x
     val ctx2 = UtxoContext(currentHeight = height1 + 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
@@ -977,15 +974,15 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val treeData = new AvlTreeData(digest, 32, None)
 
-    val proofTag = Helpers.tagInt(proof)
+    val proofId = 31: Byte
 
-    val prover = new UtxoProvingInterpreter().withContextExtender(proofTag, ByteArrayLeafConstant(proof))
+    val prover = new UtxoProvingInterpreter().withContextExtender(proofId, ByteArrayLeafConstant(proof))
     val verifier = new UtxoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = IsMember(ExtractRegisterAsAvlTreeLeafInst(Self, R3),
       ExtractRegisterAsByteArrayLeafInst(Self, R4),
-      CustomByteArray(proofTag))
+      CustomByteArray(proofId))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)

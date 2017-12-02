@@ -45,8 +45,8 @@ trait Interpreter {
 
   protected def contextSubst(ctx: CTX, cost: CostAccumulator): Strategy = {
     everywherebu(rule[SigmaStateTree] {
-      case CustomByteArray(tag: Int) if ctx.extension.values.contains(tag) =>
-        val value = ctx.extension.values(tag)
+      case CustomByteArray(id: Byte) if ctx.extension.values.contains(id) =>
+        val value = ctx.extension.values(id)
         cost.addCost(value.cost).ensuring(_.isRight)
         value
     })
