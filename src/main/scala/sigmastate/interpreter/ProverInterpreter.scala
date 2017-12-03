@@ -32,7 +32,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   val contextExtenders: Map[Byte, ByteArrayLeafConstant]
 
-  val ownExtension = ContextExtension(contextExtenders)
+  val knownExtensions = ContextExtension(contextExtenders)
 
   def enrichContext(tree: SigmaStateTree): ContextExtension = {
     val targetName = CustomByteArray.getClass.getSimpleName.replace("$", "")
@@ -106,7 +106,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   }
 
   def prove(exp: SigmaStateTree, context: CTX, message: Array[Byte]): Try[ProverResult[ProofT]] = Try {
-    val reducedProp = reduceToCrypto(exp, context.withExtension(ownExtension)).get
+    val reducedProp = reduceToCrypto(exp, context.withExtension(knownExtensions)).get
 
     ProverResult(reducedProp match {
       case tree: BooleanLeafConstant =>
@@ -117,7 +117,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       case _ =>
         val ct = convertToUnproven(reducedProp.asInstanceOf[SigmaT])
         prove(ct, message)
-    }, ownExtension)
+    }, knownExtensions)
   }
 
   /**
