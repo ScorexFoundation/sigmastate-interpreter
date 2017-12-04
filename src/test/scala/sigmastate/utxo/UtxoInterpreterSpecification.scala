@@ -244,7 +244,7 @@ class UtxoInterpreterSpecification extends PropSpec
   property("prover enriching context") {
     val prover = new UtxoProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value
-    val prop = EQ(CalcBlake2b256Inst(CustomByteArray(1)), ByteArrayLeafConstant(Blake2b256(preimage)))
+    val prop = EQ(CalcBlake2b256Inst(TaggedByteArray(1)), ByteArrayLeafConstant(Blake2b256(preimage)))
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -260,7 +260,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prover = new UtxoProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value
     val preimage2 = prover.contextExtenders(2).value
-    val prop = EQ(CalcBlake2b256Inst(Append(CustomByteArray(2), CustomByteArray(1))),
+    val prop = EQ(CalcBlake2b256Inst(Append(TaggedByteArray(2), TaggedByteArray(1))),
                   ByteArrayLeafConstant(Blake2b256(preimage2 ++ preimage1)))
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -286,7 +286,7 @@ class UtxoInterpreterSpecification extends PropSpec
       .withContextExtender(k1, ByteArrayLeafConstant(v1))
       .withContextExtender(k2, ByteArrayLeafConstant(v2))
 
-    val prop = EQ(Xor(CustomByteArray(k1), CustomByteArray(k2)), ByteArrayLeafConstant(r))
+    val prop = EQ(Xor(TaggedByteArray(k1), TaggedByteArray(k2)), ByteArrayLeafConstant(r))
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -305,7 +305,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(
       pubkey,
-      EQ(CalcBlake2b256Inst(CustomByteArray(1)), ByteArrayLeafConstant(Blake2b256(preimage)))
+      EQ(CalcBlake2b256Inst(TaggedByteArray(1)), ByteArrayLeafConstant(Blake2b256(preimage)))
     )
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -329,7 +329,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = AND(
       pubkey,
       EQ(
-        CalcBlake2b256Inst(Append(CustomByteArray(1), CustomByteArray(2))),
+        CalcBlake2b256Inst(Append(TaggedByteArray(1), TaggedByteArray(2))),
         ByteArrayLeafConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
@@ -374,13 +374,13 @@ class UtxoInterpreterSpecification extends PropSpec
     //chain1 script
     val prop1 = OR(
       AND(GT(Height, IntLeafConstant(height1 + deadlineA)), pubkeyA),
-      AND(pubkeyB, EQ(CalcBlake2b256Inst(CustomByteArray(1)), hx))
+      AND(pubkeyB, EQ(CalcBlake2b256Inst(TaggedByteArray(1)), hx))
     )
 
     //chain2 script
     val prop2 = OR(
       AND(GT(Height, IntLeafConstant(height2 + deadlineB)), pubkeyB),
-      AND(pubkeyA, EQ(CalcBlake2b256Inst(CustomByteArray(1)), hx))
+      AND(pubkeyA, EQ(CalcBlake2b256Inst(TaggedByteArray(1)), hx))
     )
 
     //Preliminary checks:
@@ -982,7 +982,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = IsMember(ExtractRegisterAsAvlTreeLeafInst(Self, R3),
       ExtractRegisterAsByteArrayLeafInst(Self, R4),
-      CustomByteArray(proofId))
+      TaggedByteArray(proofId))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)

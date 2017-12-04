@@ -213,7 +213,7 @@ case object ExtractScriptFn extends ExtractScript {
 
 
 sealed trait ExtractBytes extends Extract[ByteArrayLeaf] with NotReadyValueByteArray {
-  override def cost: Int = 10
+  override lazy val cost: Int = 10
 
   override type M = this.type
 

@@ -35,7 +35,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   val knownExtensions = ContextExtension(contextExtenders)
 
   def enrichContext(tree: SigmaStateTree): ContextExtension = {
-    val targetName = CustomByteArray.getClass.getSimpleName.replace("$", "")
+    val targetName = TaggedByteArray.getClass.getSimpleName.replace("$", "")
 
     val ce = new Tree(tree).nodes.flatMap { n =>
       if (n.productPrefix == targetName) {

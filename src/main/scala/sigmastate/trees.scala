@@ -166,6 +166,12 @@ trait NotReadyValue[V <: Value] extends Value {
   override lazy val evaluated = false
 }
 
+trait TaggedVariable[V <: Value] extends NotReadyValue[V] {
+  self: V =>
+  val id: Byte
+}
+
+
 //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
 sealed trait IntLeaf extends Value {
   override type WrappedValue = Long
@@ -201,17 +207,18 @@ case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[Byte
 }
 
 
-trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[ByteArrayLeaf]
-
-case object UnknownByteArrayLeaf extends NotReadyValueByteArray {
-  override def cost: Int = 1
+trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[ByteArrayLeaf]{
+  override lazy val cost: Int = Cost.ByteArrayDeclaration
 }
+
+case object UnknownByteArrayLeaf extends NotReadyValueByteArray
 
 case object EmptyByteArray extends ByteArrayLeaf with NotReadyValueByteArray {
-  override def cost: Int = 1
-
   override type M = this.type
 }
+
+case class TaggedByteArray(override val id: Byte) extends TaggedVariable[ByteArrayLeaf] with NotReadyValueByteArray
+
 
 //todo: merge with ByteArrayLeaf?
 
@@ -337,17 +344,6 @@ case object Outputs extends LazyCollection[BoxLeaf] {
   val cost = 1
 }
 
-
-trait CustomVariable[V <: Value] extends NotReadyValue[V] {
-  self: V =>
-  val id: Byte
-}
-
-case class CustomByteArray(override val id: Byte) extends CustomVariable[ByteArrayLeaf] with NotReadyValueByteArray {
-  override def cost: Int = Cost.ByteArrayDeclaration
-}
-
-
 sealed trait CalcBlake2b256 extends Transformer[ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
   override def function(bal: EvaluatedValue[ByteArrayLeaf]): ByteArrayLeaf =
     ByteArrayLeafConstant(Blake2b256(bal.value))
@@ -356,11 +352,11 @@ sealed trait CalcBlake2b256 extends Transformer[ByteArrayLeaf, ByteArrayLeaf] wi
 case class CalcBlake2b256Inst(input: ByteArrayLeaf)
   extends CalcBlake2b256 with TransformerInstantiation[ByteArrayLeaf, ByteArrayLeaf] {
 
-  override def cost: Int = input.cost + Cost.Blake256bDeclaration
+  override lazy val cost: Int = input.cost + Cost.Blake256bDeclaration
 }
 
 case object CalcBlake2b256Fn extends CalcBlake2b256 {
-  override def cost: Int = Cost.Blake256bDeclaration
+  override lazy val cost: Int = Cost.Blake256bDeclaration
 
   override def instantiate(input: ByteArrayLeaf) = CalcBlake2b256Inst(input)
 

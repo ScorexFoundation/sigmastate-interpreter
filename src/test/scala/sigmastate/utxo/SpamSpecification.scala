@@ -48,7 +48,7 @@ class SpamSpecification extends PropSpec
 
     val prover = new UtxoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayLeafConstant(ba))
 
-    val spamScript = EQ(CalcBlake2b256Inst(CustomByteArray(id)), CalcBlake2b256Inst(CustomByteArray(id)))
+    val spamScript = EQ(CalcBlake2b256Inst(TaggedByteArray(id)), CalcBlake2b256Inst(TaggedByteArray(id)))
 
     val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -74,7 +74,7 @@ class SpamSpecification extends PropSpec
 
     val prover = new UtxoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayLeafConstant(ba))
 
-    val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256Inst(CustomByteArray(id))) { case (script, _) =>
+    val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256Inst(TaggedByteArray(id))) { case (script, _) =>
       CalcBlake2b256Inst(script)
     }
 
