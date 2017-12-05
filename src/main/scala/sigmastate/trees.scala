@@ -285,7 +285,12 @@ case class GroupElementConstant(value: GroupElement) extends GroupElementLeaf wi
   override val cost = 10
 }
 
-trait NotReadyValueGroupElement extends GroupElementLeaf with NotReadyValue[GroupElementLeaf]
+trait NotReadyValueGroupElement extends GroupElementLeaf with NotReadyValue[GroupElementLeaf] {
+  override val cost = 10
+}
+
+case class TaggedGroupElement(override val id: Byte)
+  extends TaggedVariable[GroupElementLeaf] with NotReadyValueGroupElement
 
 
 
@@ -307,8 +312,15 @@ case object FalseLeaf extends BooleanLeafConstant(false) {
   override def cost: Int = Cost.ConstantNode
 }
 
-trait NotReadyValueBoolean extends BooleanLeaf with NotReadyValue[BooleanLeaf]
+trait NotReadyValueBoolean extends BooleanLeaf with NotReadyValue[BooleanLeaf] {
+  override def cost: Int = 1
+}
 
+case class TaggedBoolean(override val id: Byte) extends TaggedVariable[BooleanLeaf] with NotReadyValueBoolean
+
+/**
+  * For sigma statements
+  */
 trait FakeBoolean extends BooleanLeaf with NotReadyValue[BooleanLeaf]{
   override lazy val evaluated = true
 }
@@ -321,7 +333,12 @@ case class BoxLeafConstant(value: BoxWithMetadata) extends BoxLeaf with Evaluate
   override def cost: Int = 10
 }
 
-trait NotReadyValueBoxLeaf extends BoxLeaf with NotReadyValue[BoxLeaf]
+trait NotReadyValueBoxLeaf extends BoxLeaf with NotReadyValue[BoxLeaf] {
+  override def cost: Int = 10
+}
+
+case class TaggedBoxLeaf(override val id: Byte) extends TaggedVariable[BoxLeaf] with NotReadyValueBoxLeaf
+
 
 case object Self extends NotReadyValueBoxLeaf {
   override def cost: Int = 10
