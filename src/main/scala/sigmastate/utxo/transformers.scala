@@ -110,7 +110,6 @@ trait Fold[IV <: Value] extends TransformerInstantiation[CollectionLeaf[IV], IV]
 
 case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
 
-
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IntLeaf]].value.forall(_.evaluated)
 
@@ -200,7 +199,6 @@ sealed trait ExtractScript extends Extract[PropLeaf] with NotReadyValueProp {
   override type M = this.type
 
   override def function(box: EvaluatedValue[BoxLeaf]): PropLeaf = {
-    println(new String(box.value.box.propositionBytes))
     PropLeafConstant(box.value)
   }
 }

@@ -239,7 +239,11 @@ object PropLeafConstant {
   def apply(value: SigmaStateTree): PropLeafConstant = new PropLeafConstant(value.toString.getBytes)
 }
 
-trait NotReadyValueProp extends PropLeaf with NotReadyValue[PropLeaf]
+trait NotReadyValueProp extends PropLeaf with NotReadyValue[PropLeaf] {
+  override def cost: Int = Cost.PropLeafDeclaration
+}
+
+case class TaggedPropLeaf(override val id: Byte) extends TaggedVariable[PropLeaf] with NotReadyValueProp
 
 
 class AvlTreeData(val startingDigest: ADDigest,
@@ -265,7 +269,11 @@ case class AvlTreeLeafConstant(value: AvlTreeData) extends AvlTreeLeaf with Eval
       value.maxDeletes)
 }
 
-trait NotReadyValueAvlTree extends AvlTreeLeaf with NotReadyValue[AvlTreeLeaf]
+trait NotReadyValueAvlTree extends AvlTreeLeaf with NotReadyValue[AvlTreeLeaf] {
+  override val cost = 50
+}
+
+case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[AvlTreeLeaf] with NotReadyValueAvlTree
 
 
 
@@ -415,6 +423,7 @@ case class EQ[V <: Value](override val left: V,
 
 case class NEQ[V <: Value](override val left: V, override val right: V) extends Relation[V, V]
 
+
 /**
   * A tree node with three descendants
   */
@@ -430,6 +439,7 @@ sealed trait Quadruple[IV1 <: Value, IV2 <: Value, IV3 <: Value, OV <: Value] ex
 
 sealed trait Relation3[IV1 <: Value, IV2 <: Value, IV3 <: Value]
   extends Quadruple[IV1, IV2, IV3, BooleanLeaf] with NotReadyValueBoolean
+
 
 /**
   *
