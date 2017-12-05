@@ -20,8 +20,6 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
     case Self => BoxLeafConstant(context.self)
 
-    case EmptyByteArray => ByteArrayLeafConstant(Array.emptyByteArray)
-
     case e: Exists[_] if e.transformationReady => e.input match {
       case c: ConcreteCollection[_] => e.function(c)
       case _ => ???

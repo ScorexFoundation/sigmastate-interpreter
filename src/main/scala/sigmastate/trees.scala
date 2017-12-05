@@ -206,6 +206,7 @@ case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[Byte
   }
 }
 
+object EmptyByteArray extends ByteArrayLeafConstant(Array.emptyByteArray)
 
 trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[ByteArrayLeaf]{
   override lazy val cost: Int = Cost.ByteArrayDeclaration
@@ -213,9 +214,6 @@ trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[ByteArrayL
 
 case object UnknownByteArrayLeaf extends NotReadyValueByteArray
 
-case object EmptyByteArray extends ByteArrayLeaf with NotReadyValueByteArray {
-  override type M = this.type
-}
 
 case class TaggedByteArray(override val id: Byte) extends TaggedVariable[ByteArrayLeaf] with NotReadyValueByteArray
 
