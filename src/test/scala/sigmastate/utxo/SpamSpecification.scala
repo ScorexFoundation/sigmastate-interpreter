@@ -136,7 +136,7 @@ class SpamSpecification extends PropSpec
                             EQ(IntLeafConstant(6), IntLeafConstant(6)))
 
         val spamScript =
-          Exists(Outputs, GE(ExtractAmountFn, IntLeafConstant(10)),
+          Exists(Outputs, 11, GE(ExtractAmountInst(TaggedBoxLeaf(21)), IntLeafConstant(10)),
             EQ(ExtractScriptFn, PropLeafConstant(propToCompare.toString.getBytes)))
 
 

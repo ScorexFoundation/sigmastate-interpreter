@@ -82,7 +82,8 @@ class UtxoInterpreterSpecification extends PropSpec
         Seq(
           LT(Height, timeout),
           projectPubKey,
-          Exists(Outputs, GE(ExtractAmountFn, minToRaise), EQ(ExtractScriptFn, PropLeafConstant(projectPubKey)))
+          Exists(Outputs, 21, GE(ExtractAmountInst(TaggedBoxLeaf(21)), minToRaise),
+                              EQ(ExtractScriptInst(TaggedBoxLeaf(21)), PropLeafConstant(projectPubKey)))
         )
       )
     )
@@ -169,8 +170,9 @@ class UtxoInterpreterSpecification extends PropSpec
       regScript,
       AND(
         GE(Height, Plus(ExtractHeightInst(Self), IntLeafConstant(demurragePeriod))),
-        Exists(Outputs, GE(ExtractAmountFn, Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
-          EQ(ExtractScriptFn, ExtractScriptInst(Self)))
+        Exists(Outputs, 21, GE(ExtractAmountInst(TaggedBoxLeaf(21)),
+                                Minus(ExtractAmountInst(Self), IntLeafConstant(demurrageCost))),
+                            EQ(ExtractScriptInst(TaggedBoxLeaf(21)), ExtractScriptInst(Self)))
       )
     )
 
@@ -822,7 +824,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, GT(Plus(ExtractAmountFn, IntLeafConstant(5)), IntLeafConstant(10)))
+    val prop = Exists(Outputs, 21, GT(Plus(ExtractAmountInst(TaggedBoxLeaf(21)), IntLeafConstant(5)), IntLeafConstant(10)))
 
     val newBox1 = SigmaStateBox(16, pubkey)
     val newBox2 = SigmaStateBox(15, pubkey)
@@ -883,7 +885,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, EQ(ExtractRegisterAsIntLeaf(R3),
+    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAsIntLeafInst(TaggedBoxLeaf(21), R3),
       Plus(ExtractRegisterAsIntLeafInst(Self, R3), IntLeafConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(3)))
@@ -906,7 +908,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, EQ(ExtractRegisterAsIntLeaf(R3),
+    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAsIntLeafInst(TaggedBoxLeaf(21), R3),
       Plus(ExtractRegisterAsIntLeafInst(Self, R3), IntLeafConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey)

@@ -47,7 +47,9 @@ case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV],
   override type M = this.type
 }
 
-case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ <: Value, _ <: Value]*)
+case class Exists[IV <: Value](input: CollectionLeaf[IV],
+                               id: Byte,
+                               relations: Relation[_ <: Value, _ <: Value]*)
   extends TransformerInstantiation[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
 
   override def transformationReady: Boolean =
@@ -57,8 +59,8 @@ case class Exists[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ 
 
   //todo: cost
   override def function(input: EvaluatedValue[CollectionLeaf[IV]]): BooleanLeaf = {
-    def rl(arg: IV) = everywherebu(rule[Transformer[IV, _ <: Value]] {
-      case t: Transformer[IV, _] => t.instantiate(arg)
+    def rl(arg: IV) = everywherebu(rule[Value] {
+      case t: TaggedVariable[IV] if t.id == id => arg
     })
 
     OR(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[BooleanLeaf]))
