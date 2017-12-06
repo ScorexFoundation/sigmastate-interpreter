@@ -4,8 +4,6 @@ import sigmastate.{NotReadyValueIntLeaf, _}
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 
-import scala.util.Try
-
 
 trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV] {
   self: OV =>
@@ -110,6 +108,13 @@ trait Fold[IV <: Value] extends Transformer[CollectionLeaf[IV], IV] with NotRead
   val folder: (IV, IV) => IV
   val zero: IV
 
+
+  override def transformationReady: Boolean =
+    input.evaluated &&
+      input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated) &&
+      zero.isInstanceOf[EvaluatedValue[IV]]
+
+
   override lazy val cost = (input match {
     case c: EvaluatedValue[CollectionLeaf[IV]] => c.value.map(_.cost).sum
     case _ => 10
@@ -122,10 +127,12 @@ trait Fold[IV <: Value] extends Transformer[CollectionLeaf[IV], IV] with NotRead
   }
 }
 
-case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
+/*
+case class FoldInt(override val input: CollectionLeaf[IntLeaf],
+                   override val zero: IntLeaf) extends Fold[IntLeaf] with NotReadyValueIntLeaf
+*/
 
-  override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IntLeaf]].value.forall(_.evaluated)
+case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
 
   val folder = {
     case (s, i) =>
@@ -141,12 +148,6 @@ case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf
 
 case class SumBytes(override val input: CollectionLeaf[ByteArrayLeaf],
                     zero: ByteArrayLeaf) extends Fold[ByteArrayLeaf] with NotReadyValueByteArray {
-
-  override def transformationReady: Boolean =
-    input.evaluated &&
-      input.asInstanceOf[ConcreteCollection[ByteArrayLeaf]].value.forall(_.evaluated) &&
-      zero.isInstanceOf[EvaluatedValue[ByteArrayLeaf]]
-
 
   val folder = {
     case (s, i) =>
