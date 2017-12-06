@@ -81,7 +81,7 @@ trait Interpreter {
     case Append(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
       require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
       ByteArrayLeafConstant(l.value ++ r.value)
-    case c@CalcBlake2b256Inst(l: ByteArrayLeafConstant) if l.evaluated => c.function(l)
+    case c@CalcBlake2b256(l: ByteArrayLeafConstant) if l.evaluated => c.function(l)
   })
 
   protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {

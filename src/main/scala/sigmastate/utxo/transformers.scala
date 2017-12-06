@@ -2,28 +2,24 @@ package sigmastate.utxo
 
 import sigmastate.{NotReadyValueIntLeaf, _}
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
-
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+
+import scala.util.Try
 
 
 trait Transformer[IV <: Value, OV <: Value] extends NotReadyValue[OV] {
   self: OV =>
-  val abstractTransformation = true
 
-  def function(input: EvaluatedValue[IV]): OV
-
-  def instantiate(input: IV): TransformerInstantiation[IV, OV]
-}
-
-trait TransformerInstantiation[IV <: Value, OV <: Value] extends Transformer[IV, OV] {
-  self: OV =>
   val input: IV
 
   def transformationReady: Boolean = input.evaluated
 
-  override val abstractTransformation = false
+  def function(input: EvaluatedValue[IV]): OV
 
-  override def instantiate(input: IV): TransformerInstantiation[IV, OV] with OV = this
+  def function(): OV = input match{
+    case ev: EvaluatedValue[IV] => function(ev)
+    case _ => ???
+  }
 
   def evaluate(): OV = input match {
     case ev: EvaluatedValue[IV] => function(ev)
@@ -31,16 +27,24 @@ trait TransformerInstantiation[IV <: Value, OV <: Value] extends Transformer[IV,
   }
 }
 
+
 case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV],
+                                                   id: Byte,
                                                    mapper: Transformer[IV, OV])
-  extends TransformerInstantiation[CollectionLeaf[IV], CollectionLeaf[OV]] with CollectionLeaf[OV] {
+  extends Transformer[CollectionLeaf[IV], CollectionLeaf[OV]] with CollectionLeaf[OV] {
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
+
   //todo: it will fail on FakeBoolean(SigmaTree) instances, the same problem for other similar places
-  override def function(cl: EvaluatedValue[CollectionLeaf[IV]]): CollectionLeaf[OV] =
-    ConcreteCollection(cl.value.map(el => mapper.function(el.asInstanceOf[EvaluatedValue[IV]])))
+  override def function(cl: EvaluatedValue[CollectionLeaf[IV]]): CollectionLeaf[OV] = {
+    def rl(arg: IV) = everywherebu(rule[Value] {
+      case t: TaggedVariable[IV] if t.id == id => arg
+    })
+
+    ConcreteCollection(cl.value.map(el => (rl(el)(mapper)).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
+  }
 
   override def cost: Int = 1
 
@@ -50,7 +54,7 @@ case class MapCollection[IV <: Value, OV <: Value](input: CollectionLeaf[IV],
 case class Exists[IV <: Value](input: CollectionLeaf[IV],
                                id: Byte,
                                relations: Relation[_ <: Value, _ <: Value]*)
-  extends TransformerInstantiation[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
+  extends Transformer[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
@@ -69,8 +73,10 @@ case class Exists[IV <: Value](input: CollectionLeaf[IV],
   override type M = this.type
 }
 
-case class ForAll[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ <: Value, _ <: Value]*)
-  extends TransformerInstantiation[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
+case class ForAll[IV <: Value](input: CollectionLeaf[IV],
+                               id: Byte,
+                               relations: Relation[_ <: Value, _ <: Value]*)
+  extends Transformer[CollectionLeaf[IV], BooleanLeaf] with NotReadyValueBoolean {
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
@@ -79,8 +85,8 @@ case class ForAll[IV <: Value](input: CollectionLeaf[IV], relations: Relation[_ 
 
   //todo: cost
   override def function(input: EvaluatedValue[CollectionLeaf[IV]]): BooleanLeaf = {
-    def rl(arg: IV) = everywherebu(rule[Transformer[IV, _ <: Value]] {
-      case t: Transformer[IV, _] => t.instantiate(arg)
+    def rl(arg: IV) = everywherebu(rule[Value] {
+      case t: TaggedVariable[IV] if t.id == id => arg
     })
 
     AND(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[BooleanLeaf]))
@@ -98,7 +104,7 @@ object Slice
 */
 
 
-trait Fold[IV <: Value] extends TransformerInstantiation[CollectionLeaf[IV], IV] with NotReadyValue[IV] {
+trait Fold[IV <: Value] extends Transformer[CollectionLeaf[IV], IV] with NotReadyValue[IV] {
   self: IV =>
   val input: CollectionLeaf[IV]
   val folder: (IV, IV) => IV
@@ -165,7 +171,7 @@ sealed abstract class Extract[V <: Value] extends Transformer[BoxLeaf, V] {
 
 }
 
-sealed trait ExtractHeight extends Extract[IntLeaf] with NotReadyValueIntLeaf {
+case class ExtractHeight(input: BoxLeaf) extends Extract[IntLeaf] with NotReadyValueIntLeaf {
   override def cost: Int = 10
 
   override type M = this.type
@@ -173,14 +179,8 @@ sealed trait ExtractHeight extends Extract[IntLeaf] with NotReadyValueIntLeaf {
   override def function(box: EvaluatedValue[BoxLeaf]): IntLeaf = IntLeafConstant(box.value.metadata.creationHeight)
 }
 
-case class ExtractHeightInst(input: BoxLeaf) extends ExtractHeight with TransformerInstantiation[BoxLeaf, IntLeaf]
 
-case object ExtractHeightFn extends ExtractHeight {
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, IntLeaf] = ExtractHeightInst(input)
-}
-
-
-sealed trait ExtractAmount extends Extract[IntLeaf] with NotReadyValueIntLeaf {
+case class ExtractAmount(input: BoxLeaf) extends Extract[IntLeaf] with NotReadyValueIntLeaf {
   override def cost: Int = 10
 
   override type M = this.type
@@ -188,14 +188,8 @@ sealed trait ExtractAmount extends Extract[IntLeaf] with NotReadyValueIntLeaf {
   override def function(box: EvaluatedValue[BoxLeaf]): IntLeaf = IntLeafConstant(box.value.box.value)
 }
 
-case class ExtractAmountInst(input: BoxLeaf) extends ExtractAmount with TransformerInstantiation[BoxLeaf, IntLeaf]
 
-case object ExtractAmountFn extends ExtractAmount {
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, IntLeaf] = ExtractAmountInst(input)
-}
-
-
-sealed trait ExtractScript extends Extract[PropLeaf] with NotReadyValueProp {
+case class ExtractScript(input: BoxLeaf) extends Extract[PropLeaf] with NotReadyValueProp {
   override def cost: Int = 10
 
   override type M = this.type
@@ -205,26 +199,13 @@ sealed trait ExtractScript extends Extract[PropLeaf] with NotReadyValueProp {
   }
 }
 
-case class ExtractScriptInst(input: BoxLeaf) extends ExtractScript with TransformerInstantiation[BoxLeaf, PropLeaf]
 
-case object ExtractScriptFn extends ExtractScript {
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, PropLeaf] = ExtractScriptInst(input)
-}
-
-
-sealed trait ExtractBytes extends Extract[ByteArrayLeaf] with NotReadyValueByteArray {
+case class ExtractBytes(input: BoxLeaf) extends Extract[ByteArrayLeaf] with NotReadyValueByteArray {
   override lazy val cost: Int = 10
 
   override type M = this.type
 
   override def function(box: EvaluatedValue[BoxLeaf]): ByteArrayLeaf = ByteArrayLeafConstant(box.value.box.bytes)
-}
-
-case class ExtractBytesInst(input: BoxLeaf)
-  extends ExtractBytes with TransformerInstantiation[BoxLeaf, ByteArrayLeaf]
-
-case object ExtractBytesFn extends ExtractBytes {
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, ByteArrayLeaf] = ExtractBytesInst(input)
 }
 
 
@@ -240,71 +221,28 @@ abstract class ExtractRegisterAs[V <: Value] extends Extract[V] {
     box.value.box.get(registerId).get.asInstanceOf[V]
 }
 
-case class ExtractRegisterAsIntLeafInst(input: BoxLeaf, registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[IntLeaf] with TransformerInstantiation[BoxLeaf, IntLeaf] with NotReadyValueIntLeaf
-
-case class ExtractRegisterAsIntLeaf(registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[IntLeaf] with NotReadyValueIntLeaf {
-
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, IntLeaf] =
-    ExtractRegisterAsIntLeafInst(input, registerId)
-}
+case class ExtractRegisterAsIntLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[IntLeaf] with Transformer[BoxLeaf, IntLeaf] with NotReadyValueIntLeaf
 
 
-case class ExtractRegisterAsBooleanLeafInst(input: BoxLeaf, registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[BooleanLeaf] with TransformerInstantiation[BoxLeaf, BooleanLeaf] with NotReadyValueBoolean
-
-case class ExtractRegisterAsBooleanLeaf(registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[BooleanLeaf] with NotReadyValueBoolean {
-
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, BooleanLeaf] =
-    ExtractRegisterAsBooleanLeafInst(input, registerId)
-}
+case class ExtractRegisterAsBooleanLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[BooleanLeaf] with Transformer[BoxLeaf, BooleanLeaf] with NotReadyValueBoolean
 
 
-case class ExtractRegisterAsByteArrayLeafInst(input: BoxLeaf, registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[ByteArrayLeaf] with TransformerInstantiation[BoxLeaf, ByteArrayLeaf] with NotReadyValueByteArray
-
-case class ExtractRegisterAsByteArrayLeaf(registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[ByteArrayLeaf] with NotReadyValueByteArray {
-
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, ByteArrayLeaf] =
-    ExtractRegisterAsByteArrayLeafInst(input, registerId)
-}
+case class ExtractRegisterAsByteArrayLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[ByteArrayLeaf] with Transformer[BoxLeaf, ByteArrayLeaf] with NotReadyValueByteArray
 
 
-case class ExtractRegisterAsPropLeafInst(input: BoxLeaf, registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[PropLeaf] with TransformerInstantiation[BoxLeaf, PropLeaf] with NotReadyValueProp
-
-case class ExtractRegisterAsPropLeaf(registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[PropLeaf] with NotReadyValueProp {
-
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, PropLeaf] =
-    ExtractRegisterAsPropLeafInst(input, registerId)
-}
+case class ExtractRegisterAsPropLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[PropLeaf] with Transformer[BoxLeaf, PropLeaf] with NotReadyValueProp
 
 
-case class ExtractRegisterAsAvlTreeLeafInst(input: BoxLeaf, registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[AvlTreeLeaf] with TransformerInstantiation[BoxLeaf, AvlTreeLeaf] with NotReadyValueAvlTree
-
-case class ExtractRegisterAsAvlTree(registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[AvlTreeLeaf] with NotReadyValueAvlTree {
-
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, AvlTreeLeaf] =
-    ExtractRegisterAsAvlTreeLeafInst(input, registerId)
-}
+case class ExtractRegisterAsAvlTreeLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[AvlTreeLeaf] with Transformer[BoxLeaf, AvlTreeLeaf] with NotReadyValueAvlTree
 
 
-case class ExtractRegisterAsGroupElementInst(input: BoxLeaf, registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[GroupElementLeaf]
-    with TransformerInstantiation[BoxLeaf, GroupElementLeaf]
-    with NotReadyValueGroupElement
+case class ExtractRegisterAsGroupElement(input: BoxLeaf, registerId: RegisterIdentifier)
+  extends ExtractRegisterAs[GroupElementLeaf] with Transformer[BoxLeaf, GroupElementLeaf] with NotReadyValueGroupElement
 
-case class ExtractRegisterAsGroupElement(registerId: RegisterIdentifier)
-  extends ExtractRegisterAs[GroupElementLeaf] with NotReadyValueGroupElement {
 
-  override def instantiate(input: BoxLeaf): TransformerInstantiation[BoxLeaf, GroupElementLeaf] =
-    ExtractRegisterAsGroupElementInst(input, registerId)
-}
-
-//todo: extract as box leaf
+//todo: extract as a box leaf

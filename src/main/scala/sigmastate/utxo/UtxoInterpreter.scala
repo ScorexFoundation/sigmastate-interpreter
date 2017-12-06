@@ -30,7 +30,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       case _ => ???
     }
 
-    case m@MapCollection(coll, _) if m.transformationReady =>
+    case m@MapCollection(coll, _, _) if m.transformationReady =>
       m.function(coll.asInstanceOf[ConcreteCollection[Value]])
 
     case sum@Sum(coll) if sum.transformationReady =>
@@ -41,7 +41,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   })
 
   def functions(cost:CostAccumulator): Strategy = everywherebu(rule[Value]{
-    case inst: TransformerInstantiation[BoxLeaf, _]
+    case inst: Transformer[BoxLeaf, _]
       if inst.input.isInstanceOf[BoxLeafConstant] =>
 
       val leaf = inst.function(inst.input.asInstanceOf[BoxLeafConstant])

@@ -48,7 +48,7 @@ class SpamSpecification extends PropSpec
 
     val prover = new UtxoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayLeafConstant(ba))
 
-    val spamScript = EQ(CalcBlake2b256Inst(TaggedByteArray(id)), CalcBlake2b256Inst(TaggedByteArray(id)))
+    val spamScript = EQ(CalcBlake2b256(TaggedByteArray(id)), CalcBlake2b256(TaggedByteArray(id)))
 
     val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -74,11 +74,11 @@ class SpamSpecification extends PropSpec
 
     val prover = new UtxoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayLeafConstant(ba))
 
-    val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256Inst(TaggedByteArray(id))) { case (script, _) =>
-      CalcBlake2b256Inst(script)
+    val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256(TaggedByteArray(id))) { case (script, _) =>
+      CalcBlake2b256(script)
     }
 
-    val spamScript = NEQ(bigSubScript, CalcBlake2b256Inst(ByteArrayLeafConstant(Array.fill(32)(0: Byte))))
+    val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayLeafConstant(Array.fill(32)(0: Byte))))
 
     val message = Blake2b256("Hello World")
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -136,8 +136,8 @@ class SpamSpecification extends PropSpec
                             EQ(IntLeafConstant(6), IntLeafConstant(6)))
 
         val spamScript =
-          Exists(Outputs, 11, GE(ExtractAmountInst(TaggedBoxLeaf(21)), IntLeafConstant(10)),
-            EQ(ExtractScriptFn, PropLeafConstant(propToCompare.toString.getBytes)))
+          Exists(Outputs, 11, GE(ExtractAmount(TaggedBoxLeaf(21)), IntLeafConstant(10)),
+            EQ(ExtractScript(TaggedBoxLeaf(21)), PropLeafConstant(propToCompare.toString.getBytes)))
 
 
         val txOutputs = ((1 to outCnt) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)

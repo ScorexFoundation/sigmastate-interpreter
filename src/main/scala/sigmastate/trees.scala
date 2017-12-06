@@ -12,7 +12,7 @@ import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate.SigmaProposition.PropositionCode
-import sigmastate.utxo.{BoxWithMetadata, Transformer, TransformerInstantiation}
+import sigmastate.utxo.{BoxWithMetadata, Transformer}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.annotation.tailrec
@@ -55,7 +55,7 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 
 //todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
 case class OR(input: CollectionLeaf[BooleanLeaf])
-  extends TransformerInstantiation[CollectionLeaf[BooleanLeaf], BooleanLeaf] with NotReadyValueBoolean {
+  extends Transformer[CollectionLeaf[BooleanLeaf], BooleanLeaf] with NotReadyValueBoolean {
 
 
   override def cost: Int = input match {
@@ -103,7 +103,7 @@ object OR {
 }
 
 case class AND(input: CollectionLeaf[BooleanLeaf])
-  extends TransformerInstantiation[CollectionLeaf[BooleanLeaf], BooleanLeaf] with NotReadyValueBoolean {
+  extends Transformer[CollectionLeaf[BooleanLeaf], BooleanLeaf] with NotReadyValueBoolean {
 
   override def cost: Int = input match {
     case c: EvaluatedValue[CollectionLeaf[BooleanLeaf]] =>
@@ -367,23 +367,13 @@ case object Outputs extends LazyCollection[BoxLeaf] {
   val cost = 1
 }
 
-sealed trait CalcBlake2b256 extends Transformer[ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
+case class CalcBlake2b256(input: ByteArrayLeaf)
+  extends Transformer[ByteArrayLeaf, ByteArrayLeaf] with NotReadyValueByteArray {
+
   override def function(bal: EvaluatedValue[ByteArrayLeaf]): ByteArrayLeaf =
     ByteArrayLeafConstant(Blake2b256(bal.value))
-}
-
-case class CalcBlake2b256Inst(input: ByteArrayLeaf)
-  extends CalcBlake2b256 with TransformerInstantiation[ByteArrayLeaf, ByteArrayLeaf] {
 
   override lazy val cost: Int = input.cost + Cost.Blake256bDeclaration
-}
-
-case object CalcBlake2b256Fn extends CalcBlake2b256 {
-  override lazy val cost: Int = Cost.Blake256bDeclaration
-
-  override def instantiate(input: ByteArrayLeaf) = CalcBlake2b256Inst(input)
-
-  override type M = this.type
 }
 
 

@@ -165,7 +165,7 @@ class TestingInterpreterSpecification extends PropSpec
     val bytes = "hello world".getBytes
     val hash = Blake2b256(bytes)
 
-    val prop1 = EQ(CalcBlake2b256Inst(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
+    val prop1 = EQ(CalcBlake2b256(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -173,11 +173,11 @@ class TestingInterpreterSpecification extends PropSpec
 
     verify(prop1, env, proof, challenge).getOrElse(false) shouldBe true
 
-    val prop2 = NEQ(CalcBlake2b256Inst(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
+    val prop2 = NEQ(CalcBlake2b256(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
 
     verify(prop2, env, proof, challenge).getOrElse(false) shouldBe false
 
-    val prop3 = EQ(CalcBlake2b256Inst(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(bytes))
+    val prop3 = EQ(CalcBlake2b256(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(bytes))
 
     verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
   }
