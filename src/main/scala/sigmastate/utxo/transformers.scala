@@ -127,10 +127,6 @@ trait Fold[IV <: Value] extends Transformer[CollectionLeaf[IV], IV] with NotRead
   }
 }
 
-/*
-case class FoldInt(override val input: CollectionLeaf[IntLeaf],
-                   override val zero: IntLeaf) extends Fold[IntLeaf] with NotReadyValueIntLeaf
-*/
 
 case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
 
@@ -206,7 +202,9 @@ case class ExtractBytes(input: BoxLeaf) extends Extract[ByteArrayLeaf] with NotR
 
 abstract class ExtractRegisterAs[V <: Value] extends Extract[V] {
   self: V =>
+
   val registerId: RegisterIdentifier
+  val default: Option[V]
 
   override def cost: Int = 10
 
@@ -216,27 +214,39 @@ abstract class ExtractRegisterAs[V <: Value] extends Extract[V] {
     box.value.box.get(registerId).get.asInstanceOf[V]
 }
 
-case class ExtractRegisterAsIntLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+case class ExtractRegisterAsIntLeaf(input: BoxLeaf,
+                                    registerId: RegisterIdentifier,
+                                    default: Option[IntLeaf] = None)
   extends ExtractRegisterAs[IntLeaf] with Transformer[BoxLeaf, IntLeaf] with NotReadyValueIntLeaf
 
 
-case class ExtractRegisterAsBooleanLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+case class ExtractRegisterAsBooleanLeaf(input: BoxLeaf,
+                                        registerId: RegisterIdentifier,
+                                        default: Option[BooleanLeaf] = None)
   extends ExtractRegisterAs[BooleanLeaf] with Transformer[BoxLeaf, BooleanLeaf] with NotReadyValueBoolean
 
 
-case class ExtractRegisterAsByteArrayLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+case class ExtractRegisterAsByteArrayLeaf(input: BoxLeaf,
+                                          registerId: RegisterIdentifier,
+                                          default: Option[ByteArrayLeaf] = None)
   extends ExtractRegisterAs[ByteArrayLeaf] with Transformer[BoxLeaf, ByteArrayLeaf] with NotReadyValueByteArray
 
 
-case class ExtractRegisterAsPropLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+case class ExtractRegisterAsPropLeaf(input: BoxLeaf,
+                                     registerId: RegisterIdentifier,
+                                     default: Option[PropLeaf] = None)
   extends ExtractRegisterAs[PropLeaf] with Transformer[BoxLeaf, PropLeaf] with NotReadyValueProp
 
 
-case class ExtractRegisterAsAvlTreeLeaf(input: BoxLeaf, registerId: RegisterIdentifier)
+case class ExtractRegisterAsAvlTreeLeaf(input: BoxLeaf,
+                                        registerId: RegisterIdentifier,
+                                        default: Option[AvlTreeLeaf] = None)
   extends ExtractRegisterAs[AvlTreeLeaf] with Transformer[BoxLeaf, AvlTreeLeaf] with NotReadyValueAvlTree
 
 
-case class ExtractRegisterAsGroupElement(input: BoxLeaf, registerId: RegisterIdentifier)
+case class ExtractRegisterAsGroupElement(input: BoxLeaf,
+                                         registerId: RegisterIdentifier,
+                                         default: Option[GroupElementLeaf] = None)
   extends ExtractRegisterAs[GroupElementLeaf] with Transformer[BoxLeaf, GroupElementLeaf] with NotReadyValueGroupElement
 
 
