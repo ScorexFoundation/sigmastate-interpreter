@@ -114,6 +114,12 @@ trait Fold[IV <: Value] extends Transformer[CollectionLeaf[IV], IV] with NotRead
     case c: EvaluatedValue[CollectionLeaf[IV]] => c.value.map(_.cost).sum
     case _ => 10
   }) + zero.cost
+
+  override def function(input: EvaluatedValue[CollectionLeaf[IV]]): IV = {
+    input.value.foldLeft(zero) {case (s: IV, i: IV) =>
+      folder(s, i): IV
+    }
+  }
 }
 
 case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
@@ -129,12 +135,6 @@ case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf
       }
   }: (IntLeaf, IntLeaf) => IntLeaf
   val zero = IntLeafConstant(0)
-
-  override def function(input: EvaluatedValue[CollectionLeaf[IntLeaf]]): IntLeaf = {
-    input.value.foldLeft(zero: IntLeaf) {case (s: IntLeaf, i: IntLeaf) =>
-      folder(s, i): IntLeaf
-    }
-  }
 
   override type M = this.type
 }
@@ -155,12 +155,6 @@ case class SumBytes(override val input: CollectionLeaf[ByteArrayLeaf],
         case _ => UnknownByteArrayLeaf
       }
   }: (ByteArrayLeaf, ByteArrayLeaf) => ByteArrayLeaf
-
-  override def function(input: EvaluatedValue[CollectionLeaf[ByteArrayLeaf]]): ByteArrayLeaf = {
-    input.value.foldLeft(zero: ByteArrayLeaf) {case (s: ByteArrayLeaf, i: ByteArrayLeaf) =>
-      folder(s, i): ByteArrayLeaf
-    }
-  }
 
   override type M = this.type
 }
