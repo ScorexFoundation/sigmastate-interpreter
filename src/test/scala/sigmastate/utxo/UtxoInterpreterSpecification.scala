@@ -902,14 +902,15 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 
-  ignore("counter - no register in outputs") {
+  property("counter - no register in outputs") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAsIntLeaf(TaggedBoxLeaf(21), R3),
-      Plus(ExtractRegisterAsIntLeaf(Self, R3), IntLeafConstant(1))))
+    val prop = Exists(Outputs, 21,
+      EQ( ExtractRegisterAsIntLeaf(TaggedBoxLeaf(21), R3, default = Some(IntLeafConstant(0L))),
+          Plus(ExtractRegisterAsIntLeaf(Self, R3), IntLeafConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
