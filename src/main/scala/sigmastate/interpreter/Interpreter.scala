@@ -11,14 +11,15 @@ import sigmastate.utils.Helpers
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, log, rule, and}
-import org.bitbucket.inkytonik.kiama.util.OutputEmitter
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.utxo.CostTable
+
+import scala.annotation.tailrec
 
 
 trait Interpreter {
@@ -98,20 +99,42 @@ trait Interpreter {
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,
   // reduction state carried between reductions is about current cost and number of transformations done.
   // when the latter becomes zero, it means that it is time to stop (tree becomes irreducible)
-  case class ReductionState(cost: CostAccumulator, numberOfTransformations: Int)
+  case class ReductionState(cost: CostAccumulator, numberOfTransformations: Int){
+    def recordTransformation(transformationCost: Int): Try[ReductionState] = Try {
+      cost.addCost(transformationCost).ensuring(_.isRight)
+      ReductionState(cost, numberOfTransformations + 1)
+    }
+  }
 
+  //todo: return final cost as well
   def reduceNew(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try {
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
 
-    val additionalCost = CostAccumulator(exp.cost, maxCost)
+    @tailrec
+    def reductionStep(tree: SigmaStateTree, reductionState: ReductionState): (SigmaStateTree, ReductionState) = {
+      var state = reductionState
 
-    //todo: use and(s1, s2) strategy to combine rules below with specific phases
-    val rules: Strategy = everywherebu(rule[SigmaStateTree] {
-      case _ => ???
-    })
-    
+      def statefulTransformation(rules: PartialFunction[SigmaStateTree, SigmaStateTree]):
+      PartialFunction[SigmaStateTree, SigmaStateTree] = rules.andThen({newTree =>
+        state = state.recordTransformation(newTree.cost).get //todo: replace .get with a nicer logic
+        newTree
+      })
 
-    ???
+      //todo: use and(s1, s2) strategy to combine rules below with specific phases
+      val rules: Strategy = rule[SigmaStateTree](statefulTransformation({
+        case TaggedByteArray(id: Byte) if context.extension.values.contains(id) =>
+          context.extension.values(id)
+      }))
+
+      val newTree = everywherebu(rules)(tree).get.asInstanceOf[SigmaStateTree]
+
+      if(state.numberOfTransformations == 0) (newTree, state) else reductionStep(newTree, state)
+    }
+
+    val initialCost = CostAccumulator(exp.cost, maxCost)
+    val initialState = ReductionState(initialCost, 0)
+
+    reductionStep(exp, initialState)._1
   }
 
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
@@ -121,7 +144,7 @@ trait Interpreter {
 
     //in these two phases a tree could be expanded, so additionalCost accumulator is passed to ensure
     // that cost of script is not exploding
-    val afterContextSubst = log(contextSubst(context, additionalCost), "msg", new OutputEmitter)(exp).get.asInstanceOf[SigmaStateTree]
+    val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
 
     //in phases below, a tree could be reduced only
