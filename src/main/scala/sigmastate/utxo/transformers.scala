@@ -210,7 +210,8 @@ abstract class ExtractRegisterAs[V <: Value] extends Extract[V] {
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[BoxLeaf]): V = box.value.box.get(registerId).orElse(default).get
+  override def function(box: EvaluatedValue[BoxLeaf]): V =
+    box.value.box.get(registerId).orElse(default).get.asInstanceOf[V]
 }
 
 case class ExtractRegisterAsIntLeaf(input: BoxLeaf,

@@ -11,7 +11,8 @@ import sigmastate.utils.Helpers
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, log, rule, and}
+import org.bitbucket.inkytonik.kiama.util.OutputEmitter
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
@@ -93,13 +94,25 @@ trait Interpreter {
       o.function(children.asInstanceOf[ConcreteCollection[BooleanLeaf]])
   })
 
-  def reduceNew(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
+
+  // new reducer: 1 phase only which is constantly being repeated until non-reducible,
+  // reduction state carried between reductions is about current cost and number of transformations done.
+  // when the latter becomes zero, it means that it is time to stop (tree becomes irreducible)
+  case class ReductionState(cost: CostAccumulator, numberOfTransformations: Int)
+
+  def reduceNew(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try {
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
 
     val additionalCost = CostAccumulator(exp.cost, maxCost)
 
+    //todo: use and(s1, s2) strategy to combine rules below with specific phases
+    val rules: Strategy = everywherebu(rule[SigmaStateTree] {
+      case _ => ???
+    })
+    
+
     ???
-  })
+  }
 
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
@@ -108,7 +121,7 @@ trait Interpreter {
 
     //in these two phases a tree could be expanded, so additionalCost accumulator is passed to ensure
     // that cost of script is not exploding
-    val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
+    val afterContextSubst = log(contextSubst(context, additionalCost), "msg", new OutputEmitter)(exp).get.asInstanceOf[SigmaStateTree]
     val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
 
     //in phases below, a tree could be reduced only
