@@ -37,6 +37,10 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
   }
 
   override val contextExtenders: Map[Byte, ByteArrayLeafConstant] = Map[Byte, ByteArrayLeafConstant]()
+
+  override def specificTransformations(context: TestingContext): PartialFunction[SigmaStateTree, SigmaStateTree] = {
+    case Height => IntLeafConstant(context.height)
+  }
 }
 
 class TestingInterpreterSpecification extends PropSpec

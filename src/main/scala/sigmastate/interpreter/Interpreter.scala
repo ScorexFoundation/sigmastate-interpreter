@@ -36,6 +36,7 @@ trait Interpreter {
     */
   def maxCost: Int
 
+  def specificTransformations(context: CTX): PartialFunction[SigmaStateTree, SigmaStateTree]
   /**
     * Implementation-specific tree reductions, to be defined in descendants
     *
@@ -120,11 +121,48 @@ trait Interpreter {
         newTree
       })
 
-      //todo: use and(s1, s2) strategy to combine rules below with specific phases
-      val rules: Strategy = rule[SigmaStateTree](statefulTransformation({
+      val transformations = ({
         case TaggedByteArray(id: Byte) if context.extension.values.contains(id) =>
           context.extension.values(id)
-      }))
+
+        //operations
+        case Plus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value + r.value)
+        case Minus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value - r.value)
+        case Xor(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
+          assert(l.value.length == r.value.length)
+          ByteArrayLeafConstant(Helpers.xor(l.value, r.value))
+        case Append(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
+          require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
+          ByteArrayLeafConstant(l.value ++ r.value)
+        case c@CalcBlake2b256(l: ByteArrayLeafConstant) if l.evaluated => c.function(l)
+
+        //relations
+        case EQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+          BooleanLeafConstant.fromBoolean(l == r)
+        case NEQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+          BooleanLeafConstant.fromBoolean(l != r)
+        case GT(l: IntLeafConstant, r: IntLeafConstant) =>
+          BooleanLeafConstant.fromBoolean(l.value > r.value)
+        case GE(l: IntLeafConstant, r: IntLeafConstant) =>
+          BooleanLeafConstant.fromBoolean(l.value >= r.value)
+        case LT(l: IntLeafConstant, r: IntLeafConstant) =>
+          BooleanLeafConstant.fromBoolean(l.value < r.value)
+        case LE(l: IntLeafConstant, r: IntLeafConstant) =>
+          BooleanLeafConstant.fromBoolean(l.value <= r.value)
+        case IsMember(tree: AvlTreeLeafConstant, key: ByteArrayLeafConstant, proof: ByteArrayLeafConstant) =>
+          val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
+          BooleanLeafConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
+
+        //conjectures
+        case a@AND(children) if a.transformationReady =>
+          a.function(children.asInstanceOf[ConcreteCollection[BooleanLeaf]])
+
+        case o@OR(children) if o.transformationReady =>
+          o.function(children.asInstanceOf[ConcreteCollection[BooleanLeaf]])
+      }: PartialFunction[SigmaStateTree, SigmaStateTree]).orElse(specificTransformations(context))
+
+      //todo: use and(s1, s2) strategy to combine rules below with specific phases
+      val rules: Strategy = rule[SigmaStateTree](statefulTransformation(transformations))
 
       val newTree = everywherebu(rules)(tree).get.asInstanceOf[SigmaStateTree]
 
