@@ -26,7 +26,7 @@ object CostTable {
 
 
 
-    val AndDeclaration = 1
+    val AndDeclaration = 10
     val AndPerChild = 1
 
 

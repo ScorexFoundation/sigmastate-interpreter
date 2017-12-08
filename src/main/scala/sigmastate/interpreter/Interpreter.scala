@@ -9,17 +9,17 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.utils.Helpers
 
-import scala.annotation.tailrec
-import scala.collection.mutable
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.utxo.CostTable
+
+import scala.annotation.tailrec
 
 
 trait Interpreter {
@@ -39,116 +39,92 @@ trait Interpreter {
   /**
     * Implementation-specific tree reductions, to be defined in descendants
     *
-    * @param tree - a tree to process
-    * @param ctx  - context instance
+    * @param context  - context instance
     * @return - processed tree
     */
-  def specificPhases(tree: SigmaStateTree, ctx: CTX, cost: CostAccumulator): SigmaStateTree
+  def specificTransformations(context: CTX): PartialFunction[SigmaStateTree, SigmaStateTree]
 
-  protected def contextSubst(ctx: CTX, cost: CostAccumulator): Strategy = {
-    everywherebu(rule[SigmaStateTree] {
-      case CustomByteArray(tag: Int) if ctx.extension.values.contains(tag) =>
-        val value = ctx.extension.values(tag)
-        cost.addCost(value.cost).ensuring(_.isRight)
-        value
-    })
+
+  // new reducer: 1 phase only which is constantly being repeated until non-reducible,
+  // reduction state carried between reductions is about current cost and number of transformations done.
+  // when the latter becomes zero, it means that it is time to stop (tree becomes irreducible)
+  case class ReductionState(cost: CostAccumulator, numberOfTransformations: Int) {
+    def recordTransformation(transformationCost: Int): Try[ReductionState] = Try {
+      cost.addCost(transformationCost).ensuring(_.isRight)
+      ReductionState(cost, numberOfTransformations + 1)
+    }
   }
 
-  protected val relations: Strategy = everywherebu(rule[SigmaStateTree] {
-    case EQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
-      BooleanLeafConstant.fromBoolean(l == r)
-    case NEQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
-      BooleanLeafConstant.fromBoolean(l != r)
-    case GT(l: IntLeafConstant, r: IntLeafConstant) =>
-      BooleanLeafConstant.fromBoolean(l.value > r.value)
-    case GE(l: IntLeafConstant, r: IntLeafConstant) =>
-      BooleanLeafConstant.fromBoolean(l.value >= r.value)
-    case LT(l: IntLeafConstant, r: IntLeafConstant) =>
-      BooleanLeafConstant.fromBoolean(l.value < r.value)
-    case LE(l: IntLeafConstant, r: IntLeafConstant) =>
-      BooleanLeafConstant.fromBoolean(l.value <= r.value)
-
-    //todo: cost
-    case IsMember(tree: AvlTreeLeafConstant, key: ByteArrayLeafConstant, proof: ByteArrayLeafConstant) =>
-      val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
-      BooleanLeafConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
-  })
-
-  protected val operations: Strategy = everywherebu(rule[SigmaStateTree] {
-    case Plus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value + r.value)
-    case Minus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value - r.value)
-    case Xor(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
-      assert(l.value.length == r.value.length)
-      ByteArrayLeafConstant(Helpers.xor(l.value, r.value))
-    case Append(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
-      require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
-      ByteArrayLeafConstant(l.value ++ r.value)
-    case c@CalcBlake2b256Inst(l: ByteArrayLeafConstant) if l.evaluated => c.function(l)
-  })
-
-  protected val conjs: Strategy = everywherebu(rule[SigmaStateTree] {
-
-    case AND(children) =>
-
-      @tailrec
-      def iterChildren(children: Seq[BooleanLeaf],
-                       currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
-        if (children.isEmpty) currentBuffer else children.head match {
-          case FalseLeaf => mutable.Buffer(FalseLeaf)
-          case TrueLeaf => iterChildren(children.tail, currentBuffer)
-          case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
-        }
-      }
-
-      val reduced = iterChildren(children, mutable.Buffer())
-
-      reduced.size match {
-        case i: Int if i == 0 => TrueLeaf
-        case i: Int if i == 1 => reduced.head
-        case _ =>
-          if (reduced.forall(_.isInstanceOf[SigmaTree]))
-            CAND(reduced.map(_.asInstanceOf[SigmaTree]))
-          else AND(reduced)
-      }
-
-
-    case OR(children) =>
-      @tailrec
-      def iterChildren(children: Seq[BooleanLeaf],
-                       currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
-        if (children.isEmpty) currentBuffer else children.head match {
-          case TrueLeaf => mutable.Buffer(TrueLeaf)
-          case FalseLeaf => iterChildren(children.tail, currentBuffer)
-          case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
-        }
-      }
-
-      val reduced = iterChildren(children, mutable.Buffer())
-
-      reduced.size match {
-        case i: Int if i == 0 => FalseLeaf
-        case i: Int if i == 1 => reduced.head
-        case _ =>
-          if (reduced.forall(_.isInstanceOf[SigmaTree])) COR(reduced.map(_.asInstanceOf[SigmaTree]))
-          else OR(reduced)
-      }
-  })
-
-  def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try({
+  //todo: return final cost as well
+  def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try {
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
 
-    val additionalCost = CostAccumulator(exp.cost, maxCost)
+    @tailrec
+    def reductionStep(tree: SigmaStateTree, reductionState: ReductionState): (SigmaStateTree, ReductionState) = {
+      var state = reductionState
 
-    //in these two phases a tree could be expanded, so additionalCost accumulator is passed to ensure
-    // that cost of script is not exploding
-    val afterContextSubst = contextSubst(context, additionalCost)(exp).get.asInstanceOf[SigmaStateTree]
-    val afterSpecific = specificPhases(afterContextSubst, context, additionalCost)
+      def statefulTransformation(rules: PartialFunction[SigmaStateTree, SigmaStateTree]):
+      PartialFunction[SigmaStateTree, SigmaStateTree] = rules.andThen({ newTree =>
+        state = state.recordTransformation(newTree.cost).get //todo: replace .get with a nicer logic
+        newTree
+      })
 
-    //in phases below, a tree could be reduced only
-    val afterOps = operations(afterSpecific).get.asInstanceOf[SigmaStateTree]
-    val afterRels = relations(afterOps).get.asInstanceOf[SigmaStateTree]
-    conjs(afterRels).get
-  }.asInstanceOf[SigmaStateTree])
+      val transformations = ({
+        case TaggedByteArray(id: Byte) if context.extension.values.contains(id) =>
+          context.extension.values(id)
+
+        //operations
+        case Plus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value + r.value)
+        case Minus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value - r.value)
+        case Xor(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
+          assert(l.value.length == r.value.length)
+          ByteArrayLeafConstant(Helpers.xor(l.value, r.value))
+        case Append(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
+          require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
+          ByteArrayLeafConstant(l.value ++ r.value)
+        case c@CalcBlake2b256(l: ByteArrayLeafConstant) if l.evaluated => c.function(l)
+
+        //relations
+        case EQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+          BooleanLeafConstant.fromBoolean(l == r)
+        case NEQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+          BooleanLeafConstant.fromBoolean(l != r)
+        case GT(l: IntLeafConstant, r: IntLeafConstant) =>
+          BooleanLeafConstant.fromBoolean(l.value > r.value)
+        case GE(l: IntLeafConstant, r: IntLeafConstant) =>
+          BooleanLeafConstant.fromBoolean(l.value >= r.value)
+        case LT(l: IntLeafConstant, r: IntLeafConstant) =>
+          BooleanLeafConstant.fromBoolean(l.value < r.value)
+        case LE(l: IntLeafConstant, r: IntLeafConstant) =>
+          BooleanLeafConstant.fromBoolean(l.value <= r.value)
+        case IsMember(tree: AvlTreeLeafConstant, key: ByteArrayLeafConstant, proof: ByteArrayLeafConstant) =>
+          val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
+          BooleanLeafConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
+
+        //conjectures
+        case a@AND(children) if a.transformationReady =>
+          a.function(children.asInstanceOf[ConcreteCollection[BooleanLeaf]])
+
+        case o@OR(children) if o.transformationReady =>
+          o.function(children.asInstanceOf[ConcreteCollection[BooleanLeaf]])
+      }: PartialFunction[SigmaStateTree, SigmaStateTree]).orElse(specificTransformations(context))
+
+      //todo: use and(s1, s2) strategy to combine rules below with specific phases
+      val rules: Strategy = rule[SigmaStateTree](statefulTransformation(transformations))
+
+      val newTree = everywherebu(rules)(tree).get.asInstanceOf[SigmaStateTree]
+
+      if (state.numberOfTransformations == 0)
+        (newTree, state)
+      else
+        reductionStep(newTree, state.copy(numberOfTransformations = 0))
+    }
+
+    val initialCost = CostAccumulator(exp.cost, maxCost)
+    val initialState = ReductionState(initialCost, 0)
+
+    reductionStep(exp, initialState)._1
+  }
 
   /**
     * Verifier steps:
@@ -186,7 +162,7 @@ trait Interpreter {
             val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
             challenge.sameElements(expectedChallenge)
         }
-      case other: SigmaStateTree => false
+      case _: SigmaStateTree => false
     }
   }
 

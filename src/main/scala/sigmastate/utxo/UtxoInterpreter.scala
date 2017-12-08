@@ -1,16 +1,14 @@
 package sigmastate.utxo
 
 import sigmastate._
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
-import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import sigmastate.interpreter.{CostAccumulator, Interpreter}
+import sigmastate.interpreter.Interpreter
 
 
 class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends Interpreter {
   override type StateT = StateTree
   override type CTX = UtxoContext
 
-  def ssSubst(context: UtxoContext, cost: CostAccumulator): Strategy = everywherebu(rule[SigmaStateTree] {
+  override def specificTransformations(context: UtxoContext) = {
     case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxLeafConstant.apply))
 
     case Outputs => ConcreteCollection(context.spendingTransaction.newBoxes
@@ -19,8 +17,6 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       .map(BoxLeafConstant.apply))
 
     case Self => BoxLeafConstant(context.self)
-
-    case EmptyByteArray => ByteArrayLeafConstant(Array.emptyByteArray)
 
     case e: Exists[_] if e.transformationReady => e.input match {
       case c: ConcreteCollection[_] => e.function(c)
@@ -32,7 +28,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       case _ => ???
     }
 
-    case m@MapCollection(coll, _) if m.transformationReady =>
+    case m@MapCollection(coll, _, _) if m.transformationReady =>
       m.function(coll.asInstanceOf[ConcreteCollection[Value]])
 
     case sum@Sum(coll) if sum.transformationReady =>
@@ -40,25 +36,12 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
     case sum@SumBytes(coll, _) if sum.transformationReady =>
       sum.function(coll.asInstanceOf[ConcreteCollection[ByteArrayLeaf]])
-  })
 
-  def functions(cost:CostAccumulator): Strategy = everywherebu(rule[Value]{
-    case inst: TransformerInstantiation[BoxLeaf, _]
+    case Height => IntLeafConstant(context.currentHeight)
+
+    case inst: Transformer[BoxLeaf, _]
       if inst.input.isInstanceOf[BoxLeafConstant] =>
 
-      val leaf = inst.function(inst.input.asInstanceOf[BoxLeafConstant])
-      cost.addCost(leaf.cost).ensuring(_.isRight)
-      leaf
-  })
-
-  def varSubst(context: UtxoContext): Strategy = everywherebu(
-    rule[Value] {
-      case Height => IntLeafConstant(context.currentHeight)
-    })
-
-  override def specificPhases(tree: SigmaStateTree, context: UtxoContext, cost: CostAccumulator): SigmaStateTree = {
-    val afterSs = ssSubst(context, cost)(tree).get.asInstanceOf[SigmaStateTree]
-    val afterVar = varSubst(context)(afterSs).get.asInstanceOf[SigmaStateTree]
-    functions(cost)(afterVar).get.asInstanceOf[SigmaStateTree]
+      inst.function(inst.input.asInstanceOf[BoxLeafConstant])
   }
 }

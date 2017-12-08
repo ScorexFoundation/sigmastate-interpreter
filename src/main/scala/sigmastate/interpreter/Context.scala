@@ -5,7 +5,7 @@ import sigmastate.Value
 /**
   * Variables to be put into context
   */
-case class ContextExtension(values: Map[Int, _ <: Value])
+case class ContextExtension(values: Map[Byte, _ <: Value])
 
 
 trait Context[C <: Context[C]] {

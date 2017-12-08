@@ -2,7 +2,6 @@ package sigmastate
 
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
@@ -25,18 +24,17 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
 
   override val maxCost = CostTable.ScriptLimit
 
-  override def specificPhases(tree: SigmaStateTree, context: TestingContext, cost: CostAccumulator): SigmaStateTree =
-    everywherebu(rule[Value] {
-      case Height => IntLeafConstant(context.height)
-    })(tree).get.asInstanceOf[SigmaStateTree]
-
   override lazy val secrets: Seq[DLogProverInput] = {
     import SchnorrSignature._
 
     Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
   }
 
-  override val contextExtenders: Map[Int, ByteArrayLeafConstant] = Map[Int, ByteArrayLeafConstant]()
+  override val contextExtenders: Map[Byte, ByteArrayLeafConstant] = Map[Byte, ByteArrayLeafConstant]()
+
+  override def specificTransformations(context: TestingContext): PartialFunction[SigmaStateTree, SigmaStateTree] = {
+    case Height => IntLeafConstant(context.height)
+  }
 }
 
 class TestingInterpreterSpecification extends PropSpec
@@ -165,7 +163,7 @@ class TestingInterpreterSpecification extends PropSpec
     val bytes = "hello world".getBytes
     val hash = Blake2b256(bytes)
 
-    val prop1 = EQ(CalcBlake2b256Inst(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
+    val prop1 = EQ(CalcBlake2b256(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -173,11 +171,11 @@ class TestingInterpreterSpecification extends PropSpec
 
     verify(prop1, env, proof, challenge).getOrElse(false) shouldBe true
 
-    val prop2 = NEQ(CalcBlake2b256Inst(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
+    val prop2 = NEQ(CalcBlake2b256(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(hash))
 
     verify(prop2, env, proof, challenge).getOrElse(false) shouldBe false
 
-    val prop3 = EQ(CalcBlake2b256Inst(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(bytes))
+    val prop3 = EQ(CalcBlake2b256(ByteArrayLeafConstant(bytes)), ByteArrayLeafConstant(bytes))
 
     verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
   }
