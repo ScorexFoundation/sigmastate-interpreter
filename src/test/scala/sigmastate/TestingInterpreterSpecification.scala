@@ -2,7 +2,6 @@ package sigmastate
 
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
@@ -24,11 +23,6 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
   override type CTX = TestingContext
 
   override val maxCost = CostTable.ScriptLimit
-
-  override def specificPhases(tree: SigmaStateTree, context: TestingContext, cost: CostAccumulator): SigmaStateTree =
-    everywherebu(rule[Value] {
-      case Height => IntLeafConstant(context.height)
-    })(tree).get.asInstanceOf[SigmaStateTree]
 
   override lazy val secrets: Seq[DLogProverInput] = {
     import SchnorrSignature._
