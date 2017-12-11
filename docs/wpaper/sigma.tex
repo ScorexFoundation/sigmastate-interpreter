@@ -76,7 +76,7 @@ We report on design and implementation of \langname, a more powerful, protocol-f
 
 \section{Introduction}
 
-Since very early days, Bitcoin~\cite{nakamoto2008bitcoin} is not just about simple money transfers: it has a scripting language named Bitcoin Script. The language is a primitive stack-based language without loops. A program in this language is protecting an output. To spend the output, a spending transaction must provide a script in the same language, such as concatenation of both scripts is to be interpreted in {\em true} value on top of the stack. Combined with a maximum size of a 10 kilobytes, the absence of loops provides a guarantee of strictly finite validation time. However, some denial-of-service attacks were found against script validation time. \knote{links}
+Since very early days, Bitcoin~\cite{nakamoto2008bitcoin} is not just about simple money transfers: it has a scripting language named Bitcoin Script. The language is a primitive stack-based language without loops. A program in this language is protecting a transaction output~(usually, from a party who does not know some secret information). To spend the output, a spending transaction must provide a script in the same language, such as concatenation of both scripts is to be interpreted in {\em true} value on top of the stack. Combined with a maximum size of a 10 kilobytes, the absence of loops provides a guarantee of strictly finite validation time. However, some denial-of-service attacks were found against script validation time. \knote{links}
 
 Smart contracts platform Ethereum is allowing arbitrary program to be run on top of blockchain. \knote{continue}
 
@@ -303,8 +303,12 @@ It is hard to predict which functions would be useful for blockchain application
 
 \section{Conclusion}
 
+We show in this paper...
+
+
+
 \bibliographystyle{alpha}
-\bibliography{blockchain_eprint.bib, blockchain_online.bib, blockchain_peerreviewed.bib}
+\bibliography{blockchain_eprint, blockchain_online, blockchain_peerreviewed}
 
 \newpage
 
