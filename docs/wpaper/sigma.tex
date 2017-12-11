@@ -3,12 +3,9 @@
 \def\lncs{1}
 \def\shortVersion{0}
 
-\ifnum\lncs=1
-\documentclass[runningheads]{IEEEtran}
-\else
+
 \documentclass[11pt]{article}
 \usepackage{fullpage}
-\fi
 
 \usepackage{amsmath,color,xcolor,hyperref,graphicx,wrapfig}
 
@@ -71,7 +68,7 @@
 
 \begin{abstract}
 
-We report on design and implementation of \langname, a more powerful, protocol-friendly and at the same more secure language than the  Script language used in Bitcoin. We provide some examples.
+We report on design and implementation of \langname, a more powerful, protocol-friendly and at the same more secure language than the  Script language used in Bitcoin. We provide some examples of scripts in the language.
 
 
 \end{abstract}
@@ -79,14 +76,14 @@ We report on design and implementation of \langname, a more powerful, protocol-f
 
 \section{Introduction}
 
-Since very early days, Bitcoin~\cite{Nakamoto2008} is not just about simple money transfers. It has a scripting language named Bitcoin Script. The language is primitive stack-based language without loops. A program in this language is protecting an output. To spend the output, a spending transaction must provide a script in the same language, such as concatenation of both scripts is to be interpreted in {\em true} value on top of the stack. Combined with a maximum size of a 10 kilobytes, the absence of loops provides a guarantee of strictly finite validation time. However, some denial-of-service attacks were found against script validation time. \knote{links}
+Since very early days, Bitcoin~\cite{nakamoto2008bitcoin} is not just about simple money transfers: it has a scripting language named Bitcoin Script. The language is a primitive stack-based language without loops. A program in this language is protecting an output. To spend the output, a spending transaction must provide a script in the same language, such as concatenation of both scripts is to be interpreted in {\em true} value on top of the stack. Combined with a maximum size of a 10 kilobytes, the absence of loops provides a guarantee of strictly finite validation time. However, some denial-of-service attacks were found against script validation time. \knote{links}
 
 Smart contracts platform Ethereum is allowing arbitrary program to be run on top of blockchain. \knote{continue}
 
 Our paper is introducing a new language, which is more powerful than Bitcoin Script, and more friendly to cryptographic protocols and applications. It is also providing better guarantees for validation to be finished within target timeout. \knote{continue}
 
 
-The idea behind language is that a subset of zero-knowledge protocols known as $\Sigma$-protocols~(sigma protocols) could be combined via $\land$ and $\lor$ connectives forming complex statements like ``prove me a knowledge of discrete logarithm of (publicly known) $x_1$ or knowledge of Pedersen commitment $x_2$ preimage''. We augment such statements with predicates over state of blockchain system during script validation~(which happens when a transaction tries to spend an output protected by the script). To avoid inefficient processing and impossibility for a light client to validate a transaction, the state is minimal but nevertheless it is richer than in Bitcoin. Like in Bitcoin, we use current height of the blockchain, but also a spending transaction with its inputs and outputs, and output which contains script is also exposed to it, along with height when it was created. Unlike Bitcoin, we allow outputs to contain more fields than amount and protecting script, in form of additional registers. In addition to $\land$ and $\lor$ connectives, we have different operations over typed arguments. More, we filter out wrong expressions, like ``2 + 2 > true'', thanks to a type system used. 
+The idea behind the language is that a subset of zero-knowledge protocols known as $\Sigma$-protocols~(sigma protocols) could be combined via $\land$ and $\lor$ connectives forming complex statements like ``prove me a knowledge of discrete logarithm of (publicly known) $x_1$ or knowledge of Pedersen commitment $x_2$ preimage''. We augment such statements with predicates over state of blockchain system during script validation~(which happens when a transaction tries to spend an output protected by the script). To avoid inefficient processing and impossibility for a light client to validate a transaction, the state is minimal but nevertheless it is richer than in Bitcoin. Like in Bitcoin, we use current height of the blockchain, but also a spending transaction with its inputs and outputs, and output which contains script is also exposed to it, along with height when it was created. Unlike Bitcoin, we allow outputs to contain more fields than amount and protecting script, in form of additional registers. In addition to $\land$ and $\lor$ connectives, we have different operations over typed arguments. More, we filter out wrong expressions, like ``2 + 2 > true'', thanks to a type system used. 
 
 To tackle the problem of denial-of-service attack carrying by crafting scripts which are too costly to validate~(for example, if it is needed for more time to validate a script than average delay between blocks on commodity hardware, network could be obviously attacked, with nodes stuck in processing and increased number of forks as result).
 
@@ -298,7 +295,7 @@ We need to be sure that an adversary can not produce such a statement for which 
 
 \section{Extensibility}
 
-It is hard to 
+It is hard to predict which functions would be useful for blockchain applications.
 
 \section{Implementation and Evaluation}
 
@@ -306,7 +303,8 @@ It is hard to
 
 \section{Conclusion}
 
-\bibliography{sources.bib}
+\bibliographystyle{alpha}
+\bibliography{blockchain_eprint.bib, blockchain_online.bib, blockchain_peerreviewed.bib}
 
 \newpage
 
