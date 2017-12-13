@@ -8,7 +8,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   override type StateT = StateTree
   override type CTX = UtxoContext
 
-  override def specificTransformations(context: UtxoContext) = {
+  override def specificTransformations(context: UtxoContext): PartialFunction[SigmaStateTree, Value] = {
     case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxLeafConstant.apply))
 
     case Outputs => ConcreteCollection(context.spendingTransaction.newBoxes
@@ -18,6 +18,9 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
     case Self => BoxLeafConstant(context.self)
 
+    case t: Transformer[_, _] if t.transformationReady => t.function()
+
+      /*
     case e: Exists[_] if e.transformationReady => e.input match {
       case c: ConcreteCollection[_] => e.function(c)
       case _ => ???
@@ -36,6 +39,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
     case sum@SumBytes(coll, _) if sum.transformationReady =>
       sum.function(coll.asInstanceOf[ConcreteCollection[ByteArrayLeaf]])
+*/
 
     case Height => IntLeafConstant(context.currentHeight)
 
