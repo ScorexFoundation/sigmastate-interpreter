@@ -162,7 +162,7 @@ trait EvaluatedValue[V <: Value] extends Value {
 }
 
 trait NotReadyValue[V <: Value] extends Value {
-  self: V =>
+   self: V =>
   override lazy val evaluated = false
 }
 
@@ -181,15 +181,17 @@ case class IntLeafConstant(value: Long) extends IntLeaf with EvaluatedValue[IntL
   override val cost = 1
 }
 
-trait NotReadyValueIntLeaf extends IntLeaf with NotReadyValue[IntLeaf]
+trait NotReadyValueIntLeaf extends IntLeaf with NotReadyValue[IntLeaf]{
+  override lazy val cost: Int = 1
+}
 
 case object Height extends NotReadyValueIntLeaf {
-  override def cost: Int = Cost.HeightAccess
+  override lazy val cost: Int = Cost.HeightAccess
 }
 
-case object UnknownIntLeaf extends NotReadyValueIntLeaf {
-  override val cost = 1
-}
+case object UnknownIntLeaf extends NotReadyValueIntLeaf
+
+case class TaggedInt(override val id: Byte) extends TaggedVariable[IntLeaf] with NotReadyValueIntLeaf
 
 
 sealed trait ByteArrayLeaf extends Value {

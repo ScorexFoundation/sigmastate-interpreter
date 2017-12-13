@@ -102,12 +102,14 @@ object Slice
 */
 
 
-trait Fold[IV <: Value] extends Transformer[CollectionLeaf[IV], IV] with NotReadyValue[IV] {
-  self: IV =>
-  val input: CollectionLeaf[IV]
-  val folder: (IV, IV) => IV
-  val zero: IV
+abstract class Fold[IV <: Value](input: CollectionLeaf[IV],
+                             id: Byte,
+                             zero: IV,
+                             accId: Byte,
+                             foldOp: TwoArgumentsOperation[IV, IV, IV])
+  extends Transformer[CollectionLeaf[IV], IV] with NotReadyValue[IV] {
 
+  self: IV =>
 
   override def transformationReady: Boolean =
     input.evaluated &&
@@ -115,19 +117,31 @@ trait Fold[IV <: Value] extends Transformer[CollectionLeaf[IV], IV] with NotRead
       zero.isInstanceOf[EvaluatedValue[IV]]
 
 
-  override lazy val cost = (input match {
+  override lazy val cost: Int = (input match {
     case c: EvaluatedValue[CollectionLeaf[IV]] => c.value.map(_.cost).sum
     case _ => 10
   }) + zero.cost
 
   override def function(input: EvaluatedValue[CollectionLeaf[IV]]): IV = {
-    input.value.foldLeft(zero) {case (s: IV, i: IV) =>
-      folder(s, i): IV
+    def rl(arg: IV, acc: IV) = everywherebu(rule[Value] {
+      case t: TaggedVariable[IV] if t.id == id => arg
+      case t: TaggedVariable[IV] if t.id == accId => arg
+    })
+
+    input.value.foldLeft(zero) {case (acc: IV, elem: IV) =>
+      rl(elem, acc)(foldOp).get.asInstanceOf[IV]
     }
   }
 }
 
+object Fold {
+  def sum(input: CollectionLeaf[IntLeaf]) = Fold(input, 21, IntLeafConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
 
+  def sumBytes(input: CollectionLeaf[ByteArrayLeaf]) =
+    Fold(input, 21, EmptyByteArray, 22, Append(TaggedByteArray(22), TaggedByteArray(21)))
+}
+
+/*
 case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
 
   val folder = {
@@ -154,7 +168,7 @@ case class SumBytes(override val input: CollectionLeaf[ByteArrayLeaf],
   }: (ByteArrayLeaf, ByteArrayLeaf) => ByteArrayLeaf
 
   override type M = this.type
-}
+}*/
 
 sealed abstract class Extract[V <: Value] extends Transformer[BoxLeaf, V] {
   self: V =>
@@ -163,7 +177,7 @@ sealed abstract class Extract[V <: Value] extends Transformer[BoxLeaf, V] {
 }
 
 case class ExtractHeight(input: BoxLeaf) extends Extract[IntLeaf] with NotReadyValueIntLeaf {
-  override def cost: Int = 10
+  override lazy val cost: Int = 10
 
   override type M = this.type
 
@@ -172,7 +186,7 @@ case class ExtractHeight(input: BoxLeaf) extends Extract[IntLeaf] with NotReadyV
 
 
 case class ExtractAmount(input: BoxLeaf) extends Extract[IntLeaf] with NotReadyValueIntLeaf {
-  override def cost: Int = 10
+  override lazy val cost: Int = 10
 
   override type M = this.type
 
@@ -181,7 +195,7 @@ case class ExtractAmount(input: BoxLeaf) extends Extract[IntLeaf] with NotReadyV
 
 
 case class ExtractScript(input: BoxLeaf) extends Extract[PropLeaf] with NotReadyValueProp {
-  override def cost: Int = 10
+  override lazy val cost: Int = 10
 
   override type M = this.type
 
