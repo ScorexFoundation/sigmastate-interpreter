@@ -33,8 +33,6 @@ case class MapCollection[IV <: SType, OV <: SType](input: CollectionLeaf[IV],
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-
-  //todo: it will fail on FakeBoolean(SigmaTree) instances, the same problem for other similar places
   override def function(cl: EvaluatedValue[SCollection[IV]]): CollectionLeaf[OV] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
