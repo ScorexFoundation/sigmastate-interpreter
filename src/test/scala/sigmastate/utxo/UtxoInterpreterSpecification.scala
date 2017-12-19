@@ -780,7 +780,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = OR(
       AND(LE(Height, IntLeafConstant(timeout)),
-        EQ(CalcBlake2b256(SumBytes(MapCollection(Outputs, 21, ExtractBytes(TaggedBoxLeaf(21))), EmptyByteArray)),
+        EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytes(TaggedBoxLeaf(21))))),
           ByteArrayLeafConstant(properHash))),
       AND(GT(Height, IntLeafConstant(timeout)), sender)
     )
@@ -804,7 +804,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = AND(pubkey, GT(Sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBoxLeaf(21)))), IntLeafConstant(20)))
+    val prop = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBoxLeaf(21)))), IntLeafConstant(20)))
 
     val newBox1 = SigmaStateBox(11, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)

@@ -82,12 +82,12 @@ trait Interpreter {
         case Append(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
           require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
           ByteArrayLeafConstant(l.value ++ r.value)
-        case c@CalcBlake2b256(l: ByteArrayLeafConstant) if l.evaluated => c.function(l)
+        case c@CalcBlake2b256(l: EvaluatedValue[SByteArray.type]) if l.evaluated => c.function(l)
 
         //relations
-        case EQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+        case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
           BooleanLeafConstant.fromBoolean(l == r)
-        case NEQ(l: Value, r: Value) if l.evaluated && r.evaluated =>
+        case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
           BooleanLeafConstant.fromBoolean(l != r)
         case GT(l: IntLeafConstant, r: IntLeafConstant) =>
           BooleanLeafConstant.fromBoolean(l.value > r.value)
@@ -103,10 +103,10 @@ trait Interpreter {
 
         //conjectures
         case a@AND(children) if a.transformationReady =>
-          a.function(children.asInstanceOf[ConcreteCollection[BooleanLeaf]])
+          a.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
 
         case o@OR(children) if o.transformationReady =>
-          o.function(children.asInstanceOf[ConcreteCollection[BooleanLeaf]])
+          o.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
       }: PartialFunction[SigmaStateTree, SigmaStateTree]).orElse(specificTransformations(context))
 
       //todo: use and(s1, s2) strategy to combine rules below with specific phases

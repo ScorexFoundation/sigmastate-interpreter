@@ -14,11 +14,11 @@ import scala.util.Try
 
 class SigmaStateBox(override val value: Long,
                          override val proposition: SigmaStateTree,
-                         additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value] = Map()
+                         additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map()
                         ) extends Box[SigmaStateTree] {
   import sigmastate.utxo.SigmaStateBox._
 
-  def get(identifier: RegisterIdentifier): Option[_ <: Value] = {
+  def get(identifier: RegisterIdentifier): Option[_ <: Value[_]] = {
     identifier match {
       case R1 => Some(IntLeafConstant(value))
       case R2 => Some(PropLeafConstant(propositionBytes))
@@ -46,7 +46,7 @@ class SigmaStateBox(override val value: Long,
 object SigmaStateBox {
   def apply(value: Long,
             proposition: SigmaStateTree,
-            additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value] = Map()): SigmaStateBox =
+            additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map()): SigmaStateBox =
     new SigmaStateBox(value, proposition, additionalRegisters)
 
   sealed trait RegisterIdentifier
