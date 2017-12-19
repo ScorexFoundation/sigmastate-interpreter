@@ -95,7 +95,6 @@ case class ForAll[IV <: SType](input: CollectionLeaf[IV],
 /*
 todo: implement
 
-object ByIndex
 object Append
 object Slice
 */
@@ -140,6 +139,14 @@ object Fold {
     Fold[SByteArray.type](input, 21, EmptyByteArray, 22, Append(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
+case class ByIndex[V <: SType](input: CollectionLeaf[V], index: Int)
+  extends Transformer[SCollection[V], V] with NotReadyValue[V] {
+
+  override def function(input: EvaluatedValue[SCollection[V]]) = input.value.apply(index)
+
+  override def cost = 1
+}
+
 sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
   override def function(box: EvaluatedValue[SBox.type]): Value[V]
 }
@@ -154,7 +161,7 @@ case class ExtractHeight(input: BoxLeaf) extends Extract[SInt.type] with NotRead
 }
 
 
-case class ExtractAmount(input: BoxLeaf) extends Extract[SInt.type] with NotReadyValueIntLeaf {
+case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueIntLeaf {
   override lazy val cost: Int = 10
 
   override type M = this.type
