@@ -140,35 +140,6 @@ object Fold {
     Fold[SByteArray.type](input, 21, EmptyByteArray, 22, Append(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
-/*
-case class Sum(override val input: CollectionLeaf[IntLeaf]) extends Fold[IntLeaf] with NotReadyValueIntLeaf {
-
-  val folder = {
-    case (s, i) =>
-      (s, i) match {
-        case (si: IntLeafConstant, ii: IntLeafConstant) => IntLeafConstant(si.value + ii.value)
-        case _ => UnknownIntLeaf
-      }
-  }: (IntLeaf, IntLeaf) => IntLeaf
-  val zero = IntLeafConstant(0)
-
-  override type M = this.type
-}
-
-case class SumBytes(override val input: CollectionLeaf[ByteArrayLeaf],
-                    zero: ByteArrayLeaf) extends Fold[ByteArrayLeaf] with NotReadyValueByteArray {
-
-  val folder = {
-    case (s, i) =>
-      (s, i) match {
-        case (si: ByteArrayLeafConstant, ii: ByteArrayLeafConstant) => ByteArrayLeafConstant(si.value ++ ii.value)
-        case _ => UnknownByteArrayLeaf
-      }
-  }: (ByteArrayLeaf, ByteArrayLeaf) => ByteArrayLeaf
-
-  override type M = this.type
-}*/
-
 sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
   override def function(box: EvaluatedValue[SBox.type]): Value[V]
 }
