@@ -145,6 +145,15 @@ case class ByIndex[V <: SType](input: CollectionLeaf[V], index: Int)
   override def cost = 1
 }
 
+
+case class SizeOf[V <: SType](input: CollectionLeaf[V])
+  extends Transformer[SCollection[V], SInt.type] with NotReadyValue[SInt.type] {
+
+  override def function(input: EvaluatedValue[SCollection[V]]) = IntLeafConstant(input.value.length)
+
+  override def cost = 1
+}
+
 sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
   override def function(box: EvaluatedValue[SBox.type]): Value[V]
 }

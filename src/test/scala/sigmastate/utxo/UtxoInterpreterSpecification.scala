@@ -843,9 +843,35 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val fProp2 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 1)), IntLeafConstant(11)))
     prover.prove(fProp2, ctx, fakeMessage).isSuccess shouldBe false
+  }
 
-    val fProp3 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 2)), IntLeafConstant(5)))
-    prover.prove(fProp3, ctx, fakeMessage).isSuccess shouldBe false
+  property("sizeof - num of outputs = num of inputs + 1") {
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val prop = AND(pubkey, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntLeafConstant(1))))
+
+    val newBox1 = SigmaStateBox(11, pubkey)
+    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBoxes = IndexedSeq(newBox1, newBox2)
+
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+
+    val s = BoxWithMetadata(SigmaStateBox(21, pubkey), BoxMetadata(0L, 0))
+
+    val ctx = UtxoContext(currentHeight = 50,
+                          boxesToSpend = IndexedSeq(s),
+                          spendingTransaction,
+                          self = s)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage)
+
+
+    val fProp = AND(pubkey, EQ(SizeOf(Outputs), SizeOf(Inputs)))
+    prover.prove(fProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   property("exists") {
