@@ -838,8 +838,14 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage)
 
 
-    val fProp = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntLeafConstant(11)))
-    prover.prove(fProp, ctx, fakeMessage).isSuccess shouldBe false
+    val fProp1 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntLeafConstant(11)))
+    prover.prove(fProp1, ctx, fakeMessage).isSuccess shouldBe false
+
+    val fProp2 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 1)), IntLeafConstant(11)))
+    prover.prove(fProp2, ctx, fakeMessage).isSuccess shouldBe false
+
+    val fProp3 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 2)), IntLeafConstant(5)))
+    prover.prove(fProp3, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   property("exists") {
