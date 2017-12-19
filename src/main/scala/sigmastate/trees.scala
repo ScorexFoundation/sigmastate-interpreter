@@ -385,11 +385,11 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
 
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType] extends Triple[LIV, RIV, OV]
 
-case class Plus[T1 <: SInt.type, T2 <: SInt.type](override val left: Value[T1], override val right: Value[T2])
-  extends TwoArgumentsOperation[T1, T2, SInt.type] with NotReadyValueIntLeaf
+case class Plus(override val left: Value[SInt.type], override val right: Value[SInt.type])
+  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueIntLeaf
 
-case class Minus[T1 <: SInt.type, T2 <: SInt.type](override val left: Value[T1],
-                 override val right: Value[T2]) extends TwoArgumentsOperation[T1, T2, SInt.type] with NotReadyValueIntLeaf
+case class Minus(override val left: Value[SInt.type], override val right: Value[SInt.type])
+  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueIntLeaf
 
 case class Xor(override val left: ByteArrayLeaf,
                override val right: ByteArrayLeaf)
