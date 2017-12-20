@@ -100,13 +100,18 @@ In blockchain systems, there is a strict need to tackle the problem of denial-of
 
 \section{Language Design}
 
+We assume that a {\em prover} and a {verifier} have a shared context. As we are designing a language for cryptocurrencies, this context is about current state of the blockchain (such as height $h$ of a best block in the blockchain, a spending transaction with outputs it spends and newly created outputs, etc). Please note that the language can be repurposed for other areas where shared context is possible, but this is out of scope of the paper.
+
 \subsection{Notation}
 
 We use $dlog(x)$ to denote a statement ``prove a knowledge of such $w$ that $x = g^w$''. Proving is to be done in zero knowledge~(with no presenting the secret $w$). Statement $dlog(x_1) \land dlog(x_2)$ means ``prove a knowledge of both $w_1$ and $w_2$, such as $x_1 = g^{w_1}, x_2 = g^{w_2}$'', similarly, $dlog(x_1) \lor dlog(x_2)$ is about a proof knowledge of whether $w_1$ or $w_2$. 
 
-\subsection{Model}
+\subsection{UTXO model}
 
-We assume that a {\em prover} and a {verifier} have a shared context. As we are designing a language for cryptocurrencies, this context is about current state of the blockchain (such as height $h$ of a best block in the blockchain, a spending transaction with outputs it spends and newly created outputs, etc). Please note that the language can be repurposed for other areas where shared context is possible.  
+We assume a transactional model close to Bitcoin's. That is, a transaction spends unspent outputs from previous transaction written into the blockchain, and creates new outputs. An output is associated with arbitrary amount of money, and also a protecting script. In Bitcoin, there is a special kind of transaction, so-called {\em coinbase transaction}, which can create some amount of money out of thin air~(to reward a block generator). In Bitcoin transaction fees money flow is not captured in outputs, a transaction fee is just a difference of amounts of outputs being spent and outputs being created. In Appendix~\ref{apx-unified} we provide a way to avoid coinbase transactions, and also express fees explicitly as outputs. 
+
+
+\subsection{Model}
 
 An output to spend is protected by a logical statement, which is a mix of predicates over known context and statements provable via sigma protocols. As a simplest example, consider the following statement:
 
@@ -134,8 +139,20 @@ We now provide details on building blocks of the language.
 
 \subsection{Types}
 
-We have following types in the language: \knote{todo: continue}
+We have following types in the language: 
 
+\begin{itemize}
+    \item{signed integer}
+    \item{boolean}
+    \item{byte array}
+    \item{script}
+    \item{collection}
+    \item{avl+ tree verification data}
+    \item{group element}
+    \item{box}
+\end{itemize}
+
+\knote{todo: improve, also, add unsigned integer?}
 
 \ignore{
 \begin{center}
@@ -324,5 +341,8 @@ We show in this paper...
 \section{Roadmap}
 
 \section{Outputs vs Accounts}
+
+\section{Unified Transactions}
+\label{apx-unified}
 
 \end{document}
