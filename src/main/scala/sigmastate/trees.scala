@@ -395,9 +395,11 @@ case class Xor(override val left: ByteArrayLeaf,
                override val right: ByteArrayLeaf)
   extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type] with NotReadyValueByteArray
 
-case class Append(override val left: Value[SByteArray.type],
-                  override val right: Value[SByteArray.type])
+case class AppendBytes(override val left: Value[SByteArray.type],
+                       override val right: Value[SByteArray.type])
   extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type] with NotReadyValueByteArray
+
+
 
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
 

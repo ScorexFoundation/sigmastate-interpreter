@@ -79,9 +79,10 @@ trait Interpreter {
         case Xor(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
           assert(l.value.length == r.value.length)
           ByteArrayLeafConstant(Helpers.xor(l.value, r.value))
-        case Append(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
+        case AppendBytes(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
           require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
-          ByteArrayLeafConstant(l.value ++ r.value)
+          ByteArrayLeafConstant(l.value ++ r.value
+          )
         case c@CalcBlake2b256(l: EvaluatedValue[SByteArray.type]) if l.evaluated => c.function(l)
 
         //relations

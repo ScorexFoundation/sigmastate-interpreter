@@ -134,7 +134,7 @@ object Fold {
     Fold(input, 21, IntLeafConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
 
   def sumBytes(input: CollectionLeaf[SByteArray.type]) =
-    Fold[SByteArray.type](input, 21, EmptyByteArray, 22, Append(TaggedByteArray(22), TaggedByteArray(21)))
+    Fold[SByteArray.type](input, 21, EmptyByteArray, 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
 case class ByIndex[V <: SType](input: CollectionLeaf[V], index: Int)
@@ -153,6 +153,8 @@ case class SizeOf[V <: SType](input: CollectionLeaf[V])
 
   override def cost = 1
 }
+
+
 
 sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
   override def function(box: EvaluatedValue[SBox.type]): Value[V]

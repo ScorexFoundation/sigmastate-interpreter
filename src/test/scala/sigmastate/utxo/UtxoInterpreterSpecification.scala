@@ -262,7 +262,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prover = new UtxoProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value
     val preimage2 = prover.contextExtenders(2).value
-    val prop = EQ(CalcBlake2b256(Append(TaggedByteArray(2), TaggedByteArray(1))),
+    val prop = EQ(CalcBlake2b256(AppendBytes(TaggedByteArray(2), TaggedByteArray(1))),
                   ByteArrayLeafConstant(Blake2b256(preimage2 ++ preimage1)))
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -331,7 +331,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = AND(
       pubkey,
       EQ(
-        CalcBlake2b256(Append(TaggedByteArray(1), TaggedByteArray(2))),
+        CalcBlake2b256(AppendBytes(TaggedByteArray(1), TaggedByteArray(2))),
         ByteArrayLeafConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
