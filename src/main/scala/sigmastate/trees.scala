@@ -143,7 +143,7 @@ case class AND(input: CollectionLeaf[SBoolean.type])
 
 object AND {
   def apply(children: Seq[Value[SBoolean.type]]): AND = new AND(ConcreteCollection(children.toIndexedSeq))
-  def apply(left: BooleanLeaf, right: BooleanLeaf): AND = apply(Seq(left, right))
+  def apply(left: Value[SBoolean.type], right: Value[SBoolean.type]): AND = apply(Seq(left, right))
 }
 
 
@@ -442,9 +442,9 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
   * @param second - key
   * @param third - proof
   */
-case class IsMember(override val first: AvlTreeLeaf,
-                    override val second: ByteArrayLeaf,
-                    override val third: ByteArrayLeaf) extends Relation3[SAvlTree.type, SByteArray.type, SByteArray.type]
+case class IsMember(override val first: Value[SAvlTree.type],
+                    override val second: Value[SByteArray.type],
+                    override val third: Value[SByteArray.type]) extends Relation3[SAvlTree.type, SByteArray.type, SByteArray.type]
 
 //Proof tree
 

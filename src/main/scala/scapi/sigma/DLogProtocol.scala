@@ -11,7 +11,7 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.{EcPointFunctions, GroupElementConstant, GroupElementLeaf, SigmaProofOfKnowledgeTree}
+import sigmastate._
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -24,7 +24,7 @@ object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
-  case class ProveDlog(value: GroupElementLeaf)
+  case class ProveDlog(value: Value[SGroupElement.type])
     extends SigmaProtocolCommonInput[DLogSigmaProtocol]
       with SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 

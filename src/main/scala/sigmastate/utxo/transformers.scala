@@ -197,10 +197,9 @@ case class ExtractBytes(input: BoxLeaf) extends Extract[SByteArray.type] with No
 }
 
 
-abstract class ExtractRegisterAs[V <: SType] extends Extract[V] {
-  val registerId: RegisterIdentifier
-  val default: Option[Value[V]]
-
+case class ExtractRegisterAs[V <: SType](input: BoxLeaf,
+                                         registerId: RegisterIdentifier,
+                                         default: Option[Value[V]] = None) extends Extract[V] with NotReadyValue[V] {
   override def cost: Int = 10
 
   override type M = this.type
@@ -208,43 +207,3 @@ abstract class ExtractRegisterAs[V <: SType] extends Extract[V] {
   override def function(box: EvaluatedValue[SBox.type]): Value[V] =
     box.value.box.get(registerId).orElse(default).get.asInstanceOf[Value[V]]
 }
-
-case class ExtractRegisterAsIntLeaf(input: BoxLeaf,
-                                    registerId: RegisterIdentifier,
-                                    default: Option[IntLeaf] = None)
-  extends ExtractRegisterAs[SInt.type] with Transformer[SBox.type, SInt.type] with NotReadyValueIntLeaf
-
-
-case class ExtractRegisterAsBooleanLeaf(input: BoxLeaf,
-                                        registerId: RegisterIdentifier,
-                                        default: Option[BooleanLeaf] = None)
-  extends ExtractRegisterAs[SBoolean.type] with Transformer[SBox.type, SBoolean.type] with NotReadyValueBoolean
-
-
-case class ExtractRegisterAsByteArrayLeaf(input: BoxLeaf,
-                                          registerId: RegisterIdentifier,
-                                          default: Option[ByteArrayLeaf] = None)
-  extends ExtractRegisterAs[SByteArray.type] with Transformer[SBox.type, SByteArray.type] with NotReadyValueByteArray
-
-
-case class ExtractRegisterAsPropLeaf(input: BoxLeaf,
-                                     registerId: RegisterIdentifier,
-                                     default: Option[PropLeaf] = None)
-  extends ExtractRegisterAs[SProp.type] with Transformer[SBox.type, SProp.type] with NotReadyValueProp
-
-
-case class ExtractRegisterAsAvlTreeLeaf(input: BoxLeaf,
-                                        registerId: RegisterIdentifier,
-                                        default: Option[AvlTreeLeaf] = None)
-  extends ExtractRegisterAs[SAvlTree.type] with Transformer[SBox.type, SAvlTree.type] with NotReadyValueAvlTree
-
-
-case class ExtractRegisterAsGroupElement(input: BoxLeaf,
-                                         registerId: RegisterIdentifier,
-                                         default: Option[GroupElementLeaf] = None)
-  extends ExtractRegisterAs[SGroupElement.type]
-    with Transformer[SBox.type, SGroupElement.type]
-    with NotReadyValueGroupElement
-
-
-//todo: extract as a box leaf

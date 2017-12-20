@@ -941,8 +941,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAsIntLeaf(TaggedBoxLeaf(21), R3),
-      Plus(ExtractRegisterAsIntLeaf(Self, R3), IntLeafConstant(1))))
+    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBoxLeaf(21), R3),
+      Plus(ExtractRegisterAs(Self, R3), IntLeafConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(3)))
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
@@ -965,8 +965,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = Exists(Outputs, 21,
-      EQ( ExtractRegisterAsIntLeaf(TaggedBoxLeaf(21), R3, default = Some(IntLeafConstant(0L))),
-          Plus(ExtractRegisterAsIntLeaf(Self, R3), IntLeafConstant(1))))
+      EQ(ExtractRegisterAs(TaggedBoxLeaf(21), R3, default = Some(IntLeafConstant(0L))),
+          Plus(ExtractRegisterAs(Self, R3), IntLeafConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
@@ -1001,7 +1001,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val treeData = new AvlTreeData(digest, 32, None)
 
-    val prop = IsMember(ExtractRegisterAsAvlTreeLeaf(Self, R3),
+    val prop = IsMember(ExtractRegisterAs(Self, R3),
       ByteArrayLeafConstant(key),
       ByteArrayLeafConstant(proof))
 
@@ -1039,8 +1039,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = IsMember(ExtractRegisterAsAvlTreeLeaf(Self, R3),
-      ExtractRegisterAsByteArrayLeaf(Self, R4),
+    val prop = IsMember(ExtractRegisterAs(Self, R3),
+      ExtractRegisterAs(Self, R4),
       TaggedByteArray(proofId))
 
     val newBox1 = SigmaStateBox(10, pubkey)
@@ -1068,8 +1068,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey3 = prover.dlogSecrets(2).publicImage
 
     
-    val prop = AND(ProveDlog(ExtractRegisterAsGroupElement(Self, R3)),
-                    ProveDlog(ExtractRegisterAsGroupElement(Self, R4)))
+    val prop = AND(new ProveDlog(ExtractRegisterAs(Self, R3)), new ProveDlog(ExtractRegisterAs(Self, R4)))
 
 
     val newBox1 = SigmaStateBox(10, pubkey3)
