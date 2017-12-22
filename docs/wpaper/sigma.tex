@@ -108,7 +108,7 @@ We use $dlog(x)$ to denote a statement ``prove a knowledge of such $w$ that $x =
 
 \subsection{UTXO model}
 
-We assume a transactional model close to Bitcoin's. That is, a transaction spends unspent outputs from previous transaction written into the blockchain, and creates new outputs. An output is associated with arbitrary amount of money, and also a protecting script. In Bitcoin, there is a special kind of transaction, so-called {\em coinbase transaction}, which can create some amount of money out of thin air~(to reward a block generator). In Bitcoin transaction fees money flow is not captured in outputs, a transaction fee is just a difference of amounts of outputs being spent and outputs being created. In Appendix~\ref{apx-unified} we provide a way to avoid coinbase transactions, and also express fees explicitly as outputs. In Appendix~\ref{apx-account} we discuss how to make a language for a cryptocurrency with account-based transactions~(such as Waves).
+We assume a transactional model close to Bitcoin's. That is, a transaction spends unspent outputs from previous transaction written into the blockchain, and creates new outputs. An output is associated with arbitrary amount of money, and also a protecting script. In Bitcoin, there is a special kind of transaction, so-called {\em coinbase transaction}, which can create some amount of money out of thin air~(to reward a block generator). In Bitcoin transaction fees money flow is not captured in outputs, a transaction fee is just a difference of amounts of outputs being spent and outputs being created. In Appendix~\ref{apx:unified} we provide a way to avoid coinbase transactions, and also express fees explicitly as outputs. In Appendix~\ref{apx:account} we discuss how to make a language for a cryptocurrency with account-based transactions~(such as Waves).
 
 \subsection{General Idea}
 
@@ -155,7 +155,7 @@ We have following types in the language:
     \item{box}
 \end{itemize}
 
-\knote{todo: improve, also, add unsigned integer?}
+\knote{todo: improve description, also, add unsigned integer?}
 
 \ignore{
 \begin{center}
@@ -181,25 +181,28 @@ We have following types in the language:
 \end{center}
 }
 
+
+\subsection{Rewriting a Tree}
+\label{sec:tree}
+
+Both the prover and verifier are running the same deterministic interpreter over initial output guarding expression in order to get exactly the same result, which could be a boolean value, a failure (which is to be interpreted in the same way as a boolean value), or a statement provable via a $\Sigma$-protocol.
+
+
 By parsing a statement, interpreter first builds a tree from a formula. For the example \ref{eq:example1} the tree would be as following:
 
 \knote{draw the tree}.
 
-A tree is then to be transformed in following steps~(we provide here steps for the verifier, the prover is repeating some steps twice as described in details in Section~\ref{sec:proving}): 
 
-\knote{all transformations are bottom-up}
-\begin{enumerate}
-	\item{context-subst} Substitute custom variables. From context extension formed by the Prover, during this step custom variable names in the stamenent are to be replaced by their respective values.
-	\item{ss-subst} Complex context substitutions. This step is about substitutions which can increase size of a statement. 
-                    \knote{$self.script, tx.outbytes, tx.output, tx.has\_output$}
-	\item{var-subst} Trivial context substitutions. Substitutions to be made in this step do not increase statement size. 
-                    \knote{$height, self.height, self.amount$}
-	\item{operations} Operations 
-	\item{relations} Relations
-	\item{conjectures} Conjectures
-\end{enumerate}
+All the operations as well as operands have types. For example, addition operation ``+'' takes two integers and returns an integer. Comparison operation ``$>$'' takes two integers and returns a boolean value. We consider statements provable via $\Sigma$-protocols, like $dlog(x)$ as instances of the boolean type. The interpreter checks that the whole guarding expression~(the root node of the tree) has a boolean type and rejects the expression if the condition is not met. The interpreter is also checking that the expression is not exceeding by number of sub-expressions and their cumulative complexity some predefined limit~(which is the same for the prover and the verifier, e.g a constant of a blockchain system, or changed by miners in predictable and controllable fashion, like gas limit per block in Ethereum). 
 
-The process of the transformations could be aborted by an exception, if expression to reduce is not valid~(for example, a wrong type of argument), or if it is found during the transformations that the tree becomes too complex to finish its processing on time~(details are provided in the Section~\ref{sec:safety}). The result of the transformation could be a single tree node containing a boolean value~(for example, {\em true} for the statement $2 + 2 > 3$) or a tree which contains only cryptographic sub-statements and logical conjectures~(for example, $dlog(x_1) \lor dlog(x_2)$). In the latter case, the prover is proving statement validity, and the verifier checks the reduced statement against the proof.
+If the tree is well-formed according to the typing rules, and also has complexity no more than an allowed limit, interpreter is going to rewrite it, in potentially many steps. For every step, the interpreter tries, going from bottom to top of the tree, to replace nodes which are ready to be transformed~(operands are in place, and the transformation itself is known). The next step bring the same transformation in the same order to be done. The process finishes in one of the following cases:
+
+\begin{itemize}
+    \item{abort: } happens if transformation process by its complexity exceeds an upper bound. The complexity estimation works as follows. The interpreter remembers initial cumulative complexity $C_0$, and for each replacement in the tree it calculates cumulative complexity of a subtree to be inserted instead of a subtree to be removed $\Delta C$, and adds $\Delta C$ to current cumulative complexity $C$, where $C = C_0$ initially.  
+    \item{success: } we finish with this status if during last step there are no any transformations done.  
+\end{itemize} 
+
+If the transformations are finishing with abortion, the result is considered as $false$ (we recall that the interpreter is giving a single boolean result finally, whether an output could be spent or not). Otherwise, if the tree could not be transformed anymore the interpreter is looking into it. If the tree is about just a single node which contains boolean constant value~($true$ or $false$), the value is the result of the interpretation. If the tree contains statements not provable via $\Sigma$-protocols, the interpreter finishes with $false$. Otherwise, if the tree contains only statements provable via $\Sigma$-protocols, the interpreter is continuing to work, and here execution is different for the prover and the verifier. The prover is generating a proof for the statement by using its secrets, as described in Section~\ref{sec:proving}, and the verifier checks the statement against the proof~(provided in a spending transaction), as described in Section~\ref{sec:verifying}. The verifier outputs $true$ if the proof is valid for the statement, $false$ otherwise. We are skipping for now the question how Fiat-Shamir transformation works in our setting, and how a message, which is used in a non-interactive protocol is formed; details are given further in Appendix~\ref{apx:tx-format}. 
 
 
 \subsection{Proving}
@@ -236,6 +239,7 @@ Prover steps:
      the $\land$. Note that simulated $\land$ and $\lor$ have only simulated descendants, so no need to recurse down from them.
 
 \subsection{Verifying}
+\label{sec:verifying}
 
 Verifier steps:
     1. Place received challenges "e" and responses "z" into every leaf.
@@ -249,6 +253,8 @@ Verifier steps:
     3. Check that the root challenge is equal to the hash of the root commitment and other inputs.
 
 \subsection{Threshold Signatures}
+
+\subsection{Context}
 
 
 \section{Examples}
@@ -306,6 +312,9 @@ $blake2b256(tx.outbytes) = h \lor dlog(x_B)$
 
 Then it is possible to make a refund at any moment of time~(right condition in the $\lor$ conjectures), and before a refund any of the them can construct a transaction which is spending the outputs, and it is impossible to construct an alternative transaction, for which hash of the output bytes is $h$, but bytes are different~(if chosen hash function is collision-resistant).
 
+\subsection{Oracle Example}
+
+
 \section{Safety Guarantees}
 \label{sec:safety}
 
@@ -339,6 +348,8 @@ We show in this paper...
 
 \appendix
 
+\section{Tree Nodes and Transformation Rules}
+
 \section{Cost Table}
 
 \section{Roadmap}
@@ -346,10 +357,15 @@ We show in this paper...
 \section{Outputs vs Accounts}
 
 \section{Unified Transactions}
-\label{apx-unified}
+\label{apx:unified}
+
+\section{An Example of a Concrete Transaction Format}
+\label{apx:tx-format}
+
+\knote{Describe Ergo transaction format here. Malleability problems to be discussed here.}
 
 \section{A Language For An Account-Based Cryptocurrency}
-\label{apx-account}
+\label{apx:account}
 
 
 
