@@ -25,15 +25,15 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 }
 
 
-case class MapCollection[IV <: SType, OV <: SType](input: CollectionLeaf[IV],
+case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                                    id: Byte,
                                                    mapper: Transformer[IV, OV])
-  extends Transformer[SCollection[IV], SCollection[OV]] with CollectionLeaf[OV] {
+  extends Transformer[SCollection[IV], SCollection[OV]] {
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override def function(cl: EvaluatedValue[SCollection[IV]]): CollectionLeaf[OV] = {
+  override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })
@@ -46,10 +46,10 @@ case class MapCollection[IV <: SType, OV <: SType](input: CollectionLeaf[IV],
   override type M = this.type
 }
 
-case class Exists[IV <: SType](input: CollectionLeaf[IV],
+case class Exists[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
                                relations: Relation[_, _]*)
-  extends Transformer[SCollection[IV], SBoolean.type] with NotReadyValueBoolean {
+  extends Transformer[SCollection[IV], SBoolean.type] {
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
@@ -57,21 +57,21 @@ case class Exists[IV <: SType](input: CollectionLeaf[IV],
   override val cost: Int = input.cost + relations.size
 
   //todo: cost
-  override def function(input: EvaluatedValue[SCollection[IV]]): BooleanLeaf = {
+  override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    OR(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[BooleanLeaf]))
+    OR(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[Value[SBoolean.type]]))
   }
 
   override type M = this.type
 }
 
-case class ForAll[IV <: SType](input: CollectionLeaf[IV],
+case class ForAll[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
                                relations: Relation[_, _]*)
-  extends Transformer[SCollection[IV], SBoolean.type] with NotReadyValueBoolean {
+  extends Transformer[SCollection[IV], SBoolean.type] {
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
@@ -79,12 +79,12 @@ case class ForAll[IV <: SType](input: CollectionLeaf[IV],
   override val cost: Int = input.cost + relations.size
 
   //todo: cost
-  override def function(input: EvaluatedValue[SCollection[IV]]): BooleanLeaf = {
+  override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    AND(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[BooleanLeaf]))
+    AND(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[Value[SBoolean.type]]))
   }
 
   override type M = this.type
@@ -98,7 +98,7 @@ object Slice
 */
 
 
-case class Fold[IV <: SType](input: CollectionLeaf[IV],
+case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              id: Byte,
                              zero: Value[IV],
                              accId: Byte,
@@ -130,14 +130,14 @@ case class Fold[IV <: SType](input: CollectionLeaf[IV],
 }
 
 object Fold {
-  def sum(input: CollectionLeaf[SInt.type]) =
+  def sum(input: Value[SCollection[SInt.type]]) =
     Fold(input, 21, IntLeafConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
 
-  def sumBytes(input: CollectionLeaf[SByteArray.type]) =
+  def sumBytes(input: Value[SCollection[SByteArray.type]]) =
     Fold[SByteArray.type](input, 21, EmptyByteArray, 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
-case class ByIndex[V <: SType](input: CollectionLeaf[V], index: Int)
+case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   extends Transformer[SCollection[V], V] with NotReadyValue[V] {
 
   override def function(input: EvaluatedValue[SCollection[V]]) = input.value.apply(index)
@@ -146,7 +146,7 @@ case class ByIndex[V <: SType](input: CollectionLeaf[V], index: Int)
 }
 
 
-case class SizeOf[V <: SType](input: CollectionLeaf[V])
+case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValue[SInt.type] {
 
   override def function(input: EvaluatedValue[SCollection[V]]) = IntLeafConstant(input.value.length)
@@ -160,7 +160,7 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
   override def function(box: EvaluatedValue[SBox.type]): Value[V]
 }
 
-case class ExtractHeight(input: BoxLeaf) extends Extract[SInt.type] with NotReadyValueIntLeaf {
+case class ExtractHeight(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueIntLeaf {
   override lazy val cost: Int = 10
 
   override type M = this.type
@@ -179,18 +179,18 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] wit
 }
 
 
-case class ExtractScript(input: BoxLeaf) extends Extract[SProp.type] with NotReadyValueProp {
+case class ExtractScript(input: Value[SBox.type]) extends Extract[SProp.type] with NotReadyValueProp {
   override lazy val cost: Int = 10
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): PropLeaf = {
+  override def function(box: EvaluatedValue[SBox.type]): Value[SProp.type] = {
     PropLeafConstant(box.value)
   }
 }
 
 
-case class ExtractBytes(input: BoxLeaf) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
   override lazy val cost: Int = 10
 
   override type M = this.type
@@ -199,7 +199,7 @@ case class ExtractBytes(input: BoxLeaf) extends Extract[SByteArray.type] with No
 }
 
 
-case class ExtractRegisterAs[V <: SType](input: BoxLeaf,
+case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
                                          default: Option[Value[V]] = None) extends Extract[V] with NotReadyValue[V] {
   override def cost: Int = 10

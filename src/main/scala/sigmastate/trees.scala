@@ -7,7 +7,7 @@ import scapi.sigma.DLogProtocol._
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
-import scorex.core.transaction.box.proposition.{ProofOfKnowledgeProposition, Proposition}
+import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
@@ -54,7 +54,7 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 
 
 //todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
-case class OR(input: CollectionLeaf[SBoolean.type])
+case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
 
 
@@ -71,11 +71,11 @@ case class OR(input: CollectionLeaf[SBoolean.type])
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
     def iterChildren(children: Seq[Value[SBoolean.type]],
-                     currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
-      if (children.isEmpty) currentBuffer else children.head.asInstanceOf[BooleanLeaf] match {
+                     currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
+      if (children.isEmpty) currentBuffer else children.head.asInstanceOf[Value[SBoolean.type]] match {
         case TrueLeaf => mutable.Buffer(TrueLeaf)
         case FalseLeaf => iterChildren(children.tail, currentBuffer)
-        case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
+        case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }
     }
 
@@ -95,14 +95,14 @@ case class OR(input: CollectionLeaf[SBoolean.type])
 
 
 object OR {
-  def apply(children: Seq[BooleanLeaf]): OR = OR(ConcreteCollection(children.toIndexedSeq))
+  def apply(children: Seq[Value[SBoolean.type]]): OR = OR(ConcreteCollection(children.toIndexedSeq))
 
-  def apply(left: BooleanLeaf, right: BooleanLeaf): OR = apply(Seq(left, right))
+  def apply(left: Value[SBoolean.type], right: Value[SBoolean.type]): OR = apply(Seq(left, right))
 
-  def apply(arg1: BooleanLeaf, arg2: BooleanLeaf, arg3: BooleanLeaf): OR = apply(Seq(arg1, arg2, arg3))
+  def apply(arg1: Value[SBoolean.type], arg2: Value[SBoolean.type], arg3: Value[SBoolean.type]): OR = apply(Seq(arg1, arg2, arg3))
 }
 
-case class AND(input: CollectionLeaf[SBoolean.type])
+case class AND(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
 
   override def cost: Int = input match {
@@ -118,11 +118,11 @@ case class AND(input: CollectionLeaf[SBoolean.type])
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]) = {
     @tailrec
     def iterChildren(children: IndexedSeq[Value[SBoolean.type]],
-                     currentBuffer: mutable.Buffer[BooleanLeaf]): mutable.Buffer[BooleanLeaf] = {
+                     currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
       if (children.isEmpty) currentBuffer else children.head match {
         case FalseLeaf => mutable.Buffer(FalseLeaf)
         case TrueLeaf => iterChildren(children.tail, currentBuffer)
-        case s: BooleanLeaf => iterChildren(children.tail, currentBuffer += s)
+        case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }
     }
 
@@ -229,11 +229,9 @@ case object UnknownByteArrayLeaf extends NotReadyValueByteArray
 case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray
 
 
-//todo: merge with ByteArrayLeaf?
+//todo: merge with SByteArray?
 
-sealed trait PropLeaf extends Value[SProp.type]
-
-case class PropLeafConstant(value: Array[Byte]) extends EvaluatedValue[SProp.type] with PropLeaf {
+case class PropLeafConstant(value: Array[Byte]) extends EvaluatedValue[SProp.type] {
   override def cost: Int = value.length + Cost.PropLeafDeclaration
 
   override def equals(obj: scala.Any): Boolean = obj match {
@@ -248,16 +246,14 @@ object PropLeafConstant {
   def apply(value: SigmaStateTree): PropLeafConstant = new PropLeafConstant(value.toString.getBytes)
 }
 
-trait NotReadyValueProp extends PropLeaf with NotReadyValue[SProp.type] {
+trait NotReadyValueProp extends NotReadyValue[SProp.type] {
   override def cost: Int = Cost.PropLeafDeclaration
 }
 
 case class TaggedPropLeaf(override val id: Byte) extends TaggedVariable[SProp.type] with NotReadyValueProp
 
 
-sealed trait AvlTreeLeaf extends Value[SAvlTree.type]
-
-case class AvlTreeLeafConstant(value: AvlTreeData) extends AvlTreeLeaf with EvaluatedValue[SAvlTree.type] {
+case class AvlTreeLeafConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
   override val cost = 50
 
   def createVerifier(proof: SerializedAdProof) =
@@ -270,7 +266,7 @@ case class AvlTreeLeafConstant(value: AvlTreeData) extends AvlTreeLeaf with Eval
       value.maxDeletes)
 }
 
-trait NotReadyValueAvlTree extends AvlTreeLeaf with NotReadyValue[SAvlTree.type] {
+trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
   override val cost = 50
 }
 
@@ -278,13 +274,11 @@ case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.
 
 
 
-sealed trait GroupElementLeaf extends Value[SGroupElement.type] with Proposition
-
-case class GroupElementConstant(value: GroupElement) extends GroupElementLeaf with EvaluatedValue[SGroupElement.type] {
+case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[SGroupElement.type] {
   override val cost = 10
 }
 
-trait NotReadyValueGroupElement extends GroupElementLeaf with NotReadyValue[SGroupElement.type] {
+trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
   override val cost = 10
 }
 
@@ -292,9 +286,8 @@ case class TaggedGroupElement(override val id: Byte)
   extends TaggedVariable[SGroupElement.type] with NotReadyValueGroupElement
 
 
-sealed trait BooleanLeaf extends Value[SBoolean.type]
 
-sealed abstract class BooleanLeafConstant(val value: Boolean) extends BooleanLeaf with EvaluatedValue[SBoolean.type]
+sealed abstract class BooleanLeafConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type]
 
 object BooleanLeafConstant {
   def fromBoolean(v: Boolean): BooleanLeafConstant = if (v) TrueLeaf else FalseLeaf
@@ -308,7 +301,7 @@ case object FalseLeaf extends BooleanLeafConstant(false) {
   override def cost: Int = Cost.ConstantNode
 }
 
-trait NotReadyValueBoolean extends BooleanLeaf with NotReadyValue[SBoolean.type] {
+trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
   override def cost: Int = 1
 }
 
@@ -317,17 +310,16 @@ case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.
 /**
   * For sigma statements
   */
-trait FakeBoolean extends BooleanLeaf with NotReadyValue[SBoolean.type]{
+trait FakeBoolean extends NotReadyValue[SBoolean.type]{
   override lazy val evaluated = true
 }
 
-sealed trait BoxLeaf extends Value[SBox.type]
 
-case class BoxLeafConstant(value: BoxWithMetadata) extends BoxLeaf with EvaluatedValue[SBox.type] {
+case class BoxLeafConstant(value: BoxWithMetadata) extends EvaluatedValue[SBox.type] {
   override def cost: Int = 10
 }
 
-trait NotReadyValueBoxLeaf extends BoxLeaf with NotReadyValue[SBox.type] {
+trait NotReadyValueBoxLeaf extends NotReadyValue[SBox.type] {
   override def cost: Int = 10
 }
 
@@ -341,14 +333,11 @@ case object Self extends NotReadyValueBoxLeaf {
 }
 
 
-trait CollectionLeaf[V <: SType] extends Value[SCollection[V]]
-
-case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])
-  extends CollectionLeaf[V] with EvaluatedValue[SCollection[V]] {
+case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
   val cost = value.size
 }
 
-trait LazyCollection[V <: SType] extends CollectionLeaf[V] with NotReadyValue[SCollection[V]]
+trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
 
 case object Inputs extends LazyCollection[SBox.type] {

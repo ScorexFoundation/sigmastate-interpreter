@@ -21,7 +21,7 @@ class UtxoInterpreterSpecification extends PropSpec
   with Matchers {
   
   implicit def grElemConvert(leafConstant: GroupElementConstant): GroupElement = leafConstant.value
-  implicit def grLeafConvert(elem: GroupElement): GroupElementLeaf = GroupElementConstant(elem)
+  implicit def grLeafConvert(elem: GroupElement): Value[SGroupElement.type] = GroupElementConstant(elem)
 
 
   private val fakeSelf = boxWithMetadata(0, TrueLeaf)

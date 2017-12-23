@@ -147,7 +147,7 @@ trait Interpreter {
 
       case TrueLeaf => true
       case FalseLeaf => false
-      case b: BooleanLeaf if b.evaluated =>
+      case b: Value[SBoolean.type] if b.evaluated =>
         proof match {
           case NoProof => false
           case sp: UncheckedSigmaTree[_] =>

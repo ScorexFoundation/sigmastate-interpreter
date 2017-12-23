@@ -9,7 +9,7 @@ import scapi.sigma.DLogProtocol._
 import scapi.sigma.rework._
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
-import sigmastate.{GroupElementConstant, GroupElementLeaf, SigmaProofOfKnowledgeTree}
+import sigmastate.{GroupElementConstant, SGroupElement, SigmaProofOfKnowledgeTree, Value}
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 
@@ -70,10 +70,10 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger)
 }
 
 // Common input: (g,h,u,v)
-case class ProveDiffieHellmanTuple(gv: GroupElementLeaf,
-                                   hv: GroupElementLeaf,
-                                   uv: GroupElementLeaf,
-                                   vv: GroupElementLeaf)
+case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
+                                   hv: Value[SGroupElement.type],
+                                   uv: Value[SGroupElement.type],
+                                   vv: Value[SGroupElement.type])
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
 
