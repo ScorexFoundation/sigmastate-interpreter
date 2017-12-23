@@ -165,7 +165,7 @@ case class ExtractHeight(input: BoxLeaf) extends Extract[SInt.type] with NotRead
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): IntLeaf =
+  override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] =
     IntLeafConstant(box.value.metadata.creationHeight)
 }
 
@@ -175,7 +175,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] wit
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): IntLeaf = IntLeafConstant(box.value.box.value)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] = IntLeafConstant(box.value.box.value)
 }
 
 

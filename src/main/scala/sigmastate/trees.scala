@@ -403,17 +403,17 @@ case class AppendBytes(override val left: Value[SByteArray.type],
 
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
 
-case class LT(override val left: IntLeaf,
-              override val right: IntLeaf) extends Relation[SInt.type, SInt.type]
+case class LT(override val left: Value[SInt.type],
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
 
-case class LE(override val left: IntLeaf,
-              override val right: IntLeaf) extends Relation[SInt.type, SInt.type]
+case class LE(override val left: Value[SInt.type],
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
 
 case class GT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
 
-case class GE(override val left: IntLeaf,
-              override val right: IntLeaf) extends Relation[SInt.type, SInt.type]
+case class GE(override val left: Value[SInt.type],
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
 
 case class EQ[T1 <: SType, T2 <: SType](override val left: Value[T1],
                                         override val right: Value[T2]) extends Relation[T1, T2]
