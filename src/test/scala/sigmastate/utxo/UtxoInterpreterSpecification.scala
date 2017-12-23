@@ -1082,4 +1082,42 @@ class UtxoInterpreterSpecification extends PropSpec
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
+
+  /**
+    *
+    * An oracle example.
+    *
+    * A trusted weather station is publishing temperature data on blockchain.
+    * Alice and Bob are making a contract based on the data:
+    *   they have locked coins in such way that if output from the station shows that
+    *   temperature announced by the oracle is > 15 degrees, money are going to Alice, otherwise to Bob.
+    *
+    * We consider that for validating transaction only limited number of last headers and the spending transaction
+    * should be enough, in addition to outputs being spent by the transaction. Thus there is no need for knowledge
+    * of an arbitrary output. To show the coin of the weather service in the spending transaction, outputs from Alice
+    * and Bob are referencing to the coin by using Merkle proofs against UTXO set root hash of the latest known block.
+    *
+    * A tricky moment is how Alice and Bob can be sure that a coin is indeed created by the service, having just the
+    * coin (and also service's public key x = g^w, where service's secret w is not known.
+    *
+    *
+    * For that, we consider that the service creates a coin with registers of following semantics (R0 & R1 are standard):
+    *
+    * R0 - coin amount
+    * R1 - protecting script, which is the pubkey of the service, x =  g^w
+    * R2 - temperature data, number
+    * R3 - a = g^r, where r is secret random nonce
+    * R4 - z = r + ew mod q
+    *
+    * Then Alice and Bob are requiring from the coin that the following equation holds:
+    * (g^z = a * x^e, where e = hash(R2)
+    *
+    * Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
+    * "the coin is spendable if against UTXO set root hash for the last known block there is a coin along with a Merkle
+    * proof, for which following requirements hold: R1 = dlog(x) /\ g^(R4) = R3 * x^(hash(R2)) /\ (R2) > 15
+    *
+    */
+  ignore("oracle example") {
+
+  }
 }
