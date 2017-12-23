@@ -8,7 +8,7 @@ import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTupl
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
-import scorex.crypto.authds.{ADDigest, SerializedAdProof}
+import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate.SigmaProposition.PropositionCode
@@ -147,24 +147,6 @@ object AND {
 }
 
 
-class AvlTreeData(val startingDigest: ADDigest,
-                  val keyLength: Int,
-                  val valueLengthOpt: Option[Int],
-                  val maxNumOperations: Option[Int] = None,
-                  val maxDeletes: Option[Int] = None)
-
-sealed trait SType {
-  type WrappedType
-}
-
-case object SInt extends SType {override type WrappedType = Long}
-case object SBoolean extends SType {override type WrappedType = Boolean}
-case object SByteArray extends SType {override type WrappedType = Array[Byte]}
-case object SProp extends SType {override type WrappedType = Array[Byte]}
-case class  SCollection[ElemType <: SType]() extends SType {override type WrappedType = IndexedSeq[Value[ElemType]]}
-case object SAvlTree extends SType {override type WrappedType = AvlTreeData}
-case object SGroupElement extends SType {override type WrappedType = GroupElement}
-case object SBox extends SType {override type WrappedType = BoxWithMetadata}
 
 trait Value[S <: SType] extends StateTree {
   def evaluated: Boolean
