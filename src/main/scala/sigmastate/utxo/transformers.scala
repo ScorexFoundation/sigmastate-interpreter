@@ -195,7 +195,7 @@ case class ExtractBytes(input: BoxLeaf) extends Extract[SByteArray.type] with No
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): ByteArrayLeaf = ByteArrayLeafConstant(box.value.box.bytes)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayLeafConstant(box.value.box.bytes)
 }
 
 

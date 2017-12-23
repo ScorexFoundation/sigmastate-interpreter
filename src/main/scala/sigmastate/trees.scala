@@ -187,11 +187,11 @@ trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
 //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
 sealed trait IntLeaf extends Value[SInt.type]
 
-case class IntLeafConstant(value: Long) extends IntLeaf with EvaluatedValue[SInt.type] {
+case class IntLeafConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val cost = 1
 }
 
-trait NotReadyValueIntLeaf extends IntLeaf with NotReadyValue[SInt.type]{
+trait NotReadyValueIntLeaf extends NotReadyValue[SInt.type]{
   override lazy val cost: Int = 1
 }
 
@@ -206,9 +206,8 @@ case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] wi
 
 
 
-sealed trait ByteArrayLeaf extends Value[SByteArray.type]
 
-case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] with ByteArrayLeaf {
+case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
 
   override def cost: Int = (value.length / 1024.0).ceil.round.toInt * Cost.ByteArrayPerKilobyte
 
@@ -220,7 +219,7 @@ case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[SByt
 
 object EmptyByteArray extends ByteArrayLeafConstant(Array.emptyByteArray)
 
-trait NotReadyValueByteArray extends ByteArrayLeaf with NotReadyValue[SByteArray.type]{
+trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type]{
   override lazy val cost: Int = Cost.ByteArrayDeclaration
 }
 
@@ -363,7 +362,7 @@ case object Outputs extends LazyCollection[SBox.type] {
 case class CalcBlake2b256(input: Value[SByteArray.type])
   extends Transformer[SByteArray.type, SByteArray.type] with NotReadyValueByteArray {
 
-  override def function(bal: EvaluatedValue[SByteArray.type]): ByteArrayLeaf =
+  override def function(bal: EvaluatedValue[SByteArray.type]): Value[SByteArray.type] =
     ByteArrayLeafConstant(Blake2b256(bal.value))
 
   override lazy val cost: Int = input.cost + Cost.Blake256bDeclaration
@@ -391,8 +390,8 @@ case class Plus(override val left: Value[SInt.type], override val right: Value[S
 case class Minus(override val left: Value[SInt.type], override val right: Value[SInt.type])
   extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueIntLeaf
 
-case class Xor(override val left: ByteArrayLeaf,
-               override val right: ByteArrayLeaf)
+case class Xor(override val left: Value[SByteArray.type],
+               override val right: Value[SByteArray.type])
   extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type] with NotReadyValueByteArray
 
 case class AppendBytes(override val left: Value[SByteArray.type],
