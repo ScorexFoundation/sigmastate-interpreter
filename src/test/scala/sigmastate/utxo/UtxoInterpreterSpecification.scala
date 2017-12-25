@@ -1114,7 +1114,7 @@ class UtxoInterpreterSpecification extends PropSpec
     *
     * Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
     * "the coin is spendable if against UTXO set root hash for the last known block there is a coin along with a Merkle
-    * proof, for which following requirements hold: R1 = dlog(x) /\ g^(R4) = R3 * x^(hash(R2)) /\ (R2) > 15
+    * proof, for which following requirements hold: R1 = dlog(x) /\ g^(R4) = R3 * x^(hash(R2)) /\ (R2) > 15"
     *
     */
   ignore("oracle example") {
