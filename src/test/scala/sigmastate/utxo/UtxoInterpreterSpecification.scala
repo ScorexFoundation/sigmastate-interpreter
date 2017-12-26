@@ -12,7 +12,7 @@ import BoxHelpers.boxWithMetadata
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import sigmastate.utxo.SigmaStateBox.{R1, R3, R4}
+import sigmastate.utxo.SigmaStateBox.{R1, R2, R3, R4}
 
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -1152,7 +1152,8 @@ class UtxoInterpreterSpecification extends PropSpec
     //todo: finish
     val utxoRoot: AvlTreeConstant = ???
     val prop = AND(IsMember(utxoRoot, ExtractId(TaggedBox(22:Byte)), TaggedByteArray(23: Byte)),
-      EQ(ExtractRegisterAs[SProp.type](TaggedBox(22:Byte), R1), PropLeafConstant(Array.emptyByteArray))
+      EQ(ExtractRegisterAs[SProp.type](TaggedBox(22:Byte), R1), PropLeafConstant(Array.emptyByteArray)),
+      GT(ExtractRegisterAs(TaggedBox(22:Byte), R2), IntLeafConstant(15))
     )
   }
 }

@@ -140,7 +140,12 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
 object AND {
   def apply(children: Seq[Value[SBoolean.type]]): AND = new AND(ConcreteCollection(children.toIndexedSeq))
+
   def apply(left: Value[SBoolean.type], right: Value[SBoolean.type]): AND = apply(Seq(left, right))
+
+  def apply(arg1: Value[SBoolean.type],
+            arg2: Value[SBoolean.type],
+            arg3: Value[SBoolean.type]): AND = apply(Seq(arg1, arg2, arg3))
 }
 
 
