@@ -30,7 +30,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   val secrets: Seq[SigmaProtocolPrivateInput[_]]
 
-  val contextExtenders: Map[Byte, ByteArrayLeafConstant]
+  val contextExtenders: Map[Byte, ByteArrayConstant]
 
   val knownExtensions = ContextExtension(contextExtenders)
 

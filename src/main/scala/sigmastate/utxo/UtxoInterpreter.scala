@@ -20,7 +20,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
 
     case t: Transformer[_, _] if t.transformationReady => t.function()
 
-    case Height => IntLeafConstant(context.currentHeight)
+    case Height => IntConstant(context.currentHeight)
 
     case inst: Transformer[SBox.type, _]
       if inst.input.isInstanceOf[BoxLeafConstant] =>

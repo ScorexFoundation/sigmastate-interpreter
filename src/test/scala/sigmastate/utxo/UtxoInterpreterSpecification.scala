@@ -41,10 +41,10 @@ class UtxoInterpreterSpecification extends PropSpec
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
 
 
-    verifier.reduceToCrypto(EQ(PropLeafConstant(h1), PropLeafConstant(h1)), ctx)
+    verifier.reduceToCrypto(EQ(PropConstant(h1), PropConstant(h1)), ctx)
       .get.isInstanceOf[TrueLeaf.type] shouldBe true
 
-    verifier.reduceToCrypto(EQ(PropLeafConstant(h1), PropLeafConstant(h2)), ctx)
+    verifier.reduceToCrypto(EQ(PropConstant(h1), PropConstant(h2)), ctx)
       .get.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
@@ -72,8 +72,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val backerPubKey = backerProver.dlogSecrets.head.publicImage
     val projectPubKey = projectProver.dlogSecrets.head.publicImage
 
-    val timeout = IntLeafConstant(100)
-    val minToRaise = IntLeafConstant(1000)
+    val timeout = IntConstant(100)
+    val minToRaise = IntConstant(1000)
 
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
@@ -83,7 +83,7 @@ class UtxoInterpreterSpecification extends PropSpec
           LT(Height, timeout),
           projectPubKey,
           Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), minToRaise),
-                              EQ(ExtractScript(TaggedBox(21)), PropLeafConstant(projectPubKey)))
+                              EQ(ExtractScript(TaggedBox(21)), PropConstant(projectPubKey)))
         )
       )
     )
@@ -169,9 +169,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val script = OR(
       regScript,
       AND(
-        GE(Height, Plus(ExtractHeight(Self), IntLeafConstant(demurragePeriod))),
+        GE(Height, Plus(ExtractHeight(Self), IntConstant(demurragePeriod))),
         Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)),
-                                Minus(ExtractAmount(Self), IntLeafConstant(demurrageCost))),
+                                Minus(ExtractAmount(Self), IntConstant(demurrageCost))),
                             EQ(ExtractScript(TaggedBox(21)), ExtractScript(Self)))
       )
     )
@@ -246,7 +246,7 @@ class UtxoInterpreterSpecification extends PropSpec
   property("prover enriching context") {
     val prover = new UtxoProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value
-    val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayLeafConstant(Blake2b256(preimage)))
+    val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -263,7 +263,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val preimage1 = prover.contextExtenders(1).value
     val preimage2 = prover.contextExtenders(2).value
     val prop = EQ(CalcBlake2b256(AppendBytes(TaggedByteArray(2), TaggedByteArray(1))),
-                  ByteArrayLeafConstant(Blake2b256(preimage2 ++ preimage1)))
+                  ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -285,10 +285,10 @@ class UtxoInterpreterSpecification extends PropSpec
     val r = Base16.decode("bb6633db20")
 
     val prover = new UtxoProvingInterpreter()
-      .withContextExtender(k1, ByteArrayLeafConstant(v1))
-      .withContextExtender(k2, ByteArrayLeafConstant(v2))
+      .withContextExtender(k1, ByteArrayConstant(v1))
+      .withContextExtender(k2, ByteArrayConstant(v2))
 
-    val prop = EQ(Xor(TaggedByteArray(k1), TaggedByteArray(k2)), ByteArrayLeafConstant(r))
+    val prop = EQ(Xor(TaggedByteArray(k1), TaggedByteArray(k2)), ByteArrayConstant(r))
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -307,7 +307,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(
       pubkey,
-      EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayLeafConstant(Blake2b256(preimage)))
+      EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
     )
 
     val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
@@ -332,7 +332,7 @@ class UtxoInterpreterSpecification extends PropSpec
       pubkey,
       EQ(
         CalcBlake2b256(AppendBytes(TaggedByteArray(1), TaggedByteArray(2))),
-        ByteArrayLeafConstant(Blake2b256(preimage1 ++ preimage2))
+        ByteArrayConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
 
@@ -365,7 +365,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
 
     val x = proverA.contextExtenders(1).value
-    val hx = ByteArrayLeafConstant(Blake2b256(x))
+    val hx = ByteArrayConstant(Blake2b256(x))
 
     val height1 = 100000
     val height2 = 50000
@@ -375,13 +375,13 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //chain1 script
     val prop1 = OR(
-      AND(GT(Height, IntLeafConstant(height1 + deadlineA)), pubkeyA),
+      AND(GT(Height, IntConstant(height1 + deadlineA)), pubkeyA),
       AND(pubkeyB, EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
     )
 
     //chain2 script
     val prop2 = OR(
-      AND(GT(Height, IntLeafConstant(height2 + deadlineB)), pubkeyB),
+      AND(GT(Height, IntConstant(height2 + deadlineB)), pubkeyB),
       AND(pubkeyA, EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
     )
 
@@ -408,7 +408,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //B extracts preimage x of hx
     val t = pr.extension.values(1)
-    val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[ByteArrayLeafConstant])
+    val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[ByteArrayConstant])
 
     //B spends coins of A in chain1 with knowledge of x
     val ctx2 = UtxoContext(currentHeight = height1 + 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
@@ -651,7 +651,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
-    val prop = OR(pubkeyA, pubkeyB, GT(Height, IntLeafConstant(500)))
+    val prop = OR(pubkeyA, pubkeyB, GT(Height, IntConstant(500)))
 
     val ctx1 = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
     val prA = proverA.prove(prop, ctx1, fakeMessage).get
@@ -676,7 +676,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
-    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntLeafConstant(500))))
+    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntConstant(500))))
 
     val ctx1 = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
 
@@ -779,10 +779,10 @@ class UtxoInterpreterSpecification extends PropSpec
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = OR(
-      AND(LE(Height, IntLeafConstant(timeout)),
+      AND(LE(Height, IntConstant(timeout)),
         EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytes(TaggedBox(21))))),
-          ByteArrayLeafConstant(properHash))),
-      AND(GT(Height, IntLeafConstant(timeout)), sender)
+          ByteArrayConstant(properHash))),
+      AND(GT(Height, IntConstant(timeout)), sender)
     )
 
     val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = fakeSelf)
@@ -804,7 +804,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), IntLeafConstant(20)))
+    val prop = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), IntConstant(20)))
 
     val newBox1 = SigmaStateBox(11, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)
@@ -824,7 +824,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntLeafConstant(10)))
+    val prop = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntConstant(10)))
 
     val newBox1 = SigmaStateBox(11, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)
@@ -838,10 +838,10 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage)
 
 
-    val fProp1 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntLeafConstant(11)))
+    val fProp1 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntConstant(11)))
     prover.prove(fProp1, ctx, fakeMessage).isSuccess shouldBe false
 
-    val fProp2 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 1)), IntLeafConstant(11)))
+    val fProp2 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 1)), IntConstant(11)))
     prover.prove(fProp2, ctx, fakeMessage).isSuccess shouldBe false
   }
 
@@ -851,7 +851,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = AND(pubkey, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntLeafConstant(1))))
+    val prop = AND(pubkey, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
 
     val newBox1 = SigmaStateBox(11, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)
@@ -880,7 +880,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), IntLeafConstant(5)), IntLeafConstant(10)))
+    val prop = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), IntConstant(5)), IntConstant(10)))
 
     val newBox1 = SigmaStateBox(16, pubkey)
     val newBox2 = SigmaStateBox(15, pubkey)
@@ -901,7 +901,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntLeafConstant(10)))
+    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)
@@ -922,7 +922,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntLeafConstant(10)))
+    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(11, pubkey)
@@ -942,15 +942,15 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3),
-      Plus(ExtractRegisterAs(Self, R3), IntLeafConstant(1))))
+      Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
 
-    val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(3)))
-    val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
+    val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(3)))
+    val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntLeafConstant(5))), BoxMetadata(5, 0))
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5))), BoxMetadata(5, 0))
 
     val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = s)
 
@@ -965,16 +965,16 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = Exists(Outputs, 21,
-      EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntLeafConstant(0L))),
-          Plus(ExtractRegisterAs(Self, R3), IntLeafConstant(1))))
+      EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntConstant(0L))),
+          Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey)
-    val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(6)))
+    val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntLeafConstant(5))), BoxMetadata(5, 0))
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5))), BoxMetadata(5, 0))
 
     val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = s)
 
@@ -1002,8 +1002,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val treeData = new AvlTreeData(digest, 32, None)
 
     val prop = IsMember(ExtractRegisterAs(Self, R3),
-      ByteArrayLeafConstant(key),
-      ByteArrayLeafConstant(proof))
+      ByteArrayConstant(key),
+      ByteArrayConstant(proof))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
@@ -1035,7 +1035,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val proofId = 31: Byte
 
-    val prover = new UtxoProvingInterpreter().withContextExtender(proofId, ByteArrayLeafConstant(proof))
+    val prover = new UtxoProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
     val verifier = new UtxoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1049,7 +1049,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
     val s = BoxWithMetadata(
-      SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayLeafConstant(key))),
+      SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key))),
       BoxMetadata(5, 0))
 
     val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = s)
@@ -1103,8 +1103,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
 
     val prop = AND(
-      EQ(SizeOf(Inputs), IntLeafConstant(2)),
-      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayLeafConstant(brother.box.id)))
+      EQ(SizeOf(Inputs), IntConstant(2)),
+      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(brother.box.id)))
 
     val s = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5, 1))
 
@@ -1152,8 +1152,8 @@ class UtxoInterpreterSpecification extends PropSpec
     //todo: finish
     val utxoRoot: AvlTreeConstant = ???
     val prop = AND(IsMember(utxoRoot, ExtractId(TaggedBox(22:Byte)), TaggedByteArray(23: Byte)),
-      EQ(ExtractRegisterAs[SProp.type](TaggedBox(22:Byte), R1), PropLeafConstant(Array.emptyByteArray)),
-      GT(ExtractRegisterAs(TaggedBox(22:Byte), R2), IntLeafConstant(15))
+      EQ(ExtractRegisterAs[SProp.type](TaggedBox(22:Byte), R1), PropConstant(Array.emptyByteArray)),
+      GT(ExtractRegisterAs(TaggedBox(22:Byte), R2), IntConstant(15))
     )
   }
 }

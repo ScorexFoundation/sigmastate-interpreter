@@ -41,8 +41,8 @@ class SigmaStateBox(override val value: Long,
 
   def get(identifier: RegisterIdentifier): Option[_ <: Value[_]] = {
     identifier match {
-      case R1 => Some(IntLeafConstant(value))
-      case R2 => Some(PropLeafConstant(propositionBytes))
+      case R1 => Some(IntConstant(value))
+      case R2 => Some(PropConstant(propositionBytes))
       case n: NonMandatoryIdentifier => additionalRegisters.get(n)
     }
   }

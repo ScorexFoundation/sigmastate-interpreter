@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.{NotReadyValueIntLeaf, _}
+import sigmastate.{NotReadyValueInt, _}
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 
@@ -131,7 +131,7 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
 
 object Fold {
   def sum(input: Value[SCollection[SInt.type]]) =
-    Fold(input, 21, IntLeafConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
+    Fold(input, 21, IntConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
 
   def sumBytes(input: Value[SCollection[SByteArray.type]]) =
     Fold[SByteArray.type](input, 21, EmptyByteArray, 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
@@ -149,7 +149,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValue[SInt.type] {
 
-  override def function(input: EvaluatedValue[SCollection[V]]) = IntLeafConstant(input.value.length)
+  override def function(input: EvaluatedValue[SCollection[V]]) = IntConstant(input.value.length)
 
   override def cost = 1
 }
@@ -160,22 +160,22 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
   override def function(box: EvaluatedValue[SBox.type]): Value[V]
 }
 
-case class ExtractHeight(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueIntLeaf {
+case class ExtractHeight(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueInt {
   override lazy val cost: Int = 10
 
   override type M = this.type
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] =
-    IntLeafConstant(box.value.metadata.creationHeight)
+    IntConstant(box.value.metadata.creationHeight)
 }
 
 
-case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueIntLeaf {
+case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueInt {
   override lazy val cost: Int = 10
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] = IntLeafConstant(box.value.box.value)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] = IntConstant(box.value.box.value)
 }
 
 
@@ -185,7 +185,7 @@ case class ExtractScript(input: Value[SBox.type]) extends Extract[SProp.type] wi
   override type M = this.type
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SProp.type] = {
-    PropLeafConstant(box.value)
+    PropConstant(box.value)
   }
 }
 
@@ -195,7 +195,7 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayLeafConstant(box.value.box.bytes)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.box.bytes)
 }
 
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
@@ -203,7 +203,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] w
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayLeafConstant(box.value.box.id)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.box.id)
 }
 
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],

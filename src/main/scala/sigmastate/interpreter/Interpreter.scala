@@ -74,14 +74,14 @@ trait Interpreter {
           context.extension.values(id)
 
         //operations
-        case Plus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value + r.value)
-        case Minus(l: IntLeafConstant, r: IntLeafConstant) => IntLeafConstant(l.value - r.value)
-        case Xor(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
+        case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
+        case Minus(l: IntConstant, r: IntConstant) => IntConstant(l.value - r.value)
+        case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
           assert(l.value.length == r.value.length)
-          ByteArrayLeafConstant(Helpers.xor(l.value, r.value))
-        case AppendBytes(l: ByteArrayLeafConstant, r: ByteArrayLeafConstant) =>
+          ByteArrayConstant(Helpers.xor(l.value, r.value))
+        case AppendBytes(l: ByteArrayConstant, r: ByteArrayConstant) =>
           require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
-          ByteArrayLeafConstant(l.value ++ r.value
+          ByteArrayConstant(l.value ++ r.value
           )
         case c@CalcBlake2b256(l: EvaluatedValue[SByteArray.type]) if l.evaluated => c.function(l)
 
@@ -95,15 +95,15 @@ trait Interpreter {
           BooleanConstant.fromBoolean(l == r)
         case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
           BooleanConstant.fromBoolean(l != r)
-        case GT(l: IntLeafConstant, r: IntLeafConstant) =>
+        case GT(l: IntConstant, r: IntConstant) =>
           BooleanConstant.fromBoolean(l.value > r.value)
-        case GE(l: IntLeafConstant, r: IntLeafConstant) =>
+        case GE(l: IntConstant, r: IntConstant) =>
           BooleanConstant.fromBoolean(l.value >= r.value)
-        case LT(l: IntLeafConstant, r: IntLeafConstant) =>
+        case LT(l: IntConstant, r: IntConstant) =>
           BooleanConstant.fromBoolean(l.value < r.value)
-        case LE(l: IntLeafConstant, r: IntLeafConstant) =>
+        case LE(l: IntConstant, r: IntConstant) =>
           BooleanConstant.fromBoolean(l.value <= r.value)
-        case IsMember(tree: AvlTreeConstant, key: ByteArrayLeafConstant, proof: ByteArrayLeafConstant) =>
+        case IsMember(tree: AvlTreeConstant, key: ByteArrayConstant, proof: ByteArrayConstant) =>
           val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
           BooleanConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
 

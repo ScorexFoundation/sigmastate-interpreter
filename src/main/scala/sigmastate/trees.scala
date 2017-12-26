@@ -155,7 +155,7 @@ case class CalcBlake2b256(input: Value[SByteArray.type])
   extends Transformer[SByteArray.type, SByteArray.type] with NotReadyValueByteArray {
 
   override def function(bal: EvaluatedValue[SByteArray.type]): Value[SByteArray.type] =
-    ByteArrayLeafConstant(Blake2b256(bal.value))
+    ByteArrayConstant(Blake2b256(bal.value))
 
   override lazy val cost: Int = input.cost + Cost.Blake256bDeclaration
 }
@@ -180,10 +180,10 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType] extends Triple[LIV, RIV, OV]
 
 case class Plus(override val left: Value[SInt.type], override val right: Value[SInt.type])
-  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueIntLeaf
+  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
 
 case class Minus(override val left: Value[SInt.type], override val right: Value[SInt.type])
-  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueIntLeaf
+  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
 
 case class Xor(override val left: Value[SByteArray.type],
                override val right: Value[SByteArray.type])

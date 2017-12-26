@@ -34,21 +34,21 @@ trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
 //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
 sealed trait IntLeaf extends Value[SInt.type]
 
-case class IntLeafConstant(value: Long) extends EvaluatedValue[SInt.type] {
+case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val cost = 1
 }
 
-trait NotReadyValueIntLeaf extends NotReadyValue[SInt.type]{
+trait NotReadyValueInt extends NotReadyValue[SInt.type]{
   override lazy val cost: Int = 1
 }
 
-case object Height extends NotReadyValueIntLeaf {
+case object Height extends NotReadyValueInt {
   override lazy val cost: Int = Cost.HeightAccess
 }
 
-case object UnknownIntLeaf extends NotReadyValueIntLeaf
+case object UnknownInt extends NotReadyValueInt
 
-case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueIntLeaf
+case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt
 
 
 
@@ -67,23 +67,23 @@ case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.ty
 
 
 
-case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
+case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
 
   override def cost: Int = (value.length / 1024.0).ceil.round.toInt * Cost.ByteArrayPerKilobyte
 
   override def equals(obj: scala.Any): Boolean = obj match {
-    case ob: ByteArrayLeafConstant => value sameElements ob.value
+    case ob: ByteArrayConstant => value sameElements ob.value
     case _ => false
   }
 }
 
-object EmptyByteArray extends ByteArrayLeafConstant(Array.emptyByteArray)
+object EmptyByteArray extends ByteArrayConstant(Array.emptyByteArray)
 
 trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type]{
   override lazy val cost: Int = Cost.ByteArrayDeclaration
 }
 
-case object UnknownByteArrayLeaf extends NotReadyValueByteArray
+case object UnknownByteArray extends NotReadyValueByteArray
 
 
 case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray
@@ -91,26 +91,26 @@ case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteAr
 
 //todo: merge with SByteArray?
 
-case class PropLeafConstant(value: Array[Byte]) extends EvaluatedValue[SProp.type] {
+case class PropConstant(value: Array[Byte]) extends EvaluatedValue[SProp.type] {
   override def cost: Int = value.length + Cost.PropLeafDeclaration
 
   override def equals(obj: scala.Any): Boolean = obj match {
-    case ob: PropLeafConstant => value sameElements ob.value
+    case ob: PropConstant => value sameElements ob.value
     case _ => false
   }
 }
 
-object PropLeafConstant {
-  def apply(value: BoxWithMetadata): PropLeafConstant = new PropLeafConstant(value.box.propositionBytes)
+object PropConstant {
+  def apply(value: BoxWithMetadata): PropConstant = new PropConstant(value.box.propositionBytes)
 
-  def apply(value: SigmaStateTree): PropLeafConstant = new PropLeafConstant(value.toString.getBytes)
+  def apply(value: SigmaStateTree): PropConstant = new PropConstant(value.toString.getBytes)
 }
 
 trait NotReadyValueProp extends NotReadyValue[SProp.type] {
   override def cost: Int = Cost.PropLeafDeclaration
 }
 
-case class TaggedPropLeaf(override val id: Byte) extends TaggedVariable[SProp.type] with NotReadyValueProp
+case class TaggedProp(override val id: Byte) extends TaggedVariable[SProp.type] with NotReadyValueProp
 
 
 case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
