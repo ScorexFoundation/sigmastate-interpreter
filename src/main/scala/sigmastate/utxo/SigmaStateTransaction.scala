@@ -19,7 +19,7 @@ import scala.util.Try
   *
   * We add two additional fields to the box. In the first place, for carrying data along we use registers.
   * Corresponding field is called "additional registers", as we consider that amount and proposition are also stored
-  * in the registers R0 and R1. In the second place, we have a "nonce" field to guarantee unique id. For a real
+  * in the registers R1 and R2. In the second place, we have a "nonce" field to guarantee unique id. For a real
   * implementation, nonce should be an output of cryptographic hash function, which inputs prevents identifier collision
   * to happen, even for otherwise identical boxes. For example, a transaction could set
   * nonce = hash(n + box_index + box_input_id_1 + ... + box_input_id_n), where n is number of transaction inputs.
