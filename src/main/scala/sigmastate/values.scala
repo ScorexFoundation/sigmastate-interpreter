@@ -1,6 +1,8 @@
 package sigmastate
 
 
+import java.math.BigInteger
+
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.crypto.authds.SerializedAdProof
@@ -47,6 +49,22 @@ case object Height extends NotReadyValueIntLeaf {
 case object UnknownIntLeaf extends NotReadyValueIntLeaf
 
 case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueIntLeaf
+
+
+
+
+sealed trait BigIntLeaf extends Value[SBigInt.type]
+
+case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
+  override val cost = 1
+}
+
+trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type]{
+  override lazy val cost: Int = 1
+}
+
+case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt
+
 
 
 case class ByteArrayLeafConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {

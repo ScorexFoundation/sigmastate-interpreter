@@ -85,6 +85,11 @@ trait Interpreter {
           )
         case c@CalcBlake2b256(l: EvaluatedValue[SByteArray.type]) if l.evaluated => c.function(l)
 
+        case Exponentiate(l: GroupElementConstant, r: BigIntConstant) =>
+          val dlogGroup = new BcDlogECFp() //todo: externalize dlog group
+          GroupElementConstant(dlogGroup.exponentiate(l.value, r.value))
+
+
         //relations
         case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
           BooleanConstant.fromBoolean(l == r)

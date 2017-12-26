@@ -162,6 +162,9 @@ case class CalcBlake2b256(input: Value[SByteArray.type])
 
 
 
+
+
+
 /**
   * A tree node with left and right descendants
   */
@@ -190,6 +193,10 @@ case class AppendBytes(override val left: Value[SByteArray.type],
                        override val right: Value[SByteArray.type])
   extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type] with NotReadyValueByteArray
 
+
+case class Exponentiate(override val left: Value[SGroupElement.type], override val right: Value[SBigInt.type])
+  extends TwoArgumentsOperation[SGroupElement.type, SBigInt.type, SGroupElement.type]
+    with NotReadyValueGroupElement
 
 
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
