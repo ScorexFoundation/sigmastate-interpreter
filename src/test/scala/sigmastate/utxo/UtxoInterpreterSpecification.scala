@@ -82,8 +82,8 @@ class UtxoInterpreterSpecification extends PropSpec
         Seq(
           LT(Height, timeout),
           projectPubKey,
-          Exists(Outputs, 21, GE(ExtractAmount(TaggedBoxLeaf(21)), minToRaise),
-                              EQ(ExtractScript(TaggedBoxLeaf(21)), PropLeafConstant(projectPubKey)))
+          Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), minToRaise),
+                              EQ(ExtractScript(TaggedBox(21)), PropLeafConstant(projectPubKey)))
         )
       )
     )
@@ -170,9 +170,9 @@ class UtxoInterpreterSpecification extends PropSpec
       regScript,
       AND(
         GE(Height, Plus(ExtractHeight(Self), IntLeafConstant(demurragePeriod))),
-        Exists(Outputs, 21, GE(ExtractAmount(TaggedBoxLeaf(21)),
+        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)),
                                 Minus(ExtractAmount(Self), IntLeafConstant(demurrageCost))),
-                            EQ(ExtractScript(TaggedBoxLeaf(21)), ExtractScript(Self)))
+                            EQ(ExtractScript(TaggedBox(21)), ExtractScript(Self)))
       )
     )
 
@@ -780,7 +780,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = OR(
       AND(LE(Height, IntLeafConstant(timeout)),
-        EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytes(TaggedBoxLeaf(21))))),
+        EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytes(TaggedBox(21))))),
           ByteArrayLeafConstant(properHash))),
       AND(GT(Height, IntLeafConstant(timeout)), sender)
     )
@@ -804,7 +804,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBoxLeaf(21)))), IntLeafConstant(20)))
+    val prop = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), IntLeafConstant(20)))
 
     val newBox1 = SigmaStateBox(11, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)
@@ -880,7 +880,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBoxLeaf(21)), IntLeafConstant(5)), IntLeafConstant(10)))
+    val prop = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), IntLeafConstant(5)), IntLeafConstant(10)))
 
     val newBox1 = SigmaStateBox(16, pubkey)
     val newBox2 = SigmaStateBox(15, pubkey)
@@ -901,7 +901,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBoxLeaf(21)), IntLeafConstant(10)))
+    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntLeafConstant(10)))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey)
@@ -922,7 +922,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBoxLeaf(21)), IntLeafConstant(10)))
+    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntLeafConstant(10)))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(11, pubkey)
@@ -941,7 +941,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBoxLeaf(21), R3),
+    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3),
       Plus(ExtractRegisterAs(Self, R3), IntLeafConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntLeafConstant(3)))
@@ -965,7 +965,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = Exists(Outputs, 21,
-      EQ(ExtractRegisterAs(TaggedBoxLeaf(21), R3, default = Some(IntLeafConstant(0L))),
+      EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntLeafConstant(0L))),
           Plus(ExtractRegisterAs(Self, R3), IntLeafConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey)

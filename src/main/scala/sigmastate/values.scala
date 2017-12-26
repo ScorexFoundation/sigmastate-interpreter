@@ -128,17 +128,17 @@ case class TaggedGroupElement(override val id: Byte)
 
 
 
-sealed abstract class BooleanLeafConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type]
+sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type]
 
-object BooleanLeafConstant {
-  def fromBoolean(v: Boolean): BooleanLeafConstant = if (v) TrueLeaf else FalseLeaf
+object BooleanConstant {
+  def fromBoolean(v: Boolean): BooleanConstant = if (v) TrueLeaf else FalseLeaf
 }
 
-case object TrueLeaf extends BooleanLeafConstant(true) {
+case object TrueLeaf extends BooleanConstant(true) {
   override def cost: Int = Cost.ConstantNode
 }
 
-case object FalseLeaf extends BooleanLeafConstant(false) {
+case object FalseLeaf extends BooleanConstant(false) {
   override def cost: Int = Cost.ConstantNode
 }
 
@@ -160,14 +160,14 @@ case class BoxLeafConstant(value: BoxWithMetadata) extends EvaluatedValue[SBox.t
   override def cost: Int = 10
 }
 
-trait NotReadyValueBoxLeaf extends NotReadyValue[SBox.type] {
+trait NotReadyValueBox extends NotReadyValue[SBox.type] {
   override def cost: Int = 10
 }
 
-case class TaggedBoxLeaf(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBoxLeaf
+case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox
 
 
-case object Self extends NotReadyValueBoxLeaf {
+case object Self extends NotReadyValueBox {
   override def cost: Int = 10
 
   override type M = this.type

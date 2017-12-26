@@ -109,7 +109,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     val reducedProp = reduceToCrypto(exp, context.withExtension(knownExtensions)).get
 
     ProverResult(reducedProp match {
-      case tree: BooleanLeafConstant =>
+      case tree: BooleanConstant =>
         tree match {
           case TrueLeaf => NoProof
           case FalseLeaf => ???

@@ -87,20 +87,20 @@ trait Interpreter {
 
         //relations
         case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-          BooleanLeafConstant.fromBoolean(l == r)
+          BooleanConstant.fromBoolean(l == r)
         case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-          BooleanLeafConstant.fromBoolean(l != r)
+          BooleanConstant.fromBoolean(l != r)
         case GT(l: IntLeafConstant, r: IntLeafConstant) =>
-          BooleanLeafConstant.fromBoolean(l.value > r.value)
+          BooleanConstant.fromBoolean(l.value > r.value)
         case GE(l: IntLeafConstant, r: IntLeafConstant) =>
-          BooleanLeafConstant.fromBoolean(l.value >= r.value)
+          BooleanConstant.fromBoolean(l.value >= r.value)
         case LT(l: IntLeafConstant, r: IntLeafConstant) =>
-          BooleanLeafConstant.fromBoolean(l.value < r.value)
+          BooleanConstant.fromBoolean(l.value < r.value)
         case LE(l: IntLeafConstant, r: IntLeafConstant) =>
-          BooleanLeafConstant.fromBoolean(l.value <= r.value)
+          BooleanConstant.fromBoolean(l.value <= r.value)
         case IsMember(tree: AvlTreeLeafConstant, key: ByteArrayLeafConstant, proof: ByteArrayLeafConstant) =>
           val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
-          BooleanLeafConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
+          BooleanConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
 
         //conjectures
         case a@AND(children) if a.transformationReady =>
