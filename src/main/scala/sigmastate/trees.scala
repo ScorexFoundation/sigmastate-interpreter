@@ -226,13 +226,14 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
 
 /**
   *
-  * @param first - tree
-  * @param second - key
-  * @param third - proof
   */
-case class IsMember(override val first: Value[SAvlTree.type],
-                    override val second: Value[SByteArray.type],
-                    override val third: Value[SByteArray.type]) extends Relation3[SAvlTree.type, SByteArray.type, SByteArray.type]
+case class IsMember(tree: Value[SAvlTree.type],
+                    key: Value[SByteArray.type],
+                    proof: Value[SByteArray.type]) extends Relation3[SAvlTree.type, SByteArray.type, SByteArray.type] {
+  override lazy val first = tree
+  override lazy val second = key
+  override lazy val third = proof
+}
 
 
 

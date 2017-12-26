@@ -1149,5 +1149,6 @@ class UtxoInterpreterSpecification extends PropSpec
     *
     */
   ignore("oracle example") {
+    val prop = AND(IsMember())
   }
 }
