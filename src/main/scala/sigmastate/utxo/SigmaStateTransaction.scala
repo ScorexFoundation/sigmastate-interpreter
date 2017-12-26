@@ -6,6 +6,7 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.BoxTransaction
 import scorex.core.transaction.box.{Box, BoxUnlocker}
 import scorex.core.transaction.proof.Proof
+import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
@@ -46,7 +47,7 @@ class SigmaStateBox(override val value: Long,
     }
   }
 
-  override lazy val id = Blake2b256.hash(bytes)
+  override lazy val id = ADKey @@ Blake2b256.hash(bytes)
 
   override type M = SigmaStateBox
 
