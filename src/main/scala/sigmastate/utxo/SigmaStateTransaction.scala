@@ -30,7 +30,7 @@ class SigmaStateBox(override val value: Long,
 
   override type M = SigmaStateBox
 
-  //todo: implement real
+  //todo: real implementation
   val propositionBytes = proposition.toString.getBytes
 
   override def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {

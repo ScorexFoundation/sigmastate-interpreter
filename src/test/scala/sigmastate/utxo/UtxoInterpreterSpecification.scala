@@ -1118,6 +1118,5 @@ class UtxoInterpreterSpecification extends PropSpec
     *
     */
   ignore("oracle example") {
-
   }
 }
