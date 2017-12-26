@@ -256,6 +256,8 @@ Verifier steps:
 
 \subsection{Context}
 
+Shared context of a blockchain system could be expressed in different ways, based on desired expressiveness, efficiency, planned use cases and so on. In this paper we focus on context for Ergo blockchain. The main priority for this blockchain is maximum efficiency of transaction validation process, safety, and friendliness to light clients. Considering this, we require that context should contain only spending transaction along with outputs it spends, and limited number of last block headers. Thus even a client which does not have all the headers of the blockchain~(for example, the client could be working in a light-SPV mode, where the client is holding only sublinear part of the headers-chain) is able to validate a transaction, by being shown it~(as well as outputs the transaction spends along with Merkle proofs for them).
+
 
 \section{Examples}
 
@@ -297,6 +299,8 @@ $$(dlog(x_A) \lor dlog(x_B)) \land (dlog(x_C) \lor dlog(x_D))$$
 
 \subsection{Simple Tumbler}
 \label{sec:tumbler}
+
+\knote{does the example makes sense? check other tumbler papers. also, update the scripts, now approach is more generic than using tx.outbytes}
 
 Privacy is a tough problem for cryptocurrency users. Bitcoin is a pseudonymous cryptocurrency, so no real identities attached to a transaction. However, it is possible to reconstruct transactional graph for all the transactions ever entered into the Bitcoin blockchain, and often restore real identities by using auxiliary databases. \knote{link} To improve privacy, tumblers are being used. A tumbler is a scheme which us getting some money transfers as inputs, produces output money transfers, and has a property of unlinkability: it is not possible to draw a link from an input to an output. Thus a tumbler user is hiding herself amongst a ring of users sending inputs to the scheme. Privacy then depends on a ring size. For maximum privacy, there exists a cryptocurrency ZCash with inbuilt tumbler based on zkSnarks\knote{links}, where a user is hiding among all the users in the system. However, ZCash requires trusted setup, and transaction validation is relatively slow~(10 ms). In other cryptocurrencies users are usually using external services varying in security and efficiency.
 
