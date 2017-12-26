@@ -1084,6 +1084,37 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   /**
+    * An example script where an output could be spent only along with an output with given id
+    * (and no more outputs could be provided as an input of a spending transaction).
+    */
+  property("Along with a brother"){
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey1 = prover.dlogSecrets.head.publicImage
+    val pubkey2 = prover.dlogSecrets(1).publicImage
+
+    val brother = BoxWithMetadata(SigmaStateBox(10, pubkey1, Map()), BoxMetadata(5, 0))
+
+    val newBox = SigmaStateBox(20, pubkey2)
+
+    val newBoxes = IndexedSeq(newBox)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+
+
+    val prop = AND(
+      EQ(SizeOf(Inputs), IntLeafConstant(2)),
+      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayLeafConstant(brother.box.id)))
+
+    val s = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5, 1))
+
+    val ctx = UtxoContext(currentHeight = 50, IndexedSeq(brother, s), spendingTransaction, self = s)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+  }
+
+  /**
     *
     * An oracle example.
     *
