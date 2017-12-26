@@ -6,16 +6,36 @@ import scorex.core.serialization.Serializer
 import scorex.core.transaction.BoxTransaction
 import scorex.core.transaction.box.{Box, BoxUnlocker}
 import scorex.core.transaction.proof.Proof
+import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
 
 import scala.util.Try
 
-
+/**
+  * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In bitcoin, such an object
+  * is associated with some monetary value (arbitrary, but with predefined precision, so we use integer arithmetic to
+  * work with the value), guarding script (aka proposition) to protect the box from unauthorized opening.
+  *
+  * We add two additional fields to the box. In the first place, for carrying data along we use registers.
+  * Corresponding field is called "additional registers", as we consider that amount and proposition are also stored
+  * in the registers R0 and R1. In the second place, we have a "nonce" field to guarantee unique id. For a real
+  * implementation, nonce should be an output of cryptographic hash function, which inputs prevents identifier collision
+  * to happen, even for otherwise identical boxes. For example, a transaction could set
+  * nonce = hash(n + box_index + box_input_id_1 + ... + box_input_id_n), where n is number of transaction inputs.
+  *
+  * A transaction is unsealing a box. As a box can not be open twice, any further valid transaction can not link to the
+  * same box.
+  *
+  * @param value
+  * @param proposition
+  * @param additionalRegisters
+  * @param nonce
+  */
 class SigmaStateBox(override val value: Long,
                          override val proposition: SigmaStateTree,
-                         additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map()
-                        ) extends Box[SigmaStateTree] {
+                         additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map(),
+                         nonce: Array[Byte] = Array.fill(32)(0:Byte)) extends Box[SigmaStateTree] {
   import sigmastate.utxo.SigmaStateBox._
 
   def get(identifier: RegisterIdentifier): Option[_ <: Value[_]] = {
@@ -26,7 +46,7 @@ class SigmaStateBox(override val value: Long,
     }
   }
 
-  override lazy val id = ???
+  override lazy val id = Blake2b256.hash(bytes)
 
   override type M = SigmaStateBox
 
@@ -37,7 +57,7 @@ class SigmaStateBox(override val value: Long,
 
     //todo: serialize registers
     override def toBytes(obj: SigmaStateBox): Array[Byte] =
-      Longs.toByteArray(obj.value) ++ obj.propositionBytes
+      Longs.toByteArray(obj.value) ++ obj.propositionBytes ++ nonce
 
     override def parseBytes(bytes: Array[Byte]): Try[SigmaStateBox] = ???
   }
@@ -46,8 +66,10 @@ class SigmaStateBox(override val value: Long,
 object SigmaStateBox {
   def apply(value: Long,
             proposition: SigmaStateTree,
-            additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map()): SigmaStateBox =
-    new SigmaStateBox(value, proposition, additionalRegisters)
+            additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map(),
+            nonce: Array[Byte] = Array.fill(32)(0: Byte)
+           ): SigmaStateBox =
+    new SigmaStateBox(value, proposition, additionalRegisters, nonce)
 
   sealed trait RegisterIdentifier
   sealed trait NonMandatoryIdentifier extends RegisterIdentifier
