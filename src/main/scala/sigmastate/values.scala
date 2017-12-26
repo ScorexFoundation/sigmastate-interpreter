@@ -94,7 +94,7 @@ trait NotReadyValueProp extends NotReadyValue[SProp.type] {
 case class TaggedPropLeaf(override val id: Byte) extends TaggedVariable[SProp.type] with NotReadyValueProp
 
 
-case class AvlTreeLeafConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
+case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
   override val cost = 50
 
   def createVerifier(proof: SerializedAdProof) =

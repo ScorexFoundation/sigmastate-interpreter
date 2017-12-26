@@ -225,7 +225,7 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
 
 
 /**
-  *
+  * Predicate which checks whether a key is in a tree, by using a membership proof
   */
 case class IsMember(tree: Value[SAvlTree.type],
                     key: Value[SByteArray.type],

@@ -12,7 +12,7 @@ import BoxHelpers.boxWithMetadata
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import sigmastate.utxo.SigmaStateBox.{R3, R4}
+import sigmastate.utxo.SigmaStateBox.{R1, R3, R4}
 
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -1010,7 +1010,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeLeafConstant(treeData))), BoxMetadata(5, 0))
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData))), BoxMetadata(5, 0))
 
     val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = s)
 
@@ -1049,7 +1049,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
     val s = BoxWithMetadata(
-      SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeLeafConstant(treeData), R4 -> ByteArrayLeafConstant(key))),
+      SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayLeafConstant(key))),
       BoxMetadata(5, 0))
 
     val ctx = UtxoContext(currentHeight = 50, IndexedSeq(), spendingTransaction, self = s)
@@ -1149,6 +1149,10 @@ class UtxoInterpreterSpecification extends PropSpec
     *
     */
   ignore("oracle example") {
-    val prop = AND(IsMember())
+    //todo: finish
+    val utxoRoot: AvlTreeConstant = ???
+    val prop = AND(IsMember(utxoRoot, ExtractId(TaggedBox(22:Byte)), TaggedByteArray(23: Byte)),
+      EQ(ExtractRegisterAs[SProp.type](TaggedBox(22:Byte), R1), PropLeafConstant(Array.emptyByteArray))
+    )
   }
 }

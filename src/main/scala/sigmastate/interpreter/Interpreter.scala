@@ -98,7 +98,7 @@ trait Interpreter {
           BooleanConstant.fromBoolean(l.value < r.value)
         case LE(l: IntLeafConstant, r: IntLeafConstant) =>
           BooleanConstant.fromBoolean(l.value <= r.value)
-        case IsMember(tree: AvlTreeLeafConstant, key: ByteArrayLeafConstant, proof: ByteArrayLeafConstant) =>
+        case IsMember(tree: AvlTreeConstant, key: ByteArrayLeafConstant, proof: ByteArrayLeafConstant) =>
           val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
           BooleanConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
 
