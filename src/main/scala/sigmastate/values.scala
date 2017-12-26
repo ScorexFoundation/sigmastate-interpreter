@@ -2,6 +2,7 @@ package sigmastate
 
 
 import edu.biu.scapi.primitives.dlog.GroupElement
+import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
@@ -118,6 +119,14 @@ case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.
 case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[SGroupElement.type] {
   override val cost = 10
 }
+
+
+case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
+  override val cost = 10
+
+  override val value = new BcDlogECFp().getGenerator
+}
+
 
 trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
   override val cost = 10
