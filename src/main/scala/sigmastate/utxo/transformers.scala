@@ -198,6 +198,13 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayLeafConstant(box.value.box.bytes)
 }
 
+case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override lazy val cost: Int = 10
+
+  override type M = this.type
+
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayLeafConstant(box.value.box.id)
+}
 
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
