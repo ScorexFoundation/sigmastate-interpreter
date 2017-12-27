@@ -12,7 +12,7 @@ import BoxHelpers.boxWithMetadata
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import sigmastate.utxo.SigmaStateBox.{R1, R2, R3, R4}
+import sigmastate.utxo.SigmaStateBox._
 
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -1149,11 +1149,19 @@ class UtxoInterpreterSpecification extends PropSpec
     *
     */
   ignore("oracle example") {
+    def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22:Byte), R4)
+
+    val x: Value[SGroupElement.type] = ???
+
     //todo: finish
     val utxoRoot: AvlTreeConstant = ???
     val prop = AND(IsMember(utxoRoot, ExtractId(TaggedBox(22:Byte)), TaggedByteArray(23: Byte)),
-      EQ(ExtractRegisterAs[SProp.type](TaggedBox(22:Byte), R1), PropConstant(Array.emptyByteArray)),
-      GT(ExtractRegisterAs(TaggedBox(22:Byte), R2), IntConstant(15))
+      EQ(extract[SProp.type](R1), PropConstant(Array.emptyByteArray)),
+      EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R4)),
+         MultiplyGroup(extract[SGroupElement.type](R3),
+                       Exponentiate(x, ByteArrayToBigInt(CalcBlake2b256(IntToByteArray(extract[SInt.type](R2))))))
+      ),
+      GT(extract(R2), IntConstant(15))
     )
   }
 }

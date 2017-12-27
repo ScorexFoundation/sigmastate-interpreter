@@ -2,6 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 
+import com.google.common.primitives.{Ints, Longs}
 import scapi.sigma.DLogProtocol._
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
@@ -146,9 +147,32 @@ object AND {
   def apply(arg1: Value[SBoolean.type],
             arg2: Value[SBoolean.type],
             arg3: Value[SBoolean.type]): AND = apply(Seq(arg1, arg2, arg3))
+
+  def apply(arg1: Value[SBoolean.type],
+            arg2: Value[SBoolean.type],
+            arg3: Value[SBoolean.type],
+            arg4: Value[SBoolean.type]): AND = apply(Seq(arg1, arg2, arg3, arg4))
 }
 
 
+case class IntToByteArray(input: Value[SInt.type])
+  extends Transformer[SInt.type, SByteArray.type] with NotReadyValueByteArray {
+
+  override def function(bal: EvaluatedValue[SInt.type]): Value[SByteArray.type] =
+    ByteArrayConstant(Longs.toByteArray(bal.value))
+
+  override lazy val cost: Int = input.cost + 1 //todo: externalize cost
+}
+
+
+case class ByteArrayToBigInt(input: Value[SByteArray.type])
+  extends Transformer[SByteArray.type, SBigInt.type] with NotReadyValueBigInt {
+
+  override def function(bal: EvaluatedValue[SByteArray.type]): Value[SBigInt.type] =
+    BigIntConstant(new BigInteger(1, bal.value))
+
+  override lazy val cost: Int = input.cost + 1 //todo: externalize cost
+}
 
 
 case class CalcBlake2b256(input: Value[SByteArray.type])
