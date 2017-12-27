@@ -89,7 +89,9 @@ trait Interpreter {
           val dlogGroup = new BcDlogECFp() //todo: externalize dlog group
           GroupElementConstant(dlogGroup.exponentiate(l.value, r.value))
 
-
+        case MultiplyGroup(l: GroupElementConstant, r: GroupElementConstant) =>
+          GroupElementConstant(dlogGroup.multiplyGroupElements(l.value, r.value))
+          
         //relations
         case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
           BooleanConstant.fromBoolean(l == r)
