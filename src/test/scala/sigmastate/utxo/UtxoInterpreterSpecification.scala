@@ -1,6 +1,8 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Bytes
+import java.security.SecureRandom
+
+import com.google.common.primitives.{Bytes, Longs}
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scapi.sigma.DLogProtocol.ProveDlog
@@ -1134,34 +1136,56 @@ class UtxoInterpreterSpecification extends PropSpec
     *
     * For that, we consider that the service creates a coin with registers of following semantics (R0 & R1 are standard):
     *
-    * R0 - coin amount
-    * R1 - protecting script, which is the pubkey of the service, x =  g^w
-    * R2 - temperature data, number
-    * R3 - a = g^r, where r is secret random nonce
-    * R4 - z = r + ew mod q
+    * R1 - coin amount
+    * R2 - protecting script, which is the pubkey of the service, x =  g^w
+    * R3 - temperature data, number
+    * R4 - a = g^r, where r is secret random nonce
+    * R5 - z = r + ew mod q
     *
     * Then Alice and Bob are requiring from the coin that the following equation holds:
     * (g^z = a * x^e, where e = hash(R2)
     *
     * Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
     * "the coin is spendable if against UTXO set root hash for the last known block there is a coin along with a Merkle
-    * proof, for which following requirements hold: R1 = dlog(x) /\ g^(R4) = R3 * x^(hash(R2)) /\ (R2) > 15"
+    * proof, for which following requirements hold: R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3)) /\ (R3) > 15"
     *
     */
   ignore("oracle example") {
-    def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22:Byte), R4)
+    val oracle = new UtxoProvingInterpreter
+    val alice = new UtxoProvingInterpreter
+    val bob = new UtxoProvingInterpreter
 
-    val x: Value[SGroupElement.type] = ???
+    val oraclePrivKey = oracle.dlogSecrets.head
+    val oraclePubKey = oraclePrivKey.publicImage
+
+    val group = oraclePubKey.dlogGroup
+
+    val temperature: Long = 18
+
+    val r = BigInt.apply(128, new SecureRandom()) //128 bits random number
+    val a = group.exponentiate(group.getGenerator, r.bigInteger)
+
+    val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature)))
+
+    val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.getOrder).bigInteger // todo : check
+
+    val oracleBox = SigmaStateBox(
+      value = 1L,
+      proposition = oraclePubKey,
+      additionalRegisters = Map(R3 -> IntConstant(temperature), R4 -> GroupElementConstant(a), R5 -> BigIntConstant(z)))
+
+    def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22:Byte), R4)
 
     //todo: finish
     val utxoRoot: AvlTreeConstant = ???
     val prop = AND(IsMember(utxoRoot, ExtractId(TaggedBox(22:Byte)), TaggedByteArray(23: Byte)),
-      EQ(extract[SProp.type](R1), PropConstant(Array.emptyByteArray)),
-      EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R4)),
-         MultiplyGroup(extract[SGroupElement.type](R3),
-                       Exponentiate(x, ByteArrayToBigInt(CalcBlake2b256(IntToByteArray(extract[SInt.type](R2))))))
+      EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
+      EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
+         MultiplyGroup(extract[SGroupElement.type](R4),
+                       Exponentiate(oraclePubKey.value,
+                                    ByteArrayToBigInt(CalcBlake2b256(IntToByteArray(extract[SInt.type](R3))))))
       ),
-      GT(extract(R2), IntConstant(15))
+      GT(extract(R3), IntConstant(15))
     )
   }
 }

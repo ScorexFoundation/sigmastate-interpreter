@@ -2,7 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 
-import com.google.common.primitives.{Ints, Longs}
+import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
