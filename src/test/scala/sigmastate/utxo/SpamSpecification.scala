@@ -39,6 +39,8 @@ class SpamSpecification extends PropSpec
     (res, (t - t0) < Timeout)
   }
 
+  private val fakeSelf = boxWithMetadata(0, TrueLeaf)
+
 
   property("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
@@ -51,7 +53,7 @@ class SpamSpecification extends PropSpec
     val spamScript = EQ(CalcBlake2b256(TaggedByteArray(id)), CalcBlake2b256(TaggedByteArray(id)))
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext.dummy(fakeSelf)
 
     val prt = prover.prove(spamScript, ctx, message)
     prt.isSuccess shouldBe true
@@ -81,7 +83,7 @@ class SpamSpecification extends PropSpec
     val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayConstant(Array.fill(32)(0: Byte))))
 
     val message = Blake2b256("Hello World")
-    val ctx = UtxoContext(currentHeight = 0, IndexedSeq(), spendingTransaction = null, self = boxWithMetadata(0, TrueLeaf))
+    val ctx = UtxoContext.dummy(fakeSelf)
 
     val prt = prover.prove(spamScript, ctx, message)
     prt.isSuccess shouldBe true
@@ -106,8 +108,7 @@ class SpamSpecification extends PropSpec
 
     //fake message, in a real-life a message is to be derived from a spending transaction
     val message = Blake2b256("Hello World")
-    val fakeSelf = boxWithMetadata(0, TrueLeaf)
-    val ctx = UtxoContext(currentHeight = 1, IndexedSeq(), spendingTransaction = null, self = fakeSelf)
+    val ctx = UtxoContext.dummy(fakeSelf)
 
     val publicImages = secret.publicImage +: simulated
     val prop = OR(publicImages)
@@ -145,8 +146,7 @@ class SpamSpecification extends PropSpec
 
         //fake message, in a real-life a message is to be derived from a spending transaction
         val message = Blake2b256("Hello World")
-        val fakeSelf = boxWithMetadata(0, propToCompare)
-        val ctx = UtxoContext(currentHeight = 100, IndexedSeq(), spendingTransaction = tx, self = fakeSelf)
+        val ctx = UtxoContext.dummy(boxWithMetadata(0, propToCompare))
 
         val pt0 = System.currentTimeMillis()
         prover.prove(spamScript, ctx, message).map { proof =>

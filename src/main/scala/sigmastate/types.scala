@@ -23,10 +23,3 @@ case object SAvlTree extends SType {override type WrappedType = AvlTreeData}
 case object SGroupElement extends SType {override type WrappedType = GroupElement}
 case object SBox extends SType {override type WrappedType = BoxWithMetadata}
 
-
-class AvlTreeData(val startingDigest: ADDigest,
-                  val keyLength: Int,
-                  val valueLengthOpt: Option[Int],
-                  val maxNumOperations: Option[Int] = None,
-                  val maxDeletes: Option[Int] = None)
-
