@@ -1351,8 +1351,7 @@ class UtxoInterpreterSpecification extends PropSpec
     def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), R4)
 
     //todo: finish
-    val utxoRoot: AvlTreeConstant = ???
-    val prop = AND(IsMember(utxoRoot, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
+    val prop = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
       EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),

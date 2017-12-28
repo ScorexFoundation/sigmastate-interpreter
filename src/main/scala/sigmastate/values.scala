@@ -126,9 +126,12 @@ case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.t
       value.maxDeletes)
 }
 
+
 trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
   override val cost = 50
 }
+
+case object LastBlockUtxoRootHash extends NotReadyValueAvlTree
 
 case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.type] with NotReadyValueAvlTree
 
