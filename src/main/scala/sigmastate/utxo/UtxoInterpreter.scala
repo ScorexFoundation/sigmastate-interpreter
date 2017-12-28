@@ -9,14 +9,14 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   override type CTX = UtxoContext
 
   override def specificTransformations(context: UtxoContext): PartialFunction[SigmaStateTree, SigmaStateTree] = {
-    case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxLeafConstant.apply))
+    case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxConstant.apply))
 
     case Outputs => ConcreteCollection(context.spendingTransaction.newBoxes
       .zipWithIndex
       .map { case (b, i) => BoxWithMetadata(b, BoxMetadata(context.currentHeight, i.toShort)) }
-      .map(BoxLeafConstant.apply))
+      .map(BoxConstant.apply))
 
-    case Self => BoxLeafConstant(context.self)
+    case Self => BoxConstant(context.self)
 
     case t: Transformer[_, _] if t.transformationReady => t.function()
 
@@ -25,8 +25,8 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
     case LastBlockUtxoRootHash => AvlTreeConstant(context.lastBlockUtxoRoot)
 
     case inst: Transformer[SBox.type, _]
-      if inst.input.isInstanceOf[BoxLeafConstant] =>
+      if inst.input.isInstanceOf[BoxConstant] =>
 
-      inst.function(inst.input.asInstanceOf[BoxLeafConstant])
+      inst.function(inst.input.asInstanceOf[BoxConstant])
   }
 }

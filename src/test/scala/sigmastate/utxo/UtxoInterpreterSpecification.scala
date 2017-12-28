@@ -1356,9 +1356,18 @@ class UtxoInterpreterSpecification extends PropSpec
         R6 -> IntConstant(ts))
     )
 
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
+
+    avlProver.performOneOperation(Insert(ADKey @@ oracleBox.id, ADValue @@ oracleBox.bytes))
+    avlProver.generateProof()
+
+    val digest = avlProver.digest
+
+    val treeData = new AvlTreeData(digest, 32, None)
+
+
     def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), R4)
 
-    //todo: finish
     val prop = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
       EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
@@ -1369,5 +1378,9 @@ class UtxoInterpreterSpecification extends PropSpec
       ),
       GT(extract(R3), IntConstant(15))
     )
+
+    avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
+    val proof = avlProver.generateProof()
+
   }
 }

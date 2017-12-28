@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.{AvlTreeData, TrueLeaf}
+import sigmastate.AvlTreeData
 import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.utxo.UtxoContext.Height
 

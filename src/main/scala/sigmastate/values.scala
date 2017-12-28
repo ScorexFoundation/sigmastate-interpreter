@@ -186,7 +186,7 @@ trait FakeBoolean extends NotReadyValue[SBoolean.type]{
 }
 
 
-case class BoxLeafConstant(value: BoxWithMetadata) extends EvaluatedValue[SBox.type] {
+case class BoxConstant(value: BoxWithMetadata) extends EvaluatedValue[SBox.type] {
   override def cost: Int = 10
 }
 
