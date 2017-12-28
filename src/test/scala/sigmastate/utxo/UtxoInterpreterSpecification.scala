@@ -1325,7 +1325,7 @@ class UtxoInterpreterSpecification extends PropSpec
     * proof, for which following requirements hold: R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3 ++ R6)) /\ (R3) > 15"
     *
     */
-  ignore("oracle example") {
+  property("oracle example") {
     val oracle = new UtxoProvingInterpreter
     val aliceTemplate = new UtxoProvingInterpreter
     val bob = new UtxoProvingInterpreter
@@ -1345,11 +1345,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val r = BigInt.apply(128, new SecureRandom()) //128 bits random number
     val a = group.exponentiate(group.getGenerator, r.bigInteger)
 
-    val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature)))
+    val ts = System.currentTimeMillis()
+
+    val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature) ++ Longs.toByteArray(ts)))
 
     val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.getOrder).bigInteger // todo : check
-
-    val ts = System.currentTimeMillis()
 
     val oracleBox = SigmaStateBox(
       value = 1L,
@@ -1373,15 +1373,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
     def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
 
-    val prop = AND(//IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
-//      EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
-//      EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
-//        MultiplyGroup(extract[SGroupElement.type](R4),
-//          Exponentiate(oraclePubKey.value,
-//            ByteArrayToBigInt(CalcBlake2b256(
-//              AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
-//      ),
-      GT(extract(R3), IntConstant(15)),
+    val prop = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
+      EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
+      EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
+        MultiplyGroup(extract[SGroupElement.type](R4),
+          Exponentiate(oraclePubKey.value,
+            ByteArrayToBigInt(CalcBlake2b256(
+              AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
+      ),
       GT(extract(R3), IntConstant(15))
     )
 

@@ -39,7 +39,7 @@ trait Interpreter {
   /**
     * Implementation-specific tree reductions, to be defined in descendants
     *
-    * @param context  - context instance
+    * @param context - context instance
     * @return - processed tree
     */
   def specificTransformations(context: CTX): PartialFunction[SigmaStateTree, SigmaStateTree]
@@ -70,8 +70,11 @@ trait Interpreter {
       })
 
       val transformations = ({
-        case TaggedByteArray(id: Byte) if context.extension.values.contains(id) =>
-          context.extension.values(id)
+        case GroupGenerator =>
+          GroupElementConstant(dlogGroup.getGenerator)
+
+        case t: TaggedVariable[_] if context.extension.values.contains(t.id) =>
+          context.extension.values(t.id)
 
         //operations
         case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
