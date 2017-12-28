@@ -30,14 +30,14 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   val secrets: Seq[SigmaProtocolPrivateInput[_]]
 
-  val contextExtenders: Map[Byte, ByteArrayConstant]
+  val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]]
 
   val knownExtensions = ContextExtension(contextExtenders)
 
   def enrichContext(tree: SigmaStateTree): ContextExtension = {
     val targetName = TaggedByteArray.getClass.getSimpleName.replace("$", "")
 
-    val ce = new Tree(tree).nodes.flatMap { n =>
+    val ce: Map[Byte, EvaluatedValue[_ <: SType]] = new Tree(tree).nodes.flatMap { n =>
       if (n.productPrefix == targetName) {
         val tag = n.productIterator.next().asInstanceOf[Byte]
         contextExtenders.get(tag).map(v => tag -> v)

@@ -267,7 +267,7 @@ class UtxoInterpreterSpecification extends PropSpec
     */
   property("prover enriching context") {
     val prover = new UtxoProvingInterpreter
-    val preimage = prover.contextExtenders(1: Byte).value
+    val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
     val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
 
     val ctx = UtxoContext.dummy(fakeSelf)
@@ -282,8 +282,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
   property("prover enriching context 2") {
     val prover = new UtxoProvingInterpreter
-    val preimage1 = prover.contextExtenders(1).value
-    val preimage2 = prover.contextExtenders(2).value
+    val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
+    val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
     val prop = EQ(CalcBlake2b256(AppendBytes(TaggedByteArray(2), TaggedByteArray(1))),
       ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
 
@@ -324,7 +324,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
   property("context enriching mixed w. crypto") {
     val prover = new UtxoProvingInterpreter
-    val preimage = prover.contextExtenders(1).value
+    val preimage = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = AND(
@@ -346,8 +346,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
   property("context enriching mixed w. crypto 2") {
     val prover = new UtxoProvingInterpreter
-    val preimage1 = prover.contextExtenders(1).value
-    val preimage2 = prover.contextExtenders(2).value
+    val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
+    val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = AND(
@@ -386,7 +386,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val verifier = new UtxoInterpreter
 
-    val x = proverA.contextExtenders(1).value
+    val x = proverA.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val hx = ByteArrayConstant(Blake2b256(x))
 
     val height1 = 100000
@@ -1327,11 +1327,16 @@ class UtxoInterpreterSpecification extends PropSpec
     */
   ignore("oracle example") {
     val oracle = new UtxoProvingInterpreter
-    val alice = new UtxoProvingInterpreter
+    val aliceTemplate = new UtxoProvingInterpreter
     val bob = new UtxoProvingInterpreter
+
+    val verifier = new UtxoInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
+
+    val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage
+    val bobPubKey = bob.dlogSecrets.head.publicImage
 
     val group = oraclePubKey.dlogGroup
 
@@ -1361,26 +1366,45 @@ class UtxoInterpreterSpecification extends PropSpec
     avlProver.performOneOperation(Insert(ADKey @@ oracleBox.id, ADValue @@ oracleBox.bytes))
     avlProver.generateProof()
 
-    val digest = avlProver.digest
+    val lastBlockUtxoDigest = avlProver.digest
 
-    val treeData = new AvlTreeData(digest, 32, None)
+    val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
 
-    def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), R4)
+    def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
 
-    val prop = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
-      EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
-      EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
-        MultiplyGroup(extract[SGroupElement.type](R4),
-          Exponentiate(oraclePubKey.value,
-            ByteArrayToBigInt(CalcBlake2b256(
-              AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
-      ),
+    val prop = AND(//IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
+//      EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
+//      EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
+//        MultiplyGroup(extract[SGroupElement.type](R4),
+//          Exponentiate(oraclePubKey.value,
+//            ByteArrayToBigInt(CalcBlake2b256(
+//              AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
+//      ),
+      GT(extract(R3), IntConstant(15)),
       GT(extract(R3), IntConstant(15))
     )
 
     avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
     val proof = avlProver.generateProof()
 
+    val newBox1 = SigmaStateBox(10, alicePubKey)
+    val newBoxes = IndexedSeq(newBox1)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+
+    val ctx = UtxoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = treeData,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction,
+      self = null)
+
+    val alice = aliceTemplate
+      .withContextExtender(22:Byte, BoxConstant(BoxWithMetadata(oracleBox, BoxMetadata(0, 0))))
+      .withContextExtender(23:Byte, ByteArrayConstant(proof))
+    val pr = alice.prove(prop, ctx, fakeMessage).get
+
+    val ctxv = ctx.withExtension(pr.extension)
+    verifier.verify(prop, ctxv, pr, fakeMessage).get shouldBe true
   }
 }
