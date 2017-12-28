@@ -1373,7 +1373,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
 
-    val prop = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
+    val propAlice = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
       EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),
@@ -1381,29 +1381,41 @@ class UtxoInterpreterSpecification extends PropSpec
             ByteArrayToBigInt(CalcBlake2b256(
               AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
       ),
-      GT(extract(R3), IntConstant(15))
+      OR(AND(GT(extract(R3), IntConstant(15)), alicePubKey),
+         AND(LE(extract(R3), IntConstant(15)), bobPubKey))
     )
+
 
     avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
     val proof = avlProver.generateProof()
 
-    val newBox1 = SigmaStateBox(10, alicePubKey)
+    val newBox1 = SigmaStateBox(20, alicePubKey)
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+
+    val sAlice = BoxWithMetadata(SigmaStateBox(10, propAlice, Map()), BoxMetadata(5, 0))
+
+    //todo: write comments for logic below
+    val propBob = AND(EQ(SizeOf(Inputs), IntConstant(2)), EQ(ExtractId(ByIndex(Inputs,0)), ByteArrayConstant(sAlice.box.id)))
+    val sBob = BoxWithMetadata(SigmaStateBox(10, propBob, Map()), BoxMetadata(5, 1))
 
     val ctx = UtxoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
       self = null)
 
     val alice = aliceTemplate
       .withContextExtender(22:Byte, BoxConstant(BoxWithMetadata(oracleBox, BoxMetadata(0, 0))))
       .withContextExtender(23:Byte, ByteArrayConstant(proof))
-    val pr = alice.prove(prop, ctx, fakeMessage).get
+    val prA = alice.prove(propAlice, ctx, fakeMessage).get
 
-    val ctxv = ctx.withExtension(pr.extension)
-    verifier.verify(prop, ctxv, pr, fakeMessage).get shouldBe true
+    val prB = bob.prove(propBob, ctx, fakeMessage).get
+
+    val ctxv = ctx.withExtension(prA.extension)
+    verifier.verify(propAlice, ctxv, prA, fakeMessage).get shouldBe true
+
+    verifier.verify(propBob, ctx, prB, fakeMessage).get shouldBe true
   }
 }
