@@ -1315,13 +1315,14 @@ class UtxoInterpreterSpecification extends PropSpec
     * R3 - temperature data, number
     * R4 - a = g^r, where r is secret random nonce
     * R5 - z = r + ew mod q
+    * R6 - timestamp
     *
     * Then Alice and Bob are requiring from the coin that the following equation holds:
-    * (g^z = a * x^e, where e = hash(R2)
+    * (g^z = a * x^e, where e = hash(R3 ++ R6)
     *
     * Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
     * "the coin is spendable if against UTXO set root hash for the last known block there is a coin along with a Merkle
-    * proof, for which following requirements hold: R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3)) /\ (R3) > 15"
+    * proof, for which following requirements hold: R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3 ++ R6)) /\ (R3) > 15"
     *
     */
   ignore("oracle example") {
@@ -1343,10 +1344,17 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.getOrder).bigInteger // todo : check
 
+    val ts = System.currentTimeMillis()
+
     val oracleBox = SigmaStateBox(
       value = 1L,
       proposition = oraclePubKey,
-      additionalRegisters = Map(R3 -> IntConstant(temperature), R4 -> GroupElementConstant(a), R5 -> BigIntConstant(z)))
+      additionalRegisters = Map(
+        R3 -> IntConstant(temperature),
+        R4 -> GroupElementConstant(a),
+        R5 -> BigIntConstant(z),
+        R6 -> IntConstant(ts))
+    )
 
     def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), R4)
 
@@ -1356,7 +1364,8 @@ class UtxoInterpreterSpecification extends PropSpec
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),
           Exponentiate(oraclePubKey.value,
-            ByteArrayToBigInt(CalcBlake2b256(IntToByteArray(extract[SInt.type](R3))))))
+            ByteArrayToBigInt(CalcBlake2b256(
+              AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
       ),
       GT(extract(R3), IntConstant(15))
     )
