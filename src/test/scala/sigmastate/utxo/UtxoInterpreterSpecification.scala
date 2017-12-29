@@ -1321,8 +1321,14 @@ class UtxoInterpreterSpecification extends PropSpec
     * (g^z = a * x^e, where e = hash(R3 ++ R6)
     *
     * Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
-    * "the coin is spendable if against UTXO set root hash for the last known block there is a coin along with a Merkle
-    * proof, for which following requirements hold: R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3 ++ R6)) /\ (R3) > 15"
+    * "the coin is spendable by presenting a proof of Alice's private key knowledge if against UTXO set root hash for
+    * the last known block there is a coin along with a Merkle proof, for which following requirements hold:
+    * R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3 ++ R6)) /\ (R3) > 15 . Similarly, the coin is spendable by a proof of
+    * knowledge of the Bob's private key if all the same conditions are met but (R3) <= 15.".
+    *
+    * The Bob can create a box with the same guarding conditions. However, if Alice's box is already in the state, then
+    * Bob can stick to it by using the trick from the "along with a brother" test.
+    *
     *
     */
   property("oracle example") {
@@ -1373,7 +1379,16 @@ class UtxoInterpreterSpecification extends PropSpec
 
     def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
 
-    val propAlice = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
+    def withinTimeframe(sinceHeight:Int,
+                        timeoutHeight: Int,
+                        fallback: Value[SBoolean.type])(script: Value[SBoolean.type]) =
+      OR(AND(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
+         AND(GE(Height, IntConstant(timeoutHeight)), fallback))
+
+    val contractLogic = OR(AND(GT(extract(R3), IntConstant(15)), alicePubKey),
+                            AND(LE(extract(R3), IntConstant(15)), bobPubKey))
+
+    val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
       EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),
@@ -1381,10 +1396,7 @@ class UtxoInterpreterSpecification extends PropSpec
             ByteArrayToBigInt(CalcBlake2b256(
               AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
       ),
-      OR(AND(GT(extract(R3), IntConstant(15)), alicePubKey),
-         AND(LE(extract(R3), IntConstant(15)), bobPubKey))
-    )
-
+      contractLogic)
 
     avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
     val proof = avlProver.generateProof()
@@ -1393,10 +1405,16 @@ class UtxoInterpreterSpecification extends PropSpec
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
+    val sinceHeight = 40
+    val timeout = 60
+
+    val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp)
+
     val sAlice = BoxWithMetadata(SigmaStateBox(10, propAlice, Map()), BoxMetadata(5, 0))
 
-    //todo: write comments for logic below
-    val propBob = AND(EQ(SizeOf(Inputs), IntConstant(2)), EQ(ExtractId(ByIndex(Inputs,0)), ByteArrayConstant(sAlice.box.id)))
+    //"along with a brother" script
+    val propAlong = AND(EQ(SizeOf(Inputs), IntConstant(2)), EQ(ExtractId(ByIndex(Inputs,0)), ByteArrayConstant(sAlice.box.id)))
+    val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = BoxWithMetadata(SigmaStateBox(10, propBob, Map()), BoxMetadata(5, 1))
 
     val ctx = UtxoContext(
