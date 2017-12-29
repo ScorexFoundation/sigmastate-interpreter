@@ -220,11 +220,17 @@ case class AppendBytes(override val left: Value[SByteArray.type],
 
 case class Exponentiate(override val left: Value[SGroupElement.type], override val right: Value[SBigInt.type])
   extends TwoArgumentsOperation[SGroupElement.type, SBigInt.type, SGroupElement.type]
-    with NotReadyValueGroupElement
+    with NotReadyValueGroupElement {
+
+  override lazy val cost = 5000
+}
 
 case class MultiplyGroup(override val left: Value[SGroupElement.type], override val right: Value[SGroupElement.type])
   extends TwoArgumentsOperation[SGroupElement.type, SGroupElement.type, SGroupElement.type]
-    with NotReadyValueGroupElement
+    with NotReadyValueGroupElement{
+
+  override lazy val cost = 50
+}
 
 
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
