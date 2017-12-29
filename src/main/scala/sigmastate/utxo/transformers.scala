@@ -179,13 +179,13 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] wit
 }
 
 
-case class ExtractScript(input: Value[SBox.type]) extends Extract[SProp.type] with NotReadyValueProp {
+case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
   override lazy val cost: Int = 10
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SProp.type] = {
-    PropConstant(box.value)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = {
+    ByteArrayConstant(box.value.box.propositionBytes)
   }
 }
 

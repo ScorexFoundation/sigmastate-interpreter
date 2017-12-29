@@ -32,7 +32,7 @@ class UtxoInterpreterSpecification extends PropSpec
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
 
-  property("PropLeaf EQ/NEQ") {
+  property("scripts EQ/NEQ") {
     val prover1 = new UtxoProvingInterpreter
     val prover2 = new UtxoProvingInterpreter
 
@@ -43,10 +43,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext.dummy(fakeSelf)
 
-    verifier.reduceToCrypto(EQ(PropConstant(h1), PropConstant(h1)), ctx)
+    verifier.reduceToCrypto(EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes)), ctx)
       .get.isInstanceOf[TrueLeaf.type] shouldBe true
 
-    verifier.reduceToCrypto(EQ(PropConstant(h1), PropConstant(h2)), ctx)
+    verifier.reduceToCrypto(EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes)), ctx)
       .get.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
@@ -85,7 +85,7 @@ class UtxoInterpreterSpecification extends PropSpec
           LT(Height, timeout),
           projectPubKey,
           Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), minToRaise),
-            EQ(ExtractScript(TaggedBox(21)), PropConstant(projectPubKey)))
+            EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(projectPubKey.propBytes)))
         )
       )
     )
@@ -189,7 +189,7 @@ class UtxoInterpreterSpecification extends PropSpec
         GE(Height, Plus(ExtractHeight(Self), IntConstant(demurragePeriod))),
         Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)),
           Minus(ExtractAmount(Self), IntConstant(demurrageCost))),
-          EQ(ExtractScript(TaggedBox(21)), ExtractScript(Self)))
+          EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self)))
       )
     )
 
@@ -1395,7 +1395,7 @@ class UtxoInterpreterSpecification extends PropSpec
                             AND(LE(extract(R3), IntConstant(15)), bobPubKey))
 
     val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
-      EQ(extract[SProp.type](R2), PropConstant(oraclePubKey)),
+      EQ(extract[SByteArray.type](R2), ByteArrayConstant(oraclePubKey.propBytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),
           Exponentiate(oraclePubKey.value,

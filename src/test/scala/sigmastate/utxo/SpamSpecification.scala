@@ -138,7 +138,7 @@ class SpamSpecification extends PropSpec
 
         val spamScript =
           Exists(Outputs, 11, GE(ExtractAmount(TaggedBox(21)), IntConstant(10)),
-            EQ(ExtractScript(TaggedBox(21)), PropConstant(propToCompare.toString.getBytes)))
+            EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(propToCompare.toString.getBytes)))
 
 
         val txOutputs = ((1 to outCnt) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)

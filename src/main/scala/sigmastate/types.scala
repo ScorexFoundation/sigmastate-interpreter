@@ -17,7 +17,6 @@ case object SInt extends SType {override type WrappedType = Long}
 case object SBigInt extends SType {override type WrappedType = BigInteger}
 case object SBoolean extends SType {override type WrappedType = Boolean}
 case object SByteArray extends SType {override type WrappedType = Array[Byte]}
-case object SProp extends SType {override type WrappedType = Array[Byte]}
 case class  SCollection[ElemType <: SType]() extends SType {override type WrappedType = IndexedSeq[Value[ElemType]]}
 case object SAvlTree extends SType {override type WrappedType = AvlTreeData}
 case object SGroupElement extends SType {override type WrappedType = GroupElement}

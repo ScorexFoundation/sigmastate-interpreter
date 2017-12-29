@@ -89,29 +89,6 @@ case object UnknownByteArray extends NotReadyValueByteArray
 case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray
 
 
-//todo: merge with SByteArray?
-
-case class PropConstant(value: Array[Byte]) extends EvaluatedValue[SProp.type] {
-  override def cost: Int = value.length + Cost.PropLeafDeclaration
-
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case ob: PropConstant => value sameElements ob.value
-    case _ => false
-  }
-}
-
-object PropConstant {
-  def apply(value: BoxWithMetadata): PropConstant = new PropConstant(value.box.propositionBytes)
-
-  def apply(value: SigmaStateTree): PropConstant = new PropConstant(value.toString.getBytes)
-}
-
-trait NotReadyValueProp extends NotReadyValue[SProp.type] {
-  override def cost: Int = Cost.PropLeafDeclaration
-}
-
-case class TaggedProp(override val id: Byte) extends TaggedVariable[SProp.type] with NotReadyValueProp
-
 
 case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
   override val cost = 50
