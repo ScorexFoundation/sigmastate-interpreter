@@ -1233,7 +1233,6 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey2 = prover.dlogSecrets(1).publicImage
     val pubkey3 = prover.dlogSecrets(2).publicImage
 
-
     val prop = AND(new ProveDlog(ExtractRegisterAs(Self, R3)), new ProveDlog(ExtractRegisterAs(Self, R4)))
 
 
@@ -1252,6 +1251,8 @@ class UtxoInterpreterSpecification extends PropSpec
       self = s)
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+
+    //todo: check failing cases
   }
 
   /**
@@ -1288,6 +1289,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+
+    //todo: check failing branches
   }
 
   /**
@@ -1435,5 +1438,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(propAlice, ctxv, prA, fakeMessage).get shouldBe true
 
     verifier.verify(propBob, ctx, prB, fakeMessage).get shouldBe true
+
+    //todo: check timing conditions
   }
 }
