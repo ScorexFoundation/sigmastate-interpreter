@@ -1293,6 +1293,9 @@ class UtxoInterpreterSpecification extends PropSpec
     //todo: check failing branches
   }
 
+
+  //todo: move oracle examples to a separate file
+
   /**
     *
     * An oracle example.
@@ -1439,6 +1442,22 @@ class UtxoInterpreterSpecification extends PropSpec
 
     verifier.verify(propBob, ctx, prB, fakeMessage).get shouldBe true
 
-    //todo: check timing conditions
+    //todo: check timing conditions - write tests for height  < 40 and >= 60
   }
+
+
+  /**
+    * In previous example, Alice and Bob can use the same box with temperature written into multiple times (possibly,
+    * in on one block). Costs for a prover are high though.
+    *
+    * In the example below we consider an alternative approach with one-time oracle box. An oracle creates a box with
+    * temperature written by request, and its only spendable by a transaction which is using Allce's and Bob's boxes.
+    * Protection is similar to "along with a brother" example.
+    * 
+    */
+  ignore("lightweight oracle example"){
+
+  }
+
+
 }
