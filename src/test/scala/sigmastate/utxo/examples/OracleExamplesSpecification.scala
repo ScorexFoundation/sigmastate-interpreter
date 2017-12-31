@@ -177,9 +177,58 @@ class OracleExamplesSpecification extends PropSpec
     * temperature written by request, and its only spendable by a transaction which is using Allce's and Bob's boxes.
     * Protection is similar to "along with a brother" example.
     *
+    * As oracle is creating the box with the data on request, it can also participate in a spending transaction.
+    * Heavyweight authentication from the previous example is not needed then.
+    *
     */
-  ignore("lightweight oracle example"){
+  property("lightweight oracle example"){
+    val oracle = new UtxoProvingInterpreter
+    val alice = new UtxoProvingInterpreter
+    val bob = new UtxoProvingInterpreter
 
+    val verifier = new UtxoInterpreter
+
+    val oraclePrivKey = oracle.dlogSecrets.head
+    val oraclePubKey = oraclePrivKey.publicImage
+
+    val alicePubKey = alice.dlogSecrets.head.publicImage
+    val bobPubKey = bob.dlogSecrets.head.publicImage
+
+    val group = oraclePubKey.dlogGroup
+
+    val temperature: Long = 18
+
+    val oracleBox = SigmaStateBox(
+      value = 1L,
+      proposition = oraclePubKey,
+      additionalRegisters = Map(R3 -> IntConstant(temperature))
+    )
+
+    val contractLogic = OR(AND(GT(ExtractRegisterAs(ByIndex(Inputs,0), R3), IntConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs(ByIndex(Inputs,0), R3), IntConstant(15)), bobPubKey))
+
+    val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
+      EQ(ExtractScriptBytes(ByIndex(Inputs,0)), ByteArrayConstant(oraclePubKey.propBytes)),
+      contractLogic
+    )
+
+    val sOracle = BoxWithMetadata(oracleBox, BoxMetadata(5, 0))
+    val sAlice = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5, 1))
+    val sBob = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5, 2))
+
+    val newBox1 = SigmaStateBox(20, alicePubKey)
+    val newBoxes = IndexedSeq(newBox1)
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+
+    val ctx = UtxoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),
+      spendingTransaction,
+      self = null)
+
+    val prA = alice.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
   }
 
 
