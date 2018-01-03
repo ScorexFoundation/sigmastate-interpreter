@@ -12,6 +12,7 @@ import sigmastate._
 import sigmastate.utxo._
 import sigmastate.utxo.SigmaStateBox._
 
+
 class OracleExamplesSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
@@ -105,7 +106,6 @@ class OracleExamplesSpecification extends PropSpec
 
     val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
-
     def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
 
     def withinTimeframe(sinceHeight:Int,
@@ -194,8 +194,6 @@ class OracleExamplesSpecification extends PropSpec
     val alicePubKey = alice.dlogSecrets.head.publicImage
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val group = oraclePubKey.dlogGroup
-
     val temperature: Long = 18
 
     val oracleBox = SigmaStateBox(
@@ -230,6 +228,4 @@ class OracleExamplesSpecification extends PropSpec
     val prA = alice.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
   }
-
-
 }
