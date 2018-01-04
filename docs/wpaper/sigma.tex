@@ -253,21 +253,24 @@ Verifier steps:
 
 Shared context of a blockchain system could be expressed in different ways, based on desired expressiveness, efficiency, planned use cases and so on. In this paper we focus on context for Ergo blockchain. The main priority for this blockchain is maximum efficiency of transaction validation process, safety, and friendliness to light clients. Considering this, we require that context should contain only spending transaction along with outputs it spends, and limited number of last block headers. Thus even a client which does not have all the headers of the blockchain~(for example, the client could be working in a light-SPV mode, where the client is holding only sublinear part of the headers-chain) is able to validate a transaction, by being shown it~(as well as outputs the transaction spends along with Merkle proofs for them).
 
+\knote{brief context description, link to an appendix with details}
+
 
 \section{Examples}
 
-In this section we provide some examples of useful contracts. We focus on examples which are impossible or harder to realize in Bitcoin.
+In this section we provide some examples of useful guarding scripts. We focus on examples which are impossible or much harder to express in Bitcoin Script.
 
 \subsection{Crowdfunding}
 \label{sec:crowdfunding}
 
-We provide very simple solution to crowdfunding here. In the example, a crowdfunding project associated with public key $x_P$ is considered successful if it is possible to collect for the projects unspent outputs with total value not less than $to\_raise$ before height $timeout$. The project backer creates an output protected by following statement: 
+We provide very simple solution to crowdfunding here. In the example, a crowdfunding project associated with public key $x_P$ is considered successful if it can collect unspent outputs with total value not less than $to\_raise$ before height $timeout$. A project backer creates an output protected by the following statement: 
 
-$$(height \ge timeout \land dlog(x_B)) \lor (height < timeout \land dlog(x_P) \land tx.has\_output(amount \ge to\_raise \land script = dlog(x_P)))$$
+$$(height \ge timeout \land dlog(x_B)) \lor (height < timeout \land dlog(x_P) 
+\land Exists(Outputs, 20, ExtractAmount(TaggedBox(20)) \ge to\_raise \land ExtractScriptBytes(TaggedBox(20)) = ToBytes(dlog(x_P))))$$
 
 Then the project can collect biggest outputs with total value not less than $to\_raise$ with a single transaction~(it is possible to collect up to ~22,000 outputs in Bitcoin, which is enough even for a big crowdfunding campaign). For remaining small outputs over $to\_raise$, it is possible to construct follow-up transactions. 
 
-Please note the extension which is not a part of Bitcoin: we use the condition on a spending transaction, namely, we require the transaction to have an output with value not less than required and also with particular statement protecting the output.
+Please note why such a guarding expression is not possible in Bitcoin: we use the condition on a spending transaction, namely, we require the transaction to have an output with value not less than required, and also with a particular statement protecting the output.
 
 \subsection{Money With Scheduled Maintenance Payments}
 
