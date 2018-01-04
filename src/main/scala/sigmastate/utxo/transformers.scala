@@ -48,13 +48,13 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
 
 case class Exists[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
-                               relations: Relation[_, _]*)
+                               condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SBoolean.type] {
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override val cost: Int = input.cost + relations.size
+  override val cost: Int = input.cost + condition.cost
 
   //todo: cost
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
@@ -62,7 +62,7 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    OR(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[Value[SBoolean.type]]))
+    OR(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
 
   override type M = this.type
@@ -70,13 +70,13 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
 
 case class ForAll[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
-                               relations: Relation[_, _]*)
+                               condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SBoolean.type] {
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override val cost: Int = input.cost + relations.size
+  override val cost: Int = input.cost + condition.cost
 
   //todo: cost
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
@@ -84,7 +84,7 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    AND(input.value.map(el => rl(el)(AND(relations)).get.asInstanceOf[Value[SBoolean.type]]))
+    AND(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
 
   override type M = this.type

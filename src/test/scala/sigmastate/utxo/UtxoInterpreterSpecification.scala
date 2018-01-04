@@ -80,8 +80,12 @@ class UtxoInterpreterSpecification extends PropSpec
         Seq(
           LT(Height, timeout),
           projectPubKey,
-          Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), minToRaise),
-            EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(projectPubKey.propBytes)))
+          Exists(Outputs, 21,
+            AND(
+              GE(ExtractAmount(TaggedBox(21)), minToRaise),
+              EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(projectPubKey.propBytes))
+            )
+          )
         )
       )
     )
@@ -183,9 +187,12 @@ class UtxoInterpreterSpecification extends PropSpec
       regScript,
       AND(
         GE(Height, Plus(ExtractHeight(Self), IntConstant(demurragePeriod))),
-        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)),
-          Minus(ExtractAmount(Self), IntConstant(demurrageCost))),
-          EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self)))
+        Exists(Outputs, 21,
+          AND(
+            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), IntConstant(demurrageCost))),
+            EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self))
+          )
+        )
       )
     )
 
