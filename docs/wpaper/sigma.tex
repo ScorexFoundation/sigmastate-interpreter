@@ -263,10 +263,17 @@ In this section we provide some examples of useful guarding scripts. We focus on
 \subsection{Crowdfunding}
 \label{sec:crowdfunding}
 
-We provide very simple solution to crowdfunding here. In the example, a crowdfunding project associated with public key $x_P$ is considered successful if it can collect unspent outputs with total value not less than $to\_raise$ before height $timeout$. A project backer creates an output protected by the following statement: 
+We provide simple solution to crowdfunding here. In the example, a crowdfunding project associated with public key $x_P$ is considered successful if it can collect unspent outputs with total value not less than $to\_raise$ before height $timeout$. A project backer creates an output protected by the following statement: 
 
-$$(height \ge timeout \land dlog(x_B)) \lor (height < timeout \land dlog(x_P) 
-\land Exists(Outputs, 20, ExtractAmount(TaggedBox(20)) \ge to\_raise \land ExtractScriptBytes(TaggedBox(20)) = ToBytes(dlog(x_P))))$$
+\begin{equation*}
+\begin{split}
+(height \ge timeout \land dlog(x_B)) \lor \\
+(height & < timeout \land dlog(x_P)\\
+& \land Exists(Outputs, 20,\\ 
+& \quad \quad \quad \quad ExtractAmount(TaggedBox(20)) \ge to\_raise \land \\ 
+& \quad \quad \quad \quad ExtractScriptBytes(TaggedBox(20)) = ToBytes(dlog(x_P))))
+\end{split}
+\end{equation*}
 
 Then the project can collect biggest outputs with total value not less than $to\_raise$ with a single transaction~(it is possible to collect up to ~22,000 outputs in Bitcoin, which is enough even for a big crowdfunding campaign). For remaining small outputs over $to\_raise$, it is possible to construct follow-up transactions. 
 
@@ -276,14 +283,22 @@ Please note why such a guarding expression is not possible in Bitcoin: we use th
 
 \knote{description}
 
-$$user\_statement \lor (height \ge (self.height + period) \land tx.has\_output(amount \ge (self.amount-cost) \land script = self.script))$$
+\begin{equation*}
+\begin{split}
+user\_statement \lor \\ 
+(height & \ge (ExtractHeight(self) + period) \land \\
+    & Exists(Outputs, 20, \\
+    & \quad \quad \quad \quad ExtractAmount(TaggedBox(20)) \ge (ExtractAmount(self) - cost) \land \\ 
+    & \quad \quad \quad \quad ExtractScriptBytes(TaggedBox(20)) = ExtractScriptBytes(self)))
+\end{split}
+\end{equation*}
 
 We highlight impossibility of such a statement in the Bitcoin Script: similarly to the statement in the previous section~\ref{sec:crowdfunding}, we use a condition on a spending transaction. Another feature missed in the Bitcoin Script is that we also use an output to spend in the execution context. In particular, in the example above we require a spending transaction to have an output which has the same statement as an output it spends. 
 
 \subsection{Ring Signature}
 \label{sec:ring}
 
-Linear-sized ring signature is very straightforward in the language. Assume a ring consists of $m$ public keys $x_1, \dots, x_m$. If we want an output to be spent by a ring signature associated with the ring, the output is to be protected by the following statement:
+Linear-sized ring signature is very straightforward in the language. Assume a ring consists of $m$ public keys $x_1, \dots, x_m$. If one wants an output to be spent by a ring signature associated with the ring, the output is to be protected by the following statement:
 
 $$dlog(x_1) \lor \dots \lor dlog(x_m)$$  
 
@@ -315,6 +330,34 @@ $blake2b256(tx.outbytes) = h \lor dlog(x_B)$
 Then it is possible to make a refund at any moment of time~(right condition in the $\lor$ conjectures), and before a refund any of the them can construct a transaction which is spending the outputs, and it is impossible to construct an alternative transaction, for which hash of the output bytes is $h$, but bytes are different~(if chosen hash function is collision-resistant).
 
 \subsection{Oracle Example}
+
+\knote{Text below is just copied from code comments, polish it}
+
+A trusted weather station is publishing temperature data on blockchain. Alice and Bob are making a contract based on the data:
+they have locked coins in such way that if output from the station shows that temperature announced by the oracle is > 15 degrees, money are going to Alice, otherwise to Bob.
+    
+We consider that for validating transaction only limited number of last headers and the spending transaction should be enough, in addition to outputs being spent by the transaction. Thus there is no need for knowledge of an arbitrary output. To show the coin of the weather service in the spending transaction, outputs from Alice and Bob are referencing to the coin by using Merkle proofs against UTXO set root hash of the latest known block.
+    
+A tricky moment is how Alice and Bob can be sure that a coin is indeed created by the service, having just the coin (and also service's public key x = $g^w$, where service's secret w is not known.
+    
+For that, we consider that the service creates a coin with registers of following semantics (R0 and R1 are standard):
+    
+R1 - coin amount
+R2 - protecting script, which is the pubkey of the service, $x = g^w$
+R3 - temperature data, number
+R4 - $a = g^r$, where r is secret random nonce
+R5 - $z = r + ew mod q$
+R6 - timestamp
+    
+Then Alice and Bob are requiring from the coin that the following equation holds: $g^z = a * x^e$, where $e = hash(R3 ++ R6)$
+    
+Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
+"the coin is spendable by presenting a proof of Alice's private key knowledge if against UTXO set root hash for
+the last known block there is a coin along with a Merkle proof, for which following requirements hold:
+$R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3 ++ R6)) /\ (R3) > 15$. Similarly, the coin is spendable by a proof of
+knowledge of the Bob's private key if all the same conditions are met but $(R3) <= 15$.".
+    
+The Bob can create a box with the same guarding conditions. However, if Alice's box is already in the state, then Bob can stick to it by using the trick from the "along with a brother" test.
 
 
 \section{Safety Guarantees}
