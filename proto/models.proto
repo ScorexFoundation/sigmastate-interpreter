@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+message SInt {
+    int32 value = 1;
+}
+
+message SBigInt {
+    bytes value = 1;
+}
+
+message SBoolean {
+    bool value = 1;
+}
+
+message SByteArray {
+    bytes value = 1;
+}
+
+message SProp {
+    bytes value = 1;
+}
+
+message SCollection {
+}
+
+message SProp {
+    bytes value = 1;
+}
+
