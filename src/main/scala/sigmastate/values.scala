@@ -8,6 +8,7 @@ import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import sigmastate.serializer.bytes.{HeightSerializer, IntConstantSerializer}
 import sigmastate.utxo.BoxWithMetadata
 import sigmastate.utxo.CostTable.Cost
 
@@ -36,6 +37,8 @@ sealed trait IntLeaf extends Value[SInt.type]
 
 case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val cost = 1
+  override type M = IntConstant
+  override def serializer = new IntConstantSerializer
 }
 
 trait NotReadyValueInt extends NotReadyValue[SInt.type]{
@@ -44,6 +47,8 @@ trait NotReadyValueInt extends NotReadyValue[SInt.type]{
 
 case object Height extends NotReadyValueInt {
   override lazy val cost: Int = Cost.HeightAccess
+  override type M = Height.type
+  override def serializer = new HeightSerializer
 }
 
 case object UnknownInt extends NotReadyValueInt
