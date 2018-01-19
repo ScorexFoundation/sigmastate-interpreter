@@ -21,14 +21,13 @@ abstract class TwoOperandOperationSerializer[LT <: SType, RT <: SType, OPT <: Re
 
   override def parseBytes(bytes: Array[Byte]): Try[OPT] = {
     for {
-      (opCode, bytesAfterOpCode) <- shortBytes(bytes)
-      if opCode == opCode
+      (parsedOpCode, bytesAfterOpCode) <- shortBytes(bytes)
+      if parsedOpCode == opCode
       (leftBytes, bytesAfterLeft) <- arrayWithoutKnownSize(bytesAfterOpCode)
       left <- leftSerializer.parseBytes(leftBytes)
       (rightBytes, bytesAfterRight) <- arrayWithoutKnownSize(bytesAfterLeft)
       right <- rightSerializer.parseBytes(rightBytes)
     } yield {
-      require(bytesAfterRight.isEmpty)
       builder(left, right)
     }
   }

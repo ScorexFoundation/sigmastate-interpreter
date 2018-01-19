@@ -1,18 +1,16 @@
-package sigmastate.serializer.bytes
+package sigmastate.serializer.bytes.base
 
 import scorex.core.serialization.Serializer
-import sigmastate.serializer.bytes.BytesDeserializer._
 import sigmastate._
+import sigmastate.serializer.bytes.BytesDeserializer._
+import sigmastate.serializer.bytes.{HeightSerializer, IntConstantSerializer}
 
 import scala.util.Try
 
-class
-SIntSerializer(implicit intConstantSerializer: Serializer[IntConstant],
+class SIntSerializer(implicit intConstantSerializer: Serializer[IntConstant],
                 heightSerializer: HeightSerializer) extends Serializer[Value[SInt.type]] {
-  override def toBytes(v: Value[SInt.type]): Array[Byte] = v match {
-    case v: IntConstant => intConstantSerializer.toBytes(v)
-    case v: Height.type => heightSerializer.toBytes(v)
-  }
+
+  override def toBytes(v: Value[SInt.type]): Array[Byte] = v.bytes
 
   override def parseBytes(bytes: Array[Byte]): Try[Value[SInt.type]] = {
     for {

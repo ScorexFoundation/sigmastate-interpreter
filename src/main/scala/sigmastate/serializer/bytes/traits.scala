@@ -41,7 +41,7 @@ object BytesDeserializer {
   def arrayWithoutKnownSize(bytes: Array[Byte]): BytesArrayRead[Array[Byte]] = for {
     (size, array) <- shortBytes(bytes)
   } yield {
-    (array.take(size), array.drop(size))
+    array.splitAt(size)
   }
   def booleanFromByte(bytes: Array[Byte]): BytesArrayRead[Boolean] = Try(bytes.head != 0, bytes.drop(1))
 }

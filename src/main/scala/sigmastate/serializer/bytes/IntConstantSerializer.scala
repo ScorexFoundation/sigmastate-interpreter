@@ -9,7 +9,7 @@ import sigmastate.serializer.bytes.BytesSerializer._
 import scala.util.Try
 
 object IntConstantSerializer {
-  val OpCode: Short = 1
+  val OpCode: Short = 22
 }
 class IntConstantSerializer extends Serializer[IntConstant] {
   import IntConstantSerializer._
@@ -27,7 +27,6 @@ class IntConstantSerializer extends Serializer[IntConstant] {
       if opCode == OpCode
       (value, bytesAfterConstant) <- longBytes(bytesAfterOpCode)
     } yield {
-      require(bytesAfterConstant.isEmpty)
       IntConstant(value)
     }
   }
