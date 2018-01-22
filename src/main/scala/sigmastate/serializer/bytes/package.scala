@@ -1,6 +1,7 @@
 package sigmastate.serializer
 
 import scorex.core.serialization.Serializer
+import sigmastate.{SInt, Value}
 import sigmastate.serializer.bytes.base.SIntSerializer
 
 package object bytes {
@@ -8,5 +9,4 @@ package object bytes {
 
   implicit val heightSerializer: HeightSerializer = new HeightSerializer
   implicit val intConstantSerializer: IntConstantSerializer = new IntConstantSerializer
-  implicit val sIntSerializer: SIntSerializer = new SIntSerializer
 }

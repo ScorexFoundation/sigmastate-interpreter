@@ -1,6 +1,7 @@
 package sigmastate.serializer.bytes
 
 import sigmastate.{GT, SInt}
+import sigmastate.serializer.bytes.base._
 
 object GTSerializer {
   val OpCode: Short = 3

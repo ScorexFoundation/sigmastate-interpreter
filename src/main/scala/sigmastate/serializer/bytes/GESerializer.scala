@@ -1,6 +1,7 @@
 package sigmastate.serializer.bytes
 
 import sigmastate.{GE, SInt}
+import sigmastate.serializer.bytes.base._
 
 object GESerializer {
   val OpCode: Short = 4
