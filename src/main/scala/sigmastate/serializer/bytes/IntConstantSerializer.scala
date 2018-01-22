@@ -9,7 +9,7 @@ import sigmastate.serializer.bytes.BytesSerializer._
 import scala.util.Try
 
 object IntConstantSerializer {
-  val OpCode: Short = 22
+  private val OpCode: Short = 22
 }
 class IntConstantSerializer extends Serializer[IntConstant] {
   import IntConstantSerializer._

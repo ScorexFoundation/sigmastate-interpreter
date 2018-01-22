@@ -11,7 +11,7 @@ import scala.reflect.runtime.universe._
 import scala.util.Try
 
 object ConcreteCollectionSerializer {
-  val OpCode: Short = 38
+  private val OpCode: Short = 38
 }
 
 abstract class ConcreteCollectionSerializer[ElemType <: SType : TypeTag](implicit d: Serializer[Value[ElemType]]) extends Serializer[ConcreteCollection[ElemType]] {

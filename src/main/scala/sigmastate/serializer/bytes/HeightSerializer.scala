@@ -8,7 +8,7 @@ import sigmastate.serializer.bytes.BytesSerializer._
 import scala.util.Try
 
 object HeightSerializer {
-  val OpCode: Short = 46
+  private val OpCode: Short = 46
 }
 class HeightSerializer extends Serializer[Height.type] {
   import HeightSerializer._
