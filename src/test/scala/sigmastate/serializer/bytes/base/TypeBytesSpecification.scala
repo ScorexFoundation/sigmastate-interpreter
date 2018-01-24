@@ -23,9 +23,14 @@ class TypeBytesSpecification extends PropSpec
   }
 
   property("Types.checkCollectionType should check that the seq has correct type") {
-    TypeBytes.checkCollectionType[SBoolean.type](Array(1), Seq(BooleanConstant.fromBoolean(true))) shouldBe false
-    TypeBytes.checkCollectionType[SBoolean.type](Array(3), Seq(BooleanConstant.fromBoolean(true))) shouldBe true
-    TypeBytes.checkCollectionType[SInt.type](Array(1), Seq(IntConstant(1))) shouldBe true
-    TypeBytes.checkCollectionType[SInt.type](Array(2), Seq(IntConstant(1))) shouldBe false
+    TypeBytes.checkCollectionType[SBoolean.type](Array(1), ConcreteCollection(IndexedSeq(BooleanConstant.fromBoolean(true)))) shouldBe false
+    TypeBytes.checkCollectionType[SBoolean.type](Array(3), ConcreteCollection(IndexedSeq(BooleanConstant.fromBoolean(true)))) shouldBe true
+    TypeBytes.checkCollectionType[SInt.type](Array(1), ConcreteCollection(IndexedSeq(IntConstant(1)))) shouldBe true
+    TypeBytes.checkCollectionType[SInt.type](Array(2), ConcreteCollection(IndexedSeq(IntConstant(1)))) shouldBe false
+    TypeBytes.checkCollectionType[SCollection[SCollection[SInt.type]]](Array(9, 9, 1),
+      ConcreteCollection(IndexedSeq(
+        ConcreteCollection(IndexedSeq(
+          ConcreteCollection(IndexedSeq(
+            IntConstant(1)))))))) shouldBe true
   }
 }

@@ -5,12 +5,16 @@ import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
+import scorex.core.serialization.Serializer
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
-import sigmastate.serializer.bytes.{HeightSerializer, IntConstantSerializer}
+import sigmastate.serializer.bytes._
+import sigmastate.serializer.bytes.base._
 import sigmastate.utxo.BoxWithMetadata
 import sigmastate.utxo.CostTable.Cost
+
+import scala.reflect.runtime.universe._
 
 
 
@@ -206,8 +210,10 @@ case object Self extends NotReadyValueBox {
 }
 
 
-case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
+case class ConcreteCollection[V <: SType : TypeTag](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
   val cost = value.size
+  override type M = ConcreteCollection[V]
+  override def serializer: Serializer[M] = new ConcreteCollectionSerializer[V]
 }
 
 trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]

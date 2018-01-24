@@ -4,6 +4,7 @@ import sigmastate.{NotReadyValueInt, _}
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 
+import scala.reflect.runtime.universe._
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
@@ -25,7 +26,7 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 }
 
 
-case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
+case class MapCollection[IV <: SType : TypeTag, OV <: SType: TypeTag](input: Value[SCollection[IV]],
                                                    id: Byte,
                                                    mapper: Transformer[IV, OV])
   extends Transformer[SCollection[IV], SCollection[OV]] {

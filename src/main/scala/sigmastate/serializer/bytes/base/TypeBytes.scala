@@ -18,12 +18,14 @@ object TypeBytes {
         case t if t == weakTypeOf[SAvlTree.type].resultType => Array(6.toByte)
         case t if t == weakTypeOf[SGroupElement.type].resultType => Array(7.toByte)
         case t if t == weakTypeOf[SBox.type].resultType => Array(8.toByte)
+        case t =>
+          ???
       }
     }
     aux(t.tpe)
   }
 
-  def checkCollectionType[T <: SType](code: Array[Byte], c: Seq[Value[T]])(implicit t: TypeTag[T]): Boolean = {
+  def checkCollectionType[T <: SType](code: Array[Byte], c: Value[SCollection[T]])(implicit t: TypeTag[T]): Boolean = {
     typeCode[T].sameElements(code)
   }
 }
