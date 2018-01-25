@@ -1,7 +1,10 @@
-package gf2t.test;
+package gf2t;
 
-import java.util.*;
-import gf2t.*;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Random;
 
 public class GF2_128Test {
 
@@ -95,7 +98,8 @@ public class GF2_128Test {
         }
     }
 
-    public static void constructorAndEqualityTest() {
+    @Test
+    public void constructorAndEqualityTest() {
         System.out.println("Testing constructors, isZero, isOne, equality");
         GF2_128 t = new GF2_128();
         long[] r = t.toLongArray();
@@ -191,10 +195,11 @@ public class GF2_128Test {
 
     }
 
-    //TODO: write addition tests
+    // TODO: write addition tests
     // TODO: write tests where arguments and/or results are same and/or different objects
 
-    public static void mulAndInvertTest() {
+    @Test
+    public void mulAndInvertTest() {
 
         GF2t res1 = new GF2t();
         int[] pentanomial = {128, 7, 2, 1, 0};
@@ -429,7 +434,8 @@ public class GF2_128Test {
 
     }
 
-    public static void interpolateTest() {
+    @Test
+    public void interpolateTest() {
         System.out.println("Testing interpolation and evaluation");
 
 
@@ -446,7 +452,7 @@ public class GF2_128Test {
                 while (true) {
                     byte b;
                     do {
-                         b = (byte) rand.nextInt();
+                        b = (byte) rand.nextInt();
                     } while (b==(byte)0);
                     int j;
                     for (j = 0; j < i; j++) {
@@ -526,13 +532,6 @@ public class GF2_128Test {
                 }
             }
         }
-    }
-
-
-    public static void testAll() {
-        constructorAndEqualityTest();
-        mulAndInvertTest();
-        interpolateTest();
     }
 
     public static void time() {

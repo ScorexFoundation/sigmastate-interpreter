@@ -7,7 +7,9 @@ scalaVersion := "2.12.4"
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   "org.scalactic" %% "scalactic" % "3.0.1" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test"
+  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
+  "junit" % "junit" % "4.12" % "test",
+  "com.novocode" % "junit-interface" % "0.11" % "test"
 )
 
 libraryDependencies ++= Seq(

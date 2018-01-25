@@ -16,6 +16,7 @@ dependencyOverrides in ThisBuild ++= Set(
   "com.google.code.findbugs" % "jsr305" % "3.0.1",
   "com.google.guava" % "guava" % "20.0",
   "com.iheart" % "ficus_2.12" % "1.4.2",
+  "com.novocode" % "junit-interface" % "0.11",
   "com.thoughtworks.paranamer" % "paranamer" % "2.8",
   "com.typesafe" % "config" % "1.3.1",
   "com.typesafe" % "ssl-config-core_2.12" % "0.2.1",
@@ -38,12 +39,14 @@ dependencyOverrides in ThisBuild ++= Set(
   "javax.validation" % "validation-api" % "1.1.0.Final",
   "javax.ws.rs" % "jsr311-api" % "1.1.1",
   "jline" % "jline" % "2.14.5",
+  "junit" % "junit" % "4.12",
   "org.apache.commons" % "commons-lang3" % "3.2.1",
   "org.bitbucket.inkytonik.dsinfo" % "dsinfo_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.dsprofile" % "dsprofile_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.1.0-SNAPSHOT",
   "org.bitlet" % "weupnp" % "0.1.4",
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.58",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.59",
+  "org.hamcrest" % "hamcrest-core" % "1.3",
   "org.javassist" % "javassist" % "3.21.0-GA",
   "org.reactivestreams" % "reactive-streams" % "1.0.0",
   "org.reflections" % "reflections" % "0.9.11",
@@ -68,4 +71,4 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.whispersystems" % "curve25519-java" % "0.4.1",
   "org.yaml" % "snakeyaml" % "1.17"
 )
-// LIBRARY_DEPENDENCIES_HASH d35646de414aed5e3fb129ac7f6e3d352c162b25
+// LIBRARY_DEPENDENCIES_HASH 0daa008cc4742e7adc7e4c5692092a68af6e5dd5
