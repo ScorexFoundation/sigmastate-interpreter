@@ -7,7 +7,6 @@ import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
 import scapi.sigma.rework._
-import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
 import sigmastate.SigmaProposition.PropositionCode
 import sigmastate.utxo.CostTable.Cost
@@ -30,7 +29,6 @@ object DLogProtocol {
 
     override val cost: Int = Cost.Dlog
 
-    override type M = this.type
     override val code: PropositionCode = ProveDlog.Code
 
     override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup
@@ -76,10 +74,6 @@ object DLogProtocol {
       val g = dlogGroup.getGenerator
       ProveDlog(dlogGroup.exponentiate(g, w))
     }
-
-    override type M = DLogProverInput
-
-    override def serializer: Serializer[DLogProverInput] = ???
   }
 
   object DLogProverInput {

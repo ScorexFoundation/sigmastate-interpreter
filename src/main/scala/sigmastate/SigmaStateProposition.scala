@@ -1,12 +1,9 @@
 package sigmastate
 
-import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.proposition.Proposition
 
 
-trait SigmaStateProposition extends Proposition {
-  override def serializer: Serializer[M] = ???
-}
+trait SigmaStateProposition extends Proposition
 
 trait StateProposition extends SigmaStateProposition
 

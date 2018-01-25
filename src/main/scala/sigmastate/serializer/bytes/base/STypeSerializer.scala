@@ -6,7 +6,7 @@ import sigmastate._
 import scala.util.Try
 import scala.reflect.runtime.universe._
 
-class STypeSerializer[T <: SType : TypeTag](implicit sIntSerializer: Serializer[Value[SInt.type]],
+class STypeSerializer(implicit sIntSerializer: Serializer[Value[SInt.type]],
                                                 sBooleanSerializer: Serializer[Value[SBoolean.type]],
                                                 sBigIntSerializer: Serializer[Value[SBigInt.type]],
                                                 sByteArraySerializer: Serializer[Value[SByteArray.type]],
@@ -14,12 +14,22 @@ class STypeSerializer[T <: SType : TypeTag](implicit sIntSerializer: Serializer[
                                                 sAvlTreeSerializer: Serializer[Value[SAvlTree.type]],
                                                 sGroupElementSerializer: Serializer[Value[SGroupElement.type]],
                                                 sBoxSerializer: Serializer[Value[SBox.type]],
-                                                sCollectionSerializer: Serializer[Value[SCollection[T]]]
-                                           ) extends Serializer[Value[T]] {
-  override def toBytes(obj: Value[T]): Array[Byte] = obj.bytes
+                                                sCollectionSerializer: Serializer[Value[SCollection[SType]]]
+                                           ) extends Serializer[Value[SType]] {
+  override def toBytes(v: Value[SType]): Array[Byte] = v match {
+    case v: Value[SInt.type] => sIntSerializer.toBytes(v)
+    case v: Value[SBoolean.type] => sBooleanSerializer.toBytes(v)
+    case v: Value[SBigInt.type] => sBigIntSerializer.toBytes(v)
+    case v: Value[SByteArray.type] => sByteArraySerializer.toBytes(v)
+    case v: Value[SProp.type] => sPropSerializer.toBytes(v)
+    case v: Value[SAvlTree.type] => sAvlTreeSerializer.toBytes(v)
+    case v: Value[SGroupElement.type] => sGroupElementSerializer.toBytes(v)
+    case v: Value[SBox.type] => sBoxSerializer.toBytes(v)
+    case v: Value[SCollection[SType]] => sCollectionSerializer.toBytes(v)
+  }
 
-  override def parseBytes(bytes: Array[Byte]): Try[Value[T]] = {
-    def aux(tpe: Type): Try[Value[T]] = {
+  override def parseBytes(bytes: Array[Byte]): Try[Value[SType]] = {
+    def aux(tpe: Type): Try[Value[SType]] = {
       val r = tpe match {
         case TypeRef(_, col, tps) if col == typeOf[SCollection[_]].typeSymbol => sCollectionSerializer.parseBytes(bytes)
         case t if t == weakTypeOf[SInt.type].resultType => sIntSerializer.parseBytes(bytes)
@@ -33,8 +43,8 @@ class STypeSerializer[T <: SType : TypeTag](implicit sIntSerializer: Serializer[
         case t =>
           ???
       }
-      r.map(_.asInstanceOf[Value[T]])
+      r.map(_.asInstanceOf[Value[SType]])
     }
-    aux(implicitly[WeakTypeTag[T]].tpe)
+    aux(implicitly[WeakTypeTag[SType]].tpe)
   }
 }

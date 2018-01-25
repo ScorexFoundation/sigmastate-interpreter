@@ -14,20 +14,20 @@ object ConcreteCollectionSerializer {
   val OpCode: Short = 38
 }
 
-class ConcreteCollectionSerializer[ElemType <: SType : TypeTag](implicit d: Serializer[Value[ElemType]]) extends Serializer[ConcreteCollection[ElemType]] {
+class ConcreteCollectionSerializer(implicit d: Serializer[Value[SType]]) extends Serializer[ConcreteCollection[SType]] {
 
   import ConcreteCollectionSerializer.OpCode
 
-  override def toBytes(c: ConcreteCollection[ElemType]): Array[Byte] = {
-    val typeb = arrayWithKnownSize(TypeBytes.typeCode[SCollection[ElemType]])
+  override def toBytes(c: ConcreteCollection[SType]): Array[Byte] = {
+    val typeb = arrayWithKnownSize(TypeBytes.typeCode[SCollection[SType]])
     val r = Bytes.concat(
       shortBytesEnsureCapacity(OpCode),
-      arrayWithKnownSize(TypeBytes.typeCode[SCollection[ElemType]]),
+      arrayWithKnownSize(TypeBytes.typeCode[SCollection[SType]]),
       Bytes.concat(c.value.map(v => d.toBytes(v)).map(arrayWithKnownSize): _*))
     r
   }
 
-  private def parseElems(bytes: Array[Byte]): Try[IndexedSeq[Value[ElemType]]] = {
+  private def parseElems(bytes: Array[Byte]): Try[IndexedSeq[Value[SType]]] = {
     if (bytes.isEmpty) {
       Success(IndexedSeq.empty)
     } else {
@@ -38,13 +38,13 @@ class ConcreteCollectionSerializer[ElemType <: SType : TypeTag](implicit d: Seri
     } yield c}
   }
 
-  override def parseBytes(bytes: Array[Byte]): Try[ConcreteCollection[ElemType]] = {
+  override def parseBytes(bytes: Array[Byte]): Try[ConcreteCollection[SType]] = {
     println("!")
     for {
       (opCode, bytesAfterOpCode) <- shortBytes(bytes)
       if opCode == OpCode
       (typeBytes, rest) <- arrayWithoutKnownSize(bytesAfterOpCode)
       elems <- parseElems(rest)
-    } yield ConcreteCollection(elems)
+    } yield ConcreteCollection[SType](elems)
   }
 }

@@ -7,7 +7,6 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupEle
 import org.bouncycastle.util.BigIntegers
 import scapi.sigma.DLogProtocol._
 import scapi.sigma.rework._
-import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
 import sigmastate.{GroupElementConstant, SGroupElement, SigmaProofOfKnowledgeTree, Value}
 import sigmastate.SigmaProposition.PropositionCode
@@ -28,10 +27,6 @@ case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDiffie
   override def companion: SecretCompanion[DiffieHellmanTupleProverInput] = ???
 
   override lazy val publicImage: ProveDiffieHellmanTuple = commonInput
-
-  override type M = DiffieHellmanTupleProverInput
-
-  override def serializer: Serializer[DiffieHellmanTupleProverInput] = ???
 }
 
 object DiffieHellmanTupleProverInput {
@@ -79,10 +74,7 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
 
   override val cost: Int = Cost.Dlog * 2
 
-  override type M = ProveDiffieHellmanTuple
   override val code: PropositionCode = ProveDiffieHellmanTuple.Code
-
-  override def serializer: Serializer[ProveDiffieHellmanTuple] = ???
 
   override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup
   override val soundness: Int = 256

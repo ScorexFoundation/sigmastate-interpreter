@@ -33,10 +33,10 @@ package object base {
 
     override def parseBytes(bytes: Array[Byte]): util.Try[Value[SBox.type]] = ???
   }
-  implicit def sTypeSerializer[T <: SType : TypeTag]: Serializer[Value[T]] =
-    new STypeSerializer[T]
+  implicit val sTypeSerializer: Serializer[Value[SType]] =
+    new STypeSerializer
 
-  implicit val sCollectionSerializer: SCollectionSerializer[SInt.type] = new SCollectionSerializer[SInt.type]
+  implicit val sCollectionSerializer: SCollectionSerializer = new SCollectionSerializer
 //  implicit val sCollectionSerializer = new SCollectionSerializer[SInt.type]
 //  implicit def sCollectionSerializer[T <: SType: TypeTag](implicit d: Serializer[Value[T]]): Serializer[Value[SCollection[T]]] = new SCollectionSerializer[T]
 }

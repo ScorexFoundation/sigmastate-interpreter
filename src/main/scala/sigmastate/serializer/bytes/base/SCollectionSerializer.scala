@@ -7,14 +7,14 @@ import sigmastate.serializer.bytes.ConcreteCollectionSerializer
 
 import scala.util.Try
 
-class SCollectionSerializer[T <: SType](implicit concreteCollectionConstant: ConcreteCollectionSerializer[T]) extends Serializer[Value[SCollection[T]]] {
-  override def toBytes(obj: Value[SCollection[T]]): Array[Byte] = {
+class SCollectionSerializer(implicit concreteCollectionConstant: ConcreteCollectionSerializer) extends Serializer[Value[SCollection[SType]]] {
+  override def toBytes(obj: Value[SCollection[SType]]): Array[Byte] = {
     obj match {
       case c@ConcreteCollection(_) => concreteCollectionConstant.toBytes(c)
     }
   }
 
-  override def parseBytes(bytes: Array[Byte]): Try[Value[SCollection[T]]] = {
+  override def parseBytes(bytes: Array[Byte]): Try[Value[SCollection[SType]]] = {
     for {
       (opCode, _) <- shortBytes(bytes)
       v <- opCode match {

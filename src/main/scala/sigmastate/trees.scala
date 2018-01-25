@@ -4,14 +4,14 @@ import java.math.BigInteger
 
 import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
-import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import scorex.core.serialization.{BytesSerializable, Serializer}
+import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
+import scorex.core.serialization.BytesSerializable
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SigmaProposition.PropositionCode
-import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.Transformer
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -29,7 +29,6 @@ case class CAND(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
   override def cost: Int = sigmaTrees.map(_.cost).sum + sigmaTrees.length * Cost.AndPerChild + Cost.AndDeclaration
 
   override val code: PropositionCode = CAND.Code
-  override type M = this.type
 }
 
 object CAND {
@@ -40,7 +39,6 @@ case class COR(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
   override def cost: Int = sigmaTrees.map(_.cost).sum + sigmaTrees.length * Cost.OrPerChild + Cost.OrDeclaration
 
   override val code: PropositionCode = COR.Code
-  override type M = this.type
 }
 
 object COR {
@@ -87,8 +85,6 @@ case class OR(input: Value[SCollection[SBoolean.type]])
         else OR(reduced)
     }
   }
-
-  override type M = this.type
 }
 
 
@@ -135,8 +131,6 @@ case class AND(input: Value[SCollection[SBoolean.type]])
         else AND(reduced)
     }
   }
-
-  override type M = this.type
 }
 
 object AND {
@@ -368,11 +362,7 @@ case class SchnorrNode(override val proposition: ProveDlog,
                        challenge: Array[Byte],
                        secondMessage: SecondDLogProverMessage)
   extends UncheckedSigmaTree[ProveDlog] {
-
   override val propCode: SigmaProposition.PropositionCode = ProveDlog.Code
-  override type M = this.type
-
-  override def serializer: Serializer[M] = ???
 }
 
 case class DiffieHellmanTupleUncheckedNode(override val proposition: ProveDiffieHellmanTuple,
@@ -382,9 +372,6 @@ case class DiffieHellmanTupleUncheckedNode(override val proposition: ProveDiffie
   extends UncheckedSigmaTree[ProveDiffieHellmanTuple] {
 
   override val propCode: SigmaProposition.PropositionCode = ProveDiffieHellmanTuple.Code
-  override type M = DiffieHellmanTupleUncheckedNode
-
-  override def serializer: Serializer[M] = ???
 }
 
 case class CAndUncheckedNode(override val proposition: CAND,
@@ -392,11 +379,7 @@ case class CAndUncheckedNode(override val proposition: CAND,
                              override val commitments: Seq[FirstProverMessage[_]],
                              leafs: Seq[ProofTree])
   extends UncheckedConjecture[CAND] {
-
   override val propCode: PropositionCode = CAND.Code
-  override type M = CAndUncheckedNode
-
-  override def serializer: Serializer[M] = ???
 }
 
 
@@ -404,10 +387,5 @@ case class COr2UncheckedNode(override val proposition: COR,
                              override val challengeOpt: Option[Array[Byte]],
                              override val commitments: Seq[FirstProverMessage[_]],
                              children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
-
   override val propCode: PropositionCode = COR.Code
-
-  override type M = COr2UncheckedNode
-
-  override def serializer: Serializer[M] = ???
 }

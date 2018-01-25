@@ -10,7 +10,12 @@ import scala.util.Try
 class SIntSerializer(implicit intConstantSerializer: Serializer[IntConstant],
                 heightSerializer: HeightSerializer) extends Serializer[Value[SInt.type]] {
 
-  override def toBytes(v: Value[SInt.type]): Array[Byte] = v.bytes
+  override def toBytes(v: Value[SInt.type]): Array[Byte] = {
+    v match {
+      case v:IntConstant => intConstantSerializer.toBytes(v)
+      case v:Height.type => heightSerializer.toBytes(v)
+    }
+  }
 
   override def parseBytes(bytes: Array[Byte]): Try[Value[SInt.type]] = {
     for {

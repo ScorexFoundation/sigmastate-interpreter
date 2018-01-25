@@ -8,7 +8,9 @@ import sigmastate.serializer.bytes.BytesDeserializer._
 import scala.util.Try
 
 class SBooleanSerializer(implicit booleanConstant: Serializer[BooleanConstant]) extends Serializer[Value[SBoolean.type]] {
-  override def toBytes(v: Value[SBoolean.type]): Array[Byte] = v.bytes
+  override def toBytes(v: Value[SBoolean.type]): Array[Byte] = v match {
+    case v: BooleanConstant => booleanConstant.toBytes(v)
+  }
 
   override def parseBytes(bytes: Array[Byte]): Try[Value[SBoolean.type]] = {
     for {

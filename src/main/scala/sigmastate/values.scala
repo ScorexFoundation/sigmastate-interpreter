@@ -16,22 +16,20 @@ import sigmastate.utxo.CostTable.Cost
 
 import scala.reflect.runtime.universe._
 
-
-
-trait Value[S <: SType] extends StateTree {
+sealed trait Value[+S <: SType] extends StateTree {
   def evaluated: Boolean
 }
 
-trait EvaluatedValue[S <: SType] extends Value[S] {
+sealed trait EvaluatedValue[+S <: SType] extends Value[S] {
   val value: S#WrappedType
   override lazy val evaluated = true
 }
 
-trait NotReadyValue[S <: SType] extends Value[S] {
+trait NotReadyValue[+S <: SType] extends Value[S] {
   override lazy val evaluated = false
 }
 
-trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
+sealed trait TaggedVariable[+S <: SType] extends NotReadyValue[S] {
   val id: Byte
 }
 
@@ -41,8 +39,6 @@ sealed trait IntLeaf extends Value[SInt.type]
 
 case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val cost = 1
-  override type M = IntConstant
-  override def serializer = new IntConstantSerializer
 }
 
 trait NotReadyValueInt extends NotReadyValue[SInt.type]{
@@ -51,8 +47,6 @@ trait NotReadyValueInt extends NotReadyValue[SInt.type]{
 
 case object Height extends NotReadyValueInt {
   override lazy val cost: Int = Cost.HeightAccess
-  override type M = Height.type
-  override def serializer = new HeightSerializer
 }
 
 case object UnknownInt extends NotReadyValueInt
@@ -205,15 +199,11 @@ case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] wi
 
 case object Self extends NotReadyValueBox {
   override def cost: Int = 10
-
-  override type M = this.type
 }
 
 
-case class ConcreteCollection[V <: SType : TypeTag](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
+case class ConcreteCollection[+V <: SType : TypeTag](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
   val cost = value.size
-  override type M = ConcreteCollection[V]
-  override def serializer: Serializer[M] = new ConcreteCollectionSerializer[V]
 }
 
 trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]

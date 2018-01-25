@@ -49,19 +49,21 @@ class SigmaStateBox(override val value: Long,
 
   override lazy val id = ADKey @@ Blake2b256.hash(bytes)
 
-  override type M = SigmaStateBox
+  override lazy val bytes = Longs.toByteArray(value) ++ propositionBytes ++ nonce
+
+//  override type M = SigmaStateBox
 
   //todo: real implementation
   val propositionBytes = proposition.toString.getBytes
 
-  override def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {
-
-    //todo: serialize registers
-    override def toBytes(obj: SigmaStateBox): Array[Byte] =
-      Longs.toByteArray(obj.value) ++ obj.propositionBytes ++ nonce
-
-    override def parseBytes(bytes: Array[Byte]): Try[SigmaStateBox] = ???
-  }
+//  override def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {
+//
+//    //todo: serialize registers
+//    override def toBytes(obj: SigmaStateBox): Array[Byte] =
+//      Longs.toByteArray(obj.value) ++ obj.propositionBytes ++ nonce
+//
+//    override def parseBytes(bytes: Array[Byte]): Try[SigmaStateBox] = ???
+//  }
 }
 
 object SigmaStateBox {
@@ -99,10 +101,6 @@ case class SigmaStateTransaction(override val unlockers: IndexedSeq[SigmaStateBo
 
   override lazy val fee: Long = ???
   override lazy val timestamp: Long = ???
-
-  override type M = SigmaStateTransaction
-
-  override def serializer: Serializer[SigmaStateTransaction] = ???
 
   override def json: Json = ???
 }

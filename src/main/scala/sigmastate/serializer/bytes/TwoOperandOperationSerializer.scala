@@ -14,8 +14,8 @@ abstract class TwoOperandOperationSerializer[LT <: SType, RT <: SType, OPT <: Re
   override def toBytes(lt: OPT): Array[Byte] = {
     Bytes.concat(
       shortBytesEnsureCapacity(opCode),
-      arrayWithKnownSize(lt.left.bytes),
-      arrayWithKnownSize(lt.right.bytes)
+      arrayWithKnownSize(leftSerializer.toBytes(lt.left)),
+      arrayWithKnownSize(rightSerializer.toBytes(lt.right))
     )
   }
 

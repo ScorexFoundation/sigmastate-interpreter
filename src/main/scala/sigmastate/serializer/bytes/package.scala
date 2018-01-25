@@ -13,5 +13,5 @@ package object bytes {
   implicit val intConstantSerializer: IntConstantSerializer = new IntConstantSerializer
   implicit val booleanConstantSerializer: BooleanConstantSerializer = new BooleanConstantSerializer
 //  implicit def concreteCollectionSerializer[T <: SType : TypeTag](implicit d: Serializer[Value[T]]): ConcreteCollectionSerializer[T] = new ConcreteCollectionSerializer[T]
-  implicit val concreteCollectionSerializer: ConcreteCollectionSerializer[SInt.type] = new ConcreteCollectionSerializer[SInt.type]
+  implicit val concreteCollectionSerializer: ConcreteCollectionSerializer = new ConcreteCollectionSerializer
 }
