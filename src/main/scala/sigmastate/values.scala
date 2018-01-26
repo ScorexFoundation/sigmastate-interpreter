@@ -63,7 +63,7 @@ trait NotReadyValueBigInt extends NotReadyValue[BigInteger, SBigInt.type] {
   override lazy val cost: Int = 1
 }
 
-case class TaggedBigInt(override val id: Byte) extends TaggedVariable[Array[Byte], SBigInt.type] with NotReadyValueBigInt
+case class TaggedBigInt(override val id: Byte) extends TaggedVariable[BigInteger, SBigInt.type] with NotReadyValueBigInt
 
 
 case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[Array[Byte], SByteArray.type] {
