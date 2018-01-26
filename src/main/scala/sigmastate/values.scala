@@ -14,34 +14,33 @@ import sigmastate.serializer.bytes.base._
 import sigmastate.utxo.BoxWithMetadata
 import sigmastate.utxo.CostTable.Cost
 
-import scala.reflect.runtime.universe._
 
-sealed trait Value[+S <: SType] extends StateTree {
+sealed trait Value[T, +S <: SType[T]] extends StateTree {
   def evaluated: Boolean
 }
 
-sealed trait EvaluatedValue[+S <: SType] extends Value[S] {
-  val value: S#WrappedType
+sealed trait EvaluatedValue[T, +S <: SType[T]] extends Value[T, S] {
+  val value: T
   override lazy val evaluated = true
 }
 
-trait NotReadyValue[+S <: SType] extends Value[S] {
+trait NotReadyValue[T, +S <: SType[T]] extends Value[T, S] {
   override lazy val evaluated = false
 }
 
-sealed trait TaggedVariable[+S <: SType] extends NotReadyValue[S] {
+sealed trait TaggedVariable[T, +S <: SType[T]] extends NotReadyValue[T, S] {
   val id: Byte
 }
 
 
 //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
-sealed trait IntLeaf extends Value[SInt.type]
+sealed trait IntLeaf extends Value[Long, SInt.type]
 
-case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
+case class IntConstant(value: Long) extends EvaluatedValue[Long, SInt.type] {
   override val cost = 1
 }
 
-trait NotReadyValueInt extends NotReadyValue[SInt.type]{
+trait NotReadyValueInt extends NotReadyValue[Long, SInt.type] {
   override lazy val cost: Int = 1
 }
 
@@ -51,26 +50,23 @@ case object Height extends NotReadyValueInt {
 
 case object UnknownInt extends NotReadyValueInt
 
-case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt
+case class TaggedInt(override val id: Byte) extends TaggedVariable[Long, SInt.type] with NotReadyValueInt
 
 
+sealed trait BigIntLeaf extends Value[BigInteger, SBigInt.type]
 
-
-sealed trait BigIntLeaf extends Value[SBigInt.type]
-
-case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
+case class BigIntConstant(value: BigInteger) extends EvaluatedValue[BigInteger, SBigInt.type] {
   override val cost = 1
 }
 
-trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type]{
+trait NotReadyValueBigInt extends NotReadyValue[BigInteger, SBigInt.type] {
   override lazy val cost: Int = 1
 }
 
-case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt
+case class TaggedBigInt(override val id: Byte) extends TaggedVariable[Array[Byte], SBigInt.type] with NotReadyValueBigInt
 
 
-
-case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
+case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[Array[Byte], SByteArray.type] {
 
   override def cost: Int = (value.length / 1024.0).ceil.round.toInt * Cost.ByteArrayPerKilobyte
 
@@ -82,19 +78,19 @@ case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArr
 
 object EmptyByteArray extends ByteArrayConstant(Array.emptyByteArray)
 
-trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type]{
+trait NotReadyValueByteArray extends NotReadyValue[Array[Byte], SByteArray.type] {
   override lazy val cost: Int = Cost.ByteArrayDeclaration
 }
 
 case object UnknownByteArray extends NotReadyValueByteArray
 
 
-case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray
+case class TaggedByteArray(override val id: Byte) extends TaggedVariable[Array[Byte], SByteArray.type] with NotReadyValueByteArray
 
 
 //todo: merge with SByteArray?
 
-case class PropConstant(value: Array[Byte]) extends EvaluatedValue[SProp.type] {
+case class PropConstant(value: Array[Byte]) extends EvaluatedValue[Array[Byte], SProp.type] {
   override def cost: Int = value.length + Cost.PropLeafDeclaration
 
   override def equals(obj: scala.Any): Boolean = obj match {
@@ -109,14 +105,14 @@ object PropConstant {
   def apply(value: SigmaStateTree): PropConstant = new PropConstant(value.toString.getBytes)
 }
 
-trait NotReadyValueProp extends NotReadyValue[SProp.type] {
+trait NotReadyValueProp extends NotReadyValue[Array[Byte], SProp.type] {
   override def cost: Int = Cost.PropLeafDeclaration
 }
 
-case class TaggedProp(override val id: Byte) extends TaggedVariable[SProp.type] with NotReadyValueProp
+case class TaggedProp(override val id: Byte) extends TaggedVariable[Array[Byte], SProp.type] with NotReadyValueProp
 
 
-case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
+case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[AvlTreeData, SAvlTree.type] {
   override val cost = 50
 
   def createVerifier(proof: SerializedAdProof) =
@@ -129,36 +125,34 @@ case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.t
       value.maxDeletes)
 }
 
-trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
+trait NotReadyValueAvlTree extends NotReadyValue[AvlTreeData, SAvlTree.type] {
   override val cost = 50
 }
 
-case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.type] with NotReadyValueAvlTree
+case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[AvlTreeData, SAvlTree.type] with NotReadyValueAvlTree
 
 
-
-case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[SGroupElement.type] {
+case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[GroupElement, SGroupElement.type] {
   override val cost = 10
 }
 
 
-case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
+case object GroupGenerator extends EvaluatedValue[GroupElement, SGroupElement.type] {
   override val cost = 10
 
   override val value = new BcDlogECFp().getGenerator
 }
 
 
-trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
+trait NotReadyValueGroupElement extends NotReadyValue[GroupElement, SGroupElement.type] {
   override val cost = 10
 }
 
 case class TaggedGroupElement(override val id: Byte)
-  extends TaggedVariable[SGroupElement.type] with NotReadyValueGroupElement
+  extends TaggedVariable[GroupElement, SGroupElement.type] with NotReadyValueGroupElement
 
 
-
-sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type]
+sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[Boolean, SBoolean.type]
 
 object BooleanConstant {
   def fromBoolean(v: Boolean): BooleanConstant = if (v) TrueLeaf else FalseLeaf
@@ -172,29 +166,29 @@ case object FalseLeaf extends BooleanConstant(false) {
   override def cost: Int = Cost.ConstantNode
 }
 
-trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
+trait NotReadyValueBoolean extends NotReadyValue[Boolean, SBoolean.type] {
   override def cost: Int = 1
 }
 
-case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.type] with NotReadyValueBoolean
+case class TaggedBoolean(override val id: Byte) extends TaggedVariable[Boolean, SBoolean.type] with NotReadyValueBoolean
 
 /**
   * For sigma statements
   */
-trait FakeBoolean extends NotReadyValue[SBoolean.type]{
+trait FakeBoolean extends NotReadyValue[Boolean, SBoolean.type] {
   override lazy val evaluated = true
 }
 
 
-case class BoxLeafConstant(value: BoxWithMetadata) extends EvaluatedValue[SBox.type] {
+case class BoxLeafConstant(value: BoxWithMetadata) extends EvaluatedValue[BoxWithMetadata, SBox.type] {
   override def cost: Int = 10
 }
 
-trait NotReadyValueBox extends NotReadyValue[SBox.type] {
+trait NotReadyValueBox extends NotReadyValue[BoxWithMetadata, SBox.type] {
   override def cost: Int = 10
 }
 
-case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox
+case class TaggedBox(override val id: Byte) extends TaggedVariable[BoxWithMetadata, SBox.type] with NotReadyValueBox
 
 
 case object Self extends NotReadyValueBox {
@@ -202,17 +196,17 @@ case object Self extends NotReadyValueBox {
 }
 
 
-case class ConcreteCollection[+V <: SType : TypeTag](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
+case class ConcreteCollection[T, +V <: SType[T]](value: IndexedSeq[Value[T, V]]) extends EvaluatedValue[IndexedSeq[Value[T, V]], SCollection[T, V]] {
   val cost = value.size
 }
 
-trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
+trait LazyCollection[T, +V <: SType[T]] extends NotReadyValue[IndexedSeq[Value[T, V]], SCollection[T, V]]
 
 
-case object Inputs extends LazyCollection[SBox.type] {
+case object Inputs extends LazyCollection[BoxWithMetadata, SBox.type] {
   val cost = 1
 }
 
-case object Outputs extends LazyCollection[SBox.type] {
+case object Outputs extends LazyCollection[BoxWithMetadata, SBox.type] {
   val cost = 1
 }

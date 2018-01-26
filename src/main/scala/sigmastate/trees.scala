@@ -3,6 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
+import edu.biu.scapi.primitives.dlog.GroupElement
 import scapi.sigma.DLogProtocol._
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
@@ -50,28 +51,28 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 
 
 //todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
-case class OR(input: Value[SCollection[SBoolean.type]])
-  extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
+case class OR(input: Value[IndexedSeq[Value[Boolean, SBoolean.type]], SCollection[Boolean, SBoolean.type]])
+  extends Transformer[IndexedSeq[Value[Boolean, SBoolean.type]], SCollection[Boolean, SBoolean.type], Boolean, SBoolean.type] with NotReadyValueBoolean {
 
 
   override def cost: Int = input match {
-    case c: ConcreteCollection[SBoolean.type] =>
+    case c: ConcreteCollection[Boolean, SBoolean.type] =>
       c.value.map(_.cost).sum + c.value.length * Cost.AndPerChild + Cost.AndDeclaration
     case _ => Cost.AndDeclaration
   }
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[SBoolean.type]].value.forall(_.evaluated)
+    input.evaluated && input.asInstanceOf[ConcreteCollection[Boolean, SBoolean.type]].value.forall(_.evaluated)
 
-  override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
+  override def function(input: EvaluatedValue[IndexedSeq[Value[Boolean, SBoolean.type]], SCollection[Boolean, SBoolean.type]]): Value[Boolean, SBoolean.type] = {
     @tailrec
-    def iterChildren(children: Seq[Value[SBoolean.type]],
-                     currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
-      if (children.isEmpty) currentBuffer else children.head.asInstanceOf[Value[SBoolean.type]] match {
+    def iterChildren(children: Seq[Value[Boolean, SBoolean.type]],
+                     currentBuffer: mutable.Buffer[Value[Boolean, SBoolean.type]]): mutable.Buffer[Value[Boolean, SBoolean.type]] = {
+      if (children.isEmpty) currentBuffer else children.head.asInstanceOf[Value[Boolean, SBoolean.type]] match {
         case TrueLeaf => mutable.Buffer(TrueLeaf)
         case FalseLeaf => iterChildren(children.tail, currentBuffer)
-        case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
+        case s: Value[Boolean, SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }
     }
 
@@ -89,34 +90,34 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
 
 object OR {
-  def apply(children: Seq[Value[SBoolean.type]]): OR = OR(ConcreteCollection(children.toIndexedSeq))
+  def apply(children: Seq[Value[Boolean, SBoolean.type]]): OR = OR(ConcreteCollection(children.toIndexedSeq))
 
-  def apply(left: Value[SBoolean.type], right: Value[SBoolean.type]): OR = apply(Seq(left, right))
+  def apply(left: Value[Boolean, SBoolean.type], right: Value[Boolean, SBoolean.type]): OR = apply(Seq(left, right))
 
-  def apply(arg1: Value[SBoolean.type], arg2: Value[SBoolean.type], arg3: Value[SBoolean.type]): OR = apply(Seq(arg1, arg2, arg3))
+  def apply(arg1: Value[Boolean, SBoolean.type], arg2: Value[Boolean, SBoolean.type], arg3: Value[Boolean, SBoolean.type]): OR = apply(Seq(arg1, arg2, arg3))
 }
 
-case class AND(input: Value[SCollection[SBoolean.type]])
-  extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
+case class AND(input: Value[IndexedSeq[Value[Boolean, SBoolean.type]], SCollection[Boolean, SBoolean.type]])
+  extends Transformer[IndexedSeq[Value[Boolean, SBoolean.type]], SCollection[Boolean, SBoolean.type], Boolean, SBoolean.type] with NotReadyValueBoolean {
 
   override def cost: Int = input match {
-    case c: EvaluatedValue[SCollection[SBoolean.type]] =>
+    case c: EvaluatedValue[IndexedSeq[Value[Boolean, SBoolean.type]], SCollection[Boolean, SBoolean.type]] =>
       c.value.map(_.cost).sum + c.value.length * Cost.AndPerChild + Cost.AndDeclaration
     case _ => Cost.AndDeclaration
   }
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[SBoolean.type]].value.forall(_.evaluated)
+    input.evaluated && input.asInstanceOf[ConcreteCollection[Boolean, SBoolean.type]].value.forall(_.evaluated)
 
-  override def function(input: EvaluatedValue[SCollection[SBoolean.type]]) = {
+  override def function(input: EvaluatedValue[IndexedSeq[Value[Boolean, SBoolean.type]], SCollection[Boolean, SBoolean.type]]) = {
     @tailrec
-    def iterChildren(children: IndexedSeq[Value[SBoolean.type]],
-                     currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
+    def iterChildren(children: IndexedSeq[Value[Boolean, SBoolean.type]],
+                     currentBuffer: mutable.Buffer[Value[Boolean, SBoolean.type]]): mutable.Buffer[Value[Boolean, SBoolean.type]] = {
       if (children.isEmpty) currentBuffer else children.head match {
         case FalseLeaf => mutable.Buffer(FalseLeaf)
         case TrueLeaf => iterChildren(children.tail, currentBuffer)
-        case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
+        case s: Value[Boolean, SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }
     }
 
@@ -134,144 +135,136 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 }
 
 object AND {
-  def apply(children: Seq[Value[SBoolean.type]]): AND = new AND(ConcreteCollection(children.toIndexedSeq))
+  def apply(children: Seq[Value[Boolean, SBoolean.type]]): AND = new AND(ConcreteCollection(children.toIndexedSeq))
 
-  def apply(left: Value[SBoolean.type], right: Value[SBoolean.type]): AND = apply(Seq(left, right))
+  def apply(left: Value[Boolean, SBoolean.type], right: Value[Boolean, SBoolean.type]): AND = apply(Seq(left, right))
 
-  def apply(arg1: Value[SBoolean.type],
-            arg2: Value[SBoolean.type],
-            arg3: Value[SBoolean.type]): AND = apply(Seq(arg1, arg2, arg3))
+  def apply(arg1: Value[Boolean, SBoolean.type],
+            arg2: Value[Boolean, SBoolean.type],
+            arg3: Value[Boolean, SBoolean.type]): AND = apply(Seq(arg1, arg2, arg3))
 
-  def apply(arg1: Value[SBoolean.type],
-            arg2: Value[SBoolean.type],
-            arg3: Value[SBoolean.type],
-            arg4: Value[SBoolean.type]): AND = apply(Seq(arg1, arg2, arg3, arg4))
+  def apply(arg1: Value[Boolean, SBoolean.type],
+            arg2: Value[Boolean, SBoolean.type],
+            arg3: Value[Boolean, SBoolean.type],
+            arg4: Value[Boolean, SBoolean.type]): AND = apply(Seq(arg1, arg2, arg3, arg4))
 }
 
 
-case class IntToByteArray(input: Value[SInt.type])
-  extends Transformer[SInt.type, SByteArray.type] with NotReadyValueByteArray {
+case class IntToByteArray(input: Value[Long, SInt.type])
+  extends Transformer[Long, SInt.type, Array[Byte], SByteArray.type] with NotReadyValueByteArray {
 
-  override def function(bal: EvaluatedValue[SInt.type]): Value[SByteArray.type] =
+  override def function(bal: EvaluatedValue[Long, SInt.type]): Value[Array[Byte], SByteArray.type] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
   override lazy val cost: Int = input.cost + 1 //todo: externalize cost
 }
 
 
-case class ByteArrayToBigInt(input: Value[SByteArray.type])
-  extends Transformer[SByteArray.type, SBigInt.type] with NotReadyValueBigInt {
+case class ByteArrayToBigInt(input: Value[Array[Byte], SByteArray.type])
+  extends Transformer[Array[Byte], SByteArray.type, BigInteger, SBigInt.type] with NotReadyValueBigInt {
 
-  override def function(bal: EvaluatedValue[SByteArray.type]): Value[SBigInt.type] =
+  override def function(bal: EvaluatedValue[Array[Byte], SByteArray.type]): Value[BigInteger, SBigInt.type] =
     BigIntConstant(new BigInteger(1, bal.value))
 
   override lazy val cost: Int = input.cost + 1 //todo: externalize cost
 }
 
 
-case class CalcBlake2b256(input: Value[SByteArray.type])
-  extends Transformer[SByteArray.type, SByteArray.type] with NotReadyValueByteArray {
+case class CalcBlake2b256(input: Value[Array[Byte], SByteArray.type])
+  extends Transformer[Array[Byte], SByteArray.type, Array[Byte], SByteArray.type] with NotReadyValueByteArray {
 
-  override def function(bal: EvaluatedValue[SByteArray.type]): Value[SByteArray.type] =
+  override def function(bal: EvaluatedValue[Array[Byte], SByteArray.type]): Value[Array[Byte], SByteArray.type] =
     ByteArrayConstant(Blake2b256(bal.value))
 
   override lazy val cost: Int = input.cost + Cost.Blake256bDeclaration
 }
 
 
-
-
-
-
 /**
   * A tree node with left and right descendants
   */
-sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyValue[OV] {
+sealed trait Triple[LIT, LIV <: SType[LIT], RIT, RIV <: SType[RIT], OT, OV <: SType[OT]] extends NotReadyValue[OT, OV] {
 
-  val left: Value[LIV]
-  val right: Value[RIV]
+  val left: Value[LIT, LIV]
+  val right: Value[RIT, RIV]
 
   override def cost: Int = left.cost + right.cost + Cost.TripleDeclaration
 }
 
 
-sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType] extends Triple[LIV, RIV, OV]
+sealed trait TwoArgumentsOperation[LIT, LIV <: SType[LIT], RIT, RIV <: SType[RIT], OT, OV <: SType[OT]] extends Triple[LIT, LIV, RIT, RIV, OT, OV]
 
-case class Plus(override val left: Value[SInt.type], override val right: Value[SInt.type])
-  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
+case class Plus(override val left: Value[Long, SInt.type], override val right: Value[Long, SInt.type])
+  extends TwoArgumentsOperation[Long, SInt.type, Long, SInt.type, Long, SInt.type] with NotReadyValueInt
 
-case class Minus(override val left: Value[SInt.type], override val right: Value[SInt.type])
-  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
+case class Minus(override val left: Value[Long, SInt.type], override val right: Value[Long, SInt.type])
+  extends TwoArgumentsOperation[Long, SInt.type, Long, SInt.type, Long, SInt.type] with NotReadyValueInt
 
-case class Xor(override val left: Value[SByteArray.type],
-               override val right: Value[SByteArray.type])
-  extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type] with NotReadyValueByteArray
+case class Xor(override val left: Value[Array[Byte], SByteArray.type],
+               override val right: Value[Array[Byte], SByteArray.type])
+  extends TwoArgumentsOperation[Array[Byte], SByteArray.type, Array[Byte], SByteArray.type, Array[Byte], SByteArray.type] with NotReadyValueByteArray
 
-case class AppendBytes(override val left: Value[SByteArray.type],
-                       override val right: Value[SByteArray.type])
-  extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type] with NotReadyValueByteArray
+case class AppendBytes(override val left: Value[Array[Byte], SByteArray.type],
+                       override val right: Value[Array[Byte], SByteArray.type])
+  extends TwoArgumentsOperation[Array[Byte], SByteArray.type, Array[Byte], SByteArray.type, Array[Byte], SByteArray.type] with NotReadyValueByteArray
 
 
-case class Exponentiate(override val left: Value[SGroupElement.type], override val right: Value[SBigInt.type])
-  extends TwoArgumentsOperation[SGroupElement.type, SBigInt.type, SGroupElement.type]
+case class Exponentiate(override val left: Value[GroupElement, SGroupElement.type], override val right: Value[BigInteger, SBigInt.type])
+  extends TwoArgumentsOperation[GroupElement, SGroupElement.type, BigInteger, SBigInt.type, GroupElement, SGroupElement.type]
     with NotReadyValueGroupElement
 
-case class MultiplyGroup(override val left: Value[SGroupElement.type], override val right: Value[SGroupElement.type])
-  extends TwoArgumentsOperation[SGroupElement.type, SGroupElement.type, SGroupElement.type]
+case class MultiplyGroup(override val left: Value[GroupElement, SGroupElement.type], override val right: Value[GroupElement, SGroupElement.type])
+  extends TwoArgumentsOperation[GroupElement, SGroupElement.type, GroupElement, SGroupElement.type, GroupElement, SGroupElement.type]
     with NotReadyValueGroupElement
 
 
-sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
+sealed trait Relation[LIT, LIV <: SType[LIT], RIT, RIV <: SType[RIT]] extends Triple[LIT, LIV, RIT, RIV, Boolean, SBoolean.type] with NotReadyValueBoolean
 
-case class LT(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+case class LT(override val left: Value[Long, SInt.type],
+              override val right: Value[Long, SInt.type]) extends Relation[Long, SInt.type, Long, SInt.type]
 
-case class LE(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+case class LE(override val left: Value[Long, SInt.type],
+              override val right: Value[Long, SInt.type]) extends Relation[Long, SInt.type, Long, SInt.type]
 
-case class GT(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+case class GT(override val left: Value[Long, SInt.type],
+              override val right: Value[Long, SInt.type]) extends Relation[Long, SInt.type, Long, SInt.type]
 
-case class GE(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+case class GE(override val left: Value[Long, SInt.type],
+              override val right: Value[Long, SInt.type]) extends Relation[Long, SInt.type, Long, SInt.type]
 
-case class EQ[T1 <: SType, T2 <: SType](override val left: Value[T1],
-                                        override val right: Value[T2]) extends Relation[T1, T2]
+case class EQ[TT1, T1 <: SType[TT1], TT2, T2 <: SType[TT2]](override val left: Value[TT1, T1],
+                                                            override val right: Value[TT2, T2]) extends Relation[TT1, T1, TT2, T2]
 
-case class NEQ[T1 <: SType, T2 <: SType](override val left: Value[T1],
-                                         override val right: Value[T2]) extends Relation[T1, T2]
+case class NEQ[TT1, T1 <: SType[TT1], TT2, T2 <: SType[TT2]](override val left: Value[TT1, T1],
+                                                             override val right: Value[TT2, T2]) extends Relation[TT1, T1, TT2, T2]
 
 
 /**
   * A tree node with three descendants
   */
-sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] extends NotReadyValue[OV] {
+sealed trait Quadruple[IT1, IV1 <: SType[IT1], IT2, IV2 <: SType[IT2], IT3, IV3 <: SType[IT3], OT, OV <: SType[OT]] extends NotReadyValue[OT, OV] {
 
-  val first: Value[IV1]
-  val second: Value[IV2]
-  val third: Value[IV3]
+  val first: Value[IT1, IV1]
+  val second: Value[IT2, IV2]
+  val third: Value[IT3, IV3]
 
   override def cost: Int = first.cost + second.cost + third.cost + Cost.QuadrupleDeclaration
 }
 
-sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
-  extends Quadruple[IV1, IV2, IV3, SBoolean.type] with NotReadyValueBoolean
+sealed trait Relation3[IT1, IV1 <: SType[IT1], IT2, IV2 <: SType[IT2], IT3, IV3 <: SType[IT3]]
+  extends Quadruple[IT1, IV1, IT2, IV2, IT3, IV3, Boolean, SBoolean.type] with NotReadyValueBoolean
 
 
 /**
   * Predicate which checks whether a key is in a tree, by using a membership proof
   */
-case class IsMember(tree: Value[SAvlTree.type],
-                    key: Value[SByteArray.type],
-                    proof: Value[SByteArray.type]) extends Relation3[SAvlTree.type, SByteArray.type, SByteArray.type] {
+case class IsMember(tree: Value[AvlTreeData, SAvlTree.type],
+                    key: Value[Array[Byte], SByteArray.type],
+                    proof: Value[Array[Byte], SByteArray.type]) extends Relation3[AvlTreeData, SAvlTree.type, Array[Byte], SByteArray.type, Array[Byte], SByteArray.type] {
   override lazy val first = tree
   override lazy val second = key
   override lazy val third = proof
 }
-
-
-
-
 
 
 //Proof tree
