@@ -46,16 +46,13 @@ trait Interpreter {
 
 
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,
-  // reduction state carried between reductions is about current cost and number of transformations done.
-  // when the latter becomes zero, it means that it is time to stop (tree becomes irreducible)
-  case class ReductionState(cost: CostAccumulator, numberOfTransformations: Int) {
-    def recordTransformation(transformationCost: Int): Try[ReductionState] = Try {
-      cost.addCost(transformationCost).ensuring(_.isRight)
-      ReductionState(cost, numberOfTransformations + 1)
-    }
+  // reduction state carried between reductions is number of transformations done.
+  // when it becomes zero, it means that it is time to stop (tree becomes irreducible)
+  case class ReductionState(numberOfTransformations: Int) {
+    def recordTransformation(): ReductionState = ReductionState(numberOfTransformations + 1)
   }
 
-  //todo: return final cost as well
+  //todo: return cost as well
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try {
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
 
@@ -65,7 +62,7 @@ trait Interpreter {
 
       def statefulTransformation(rules: PartialFunction[SigmaStateTree, SigmaStateTree]):
       PartialFunction[SigmaStateTree, SigmaStateTree] = rules.andThen({ newTree =>
-        state = state.recordTransformation(newTree.cost).get //todo: replace .get with a nicer logic
+        state = state.recordTransformation()
         newTree
       })
 
@@ -131,8 +128,7 @@ trait Interpreter {
         reductionStep(newTree, state.copy(numberOfTransformations = 0))
     }
 
-    val initialCost = CostAccumulator(exp.cost, maxCost)
-    val initialState = ReductionState(initialCost, 0)
+    val initialState = ReductionState(0)
 
     reductionStep(exp, initialState)._1
   }

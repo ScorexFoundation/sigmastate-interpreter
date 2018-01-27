@@ -42,10 +42,6 @@ trait NotReadyValueInt extends NotReadyValue[SInt.type]{
   override lazy val cost: Int = 1
 }
 
-case object Height extends NotReadyValueInt {
-  override lazy val cost: Int = Cost.HeightAccess
-}
-
 case object UnknownInt extends NotReadyValueInt
 
 case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt
@@ -107,8 +103,6 @@ case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.t
 trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
   override val cost = 50
 }
-
-case object LastBlockUtxoRootHash extends NotReadyValueAvlTree
 
 case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.type] with NotReadyValueAvlTree
 
@@ -174,24 +168,8 @@ trait NotReadyValueBox extends NotReadyValue[SBox.type] {
 case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox
 
 
-case object Self extends NotReadyValueBox {
-  override def cost: Int = 10
-
-  override type M = this.type
-}
-
-
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
   val cost = value.size
 }
 
 trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
-
-
-case object Inputs extends LazyCollection[SBox.type] {
-  val cost = 1
-}
-
-case object Outputs extends LazyCollection[SBox.type] {
-  val cost = 1
-}
