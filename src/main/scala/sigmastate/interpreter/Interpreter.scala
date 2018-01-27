@@ -72,9 +72,6 @@ trait Interpreter {
 
         case t: Transformer[_, _] if t.transformationReady => t.function()
 
-        case t: TaggedVariable[_] if context.extension.values.contains(t.id) =>
-          context.extension.values(t.id)
-
         //operations
         case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
         case Minus(l: IntConstant, r: IntConstant) => IntConstant(l.value - r.value)

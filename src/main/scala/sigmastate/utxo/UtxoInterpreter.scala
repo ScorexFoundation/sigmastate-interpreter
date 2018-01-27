@@ -21,5 +21,8 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
     case Height => IntConstant(context.currentHeight)
 
     case LastBlockUtxoRootHash => AvlTreeConstant(context.lastBlockUtxoRoot)
+
+    case t: TaggedVariable[_] if context.extension.values.contains(t.id) =>
+      context.extension.values(t.id)
   }
 }
