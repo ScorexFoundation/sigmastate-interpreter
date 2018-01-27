@@ -17,7 +17,7 @@ import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.utxo.CostTable
+import sigmastate.utxo.{CostTable, Transformer}
 
 import scala.annotation.tailrec
 
@@ -69,6 +69,8 @@ trait Interpreter {
       val transformations = ({
         case GroupGenerator =>
           GroupElementConstant(dlogGroup.getGenerator)
+
+        case t: Transformer[_, _] if t.transformationReady => t.function()
 
         case t: TaggedVariable[_] if context.extension.values.contains(t.id) =>
           context.extension.values(t.id)
