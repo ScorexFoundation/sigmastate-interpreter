@@ -3,6 +3,7 @@ package sigmastate.utxo
 import sigmastate.{NotReadyValueInt, _}
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+import sigmastate.utxo.CostTable.Cost
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -41,7 +42,7 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
     ConcreteCollection(cl.value.map(el => (rl(el)(mapper)).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
   }
 
-  override def cost: Int = 1
+  override def cost: Int = input.cost * mapper.cost
 
   override type M = this.type
 }
@@ -54,7 +55,7 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override val cost: Int = input.cost + condition.cost
+  override val cost: Int = input.cost * condition.cost + input.cost * Cost.OrDeclaration
 
   //todo: cost
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
@@ -76,7 +77,7 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override val cost: Int = input.cost * condition.cost
+  override val cost: Int = input.cost * condition.cost + input.cost * Cost.AndDeclaration
 
   //todo: cost
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
