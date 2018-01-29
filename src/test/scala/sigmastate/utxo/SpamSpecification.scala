@@ -17,6 +17,11 @@ class SpamSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
+  private val fakeSelf = boxWithMetadata(0, TrueLeaf)
+
+  //fake message, in a real-life a message is to be derived from a spending transaction
+  private val message = Blake2b256("Hello World")
+
   //we assume that verifier must finish verification of any script in less time than 3M hash calculations
   // (for the Blake2b256 hash function over a single block input)
   val Timeout: Long = {
@@ -39,11 +44,6 @@ class SpamSpecification extends PropSpec
     (res, (t - t0) < Timeout)
   }
 
-  private val fakeSelf = boxWithMetadata(0, TrueLeaf)
-
-  //fake message, in a real-life a message is to be derived from a spending transaction
-  private val message = Blake2b256("Hello World")
-
   property("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
     val ba = Random.randomBytes(10000000)
@@ -54,7 +54,6 @@ class SpamSpecification extends PropSpec
 
     val spamScript = EQ(CalcBlake2b256(TaggedByteArray(id)), CalcBlake2b256(TaggedByteArray(id)))
 
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext.dummy(fakeSelf)
 
     val prt = prover.prove(spamScript, ctx, message)
@@ -168,10 +167,10 @@ class SpamSpecification extends PropSpec
       EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
 
     val inputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
-    val outputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
+    val outputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(6))))
 
     val inputs = ((1 to 999) map (_ => SigmaStateBox(11, inputScript))) :+ SigmaStateBox(11, outputScript)
-    val outputs = (1 to 1000) map (_ => SigmaStateBox(11, inputScript))
+    val outputs = (1 to 1000) map (_ => SigmaStateBox(11, outputScript))
 
     val tx = SigmaStateTransaction(IndexedSeq(), outputs)
 
