@@ -38,19 +38,15 @@ case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val cost = 1
 }
 
-trait NotReadyValueInt extends NotReadyValue[SInt.type]{
-  override lazy val cost: Int = 1
+trait NotReadyValueInt extends NotReadyValue[SInt.type]
+
+case object UnknownInt extends NotReadyValueInt {
+  override val cost = 1
 }
 
-case object Height extends NotReadyValueInt {
-  override lazy val cost: Int = Cost.HeightAccess
+case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt {
+  override val cost = 1
 }
-
-case object UnknownInt extends NotReadyValueInt
-
-case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt
-
-
 
 
 sealed trait BigIntLeaf extends Value[SBigInt.type]
@@ -69,7 +65,7 @@ case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.ty
 
 case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
 
-  override def cost: Int = (value.length / 1024.0).ceil.round.toInt * Cost.ByteArrayPerKilobyte
+  override def cost: Int = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case ob: ByteArrayConstant => value sameElements ob.value
@@ -107,8 +103,6 @@ case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.t
 trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
   override val cost = 50
 }
-
-case object LastBlockUtxoRootHash extends NotReadyValueAvlTree
 
 case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.type] with NotReadyValueAvlTree
 
@@ -149,11 +143,11 @@ case object FalseLeaf extends BooleanConstant(false) {
   override def cost: Int = Cost.ConstantNode
 }
 
-trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
-  override def cost: Int = 1
-}
+trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type]
 
-case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.type] with NotReadyValueBoolean
+case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.type] with NotReadyValueBoolean {
+  override def cost = 1
+}
 
 /**
   * For sigma statements
@@ -174,24 +168,8 @@ trait NotReadyValueBox extends NotReadyValue[SBox.type] {
 case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox
 
 
-case object Self extends NotReadyValueBox {
-  override def cost: Int = 10
-
-  override type M = this.type
-}
-
-
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
   val cost = value.size
 }
 
 trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
-
-
-case object Inputs extends LazyCollection[SBox.type] {
-  val cost = 1
-}
-
-case object Outputs extends LazyCollection[SBox.type] {
-  val cost = 1
-}

@@ -45,7 +45,7 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.bitbucket.inkytonik.dsprofile" % "dsprofile_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.1.0-SNAPSHOT",
   "org.bitlet" % "weupnp" % "0.1.4",
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.59",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.58",
   "org.hamcrest" % "hamcrest-core" % "1.3",
   "org.javassist" % "javassist" % "3.21.0-GA",
   "org.reactivestreams" % "reactive-streams" % "1.0.0",
@@ -71,4 +71,4 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.whispersystems" % "curve25519-java" % "0.4.1",
   "org.yaml" % "snakeyaml" % "1.17"
 )
-// LIBRARY_DEPENDENCIES_HASH 0daa008cc4742e7adc7e4c5692092a68af6e5dd5
+// LIBRARY_DEPENDENCIES_HASH 1f856fc31ccf8fa00791adee74aaddf7d1c2775c

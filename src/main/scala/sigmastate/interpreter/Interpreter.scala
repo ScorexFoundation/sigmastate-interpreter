@@ -17,7 +17,7 @@ import scapi.sigma.FirstDiffieHellmanTupleProverMessage
 import scapi.sigma.rework.FirstProverMessage
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.utxo.CostTable
+import sigmastate.utxo.{CostTable, Transformer}
 
 import scala.annotation.tailrec
 
@@ -46,16 +46,22 @@ trait Interpreter {
 
 
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,
-  // reduction state carried between reductions is about current cost and number of transformations done.
-  // when the latter becomes zero, it means that it is time to stop (tree becomes irreducible)
-  case class ReductionState(cost: CostAccumulator, numberOfTransformations: Int) {
-    def recordTransformation(transformationCost: Int): Try[ReductionState] = Try {
-      cost.addCost(transformationCost).ensuring(_.isRight)
-      ReductionState(cost, numberOfTransformations + 1)
-    }
+  // reduction state carried between reductions is number of transformations done.
+  // when it becomes zero, it means that it is time to stop (tree becomes irreducible)
+  case class ReductionState(numberOfTransformations: Int) {
+    def recordTransformation(): ReductionState = ReductionState(numberOfTransformations + 1)
   }
 
-  //todo: return final cost as well
+  //todo: return cost as well
+  /**
+    * As the first step both prover and verifier are applying context-specific transformations and then estimating
+    * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
+    * reducing the expression in the same way.
+    *
+    * @param exp
+    * @param context
+    * @return
+    */
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try {
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
 
@@ -65,7 +71,7 @@ trait Interpreter {
 
       def statefulTransformation(rules: PartialFunction[SigmaStateTree, SigmaStateTree]):
       PartialFunction[SigmaStateTree, SigmaStateTree] = rules.andThen({ newTree =>
-        state = state.recordTransformation(newTree.cost).get //todo: replace .get with a nicer logic
+        state = state.recordTransformation()
         newTree
       })
 
@@ -73,8 +79,7 @@ trait Interpreter {
         case GroupGenerator =>
           GroupElementConstant(dlogGroup.getGenerator)
 
-        case t: TaggedVariable[_] if context.extension.values.contains(t.id) =>
-          context.extension.values(t.id)
+        case t: Transformer[_, _] if t.transformationReady => t.function()
 
         //operations
         case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
@@ -131,10 +136,20 @@ trait Interpreter {
         reductionStep(newTree, state.copy(numberOfTransformations = 0))
     }
 
-    val initialCost = CostAccumulator(exp.cost, maxCost)
-    val initialState = ReductionState(initialCost, 0)
+    // First, both the prover and the verifier are making context-dependent tree transformations
+    // (usually, context variables substitutions).
+    // We can estimate cost of the tree evaluation only after this step.
+    val substRule = rule[SigmaStateTree](specificTransformations(context))
+    val substTree = everywherebu(substRule)(exp).get.asInstanceOf[SigmaStateTree]
+    if (substTree.cost > maxCost) throw new Error("Estimated expression complexity exceeds the limit")
 
-    reductionStep(exp, initialState)._1
+    // After performing context-dependent transformations and checking cost of the resulting tree, both the prover
+    // and the verifier are evaluating the tree by applying rewriting rules, until no any rule triggers during tree
+    // traversal (so interpreter checks whether no any nodes were rewritten during last rewriting, and aborts if so).
+    // todo: any attacks possible on rewriting itself? Maybe, adversary can construct such a tree that its rewriting
+    // todo: takes long time. Further investigation is needed.
+    val initialState = ReductionState(0)
+    reductionStep(substTree, initialState)._1
   }
 
   /**
@@ -153,8 +168,8 @@ trait Interpreter {
              proof: UncheckedTree,
              message: Array[Byte]): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
-    cProp match {
 
+    cProp match {
       case TrueLeaf => true
       case FalseLeaf => false
       case b: Value[SBoolean.type] if b.evaluated =>

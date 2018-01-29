@@ -3,6 +3,7 @@ package sigmastate.utxo
 import sigmastate.{NotReadyValueInt, _}
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+import sigmastate.utxo.CostTable.Cost
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -41,7 +42,7 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
     ConcreteCollection(cl.value.map(el => (rl(el)(mapper)).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
   }
 
-  override def cost: Int = 1
+  override def cost: Int = input.cost * mapper.cost
 
   override type M = this.type
 }
@@ -54,7 +55,7 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override val cost: Int = input.cost + condition.cost
+  override val cost: Int = input.cost * condition.cost + input.cost * Cost.OrDeclaration
 
   //todo: cost
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
@@ -76,7 +77,7 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override val cost: Int = input.cost + condition.cost
+  override val cost: Int = input.cost * condition.cost + input.cost * Cost.AndDeclaration
 
   //todo: cost
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
@@ -180,7 +181,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] wit
 
 
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
-  override lazy val cost: Int = 10
+  override lazy val cost: Int = 1000
 
   override type M = this.type
 
@@ -191,7 +192,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
 
 
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
-  override lazy val cost: Int = 10
+  override lazy val cost: Int = 1000 //todo: make it PerKb * max box size in kbs
 
   override type M = this.type
 
@@ -209,7 +210,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] w
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
                                          default: Option[Value[V]] = None) extends Extract[V] with NotReadyValue[V] {
-  override def cost: Int = 10
+  override def cost: Int = 1000 //todo: the same as ExtractBytes.cost
 
   override type M = this.type
 

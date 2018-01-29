@@ -4,10 +4,10 @@ import edu.biu.scapi.primitives.dlog.DlogGroup
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
+import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.interpreter._
-import sigmastate.utxo.CostTable
+import sigmastate.utxo.{CostTable, Height}
 
 import scala.util.Random
 
