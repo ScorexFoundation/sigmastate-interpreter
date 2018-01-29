@@ -53,6 +53,15 @@ trait Interpreter {
   }
 
   //todo: return cost as well
+  /**
+    * As the first step both prover and verifier are applying context-specific transformations and then estimating
+    * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
+    * reducing the expression in the same way.
+    *
+    * @param exp
+    * @param context
+    * @return
+    */
   def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try {
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
 
@@ -127,9 +136,14 @@ trait Interpreter {
         reductionStep(newTree, state.copy(numberOfTransformations = 0))
     }
 
-    val initialState = ReductionState(0)
 
-    reductionStep(exp, initialState)._1
+    val substRule = rule[SigmaStateTree](specificTransformations(context))
+    val substTree = everywherebu(substRule)(exp).get.asInstanceOf[SigmaStateTree]
+    if (substTree.cost > maxCost) throw new Error("Estimated expression complexity exceeds the limit")
+
+
+    val initialState = ReductionState(0)
+    reductionStep(substTree, initialState)._1
   }
 
   /**

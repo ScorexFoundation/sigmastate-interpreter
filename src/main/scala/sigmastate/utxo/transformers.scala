@@ -76,7 +76,7 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override val cost: Int = input.cost + condition.cost
+  override val cost: Int = input.cost * condition.cost
 
   //todo: cost
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {

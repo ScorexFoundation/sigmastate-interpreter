@@ -38,9 +38,7 @@ case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val cost = 1
 }
 
-trait NotReadyValueInt extends NotReadyValue[SInt.type]{
-  override lazy val cost: Int = 1
-}
+trait NotReadyValueInt extends NotReadyValue[SInt.type]
 
 case object UnknownInt extends NotReadyValueInt
 
@@ -65,7 +63,7 @@ case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.ty
 
 case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
 
-  override def cost: Int = (value.length / 1024.0).ceil.round.toInt * Cost.ByteArrayPerKilobyte
+  override def cost: Int = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case ob: ByteArrayConstant => value sameElements ob.value
@@ -143,11 +141,11 @@ case object FalseLeaf extends BooleanConstant(false) {
   override def cost: Int = Cost.ConstantNode
 }
 
-trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
-  override def cost: Int = 1
-}
+trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type]
 
-case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.type] with NotReadyValueBoolean
+case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.type] with NotReadyValueBoolean {
+  override def cost = 1
+}
 
 /**
   * For sigma statements
