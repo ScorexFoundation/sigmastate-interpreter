@@ -41,6 +41,8 @@ class SpamSpecification extends PropSpec
 
   private val fakeSelf = boxWithMetadata(0, TrueLeaf)
 
+  //fake message, in a real-life a message is to be derived from a spending transaction
+  private val message = Blake2b256("Hello World")
 
   property("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
@@ -82,7 +84,6 @@ class SpamSpecification extends PropSpec
 
     val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayConstant(Array.fill(32)(0: Byte))))
 
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext.dummy(fakeSelf)
 
     val prt = prover.prove(spamScript, ctx, message)
@@ -106,8 +107,6 @@ class SpamSpecification extends PropSpec
       new UtxoProvingInterpreter().dlogSecrets.head.publicImage
     }
 
-    //fake message, in a real-life a message is to be derived from a spending transaction
-    val message = Blake2b256("Hello World")
     val ctx = UtxoContext.dummy(fakeSelf)
 
     val publicImages = secret.publicImage +: simulated
@@ -131,11 +130,12 @@ class SpamSpecification extends PropSpec
       whenever(orCnt > 10 && outCnt > 200) {
         val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
 
-        val propToCompare = OR((1 to orCnt).map(_ => EQ(IntConstant(6), IntConstant(5)) ))
+        val propToCompare = OR((1 to orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))))
 
         val spamProp = OR((1 until orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))) :+
-                            EQ(IntConstant(6), IntConstant(6)))
+          EQ(IntConstant(6), IntConstant(6)))
 
+        //todo: why 11 not 21?
         val spamScript =
           Exists(Outputs, 11,
             AND(
@@ -144,12 +144,9 @@ class SpamSpecification extends PropSpec
             )
           )
 
-
         val txOutputs = ((1 to outCnt) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
         val tx = SigmaStateTransaction(IndexedSeq(), txOutputs)
 
-        //fake message, in a real-life a message is to be derived from a spending transaction
-        val message = Blake2b256("Hello World")
         val ctx = UtxoContext.dummy(boxWithMetadata(0, propToCompare))
 
         val pt0 = System.currentTimeMillis()
@@ -163,7 +160,39 @@ class SpamSpecification extends PropSpec
         }
       }
     }
-
-    
   }
+
+    property("transaction with many inputs and outputs") {
+      val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
+
+
+      val prop = Exists(Inputs, 21, Exists(Outputs, 22,
+        EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
+
+      val inputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
+      val outputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
+
+      val inputs = ((1 to 999) map (_ => SigmaStateBox(11, inputScript))) :+ SigmaStateBox(11, outputScript)
+      val outputs = (1 to 1000) map (_ => SigmaStateBox(11, inputScript))
+
+      val tx = SigmaStateTransaction(IndexedSeq(), outputs)
+
+      val ctx = new UtxoContext(currentHeight = 0,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        boxesToSpend = inputs.map(b => BoxWithMetadata(b, BoxMetadata(0, 0))),
+        spendingTransaction = tx,
+        self = BoxWithMetadata(SigmaStateBox(11, prop), BoxMetadata(0, 0)))
+
+      val pt0 = System.currentTimeMillis()
+      prover.prove(prop, ctx, message).map { proof =>
+        val pt = System.currentTimeMillis()
+        println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
+
+        val verifier = new UtxoInterpreter
+        val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
+        terminated shouldBe true
+        res.isFailure shouldBe true
+      }
+    }
+
 }

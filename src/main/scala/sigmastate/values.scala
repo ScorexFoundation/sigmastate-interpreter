@@ -40,11 +40,13 @@ case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
 
 trait NotReadyValueInt extends NotReadyValue[SInt.type]
 
-case object UnknownInt extends NotReadyValueInt
+case object UnknownInt extends NotReadyValueInt {
+  override val cost = 1
+}
 
-case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt
-
-
+case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt {
+  override val cost = 1
+}
 
 
 sealed trait BigIntLeaf extends Value[SBigInt.type]

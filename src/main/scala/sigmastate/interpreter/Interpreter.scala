@@ -139,6 +139,7 @@ trait Interpreter {
 
     val substRule = rule[SigmaStateTree](specificTransformations(context))
     val substTree = everywherebu(substRule)(exp).get.asInstanceOf[SigmaStateTree]
+
     if (substTree.cost > maxCost) throw new Error("Estimated expression complexity exceeds the limit")
 
 
