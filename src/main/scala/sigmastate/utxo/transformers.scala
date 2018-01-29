@@ -181,7 +181,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] wit
 
 
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
-  override lazy val cost: Int = 10
+  override lazy val cost: Int = 1000
 
   override type M = this.type
 
@@ -192,7 +192,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
 
 
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
-  override lazy val cost: Int = 10
+  override lazy val cost: Int = 1000 //todo: make it PerKb * max box size in kbs
 
   override type M = this.type
 
@@ -210,7 +210,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] w
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
                                          default: Option[Value[V]] = None) extends Extract[V] with NotReadyValue[V] {
-  override def cost: Int = 10
+  override def cost: Int = 1000 //todo: the same as ExtractBytes.cost
 
   override type M = this.type
 

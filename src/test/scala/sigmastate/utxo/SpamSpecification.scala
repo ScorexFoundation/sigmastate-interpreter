@@ -148,20 +148,20 @@ class SpamSpecification extends PropSpec
         val ctx = UtxoContext.dummy(boxWithMetadata(0, propToCompare))
 
         val pt0 = System.currentTimeMillis()
-        prover.prove(spamScript, ctx, message).map { proof =>
+        val proof = prover.prove(spamScript, ctx, message).get
           val pt = System.currentTimeMillis()
           println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
           val verifier = new UtxoInterpreter
           val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, message))
           terminated shouldBe true
-        }
+
       }
     }
   }
 
   property("transaction with many inputs and outputs") {
-    val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
+    val prover = new UtxoProvingInterpreter(maxCost = Int.MaxValue)
 
     val prop = Exists(Inputs, 21, Exists(Outputs, 22,
       EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
@@ -181,7 +181,7 @@ class SpamSpecification extends PropSpec
       self = BoxWithMetadata(SigmaStateBox(11, prop), BoxMetadata(0, 0)))
 
     val pt0 = System.currentTimeMillis()
-    prover.prove(prop, ctx, message).map { proof =>
+    val proof = prover.prove(prop, ctx, message).get
       val pt = System.currentTimeMillis()
       println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
@@ -189,6 +189,5 @@ class SpamSpecification extends PropSpec
       val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
       terminated shouldBe true
       res.isFailure shouldBe true
-    }
   }
 }

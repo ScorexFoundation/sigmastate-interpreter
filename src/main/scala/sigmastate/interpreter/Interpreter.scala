@@ -162,8 +162,8 @@ trait Interpreter {
              proof: UncheckedTree,
              message: Array[Byte]): Try[Boolean] = Try {
     val cProp = reduceToCrypto(exp, context).get
-    cProp match {
 
+    cProp match {
       case TrueLeaf => true
       case FalseLeaf => false
       case b: Value[SBoolean.type] if b.evaluated =>
