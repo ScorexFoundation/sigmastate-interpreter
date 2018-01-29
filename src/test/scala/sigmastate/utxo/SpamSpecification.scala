@@ -135,9 +135,8 @@ class SpamSpecification extends PropSpec
         val spamProp = OR((1 until orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))) :+
           EQ(IntConstant(6), IntConstant(6)))
 
-        //todo: why 11 not 21?
         val spamScript =
-          Exists(Outputs, 11,
+          Exists(Outputs, 21,
             AND(
               GE(ExtractAmount(TaggedBox(21)), IntConstant(10)),
               EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(propToCompare.toString.getBytes))
@@ -162,37 +161,35 @@ class SpamSpecification extends PropSpec
     }
   }
 
-    property("transaction with many inputs and outputs") {
-      val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
+  property("transaction with many inputs and outputs") {
+    val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
 
+    val prop = Exists(Inputs, 21, Exists(Outputs, 22,
+      EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
 
-      val prop = Exists(Inputs, 21, Exists(Outputs, 22,
-        EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
+    val inputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
+    val outputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
 
-      val inputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
-      val outputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
+    val inputs = ((1 to 999) map (_ => SigmaStateBox(11, inputScript))) :+ SigmaStateBox(11, outputScript)
+    val outputs = (1 to 1000) map (_ => SigmaStateBox(11, inputScript))
 
-      val inputs = ((1 to 999) map (_ => SigmaStateBox(11, inputScript))) :+ SigmaStateBox(11, outputScript)
-      val outputs = (1 to 1000) map (_ => SigmaStateBox(11, inputScript))
+    val tx = SigmaStateTransaction(IndexedSeq(), outputs)
 
-      val tx = SigmaStateTransaction(IndexedSeq(), outputs)
+    val ctx = new UtxoContext(currentHeight = 0,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = inputs.map(b => BoxWithMetadata(b, BoxMetadata(0, 0))),
+      spendingTransaction = tx,
+      self = BoxWithMetadata(SigmaStateBox(11, prop), BoxMetadata(0, 0)))
 
-      val ctx = new UtxoContext(currentHeight = 0,
-        lastBlockUtxoRoot = AvlTreeData.dummy,
-        boxesToSpend = inputs.map(b => BoxWithMetadata(b, BoxMetadata(0, 0))),
-        spendingTransaction = tx,
-        self = BoxWithMetadata(SigmaStateBox(11, prop), BoxMetadata(0, 0)))
+    val pt0 = System.currentTimeMillis()
+    prover.prove(prop, ctx, message).map { proof =>
+      val pt = System.currentTimeMillis()
+      println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
-      val pt0 = System.currentTimeMillis()
-      prover.prove(prop, ctx, message).map { proof =>
-        val pt = System.currentTimeMillis()
-        println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
-
-        val verifier = new UtxoInterpreter
-        val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
-        terminated shouldBe true
-        res.isFailure shouldBe true
-      }
+      val verifier = new UtxoInterpreter
+      val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
+      terminated shouldBe true
+      res.isFailure shouldBe true
     }
-
+  }
 }
