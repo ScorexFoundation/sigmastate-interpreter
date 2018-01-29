@@ -136,12 +136,18 @@ trait Interpreter {
         reductionStep(newTree, state.copy(numberOfTransformations = 0))
     }
 
-
+    // First, both the prover and the verifier are making context-dependent tree transformations
+    // (usually, context variables substitutions).
+    // We can estimate cost of the tree evaluation only after this step.
     val substRule = rule[SigmaStateTree](specificTransformations(context))
     val substTree = everywherebu(substRule)(exp).get.asInstanceOf[SigmaStateTree]
     if (substTree.cost > maxCost) throw new Error("Estimated expression complexity exceeds the limit")
 
-
+    // After performing context-dependent transformations and checking cost of the resulting tree, both the prover
+    // and the verifier are evaluating the tree by applying rewriting rules, until no any rule triggers during tree
+    // traversal (so interpreter checks whether no any nodes were rewritten during last rewriting, and aborts if so).
+    // todo: any attacks possible on rewriting itself? Maybe, adversary can construct such a tree that its rewriting
+    // todo: takes long time. Further investigation is needed.
     val initialState = ReductionState(0)
     reductionStep(substTree, initialState)._1
   }

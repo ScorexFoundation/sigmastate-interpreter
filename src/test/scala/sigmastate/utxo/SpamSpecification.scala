@@ -149,13 +149,12 @@ class SpamSpecification extends PropSpec
 
         val pt0 = System.currentTimeMillis()
         val proof = prover.prove(spamScript, ctx, message).get
-          val pt = System.currentTimeMillis()
-          println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
+        val pt = System.currentTimeMillis()
+        println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
-          val verifier = new UtxoInterpreter
-          val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, message))
-          terminated shouldBe true
-
+        val verifier = new UtxoInterpreter
+        val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, message))
+        terminated shouldBe true
       }
     }
   }
@@ -182,12 +181,12 @@ class SpamSpecification extends PropSpec
 
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(prop, ctx, message).get
-      val pt = System.currentTimeMillis()
-      println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
+    val pt = System.currentTimeMillis()
+    println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
-      val verifier = new UtxoInterpreter
-      val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
-      terminated shouldBe true
-      res.isFailure shouldBe true
+    val verifier = new UtxoInterpreter
+    val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
+    terminated shouldBe true
+    res.isFailure shouldBe true
   }
 }
