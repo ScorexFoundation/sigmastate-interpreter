@@ -116,7 +116,7 @@ case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[SGro
 case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
   override val cost = 10
 
-  override val value = new BcDlogECFp().getGenerator
+  override val value: GroupElement = new BcDlogECFp().getGenerator
 }
 
 
@@ -181,7 +181,7 @@ case class TaggedBoxWithMetadata(override val id: Byte)
 
 
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
-  val cost = value.size
+  val cost: Int = value.size
 }
 
 trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
