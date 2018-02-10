@@ -189,8 +189,8 @@ class UtxoInterpreterSpecification extends PropSpec
         GE(Height, Plus(ExtractHeight(Self), IntConstant(demurragePeriod))),
         Exists(Outputs, 21,
           AND(
-            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), IntConstant(demurrageCost))),
-            EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self))
+            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(ExtractBox(Self)), IntConstant(demurrageCost))),
+            EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(ExtractBox(Self)))
           )
         )
       )
@@ -1092,7 +1092,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3),
-      Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
+      Plus(ExtractRegisterAs(ExtractBox(Self), R3), IntConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(3)))
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(6)))
@@ -1121,7 +1121,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = Exists(Outputs, 21,
       EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntConstant(0L))),
-        Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
+        Plus(ExtractRegisterAs(ExtractBox(Self), R3), IntConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(6)))
@@ -1161,7 +1161,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val treeData = new AvlTreeData(digest, 32, None)
 
-    val prop = IsMember(ExtractRegisterAs(Self, R3),
+    val prop = IsMember(ExtractRegisterAs(ExtractBox(Self), R3),
       ByteArrayConstant(key),
       ByteArrayConstant(proof))
 
@@ -1204,8 +1204,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = IsMember(ExtractRegisterAs(Self, R3),
-      ExtractRegisterAs(Self, R4),
+    val prop = IsMember(ExtractRegisterAs(ExtractBox(Self), R3),
+      ExtractRegisterAs(ExtractBox(Self), R4),
       TaggedByteArray(proofId))
 
     val newBox1 = SigmaStateBox(10, pubkey)
@@ -1236,7 +1236,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey2 = prover.dlogSecrets(1).publicImage
     val pubkey3 = prover.dlogSecrets(2).publicImage
 
-    val prop = AND(new ProveDlog(ExtractRegisterAs(Self, R3)), new ProveDlog(ExtractRegisterAs(Self, R4)))
+    val prop = AND(new ProveDlog(ExtractRegisterAs(ExtractBox(Self), R3)),
+                    new ProveDlog(ExtractRegisterAs(ExtractBox(Self), R4)))
 
 
     val newBox1 = SigmaStateBox(10, pubkey3)
@@ -1279,7 +1280,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
-      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(brother.box.id)))
+      EQ(ExtractId(ExtractBox(ByIndex(Inputs, 0))), ByteArrayConstant(brother.box.id)))
 
     val s = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5, 1))
 

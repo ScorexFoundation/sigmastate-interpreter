@@ -3,8 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
-import scorex.crypto.authds.ADDigest
-import sigmastate.utxo.BoxWithMetadata
+import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
 
 
 
@@ -20,5 +19,6 @@ case object SByteArray extends SType {override type WrappedType = Array[Byte]}
 case class  SCollection[ElemType <: SType]() extends SType {override type WrappedType = IndexedSeq[Value[ElemType]]}
 case object SAvlTree extends SType {override type WrappedType = AvlTreeData}
 case object SGroupElement extends SType {override type WrappedType = GroupElement}
-case object SBox extends SType {override type WrappedType = BoxWithMetadata}
+case object SBox extends SType {override type WrappedType = SigmaStateBox}
+case object SBoxWithMetadata extends SType {override type WrappedType = BoxWithMetadata}
 

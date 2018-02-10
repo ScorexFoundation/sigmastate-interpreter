@@ -157,26 +157,40 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
 
 
 
-sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
-  override def function(box: EvaluatedValue[SBox.type]): Value[V]
-}
+case class ExtractBox(input: Value[SBoxWithMetadata.type])
+  extends Transformer[SBoxWithMetadata.type, SBox.type] with NotReadyValueBox {
 
-case class ExtractHeight(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueInt {
   override lazy val cost: Int = 10
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] =
+  override def function(box: EvaluatedValue[SBoxWithMetadata.type]): Value[SBox.type] =
+    BoxConstant(box.value.box)
+}
+
+case class ExtractHeight(input: Value[SBoxWithMetadata.type])
+  extends Transformer[SBoxWithMetadata.type, SInt.type] with NotReadyValueInt {
+
+  override lazy val cost: Int = 10
+
+  override type M = this.type
+
+  override def function(box: EvaluatedValue[SBoxWithMetadata.type]): Value[SInt.type] =
     IntConstant(box.value.metadata.creationHeight)
 }
 
+
+
+sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
+  override def function(box: EvaluatedValue[SBox.type]): Value[V]
+}
 
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueInt {
   override lazy val cost: Int = 10
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] = IntConstant(box.value.box.value)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] = IntConstant(box.value.value)
 }
 
 
@@ -186,7 +200,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
   override type M = this.type
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = {
-    ByteArrayConstant(box.value.box.propositionBytes)
+    ByteArrayConstant(box.value.propositionBytes)
   }
 }
 
@@ -196,7 +210,7 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.box.bytes)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytes)
 }
 
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
@@ -204,7 +218,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] w
 
   override type M = this.type
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.box.id)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.id)
 }
 
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
@@ -215,5 +229,5 @@ case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
   override type M = this.type
 
   override def function(box: EvaluatedValue[SBox.type]): Value[V] =
-    box.value.box.get(registerId).orElse(default).get.asInstanceOf[Value[V]]
+    box.value.get(registerId).orElse(default).get.asInstanceOf[Value[V]]
 }

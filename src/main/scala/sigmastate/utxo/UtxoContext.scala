@@ -18,7 +18,8 @@ case class UtxoContext(currentHeight: Height,
 object UtxoContext {
   type Height = Long
 
-  def dummy(selfDesc: BoxWithMetadata) = UtxoContext(currentHeight = 0, lastBlockUtxoRoot = AvlTreeData.dummy, boxesToSpend = IndexedSeq(),
+  def dummy(selfDesc: BoxWithMetadata) = UtxoContext(currentHeight = 0,
+    lastBlockUtxoRoot = AvlTreeData.dummy, boxesToSpend = IndexedSeq(),
                           spendingTransaction = null, self = selfDesc)
 
 }
@@ -27,7 +28,7 @@ case object Height extends NotReadyValueInt {
   override lazy val cost: Int = Cost.HeightAccess
 }
 
-case object Inputs extends LazyCollection[SBox.type] {
+case object Inputs extends LazyCollection[SBoxWithMetadata.type] {
   val cost = 1
 }
 
@@ -38,7 +39,7 @@ case object Outputs extends LazyCollection[SBox.type] {
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree
 
 
-case object Self extends NotReadyValueBox {
+case object Self extends NotReadyValueBoxWithMetadata {
   override def cost: Int = 10
 
   override type M = this.type

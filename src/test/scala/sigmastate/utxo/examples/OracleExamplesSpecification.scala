@@ -142,7 +142,9 @@ class OracleExamplesSpecification extends PropSpec
     val sAlice = BoxWithMetadata(SigmaStateBox(10, propAlice, Map()), BoxMetadata(5, 0))
 
     //"along with a brother" script
-    val propAlong = AND(EQ(SizeOf(Inputs), IntConstant(2)), EQ(ExtractId(ByIndex(Inputs,0)), ByteArrayConstant(sAlice.box.id)))
+    val propAlong = AND(
+      EQ(SizeOf(Inputs), IntConstant(2)),
+      EQ(ExtractId(ExtractBox(ByIndex(Inputs,0))), ByteArrayConstant(sAlice.box.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = BoxWithMetadata(SigmaStateBox(10, propBob, Map()), BoxMetadata(5, 1))
 
@@ -154,7 +156,7 @@ class OracleExamplesSpecification extends PropSpec
       self = null)
 
     val alice = aliceTemplate
-      .withContextExtender(22:Byte, BoxConstant(BoxWithMetadata(oracleBox, BoxMetadata(0, 0))))
+      .withContextExtender(22:Byte, BoxConstant(oracleBox))
       .withContextExtender(23:Byte, ByteArrayConstant(proof))
     val prA = alice.prove(propAlice, ctx, fakeMessage).get
 
@@ -202,11 +204,11 @@ class OracleExamplesSpecification extends PropSpec
       additionalRegisters = Map(R3 -> IntConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs(ByIndex(Inputs,0), R3), IntConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs(ByIndex(Inputs,0), R3), IntConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs(ExtractBox(ByIndex(Inputs,0)), R3), IntConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs(ExtractBox(ByIndex(Inputs,0)), R3), IntConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
-      EQ(ExtractScriptBytes(ByIndex(Inputs,0)), ByteArrayConstant(oraclePubKey.propBytes)),
+      EQ(ExtractScriptBytes(ExtractBox(ByIndex(Inputs,0))), ByteArrayConstant(oraclePubKey.propBytes)),
       contractLogic
     )
 

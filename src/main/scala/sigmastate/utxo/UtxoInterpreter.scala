@@ -9,14 +9,11 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   override type CTX = UtxoContext
 
   override def specificTransformations(context: UtxoContext): PartialFunction[SigmaStateTree, SigmaStateTree] = {
-    case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxConstant.apply))
+    case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxWithMetadataConstant.apply))
 
-    case Outputs => ConcreteCollection(context.spendingTransaction.newBoxes
-      .zipWithIndex
-      .map { case (b, i) => BoxWithMetadata(b, BoxMetadata(context.currentHeight, i.toShort)) }
-      .map(BoxConstant.apply))
+    case Outputs => ConcreteCollection(context.spendingTransaction.newBoxes.map(BoxConstant.apply))
 
-    case Self => BoxConstant(context.self)
+    case Self => BoxWithMetadataConstant(context.self)
 
     case Height => IntConstant(context.currentHeight)
 

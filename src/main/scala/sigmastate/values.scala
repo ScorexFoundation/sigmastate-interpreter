@@ -8,7 +8,7 @@ import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
-import sigmastate.utxo.BoxWithMetadata
+import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
 import sigmastate.utxo.CostTable.Cost
 
 
@@ -157,7 +157,7 @@ trait FakeBoolean extends NotReadyValue[SBoolean.type]{
 }
 
 
-case class BoxConstant(value: BoxWithMetadata) extends EvaluatedValue[SBox.type] {
+case class BoxConstant(value: SigmaStateBox) extends EvaluatedValue[SBox.type] {
   override def cost: Int = 10
 }
 
@@ -166,6 +166,18 @@ trait NotReadyValueBox extends NotReadyValue[SBox.type] {
 }
 
 case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox
+
+
+case class BoxWithMetadataConstant(value: BoxWithMetadata) extends EvaluatedValue[SBoxWithMetadata.type] {
+  override def cost: Int = 10
+}
+
+trait NotReadyValueBoxWithMetadata extends NotReadyValue[SBoxWithMetadata.type] {
+  override def cost: Int = 10
+}
+
+case class TaggedBoxWithMetadata(override val id: Byte)
+  extends TaggedVariable[SBoxWithMetadata.type] with NotReadyValueBoxWithMetadata
 
 
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
