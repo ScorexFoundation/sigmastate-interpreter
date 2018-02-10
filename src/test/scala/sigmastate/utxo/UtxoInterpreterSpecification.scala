@@ -91,7 +91,7 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val outputToSpend = SigmaStateBox(10, crowdFundingScript)
-    val outputWithMetadata = BoxWithMetadata(outputToSpend, BoxMetadata(0, 0))
+    val outputWithMetadata = BoxWithMetadata(outputToSpend, BoxMetadata(0))
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
 
@@ -992,7 +992,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(21, pubkey), BoxMetadata(0L, 0))
+    val s = BoxWithMetadata(SigmaStateBox(21, pubkey), BoxMetadata(0L))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1100,7 +1100,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5))), BoxMetadata(5, 0))
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5))), BoxMetadata(5))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1129,7 +1129,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5))), BoxMetadata(5, 0))
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5))), BoxMetadata(5))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1170,7 +1170,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData))), BoxMetadata(5, 0))
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData))), BoxMetadata(5))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1215,7 +1215,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val s = BoxWithMetadata(
       SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key))),
-      BoxMetadata(5, 0))
+      BoxMetadata(5))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1244,7 +1244,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value)), BoxMetadata(5, 0))
+    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value)), BoxMetadata(5))
 
 
     val ctx = UtxoContext(
@@ -1270,7 +1270,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey1 = prover.dlogSecrets.head.publicImage
     val pubkey2 = prover.dlogSecrets(1).publicImage
 
-    val brother = BoxWithMetadata(SigmaStateBox(10, pubkey1, Map()), BoxMetadata(5, 0))
+    val brother = BoxWithMetadata(SigmaStateBox(10, pubkey1, Map()), BoxMetadata(5))
 
     val newBox = SigmaStateBox(20, pubkey2)
 
@@ -1282,7 +1282,7 @@ class UtxoInterpreterSpecification extends PropSpec
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ExtractBox(ByIndex(Inputs, 0))), ByteArrayConstant(brother.box.id)))
 
-    val s = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5, 1))
+    val s = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5))
 
     val ctx = UtxoContext(
       currentHeight = 50,

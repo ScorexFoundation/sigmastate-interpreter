@@ -5,7 +5,7 @@ import sigmastate.{SigmaStateTree, TrueLeaf}
 
 object BoxHelpers {
   def boxWithMetadata(value: Int, proposition: SigmaStateTree, creationHeight: Int = 0, boxIndex: Short = 0) =
-    BoxWithMetadata(SigmaStateBox(value, proposition), BoxMetadata(creationHeight, boxIndex))
+    BoxWithMetadata(SigmaStateBox(value, proposition), BoxMetadata(creationHeight))
 
   val fakeSelf = boxWithMetadata(0, TrueLeaf)
 

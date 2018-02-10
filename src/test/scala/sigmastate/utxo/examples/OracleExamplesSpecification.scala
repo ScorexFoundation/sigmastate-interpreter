@@ -139,14 +139,14 @@ class OracleExamplesSpecification extends PropSpec
 
     val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp)
 
-    val sAlice = BoxWithMetadata(SigmaStateBox(10, propAlice, Map()), BoxMetadata(5, 0))
+    val sAlice = BoxWithMetadata(SigmaStateBox(10, propAlice, Map()), BoxMetadata(5))
 
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ExtractBox(ByIndex(Inputs,0))), ByteArrayConstant(sAlice.box.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
-    val sBob = BoxWithMetadata(SigmaStateBox(10, propBob, Map()), BoxMetadata(5, 1))
+    val sBob = BoxWithMetadata(SigmaStateBox(10, propBob, Map()), BoxMetadata(5))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -212,9 +212,9 @@ class OracleExamplesSpecification extends PropSpec
       contractLogic
     )
 
-    val sOracle = BoxWithMetadata(oracleBox, BoxMetadata(5, 0))
-    val sAlice = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5, 1))
-    val sBob = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5, 2))
+    val sOracle = BoxWithMetadata(oracleBox, BoxMetadata(5))
+    val sAlice = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5))
+    val sBob = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5))
 
     val newBox1 = SigmaStateBox(20, alicePubKey)
     val newBoxes = IndexedSeq(newBox1)

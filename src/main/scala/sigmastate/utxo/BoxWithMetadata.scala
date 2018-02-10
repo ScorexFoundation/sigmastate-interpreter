@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import sigmastate.utxo.UtxoContext.Height
 
-case class BoxMetadata(creationHeight: Height, boxIndex: Short)
+case class BoxMetadata(creationHeight: Height)
 
 class BoxWithMetadata(val box: SigmaStateBox, val metadata: BoxMetadata)
 

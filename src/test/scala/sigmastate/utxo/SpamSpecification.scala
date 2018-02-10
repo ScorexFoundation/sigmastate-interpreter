@@ -175,9 +175,9 @@ class SpamSpecification extends PropSpec
 
     val ctx = new UtxoContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = inputs.map(b => BoxWithMetadata(b, BoxMetadata(0, 0))),
+      boxesToSpend = inputs.map(b => BoxWithMetadata(b, BoxMetadata(0))),
       spendingTransaction = tx,
-      self = BoxWithMetadata(SigmaStateBox(11, prop), BoxMetadata(0, 0)))
+      self = BoxWithMetadata(SigmaStateBox(11, prop), BoxMetadata(0)))
 
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(prop, ctx, message).get
