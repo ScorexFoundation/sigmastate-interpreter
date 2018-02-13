@@ -13,7 +13,9 @@ import sigmastate.utxo.CostTable.Cost
 
 
 
-trait Value[S <: SType] extends StateTree {
+trait Value[S <: SType] extends Product with SigmaStateProposition {
+  def cost: Int
+
   def evaluated: Boolean
 }
 

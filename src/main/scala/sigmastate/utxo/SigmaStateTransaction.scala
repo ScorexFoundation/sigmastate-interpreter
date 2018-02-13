@@ -34,9 +34,9 @@ import scala.util.Try
   * @param nonce
   */
 class SigmaStateBox(override val value: Long,
-                         override val proposition: SigmaStateTree,
+                         override val proposition: Value[SBoolean.type],
                          additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map(),
-                         nonce: Array[Byte] = Array.fill(32)(0:Byte)) extends Box[SigmaStateTree] {
+                         nonce: Array[Byte] = Array.fill(32)(0:Byte)) extends Box[Value[SBoolean.type]] {
   import sigmastate.utxo.SigmaStateBox._
 
   def get(identifier: RegisterIdentifier): Option[_ <: Value[_]] = {
@@ -66,7 +66,7 @@ class SigmaStateBox(override val value: Long,
 
 object SigmaStateBox {
   def apply(value: Long,
-            proposition: SigmaStateTree,
+            proposition: Value[SBoolean.type],
             additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map(),
             nonce: Array[Byte] = Array.fill(32)(0: Byte)
            ): SigmaStateBox =
@@ -88,14 +88,14 @@ object SigmaStateBox {
 }
 
 
-class SigmaStateBoxUnlocker extends BoxUnlocker[SigmaStateTree] {
+class SigmaStateBoxUnlocker extends BoxUnlocker[Value[SBoolean.type]] {
   override val closedBoxId: Array[Byte] = ???
-  override val boxKey: Proof[SigmaStateTree] = ???
+  override val boxKey: Proof[Value[SBoolean.type]] = ???
 }
 
 case class SigmaStateTransaction(override val unlockers: IndexedSeq[SigmaStateBoxUnlocker],
                                  override val newBoxes: IndexedSeq[SigmaStateBox])
-  extends BoxTransaction[SigmaStateTree, SigmaStateBox] {
+  extends BoxTransaction[Value[SBoolean.type], SigmaStateBox] {
 
   override lazy val fee: Long = ???
   override lazy val timestamp: Long = ???

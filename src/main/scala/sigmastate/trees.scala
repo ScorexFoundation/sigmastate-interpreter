@@ -17,13 +17,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 
-sealed trait SigmaStateTree extends Product with SigmaStateProposition {
-  def cost: Int
-}
-
-trait StateTree extends SigmaStateTree with StateProposition
-
-trait SigmaTree extends SigmaStateTree with SigmaProposition with FakeBoolean
+trait SigmaTree extends SigmaProposition with FakeBoolean
 
 case class CAND(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
   override def cost: Int = sigmaTrees.map(_.cost).sum + sigmaTrees.length * Cost.AndPerChild + Cost.AndDeclaration

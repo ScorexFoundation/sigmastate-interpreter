@@ -19,7 +19,6 @@ case class TestingContext(height: Int,
 
 
 object TestingInterpreter extends Interpreter with ProverInterpreter {
-  override type StateT = StateTree
   override type CTX = TestingContext
 
   override val maxCost = CostTable.ScriptLimit
@@ -32,7 +31,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
 
   override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
 
-  override def specificTransformations(context: TestingContext): PartialFunction[SigmaStateTree, SigmaStateTree] = {
+  override def specificTransformations(context: TestingContext): PartialFunction[Value[_ <: SType], Value[_ <: SType]] = {
     case Height => IntConstant(context.height)
   }
 }

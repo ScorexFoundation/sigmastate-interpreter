@@ -6,7 +6,7 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
-import sigmastate._
+import sigmastate.{SType, _}
 import sigmastate.utils.Helpers
 
 import scala.util.Try
@@ -24,7 +24,6 @@ import scala.annotation.tailrec
 
 trait Interpreter {
   type CTX <: Context[CTX]
-  type StateT <: StateTree
   type SigmaT <: SigmaTree
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
@@ -42,7 +41,7 @@ trait Interpreter {
     * @param context - context instance
     * @return - processed tree
     */
-  def specificTransformations(context: CTX): PartialFunction[SigmaStateTree, SigmaStateTree]
+  def specificTransformations(context: CTX): PartialFunction[Value[_ <: SType], Value[_ <: SType]]
 
 
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,
@@ -62,15 +61,16 @@ trait Interpreter {
     * @param context
     * @return
     */
-  def reduceToCrypto(exp: SigmaStateTree, context: CTX): Try[SigmaStateTree] = Try {
+  def reduceToCrypto(exp: Value[SBoolean.type], context: CTX): Try[Value[SBoolean.type]] = Try {
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
 
     @tailrec
-    def reductionStep(tree: SigmaStateTree, reductionState: ReductionState): (SigmaStateTree, ReductionState) = {
+    def reductionStep(tree: Value[SBoolean.type],
+                      reductionState: ReductionState): (Value[SBoolean.type], ReductionState) = {
       var state = reductionState
 
-      def statefulTransformation(rules: PartialFunction[SigmaStateTree, SigmaStateTree]):
-      PartialFunction[SigmaStateTree, SigmaStateTree] = rules.andThen({ newTree =>
+      def statefulTransformation(rules: PartialFunction[Value[_ <: SType], Value[_ <: SType]]):
+      PartialFunction[Value[_ <: SType], Value[_ <: SType]] = rules.andThen({ newTree =>
         state = state.recordTransformation()
         newTree
       })
@@ -123,12 +123,12 @@ trait Interpreter {
 
         case o@OR(children) if o.transformationReady =>
           o.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
-      }: PartialFunction[SigmaStateTree, SigmaStateTree]).orElse(specificTransformations(context))
+      }: PartialFunction[Value[_ <: SType], Value[_ <: SType]]).orElse(specificTransformations(context))
 
       //todo: use and(s1, s2) strategy to combine rules below with specific phases
-      val rules: Strategy = rule[SigmaStateTree](statefulTransformation(transformations))
+      val rules: Strategy = rule[Value[_ <: SType]](statefulTransformation(transformations))
 
-      val newTree = everywherebu(rules)(tree).get.asInstanceOf[SigmaStateTree]
+      val newTree = everywherebu(rules)(tree).get.asInstanceOf[Value[SBoolean.type]]
 
       if (state.numberOfTransformations == 0)
         (newTree, state)
@@ -139,8 +139,10 @@ trait Interpreter {
     // First, both the prover and the verifier are making context-dependent tree transformations
     // (usually, context variables substitutions).
     // We can estimate cost of the tree evaluation only after this step.
-    val substRule = rule[SigmaStateTree](specificTransformations(context))
-    val substTree = everywherebu(substRule)(exp).get.asInstanceOf[SigmaStateTree]
+    val substRule = rule[Value[_ <: SType]](specificTransformations(context))
+
+    //todo: controversial .asInstanceOf?
+    val substTree = everywherebu(substRule)(exp).get.asInstanceOf[Value[SBoolean.type]]
     if (substTree.cost > maxCost) throw new Error("Estimated expression complexity exceeds the limit")
 
     // After performing context-dependent transformations and checking cost of the resulting tree, both the prover
@@ -163,7 +165,7 @@ trait Interpreter {
     * 3. Check that the root challenge is equal to the hash of the root commitment and other inputs.
     */
 
-  def verify(exp: SigmaStateTree,
+  def verify(exp: Value[SBoolean.type],
              context: CTX,
              proof: UncheckedTree,
              message: Array[Byte]): Try[Boolean] = Try {
@@ -188,7 +190,7 @@ trait Interpreter {
             val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
             challenge.sameElements(expectedChallenge)
         }
-      case _: SigmaStateTree => false
+      case _: Value[_] => false
     }
   }
 
@@ -277,7 +279,7 @@ trait Interpreter {
     case _ => ???
   })
 
-  def verify(exp: SigmaStateTree,
+  def verify(exp: Value[SBoolean.type],
              context: CTX,
              proverResult: ProverResult[ProofT],
              message: Array[Byte]): Try[Boolean] = {

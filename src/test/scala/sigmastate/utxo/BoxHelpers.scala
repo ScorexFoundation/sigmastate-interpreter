@@ -1,10 +1,10 @@
 package sigmastate.utxo
 
 import scorex.crypto.hash.Blake2b256
-import sigmastate.{SigmaStateTree, TrueLeaf}
+import sigmastate.{SBoolean, TrueLeaf, Value}
 
 object BoxHelpers {
-  def boxWithMetadata(value: Int, proposition: SigmaStateTree, creationHeight: Int = 0) =
+  def boxWithMetadata(value: Int, proposition: Value[SBoolean.type], creationHeight: Int = 0) =
     BoxWithMetadata(SigmaStateBox(value, proposition), BoxMetadata(creationHeight))
 
   val fakeSelf: BoxWithMetadata = boxWithMetadata(0, TrueLeaf)
