@@ -9,7 +9,7 @@ import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommo
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import scorex.crypto.hash.Blake2b256
-import sigmastate.SigmaProposition.PropositionCode
+import sigmastate.Value.PropositionCode
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
 
@@ -17,10 +17,8 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 
-trait SigmaTree extends SigmaProposition with FakeBoolean
-
-case class CAND(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
-  override def cost: Int = sigmaTrees.map(_.cost).sum + sigmaTrees.length * Cost.AndPerChild + Cost.AndDeclaration
+case class CAND(SigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  override def cost: Int = SigmaBooleans.map(_.cost).sum + SigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 
   override val code: PropositionCode = CAND.Code
   override type M = this.type
@@ -30,8 +28,8 @@ object CAND {
   val Code: PropositionCode = 101: Byte
 }
 
-case class COR(sigmaTrees: Seq[SigmaTree]) extends SigmaTree {
-  override def cost: Int = sigmaTrees.map(_.cost).sum + sigmaTrees.length * Cost.OrPerChild + Cost.OrDeclaration
+case class COR(SigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  override def cost: Int = SigmaBooleans.map(_.cost).sum + SigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 
   override val code: PropositionCode = COR.Code
   override type M = this.type
@@ -42,7 +40,7 @@ object COR {
 }
 
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP]]
-  extends SigmaTree with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
+  extends SigmaBoolean with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
 
 
 //todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
@@ -77,7 +75,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
       case i: Int if i == 0 => FalseLeaf
       case i: Int if i == 1 => reduced.head
       case _ =>
-        if (reduced.forall(_.isInstanceOf[SigmaTree])) COR(reduced.map(_.asInstanceOf[SigmaTree]))
+        if (reduced.forall(_.isInstanceOf[SigmaBoolean])) COR(reduced.map(_.asInstanceOf[SigmaBoolean]))
         else OR(reduced)
     }
   }
@@ -124,8 +122,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
       case i: Int if i == 0 => TrueLeaf
       case i: Int if i == 1 => reduced.head
       case _ =>
-        if (reduced.forall(_.isInstanceOf[SigmaTree]))
-          CAND(reduced.map(_.asInstanceOf[SigmaTree]))
+        if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
+          CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
         else AND(reduced)
     }
   }
@@ -285,7 +283,7 @@ case class IsMember(tree: Value[SAvlTree.type],
 trait ProofTree extends Product
 
 sealed trait UnprovenTree extends ProofTree {
-  val proposition: SigmaTree
+  val proposition: SigmaBoolean
 
   val simulated: Boolean
 
@@ -352,12 +350,12 @@ sealed trait UncheckedTree extends ProofTree
 
 case object NoProof extends UncheckedTree
 
-sealed trait UncheckedSigmaTree[ST <: SigmaTree] extends UncheckedTree with BytesSerializable {
+sealed trait UncheckedSigmaTree[ST <: SigmaBoolean] extends UncheckedTree with BytesSerializable {
   val proposition: ST
-  val propCode: SigmaProposition.PropositionCode
+  val propCode: Value.PropositionCode
 }
 
-trait UncheckedConjecture[ST <: SigmaTree] extends UncheckedSigmaTree[ST] {
+trait UncheckedConjecture[ST <: SigmaBoolean] extends UncheckedSigmaTree[ST] {
   val challengeOpt: Option[Array[Byte]]
   val commitments: Seq[FirstProverMessage[_]]
 }
@@ -369,7 +367,7 @@ case class SchnorrNode(override val proposition: ProveDlog,
                        secondMessage: SecondDLogProverMessage)
   extends UncheckedSigmaTree[ProveDlog] {
 
-  override val propCode: SigmaProposition.PropositionCode = ProveDlog.Code
+  override val propCode: Value.PropositionCode = ProveDlog.Code
   override type M = this.type
 
   override def serializer: Serializer[M] = ???
@@ -381,7 +379,7 @@ case class DiffieHellmanTupleUncheckedNode(override val proposition: ProveDiffie
                                            secondMessage: SecondDiffieHellmanTupleProverMessage)
   extends UncheckedSigmaTree[ProveDiffieHellmanTuple] {
 
-  override val propCode: SigmaProposition.PropositionCode = ProveDiffieHellmanTuple.Code
+  override val propCode: Value.PropositionCode = ProveDiffieHellmanTuple.Code
   override type M = DiffieHellmanTupleUncheckedNode
 
   override def serializer: Serializer[M] = ???

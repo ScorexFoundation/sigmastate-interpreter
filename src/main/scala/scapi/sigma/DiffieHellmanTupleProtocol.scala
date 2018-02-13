@@ -10,7 +10,7 @@ import scapi.sigma.rework._
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
 import sigmastate.{GroupElementConstant, SGroupElement, SigmaProofOfKnowledgeTree, Value}
-import sigmastate.SigmaProposition.PropositionCode
+import sigmastate.Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {

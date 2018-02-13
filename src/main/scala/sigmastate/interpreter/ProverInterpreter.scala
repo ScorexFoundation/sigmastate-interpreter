@@ -25,7 +25,6 @@ case class ProverResult[ProofT <: UncheckedTree](proof: ProofT, extension: Conte
   */
 
 trait ProverInterpreter extends Interpreter with AttributionCore {
-  override type SigmaT = SigmaTree
   override type ProofT = UncheckedTree
 
   val secrets: Seq[SigmaProtocolPrivateInput[_]]
@@ -109,13 +108,13 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     val reducedProp = reduceToCrypto(exp, context.withExtension(knownExtensions)).get
 
     ProverResult(reducedProp match {
-      case tree: BooleanConstant =>
-        tree match {
+      case bool: BooleanConstant =>
+        bool match {
           case TrueLeaf => NoProof
           case FalseLeaf => ???
         }
       case _ =>
-        val ct = convertToUnproven(reducedProp.asInstanceOf[SigmaT])
+        val ct = convertToUnproven(reducedProp.asInstanceOf[SigmaBoolean])
         prove(ct, message)
     }, knownExtensions)
   }
@@ -320,7 +319,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
 
   //converts SigmaTree => UnprovenTree
-  val convertToUnproven: SigmaTree => UnprovenTree = attr {
+  val convertToUnproven: SigmaBoolean => UnprovenTree = attr {
     case CAND(sigmaTrees) =>
       CAndUnproven(CAND(sigmaTrees), Seq(), None, simulated = false, sigmaTrees.map(convertToUnproven))
     case COR(children) =>

@@ -24,7 +24,6 @@ import scala.annotation.tailrec
 
 trait Interpreter {
   type CTX <: Context[CTX]
-  type SigmaT <: SigmaTree
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
 

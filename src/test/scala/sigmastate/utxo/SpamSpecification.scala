@@ -111,14 +111,9 @@ class SpamSpecification extends PropSpec
     val publicImages = secret.publicImage +: simulated
     val prop = OR(publicImages)
 
-    println("cost of ring sig: " + prop.cost)
-
-    println(s"Ring signature benchmark for a ring of size ${publicImages.length}")
-
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(prop, ctx, message).get
     val pt = System.currentTimeMillis()
-    println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
     val (_, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
     terminated shouldBe true
