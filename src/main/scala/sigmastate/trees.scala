@@ -17,8 +17,8 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 
-case class CAND(SigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override def cost: Int = SigmaBooleans.map(_.cost).sum + SigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
+case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 
   override val code: PropositionCode = CAND.Code
   override type M = this.type
@@ -28,8 +28,8 @@ object CAND {
   val Code: PropositionCode = 101: Byte
 }
 
-case class COR(SigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override def cost: Int = SigmaBooleans.map(_.cost).sum + SigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
+case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 
   override val code: PropositionCode = COR.Code
   override type M = this.type
