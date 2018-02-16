@@ -16,11 +16,7 @@ import sigmastate.utxo.CostTable.Cost
 import scala.util.Try
 
 
-/**
-  *
-  * @tparam V
-  */
-trait SigmaSerializer[S <: SType, V <: Value[S]] extends Serializer[V] {
+trait SigmaSerializer[V <: Value[_ <: SType]] extends Serializer[V] {
   import SigmaSerializer._
 
   val opCode: Byte
@@ -44,13 +40,6 @@ object SigmaSerializer extends App {
   type SerializingFn[V <: Value[_ <: SType]] = (V) => (Array[Byte])
 
   val GeCode = 21: Byte
-  val GeDeserializer: DeserializingFn = {
-    case (bytes, pos) =>
-      val (firstArg, consumed) = deserialize(bytes, pos)
-      val (secondArg, consumed2) = deserialize(bytes, pos + consumed)
-      GE(firstArg.asInstanceOf[Value[SInt.type]], secondArg.asInstanceOf[Value[SInt.type]]) -> (consumed + consumed2)
-  }
-  val GeSerializer: SerializingFn[GE] = {cc => ???}
 
   val IntConstantCode = 11: Byte
   val IntConstantDeserializer: DeserializingFn = {
@@ -78,17 +67,12 @@ object SigmaSerializer extends App {
   }
   val ConcreteCollectionSerializer: SerializingFn[ConcreteCollection[_]] = {cc => ???}
 
-  val serializers = Map[Value.PropositionCode, SigmaSerializer[_, _]](
+  val serializers = Map[Value.PropositionCode, SigmaSerializer[_ <: Value[_ <: SType]]](
     GeCode -> RelationSerializer[GE](GeCode)
   )
 
-  val table: Map[Value.PropositionCode, (DeserializingFn, SerializingFn[_])] = Map(
-    GeCode -> (GeDeserializer, GeSerializer),
-    ConcreteCollectionCode -> (ConcreteCollectionDeserializer, ConcreteCollectionSerializer),
-    IntConstantCode -> (IntConstantDeserializer, IntConstantSerializer),
-    TrueCode -> (TrueDeserializer, TrueSerializer),
-    FalseCode -> (FalseDeserializer, FalseSerializer)
-  )
+  val table: Map[Value.PropositionCode, (DeserializingFn, SerializingFn[_ <: Value[_ <: SType]])] =
+    serializers.mapValues(s => (s.parseBody, s.serializeBody))
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
     val c = bytes(pos)
@@ -121,7 +105,7 @@ trait Value[S <: SType] extends Product with Proposition {
 
   def evaluated: Boolean
 
-  override def serializer: SigmaSerializer[S, M] = ???
+  override def serializer: SigmaSerializer[M] = ???
 
   //todo: remove after serialization, replace with just .bytes
   lazy val propBytes = this.toString.getBytes
@@ -294,6 +278,15 @@ case class TaggedBoxWithMetadata(override val id: Byte)
 
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
   val cost: Int = value.size
+}
+
+object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_ <: SCollection[_ <: SType]]]{
+
+  override val opCode: Byte = SigmaSerializer.ConcreteCollectionCode
+
+  override def parseBody = {case (bytes, pos) => ???}
+
+  override def serializeBody = {cc => ???}
 }
 
 trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
