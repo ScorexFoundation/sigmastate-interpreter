@@ -21,7 +21,6 @@ case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 
   override val code: PropositionCode = CAND.Code
-  override type M = this.type
 }
 
 object CAND {
@@ -32,7 +31,6 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 
   override val code: PropositionCode = COR.Code
-  override type M = this.type
 }
 
 object COR {
@@ -79,8 +77,6 @@ case class OR(input: Value[SCollection[SBoolean.type]])
         else OR(reduced)
     }
   }
-
-  override type M = this.type
 }
 
 
@@ -127,8 +123,6 @@ case class AND(input: Value[SCollection[SBoolean.type]])
         else AND(reduced)
     }
   }
-
-  override type M = this.type
 }
 
 object AND {

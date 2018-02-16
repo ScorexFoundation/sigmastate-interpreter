@@ -30,7 +30,7 @@ object DLogProtocol {
 
     override val cost: Int = Cost.Dlog
 
-    override type M = this.type
+    //override type M = ProveDlog
     override val code: PropositionCode = ProveDlog.Code
 
     override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup

@@ -9,7 +9,7 @@ import scapi.sigma.DLogProtocol._
 import scapi.sigma.rework._
 import scorex.core.serialization.Serializer
 import scorex.core.transaction.state.SecretCompanion
-import sigmastate.{GroupElementConstant, SGroupElement, SigmaProofOfKnowledgeTree, Value}
+import sigmastate._
 import sigmastate.Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 
@@ -79,10 +79,10 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
 
   override val cost: Int = Cost.Dlog * 2
 
-  override type M = ProveDiffieHellmanTuple
+  //override type M = ProveDiffieHellmanTuple
   override val code: PropositionCode = ProveDiffieHellmanTuple.Code
 
-  override def serializer: Serializer[ProveDiffieHellmanTuple] = ???
+  override def serializer: SigmaSerializer[M] = ???
 
   override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup
   override val soundness: Int = 256
