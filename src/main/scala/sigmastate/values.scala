@@ -40,26 +40,8 @@ object SigmaSerializer extends App {
   type SerializingFn[V <: Value[_ <: SType]] = (V) => (Array[Byte])
 
   val GeCode = 21: Byte
-
-  val IntConstantCode = 11: Byte
-  val IntConstantDeserializer: DeserializingFn = {
-    case (bytes, pos) =>
-      IntConstant(Longs.fromByteArray(bytes.slice(pos, pos + 8))) -> 8
-  }
-  val IntConstantSerializer: SerializingFn[IntConstant] = (c => Longs.toByteArray(c.value))
-
-
   val TrueCode = 12: Byte
-  val TrueDeserializer: DeserializingFn = {
-    case (bytes, pos) => TrueLeaf -> 0
-  }
-  val TrueSerializer: SerializingFn[TrueLeaf.type] = {cc => ???}
-
   val FalseCode = 13: Byte
-  val FalseDeserializer: DeserializingFn = {
-    case (bytes, pos) => FalseLeaf -> 0
-  }
-  val FalseSerializer: SerializingFn[FalseLeaf.type] = {cc => ???}
 
   val ConcreteCollectionCode = 25: Byte
   val ConcreteCollectionDeserializer: DeserializingFn = {
@@ -67,12 +49,15 @@ object SigmaSerializer extends App {
   }
   val ConcreteCollectionSerializer: SerializingFn[ConcreteCollection[_]] = {cc => ???}
 
-  val serializers = Map[Value.PropositionCode, SigmaSerializer[_ <: Value[_ <: SType]]](
-    GeCode -> RelationSerializer[GE](GeCode)
+  val serializers = Seq[SigmaSerializer[_ <: Value[_ <: SType]]](
+    RelationSerializer[GE](GeCode),
+    IntConstantSerializer,
+    TrueLeafSerializer,
+    FalseLeafSerializer
   )
 
   val table: Map[Value.PropositionCode, (DeserializingFn, SerializingFn[_ <: Value[_ <: SType]])] =
-    serializers.mapValues(s => (s.parseBody, s.serializeBody))
+    serializers.map(s => s.opCode -> (s.parseBody, s.serializeBody)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
     val c = bytes(pos)
@@ -134,6 +119,17 @@ sealed trait IntLeaf extends Value[SInt.type]
 
 case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val cost = 1
+}
+
+object IntConstantSerializer extends SigmaSerializer[IntConstant]{
+  override val opCode = 11
+
+  override def parseBody = {
+    case (bytes, pos) =>
+      IntConstant(Longs.fromByteArray(bytes.slice(pos, pos + 8))) -> 8
+  }
+
+  override def serializeBody = (c => Longs.toByteArray(c.value))
 }
 
 trait NotReadyValueInt extends NotReadyValue[SInt.type]
@@ -233,10 +229,24 @@ case object TrueLeaf extends BooleanConstant(true) {
   override def cost: Int = Cost.ConstantNode
 }
 
-object TrueLeafSerializer
+object TrueLeafSerializer extends SigmaSerializer[TrueLeaf.type] {
+  override val opCode = SigmaSerializer.TrueCode
+
+  override def parseBody = {case (bytes, pos) => TrueLeaf -> 0}
+
+  override def serializeBody = {cc => ???}
+}
 
 case object FalseLeaf extends BooleanConstant(false) {
   override def cost: Int = Cost.ConstantNode
+}
+
+object FalseLeafSerializer extends SigmaSerializer[FalseLeaf.type] {
+  override val opCode = SigmaSerializer.FalseCode
+
+  override def parseBody = {case (bytes, pos) => FalseLeaf -> 0}
+
+  override def serializeBody = {cc => ???}
 }
 
 trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type]
