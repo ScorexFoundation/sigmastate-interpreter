@@ -45,7 +45,6 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
 
-
   override def cost: Int = input match {
     case c: ConcreteCollection[SBoolean.type] =>
       c.value.map(_.cost).sum + c.value.length * Cost.AndPerChild + Cost.AndDeclaration
@@ -220,6 +219,22 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type], override 
 
 
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
+
+case class RelationSerializer[R <: Relation[_ <: SType, _<: SType]](override val opCode: Byte) extends
+  SigmaSerializer[SBoolean.type, R]{
+
+  import SigmaSerializer.deserialize
+
+  override def parseBody = {
+    case (bytes, pos) =>
+      val (firstArg, consumed) = deserialize(bytes, pos)
+      val (secondArg, consumed2) = deserialize(bytes, pos + consumed)
+      GE(firstArg.asInstanceOf[Value[SInt.type]], secondArg.asInstanceOf[Value[SInt.type]]) -> (consumed + consumed2)
+  }
+
+  override def serializeBody = {cc => ???}
+}
+
 
 case class LT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]

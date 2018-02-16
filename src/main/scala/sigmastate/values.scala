@@ -20,7 +20,7 @@ import scala.util.Try
   *
   * @tparam V
   */
-trait SigmaSerializer[V <: Value[_ <: SType]] extends Serializer[V] {
+trait SigmaSerializer[S <: SType, V <: Value[S]] extends Serializer[V] {
   import SigmaSerializer._
 
   val opCode: Byte
@@ -50,7 +50,7 @@ object SigmaSerializer extends App {
       val (secondArg, consumed2) = deserialize(bytes, pos + consumed)
       GE(firstArg.asInstanceOf[Value[SInt.type]], secondArg.asInstanceOf[Value[SInt.type]]) -> (consumed + consumed2)
   }
-  val GeSerializer: SerializingFn[GE] = { cc => ???}
+  val GeSerializer: SerializingFn[GE] = {cc => ???}
 
   val IntConstantCode = 11: Byte
   val IntConstantDeserializer: DeserializingFn = {
@@ -64,19 +64,23 @@ object SigmaSerializer extends App {
   val TrueDeserializer: DeserializingFn = {
     case (bytes, pos) => TrueLeaf -> 0
   }
-  val TrueSerializer: SerializingFn[TrueLeaf.type] = { cc => ???}
+  val TrueSerializer: SerializingFn[TrueLeaf.type] = {cc => ???}
 
   val FalseCode = 13: Byte
   val FalseDeserializer: DeserializingFn = {
     case (bytes, pos) => FalseLeaf -> 0
   }
-  val FalseSerializer: SerializingFn[FalseLeaf.type] = { cc => ???}
+  val FalseSerializer: SerializingFn[FalseLeaf.type] = {cc => ???}
 
   val ConcreteCollectionCode = 25: Byte
   val ConcreteCollectionDeserializer: DeserializingFn = {
     case (bytes, pos) => ???
   }
-  val ConcreteCollectionSerializer: SerializingFn[ConcreteCollection[_]] = { cc => ???}
+  val ConcreteCollectionSerializer: SerializingFn[ConcreteCollection[_]] = {cc => ???}
+
+  val serializers = Map[Value.PropositionCode, SigmaSerializer[_, _]](
+    GeCode -> RelationSerializer[GE](GeCode)
+  )
 
   val table: Map[Value.PropositionCode, (DeserializingFn, SerializingFn[_])] = Map(
     GeCode -> (GeDeserializer, GeSerializer),
@@ -109,15 +113,15 @@ object SigmaSerializer extends App {
 }
 
 
-trait Value[S <: SType] extends Product with Proposition {self: SType =>
+trait Value[S <: SType] extends Product with Proposition {
 
-  type M = Value[S]
+  type M = this.type
 
   def cost: Int
 
   def evaluated: Boolean
 
-  override def serializer: SigmaSerializer[M] = ???
+  override def serializer: SigmaSerializer[S, M] = ???
 
   //todo: remove after serialization, replace with just .bytes
   lazy val propBytes = this.toString.getBytes
@@ -247,6 +251,8 @@ object BooleanConstant {
 case object TrueLeaf extends BooleanConstant(true) {
   override def cost: Int = Cost.ConstantNode
 }
+
+object TrueLeafSerializer
 
 case object FalseLeaf extends BooleanConstant(false) {
   override def cost: Int = Cost.ConstantNode
