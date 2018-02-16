@@ -125,9 +125,6 @@ trait Value[S <: SType] extends Product with Proposition {
 
   //todo: remove after serialization, replace with just .bytes
   lazy val propBytes = this.toString.getBytes
-
-  //todo: remove this alias?
-  def code: Value.PropositionCode = serializer.opCode
 }
 
 object Value {

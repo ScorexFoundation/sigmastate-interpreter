@@ -19,22 +19,10 @@ import scala.collection.mutable
 
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
-
-  override val code: PropositionCode = CAND.Code
-}
-
-object CAND {
-  val Code: PropositionCode = 101: Byte
 }
 
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
-
-  override val code: PropositionCode = COR.Code
-}
-
-object COR {
-  val Code: PropositionCode = 101: Byte
 }
 
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP]]
@@ -361,7 +349,6 @@ case object NoProof extends UncheckedTree
 
 sealed trait UncheckedSigmaTree[ST <: SigmaBoolean] extends UncheckedTree with BytesSerializable {
   val proposition: ST
-  val propCode: Value.PropositionCode
 }
 
 trait UncheckedConjecture[ST <: SigmaBoolean] extends UncheckedSigmaTree[ST] {
@@ -376,7 +363,6 @@ case class SchnorrNode(override val proposition: ProveDlog,
                        secondMessage: SecondDLogProverMessage)
   extends UncheckedSigmaTree[ProveDlog] {
 
-  override val propCode: Value.PropositionCode = ProveDlog.Code
   override type M = this.type
 
   override def serializer: Serializer[M] = ???
@@ -387,8 +373,6 @@ case class DiffieHellmanTupleUncheckedNode(override val proposition: ProveDiffie
                                            challenge: Array[Byte],
                                            secondMessage: SecondDiffieHellmanTupleProverMessage)
   extends UncheckedSigmaTree[ProveDiffieHellmanTuple] {
-
-  override val propCode: Value.PropositionCode = ProveDiffieHellmanTuple.Code
   override type M = DiffieHellmanTupleUncheckedNode
 
   override def serializer: Serializer[M] = ???
@@ -399,8 +383,6 @@ case class CAndUncheckedNode(override val proposition: CAND,
                              override val commitments: Seq[FirstProverMessage[_]],
                              leafs: Seq[ProofTree])
   extends UncheckedConjecture[CAND] {
-
-  override val propCode: PropositionCode = CAND.Code
   override type M = CAndUncheckedNode
 
   override def serializer: Serializer[M] = ???
@@ -411,8 +393,6 @@ case class COr2UncheckedNode(override val proposition: COR,
                              override val challengeOpt: Option[Array[Byte]],
                              override val commitments: Seq[FirstProverMessage[_]],
                              children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
-
-  override val propCode: PropositionCode = COR.Code
 
   override type M = COr2UncheckedNode
 
