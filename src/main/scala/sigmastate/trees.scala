@@ -10,6 +10,7 @@ import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import scorex.crypto.hash.Blake2b256
 import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.SigmaSerializer.OpCode
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
 
@@ -209,8 +210,6 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type], override 
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
 
 
-
-
 case class LT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
 
@@ -221,7 +220,9 @@ case class GT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
 
 case class GE(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+  override val opCode: OpCode = SigmaSerializer.GeCode
+}
 
 case class EQ[T1 <: SType, T2 <: SType](override val left: Value[T1],
                                         override val right: Value[T2]) extends Relation[T1, T2]

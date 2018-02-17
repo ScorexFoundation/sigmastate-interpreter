@@ -1,20 +1,19 @@
 package sigmastate
 
 import java.math.BigInteger
-
-import com.google.common.primitives.Longs
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.core.transaction.box.proposition.Proposition
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
-import sigmastate.serialization.{IntConstantSerializer, SigmaSerializer}
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
 import sigmastate.utxo.CostTable.Cost
 
 
 trait Value[S <: SType] extends Product with Proposition {
+  val opCode: SigmaSerializer.OpCode = 0: Byte
 
   def cost: Int
 
@@ -51,6 +50,7 @@ trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
 sealed trait IntLeaf extends Value[SInt.type]
 
 case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
+  override val opCode = SigmaSerializer.IntConstantCode
   override val cost = 1
 }
 

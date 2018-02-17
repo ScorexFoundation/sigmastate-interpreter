@@ -8,7 +8,7 @@ import scala.util.Try
 trait SigmaSerializer[V <: Value[_ <: SType]] extends Serializer[V] {
   import SigmaSerializer._
 
-  val opCode: Byte
+  val opCode: OpCode
 
   def parseBody: DeserializingFn
 
@@ -22,11 +22,12 @@ trait SigmaSerializer[V <: Value[_ <: SType]] extends Serializer[V] {
 }
 
 object SigmaSerializer extends App {
+  type OpCode = Byte
 
   type Position = Int
   type Consumed = Int
   type DeserializingFn = (Array[Byte], Position) => (Value[_ <: SType], Consumed)
-  type SerializingFn[V <: Value[_ <: SType]] = (V) => (Array[Byte])
+  type SerializingFn[V <: Value[_ <: SType]] = V => Array[Byte]
 
   val IntConstantCode = 11: Byte
   val GeCode = 21: Byte
@@ -57,7 +58,11 @@ object SigmaSerializer extends App {
 
   def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
 
-  def serialize(v: Value[_ <: SType]) = v.serializer.opCode +: v.serializer.serializeBody(v)
+  def serialize(v: Value[_ <: SType]) = {
+    val opCode = v.opCode
+    val serFn = table(opCode)._2.asInstanceOf[SerializingFn[v.type]]
+    opCode +: serFn(v)
+  }
 
   println(deserialize(Array[Byte](21, 11, 0, 0, 0, 0, 0, 0, 0, 2,
     11, 0, 0, 0, 0, 0, 0, 0, 3)))
@@ -68,4 +73,6 @@ object SigmaSerializer extends App {
 
   val s: Value[SInt.type] = IntConstant(4)
   println(serialize(s))
+
+  assert(deserialize(serialize(s)) == s)
 }
