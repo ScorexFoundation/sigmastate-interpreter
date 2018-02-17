@@ -5,96 +5,29 @@ import java.math.BigInteger
 import com.google.common.primitives.Longs
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
-import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.proposition.Proposition
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import sigmastate.serialization.{IntConstantSerializer, SigmaSerializer}
 import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
 import sigmastate.utxo.CostTable.Cost
 
-import scala.util.Try
-
-
-trait SigmaSerializer[V <: Value[_ <: SType]] extends Serializer[V] {
-  import SigmaSerializer._
-
-  val opCode: Byte
-
-  def parseBody: DeserializingFn
-
-  def serializeBody: SerializingFn[V]
-
-  override def toBytes(obj: V): Array[Byte] = serialize(obj)
-
-  override def parseBytes(bytes: Array[Byte]): Try[V] = Try {
-    deserialize(bytes).asInstanceOf[V]
-  }
-}
-
-object SigmaSerializer extends App {
-
-  type Position = Int
-  type Consumed = Int
-  type DeserializingFn = (Array[Byte], Position) => (Value[_ <: SType], Consumed)
-  type SerializingFn[V <: Value[_ <: SType]] = (V) => (Array[Byte])
-
-  val GeCode = 21: Byte
-  val TrueCode = 12: Byte
-  val FalseCode = 13: Byte
-
-  val ConcreteCollectionCode = 25: Byte
-  val ConcreteCollectionDeserializer: DeserializingFn = {
-    case (bytes, pos) => ???
-  }
-  val ConcreteCollectionSerializer: SerializingFn[ConcreteCollection[_]] = {cc => ???}
-
-  val serializers = Seq[SigmaSerializer[_ <: Value[_ <: SType]]](
-    RelationSerializer[GE](GeCode),
-    IntConstantSerializer,
-    TrueLeafSerializer,
-    FalseLeafSerializer
-  )
-
-  val table: Map[Value.PropositionCode, (DeserializingFn, SerializingFn[_ <: Value[_ <: SType]])] =
-    serializers.map(s => s.opCode -> (s.parseBody, s.serializeBody)).toMap
-
-  def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
-    val c = bytes(pos)
-    val (v, consumed) = table(c)._1(bytes, pos + 1)
-    v -> (consumed + 1)
-  }
-
-  def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
-
-  def serialize(v: Value[_]) = ???
-
-  println(deserialize(Array[Byte](21, 11, 0, 0, 0, 0, 0, 0, 0, 2,
-    11, 0, 0, 0, 0, 0, 0, 0, 3)))
-
-
-  println(deserialize(Array[Byte](21, 12, 13)))
-
-  import scala.reflect.runtime.universe.typeTag
-
-  val s: Value[SInt.type] = IntConstant(4)
-  println(typeTag[Value[SInt.type]])
-}
-
 
 trait Value[S <: SType] extends Product with Proposition {
-
-  type M = this.type
 
   def cost: Int
 
   def evaluated: Boolean
 
+  //todo: remove serialization
+  override type M = this.type
   override def serializer: SigmaSerializer[M] = ???
 
   //todo: remove after serialization, replace with just .bytes
   lazy val propBytes = this.toString.getBytes
 }
+
 
 object Value {
   type PropositionCode = Byte
@@ -121,16 +54,7 @@ case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val cost = 1
 }
 
-object IntConstantSerializer extends SigmaSerializer[IntConstant]{
-  override val opCode = 11
 
-  override def parseBody = {
-    case (bytes, pos) =>
-      IntConstant(Longs.fromByteArray(bytes.slice(pos, pos + 8))) -> 8
-  }
-
-  override def serializeBody = (c => Longs.toByteArray(c.value))
-}
 
 trait NotReadyValueInt extends NotReadyValue[SInt.type]
 
@@ -229,25 +153,13 @@ case object TrueLeaf extends BooleanConstant(true) {
   override def cost: Int = Cost.ConstantNode
 }
 
-object TrueLeafSerializer extends SigmaSerializer[TrueLeaf.type] {
-  override val opCode = SigmaSerializer.TrueCode
 
-  override def parseBody = {case (bytes, pos) => TrueLeaf -> 0}
-
-  override def serializeBody = {cc => ???}
-}
 
 case object FalseLeaf extends BooleanConstant(false) {
   override def cost: Int = Cost.ConstantNode
 }
 
-object FalseLeafSerializer extends SigmaSerializer[FalseLeaf.type] {
-  override val opCode = SigmaSerializer.FalseCode
 
-  override def parseBody = {case (bytes, pos) => FalseLeaf -> 0}
-
-  override def serializeBody = {cc => ???}
-}
 
 trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type]
 

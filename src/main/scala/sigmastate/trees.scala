@@ -9,6 +9,7 @@ import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommo
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import scorex.crypto.hash.Blake2b256
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
 
@@ -207,20 +208,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type], override 
 
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
 
-case class RelationSerializer[R <: Relation[_ <: SType, _<: SType]](override val opCode: Byte) extends
-  SigmaSerializer[R]{
 
-  import SigmaSerializer.deserialize
-
-  override def parseBody = {
-    case (bytes, pos) =>
-      val (firstArg, consumed) = deserialize(bytes, pos)
-      val (secondArg, consumed2) = deserialize(bytes, pos + consumed)
-      GE(firstArg.asInstanceOf[Value[SInt.type]], secondArg.asInstanceOf[Value[SInt.type]]) -> (consumed + consumed2)
-  }
-
-  override def serializeBody = {cc => ???}
-}
 
 
 case class LT(override val left: Value[SInt.type],
