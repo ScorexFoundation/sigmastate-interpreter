@@ -211,13 +211,19 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
 
 
 case class LT(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]{
+  override val opCode: OpCode = SigmaSerializer.LtCode
+}
 
 case class LE(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+  override val opCode: OpCode = SigmaSerializer.LeCode
+}
 
 case class GT(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+  override val opCode: OpCode = SigmaSerializer.GtCode
+}
 
 case class GE(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
@@ -225,10 +231,14 @@ case class GE(override val left: Value[SInt.type],
 }
 
 case class EQ[T1 <: SType, T2 <: SType](override val left: Value[T1],
-                                        override val right: Value[T2]) extends Relation[T1, T2]
+                                        override val right: Value[T2]) extends Relation[T1, T2] {
+  override val opCode: OpCode = SigmaSerializer.EqCode
+}
 
 case class NEQ[T1 <: SType, T2 <: SType](override val left: Value[T1],
-                                         override val right: Value[T2]) extends Relation[T1, T2]
+                                         override val right: Value[T2]) extends Relation[T1, T2] {
+  override val opCode: OpCode = SigmaSerializer.NeqCode
+}
 
 
 /**

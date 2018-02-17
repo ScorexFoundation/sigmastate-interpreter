@@ -5,7 +5,7 @@ import sigmastate._
 case class RelationSerializer[R <: Relation[_ <: SType, _<: SType]](override val opCode: Byte) extends
   SigmaSerializer[R]{
 
-  import SigmaSerializer.deserialize
+  import SigmaSerializer.{serialize, deserialize}
 
   override def parseBody = {
     case (bytes, pos) =>
@@ -14,5 +14,5 @@ case class RelationSerializer[R <: Relation[_ <: SType, _<: SType]](override val
       GE(firstArg.asInstanceOf[Value[SInt.type]], secondArg.asInstanceOf[Value[SInt.type]]) -> (consumed + consumed2)
   }
 
-  override def serializeBody = {cc => ???}
+  override def serializeBody = {rel => serialize(rel.left) ++ serialize(rel.right)}
 }

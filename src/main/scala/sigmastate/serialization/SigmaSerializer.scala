@@ -30,7 +30,15 @@ object SigmaSerializer extends App {
   type SerializingFn[V <: Value[_ <: SType]] = V => Array[Byte]
 
   val IntConstantCode = 11: Byte
-  val GeCode = 21: Byte
+
+  val LtCode = 21: Byte
+  val LeCode = 22: Byte
+  val GtCode = 23: Byte
+  val GeCode = 24: Byte
+  val EqCode = 25: Byte
+  val NeqCode = 26: Byte
+
+
   val TrueCode = 12: Byte
   val FalseCode = 13: Byte
 
@@ -41,7 +49,12 @@ object SigmaSerializer extends App {
   val ConcreteCollectionSerializer: SerializingFn[ConcreteCollection[_]] = {cc => ???}
 
   val serializers = Seq[SigmaSerializer[_ <: Value[_ <: SType]]](
+    RelationSerializer[GT](GtCode),
     RelationSerializer[GE](GeCode),
+    RelationSerializer[LT](LtCode),
+    RelationSerializer[LE](LeCode),
+    RelationSerializer[EQ[_ <: SType, _ <: SType]](EqCode),
+    RelationSerializer[NEQ[_ <: SType, _ <: SType]](NeqCode),
     IntConstantSerializer,
     TrueLeafSerializer,
     FalseLeafSerializer
@@ -70,9 +83,11 @@ object SigmaSerializer extends App {
 
   println(deserialize(Array[Byte](21, 12, 13)))
 
-
   val s: Value[SInt.type] = IntConstant(4)
   println(serialize(s))
 
   assert(deserialize(serialize(s)) == s)
+
+  val gt = GT(IntConstant(6), IntConstant(5))
+  assert(deserialize(serialize(gt)) == gt)
 }
