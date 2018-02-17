@@ -1,12 +1,14 @@
 package sigmastate
 
 import java.math.BigInteger
+
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.core.transaction.box.proposition.Proposition
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import sigmastate.SType.TypeCode
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
 import sigmastate.utxo.CostTable.Cost
@@ -202,9 +204,11 @@ case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends E
   val cost: Int = value.size
 }
 
-object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_ <: SCollection[_ <: SType]]]{
+object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_ <: SCollection[_ <: SType]]] {
 
   override val opCode: Byte = SigmaSerializer.ConcreteCollectionCode
+
+  override val typeCode: TypeCode = ???
 
   override def parseBody = {case (bytes, pos) => ???}
 

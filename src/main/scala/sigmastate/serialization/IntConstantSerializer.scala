@@ -1,10 +1,13 @@
 package sigmastate.serialization
 
 import com.google.common.primitives.Longs
-import sigmastate.IntConstant
+import sigmastate.{IntConstant, SInt}
+import sigmastate.SType.TypeCode
 
 object IntConstantSerializer extends SigmaSerializer[IntConstant] {
   override val opCode = SigmaSerializer.IntConstantCode
+
+  override val typeCode: TypeCode = SInt.typeCode
 
   override def parseBody = {
     case (bytes, pos) =>

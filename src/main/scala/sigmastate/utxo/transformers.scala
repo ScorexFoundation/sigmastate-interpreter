@@ -149,8 +149,6 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
   override def cost = 1
 }
 
-
-
 case class ExtractBox(input: Value[SBoxWithMetadata.type])
   extends Transformer[SBoxWithMetadata.type, SBox.type] with NotReadyValueBox {
 
