@@ -30,6 +30,7 @@ object SigmaSerializer extends App {
   type SerializingFn[V <: Value[_ <: SType]] = V => Array[Byte]
 
   val IntConstantCode = 11: Byte
+  val TaggedVariableCode = 1: Byte
 
   val LtCode = 21: Byte
   val LeCode = 22: Byte
@@ -54,7 +55,8 @@ object SigmaSerializer extends App {
     IntConstantSerializer,
     TrueLeafSerializer,
     FalseLeafSerializer,
-    ConcreteCollectionSerializer
+    ConcreteCollectionSerializer,
+    TaggedVariableSerializer
   )
 
   val table: Map[Value.PropositionCode, (DeserializingFn, SerializingFn[_ <: Value[_ <: SType]])] =
@@ -74,6 +76,8 @@ object SigmaSerializer extends App {
     val serFn = table(opCode)._2.asInstanceOf[SerializingFn[v.type]]
     opCode +: serFn(v)
   }
+
+  //todo: convert cases below into tests:
 
   println(deserialize(Array[Byte](21, 11, 0, 0, 0, 0, 0, 0, 0, 2,
     11, 0, 0, 0, 0, 0, 0, 0, 3)))
@@ -100,6 +104,11 @@ object SigmaSerializer extends App {
   val cc = ConcreteCollection(IndexedSeq(IntConstant(5), IntConstant(6), IntConstant(7)))
   assert(deserialize(serialize(cc)) == cc)
 
+  val tb = TaggedBox(21: Byte)
+  assert(deserialize(serialize(tb)) == tb)
+
+  val cc2 = ConcreteCollection(IndexedSeq(IntConstant(5), TaggedInt(21)))
+  assert(deserialize(serialize(cc2)) == cc2)
 }
 
 object Constraints {

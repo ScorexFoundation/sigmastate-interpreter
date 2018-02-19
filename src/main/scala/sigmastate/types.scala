@@ -8,7 +8,6 @@ import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
 
 
 
-
 sealed trait SType {
   type WrappedType
 
