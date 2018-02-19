@@ -118,5 +118,5 @@ object Constraints {
   def onlyInt2: Constraint2 = {case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode}
   def sameType2: Constraint2 = {case (tc1, tc2) => tc1 == tc2}
 
-  def sameTypeN: ConstraintN = {case tcs => tcs.tail.forall(_ == tcs.head)}
+  def sameTypeN: ConstraintN = {tcs => tcs.tail.forall(_ == tcs.head)}
 }
