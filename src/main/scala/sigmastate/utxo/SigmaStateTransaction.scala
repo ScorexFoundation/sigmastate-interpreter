@@ -35,11 +35,11 @@ import scala.util.Try
   */
 class SigmaStateBox(override val value: Long,
                          override val proposition: Value[SBoolean.type],
-                         additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map(),
+                         additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
                          nonce: Array[Byte] = Array.fill(32)(0:Byte)) extends Box[Value[SBoolean.type]] {
   import sigmastate.utxo.SigmaStateBox._
 
-  def get(identifier: RegisterIdentifier): Option[_ <: Value[_]] = {
+  def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {
       case R1 => Some(IntConstant(value))
       case R2 => Some(ByteArrayConstant(propositionBytes))
@@ -67,7 +67,7 @@ class SigmaStateBox(override val value: Long,
 object SigmaStateBox {
   def apply(value: Long,
             proposition: Value[SBoolean.type],
-            additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[_]] = Map(),
+            additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
             nonce: Array[Byte] = Array.fill(32)(0: Byte)
            ): SigmaStateBox =
     new SigmaStateBox(value, proposition, additionalRegisters, nonce)

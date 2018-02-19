@@ -8,13 +8,13 @@ import scorex.core.transaction.box.proposition.Proposition
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
-import sigmastate.SType.TypeCode
 import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.SigmaSerializer.OpCode
 import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
 import sigmastate.utxo.CostTable.Cost
 
 
-trait Value[S <: SType] extends Product with Proposition {
+trait Value[+S <: SType] extends Product with Proposition {
   val opCode: SigmaSerializer.OpCode = 0: Byte
 
   def cost: Int
@@ -152,12 +152,13 @@ object BooleanConstant {
 }
 
 case object TrueLeaf extends BooleanConstant(true) {
+  override val opCode: OpCode = SigmaSerializer.TrueCode
   override def cost: Int = Cost.ConstantNode
 }
 
 
-
 case object FalseLeaf extends BooleanConstant(false) {
+  override val opCode: OpCode = SigmaSerializer.FalseCode
   override def cost: Int = Cost.ConstantNode
 }
 
@@ -207,8 +208,6 @@ case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends E
 object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_ <: SCollection[_ <: SType]]] {
 
   override val opCode: Byte = SigmaSerializer.ConcreteCollectionCode
-
-  override val typeCode: TypeCode = ???
 
   override def parseBody = {case (bytes, pos) => ???}
 

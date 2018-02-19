@@ -8,8 +8,6 @@ import scala.util.Try
 trait SigmaSerializer[V <: Value[_ <: SType]] extends Serializer[V] {
   import SigmaSerializer._
 
-  val typeCode: SType.TypeCode
-
   val opCode: OpCode
 
   def parseBody: DeserializingFn
@@ -28,7 +26,7 @@ object SigmaSerializer extends App {
 
   type Position = Int
   type Consumed = Int
-  type DeserializingFn = (Array[Byte], Position) => (Value[_ <: SType], Consumed)
+  type DeserializingFn = (Array[Byte], Position) => (Value[_ <: SType], Consumed, SType.TypeCode)
   type SerializingFn[V <: Value[_ <: SType]] = V => Array[Byte]
 
   val IntConstantCode = 11: Byte
@@ -51,25 +49,25 @@ object SigmaSerializer extends App {
   val ConcreteCollectionSerializer: SerializingFn[ConcreteCollection[_]] = {cc => ???}
 
   val serializers = Seq[SigmaSerializer[_ <: Value[_ <: SType]]](
-    RelationSerializer[GT](GtCode),
-    RelationSerializer[GE](GeCode),
-    RelationSerializer[LT](LtCode),
-    RelationSerializer[LE](LeCode),
-    RelationSerializer[EQ[_ <: SType, _ <: SType]](EqCode),
-    RelationSerializer[NEQ[_ <: SType, _ <: SType]](NeqCode),
+    RelationSerializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
+    RelationSerializer(GeCode, GE.apply, Seq(Constraints.onlyInt2)),
+    RelationSerializer(LtCode, LT.apply, Seq(Constraints.onlyInt2)),
+    RelationSerializer(LeCode, LE.apply, Seq(Constraints.onlyInt2)),
+    RelationSerializer(EqCode, EQ.apply, Seq(Constraints.sameType2)),
+    RelationSerializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
     IntConstantSerializer,
     TrueLeafSerializer,
     FalseLeafSerializer
   )
 
-  val table: Map[Value.PropositionCode, (DeserializingFn, SerializingFn[_ <: Value[_ <: SType]], SType.TypeCode)] =
-    serializers.map(s => s.opCode -> (s.parseBody, s.serializeBody, s.typeCode)).toMap
+  val table: Map[Value.PropositionCode, (DeserializingFn, SerializingFn[_ <: Value[_ <: SType]])] =
+    serializers.map(s => s.opCode -> (s.parseBody, s.serializeBody)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed, SType.TypeCode) = {
     val c = bytes(pos)
     val handler = table(c)
-    val (v, consumed) = handler._1(bytes, pos + 1)
-    (v, consumed + 1, handler._3)
+    val (v, consumed, tc) = handler._1(bytes, pos + 1)
+    (v, consumed + 1, tc)
   }
 
   def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
@@ -88,8 +86,22 @@ object SigmaSerializer extends App {
 
   assert(deserialize(serialize(s)) == s)
 
+  assert(Try(deserialize(Array[Byte](21, 12, 13))).isFailure, "LT(bool, bool) must fail")
+
   val gt = GT(IntConstant(6), IntConstant(5))
   println(deserialize(serialize(gt)))
+  assert(deserialize(serialize(gt)) == gt)
 
-  println(deserialize(Array[Byte](21, 12, 13)))
+  val eq = EQ(TrueLeaf, FalseLeaf)
+  println(serialize(eq).mkString(","))
+  assert(deserialize(serialize(eq)) == eq)
+
+  val eq2 = EQ(TrueLeaf, IntConstant(5))
+}
+
+object Constraints {
+  type Contraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
+
+  def onlyInt2: Contraint2 = {case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode}
+  def sameType2: Contraint2 = {case (tc1, tc2) => tc1 == tc2}
 }

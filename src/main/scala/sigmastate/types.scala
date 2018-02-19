@@ -69,5 +69,9 @@ case object SBoxWithMetadata extends SType {
 case class  SCollection[ElemType <: SType]()(implicit val w: ElemType) extends SType {
   override type WrappedType = IndexedSeq[Value[ElemType]]
 
-  override val typeCode = (80 + w.typeCode).toByte
+  override val typeCode = (SCollection.Base + w.typeCode).toByte
+}
+
+object SCollection {
+  val Base = 80: Byte
 }
