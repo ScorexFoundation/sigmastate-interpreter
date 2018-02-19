@@ -230,9 +230,12 @@ case class GE(override val left: Value[SInt.type],
   override val opCode: OpCode = SigmaSerializer.GeCode
 }
 
-case class EQ(override val left: Value[SType],
-              override val right: Value[SType]) extends Relation[SType, SType] {
+case class EQ[S <: SType](override val left: Value[S], override val right: Value[S]) extends Relation[S, S] {
   override val opCode: OpCode = SigmaSerializer.EqCode
+}
+
+object EQ {
+  def applyNonTyped(left: Value[SType], right: Value[SType]): EQ[SType] = apply(left, right)
 }
 
 case class NEQ(override val left: Value[SType],

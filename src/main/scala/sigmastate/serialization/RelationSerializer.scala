@@ -6,7 +6,7 @@ import sigmastate._
 case class RelationSerializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
   (override val opCode: Byte,
    constructor: (Value[S1], Value[S2]) => R,
-   constraints: Seq[Constraints.Contraint2]) extends
+   constraints: Seq[Constraints.Constraint2]) extends
 
   SigmaSerializer[R]{
 

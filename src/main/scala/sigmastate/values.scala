@@ -2,6 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 
+import com.google.common.primitives.Chars
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.core.transaction.box.proposition.Proposition
@@ -202,16 +203,10 @@ case class TaggedBoxWithMetadata(override val id: Byte)
 
 
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
+  override val opCode = SigmaSerializer.ConcreteCollectionCode
   val cost: Int = value.size
 }
 
-object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_ <: SCollection[_ <: SType]]] {
 
-  override val opCode: Byte = SigmaSerializer.ConcreteCollectionCode
-
-  override def parseBody = {case (bytes, pos) => ???}
-
-  override def serializeBody = {cc => ???}
-}
 
 trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]

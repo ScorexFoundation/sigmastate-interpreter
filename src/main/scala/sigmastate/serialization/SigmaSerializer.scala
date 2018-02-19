@@ -42,22 +42,19 @@ object SigmaSerializer extends App {
   val TrueCode = 12: Byte
   val FalseCode = 13: Byte
 
-  val ConcreteCollectionCode = 25: Byte
-  val ConcreteCollectionDeserializer: DeserializingFn = {
-    case (bytes, pos) => ???
-  }
-  val ConcreteCollectionSerializer: SerializingFn[ConcreteCollection[_]] = {cc => ???}
+  val ConcreteCollectionCode = 35: Byte
 
   val serializers = Seq[SigmaSerializer[_ <: Value[_ <: SType]]](
     RelationSerializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
     RelationSerializer(GeCode, GE.apply, Seq(Constraints.onlyInt2)),
     RelationSerializer(LtCode, LT.apply, Seq(Constraints.onlyInt2)),
     RelationSerializer(LeCode, LE.apply, Seq(Constraints.onlyInt2)),
-    RelationSerializer(EqCode, EQ.apply, Seq(Constraints.sameType2)),
+    RelationSerializer(EqCode, EQ.applyNonTyped, Seq(Constraints.sameType2)),
     RelationSerializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
     IntConstantSerializer,
     TrueLeafSerializer,
-    FalseLeafSerializer
+    FalseLeafSerializer,
+    ConcreteCollectionSerializer
   )
 
   val table: Map[Value.PropositionCode, (DeserializingFn, SerializingFn[_ <: Value[_ <: SType]])] =
@@ -96,12 +93,21 @@ object SigmaSerializer extends App {
   println(serialize(eq).mkString(","))
   assert(deserialize(serialize(eq)) == eq)
 
+  //todo: make this expression does not compile?
   val eq2 = EQ(TrueLeaf, IntConstant(5))
+  
+  //concrete collection
+  val cc = ConcreteCollection(IndexedSeq(IntConstant(5), IntConstant(6), IntConstant(7)))
+  assert(deserialize(serialize(cc)) == cc)
+
 }
 
 object Constraints {
-  type Contraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
+  type Constraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
+  type ConstraintN = Seq[SType.TypeCode] => Boolean
 
-  def onlyInt2: Contraint2 = {case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode}
-  def sameType2: Contraint2 = {case (tc1, tc2) => tc1 == tc2}
+  def onlyInt2: Constraint2 = {case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode}
+  def sameType2: Constraint2 = {case (tc1, tc2) => tc1 == tc2}
+
+  def sameTypeN: ConstraintN = {case tcs => tcs.tail.forall(_ == tcs.head)}
 }
