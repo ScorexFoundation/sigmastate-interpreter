@@ -3,6 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
+import sigmastate.SType.TypeCode
 import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
 
 
@@ -69,9 +70,12 @@ case object SBoxWithMetadata extends SType {
 case class  SCollection[ElemType <: SType]()(implicit val w: ElemType) extends SType {
   override type WrappedType = IndexedSeq[Value[ElemType]]
 
-  override val typeCode = (SCollection.Base + w.typeCode).toByte
+  override val typeCode = SCollection.collectionOf(w.typeCode)
 }
 
 object SCollection {
   val Base = 80: Byte
+
+  //todo: SCollection[SCollection[]] is not possible!
+  def collectionOf(typeCode: TypeCode) = (Base + typeCode).toByte
 }

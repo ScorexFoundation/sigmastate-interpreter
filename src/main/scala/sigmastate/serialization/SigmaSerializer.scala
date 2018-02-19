@@ -95,7 +95,7 @@ object SigmaSerializer extends App {
 
   //todo: make this expression does not compile?
   val eq2 = EQ(TrueLeaf, IntConstant(5))
-  
+
   //concrete collection
   val cc = ConcreteCollection(IndexedSeq(IntConstant(5), IntConstant(6), IntConstant(7)))
   assert(deserialize(serialize(cc)) == cc)

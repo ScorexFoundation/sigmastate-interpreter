@@ -18,7 +18,7 @@ object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_
           (vs :+ v, c + consumed, ts :+ typeCode)
       }
       assert(Constraints.sameTypeN(types))
-      (ConcreteCollection(values.toIndexedSeq), consumed, types.head)
+      (ConcreteCollection(values.toIndexedSeq), consumed, SCollection.collectionOf(types.head))
   }
 
   override def serializeBody = { cc =>

@@ -2,7 +2,6 @@ package sigmastate
 
 import java.math.BigInteger
 
-import com.google.common.primitives.Chars
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import scorex.core.transaction.box.proposition.Proposition
