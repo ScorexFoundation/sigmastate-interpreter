@@ -9,7 +9,8 @@ import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommo
 import scorex.core.serialization.{BytesSerializable, Serializer}
 import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Value.PropositionCode
+import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.SigmaSerializer.OpCode
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
 
@@ -19,24 +20,10 @@ import scala.collection.mutable
 
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
-
-  override val code: PropositionCode = CAND.Code
-  override type M = this.type
-}
-
-object CAND {
-  val Code: PropositionCode = 101: Byte
 }
 
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
-
-  override val code: PropositionCode = COR.Code
-  override type M = this.type
-}
-
-object COR {
-  val Code: PropositionCode = 101: Byte
 }
 
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP]]
@@ -46,7 +33,6 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 //todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
 case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
-
 
   override def cost: Int = input match {
     case c: ConcreteCollection[SBoolean.type] =>
@@ -79,8 +65,6 @@ case class OR(input: Value[SCollection[SBoolean.type]])
         else OR(reduced)
     }
   }
-
-  override type M = this.type
 }
 
 
@@ -127,8 +111,6 @@ case class AND(input: Value[SCollection[SBoolean.type]])
         else AND(reduced)
     }
   }
-
-  override type M = this.type
 }
 
 object AND {
@@ -227,23 +209,39 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type], override 
 
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
 
+
 case class LT(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]{
+  override val opCode: OpCode = SigmaSerializer.LtCode
+}
 
 case class LE(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+  override val opCode: OpCode = SigmaSerializer.LeCode
+}
 
 case class GT(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+  override val opCode: OpCode = SigmaSerializer.GtCode
+}
 
 case class GE(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+  override val opCode: OpCode = SigmaSerializer.GeCode
+}
 
-case class EQ[T1 <: SType, T2 <: SType](override val left: Value[T1],
-                                        override val right: Value[T2]) extends Relation[T1, T2]
+case class EQ[S <: SType](override val left: Value[S], override val right: Value[S]) extends Relation[S, S] {
+  override val opCode: OpCode = SigmaSerializer.EqCode
+}
 
-case class NEQ[T1 <: SType, T2 <: SType](override val left: Value[T1],
-                                         override val right: Value[T2]) extends Relation[T1, T2]
+object EQ {
+  def applyNonTyped(left: Value[SType], right: Value[SType]): EQ[SType] = apply(left, right)
+}
+
+case class NEQ(override val left: Value[SType],
+                                         override val right: Value[SType]) extends Relation[SType, SType] {
+  override val opCode: OpCode = SigmaSerializer.NeqCode
+}
 
 
 /**
@@ -352,7 +350,6 @@ case object NoProof extends UncheckedTree
 
 sealed trait UncheckedSigmaTree[ST <: SigmaBoolean] extends UncheckedTree with BytesSerializable {
   val proposition: ST
-  val propCode: Value.PropositionCode
 }
 
 trait UncheckedConjecture[ST <: SigmaBoolean] extends UncheckedSigmaTree[ST] {
@@ -367,7 +364,6 @@ case class SchnorrNode(override val proposition: ProveDlog,
                        secondMessage: SecondDLogProverMessage)
   extends UncheckedSigmaTree[ProveDlog] {
 
-  override val propCode: Value.PropositionCode = ProveDlog.Code
   override type M = this.type
 
   override def serializer: Serializer[M] = ???
@@ -378,8 +374,6 @@ case class DiffieHellmanTupleUncheckedNode(override val proposition: ProveDiffie
                                            challenge: Array[Byte],
                                            secondMessage: SecondDiffieHellmanTupleProverMessage)
   extends UncheckedSigmaTree[ProveDiffieHellmanTuple] {
-
-  override val propCode: Value.PropositionCode = ProveDiffieHellmanTuple.Code
   override type M = DiffieHellmanTupleUncheckedNode
 
   override def serializer: Serializer[M] = ???
@@ -390,8 +384,6 @@ case class CAndUncheckedNode(override val proposition: CAND,
                              override val commitments: Seq[FirstProverMessage[_]],
                              leafs: Seq[ProofTree])
   extends UncheckedConjecture[CAND] {
-
-  override val propCode: PropositionCode = CAND.Code
   override type M = CAndUncheckedNode
 
   override def serializer: Serializer[M] = ???
@@ -402,8 +394,6 @@ case class COr2UncheckedNode(override val proposition: COR,
                              override val challengeOpt: Option[Array[Byte]],
                              override val commitments: Seq[FirstProverMessage[_]],
                              children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
-
-  override val propCode: PropositionCode = COR.Code
 
   override type M = COr2UncheckedNode
 

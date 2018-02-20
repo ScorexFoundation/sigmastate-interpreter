@@ -41,6 +41,4 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree
 
 case object Self extends NotReadyValueBoxWithMetadata {
   override def cost: Int = 10
-
-  override type M = this.type
 }

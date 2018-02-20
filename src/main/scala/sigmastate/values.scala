@@ -1,32 +1,36 @@
 package sigmastate
 
-
 import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
-import scorex.core.serialization.Serializer
 import scorex.core.transaction.box.proposition.Proposition
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import sigmastate.SType.TypeCode
+import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.SigmaSerializer.OpCode
 import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
 import sigmastate.utxo.CostTable.Cost
 
 
+trait Value[+S <: SType] extends Product with Proposition {
+  val opCode: SigmaSerializer.OpCode = 0: Byte
 
-trait Value[S <: SType] extends Product with Proposition {
   def cost: Int
 
   def evaluated: Boolean
 
-  override def serializer: Serializer[M] = ???
+  //todo: remove serialization
+  override type M = this.type
+
+  override def serializer: SigmaSerializer[M] = ???
 
   //todo: remove after serialization, replace with just .bytes
   lazy val propBytes = this.toString.getBytes
-
-  def code: Value.PropositionCode = ???
 }
+
 
 object Value {
   type PropositionCode = Byte
@@ -42,7 +46,10 @@ trait NotReadyValue[S <: SType] extends Value[S] {
 }
 
 trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
+  override val opCode: OpCode = SigmaSerializer.TaggedVariableCode
+
   val id: Byte
+  val typeCode: SType.TypeCode
 }
 
 
@@ -50,8 +57,10 @@ trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
 sealed trait IntLeaf extends Value[SInt.type]
 
 case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
+  override val opCode = SigmaSerializer.IntConstantCode
   override val cost = 1
 }
+
 
 trait NotReadyValueInt extends NotReadyValue[SInt.type]
 
@@ -61,6 +70,7 @@ case object UnknownInt extends NotReadyValueInt {
 
 case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt {
   override val cost = 1
+  override val typeCode: TypeCode = SInt.typeCode
 }
 
 
@@ -70,12 +80,13 @@ case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type
   override val cost = 1
 }
 
-trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type]{
+trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type] {
   override lazy val cost: Int = 1
 }
 
-case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt
-
+case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt {
+  override val typeCode: TypeCode = SBigInt.typeCode
+}
 
 
 case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
@@ -90,15 +101,16 @@ case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArr
 
 object EmptyByteArray extends ByteArrayConstant(Array.emptyByteArray)
 
-trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type]{
+trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type] {
   override lazy val cost: Int = Cost.ByteArrayDeclaration
 }
 
 case object UnknownByteArray extends NotReadyValueByteArray
 
 
-case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray
-
+case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray {
+  override val typeCode: TypeCode = SByteArray.typeCode
+}
 
 
 case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
@@ -119,8 +131,9 @@ trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
   override val cost = 50
 }
 
-case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.type] with NotReadyValueAvlTree
-
+case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.type] with NotReadyValueAvlTree {
+  override val typeCode: TypeCode = SAvlTree.typeCode
+}
 
 
 case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[SGroupElement.type] {
@@ -140,8 +153,9 @@ trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
 }
 
 case class TaggedGroupElement(override val id: Byte)
-  extends TaggedVariable[SGroupElement.type] with NotReadyValueGroupElement
-
+  extends TaggedVariable[SGroupElement.type] with NotReadyValueGroupElement {
+  override val typeCode: TypeCode = SGroupElement.typeCode
+}
 
 
 sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type]
@@ -151,23 +165,30 @@ object BooleanConstant {
 }
 
 case object TrueLeaf extends BooleanConstant(true) {
+  override val opCode: OpCode = SigmaSerializer.TrueCode
+
   override def cost: Int = Cost.ConstantNode
 }
 
+
 case object FalseLeaf extends BooleanConstant(false) {
+  override val opCode: OpCode = SigmaSerializer.FalseCode
+
   override def cost: Int = Cost.ConstantNode
 }
+
 
 trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type]
 
 case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.type] with NotReadyValueBoolean {
   override def cost = 1
+  override val typeCode: TypeCode = SBoolean.typeCode
 }
 
 /**
   * For sigma statements
   */
-trait SigmaBoolean extends NotReadyValue[SBoolean.type]{
+trait SigmaBoolean extends NotReadyValue[SBoolean.type] {
   override lazy val evaluated = true
 }
 
@@ -180,7 +201,9 @@ trait NotReadyValueBox extends NotReadyValue[SBox.type] {
   override def cost: Int = 10
 }
 
-case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox
+case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox {
+  override val typeCode: TypeCode = SBox.typeCode
+}
 
 
 case class BoxWithMetadataConstant(value: BoxWithMetadata) extends EvaluatedValue[SBoxWithMetadata.type] {
@@ -192,11 +215,16 @@ trait NotReadyValueBoxWithMetadata extends NotReadyValue[SBoxWithMetadata.type] 
 }
 
 case class TaggedBoxWithMetadata(override val id: Byte)
-  extends TaggedVariable[SBoxWithMetadata.type] with NotReadyValueBoxWithMetadata
+  extends TaggedVariable[SBoxWithMetadata.type] with NotReadyValueBoxWithMetadata {
+
+  override val typeCode: TypeCode = SBoxWithMetadata.typeCode
+}
 
 
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {
+  override val opCode = SigmaSerializer.ConcreteCollectionCode
   val cost: Int = value.size
 }
+
 
 trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
