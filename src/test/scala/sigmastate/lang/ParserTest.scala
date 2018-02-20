@@ -39,7 +39,7 @@ class ParserTest extends PropSpec with PropertyChecks with Matchers {
 
     parse("(let X = 10; 3 > 2)") shouldBe Block(Some(LET("X", IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
     parse("(let X = 3 + 2; 3 > 2)") shouldBe Block(Some(LET("X", Plus(IntConstant(3), IntConstant(2)))), GT(IntConstant(3), IntConstant(2)))
-    parse("(let X = if(true) then true else false; false)") shouldBe Block(Some(LET("X", IF(TrueLeaf, TrueLeaf, FalseLeaf))), FalseLeaf)
+    parse("(let X = if(true) then true else false; false)") shouldBe Block(Some(LET("X", If(TrueLeaf, TrueLeaf, FalseLeaf))), FalseLeaf)
 
     val expr = parse(
       """let X = 10;
@@ -82,16 +82,16 @@ X > Y
   }
 
   property("if") {
-    parse("if(true) then 1 else 2") shouldBe IF(TrueLeaf, IntConstant(1), IntConstant(2))
-    parse("if(true) then 1 else if(X==Y) then 2 else 3") shouldBe IF(TrueLeaf, IntConstant(1), IF(EQ(REF("X"), REF("Y")), IntConstant(2), IntConstant(3)))
+    parse("if(true) then 1 else 2") shouldBe If(TrueLeaf, IntConstant(1), IntConstant(2))
+    parse("if(true) then 1 else if(X==Y) then 2 else 3") shouldBe If(TrueLeaf, IntConstant(1), If(EQ(REF("X"), REF("Y")), IntConstant(2), IntConstant(3)))
     parse(
       """if ( true )
         |then 1
         |else if(X== Y)
         |     then 2
-        |       else 3""".stripMargin) shouldBe IF(TrueLeaf, IntConstant(1), IF(EQ(REF("X"), REF("Y")), IntConstant(2), IntConstant(3)))
+        |       else 3""".stripMargin) shouldBe If(TrueLeaf, IntConstant(1), If(EQ(REF("X"), REF("Y")), IntConstant(2), IntConstant(3)))
 
-    parse("if (true) then false else false==false") shouldBe IF(TrueLeaf, FalseLeaf, EQ(FalseLeaf, FalseLeaf))
+    parse("if (true) then false else false==false") shouldBe If(TrueLeaf, FalseLeaf, EQ(FalseLeaf, FalseLeaf))
 
     parse(
       """if
@@ -99,10 +99,10 @@ X > Y
              (true)
         |then let A = 10;
         |  1
-        |else if ( X == Y) then 2 else 3""".stripMargin) shouldBe IF(
-      Block(None, TrueLeaf),
-      Block(None, Block(Some(LET("A", Block(None, IntConstant(10)))), IntConstant(1))),
-      Block(None, IF(Block(None, EQ(REF("X"), REF("Y"))), Block(None, IntConstant(2)), Block(None, IntConstant(3))))
+        |else if ( X == Y) then 2 else 3""".stripMargin) shouldBe If(
+      TrueLeaf,
+      Block(Some(LET("A", Block(None, IntConstant(10)))), IntConstant(1)),
+      If(EQ(REF("X"), REF("Y")), IntConstant(2), IntConstant(3))
     )
 
   }

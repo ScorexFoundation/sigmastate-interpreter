@@ -33,7 +33,10 @@ object Parser {
   private def curlyBracesP: P[Value[SType]]    = P("{" ~ block ~ "}")
   private def letP: P[LET]             = P("let " ~ varName ~ "=" ~ block).map { case ((x, y)) => LET(x, y) }
   private def refP: P[REF]             = P(varName).map(x => REF(x))
-  private def ifP: P[IF]               = P("if" ~ "(" ~ block ~ ")" ~ "then" ~ block ~ "else" ~ block).map { case (x, y, z) => IF(x, y, z) }
+
+  private def ifP: P[If[SType]]        = P("if" ~ "(" ~ block ~ ")" ~ "then" ~ block ~ "else" ~ block)
+    .map { case (x, y, z) => If(x.asValue[SBoolean.type], y, z) }
+    
   private def getterP: P[GETTER] = P(refP ~ "." ~ varName).map { case ((b, f)) => GETTER(b, f) }
   private def block: P[Value[SType]] = P("\n".rep ~ letP.rep ~ expr ~ ";".rep).map {
     case ((Nil, y)) => y

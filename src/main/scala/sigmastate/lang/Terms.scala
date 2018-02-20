@@ -43,11 +43,6 @@ object Terms {
     override def evaluated: Boolean = ???
   }
 
-  case class IF(cond: Block, ifTrue: Block, ifFalse: Block) extends Value[SType] {
-    override def cost: Int = ???
-    override def evaluated: Boolean = ???
-  }
-
 //  case class SIG_VERIFY(message: Block, signature: Block, publicKey: Block) extends Expr { val predefinedType: Option[Type] = Some(BOOLEAN)         }
 //  case class IS_DEFINED(t: Block)                                           extends Expr { val predefinedType: Option[Type] = Some(BOOLEAN)         }
 //  case class GET(t: Block)                                                  extends Expr { val predefinedType: Option[Type] = None                  }
@@ -59,4 +54,7 @@ object Terms {
   def typed[A <: SType,B <: SType](a: UValue, b: UValue)(f: (Value[A],Value[B]) => UValue): UValue =
     f(a.asInstanceOf[Value[A]], b.asInstanceOf[Value[B]])
 
+  implicit class ValueOps(v: Value[SType]) {
+    def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
+  }
 }
