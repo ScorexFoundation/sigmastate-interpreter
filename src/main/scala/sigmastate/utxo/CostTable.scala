@@ -14,7 +14,7 @@ object CostTable {
 
     val HeightAccess = 1
 
-    //cost fo CustomByteArray declaration. Additional cost to be calculated when data is known
+    //cost for CustomByteArray declaration. Additional cost to be calculated when data is known
     //(and CustomByteArray being converted to ByteArrayLeaf)
     val ByteArrayDeclaration = 1
 
