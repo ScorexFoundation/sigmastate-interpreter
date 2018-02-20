@@ -158,6 +158,14 @@ case class CalcBlake2b256(input: Value[SByteArray.type])
   override lazy val cost: Int = input.cost + Cost.Blake256bDeclaration
 }
 
+case class Not(input: Value[SBoolean.type])
+  extends Transformer[SBoolean.type, SBoolean.type] with NotReadyValueBoolean {
+
+  override def function(bal: EvaluatedValue[SBoolean.type]): Value[SBoolean.type] =
+    BooleanConstant.fromBoolean(!bal.value)
+
+  override lazy val cost: Int = input.cost + 1 //todo: externalize cost
+}
 
 
 
@@ -271,6 +279,14 @@ case class IsMember(tree: Value[SAvlTree.type],
   override lazy val third = proof
 }
 
+
+case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T], falseBranch: Value[T])
+  extends Quadruple[SBoolean.type, T, T, T] {
+
+  override lazy val first = condition
+  override lazy val second = trueBranch
+  override lazy val third = falseBranch
+}
 
 
 
