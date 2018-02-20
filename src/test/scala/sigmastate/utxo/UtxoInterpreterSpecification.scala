@@ -1,8 +1,6 @@
 package sigmastate.utxo
 
-import java.security.SecureRandom
-
-import com.google.common.primitives.{Bytes, Longs}
+import com.google.common.primitives.Bytes
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scapi.sigma.DLogProtocol.ProveDlog
@@ -1294,6 +1292,45 @@ class UtxoInterpreterSpecification extends PropSpec
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
 
+    //todo: check failing branches
+  }
+
+  property("Not / If"){
+    val prover = new UtxoProvingInterpreter
+    val verifier = new UtxoInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val preimage = "hello world".getBytes("UTF-8")
+    val preimageWrong = "wrong".getBytes("UTF-8")
+
+    val hash = Blake2b256.hash(preimage)
+
+    val prop = EQ(ByteArrayConstant(hash),
+                  CalcBlake2b256(
+                    If(Not(GT(ExtractAmount(ExtractBox(ByIndex(Inputs, 0))), IntConstant(10))),
+                      ExtractRegisterAs[SByteArray.type](ExtractBox(ByIndex(Inputs, 1)), R3),
+                      ExtractRegisterAs[SByteArray.type](ExtractBox(ByIndex(Inputs, 2)), R3))))
+
+    val input0 = BoxWithMetadata(SigmaStateBox(10, pubkey, Map()), BoxMetadata(5))
+    val input1 = BoxWithMetadata(SigmaStateBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimage))), BoxMetadata(5))
+    val input2 = BoxWithMetadata(SigmaStateBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimageWrong))), BoxMetadata(5))
+    val input3 = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5))
+
+    val output = BoxWithMetadata(SigmaStateBox(22, pubkey, Map()), BoxMetadata(5))
+
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), IndexedSeq(output.box))
+
+    val ctx = UtxoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(input0, input1, input2, input3),
+      spendingTransaction,
+      self = input3)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    
     //todo: check failing branches
   }
 }
