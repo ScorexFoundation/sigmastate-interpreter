@@ -8,7 +8,7 @@ import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate._
-import BoxHelpers.boxWithMetadata
+import BoxHelpers.createBox
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
@@ -89,7 +89,6 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 
     val outputToSpend = SigmaStateBox(10, crowdFundingScript)
-    val outputWithMetadata = BoxWithMetadata(outputToSpend, BoxMetadata(0))
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
 
@@ -104,7 +103,7 @@ class UtxoInterpreterSpecification extends PropSpec
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = outputWithMetadata)
+      self = outputToSpend)
 
     //project is generating a proof and it is passing verification
     val proofP = projectProver.prove(crowdFundingScript, ctx1, fakeMessage).get.proof
@@ -125,7 +124,7 @@ class UtxoInterpreterSpecification extends PropSpec
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx2,
-      self = outputWithMetadata)
+      self = outputToSpend)
 
     //project cant' generate a proof
     val proofP2Try = projectProver.prove(crowdFundingScript, ctx2, fakeMessage)
@@ -147,7 +146,7 @@ class UtxoInterpreterSpecification extends PropSpec
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx3,
-      self = outputWithMetadata)
+      self = outputToSpend)
 
     //project cant' generate a proof
     projectProver.prove(crowdFundingScript, ctx3, fakeMessage).isFailure shouldBe true
@@ -200,18 +199,19 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val outHeight = 100
     val outValue = 10
+    val curHeight = outHeight + demurragePeriod
 
     //case 1: demurrage time hasn't come yet
     val tx1 = SigmaStateTransaction(
       IndexedSeq(),
-      IndexedSeq(SigmaStateBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight)))))
+      IndexedSeq(SigmaStateBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
     val ctx1 = UtxoContext(
       currentHeight = outHeight + demurragePeriod - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = boxWithMetadata(outValue, script, outHeight))
+      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
     //user can spend all the money
     val uProof1 = userProver.prove(script, ctx1, fakeMessage).get.proof
@@ -226,45 +226,49 @@ class UtxoInterpreterSpecification extends PropSpec
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = boxWithMetadata(outValue, script, outHeight))
+      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
     //user can spend all the money
     val uProof2 = userProver.prove(script, ctx1, fakeMessage).get.proof
     verifier.verify(script, ctx2, uProof2, fakeMessage).get shouldBe true
 
     //miner can spend "demurrageCost" tokens
-    val tx3 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(SigmaStateBox(outValue - demurrageCost, script)))
+    val tx3 = SigmaStateTransaction(IndexedSeq(),
+      IndexedSeq(SigmaStateBox(outValue - demurrageCost, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
     val ctx3 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx3,
-      self = boxWithMetadata(outValue, script, outHeight))
+      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
 
-    assert(ctx3.spendingTransaction.newBoxes.head.propositionBytes sameElements ctx3.self.box.propositionBytes)
+    assert(ctx3.spendingTransaction.newBoxes.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
     verifier.verify(script, ctx3, NoProof, fakeMessage).get shouldBe true
 
     //miner can't spend more
-    val tx4 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(SigmaStateBox(outValue - demurrageCost - 1, script)))
+    val tx4 = SigmaStateTransaction(IndexedSeq(),
+      IndexedSeq(SigmaStateBox(outValue - demurrageCost - 1, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
     val ctx4 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx4,
-      self = boxWithMetadata(outValue, script, outHeight))
+      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
     verifier.verify(script, ctx4, NoProof, fakeMessage).get shouldBe false
 
     //miner can spend less
-    val tx5 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(SigmaStateBox(outValue - demurrageCost + 1, script)))
+    val tx5 = SigmaStateTransaction(IndexedSeq(),
+      IndexedSeq(SigmaStateBox(outValue - demurrageCost + 1, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+
     val ctx5 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx5,
-      self = boxWithMetadata(outValue, script, outHeight))
+      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
     verifier.verify(script, ctx5, NoProof, fakeMessage).get shouldBe true
   }
@@ -996,7 +1000,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(21, pubkey), BoxMetadata(0L))
+    val s = SigmaStateBox(21, pubkey)
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1104,7 +1108,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5))), BoxMetadata(5))
+    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1133,7 +1137,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5))), BoxMetadata(5))
+    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1174,7 +1178,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData))), BoxMetadata(5))
+    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData)))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1215,9 +1219,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(
-      SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key))),
-      BoxMetadata(5))
+    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key)))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1244,7 +1246,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    val s = BoxWithMetadata(SigmaStateBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value)), BoxMetadata(5))
+    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
 
 
     val ctx = UtxoContext(
@@ -1270,7 +1272,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey1 = prover.dlogSecrets.head.publicImage
     val pubkey2 = prover.dlogSecrets(1).publicImage
 
-    val brother = BoxWithMetadata(SigmaStateBox(10, pubkey1, Map()), BoxMetadata(5))
+    val brother = SigmaStateBox(10, pubkey1)
 
     val newBox = SigmaStateBox(20, pubkey2)
 
@@ -1280,9 +1282,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
-      EQ(ExtractId(ExtractBox(ByIndex(Inputs, 0))), ByteArrayConstant(brother.box.id)))
+      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(brother.id)))
 
-    val s = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5))
+    val s = SigmaStateBox(10, prop, Map())
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1310,18 +1312,18 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = EQ(ByteArrayConstant(hash),
                   CalcBlake2b256(
-                    If(Not(GT(ExtractAmount(ExtractBox(ByIndex(Inputs, 0))), IntConstant(10))),
-                      ExtractRegisterAs[SByteArray.type](ExtractBox(ByIndex(Inputs, 1)), R3),
-                      ExtractRegisterAs[SByteArray.type](ExtractBox(ByIndex(Inputs, 2)), R3))))
+                    If(Not(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10))),
+                      ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 1), R3),
+                      ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3))))
 
-    val input0 = BoxWithMetadata(SigmaStateBox(10, pubkey, Map()), BoxMetadata(5))
-    val input1 = BoxWithMetadata(SigmaStateBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimage))), BoxMetadata(5))
-    val input2 = BoxWithMetadata(SigmaStateBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimageWrong))), BoxMetadata(5))
-    val input3 = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5))
+    val input0 = SigmaStateBox(10, pubkey, Map())
+    val input1 = SigmaStateBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimage)))
+    val input2 = SigmaStateBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimageWrong)))
+    val input3 = SigmaStateBox(10, prop, Map())
 
-    val output = BoxWithMetadata(SigmaStateBox(22, pubkey, Map()), BoxMetadata(5))
+    val output = SigmaStateBox(22, pubkey, Map())
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), IndexedSeq(output.box))
+    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), IndexedSeq(output))
 
     val ctx = UtxoContext(
       currentHeight = 50,

@@ -20,7 +20,6 @@ object TaggedVariableSerializer extends SigmaSerializer[TaggedVariable[_ <: STyp
       case b: Byte if b == SAvlTree.typeCode => TaggedAvlTree(id)
       case b: Byte if b == SGroupElement.typeCode => TaggedGroupElement(id)
       case b: Byte if b == SBox.typeCode => TaggedBox(id)
-      case b: Byte if b == SBoxWithMetadata.typeCode => TaggedBoxWithMetadata(id)
     }, consumed, tc)
   }
 

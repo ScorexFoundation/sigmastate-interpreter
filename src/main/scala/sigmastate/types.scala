@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.SType.TypeCode
-import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
+import sigmastate.utxo.SigmaStateBox
 
 
 
@@ -58,12 +58,6 @@ case object SBox extends SType {
   override type WrappedType = SigmaStateBox
 
   override val typeCode: Byte = 7: Byte
-}
-
-case object SBoxWithMetadata extends SType {
-  override type WrappedType = BoxWithMetadata
-
-  override val typeCode: Byte = 8: Byte
 }
 
 case class  SCollection[ElemType <: SType]()(implicit val w: ElemType) extends SType {

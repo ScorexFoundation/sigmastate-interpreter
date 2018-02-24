@@ -139,14 +139,14 @@ class OracleExamplesSpecification extends PropSpec
 
     val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp)
 
-    val sAlice = BoxWithMetadata(SigmaStateBox(10, propAlice, Map()), BoxMetadata(5))
+    val sAlice = SigmaStateBox(10, propAlice, Map())
 
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
-      EQ(ExtractId(ExtractBox(ByIndex(Inputs,0))), ByteArrayConstant(sAlice.box.id)))
+      EQ(ExtractId(ByIndex(Inputs,0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
-    val sBob = BoxWithMetadata(SigmaStateBox(10, propBob, Map()), BoxMetadata(5))
+    val sBob = SigmaStateBox(10, propBob, Map())
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -204,17 +204,17 @@ class OracleExamplesSpecification extends PropSpec
       additionalRegisters = Map(R3 -> IntConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs(ExtractBox(ByIndex(Inputs,0)), R3), IntConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs(ExtractBox(ByIndex(Inputs,0)), R3), IntConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs(ByIndex(Inputs,0), R3), IntConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs(ByIndex(Inputs,0), R3), IntConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
-      EQ(ExtractScriptBytes(ExtractBox(ByIndex(Inputs,0))), ByteArrayConstant(oraclePubKey.propBytes)),
+      EQ(ExtractScriptBytes(ByIndex(Inputs,0)), ByteArrayConstant(oraclePubKey.propBytes)),
       contractLogic
     )
 
-    val sOracle = BoxWithMetadata(oracleBox, BoxMetadata(5))
-    val sAlice = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5))
-    val sBob = BoxWithMetadata(SigmaStateBox(10, prop, Map()), BoxMetadata(5))
+    val sOracle = oracleBox
+    val sAlice = SigmaStateBox(10, prop, Map())
+    val sBob = SigmaStateBox(10, prop, Map())
 
     val newBox1 = SigmaStateBox(20, alicePubKey)
     val newBoxes = IndexedSeq(newBox1)

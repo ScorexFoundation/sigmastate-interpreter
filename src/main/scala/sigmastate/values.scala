@@ -11,7 +11,7 @@ import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
 import sigmastate.SType.TypeCode
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.SigmaSerializer.OpCode
-import sigmastate.utxo.{BoxWithMetadata, SigmaStateBox}
+import sigmastate.utxo.SigmaStateBox
 import sigmastate.utxo.CostTable.Cost
 
 
@@ -206,19 +206,6 @@ case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] wi
 }
 
 
-case class BoxWithMetadataConstant(value: BoxWithMetadata) extends EvaluatedValue[SBoxWithMetadata.type] {
-  override def cost: Int = 10
-}
-
-trait NotReadyValueBoxWithMetadata extends NotReadyValue[SBoxWithMetadata.type] {
-  override def cost: Int = 10
-}
-
-case class TaggedBoxWithMetadata(override val id: Byte)
-  extends TaggedVariable[SBoxWithMetadata.type] with NotReadyValueBoxWithMetadata {
-
-  override val typeCode: TypeCode = SBoxWithMetadata.typeCode
-}
 
 
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]]) extends EvaluatedValue[SCollection[V]] {

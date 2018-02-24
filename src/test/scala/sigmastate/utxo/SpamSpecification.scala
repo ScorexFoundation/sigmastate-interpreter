@@ -6,7 +6,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe}
 import scorex.utils.Random
 import sigmastate._
-import BoxHelpers.boxWithMetadata
+import BoxHelpers.createBox
 
 
 /**
@@ -17,7 +17,7 @@ class SpamSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
-  private val fakeSelf = boxWithMetadata(0, TrueLeaf)
+  private val fakeSelf = createBox(0, TrueLeaf)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   private val message = Blake2b256("Hello World")
@@ -140,7 +140,7 @@ class SpamSpecification extends PropSpec
         val txOutputs = ((1 to outCnt) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
         val tx = SigmaStateTransaction(IndexedSeq(), txOutputs)
 
-        val ctx = UtxoContext.dummy(boxWithMetadata(0, propToCompare)).copy(spendingTransaction = tx)
+        val ctx = UtxoContext.dummy(createBox(0, propToCompare)).copy(spendingTransaction = tx)
 
         val pt0 = System.currentTimeMillis()
         val proof = prover.prove(spamScript, ctx, message).get
@@ -158,7 +158,7 @@ class SpamSpecification extends PropSpec
     val prover = new UtxoProvingInterpreter(maxCost = Int.MaxValue)
 
     val prop = Exists(Inputs, 21, Exists(Outputs, 22,
-      EQ(ExtractScriptBytes(ExtractBox(TaggedBoxWithMetadata(21))), ExtractScriptBytes(TaggedBox(22)))))
+      EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
 
     val inputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
     val outputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(6))))
@@ -170,9 +170,9 @@ class SpamSpecification extends PropSpec
 
     val ctx = new UtxoContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = inputs.map(b => BoxWithMetadata(b, BoxMetadata(0))),
+      boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = BoxWithMetadata(SigmaStateBox(11, prop), BoxMetadata(0)))
+      self = SigmaStateBox(11, prop))
 
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(prop, ctx, message).get

@@ -149,24 +149,6 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
   override def cost = 1
 }
 
-case class ExtractBox(input: Value[SBoxWithMetadata.type])
-  extends Transformer[SBoxWithMetadata.type, SBox.type] with NotReadyValueBox {
-
-  override lazy val cost: Int = 10
-
-  override def function(box: EvaluatedValue[SBoxWithMetadata.type]): Value[SBox.type] =
-    BoxConstant(box.value.box)
-}
-
-case class ExtractHeight(input: Value[SBoxWithMetadata.type])
-  extends Transformer[SBoxWithMetadata.type, SInt.type] with NotReadyValueInt {
-
-  override lazy val cost: Int = 10
-
-  override def function(box: EvaluatedValue[SBoxWithMetadata.type]): Value[SInt.type] =
-    IntConstant(box.value.metadata.creationHeight)
-}
-
 
 
 sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
