@@ -39,6 +39,6 @@ case object Outputs extends LazyCollection[SBox.type] {
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree
 
 
-case object Self extends NotReadyValueBoxWithMetadata {
+case object Self extends NotReadyValueBox {
   override def cost: Int = 10
 }

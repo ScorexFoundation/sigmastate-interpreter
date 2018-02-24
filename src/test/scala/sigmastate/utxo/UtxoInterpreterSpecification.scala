@@ -166,8 +166,12 @@ class UtxoInterpreterSpecification extends PropSpec
     * after "demurrage_period" blocks since output creation. If the user is relocating the money from the output before
     * that height, the miner can charge according to output lifetime.
     *
+    * We assume that it is enforced by a consensus protocol to store height when an input got into a block in the
+    * register R3 (if the transaction is not included into the blockchain yet, then R3 contains the current height of
+    * the blockchain).
+    *
     * (regular_script) ∨
-    * (height > (out.height + demurrage_period ) ∧ has_output(value >= out.value − demurrage_cost, script = out.script))
+    * (height > (self.R3 + demurrage_period ) ∧ has_output(value >= self.value − demurrage_cost, script = self.script))
     */
   property("Evaluation - Demurrage Example") {
     val demurragePeriod = 100
@@ -184,11 +188,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val script = OR(
       regScript,
       AND(
-        GE(Height, Plus(ExtractHeight(Self), IntConstant(demurragePeriod))),
+        GE(Height, Plus(ExtractRegisterAs[SInt.type](Self, R3), IntConstant(demurragePeriod))),
         Exists(Outputs, 21,
           AND(
-            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(ExtractBox(Self)), IntConstant(demurrageCost))),
-            EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(ExtractBox(Self)))
+            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), IntConstant(demurrageCost))),
+            EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self))
           )
         )
       )
@@ -198,7 +202,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val outValue = 10
 
     //case 1: demurrage time hasn't come yet
-    val tx1 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(SigmaStateBox(outValue, script)))
+    val tx1 = SigmaStateTransaction(
+      IndexedSeq(),
+      IndexedSeq(SigmaStateBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight)))))
 
     val ctx1 = UtxoContext(
       currentHeight = outHeight + demurragePeriod - 1,
@@ -1090,7 +1096,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3),
-      Plus(ExtractRegisterAs(ExtractBox(Self), R3), IntConstant(1))))
+      Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(3)))
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(6)))
@@ -1119,7 +1125,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = Exists(Outputs, 21,
       EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntConstant(0L))),
-        Plus(ExtractRegisterAs(ExtractBox(Self), R3), IntConstant(1))))
+        Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(6)))
@@ -1159,7 +1165,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val treeData = new AvlTreeData(digest, 32, None)
 
-    val prop = IsMember(ExtractRegisterAs(ExtractBox(Self), R3),
+    val prop = IsMember(ExtractRegisterAs(Self, R3),
       ByteArrayConstant(key),
       ByteArrayConstant(proof))
 
@@ -1202,9 +1208,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = IsMember(ExtractRegisterAs(ExtractBox(Self), R3),
-      ExtractRegisterAs(ExtractBox(Self), R4),
-      TaggedByteArray(proofId))
+    val prop = IsMember(ExtractRegisterAs(Self, R3), ExtractRegisterAs(Self, R4), TaggedByteArray(proofId))
 
     val newBox1 = SigmaStateBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
@@ -1234,9 +1238,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey2 = prover.dlogSecrets(1).publicImage
     val pubkey3 = prover.dlogSecrets(2).publicImage
 
-    val prop = AND(new ProveDlog(ExtractRegisterAs(ExtractBox(Self), R3)),
-                    new ProveDlog(ExtractRegisterAs(ExtractBox(Self), R4)))
-
+    val prop = AND(new ProveDlog(ExtractRegisterAs(Self, R3)), new ProveDlog(ExtractRegisterAs(Self, R4)))
 
     val newBox1 = SigmaStateBox(10, pubkey3)
     val newBoxes = IndexedSeq(newBox1)
@@ -1330,7 +1332,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
-    
+
     //todo: check failing branches
   }
 }
