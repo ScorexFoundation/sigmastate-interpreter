@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
-import scorex.core.serialization.Serializer
 import sigmastate._
+import sigmastate.utxo.Serializer
 
 import scala.util.Try
 

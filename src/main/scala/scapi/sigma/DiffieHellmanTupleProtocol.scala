@@ -7,8 +7,6 @@ import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupEle
 import org.bouncycastle.util.BigIntegers
 import scapi.sigma.DLogProtocol._
 import scapi.sigma.rework._
-import scorex.core.serialization.Serializer
-import scorex.core.transaction.state.SecretCompanion
 import sigmastate._
 import sigmastate.Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
@@ -20,18 +18,9 @@ trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtoco
 
 case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDiffieHellmanTuple)
                                         (implicit val dlogGroup: DlogGroup, soundness: Int)
-  extends SigmaProtocolPrivateInput[DiffieHellmanTupleProtocol] {
-
-  override type S = DiffieHellmanTupleProverInput
-  override type PK = ProveDiffieHellmanTuple
-
-  override def companion: SecretCompanion[DiffieHellmanTupleProverInput] = ???
+  extends SigmaProtocolPrivateInput[DiffieHellmanTupleProtocol, ProveDiffieHellmanTuple] {
 
   override lazy val publicImage: ProveDiffieHellmanTuple = commonInput
-
-  override type M = DiffieHellmanTupleProverInput
-
-  override def serializer: Serializer[DiffieHellmanTupleProverInput] = ???
 }
 
 object DiffieHellmanTupleProverInput {

@@ -5,7 +5,6 @@ import java.security.SecureRandom
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocolMsg
 import edu.biu.scapi.primitives.dlog.DlogGroup
-import scorex.core.transaction.state.Secret
 import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
 
 import scala.concurrent.Future
@@ -50,7 +49,9 @@ trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] {
   val soundness: Int
 }
 
-trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP]] extends Secret
+trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] {
+  def publicImage: CI
+}
 
 /**
   * common interface for both Prover and Verifier
@@ -79,12 +80,12 @@ object ActorParty {
 
 trait Prover[SP <: SigmaProtocol[SP],
 CI <: SigmaProtocolCommonInput[SP],
-PI <: SigmaProtocolPrivateInput[SP]] extends Party[SP, CI] {
+PI <: SigmaProtocolPrivateInput[SP, CI]] extends Party[SP, CI] {
   val privateInputOpt: Option[PI]
 }
 
 
-trait InteractiveProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP], PI <: SigmaProtocolPrivateInput[SP]]
+trait InteractiveProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP], PI <: SigmaProtocolPrivateInput[SP, CI]]
   extends Prover[SP, CI, PI] with InteractiveParty {
 
   def firstMessage: SP#A
@@ -95,7 +96,7 @@ trait InteractiveProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[
 
 //todo: test
 //todo: timeout?
-trait ActorProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP], PI <: SigmaProtocolPrivateInput[SP]]
+trait ActorProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP], PI <: SigmaProtocolPrivateInput[SP, CI]]
   extends InteractiveProver[SP, CI, PI] with ActorParty {
 
   import ActorParty._
@@ -150,7 +151,7 @@ trait SimulatingProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[S
 trait ZeroKnowledgeProofOfKnowledge[SP <: SigmaProtocol[SP]]
 
 trait NonInteractiveProver[SP <: SigmaProtocol[SP],
-  PI <: SigmaProtocolPrivateInput[SP],
+  PI <: SigmaProtocolPrivateInput[SP, CI],
   CI <: SigmaProofOfKnowledgeTree[SP, PI],
   P <: UncheckedTree]
   extends Prover[SP, CI, PI] {

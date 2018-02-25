@@ -7,8 +7,6 @@ import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
 import scapi.sigma.rework._
-import scorex.core.serialization.Serializer
-import scorex.core.transaction.state.SecretCompanion
 import sigmastate.Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
@@ -16,8 +14,9 @@ import sigmastate._
 import scala.concurrent.Future
 import scala.util.Try
 
-object DLogProtocol {
 
+
+object DLogProtocol {
 
   trait DLogSigmaProtocol extends SigmaProtocol[DLogSigmaProtocol]{
     override type A = FirstDLogProverMessage
@@ -36,7 +35,7 @@ object DLogProtocol {
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h = value.asInstanceOf[GroupElementConstant].value
 
-    override lazy val bytes: Array[Byte] = {
+    lazy val bytes: Array[Byte] = {
       val gw = h.generateSendableData().asInstanceOf[ECElementSendableData]
       val gwx = gw.getX.toByteArray
       val gwy = gw.getY.toByteArray
@@ -62,21 +61,11 @@ object DLogProtocol {
 
 
   case class DLogProverInput(w: BigInteger)(implicit val dlogGroup: DlogGroup, soundness: Int)
-    extends SigmaProtocolPrivateInput[DLogSigmaProtocol] {
-
-    override type S = DLogProverInput
-    override type PK = ProveDlog
-
-    override def companion: SecretCompanion[DLogProverInput] = ???
-
+    extends SigmaProtocolPrivateInput[DLogSigmaProtocol, ProveDlog] {
     override lazy val publicImage: ProveDlog = {
       val g = dlogGroup.getGenerator
       ProveDlog(dlogGroup.exponentiate(g, w))
     }
-
-    override type M = DLogProverInput
-
-    override def serializer: Serializer[DLogProverInput] = ???
   }
 
   object DLogProverInput {

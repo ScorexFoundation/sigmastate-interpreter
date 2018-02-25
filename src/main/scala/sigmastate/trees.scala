@@ -6,8 +6,6 @@ import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import scorex.core.serialization.{BytesSerializable, Serializer}
-import scorex.core.transaction.box.proposition.ProofOfKnowledgeProposition
 import scorex.crypto.hash.Blake2b256
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.SigmaSerializer.OpCode
@@ -26,8 +24,8 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 }
 
-trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP]]
-  extends SigmaBoolean with ProofOfKnowledgeProposition[S] with SigmaProtocolCommonInput[SP]
+trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
+  extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
 
 //todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
@@ -364,7 +362,7 @@ sealed trait UncheckedTree extends ProofTree
 
 case object NoProof extends UncheckedTree
 
-sealed trait UncheckedSigmaTree[ST <: SigmaBoolean] extends UncheckedTree with BytesSerializable {
+sealed trait UncheckedSigmaTree[ST <: SigmaBoolean] extends UncheckedTree {
   val proposition: ST
 }
 
@@ -379,10 +377,6 @@ case class SchnorrNode(override val proposition: ProveDlog,
                        challenge: Array[Byte],
                        secondMessage: SecondDLogProverMessage)
   extends UncheckedSigmaTree[ProveDlog] {
-
-  override type M = this.type
-
-  override def serializer: Serializer[M] = ???
 }
 
 case class DiffieHellmanTupleUncheckedNode(override val proposition: ProveDiffieHellmanTuple,
@@ -390,9 +384,6 @@ case class DiffieHellmanTupleUncheckedNode(override val proposition: ProveDiffie
                                            challenge: Array[Byte],
                                            secondMessage: SecondDiffieHellmanTupleProverMessage)
   extends UncheckedSigmaTree[ProveDiffieHellmanTuple] {
-  override type M = DiffieHellmanTupleUncheckedNode
-
-  override def serializer: Serializer[M] = ???
 }
 
 case class CAndUncheckedNode(override val proposition: CAND,
@@ -400,9 +391,6 @@ case class CAndUncheckedNode(override val proposition: CAND,
                              override val commitments: Seq[FirstProverMessage[_]],
                              leafs: Seq[ProofTree])
   extends UncheckedConjecture[CAND] {
-  override type M = CAndUncheckedNode
-
-  override def serializer: Serializer[M] = ???
 }
 
 
@@ -410,8 +398,4 @@ case class COr2UncheckedNode(override val proposition: COR,
                              override val challengeOpt: Option[Array[Byte]],
                              override val commitments: Seq[FirstProverMessage[_]],
                              children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
-
-  override type M = COr2UncheckedNode
-
-  override def serializer: Serializer[M] = ???
 }

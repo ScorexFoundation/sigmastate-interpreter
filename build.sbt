@@ -13,28 +13,12 @@ val testingDependencies = Seq(
 )
 
 libraryDependencies ++= Seq(
+  "org.scorexfoundation" %% "scrypto" % "2.+",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.50",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
-  "org.scorexfoundation" %% "scorex-core" % "2.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.+"
 ) ++ testingDependencies
 
 
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

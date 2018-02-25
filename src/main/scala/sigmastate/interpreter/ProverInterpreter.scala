@@ -27,7 +27,7 @@ case class ProverResult[ProofT <: UncheckedTree](proof: ProofT, extension: Conte
 trait ProverInterpreter extends Interpreter with AttributionCore {
   override type ProofT = UncheckedTree
 
-  val secrets: Seq[SigmaProtocolPrivateInput[_]]
+  val secrets: Seq[SigmaProtocolPrivateInput[_, _]]
 
   val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]]
 

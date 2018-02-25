@@ -1,17 +1,33 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Longs
-import io.circe.Json
-import scorex.core.serialization.Serializer
-import scorex.core.transaction.BoxTransaction
-import scorex.core.transaction.box.{Box, BoxUnlocker}
-import scorex.core.transaction.proof.Proof
+import com.google.common.primitives.{Bytes, Longs}
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
 
 import scala.util.Try
+
+
+trait Serializer[M] {
+  def toBytes(obj: M): Array[Byte]
+
+  def parseBytes(bytes: Array[Byte]): Try[M]
+}
+
+/**
+  * Box is a state element locked by some proposition.
+  */
+trait Box[P <: Value[SBoolean.type]] {
+  val value: Box.Amount
+  val proposition: P
+
+  val id: ADKey
+}
+
+object Box {
+  type Amount = Long
+}
 
 /**
   * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In bitcoin, such an object
@@ -49,12 +65,12 @@ class SigmaStateBox(override val value: Long,
 
   override lazy val id = ADKey @@ Blake2b256.hash(bytes)
 
-  override type M = SigmaStateBox
-
   //todo: real implementation
   val propositionBytes = proposition.toString.getBytes
 
-  override def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {
+  lazy val bytes = serializer.toBytes(this)
+
+  def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {
 
     //todo: serialize registers
     override def toBytes(obj: SigmaStateBox): Array[Byte] =
@@ -87,22 +103,19 @@ object SigmaStateBox {
   object R10 extends RegisterIdentifier with NonMandatoryIdentifier
 }
 
+case class SigmaStateTransaction(inputs: IndexedSeq[SigmaStateBox], outputs: IndexedSeq[SigmaStateBox]) {
+  def concatBytes(seq: Traversable[Array[Byte]]): Array[Byte] = {
+    val length: Int = seq.map(_.length).sum
+    val result: Array[Byte] = new Array[Byte](length)
+    var pos: Int = 0
+    seq.foreach{ array =>
+      System.arraycopy(array, 0, result, pos, array.length)
+      pos += array.length
+    }
+    result
+  }
 
-class SigmaStateBoxUnlocker extends BoxUnlocker[Value[SBoolean.type]] {
-  override val closedBoxId: Array[Byte] = ???
-  override val boxKey: Proof[Value[SBoolean.type]] = ???
-}
-
-case class SigmaStateTransaction(override val unlockers: IndexedSeq[SigmaStateBoxUnlocker],
-                                 override val newBoxes: IndexedSeq[SigmaStateBox])
-  extends BoxTransaction[Value[SBoolean.type], SigmaStateBox] {
-
-  override lazy val fee: Long = ???
-  override lazy val timestamp: Long = ???
-
-  override type M = SigmaStateTransaction
-
-  override def serializer: Serializer[SigmaStateTransaction] = ???
-
-  override def json: Json = ???
+  lazy val messageToSign: Array[Byte] =
+    Bytes.concat(if (outputs.nonEmpty) concatBytes(outputs.map(_.bytes)) else Array[Byte](),
+                  concatBytes(inputs.map(_.bytes)))
 }

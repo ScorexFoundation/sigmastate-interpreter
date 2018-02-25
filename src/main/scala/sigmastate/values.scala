@@ -4,7 +4,6 @@ import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
-import scorex.core.transaction.box.proposition.Proposition
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
@@ -15,17 +14,12 @@ import sigmastate.utxo.SigmaStateBox
 import sigmastate.utxo.CostTable.Cost
 
 
-trait Value[+S <: SType] extends Product with Proposition {
+trait Value[+S <: SType] extends Product {
   val opCode: SigmaSerializer.OpCode = 0: Byte
 
   def cost: Int
 
   def evaluated: Boolean
-
-  //todo: remove serialization
-  override type M = this.type
-
-  override def serializer: SigmaSerializer[M] = ???
 
   //todo: remove after serialization, replace with just .bytes
   lazy val propBytes = this.toString.getBytes

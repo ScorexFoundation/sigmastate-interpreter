@@ -10,7 +10,7 @@ class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
   override def specificTransformations(context: UtxoContext): PartialFunction[Value[_ <: SType], Value[_ <: SType]] = {
     case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxConstant.apply))
 
-    case Outputs => ConcreteCollection(context.spendingTransaction.newBoxes.map(BoxConstant.apply))
+    case Outputs => ConcreteCollection(context.spendingTransaction.outputs.map(BoxConstant.apply))
 
     case Self => BoxConstant(context.self)
 

@@ -243,7 +243,7 @@ class UtxoInterpreterSpecification extends PropSpec
       self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
 
-    assert(ctx3.spendingTransaction.newBoxes.head.propositionBytes sameElements ctx3.self.propositionBytes)
+    assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
     verifier.verify(script, ctx3, NoProof, fakeMessage).get shouldBe true
 
