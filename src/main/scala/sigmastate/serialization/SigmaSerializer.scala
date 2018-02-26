@@ -5,12 +5,6 @@ import sigmastate._
 import scala.util.Try
 
 
-trait Serializer[M] {
-  def toBytes(obj: M): Array[Byte]
-
-  def parseBytes(bytes: Array[Byte]): Try[M]
-}
-
 
 trait SigmaSerializer[V <: Value[_ <: SType]] extends Serializer[V] {
   import SigmaSerializer._
