@@ -4,19 +4,18 @@ import com.google.common.primitives.{Bytes, Longs}
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
+import sigmastate.serialization.Serializer
 import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
 
 import scala.util.Try
 
-
-trait Serializer[M] {
-  def toBytes(obj: M): Array[Byte]
-
-  def parseBytes(bytes: Array[Byte]): Try[M]
-}
-
 /**
-  * Box is a state element locked by some proposition.
+  *
+  * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In bitcoin, such an object
+  * is associated with some monetary value (arbitrary, but with predefined precision, so we use integer arithmetic to
+  * work with the value), guarding script (aka proposition) to protect the box from unauthorized opening.
+  *
+  * In other way, a box is a state element locked by some proposition.
   */
 trait Box[P <: Value[SBoolean.type]] {
   val value: Box.Amount
@@ -30,10 +29,6 @@ object Box {
 }
 
 /**
-  * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In bitcoin, such an object
-  * is associated with some monetary value (arbitrary, but with predefined precision, so we use integer arithmetic to
-  * work with the value), guarding script (aka proposition) to protect the box from unauthorized opening.
-  *
   * We add two additional fields to the box. In the first place, for carrying data along we use registers.
   * Corresponding field is called "additional registers", as we consider that amount and proposition are also stored
   * in the registers R1 and R2. In the second place, we have a "nonce" field to guarantee unique id. For a real
