@@ -7,7 +7,7 @@
 \documentclass[11pt]{article}
 \usepackage{fullpage}
 
-\usepackage{amsmath,color,xcolor,hyperref,graphicx,wrapfig}
+\usepackage{amsmath,color,xcolor,hyperref,graphicx,wrapfig,listings}
 
 
 \ifnum\shownotes=1
@@ -26,6 +26,7 @@
 \newcommand{\lnote}[1]{{\authnote{\textcolor{orange}{Leo notes}}{#1}}}
 \newcommand{\dnote}[1]{{\authnote{\textcolor{red}{Dima notes}}{#1}}}
 \newcommand{\knote}[1]{{\authnote{\textcolor{green}{kushti notes}}{#1}}}
+\newcommand{\mnote}[1]{{\authnote{\textcolor{blue}{morphic}}{#1}}}
 
 \newcommand{\ret}{\mathsf{ret}}
 \newcommand{\new}{\mathsf{new}}
@@ -51,6 +52,7 @@
 \newcommand{\ignore}[1]{}
 
 \newcommand{\langname}{$\Sigma$-State}
+\newcommand{\lst}[1]{\text{\lstinline[basicstyle={\ttfamily}]$#1$}}
 
 \begin{document}
 
@@ -392,6 +394,40 @@ We show in this paper...
 
 
 \appendix
+
+\section{Types}
+
+\[\begin{tabular}{@{}l c l l}
+
+      $\mathcal{T} \ni \tau$			& ::= 	    &\
+         \lst{Unit} $\mid$
+         \lst{Int} $\mid$ \lst{BigInt} $\mid$ \lst{Boolean} $\mid$ \lst{ByteArray} & base types     \\
+      &	$\mid$	& \lst{GroupElement} 				& element of the Group  \\
+      &	$\mid$	& \lst{Box} 				    & value in a box protected by proposition  \\
+      &	$\mid$	& \lst{AvlTree} 				&  \mnote{give description} \\
+      &	$\mid$	& $(\tau_1 \times \tau_2) $		& binary product type  \\
+      & $\mid$  & $\text{\lst{Collection}}[\tau]$	    & collection type       \\
+%      &   $\mid$  & $(\tau_1 + \tau_2) $					& sum type       \\
+%      &   $\mid$  & $(\tau_1 \to \tau_2) $				& function type       \\
+      %				& 	     	&										&				\\
+%      $Term \ni e$	& ::= 		&   $l \mid x : \tau $							& integer literals and vars     \\
+%      & 	$\mid$ 	& 	$\TyLam{x}{\tau}{e} \mid e_1 e_2$ 	& functions  \\
+%      & 	$\mid$ 	& 	$k~\Ov{e}$ 							& constructors  \\
+%      & 	$\mid$ 	& 	$\delta~\Ov{e}$ 					& primitives  \\
+%      & 	$\mid$ 	& 	\lst{case} $e$ \lst{of} \{ $p_i$ $\rightarrow$ $e_i$  \}  & case analysis \\
+      %				& 	$\mid$ 	& 	\lst{let} $x = e$ \lst{in} $e'$  	& let binding \\
+      %				& 	     	&										&				\\
+%      $k$				& ::= 		&   $\Tup{} \mid \Tup{\_, \_}$ 			& unit and pair     	\\
+%      & 	$\mid$ 	&	$\Left{\tau_1}{\tau_2}{\text{\lst{\_}}} \mid \Right{\tau_1}{\tau_2}{\text{\lst{\_}}}$			& injections		\\
+      %				& 	     	&										&				\\
+%      $\delta$		& ::= 		&   \Fst{\_} $\mid$ \Snd{\_}			& projections     	\\
+%      & 	$\mid$ 	&	$\_ \oplus \_$						& binary operations	\\
+      %				& 	     	&										&				\\
+%      $p$				& ::= 		&   $l \mid k~\Ov{x}$ 			& patterns     	\\
+      %				& 	     	&										&				\\
+%      $v$				& ::= 		&   $l \mid k~\Ov{v} \mid \TyLam{x}{\tau}{e}$ 		& values     	\\
+%      & & & \\
+\end{tabular}\]
 
 \section{Tree Nodes and Transformation Rules}
 
