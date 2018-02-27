@@ -16,6 +16,8 @@ import scapi.sigma.rework.SigmaProtocolFunctions.StartInteraction
     1. A first message from the prover to the verifier
     2. A random challenge from the verifier
     3. A second message from the prover.
+
+    See Efficient Secure Two-Party Protocols: Techniques and Constructions, p.148
   */
 
 object Dealer extends App {
