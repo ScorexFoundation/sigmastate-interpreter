@@ -24,8 +24,7 @@ object DLogProtocol {
   }
 
   case class ProveDlog(value: Value[SGroupElement.type])
-    extends SigmaProtocolCommonInput[DLogSigmaProtocol]
-      with SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
+    extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
     override val cost: Int = Cost.Dlog
 

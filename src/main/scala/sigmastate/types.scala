@@ -16,6 +16,14 @@ sealed trait SType {
 
 object SType {
   type TypeCode = Byte
+  implicit val typeInt = SInt
+  implicit val typeBigInt = SBigInt
+  implicit val typeBoolean = SBoolean
+  implicit val typeByteArray = SByteArray
+  implicit val typeAvlTree = SAvlTree
+  implicit val typeGroupElement = SGroupElement
+  implicit val typeBox = SBox
+  implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 }
 
 case object SInt extends SType {
@@ -60,10 +68,10 @@ case object SBox extends SType {
   override val typeCode: Byte = 7: Byte
 }
 
-case class  SCollection[ElemType <: SType]()(implicit val w: ElemType) extends SType {
+case class  SCollection[ElemType <: SType]()(implicit val elemType: ElemType) extends SType {
   override type WrappedType = IndexedSeq[Value[ElemType]]
 
-  override val typeCode = SCollection.collectionOf(w.typeCode)
+  override val typeCode = SCollection.collectionOf(elemType.typeCode)
 }
 
 object SCollection {

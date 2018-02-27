@@ -1,7 +1,9 @@
 package sigmastate.serialization
 
 import com.google.common.primitives.Chars
-import sigmastate.{ConcreteCollection, SCollection, SType, Value}
+import sigmastate.{ConcreteCollection, SCollection, Value, SType}
+
+import scala.collection.mutable.ArrayBuffer
 
 object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_ <: SCollection[_ <: SType]]] {
 
@@ -10,10 +12,10 @@ object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_
   override def parseBody = {
     case (bytes, pos) =>
       val sizeBytes = bytes.slice(pos, pos + 2)
+      val elemCode = bytes(pos + 2)
       val size = Chars.fromBytes(sizeBytes.head, sizeBytes.tail.head)
       val (values, consumed, types) = (1 to size).foldLeft((Seq[Value[SType]](), 2, Seq[SType.TypeCode]())) {
         case ((vs, c, ts), _) =>
-
           val (v, consumed, typeCode) = SigmaSerializer.deserialize(bytes, pos + c)
           (vs :+ v, c + consumed, ts :+ typeCode)
       }
@@ -22,13 +24,15 @@ object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_
   }
 
   override def serializeBody = { cc =>
-    require(cc.value.size <= Char.MaxValue)
-    val size = cc.value.size.toChar // max collection size is Char.MaxValue = 65535
-
+    require(cc.value.size <= Char.MaxValue, "max collection size is Char.MaxValue = 65535")
+    val elemCode = cc.tpe.elemType.typeCode
+    val size = cc.value.size.toChar
     val sizeBytes = Chars.toByteArray(size)
-
-    cc.value.foldLeft(sizeBytes) { (bs, elem) =>
-      bs ++ SigmaSerializer.serialize(elem)
+    val b = ArrayBuffer[Byte](sizeBytes)
+    b += elemCode
+    for (elem <- cc.value) {
+      b += SigmaSerializer.serialize(elem)
     }
+    b.toArray
   }
 }

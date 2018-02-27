@@ -21,7 +21,7 @@ case class CostAccumulator(initialValue: Int, limit: Int) {
     */
   def addCost(delta: Int): Either[Int, Int] = {
     mutVal = mutVal + delta
-    if (mutVal <= limit) Right(limit) else Left(limit)
+    if (mutVal <= limit) Right(mutVal) else Left(mutVal)
   }
 
   def value: Int = mutVal

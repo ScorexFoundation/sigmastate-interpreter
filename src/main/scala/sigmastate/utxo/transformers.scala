@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.{NotReadyValueInt, _}
+import sigmastate._
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import sigmastate.utxo.CostTable.Cost
@@ -28,8 +28,9 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
 case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                                    id: Byte,
-                                                   mapper: Transformer[IV, OV])
+                                                   mapper: Transformer[IV, OV])(implicit val tOV: OV)
   extends Transformer[SCollection[IV], SCollection[OV]] {
+  val tpe = SCollection[OV]
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
@@ -49,7 +50,7 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
                                condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SBoolean.type] {
-
+  override def tpe = SBoolean
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
@@ -69,7 +70,7 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
                                condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SBoolean.type] {
-
+  override def tpe = SBoolean
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
@@ -97,9 +98,8 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              id: Byte,
                              zero: Value[IV],
                              accId: Byte,
-                             foldOp: TwoArgumentsOperation[IV, IV, IV])
+                             foldOp: TwoArgumentsOperation[IV, IV, IV])(implicit val tpe: IV)
   extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] {
-
 
   override def transformationReady: Boolean =
     input.evaluated &&
@@ -132,7 +132,7 @@ object Fold {
     Fold[SByteArray.type](input, 21, EmptyByteArray, 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
-case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
+case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)(implicit val tpe: V)
   extends Transformer[SCollection[V], V] with NotReadyValue[V] {
 
   override def function(input: EvaluatedValue[SCollection[V]]) = input.value.apply(index)
@@ -140,9 +140,12 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   override def cost = 1
 }
 
+trait NotReadyValueInt extends NotReadyValue[SInt.type] {
+  override def tpe = SInt
+}
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
-  extends Transformer[SCollection[V], SInt.type] with NotReadyValue[SInt.type] {
+  extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
 
   override def function(input: EvaluatedValue[SCollection[V]]) = IntConstant(input.value.length)
 
@@ -185,7 +188,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] w
 
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
-                                         default: Option[Value[V]] = None) extends Extract[V] with NotReadyValue[V] {
+                                         default: Option[Value[V]] = None)(implicit val tpe: V) extends Extract[V] with NotReadyValue[V] {
   override def cost: Int = 1000 //todo: the same as ExtractBytes.cost
 
   override def function(box: EvaluatedValue[SBox.type]): Value[V] =
