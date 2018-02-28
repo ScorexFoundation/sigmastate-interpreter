@@ -18,9 +18,10 @@ trait STypeSerializer[T <: SType] extends SigmaSerializer[SType, T] {
 
 object STypeSerializer extends SigmaSerializerCompanion[SType] {
   override type Tag = SType.TypeCode
-  val table: Map[Tag, SigmaSerializer[SType, _]] = Seq(
-    SInt.typeCode
-  ).map(tc => (tc, new DefaultSTypeSerializer(tc))).toMap
+  val table: Map[Tag, SigmaSerializer[SType, _]] = {
+    val primSers = SType.allPrimitiveTypes.map(t => (t.typeCode, new PrimitiveTypeSerializer(t.typeCode))).toMap
+    primSers + (SCollection.TypeCode -> SCollectionSerializer)
+  }
 
   override def deserialize(bytes: Array[TypeCode], pos: Position): (SType, Consumed) = {
     val c = bytes(pos)
@@ -36,17 +37,31 @@ object STypeSerializer extends SigmaSerializerCompanion[SType] {
   }
 }
 
-/** Default serializer stands out from other because it supports all predefined types */
-class DefaultSTypeSerializer(val typeCode: TypeCode) extends STypeSerializer[SType] {
+/** All primitive types are processed by the same serializer */
+class PrimitiveTypeSerializer(val typeCode: TypeCode) extends STypeSerializer[SType] {
   override val companion = STypeSerializer
 
   override def parseBody(bytes: Array[Byte], pos: Position) = typeCode match {
     case PrimType(t) => (t, 0)
-    case _ => sys.error(s"Don't know how to parse type descriptor with typeCode = $typeCode")
+    case _ => sys.error(s"Don't know how to parse primitive type descriptor with typeCode = $typeCode")
   }
 
   override def serializeBody(tpe: SType) = tpe match {
     case t if t.isPrimitive => Array[Byte]()
-    case _ => sys.error(s"Don't know how to serialize type descriptor $tpe")
+    case _ => sys.error(s"Don't know how to serialize primitive type descriptor $tpe")
+  }
+}
+
+object SCollectionSerializer extends STypeSerializer[SCollection[SType]] {
+  override val companion = STypeSerializer
+  val typeCode = SCollection.TypeCode
+
+  override def parseBody(bytes: Array[Byte], pos: Position) = {
+    val (tElem, len) = STypeSerializer.deserialize(bytes, pos)
+    (SCollection()(tElem), len)
+  }
+
+  override def serializeBody(tpe: SCollection[SType]) = {
+    STypeSerializer.serialize(tpe.elemType)
   }
 }

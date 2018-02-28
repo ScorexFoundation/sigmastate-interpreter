@@ -79,12 +79,12 @@ case object SBox extends SType {
 case class  SCollection[ElemType <: SType]()(implicit val elemType: ElemType) extends SType {
   override type WrappedType = IndexedSeq[Value[ElemType]]
 
-  override val typeCode = SCollection.collectionOf(elemType.typeCode)
+  override val typeCode = SCollection.TypeCode
 }
 
 object SCollection {
-  val Base = 80: Byte
+  val TypeCode = 80: Byte
 
   //todo: SCollection[SCollection[]] is not possible!
-  def collectionOf(typeCode: TypeCode) = (Base + typeCode).toByte
+  def collectionOf(typeCode: TypeCode) = (TypeCode + typeCode).toByte
 }
