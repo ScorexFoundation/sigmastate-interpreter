@@ -8,7 +8,6 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256Unsafe}
-import sigmastate.SType.TypeCode
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utxo.SigmaStateBox
