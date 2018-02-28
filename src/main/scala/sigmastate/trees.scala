@@ -5,7 +5,7 @@ import java.math.BigInteger
 import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
 import scapi.sigma._
-import scapi.sigma.rework.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode

@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import scapi.sigma.rework.SigmaProtocolPrivateInput
+import scapi.sigma.SigmaProtocolPrivateInput
 import scapi.sigma.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.Helpers
