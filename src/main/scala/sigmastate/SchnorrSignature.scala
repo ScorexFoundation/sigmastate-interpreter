@@ -2,8 +2,9 @@ package sigmastate
 
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import edu.biu.scapi.primitives.dlog.DlogGroup
+import scapi.sigma.{Challenge, NonInteractiveProver}
 import scapi.sigma.DLogProtocol._
-import scapi.sigma.rework.{Challenge, NonInteractiveProver}
+import scapi.sigma.rework.NonInteractiveProver
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SchnorrSignature.dlog
 

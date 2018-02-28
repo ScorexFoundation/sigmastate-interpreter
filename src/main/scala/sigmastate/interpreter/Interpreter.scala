@@ -13,8 +13,7 @@ import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
-import scapi.sigma.FirstDiffieHellmanTupleProverMessage
-import scapi.sigma.rework.FirstProverMessage
+import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.utxo.{CostTable, Transformer}

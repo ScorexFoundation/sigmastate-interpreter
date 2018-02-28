@@ -2,8 +2,7 @@ package sigmastate.utxo
 
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
-import scapi.sigma.DiffieHellmanTupleProverInput
-import scapi.sigma.rework.SigmaProtocolPrivateInput
+import scapi.sigma.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import scorex.utils.Random
 import sigmastate.{ByteArrayConstant, EvaluatedValue, SType}
 import sigmastate.interpreter.ProverInterpreter

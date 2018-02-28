@@ -1,4 +1,4 @@
-package scapi.sigma.rework
+package scapi.sigma
 
 import java.security.SecureRandom
 
@@ -7,8 +7,8 @@ import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocol
 import edu.biu.scapi.primitives.dlog.DlogGroup
 import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 
 /*

@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import scapi.sigma.rework.{Challenge, SigmaProtocolPrivateInput}
+import scapi.sigma.rework.SigmaProtocolPrivateInput
 import scapi.sigma.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.Helpers
@@ -10,7 +10,7 @@ import sigmastate.utils.Helpers
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import scapi.sigma.{DiffieHellmanTupleInteractiveProver, ProveDiffieHellmanTuple, DiffieHellmanTupleProverInput}
+import scapi.sigma._
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 
