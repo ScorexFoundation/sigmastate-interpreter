@@ -50,7 +50,6 @@ trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
 
 
 //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
-//sealed trait IntLeaf extends Value[SInt.type]
 
 case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val opCode = ValueSerializer.IntConstantCode
@@ -71,8 +70,6 @@ case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] wi
   override val cost = 1
 }
 
-
-//sealed trait BigIntLeaf extends Value[SBigInt.type]
 
 case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
   override val cost = 1
