@@ -15,7 +15,6 @@ class ConcreteCollectionSerializerSpecification extends SerializationSpecificati
 
   property("ConcreteCollection deserialize from predefined bytes") {
     val col = ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))
-    val bytes = Base58.decode("yo18XXEkLgyWrJvWUX4t").get
-    predefinedBytesTest(bytes, col)
+    roundTripTest(col)
   }
 }

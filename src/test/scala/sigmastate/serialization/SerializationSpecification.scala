@@ -11,12 +11,12 @@ trait SerializationSpecification extends PropSpec
   with Matchers {
 
   protected def roundTripTest[V <: Value[_ <: SType]](v: V): Assertion = {
-    val bytes = SigmaSerializer.serialize(v)
-    val t = SigmaSerializer.deserialize(bytes)
+    val bytes = ValueSerializer.serialize(v)
+    val t = ValueSerializer.deserialize(bytes)
     t shouldBe v
   }
 
   protected def predefinedBytesTest[V <: Value[_ <: SType]](bytes: Array[Byte], v: V): Assertion = {
-    SigmaSerializer.deserialize(bytes) shouldBe v
+    ValueSerializer.deserialize(bytes) shouldBe v
   }
 }

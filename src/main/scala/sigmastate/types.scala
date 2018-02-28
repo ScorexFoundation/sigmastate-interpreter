@@ -1,6 +1,7 @@
 package sigmastate
 
 import java.math.BigInteger
+import java.util.Objects
 
 import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.SType.TypeCode
@@ -80,6 +81,12 @@ case class  SCollection[ElemType <: SType]()(implicit val elemType: ElemType) ex
   override type WrappedType = IndexedSeq[Value[ElemType]]
 
   override val typeCode = SCollection.TypeCode
+
+  override def equals(obj: scala.Any) = obj match {
+    case that: SCollection[_] => that.elemType == elemType
+    case _ => false
+  }
+  override def hashCode() = (31 + typeCode) * 31 + elemType.hashCode()
 }
 
 object SCollection {
