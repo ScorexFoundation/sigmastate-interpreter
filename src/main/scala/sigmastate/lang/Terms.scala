@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import sigmastate.{SType, Value}
+import sigmastate.{Value, SType, NoType}
 
 object Terms {
 
@@ -26,28 +26,25 @@ object Terms {
   case class Block(let: Option[LET], t: Value[SType]) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
+    def tpe: SType = t.tpe
   }
 
   case class LET(name: String, value: Block) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
+    def tpe: SType = value.tpe
   }
 
   case class GETTER(i: Block, field: String) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
+    def tpe: SType = NoType
   }
 
-  case class REF(key: String) extends Value[SType] {
+  case class REF(key: String, tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
   }
-
-//  case class SIG_VERIFY(message: Block, signature: Block, publicKey: Block) extends Expr { val predefinedType: Option[Type] = Some(BOOLEAN)         }
-//  case class IS_DEFINED(t: Block)                                           extends Expr { val predefinedType: Option[Type] = Some(BOOLEAN)         }
-//  case class GET(t: Block)                                                  extends Expr { val predefinedType: Option[Type] = None                  }
-//  case object NONE                                                          extends Expr { val predefinedType: Option[Type] = Some(OPTION(NOTHING)) }
-//  case class SOME(t: Block)                                                 extends Expr { val predefinedType: Option[Type] = None                  }
 
   implicit def valueToBlock(t: Value[SType]): Block = Block(None, t)
 
