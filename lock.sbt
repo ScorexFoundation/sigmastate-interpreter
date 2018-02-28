@@ -17,14 +17,13 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.rogach" % "scallop_2.12" % "2.0.5",
   "org.rudogma" % "supertagged_2.12" % "1.3",
   "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
-  "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.0.4",
   "org.scala-lang.modules" % "scala-xml_2.12" % "1.0.6",
   "org.scala-sbt" % "test-interface" % "1.0",
   "org.scalacheck" % "scalacheck_2.12" % "1.13.5",
-  "org.scalactic" % "scalactic_2.12" % "3.0.1",
-  "org.scalatest" % "scalatest_2.12" % "3.0.1",
+  "org.scalactic" % "scalactic_2.12" % "3.0.5",
+  "org.scalatest" % "scalatest_2.12" % "3.0.5",
   "org.scorexfoundation" % "scrypto_2.12" % "2.0.2",
   "org.slf4j" % "slf4j-api" % "1.7.25",
   "org.whispersystems" % "curve25519-java" % "0.4.1"
 )
-// LIBRARY_DEPENDENCIES_HASH f460d0e73594931630b2e66099686424c923ded6
+// LIBRARY_DEPENDENCIES_HASH fbcb26263a98042d9a7fa51842072a04d65d9c4c
