@@ -1,34 +1,40 @@
 package sigmastate.serialization
 
 import com.google.common.primitives.Chars
-import sigmastate.{ConcreteCollection, SCollection, SType, Value}
+import sigmastate.serialization.ValueSerializer.Position
+import sigmastate.{ConcreteCollection, SCollection, Value, SType}
 
-object ConcreteCollectionSerializer extends SigmaSerializer[ConcreteCollection[_ <: SCollection[_ <: SType]]] {
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
-  override val opCode: Byte = SigmaSerializer.ConcreteCollectionCode
+object ConcreteCollectionSerializer extends ValueSerializer[ConcreteCollection[_ <: SType]] {
 
-  override def parseBody = {
-    case (bytes, pos) =>
-      val sizeBytes = bytes.slice(pos, pos + 2)
-      val size = Chars.fromBytes(sizeBytes.head, sizeBytes.tail.head)
-      val (values, consumed, types) = (1 to size).foldLeft((Seq[Value[SType]](), 2, Seq[SType.TypeCode]())) {
-        case ((vs, c, ts), _) =>
+  override val opCode: Byte = ValueSerializer.ConcreteCollectionCode
 
-          val (v, consumed, typeCode) = SigmaSerializer.deserialize(bytes, pos + c)
-          (vs :+ v, c + consumed, ts :+ typeCode)
-      }
-      assert(Constraints.sameTypeN(types))
-      (ConcreteCollection(values.toIndexedSeq), consumed, SCollection.collectionOf(types.head))
+  override def parseBody(bytes: Array[Byte], pos: Position) = {
+    val size = Chars.fromBytes(bytes(pos), bytes(pos + 1))
+    val (tItem, tItemLen) = STypeSerializer.deserialize(bytes, pos + 2)
+    val (values, typeCodes, consumed) = (1 to size).foldLeft((Seq[Value[SType]](), Seq[SType.TypeCode](), 2 + tItemLen)) {
+      case ((vs, ts, c), _) =>
+        val (v, consumed) = ValueSerializer.deserialize(bytes, pos + c)
+        (vs :+ v, ts :+ v.tpe.typeCode, c + consumed)
+    }
+    assert(Constraints.sameTypeN(typeCodes))
+    (ConcreteCollection[SType](values.toIndexedSeq)(tItem), consumed)
   }
 
-  override def serializeBody = { cc =>
-    require(cc.value.size <= Char.MaxValue)
-    val size = cc.value.size.toChar // max collection size is Char.MaxValue = 65535
-
+  override def serializeBody(cc: ConcreteCollection[_ <: SType]) = {
+    val ccSize = cc.items.size
+    require(ccSize <= Char.MaxValue, "max collection size is Char.MaxValue = 65535")
+    val elemTpeBytes = STypeSerializer.serialize(cc.tpe.elemType)
+    val size = ccSize.toChar
     val sizeBytes = Chars.toByteArray(size)
-
-    cc.value.foldLeft(sizeBytes) { (bs, elem) =>
-      bs ++ SigmaSerializer.serialize(elem)
+    val b = ArrayBuffer[Byte]()
+    b ++= sizeBytes
+    b ++= elemTpeBytes
+    for (item <- cc.items) {
+      b ++= ValueSerializer.serialize(item)
     }
+    b.toArray
   }
 }

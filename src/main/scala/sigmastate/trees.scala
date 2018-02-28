@@ -7,8 +7,8 @@ import scapi.sigma.DLogProtocol._
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import scapi.sigma.rework.{FirstProverMessage, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.serialization.SigmaSerializer.OpCode
+import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
 
@@ -218,26 +218,26 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
 
 case class LT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]{
-  override val opCode: OpCode = SigmaSerializer.LtCode
+  override val opCode: OpCode = ValueSerializer.LtCode
 }
 
 case class LE(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
-  override val opCode: OpCode = SigmaSerializer.LeCode
+  override val opCode: OpCode = ValueSerializer.LeCode
 }
 
 case class GT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
-  override val opCode: OpCode = SigmaSerializer.GtCode
+  override val opCode: OpCode = ValueSerializer.GtCode
 }
 
 case class GE(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
-  override val opCode: OpCode = SigmaSerializer.GeCode
+  override val opCode: OpCode = ValueSerializer.GeCode
 }
 
 case class EQ[S <: SType](override val left: Value[S], override val right: Value[S]) extends Relation[S, S] {
-  override val opCode: OpCode = SigmaSerializer.EqCode
+  override val opCode: OpCode = ValueSerializer.EqCode
 }
 
 object EQ {
@@ -246,7 +246,7 @@ object EQ {
 
 case class NEQ(override val left: Value[SType],
                                          override val right: Value[SType]) extends Relation[SType, SType] {
-  override val opCode: OpCode = SigmaSerializer.NeqCode
+  override val opCode: OpCode = ValueSerializer.NeqCode
 }
 
 
@@ -280,7 +280,7 @@ case class IsMember(tree: Value[SAvlTree.type],
 
 case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T], falseBranch: Value[T])
   extends Quadruple[SBoolean.type, T, T, T] {
-
+  override def tpe = trueBranch.tpe
   override lazy val first = condition
   override lazy val second = trueBranch
   override lazy val third = falseBranch

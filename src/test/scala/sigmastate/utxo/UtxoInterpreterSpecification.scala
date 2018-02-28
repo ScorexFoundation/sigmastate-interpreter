@@ -1099,8 +1099,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3),
-      Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
+    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3)(SInt),
+      Plus(ExtractRegisterAs(Self, R3)(SInt), IntConstant(1))))
 
     val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(3)))
     val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(6)))

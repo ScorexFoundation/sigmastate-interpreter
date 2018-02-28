@@ -40,14 +40,15 @@ object Box {
   * same box.
   *
   * @param value
-  * @param proposition
+  * @param proposition guarding script, which should be evaluated to true in order to open this box
   * @param additionalRegisters
-  * @param nonce
+  * @param nonce to differentiate this instance from otherwise identical instances
   */
-class SigmaStateBox(override val value: Long,
-                         override val proposition: Value[SBoolean.type],
-                         additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
-                         nonce: Array[Byte] = Array.fill(32)(0:Byte)) extends Box[Value[SBoolean.type]] {
+class SigmaStateBox private(
+    override val value: Long,
+    override val proposition: Value[SBoolean.type],
+    additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
+    nonce: Array[Byte]) extends Box[Value[SBoolean.type]] {
   import sigmastate.utxo.SigmaStateBox._
 
   def get(identifier: RegisterIdentifier): Option[Value[SType]] = {

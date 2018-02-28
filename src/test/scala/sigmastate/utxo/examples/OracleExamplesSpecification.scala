@@ -106,7 +106,7 @@ class OracleExamplesSpecification extends PropSpec
 
     val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
-    def extract[T <: SType](Rn: RegisterIdentifier) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
+    def extract[T <: SType](Rn: RegisterIdentifier)(implicit tT: T) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
 
     def withinTimeframe(sinceHeight:Int,
                         timeoutHeight: Int,

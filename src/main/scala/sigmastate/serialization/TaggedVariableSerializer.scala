@@ -1,12 +1,13 @@
 package sigmastate.serialization
 
 import sigmastate._
+import sigmastate.serialization.ValueSerializer.Position
 
-object TaggedVariableSerializer extends SigmaSerializer[TaggedVariable[_ <: SType]] {
+object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: SType]] {
 
-  override val opCode = SigmaSerializer.TaggedVariableCode
+  override val opCode = ValueSerializer.TaggedVariableCode
 
-  override def parseBody = {case (bytes, pos) =>
+  override def parseBody(bytes: Array[Byte], pos: Position) = {
     val tc = bytes(pos)
     val id = bytes(pos + 1)
 
@@ -20,10 +21,10 @@ object TaggedVariableSerializer extends SigmaSerializer[TaggedVariable[_ <: STyp
       case b: Byte if b == SAvlTree.typeCode => TaggedAvlTree(id)
       case b: Byte if b == SGroupElement.typeCode => TaggedGroupElement(id)
       case b: Byte if b == SBox.typeCode => TaggedBox(id)
-    }, consumed, tc)
+    }, consumed)
   }
 
-  override def serializeBody = {v =>
+  override def serializeBody(v: TaggedVariable[_ <: SType]) = {
     Array(v.typeCode, v.id)
   }
 }

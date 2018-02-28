@@ -30,10 +30,12 @@ case object Height extends NotReadyValueInt {
 
 case object Inputs extends LazyCollection[SBox.type] {
   val cost = 1
+  val tpe = SCollection()(SBox)
 }
 
 case object Outputs extends LazyCollection[SBox.type] {
   val cost = 1
+  val tpe = SCollection()(SBox)
 }
 
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree

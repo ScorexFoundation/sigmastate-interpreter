@@ -4,15 +4,15 @@ import com.google.common.primitives.Longs
 import sigmastate.{IntConstant, SInt}
 import sigmastate.SType.TypeCode
 
-object IntConstantSerializer extends SigmaSerializer[IntConstant] {
-  override val opCode = SigmaSerializer.IntConstantCode
+object IntConstantSerializer extends ValueSerializer[IntConstant] {
+  import ValueSerializer._
+  override val opCode = ValueSerializer.IntConstantCode
 
   val typeCode: TypeCode = SInt.typeCode
 
-  override def parseBody = {
-    case (bytes, pos) =>
-      (IntConstant(Longs.fromByteArray(bytes.slice(pos, pos + 8))), 8, typeCode)
+  override def parseBody(bytes: Array[Byte], pos: Position) = {
+    (IntConstant(Longs.fromByteArray(bytes.slice(pos, pos + 8))), 8)
   }
 
-  override def serializeBody = (c => Longs.toByteArray(c.value))
+  override def serializeBody(c: IntConstant) = Longs.toByteArray(c.value)
 }
