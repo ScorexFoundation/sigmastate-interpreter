@@ -1,9 +1,12 @@
 package sigmastate.utxo
 
+import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import sigmastate._
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
 import sigmastate.utxo.CostTable.Cost
+
+import scala.collection.immutable
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -29,8 +32,18 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                                    id: Byte,
                                                    mapper: Transformer[IV, OV])(implicit val tOV: OV)
-  extends Transformer[SCollection[IV], SCollection[OV]] {
+  extends Transformer[SCollection[IV], SCollection[OV]] with Rewritable {
   val tpe = SCollection[OV]
+  def arity = 4
+  def deconstruct = immutable.Seq[Any](input, id, mapper, tOV)
+  def reconstruct(cs: immutable.Seq[Any]) = cs match {
+    case Seq(input: Value[SCollection[IV]] @unchecked,
+             id: Byte,
+             mapper: Transformer[IV, OV],
+             t: OV @unchecked) => MapCollection[IV, OV](input, id, mapper)(t)
+    case _ =>
+      illegalArgs("MapCollection", "(Value[SCollection[IV]], Byte, Transformer[IV, OV], SType)", cs)
+  }
 
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
@@ -99,7 +112,20 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              zero: Value[IV],
                              accId: Byte,
                              foldOp: TwoArgumentsOperation[IV, IV, IV])(implicit val tpe: IV)
-  extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] {
+  extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] with Rewritable {
+  def arity = 6
+  def deconstruct = immutable.Seq[Any](input, id, zero, accId, foldOp, tpe)
+  def reconstruct(cs: immutable.Seq[Any]) = cs match {
+    case Seq(input: Value[SCollection[IV]] @unchecked,
+             id: Byte,
+             zero: Value[IV],
+             accId: Byte,
+             foldOp: TwoArgumentsOperation[IV, IV, IV],
+             t: IV @unchecked) => Fold[IV](input, id, zero, accId, foldOp)(t)
+    case _ =>
+      illegalArgs("Fold",
+        "(Value[SCollection[IV]], id: Byte, zero: Value[IV], accId: Byte, foldOp: TwoArgumentsOperation[IV, IV, IV])(tpe: IV)", cs)
+  }
 
   override def transformationReady: Boolean =
     input.evaluated &&
@@ -133,8 +159,16 @@ object Fold {
 }
 
 case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)(implicit val tpe: V)
-  extends Transformer[SCollection[V], V] with NotReadyValue[V] {
-
+  extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
+  def arity = 3
+  def deconstruct = immutable.Seq[Any](input, index, tpe)
+  def reconstruct(cs: immutable.Seq[Any]) = cs match {
+    case Seq(input: Value[SCollection[V]] @unchecked,
+      index: Int,
+      t: V @unchecked) => ByIndex[V](input, index)(t)
+    case _ =>
+      illegalArgs("ByIndex", "(Value[SCollection[V]], index: Int)(tpe: V)", cs)
+  }
   override def function(input: EvaluatedValue[SCollection[V]]) = input.value.apply(index)
 
   override def cost = 1
@@ -188,7 +222,18 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] w
 
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
-                                         default: Option[Value[V]] = None)(implicit val tpe: V) extends Extract[V] with NotReadyValue[V] {
+                                         default: Option[Value[V]] = None)(implicit val tpe: V)
+    extends Extract[V] with NotReadyValue[V] with Rewritable {
+  def arity = 4
+  def deconstruct = immutable.Seq[Any](input, registerId, default, tpe)
+  def reconstruct(cs: immutable.Seq[Any]) = cs match {
+    case Seq(input: Value[SBox.type] @unchecked,
+      registerId: RegisterIdentifier,
+      default: Option[Value[V]] @unchecked,
+      t: V @unchecked) => ExtractRegisterAs[V](input, registerId, default)(t)
+    case _ =>
+      illegalArgs("ExtractRegisterAs", "(Value[SBox.type], registerId: RegisterIdentifier, default: Option[Value[V]])(tpe: V)", cs)
+  }
   override def cost: Int = 1000 //todo: the same as ExtractBytes.cost
 
   override def function(box: EvaluatedValue[SBox.type]): Value[V] =

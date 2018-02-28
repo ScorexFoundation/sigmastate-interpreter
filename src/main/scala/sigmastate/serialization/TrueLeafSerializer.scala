@@ -1,14 +1,15 @@
 package sigmastate.serialization
 
 import sigmastate.SType.TypeCode
-import sigmastate.{SBoolean, TrueLeaf}
+import sigmastate.serialization.ValueSerializer.Position
+import sigmastate.{TrueLeaf, SBoolean}
 
-object TrueLeafSerializer extends SigmaSerializer[TrueLeaf.type] {
-  override val opCode = SigmaSerializer.TrueCode
+object TrueLeafSerializer extends ValueSerializer[TrueLeaf.type] {
+  override val opCode = ValueSerializer.TrueCode
 
   val typeCode: TypeCode = SBoolean.typeCode
 
-  override def parseBody = {case (bytes, pos) => (TrueLeaf, 0, typeCode)}
+  override def parseBody(bytes: Array[Byte], pos: Position) = {(TrueLeaf, 0)}
 
-  override def serializeBody = {_ => Array[Byte]()}
+  override def serializeBody(obj: TrueLeaf.type) = {Array[Byte]()}
 }

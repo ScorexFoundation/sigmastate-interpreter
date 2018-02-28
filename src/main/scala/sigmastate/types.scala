@@ -10,8 +10,8 @@ import sigmastate.utxo.SigmaStateBox
 
 sealed trait SType {
   type WrappedType
-
   val typeCode: SType.TypeCode
+  def isPrimitive: Boolean = SType.allPrimitiveTypes.contains(this)
 }
 
 object SType {
@@ -24,6 +24,14 @@ object SType {
   implicit val typeGroupElement = SGroupElement
   implicit val typeBox = SBox
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
+
+  val allPrimitiveTypes = Seq(SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox)
+  val typeCodeToType = allPrimitiveTypes.map(t => t.typeCode -> t).toMap
+}
+
+/** Primitive type recognizer to pattern match on TypeCode */
+object PrimType {
+  def unapply(tc: TypeCode): Option[SType] = SType.typeCodeToType.get(tc)
 }
 
 case object SInt extends SType {

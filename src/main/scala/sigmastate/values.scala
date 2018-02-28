@@ -4,18 +4,21 @@ import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
 import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
+import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256Unsafe}
 import sigmastate.SType.TypeCode
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.serialization.SigmaSerializer.OpCode
+import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utxo.SigmaStateBox
 import sigmastate.utxo.CostTable.Cost
 
+import scala.collection.immutable
+
 
 trait Value[+S <: SType] extends Product {
-  val opCode: SigmaSerializer.OpCode = 0: Byte
+  val opCode: ValueSerializer.OpCode = 0: Byte
   def tpe: S
   def cost: Int
 
@@ -41,7 +44,7 @@ trait NotReadyValue[S <: SType] extends Value[S] {
 }
 
 trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
-  override val opCode: OpCode = SigmaSerializer.TaggedVariableCode
+  override val opCode: OpCode = ValueSerializer.TaggedVariableCode
 
   val id: Byte
   val typeCode: SType.TypeCode
@@ -52,7 +55,7 @@ trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
 //sealed trait IntLeaf extends Value[SInt.type]
 
 case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
-  override val opCode = SigmaSerializer.IntConstantCode
+  override val opCode = ValueSerializer.IntConstantCode
   override val cost = 1
   override def tpe = SInt
 }
@@ -171,14 +174,14 @@ object BooleanConstant {
 }
 
 case object TrueLeaf extends BooleanConstant(true) {
-  override val opCode: OpCode = SigmaSerializer.TrueCode
+  override val opCode: OpCode = ValueSerializer.TrueCode
 
   override def cost: Int = Cost.ConstantNode
 }
 
 
 case object FalseLeaf extends BooleanConstant(false) {
-  override val opCode: OpCode = SigmaSerializer.FalseCode
+  override val opCode: OpCode = ValueSerializer.FalseCode
 
   override def cost: Int = Cost.ConstantNode
 }
@@ -208,6 +211,7 @@ case class BoxConstant(value: SigmaStateBox) extends EvaluatedValue[SBox.type] {
 
 trait NotReadyValueBox extends NotReadyValue[SBox.type] {
   override def cost: Int = 10
+  def tpe = SBox
 }
 
 case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox {
@@ -215,11 +219,19 @@ case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] wi
   override def tpe = SBox
 }
 
-case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tV: V)
-    extends EvaluatedValue[SCollection[V]] {
-  override val opCode = SigmaSerializer.ConcreteCollectionCode
+case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tItem: V)
+    extends EvaluatedValue[SCollection[V]] with Rewritable {
+  override val opCode = ValueSerializer.ConcreteCollectionCode
   val cost: Int = value.size
-  val tpe = SCollection[V]()(tV)
+  val tpe = SCollection[V]()(tItem)
+  def items = value // convenience accessor for code readability
+  def arity = 2
+  def deconstruct = immutable.Seq[Any](value, tItem)
+  def reconstruct(cs: immutable.Seq[Any]) = cs match {
+    case Seq(v: IndexedSeq[Value[V]] @unchecked, t: SType) => ConcreteCollection[SType](v)(t)
+    case _ =>
+      illegalArgs("ConcreteCollection", "(IndexedSeq, SType)", cs)
+  }
 }
 
 

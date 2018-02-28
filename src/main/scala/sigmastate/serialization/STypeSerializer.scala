@@ -1,0 +1,52 @@
+package sigmastate.serialization
+
+import scala.util.Try
+import sigmastate._
+import sigmastate.SType.TypeCode
+import sigmastate.serialization.STypeSerializer.Position
+
+trait STypeSerializer[T <: SType] extends SigmaSerializer[SType, T] {
+  import STypeSerializer._
+  val typeCode: TypeCode
+
+  override def toBytes(obj: T): Array[Byte] = serialize(obj)
+
+  override def parseBytes(bytes: Array[Byte]): Try[T] = Try {
+    deserialize(bytes, 0).asInstanceOf[T]
+  }
+}
+
+object STypeSerializer extends SigmaSerializerCompanion[SType] {
+  override type Tag = SType.TypeCode
+  val table: Map[Tag, SigmaSerializer[SType, _]] = Seq(
+    SInt.typeCode
+  ).map(tc => (tc, new DefaultSTypeSerializer(tc))).toMap
+
+  override def deserialize(bytes: Array[TypeCode], pos: Position): (SType, Consumed) = {
+    val c = bytes(pos)
+    val handler = table(c)
+    val (tpe, consumed) = handler.parseBody(bytes, pos + 1)
+    (tpe, consumed + 1)
+  }
+
+  override def serialize(tpe: SType) = {
+    val tc = tpe.typeCode
+    val ser = table(tc).asInstanceOf[SigmaSerializer[SType, SType]]
+    tc +: ser.serializeBody(tpe)
+  }
+}
+
+/** Default serializer stands out from other because it supports all predefined types */
+class DefaultSTypeSerializer(val typeCode: TypeCode) extends STypeSerializer[SType] {
+  override val companion = STypeSerializer
+
+  override def parseBody(bytes: Array[Byte], pos: Position) = typeCode match {
+    case PrimType(t) => (t, 0)
+    case _ => sys.error(s"Don't know how to parse type descriptor with typeCode = $typeCode")
+  }
+
+  override def serializeBody(tpe: SType) = tpe match {
+    case t if t.isPrimitive => Array[Byte]()
+    case _ => sys.error(s"Don't know how to serialize type descriptor $tpe")
+  }
+}
