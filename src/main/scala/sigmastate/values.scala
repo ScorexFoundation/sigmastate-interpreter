@@ -20,6 +20,7 @@ import scala.collection.immutable
 trait Value[+S <: SType] extends Product {
   val opCode: ValueSerializer.OpCode = 0: Byte
   def tpe: S
+  def typeCode: SType.TypeCode = tpe.typeCode
   def cost: Int
 
   /** Returns true if this value represent some constant or sigma statement, false otherwise */
@@ -45,9 +46,7 @@ trait NotReadyValue[S <: SType] extends Value[S] {
 
 trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
   override val opCode: OpCode = ValueSerializer.TaggedVariableCode
-
   val id: Byte
-  val typeCode: SType.TypeCode
 }
 
 
@@ -71,7 +70,6 @@ case object UnknownInt extends NotReadyValueInt {
 
 case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt {
   override val cost = 1
-  override val typeCode: TypeCode = SInt.typeCode
 }
 
 
@@ -88,7 +86,6 @@ trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type] {
 }
 
 case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt {
-  override val typeCode: TypeCode = SBigInt.typeCode
 }
 
 
@@ -113,7 +110,6 @@ case object UnknownByteArray extends NotReadyValueByteArray
 
 
 case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray {
-  override val typeCode: TypeCode = SByteArray.typeCode
 }
 
 
@@ -137,7 +133,6 @@ trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
 }
 
 case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.type] with NotReadyValueAvlTree {
-  override val typeCode: TypeCode = SAvlTree.typeCode
 }
 
 
@@ -161,7 +156,6 @@ trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
 
 case class TaggedGroupElement(override val id: Byte)
   extends TaggedVariable[SGroupElement.type] with NotReadyValueGroupElement {
-  override val typeCode: TypeCode = SGroupElement.typeCode
 }
 
 
@@ -193,7 +187,6 @@ trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
 
 case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.type] with NotReadyValueBoolean {
   override def cost = 1
-  override val typeCode: TypeCode = SBoolean.typeCode
 }
 
 /**
@@ -215,7 +208,6 @@ trait NotReadyValueBox extends NotReadyValue[SBox.type] {
 }
 
 case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox {
-  override val typeCode: TypeCode = SBox.typeCode
   override def tpe = SBox
 }
 
