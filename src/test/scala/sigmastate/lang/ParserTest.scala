@@ -107,6 +107,12 @@ X > Y
 
   }
 
+  property("arrays") {
+    parse("[]") shouldBe(ConcreteCollection(IndexedSeq.empty)(NoType))
+    parse("[1]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt))
+    parse("[1, X]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1), REF("X")))(SInt))
+  }
+
   property("get field of ref") {
     parse("XXX.YYY") shouldBe GETTER(REF("XXX"), "YYY")
     parse("""
