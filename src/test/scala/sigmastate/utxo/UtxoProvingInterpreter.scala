@@ -14,7 +14,7 @@ class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
   private implicit val soundness: Int = 256
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
-    (1 to 4).map(_ => DLogProverInput.random()._1) ++
+    (1 to 4).map(_ => DLogProverInput.random()) ++
       (1 to 4).map(_ => DiffieHellmanTupleProverInput.random())
   }
 

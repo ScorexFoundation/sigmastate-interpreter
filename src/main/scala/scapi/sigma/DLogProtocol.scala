@@ -67,13 +67,11 @@ object DLogProtocol {
   }
 
   object DLogProverInput {
-    def random()(implicit dlog: DlogGroup, soundness: Int): (DLogProverInput, ProveDlog) = {
+    def random()(implicit dlog: DlogGroup, soundness: Int): DLogProverInput = {
       val g = dlog.getGenerator
       val qMinusOne = dlog.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-      val h = dlog.exponentiate(g, w)
-
-      DLogProverInput(w) -> ProveDlog(h)
+      DLogProverInput(w)
     }
   }
 
