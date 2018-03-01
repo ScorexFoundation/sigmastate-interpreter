@@ -46,6 +46,13 @@ trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
 
 //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
 
+case object UnitConstant extends EvaluatedValue[SUnit.type] {
+  override val opCode = ValueSerializer.UnitConstantCode
+  override val cost = 1
+  override def tpe = SUnit
+  val value = ()
+}
+
 case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val opCode = ValueSerializer.IntConstantCode
   override val cost = 1
@@ -196,6 +203,13 @@ trait NotReadyValueBox extends NotReadyValue[SBox.type] {
 }
 
 case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox {
+}
+
+case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] {
+  override val opCode = ValueSerializer.TupleCode
+  val cost: Int = value.size
+  val tpe = STuple(items.map(_.tpe))
+  lazy val value = items
 }
 
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tItem: V)

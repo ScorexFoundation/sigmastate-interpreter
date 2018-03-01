@@ -37,9 +37,9 @@ class ParserTest extends PropSpec with PropertyChecks with Matchers {
         |3 > 2
       """.stripMargin) shouldBe Block(Some(LET("X", IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
 
-    parse("(let X = 10; 3 > 2)") shouldBe Block(Some(LET("X", IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
-    parse("(let X = 3 + 2; 3 > 2)") shouldBe Block(Some(LET("X", Plus(IntConstant(3), IntConstant(2)))), GT(IntConstant(3), IntConstant(2)))
-    parse("(let X = if(true) then true else false; false)") shouldBe Block(Some(LET("X", If(TrueLeaf, TrueLeaf, FalseLeaf))), FalseLeaf)
+    parse("{let X = 10; 3 > 2}") shouldBe Block(Some(LET("X", IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
+    parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Some(LET("X", Plus(IntConstant(3), IntConstant(2)))), GT(IntConstant(3), IntConstant(2)))
+    parse("{let X = if(true) then true else false; false}") shouldBe Block(Some(LET("X", If(TrueLeaf, TrueLeaf, FalseLeaf))), FalseLeaf)
 
     val expr = parse(
       """let X = 10;
@@ -111,7 +111,27 @@ X > Y
     parse("[]") shouldBe(ConcreteCollection(IndexedSeq.empty)(NoType))
     parse("[1]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt))
     parse("[1, X]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1), REF("X")))(SInt))
+    parse("[1, X + 1, []]") shouldBe(ConcreteCollection(
+      IndexedSeq(
+        IntConstant(1),
+        Plus(REF("X").asValue[SInt.type], IntConstant(1)),
+        ConcreteCollection(IndexedSeq.empty)(NoType)))(SInt))
+    parse("[[X + 1]]") shouldBe ConcreteCollection[SCollection[SInt.type]](
+      IndexedSeq(ConcreteCollection[SInt.type](IndexedSeq(
+                  Plus(REF("X").asValue[SInt.type], IntConstant(1))))))
   }
+
+  property("comma separated list") {
+    parse("()") shouldBe UnitConstant
+    parse("(1)") shouldBe IntConstant(1)
+    parse("(1, 2)") shouldBe Tuple(IndexedSeq(IntConstant(1), IntConstant(2)))
+    parse("(1, X + 1)") shouldBe Tuple(IndexedSeq(IntConstant(1), Plus(REF("X").asValue[SInt.type], IntConstant(1))))
+  }
+
+//  property("global functions") {
+//    parse("f(x)") shouldBe ConcreteCollection(IndexedSeq.empty)(NoType)
+//
+//  }
 
   property("get field of ref") {
     parse("XXX.YYY") shouldBe GETTER(REF("XXX"), "YYY")

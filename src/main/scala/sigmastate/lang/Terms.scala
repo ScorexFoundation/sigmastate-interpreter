@@ -1,27 +1,12 @@
 package sigmastate.lang
 
-import sigmastate.{Value, SType, NoType}
+import sigmastate.{Value, NoType, SType, SFunc}
 
 object Terms {
 
   type UValue = Value[SType]
 
   case class CUSTOMTYPE(name: String, fields: List[(String, SType)])
-
-//  sealed trait LazyVal {
-//    val tpe: SType
-//    val value: Coeval[tpe.WrappedType]
-//  }
-//
-//  object LazyVal {
-//    private case class LazyValImpl(tpe: Type, v: Coeval[Any]) extends LazyVal {
-//      override val value: Coeval[tpe.Underlying] = v.map(_.asInstanceOf[tpe.Underlying])
-//    }
-//
-//    def apply(t: Type)(v: Coeval[t.Underlying]): LazyVal = LazyValImpl(t, v)
-//  }
-
-//  case class OBJECT(fields: Map[String, LazyVal])
 
   case class Block(let: Option[LET], t: Value[SType]) extends Value[SType] {
     override def cost: Int = ???
@@ -44,6 +29,15 @@ object Terms {
   case class REF(key: String, tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
+  }
+
+  case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
+    override def cost: Int = ???
+    override def evaluated: Boolean = false
+    lazy val tpe: SType = func.tpe match {
+      case SFunc(_, r) => r
+      case _ => NoType
+    }
   }
 
   implicit def valueToBlock(t: Value[SType]): Block = Block(None, t)

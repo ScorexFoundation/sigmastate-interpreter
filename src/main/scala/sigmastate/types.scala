@@ -117,4 +117,28 @@ object SCollection {
   val TypeCode = 80: Byte
 }
 
+case class SFunc[Dom <: SType, Range <: SType](tDom: Dom,  tRange: Range) extends SType {
+  override type WrappedType = tDom.WrappedType => tRange.WrappedType
+  override val typeCode = SFunc.TypeCode
+//  override def equals(obj: scala.Any) = obj match {
+//    case that: SFunc[_,_] => that.tDom == tDom && that.tRange == tRange
+//    case _ => false
+//  }
+//  override def hashCode() = ((31 + typeCode) * 31 + tDom.hashCode()) * 31 + tRange.hashCode()
+}
+
+object SFunc {
+  val TypeCode = 90: Byte
+}
+
+case class STuple(items: IndexedSeq[SType]) extends SType {
+  override type WrappedType = Seq[Any]
+  override val typeCode = STuple.TypeCode
+}
+
+object STuple {
+  val TypeCode = 100: Byte
+}
+
+
 

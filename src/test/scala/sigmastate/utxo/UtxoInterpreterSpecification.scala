@@ -86,24 +86,24 @@ class UtxoInterpreterSpecification extends PropSpec
     val timeout = IntConstant(100)
     val minToRaise = IntConstant(1000)
 
-//    val env = Map(
-//      "timeout" -> 100,
-//      "minToRaise" -> 1000,
-//      "backerPubKey" -> backerPubKey,
-//      "projectPubKey" -> projectPubKey,
-//    )
-//    val crowdFundingAst = buildAst(env,
-//      """
-//       | let c1 = HEIGHT >= timeout && backerPubKey;
-//       | let c2 = all([
-//       |   HEIGHT < timeout,
-//       |   projectPubKey,
-//       |   exists(OUTPUT, function(out: Box) {
-//       |     return out.amount >= minToRaise && out.propositionBytes = projectPubKey.propBytes;
-//       |   })
-//       | ])
-//       | c1 || c2
-//      """.stripMargin)
+    val env = Map(
+      "timeout" -> 100,
+      "minToRaise" -> 1000,
+      "backerPubKey" -> backerPubKey,
+      "projectPubKey" -> projectPubKey,
+    )
+    val crowdFundingAst = buildAst(env,
+      """
+       | let c1 = HEIGHT >= timeout && backerPubKey;
+       | let c2 = all([
+       |   HEIGHT < timeout,
+       |   projectPubKey,
+       |   exists(OUTPUT, function(out: Box) {
+       |     return out.amount >= minToRaise && out.propositionBytes = projectPubKey.propBytes;
+       |   })
+       | ])
+       | c1 || c2
+      """.stripMargin)
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
       AND(GE(Height, timeout), backerPubKey),
