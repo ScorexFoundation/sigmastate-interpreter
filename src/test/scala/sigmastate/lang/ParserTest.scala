@@ -35,11 +35,11 @@ class ParserTest extends PropSpec with PropertyChecks with Matchers {
     parse(
       """let X = 10;
         |3 > 2
-      """.stripMargin) shouldBe Block(Some(LET("X", IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
+      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
 
-    parse("{let X = 10; 3 > 2}") shouldBe Block(Some(LET("X", IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
-    parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Some(LET("X", Plus(IntConstant(3), IntConstant(2)))), GT(IntConstant(3), IntConstant(2)))
-    parse("{let X = if(true) then true else false; false}") shouldBe Block(Some(LET("X", If(TrueLeaf, TrueLeaf, FalseLeaf))), FalseLeaf)
+    parse("{let X = 10; 3 > 2}") shouldBe Block(Some(Let("X", IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
+    parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Some(Let("X", Plus(IntConstant(3), IntConstant(2)))), GT(IntConstant(3), IntConstant(2)))
+    parse("{let X = if(true) then true else false; false}") shouldBe Block(Some(Let("X", If(TrueLeaf, TrueLeaf, FalseLeaf))), FalseLeaf)
 
     val expr = parse(
       """let X = 10;
@@ -47,7 +47,7 @@ let Y = 11;
 X > Y
       """.stripMargin)
 
-    expr shouldBe Block(Some(LET("X", IntConstant(10))), Block(Some(LET("Y", IntConstant(11))), typed[SInt.type, SInt.type](REF("X"), REF("Y"))(GT)))
+    expr shouldBe Block(Some(Let("X", IntConstant(10))), Block(Some(Let("Y", IntConstant(11))), typed[SInt.type, SInt.type](Ident("X"), Ident("Y"))(GT)))
   }
 
   property("multiline") {
@@ -63,11 +63,11 @@ X > Y
       """let X = 10;
         |
         |true
-      """.stripMargin) shouldBe Block(Some(LET("X", IntConstant(10))), TrueLeaf)
+      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(10))), TrueLeaf)
     parse(
       """let X = 11;
         |true
-      """.stripMargin) shouldBe Block(Some(LET("X", IntConstant(11))), TrueLeaf)
+      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(11))), TrueLeaf)
 
     parse(
       """
@@ -78,18 +78,18 @@ X > Y
         | +
         |  2
         |
-      """.stripMargin) shouldBe Block(Some(LET("X", IntConstant(12))), Plus(IntConstant(3), IntConstant(2)))
+      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(12))), Plus(IntConstant(3), IntConstant(2)))
   }
 
   property("if") {
     parse("if(true) then 1 else 2") shouldBe If(TrueLeaf, IntConstant(1), IntConstant(2))
-    parse("if(true) then 1 else if(X==Y) then 2 else 3") shouldBe If(TrueLeaf, IntConstant(1), If(EQ(REF("X"), REF("Y")), IntConstant(2), IntConstant(3)))
+    parse("if(true) then 1 else if(X==Y) then 2 else 3") shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
     parse(
       """if ( true )
         |then 1
         |else if(X== Y)
         |     then 2
-        |       else 3""".stripMargin) shouldBe If(TrueLeaf, IntConstant(1), If(EQ(REF("X"), REF("Y")), IntConstant(2), IntConstant(3)))
+        |       else 3""".stripMargin) shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
 
     parse("if (true) then false else false==false") shouldBe If(TrueLeaf, FalseLeaf, EQ(FalseLeaf, FalseLeaf))
 
@@ -101,45 +101,45 @@ X > Y
         |  1
         |else if ( X == Y) then 2 else 3""".stripMargin) shouldBe If(
       TrueLeaf,
-      Block(Some(LET("A", Block(None, IntConstant(10)))), IntConstant(1)),
-      If(EQ(REF("X"), REF("Y")), IntConstant(2), IntConstant(3))
+      Block(Some(Let("A", Block(None, IntConstant(10)))), IntConstant(1)),
+      If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3))
     )
 
   }
 
-  property("arrays") {
-    parse("[]") shouldBe(ConcreteCollection(IndexedSeq.empty)(NoType))
-    parse("[1]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt))
-    parse("[1, X]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1), REF("X")))(SInt))
-    parse("[1, X + 1, []]") shouldBe(ConcreteCollection(
-      IndexedSeq(
-        IntConstant(1),
-        Plus(REF("X").asValue[SInt.type], IntConstant(1)),
-        ConcreteCollection(IndexedSeq.empty)(NoType)))(SInt))
-    parse("[[X + 1]]") shouldBe ConcreteCollection[SCollection[SInt.type]](
-      IndexedSeq(ConcreteCollection[SInt.type](IndexedSeq(
-                  Plus(REF("X").asValue[SInt.type], IntConstant(1))))))
-  }
+//  property("arrays") {
+//    parse("[]") shouldBe(ConcreteCollection(IndexedSeq.empty)(NoType))
+//    parse("[1]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt))
+//    parse("[1, X]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1), Ident("X")))(SInt))
+//    parse("[1, X + 1, []]") shouldBe(ConcreteCollection(
+//      IndexedSeq(
+//        IntConstant(1),
+//        Plus(Ident("X").asValue[SInt.type], IntConstant(1)),
+//        ConcreteCollection(IndexedSeq.empty)(NoType)))(SInt))
+//    parse("[[X + 1]]") shouldBe ConcreteCollection[SCollection[SInt.type]](
+//      IndexedSeq(ConcreteCollection[SInt.type](IndexedSeq(
+//                  Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
+//  }
 
   property("comma separated list") {
     parse("()") shouldBe UnitConstant
     parse("(1)") shouldBe IntConstant(1)
     parse("(1, 2)") shouldBe Tuple(IndexedSeq(IntConstant(1), IntConstant(2)))
-    parse("(1, X + 1)") shouldBe Tuple(IndexedSeq(IntConstant(1), Plus(REF("X").asValue[SInt.type], IntConstant(1))))
+    parse("(1, X + 1)") shouldBe Tuple(IndexedSeq(IntConstant(1), Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
   }
 
 //  property("global functions") {
-//    parse("f(x)") shouldBe ConcreteCollection(IndexedSeq.empty)(NoType)
+//    parse("f(x)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x")))
 //
 //  }
 
   property("get field of ref") {
-    parse("XXX.YYY") shouldBe GETTER(REF("XXX"), "YYY")
+    parse("XXX.YYY") shouldBe Select(Ident("XXX"), "YYY")
     parse("""
         |
         | X.Y
         |
-      """.stripMargin) shouldBe GETTER(REF("X"), "Y")
+      """.stripMargin) shouldBe Select(Ident("X"), "Y")
   }
 
 //  property("multisig sample") {

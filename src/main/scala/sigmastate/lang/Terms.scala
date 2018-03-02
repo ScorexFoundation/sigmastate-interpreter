@@ -8,25 +8,25 @@ object Terms {
 
   case class CUSTOMTYPE(name: String, fields: List[(String, SType)])
 
-  case class Block(let: Option[LET], t: Value[SType]) extends Value[SType] {
+  case class Block(let: Option[Let], t: Value[SType]) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
     def tpe: SType = t.tpe
   }
 
-  case class LET(name: String, value: Block) extends Value[SType] {
+  case class Let(name: String, value: Block) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
     def tpe: SType = value.tpe
   }
 
-  case class GETTER(i: Block, field: String) extends Value[SType] {
+  case class Select(i: Value[SType], field: String) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
     def tpe: SType = NoType
   }
 
-  case class REF(key: String, tpe: SType = NoType) extends Value[SType] {
+  case class Ident(key: String, tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
   }
