@@ -10,7 +10,9 @@ class ParserTest extends PropSpec with PropertyChecks with Matchers {
 
   def parse(x: String): UValue = {
     try {
-      Parser(x).get.value
+      val res = Parser(x).get.value
+//      Parser.logged.foreach(println)
+      res
     } catch {
       case e: Exception =>
         Parser.logged.foreach(println)
@@ -39,6 +41,21 @@ class ParserTest extends PropSpec with PropertyChecks with Matchers {
     parse("1 >= 0 || 3 > 2") shouldBe OR(GE(IntConstant(1), IntConstant(0)), GT(IntConstant(3), IntConstant(2)))
   }
 
+  property("comma operators") {
+    parse("1, 2") shouldBe Comma(IntConstant(1), IntConstant(2))
+    parse("1, 2, 3") shouldBe Comma(Comma(IntConstant(1), IntConstant(2)), IntConstant(3))
+    parse("1, 2 + 3") shouldBe Comma(IntConstant(1), Plus(IntConstant(2), IntConstant(3)))
+  }
+
+  property("tuple constructor") {
+    parse("()") shouldBe UnitConstant
+    parse("(1)") shouldBe IntConstant(1)
+    parse("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
+    parse("(1, X + 1)") shouldBe Tuple(IntConstant(1), Plus(Ident("X").asValue[SInt.type], IntConstant(1)))
+    parse("(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
+    parse("(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(IntConstant(2), IntConstant(3)), IntConstant(4))
+  }
+
   property("let/ref constructs") {
     parse(
       """let X = 10;
@@ -51,8 +68,8 @@ class ParserTest extends PropSpec with PropertyChecks with Matchers {
 
     val expr = parse(
       """let X = 10;
-let Y = 11;
-X > Y
+        |let Y = 11;
+        |X > Y
       """.stripMargin)
 
     expr shouldBe Block(Some(Let("X", IntConstant(10))), Block(Some(Let("Y", IntConstant(11))), typed[SInt.type, SInt.type](Ident("X"), Ident("Y"))(GT)))
@@ -115,29 +132,23 @@ X > Y
 
   }
 
-//  property("arrays") {
-//    parse("[]") shouldBe(ConcreteCollection(IndexedSeq.empty)(NoType))
-//    parse("[1]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt))
-//    parse("[1, X]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1), Ident("X")))(SInt))
-//    parse("[1, X + 1, []]") shouldBe(ConcreteCollection(
-//      IndexedSeq(
-//        IntConstant(1),
-//        Plus(Ident("X").asValue[SInt.type], IntConstant(1)),
-//        ConcreteCollection(IndexedSeq.empty)(NoType)))(SInt))
-//    parse("[[X + 1]]") shouldBe ConcreteCollection[SCollection[SInt.type]](
-//      IndexedSeq(ConcreteCollection[SInt.type](IndexedSeq(
-//                  Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
-//  }
-
-  property("comma separated list") {
-    parse("()") shouldBe UnitConstant
-    parse("(1)") shouldBe IntConstant(1)
-    parse("(1, 2)") shouldBe Tuple(IndexedSeq(IntConstant(1), IntConstant(2)))
-    parse("(1, X + 1)") shouldBe Tuple(IndexedSeq(IntConstant(1), Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
+  property("arrays") {
+    parse("[]") shouldBe(ConcreteCollection(IndexedSeq.empty)(NoType))
+    parse("[1]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt))
+    parse("[1, X]") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1), Ident("X")))(SInt))
+    parse("[1, X + 1, []]") shouldBe(ConcreteCollection(
+      IndexedSeq(
+        IntConstant(1),
+        Plus(Ident("X").asValue[SInt.type], IntConstant(1)),
+        ConcreteCollection(IndexedSeq.empty)(NoType)))(SInt))
+    parse("[[X + 1]]") shouldBe ConcreteCollection[SCollection[SInt.type]](
+      IndexedSeq(ConcreteCollection[SInt.type](IndexedSeq(
+                  Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
   }
 
   property("global functions") {
     parse("f(x)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x")))
+    parse("f((x, y))") shouldBe Apply(Ident("f"), IndexedSeq(Tuple(IndexedSeq(Ident("x"), Ident("y")))))
 
   }
 

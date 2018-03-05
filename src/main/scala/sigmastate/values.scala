@@ -211,6 +211,9 @@ case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple]
   val tpe = STuple(items.map(_.tpe))
   lazy val value = items
 }
+object Tuple {
+  def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
+}
 
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tItem: V)
     extends EvaluatedValue[SCollection[V]] with Rewritable {

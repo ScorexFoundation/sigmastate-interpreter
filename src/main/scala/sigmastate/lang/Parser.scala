@@ -36,6 +36,7 @@ object Parser {
   private def trueP: P[TrueLeaf.type]      = P("true").map(_ => TrueLeaf)
   private def falseP: P[FalseLeaf.type]    = P("false").map(_ => FalseLeaf)
   private def unitP: P[UnitConstant.type]  = P("()").map(_ => UnitConstant)
+  private def emptyArrayP: P[Value[SType]]  = P("[]").map(_ => ConcreteCollection(IndexedSeq.empty)(NoType))
   private def ident: P[Ident]               = P(varName).map(x => Ident(x.trim))
   private def byteVectorP: P[ByteArrayConstant] =
     P("base58'" ~ CharsWhileIn(Base58Chars).! ~ "'")
@@ -45,23 +46,22 @@ object Parser {
     case (h, t) => h :: t.toList
   }
 
-  private def bracketsP: P[Value[SType]] = P("[" ~ commaList ~ "]").map {
+  private def bracketsP: P[Value[SType]] = P("[" ~/ commaList ~ "]").map {
     case Nil => ConcreteCollection(IndexedSeq.empty)(NoType)
-    case h :: t => ConcreteCollection(h +: t.toIndexedSeq)(h.tpe)
+    case xs => {
+      val items = xs.flatMap(flattenComma).toIndexedSeq
+      ConcreteCollection(items)(if (items.nonEmpty) items(0).tpe else NoType)
+    }
   }
-  private def bracesP: P[Value[SType]] = P("(" ~ commaList ~ ")").map {
-    case Nil => UnitConstant
-    case h :: Nil => h
-    case h :: t => Tuple(h +: t.toIndexedSeq)
-  }
-  private def curlyBracesP: P[Value[SType]]    = P("{" ~ block ~ "}")
+
+  private def curlyBracesP: P[Value[SType]]    = P("{" ~/ block ~ "}")
 
   private def statement = P(letP).log()
-  private def letP: P[Let]             = P("let " ~ varName ~ "=" ~ expr ~ ";").map { case ((x, y)) => Let(x, y) }
+  private def letP: P[Let]             = P("let " ~/ varName ~ "=" ~/ expr ~ ";").map { case ((x, y)) => Let(x, y) }
 
   private def func: P[Value[SType]]         = P(ident)
 
-  private def applyP: P[Apply]         = P(func ~ "(" ~ commaList ~ ")").map {
+  private def applyP: P[Apply]         = P(func ~ "(" ~/ commaList ~ ")").map {
     case (f, Nil) => Apply(f, IndexedSeq.empty)
     case (f, items) => Apply(f, items.toIndexedSeq)
   }
@@ -74,22 +74,28 @@ object Parser {
     case ((all, y)) => all.foldRight(y) { case (r, curr) => Block(Some(r), curr) }
   }
 
-  private def expr = P(applyP | binaryOp(priority) | bracesP | atom).log()
+  private lazy val binop = binaryOp(priority)
 
-  private def atom: P[Value[_ <: SType]] =
-    P(ifP | byteVectorP | numberP | trueP | falseP | unitP  | curlyBracesP | bracketsP | ident )
+  val parens = P( "(" ~/ binop ~ ")" ).log().map {
+    case c: Comma => Tuple(flattenComma(c).toIndexedSeq)
+    case x => x
+  }
+
+  private def factor: P[Value[_ <: SType]] =
+    P(ifP | byteVectorP | numberP | trueP | falseP | unitP  | emptyArrayP | curlyBracesP | bracketsP | ident | parens)
+
+  private def expr = P(applyP | binop).log()
 
   def apply(str: String): core.Parsed[Value[_ <: SType], Char, String] = (block ~ End).log().parse(str)
 
-  private val priority = List("||", "&&", "==", ">=", ">", "+", "-", "*", ".")
+  private val priority = List(",", "||", "&&", "==", ">=", ">", "+", "-", "*", ".")
 
   private def binaryOp(rest: List[String]): P[Value[SType]] = rest match {
-    case Nil => atom
+    case Nil => factor
     case lessPriorityOp :: restOps =>
       val operand = binaryOp(restOps)
-      var p = P(operand ~ (lessPriorityOp.! ~ operand).rep())
-      if (lessPriorityOp == "+") p = p.log()
-      p.map {
+      var binop = P( operand ~ (lessPriorityOp.!  ~  operand).rep )
+      binop.map {
         case ((left: Value[SType], r: Seq[(String, Value[SType])])) =>
           r.foldLeft(left) {
             case (r2, (op, y)) =>
@@ -105,6 +111,11 @@ object Parser {
                   case Ident(fieldName, t) => Select(r2, fieldName)
                   case _ => error(s"Invalid field name $y")
                 }
+                case "," => Comma(r2, y)
+//                r2 match {
+//                  case Tuple(items) => Tuple(items :+ y)
+//                  case _ => Tuple(IndexedSeq(r2, y))
+//                }
               }
           }
 

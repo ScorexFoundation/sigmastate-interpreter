@@ -26,6 +26,12 @@ object Terms {
     def tpe: SType = NoType
   }
 
+  case class Comma(l: Value[SType], r: Value[SType]) extends Value[SType] {
+    override def cost: Int = ???
+    override def evaluated: Boolean = ???
+    def tpe: SType = NoType
+  }
+
   case class Ident(key: String, tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
@@ -47,5 +53,10 @@ object Terms {
 
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
+  }
+
+  private[lang] def flattenComma(x: Value[SType]): List[Value[SType]] = x match {
+    case Comma(l, r) => flattenComma(l) ::: flattenComma(r)
+    case _ => List(x)
   }
 }
