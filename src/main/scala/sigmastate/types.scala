@@ -117,8 +117,8 @@ object SCollection {
   val TypeCode = 80: Byte
 }
 
-case class SFunc[Dom <: SType, Range <: SType](tDom: Dom,  tRange: Range) extends SType {
-  override type WrappedType = tDom.WrappedType => tRange.WrappedType
+case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {
+  override type WrappedType = Seq[Any] => tRange.WrappedType
   override val typeCode = SFunc.TypeCode
 //  override def equals(obj: scala.Any) = obj match {
 //    case that: SFunc[_,_] => that.tDom == tDom && that.tRange == tRange

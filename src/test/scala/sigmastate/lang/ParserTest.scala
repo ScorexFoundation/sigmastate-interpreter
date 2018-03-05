@@ -76,6 +76,17 @@ class ParserTest extends PropSpec with PropertyChecks with Matchers {
     expr shouldBe Block(Some(Let("X", IntConstant(10))), Block(Some(Let("Y", IntConstant(11))), typed[SInt.type, SInt.type](Ident("X"), Ident("Y"))(GT)))
   }
 
+  property("types") {
+    parse("let X: Int = 10; 3 > 2") shouldBe Block(Some(Let("X", IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
+    parse("""let X: (Int, Boolean) = (10, true); 3 > 2""") shouldBe Block(Some(Let("X", Tuple(IntConstant(10), TrueLeaf))), GT(IntConstant(3), IntConstant(2)))
+    parse("""let X: Array[Int] = [1,2,3]; X.size""") shouldBe
+      Block(Some(Let("X", ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
+            Select(Ident("X", NoType), "size"))
+    parse("""let X: (Array[Int], Box) = ([1,2,3], INPUT); X._1""") shouldBe
+        Block(Some(Let("X", Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
+          Select(Ident("X", NoType), "_1"))
+  }
+
   property("multiline") {
     parse(
       """
@@ -149,8 +160,12 @@ class ParserTest extends PropSpec with PropertyChecks with Matchers {
 
   property("global functions") {
     parse("f(x)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x")))
-   parse("f((x, y))") shouldBe Apply(Ident("f"), IndexedSeq(Tuple(IndexedSeq(Ident("x"), Ident("y")))))
+    parse("f((x, y))") shouldBe Apply(Ident("f"), IndexedSeq(Tuple(IndexedSeq(Ident("x"), Ident("y")))))
     parse("f(x, y)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y")))
+  }
+
+  property("lambdas") {
+    parse("fun (x: Int) = x + 1") shouldBe Lambda(IndexedSeq("x" -> SInt), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
   }
 
   property("unary operations") {

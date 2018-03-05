@@ -46,6 +46,12 @@ object Terms {
     }
   }
 
+  case class Lambda(args: IndexedSeq[(String,SType)], body: Value[SType]) extends Value[SType] {
+    override def cost: Int = ???
+    override def evaluated: Boolean = true
+    lazy val tpe: SType = SFunc(args.map(_._2), body.tpe)
+  }
+
   implicit def valueToBlock(t: Value[SType]): Block = Block(None, t)
 
   def typed[A <: SType,B <: SType](a: UValue, b: UValue)(f: (Value[A],Value[B]) => UValue): UValue =

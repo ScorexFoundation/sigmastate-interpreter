@@ -5,13 +5,41 @@ import fastparse.{WhitespaceApi, core}
 import sigmastate._
 import sigmastate.lang.Terms._
 import scorex.crypto.encode.Base58
+import sigmastate.lang.syntax.Basic._
 import sigmastate.utxo.SizeOf
 
 import scala.collection.mutable
 
 class ParserException(msg: String) extends Exception(msg)
 
-object Parser {
+object Parser extends Types with Core {
+  import fastparse.noApi._
+  import WhitespaceApi._
+
+  def TypeExpr = ???
+
+  def ValVarDef = ???
+
+  val FunDef = LambdaDef.map { _ => () }
+
+  val LambdaSig = {
+    val FunArg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type.!).? )
+    val Args = P( FunArg.repTC(1) )
+    val FunArgs = P( OneNLMax ~ "(" ~/ Args.? ~ ")" )
+    val FunTypeArgs = P( "[" ~/ (Annot.rep ~ TypeArg).repTC(1) ~ "]" )
+    P( (FunTypeArgs).? ~~ FunArgs.rep )
+  }
+
+  val LambdaDef = {
+    val Body = P( WL ~ `=` ~/  expr )
+    P( LambdaSig ~ (`:` ~/ Type).?.! ~~ Body ).map {
+      case (args, resType, body) => body
+    }
+  }
+
+  def Block: P0 = curlyBracesP.map { _ => ()}
+
+  def Pattern = ???
 
   val logged = mutable.Buffer.empty[String]
   implicit val logger = Logger(logged.append(_))
@@ -21,24 +49,18 @@ object Parser {
   private val FirstCharInVarField = "QWERTYUIOPASDFGHJKLZXCVBNM"
   private val OtherCharInVarField = FirstCharInVarField + "1234567890[]"
 
-  private val White = WhitespaceApi.Wrapper {
-    import fastparse.all._
-    NoTrace(CharIn(" ", "\t", "\r", "\n").rep)
-  }
-  private val keywords = Set("if", "then", "else", "let")
-  import fastparse.noApi._
-  import White._
+//  private val keywords = Set("if", "then", "else", "let")
 
   val alpha = CharIn('A' to 'Z') | CharIn('a' to 'z')
   val digit = CharIn('0' to '9')
-  val varName = (alpha ~ ((alpha | digit).rep())).!.filter(!keywords(_))
+  val varName = Id.! //(alpha ~ ((alpha | digit).rep())).!.filter(!keywords(_))
 
   private def numberP: P[IntConstant]      = digit.rep(min = 1).!.map(t => IntConstant(t.toLong))
   private def trueP: P[TrueLeaf.type]      = P("true").map(_ => TrueLeaf)
   private def falseP: P[FalseLeaf.type]    = P("false").map(_ => FalseLeaf)
   private def unitP: P[UnitConstant.type]  = P("()").map(_ => UnitConstant)
   private def emptyArrayP: P[Value[SType]]  = P("[]").map(_ => ConcreteCollection(IndexedSeq.empty)(NoType))
-  private def ident: P[Ident]               = P(varName).map(x => Ident(x.trim))
+  private def ident: P[Ident]               = varName.map(x => Ident(x.trim))
   private def byteVectorP: P[ByteArrayConstant] =
     P("base58'" ~ CharsWhileIn(Base58Chars).! ~ "'")
         .map(x => ByteArrayConstant(Base58.decode(x).get))
@@ -50,7 +72,7 @@ object Parser {
   private def curlyBracesP: P[Value[SType]]    = P("{" ~/ block ~ "}")
 
   private def statement = P(letP).log()
-  private def letP: P[Let]             = P("let " ~/ varName ~ "=" ~/ expr ~ ";").map { case ((x, y)) => Let(x, y) }
+  private def letP: P[Let]             = P("let " ~/ varName ~ (`:` ~ Type).? ~ "=" ~/ expr ~ Semi).map { case ((x, y)) => Let(x, y) }
 
   private def func: P[Value[SType]] = P(ident)
 
@@ -58,15 +80,18 @@ object Parser {
     case (f, Some(UnitConstant)) => Apply(f, IndexedSeq.empty)
     case (f, Some(Tuple(items))) => Apply(f, items)
     case (f, Some(x)) => Apply(f, flattenComma(x).toIndexedSeq)
-    case (x: Ident, None) => x
+    case (x, _) => x
   }
 
   private def ifP: P[If[SType]]        = P("if" ~ "(" ~ expr ~ ")" ~ "then" ~ expr ~ "else" ~ expr)
     .map { case (x, y, z) => If(x.asValue[SBoolean.type], y, z) }
-    
+
+  private def lambda: P[Value[SType]]        = P(`fun` ~/ LambdaDef)
+    .map { case x => Lambda(IndexedSeq("x" -> SInt), x)}
+
   private def block: P[Value[SType]] = P("\n".rep ~ statement.rep ~ expr).map {
     case ((Nil, y)) => y
-    case ((all, y)) => all.foldRight(y) { case (r, curr) => Block(Some(r), curr) }
+    case ((all, y)) => all.foldRight(y) { case (r, curr) => Terms.Block(Some(r), curr) }
   }
 
   private lazy val binop = binaryOp(priority)
@@ -76,6 +101,7 @@ object Parser {
     def loop(ops: List[String]): P[String] = ops match {
       case o :: Nil => P(o).!
       case h :: t => P(h).! | loop(t)
+      case Nil => error("Empty list")
     }
     loop(allUnaryOps)
   }
@@ -102,6 +128,7 @@ object Parser {
   private def factor: P[Value[_ <: SType]] =
     P(ifP | byteVectorP | numberP | trueP | falseP | unitP  | emptyArrayP
       | curlyBracesP
+      | lambda
       | bracketsP
       | parens.map {
           case t if t.items.size == 1 => t.items(0)
