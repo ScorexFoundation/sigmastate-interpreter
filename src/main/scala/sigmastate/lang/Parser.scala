@@ -5,6 +5,7 @@ import fastparse.{WhitespaceApi, core}
 import sigmastate._
 import sigmastate.lang.Terms._
 import scorex.crypto.encode.Base58
+import sigmastate.utxo.SizeOf
 
 import scala.collection.mutable
 
@@ -46,24 +47,18 @@ object Parser {
     case (h, t) => h :: t.toList
   }
 
-  private def bracketsP: P[Value[SType]] = P("[" ~/ commaList ~ "]").map {
-    case Nil => ConcreteCollection(IndexedSeq.empty)(NoType)
-    case xs => {
-      val items = xs.flatMap(flattenComma).toIndexedSeq
-      ConcreteCollection(items)(if (items.nonEmpty) items(0).tpe else NoType)
-    }
-  }
-
   private def curlyBracesP: P[Value[SType]]    = P("{" ~/ block ~ "}")
 
   private def statement = P(letP).log()
   private def letP: P[Let]             = P("let " ~/ varName ~ "=" ~/ expr ~ ";").map { case ((x, y)) => Let(x, y) }
 
-  private def func: P[Value[SType]]         = P(ident)
+  private def func: P[Value[SType]] = P(ident)
 
-  private def applyP: P[Apply]         = P(func ~ "(" ~/ commaList ~ ")").map {
-    case (f, Nil) => Apply(f, IndexedSeq.empty)
-    case (f, items) => Apply(f, items.toIndexedSeq)
+  private def apply: P[Value[SType]]         = P(func ~ (unitP | parens).?).log().map {
+    case (f, Some(UnitConstant)) => Apply(f, IndexedSeq.empty)
+    case (f, Some(Tuple(items))) => Apply(f, items)
+    case (f, Some(x)) => Apply(f, flattenComma(x).toIndexedSeq)
+    case (x: Ident, None) => x
   }
 
   private def ifP: P[If[SType]]        = P("if" ~ "(" ~ expr ~ ")" ~ "then" ~ expr ~ "else" ~ expr)
@@ -76,15 +71,45 @@ object Parser {
 
   private lazy val binop = binaryOp(priority)
 
-  val parens = P( "(" ~/ binop ~ ")" ).log().map {
-    case c: Comma => Tuple(flattenComma(c).toIndexedSeq)
-    case x => x
+  private val allUnaryOps = List("!", "#")
+  private def unaryOp: P[String] = {
+    def loop(ops: List[String]): P[String] = ops match {
+      case o :: Nil => P(o).!
+      case h :: t => P(h).! | loop(t)
+    }
+    loop(allUnaryOps)
   }
 
-  private def factor: P[Value[_ <: SType]] =
-    P(ifP | byteVectorP | numberP | trueP | falseP | unitP  | emptyArrayP | curlyBracesP | bracketsP | ident | parens)
+  private lazy val unop = P( unaryOp ~ factor ).map { case (op, f) => op match {
+      case "!" => Not(f.asValue[SBoolean.type])
+      case "#" => SizeOf(f.asValue[SCollection[SAny.type]])
+    }
+  }
 
-  private def expr = P(applyP | binop).log()
+  private val parens = P( "(" ~/ binop ~ ")" ).log().map {
+    case c: Comma => Tuple(flattenComma(c).toIndexedSeq)
+    case x => Tuple(x)
+  }
+
+  private val bracketsP = P("[" ~/ binop ~ "]").map(t => {
+    val items = t match {
+      case c: Comma => flattenComma(c).toIndexedSeq
+      case _ => IndexedSeq(t)
+    }
+    ConcreteCollection(items)(if (items.nonEmpty) items(0).tpe else NoType)
+  })
+
+  private def factor: P[Value[_ <: SType]] =
+    P(ifP | byteVectorP | numberP | trueP | falseP | unitP  | emptyArrayP
+      | curlyBracesP
+      | bracketsP
+      | parens.map {
+          case t if t.items.size == 1 => t.items(0)
+          case t => t
+        }
+      | unop | apply)
+
+  private def expr = P(binop).log()
 
   def apply(str: String): core.Parsed[Value[_ <: SType], Char, String] = (block ~ End).log().parse(str)
 
@@ -112,10 +137,6 @@ object Parser {
                   case _ => error(s"Invalid field name $y")
                 }
                 case "," => Comma(r2, y)
-//                r2 match {
-//                  case Tuple(items) => Tuple(items :+ y)
-//                  case _ => Tuple(IndexedSeq(r2, y))
-//                }
               }
           }
 

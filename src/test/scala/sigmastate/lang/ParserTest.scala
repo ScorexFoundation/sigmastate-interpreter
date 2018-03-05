@@ -5,6 +5,7 @@ import org.scalatest.prop.PropertyChecks
 import scorex.crypto.encode.Base58
 import sigmastate._
 import sigmastate.lang.Terms._
+import sigmastate.utxo.SizeOf
 
 class ParserTest extends PropSpec with PropertyChecks with Matchers {
 
@@ -148,8 +149,17 @@ class ParserTest extends PropSpec with PropertyChecks with Matchers {
 
   property("global functions") {
     parse("f(x)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x")))
-    parse("f((x, y))") shouldBe Apply(Ident("f"), IndexedSeq(Tuple(IndexedSeq(Ident("x"), Ident("y")))))
+   parse("f((x, y))") shouldBe Apply(Ident("f"), IndexedSeq(Tuple(IndexedSeq(Ident("x"), Ident("y")))))
+    parse("f(x, y)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y")))
+  }
 
+  property("unary operations") {
+    parse("!x") shouldBe Not(Ident("x").asValue[SBoolean.type])
+    parse("!!x") shouldBe Not(Not(Ident("x").asValue[SBoolean.type]))
+    parse("!x && y") shouldBe AND(Not(Ident("x").asValue[SBoolean.type]), Ident("y").asValue[SBoolean.type])
+    parse("!x && !y") shouldBe AND(Not(Ident("x").asValue[SBoolean.type]), Not(Ident("y").asValue[SBoolean.type]))
+    parse("#x") shouldBe SizeOf(Ident("x").asValue[SCollection[NoType.type]])
+    parse("#x + 1") shouldBe Plus(SizeOf(Ident("x").asValue[SCollection[NoType.type]]), IntConstant(1))
   }
 
   property("get field of ref") {
