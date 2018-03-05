@@ -62,10 +62,6 @@ trait NotReadyValueInt extends NotReadyValue[SInt.type] {
   override def tpe = SInt
 }
 
-case object UnknownInt extends NotReadyValueInt {
-  override val cost = 1
-}
-
 case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt {
   override val cost = 1
 }

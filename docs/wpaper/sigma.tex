@@ -1,10 +1,7 @@
 \def\shownotes{1}
 \def\notesinmargins{0}
-\def\lncs{1}
-\def\shortVersion{0}
 
-
-\documentclass[11pt]{article}
+\documentclass[]{llncs}
 \usepackage{fullpage}
 
 \usepackage{amsmath,color,xcolor,hyperref,graphicx,wrapfig,listings}
@@ -24,7 +21,6 @@
 \fi
 
 \newcommand{\lnote}[1]{{\authnote{\textcolor{orange}{Leo notes}}{#1}}}
-\newcommand{\dnote}[1]{{\authnote{\textcolor{red}{Dima notes}}{#1}}}
 \newcommand{\knote}[1]{{\authnote{\textcolor{green}{kushti notes}}{#1}}}
 \newcommand{\mnote}[1]{{\authnote{\textcolor{blue}{morphic}}{#1}}}
 
@@ -69,10 +65,7 @@
 
 
 \begin{abstract}
-
 We report on design and implementation of \langname, a more powerful, protocol-friendly and at the same more secure language than the  Script language used in Bitcoin. We provide some examples of scripts in the language.
-
-
 \end{abstract}
 
 
@@ -92,7 +85,15 @@ In blockchain systems, there is a strict need to tackle the problem of denial-of
 
 \subsection{Related Work}
 
-\knote{Possible candidates: Simplicity, Plutus, Typecoin, Rholang, FSM-DSL. Good list is available at https://arxiv.org/pdf/1801.00687.pdf, pg. 11. }
+\knote{A good survey is available at https://arxiv.org/pdf/1801.00687.pdf, pg. 11}
+
+\begin{itemize}
+    \item{Simplicity}
+    \item{Plutus}
+    \item{TypeCoin}
+    \item{Rholang}
+\end{itemize}
+
 
 \subsection{Organization of the Paper}
 
@@ -388,8 +389,8 @@ We show in this paper...
 
 
 
-\bibliographystyle{alpha}
-\bibliography{sigma}
+\bibliographystyle{splncs03}
+\bibliography{sigma.bib}
 
 
 
