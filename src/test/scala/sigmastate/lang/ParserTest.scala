@@ -1,4 +1,4 @@
-package com.wavesplatform.lang
+package sigmastate.lang
 
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
@@ -8,7 +8,15 @@ import sigmastate.lang.Terms._
 
 class ParserTest extends PropSpec with PropertyChecks with Matchers {
 
-  def parse(x: String): UValue = Parser(x).get.value
+  def parse(x: String): UValue = {
+    try {
+      Parser(x).get.value
+    } catch {
+      case e: Exception =>
+        Parser.logged.foreach(println)
+        throw e
+    }
+  }
 
   property("simple expressions") {
     parse("10") shouldBe IntConstant(10)
@@ -97,8 +105,8 @@ X > Y
       """if
 
              (true)
-        |then let A = 10;
-        |  1
+        |then { let A = 10;
+        |  1 }
         |else if ( X == Y) then 2 else 3""".stripMargin) shouldBe If(
       TrueLeaf,
       Block(Some(Let("A", Block(None, IntConstant(10)))), IntConstant(1)),
@@ -128,10 +136,10 @@ X > Y
     parse("(1, X + 1)") shouldBe Tuple(IndexedSeq(IntConstant(1), Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
   }
 
-//  property("global functions") {
-//    parse("f(x)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x")))
-//
-//  }
+  property("global functions") {
+    parse("f(x)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x")))
+
+  }
 
   property("get field of ref") {
     parse("XXX.YYY") shouldBe Select(Ident("XXX"), "YYY")

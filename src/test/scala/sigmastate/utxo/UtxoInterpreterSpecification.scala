@@ -9,11 +9,10 @@ import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Digest32, Blake2b256, Blake2b256Unsafe}
 import sigmastate._
 import BoxHelpers.createBox
-import com.wavesplatform.lang.Parser
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
-import sigmastate.lang.SigmaBinder
+import sigmastate.lang.{SigmaBinder, Parser}
 import sigmastate.lang.Terms.UValue
 import sigmastate.utxo.SigmaStateBox._
 
