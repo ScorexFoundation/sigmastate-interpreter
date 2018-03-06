@@ -236,6 +236,7 @@ case class GE(override val left: Value[SInt.type],
   override val opCode: OpCode = ValueSerializer.GeCode
 }
 
+//todo: make EQ to really accept only values of the same type, now EQ(TrueLeaf, IntConstant(5)) is valid
 case class EQ[S <: SType](override val left: Value[S], override val right: Value[S]) extends Relation[S, S] {
   override val opCode: OpCode = ValueSerializer.EqCode
 }
