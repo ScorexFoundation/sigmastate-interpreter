@@ -44,9 +44,6 @@ class UtxoInterpreterSpecification extends PropSpec
       .get.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
-  //todo: implement
-  ignore("TxHasOutput reductions") {}
-
   /**
     * Crowdfunding example:
     * a project declares a need to raise "minToRaise" amount of tokens until some "timeout" height
