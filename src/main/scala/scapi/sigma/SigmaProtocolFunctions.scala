@@ -22,7 +22,6 @@ import scala.concurrent.Future
   - Json and ultra-compact binary serialization/deserialization
 */
 
-//todo: implement ring signature protocol of Groth et al.
 
 trait TranscriptMessage {
   def bytes: Array[Byte]
