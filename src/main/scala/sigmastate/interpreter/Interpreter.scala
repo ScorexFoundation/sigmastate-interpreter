@@ -20,13 +20,15 @@ import sigmastate.utxo.{CostTable, Transformer}
 
 import scala.annotation.tailrec
 
+trait InterpreterSettings {
+  lazy val dlogGroup: DlogGroup = new BcDlogECFp()
+}
 
-trait Interpreter {
+trait Interpreter extends InterpreterSettings {
+
   type CTX <: Context[CTX]
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
-
-  lazy val dlogGroup: DlogGroup = new BcDlogECFp()
 
   /**
     * Max cost of a script interpreter can accept
@@ -92,7 +94,6 @@ trait Interpreter {
         case c@CalcBlake2b256(l: EvaluatedValue[SByteArray.type]) if l.evaluated => c.function(l)
 
         case Exponentiate(l: GroupElementConstant, r: BigIntConstant) =>
-          val dlogGroup = new BcDlogECFp() //todo: externalize dlog group
           GroupElementConstant(dlogGroup.exponentiate(l.value, r.value))
 
         case MultiplyGroup(l: GroupElementConstant, r: GroupElementConstant) =>
