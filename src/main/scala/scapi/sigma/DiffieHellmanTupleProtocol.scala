@@ -5,7 +5,6 @@ import java.security.SecureRandom
 
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
-import scapi.sigma.DLogProtocol._
 import sigmastate._
 import sigmastate.Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
