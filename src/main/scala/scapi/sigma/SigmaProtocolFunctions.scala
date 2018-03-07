@@ -44,8 +44,7 @@ trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
 }
 
 
-trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] {
-  val dlogGroup: DlogGroup
+trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] extends InterpreterSettings {
   val soundness: Int
 }
 

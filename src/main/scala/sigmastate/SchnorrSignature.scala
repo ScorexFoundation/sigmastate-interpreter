@@ -1,11 +1,9 @@
 package sigmastate
 
-import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
-import edu.biu.scapi.primitives.dlog.DlogGroup
 import scapi.sigma.{Challenge, NonInteractiveProver}
 import scapi.sigma.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.SchnorrSignature.dlog
+import sigmastate.interpreter.InterpreterSettings
 
 
 // TODO: make implementation corresponding to RFC-8032 standard for EdDSA signatures
@@ -14,8 +12,6 @@ object SchnorrSignature {
   implicit val soundness = 256
 
   implicit val hf = Blake2b256
-
-  implicit val dlog: DlogGroup = new BcDlogECFp()
 }
 
 case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: Option[DLogProverInput])
@@ -40,7 +36,7 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
   }
 }
 
-object SchnorrSigner {
+object SchnorrSigner extends InterpreterSettings {
 
   def serialize(fm: FirstDLogProverMessage, sm: SecondDLogProverMessage): Array[Byte] = {
     val grec = fm.ecData
@@ -54,8 +50,8 @@ object SchnorrSigner {
 
   def generate(privateInput: DLogProverInput): SchnorrSigner = {
     val publicInput: ProveDlog = {
-      val g = dlog.getGenerator
-      val gw = dlog.exponentiate(g, privateInput.w)
+      val g = dlogGroup.getGenerator
+      val gw = dlogGroup.exponentiate(g, privateInput.w)
 
       ProveDlog(gw)
     }

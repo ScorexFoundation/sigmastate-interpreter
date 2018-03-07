@@ -3,7 +3,6 @@ package scapi.sigma
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Value.PropositionCode
@@ -28,7 +27,6 @@ object DLogProtocol {
 
     override val cost: Int = Cost.Dlog
 
-    override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup
     override val soundness: Int = 256
 
     //todo: fix, we should consider that class parameter could be not evaluated
@@ -42,13 +40,11 @@ object DLogProtocol {
     }
   }
 
-  object ProveDlog {
+  object ProveDlog extends InterpreterSettings {
 
     def apply(h: GroupElement): ProveDlog = ProveDlog(GroupElementConstant(h))
 
     val Code: PropositionCode = 102: Byte
-
-    lazy val dlogGroup: DlogGroup = new BcDlogECFp()
 
     def fromBytes(bytes: Array[Byte]): ProveDlog = {
       val (x, y) = EcPointFunctions.decodeBigIntPair(bytes).get

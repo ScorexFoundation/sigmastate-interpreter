@@ -67,7 +67,6 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
 
   override val cost: Int = Cost.Dlog * 2
 
-  override lazy val dlogGroup: DlogGroup = ProveDlog.dlogGroup
   override val soundness: Int = 256
 
 

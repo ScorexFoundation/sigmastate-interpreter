@@ -3,11 +3,11 @@ package sigmastate
 import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
-import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256Unsafe}
+import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import sigmastate.interpreter.InterpreterSettings
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utxo.SigmaStateBox
@@ -134,10 +134,10 @@ case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[SGro
 }
 
 
-case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
+case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with InterpreterSettings {
   override val cost = 10
   override def tpe = SGroupElement
-  override val value: GroupElement = new BcDlogECFp().getGenerator
+  override val value: GroupElement = dlogGroup.getGenerator
 }
 
 
