@@ -3,7 +3,7 @@ package sigmastate
 import scapi.sigma.{Challenge, NonInteractiveProver}
 import scapi.sigma.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.interpreter.InterpreterSettings
+import sigmastate.interpreter.GroupSettings
 
 
 // TODO: make implementation corresponding to RFC-8032 standard for EdDSA signatures
@@ -36,7 +36,7 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
   }
 }
 
-object SchnorrSigner extends InterpreterSettings {
+object SchnorrSigner extends GroupSettings {
 
   def serialize(fm: FirstDLogProverMessage, sm: SecondDLogProverMessage): Array[Byte] = {
     val grec = fm.ecData

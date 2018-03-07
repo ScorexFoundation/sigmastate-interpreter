@@ -5,7 +5,7 @@ import java.security.SecureRandom
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocolMsg
 import edu.biu.scapi.primitives.dlog.DlogGroup
-import sigmastate.interpreter.InterpreterSettings
+import sigmastate.interpreter.GroupSettings
 import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,12 +44,12 @@ trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
 }
 
 
-trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] extends InterpreterSettings {
+trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] extends GroupSettings {
   val soundness: Int
 }
 
 trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]]
-  extends InterpreterSettings {
+  extends GroupSettings {
 
   def publicImage: CI
 }

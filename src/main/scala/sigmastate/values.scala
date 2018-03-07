@@ -7,7 +7,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
-import sigmastate.interpreter.InterpreterSettings
+import sigmastate.interpreter.GroupSettings
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utxo.SigmaStateBox
@@ -134,7 +134,7 @@ case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[SGro
 }
 
 
-case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with InterpreterSettings {
+case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with GroupSettings {
   override val cost = 10
   override def tpe = SGroupElement
   override val value: GroupElement = dlogGroup.getGenerator

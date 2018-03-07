@@ -20,11 +20,11 @@ import sigmastate.utxo.{CostTable, Transformer}
 
 import scala.annotation.tailrec
 
-trait InterpreterSettings {
+trait GroupSettings {
   lazy val dlogGroup: DlogGroup = new BcDlogECFp()
 }
 
-trait Interpreter extends InterpreterSettings {
+trait Interpreter extends GroupSettings {
 
   type CTX <: Context[CTX]
 

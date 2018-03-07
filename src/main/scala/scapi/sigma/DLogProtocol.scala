@@ -8,7 +8,7 @@ import org.bouncycastle.util.BigIntegers
 import sigmastate.Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
-import sigmastate.interpreter.InterpreterSettings
+import sigmastate.interpreter.GroupSettings
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -40,7 +40,7 @@ object DLogProtocol {
     }
   }
 
-  object ProveDlog extends InterpreterSettings {
+  object ProveDlog extends GroupSettings {
 
     def apply(h: GroupElement): ProveDlog = ProveDlog(GroupElementConstant(h))
 
@@ -63,7 +63,7 @@ object DLogProtocol {
     }
   }
 
-  object DLogProverInput extends InterpreterSettings {
+  object DLogProverInput extends GroupSettings {
     def random()(implicit soundness: Int): (DLogProverInput, ProveDlog) = {
       val g = dlogGroup.getGenerator
       val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
