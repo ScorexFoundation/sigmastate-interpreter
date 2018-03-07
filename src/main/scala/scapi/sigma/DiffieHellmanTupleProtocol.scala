@@ -16,7 +16,7 @@ trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtoco
 }
 
 case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDiffieHellmanTuple)
-                                        (implicit val dlogGroup: DlogGroup, soundness: Int)
+                                        (implicit soundness: Int)
   extends SigmaProtocolPrivateInput[DiffieHellmanTupleProtocol, ProveDiffieHellmanTuple] {
 
   override lazy val publicImage: ProveDiffieHellmanTuple = commonInput

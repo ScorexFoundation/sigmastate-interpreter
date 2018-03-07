@@ -2,6 +2,8 @@ package sigmastate.utxo
 
 
 object CostTable {
+  type ExpressionCost = Int
+
   //Maximum cost of a script
   val ScriptLimit = 1000000
 

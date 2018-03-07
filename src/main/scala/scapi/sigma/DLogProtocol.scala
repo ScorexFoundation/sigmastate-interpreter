@@ -9,6 +9,7 @@ import org.bouncycastle.util.BigIntegers
 import sigmastate.Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
+import sigmastate.interpreter.InterpreterSettings
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -58,7 +59,7 @@ object DLogProtocol {
   }
 
 
-  case class DLogProverInput(w: BigInteger)(implicit val dlogGroup: DlogGroup, soundness: Int)
+  case class DLogProverInput(w: BigInteger)(implicit soundness: Int)
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol, ProveDlog] {
     override lazy val publicImage: ProveDlog = {
       val g = dlogGroup.getGenerator
@@ -66,12 +67,12 @@ object DLogProtocol {
     }
   }
 
-  object DLogProverInput {
-    def random()(implicit dlog: DlogGroup, soundness: Int): (DLogProverInput, ProveDlog) = {
-      val g = dlog.getGenerator
-      val qMinusOne = dlog.getOrder.subtract(BigInteger.ONE)
+  object DLogProverInput extends InterpreterSettings {
+    def random()(implicit soundness: Int): (DLogProverInput, ProveDlog) = {
+      val g = dlogGroup.getGenerator
+      val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-      val h = dlog.exponentiate(g, w)
+      val h = dlogGroup.exponentiate(g, w)
 
       DLogProverInput(w) -> ProveDlog(h)
     }

@@ -1,7 +1,5 @@
 package sigmastate
 
-import edu.biu.scapi.primitives.dlog.DlogGroup
-import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
@@ -44,7 +42,6 @@ class TestingInterpreterSpecification extends PropSpec
   import TestingInterpreter._
 
   implicit val soundness = 256
-  implicit val dlogGroup: DlogGroup = new BcDlogECFp()
 
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
