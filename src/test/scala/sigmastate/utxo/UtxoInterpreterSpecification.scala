@@ -1,17 +1,19 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.encode.Base16
-import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256, Blake2b256Unsafe}
 import sigmastate._
 import BoxHelpers.createBox
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import sigmastate.lang.{SigmaBinder, SigmaParser}
+import sigmastate.lang.Terms.SValue
 import sigmastate.utxo.SigmaStateBox._
 
 
@@ -26,6 +28,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
   import BoxHelpers.{fakeMessage, fakeSelf}
 
+  def parse(x: String): SValue = SigmaParser(x).get.value
+
+  def buildAst(env: Map[String, Any], code: String, okBind: Boolean = true): Value[SType] = {
+    val binder = new SigmaBinder(env)
+    val e = parse(code)
+    if (okBind) binder.bind(e) else e
+  }
+
   property("scripts EQ/NEQ") {
     val prover1 = new UtxoProvingInterpreter
     val prover2 = new UtxoProvingInterpreter
@@ -37,7 +47,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext.dummy(fakeSelf)
 
-    verifier.reduceToCrypto(EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes)), ctx)
+    val e = buildAst(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
+    val exp = EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes))
+    e shouldBe exp
+
+    verifier.reduceToCrypto(exp, ctx)
       .get.isInstanceOf[TrueLeaf.type] shouldBe true
 
     verifier.reduceToCrypto(EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes)), ctx)
@@ -68,6 +82,25 @@ class UtxoInterpreterSpecification extends PropSpec
     val timeout = IntConstant(100)
     val minToRaise = IntConstant(1000)
 
+    val env = Map(
+      "timeout" -> 100,
+      "minToRaise" -> 1000,
+      "backerPubKey" -> backerPubKey,
+      "projectPubKey" -> projectPubKey,
+    )
+    val crowdFundingAst = buildAst(env,
+      """{
+       | let c1 = HEIGHT >= timeout && backerPubKey
+       | let c2 = all(Array(
+       |   HEIGHT < timeout,
+       |   projectPubKey,
+       |   exists(OUTPUT, fun (out: Box) = {
+       |     out.amount >= minToRaise && out.propositionBytes == projectPubKey.propBytes
+       |   })
+       | ))
+       | c1 || c2
+       | }
+      """.stripMargin, okBind = false)
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
       AND(GE(Height, timeout), backerPubKey),

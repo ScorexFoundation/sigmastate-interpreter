@@ -24,7 +24,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
   override lazy val secrets: Seq[DLogProverInput] = {
     import SchnorrSignature._
 
-    Seq(DLogProverInput.random()._1, DLogProverInput.random()._1)
+    Seq(DLogProverInput.random(), DLogProverInput.random())
   }
 
   override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
@@ -46,7 +46,7 @@ class TestingInterpreterSpecification extends PropSpec
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
-        val dk1 = ProveDlog(DLogProverInput.random()._2.h)
+        val dk1 = DLogProverInput.random().publicImage
 
         val env = TestingContext(h)
         assert(reduceToCrypto(AND(GE(Height, IntConstant(h - 1)), dk1), env).get.isInstanceOf[ProveDlog])
@@ -65,8 +65,8 @@ class TestingInterpreterSpecification extends PropSpec
 
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
-        val dk1 = ProveDlog(DLogProverInput.random()._2.h)
-        val dk2 = ProveDlog(DLogProverInput.random()._2.h)
+        val dk1 = DLogProverInput.random().publicImage
+        val dk2 = DLogProverInput.random().publicImage
 
         val env = TestingContext(h)
 

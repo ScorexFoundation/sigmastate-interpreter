@@ -20,8 +20,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   type OpCode = Byte
   type Tag = OpCode
 
-  val IntConstantCode = 11: Byte
   val TaggedVariableCode = 1: Byte
+
+  val IntConstantCode = 11: Byte
+  val TrueCode = 12: Byte
+  val FalseCode = 13: Byte
+  val UnitConstantCode = 14: Byte
 
   val LtCode = 21: Byte
   val LeCode = 22: Byte
@@ -30,11 +34,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   val EqCode = 25: Byte
   val NeqCode = 26: Byte
 
-
-  val TrueCode = 12: Byte
-  val FalseCode = 13: Byte
-
   val ConcreteCollectionCode = 35: Byte
+  val TupleCode = 36: Byte
 
   val table = Seq[ValueSerializer[_ <: Value[SType]]](
     RelationSerializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),

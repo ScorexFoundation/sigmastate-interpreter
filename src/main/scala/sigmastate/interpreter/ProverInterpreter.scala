@@ -23,7 +23,6 @@ case class ProverResult[ProofT <: UncheckedTree](proof: ProofT, extension: Conte
   * Interpreter with enhanced functionality to prove statements.
   *
   */
-
 trait ProverInterpreter extends Interpreter with AttributionCore {
   override type ProofT = UncheckedTree
 

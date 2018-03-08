@@ -64,13 +64,11 @@ object DLogProtocol {
   }
 
   object DLogProverInput extends GroupSettings {
-    def random()(implicit soundness: Int): (DLogProverInput, ProveDlog) = {
+    def random()(implicit soundness: Int): DLogProverInput = {
       val g = dlogGroup.getGenerator
       val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-      val h = dlogGroup.exponentiate(g, w)
-
-      DLogProverInput(w) -> ProveDlog(h)
+      DLogProverInput(w)
     }
   }
 

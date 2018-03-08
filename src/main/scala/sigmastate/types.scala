@@ -3,6 +3,7 @@ package sigmastate
 import java.math.BigInteger
 import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.SType.TypeCode
+import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.SigmaStateBox
 
 /** Every type descriptor is a tree represented by nodes in SType hierarchy.
@@ -33,14 +34,26 @@ object SType {
 
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
-  /** All primitive types should be listed here */
-  val allPrimitiveTypes = Seq(SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox)
+  /** All primitive types should be listed here. Note, NoType is not primitive type. */
+  val allPrimitiveTypes = Seq(SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox, SUnit, SAny)
   val typeCodeToType = allPrimitiveTypes.map(t => t.typeCode -> t).toMap
 }
 
 /** Primitive type recognizer to pattern match on TypeCode */
 object PrimType {
   def unapply(tc: TypeCode): Option[SType] = SType.typeCodeToType.get(tc)
+  def unapply(t: SType): Option[SType] = SType.allPrimitiveTypes.find(_ == t)
+}
+
+/** Special type to represent untyped values.
+  * Interpreter raises an error when encounter a Value with this type.
+  * All Value nodes with this type should be elimitanted during typing.
+  * If no specific type can be assigned statically during typing,
+  * then either error should be raised or type SAny should be assigned
+  * which is interpreted as dynamic typing. */
+case object NoType extends SType {
+  type WrappedType = Nothing
+  val typeCode = 0
 }
 
 case object SInt extends SType {
@@ -78,6 +91,18 @@ case object SBox extends SType {
   override val typeCode: TypeCode = 7: Byte
 }
 
+/** The type with single inhabitant value () */
+case object SUnit extends SType {
+  override type WrappedType = Unit
+  override val typeCode: Byte = 8: Byte
+}
+
+/** Any other type is implicitly subtype of this type. */
+case object SAny extends SType {
+  override type WrappedType = Any
+  override val typeCode: Byte = 9: Byte
+}
+
 case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) extends SType {
   override type WrappedType = IndexedSeq[Value[ElemType]]
   override val typeCode: TypeCode = SCollection.TypeCode
@@ -92,4 +117,38 @@ case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) ext
 
 object SCollection {
   val TypeCode: TypeCode = 80: Byte
+  def apply[T <: SType](elemType: T)(implicit ov: Overload1): SCollection[T] = SCollection()(elemType)
 }
+
+case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {
+  override type WrappedType = Seq[Any] => tRange.WrappedType
+  override val typeCode = SFunc.TypeCode
+//  override def equals(obj: scala.Any) = obj match {
+//    case that: SFunc[_,_] => that.tDom == tDom && that.tRange == tRange
+//    case _ => false
+//  }
+//  override def hashCode() = ((31 + typeCode) * 31 + tDom.hashCode()) * 31 + tRange.hashCode()
+}
+
+object SFunc {
+  val TypeCode = 90: Byte
+}
+
+case class STuple(items: IndexedSeq[SType]) extends SType {
+  override type WrappedType = Seq[Any]
+  override val typeCode = STuple.TypeCode
+}
+
+object STuple {
+  val TypeCode = 100: Byte
+  def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
+}
+
+case class STypeApply(name: String, args: IndexedSeq[SType] = IndexedSeq()) extends SType {
+  override type WrappedType = Any
+  override val typeCode = STypeApply.TypeCode
+}
+object STypeApply {
+  val TypeCode = 110: Byte
+}
+
