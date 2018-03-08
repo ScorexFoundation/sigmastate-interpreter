@@ -4,7 +4,7 @@ import com.google.common.primitives.{Bytes, Longs}
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
-import sigmastate.serialization.Serializer
+import sigmastate.serialization.{Serializer, ValueSerializer}
 import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
 
 import scala.util.Try
@@ -61,13 +61,12 @@ class SigmaStateBox private(
 
   override lazy val id = ADKey @@ Blake2b256.hash(bytes)
 
-  //todo: real implementation
+  //TODO: val propositionBytes = ValueSerializer.serialize(proposition)
   val propositionBytes = proposition.toString.getBytes
 
   lazy val bytes = serializer.toBytes(this)
 
   def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {
-
     //todo: serialize registers
     override def toBytes(obj: SigmaStateBox): Array[Byte] =
       Longs.toByteArray(obj.value) ++ obj.propositionBytes ++ nonce

@@ -10,11 +10,11 @@ import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode
+import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.SigmaStateBox
 import sigmastate.utxo.CostTable.Cost
 
 import scala.collection.immutable
-
 
 trait Value[+S <: SType] extends Product {
   val opCode: ValueSerializer.OpCode = 0: Byte
@@ -28,7 +28,6 @@ trait Value[+S <: SType] extends Product {
   //todo: remove after serialization, replace with just .bytes
   lazy val propBytes = this.toString.getBytes
 }
-
 
 object Value {
   type PropositionCode = Byte
@@ -48,15 +47,20 @@ trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
   val id: Byte
 }
 
-
 //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
+
+case object UnitConstant extends EvaluatedValue[SUnit.type] {
+  override val opCode = ValueSerializer.UnitConstantCode
+  override val cost = 1
+  override def tpe = SUnit
+  val value = ()
+}
 
 case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
   override val opCode = ValueSerializer.IntConstantCode
   override val cost = 1
   override def tpe = SInt
 }
-
 
 trait NotReadyValueInt extends NotReadyValue[SInt.type] {
   override def tpe = SInt
@@ -65,7 +69,6 @@ trait NotReadyValueInt extends NotReadyValue[SInt.type] {
 case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt {
   override val cost = 1
 }
-
 
 case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
   override val cost = 1
@@ -79,7 +82,6 @@ trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type] {
 
 case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt {
 }
-
 
 case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
   override def cost: Int = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
@@ -200,7 +202,17 @@ trait NotReadyValueBox extends NotReadyValue[SBox.type] {
 }
 
 case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox {
-  override def tpe = SBox
+}
+
+case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] {
+  override val opCode = ValueSerializer.TupleCode
+  val cost: Int = value.size
+  val tpe = STuple(items.map(_.tpe))
+  lazy val value = items
+}
+object Tuple {
+  def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
+  def apply(items: Seq[Value[SType]])(implicit o: Overload1): Tuple = Tuple(items.toIndexedSeq)
 }
 
 case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tItem: V)
