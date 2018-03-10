@@ -94,13 +94,13 @@ class UtxoInterpreterSpecification extends PropSpec
        | let c2 = all(Array(
        |   HEIGHT < timeout,
        |   projectPubKey,
-       |   exists(OUTPUT, fun (out: Box) = {
+       |   exists(OUTPUTS, fun (out: Box) = {
        |     out.amount >= minToRaise && out.propositionBytes == projectPubKey.propBytes
        |   })
        | ))
        | c1 || c2
        | }
-      """.stripMargin, okBind = false)
+      """.stripMargin)
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
       AND(GE(Height, timeout), backerPubKey),
@@ -117,6 +117,7 @@ class UtxoInterpreterSpecification extends PropSpec
         )
       )
     )
+    crowdFundingAst shouldBe crowdFundingScript
 
     val outputToSpend = SigmaStateBox(10, crowdFundingScript)
 

@@ -33,7 +33,7 @@ object Terms {
     def tpe: SType = NoType
   }
 
-  case class Ident(nameParts: IndexedSeq[String], tpe: SType = NoType) extends Value[SType] {
+  case class Ident(nameParts: Seq[String], tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
   }
@@ -55,15 +55,15 @@ object Terms {
     override def evaluated: Boolean = false
   }
 
-  case class Lambda(args: IndexedSeq[(String,SType)], givenResType: Option[SType], body: Value[SType]) extends Value[SType] {
+  case class Lambda(args: IndexedSeq[(String,SType)], givenResType: SType, body: Option[Value[SType]]) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = true
-    lazy val tpe: SType = SFunc(args.map(_._2), givenResType.getOrElse(body.tpe))
+    lazy val tpe: SType = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe))
   }
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
-      Lambda(args, Some(resTpe), body)
-    def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(args, None, body)
+      Lambda(args, resTpe, Some(body))
+    def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(args, NoType, Some(body))
   }
 
   implicit def valueToBlock(t: Value[SType]): Block = Block(None, t)

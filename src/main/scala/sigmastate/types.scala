@@ -19,6 +19,9 @@ sealed trait SType {
   val typeCode: SType.TypeCode
 
   def isPrimitive: Boolean = SType.allPrimitiveTypes.contains(this)
+  
+  /** Elvis operator for types. See https://en.wikipedia.org/wiki/Elvis_operator*/
+  def ?:(whenNoType: => SType): SType = if (this == NoType) whenNoType else this
 }
 
 object SType {
@@ -118,6 +121,9 @@ case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) ext
 object SCollection {
   val TypeCode: TypeCode = 80: Byte
   def apply[T <: SType](elemType: T)(implicit ov: Overload1): SCollection[T] = SCollection()(elemType)
+  implicit class SCollectionOpsForType(tpe: SType) {
+    def isCollection: Boolean = tpe.isInstanceOf[SCollection[_]]
+  }
 }
 
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {

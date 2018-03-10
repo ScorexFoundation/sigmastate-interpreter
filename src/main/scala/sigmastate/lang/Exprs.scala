@@ -6,7 +6,7 @@ import Terms._
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec
-import scala.collection.mutable
+import sigmastate.utils.Extensions._
 
 //noinspection ForwardReference,TypeAnnotation
 trait Exprs extends Core with Types {
@@ -111,7 +111,7 @@ trait Exprs extends Core with Types {
     val Guard : P0 = P( `if` ~/ PostfixExpr ).ignore
   }
 
-  protected def mkIdent(nameParts: IndexedSeq[String], tpe: SType = NoType): SValue = {
+  protected def mkIdent(nameParts: Seq[String], tpe: SType = NoType): SValue = {
     require(nameParts.nonEmpty)
     if (nameParts.size == 1)
       Ident(nameParts, tpe)
@@ -123,7 +123,7 @@ trait Exprs extends Core with Types {
 
   protected def mkLambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
     val names = args.map { case Ident(IndexedSeq(n), t) => (n, t) }
-    Lambda(names.toIndexedSeq, None, body)
+    Lambda(names.toIndexedSeq, NoType, body)
 //    error(s"Cannot create Lambda($args, $body)")
   }
 
@@ -196,7 +196,7 @@ trait Exprs extends Core with Types {
   val LambdaDef = {
     val Body = P( WL ~ `=` ~ StatCtx.Expr )
     P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-      case (secs @ Seq(args), resType, body) => Lambda(args.toIndexedSeq, resType, body)
+      case (secs @ Seq(args), resType, body) => Lambda(args.toIndexedSeq, resType.getOrElse(NoType), body)
       case (secs, resType, body) => error(s"Function can only have single argument list: fun ($secs): $resType = $body")
     }
   }

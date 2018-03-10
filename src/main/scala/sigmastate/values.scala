@@ -223,10 +223,10 @@ case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit 
   val cost: Int = value.size
   val tpe = SCollection[V]()(tItem)
   def items = value // convenience accessor for code readability
-  def arity = 2
-  def deconstruct = immutable.Seq[Any](value, tItem)
+  def arity = 1 + value.size
+  def deconstruct = immutable.Seq[Any](tItem) ++ items
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(v: IndexedSeq[Value[V]] @unchecked, t: SType) => ConcreteCollection[SType](v)(t)
+    case Seq(t: SType, vs @ _*) => ConcreteCollection[SType](vs.asInstanceOf[Seq[Value[V]]].toIndexedSeq)(t)
     case _ =>
       illegalArgs("ConcreteCollection", "(IndexedSeq, SType)", cs)
   }

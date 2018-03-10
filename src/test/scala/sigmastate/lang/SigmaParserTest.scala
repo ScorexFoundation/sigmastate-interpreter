@@ -207,11 +207,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
         )
 
     parse("fun (x) = x + 1") shouldBe
-        Lambda(IndexedSeq("x" -> NoType), None, Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+        Lambda(IndexedSeq("x" -> NoType), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
     parse("fun (x: Int) = { x + 1 }") shouldBe
-        Lambda(IndexedSeq("x" -> SInt), None, Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+        Lambda(IndexedSeq("x" -> SInt), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
     parse("fun (x: Int) = { let y = x + 1; y }") shouldBe
-        Lambda(IndexedSeq("x" -> SInt), None,
+        Lambda(IndexedSeq("x" -> SInt),
           Block(Let("y", Plus(IntIdent("x"), 1)), Ident("y")))
   }
 
