@@ -53,17 +53,16 @@ object SigmaParser extends Exprs with Types with Core {
     case _ => error(s"Unknown prefix operation $opName")
   }
 
-  def mkBinaryOp(opName: String, l: Value[SType], r: Value[SType]): Value[SType] = opName match {
-    case "||" => typed[SBoolean.type, SBoolean.type](l, r)(OR.apply)
-    case "&&" => typed[SBoolean.type, SBoolean.type](l, r)(AND.apply)
+  def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType] = opName match {
+    case "||" => OR(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
+    case "&&" => AND(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
     case "==" => EQ(l, r)
-    case ">=" => typed[SInt.type, SInt.type](l, r)(GE)
-    case ">"  => typed[SInt.type, SInt.type](l, r)(GT)
-    case "<=" => typed[SInt.type, SInt.type](l, r)(LE)
-    case "<"  => typed[SInt.type, SInt.type](l, r)(LT)
-    case "+"  => typed[SInt.type, SInt.type](l, r)(Plus)
-    case "-"  => typed[SInt.type, SInt.type](l, r)(Minus)
-    case "," => Comma(l, r)
+    case ">=" => GE(l.asValue[SInt.type], r.asValue[SInt.type])
+    case ">"  => GT(l.asValue[SInt.type], r.asValue[SInt.type])
+    case "<=" => LE(l.asValue[SInt.type], r.asValue[SInt.type])
+    case "<"  => LT(l.asValue[SInt.type], r.asValue[SInt.type])
+    case "+"  => Plus(l.asValue[SInt.type], r.asValue[SInt.type])
+    case "-"  => Minus(l.asValue[SInt.type], r.asValue[SInt.type])
     case _ => error(s"Unknown binary operation $opName")
   }
 

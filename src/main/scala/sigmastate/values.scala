@@ -31,6 +31,8 @@ trait Value[+S <: SType] extends Product {
 
 object Value {
   type PropositionCode = Byte
+  implicit def liftInt(n: Int): Value[SInt.type] = IntConstant(n)
+  implicit def liftLong(n: Long): Value[SInt.type] = IntConstant(n)
 }
 
 trait EvaluatedValue[S <: SType] extends Value[S] {

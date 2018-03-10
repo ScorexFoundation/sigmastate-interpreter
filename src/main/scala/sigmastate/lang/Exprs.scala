@@ -5,6 +5,7 @@ import sigmastate._
 import Terms._
 import sigmastate.lang.syntax.Basic._
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 //noinspection ForwardReference,TypeAnnotation
@@ -157,21 +158,27 @@ trait Exprs extends Core with Types {
   @inline def precedenceOf(op: String): Int = precedenceOf(op(0))
 
   protected[lang] def mkInfixTree(lhs: SValue, rhss: Seq[(String, SValue)]): SValue = {
-    def build(first: SValue, op: String, second: SValue, rest: List[(String, SValue)]): SValue = rest match {
-      case Nil => mkBinaryOp(op, first, second)
-      case (op2, third) :: t =>
-        if (precedenceOf(op) >= precedenceOf(op2))
-          build(mkBinaryOp(op, first, second), op2, third, t)
-        else {
-          val n = build(second, op2, third, t)
-          mkBinaryOp(op, first, n)
+    @tailrec def build(wait: List[(SValue, String)], x: SValue, rest: List[(String, SValue)]): SValue = (wait, rest) match {
+      case ((l, op1) :: stack, (op2, r) :: tail) =>
+        if (precedenceOf(op1) >= precedenceOf(op2)) {
+          val n = mkBinaryOp(l, op1, x)
+          build(stack, n, rest)
         }
+        else {
+          build((x, op2) :: wait, r, tail)
+        }
+
+      case (Nil, Nil) => x
+      case (Nil, (op, r):: Nil) => mkBinaryOp(x, op, r)
+      case ((l, op) :: Nil, Nil) => mkBinaryOp(l, op, x)
+
+      case (Nil, (op, r) :: tail) =>
+        build((x, op) :: Nil, r, tail)
+      case ((l, op) :: stack, Nil) =>
+        val n = mkBinaryOp(l, op, x)
+        build(stack, n, Nil)
     }
-    if (rhss.isEmpty) lhs
-    else {
-      val (op, second) :: t = rhss.toList
-      build(lhs, op, second, t)
-    }
+    build(Nil, lhs, rhss.toList)
   }
 
   protected def applySuffix(f: Value[SType], args: Seq[Value[SType]]): Value[SType] = {

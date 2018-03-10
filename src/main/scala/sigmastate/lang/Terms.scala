@@ -8,7 +8,7 @@ object Terms {
 
   case class CUSTOMTYPE(name: String, fields: List[(String, SType)])
 
-  case class Block(let: Option[Value[SType]], t: Value[SType]) extends Value[SType] {
+  case class Block(let: Option[SValue], t: SValue) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
     def tpe: SType = t.tpe
@@ -28,12 +28,6 @@ object Terms {
   }
 
   case class Select(i: Value[SType], field: String) extends Value[SType] {
-    override def cost: Int = ???
-    override def evaluated: Boolean = ???
-    def tpe: SType = NoType
-  }
-
-  case class Comma(l: Value[SType], r: Value[SType]) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
     def tpe: SType = NoType
@@ -74,15 +68,8 @@ object Terms {
 
   implicit def valueToBlock(t: Value[SType]): Block = Block(None, t)
 
-  def typed[A <: SType,B <: SType](a: SValue, b: SValue)(f: (Value[A],Value[B]) => SValue): SValue =
-    f(a.asInstanceOf[Value[A]], b.asInstanceOf[Value[B]])
-
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
   }
 
-  private[lang] def flattenComma(x: Value[SType]): List[Value[SType]] = x match {
-    case Comma(l, r) => flattenComma(l) ::: flattenComma(r)
-    case _ => List(x)
-  }
 }

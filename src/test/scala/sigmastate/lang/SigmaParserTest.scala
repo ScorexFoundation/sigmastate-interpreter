@@ -20,45 +20,61 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     }
   }
 
+  def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
+  def IntIdent(name: String): Value[SInt.type] = Ident(name).asValue[SInt.type]
+
   property("simple expressions") {
     parse("10") shouldBe IntConstant(10)
-    parse("10+11") shouldBe Plus(IntConstant(10), IntConstant(11))
-    parse("(10+11)") shouldBe Plus(IntConstant(10), IntConstant(11))
-    parse("(10+11) + 12") shouldBe Plus(Plus(IntConstant(10), IntConstant(11)), IntConstant(12))
-    parse("10   + 11 + 12") shouldBe Plus(Plus(IntConstant(10), IntConstant(11)), IntConstant(12))
-    parse("1+2+3+4+5") shouldBe Plus(Plus(Plus(Plus(IntConstant(1), IntConstant(2)), IntConstant(3)), IntConstant(4)), IntConstant(5))
-    parse("1==1") shouldBe EQ(IntConstant(1), IntConstant(1))
+    parse("10+11") shouldBe Plus(10, 11)
+    parse("(10+11)") shouldBe Plus(10, 11)
+    parse("(10+11) + 12") shouldBe Plus(Plus(10, 11), 12)
+    parse("10   + 11 + 12") shouldBe Plus(Plus(10, 11), 12)
+    parse("1+2+3+4+5") shouldBe Plus(Plus(Plus(Plus(1, 2), 3), 4), 5)
+    parse("1==1") shouldBe EQ(1, 1)
     parse("true && true") shouldBe AND(TrueLeaf, TrueLeaf)
     parse("true || false") shouldBe OR(TrueLeaf, FalseLeaf)
     parse("true || (true && false)") shouldBe OR(TrueLeaf, AND(TrueLeaf, FalseLeaf))
     parse("false || false || false") shouldBe OR(OR(FalseLeaf, FalseLeaf), FalseLeaf)
-    parse("(1>= 0)||(3 >2)") shouldBe OR(GE(IntConstant(1), IntConstant(0)), GT(IntConstant(3), IntConstant(2)))
+    parse("(1>= 0)||(3 >2)") shouldBe OR(GE(1, 0), GT(3, 2))
   }
 
   property("priority in binary expressions") {
-    parse("1 + 0 + 3") shouldBe Plus(Plus(IntConstant(1), IntConstant(0)), IntConstant(3))
-    parse("1 == 0 || 3 == 2") shouldBe OR(EQ(IntConstant(1), IntConstant(0)), EQ(IntConstant(3), IntConstant(2)))
-    parse("3 + 2 > 2 + 1") shouldBe GT(Plus(IntConstant(3), IntConstant(2)), Plus(IntConstant(2), IntConstant(1)))
-    parse("1 >= 0 || 3 > 2") shouldBe OR(GE(IntConstant(1), IntConstant(0)), GT(IntConstant(3), IntConstant(2)))
+    parse("1 + 2 + 3") shouldBe Plus(Plus(1, 2), 3)
+    parse("1 + 2 + 3 + 4") shouldBe Plus(Plus(Plus(1, 2), 3), 4)
+    parse("1 == 0 || 3 == 2") shouldBe OR(EQ(1, 0), EQ(3, 2))
+    parse("3 + 2 > 2 + 1") shouldBe GT(Plus(3, 2), Plus(2, 1))
+    parse("1 + 2 + 3 > 4 + 5 + 6") shouldBe GT(Plus(Plus(1, 2), 3), Plus(Plus(4, 5), 6))
+    parse("1 >= 0 || 3 > 2") shouldBe OR(GE(1, 0), GT(3, 2))
+    parse("2 >= 0 + 1 || 3 - 1 >= 2") shouldBe OR(GE(2, Plus(0, 1)), GE(Minus(3, 1), 2))
+    parse("x1 || x2 > x3 + x4 - x5 || x6") shouldBe
+      OR(
+        OR(BoolIdent("x1"),
+           GT(IntIdent("x2"),
+              Minus(Plus(IntIdent("x3"), IntIdent("x4")), IntIdent("x5")))),
+        BoolIdent("x6"))
+    parse("x1 || x2 > x3 + x4") shouldBe
+      OR(BoolIdent("x1"),
+        GT(IntIdent("x2"),
+          Plus(IntIdent("x3"), IntIdent("x4"))))
   }
 
   property("tuple constructor") {
     parse("()") shouldBe UnitConstant
     parse("(1)") shouldBe IntConstant(1)
     parse("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
-    parse("(1, X + 1)") shouldBe Tuple(IntConstant(1), Plus(Ident("X").asValue[SInt.type], IntConstant(1)))
+    parse("(1, X + 1)") shouldBe Tuple(IntConstant(1), Plus(IntIdent("X"), 1))
     parse("(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
-    parse("(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(IntConstant(2), IntConstant(3)), IntConstant(4))
+    parse("(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
   }
 
   property("let constructs") {
     parse(
       """{let X = 10
         |3 > 2}
-      """.stripMargin) shouldBe Block(Some(Let("X", None, IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
+      """.stripMargin) shouldBe Block(Some(Let("X", None, IntConstant(10))), GT(3, 2))
 
-    parse("{let X = 10; 3 > 2}") shouldBe Block(Some(Let("X", None, IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
-    parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Some(Let("X", None, Plus(IntConstant(3), IntConstant(2)))), GT(IntConstant(3), IntConstant(2)))
+    parse("{let X = 10; 3 > 2}") shouldBe Block(Some(Let("X", None, IntConstant(10))), GT(3, 2))
+    parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Some(Let("X", None, Plus(3, 2))), GT(3, 2))
     parse("{let X = if (true) true else false; false}") shouldBe Block(Some(Let("X", None, If(TrueLeaf, TrueLeaf, FalseLeaf))), FalseLeaf)
 
     val expr = parse(
@@ -67,12 +83,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
         |X > Y}
       """.stripMargin)
 
-    expr shouldBe Block(Some(Let("X", None, IntConstant(10))), Block(Some(Let("Y", None, IntConstant(11))), typed[SInt.type, SInt.type](Ident("X"), Ident("Y"))(GT)))
+    expr shouldBe Block(Some(Let("X", None, IntConstant(10))), Block(Some(Let("Y", None, IntConstant(11))), GT(IntIdent("X"), IntIdent("Y"))))
   }
 
   property("types") {
-    parse("{let X: Int = 10; 3 > 2}") shouldBe Block(Some(Let("X", SInt, IntConstant(10))), GT(IntConstant(3), IntConstant(2)))
-    parse("""{let X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe Block(Some(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(IntConstant(3), IntConstant(2)))
+    parse("{let X: Int = 10; 3 > 2}") shouldBe Block(Some(Let("X", SInt, IntConstant(10))), GT(3, 2))
+    parse("""{let X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe
+      Block(Some(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
     parse("""{let X: Array[Int] = Array(1,2,3); X.size}""") shouldBe
       Block(Some(Let("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
             Select(Ident("X"), "size"))
@@ -111,7 +128,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
        |3 + // end line comment
        |  2
        |}
-      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(12))), Plus(IntConstant(3), IntConstant(2)))
+      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(12))), Plus(3, 2))
   }
 
   property("if") {
@@ -141,7 +158,12 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
   }
 
   property("array literals") {
-    parse("Array()") shouldBe(ConcreteCollection(IndexedSeq.empty)(NoType))
+    val emptyCol = ConcreteCollection(IndexedSeq.empty)(NoType)
+    parse("Array()") shouldBe(emptyCol)
+    val emptyCol2 = ConcreteCollection(IndexedSeq(emptyCol))(SCollection(NoType))
+    parse("Array(Array())") shouldBe(emptyCol2)
+    parse("Array(Array(Array()))") shouldBe(ConcreteCollection(IndexedSeq(emptyCol2))(SCollection(SCollection(NoType))))
+
     parse("Array(1)") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt))
     parse("Array(1, X)") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1), Ident("X")))(SInt))
     parse("Array(1, X + 1, Array())") shouldBe(ConcreteCollection(
@@ -156,6 +178,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
 
   property("array indexed access") {
     parse("Array()(0)") shouldBe Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0)))
+    parse("Array()(0)(0)") shouldBe Apply(Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
   }
 
   property("global functions") {
@@ -189,7 +212,20 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
         Lambda(IndexedSeq("x" -> SInt), None, Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
     parse("fun (x: Int) = { let y = x + 1; y }") shouldBe
         Lambda(IndexedSeq("x" -> SInt), None,
-          Block(Let("y", Plus(Ident("x").asValue[SInt.type], IntConstant(1))), Ident("y")))
+          Block(Let("y", Plus(IntIdent("x"), 1)), Ident("y")))
+  }
+
+  property("function definitions") {
+    parse(
+      """{let f = fun (x: Int) = x + 1
+       |f}
+      """.stripMargin) shouldBe
+        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
+    parse(
+      """{fun f(x: Int) = x + 1
+       |f}
+      """.stripMargin) shouldBe
+        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
   }
 
   property("unary operations") {
