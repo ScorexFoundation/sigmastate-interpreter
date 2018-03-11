@@ -4,6 +4,7 @@ import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
+import sigmastate.utxo.{SizeOf, Inputs}
 
 /**
   * Analyses for typed lambda calculus expressions.  A simple free variable
@@ -12,28 +13,26 @@ import sigmastate.lang.Terms._
   * from the AST, and one (tipe2) that represents names by references to the
   * nodes of their binding lambda expressions.
   */
-class Analyser(tree : SigmaTree) extends Attribution {
+class Analyser(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribution {
 
   import PrettyPrinter.formattedLayout
-  import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, message, Messages}
+  import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, noMessages, message, Messages}
 
-  /**
-    * The semantic error messages for the tree. This one uses the `tipe`
-    * attribute.
-    */
+  /** The semantic error messages for the tree. */
   lazy val errors : Messages =
     collectMessages(tree) {
-      case e : SValue => ???
+      case e : SValue =>
 //        checkType(e, tipe) ++
-//            check(e) {
-//              case App(e1, e2) =>
-//                check(tipe(e1)) {
-//                  case _ : IntType =>
-//                    message(e1, "application of non-function")
-//                }
-//              case Var(x) =>
-//                message(e, s"'$x' unknown", tipe(e) == UnknownType())
-//            }
+            check(e) {
+              case Apply(e1, e2) =>
+                check(tipe(e1)) {
+                  case _: SFunc => noMessages
+                  case _ =>
+                    message(e1, "application of non-function")
+                }
+              case Ident(Seq(x), _) =>
+                message(e, s"'$x' unknown", tipe(e) == NoType)
+            }
     }
 
   /**
@@ -75,7 +74,9 @@ class Analyser(tree : SigmaTree) extends Attribution {
         env(p)
 
       // global level contains all predefined names
-      case _ => SigmaPredef.predefinedEnv.mapValues(_.tpe).toList
+      case _ =>
+        val predef = SigmaPredef.predefinedEnv.mapValues(_.tpe).toList
+        predef ++ globalEnv.mapValues(SType.typeOfData).toList
     }
 
   /**
@@ -95,7 +96,22 @@ class Analyser(tree : SigmaTree) extends Attribution {
   val tipe : SValue => SType =
     attr {
       // A number is always of integer type
-      case IntConstant(_) => SInt
+      case v: EvaluatedValue[_] => v.tpe
+      case v: NotReadyValueInt => v.tpe
+      case Inputs => Inputs.tpe
+      
+      // An operation must be applied to two arguments of the same type
+      case GT(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
+      case LT(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
+      case GE(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
+      case LE(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
+      case EQ(e1, e2) => binOpTipe(e1, e2)(tipe(e1), SBoolean)
+      case NEQ(e1, e2) => binOpTipe(e1, e2)(tipe(e1), SBoolean)
+
+      case AND(xs) =>
+        if (xs.tpe.elemType == SBoolean) SBoolean else NoType
+      case OR(xs) =>
+        if (xs.tpe.elemType == SBoolean) SBoolean else NoType
 
       // An identifier is looked up in the environement of the current
       // expression.  If we find it, then we use the type that we find.
@@ -131,19 +147,16 @@ class Analyser(tree : SigmaTree) extends Attribution {
             NoType
         }
 
-      // An operation must be applied to two integers and returns an
-      // integer.
-      case Plus(e1, e2) => binOpTipe(e1, e2)
-      case Minus(e1, e2) => binOpTipe(e1, e2)
 
       // A parallel returns the type of the body expression
       case Block(bs, e) =>
         tipe(e)
+      case e => sys.error(s"Don't know how to compute type for $e")
     }
 
-  def binOpTipe(e1: SValue, e2: SValue): SType =
-    if ((tipe(e1) == SInt) && (tipe(e2) == SInt))
-      SInt
+  def binOpTipe(e1: SValue, e2: SValue)(arg: SType, res: SType): SType =
+    if ((tipe(e1) == arg) && (tipe(e2) == arg))
+      res
     else
       NoType
 

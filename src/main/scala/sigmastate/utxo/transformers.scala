@@ -175,10 +175,6 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)(implici
   override def cost = 1
 }
 
-trait NotReadyValueInt extends NotReadyValue[SInt.type] {
-  override def tpe = SInt
-}
-
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
 

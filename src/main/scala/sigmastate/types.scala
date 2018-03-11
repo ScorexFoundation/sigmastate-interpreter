@@ -1,10 +1,11 @@
 package sigmastate
 
 import java.math.BigInteger
+
 import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.SType.TypeCode
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo.SigmaStateBox
+import sigmastate.utxo.{SigmaStateBox, Box}
 import sigmastate.Values._
 
 /** Base type for all AST nodes of sigma lang. */
@@ -57,6 +58,18 @@ object SType {
         okDom && okRange
     }
   }
+
+  def typeOfData(x: Any): SType = x match {
+    case i: Int => SInt
+    case l: Long => SInt
+    case b: Boolean => SBoolean
+    case arr: Array[Byte] => SByteArray
+    case g: GroupElement => SGroupElement
+    case box: SigmaStateBox => SBox
+    case _: Unit => SUnit
+    case _ => sys.error(s"Don't know how to return SType for $x")
+  }
+
 }
 
 /** Primitive type recognizer to pattern match on TypeCode */
