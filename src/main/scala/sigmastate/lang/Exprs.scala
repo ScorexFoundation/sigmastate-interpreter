@@ -120,9 +120,6 @@ trait Exprs extends Core with Types {
   }
 
   protected def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType] = (func, args) match {
-    case (Ident("Array", _), args) =>
-      val tpe = if (args.isEmpty) NoType else args(0).tpe
-      ConcreteCollection(args)(tpe)
     case _ => Apply(func, args)
   }
 

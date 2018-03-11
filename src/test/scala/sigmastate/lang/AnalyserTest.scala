@@ -5,7 +5,7 @@ import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.utxo._
+import sigmastate.lang.SigmaPredef._
 
 class AnalyserTest extends PropSpec with PropertyChecks with Matchers {
 
@@ -45,6 +45,7 @@ class AnalyserTest extends PropSpec with PropertyChecks with Matchers {
   }
 
   property("predefined functions") {
+    typecheck(env, "all") shouldBe AllSym.tpe
 //    typecheck(env, "all(Array(c1, c2))") shouldBe
 //        AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
   }
@@ -155,9 +156,9 @@ class AnalyserTest extends PropSpec with PropertyChecks with Matchers {
 //
 //  }
 //
-//  property("array literals") {
-//    val emptyCol = ConcreteCollection(IndexedSeq.empty)(NoType)
-//    typecheck("Array()") shouldBe(emptyCol)
+  property("array literals") {
+    val emptyCol = ConcreteCollection(IndexedSeq.empty)(NoType)
+    typecheck(env, "Array()") shouldBe emptyCol.tpe
 //    val emptyCol2 = ConcreteCollection(IndexedSeq(emptyCol))(SCollection(NoType))
 //    typecheck("Array(Array())") shouldBe(emptyCol2)
 //    typecheck("Array(Array(Array()))") shouldBe(ConcreteCollection(IndexedSeq(emptyCol2))(SCollection(SCollection(NoType))))
@@ -172,8 +173,8 @@ class AnalyserTest extends PropSpec with PropertyChecks with Matchers {
 //    typecheck("Array(Array(X + 1))") shouldBe ConcreteCollection[SCollection[SInt.type]](
 //      IndexedSeq(ConcreteCollection[SInt.type](IndexedSeq(
 //                  Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
-//  }
-//
+  }
+
 //  property("array indexed access") {
 //    typecheck("Array()(0)") shouldBe Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0)))
 //    typecheck("Array()(0)(0)") shouldBe Apply(Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))

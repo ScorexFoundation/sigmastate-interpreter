@@ -92,10 +92,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse("""{let X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe
       Block(Seq(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
     parse("""{let X: Array[Int] = Array(1,2,3); X.size}""") shouldBe
-      Block(Seq(Let("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
+      Block(Seq(Let("X", SCollection(SInt), Apply(Ident("Array"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
             Select(Ident("X"), "size"))
     parse("""{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}""") shouldBe
-        Block(Seq(Let("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
+        Block(Seq(Let("X", STuple(SCollection(SInt), SBox), Tuple(Apply(Ident("Array"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
           Select(Ident("X"), "_1"))
   }
 
@@ -159,27 +159,28 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
   }
 
   property("array literals") {
-    val emptyCol = ConcreteCollection(IndexedSeq.empty)(NoType)
-    parse("Array()") shouldBe(emptyCol)
-    val emptyCol2 = ConcreteCollection(IndexedSeq(emptyCol))(SCollection(NoType))
-    parse("Array(Array())") shouldBe(emptyCol2)
-    parse("Array(Array(Array()))") shouldBe(ConcreteCollection(IndexedSeq(emptyCol2))(SCollection(SCollection(NoType))))
+    val emptyCol = Apply(Ident("Array"), IndexedSeq.empty)
+    parse("Array()") shouldBe emptyCol
+    val emptyCol2 = Apply(Ident("Array"), IndexedSeq(emptyCol))
+    parse("Array(Array())") shouldBe emptyCol2
+    parse("Array(Array(Array()))") shouldBe Apply(Ident("Array"), IndexedSeq(emptyCol2))
 
-    parse("Array(1)") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt))
-    parse("Array(1, X)") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1), Ident("X")))(SInt))
-    parse("Array(1, X + 1, Array())") shouldBe(ConcreteCollection(
+    parse("Array(1)") shouldBe Apply(Ident("Array"), IndexedSeq(IntConstant(1)))
+    parse("Array(1, X)") shouldBe Apply(Ident("Array"), IndexedSeq(IntConstant(1), Ident("X")))
+    parse("Array(1, X + 1, Array())") shouldBe
+    Apply(Ident("Array"),
       IndexedSeq(
         IntConstant(1),
         Plus(Ident("X").asValue[SInt.type], IntConstant(1)),
-        ConcreteCollection(IndexedSeq.empty)(NoType)))(SInt))
-    parse("Array(Array(X + 1))") shouldBe ConcreteCollection[SCollection[SInt.type]](
-      IndexedSeq(ConcreteCollection[SInt.type](IndexedSeq(
+        Apply(Ident("Array"), IndexedSeq.empty)))
+    parse("Array(Array(X + 1))") shouldBe Apply(Ident("Array"),
+      IndexedSeq(Apply(Ident("Array"), IndexedSeq(
                   Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
   }
 
   property("array indexed access") {
-    parse("Array()(0)") shouldBe Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0)))
-    parse("Array()(0)(0)") shouldBe Apply(Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
+    parse("Array()(0)") shouldBe Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0)))
+    parse("Array()(0)(0)") shouldBe Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
   }
 
   property("global functions") {

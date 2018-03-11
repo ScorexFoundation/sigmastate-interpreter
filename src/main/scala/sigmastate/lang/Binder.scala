@@ -42,6 +42,9 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
         }
       }
     }
+    case Apply(Ident("Array", _), args) =>
+      val tpe = if (args.isEmpty) NoType else args(0).tpe
+      Some(ConcreteCollection(args)(tpe))
     case Select(obj, "size") if obj.tpe.isCollection =>
       Some(SizeOf(obj.asValue[SCollection[SType]]))
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
