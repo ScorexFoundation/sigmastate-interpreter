@@ -112,7 +112,7 @@ trait Core extends syntax.Literals {
 //    val ThisSuper = P( `this` | `super` ~ ClassQualifier.? )
 //    val ThisPath: P0 = P( ThisSuper ~ ("." ~ PostDotCheck ~/ Id).rep )
     val IdPath = P( Id.! ~ ("." ~ PostDotCheck ~/ (`this`.! | Id.!)).rep /*~ ("." ~ ThisPath).?*/ ).map {
-      case (h, t) => Ident((h +: t).toIndexedSeq)
+      case (h, t) => t.foldLeft[SValue](Ident(h))(Select)
     }
     P( /*ThisPath |*/ IdPath )
   }

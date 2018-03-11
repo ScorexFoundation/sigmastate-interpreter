@@ -71,7 +71,7 @@ trait Types extends Core {
   val AnnotType = P(SimpleType ~~ NLAnnot.repX )
 
   val TypeId = P( StableId ).map {
-    case Ident(IndexedSeq(tn), _) =>
+    case Ident(tn, _) =>
       typeFromName(tn) match {
         case Some(t) => t
         case None => STypeApply(tn)

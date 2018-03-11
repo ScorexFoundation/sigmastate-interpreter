@@ -14,7 +14,7 @@ object SigmaPredef {
 
   def PredefIdent(name: String) = {
     val v = predefinedEnv(name)
-    Ident(Seq(name), v.tpe)
+    Ident(name, v.tpe)
   }
 
   val AllSym = PredefIdent("all")

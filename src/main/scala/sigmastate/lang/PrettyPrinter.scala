@@ -32,7 +32,7 @@ class PrettyPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
   def toDoc(t : SValue) : Doc =
     t match {
       case IntConstant(d) => value(d)
-      case Ident(Seq(i),_) => i
+      case Ident(i,_) => i
       case Lambda(i, t, Some(e)) => parens('\\' <> parens(lsep(i.map { case (n, t) => n <+> ": " <+> typedeclToDoc(t) }.to, comma)) <>
           typedeclToDoc(t) <+> '.' <+>
           group(nest(toDoc(e))))

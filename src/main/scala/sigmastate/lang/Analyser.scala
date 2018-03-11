@@ -30,8 +30,8 @@ class Analyser(globalEnv: Map[String, Any], tree : SigmaTree) extends Attributio
                   case _ =>
                     message(e1, "application of non-function")
                 }
-              case Ident(Seq(x), _) =>
-                message(e, s"'$x' unknown", tipe(e) == NoType)
+              case Ident(x, _) =>
+                message(e, s"unknown name '$x'", tipe(e) == NoType)
             }
     }
 
@@ -41,7 +41,7 @@ class Analyser(globalEnv: Map[String, Any], tree : SigmaTree) extends Attributio
   val fv : SValue => Set[Idn] =
     attr {
       case IntConstant(_)            => Set()
-      case Ident(Seq(v), _)            => Set(v)
+      case Ident(v, _)            => Set(v)
       case Lambda(args, _, Some(e))      => fv(e) -- args.map(_._1).toSet
       case Apply(e1, args)       => args.foldLeft(fv(e1))((acc, e) => acc ++ fv(e))
       case Let(i, t, e) => fv(e)
@@ -116,7 +116,7 @@ class Analyser(globalEnv: Map[String, Any], tree : SigmaTree) extends Attributio
       // An identifier is looked up in the environement of the current
       // expression.  If we find it, then we use the type that we find.
       // Otherwise it's an error.
-      case e @ Ident(Seq(x),_) =>
+      case e @ Ident(x,_) =>
         env(e).collectFirst {
           case (y, t) if x == y => t
         }.getOrElse {

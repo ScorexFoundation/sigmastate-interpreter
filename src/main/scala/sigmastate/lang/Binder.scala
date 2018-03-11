@@ -18,7 +18,7 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
   /** Rewriting of AST with respect to environment to resolve all references and infer types.
     * If successfull, returns type-checked Value which is ready for evaluation by the interpreter. */
   private def eval(e: SValue, env: Map[String, Any]): SValue = rewrite(reduce(strategy[SValue]({
-    case Ident(Seq(n), NoType) => env.get(n) match {
+    case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
         case arr: Array[Byte] => Some(ByteArrayConstant(arr))
         case v: Int => Some(IntConstant(v))
@@ -29,7 +29,7 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
 //        case _ => error(s"Variable $n has invalid value $v")
       }
       case None => predefinedEnv.get(n) match {
-        case Some(v) => Some(Ident(Seq(n), v.tpe))
+        case Some(v) => Some(Ident(n, v.tpe))
         case None => n match {
           case "HEIGHT" => Some(Height)
           case "INPUTS" => Some(Inputs)

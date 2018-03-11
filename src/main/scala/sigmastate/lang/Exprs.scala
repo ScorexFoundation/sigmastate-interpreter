@@ -89,7 +89,7 @@ trait Exprs extends Core with Types {
         val lhs = applySuffix(prefix, suffix)
         val obj = mkInfixTree(lhs, infixOps)
         postfix.fold(obj) {
-          case Ident(IndexedSeq(name), _) =>
+          case Ident(name, _) =>
             MethodCall(obj, name, IndexedSeq.empty)
         }
     }
@@ -100,7 +100,7 @@ trait Exprs extends Core with Types {
 
       P( /*New | */ BlockExpr
         | ExprLiteral
-        | StableId.map { case Ident(ps, t) => mkIdent(ps, t) }
+        | StableId //.map { case Ident(ps, t) => mkIdent(ps, t) }
         | `_`.!.map(Ident(_))
         | Parened.map(items =>
             if (items.isEmpty) UnitConstant
@@ -110,24 +110,17 @@ trait Exprs extends Core with Types {
     val Guard : P0 = P( `if` ~/ PostfixExpr ).ignore
   }
 
-  protected def mkIdent(nameParts: Seq[String], tpe: SType = NoType): SValue = {
-    require(nameParts.nonEmpty)
-    if (nameParts.size == 1)
-      Ident(nameParts, tpe)
-    else {
-      val first: SValue = Ident(nameParts(0))
-      nameParts.iterator.drop(1).foldLeft(first)((acc, p) => Select(acc, p))
-    }
+  protected def mkIdent(nameParts: String, tpe: SType = NoType): SValue = {
+    Ident(nameParts, tpe)
   }
 
   protected def mkLambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
-    val names = args.map { case Ident(IndexedSeq(n), t) => (n, t) }
+    val names = args.map { case Ident(n, t) => (n, t) }
     Lambda(names.toIndexedSeq, NoType, body)
-//    error(s"Cannot create Lambda($args, $body)")
   }
 
   protected def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType] = (func, args) match {
-    case (Ident(Vector("Array"), _), args) =>
+    case (Ident("Array", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
       ConcreteCollection(args)(tpe)
     case _ => Apply(func, args)
@@ -182,9 +175,7 @@ trait Exprs extends Core with Types {
 
   protected def applySuffix(f: Value[SType], args: Seq[Value[SType]]): Value[SType] = {
     val rhs = args.foldLeft(f)((acc, arg) => arg match {
-      case Ident(parts, t) =>
-        assert(parts.size == 1, s"Ident with many parts are not supported: $parts")
-        Select(acc, parts(0))
+      case Ident(name, t) => Select(acc, name)
       case UnitConstant => mkApply(acc, IndexedSeq.empty)
       case Tuple(xs) => mkApply(acc, xs)
       case arg => mkApply(acc, IndexedSeq(arg))

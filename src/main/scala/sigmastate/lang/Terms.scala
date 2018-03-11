@@ -32,12 +32,12 @@ object Terms {
     def tpe: SType = NoType
   }
 
-  case class Ident(nameParts: Seq[String], tpe: SType = NoType) extends Value[SType] {
+  case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
   }
   object Ident {
-    def apply(name: String): Ident = Ident(IndexedSeq(name), NoType)
+    def apply(name: String): Ident = Ident(name, NoType)
   }
 
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
