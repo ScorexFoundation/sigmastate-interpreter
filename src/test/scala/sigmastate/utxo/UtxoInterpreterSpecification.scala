@@ -14,7 +14,6 @@ import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import sigmastate.lang.{SigmaBinder, SigmaParser}
-import sigmastate.lang.Terms.SValue
 import sigmastate.utxo.SigmaStateBox._
 
 

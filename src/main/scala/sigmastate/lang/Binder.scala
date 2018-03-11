@@ -13,21 +13,7 @@ trait Binder {
 
 class SigmaBinder(env: Map[String, Any]) extends Binder {
   import SigmaBinder._
-
-  val predefinedEnv: Map[String, SValue] = Seq(
-    "all" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-    "exists" -> Lambda(
-                  Vector("input" -> SCollection(NoType), "pred" -> SFunc(Vector(NoType), SBoolean)),
-                  SBoolean, None),
-  ).toMap
-
-  def PredefIdent(name: String) = {
-    val v = predefinedEnv(name)
-    Ident(Seq(name), v.tpe)
-  }
-
-  val AllSym = PredefIdent("all")
-  val ExistsSym = PredefIdent("exists")
+  import SigmaPredef._
 
   /** Rewriting of AST with respect to environment to resolve all references and infer types.
     * If successfull, returns type-checked Value which is ready for evaluation by the interpreter. */

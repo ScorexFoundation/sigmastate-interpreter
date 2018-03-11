@@ -1,20 +1,28 @@
 package sigmastate
 
 import java.math.BigInteger
+
 import edu.biu.scapi.primitives.dlog.GroupElement
+import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256Unsafe}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.SigmaStateBox
 import sigmastate.utxo.CostTable.Cost
+
 import scala.collection.immutable
 
 object Values {
+
+  type SigmaTree = Tree[SigmaNode, SValue]
+
+  type SValue = Value[SType]
+  type Idn = String
 
   trait Value[+S <: SType] extends SigmaNode {
     val opCode: ValueSerializer.OpCode = 0: Byte

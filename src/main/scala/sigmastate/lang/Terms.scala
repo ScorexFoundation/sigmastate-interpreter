@@ -5,8 +5,6 @@ import sigmastate.{NoType, SType, SFunc}
 
 object Terms {
 
-  type SValue = Value[SType]
-
   case class CUSTOMTYPE(name: String, fields: List[(String, SType)])
 
   case class Block(bindings: Seq[Let], t: SValue) extends Value[SType] {
