@@ -4,6 +4,7 @@ import com.google.common.primitives.{Bytes, Longs}
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
+import Values._
 import sigmastate.serialization.{Serializer, ValueSerializer}
 import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
 

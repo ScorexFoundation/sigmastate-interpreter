@@ -3,6 +3,7 @@ package sigmastate.lang
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import sigmastate.lang.Terms._
 import sigmastate._
+import Values._
 import sigmastate.utxo._
 import sigmastate.SCollection._
 

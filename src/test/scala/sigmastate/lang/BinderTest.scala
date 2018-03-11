@@ -3,6 +3,7 @@ package sigmastate.lang
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
+import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 

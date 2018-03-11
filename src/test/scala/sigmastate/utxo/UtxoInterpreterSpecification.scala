@@ -8,6 +8,7 @@ import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Digest32, Blake2b256, Blake2b256Unsafe}
 import sigmastate._
+import sigmastate.Values._
 import BoxHelpers.createBox
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}

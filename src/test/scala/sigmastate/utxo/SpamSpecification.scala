@@ -6,6 +6,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe}
 import scorex.utils.Random
 import sigmastate._
+import sigmastate.Values._
 import BoxHelpers.createBox
 
 

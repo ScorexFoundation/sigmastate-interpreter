@@ -1,6 +1,7 @@
 package sigmastate.lang
 
-import sigmastate.{Value, NoType, SType, SFunc}
+import sigmastate.Values._
+import sigmastate.{NoType, SType, SFunc}
 
 object Terms {
 

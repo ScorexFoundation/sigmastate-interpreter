@@ -8,6 +8,7 @@ import syntax.Identifiers
 import fastparse.noApi._
 import sigmastate.lang.Terms._
 import sigmastate._
+import Values._
 
 trait Core extends syntax.Literals {
   import fastparse.noApi._

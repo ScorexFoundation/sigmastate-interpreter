@@ -2,7 +2,8 @@ package sigmastate.utxo
 
 import scorex.crypto.hash.Blake2b256
 import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
-import sigmastate.{SBoolean, SType, TrueLeaf, Value}
+import sigmastate.Values._
+import sigmastate.{SBoolean, SType}
 
 object BoxHelpers {
   def createBox(value: Int,

@@ -4,6 +4,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
 import scorex.crypto.hash.Blake2b256
+import sigmastate.Values._
 import sigmastate.interpreter._
 import sigmastate.utxo.{CostTable, Height}
 

@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import fastparse.noApi._
 import sigmastate._
+import Values._
 import Terms._
 import sigmastate.lang.syntax.Basic._
 
@@ -50,10 +51,8 @@ trait Exprs extends Core with Types {
 //      }
       val PostfixLambda = P( PostfixExpr ~ ((`=>` ~ LambdaRhs.?) | SuperPostfixSuffix) ).map {
         case (e, None) => e
-//        case (i: Ident, Some(None)) => mkLambda(Seq(i), UnitConstant)
-//        case (Tuple(args), None) => mkLambda(args.toSeq, UnitConstant)
-//        case (Tuple(args), None) => mkLambda(args.toSeq, UnitConstant)
         case (Tuple(args), Some(body)) => mkLambda(args.toSeq, body)
+        case (e, Some(body)) => error(s"Invalid declaration of lambda")
       }
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
 //      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => Ident(IndexedSeq(n), t)}

@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import scorex.crypto.encode.Base58
-import sigmastate.IntConstant
+import sigmastate.Values._
 
 class IntConstantSerializerSpecification extends SerializationSpecification {
   property("IntConstant serializer roundtrip") {

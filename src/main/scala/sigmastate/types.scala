@@ -5,6 +5,10 @@ import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.SType.TypeCode
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.SigmaStateBox
+import sigmastate.Values._
+
+/** Base type for all AST nodes of sigma lang. */
+trait SigmaNode extends Product
 
 /** Every type descriptor is a tree represented by nodes in SType hierarchy.
   * In order to extend type family:
@@ -14,7 +18,7 @@ import sigmastate.utxo.SigmaStateBox
   * - emitting typeCode of each node
   * - then recursively serializing subtrees from left to right on each level
   * */
-sealed trait SType {
+sealed trait SType extends SigmaNode {
   type WrappedType
   val typeCode: SType.TypeCode
 

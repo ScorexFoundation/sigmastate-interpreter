@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate._
+import Values._
 import scala.util.Try
 
 

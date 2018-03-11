@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate._
+import sigmastate.Values._
 
 class BooleanLeafsSerializerSpecification extends TableSerializationSpecification {
   override val objects =

@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import sigmastate._
+import Values._
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
 import sigmastate.utxo.CostTable.Cost

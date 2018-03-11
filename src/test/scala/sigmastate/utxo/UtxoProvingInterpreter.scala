@@ -4,7 +4,8 @@ import edu.biu.scapi.primitives.dlog.DlogGroup
 import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
 import scapi.sigma.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import scorex.utils.Random
-import sigmastate.{ByteArrayConstant, EvaluatedValue, SType}
+import sigmastate.Values._
+import sigmastate.{SType}
 import sigmastate.interpreter.ProverInterpreter
 
 class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)

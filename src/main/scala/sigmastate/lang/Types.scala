@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import fastparse.noApi._
 import sigmastate._
+import Values._
 import sigmastate.lang.Terms.{Ident, Lambda}
 import syntax.Basic.error
 

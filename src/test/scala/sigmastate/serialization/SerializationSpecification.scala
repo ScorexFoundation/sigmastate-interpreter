@@ -2,7 +2,8 @@ package sigmastate.serialization
 
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks, TableDrivenPropertyChecks}
 import org.scalatest.{Assertion, Matchers, PropSpec}
-import sigmastate.{SType, Value}
+import sigmastate.Values._
+import sigmastate.{SType}
 
 trait SerializationSpecification extends PropSpec
   with PropertyChecks
