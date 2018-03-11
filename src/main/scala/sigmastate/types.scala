@@ -146,6 +146,8 @@ case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) ext
   }
 
   override def hashCode() = (31 + typeCode) * 31 + elemType.hashCode()
+
+  override def toString = s"SCollection($elemType)"
 }
 
 object SCollection {

@@ -13,8 +13,8 @@ import sigmastate.utxo.{SizeOf, Inputs}
   * from the AST, and one (tipe2) that represents names by references to the
   * nodes of their binding lambda expressions.
   */
-class Analyser(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribution {
-
+class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribution {
+  import SigmaTyper._
   import PrettyPrinter.formattedLayout
   import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, noMessages, message, Messages}
 
@@ -95,11 +95,21 @@ class Analyser(globalEnv: Map[String, Any], tree : SigmaTree) extends Attributio
     */
   val tipe : SValue => SType =
     attr {
-      // A number is always of integer type
+      case c @ ConcreteCollection(items) =>  {
+        val types = items.map(_.tpe).distinct
+        val eItem =
+          if (types.isEmpty) NoType
+          else
+          if (types.size == 1) types(0)
+          else
+            error(s"All element of array should have the same type $c")
+        SCollection(eItem)
+      }
+
       case v: EvaluatedValue[_] => v.tpe
       case v: NotReadyValueInt => v.tpe
       case Inputs => Inputs.tpe
-      
+
       // An operation must be applied to two arguments of the same type
       case GT(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
       case LT(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
@@ -198,3 +208,8 @@ class Analyser(globalEnv: Map[String, Any], tree : SigmaTree) extends Attributio
 //
 }
 
+class TyperException(msg: String) extends Exception(msg)
+
+object SigmaTyper {
+  def error(msg: String) = throw new TyperException(msg)
+}
