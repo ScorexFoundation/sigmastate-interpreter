@@ -40,6 +40,19 @@ object SType {
   /** All primitive types should be listed here. Note, NoType is not primitive type. */
   val allPrimitiveTypes = Seq(SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox, SUnit, SAny)
   val typeCodeToType = allPrimitiveTypes.map(t => t.typeCode -> t).toMap
+
+  implicit class STypeOps(tpe: SType) {
+    def isCollection: Boolean = tpe.isInstanceOf[SCollection[_]]
+    def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
+      case (NoType, _) => true
+      case (t1, t2) if t1 == t2 => true
+      case (f1: SFunc, f2: SFunc) =>
+        val okDom = f1.tDom.size == f2.tDom.size &&
+                     f1.tDom.zip(f2.tDom).forall { case (d1, d2) => d1.canBeTypedAs(d2) }
+        val okRange = f1.tRange.canBeTypedAs(f2.tRange)
+        okDom && okRange
+    }
+  }
 }
 
 /** Primitive type recognizer to pattern match on TypeCode */
@@ -121,9 +134,6 @@ case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) ext
 object SCollection {
   val TypeCode: TypeCode = 80: Byte
   def apply[T <: SType](elemType: T)(implicit ov: Overload1): SCollection[T] = SCollection()(elemType)
-  implicit class SCollectionOpsForType(tpe: SType) {
-    def isCollection: Boolean = tpe.isInstanceOf[SCollection[_]]
-  }
 }
 
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {

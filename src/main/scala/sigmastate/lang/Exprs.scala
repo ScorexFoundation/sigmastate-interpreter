@@ -52,7 +52,7 @@ trait Exprs extends Core with Types {
         case (e, None) => e
 //        case (i: Ident, Some(None)) => mkLambda(Seq(i), UnitConstant)
 //        case (Tuple(args), None) => mkLambda(args.toSeq, UnitConstant)
-        case (Tuple(args), None) => mkLambda(args.toSeq, UnitConstant)
+//        case (Tuple(args), None) => mkLambda(args.toSeq, UnitConstant)
         case (Tuple(args), Some(body)) => mkLambda(args.toSeq, body)
       }
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
@@ -218,13 +218,23 @@ trait Exprs extends Core with Types {
     val BlockStat = P( Prelude ~ BlockDef | StatCtx.Expr )
     P( BlockLambda.rep ~ BlockStat.rep(sep = Semis) )
   }
-  protected def mkBlock(stats: Seq[SValue]): SValue = {
-    if (stats.isEmpty)
-      Terms.Block(None, UnitConstant)
+
+  def extractBlockStats(stats: Seq[SValue]): (Seq[Let], SValue) = {
+    if (stats.nonEmpty) {
+      val lets = stats.iterator.take(stats.size - 1).map(_ match {
+        case l: Let => l
+        case e =>
+          error(s"Block should contain a list of Let bindings and one expression: but was $stats")
+      })
+      (lets.toList, stats.last)
+    }
     else
-      stats.take(stats.size - 1).foldRight(stats.last) {
-        case (r, curr) => Terms.Block(Some(r), curr)
-      }
+      (Seq(), UnitConstant)
+  }
+
+  protected def mkBlock(stats: Seq[SValue]): SValue = {
+    val (lets, body) = extractBlockStats(stats)
+    Terms.Block(lets, body)
   }
 
   def BaseBlock(end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {

@@ -117,7 +117,7 @@ class UtxoInterpreterSpecification extends PropSpec
         )
       )
     )
-    crowdFundingAst shouldBe crowdFundingScript
+//    crowdFundingAst shouldBe crowdFundingScript
 
     val outputToSpend = SigmaStateBox(10, crowdFundingScript)
 

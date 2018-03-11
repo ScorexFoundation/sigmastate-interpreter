@@ -8,23 +8,23 @@ object Terms {
 
   case class CUSTOMTYPE(name: String, fields: List[(String, SType)])
 
-  case class Block(let: Option[SValue], t: SValue) extends Value[SType] {
+  case class Block(bindings: Seq[Let], t: SValue) extends Value[SType] {
     override def cost: Int = ???
-    override def evaluated: Boolean = ???
+    override def evaluated: Boolean = false
     def tpe: SType = t.tpe
   }
   object Block {
-    def apply(let: Let, t: Value[SType]): Block = Block(Some(let), t)
+    def apply(let: Let, t: SValue): Block = Block(Seq(let), t)
   }
 
-  case class Let(name: String, givenType: Option[SType], value: Block) extends Value[SType] {
+  case class Let(name: String, givenType: Option[SType], value: SValue) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
     def tpe: SType = givenType.getOrElse(value.tpe)
   }
   object Let {
-    def apply(name: String, value: Block): Let = Let(name, None, value)
-    def apply(name: String, tpe: SType, value: Block): Let = Let(name, Some(tpe), value)
+    def apply(name: String, value: SValue): Let = Let(name, None, value)
+    def apply(name: String, tpe: SType, value: SValue): Let = Let(name, Some(tpe), value)
   }
 
   case class Select(i: Value[SType], field: String) extends Value[SType] {
@@ -65,8 +65,6 @@ object Terms {
       Lambda(args, resTpe, Some(body))
     def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(args, NoType, Some(body))
   }
-
-  implicit def valueToBlock(t: Value[SType]): Block = Block(None, t)
 
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]

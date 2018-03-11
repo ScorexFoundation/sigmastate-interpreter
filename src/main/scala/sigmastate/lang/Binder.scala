@@ -38,7 +38,8 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
         case v: Long => Some(IntConstant(v))
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
         case v: SValue => Some(v)
-        case _ => error(s"Variable $n has invalid value $v")
+        case _ => None
+//        case _ => error(s"Variable $n has invalid value $v")
       }
       case None => predefinedEnv.get(n) match {
         case Some(v) => Some(Ident(Seq(n), v.tpe))
@@ -48,22 +49,33 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
           case "OUTPUTS" => Some(Outputs)
           case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
           case "SELF" => Some(Self)
-          case _ =>
-            error(s"Variable name $n is not defined")
+          case _ => None
+//          case _ =>
+//            error(s"Variable name $n is not defined")
         }
       }
     }
     case Select(obj, "size") if obj.tpe.isCollection =>
       Some(SizeOf(obj.asValue[SCollection[SType]]))
-    case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]))) =>
+    case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(AND(args))
-    case Apply(ExistsSym, Seq(input: Value[SCollection[v]], pred: Value[SFunc])) =>
-      Some(Exists(input, ))
-    case Block(Some(Let(n, tpe, b)), t) =>
-      if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}")
-      val b1 = eval(b, env)
-      val t1 = eval(t, env + (n -> b1))
-      Some(Block(Some(Let(n, tpe, b1)), t1))
+    case Apply(ExistsSym, Seq(input: Value[SCollection[SType]]@unchecked, pred: Value[SFunc]@unchecked)) =>
+      val tItem = input.tpe.elemType
+      val expectedTpe = SFunc(Vector(tItem), SBoolean)
+      if (!pred.tpe.canBeTypedAs(expectedTpe))
+        error(s"Invalid type of $pred. Expected $expectedTpe")
+      val args = expectedTpe.tDom.zipWithIndex.map { case (t, i) => (s"arg${i+1}", t) }
+      Some(ExistsSym)
+//      Some(Exists(input, ))
+    case Block(Seq(), e) => Some(e)
+    case block @ Block(binds, t) if !block.evaluated =>
+      val newBinds = for (Let(n, t, b) <- binds) yield {
+        if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}")
+        val b1 = eval(b, env)
+        Let(n, t, b1)
+      }
+      val t1 = eval(t, env ++ newBinds.map(l => (l.name, l.value)))
+      Some(new Block(newBinds, t1) { override def evaluated = true })
 //    case v =>
 //      val v1 = rewrite(some(rule[Value[SType]] { case v => eval(v, env) }))(v)
 //      Some(v1)

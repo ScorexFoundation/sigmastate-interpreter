@@ -4,7 +4,7 @@ import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{Height, SizeOf, Inputs}
+import sigmastate.utxo._
 
 class BinderTest extends PropSpec with PropertyChecks with Matchers {
 
@@ -39,12 +39,33 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
   property("predefined functions") {
     bind(env, "all(Array(c1, c2))") shouldBe
         AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
-//    bind("f((x, y))") shouldBe Apply(Ident("f"), IndexedSeq(Tuple(IndexedSeq(Ident("x"), Ident("y")))))
-//    bind("f(x, y)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y")))
-//    bind("f(x, y).size") shouldBe Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "size")
-//    bind("f(x, y).get(1)") shouldBe Apply(Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "get"), IndexedSeq(IntConstant(1)))
-//    bind("{let y = f(x); y}") shouldBe Block(Some(Let("y", Apply(Ident("f"), IndexedSeq(Ident("x"))))), Ident("y"))
   }
+
+    property("let constructs") {
+      bind(env, """{let X = 10; X > 2}""".stripMargin) shouldBe
+        Block(Let("X", None, IntConstant(10)), GT(10, 2))
+      bind(env, """{let X = 10; X >= X}""".stripMargin) shouldBe
+        Block(Let("X", None, IntConstant(10)), GE(10, 10))
+      bind(env, """{let X = 10 + 1; X >= X}""".stripMargin) shouldBe
+          Block(Let("X", None, Plus(10, 1)), GE(Plus(10, 1), Plus(10, 1)))
+      bind(env,
+        """{let X = 10
+         |let Y = 11
+         |X > Y}
+        """.stripMargin) shouldBe Block(
+        Seq(Let("X", None, IntConstant(10)), Let("Y", None, IntConstant(11))),
+        GT(10, 11))
+    }
+
+
+//  property("predefined Exists with lambda argument") {
+//    val minToRaise = IntConstant(1000)
+//    val env = this.env ++ Map(
+//      "minToRaise" -> minToRaise,
+//    )
+//    bind(env, """exists(OUTPUTS, fun (out: Box) = { out.amount >= minToRaise })""") shouldBe
+//        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), minToRaise))
+//  }
 
 //  property("tuple constructor") {
 //    bind("()") shouldBe UnitConstant
@@ -53,25 +74,6 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
 //    bind("(1, X + 1)") shouldBe Tuple(IntConstant(1), Plus(IntIdent("X"), 1))
 //    bind("(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
 //    bind("(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
-//  }
-//
-//  property("let constructs") {
-//    bind(
-//      """{let X = 10
-//        |3 > 2}
-//      """.stripMargin) shouldBe Block(Some(Let("X", None, IntConstant(10))), GT(3, 2))
-//
-//    bind("{let X = 10; 3 > 2}") shouldBe Block(Some(Let("X", None, IntConstant(10))), GT(3, 2))
-//    bind("{let X = 3 + 2; 3 > 2}") shouldBe Block(Some(Let("X", None, Plus(3, 2))), GT(3, 2))
-//    bind("{let X = if (true) true else false; false}") shouldBe Block(Some(Let("X", None, If(TrueLeaf, TrueLeaf, FalseLeaf))), FalseLeaf)
-//
-//    val expr = bind(
-//      """{let X = 10
-//        |let Y = 11
-//        |X > Y}
-//      """.stripMargin)
-//
-//    expr shouldBe Block(Some(Let("X", None, IntConstant(10))), Block(Some(Let("Y", None, IntConstant(11))), GT(IntIdent("X"), IntIdent("Y"))))
 //  }
 //
 //  property("types") {

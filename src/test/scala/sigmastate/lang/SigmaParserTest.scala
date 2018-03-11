@@ -71,11 +71,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse(
       """{let X = 10
         |3 > 2}
-      """.stripMargin) shouldBe Block(Some(Let("X", None, IntConstant(10))), GT(3, 2))
+      """.stripMargin) shouldBe Block(Let("X", None, IntConstant(10)), GT(3, 2))
 
-    parse("{let X = 10; 3 > 2}") shouldBe Block(Some(Let("X", None, IntConstant(10))), GT(3, 2))
-    parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Some(Let("X", None, Plus(3, 2))), GT(3, 2))
-    parse("{let X = if (true) true else false; false}") shouldBe Block(Some(Let("X", None, If(TrueLeaf, TrueLeaf, FalseLeaf))), FalseLeaf)
+    parse("{let X = 10; 3 > 2}") shouldBe Block(Let("X", None, IntConstant(10)), GT(3, 2))
+    parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Let("X", None, Plus(3, 2)), GT(3, 2))
+    parse("{let X = if (true) true else false; false}") shouldBe Block(Let("X", None, If(TrueLeaf, TrueLeaf, FalseLeaf)), FalseLeaf)
 
     val expr = parse(
       """{let X = 10
@@ -83,18 +83,18 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
         |X > Y}
       """.stripMargin)
 
-    expr shouldBe Block(Some(Let("X", None, IntConstant(10))), Block(Some(Let("Y", None, IntConstant(11))), GT(IntIdent("X"), IntIdent("Y"))))
+    expr shouldBe Block(Seq(Let("X", None, IntConstant(10)),Let("Y", None, IntConstant(11))), GT(IntIdent("X"), IntIdent("Y")))
   }
 
   property("types") {
-    parse("{let X: Int = 10; 3 > 2}") shouldBe Block(Some(Let("X", SInt, IntConstant(10))), GT(3, 2))
+    parse("{let X: Int = 10; 3 > 2}") shouldBe Block(Seq(Let("X", SInt, IntConstant(10))), GT(3, 2))
     parse("""{let X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe
-      Block(Some(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
+      Block(Seq(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
     parse("""{let X: Array[Int] = Array(1,2,3); X.size}""") shouldBe
-      Block(Some(Let("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
+      Block(Seq(Let("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
             Select(Ident("X"), "size"))
     parse("""{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}""") shouldBe
-        Block(Some(Let("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
+        Block(Seq(Let("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
           Select(Ident("X"), "_1"))
   }
 
@@ -111,11 +111,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
       """{let X = 10;
         |
         |true}
-      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(10))), TrueLeaf)
+      """.stripMargin) shouldBe Block(Seq(Let("X", IntConstant(10))), TrueLeaf)
     parse(
       """{let X = 11
         |true}
-      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(11))), TrueLeaf)
+      """.stripMargin) shouldBe Block(Seq(Let("X", IntConstant(11))), TrueLeaf)
   }
 
   property("comments") {
@@ -128,7 +128,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
        |3 + // end line comment
        |  2
        |}
-      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(12))), Plus(3, 2))
+      """.stripMargin) shouldBe Block(Seq(Let("X", IntConstant(12))), Plus(3, 2))
   }
 
   property("if") {
@@ -149,10 +149,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
              (true)
         |{ let A = 10;
         |  1 }
-        |else if ( X == Y) 2 else 3""".stripMargin) shouldBe If(
-      TrueLeaf,
-      Block(Some(Let("A", Block(None, IntConstant(10)))), IntConstant(1)),
-      If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3))
+        |else if ( X == Y) 2 else 3""".stripMargin) shouldBe
+        If(TrueLeaf,
+          Block(Seq(Let("A", IntConstant(10))), IntConstant(1)),
+          If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3))
     )
 
   }
@@ -187,7 +187,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse("f(x, y)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y")))
     parse("f(x, y).size") shouldBe Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "size")
     parse("f(x, y).get(1)") shouldBe Apply(Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "get"), IndexedSeq(IntConstant(1)))
-    parse("{let y = f(x); y}") shouldBe Block(Some(Let("y", Apply(Ident("f"), IndexedSeq(Ident("x"))))), Ident("y"))
+    parse("{let y = f(x); y}") shouldBe Block(Seq(Let("y", Apply(Ident("f"), IndexedSeq(Ident("x"))))), Ident("y"))
   }
 
   property("lambdas") {
@@ -209,7 +209,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse("fun (x) = x + 1") shouldBe
         Lambda(IndexedSeq("x" -> NoType), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
     parse("fun (x: Int) = { x + 1 }") shouldBe
-        Lambda(IndexedSeq("x" -> SInt), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+        Lambda(IndexedSeq("x" -> SInt), Block(Seq(), Plus(Ident("x").asValue[SInt.type], IntConstant(1))))
     parse("fun (x: Int) = { let y = x + 1; y }") shouldBe
         Lambda(IndexedSeq("x" -> SInt),
           Block(Let("y", Plus(IntIdent("x"), 1)), Ident("y")))
