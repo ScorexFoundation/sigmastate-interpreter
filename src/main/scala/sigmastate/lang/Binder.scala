@@ -62,9 +62,9 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
       val newBinds = for (Let(n, t, b) <- binds) yield {
         if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}")
         val b1 = eval(b, env)
-        Let(n, t, b1)
+        Let(n, if (t != NoType) t else b1.tpe, b1)
       }
-      val t1 = eval(t, env ++ newBinds.map(l => (l.name, l.value)))
+      val t1 = eval(t, env)
       Some(new Block(newBinds, t1) { override def evaluated = true })
 //    case v =>
 //      val v1 = rewrite(some(rule[Value[SType]] { case v => eval(v, env) }))(v)

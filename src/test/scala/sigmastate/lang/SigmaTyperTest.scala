@@ -65,23 +65,18 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
     typecheck(env, "all(Array(c1, c2))") shouldBe SBoolean
   }
 
-//    property("let constructs") {
-//      typecheck(env, """{let X = 10; X > 2}""".stripMargin) shouldBe
-//        Block(Let("X", None, IntConstant(10)), GT(10, 2))
-//      typecheck(env, """{let X = 10; X >= X}""".stripMargin) shouldBe
-//        Block(Let("X", None, IntConstant(10)), GE(10, 10))
-//      typecheck(env, """{let X = 10 + 1; X >= X}""".stripMargin) shouldBe
-//          Block(Let("X", None, Plus(10, 1)), GE(Plus(10, 1), Plus(10, 1)))
-//      typecheck(env,
-//        """{let X = 10
-//         |let Y = 11
-//         |X > Y}
-//        """.stripMargin) shouldBe Block(
-//        Seq(Let("X", None, IntConstant(10)), Let("Y", None, IntConstant(11))),
-//        GT(10, 11))
-//    }
-//
-//
+  property("let constructs") {
+    typecheck(env, "{let X = 10; X > 2}") shouldBe SBoolean
+    typecheck(env, """{let X = 10; X >= X}""".stripMargin) shouldBe SBoolean
+    typecheck(env, """{let X = 10 + 1; X >= X}""".stripMargin) shouldBe SBoolean
+    typecheck(env,
+      """{let X = 10
+       |let Y = X + 1
+       |X < Y}
+      """.stripMargin) shouldBe SBoolean
+  }
+
+
 //  property("predefined Exists with lambda argument") {
 //    val minToRaise = IntConstant(1000)
 //    val env = this.env ++ Map(

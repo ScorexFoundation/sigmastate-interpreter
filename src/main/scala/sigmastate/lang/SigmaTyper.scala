@@ -4,7 +4,7 @@ import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{SizeOf, Inputs}
+import sigmastate.utxo.Inputs
 
 /**
   * Analyses for typed lambda calculus expressions.  A simple free variable
@@ -46,7 +46,7 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case Apply(e1, args)       => args.foldLeft(fv(e1))((acc, e) => acc ++ fv(e))
       case Let(i, t, e) => fv(e)
       case Block(bs, e) => {
-        val fbv = bs.map(_.value).map(fv).flatten.toSet
+        val fbv = bs.map(_.body).map(fv).flatten.toSet
         val bvars = bs.map(_.name).toSet
         fbv ++ (fv(e) -- bvars)
       }
@@ -65,8 +65,18 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       // of the same var since we add inner bindings at the beginning
       // of the env and we search the env list below in tipe from
       // beginning to end
-      case tree.parent(p @ Lambda(args, t, _)) =>
+      case e @ tree.parent(p @ Lambda(args, t, Some(body))) if e eq body =>
         (args ++ env(p)).toList
+
+      // Inside the result expression of a block all bindings are visible
+      case e @ tree.parent(p @ Block(bs, res)) if e eq res =>
+        (bs.map(l => (l.name, l.givenType.?:(tipe(l.body)))) ++ env(p)).toList
+
+      // Inside any binding of a block all the previous names are visible
+      case e @ tree.parent(p @ Block(bs, res)) if bs.exists(_ eq e) =>
+        val iLet = bs.indexWhere(_ eq e)
+        val boundNames = bs.take(iLet).map(l => (l.name, l.givenType.?:(tipe(l.body))))
+        (boundNames ++ env(p)).toList
 
       // Other expressions do not bind new identifiers so they just
       // get their environment from their parent
@@ -188,7 +198,7 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
 //        }
 
       // The type of let body must match the declared type
-      case e @ tree.parent(p @ Let(_, Some(t), body)) if e eq body => t
+      case e @ tree.parent(p @ Let(_, t, body)) if (e eq body) && t != NoType => t
 
       // The operands of an operation should be integers
       case tree.parent(Plus(_, _)) => SInt

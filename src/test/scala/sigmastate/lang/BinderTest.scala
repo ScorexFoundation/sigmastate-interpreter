@@ -44,18 +44,18 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
 
     property("let constructs") {
       bind(env, """{let X = 10; X > 2}""".stripMargin) shouldBe
-        Block(Let("X", None, IntConstant(10)), GT(10, 2))
+        Block(Let("X", IntConstant(10)), GT(IntIdent("X"), 2))
       bind(env, """{let X = 10; X >= X}""".stripMargin) shouldBe
-        Block(Let("X", None, IntConstant(10)), GE(10, 10))
+        Block(Let("X", IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
       bind(env, """{let X = 10 + 1; X >= X}""".stripMargin) shouldBe
-          Block(Let("X", None, Plus(10, 1)), GE(Plus(10, 1), Plus(10, 1)))
+          Block(Let("X", Plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
       bind(env,
         """{let X = 10
          |let Y = 11
          |X > Y}
         """.stripMargin) shouldBe Block(
-        Seq(Let("X", None, IntConstant(10)), Let("Y", None, IntConstant(11))),
-        GT(10, 11))
+        Seq(Let("X", IntConstant(10)), Let("Y", IntConstant(11))),
+        GT(IntIdent("X"), IntIdent("Y")))
     }
 
 

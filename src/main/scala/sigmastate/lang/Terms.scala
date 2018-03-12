@@ -5,25 +5,22 @@ import sigmastate.{NoType, SType, SFunc}
 
 object Terms {
 
-  case class CUSTOMTYPE(name: String, fields: List[(String, SType)])
-
-  case class Block(bindings: Seq[Let], t: SValue) extends Value[SType] {
+  case class Block(bindings: Seq[Let], result: SValue) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = false
-    def tpe: SType = t.tpe
+    def tpe: SType = result.tpe
   }
   object Block {
-    def apply(let: Let, t: SValue): Block = Block(Seq(let), t)
+    def apply(let: Let, result: SValue): Block = Block(Seq(let), result)
   }
 
-  case class Let(name: String, givenType: Option[SType], value: SValue) extends Value[SType] {
+  case class Let(name: String, givenType: SType, body: SValue) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
-    def tpe: SType = givenType.getOrElse(value.tpe)
+    def tpe: SType = givenType ?: body.tpe
   }
   object Let {
-    def apply(name: String, value: SValue): Let = Let(name, None, value)
-    def apply(name: String, tpe: SType, value: SValue): Let = Let(name, Some(tpe), value)
+    def apply(name: String, value: SValue): Let = Let(name, NoType, value)
   }
 
   case class Select(i: Value[SType], field: String) extends Value[SType] {

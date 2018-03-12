@@ -72,11 +72,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse(
       """{let X = 10
         |3 > 2}
-      """.stripMargin) shouldBe Block(Let("X", None, IntConstant(10)), GT(3, 2))
+      """.stripMargin) shouldBe Block(Let("X", IntConstant(10)), GT(3, 2))
 
-    parse("{let X = 10; 3 > 2}") shouldBe Block(Let("X", None, IntConstant(10)), GT(3, 2))
-    parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Let("X", None, Plus(3, 2)), GT(3, 2))
-    parse("{let X = if (true) true else false; false}") shouldBe Block(Let("X", None, If(TrueLeaf, TrueLeaf, FalseLeaf)), FalseLeaf)
+    parse("{let X = 10; 3 > 2}") shouldBe Block(Let("X", IntConstant(10)), GT(3, 2))
+    parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Let("X", Plus(3, 2)), GT(3, 2))
+    parse("{let X = if (true) true else false; false}") shouldBe Block(Let("X", If(TrueLeaf, TrueLeaf, FalseLeaf)), FalseLeaf)
 
     val expr = parse(
       """{let X = 10
@@ -84,7 +84,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
         |X > Y}
       """.stripMargin)
 
-    expr shouldBe Block(Seq(Let("X", None, IntConstant(10)),Let("Y", None, IntConstant(11))), GT(IntIdent("X"), IntIdent("Y")))
+    expr shouldBe Block(Seq(Let("X", IntConstant(10)),Let("Y", IntConstant(11))), GT(IntIdent("X"), IntIdent("Y")))
   }
 
   property("types") {
