@@ -42,13 +42,20 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
         }
       }
     }
+    // Rule: Array(...) -->
     case Apply(Ident("Array", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
       Some(ConcreteCollection(args)(tpe))
+
+    // Rule: col.size --> SizeOf(col)
     case Select(obj, "size") if obj.tpe.isCollection =>
       Some(SizeOf(obj.asValue[SCollection[SType]]))
+
+    // Rule: all(Array(...)) --> AND(...)
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(AND(args))
+
+    // Rule: exists(input, f) -->
     case Apply(ExistsSym, Seq(input: Value[SCollection[SType]]@unchecked, pred: Value[SFunc]@unchecked)) =>
       val tItem = input.tpe.elemType
       val expectedTpe = SFunc(Vector(tItem), SBoolean)
@@ -57,7 +64,16 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
       val args = expectedTpe.tDom.zipWithIndex.map { case (t, i) => (s"arg${i+1}", t) }
       Some(ExistsSym)
 //      Some(Exists(input, ))
+
+    // Rule: fun (...) = ... --> fun (...): T = ...
+    case lam @ Lambda(args, t, Some(body)) if !lam.evaluated =>
+      val b1 = eval(body, env)
+      val t1 = if (t != NoType) t else b1.tpe
+      Some(new Lambda(args, t1, Some(b1)) { override def evaluated = true })
+
+    // Rule: { e } --> e
     case Block(Seq(), e) => Some(e)
+    
     case block @ Block(binds, t) if !block.evaluated =>
       val newBinds = for (Let(n, t, b) <- binds) yield {
         if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}")

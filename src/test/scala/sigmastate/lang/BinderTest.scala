@@ -43,18 +43,18 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
   }
 
     property("let constructs") {
-      bind(env, """{let X = 10; X > 2}""".stripMargin) shouldBe
-        Block(Let("X", IntConstant(10)), GT(IntIdent("X"), 2))
-      bind(env, """{let X = 10; X >= X}""".stripMargin) shouldBe
-        Block(Let("X", IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
-      bind(env, """{let X = 10 + 1; X >= X}""".stripMargin) shouldBe
-          Block(Let("X", Plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
+      bind(env, "{let X = 10; X > 2}") shouldBe
+        Block(Let("X", SInt, IntConstant(10)), GT(IntIdent("X"), 2))
+      bind(env, "{let X = 10; X >= X}") shouldBe
+        Block(Let("X", SInt, IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
+      bind(env, "{let X = 10 + 1; X >= X}") shouldBe
+          Block(Let("X", SInt, Plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
       bind(env,
         """{let X = 10
          |let Y = 11
          |X > Y}
         """.stripMargin) shouldBe Block(
-        Seq(Let("X", IntConstant(10)), Let("Y", IntConstant(11))),
+        Seq(Let("X", SInt, IntConstant(10)), Let("Y", SInt, IntConstant(11))),
         GT(IntIdent("X"), IntIdent("Y")))
     }
 
@@ -68,135 +68,59 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
 //        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), minToRaise))
 //  }
 
-//  property("tuple constructor") {
-//    bind("()") shouldBe UnitConstant
-//    bind("(1)") shouldBe IntConstant(1)
-//    bind("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
-//    bind("(1, X + 1)") shouldBe Tuple(IntConstant(1), Plus(IntIdent("X"), 1))
-//    bind("(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
-//    bind("(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
-//  }
-//
-//  property("types") {
-//    bind("{let X: Int = 10; 3 > 2}") shouldBe Block(Some(Let("X", SInt, IntConstant(10))), GT(3, 2))
-//    bind("""{let X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe
-//      Block(Some(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
-//    bind("""{let X: Array[Int] = Array(1,2,3); X.size}""") shouldBe
-//      Block(Some(Let("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
-//            Select(Ident("X"), "size"))
-//    bind("""{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}""") shouldBe
-//        Block(Some(Let("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
-//          Select(Ident("X"), "_1"))
-//  }
-//
-//  property("multiline") {
-//    bind(
-//      """
-//        |
-//        |false
-//        |
-//        |
-//      """.stripMargin) shouldBe FalseLeaf
-//
-//    bind(
-//      """{let X = 10;
-//        |
-//        |true}
-//      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(10))), TrueLeaf)
-//    bind(
-//      """{let X = 11
-//        |true}
-//      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(11))), TrueLeaf)
-//  }
-//
-//  property("comments") {
-//    bind(
-//      """{
-//       |// line comment
-//       |let X = 12
-//       |/* comment // nested line comment
-//       |*/
-//       |3 + // end line comment
-//       |  2
-//       |}
-//      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(12))), Plus(3, 2))
-//  }
-//
-//  property("if") {
-//    bind("if(true) 1 else 2") shouldBe If(TrueLeaf, IntConstant(1), IntConstant(2))
-//    bind("if(true) 1 else if(X==Y) 2 else 3") shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
-//    bind(
-//      """if ( true )
-//        |1
-//        |else if(X== Y)
-//        |     2
-//        |     else 3""".stripMargin) shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
-//
-//    bind("if (true) false else false==false") shouldBe If(TrueLeaf, FalseLeaf, EQ(FalseLeaf, FalseLeaf))
-//
-//    bind(
-//      """if
-//
-//             (true)
-//        |{ let A = 10;
-//        |  1 }
-//        |else if ( X == Y) 2 else 3""".stripMargin) shouldBe If(
-//      TrueLeaf,
-//      Block(Some(Let("A", Block(None, IntConstant(10)))), IntConstant(1)),
-//      If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3))
-//    )
-//
-//  }
-//
-//  property("array literals") {
-//    val emptyCol = ConcreteCollection(IndexedSeq.empty)(NoType)
-//    bind("Array()") shouldBe(emptyCol)
-//    val emptyCol2 = ConcreteCollection(IndexedSeq(emptyCol))(SCollection(NoType))
-//    bind("Array(Array())") shouldBe(emptyCol2)
-//    bind("Array(Array(Array()))") shouldBe(ConcreteCollection(IndexedSeq(emptyCol2))(SCollection(SCollection(NoType))))
-//
-//    bind("Array(1)") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt))
-//    bind("Array(1, X)") shouldBe(ConcreteCollection(IndexedSeq(IntConstant(1), Ident("X")))(SInt))
-//    bind("Array(1, X + 1, Array())") shouldBe(ConcreteCollection(
-//      IndexedSeq(
-//        IntConstant(1),
-//        Plus(Ident("X").asValue[SInt.type], IntConstant(1)),
-//        ConcreteCollection(IndexedSeq.empty)(NoType)))(SInt))
-//    bind("Array(Array(X + 1))") shouldBe ConcreteCollection[SCollection[SInt.type]](
-//      IndexedSeq(ConcreteCollection[SInt.type](IndexedSeq(
-//                  Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
-//  }
-//
-//  property("array indexed access") {
-//    bind("Array()(0)") shouldBe Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0)))
-//    bind("Array()(0)(0)") shouldBe Apply(Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
-//  }
+  property("tuple constructor") {
+    bind(env, "()") shouldBe UnitConstant
+    bind(env, "(1)") shouldBe IntConstant(1)
+    bind(env, "(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
+    bind(env, "(1, x + 1)") shouldBe Tuple(IntConstant(1), Plus(10, 1))
+    bind(env, "(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
+    bind(env, "(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
+  }
 
-//  property("lambdas") {
-//    bind("fun (x: Int) = x + 1") shouldBe
-//      Lambda(IndexedSeq("x" -> SInt), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-//    bind("fun (x: Int): Int = x + 1") shouldBe
-//      Lambda(IndexedSeq("x" -> SInt), SInt, Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-//    bind("fun (x: Int, box: Box): Int = x + box.value") shouldBe
-//        Lambda(IndexedSeq("x" -> SInt, "box" -> SBox), SInt,
-//               Plus(Ident("x").asValue[SInt.type], Select(Ident("box"), "value").asValue[SInt.type]))
-//    bind("fun (p: (Int, GroupElement), box: Box): Int = p._1 > box.value && p._2.isIdentity") shouldBe
-//        Lambda(IndexedSeq("p" -> STuple(SInt, SGroupElement), "box" -> SBox), SInt,
-//          AND(
-//            GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SInt.type]),
-//            Select(Select(Ident("p"), "_2"), "isIdentity").asValue[SBoolean.type]
-//            )
-//        )
-//
-//    bind("fun (x) = x + 1") shouldBe
-//        Lambda(IndexedSeq("x" -> NoType), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-//    bind("fun (x: Int) = { x + 1 }") shouldBe
-//        Lambda(IndexedSeq("x" -> SInt), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-//    bind("fun (x: Int) = { let y = x + 1; y }") shouldBe
-//        Lambda(IndexedSeq("x" -> SInt),
-//          Block(Let("y", Plus(IntIdent("x"), 1)), Ident("y")))
-//  }
-//
+  property("types") {
+    bind(env, "{let X: Int = 10; 3 > 2}") shouldBe Block(Let("X", SInt, IntConstant(10)), GT(3, 2))
+    bind(env, "{let X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe
+      Block(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)), GT(3, 2))
+    bind(env, "{let X: Array[Int] = Array(1,2,3); X.size}") shouldBe
+      Block(Let("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3)))),
+            Select(Ident("X"), "size"))
+    bind(env, "{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}") shouldBe
+      Block(Let("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT"))),
+            Select(Ident("X"), "_1"))
+  }
+
+  property("if") {
+    bind(env, "if (true) x else y") shouldBe If(TrueLeaf, IntConstant(10), IntConstant(11))
+    bind(env, "if(c1) 1 else if(x==y) 2 else 3") shouldBe
+      If(TrueLeaf, IntConstant(1), If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
+    bind(env,
+      """if (true) { let A = x; 1 }
+        |else if (x == y) 2 else 3""".stripMargin) shouldBe
+        If(TrueLeaf,
+          Block(Let("A", SInt, IntConstant(10)), IntConstant(1)),
+          If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
+  }
+
+  property("array indexed access") {
+    bind(env, "Array()(0)") shouldBe Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0)))
+    bind(env, "Array()(0)(0)") shouldBe Apply(Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
+  }
+
+  property("lambdas") {
+    bind(env, "fun (a: Int) = a + 1") shouldBe
+      Lambda(IndexedSeq("a" -> SInt), SInt, Plus(IntIdent("a"), 1))
+    bind(env, "fun (a: Int, box: Box): Int = a + box.value") shouldBe
+        Lambda(IndexedSeq("a" -> SInt, "box" -> SBox), SInt,
+               Plus(IntIdent("a"), Select(Ident("box"), "value").asValue[SInt.type]))
+    bind(env, "fun (a) = a + 1") shouldBe
+        Lambda(IndexedSeq("a" -> NoType), SInt, Plus(IntIdent("a"), IntConstant(1)))
+    bind(env, "fun (a) = a + x") shouldBe
+        Lambda(IndexedSeq("a" -> NoType), SInt, Plus(IntIdent("a"), 10))
+    bind(env, "fun (a: Int) = { let Y = a + 1; Y + x }") shouldBe
+        Lambda(IndexedSeq("a" -> SInt), SInt,
+          Block(Let("Y", SInt, Plus(IntIdent("a"), 1)), Plus(IntIdent("Y"), 10)))
+  }
+
 //  property("function definitions") {
 //    bind(
 //      """{let f = fun (x: Int) = x + 1
@@ -210,9 +134,9 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
 //        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
 //  }
 //
-//  property("unary operations") {
-//    bind("!x") shouldBe Not(Ident("x").asValue[SBoolean.type])
-//    bind("!x && y") shouldBe AND(Not(Ident("x").asValue[SBoolean.type]), Ident("y").asValue[SBoolean.type])
-//    bind("!x && !y") shouldBe AND(Not(Ident("x").asValue[SBoolean.type]), Not(Ident("y").asValue[SBoolean.type]))
-//  }
+  property("unary operations") {
+    bind(env, "!c1") shouldBe Not(TrueLeaf)
+    bind(env, "!c1 && c2") shouldBe AND(Not(TrueLeaf), FalseLeaf)
+    bind(env, "!c1 && !c2") shouldBe AND(Not(TrueLeaf), Not(FalseLeaf))
+  }
 }
