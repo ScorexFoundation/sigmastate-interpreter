@@ -1,12 +1,15 @@
 package sigmastate
 
 import java.math.BigInteger
+import javafx.animation.SequentialTransitionBuilder
 
 import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.SType.TypeCode
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo.{SigmaStateBox, Box}
+import sigmastate.utxo.{Box, SigmaStateBox}
 import sigmastate.Values._
+
+import scala.collection.mutable
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -136,9 +139,15 @@ case object SAny extends SType {
   override val typeCode: Byte = 9: Byte
 }
 
-case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) extends SType {
+trait SProduct extends SType {
+  def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
+  def fields: Seq[(String, SType)]
+}
+
+case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) extends SProduct {
   override type WrappedType = IndexedSeq[Value[ElemType]]
   override val typeCode: TypeCode = SCollection.TypeCode
+  override def fields = SCollection.fields
 
   override def equals(obj: scala.Any) = obj match {
     case that: SCollection[_] => that.elemType == elemType
@@ -152,6 +161,7 @@ case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) ext
 
 object SCollection {
   val TypeCode: TypeCode = 80: Byte
+  val fields = Seq("size" -> SInt)
   def apply[T <: SType](elemType: T)(implicit ov: Overload1): SCollection[T] = SCollection()(elemType)
 }
 
@@ -169,14 +179,24 @@ object SFunc {
   val TypeCode = 90: Byte
 }
 
-case class STuple(items: IndexedSeq[SType]) extends SType {
+case class STuple(items: IndexedSeq[SType]) extends SProduct {
+  import STuple._
   override type WrappedType = Seq[Any]
   override val typeCode = STuple.TypeCode
+  override lazy val fields = {
+    val b = new mutable.ArrayBuffer[(String, SType)](items.size)
+    val i = 0
+    while (i < items.size) {
+      b += (componentNames(i) -> items(i))
+    }
+    b.result
+  }
 }
 
 object STuple {
   val TypeCode = 100: Byte
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
+  val componentNames = Range(1, 31).map(i => s"_$i")
 }
 
 case class STypeApply(name: String, args: IndexedSeq[SType] = IndexedSeq()) extends SType {

@@ -30,8 +30,10 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
                   case _ =>
                     message(e1, "application of non-function")
                 }
-              case Ident(x, _) =>
+              case e @ Ident(x, _) =>
                 message(e, s"unknown name '$x'", tipe(e) == NoType)
+              case e: SValue =>
+                message(e, s"Expression doesn't have type ${e}: NoType: context ${tree.parent(e)}", tipe(e) == NoType)
             }
     }
 
@@ -167,11 +169,27 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
             NoType
         }
 
-
-      // A parallel returns the type of the body expression
+      // A block returns the type of the result expression
       case Block(bs, e) =>
         tipe(e)
-      case e => sys.error(s"Don't know how to compute type for $e")
+
+      // Let can be thought as an expression with the side effect of introducing a new variable
+      case Let(_, _, body) => tipe(body)
+
+      case Select(obj, field) =>
+        tipe(obj) match {
+          case s: SProduct =>
+            val iField = s.fieldIndex(field)
+            if (iField != -1) {
+              s.fields(iField)._2
+            }
+            else
+              error(s"Cannot find field '$field' in product type with fields ${s.fields}")
+          case t =>
+            error(s"Cannot get field '$field' of non-product type $t")
+        }
+
+      case e => error(s"Don't know how to compute type for $e")
     }
 
   def binOpTipe(e1: SValue, e2: SValue)(arg: SType, res: SType): SType =

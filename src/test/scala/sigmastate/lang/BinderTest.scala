@@ -121,19 +121,13 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
           Block(Let("Y", SInt, Plus(IntIdent("a"), 1)), Plus(IntIdent("Y"), 10)))
   }
 
-//  property("function definitions") {
-//    bind(
-//      """{let f = fun (x: Int) = x + 1
-//       |f}
-//      """.stripMargin) shouldBe
-//        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
-//    bind(
-//      """{fun f(x: Int) = x + 1
-//       |f}
-//      """.stripMargin) shouldBe
-//        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
-//  }
-//
+  property("function definitions") {
+    bind(env, "{let f = fun (a: Int) = a + 1; f}") shouldBe
+        Block(Let("f", SFunc(IndexedSeq(SInt), SInt), Lambda(IndexedSeq("a" -> SInt), SInt, Plus(IntIdent("a"), 1))), Ident("f"))
+    bind(env, "{fun f(a: Int) = a + x; f}") shouldBe
+        Block(Let("f", SFunc(IndexedSeq(SInt), SInt), Lambda(IndexedSeq("a" -> SInt), SInt, Plus(IntIdent("a"), 10))), Ident("f"))
+  }
+
   property("unary operations") {
     bind(env, "!c1") shouldBe Not(TrueLeaf)
     bind(env, "!c1 && c2") shouldBe AND(Not(TrueLeaf), FalseLeaf)

@@ -76,7 +76,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
       """.stripMargin) shouldBe SBoolean
   }
 
-
 //  property("predefined Exists with lambda argument") {
 //    val minToRaise = IntConstant(1000)
 //    val env = this.env ++ Map(
@@ -85,28 +84,24 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
 //    typecheck(env, """exists(OUTPUTS, fun (out: Box) = { out.amount >= minToRaise })""") shouldBe
 //        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), minToRaise))
 //  }
-//
-//  property("tuple constructor") {
-//    typecheck("()") shouldBe UnitConstant
-//    typecheck("(1)") shouldBe IntConstant(1)
-//    typecheck("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
-//    typecheck("(1, X + 1)") shouldBe Tuple(IntConstant(1), Plus(IntIdent("X"), 1))
-//    typecheck("(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
-//    typecheck("(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
-//  }
-//
-//  property("types") {
-//    typecheck("{let X: Int = 10; 3 > 2}") shouldBe Block(Some(Let("X", SInt, IntConstant(10))), GT(3, 2))
-//    typecheck("""{let X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe
-//      Block(Some(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
-//    typecheck("""{let X: Array[Int] = Array(1,2,3); X.size}""") shouldBe
-//      Block(Some(Let("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
-//            Select(Ident("X"), "size"))
-//    typecheck("""{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}""") shouldBe
-//        Block(Some(Let("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
-//          Select(Ident("X"), "_1"))
-//  }
-//
+
+  property("tuple constructor") {
+    typecheck(env, "()") shouldBe SUnit
+    typecheck(env, "(1)") shouldBe SInt
+    typecheck(env, "(1, 2)") shouldBe STuple(SInt, SInt)
+    typecheck(env, "(1, x + 1)") shouldBe STuple(SInt, SInt)
+    typecheck(env, "(1, 2, 3)") shouldBe STuple(SInt, SInt, SInt)
+    typecheck(env, "(1, 2 + 3, 4)") shouldBe STuple(SInt, SInt, SInt)
+  }
+
+  property("types") {
+    typecheck(env, "{let X: Int = 10; 3 > 2}") shouldBe SBoolean
+    typecheck(env, "{let X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe SBoolean
+    typecheck(env, "{let X: Array[Int] = Array(1,2,3); X.size}") shouldBe SInt
+    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
+//    typecheck(env, "{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}") shouldBe SByteArray
+  }
+
 //  property("multiline") {
 //    typecheck(
 //      """
