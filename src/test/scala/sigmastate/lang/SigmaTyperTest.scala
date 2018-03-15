@@ -74,6 +74,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
        |let Y = X + 1
        |X < Y}
       """.stripMargin) shouldBe SBoolean
+    typecheck(env, "{let X = (10, true); X._1 > 2 && X._2}") shouldBe SBoolean
+    typecheck(env, "{let X = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
   }
 
 //  property("predefined Exists with lambda argument") {
@@ -99,44 +101,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
     typecheck(env, "{let X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe SBoolean
     typecheck(env, "{let X: Array[Int] = Array(1,2,3); X.size}") shouldBe SInt
     typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
-//    typecheck(env, "{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}") shouldBe SByteArray
+    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
   }
 
-//  property("multiline") {
-//    typecheck(
-//      """
-//        |
-//        |false
-//        |
-//        |
-//      """.stripMargin) shouldBe FalseLeaf
-//
-//    typecheck(
-//      """{let X = 10;
-//        |
-//        |true}
-//      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(10))), TrueLeaf)
-//    typecheck(
-//      """{let X = 11
-//        |true}
-//      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(11))), TrueLeaf)
-//  }
-//
-//  property("comments") {
-//    typecheck(
-//      """{
-//       |// line comment
-//       |let X = 12
-//       |/* comment // nested line comment
-//       |*/
-//       |3 + // end line comment
-//       |  2
-//       |}
-//      """.stripMargin) shouldBe Block(Some(Let("X", IntConstant(12))), Plus(3, 2))
-//  }
-//
 //  property("if") {
-//    typecheck("if(true) 1 else 2") shouldBe If(TrueLeaf, IntConstant(1), IntConstant(2))
+//    typecheck(env, "if(true) 1 else 2") shouldBe SInt
 //    typecheck("if(true) 1 else if(X==Y) 2 else 3") shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
 //    typecheck(
 //      """if ( true )

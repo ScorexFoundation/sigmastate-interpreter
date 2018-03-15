@@ -183,11 +183,12 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
   import STuple._
   override type WrappedType = Seq[Any]
   override val typeCode = STuple.TypeCode
-  override lazy val fields = {
+  override val fields = {
     val b = new mutable.ArrayBuffer[(String, SType)](items.size)
-    val i = 0
+    var i = 0
     while (i < items.size) {
       b += (componentNames(i) -> items(i))
+      i += 1
     }
     b.result
   }

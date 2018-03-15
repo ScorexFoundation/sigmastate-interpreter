@@ -107,16 +107,21 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     */
   val tipe : SValue => SType =
     attr {
+      // this case should be before general EvaluatedValue
       case c @ ConcreteCollection(items) =>  {
-        val types = items.map(_.tpe).distinct
+        val types = items.map(tipe).distinct
         val eItem =
           if (types.isEmpty) NoType
           else
           if (types.size == 1) types(0)
           else
-            error(s"All element of array should have the same type $c")
+            error(s"All element of array $c should have the same type but found $types")
         SCollection(eItem)
       }
+
+      // this case should be before general EvaluatedValue
+      case Tuple(items) =>
+        STuple(items.map(tipe))
 
       case v: EvaluatedValue[_] => v.tpe
       case v: NotReadyValueInt => v.tpe
@@ -155,18 +160,17 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
 
       // For an application we first determine the type of the expression
       // being applied.  If it's a function then the application has type
-      // of that function's return type. If it's not a function then any
-      // type is allowed. We check separately that only functions are
-      // applied.
-      case Apply(e1, e2) =>
-        tipe(e1) match {
-          case SFunc(t1, t2) =>
-            if (e2.map(tipe) == t1)
-              t2
+      // of that function's return type.
+      case app @ Apply(f, args) =>
+        tipe(f) match {
+          case SFunc(argTypes, tRes) =>
+            val actualTypes = args.map(tipe)
+            if (actualTypes == argTypes)
+              tRes
             else
-              NoType
-          case _ =>
-            NoType
+              error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+          case t =>
+            error(s"Invalid function application $app: function type is expected but was $t")
         }
 
       // A block returns the type of the result expression

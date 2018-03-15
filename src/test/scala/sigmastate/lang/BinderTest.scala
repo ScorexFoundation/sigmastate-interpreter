@@ -56,6 +56,10 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
         """.stripMargin) shouldBe Block(
         Seq(Let("X", SInt, IntConstant(10)), Let("Y", SInt, IntConstant(11))),
         GT(IntIdent("X"), IntIdent("Y")))
+      bind(env, "{let X = (10, true); X._1 > 2 && X._2}") shouldBe
+          Block(
+            Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)),
+            AND(GT(Select(IntIdent("X"), "_1").asValue[SInt.type], 2), Select(IntIdent("X"), "_2").asValue[SBoolean.type]))
     }
 
 
