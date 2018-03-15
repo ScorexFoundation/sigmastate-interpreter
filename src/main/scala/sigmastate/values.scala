@@ -46,6 +46,10 @@ object Values {
     implicit def liftInt(n: Int): Value[SInt.type] = IntConstant(n)
 
     implicit def liftLong(n: Long): Value[SInt.type] = IntConstant(n)
+
+    object Typed {
+      def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
+    }
   }
 
   trait EvaluatedValue[S <: SType] extends Value[S] {

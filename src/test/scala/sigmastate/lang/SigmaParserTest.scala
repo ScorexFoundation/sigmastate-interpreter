@@ -234,6 +234,29 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse("!x") shouldBe Not(Ident("x").asValue[SBoolean.type])
     parse("!x && y") shouldBe AND(Not(Ident("x").asValue[SBoolean.type]), Ident("y").asValue[SBoolean.type])
     parse("!x && !y") shouldBe AND(Not(Ident("x").asValue[SBoolean.type]), Not(Ident("y").asValue[SBoolean.type]))
+
+//    let x: Boolean =
+//
+//    not: Bool => Bool
+//    not true = false
+//    not false = true
+//
+//    verify: (T x (\x => x R q)) => Bool
+//
+//    S[T] x S[R]  ~  S[TxR]
+//
+//
+//    let e1 : Boolean =     ...
+//    let e2 : GroupElement =    S[x: T] x R q  ~   (T x (\x => x R q))
+//
+//    let res: Boolean = verify {
+//      let s1: Sigma =     . e1 . //(S[x: T] x R q) * (S[y: S] y R q) | (S[z: U] z R q)
+//      let s2: Sigma =     ..e2.
+//      let s3: Sigma =     ...
+//      let y: Sigma = (s1 \/ s2) /\ (s1 \/ s3)
+//    y}
+//
+//    !(x || verify(y \/ z \/ z2)) &&
   }
 
   property("get field of ref") {

@@ -159,14 +159,15 @@ object Fold {
     Fold[SByteArray.type](input, 21, EmptyByteArray, 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
-case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)(implicit val tpe: V)
+case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
+  def tpe = input.tpe.elemType
   def arity = 3
   def deconstruct = immutable.Seq[Any](input, index, tpe)
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
     case Seq(input: Value[SCollection[V]] @unchecked,
       index: Int,
-      t: V @unchecked) => ByIndex[V](input, index)(t)
+      t: V @unchecked) => ByIndex[V](input, index)
     case _ =>
       illegalArgs("ByIndex", "(Value[SCollection[V]], index: Int)(tpe: V)", cs)
   }

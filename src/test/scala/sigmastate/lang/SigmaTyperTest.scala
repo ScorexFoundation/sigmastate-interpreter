@@ -104,32 +104,17 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
     typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
   }
 
-//  property("if") {
-//    typecheck(env, "if(true) 1 else 2") shouldBe SInt
-//    typecheck("if(true) 1 else if(X==Y) 2 else 3") shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
-//    typecheck(
-//      """if ( true )
-//        |1
-//        |else if(X== Y)
-//        |     2
-//        |     else 3""".stripMargin) shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
-//
-//    typecheck("if (true) false else false==false") shouldBe If(TrueLeaf, FalseLeaf, EQ(FalseLeaf, FalseLeaf))
-//
-//    typecheck(
-//      """if
-//
-//             (true)
-//        |{ let A = 10;
-//        |  1 }
-//        |else if ( X == Y) 2 else 3""".stripMargin) shouldBe If(
-//      TrueLeaf,
-//      Block(Some(Let("A", Block(None, IntConstant(10)))), IntConstant(1)),
-//      If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3))
-//    )
-//
-//  }
-//
+  property("if") {
+    typecheck(env, "if(true) 1 else 2") shouldBe SInt
+    typecheck(env, "if(c1) 1 else 2") shouldBe SInt
+    typecheck(env, "if(c1) x else y") shouldBe SInt
+    typecheck(env,
+      """if (true) {
+        |  let A = 10; A
+        |} else
+        |  if ( x == y) 2 else 3""".stripMargin) shouldBe SInt
+  }
+
   property("array literals") {
     typecheck(env, "Array()") shouldBe SCollection(NoType)
     typecheck(env, "Array(Array())") shouldBe SCollection(SCollection(NoType))
@@ -143,27 +128,20 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
     typefail(env, "Array(1, false)")
   }
 
-//  property("array indexed access") {
-//    typecheck("Array()(0)") shouldBe Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0)))
-//    typecheck("Array()(0)(0)") shouldBe Apply(Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
-//  }
-//
-//  property("lambdas") {
-//    typecheck("fun (x: Int) = x + 1") shouldBe
-//      Lambda(IndexedSeq("x" -> SInt), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-//    typecheck("fun (x: Int): Int = x + 1") shouldBe
-//      Lambda(IndexedSeq("x" -> SInt), SInt, Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-//    typecheck("fun (x: Int, box: Box): Int = x + box.value") shouldBe
-//        Lambda(IndexedSeq("x" -> SInt, "box" -> SBox), SInt,
-//               Plus(Ident("x").asValue[SInt.type], Select(Ident("box"), "value").asValue[SInt.type]))
-//    typecheck("fun (p: (Int, GroupElement), box: Box): Int = p._1 > box.value && p._2.isIdentity") shouldBe
-//        Lambda(IndexedSeq("p" -> STuple(SInt, SGroupElement), "box" -> SBox), SInt,
-//          AND(
-//            GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SInt.type]),
-//            Select(Select(Ident("p"), "_2"), "isIdentity").asValue[SBoolean.type]
-//            )
-//        )
-//
+  property("array indexed access") {
+    typefail(env, "Array()(0)", "undefined element type")
+    typecheck(env, "Array(0)(0)") shouldBe SInt
+    typefail(env, "Array(0)(0)(0)", "function/array type is expected")
+  }
+
+  property("lambdas") {
+    typecheck(env, "fun (x: Int) = x + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "fun (x: Int): Int = x + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
+//    typecheck(env, "fun (x: Int, box: Box): Int = x + box.value") shouldBe
+//      SFunc(IndexedSeq(SInt, SBox), SInt)
+//    typecheck(env, "fun (p: (Int, GroupElement), box: Box): Int = p._1 > box.value && p._2.isIdentity") shouldBe
+//      SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SInt)
+
 //    typecheck("fun (x) = x + 1") shouldBe
 //        Lambda(IndexedSeq("x" -> NoType), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
 //    typecheck("fun (x: Int) = { x + 1 }") shouldBe
@@ -171,8 +149,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
 //    typecheck("fun (x: Int) = { let y = x + 1; y }") shouldBe
 //        Lambda(IndexedSeq("x" -> SInt),
 //          Block(Let("y", Plus(IntIdent("x"), 1)), Ident("y")))
-//  }
-//
+  }
+
 //  property("function definitions") {
 //    typecheck(
 //      """{let f = fun (x: Int) = x + 1
@@ -186,9 +164,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
 //        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
 //  }
 //
-//  property("unary operations") {
-//    typecheck("!x") shouldBe Not(Ident("x").asValue[SBoolean.type])
-//    typecheck("!x && y") shouldBe AND(Not(Ident("x").asValue[SBoolean.type]), Ident("y").asValue[SBoolean.type])
-//    typecheck("!x && !y") shouldBe AND(Not(Ident("x").asValue[SBoolean.type]), Not(Ident("y").asValue[SBoolean.type]))
-//  }
+
+  property("unary operations") {
+    typecheck(env, "!c1") shouldBe SBoolean
+    typecheck(env, "!c1 && c2") shouldBe SBoolean
+    typecheck(env, "!c1 && !c2") shouldBe SBoolean
+  }
 }

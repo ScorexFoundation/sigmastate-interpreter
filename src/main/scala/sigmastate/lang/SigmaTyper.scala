@@ -4,7 +4,7 @@ import org.bitbucket.inkytonik.kiama.attribution.Attribution
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.Inputs
+import sigmastate.utxo.{Inputs, ByIndex}
 
 /**
   * Analyses for typed lambda calculus expressions.  A simple free variable
@@ -24,16 +24,10 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case e : SValue =>
 //        checkType(e, tipe) ++
             check(e) {
-              case Apply(e1, e2) =>
-                check(tipe(e1)) {
-                  case _: SFunc => noMessages
-                  case _ =>
-                    message(e1, "application of non-function")
-                }
               case e @ Ident(x, _) =>
                 message(e, s"unknown name '$x'", tipe(e) == NoType)
               case e: SValue =>
-                message(e, s"Expression doesn't have type ${e}: NoType: context ${tree.parent(e)}", tipe(e) == NoType)
+                message(e, s"Expression ${e} doesn't have type: context ${tree.parent(e)}", tipe(e) == NoType)
             }
     }
 
@@ -128,18 +122,31 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case Inputs => Inputs.tpe
 
       // An operation must be applied to two arguments of the same type
-      case GT(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
-      case LT(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
-      case GE(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
-      case LE(e1, e2) => binOpTipe(e1, e2)(SInt, SBoolean)
-      case EQ(e1, e2) => binOpTipe(e1, e2)(tipe(e1), SBoolean)
-      case NEQ(e1, e2) => binOpTipe(e1, e2)(tipe(e1), SBoolean)
+      case op @ GT(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
+      case op @ LT(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
+      case op @ GE(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
+      case op @ LE(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
+      case op @ EQ(e1, e2) => binOpTipe(op, e1, e2)(tipe(e1), SBoolean)
+      case op @ NEQ(e1, e2) => binOpTipe(op, e1, e2)(tipe(e1), SBoolean)
 
-      case AND(xs) =>
-        if (xs.tpe.elemType == SBoolean) SBoolean else NoType
-      case OR(xs) =>
-        if (xs.tpe.elemType == SBoolean) SBoolean else NoType
+      case op @ AND(xs) =>
+        val xsT = checkTyped(op, tipe(xs), SCollection(SBoolean))
+        xsT.elemType
+      case op @ OR(xs) =>
+        val xsT = checkTyped(op, tipe(xs), SCollection(SBoolean))
+        xsT.elemType
 
+      case op @ Not(e) =>
+        val xsT = checkTyped(op, tipe(e), SBoolean)
+        SBoolean
+
+      case ite @ If(c, t, e) =>
+        val tCond = tipe(c)
+        if (tCond != SBoolean) error(s"Invalid type of condition in $ite: expected Boolean; actual: $tCond")
+        val tThen = tipe(t)
+        val tElse = tipe(e)
+        if (tThen != tElse) error(s"Invalid type of condition $ite: both branches should have the same type but was $tThen and $tElse")
+        tThen
       // An identifier is looked up in the environement of the current
       // expression.  If we find it, then we use the type that we find.
       // Otherwise it's an error.
@@ -169,9 +176,21 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
               tRes
             else
               error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+          case tCol: SCollection[_] =>
+            args match {
+              case Seq(IntConstant(i)) =>
+                tCol.elemType
+              case _ =>
+                error(s"Invalid argument of array application $app: expected integer constant; actual: $args")
+            }
           case t =>
-            error(s"Invalid function application $app: function type is expected but was $t")
+            error(s"Invalid function/array application $app: function/array type is expected but was $t")
         }
+
+      case ByIndex(col, i) =>
+        val tItem = col.tpe.elemType
+        if (tItem == NoType) error(s"Invalid type in $col: undefined element type")
+        tItem
 
       // A block returns the type of the result expression
       case Block(bs, e) =>
@@ -196,11 +215,17 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case e => error(s"Don't know how to compute type for $e")
     }
 
-  def binOpTipe(e1: SValue, e2: SValue)(arg: SType, res: SType): SType =
+  def binOpTipe(op: SValue, e1: SValue, e2: SValue)(arg: SType, res: SType): SType =
     if ((tipe(e1) == arg) && (tipe(e2) == arg))
       res
     else
-      NoType
+      error(s"Invalid binary operation $op: expected argument types ($arg, $arg); actual: (${tipe(e1)}, ${tipe(e2)})")
+
+  def checkTyped[T <: SType](op: SValue, t: SType, expected: T): T =
+    if (t == expected)
+      t.asInstanceOf[T]
+    else
+      error(s"Invalid argument type $t of $op")
 
   /** The expected type of an expression. */
   val exptipe : SValue => SType =

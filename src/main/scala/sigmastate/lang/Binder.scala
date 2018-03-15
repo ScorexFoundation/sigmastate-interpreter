@@ -6,6 +6,7 @@ import sigmastate._
 import Values._
 import sigmastate.utxo._
 import sigmastate.SCollection._
+import sigmastate.Values.Value.Typed
 
 trait Binder {
   def bind(e: SValue): SValue
@@ -50,6 +51,10 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size") if obj.tpe.isCollection =>
       Some(SizeOf(obj.asValue[SCollection[SType]]))
+
+    // Rule: col(i) --> ByIndex(col, i)
+    case Apply(Typed(obj, tCol: SCollection[_]), Seq(IntConstant(i))) =>
+      Some(ByIndex(obj.asValue[SCollection[SType]], i.toInt))
 
     // Rule: all(Array(...)) --> AND(...)
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>

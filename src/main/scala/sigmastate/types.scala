@@ -163,6 +163,7 @@ object SCollection {
   val TypeCode: TypeCode = 80: Byte
   val fields = Seq("size" -> SInt)
   def apply[T <: SType](elemType: T)(implicit ov: Overload1): SCollection[T] = SCollection()(elemType)
+  def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 }
 
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {

@@ -106,8 +106,10 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
   }
 
   property("array indexed access") {
-    bind(env, "Array()(0)") shouldBe Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0)))
-    bind(env, "Array()(0)(0)") shouldBe Apply(Apply(ConcreteCollection(IndexedSeq.empty)(NoType), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
+    val col =
+    bind(env, "Array(1)(0)") shouldBe ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0)
+    bind(env, "Array(Array(1))(0)(0)") shouldBe
+      ByIndex(ByIndex(ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)), 0), 0)
   }
 
   property("lambdas") {
