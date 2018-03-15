@@ -159,11 +159,15 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
 
       // A lambda expression is a function from the type of its argument
       // to the type of the body expression
-      case Lambda(args, t, body) =>
+      case lam @ Lambda(args, t, body) =>
+        for ((name, t) <- args)
+          if (t == NoType)
+            error(s"Invalid function $lam: undefined type of argument $name")
+        val argTypes = args.map(_._2)
         if (t == NoType)
-          SFunc(args.map(_._2), body.fold(NoType: SType)(tipe))
+          SFunc(argTypes, body.fold(NoType: SType)(tipe))
         else
-          SFunc(args.map(_._2), t)
+          SFunc(argTypes, t)
 
       // For an application we first determine the type of the expression
       // being applied.  If it's a function then the application has type

@@ -33,11 +33,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
       val st = new SigmaTree(bound)
       val an = new SigmaTyper(env, st)
       an.tipe(bound)
+      an.errors shouldBe empty
       assert(false, s"Should not typecheck: $x")
     } catch {
       case e: TyperException =>
         if (messageSubstr.nonEmpty)
-          e.getMessage.indexOf(messageSubstr) should not be(-1)
+          assert(e.getMessage.contains(messageSubstr)/*, s"error message '${e.getMessage}' does't contain '${messageSubstr}'"*/)
     }
   }
 
@@ -135,35 +136,22 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
   }
 
   property("lambdas") {
-    typecheck(env, "fun (x: Int) = x + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
-    typecheck(env, "fun (x: Int): Int = x + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
-//    typecheck(env, "fun (x: Int, box: Box): Int = x + box.value") shouldBe
-//      SFunc(IndexedSeq(SInt, SBox), SInt)
-//    typecheck(env, "fun (p: (Int, GroupElement), box: Box): Int = p._1 > box.value && p._2.isIdentity") shouldBe
-//      SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SInt)
+    typecheck(env, "fun (a: Int) = a + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "fun (a: Int): Int = a + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "fun (a: Int) = { a + 1 }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "fun (a: Int) = { let b = a + 1; b }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "fun (a: Int, box: Box): Int = a + box.value") shouldBe
+      SFunc(IndexedSeq(SInt, SBox), SInt)
+    typecheck(env, "fun (p: (Int, GroupElement), box: Box): Int = p._1 > box.value && p._2.isIdentity") shouldBe
+      SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SInt)
 
-//    typecheck("fun (x) = x + 1") shouldBe
-//        Lambda(IndexedSeq("x" -> NoType), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-//    typecheck("fun (x: Int) = { x + 1 }") shouldBe
-//        Lambda(IndexedSeq("x" -> SInt), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-//    typecheck("fun (x: Int) = { let y = x + 1; y }") shouldBe
-//        Lambda(IndexedSeq("x" -> SInt),
-//          Block(Let("y", Plus(IntIdent("x"), 1)), Ident("y")))
+    typefail(env, "fun (a) = a + 1", "undefined type of argument")
   }
 
-//  property("function definitions") {
-//    typecheck(
-//      """{let f = fun (x: Int) = x + 1
-//       |f}
-//      """.stripMargin) shouldBe
-//        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
-//    typecheck(
-//      """{fun f(x: Int) = x + 1
-//       |f}
-//      """.stripMargin) shouldBe
-//        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
-//  }
-//
+  property("function definitions") {
+    typecheck(env, "{ let f = fun (x: Int) = x + 1; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "{ fun f(x: Int) = x + 1; f } ") shouldBe SFunc(IndexedSeq(SInt), SInt)
+  }
 
   property("unary operations") {
     typecheck(env, "!c1") shouldBe SBoolean

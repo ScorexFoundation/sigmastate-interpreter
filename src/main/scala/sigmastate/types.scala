@@ -117,14 +117,22 @@ case object SAvlTree extends SType {
   override val typeCode: TypeCode = 5: Byte
 }
 
-case object SGroupElement extends SType {
+case object SGroupElement extends SProduct {
   override type WrappedType = GroupElement
   override val typeCode: TypeCode = 6: Byte
+  val fields = Seq(
+    "isIdentity" -> SBoolean,
+    "nonce" -> SByteArray
+  )
 }
 
-case object SBox extends SType {
+case object SBox extends SProduct {
   override type WrappedType = SigmaStateBox
   override val typeCode: TypeCode = 7: Byte
+  val fields = Seq(
+    "value" -> SInt,
+    "nonce" -> SByteArray
+  )
 }
 
 /** The type with single inhabitant value () */
