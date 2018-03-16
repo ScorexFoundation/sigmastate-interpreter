@@ -164,8 +164,12 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
           if (t == NoType)
             error(s"Invalid function $lam: undefined type of argument $name")
         val argTypes = args.map(_._2)
-        if (t == NoType)
-          SFunc(argTypes, body.fold(NoType: SType)(tipe))
+        if (t == NoType) {
+          val tRes = body.fold(NoType: SType)(tipe)
+          if (tRes == NoType)
+            error(s"Invalid function $lam: undefined type of result")
+          SFunc(argTypes, tRes)
+        }
         else
           SFunc(argTypes, t)
 
@@ -259,14 +263,6 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case _ => SAny
     }
 
-//  /**
-//    * The declaration (if any) of an identifier use.
-//    */
-//  def decl : Var => Option[Lam] =
-//    attr {
-//      case e @ Var(x) => lookup(x)(e)
-//    }
-//
 }
 
 class TyperException(msg: String) extends Exception(msg)

@@ -139,4 +139,11 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
     bind(env, "!c1 && c2") shouldBe AND(Not(TrueLeaf), FalseLeaf)
     bind(env, "!c1 && !c2") shouldBe AND(Not(TrueLeaf), Not(FalseLeaf))
   }
+
+  property("predefined primitives") {
+    bind(env, "fun (box: Box): Int = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SInt, Select(Ident("box"), "value"))
+    bind(env, "fun (box: Box): ByteArray = box.propositionBytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "propositionBytes"))
+    bind(env, "fun (box: Box): ByteArray = box.bytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "bytes"))
+    bind(env, "fun (box: Box): ByteArray = box.id") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "id"))
+  }
 }

@@ -146,6 +146,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
       SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SInt)
 
     typefail(env, "fun (a) = a + 1", "undefined type of argument")
+//    typefail(env, "fun (a: Int) = Array()", "undefined type of result")
   }
 
   property("function definitions") {
@@ -157,5 +158,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
     typecheck(env, "!c1") shouldBe SBoolean
     typecheck(env, "!c1 && c2") shouldBe SBoolean
     typecheck(env, "!c1 && !c2") shouldBe SBoolean
+  }
+
+  property("predefined primitives") {
+    typecheck(env, "fun (box: Box): Int = box.value") shouldBe SFunc(IndexedSeq(SBox), SInt)
+    typecheck(env, "fun (box: Box): ByteArray = box.propositionBytes") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
+    typecheck(env, "fun (box: Box): ByteArray = box.bytes") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
+    typecheck(env, "fun (box: Box): ByteArray = box.id") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
   }
 }

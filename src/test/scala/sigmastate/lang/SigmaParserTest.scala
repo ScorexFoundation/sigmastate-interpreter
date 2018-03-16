@@ -39,7 +39,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse("(1>= 0)||(3 >2)") shouldBe OR(GE(1, 0), GT(3, 2))
   }
 
-  property("priority in binary expressions") {
+  property("precedence of binary operations") {
     parse("1 + 2 + 3") shouldBe Plus(Plus(1, 2), 3)
     parse("1 + 2 + 3 + 4") shouldBe Plus(Plus(Plus(1, 2), 3), 4)
     parse("1 == 0 || 3 == 2") shouldBe OR(EQ(1, 0), EQ(3, 2))
@@ -266,6 +266,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
         | X.Y
         |
       """.stripMargin) shouldBe Select(Ident("X"), "Y")
+  }
+
+  property("predefined primitives") {
+    parse("fun (box: Box): Int = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SInt, Select(Ident("box"), "value"))
+    parse("fun (box: Box): ByteArray = box.propositionBytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "propositionBytes"))
+    parse("fun (box: Box): ByteArray = box.bytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "bytes"))
+    parse("fun (box: Box): ByteArray = box.id") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "id"))
   }
 
 }

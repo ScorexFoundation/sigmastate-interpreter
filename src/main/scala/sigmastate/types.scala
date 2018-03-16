@@ -131,11 +131,14 @@ case object SBox extends SProduct {
   override val typeCode: TypeCode = 7: Byte
   val fields = Seq(
     "value" -> SInt,
-    "nonce" -> SByteArray
+    "nonce" -> SByteArray,
+    "propositionBytes" -> SByteArray,
+    "bytes" -> SByteArray,
+    "id" -> SByteArray
   )
 }
 
-/** The type with single inhabitant value () */
+/** The type with single inhabitant value `()` */
 case object SUnit extends SType {
   override type WrappedType = Unit
   override val typeCode: Byte = 8: Byte
@@ -147,6 +150,7 @@ case object SAny extends SType {
   override val typeCode: Byte = 9: Byte
 }
 
+/** Base trait for all types which have fields (aka properties) */
 trait SProduct extends SType {
   def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
   def fields: Seq[(String, SType)]

@@ -51,10 +51,10 @@ object Terms {
     override def evaluated: Boolean = false
   }
 
-  case class Lambda(args: IndexedSeq[(String,SType)], givenResType: SType, body: Option[Value[SType]]) extends Value[SType] {
+  case class Lambda(args: IndexedSeq[(String,SType)], givenResType: SType, body: Option[Value[SType]]) extends Value[SFunc] {
     override def cost: Int = ???
     override def evaluated: Boolean = false
-    lazy val tpe: SType = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe))
+    lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe))
   }
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
