@@ -136,10 +136,6 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
         val xsT = checkTyped(op, tipe(xs), SCollection(SBoolean))
         xsT.elemType
 
-      case op @ Not(e) =>
-        val xsT = checkTyped(op, tipe(e), SBoolean)
-        SBoolean
-
       case ite @ If(c, t, e) =>
         val tCond = tipe(c)
         if (tCond != SBoolean) error(s"Invalid type of condition in $ite: expected Boolean; actual: $tCond")

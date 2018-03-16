@@ -50,7 +50,6 @@ object SigmaParser extends Exprs with Types with Core {
         .map(x => ByteArrayConstant(Base58.decode(x).get))
 
   def mkUnaryOp(opName: String, arg: Value[SType]) = opName match {
-    case "!" => Not(arg.asValue[SBoolean.type])
     case _ => error(s"Unknown prefix operation $opName")
   }
 

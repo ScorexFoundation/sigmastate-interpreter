@@ -16,7 +16,7 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
       binder.bind(ast)
     } catch {
       case e: Exception =>
-        SigmaParser.logged.foreach(println)
+//        SigmaParser.logged.foreach(println)
         throw e
     }
   }
@@ -132,12 +132,6 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
         Block(Let("f", SFunc(IndexedSeq(SInt), SInt), Lambda(IndexedSeq("a" -> SInt), SInt, Plus(IntIdent("a"), 1))), Ident("f"))
     bind(env, "{fun f(a: Int) = a + x; f}") shouldBe
         Block(Let("f", SFunc(IndexedSeq(SInt), SInt), Lambda(IndexedSeq("a" -> SInt), SInt, Plus(IntIdent("a"), 10))), Ident("f"))
-  }
-
-  property("unary operations") {
-    bind(env, "!c1") shouldBe Not(TrueLeaf)
-    bind(env, "!c1 && c2") shouldBe AND(Not(TrueLeaf), FalseLeaf)
-    bind(env, "!c1 && !c2") shouldBe AND(Not(TrueLeaf), Not(FalseLeaf))
   }
 
   property("predefined primitives") {

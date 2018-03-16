@@ -20,7 +20,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
       an.tipe(bound)
     } catch {
       case e: Exception =>
-        SigmaParser.logged.foreach(println)
+//        SigmaParser.logged.foreach(println)
         throw e
     }
   }
@@ -152,12 +152,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
   property("function definitions") {
     typecheck(env, "{ let f = fun (x: Int) = x + 1; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
     typecheck(env, "{ fun f(x: Int) = x + 1; f } ") shouldBe SFunc(IndexedSeq(SInt), SInt)
-  }
-
-  property("unary operations") {
-    typecheck(env, "!c1") shouldBe SBoolean
-    typecheck(env, "!c1 && c2") shouldBe SBoolean
-    typecheck(env, "!c1 && !c2") shouldBe SBoolean
   }
 
   property("predefined primitives") {
