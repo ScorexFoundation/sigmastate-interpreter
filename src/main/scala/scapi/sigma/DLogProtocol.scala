@@ -3,7 +3,6 @@ package scapi.sigma
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
@@ -25,6 +24,8 @@ object DLogProtocol {
   case class ProveDlog(value: Value[SGroupElement.type])
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
+    import GroupSettings.dlogGroup
+
     override val cost: Int = Cost.Dlog
 
     override val soundness: Int = 256
@@ -32,23 +33,19 @@ object DLogProtocol {
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h = value.asInstanceOf[GroupElementConstant].value
 
-    lazy val bytes: Array[Byte] = {
-      val gw = h.generateSendableData().asInstanceOf[ECElementSendableData]
-      val gwx = gw.getX.toByteArray
-      val gwy = gw.getY.toByteArray
-      gwx ++ gwy
-    }
+    lazy val bytes: Array[Byte] = dlogGroup.decodeGroupElementToByteArray(h)
   }
 
-  object ProveDlog extends GroupSettings {
+  object ProveDlog {
+    import GroupSettings.dlogGroup
 
-    def apply(h: GroupElement): ProveDlog = ProveDlog(GroupElementConstant(h))
+    def apply(h: GroupSettings.EcPointType): ProveDlog = ProveDlog(GroupElementConstant(h))
 
     val Code: PropositionCode = 102: Byte
 
     def fromBytes(bytes: Array[Byte]): ProveDlog = {
       val (x, y) = EcPointFunctions.decodeBigIntPair(bytes).get
-      val xy = new ECElementSendableData(x, y)
+      val xy = GroupAgnosticEcElement(x, y)
       val h = dlogGroup.reconstructElement(true, xy)
       ProveDlog(h)
     }
@@ -57,15 +54,21 @@ object DLogProtocol {
 
   case class DLogProverInput(w: BigInteger)(implicit soundness: Int)
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol, ProveDlog] {
+
+    import GroupSettings.dlogGroup
+
     override lazy val publicImage: ProveDlog = {
-      val g = dlogGroup.getGenerator
+      val g = dlogGroup.generator
       ProveDlog(dlogGroup.exponentiate(g, w))
     }
   }
 
-  object DLogProverInput extends GroupSettings {
+  object DLogProverInput {
+
+    import GroupSettings.dlogGroup
+
     def random()(implicit soundness: Int): (DLogProverInput, ProveDlog) = {
-      val g = dlogGroup.getGenerator
+      val g = dlogGroup.generator
       val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
       val h = dlogGroup.exponentiate(g, w)
@@ -74,18 +77,18 @@ object DLogProtocol {
     }
   }
 
-  case class FirstDLogProverMessage(ecData: ECElementSendableData) extends FirstProverMessage[DLogSigmaProtocol] {
+  case class FirstDLogProverMessage(ecData: GroupAgnosticEcElement) extends FirstProverMessage[DLogSigmaProtocol] {
     override def bytes: Array[Byte] = {
-      val x = ecData.getX.toByteArray
-      val y = ecData.getY.toByteArray
+      val x = ecData.x.toByteArray
+      val y = ecData.y.toByteArray
 
-      Array(x.size.toByte, y.size.toByte) ++ x ++ y
+      Array(x.length.toByte, y.length.toByte) ++ x ++ y
     }
   }
 
   object FirstDLogProverMessage {
-    def apply(a: GroupElement): FirstDLogProverMessage =
-      FirstDLogProverMessage(a.generateSendableData().asInstanceOf[ECElementSendableData])
+    def apply(a: ECElement): FirstDLogProverMessage =
+      FirstDLogProverMessage(a)
   }
 
   case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage[DLogSigmaProtocol] {
@@ -95,7 +98,7 @@ object DLogProtocol {
   class DLogInteractiveProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
     extends InteractiveProver[DLogSigmaProtocol, ProveDlog, DLogProverInput] {
 
-    lazy val group: DlogGroup = publicInput.dlogGroup
+    import GroupSettings.dlogGroup
 
     var rOpt: Option[BigInteger] = None
 
@@ -123,32 +126,35 @@ object DLogProtocol {
 
     override def simulate(challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
       assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-      val qMinusOne = group.getOrder.subtract(BigInteger.ONE)
+      val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
 
       //SAMPLE a random z <- Zq
       val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
 
       //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
       val e: BigInteger = new BigInteger(1, challenge.bytes)
-      val minusE = group.getOrder.subtract(e)
-      val hToE = group.exponentiate(publicInput.h, minusE)
-      val gToZ = group.exponentiate(group.getGenerator, z)
-      val a = group.multiplyGroupElements(gToZ, hToE)
-      FirstDLogProverMessage(a.generateSendableData().asInstanceOf[ECElementSendableData]) -> SecondDLogProverMessage(z)
+      val minusE = dlogGroup.getOrder.subtract(e)
+      val hToE = dlogGroup.exponentiate(publicInput.h, minusE)
+      val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
+      val a = dlogGroup.multiplyGroupElements(gToZ, hToE)
+      FirstDLogProverMessage(a) -> SecondDLogProverMessage(z)
     }
   }
 
   object DLogInteractiveProver {
     def firstMessage(publicInput: ProveDlog): (BigInteger, FirstDLogProverMessage) = {
-      val group = publicInput.dlogGroup
-      val qMinusOne = group.getOrder.subtract(BigInteger.ONE)
+      import GroupSettings.dlogGroup
+
+      val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
       val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-      val a = group.exponentiate(group.getGenerator, r)
-      r -> FirstDLogProverMessage(a.generateSendableData().asInstanceOf[ECElementSendableData])
+      val a = dlogGroup.exponentiate(dlogGroup.generator, r)
+      r -> FirstDLogProverMessage(a)
     }
 
     def secondMessage(privateInput: DLogProverInput, rnd: BigInteger, challenge: Challenge): SecondDLogProverMessage = {
-      val q: BigInteger = privateInput.dlogGroup.getOrder
+      import GroupSettings.dlogGroup
+
+      val q: BigInteger = dlogGroup.getOrder
       val e: BigInteger = new BigInteger(1, challenge.bytes)
       val ew: BigInteger = e.multiply(privateInput.w).mod(q)
       val z: BigInteger = rnd.add(ew).mod(q)
@@ -165,13 +171,15 @@ object DLogProtocol {
                             override val z: SecondDLogProverMessage)
     extends SigmaProtocolTranscript[DLogSigmaProtocol, ProveDlog] {
 
+    import GroupSettings.dlogGroup
+
 
     override lazy val accepted: Boolean = Try {
-      assert(x.dlogGroup.isMember(x.h))
-      val aElem = x.dlogGroup.reconstructElement(true, a.ecData)
-      val left = x.dlogGroup.exponentiate(x.dlogGroup.getGenerator, z.z.bigInteger)
-      val hToe = x.dlogGroup.exponentiate(x.h, BigInt(1, e.bytes).bigInteger)
-      val right = x.dlogGroup.multiplyGroupElements(aElem, hToe)
+      assert(dlogGroup.isMember(x.h))
+      val aElem = dlogGroup.reconstructElement(true, a.ecData)
+      val left = dlogGroup.exponentiate(dlogGroup.generator, z.z.bigInteger)
+      val hToe = dlogGroup.exponentiate(x.h, BigInt(1, e.bytes).bigInteger)
+      val right = dlogGroup.multiplyGroupElements(aElem, hToe)
 
       left == right
     }.getOrElse(false)

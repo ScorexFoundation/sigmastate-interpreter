@@ -1,7 +1,8 @@
 package sigmastate
 
 import java.math.BigInteger
-import edu.biu.scapi.primitives.dlog.GroupElement
+
+import scapi.sigma.ECElement
 import sigmastate.SType.TypeCode
 import sigmastate.utxo.SigmaStateBox
 
@@ -69,7 +70,7 @@ case object SAvlTree extends SType {
 }
 
 case object SGroupElement extends SType {
-  override type WrappedType = GroupElement
+  override type WrappedType = ECElement
   override val typeCode: TypeCode = 6: Byte
 }
 

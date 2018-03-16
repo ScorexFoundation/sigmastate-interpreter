@@ -10,7 +10,7 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.bitbucket.inkytonik.dsinfo" % "dsinfo_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.dsprofile" % "dsprofile_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.1.0-SNAPSHOT",
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.58",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.59",
   "org.rogach" % "scallop_2.12" % "2.0.5",
   "org.rudogma" % "supertagged_2.12" % "1.3",
   "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
@@ -18,4 +18,4 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.25",
   "org.whispersystems" % "curve25519-java" % "0.4.1"
 )
-// LIBRARY_DEPENDENCIES_HASH fbcb26263a98042d9a7fa51842072a04d65d9c4c
+// LIBRARY_DEPENDENCIES_HASH d3a6596eb4eeef9dfc17e37fee99da873f7ed292

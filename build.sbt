@@ -14,7 +14,7 @@ val testingDependencies = Seq(
 
 libraryDependencies ++= Seq(
   "org.scorexfoundation" %% "scrypto" % "2.+",
-  //"org.bouncycastle" % "bcprov-jdk15on" % "1.50"
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.+"
 ) ++ testingDependencies

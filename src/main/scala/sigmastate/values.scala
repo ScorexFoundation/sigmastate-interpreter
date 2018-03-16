@@ -2,7 +2,6 @@ package sigmastate
 
 import java.math.BigInteger
 
-import edu.biu.scapi.primitives.dlog.GroupElement
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
@@ -128,16 +127,18 @@ case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.
 }
 
 
-case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[SGroupElement.type] {
+case class GroupElementConstant(value: GroupSettings.EcPointType) extends EvaluatedValue[SGroupElement.type] {
   override val cost = 10
   override def tpe = SGroupElement
 }
 
 
-case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with GroupSettings {
+case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
+  import GroupSettings.dlogGroup
+
   override val cost = 10
   override def tpe = SGroupElement
-  override val value: GroupElement = dlogGroup.getGenerator
+  override val value: ECElement = dlogGroup.generator
 }
 
 

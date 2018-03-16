@@ -9,6 +9,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate._
+import sigmastate.interpreter.GroupSettings
 import sigmastate.utxo._
 import sigmastate.utxo.SigmaStateBox._
 
@@ -74,12 +75,12 @@ class OracleExamplesSpecification extends PropSpec
     val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val group = oraclePubKey.dlogGroup
+    val group = GroupSettings.dlogGroup
 
     val temperature: Long = 18
 
     val r = BigInt.apply(128, new SecureRandom()) //128 bits random number
-    val a = group.exponentiate(group.getGenerator, r.bigInteger)
+    val a = group.exponentiate(group.generator, r.bigInteger)
 
     val ts = System.currentTimeMillis()
 

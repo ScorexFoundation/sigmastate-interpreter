@@ -2,8 +2,6 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 
-import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData}
-import edu.biu.scapi.primitives.dlog.bc.BcDlogECFp
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
 import sigmastate.{SType, _}
@@ -13,18 +11,21 @@ import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule}
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
-import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage}
+import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.utxo.{CostTable, Transformer}
 
 import scala.annotation.tailrec
 
-trait GroupSettings {
-  lazy val dlogGroup: DlogGroup = new BcDlogECFp()
+object GroupSettings {
+  type EcPointType = SecP384R1Element
+  val dlogGroup: DlogGroup[EcPointType] = SecP384R1
 }
 
-trait Interpreter extends GroupSettings {
+trait Interpreter {
+
+  import GroupSettings._
 
   type CTX <: Context[CTX]
 
@@ -77,7 +78,7 @@ trait Interpreter extends GroupSettings {
 
       val transformations = ({
         case GroupGenerator =>
-          GroupElementConstant(dlogGroup.getGenerator)
+          GroupElementConstant(dlogGroup.generator)
 
         case t: Transformer[_, _] if t.transformationReady => t.function()
 
@@ -243,8 +244,8 @@ trait Interpreter extends GroupSettings {
 
     case sn: SchnorrNode =>
 
-      val dlog = sn.proposition.dlogGroup
-      val g = dlog.getGenerator
+      val dlog = GroupSettings.dlogGroup
+      val g = dlog.generator
       val h = sn.proposition.h
 
       val a = dlog.multiplyGroupElements(
@@ -256,7 +257,7 @@ trait Interpreter extends GroupSettings {
     //todo: check that g,h belong to the group
     //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
     case dh: DiffieHellmanTupleUncheckedNode =>
-      val dlog = dh.proposition.dlogGroup
+      val dlog = GroupSettings.dlogGroup
 
       val g = dh.proposition.g
       val h = dh.proposition.h
@@ -273,8 +274,8 @@ trait Interpreter extends GroupSettings {
       val uToE = dlog.exponentiate(u, e)
       val vToE = dlog.exponentiate(v, e)
 
-      val a = dlog.multiplyGroupElements(gToZ, dlog.getInverse(uToE)).generateSendableData().asInstanceOf[ECElementSendableData]
-      val b = dlog.multiplyGroupElements(hToZ, dlog.getInverse(vToE)).generateSendableData().asInstanceOf[ECElementSendableData]
+      val a = dlog.multiplyGroupElements(gToZ, dlog.getInverse(uToE))
+      val b = dlog.multiplyGroupElements(hToZ, dlog.getInverse(vToE))
       dh.copy(firstMessageOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
 
     case _ => ???

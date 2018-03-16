@@ -3,8 +3,6 @@ package scapi.sigma
 import java.security.SecureRandom
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
-import edu.biu.scapi.interactiveMidProtocols.sigmaProtocol.utility.SigmaProtocolMsg
-import edu.biu.scapi.primitives.dlog.DlogGroup
 import sigmastate.interpreter.GroupSettings
 import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
 
@@ -44,13 +42,11 @@ trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
 }
 
 
-trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] extends GroupSettings {
+trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] {
   val soundness: Int
 }
 
-trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]]
-  extends GroupSettings {
-
+trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] {
   def publicImage: CI
 }
 
@@ -197,6 +193,7 @@ CI <: SigmaProtocolCommonInput[SP]] {
   def accepted: Boolean
 }
 
+trait SigmaProtocolMsg
 
 object SigmaProtocolFunctions {
 
