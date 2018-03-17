@@ -32,7 +32,7 @@ env:
 #    - CC="gcc-4.8"
   matrix:
     - TEST_SUITE=test
-    - TEST_SUITE=it:test
+#    - TEST_SUITE=it:test
 
 language: scala
 
