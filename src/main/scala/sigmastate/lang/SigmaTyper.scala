@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
@@ -15,36 +16,37 @@ import sigmastate.utxo.{Inputs, ByIndex}
   */
 class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribution {
   import SigmaTyper._
-  import PrettyPrinter.formattedLayout
-  import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, noMessages, message, Messages}
+  import SigmaPrinter.formattedLayout
+  import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, message, Messages}
 
-  /** The semantic error messages for the tree. */
+  /** The semantic error messages for the tree based on the inferred attributes. */
   lazy val errors : Messages =
     collectMessages(tree) {
       case e : SValue =>
-//        checkType(e, tipe) ++
-            check(e) {
-              case e @ Ident(x, _) =>
-                message(e, s"unknown name '$x'", tipe(e) == NoType)
-              case e: SValue =>
-                message(e, s"Expression ${e} doesn't have type: context ${tree.parent(e)}", tipe(e) == NoType)
-            }
+        check(e) {
+          case e @ Ident(x, _) =>
+            message(e, s"unknown name '$x'", tipe(e) == NoType)
+          case e: SValue =>
+            message(e, s"Expression ${e} doesn't have type: context ${tree.parent(e)}", tipe(e) == NoType)
+        }
     }
 
   /**
     * The variables that are free in the given expression.
     */
-  val fv : SValue => Set[Idn] =
+  val fv : SValue => List[Idn] =
     attr {
-      case IntConstant(_)            => Set()
-      case Ident(v, _)            => Set(v)
-      case Lambda(args, _, Some(e))      => fv(e) -- args.map(_._1).toSet
-      case Apply(e1, args)       => args.foldLeft(fv(e1))((acc, e) => acc ++ fv(e))
+      case IntConstant(_)            => List()
+      case Ident(v, _)               => List(v)
+      case Lambda(args, _, Some(e))  =>
+        val argNames = args.map(_._1).toList
+        fv(e).filterNot(argNames.contains(_))
+      case Apply(e1, args)           => args.foldLeft(fv(e1))((acc, e) => acc ++ fv(e))
       case Let(i, t, e) => fv(e)
       case Block(bs, e) => {
-        val fbv = bs.map(_.body).map(fv).flatten.toSet
-        val bvars = bs.map(_.name).toSet
-        fbv ++ (fv(e) -- bvars)
+        val fbv = bs.map(_.body).map(fv).flatten
+        val bvars = bs.map(_.name)
+        fbv.toList ++ (fv(e).filterNot(bvars.contains(_)))
       }
     }
 
@@ -54,7 +56,6 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     */
   val env : SValue => List[(Idn, SType)] =
     attr {
-
       // Inside a lambda expression the bound variable is now visible
       // in addition to everything that is visible from above. Note
       // that an inner declaration of a var hides an outer declaration
@@ -216,6 +217,8 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
             error(s"Cannot get field '$field' of non-product type $t")
         }
 
+      case v: SValue if v.tpe != NoType => v.tpe
+      
       case e => error(s"Don't know how to compute type for $e")
     }
 
@@ -259,6 +262,30 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case _ => SAny
     }
 
+  val assignTypes = rule[SValue] {
+    case Let(n, NoType, body) => Let(n, tipe(body), body)
+    case v @ Ident(n, NoType) =>
+      env(v).find(_._1 == n) match {
+        case Some((_, t)) => Ident(n, t)
+        case None => error(s"Cannot assign type for variable '$n'")
+      }
+    case v => v
+  }
+
+  def typecheck(bound: SValue): SValue = {
+    val t = tipe(bound)
+    if (t == NoType) error(s"No type can be assigned to expression $bound")
+    if(errors.nonEmpty) error(s"Errors found while typing expression $bound:\n${errors.mkString("\n")}\n")
+    val assigned = rewrite(everywherebu(assignTypes))(bound)
+    for (n <- tree.nodes) {
+      n match {
+        case v: SValue if v.tpe == NoType =>
+          error(s"Errors found while assigning types to expression $bound: $v assigned NoType")
+        case _ =>
+      }
+    }
+    assigned 
+  }
 }
 
 class TyperException(msg: String) extends Exception(msg)

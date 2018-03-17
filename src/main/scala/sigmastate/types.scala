@@ -70,6 +70,7 @@ object SType {
     case g: GroupElement => SGroupElement
     case box: SigmaStateBox => SBox
     case _: Unit => SUnit
+    case v: SValue => v.tpe
     case _ => sys.error(s"Don't know how to return SType for $x")
   }
 

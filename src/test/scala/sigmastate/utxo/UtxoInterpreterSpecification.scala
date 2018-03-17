@@ -13,7 +13,7 @@ import BoxHelpers.createBox
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
-import sigmastate.lang.{SigmaBinder, SigmaParser}
+import sigmastate.lang.{SigmaBinder, SigmaParser, SigmaTyper}
 import sigmastate.utxo.SigmaStateBox._
 
 
@@ -30,10 +30,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
   def parse(x: String): SValue = SigmaParser(x).get.value
 
-  def buildAst(env: Map[String, Any], code: String, okBind: Boolean = true): Value[SType] = {
+  def buildAst(env: Map[String, Any], code: String): Value[SType] = {
     val binder = new SigmaBinder(env)
-    val e = parse(code)
-    if (okBind) binder.bind(e) else e
+    val parsed = parse(code)
+    val bound = binder.bind(parsed)
+    val st = new SigmaTree(bound)
+    val typer = new SigmaTyper(env, st)
+    val typed = typer.typecheck(bound)
+    typed
   }
 
   property("scripts EQ/NEQ") {
@@ -88,19 +92,19 @@ class UtxoInterpreterSpecification extends PropSpec
       "backerPubKey" -> backerPubKey,
       "projectPubKey" -> projectPubKey,
     )
-    val crowdFundingAst = buildAst(env,
-      """{
-       | let c1 = HEIGHT >= timeout && backerPubKey
-       | let c2 = all(Array(
-       |   HEIGHT < timeout,
-       |   projectPubKey,
-       |   exists(OUTPUTS, fun (out: Box) = {
-       |     out.amount >= minToRaise && out.propositionBytes == projectPubKey.propBytes
-       |   })
-       | ))
-       | c1 || c2
-       | }
-      """.stripMargin)
+//    val crowdFundingAst = buildAst(env,
+//      """{
+//       | let c1 = HEIGHT >= timeout && backerPubKey
+//       | let c2 = all(Array(
+//       |   HEIGHT < timeout,
+//       |   projectPubKey,
+//       |   exists(OUTPUTS, fun (out: Box) = {
+//       |     out.amount >= minToRaise && out.propositionBytes == projectPubKey.propBytes
+//       |   })
+//       | ))
+//       | c1 || c2
+//       | }
+//      """.stripMargin)
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
       AND(GE(Height, timeout), backerPubKey),
