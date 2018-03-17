@@ -3,6 +3,7 @@ package sigmastate.lang.syntax
 import fastparse.all._
 import Identifiers._
 import sigmastate._
+import Values._
 
 trait Literals { l =>
   def Block: P[Value[SType]]

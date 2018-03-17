@@ -6,7 +6,7 @@ import scapi.sigma.SigmaProtocolPrivateInput
 import scapi.sigma.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.Helpers
-
+import Values._
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy

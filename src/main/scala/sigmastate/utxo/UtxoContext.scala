@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
 import sigmastate._
+import Values._
 import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.UtxoContext.Height

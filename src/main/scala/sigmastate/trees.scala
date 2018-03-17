@@ -11,7 +11,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
-
+import sigmastate.Values._
 import scala.annotation.tailrec
 import scala.collection.mutable
 

@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import fastparse.noApi._
 import sigmastate._
+import Values._
 import sigmastate.lang.Terms.{Ident, Lambda}
 import syntax.Basic.error
 
@@ -12,7 +13,7 @@ trait Types extends Core {
   def FunDef: P[Value[SType]]
 
   val Dcl = {
-    P( `let` ~/ ValVarDef /*| `fun` ~/ FunDef*/ )
+    P( `let` ~/ ValVarDef | `fun` ~/ FunDef )
   }
 
   /** This map should be in sync with SType.allPrimitiveTypes*/
@@ -70,7 +71,7 @@ trait Types extends Core {
   val AnnotType = P(SimpleType ~~ NLAnnot.repX )
 
   val TypeId = P( StableId ).map {
-    case Ident(IndexedSeq(tn), _) =>
+    case Ident(tn, _) =>
       typeFromName(tn) match {
         case Some(t) => t
         case None => STypeApply(tn)

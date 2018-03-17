@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
 import sigmastate._
+import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 
 

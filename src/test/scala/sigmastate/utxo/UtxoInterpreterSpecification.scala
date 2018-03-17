@@ -8,12 +8,12 @@ import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Digest32, Blake2b256, Blake2b256Unsafe}
 import sigmastate._
+import sigmastate.Values._
 import BoxHelpers.createBox
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import sigmastate.lang.{SigmaBinder, SigmaParser}
-import sigmastate.lang.Terms.SValue
 import sigmastate.utxo.SigmaStateBox._
 
 
@@ -94,13 +94,13 @@ class UtxoInterpreterSpecification extends PropSpec
        | let c2 = all(Array(
        |   HEIGHT < timeout,
        |   projectPubKey,
-       |   exists(OUTPUT, fun (out: Box) = {
+       |   exists(OUTPUTS, fun (out: Box) = {
        |     out.amount >= minToRaise && out.propositionBytes == projectPubKey.propBytes
        |   })
        | ))
        | c1 || c2
        | }
-      """.stripMargin, okBind = false)
+      """.stripMargin)
     // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
       AND(GE(Height, timeout), backerPubKey),
@@ -117,6 +117,7 @@ class UtxoInterpreterSpecification extends PropSpec
         )
       )
     )
+//    crowdFundingAst shouldBe crowdFundingScript
 
     val outputToSpend = SigmaStateBox(10, crowdFundingScript)
 

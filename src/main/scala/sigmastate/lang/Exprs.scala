@@ -2,10 +2,12 @@ package sigmastate.lang
 
 import fastparse.noApi._
 import sigmastate._
+import Values._
 import Terms._
 import sigmastate.lang.syntax.Basic._
 
-import scala.collection.mutable
+import scala.annotation.tailrec
+import sigmastate.utils.Extensions._
 
 //noinspection ForwardReference,TypeAnnotation
 trait Exprs extends Core with Types {
@@ -49,10 +51,8 @@ trait Exprs extends Core with Types {
 //      }
       val PostfixLambda = P( PostfixExpr ~ ((`=>` ~ LambdaRhs.?) | SuperPostfixSuffix) ).map {
         case (e, None) => e
-//        case (i: Ident, Some(None)) => mkLambda(Seq(i), UnitConstant)
-//        case (Tuple(args), None) => mkLambda(args.toSeq, UnitConstant)
-        case (Tuple(args), None) => mkLambda(args.toSeq, UnitConstant)
         case (Tuple(args), Some(body)) => mkLambda(args.toSeq, body)
+        case (e, Some(body)) => error(s"Invalid declaration of lambda")
       }
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
 //      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => Ident(IndexedSeq(n), t)}
@@ -89,7 +89,7 @@ trait Exprs extends Core with Types {
         val lhs = applySuffix(prefix, suffix)
         val obj = mkInfixTree(lhs, infixOps)
         postfix.fold(obj) {
-          case Ident(IndexedSeq(name), _) =>
+          case Ident(name, _) =>
             MethodCall(obj, name, IndexedSeq.empty)
         }
     }
@@ -100,7 +100,7 @@ trait Exprs extends Core with Types {
 
       P( /*New | */ BlockExpr
         | ExprLiteral
-        | StableId.map { case Ident(ps, t) => mkIdent(ps, t) }
+        | StableId //.map { case Ident(ps, t) => mkIdent(ps, t) }
         | `_`.!.map(Ident(_))
         | Parened.map(items =>
             if (items.isEmpty) UnitConstant
@@ -110,26 +110,16 @@ trait Exprs extends Core with Types {
     val Guard : P0 = P( `if` ~/ PostfixExpr ).ignore
   }
 
-  protected def mkIdent(nameParts: IndexedSeq[String], tpe: SType = NoType): SValue = {
-    require(nameParts.nonEmpty)
-    if (nameParts.size == 1)
-      Ident(nameParts, tpe)
-    else {
-      val first: SValue = Ident(nameParts(0))
-      nameParts.iterator.drop(1).foldLeft(first)((acc, p) => Select(acc, p))
-    }
+  protected def mkIdent(nameParts: String, tpe: SType = NoType): SValue = {
+    Ident(nameParts, tpe)
   }
 
   protected def mkLambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
-    val names = args.map { case Ident(IndexedSeq(n), t) => (n, t) }
-    Lambda(names.toIndexedSeq, None, body)
-//    error(s"Cannot create Lambda($args, $body)")
+    val names = args.map { case Ident(n, t) => (n, t) }
+    Lambda(names.toIndexedSeq, NoType, body)
   }
 
   protected def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType] = (func, args) match {
-    case (Ident(Vector("Array"), _), args) =>
-      val tpe = if (args.isEmpty) NoType else args(0).tpe
-      ConcreteCollection(args)(tpe)
     case _ => Apply(func, args)
   }
 
@@ -157,28 +147,32 @@ trait Exprs extends Core with Types {
   @inline def precedenceOf(op: String): Int = precedenceOf(op(0))
 
   protected[lang] def mkInfixTree(lhs: SValue, rhss: Seq[(String, SValue)]): SValue = {
-    def build(first: SValue, op: String, second: SValue, rest: List[(String, SValue)]): SValue = rest match {
-      case Nil => mkBinaryOp(op, first, second)
-      case (op2, third) :: t =>
-        if (precedenceOf(op) >= precedenceOf(op2))
-          build(mkBinaryOp(op, first, second), op2, third, t)
-        else {
-          val n = build(second, op2, third, t)
-          mkBinaryOp(op, first, n)
+    @tailrec def build(wait: List[(SValue, String)], x: SValue, rest: List[(String, SValue)]): SValue = (wait, rest) match {
+      case ((l, op1) :: stack, (op2, r) :: tail) =>
+        if (precedenceOf(op1) >= precedenceOf(op2)) {
+          val n = mkBinaryOp(l, op1, x)
+          build(stack, n, rest)
         }
+        else {
+          build((x, op2) :: wait, r, tail)
+        }
+
+      case (Nil, Nil) => x
+      case (Nil, (op, r):: Nil) => mkBinaryOp(x, op, r)
+      case ((l, op) :: Nil, Nil) => mkBinaryOp(l, op, x)
+
+      case (Nil, (op, r) :: tail) =>
+        build((x, op) :: Nil, r, tail)
+      case ((l, op) :: stack, Nil) =>
+        val n = mkBinaryOp(l, op, x)
+        build(stack, n, Nil)
     }
-    if (rhss.isEmpty) lhs
-    else {
-      val (op, second) :: t = rhss.toList
-      build(lhs, op, second, t)
-    }
+    build(Nil, lhs, rhss.toList)
   }
 
   protected def applySuffix(f: Value[SType], args: Seq[Value[SType]]): Value[SType] = {
     val rhs = args.foldLeft(f)((acc, arg) => arg match {
-      case Ident(parts, t) =>
-        assert(parts.size == 1, s"Ident with many parts are not supported: $parts")
-        Select(acc, parts(0))
+      case Ident(name, t) => Select(acc, name)
       case UnitConstant => mkApply(acc, IndexedSeq.empty)
       case Tuple(xs) => mkApply(acc, xs)
       case arg => mkApply(acc, IndexedSeq(arg))
@@ -189,7 +183,7 @@ trait Exprs extends Core with Types {
   val LambdaDef = {
     val Body = P( WL ~ `=` ~ StatCtx.Expr )
     P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-      case (secs @ Seq(args), resType, body) => Lambda(args.toIndexedSeq, resType, body)
+      case (secs @ Seq(args), resType, body) => Lambda(args.toIndexedSeq, resType.getOrElse(NoType), body)
       case (secs, resType, body) => error(s"Function can only have single argument list: fun ($secs): $resType = $body")
     }
   }
@@ -211,13 +205,23 @@ trait Exprs extends Core with Types {
     val BlockStat = P( Prelude ~ BlockDef | StatCtx.Expr )
     P( BlockLambda.rep ~ BlockStat.rep(sep = Semis) )
   }
-  protected def mkBlock(stats: Seq[SValue]): SValue = {
-    if (stats.isEmpty)
-      Terms.Block(None, UnitConstant)
+
+  def extractBlockStats(stats: Seq[SValue]): (Seq[Let], SValue) = {
+    if (stats.nonEmpty) {
+      val lets = stats.iterator.take(stats.size - 1).map(_ match {
+        case l: Let => l
+        case e =>
+          error(s"Block should contain a list of Let bindings and one expression: but was $stats")
+      })
+      (lets.toList, stats.last)
+    }
     else
-      stats.take(stats.size - 1).foldRight(stats.last) {
-        case (r, curr) => Terms.Block(Some(r), curr)
-      }
+      (Seq(), UnitConstant)
+  }
+
+  protected def mkBlock(stats: Seq[SValue]): SValue = {
+    val (lets, body) = extractBlockStats(stats)
+    Terms.Block(lets, body)
   }
 
   def BaseBlock(end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {

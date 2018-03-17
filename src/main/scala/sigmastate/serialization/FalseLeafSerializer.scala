@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
-import sigmastate.{FalseLeaf, SBoolean}
+import sigmastate.Values._
+import sigmastate.{SBoolean}
 import sigmastate.SType.TypeCode
 import sigmastate.serialization.ValueSerializer.Position
 

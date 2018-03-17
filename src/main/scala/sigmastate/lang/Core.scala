@@ -8,6 +8,7 @@ import syntax.Identifiers
 import fastparse.noApi._
 import sigmastate.lang.Terms._
 import sigmastate._
+import Values._
 
 trait Core extends syntax.Literals {
   import fastparse.noApi._
@@ -27,7 +28,7 @@ trait Core extends syntax.Literals {
   }
 
   def mkUnaryOp(opName: String, arg: Value[SType]): Value[SType]
-  def mkBinaryOp(opName: String, l: Value[SType], r: Value[SType]): Value[SType]
+  def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType]
 
   // Aliases for common things. These things are used in almost every parser
   // in the file, so it makes sense to keep them short.
@@ -111,7 +112,7 @@ trait Core extends syntax.Literals {
 //    val ThisSuper = P( `this` | `super` ~ ClassQualifier.? )
 //    val ThisPath: P0 = P( ThisSuper ~ ("." ~ PostDotCheck ~/ Id).rep )
     val IdPath = P( Id.! ~ ("." ~ PostDotCheck ~/ (`this`.! | Id.!)).rep /*~ ("." ~ ThisPath).?*/ ).map {
-      case (h, t) => Ident((h +: t).toIndexedSeq)
+      case (h, t) => t.foldLeft[SValue](Ident(h))(Select)
     }
     P( /*ThisPath |*/ IdPath )
   }

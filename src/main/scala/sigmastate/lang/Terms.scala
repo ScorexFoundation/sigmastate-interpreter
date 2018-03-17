@@ -1,30 +1,26 @@
 package sigmastate.lang
 
-import sigmastate.{Value, NoType, SType, SFunc}
+import sigmastate.Values._
+import sigmastate.{NoType, SType, SFunc}
 
 object Terms {
 
-  type SValue = Value[SType]
-
-  case class CUSTOMTYPE(name: String, fields: List[(String, SType)])
-
-  case class Block(let: Option[Value[SType]], t: Value[SType]) extends Value[SType] {
+  case class Block(bindings: Seq[Let], result: SValue) extends Value[SType] {
     override def cost: Int = ???
-    override def evaluated: Boolean = ???
-    def tpe: SType = t.tpe
+    override def evaluated: Boolean = false
+    def tpe: SType = result.tpe
   }
   object Block {
-    def apply(let: Let, t: Value[SType]): Block = Block(Some(let), t)
+    def apply(let: Let, result: SValue): Block = Block(Seq(let), result)
   }
 
-  case class Let(name: String, givenType: Option[SType], value: Block) extends Value[SType] {
+  case class Let(name: String, givenType: SType, body: SValue) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
-    def tpe: SType = givenType.getOrElse(value.tpe)
+    def tpe: SType = givenType ?: body.tpe
   }
   object Let {
-    def apply(name: String, value: Block): Let = Let(name, None, value)
-    def apply(name: String, tpe: SType, value: Block): Let = Let(name, Some(tpe), value)
+    def apply(name: String, value: SValue): Let = Let(name, NoType, value)
   }
 
   case class Select(i: Value[SType], field: String) extends Value[SType] {
@@ -33,18 +29,12 @@ object Terms {
     def tpe: SType = NoType
   }
 
-  case class Comma(l: Value[SType], r: Value[SType]) extends Value[SType] {
-    override def cost: Int = ???
-    override def evaluated: Boolean = ???
-    def tpe: SType = NoType
-  }
-
-  case class Ident(nameParts: IndexedSeq[String], tpe: SType = NoType) extends Value[SType] {
+  case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
   }
   object Ident {
-    def apply(name: String): Ident = Ident(IndexedSeq(name), NoType)
+    def apply(name: String): Ident = Ident(name, NoType)
   }
 
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
@@ -61,28 +51,19 @@ object Terms {
     override def evaluated: Boolean = false
   }
 
-  case class Lambda(args: IndexedSeq[(String,SType)], givenResType: Option[SType], body: Value[SType]) extends Value[SType] {
+  case class Lambda(args: IndexedSeq[(String,SType)], givenResType: SType, body: Option[Value[SType]]) extends Value[SFunc] {
     override def cost: Int = ???
-    override def evaluated: Boolean = true
-    lazy val tpe: SType = SFunc(args.map(_._2), givenResType.getOrElse(body.tpe))
+    override def evaluated: Boolean = false
+    lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe))
   }
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
-      Lambda(args, Some(resTpe), body)
-    def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(args, None, body)
+      Lambda(args, resTpe, Some(body))
+    def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(args, NoType, Some(body))
   }
-
-  implicit def valueToBlock(t: Value[SType]): Block = Block(None, t)
-
-  def typed[A <: SType,B <: SType](a: SValue, b: SValue)(f: (Value[A],Value[B]) => SValue): SValue =
-    f(a.asInstanceOf[Value[A]], b.asInstanceOf[Value[B]])
 
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
   }
 
-  private[lang] def flattenComma(x: Value[SType]): List[Value[SType]] = x match {
-    case Comma(l, r) => flattenComma(l) ::: flattenComma(r)
-    case _ => List(x)
-  }
 }
