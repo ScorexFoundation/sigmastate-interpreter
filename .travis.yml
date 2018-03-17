@@ -17,19 +17,19 @@ cache:
 addons:
   apt:
     sources:
-      - boost-latest
-      - ubuntu-toolchain-r-test
+#      - boost-latest
+#      - ubuntu-toolchain-r-test
     packages:
       - build-essential
-      - gcc-4.8
-      - g++-4.8
-      - libstdc++6-4.6-dev
-      - libboost1.55-dev
+#      - gcc-4.8
+#      - g++-4.8
+#      - libstdc++6-4.6-dev
+#      - libboost1.55-dev
 
 env:
   global:
-    - CXX="g++-4.8"
-    - CC="gcc-4.8"
+#    - CXX="g++-4.8"
+#    - CC="gcc-4.8"
   matrix:
     - TEST_SUITE=test
     - TEST_SUITE=it:test
