@@ -10,6 +10,7 @@ import sigmastate.utils.Helpers
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule}
+import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
@@ -19,7 +20,7 @@ import sigmastate.utxo.{CostTable, Transformer}
 import scala.annotation.tailrec
 
 object GroupSettings {
-  type EcPointType = SecP384R1Element
+  type EcPointType = SecP384R1Point
   val dlogGroup: DlogGroup[EcPointType] = SecP384R1
 }
 

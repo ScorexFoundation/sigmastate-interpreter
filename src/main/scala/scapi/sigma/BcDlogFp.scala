@@ -5,7 +5,7 @@ import java.security.SecureRandom
 
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.custom.sec.{SecP384R1Curve, SecP384R1Point}
+import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import org.bouncycastle.util.BigIntegers
 
@@ -16,9 +16,15 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
   val curve = x9params.getCurve
 
+  //modulus of the field
+  val p: BigInteger = curve.getField.getCharacteristic
+
+  //order of the group
+  val q = x9params.getN
+
   //Now that we have p, we can calculate k which is the maximum length in bytes
   // of a string to be converted to a Group Element of this group.
-  lazy val k = calcK(curve.getField.getCharacteristic)
+  lazy val k = calcK(p)
 
 
   //Create the generator
@@ -49,9 +55,8 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     */
   def findYInCurveEquationForX(x: BigInteger): BigInteger = {
     /* get a, b, p from group params */
-    val a = x9params.getCurve.getA
-    val b = x9params.getCurve.getB
-    val p = x9params.getCurve.getField.getCharacteristic
+    val a = x9params.getCurve.getA.toBigInteger
+    val b = x9params.getCurve.getB.toBigInteger
     // compute x^3
     val x3 = x.modPow(new BigInteger("3"), p)
     // compute x^3+ax+b
@@ -61,7 +66,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     //else, return null
     //We compute the square root via the ECFieldElement.Fp of Bouncy Castle, since BigInteger does not implement this function.
     //ECFieldElement.Fp ySquare = new ECFieldElement.Fp(params.getQ(), rightSide);
-    val ySquare = new ECFieldElement.Fp(params.p, rightSide)
+    val ySquare = new ECFieldElement.Fp(p, rightSide)
     //TODO I am not sure which one of the square roots it returns (if they exist). We need to check this!! (Yael)
     val y = ySquare.sqrt.asInstanceOf[ECFieldElement.Fp]
     if (y != null) y.toBigInteger.mod(p)
@@ -95,7 +100,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
               If did not find y such that (x,y) satisfies the equation after 80 trials then return null.
          */
     if (binaryString.length > k) throw new IndexOutOfBoundsException("The binary array to encode is too long.")
-    val l = params.p.bitLength / 8
+    val l = p.bitLength / 8
     val randomArray = new Array[Byte](l - k - 2)
     //Create a random object and make it seed itself:
     val rand = new SecureRandom
@@ -119,14 +124,14 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
       //Compute the elliptic curve equation for this x and see if there exists a y such that (x,y) satisfies the equation.
       //If yes, return (x,y)
       //Else, go back to choose a random r etc.)
-      y = findYInCurveEquationForX(params, x)
+      y = findYInCurveEquationForX(x)
       counter += 1
     } while ( {
       (y == null) && (counter <= 80)
     }) //we limit the amount of times we try to 80 which is an arbitrary number.
 
     //If found the correct y in reasonable time then return the (x,y) FpPoint
-    if (y != null) FpPoint(x, y) else null
+    if (y != null) curve.createPoint(x, y).asInstanceOf[ElemType] else ??? //todo: fix, Option result?
   }
 
 
@@ -144,7 +149,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     val h = x9params.getH
     //if the cofactor is 1 the sub-group is same as the elliptic curve equation which the point is in.
     if (h == BigInteger.ONE) return true
-    val y = point.y
+    val y = point.getYCoord.toBigInteger
     //if the cofactor is greater than 1, the point must have order q (same as the order of the group)
     //if the cofactor is 2 and the y coefficient is 0, the point has order 2 and is not in the group
     if (h == new BigInteger("2")) if (y == BigInteger.ZERO) return false
@@ -162,17 +167,16 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     if (h == new BigInteger("4")) {
       if (y == BigInteger.ZERO) return false
       val power = exponentiate(point, new BigInteger("2"))
-      val powerY = power.y
+      val powerY = power.getYCoord.toBigInteger
       if (powerY == BigInteger.ZERO) return false
       else return true
     }
     // if the cofactor is bigger than 4, there is no optimized way to check the order, so we operates the naive:
     // if the point raised to q (order of the group) is the identity, the point has order q too and is in the group.
     // else, it is not in the group
-    val r = params.q
-    val pointPowR = curve.exponentiate(point, r)
-    if (pointPowR.isIdentity) true
-    else false
+    val r = q
+    val pointPowR = exponentiate(point, r)
+    if (pointPowR.isInfinity) true else false
   }
 
 
@@ -223,7 +227,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
   }
 
   def checkMembershipAndCreate(x: BigInteger, y: BigInteger): Try[ElemType] = Try {
-    val valid = checkCurveMembership(groupParams, x, y)
+    val valid = checkCurveMembership(x, y)
     // checks validity
     if (!valid) throw new IllegalArgumentException("x, y values are not a point on this curve")
     point(x, y)
@@ -251,7 +255,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     // those two checks are done in two steps:
     // 1.	Checking that the point is on the curve, performed by checkCurveMembership
     // 2.	Checking that the point is in the Dlog group,performed by checkSubGroupMembership
-    checkCurveMembership(point.x, point.y) && checkSubGroupMembership(point)
+    point.isValid && checkSubGroupMembership(point)
   }
 
 
@@ -272,7 +276,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
   /**
     * Creates ECPoint.Fp with infinity values
     */
-  def getInfinity: ElemType = curve.getInfinity
+  lazy val getInfinity: ElemType = curve.getInfinity.asInstanceOf[ElemType]
 
 
   /**
@@ -294,7 +298,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
      * BC treats EC as additive group while we treat that as multiplicative group.
      * Therefore, exponentiate point is multiply.
      */
-    base.multiply(exp)
+    base.multiply(exp).asInstanceOf[ElemType]
   }
 
 
@@ -329,11 +333,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     */
   override def encodeByteArrayToGroupElement(binaryString: Array[Byte]): ElemType = {
     val fpPoint = findPointRepresentedByByteArray(binaryString, k)
-
-    //todo: fix
-    if (fpPoint == null) ??? else
-    //When generating an element for an encoding always check that the (x,y) coordinates represent a point on the curve.
-      generateElement(true, fpPoint.x, fpPoint.y)
+    curve.importPoint(fpPoint).asInstanceOf[ElemType]
   }
 
   /**
@@ -348,11 +348,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @return the created byte array
     */
   override def decodeGroupElementToByteArray(point: ElemType): Array[Byte] = {
-    val xByteArray = point.x.toByteArray
-    val bOriginalSize = xByteArray(xByteArray.length - 1)
-    val b2 = new Array[Byte](bOriginalSize)
-    System.arraycopy(xByteArray, xByteArray.length - 1 - bOriginalSize, b2, 0, bOriginalSize)
-    b2
+    point.getEncoded(true)
   }
 
   /**
@@ -367,44 +363,25 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     //This function simply returns an array which is the result of concatenating
     //The actual work is implemented in ECFpUtility since it is independent of the underlying library (BC, Miracl, or other)
     //If we ever decide to change the implementation there will only one place to change it.
-    mapAnyGroupElementToByteArray(point.x, point.y)
+
+    //todo: fix
+    //mapAnyGroupElementToByteArray(point.x, point.y)
+    ???
   }
 }
 
 
-object SecP384R1CurveGroupParams extends ECFpGroupParams {
-  val curve = new SecP384R1Curve
 
-  val params = CustomNamedCurves.getByName("secp384r1")
+object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1")) {
 
-  override val q: BigInteger = curve.getOrder
-  override val xG: BigInteger = params.getG.getX.toBigInteger
-  override val yG: BigInteger = params.getG.getY.toBigInteger
-  override val p: BigInteger = curve.getQ
-  override val a: BigInteger = BigInt(-3).bigInteger
-  override val b: BigInteger = curve.getB.toBigInteger
-  override val h: BigInteger = curve.getCofactor
-
-  override def toString: String = {
-    Seq("p" -> p, "a" -> a, "b" -> b, "xG" -> xG, "yG" -> yG, "h" -> h, "q" -> q).toString()
-  }
-
-  def main(args: Array[String]): Unit = {
-    println(this.toString)
-  }
-}
-
-
-object SecP384R1 extends BcDlogFp[SecP384R1Point](new SecP384R1Curve, SecP384R1CurveGroupParams) {
-
-  override def point(x: BigInteger, y: BigInteger): SecP384R1Point = SecP384R1Point(x, y)
+  override def point(x: BigInteger, y: BigInteger): SecP384R1Point = curve.createPoint(x, y).asInstanceOf[SecP384R1Point]
 
 
   /**
     *
     * @return the identity of this Dlog group
     */
-  override def getIdentity(): SecP384R1Point = ???
+  override def getIdentity(): SecP384R1Point = curve.getInfinity.asInstanceOf[SecP384R1Point]
 
   /**
     * Checks if the order is a prime number
@@ -447,7 +424,8 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](new SecP384R1Curve, SecP384R1C
     * @return the inverse element of the given GroupElement
     * @throws IllegalArgumentException
     **/
-  override def getInverse(groupElement: SecP384R1Point): SecP384R1Point = ???
+  override def getInverse(groupElement: SecP384R1Point): SecP384R1Point =
+    groupElement.negate().asInstanceOf[SecP384R1Point]
 
 
   /**
@@ -458,7 +436,8 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](new SecP384R1Curve, SecP384R1C
     * @return the multiplication result
     * @throws IllegalArgumentException
     */
-  override def multiplyGroupElements(groupElement1: SecP384R1Point, groupElement2: SecP384R1Point): SecP384R1Point = ???
+  override def multiplyGroupElements(groupElement1: SecP384R1Point, groupElement2: SecP384R1Point): SecP384R1Point =
+    groupElement1.add(groupElement2).asInstanceOf[SecP384R1Point]
 
 
   /**

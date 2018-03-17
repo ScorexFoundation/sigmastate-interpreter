@@ -1,9 +1,10 @@
 package sigmastate
 
 import java.math.BigInteger
+import java.security.spec.ECPoint
 
-import scapi.sigma.ECElement
 import sigmastate.SType.TypeCode
+import sigmastate.interpreter.GroupSettings
 import sigmastate.utxo.SigmaStateBox
 
 /** Every type descriptor is a tree represented by nodes in SType hierarchy.
@@ -70,7 +71,7 @@ case object SAvlTree extends SType {
 }
 
 case object SGroupElement extends SType {
-  override type WrappedType = ECElement
+  override type WrappedType = GroupSettings.EcPointType
   override val typeCode: TypeCode = 6: Byte
 }
 

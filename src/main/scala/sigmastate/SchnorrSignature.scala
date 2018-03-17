@@ -24,7 +24,7 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
       //real proving
       case true =>
         val firstMsg = prover.firstMessage
-        val e = Blake2b256(firstMsg.ecData.x.toByteArray ++ firstMsg.ecData.y.toByteArray ++ challenge)
+        val e = Blake2b256(firstMsg.ecData.getEncoded(true) ++ challenge)
         firstMsg -> prover.secondMessage(Challenge(e))
       //simulation
       case false => prover.simulate(Challenge(challenge))
@@ -44,10 +44,10 @@ object SchnorrSigner {
     val grec = fm.ecData
     val z = sm.z
 
-    val grxb = grec.x.toByteArray
-    val gryb = grec.y.toByteArray
+    val grb = grec.getEncoded(true)
     val zb = z.toByteArray
-    Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
+    //todo: is byte enough for any group?
+    Array(grb.length.toByte, zb.length.toByte) ++ grb  ++ zb
   }
 
   def generate(privateInput: DLogProverInput): SchnorrSigner = {

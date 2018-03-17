@@ -77,18 +77,13 @@ object DLogProtocol {
     }
   }
 
-  case class FirstDLogProverMessage(ecData: GroupAgnosticEcElement) extends FirstProverMessage[DLogSigmaProtocol] {
+  case class FirstDLogProverMessage(ecData: GroupSettings.EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
     override def bytes: Array[Byte] = {
-      val x = ecData.x.toByteArray
-      val y = ecData.y.toByteArray
+      val bytes = ecData.getEncoded(true)
 
-      Array(x.length.toByte, y.length.toByte) ++ x ++ y
+      //todo: is byte enough for any group?
+      Array(bytes.length.toByte) ++ bytes
     }
-  }
-
-  object FirstDLogProverMessage {
-    def apply(a: ECElement): FirstDLogProverMessage =
-      FirstDLogProverMessage(a)
   }
 
   case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage[DLogSigmaProtocol] {
@@ -176,10 +171,9 @@ object DLogProtocol {
 
     override lazy val accepted: Boolean = Try {
       assert(dlogGroup.isMember(x.h))
-      val aElem = dlogGroup.reconstructElement(true, a.ecData)
       val left = dlogGroup.exponentiate(dlogGroup.generator, z.z.bigInteger)
       val hToe = dlogGroup.exponentiate(x.h, BigInt(1, e.bytes).bigInteger)
-      val right = dlogGroup.multiplyGroupElements(aElem, hToe)
+      val right = dlogGroup.multiplyGroupElements(a.ecData, hToe)
 
       left == right
     }.getOrElse(false)

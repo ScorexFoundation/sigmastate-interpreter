@@ -3,9 +3,11 @@ package scapi.sigma
 import java.math.BigInteger
 import java.security.SecureRandom
 
+import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
 import sigmastate._
 import sigmastate.Value.PropositionCode
+import sigmastate.interpreter.GroupSettings
 import sigmastate.utxo.CostTable.Cost
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
@@ -31,8 +33,6 @@ object DiffieHellmanTupleProverInput {
     println("h: " + h)
     println(dlogGroup.isMember(h))
 
-    println(dlogGroup.groupParams())
-
     val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
     val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
     val u = dlogGroup.exponentiate(g, w)
@@ -45,12 +45,12 @@ object DiffieHellmanTupleProverInput {
 }
 
 //a = g^r, b = h^r
-case class FirstDiffieHellmanTupleProverMessage(a: ECElement, b: ECElement)
+case class FirstDiffieHellmanTupleProverMessage(a: GroupSettings.EcPointType, b: GroupSettings.EcPointType)
   extends FirstProverMessage[DiffieHellmanTupleProtocol] {
   override def bytes: Array[Byte] = {
-    val ba = a.toBytes
+    val ba = a.getEncoded(true)
 
-    val bb = b.toBytes
+    val bb = b.getEncoded(true)
 
     //todo: is toByte enough? check for a concrete group used!
     Array(ba.length.toByte, bb.length.toByte) ++ ba ++ bb

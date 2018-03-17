@@ -138,7 +138,7 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
 
   override val cost = 10
   override def tpe = SGroupElement
-  override val value: ECElement = dlogGroup.generator
+  override val value: GroupSettings.EcPointType = dlogGroup.generator
 }
 
 

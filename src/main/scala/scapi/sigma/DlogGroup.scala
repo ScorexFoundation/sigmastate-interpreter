@@ -2,8 +2,7 @@ package scapi.sigma
 
 import java.math.BigInteger
 import java.security.SecureRandom
-
-trait GroupParams
+import org.bouncycastle.math.ec.ECPoint
 
 
 /**
@@ -29,7 +28,7 @@ trait GroupParams
  *
  *
   */
-trait DlogGroup[ElemType <: ECElement] {
+trait DlogGroup[ElemType <: ECPoint] {
 
   val random = new SecureRandom()
 
@@ -38,14 +37,6 @@ trait DlogGroup[ElemType <: ECElement] {
     * @return the generator of this Dlog group
     */
   def generator(): ElemType
-
-  /**
-    * GroupParams is a structure that holds the actual data that makes this group a specific Dlog group.<p>
-    * For example, for a Dlog group over Zp* what defines the group is p.
-    *
-    * @return the GroupParams of that Dlog group
-    */
-  def groupParams(): GroupParams
 
   /**
     *
@@ -142,7 +133,7 @@ trait DlogGroup[ElemType <: ECElement] {
 
     // if the given element is the identity, get a new random element
     while ( {
-      randGen.isIdentity
+      randGen.isInfinity
     }) randGen = createRandomElement
 
     randGen
