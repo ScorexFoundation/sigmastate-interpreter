@@ -9,11 +9,11 @@ class SigmaSpecializer {
     typed
   }
 
-  def error(msg: String) = throw new SpecializerException(msg)
+
 }
 
 class SpecializerException(msg: String) extends Exception(msg)
 
 object SigmaSpecializer {
-
+  def error(msg: String) = throw new SpecializerException(msg)
 }

@@ -174,7 +174,15 @@ case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) ext
 
 object SCollection {
   val TypeCode: TypeCode = 80: Byte
-  val fields = Seq("size" -> SInt)
+  private val tIV = STypeIdent("IV")
+  private val tOV = STypeIdent("OV")
+  val fields = Seq(
+    "size" -> SInt,
+    "map" -> SFunc(SFunc(tIV, tOV), SCollection(tOV)),
+    "exists" -> SFunc(SFunc(tIV, SBoolean), SBoolean),
+    "fold" -> SFunc(IndexedSeq(tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV),
+    "forall" -> SFunc(SFunc(tIV, SBoolean), SBoolean)
+  )
   def apply[T <: SType](elemType: T)(implicit ov: Overload1): SCollection[T] = SCollection()(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 }
@@ -191,6 +199,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {
 
 object SFunc {
   val TypeCode = 90: Byte
+  def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
 }
 
 case class STuple(items: IndexedSeq[SType]) extends SProduct {
@@ -220,5 +229,13 @@ case class STypeApply(name: String, args: IndexedSeq[SType] = IndexedSeq()) exte
 }
 object STypeApply {
   val TypeCode = 110: Byte
+}
+
+case class STypeIdent(name: String) extends SType {
+  override type WrappedType = Any
+  override val typeCode = STypeIdent.TypeCode
+}
+object STypeIdent {
+  val TypeCode = 111: Byte
 }
 
