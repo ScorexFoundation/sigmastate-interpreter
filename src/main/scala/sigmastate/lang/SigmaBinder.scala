@@ -8,11 +8,7 @@ import sigmastate.utxo._
 import sigmastate.SCollection._
 import sigmastate.Values.Value.Typed
 
-trait Binder {
-  def bind(e: SValue): SValue
-}
-
-class SigmaBinder(env: Map[String, Any]) extends Binder {
+class SigmaBinder(env: Map[String, Any]) {
   import SigmaBinder._
   import SigmaPredef._
 
