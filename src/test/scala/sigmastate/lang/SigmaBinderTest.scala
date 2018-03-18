@@ -62,14 +62,17 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     }
 
 
-//  property("predefined Exists with lambda argument") {
-//    val minToRaise = IntConstant(1000)
-//    val env = this.env ++ Map(
-//      "minToRaise" -> minToRaise,
-//    )
-//    bind(env, """exists(OUTPUTS, fun (out: Box) = { out.amount >= minToRaise })""") shouldBe
-//        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), minToRaise))
-//  }
+  property("predefined Exists with lambda argument") {
+    val minToRaise = IntConstant(1000)
+    val env = this.env ++ Map(
+      "minToRaise" -> minToRaise,
+    )
+    bind(env, "OUTPUTS.exists(fun (out: Box) = { out.amount >= minToRaise })") shouldBe
+      Apply(Select(Outputs, "exists"),
+      IndexedSeq(
+        Lambda(IndexedSeq("out" -> SBox), SBoolean,
+            GE(Select(Ident("out"), "amount").asValue[SInt.type], minToRaise))))
+  }
 
   property("tuple constructor") {
     bind(env, "()") shouldBe UnitConstant

@@ -5,7 +5,7 @@ import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.SizeOf
+import sigmastate.utxo.{SizeOf, Exists, Outputs}
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
@@ -216,6 +216,15 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("fun (x: Int) = { let y = x + 1; y }") shouldBe
         Lambda(IndexedSeq("x" -> SInt),
           Block(Let("y", Plus(IntIdent("x"), 1)), Ident("y")))
+  }
+
+  property("predefined Exists with lambda argument") {
+    parse("OUTPUTS.exists(fun (out: Box) = { out.amount >= minToRaise })") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "exists"),
+        IndexedSeq(
+          Lambda(IndexedSeq("out" -> SBox),
+            Block(IndexedSeq(),
+              GE(Select(Ident("out"), "amount").asValue[SInt.type], IntIdent("minToRaise"))))))
   }
 
   property("function definitions") {
