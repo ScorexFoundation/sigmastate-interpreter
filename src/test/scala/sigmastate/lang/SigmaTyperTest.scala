@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._
 
-class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
+class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
   def typecheck(env: Map[String, Any], x: String): SType = {
     try {
@@ -42,23 +42,20 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers {
     }
   }
 
-  def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
-  def IntIdent(name: String): Value[SInt.type] = Ident(name).asValue[SInt.type]
-
-  val EV: Map[String, Any] = Map()
-
-  val env = Map("x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false, "arr" -> Array[Byte](1, 2))
-
   property("simple expressions") {
     typecheck(env, "x") shouldBe SInt
     typecheck(env, "x+y") shouldBe SInt
     typecheck(env, "c1 && c2") shouldBe SBoolean
-    typecheck(env, "arr") shouldBe SByteArray
+    typecheck(env, "arr1") shouldBe SByteArray
     typecheck(env, "HEIGHT") shouldBe SInt
     typecheck(env, "HEIGHT + 1") shouldBe SInt
     typecheck(env, "INPUTS") shouldBe SCollection(SBox)
     typecheck(env, "INPUTS.size") shouldBe SInt
     typecheck(env, "INPUTS.size > 1") shouldBe SBoolean
+    typecheck(env, "arr1 | arr2") shouldBe SByteArray
+    typecheck(env, "arr1 ++ arr2") shouldBe SByteArray
+    typecheck(env, "g1 ^ n") shouldBe SGroupElement
+    typecheck(env, "g1 * g2") shouldBe SGroupElement
   }
 
   property("predefined functions") {

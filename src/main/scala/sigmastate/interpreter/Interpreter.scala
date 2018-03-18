@@ -116,7 +116,7 @@ trait Interpreter extends GroupSettings {
           val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
           BooleanConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
         case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
-          if(cond.value) trueBranch else falseBranch
+          if (cond.value) trueBranch else falseBranch
 
         //conjectures
         case a@AND(children) if a.transformationReady =>

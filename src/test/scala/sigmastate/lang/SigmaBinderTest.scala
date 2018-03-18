@@ -1,5 +1,7 @@
 package sigmastate.lang
 
+import java.math.BigInteger
+
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
@@ -7,7 +9,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 
-class BinderTest extends PropSpec with PropertyChecks with Matchers {
+class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
   def bind(env: Map[String, Any], x: String): SValue = {
     try {
@@ -21,20 +23,17 @@ class BinderTest extends PropSpec with PropertyChecks with Matchers {
     }
   }
 
-  def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
-  def IntIdent(name: String): Value[SInt.type] = Ident(name).asValue[SInt.type]
-
-  val EV: Map[String, Any] = Map()
-
-  val env = Map("x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false, "arr" -> Array[Byte](1, 2))
-
   property("simple expressions") {
     bind(env, "x") shouldBe IntConstant(10)
     bind(env, "x+y") shouldBe Plus(10, 11)
     bind(env, "c1 && c2") shouldBe AND(TrueLeaf, FalseLeaf)
-    bind(env, "arr") shouldBe ByteArrayConstant(Array(1, 2))
+    bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
     bind(env, "HEIGHT + 1") shouldBe Plus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(SizeOf(Inputs), 1)
+    bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10,20))
+    bind(env, "arr1 ++ arr2") shouldBe AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
+    bind(env, "g1 ^ n") shouldBe Exponentiate(g1, n)
+    bind(env, "g1 * g2") shouldBe MultiplyGroup(g1, g2)
   }
 
   property("predefined functions") {

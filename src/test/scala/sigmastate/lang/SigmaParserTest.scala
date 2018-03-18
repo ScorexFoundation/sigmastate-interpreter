@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.utxo.SizeOf
 
-class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
+class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
   def parse(x: String): SValue = {
     try {
@@ -20,9 +20,6 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
         throw e
     }
   }
-
-  def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
-  def IntIdent(name: String): Value[SInt.type] = Ident(name).asValue[SInt.type]
 
   property("simple expressions") {
     parse("10") shouldBe IntConstant(10)
@@ -37,6 +34,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse("true || (true && false)") shouldBe OR(TrueLeaf, AND(TrueLeaf, FalseLeaf))
     parse("false || false || false") shouldBe OR(OR(FalseLeaf, FalseLeaf), FalseLeaf)
     parse("(1>= 0)||(3 >2)") shouldBe OR(GE(1, 0), GT(3, 2))
+    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
+    parse("arr1 ++ arr2") shouldBe AppendBytes(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
+    parse("ge ^ n") shouldBe Exponentiate(GEIdent("ge"), BigIntIdent("n"))
+    parse("g1 * g2") shouldBe MultiplyGroup(GEIdent("g1"), GEIdent("g2"))
   }
 
   property("precedence of binary operations") {
