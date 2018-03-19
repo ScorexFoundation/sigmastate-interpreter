@@ -4,7 +4,8 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 import org.bouncycastle.util.BigIntegers
-import sigmastate.Value.PropositionCode
+import sigmastate.Values._
+import Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
 import sigmastate.interpreter.GroupSettings
@@ -67,13 +68,11 @@ object DLogProtocol {
 
     import GroupSettings.dlogGroup
 
-    def random()(implicit soundness: Int): (DLogProverInput, ProveDlog) = {
+    def random()(implicit soundness: Int): DLogProverInput = {
       val g = dlogGroup.generator
       val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-      val h = dlogGroup.exponentiate(g, w)
-
-      DLogProverInput(w) -> ProveDlog(h)
+      DLogProverInput(w)
     }
   }
 

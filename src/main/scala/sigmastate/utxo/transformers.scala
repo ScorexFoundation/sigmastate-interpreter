@@ -2,8 +2,10 @@ package sigmastate.utxo
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import sigmastate._
+import Values._
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
+import sigmastate.interpreter.Interpreter
 import sigmastate.utxo.CostTable.Cost
 
 import scala.collection.immutable
@@ -19,7 +21,7 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
   def function(): Value[OV] = input match{
     case ev: EvaluatedValue[IV] => function(ev)
-    case _ => ???
+    case _ => Interpreter.error(s"Transformer function can be called only after input value is evaluated: $input")
   }
 
   def evaluate(): Value[OV] = input match {
@@ -158,24 +160,21 @@ object Fold {
     Fold[SByteArray.type](input, 21, EmptyByteArray, 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
-case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)(implicit val tpe: V)
+case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
+  def tpe = input.tpe.elemType
   def arity = 3
   def deconstruct = immutable.Seq[Any](input, index, tpe)
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
     case Seq(input: Value[SCollection[V]] @unchecked,
       index: Int,
-      t: V @unchecked) => ByIndex[V](input, index)(t)
+      t: V @unchecked) => ByIndex[V](input, index)
     case _ =>
       illegalArgs("ByIndex", "(Value[SCollection[V]], index: Int)(tpe: V)", cs)
   }
   override def function(input: EvaluatedValue[SCollection[V]]) = input.value.apply(index)
 
   override def cost = 1
-}
-
-trait NotReadyValueInt extends NotReadyValue[SInt.type] {
-  override def tpe = SInt
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])

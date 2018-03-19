@@ -6,7 +6,7 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
 import sigmastate.{SType, _}
 import sigmastate.utils.Helpers
-
+import sigmastate.Values._
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule}
@@ -79,7 +79,7 @@ trait Interpreter {
 
       val transformations = ({
         case GroupGenerator =>
-          GroupElementConstant(dlogGroup.generator)
+          GroupElementConstant(dlogGroup.generator) // TODO should we use GroupGenerator.value instead
 
         case t: Transformer[_, _] if t.transformationReady => t.function()
 
@@ -118,7 +118,7 @@ trait Interpreter {
           val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
           BooleanConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
         case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
-          if(cond.value) trueBranch else falseBranch
+          if (cond.value) trueBranch else falseBranch
 
         //conjectures
         case a@AND(children) if a.transformationReady =>
@@ -145,7 +145,10 @@ trait Interpreter {
     val substRule = rule[Value[_ <: SType]](specificTransformations(context))
 
     //todo: controversial .asInstanceOf?
-    val substTree = everywherebu(substRule)(exp).get.asInstanceOf[Value[SBoolean.type]]
+    val substTree = everywherebu(substRule)(exp) match {
+      case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
+      case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
+    }
     if (substTree.cost > maxCost) throw new Error("Estimated expression complexity exceeds the limit")
 
     // After performing context-dependent transformations and checking cost of the resulting tree, both the prover
@@ -289,4 +292,10 @@ trait Interpreter {
     val ctxv = context.withExtension(proverResult.extension)
     verify(exp, ctxv, proverResult.proof, message)
   }
+}
+
+class InterpreterException(msg: String) extends Exception(msg)
+
+object Interpreter {
+  def error(msg: String) = throw new InterpreterException(msg)
 }

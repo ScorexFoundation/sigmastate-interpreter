@@ -1,7 +1,6 @@
 package sigmastate.utxo.examples
 
 import java.security.SecureRandom
-
 import com.google.common.primitives.Longs
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
@@ -9,6 +8,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate._
+import sigmastate.Values._
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utxo._
 import sigmastate.utxo.SigmaStateBox._

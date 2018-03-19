@@ -11,7 +11,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
-
+import sigmastate.Values._
 import scala.annotation.tailrec
 import scala.collection.mutable
 
@@ -106,7 +106,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
       case _ =>
         if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
           CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
-        else AND(reduced)
+        else
+          AND(reduced)  // TODO is it ok if not all but some of the items in reduced are SigmaBoolean
     }
   }
 }

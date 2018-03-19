@@ -16,8 +16,11 @@ class SchnorrSignatureSpecification extends PropSpec
 
       import SchnorrSignature._
 
-      val (pi, ci) = DLogProverInput.random()
-      val (_, ci2) = DLogProverInput.random()
+      val pi = DLogProverInput.random()
+      val ci = pi.publicImage
+
+      val pi2 = DLogProverInput.random()
+      val ci2 = pi2.publicImage
 
       val challenge = Blake2b256(message)
 

@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
 import com.google.common.primitives.Longs
-import sigmastate.{IntConstant, SInt}
+import sigmastate.Values._
+import sigmastate.{SInt}
 import sigmastate.SType.TypeCode
 
 object IntConstantSerializer extends ValueSerializer[IntConstant] {

@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import scorex.crypto.encode.Base58
 import sigmastate._
+import sigmastate.Values._
 import sigmastate.serialization.ValueSerializer._
 
 class RelationSerializerSpecification extends TableSerializationSpecification {
