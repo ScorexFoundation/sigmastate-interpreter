@@ -27,14 +27,14 @@ object DiffieHellmanTupleProverInput {
   import sigmastate.interpreter.GroupSettings.dlogGroup
 
   def random()(implicit soundness: Int): DiffieHellmanTupleProverInput = {
-    val g = dlogGroup.generator()
+    val g = dlogGroup.generator
     val h = dlogGroup.createRandomGenerator()
     println("g: " + g)
     println(dlogGroup.isMember(g))
     println("h: " + h)
     println(dlogGroup.isMember(h))
 
-    val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
+    val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
     val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
     val u = dlogGroup.exponentiate(g, w)
     val v = dlogGroup.exponentiate(h, w)
@@ -122,14 +122,14 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieH
   override def simulate(challenge: Challenge):
   (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
     assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-    val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
+    val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
 
     //SAMPLE a random z <- Zq
     val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
 
     //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
     val e: BigInteger = new BigInteger(1, challenge.bytes)
-    val minusE = dlogGroup.getOrder.subtract(e)
+    val minusE = dlogGroup.order.subtract(e)
     val hToZ = dlogGroup.exponentiate(publicInput.h, z)
     val gToZ = dlogGroup.exponentiate(publicInput.g, z)
     val uToMinusE = dlogGroup.exponentiate(publicInput.u, minusE)
@@ -144,7 +144,7 @@ object DiffieHellmanTupleInteractiveProver {
   import sigmastate.interpreter.GroupSettings.dlogGroup
 
   def firstMessage(publicInput: ProveDiffieHellmanTuple): (BigInteger, FirstDiffieHellmanTupleProverMessage) = {
-    val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
+    val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
     val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
     val a = dlogGroup.exponentiate(publicInput.g, r)
     val b = dlogGroup.exponentiate(publicInput.h, r)
@@ -154,7 +154,7 @@ object DiffieHellmanTupleInteractiveProver {
   def secondMessage(privateInput: DiffieHellmanTupleProverInput,
                     rnd: BigInteger,
                     challenge: Challenge): SecondDiffieHellmanTupleProverMessage = {
-    val q: BigInteger = dlogGroup.getOrder
+    val q: BigInteger = dlogGroup.order
     val e: BigInteger = new BigInteger(1, challenge.bytes)
     val ew: BigInteger = e.multiply(privateInput.w).mod(q)
     val z: BigInteger = rnd.add(ew).mod(q)

@@ -237,7 +237,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     *
     * @return the order of this Dlog group
     */
-  override def getOrder(): BigInteger = x9params.getN
+  override def order(): BigInteger = x9params.getN
 
   /**
     * Checks if the given element is a member of this Dlog group
@@ -292,7 +292,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     if (base.isInfinity) return base
 
     //If the exponent is negative, convert it to be the exponent modulus q.
-    val exp = if (exponent.compareTo(BigInteger.ZERO) < 0) exponent.mod(getOrder) else exponent
+    val exp = if (exponent.compareTo(BigInteger.ZERO) < 0) exponent.mod(order) else exponent
 
     /*
      * BC treats EC as additive group while we treat that as multiplicative group.
@@ -381,7 +381,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     *
     * @return the identity of this Dlog group
     */
-  override def getIdentity(): SecP384R1Point = curve.getInfinity.asInstanceOf[SecP384R1Point]
+  override def identity(): SecP384R1Point = curve.getInfinity.asInstanceOf[SecP384R1Point]
 
   /**
     * Checks if the order is a prime number
@@ -399,15 +399,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     * @return <code>true</code> if the order is greater than 2^numBits;<p>
     *         <code>false</code> otherwise.
     **/
-  override def isOrderGreaterThan(numBits: Int): Boolean = ???
-
-  /**
-    * Checks if the element set as the generator is indeed the generator of this group.
-    *
-    * @return <code>true</code> if the generator is valid;<p>
-    *         <code>false</code> otherwise.
-    */
-  override def isGenerator(): Boolean = ???
+  override def orderGreaterThan(numBits: Int): Boolean = ???
 
   /**
     * Checks parameters of this group to see if they conform to the type this group is supposed to be.

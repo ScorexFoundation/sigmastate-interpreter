@@ -9,6 +9,7 @@ import Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
 import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.GroupSettings.EcPointType
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -32,7 +33,7 @@ object DLogProtocol {
     override val soundness: Int = 256
 
     //todo: fix, we should consider that class parameter could be not evaluated
-    lazy val h = value.asInstanceOf[GroupElementConstant].value
+    lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
 
     lazy val bytes: Array[Byte] = dlogGroup.decodeGroupElementToByteArray(h)
   }
@@ -47,7 +48,7 @@ object DLogProtocol {
     def fromBytes(bytes: Array[Byte]): ProveDlog = {
       val (x, y) = EcPointFunctions.decodeBigIntPair(bytes).get
       val xy = GroupAgnosticEcElement(x, y)
-      val h = dlogGroup.reconstructElement(true, xy)
+      val h = dlogGroup.reconstructElement(bCheckMembership = true, xy)
       ProveDlog(h)
     }
   }
@@ -69,7 +70,7 @@ object DLogProtocol {
     import GroupSettings.dlogGroup
 
     def random()(implicit soundness: Int): DLogProverInput = {
-      val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
+      val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
       DLogProverInput(w)
     }
@@ -119,14 +120,14 @@ object DLogProtocol {
 
     override def simulate(challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
       assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-      val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
+      val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
 
       //SAMPLE a random z <- Zq
       val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
 
       //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
       val e: BigInteger = new BigInteger(1, challenge.bytes)
-      val minusE = dlogGroup.getOrder.subtract(e)
+      val minusE = dlogGroup.order.subtract(e)
       val hToE = dlogGroup.exponentiate(publicInput.h, minusE)
       val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
       val a = dlogGroup.multiplyGroupElements(gToZ, hToE)
@@ -138,7 +139,7 @@ object DLogProtocol {
     def firstMessage(publicInput: ProveDlog): (BigInteger, FirstDLogProverMessage) = {
       import GroupSettings.dlogGroup
 
-      val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
+      val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
       val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
       val a = dlogGroup.exponentiate(dlogGroup.generator, r)
       r -> FirstDLogProverMessage(a)
@@ -147,7 +148,7 @@ object DLogProtocol {
     def secondMessage(privateInput: DLogProverInput, rnd: BigInteger, challenge: Challenge): SecondDLogProverMessage = {
       import GroupSettings.dlogGroup
 
-      val q: BigInteger = dlogGroup.getOrder
+      val q: BigInteger = dlogGroup.order
       val e: BigInteger = new BigInteger(1, challenge.bytes)
       val ew: BigInteger = e.multiply(privateInput.w).mod(q)
       val z: BigInteger = rnd.add(ew).mod(q)

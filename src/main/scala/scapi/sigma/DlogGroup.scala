@@ -23,10 +23,6 @@ import org.bouncycastle.math.ec.ECPoint
   *  - {@code mapAnyGroupElementToByteArray(GroupElement element) : byte[]}<p>
   *
   *  The first two work as a pair and decodeGroupElementToByteArray is the inverse of encodeByteArrayToGroupElement, whereas the last one works alone and does not have an inverse.
- *
-  * @author Cryptography and Computer Security Research Group Department of Computer Science Bar-Ilan University (Moriya Farbstein)
- *
- *
   */
 trait DlogGroup[ElemType <: ECPoint] {
 
@@ -36,20 +32,20 @@ trait DlogGroup[ElemType <: ECPoint] {
     * The generator g of the group is an element of the group such that, when written multiplicatively, every element of the group is a power of g.
     * @return the generator of this Dlog group
     */
-  def generator(): ElemType
+  def generator: ElemType
 
   /**
     *
     * @return the order of this Dlog group
     */
-  def getOrder(): BigInteger
+  def order: BigInteger
 
 
   /**
     *
     * @return the identity of this Dlog group
     */
-  def getIdentity(): ElemType
+  def identity: ElemType
 
   /**
     * Checks if the given element is a member of this Dlog group
@@ -73,14 +69,8 @@ trait DlogGroup[ElemType <: ECPoint] {
     * @return <code>true</code> if the order is greater than 2^numBits;<p>
     * 		   <code>false</code> otherwise.
     */
-  def isOrderGreaterThan(numBits: Int): Boolean
+  def orderGreaterThan(numBits: Int): Boolean
 
-  /**
-    * Checks if the element set as the generator is indeed the generator of this group.
-    * @return <code>true</code> if the generator is valid;<p>
-    *         <code>false</code> otherwise.
-    */
-  def isGenerator(): Boolean
 
   /**
     * Checks parameters of this group to see if they conform to the type this group is supposed to be.
