@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.attribution.Attribution
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
@@ -15,36 +16,37 @@ import sigmastate.utxo.{Inputs, ByIndex}
   */
 class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribution {
   import SigmaTyper._
-  import PrettyPrinter.formattedLayout
-  import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, noMessages, message, Messages}
+  import SigmaPrinter.formattedLayout
+  import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, message, Messages}
 
-  /** The semantic error messages for the tree. */
+  /** The semantic error messages for the tree based on the inferred attributes. */
   lazy val errors : Messages =
     collectMessages(tree) {
       case e : SValue =>
-//        checkType(e, tipe) ++
-            check(e) {
-              case e @ Ident(x, _) =>
-                message(e, s"unknown name '$x'", tipe(e) == NoType)
-              case e: SValue =>
-                message(e, s"Expression ${e} doesn't have type: context ${tree.parent(e)}", tipe(e) == NoType)
-            }
+        check(e) {
+          case e @ Ident(x, _) =>
+            message(e, s"unknown name '$x'", tipe(e) == NoType)
+          case e: SValue =>
+            message(e, s"Expression ${e} doesn't have type: context ${tree.parent(e)}", tipe(e) == NoType)
+        }
     }
 
   /**
     * The variables that are free in the given expression.
     */
-  val fv : SValue => Set[Idn] =
+  val fv : SValue => List[Idn] =
     attr {
-      case IntConstant(_)            => Set()
-      case Ident(v, _)            => Set(v)
-      case Lambda(args, _, Some(e))      => fv(e) -- args.map(_._1).toSet
-      case Apply(e1, args)       => args.foldLeft(fv(e1))((acc, e) => acc ++ fv(e))
+      case IntConstant(_)            => List()
+      case Ident(v, _)               => List(v)
+      case Lambda(args, _, Some(e))  =>
+        val argNames = args.map(_._1).toList
+        fv(e).filterNot(argNames.contains(_))
+      case Apply(e1, args)           => args.foldLeft(fv(e1))((acc, e) => acc ++ fv(e))
       case Let(i, t, e) => fv(e)
       case Block(bs, e) => {
-        val fbv = bs.map(_.body).map(fv).flatten.toSet
-        val bvars = bs.map(_.name).toSet
-        fbv ++ (fv(e) -- bvars)
+        val fbv = bs.map(_.body).map(fv).flatten
+        val bvars = bs.map(_.name)
+        fbv.toList ++ (fv(e).filterNot(bvars.contains(_)))
       }
     }
 
@@ -54,7 +56,6 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     */
   val env : SValue => List[(Idn, SType)] =
     attr {
-
       // Inside a lambda expression the bound variable is now visible
       // in addition to everything that is visible from above. Note
       // that an inner declaration of a var hides an outer declaration
@@ -176,10 +177,13 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
         tipe(f) match {
           case SFunc(argTypes, tRes) =>
             val actualTypes = args.map(tipe)
-            if (actualTypes == argTypes)
-              tRes
-            else
-              error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+            unifyTypeLists(argTypes, actualTypes) match {
+              case Some(subst) =>
+                applySubst(tRes, subst)
+              case None =>
+                error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+            }
+
           case tCol: SCollection[_] =>
             args match {
               case Seq(IntConstant(i)) =>
@@ -216,6 +220,8 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
             error(s"Cannot get field '$field' of non-product type $t")
         }
 
+      case v: SValue if v.tpe != NoType => v.tpe
+      
       case e => error(s"Don't know how to compute type for $e")
     }
 
@@ -259,10 +265,80 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case _ => SAny
     }
 
+  val assignTypes = rule[SValue] {
+    case Let(n, NoType, body) => Let(n, tipe(body), body)
+    case v @ Ident(n, NoType) =>
+      env(v).find(_._1 == n) match {
+        case Some((_, t)) => Ident(n, t)
+        case None => error(s"Cannot assign type for variable '$n'")
+      }
+    case v => v
+  }
+
+  def typecheck(bound: SValue): SValue = {
+    val t = tipe(bound)
+    if (t == NoType) error(s"No type can be assigned to expression $bound")
+    if(errors.nonEmpty) error(s"Errors found while typing expression $bound:\n${errors.mkString("\n")}\n")
+    val assigned = rewrite(everywherebu(assignTypes))(bound)
+    for (n <- tree.nodes) {
+      n match {
+        case v: SValue if v.tpe == NoType =>
+          error(s"Errors found while assigning types to expression $bound: $v assigned NoType")
+        case _ =>
+      }
+    }
+    assigned 
+  }
 }
 
 class TyperException(msg: String) extends Exception(msg)
 
 object SigmaTyper {
+
+  type STypeSubst = Map[STypeIdent, SType]
+  val emptySubst = Map.empty[STypeIdent, SType]
+
+  def unifyTypeLists(items1: Seq[SType], items2: Seq[SType]): Option[STypeSubst] = {
+    // unify items pairwise independently
+    val itemsUni = (items1, items2).zipped.map((t1, t2) => unifyTypes(t1,t2))
+    if (itemsUni.forall(_.isDefined)) {
+      // merge substitutions making sure the same id is equally substituted in all items
+      val merged = itemsUni.foldLeft(emptySubst)((acc, subst) => {
+        var res = acc
+        for ((id, t) <- subst.get) {
+          if (res.contains(id) && res(id) != t) return None
+          res = res + (id -> t)
+        }
+        res
+      })
+      Some(merged)
+    } else
+      None
+  }
+
+  def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
+    case (id1 @ STypeIdent(n1), id2 @ STypeIdent(n2)) =>
+      if (n1 == n2) Some(Map(id1 -> t2)) else None
+    case (id1 @ STypeIdent(n), _) => Some(Map(id1 -> t2))
+    case (e1: SCollection[_], e2: SCollection[_]) =>
+      unifyTypes(e1.elemType, e2.elemType)
+    case (e1: STuple, e2: STuple) =>
+      unifyTypeLists(e1.items, e2.items)
+    case (e1: SFunc, e2: SFunc) =>
+      unifyTypeLists(e1.tDom :+ e1.tRange, e2.tDom :+ e2.tRange)
+    case (STypeApply(name1, args1), STypeApply(name2, args2))
+      if name1 == name2 && args1.length == args2.length =>
+      unifyTypeLists(args1, args2)
+    case (e1: SPrimType, e2: SPrimType) if e1 == e2 => Some(Map())
+    case _ => None
+  }
+
+  def applySubst(tpe: SType, subst: STypeSubst): SType = {
+    val substRule = rule[SType] {
+      case id: STypeIdent if subst.contains(id) => subst(id)
+    }
+    rewrite(everywherebu(substRule))(tpe)
+  }
+
   def error(msg: String) = throw new TyperException(msg)
 }

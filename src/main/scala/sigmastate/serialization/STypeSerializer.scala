@@ -19,7 +19,7 @@ trait STypeSerializer[T <: SType] extends SigmaSerializer[SType, T] {
 object STypeSerializer extends SigmaSerializerCompanion[SType] {
   override type Tag = SType.TypeCode
   val table: Map[Tag, SigmaSerializer[SType, _]] = {
-    val primSers = SType.allPrimitiveTypes.map(t => (t.typeCode, new PrimitiveTypeSerializer(t.typeCode))).toMap
+    val primSers = SType.allPredefTypes.map(t => (t.typeCode, new PrimitiveTypeSerializer(t.typeCode))).toMap
     primSers + (SCollection.TypeCode -> SCollectionSerializer)
   }
 
@@ -42,7 +42,7 @@ class PrimitiveTypeSerializer(val typeCode: TypeCode) extends STypeSerializer[ST
   override val companion = STypeSerializer
 
   override def parseBody(bytes: Array[Byte], pos: Position) = typeCode match {
-    case PrimType(t) => (t, 0)
+    case SPrimType(t) => (t, 0)
     case _ => sys.error(s"Don't know how to parse primitive type descriptor with typeCode = $typeCode")
   }
 

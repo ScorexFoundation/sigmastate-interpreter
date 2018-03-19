@@ -63,6 +63,10 @@ object SigmaParser extends Exprs with Types with Core {
     case "<"  => LT(l.asValue[SInt.type], r.asValue[SInt.type])
     case "+"  => Plus(l.asValue[SInt.type], r.asValue[SInt.type])
     case "-"  => Minus(l.asValue[SInt.type], r.asValue[SInt.type])
+    case "|"  => Xor(l.asValue[SByteArray.type], r.asValue[SByteArray.type])
+    case "++" => AppendBytes(l.asValue[SByteArray.type], r.asValue[SByteArray.type])
+    case "^"  => Exponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
+    case "*"  => MultiplyGroup(l.asValue[SGroupElement.type], r.asValue[SGroupElement.type])
     case _ => error(s"Unknown binary operation $opName")
   }
 

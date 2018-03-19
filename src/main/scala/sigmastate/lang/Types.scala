@@ -16,13 +16,13 @@ trait Types extends Core {
     P( `let` ~/ ValVarDef | `fun` ~/ FunDef )
   }
 
-  /** This map should be in sync with SType.allPrimitiveTypes*/
-  val primitiveTypes = Map(
+  /** This map should be in sync with SType.allPredefTypes*/
+  val predefTypes = Map(
     "Int" -> SInt, "BigInt" -> SBigInt, "Boolean" -> SBoolean, "ByteArray" -> SByteArray,
     "AvlTree" -> SAvlTree, "GroupElement" -> SGroupElement, "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
   )
 
-  def typeFromName(tn: String): Option[SType] = primitiveTypes.get(tn)
+  def typeFromName(tn: String): Option[SType] = predefTypes.get(tn)
 
   val PostfixType = P( InfixType ~ (`=>` ~/ Type ).? ).map {
     case (t, None) => t
@@ -89,7 +89,7 @@ trait Types extends Core {
     P( BasicType ~ TypeArgs.rep ).map {
       case (t: STuple, Seq()) => t
       case (STypeApply("Array", IndexedSeq()), Seq(Seq(t))) => SCollection()(t)
-      case (PrimType(t), Seq()) => t
+      case (SPrimType(t), Seq()) => t
       case (STypeApply(tn, IndexedSeq()), args) => error(s"Unsupported type $tn[$args]")
     }
   }

@@ -26,8 +26,8 @@ sealed trait SType extends SigmaNode {
   type WrappedType
   val typeCode: SType.TypeCode
 
-  def isPrimitive: Boolean = SType.allPrimitiveTypes.contains(this)
-  
+  def isPrimitive: Boolean = SType.allPredefTypes.contains(this)
+
   /** Elvis operator for types. See https://en.wikipedia.org/wiki/Elvis_operator*/
   def ?:(whenNoType: => SType): SType = if (this == NoType) whenNoType else this
 }
@@ -46,8 +46,8 @@ object SType {
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
   /** All primitive types should be listed here. Note, NoType is not primitive type. */
-  val allPrimitiveTypes = Seq(SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox, SUnit, SAny)
-  val typeCodeToType = allPrimitiveTypes.map(t => t.typeCode -> t).toMap
+  val allPredefTypes = Seq(SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox, SUnit, SAny)
+  val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   implicit class STypeOps(tpe: SType) {
     def isCollection: Boolean = tpe.isInstanceOf[SCollection[_]]
@@ -67,18 +67,30 @@ object SType {
     case l: Long => SInt
     case b: Boolean => SBoolean
     case arr: Array[Byte] => SByteArray
+    case big: BigInteger => SBigInt
     case g: GroupElement => SGroupElement
     case box: SigmaStateBox => SBox
     case _: Unit => SUnit
-    case _ => sys.error(s"Don't know how to return SType for $x")
+    case v: SValue => v.tpe
+    case _ => sys.error(s"Don't know how to return SType for $x: ${x.getClass}")
   }
 
 }
 
+/** Base trait for all primitive types which don't have internal type items. */
+trait SPrimType extends SType {
+}
+
 /** Primitive type recognizer to pattern match on TypeCode */
-object PrimType {
+object SPrimType {
   def unapply(tc: TypeCode): Option[SType] = SType.typeCodeToType.get(tc)
-  def unapply(t: SType): Option[SType] = SType.allPrimitiveTypes.find(_ == t)
+  def unapply(t: SType): Option[SType] = SType.allPredefTypes.find(_ == t)
+}
+
+/** Base trait for all types which have fields (aka properties) */
+trait SProduct extends SType {
+  def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
+  def fields: Seq[(String, SType)]
 }
 
 /** Special type to represent untyped values.
@@ -92,29 +104,30 @@ case object NoType extends SType {
   val typeCode = 0
 }
 
-case object SInt extends SType {
+case object SInt extends SPrimType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 1: Byte
 }
 
-case object SBigInt extends SType {
+case object SBigInt extends SPrimType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 2: Byte
 }
 
-case object SBoolean extends SType {
+case object SBoolean extends SPrimType {
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 3: Byte
 }
 
-case object SByteArray extends SType {
+case object SByteArray extends SPrimType {
   override type WrappedType = Array[Byte]
   override val typeCode: TypeCode = 4: Byte
 }
 
-case object SAvlTree extends SType {
+case object SAvlTree extends SProduct {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 5: Byte
+  val fields = Seq()
 }
 
 case object SGroupElement extends SProduct {
@@ -139,21 +152,15 @@ case object SBox extends SProduct {
 }
 
 /** The type with single inhabitant value `()` */
-case object SUnit extends SType {
+case object SUnit extends SPrimType {
   override type WrappedType = Unit
   override val typeCode: Byte = 8: Byte
 }
 
 /** Any other type is implicitly subtype of this type. */
-case object SAny extends SType {
+case object SAny extends SPrimType {
   override type WrappedType = Any
   override val typeCode: Byte = 9: Byte
-}
-
-/** Base trait for all types which have fields (aka properties) */
-trait SProduct extends SType {
-  def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
-  def fields: Seq[(String, SType)]
 }
 
 case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) extends SProduct {
@@ -173,7 +180,15 @@ case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) ext
 
 object SCollection {
   val TypeCode: TypeCode = 80: Byte
-  val fields = Seq("size" -> SInt)
+  private val tIV = STypeIdent("IV")
+  private val tOV = STypeIdent("OV")
+  val fields = Seq(
+    "size" -> SInt,
+    "map" -> SFunc(SFunc(tIV, tOV), SCollection(tOV)),
+    "exists" -> SFunc(SFunc(tIV, SBoolean), SBoolean),
+    "fold" -> SFunc(IndexedSeq(tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV),
+    "forall" -> SFunc(SFunc(tIV, SBoolean), SBoolean)
+  )
   def apply[T <: SType](elemType: T)(implicit ov: Overload1): SCollection[T] = SCollection()(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 }
@@ -190,6 +205,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {
 
 object SFunc {
   val TypeCode = 90: Byte
+  def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
 }
 
 case class STuple(items: IndexedSeq[SType]) extends SProduct {
@@ -219,5 +235,13 @@ case class STypeApply(name: String, args: IndexedSeq[SType] = IndexedSeq()) exte
 }
 object STypeApply {
   val TypeCode = 110: Byte
+}
+
+case class STypeIdent(name: String) extends SType {
+  override type WrappedType = Any
+  override val typeCode = STypeIdent.TypeCode
+}
+object STypeIdent {
+  val TypeCode = 111: Byte
 }
 

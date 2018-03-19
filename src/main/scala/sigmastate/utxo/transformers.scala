@@ -5,6 +5,7 @@ import sigmastate._
 import Values._
 import sigmastate.utxo.SigmaStateBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
+import sigmastate.interpreter.Interpreter
 import sigmastate.utxo.CostTable.Cost
 
 import scala.collection.immutable
@@ -20,7 +21,7 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
   def function(): Value[OV] = input match{
     case ev: EvaluatedValue[IV] => function(ev)
-    case _ => ???
+    case _ => Interpreter.error(s"Transformer function can be called only after input value is evaluated: $input")
   }
 
   def evaluate(): Value[OV] = input match {

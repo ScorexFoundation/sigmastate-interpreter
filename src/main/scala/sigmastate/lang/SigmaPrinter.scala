@@ -5,7 +5,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms._
 
 /** Sigma pretty printing. */
-class PrettyPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
+class SigmaPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
 
   import org.bitbucket.inkytonik.kiama.output.PrettyPrinterTypes.Document
 
@@ -83,4 +83,4 @@ class PrettyPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
 /**
   * Lambda calculus pretty printing.
   */
-object PrettyPrinter extends PrettyPrinter
+object SigmaPrinter extends SigmaPrinter

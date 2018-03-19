@@ -1,18 +1,17 @@
 package sigmastate.lang
 
+import java.math.BigInteger
+
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import sigmastate.lang.Terms._
 import sigmastate._
 import Values._
+import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.utxo._
 import sigmastate.SCollection._
 import sigmastate.Values.Value.Typed
 
-trait Binder {
-  def bind(e: SValue): SValue
-}
-
-class SigmaBinder(env: Map[String, Any]) extends Binder {
+class SigmaBinder(env: Map[String, Any]) {
   import SigmaBinder._
   import SigmaPredef._
 
@@ -24,6 +23,8 @@ class SigmaBinder(env: Map[String, Any]) extends Binder {
         case arr: Array[Byte] => Some(ByteArrayConstant(arr))
         case v: Int => Some(IntConstant(v))
         case v: Long => Some(IntConstant(v))
+        case v: BigInteger => Some(BigIntConstant(v))
+        case v: GroupElement => Some(GroupElementConstant(v))
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
         case v: SValue => Some(v)
         case _ => None
