@@ -177,10 +177,13 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
         tipe(f) match {
           case SFunc(argTypes, tRes) =>
             val actualTypes = args.map(tipe)
-            if (actualTypes == argTypes)
-              tRes
-            else
-              error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+            unifyTypeLists(argTypes, actualTypes) match {
+              case Some(subst) =>
+                applySubst(tRes, subst)
+              case None =>
+                error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+            }
+
           case tCol: SCollection[_] =>
             args match {
               case Seq(IntConstant(i)) =>
@@ -291,5 +294,51 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
 class TyperException(msg: String) extends Exception(msg)
 
 object SigmaTyper {
+
+  type STypeSubst = Map[STypeIdent, SType]
+  val emptySubst = Map.empty[STypeIdent, SType]
+
+  def unifyTypeLists(items1: Seq[SType], items2: Seq[SType]): Option[STypeSubst] = {
+    // unify items pairwise independently
+    val itemsUni = (items1, items2).zipped.map((t1, t2) => unifyTypes(t1,t2))
+    if (itemsUni.forall(_.isDefined)) {
+      // merge substitutions making sure the same id is equally substituted in all items
+      val merged = itemsUni.foldLeft(emptySubst)((acc, subst) => {
+        var res = acc
+        for ((id, t) <- subst.get) {
+          if (res.contains(id) && res(id) != t) return None
+          res = res + (id -> t)
+        }
+        res
+      })
+      Some(merged)
+    } else
+      None
+  }
+
+  def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
+    case (id1 @ STypeIdent(n1), id2 @ STypeIdent(n2)) =>
+      if (n1 == n2) Some(Map(id1 -> t2)) else None
+    case (id1 @ STypeIdent(n), _) => Some(Map(id1 -> t2))
+    case (e1: SCollection[_], e2: SCollection[_]) =>
+      unifyTypes(e1.elemType, e2.elemType)
+    case (e1: STuple, e2: STuple) =>
+      unifyTypeLists(e1.items, e2.items)
+    case (e1: SFunc, e2: SFunc) =>
+      unifyTypeLists(e1.tDom :+ e1.tRange, e2.tDom :+ e2.tRange)
+    case (STypeApply(name1, args1), STypeApply(name2, args2))
+      if name1 == name2 && args1.length == args2.length =>
+      unifyTypeLists(args1, args2)
+    case (e1: SPrimType, e2: SPrimType) if e1 == e2 => Some(Map())
+    case _ => None
+  }
+
+  def applySubst(tpe: SType, subst: STypeSubst): SType = {
+    val substRule = rule[SType] {
+      case id: STypeIdent if subst.contains(id) => subst(id)
+    }
+    rewrite(everywherebu(substRule))(tpe)
+  }
+
   def error(msg: String) = throw new TyperException(msg)
 }

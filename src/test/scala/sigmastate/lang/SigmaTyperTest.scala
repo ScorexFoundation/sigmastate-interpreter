@@ -6,6 +6,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._
+import sigmastate.utxo.Outputs
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
@@ -81,8 +82,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 //    val env = this.env ++ Map(
 //      "minToRaise" -> minToRaise,
 //    )
-//    typecheck(env, """exists(OUTPUTS, fun (out: Box) = { out.amount >= minToRaise })""") shouldBe
-//        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), minToRaise))
+//    typecheck(env, "OUTPUTS.exists(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
 //  }
 
   property("tuple constructor") {
@@ -157,4 +157,16 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "fun (box: Box): ByteArray = box.bytes") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
     typecheck(env, "fun (box: Box): ByteArray = box.id") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
   }
+
+  property("unifying type substitution") {
+    import SigmaTyper._
+    unifyTypes(NoType, NoType) shouldBe None
+    unifyTypes(SInt, SInt) shouldBe Some(emptySubst)
+    unifyTypes(SInt, SBoolean) shouldBe None
+    unifyTypes(STuple(SInt, SBoolean), SInt) shouldBe None
+    unifyTypes(STuple(SInt, SBoolean), STuple(SInt, SBoolean)) shouldBe Some(emptySubst)
+    unifyTypes(STuple(SInt, SBoolean), STuple(SInt, SInt)) shouldBe None
+//    unifyTypes(STuple(SInt, SBox), STuple(SInt, SBox)) shouldBe Some(emptySubst)
+  }
+
 }
