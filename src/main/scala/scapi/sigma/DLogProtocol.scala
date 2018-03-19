@@ -69,7 +69,6 @@ object DLogProtocol {
     import GroupSettings.dlogGroup
 
     def random()(implicit soundness: Int): DLogProverInput = {
-      val g = dlogGroup.generator
       val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
       DLogProverInput(w)

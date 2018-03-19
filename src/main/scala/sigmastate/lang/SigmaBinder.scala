@@ -7,7 +7,6 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import Values._
 import sigmastate.utxo._
-import sigmastate.SCollection._
 import sigmastate.Values.Value.Typed
 import sigmastate.interpreter.GroupSettings
 

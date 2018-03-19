@@ -1,15 +1,10 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.security.spec.ECPoint
-
-import javafx.animation.SequentialTransitionBuilder
-
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.GroupSettings
-import sigmastate.utxo.SigmaStateBox
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo.{Box, SigmaStateBox}
+import sigmastate.utxo.SigmaStateBox
 import sigmastate.Values._
 
 import scala.collection.mutable

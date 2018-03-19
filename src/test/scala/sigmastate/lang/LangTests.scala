@@ -2,7 +2,6 @@ package sigmastate.lang
 
 import sigmastate.lang.Terms.Ident
 import sigmastate.Values.Value
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate._
 import java.math.BigInteger
 
