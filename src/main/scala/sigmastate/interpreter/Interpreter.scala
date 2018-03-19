@@ -8,7 +8,7 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
 import sigmastate.{SType, _}
 import sigmastate.utils.Helpers
-
+import sigmastate.Values._
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule}

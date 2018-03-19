@@ -2,7 +2,8 @@ package sigmastate.serialization
 
 import com.google.common.primitives.Chars
 import sigmastate.serialization.ValueSerializer.Position
-import sigmastate.{ConcreteCollection, SCollection, Value, SType}
+import sigmastate.Values._
+import sigmastate.{SCollection,SType}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

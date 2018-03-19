@@ -1,6 +1,7 @@
 package sigmastate.interpreter
 
-import sigmastate.{EvaluatedValue, SType}
+import sigmastate.SType
+import sigmastate.Values.EvaluatedValue
 
 /**
   * Variables to be put into context

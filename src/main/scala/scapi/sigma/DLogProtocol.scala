@@ -5,7 +5,8 @@ import java.security.SecureRandom
 
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
-import sigmastate.Value.PropositionCode
+import sigmastate.Values._
+import Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
 import sigmastate.interpreter.GroupSettings
@@ -64,13 +65,11 @@ object DLogProtocol {
   }
 
   object DLogProverInput extends GroupSettings {
-    def random()(implicit soundness: Int): (DLogProverInput, ProveDlog) = {
+    def random()(implicit soundness: Int): DLogProverInput = {
       val g = dlogGroup.getGenerator
       val qMinusOne = dlogGroup.getOrder.subtract(BigInteger.ONE)
       val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-      val h = dlogGroup.exponentiate(g, w)
-
-      DLogProverInput(w) -> ProveDlog(h)
+      DLogProverInput(w)
     }
   }
 

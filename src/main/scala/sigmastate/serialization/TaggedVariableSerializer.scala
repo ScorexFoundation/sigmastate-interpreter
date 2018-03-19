@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate._
+import sigmastate.Values._
 import sigmastate.serialization.ValueSerializer.Position
 
 object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: SType]] {

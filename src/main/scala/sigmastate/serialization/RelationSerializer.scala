@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.SType.TypeCode
 import sigmastate._
+import sigmastate.Values._
 import sigmastate.serialization.ValueSerializer.Position
 
 case class RelationSerializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]

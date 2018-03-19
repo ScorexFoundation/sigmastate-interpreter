@@ -6,7 +6,8 @@ import java.security.SecureRandom
 import edu.biu.scapi.primitives.dlog.{DlogGroup, ECElementSendableData, GroupElement}
 import org.bouncycastle.util.BigIntegers
 import sigmastate._
-import sigmastate.Value.PropositionCode
+import sigmastate.Values._
+import Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
