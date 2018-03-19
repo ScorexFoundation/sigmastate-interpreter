@@ -5,9 +5,9 @@ import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.SizeOf
+import sigmastate.utxo.{SizeOf, Exists, Outputs}
 
-class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
+class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
   def parse(x: String): SValue = {
     try {
@@ -20,9 +20,6 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
         throw e
     }
   }
-
-  def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
-  def IntIdent(name: String): Value[SInt.type] = Ident(name).asValue[SInt.type]
 
   property("simple expressions") {
     parse("10") shouldBe IntConstant(10)
@@ -37,6 +34,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse("true || (true && false)") shouldBe OR(TrueLeaf, AND(TrueLeaf, FalseLeaf))
     parse("false || false || false") shouldBe OR(OR(FalseLeaf, FalseLeaf), FalseLeaf)
     parse("(1>= 0)||(3 >2)") shouldBe OR(GE(1, 0), GT(3, 2))
+    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
+    parse("arr1 ++ arr2") shouldBe AppendBytes(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
+    parse("ge ^ n") shouldBe Exponentiate(GEIdent("ge"), BigIntIdent("n"))
+    parse("g1 * g2") shouldBe MultiplyGroup(GEIdent("g1"), GEIdent("g2"))
   }
 
   property("precedence of binary operations") {
@@ -215,6 +216,15 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers {
     parse("fun (x: Int) = { let y = x + 1; y }") shouldBe
         Lambda(IndexedSeq("x" -> SInt),
           Block(Let("y", Plus(IntIdent("x"), 1)), Ident("y")))
+  }
+
+  property("predefined Exists with lambda argument") {
+    parse("OUTPUTS.exists(fun (out: Box) = { out.amount >= minToRaise })") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "exists"),
+        IndexedSeq(
+          Lambda(IndexedSeq("out" -> SBox),
+            Block(IndexedSeq(),
+              GE(Select(Ident("out"), "amount").asValue[SInt.type], IntIdent("minToRaise"))))))
   }
 
   property("function definitions") {

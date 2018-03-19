@@ -44,8 +44,10 @@ object Values {
     type PropositionCode = Byte
 
     implicit def liftInt(n: Int): Value[SInt.type] = IntConstant(n)
-
     implicit def liftLong(n: Long): Value[SInt.type] = IntConstant(n)
+    implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray.type] = ByteArrayConstant(arr)
+    implicit def liftBigInt(arr: BigInteger): Value[SBigInt.type] = BigIntConstant(arr)
+    implicit def liftGroupElement(g: GroupElement): Value[SGroupElement.type] = GroupElementConstant(g)
 
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))

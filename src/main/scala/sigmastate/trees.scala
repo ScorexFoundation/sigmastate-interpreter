@@ -106,7 +106,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
       case _ =>
         if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
           CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
-        else AND(reduced)
+        else
+          AND(reduced)  // TODO is it ok if not all but some of the items in reduced are SigmaBoolean
     }
   }
 }
