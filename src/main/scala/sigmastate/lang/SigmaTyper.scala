@@ -319,17 +319,21 @@ object SigmaTyper {
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
     case (id1 @ STypeIdent(n1), id2 @ STypeIdent(n2)) =>
       if (n1 == n2) Some(Map(id1 -> t2)) else None
-    case (id1 @ STypeIdent(n), _) => Some(Map(id1 -> t2))
+    case (id1 @ STypeIdent(n), _) =>
+      Some(Map(id1 -> t2))
     case (e1: SCollection[_], e2: SCollection[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
-    case (e1: STuple, e2: STuple) =>
+    case (e1: STuple, e2: STuple) if e1.items.length == e2.items.length =>
       unifyTypeLists(e1.items, e2.items)
-    case (e1: SFunc, e2: SFunc) =>
+    case (e1: SFunc, e2: SFunc) if e1.tDom.length == e2.tDom.length =>
       unifyTypeLists(e1.tDom :+ e1.tRange, e2.tDom :+ e2.tRange)
     case (STypeApply(name1, args1), STypeApply(name2, args2))
       if name1 == name2 && args1.length == args2.length =>
       unifyTypeLists(args1, args2)
-    case (e1: SPrimType, e2: SPrimType) if e1 == e2 => Some(Map())
+    case (e1: SPrimType, e2: SPrimType) if e1 == e2 =>
+      Some(Map())
+    case (e1: SProduct, e2: SProduct) if e1.sameFields(e2) =>
+      unifyTypeLists(e1.fields.map(_._2), e2.fields.map(_._2))
     case _ => None
   }
 

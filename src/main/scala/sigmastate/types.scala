@@ -91,6 +91,14 @@ object SPrimType {
 trait SProduct extends SType {
   def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
   def fields: Seq[(String, SType)]
+  def sameFields(that: SProduct): Boolean = {
+    if (fields.length != that.fields.length) return false
+    // imperative to avoid allocation as it is supposed to be used frequently
+    for (i <- fields.indices) {
+      if (fields(i)._1 != that.fields(i)._1) return false
+    }
+    true
+  }
 }
 
 /** Special type to represent untyped values.
@@ -243,5 +251,6 @@ case class STypeIdent(name: String) extends SType {
 }
 object STypeIdent {
   val TypeCode = 111: Byte
+  implicit def liftString(n: String): STypeIdent = STypeIdent(n)
 }
 

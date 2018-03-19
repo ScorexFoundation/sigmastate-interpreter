@@ -90,7 +90,8 @@ trait Types extends Core {
       case (t: STuple, Seq()) => t
       case (STypeApply("Array", IndexedSeq()), Seq(Seq(t))) => SCollection()(t)
       case (SPrimType(t), Seq()) => t
-      case (STypeApply(tn, IndexedSeq()), args) => error(s"Unsupported type $tn[$args]")
+      case (STypeApply(tn, IndexedSeq()), args) if args.isEmpty => STypeIdent(tn)
+      case t => error(s"Unsupported type $t")
     }
   }
 
