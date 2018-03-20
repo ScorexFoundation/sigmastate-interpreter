@@ -1,14 +1,10 @@
-package sigmastate.lang
-
-import syntax.{Key, Basic}
-import Basic.error
+package sigmastate.lang.syntax
 
 import scala.language.implicitConversions
-import syntax.Identifiers
-import fastparse.noApi._
 import sigmastate.lang.Terms._
 import sigmastate._
-import Values._
+import sigmastate.Values._
+import sigmastate.lang.syntax
 
 trait Core extends syntax.Literals {
   import fastparse.noApi._

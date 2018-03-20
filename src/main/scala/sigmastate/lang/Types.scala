@@ -3,7 +3,8 @@ package sigmastate.lang
 import fastparse.noApi._
 import sigmastate._
 import Values._
-import sigmastate.lang.Terms.{Ident, Lambda}
+import sigmastate.lang.Terms.Ident
+import sigmastate.lang.syntax.Core
 import syntax.Basic.error
 
 trait Types extends Core {

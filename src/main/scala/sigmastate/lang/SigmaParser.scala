@@ -1,13 +1,13 @@
 package sigmastate.lang
 
 import fastparse.core.Logger
-import fastparse.{WhitespaceApi, core}
+import fastparse.core
 import sigmastate._
 import Values._
 import sigmastate.lang.Terms._
 import scorex.crypto.encode.Base58
 import sigmastate.lang.syntax.Basic._
-import sigmastate.utxo.SizeOf
+import sigmastate.lang.syntax.{Core, Exprs}
 
 import scala.collection.mutable
 
