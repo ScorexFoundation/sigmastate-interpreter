@@ -383,11 +383,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     //mapAnyGroupElementToByteArray(point.x, point.y)
     ???
   }
-}
 
-
-
-object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1")) {
 
   /**
     * Checks if the order is a prime number
@@ -415,8 +411,8 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     * @return the multiplication result
     * @throws IllegalArgumentException
     */
-  override def multiplyGroupElements(groupElement1: SecP384R1Point, groupElement2: SecP384R1Point): SecP384R1Point =
-    groupElement1.add(groupElement2).asInstanceOf[SecP384R1Point]
+  override def multiplyGroupElements(groupElement1: ElemType, groupElement2: ElemType): ElemType =
+    groupElement1.add(groupElement2).asInstanceOf[ElemType]
 
 
   /**
@@ -431,7 +427,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     * @return the generated GroupElement
     * @throws IllegalArgumentException
     */
-  override def generateElement(bCheckMembership: Boolean, values: BigInteger*): SecP384R1Point = ???
+  override def generateElement(bCheckMembership: Boolean, values: BigInteger*): ElemType = ???
 
   /**
     * Reconstructs a GroupElement given the GroupElementSendableData data, which might have been received through a Channel open between the party holding this DlogGroup and
@@ -441,7 +437,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     * @param data             the GroupElementSendableData from which we wish to "reconstruct" an element of this DlogGroup
     * @return the reconstructed GroupElement
     */
-  override def reconstructElement(bCheckMembership: Boolean, data: GroupAgnosticEcElement): SecP384R1Point = ???
+  override def reconstructElement(bCheckMembership: Boolean, data: GroupAgnosticEcElement): ElemType = ???
 
   /**
     * Computes the product of several exponentiations with distinct bases
@@ -453,7 +449,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     * @param exponentiations
     * @return the exponentiation result
     */
-  override def simultaneousMultipleExponentiations(groupElements: Array[SecP384R1Point], exponentiations: Array[BigInteger]): SecP384R1Point = ???
+  override def simultaneousMultipleExponentiations(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType = ???
 
   /**
     * Computes the product of several exponentiations of the same base
@@ -467,7 +463,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     * @param exponent
     * @return the exponentiation result
     */
-  override def exponentiateWithPreComputedValues(base: SecP384R1Point, exponent: BigInteger): Unit = ???
+  override def exponentiateWithPreComputedValues(base: ElemType, exponent: BigInteger): Unit = ???
 
   /**
     * This function cleans up any resources used by exponentiateWithPreComputedValues for the requested base.
@@ -475,7 +471,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     *
     * @param base
     */
-  override def endExponentiateWithPreComputedValues(base: SecP384R1Point): Unit = ???
+  override def endExponentiateWithPreComputedValues(base: ElemType): Unit = ???
 
   /**
     * This function returns the value <I>k</I> which is the maximum length of a string to be encoded to a Group Element of this group.<p>
@@ -487,3 +483,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     */
   override def getMaxLengthOfByteArrayForEncoding(): Int = ???
 }
+
+
+
+object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1"))
