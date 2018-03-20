@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import org.bouncycastle.util.BigIntegers
+import scapi.sigma.SecP384R1.curve
 
 import scala.util.Try
 
@@ -237,6 +238,13 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
   override def order(): BigInteger = x9params.getN
 
   /**
+    *
+    * @return the identity of this Dlog group
+    */
+  override lazy val identity: ElemType = curve.getInfinity.asInstanceOf[ElemType]
+
+
+  /**
     * Checks if the given element is a member of this Dlog group
     *
     * @param point
@@ -370,12 +378,6 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
 
 object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1")) {
-
-  /**
-    *
-    * @return the identity of this Dlog group
-    */
-  override def identity(): SecP384R1Point = curve.getInfinity.asInstanceOf[SecP384R1Point]
 
   /**
     * Checks if the order is a prime number
