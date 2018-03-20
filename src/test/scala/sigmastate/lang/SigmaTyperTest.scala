@@ -158,12 +158,17 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "fun (box: Box): ByteArray = box.id") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
   }
 
-  property("unifying type substitution") {
+  property("compute unifying type substitution") {
     import SigmaTyper._
     def ty(s: String) = SigmaParser.parseType(s).get.value
     def check(s1: String, s2: String, exp: Option[STypeSubst] = Some(emptySubst)): Unit = {
       val t1 = ty(s1); val t2 = ty(s2)
       unifyTypes(t1, t2) shouldBe exp
+      exp match {
+        case Some(subst) =>
+          applySubst(t1, subst) shouldBe t2
+        case None =>
+      }
     }
     def unify(s1: String, s2: String, subst: (STypeIdent, SType)*): Unit =
       check(s1, s2, Some(subst.toMap))

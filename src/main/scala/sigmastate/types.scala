@@ -171,7 +171,7 @@ case object SAny extends SPrimType {
   override val typeCode: Byte = 9: Byte
 }
 
-case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) extends SProduct {
+case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
   override type WrappedType = IndexedSeq[Value[ElemType]]
   override val typeCode: TypeCode = SCollection.TypeCode
   override def fields = SCollection.fields
@@ -197,7 +197,7 @@ object SCollection {
     "fold" -> SFunc(IndexedSeq(tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV),
     "forall" -> SFunc(SFunc(tIV, SBoolean), SBoolean)
   )
-  def apply[T <: SType](elemType: T)(implicit ov: Overload1): SCollection[T] = SCollection()(elemType)
+  def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 }
 

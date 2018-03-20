@@ -58,7 +58,7 @@ object SCollectionSerializer extends STypeSerializer[SCollection[SType]] {
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
     val (tElem, len) = STypeSerializer.deserialize(bytes, pos)
-    (SCollection()(tElem), len)
+    (SCollection(tElem), len)
   }
 
   override def serializeBody(tpe: SCollection[SType]) = {
