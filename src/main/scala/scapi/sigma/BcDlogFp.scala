@@ -14,13 +14,13 @@ import scala.util.Try
 
 abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) extends DlogGroup[ElemType] {
 
-  val curve = x9params.getCurve
+  lazy val curve = x9params.getCurve
 
   //modulus of the field
-  val p: BigInteger = curve.getField.getCharacteristic
+  lazy val p: BigInteger = curve.getField.getCharacteristic
 
   //order of the group
-  val q = x9params.getN
+  lazy val q = x9params.getN
 
   //Now that we have p, we can calculate k which is the maximum length in bytes
   // of a string to be converted to a Group Element of this group.
@@ -29,10 +29,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
   //Create the generator
   //Assume that (x,y) are the coordinates of a point that is indeed a generator but check that (x,y) are the coordinates of a point.
-  override val generator: ElemType = x9params.getG.asInstanceOf[ElemType]
-
-
-  def point(x: BigInteger, y: BigInteger): ElemType
+  override lazy val generator: ElemType = x9params.getG.asInstanceOf[ElemType]
 
   /**
     * Checks if the given x and y represent a valid point on the given curve,
@@ -230,7 +227,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     val valid = checkCurveMembership(x, y)
     // checks validity
     if (!valid) throw new IllegalArgumentException("x, y values are not a point on this curve")
-    point(x, y)
+    curve.validatePoint(x,y).asInstanceOf[ElemType]
   }
 
   /**
@@ -373,9 +370,6 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
 
 object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1")) {
-
-  override def point(x: BigInteger, y: BigInteger): SecP384R1Point = curve.createPoint(x, y).asInstanceOf[SecP384R1Point]
-
 
   /**
     *
