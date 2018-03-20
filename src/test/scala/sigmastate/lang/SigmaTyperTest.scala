@@ -77,13 +77,16 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "{let X = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
   }
 
-//  property("predefined Exists with lambda argument") {
-//    val minToRaise = IntConstant(1000)
-//    val env = this.env ++ Map(
-//      "minToRaise" -> minToRaise,
-//    )
-//    typecheck(env, "OUTPUTS.exists(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
-//  }
+  property("generic methods of collection") {
+    val minToRaise = IntConstant(1000)
+    val env = this.env ++ Map(
+      "minToRaise" -> minToRaise,
+    )
+    typecheck(env, "OUTPUTS.exists(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
+    typecheck(env, "OUTPUTS.map(fun (out: Box) = { out.value >= minToRaise })") shouldBe ty("Array[Boolean]")
+    typecheck(env, "{ let arr = Array(1,2,3); arr.fold(0, fun (n1: Int, n2: Int) = n1 + n2)}") shouldBe SInt
+    typecheck(env, "OUTPUTS.forall(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
+  }
 
   property("tuple constructor") {
     typecheck(env, "()") shouldBe SUnit
@@ -160,7 +163,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("compute unifying type substitution") {
     import SigmaTyper._
-    def ty(s: String) = SigmaParser.parseType(s).get.value
     def check(s1: String, s2: String, exp: Option[STypeSubst] = Some(emptySubst)): Unit = {
       val t1 = ty(s1); val t2 = ty(s2)
       unifyTypes(t1, t2) shouldBe exp

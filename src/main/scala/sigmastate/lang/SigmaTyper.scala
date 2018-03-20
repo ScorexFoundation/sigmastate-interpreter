@@ -171,11 +171,11 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
           SFunc(argTypes, t)
 
       // For an application we first determine the type of the expression
-      // being applied.  If it's a function then the application has type
-      // of that function's return type.
+      // being applied.
       case app @ Apply(f, args) =>
         tipe(f) match {
           case SFunc(argTypes, tRes) =>
+            // If it's a function then the application has type of that function's return type.
             val actualTypes = args.map(tipe)
             unifyTypeLists(argTypes, actualTypes) match {
               case Some(subst) =>
@@ -185,6 +185,8 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
             }
 
           case tCol: SCollection[_] =>
+            // If it's a collection then the application has type of that collection's element.
+            // Only constant indices are supported so far
             args match {
               case Seq(IntConstant(i)) =>
                 tCol.elemType
