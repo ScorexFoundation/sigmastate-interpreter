@@ -285,6 +285,16 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
 
   /**
+    * Calculates the inverse of the given GroupElement.
+    *
+    * @param groupElement to invert
+    * @return the inverse element of the given GroupElement
+    * @throws IllegalArgumentException
+    **/
+  override def getInverse(groupElement: ElemType): ElemType =
+    groupElement.negate().asInstanceOf[ElemType]
+
+  /**
     * Raises the base GroupElement to the exponent. The result is another GroupElement.
     *
     * @param exponent
@@ -396,25 +406,6 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     *         <code>false</code> otherwise.
     **/
   override def orderGreaterThan(numBits: Int): Boolean = ???
-
-  /**
-    * Checks parameters of this group to see if they conform to the type this group is supposed to be.
-    *
-    * @return <code>true</code> if valid;<p>
-    *         <code>false</code> otherwise.
-    */
-  override def validateGroup(): Boolean = ???
-
-  /**
-    * Calculates the inverse of the given GroupElement.
-    *
-    * @param groupElement to invert
-    * @return the inverse element of the given GroupElement
-    * @throws IllegalArgumentException
-    **/
-  override def getInverse(groupElement: SecP384R1Point): SecP384R1Point =
-    groupElement.negate().asInstanceOf[SecP384R1Point]
-
 
   /**
     * Multiplies two GroupElements

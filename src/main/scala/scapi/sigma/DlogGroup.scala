@@ -71,14 +71,6 @@ trait DlogGroup[ElemType <: ECPoint] {
     */
   def orderGreaterThan(numBits: Int): Boolean
 
-
-  /**
-    * Checks parameters of this group to see if they conform to the type this group is supposed to be.
-    * @return <code>true</code> if valid;<p>
-    *  	   <code>false</code> otherwise.
-    */
-  def validateGroup(): Boolean
-
   /**
     * Calculates the inverse of the given GroupElement.
     * @param groupElement to invert
