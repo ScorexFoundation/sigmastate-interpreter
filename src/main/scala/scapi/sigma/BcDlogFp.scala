@@ -36,8 +36,8 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * Checks if the given x and y represent a valid point on the given curve,
     * i.e. if the point (x, y) is a solution of the curves equation.
     *
-    * @param x      coefficient of the point
-    * @param y      coefficient of the point
+    * @param x coefficient of the point
+    * @param y coefficient of the point
     * @return true if the given x and y represented a valid point on the given curve
     */
   def checkCurveMembership(x: BigInteger, y: BigInteger): Boolean = {
@@ -228,7 +228,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     val valid = checkCurveMembership(x, y)
     // checks validity
     if (!valid) throw new IllegalArgumentException("x, y values are not a point on this curve")
-    curve.validatePoint(x,y).asInstanceOf[ElemType]
+    curve.validatePoint(x, y).asInstanceOf[ElemType]
   }
 
   /**
@@ -367,7 +367,12 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @return the created byte array
     */
   override def decodeGroupElementToByteArray(point: ElemType): Array[Byte] = {
-    point.getEncoded(true)
+    val xByteArray = point.getXCoord.toBigInteger.toByteArray
+    val bOriginalSize = xByteArray(xByteArray.length - 1)
+
+    val b2 = new Array[Byte](bOriginalSize)
+    System.arraycopy(xByteArray, xByteArray.length - 1 - bOriginalSize, b2, 0, bOriginalSize)
+    return b2
   }
 
   /**
@@ -477,7 +482,6 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     */
   override def maxLengthOfByteArrayForEncoding: Int = ???
 }
-
 
 
 object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1"))
