@@ -6,23 +6,34 @@ import org.bouncycastle.math.ec.ECPoint
 
 
 /**
-  * This is the general interface for the discrete logarithm group. Every class in the DlogGroup family implements this interface.
-  * <p>
+  * This is the general interface for the discrete logarithm group.
+  * Every class in the DlogGroup family implements this interface.
+  *
+  *
   * The discrete logarithm problem is as follows: given a generator g of a finite
   * group G and a random element h in G, find the (unique) integer x such that
-  * g^x = h.<p>
-  * In cryptography, we are interested in groups for which the discrete logarithm problem (Dlog for short) is assumed to be hard.<p>
-  * The two most common classes are the group Zp* for a large p, and some Elliptic curve groups.<p>
+  * g^x = h.
   *
-  * Another issue pertaining elliptic curves is the need to find a suitable mapping that will convert an arbitrary message (that is some binary string) to an element of the group and vice-versa.<p>
-  * Only a subset of the messages can be effectively mapped to a group element in such a way that there is a one-to-one injection that converts the string to a group element and vice-versa.<p>
-  * On the other hand, any group element can be mapped to some string.<p>
-  * In this case, the operation is not invertible. This functionality is implemented by the functions:<p>
-  *  - {@code encodeByteArrayToGroupElement(byte[] binaryString) : GroupElement}<p>
-  *  - {@code decodeGroupElementToByteArray(GroupElement element) : byte[]}<p>
-  *  - {@code mapAnyGroupElementToByteArray(GroupElement element) : byte[]}<p>
+  * In cryptography, we are interested in groups for which the discrete logarithm problem
+  * (Dlog for short) is assumed to be hard. The most known groups of that kind are some Elliptic curve groups.
   *
-  *  The first two work as a pair and decodeGroupElementToByteArray is the inverse of encodeByteArrayToGroupElement, whereas the last one works alone and does not have an inverse.
+  * Another issue pertaining elliptic curves is the need to find a suitable mapping that will convert an arbitrary
+  * message (that is some binary string) to an element of the group and vice-versa.
+  *
+  * Only a subset of the messages can be effectively mapped to a group element in such a way that there is a one-to-one
+  * injection that converts the string to a group element and vice-versa.
+  *
+  * On the other hand, any group element can be mapped to some string.
+  *
+  * In this case, the operation is not invertible. This functionality is implemented by the functions:
+  *  - {@code encodeByteArrayToGroupElement(binaryString: Array[Byte]): ElemType}
+  *  - {@code decodeGroupElementToByteArray(element: ElemType) : Array[Byte]}
+  *  - {@code mapAnyGroupElementToByteArray(element: ElemType): Array[Byte]}
+  *
+  *  The first two work as a pair and decodeGroupElementToByteArray is the inverse of encodeByteArrayToGroupElement,
+  *  whereas the last one works alone and does not have an inverse.
+  *
+  *  @tparam ElemType is concrete type
   */
 trait DlogGroup[ElemType <: ECPoint] {
 

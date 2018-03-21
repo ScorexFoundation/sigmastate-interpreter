@@ -336,10 +336,13 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
   /**
     * This function takes any string of length up to k bytes and encodes it to a Group Element.
-    * k can be obtained by calling getMaxLengthOfByteArrayForEncoding() and it is calculated upon construction of this group; it depends on the length in bits of p.<p>
+    * k can be obtained by calling getMaxLengthOfByteArrayForEncoding() and it is calculated upon construction of
+    * this group; it depends on the length in bits of p.
     * The encoding-decoding functionality is not a bijection, that is, it is a 1-1 function but is not onto.
-    * Therefore, any string of length in bytes up to k can be encoded to a group element but not every group element can be decoded to a binary string in the group of binary strings of length up to 2^k.<p>
-    * Thus, the right way to use this functionality is first to encode a byte array and then to decode it, and not the opposite.
+    * Therefore, any string of length in bytes up to k can be encoded to a group element but not every group element
+    * can be decoded to a binary string in the group of binary strings of length up to 2^k.
+    * Thus, the right way to use this functionality is first to encode a byte array and then to decode it,
+    * and not the opposite.
     *
     *
     * @param binaryString the byte array to convert
@@ -352,11 +355,12 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
   }
 
   /**
-    * This function decodes a group element to a byte array. This function is guaranteed to work properly ONLY if the group element was obtained as a result of
-    * encoding a binary string of length in bytes up to k.<p>
-    * This is because the encoding-decoding functionality is not a bijection, that is, it is a 1-1 function but is not onto.
-    * Therefore, any string of length in bytes up to k can be encoded to a group element but not any group element can be decoded
-    * to a binary sting in the group of binary strings of length up to 2^k.
+    * This function decodes a group element to a byte array. This function is guaranteed to work properly ONLY if
+    * the group element was obtained as a result of
+    * encoding a binary string of length in bytes up to k.
+    * This is because the encoding-decoding functionality is not a bijection, that is, it is a 1-1 function
+    * but is not onto. Therefore, any string of length in bytes up to k can be encoded to a group element but not any
+    * group element can be decoded to a binary sting in the group of binary strings of length up to 2^k.
     *
     *
     * @param point the element to convert
@@ -368,9 +372,10 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
   /**
     * This function maps a group element of this dlog group to a byte array.<p>
-    * This function does not have an inverse function, that is, it is not possible to re-construct the original group element from the resulting byte array.<p>
-    * Moreover, the implementation of this function is such that for a given group element (point in the curve),<p>
-    * the result of applying this function (mapAnyGroupElementToByteArray) and the result of applying decodeGroupElementToByteArray are not equal.
+    * This function does not have an inverse function, that is, it is not possible to re-construct the original
+    * group element from the resulting byte array. Moreover, the implementation of this function is such that
+    * for a given group element (point in the curve), the result of applying this function
+    * (mapAnyGroupElementToByteArray) and the result of applying decodeGroupElementToByteArray are not equal.
     *
     * @return a byte array representation of the given group element
     */
@@ -379,9 +384,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     //The actual work is implemented in ECFpUtility since it is independent of the underlying library (BC, Miracl, or other)
     //If we ever decide to change the implementation there will only one place to change it.
 
-    //todo: fix
-    //mapAnyGroupElementToByteArray(point.x, point.y)
-    ???
+    point.getEncoded(true)
   }
 
 
