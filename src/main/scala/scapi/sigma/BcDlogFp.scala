@@ -238,7 +238,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     *
     * @return the order of this Dlog group
     */
-  override def order(): BigInteger = x9params.getN
+  override lazy val order: BigInteger = x9params.getN
 
   /**
     *
