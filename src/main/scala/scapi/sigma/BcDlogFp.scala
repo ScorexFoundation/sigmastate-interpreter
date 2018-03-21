@@ -5,10 +5,13 @@ import java.security.SecureRandom
 
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
+import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.{SecP384R1Point, SecP521R1Point}
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import org.bouncycastle.util.BigIntegers
+import scapi.sigma.Curve25519
 import scapi.sigma.SecP384R1.curve
+import scapi.sigma.SecP521R1.{createRandomElement, generator}
 
 import scala.util.Try
 
@@ -489,3 +492,5 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1"))
 
 object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("secp521r1"))
+
+object Curve25519 extends BcDlogFp[Curve25519Point](CustomNamedCurves.getByName("curve25519"))
