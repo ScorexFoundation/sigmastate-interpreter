@@ -264,5 +264,4 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
-
 }

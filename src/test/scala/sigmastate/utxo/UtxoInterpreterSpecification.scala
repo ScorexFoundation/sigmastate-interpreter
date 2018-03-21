@@ -23,7 +23,6 @@ class UtxoInterpreterSpecification extends PropSpec
   with Matchers {
 
   implicit def grElemConvert(leafConstant: GroupElementConstant): GroupSettings.EcPointType = leafConstant.value
-
   implicit def grLeafConvert(elem: GroupSettings.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 
   import BoxHelpers.{fakeMessage, fakeSelf}
