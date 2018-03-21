@@ -56,14 +56,6 @@ trait DlogGroup[ElemType <: ECPoint] {
   def isMember(element: ElemType): Boolean
 
   /**
-    * Checks if the order is a prime number
-    * @return <code>true<code> if the order is a prime number; <p>
-    * 		   <code>false</code> otherwise.
-    *
-    */
-  def isPrimeOrder(): Boolean
-
-  /**
     * Checks if the order of this group is greater than 2^numBits
     * @param numBits
     * @return <code>true</code> if the order is greater than 2^numBits;<p>
@@ -207,7 +199,7 @@ trait DlogGroup[ElemType <: ECPoint] {
     * If a string exceeds the <I>k</I> length it cannot be encoded.
     * @return k the maximum length of a string to be encoded to a Group Element of this group. k can be zero if there is no maximum.
     */
-  def getMaxLengthOfByteArrayForEncoding(): Int
+  def maxLengthOfByteArrayForEncoding: Int
 
   /**
     * This function maps a group element of this dlog group to a byte array.<p>

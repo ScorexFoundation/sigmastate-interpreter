@@ -386,15 +386,6 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
 
   /**
-    * Checks if the order is a prime number
-    *
-    * @return <code>true<code> if the order is a prime number; <p>
-    *         <code>false</code> otherwise.
-    *
-    */
-  override def isPrimeOrder(): Boolean = ???
-
-  /**
     *
     * Checks if the order of this group is greater than 2^numBits
     * @param numBits
@@ -481,7 +472,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     *
     * @return k the maximum length of a string to be encoded to a Group Element of this group. k can be zero if there is no maximum.
     */
-  override def getMaxLengthOfByteArrayForEncoding(): Int = ???
+  override def maxLengthOfByteArrayForEncoding: Int = ???
 }
 
 
