@@ -9,9 +9,6 @@ import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.{SecP384R1Point, SecP521R1Point}
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import org.bouncycastle.util.BigIntegers
-import scapi.sigma.Curve25519
-import scapi.sigma.SecP384R1.curve
-import scapi.sigma.SecP521R1.{createRandomElement, generator}
 
 import scala.util.Try
 
