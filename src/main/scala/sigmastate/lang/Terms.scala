@@ -37,16 +37,16 @@ object Terms {
     }
   }
 
-  case class SelectGen(obj: Value[SType], field: String, tpeArgs: STypeSubst) extends Value[SType] {
+  case class SelectGen(obj: Value[SType], field: String, tpe: SType) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
-    val tpe: SType = obj.tpe match {
-      case p: SProduct =>
-        val i = p.fieldIndex(field)
-        if (i == -1) NoType
-        else SigmaTyper.applySubst(p.fields(i)._2, tpeArgs)
-      case _ => NoType
-    }
+//    val tpe: SType = obj.tpe match {
+//      case p: SProduct =>
+//        val i = p.fieldIndex(field)
+//        if (i == -1) NoType
+//        else SigmaTyper.applySubst(p.fields(i)._2, tpeArgs)
+//      case _ => NoType
+//    }
   }
 
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {

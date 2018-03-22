@@ -89,9 +89,6 @@ class SigmaBinder(env: Map[String, Any]) {
         Some(newBlock)
       else
         None
-//    case v =>
-//      val v1 = rewrite(some(rule[Value[SType]] { case v => eval(v, env) }))(v)
-//      Some(v1)
   })))(e)
 
   def bind(e: Value[SType]): Value[SType] = eval(e, env)

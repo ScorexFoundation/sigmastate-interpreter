@@ -67,13 +67,16 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
 
       // Inside the result expression of a block all bindings are visible
       case e @ tree.parent(p @ Block(bs, res)) if e eq res =>
-        (bs.map(l => (l.name, l.givenType.?:(tipe(l.body)))) ++ env(p)).toList
+        val fromLets = bs.map(l => (l.name, l.givenType.?:(tipe(l.body))))
+        val res = (fromLets ++ env(p))
+        res.toList
 
       // Inside any binding of a block all the previous names are visible
       case e @ tree.parent(p @ Block(bs, res)) if bs.exists(_ eq e) =>
         val iLet = bs.indexWhere(_ eq e)
         val boundNames = bs.take(iLet).map(l => (l.name, l.givenType.?:(tipe(l.body))))
-        (boundNames ++ env(p)).toList
+        val res = (boundNames ++ env(p))
+        res.toList
 
       // Other expressions do not bind new identifiers so they just
       // get their environment from their parent
@@ -292,29 +295,86 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case _ => SAny
     }
 
-  val assignTypes = rule[SValue] {
-    case Let(n, NoType, body) =>
-      Let(n, tipe(body), body)
-    case v @ Ident(n, NoType) =>
+//  val assignTypes = rule[SValue] {
+//    case Let(n, NoType, body) =>
+//      Let(n, tipe(body), body)
+//    case v @ Ident(n, NoType) =>
+//      env(v).find(_._1 == n) match {
+//        case Some((_, t)) =>
+//          Ident(n, t)
+//        case None => error(s"Cannot assign type for variable '$n'")
+//      }
+//    case sel @ Select(o, n) if tree.child.getGraph(sel) != null &&  sel.tpe != tipe(sel) =>
+//      val subst = SigmaTyper.unifyTypes(sel.tpe, tipe(sel)).get
+//      SelectGen(o, n, subst)
+//
+////    case Apply(, args) if sel.tpe != tipe(sel) =>
+////    case Lambda(args, NoType, b) =>
+////    case v => v
+//  }
+
+  def assignType(bound: SValue): SValue = bound match {
+    case Block(bs, res) =>
+      Block(bs.map(l => assignType(l).asInstanceOf[Let]), assignType(res))
+    case Let(n, _, body) =>
+      Let(n, tipe(body), assignType(body))
+
+    case v @ Ident(n, _) =>
       env(v).find(_._1 == n) match {
         case Some((_, t)) =>
           Ident(n, t)
         case None => error(s"Cannot assign type for variable '$n'")
       }
-    case sel @ Select(o, n) if tree.child.getGraph(sel) != null &&  sel.tpe != tipe(sel) =>
-      val subst = SigmaTyper.unifyTypes(sel.tpe, tipe(sel)).get
-      SelectGen(o, n, subst)
 
-//    case Apply(, args) if sel.tpe != tipe(sel) =>
-//    case Lambda(args, NoType, b) =>
-//    case v => v
+    case sel @ Select(o, n) =>
+      SelectGen(assignType(o), n, tipe(sel))
+
+    case Lambda(args, t, body) =>
+      Lambda(args, body.fold(t)(tipe), body.map(assignType))
+
+    case app @ Apply(sel @ Select(obj, n), args) =>
+      tipe(sel) match {
+        case tFun @ SFunc(argTypes, tRes) =>
+          // If it's a function then the application has type of that function's return type.
+          val actualTypes = args.map(tipe)
+          unifyTypeLists(argTypes, actualTypes) match {
+            case Some(subst) =>
+              val newFun = applySubst(tFun, subst)
+              Apply(SelectGen(assignType(obj), n, newFun), args.map(assignType))
+            case None =>
+              error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+          }
+        case _ =>
+          Apply(Select(assignType(obj), n), args.map(assignType))
+      }
+
+    case Apply(f, args) =>
+      Apply(assignType(f), args.map(assignType))
+
+    case If(c, t, e) =>
+      If(assignType(c).asValue[SBoolean.type], assignType(t), assignType(e))
+    case GE(l, r) => bimap(l, r)(GE)
+    case LE(l, r) => bimap(l, r)(LE)
+    case GT(l, r) => bimap(l, r)(GT)
+    case LT(l, r) => bimap(l, r)(LT)
+    case EQ(l, r) => bimap(l, r)(EQ[SType])
+    case NEQ(l, r) => bimap(l, r)(NEQ)
+
+    case Plus(l, r) => bimap(l, r)(Plus)
+    case Minus(l, r) => bimap(l, r)(Minus)
+    case v => v
+  }
+
+  def bimap[T <: SType](l: Value[T], r: Value[T])(f: (Value[T], Value[T]) => SValue): SValue = {
+    f(assignType(l).asValue[T], assignType(r).asValue[T])
   }
 
   def typecheck(bound: SValue): SValue = {
     val t = tipe(bound)
     if (t == NoType) error(s"No type can be assigned to expression $bound")
     if(errors.nonEmpty) error(s"Errors found while typing expression $bound:\n${errors.mkString("\n")}\n")
-    val assigned = rewrite(everywherebu(assignTypes))(bound)
+//    val assigned = rewrite(everywherebu(assignTypes))(bound)
+    val assigned = assignType(bound)
     // traverse the tree bottom-up checking all the nodes have a type
     var untyped: SValue = null
     rewrite(everywherebu(rule[SValue]{
