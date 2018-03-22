@@ -167,8 +167,11 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
             error(s"Invalid function $lam: undefined type of result")
           SFunc(argTypes, tRes)
         }
-        else
+        else {
+          if (body.isDefined && t != tipe(body.get))
+            error(s"Invalid function $lam: resulting expression type ${tipe(body.get)} doesn't equal expected type $t")
           SFunc(argTypes, t)
+        }
 
       // For an application we first determine the type of the expression
       // being applied.
@@ -179,7 +182,8 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
             val actualTypes = args.map(tipe)
             unifyTypeLists(argTypes, actualTypes) match {
               case Some(subst) =>
-                applySubst(tRes, subst)
+                val newRes = applySubst(tRes, subst)
+                newRes
               case None =>
                 error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
             }
@@ -209,23 +213,44 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       // Let can be thought as an expression with the side effect of introducing a new variable
       case Let(_, _, body) => tipe(body)
 
-      case Select(obj, field) =>
-        tipe(obj) match {
-          case s: SProduct =>
-            val iField = s.fieldIndex(field)
-            if (iField != -1) {
-              s.fields(iField)._2
-            }
-            else
-              error(s"Cannot find field '$field' in product type with fields ${s.fields}")
-          case t =>
-            error(s"Cannot get field '$field' of non-product type $t")
-        }
+//      case e @ tree.parent(app @ Apply(sel: Select, args)) if e eq sel  =>
+//        typeOfSelect(sel) match {
+//          case selT @ SFunc(argTypes, tRes) =>
+//            // If it's a function then the application has type of that function's return type.
+//            val actualTypes = args.map(tipe)
+//            unifyTypeLists(argTypes, actualTypes) match {
+//              case Some(subst) =>
+//                val newSelT = applySubst(selT, subst)
+//                newSelT
+//              case None =>
+//                error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+//            }
+//
+//          case tCol: SCollection[_] =>
+//            // If it's a collection then the application has type of that collection's element.
+//            tCol
+//          case t =>
+//            error(s"Invalid function/array application $app: function/array type is expected but was $t")
+//        }
+
+      case sel: Select => typeOfSelect(sel)
 
       case v: SValue if v.tpe != NoType => v.tpe
       
       case e => error(s"Don't know how to compute type for $e")
     }
+
+  def typeOfSelect(sel: Select): SType = tipe(sel.obj) match {
+    case s: SProduct =>
+      val iField = s.fieldIndex(sel.field)
+      if (iField != -1) {
+        s.fields(iField)._2
+      }
+      else
+        error(s"Cannot find field '${sel.field}' in product type with fields ${s.fields}")
+    case t =>
+      error(s"Cannot get field '${sel.field}' of non-product type $t")
+  }
 
   def binOpTipe(op: SValue, e1: SValue, e2: SValue)(arg: SType, res: SType): SType =
     if ((tipe(e1) == arg) && (tipe(e2) == arg))
@@ -268,13 +293,21 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     }
 
   val assignTypes = rule[SValue] {
-    case Let(n, NoType, body) => Let(n, tipe(body), body)
+    case Let(n, NoType, body) =>
+      Let(n, tipe(body), body)
     case v @ Ident(n, NoType) =>
       env(v).find(_._1 == n) match {
-        case Some((_, t)) => Ident(n, t)
+        case Some((_, t)) =>
+          Ident(n, t)
         case None => error(s"Cannot assign type for variable '$n'")
       }
-    case v => v
+    case sel @ Select(o, n) if tree.child.getGraph(sel) != null &&  sel.tpe != tipe(sel) =>
+      val subst = SigmaTyper.unifyTypes(sel.tpe, tipe(sel)).get
+      SelectGen(o, n, subst)
+
+//    case Apply(, args) if sel.tpe != tipe(sel) =>
+//    case Lambda(args, NoType, b) =>
+//    case v => v
   }
 
   def typecheck(bound: SValue): SValue = {
@@ -282,13 +315,24 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     if (t == NoType) error(s"No type can be assigned to expression $bound")
     if(errors.nonEmpty) error(s"Errors found while typing expression $bound:\n${errors.mkString("\n")}\n")
     val assigned = rewrite(everywherebu(assignTypes))(bound)
-    for (n <- tree.nodes) {
-      n match {
-        case v: SValue if v.tpe == NoType =>
-          error(s"Errors found while assigning types to expression $bound: $v assigned NoType")
-        case _ =>
-      }
-    }
+    // traverse the tree bottom-up checking all the nodes have a type
+    var untyped: SValue = null
+    rewrite(everywherebu(rule[SValue]{
+      case v =>
+        if (v.tpe == NoType) untyped = v
+        v
+    }))(assigned)
+
+    if (untyped != null)
+      error(s"Errors found in $bound while assigning types to expression: $untyped assigned NoType")
+      
+//    for (n <- tree.nodes) {
+//      n match {
+//        case v: SValue if v.tpe == NoType =>
+//          error(s"Errors found while assigning types to expression $bound: $v assigned NoType")
+//        case _ =>
+//      }
+//    }
     assigned 
   }
 }

@@ -89,6 +89,7 @@ object SPrimType {
 
 /** Base trait for all types which have fields (aka properties) */
 trait SProduct extends SType {
+  /** Returns -1 if `field` is not found. */
   def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
   def fields: Seq[(String, SType)]
   def sameFields(that: SProduct): Boolean = {
