@@ -16,7 +16,6 @@ import sigmastate.utxo.{Inputs, ByIndex}
   */
 class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribution {
   import SigmaTyper._
-  import SigmaPrinter.formattedLayout
   import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, message, Messages}
 
   /** The semantic error messages for the tree based on the inferred attributes. */
@@ -88,16 +87,6 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
         val predef = SigmaPredef.predefinedEnv.mapValues(_.tpe).toList
         predef ++ globalEnv.mapValues(SType.typeOfData).toList
     }
-
-  /**
-    * Check that the type of `e` is its expected type or unknown. If not,
-    * return an error. `tipe` is used to obtain the type.
-    */
-  def checkType(e : SValue, tipe : SValue => SType) : Messages = {
-    val expectedType = exptipe(e)
-    message(e, s"expected ${formattedLayout(expectedType)}, found ${formattedLayout(tipe(e))}",
-      tipe(e) != NoType && expectedType != NoType && tipe(e) != expectedType)
-  }
 
   /**
     * The type of an expression.  Checks constituent names and types.  Uses
@@ -216,26 +205,6 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       // Let can be thought as an expression with the side effect of introducing a new variable
       case Let(_, _, body) => tipe(body)
 
-//      case e @ tree.parent(app @ Apply(sel: Select, args)) if e eq sel  =>
-//        typeOfSelect(sel) match {
-//          case selT @ SFunc(argTypes, tRes) =>
-//            // If it's a function then the application has type of that function's return type.
-//            val actualTypes = args.map(tipe)
-//            unifyTypeLists(argTypes, actualTypes) match {
-//              case Some(subst) =>
-//                val newSelT = applySubst(selT, subst)
-//                newSelT
-//              case None =>
-//                error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
-//            }
-//
-//          case tCol: SCollection[_] =>
-//            // If it's a collection then the application has type of that collection's element.
-//            tCol
-//          case t =>
-//            error(s"Invalid function/array application $app: function/array type is expected but was $t")
-//        }
-
       case sel: Select => typeOfSelect(sel)
 
       case v: SValue if v.tpe != NoType => v.tpe
@@ -267,57 +236,16 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     else
       error(s"Invalid argument type $t of $op")
 
-  /** The expected type of an expression. */
-  val exptipe : SValue => SType =
-    attr {
-
-      // An applied expression is allowed to be anything. We check
-      // elsewhere that it's a function.
-      case e @ tree.parent(Apply(e1, _)) if e eq e1 => SAny
-
-      // An argument is expected to be of the function's input type
-      case e @ tree.parent(Apply(e1, e2)) if e eq e2 => SAny
-//        tipe(e1) match {
-//          case FunType(t1, _) =>
-//            t1
-//          case _ =>
-//            NoType()
-//        }
-
-      // The type of let body must match the declared type
-      case e @ tree.parent(p @ Let(_, t, body)) if (e eq body) && t != NoType => t
-
-      // The operands of an operation should be integers
-      case tree.parent(Plus(_, _)) => SInt
-      case tree.parent(Minus(_, _)) => SInt
-
-      // Other expressions are allowed to be anything
-      case _ => SAny
-    }
-
-//  val assignTypes = rule[SValue] {
-//    case Let(n, NoType, body) =>
-//      Let(n, tipe(body), body)
-//    case v @ Ident(n, NoType) =>
-//      env(v).find(_._1 == n) match {
-//        case Some((_, t)) =>
-//          Ident(n, t)
-//        case None => error(s"Cannot assign type for variable '$n'")
-//      }
-//    case sel @ Select(o, n) if tree.child.getGraph(sel) != null &&  sel.tpe != tipe(sel) =>
-//      val subst = SigmaTyper.unifyTypes(sel.tpe, tipe(sel)).get
-//      SelectGen(o, n, subst)
-//
-////    case Apply(, args) if sel.tpe != tipe(sel) =>
-////    case Lambda(args, NoType, b) =>
-////    case v => v
-//  }
-
   def assignType(bound: SValue): SValue = bound match {
     case Block(bs, res) =>
       Block(bs.map(l => assignType(l).asInstanceOf[Let]), assignType(res))
+
     case Let(n, _, body) =>
       Let(n, tipe(body), assignType(body))
+
+    case Tuple(items) => Tuple(items.map(assignType))
+
+    case c @ ConcreteCollection(items) => ConcreteCollection(items.map(assignType))(c.tItem)
 
     case v @ Ident(n, _) =>
       env(v).find(_._1 == n) match {
@@ -353,6 +281,10 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
 
     case If(c, t, e) =>
       If(assignType(c).asValue[SBoolean.type], assignType(t), assignType(e))
+
+    case AND(input) => AND(assignType(input).asValue[SCollection[SBoolean.type]])
+    case OR(input) => OR(assignType(input).asValue[SCollection[SBoolean.type]])
+
     case GE(l, r) => bimap(l, r)(GE)
     case LE(l, r) => bimap(l, r)(LE)
     case GT(l, r) => bimap(l, r)(GT)
@@ -373,9 +305,9 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     val t = tipe(bound)
     if (t == NoType) error(s"No type can be assigned to expression $bound")
     if(errors.nonEmpty) error(s"Errors found while typing expression $bound:\n${errors.mkString("\n")}\n")
-//    val assigned = rewrite(everywherebu(assignTypes))(bound)
     val assigned = assignType(bound)
-    // traverse the tree bottom-up checking all the nodes have a type
+
+    // traverse the tree bottom-up checking that all the nodes have a type
     var untyped: SValue = null
     rewrite(everywherebu(rule[SValue]{
       case v =>
@@ -386,14 +318,7 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     if (untyped != null)
       error(s"Errors found in $bound while assigning types to expression: $untyped assigned NoType")
       
-//    for (n <- tree.nodes) {
-//      n match {
-//        case v: SValue if v.tpe == NoType =>
-//          error(s"Errors found while assigning types to expression $bound: $v assigned NoType")
-//        case _ =>
-//      }
-//    }
-    assigned 
+    assigned
   }
 }
 
