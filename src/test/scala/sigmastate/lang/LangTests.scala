@@ -30,4 +30,7 @@ trait LangTests {
     "g2" -> g2,
     "n" -> n
   )
+
+  /** Parses string to SType tree */
+  def ty(s: String): SType = SigmaParser.parseType(s).get.value
 }

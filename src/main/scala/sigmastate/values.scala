@@ -249,7 +249,7 @@ object Values {
       extends EvaluatedValue[SCollection[V]] with Rewritable {
     override val opCode = ValueSerializer.ConcreteCollectionCode
     val cost: Int = value.size
-    val tpe = SCollection[V]()(tItem)
+    val tpe = SCollection[V](tItem)
 
     def items = value // convenience accessor for code readability
     def arity = 1 + value.size

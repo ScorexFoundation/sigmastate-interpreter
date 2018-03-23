@@ -16,7 +16,6 @@ import sigmastate.utxo.{Inputs, ByIndex}
   */
 class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribution {
   import SigmaTyper._
-  import SigmaPrinter.formattedLayout
   import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, message, Messages}
 
   /** The semantic error messages for the tree based on the inferred attributes. */
@@ -67,13 +66,16 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
 
       // Inside the result expression of a block all bindings are visible
       case e @ tree.parent(p @ Block(bs, res)) if e eq res =>
-        (bs.map(l => (l.name, l.givenType.?:(tipe(l.body)))) ++ env(p)).toList
+        val fromLets = bs.map(l => (l.name, l.givenType.?:(tipe(l.body))))
+        val res = (fromLets ++ env(p))
+        res.toList
 
       // Inside any binding of a block all the previous names are visible
       case e @ tree.parent(p @ Block(bs, res)) if bs.exists(_ eq e) =>
         val iLet = bs.indexWhere(_ eq e)
         val boundNames = bs.take(iLet).map(l => (l.name, l.givenType.?:(tipe(l.body))))
-        (boundNames ++ env(p)).toList
+        val res = (boundNames ++ env(p))
+        res.toList
 
       // Other expressions do not bind new identifiers so they just
       // get their environment from their parent
@@ -85,16 +87,6 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
         val predef = SigmaPredef.predefinedEnv.mapValues(_.tpe).toList
         predef ++ globalEnv.mapValues(SType.typeOfData).toList
     }
-
-  /**
-    * Check that the type of `e` is its expected type or unknown. If not,
-    * return an error. `tipe` is used to obtain the type.
-    */
-  def checkType(e : SValue, tipe : SValue => SType) : Messages = {
-    val expectedType = exptipe(e)
-    message(e, s"expected ${formattedLayout(expectedType)}, found ${formattedLayout(tipe(e))}",
-      tipe(e) != NoType && expectedType != NoType && tipe(e) != expectedType)
-  }
 
   /**
     * The type of an expression.  Checks constituent names and types.  Uses
@@ -167,24 +159,30 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
             error(s"Invalid function $lam: undefined type of result")
           SFunc(argTypes, tRes)
         }
-        else
+        else {
+          if (body.isDefined && t != tipe(body.get))
+            error(s"Invalid function $lam: resulting expression type ${tipe(body.get)} doesn't equal expected type $t")
           SFunc(argTypes, t)
+        }
 
       // For an application we first determine the type of the expression
-      // being applied.  If it's a function then the application has type
-      // of that function's return type.
+      // being applied.
       case app @ Apply(f, args) =>
         tipe(f) match {
           case SFunc(argTypes, tRes) =>
+            // If it's a function then the application has type of that function's return type.
             val actualTypes = args.map(tipe)
             unifyTypeLists(argTypes, actualTypes) match {
               case Some(subst) =>
-                applySubst(tRes, subst)
+                val newRes = applySubst(tRes, subst)
+                newRes
               case None =>
                 error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
             }
 
           case tCol: SCollection[_] =>
+            // If it's a collection then the application has type of that collection's element.
+            // Only constant indices are supported so far
             args match {
               case Seq(IntConstant(i)) =>
                 tCol.elemType
@@ -207,23 +205,24 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       // Let can be thought as an expression with the side effect of introducing a new variable
       case Let(_, _, body) => tipe(body)
 
-      case Select(obj, field) =>
-        tipe(obj) match {
-          case s: SProduct =>
-            val iField = s.fieldIndex(field)
-            if (iField != -1) {
-              s.fields(iField)._2
-            }
-            else
-              error(s"Cannot find field '$field' in product type with fields ${s.fields}")
-          case t =>
-            error(s"Cannot get field '$field' of non-product type $t")
-        }
+      case sel: Select => typeOfSelect(sel)
 
       case v: SValue if v.tpe != NoType => v.tpe
       
       case e => error(s"Don't know how to compute type for $e")
     }
+
+  def typeOfSelect(sel: Select): SType = tipe(sel.obj) match {
+    case s: SProduct =>
+      val iField = s.fieldIndex(sel.field)
+      if (iField != -1) {
+        s.fields(iField)._2
+      }
+      else
+        error(s"Cannot find field '${sel.field}' in product type with fields ${s.fields}")
+    case t =>
+      error(s"Cannot get field '${sel.field}' of non-product type $t")
+  }
 
   def binOpTipe(op: SValue, e1: SValue, e2: SValue)(arg: SType, res: SType): SType =
     if ((tipe(e1) == arg) && (tipe(e2) == arg))
@@ -237,57 +236,89 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     else
       error(s"Invalid argument type $t of $op")
 
-  /** The expected type of an expression. */
-  val exptipe : SValue => SType =
-    attr {
+  def assignType(bound: SValue): SValue = bound match {
+    case Block(bs, res) =>
+      Block(bs.map(l => assignType(l).asInstanceOf[Let]), assignType(res))
 
-      // An applied expression is allowed to be anything. We check
-      // elsewhere that it's a function.
-      case e @ tree.parent(Apply(e1, _)) if e eq e1 => SAny
+    case Let(n, _, body) =>
+      Let(n, tipe(body), assignType(body))
 
-      // An argument is expected to be of the function's input type
-      case e @ tree.parent(Apply(e1, e2)) if e eq e2 => SAny
-//        tipe(e1) match {
-//          case FunType(t1, _) =>
-//            t1
-//          case _ =>
-//            NoType()
-//        }
+    case Tuple(items) => Tuple(items.map(assignType))
 
-      // The type of let body must match the declared type
-      case e @ tree.parent(p @ Let(_, t, body)) if (e eq body) && t != NoType => t
+    case c @ ConcreteCollection(items) => ConcreteCollection(items.map(assignType))(c.tItem)
 
-      // The operands of an operation should be integers
-      case tree.parent(Plus(_, _)) => SInt
-      case tree.parent(Minus(_, _)) => SInt
-
-      // Other expressions are allowed to be anything
-      case _ => SAny
-    }
-
-  val assignTypes = rule[SValue] {
-    case Let(n, NoType, body) => Let(n, tipe(body), body)
-    case v @ Ident(n, NoType) =>
+    case v @ Ident(n, _) =>
       env(v).find(_._1 == n) match {
-        case Some((_, t)) => Ident(n, t)
+        case Some((_, t)) =>
+          Ident(n, t)
         case None => error(s"Cannot assign type for variable '$n'")
       }
+
+    case sel @ Select(o, n) =>
+      SelectGen(assignType(o), n, tipe(sel))
+
+    case Lambda(args, t, body) =>
+      Lambda(args, body.fold(t)(tipe), body.map(assignType))
+
+    case app @ Apply(sel @ Select(obj, n), args) =>
+      tipe(sel) match {
+        case tFun @ SFunc(argTypes, tRes) =>
+          // If it's a function then the application has type of that function's return type.
+          val actualTypes = args.map(tipe)
+          unifyTypeLists(argTypes, actualTypes) match {
+            case Some(subst) =>
+              val newFun = applySubst(tFun, subst)
+              Apply(SelectGen(assignType(obj), n, newFun), args.map(assignType))
+            case None =>
+              error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+          }
+        case _ =>
+          Apply(Select(assignType(obj), n), args.map(assignType))
+      }
+
+    case Apply(f, args) =>
+      Apply(assignType(f), args.map(assignType))
+
+    case If(c, t, e) =>
+      If(assignType(c).asValue[SBoolean.type], assignType(t), assignType(e))
+
+    case AND(input) => AND(assignType(input).asValue[SCollection[SBoolean.type]])
+    case OR(input) => OR(assignType(input).asValue[SCollection[SBoolean.type]])
+
+    case GE(l, r) => bimap(l, r)(GE)
+    case LE(l, r) => bimap(l, r)(LE)
+    case GT(l, r) => bimap(l, r)(GT)
+    case LT(l, r) => bimap(l, r)(LT)
+    case EQ(l, r) => bimap(l, r)(EQ[SType])
+    case NEQ(l, r) => bimap(l, r)(NEQ)
+
+    case Plus(l, r) => bimap(l, r)(Plus)
+    case Minus(l, r) => bimap(l, r)(Minus)
     case v => v
+  }
+
+  def bimap[T <: SType](l: Value[T], r: Value[T])(f: (Value[T], Value[T]) => SValue): SValue = {
+    f(assignType(l).asValue[T], assignType(r).asValue[T])
   }
 
   def typecheck(bound: SValue): SValue = {
     val t = tipe(bound)
     if (t == NoType) error(s"No type can be assigned to expression $bound")
     if(errors.nonEmpty) error(s"Errors found while typing expression $bound:\n${errors.mkString("\n")}\n")
-    val assigned = rewrite(everywherebu(assignTypes))(bound)
-    for (n <- tree.nodes) {
-      n match {
-        case v: SValue if v.tpe == NoType =>
-          error(s"Errors found while assigning types to expression $bound: $v assigned NoType")
-        case _ =>
-      }
-    }
-    assigned 
+    val assigned = assignType(bound)
+
+    // traverse the tree bottom-up checking that all the nodes have a type
+    var untyped: SValue = null
+    rewrite(everywherebu(rule[SValue]{
+      case v =>
+        if (v.tpe == NoType) untyped = v
+        v
+    }))(assigned)
+
+    if (untyped != null)
+      error(s"Errors found in $bound while assigning types to expression: $untyped assigned NoType")
+      
+    assigned
   }
 }
 
@@ -319,17 +350,21 @@ object SigmaTyper {
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
     case (id1 @ STypeIdent(n1), id2 @ STypeIdent(n2)) =>
       if (n1 == n2) Some(Map(id1 -> t2)) else None
-    case (id1 @ STypeIdent(n), _) => Some(Map(id1 -> t2))
+    case (id1 @ STypeIdent(n), _) =>
+      Some(Map(id1 -> t2))
     case (e1: SCollection[_], e2: SCollection[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
-    case (e1: STuple, e2: STuple) =>
+    case (e1: STuple, e2: STuple) if e1.items.length == e2.items.length =>
       unifyTypeLists(e1.items, e2.items)
-    case (e1: SFunc, e2: SFunc) =>
+    case (e1: SFunc, e2: SFunc) if e1.tDom.length == e2.tDom.length =>
       unifyTypeLists(e1.tDom :+ e1.tRange, e2.tDom :+ e2.tRange)
     case (STypeApply(name1, args1), STypeApply(name2, args2))
       if name1 == name2 && args1.length == args2.length =>
       unifyTypeLists(args1, args2)
-    case (e1: SPrimType, e2: SPrimType) if e1 == e2 => Some(Map())
+    case (e1: SPrimType, e2: SPrimType) if e1 == e2 =>
+      Some(Map())
+    case (e1: SProduct, e2: SProduct) if e1.sameFields(e2) =>
+      unifyTypeLists(e1.fields.map(_._2), e2.fields.map(_._2))
     case _ => None
   }
 

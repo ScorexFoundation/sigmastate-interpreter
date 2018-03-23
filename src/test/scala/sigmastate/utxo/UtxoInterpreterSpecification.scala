@@ -13,7 +13,7 @@ import BoxHelpers.createBox
 import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
-import sigmastate.lang.{SigmaBinder, SigmaParser, SigmaTyper}
+import sigmastate.lang.{SigmaBinder, SigmaParser, SigmaTyper, SigmaSpecializer}
 import sigmastate.utxo.SigmaStateBox._
 
 
@@ -37,7 +37,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val st = new SigmaTree(bound)
     val typer = new SigmaTyper(env, st)
     val typed = typer.typecheck(bound)
-    typed
+    val spec = new SigmaSpecializer
+    val ir = spec.specialize(typed)
+    ir
   }
 
   property("scripts EQ/NEQ") {
