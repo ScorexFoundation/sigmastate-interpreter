@@ -58,8 +58,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("predefined functions") {
-    typecheck(env, "all") shouldBe AllSym.tpe
-    typecheck(env, "all(Array(c1, c2))") shouldBe SBoolean
+    typecheck(env, "allOf") shouldBe AllSym.tpe
+    typecheck(env, "allOf(Array(c1, c2))") shouldBe SBoolean
   }
 
   property("let constructs") {

@@ -27,8 +27,9 @@ object DLogProtocol {
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
     override val cost: Int = Cost.Dlog
-
     override val soundness: Int = 256
+
+//    override def fields = ProveDlog.fields
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h = value.asInstanceOf[GroupElementConstant].value
@@ -53,6 +54,9 @@ object DLogProtocol {
       val h = dlogGroup.reconstructElement(true, xy)
       ProveDlog(h)
     }
+//    val fields = Seq(
+//      "propBytes" -> SByteArray,
+//    )
   }
 
 
