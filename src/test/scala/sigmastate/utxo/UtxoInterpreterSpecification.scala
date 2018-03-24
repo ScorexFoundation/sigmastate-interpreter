@@ -30,9 +30,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
   def parse(x: String): SValue = SigmaParser(x).get.value
 
-  def buildAst(env: Map[String, Any], code: String): Value[SType] = {
-    val binder = new SigmaBinder(env)
+  def compile(env: Map[String, Any], code: String): Value[SType] = {
     val parsed = parse(code)
+    val binder = new SigmaBinder(env)
     val bound = binder.bind(parsed)
     val st = new SigmaTree(bound)
     val typer = new SigmaTyper(env, st)
@@ -53,7 +53,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val ctx = UtxoContext.dummy(fakeSelf)
 
-    val e = buildAst(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
+    val e = compile(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
     val exp = EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes))
     e shouldBe exp
 
@@ -94,20 +94,20 @@ class UtxoInterpreterSpecification extends PropSpec
       "backerPubKey" -> backerPubKey,
       "projectPubKey" -> projectPubKey,
     )
-//    val crowdFundingAst = buildAst(env,
+//    val compiledScript = compile(env,
 //      """{
 //       | let c1 = HEIGHT >= timeout && backerPubKey
 //       | let c2 = all(Array(
 //       |   HEIGHT < timeout,
 //       |   projectPubKey,
-//       |   exists(OUTPUTS, fun (out: Box) = {
-//       |     out.amount >= minToRaise && out.propositionBytes == projectPubKey.propBytes
+//       |   OUTPUTS.exists(fun (out: Box) = {
+//       |     out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
 //       |   })
 //       | ))
 //       | c1 || c2
 //       | }
 //      """.stripMargin)
-    // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
+//    // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
       AND(GE(Height, timeout), backerPubKey),
       AND(
@@ -221,6 +221,22 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val regScript = userProver.dlogSecrets.head.publicImage
 
+//    val env = Map(
+//      "demurragePeriod" -> 100,
+//      "demurrageCost" -> 2,
+//      "regScript" -> regScript,
+//    )
+//    val compiledScript = compile(env,
+//      """{
+//       | let c2 = all(Array(
+//       |   HEIGHT >= SELF.R3 + demurragePeriod,
+//       |   OUTPUTS.exists(fun (out: Box) = {
+//       |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
+//       |   })
+//       | ))
+//       | regScript || c2
+//       | }
+//      """.stripMargin)
     val script = OR(
       regScript,
       AND(
@@ -316,6 +332,14 @@ class UtxoInterpreterSpecification extends PropSpec
   property("prover enriching context") {
     val prover = new UtxoProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
+
+//    val env = Map("blake" -> Blake2b256(preimage))
+//    val compiledScript = compile(env,
+//      """{
+//       |  Blake2b256(taggedByteArray(1)) == blake
+//       |}
+//      """.stripMargin)
+
     val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
 
     val ctx = UtxoContext.dummy(fakeSelf)
@@ -332,6 +356,14 @@ class UtxoInterpreterSpecification extends PropSpec
     val prover = new UtxoProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
+
+//    val env = Map("blake" -> Blake2b256(preimage2 ++ preimage1))
+//    val compiledScript = compile(env,
+//      """{
+//       |  Blake2b256(taggedByteArray(2) ++ taggedByteArray(1)) == blake
+//       |}
+//      """.stripMargin)
+
     val prop = EQ(CalcBlake2b256(AppendBytes(TaggedByteArray(2), TaggedByteArray(1))),
       ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
 
@@ -358,6 +390,13 @@ class UtxoInterpreterSpecification extends PropSpec
       .withContextExtender(k1, ByteArrayConstant(v1))
       .withContextExtender(k2, ByteArrayConstant(v2))
 
+//    val env = Map("k1" -> k1, "k2" -> k2, "r" -> r)
+//    val compiledScript = compile(env,
+//      """{
+//       |  taggedByteArray(k1) | taggedByteArray(k2) == r
+//       |}
+//      """.stripMargin)
+
     val prop = EQ(Xor(TaggedByteArray(k1), TaggedByteArray(k2)), ByteArrayConstant(r))
 
     val ctx = UtxoContext.dummy(fakeSelf)
@@ -375,6 +414,12 @@ class UtxoInterpreterSpecification extends PropSpec
     val preimage = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
 
+//    val env = Map("blake" -> Blake2b256(preimage), "pubkey" -> pubkey)
+//    val compiledScript = compile(env,
+//      """{
+//       |  pubkey && blake2b256(taggedByteArray(1)) == blake
+//       |}
+//      """.stripMargin)
     val prop = AND(
       pubkey,
       EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
@@ -397,6 +442,13 @@ class UtxoInterpreterSpecification extends PropSpec
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
+
+//    val env = Map("blake" -> Blake2b256(preimage2 ++ preimage1), "pubkey" -> pubkey)
+//    val compiledScript = compile(env,
+//      """{
+//       |  pubkey && blake2b256(taggedByteArray(2) ++ taggedByteArray(1)) == blake
+//       |}
+//      """.stripMargin)
 
     val prop = AND(
       pubkey,
@@ -443,11 +495,33 @@ class UtxoInterpreterSpecification extends PropSpec
     val deadlineA = 1000
     val deadlineB = 500
 
+//    val env = Map(
+//      "height1" -> height1, "height2" -> height2,
+//      "deadlineA" -> deadlineA, "deadlineB" -> deadlineB,
+//      "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
+//    val compiledProp1 = compile(env,
+//      """{
+//       |  anyOf(Array(
+//       |    HEIGHT > height1 + deadlineA && pubkeyA,
+//       |    pubkeyB && blake2b256(taggedByteArray(1)) == hx
+//       |  ))
+//       |}
+//      """.stripMargin)
+
     //chain1 script
     val prop1 = OR(
       AND(GT(Height, IntConstant(height1 + deadlineA)), pubkeyA),
       AND(pubkeyB, EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
     )
+
+//    val compiledProp2 = compile(env,
+//      """{
+//       |  anyOf(Array(
+//       |    HEIGHT > height2 + deadlineB && pubkeyB,
+//       |    pubkeyA && blake2b256(taggedByteArray(1)) == hx
+//       |  ))
+//       |}
+//      """.stripMargin)
 
     //chain2 script
     val prop2 = OR(
@@ -516,6 +590,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
+//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
+//    val compiledProp = compile(env, """pubkeyA \/ pubkeyB""")
+
     val prop = OR(pubkeyA, pubkeyB)
 
     val ctx = UtxoContext(
@@ -543,6 +620,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
+
+//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
+//    val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, pubkeyC))""")
 
     val prop = OR(pubkeyA, pubkeyB, pubkeyC)
 
@@ -574,6 +654,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA3 = proverA.dlogSecrets(2).publicImage
     val pubkeyA4 = proverA.dlogSecrets(3).publicImage
 
+//    val env = Map("pubkeyA1" -> pubkeyA1, "pubkeyA2" -> pubkeyA2, "pubkeyA3" -> pubkeyA3, "pubkeyA4" -> pubkeyA4)
+//    val compiledProp = compile(env, """anyOf(Array(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""")
+
     val prop = OR(Seq(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))
 
     val ctx = UtxoContext(
@@ -599,6 +682,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
+
+//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+//    val compiledProp = compile(env, """pubkeyA && pubkeyB || pubkeyC && pubkeyD""")
 
     val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyC, pubkeyD))
 
@@ -636,6 +722,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
+//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+//    val compiledProp = compile(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""")
+
     val prop = OR(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
     val ctx = UtxoContext(
@@ -672,6 +761,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
+//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+//    val compiledProp = compile(env, """(pubkeyA || pubkeyB) && (pubkeyC || pubkeyD)""")
+
     val prop = AND(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
     val ctx = UtxoContext(
@@ -707,6 +799,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
+
+//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+//    val compiledProp = compile(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""")
 
     val prop = AND(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
@@ -747,6 +842,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
+//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+//    val compiledProp = compile(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""")
+
     val prop = OR(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
 
     val ctx = UtxoContext(
@@ -778,6 +876,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
+
+//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
+//    val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, HEIGHT > 500))""")
 
     val prop = OR(pubkeyA, pubkeyB, GT(Height, IntConstant(500)))
 
@@ -813,6 +914,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
+
+//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
+//    val compiledProp = compile(env, """anyOf(Array(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
 
     val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntConstant(500))))
 
@@ -881,6 +985,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubdhB = proverB.dhSecrets.head.publicImage
 
+//    val env = Map("pubkeyA" -> pubkeyA, "pubdhB" -> pubdhB)
+//    val compiledProp = compile(env, """pubkeyA || pubdhB""")
+
     val prop = OR(pubkeyA, pubdhB)
 
     val ctx = UtxoContext(
@@ -902,6 +1009,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubdhA = proverA.dhSecrets.head.publicImage
+
+//    val env = Map("pubkeyA" -> pubkeyA, "pubdhA" -> pubdhA)
+//    val compiledProp = compile(env, """pubkeyA && pubdhB""")
 
     val prop = AND(pubkeyA, pubdhA)
 
@@ -941,12 +1051,24 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
-    def mixingRequestProp(sender: ProveDlog, timeout: Int) = OR(
-      AND(LE(Height, IntConstant(timeout)),
-        EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytes(TaggedBox(21))))),
-          ByteArrayConstant(properHash))),
-      AND(GT(Height, IntConstant(timeout)), sender)
-    )
+    def mixingRequestProp(sender: ProveDlog, timeout: Int) = {
+//      val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
+//      val compiledProp = compile(env,
+//        """{
+//          |  let notTimePassed = HEIGHT <= timeout
+//          |  let outBytes = OUTPUT.map(fun (box: Box) = box.bytes)
+//          |  val outSumBytes = outBytes.fold(EmptyByteArray, fun (arr1: ByteArray, arr2: ByteArray) = arr1 ++ arr2)
+//          |  val timePassed = HEIGHT > timeout
+//          |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
+//           }""".stripMargin)
+
+      OR(
+        AND(LE(Height, IntConstant(timeout)),
+          EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytes(TaggedBox(21))))),
+            ByteArrayConstant(properHash))),
+        AND(GT(Height, IntConstant(timeout)), sender)
+      )
+    }
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -972,6 +1094,13 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
+//    val env = Map("pubkey" -> pubkey)
+//    val compiledProp = compile(env,
+//      """{
+//        |  let outValues = OUTPUTS.map(fun (box: Box) = box.value)
+//        |  pubkey && outValues.fold(0, fun (x: Int, y: Int) = x + y) > 20
+//         }""".stripMargin)
+
     val prop = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), IntConstant(20)))
 
     val newBox1 = SigmaStateBox(11, pubkey)
@@ -996,6 +1125,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
+
+//    val env = Map("pubkey" -> pubkey)
+//    val compiledProp = compile(env, """pubkey && OUTPUTS(0).value > 10""")
 
     val prop = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntConstant(10)))
 
@@ -1060,6 +1192,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
+//    val compiledProp = compile(Map(), "OUTPUTS.exists(fun (box: Box) = box.value + 5 > 10)")
+
     val prop = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), IntConstant(5)), IntConstant(10)))
 
     val newBox1 = SigmaStateBox(16, pubkey)
@@ -1085,6 +1219,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
+
+//    val compiledProp = compile(Map(), "OUTPUTS.forall(fun (box: Box) = box.value == 10)")
 
     val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
 
@@ -1136,6 +1272,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
+//    val compiledProp = compile(Map(),
+//      """OUTPUTS.exists(fun (box: Box) = {
+//        |  box.R3.get == SELF.R3.get + 1
+//         })""".stripMargin)
+
     val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3)(SInt),
       Plus(ExtractRegisterAs(Self, R3)(SInt), IntConstant(1))))
 
@@ -1163,6 +1304,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
+
+//    val compiledProp = compile(Map(),
+//      """OUTPUTS.exists(fun (box: Box) = {
+//        |  box.R3.getOrElse(0) == SELF.R3.get + 1
+//         })""".stripMargin)
 
     val prop = Exists(Outputs, 21,
       EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntConstant(0L))),
@@ -1205,6 +1351,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val proof = avlProver.generateProof()
 
     val treeData = new AvlTreeData(digest, 32, None)
+
+//    val env = Map("key" -> key, "proof" -> proof)
+//    val compiledProp = compile(env, """isMember(SELF.R3, key, proof)""")
 
     val prop = IsMember(ExtractRegisterAs(Self, R3),
       ByteArrayConstant(key),
@@ -1249,6 +1398,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
+//    val env = Map("proofId" -> proofId)
+//    val compiledProp = compile(env, """isMember(SELF.R3, SELF.R4, proofId)""")
+
     val prop = IsMember(ExtractRegisterAs(Self, R3), ExtractRegisterAs(Self, R4), TaggedByteArray(proofId))
 
     val newBox1 = SigmaStateBox(10, pubkey)
@@ -1276,6 +1428,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey1 = prover.dlogSecrets.head.publicImage
     val pubkey2 = prover.dlogSecrets(1).publicImage
     val pubkey3 = prover.dlogSecrets(2).publicImage
+
+//    val compiledProp = compile(Map(), """ProveDlog(SELF.R3) && ProveDlog(SELF.R4)""")
 
     val prop = AND(new ProveDlog(ExtractRegisterAs(Self, R3)), new ProveDlog(ExtractRegisterAs(Self, R4)))
 
@@ -1316,6 +1470,13 @@ class UtxoInterpreterSpecification extends PropSpec
     val newBoxes = IndexedSeq(newBox)
     val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
 
+//    val env = Map("brother" -> brother)
+//    val compiledProp = compile(env,
+//      """{
+//        |  let okInputs = INPUTS.size == 2
+//        |  let okIds = INPUTS(0).id == brother.id
+//        |  okInputs && okIds
+//         }""".stripMargin)
 
     val prop = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),

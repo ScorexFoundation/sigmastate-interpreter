@@ -6,8 +6,8 @@ import sigmastate.lang.Terms.{Lambda, Ident}
 
 object SigmaPredef {
   val predefinedEnv: Map[String, SValue] = Seq(
-    "all" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-    "any" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+    "allOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+    "anyOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "sigmaAll" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "sigmaAny" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "Blake2b256" -> Lambda(Vector("input" -> SByteArray), SByteArray, None),
@@ -28,6 +28,6 @@ object SigmaPredef {
     Ident(name, v.tpe)
   }
 
-  val AllSym = PredefIdent("all")
+  val AllSym = PredefIdent("allOf")
   val ExistsSym = PredefIdent("exists")
 }

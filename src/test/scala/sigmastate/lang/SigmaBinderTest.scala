@@ -37,7 +37,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("predefined functions") {
-    bind(env, "all(Array(c1, c2))") shouldBe
+    bind(env, "allOf(Array(c1, c2))") shouldBe
         AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
   }
 
