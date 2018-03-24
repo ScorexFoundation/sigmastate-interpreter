@@ -29,13 +29,14 @@ object DLogProtocol {
     import GroupSettings.dlogGroup
 
     override val cost: Int = Cost.Dlog
-
     override val soundness: Int = 256
+
+//    override def fields = ProveDlog.fields
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
 
-    lazy val bytes: Array[Byte] = dlogGroup.decodeGroupElementToByteArray(h)
+    lazy val bytes: Array[Byte] = dlogGroup.mapAnyGroupElementToByteArray(h)
   }
 
   object ProveDlog {
@@ -51,6 +52,9 @@ object DLogProtocol {
       val h = dlogGroup.reconstructElement(bCheckMembership = true, xy)
       ProveDlog(h)
     }
+//    val fields = Seq(
+//      "propBytes" -> SByteArray,
+//    )
   }
 
 

@@ -87,8 +87,17 @@ object SPrimType {
 
 /** Base trait for all types which have fields (aka properties) */
 trait SProduct extends SType {
+  /** Returns -1 if `field` is not found. */
   def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
   def fields: Seq[(String, SType)]
+  def sameFields(that: SProduct): Boolean = {
+    if (fields.length != that.fields.length) return false
+    // imperative to avoid allocation as it is supposed to be used frequently
+    for (i <- fields.indices) {
+      if (fields(i)._1 != that.fields(i)._1) return false
+    }
+    true
+  }
 }
 
 /** Special type to represent untyped values.
@@ -161,7 +170,7 @@ case object SAny extends SPrimType {
   override val typeCode: Byte = 9: Byte
 }
 
-case class SCollection[ElemType <: SType]()(implicit val elemType: ElemType) extends SProduct {
+case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
   override type WrappedType = IndexedSeq[Value[ElemType]]
   override val typeCode: TypeCode = SCollection.TypeCode
   override def fields = SCollection.fields
@@ -187,7 +196,7 @@ object SCollection {
     "fold" -> SFunc(IndexedSeq(tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV),
     "forall" -> SFunc(SFunc(tIV, SBoolean), SBoolean)
   )
-  def apply[T <: SType](elemType: T)(implicit ov: Overload1): SCollection[T] = SCollection()(elemType)
+  def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 }
 
@@ -241,5 +250,6 @@ case class STypeIdent(name: String) extends SType {
 }
 object STypeIdent {
   val TypeCode = 111: Byte
+  implicit def liftString(n: String): STypeIdent = STypeIdent(n)
 }
 

@@ -3,7 +3,8 @@ package sigmastate.lang
 import fastparse.noApi._
 import sigmastate._
 import Values._
-import sigmastate.lang.Terms.{Ident, Lambda}
+import sigmastate.lang.Terms.Ident
+import sigmastate.lang.syntax.Core
 import syntax.Basic.error
 
 trait Types extends Core {
@@ -88,9 +89,10 @@ trait Types extends Core {
     val BasicType = P( TupleType | TypeId )
     P( BasicType ~ TypeArgs.rep ).map {
       case (t: STuple, Seq()) => t
-      case (STypeApply("Array", IndexedSeq()), Seq(Seq(t))) => SCollection()(t)
+      case (STypeApply("Array", IndexedSeq()), Seq(Seq(t))) => SCollection(t)
       case (SPrimType(t), Seq()) => t
-      case (STypeApply(tn, IndexedSeq()), args) => error(s"Unsupported type $tn[$args]")
+      case (STypeApply(tn, IndexedSeq()), args) if args.isEmpty => STypeIdent(tn)
+      case t => error(s"Unsupported type $t")
     }
   }
 

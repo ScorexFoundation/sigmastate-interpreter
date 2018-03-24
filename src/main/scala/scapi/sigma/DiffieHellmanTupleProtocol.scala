@@ -3,7 +3,6 @@ package scapi.sigma
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
 import sigmastate._
 import sigmastate.interpreter.GroupSettings
@@ -29,10 +28,6 @@ object DiffieHellmanTupleProverInput {
   def random()(implicit soundness: Int): DiffieHellmanTupleProverInput = {
     val g = dlogGroup.generator
     val h = dlogGroup.createRandomGenerator()
-    println("g: " + g)
-    println(dlogGroup.isMember(g))
-    println("h: " + h)
-    println(dlogGroup.isMember(h))
 
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
     val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)

@@ -1,13 +1,13 @@
-package sigmastate.lang
+package sigmastate.lang.syntax
 
 import fastparse.noApi._
 import sigmastate._
-import Values._
-import Terms._
+import sigmastate.Values._
+import sigmastate.lang.Terms.{Lambda, Let, MethodCall, Apply, Select, Ident, ValueOps}
+import sigmastate.lang.{Terms, syntax, Types}
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec
-import sigmastate.utils.Extensions._
 
 //noinspection ForwardReference,TypeAnnotation
 trait Exprs extends Core with Types {

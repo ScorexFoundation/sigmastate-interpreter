@@ -33,13 +33,13 @@ case object Height extends NotReadyValueInt {
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
 case object Inputs extends LazyCollection[SBox.type] {
   val cost = 1
-  val tpe = SCollection()(SBox)
+  val tpe = SCollection(SBox)
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
 case object Outputs extends LazyCollection[SBox.type] {
   val cost = 1
-  val tpe = SCollection()(SBox)
+  val tpe = SCollection(SBox)
 }
 
 /** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */

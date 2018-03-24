@@ -27,7 +27,6 @@ class SigmaBinder(env: Map[String, Any]) {
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
         case v: SValue => Some(v)
         case _ => None
-//        case _ => error(s"Variable $n has invalid value $v")
       }
       case None => predefinedEnv.get(n) match {
         case Some(v) => Some(Ident(n, v.tpe))
@@ -38,8 +37,6 @@ class SigmaBinder(env: Map[String, Any]) {
           case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
           case "SELF" => Some(Self)
           case _ => None
-//          case _ =>
-//            error(s"Variable name $n is not defined")
         }
       }
     }
@@ -68,28 +65,29 @@ class SigmaBinder(env: Map[String, Any]) {
         error(s"Invalid type of $pred. Expected $expectedTpe")
       val args = expectedTpe.tDom.zipWithIndex.map { case (t, i) => (s"arg${i+1}", t) }
       Some(ExistsSym)
-//      Some(Exists(input, ))
 
     // Rule: fun (...) = ... --> fun (...): T = ...
-    case lam @ Lambda(args, t, Some(body)) if !lam.evaluated =>
+    case lam @ Lambda(args, t, Some(body)) =>
       val b1 = eval(body, env)
       val t1 = if (t != NoType) t else b1.tpe
-      Some(new Lambda(args, t1, Some(b1)) { override def evaluated = true })
+      val newLam = Lambda(args, t1, Some(b1))
+      if (newLam != lam) Some(newLam) else None
 
     // Rule: { e } --> e
     case Block(Seq(), e) => Some(e)
     
-    case block @ Block(binds, t) if !block.evaluated =>
+    case block @ Block(binds, t) =>
       val newBinds = for (Let(n, t, b) <- binds) yield {
         if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}")
         val b1 = eval(b, env)
         Let(n, if (t != NoType) t else b1.tpe, b1)
       }
       val t1 = eval(t, env)
-      Some(new Block(newBinds, t1) { override def evaluated = true })
-//    case v =>
-//      val v1 = rewrite(some(rule[Value[SType]] { case v => eval(v, env) }))(v)
-//      Some(v1)
+      val newBlock = Block(newBinds, t1)
+      if (newBlock != block)
+        Some(newBlock)
+      else
+        None
   })))(e)
 
   def bind(e: Value[SType]): Value[SType] = eval(e, env)

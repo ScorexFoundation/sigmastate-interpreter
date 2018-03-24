@@ -16,13 +16,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val binder = new SigmaBinder(env)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val an = new SigmaTyper(env, st)
-      an.errors shouldBe empty
-      an.tipe(bound)
+      val typer = new SigmaTyper(env, st)
+      val typed = typer.typecheck(bound)
+     typed.tpe
     } catch {
-      case e: Exception =>
-//        SigmaParser.logged.foreach(println)
-        throw e
+      case e: Exception => throw e
     }
   }
 
@@ -60,8 +58,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("predefined functions") {
-    typecheck(env, "all") shouldBe AllSym.tpe
-    typecheck(env, "all(Array(c1, c2))") shouldBe SBoolean
+    typecheck(env, "allOf") shouldBe AllSym.tpe
+    typecheck(env, "allOf(Array(c1, c2))") shouldBe SBoolean
   }
 
   property("let constructs") {
@@ -77,13 +75,16 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "{let X = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
   }
 
-//  property("predefined Exists with lambda argument") {
-//    val minToRaise = IntConstant(1000)
-//    val env = this.env ++ Map(
-//      "minToRaise" -> minToRaise,
-//    )
-//    typecheck(env, "OUTPUTS.exists(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
-//  }
+  property("generic methods of collection") {
+    val minToRaise = IntConstant(1000)
+    val env = this.env ++ Map(
+      "minToRaise" -> minToRaise,
+    )
+    typecheck(env, "OUTPUTS.exists(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
+    typecheck(env, "OUTPUTS.map(fun (out: Box) = { out.value >= minToRaise })") shouldBe ty("Array[Boolean]")
+    typecheck(env, "{ let arr = Array(1,2,3); arr.fold(0, fun (n1: Int, n2: Int) = n1 + n2)}") shouldBe SInt
+    typecheck(env, "OUTPUTS.forall(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
+  }
 
   property("tuple constructor") {
     typecheck(env, "()") shouldBe SUnit
@@ -139,11 +140,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "fun (a: Int) = { let b = a + 1; b }") shouldBe SFunc(IndexedSeq(SInt), SInt)
     typecheck(env, "fun (a: Int, box: Box): Int = a + box.value") shouldBe
       SFunc(IndexedSeq(SInt, SBox), SInt)
-    typecheck(env, "fun (p: (Int, GroupElement), box: Box): Int = p._1 > box.value && p._2.isIdentity") shouldBe
-      SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SInt)
+    typecheck(env, "fun (p: (Int, GroupElement), box: Box): Boolean = p._1 > box.value && p._2.isIdentity") shouldBe
+      SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
 
     typefail(env, "fun (a) = a + 1", "undefined type of argument")
-//    typefail(env, "fun (a: Int) = Array()", "undefined type of result")
   }
 
   property("function definitions") {
@@ -158,15 +158,75 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "fun (box: Box): ByteArray = box.id") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
   }
 
-  property("unifying type substitution") {
+  property("compute unifying type substitution") {
     import SigmaTyper._
+    def check(s1: String, s2: String, exp: Option[STypeSubst] = Some(emptySubst)): Unit = {
+      val t1 = ty(s1); val t2 = ty(s2)
+      unifyTypes(t1, t2) shouldBe exp
+      exp match {
+        case Some(subst) =>
+          applySubst(t1, subst) shouldBe t2
+        case None =>
+      }
+    }
+    def unify(s1: String, s2: String, subst: (STypeIdent, SType)*): Unit =
+      check(s1, s2, Some(subst.toMap))
+
     unifyTypes(NoType, NoType) shouldBe None
+    unifyTypes(SUnit, SUnit) shouldBe Some(emptySubst)
+    unifyTypes(SAny, SAny) shouldBe Some(emptySubst)
     unifyTypes(SInt, SInt) shouldBe Some(emptySubst)
     unifyTypes(SInt, SBoolean) shouldBe None
-    unifyTypes(STuple(SInt, SBoolean), SInt) shouldBe None
-    unifyTypes(STuple(SInt, SBoolean), STuple(SInt, SBoolean)) shouldBe Some(emptySubst)
-    unifyTypes(STuple(SInt, SBoolean), STuple(SInt, SInt)) shouldBe None
-//    unifyTypes(STuple(SInt, SBox), STuple(SInt, SBox)) shouldBe Some(emptySubst)
+
+    check("(Int, Boolean)", "Int", None)
+    check("(Int, Boolean)", "(Int, Boolean)")
+    check("(Int, Boolean)", "(Int, Int)", None)
+    check("(Int, Box)", "(Int, Box)")
+    check("(Int, Box)", "(Int, Box, Boolean)", None)
+
+    check("Array[Int]", "Array[Boolean]", None)
+    check("Array[Int]", "Array[Int]")
+    check("Array[(Int,Box)]", "Array[Int]", None)
+    check("Array[(Int,Box)]", "Array[(Int,Box)]")
+    check("Array[Array[Int]]", "Array[Array[Int]]")
+
+    check("Int => Int", "Int => Boolean", None)
+    check("Int => Int", "Int => Int")
+    check("(Int, Boolean) => Int", "Int => Int", None)
+    check("(Int, Boolean) => Int", "(Int,Boolean) => Int")
+
+    unify("A", "A", ("A", STypeIdent("A")))
+    check("A", "B", None)
+
+    check("(Int, A)", "Int", None)
+    unify("(Int, A)", "(Int, A)", ("A", STypeIdent("A")))
+    unify("(Int, A)", "(Int, Int)", ("A", SInt))
+    unify("(A, B)", "(A, B)", ("A", STypeIdent("A")), ("B", STypeIdent("B")))
+    unify("(A, B)", "(Int, Boolean)", ("A", SInt), ("B", SBoolean))
+    check("(A, B)", "(Int, Boolean, Box)", None)
+    check("(A, Boolean)", "(Int, B)", None)
+    check("(A, Int)", "(B, Int)", None)
+
+    unify("A", "Array[Boolean]", ("A", ty("Array[Boolean]")))
+    unify("Array[A]", "Array[Int]", ("A", SInt))
+    unify("Array[A]", "Array[(Int, Box)]", ("A", ty("(Int, Box)")))
+    unify("Array[(Int, A)]", "Array[(Int, Box)]", ("A", SBox))
+    unify("Array[Array[A]]", "Array[Array[Int]]", ("A", SInt))
+    unify("Array[Array[A]]", "Array[Array[A]]", ("A", STypeIdent("A")))
+    check("Array[Array[A]]", "Array[Array[B]]", None)
+
+    unify("A => Int", "Int => Int", ("A", SInt))
+    check("A => Int", "Int => Boolean", None)
+    unify("Int => A", "Int => Int", ("A", SInt))
+    check("Int => A", "Boolean => Int", None)
+    unify("(Int, A) => B", "(Int, Boolean) => Box", ("A", SBoolean), ("B", SBox))
+    check("(Int, A) => A", "(Int, Boolean) => Box", None)
+    unify("(Int, A) => A", "(Int, Boolean) => Boolean", ("A", SBoolean))
+
+    unify(
+      "((A,Int), Array[B] => Array[(Array[C], B)]) => A",
+      "((Int,Int), Array[Boolean] => Array[(Array[C], Boolean)]) => Int",
+      ("A", SInt), ("B", SBoolean), ("C", ty("C")))
   }
 
 }
