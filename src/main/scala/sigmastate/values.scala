@@ -1,6 +1,7 @@
 package sigmastate
 
 import java.math.BigInteger
+import java.util
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
@@ -116,6 +117,8 @@ object Values {
       case ob: ByteArrayConstant => value sameElements ob.value
       case _ => false
     }
+
+    override def hashCode(): Int = util.Arrays.hashCode(value)
   }
 
   object EmptyByteArray extends ByteArrayConstant(Array.emptyByteArray)
