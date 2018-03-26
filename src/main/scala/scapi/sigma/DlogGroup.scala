@@ -155,7 +155,7 @@ trait DlogGroup[ElemType <: ECPoint] {
     * @param exponent
     * @return the exponentiation result
     */
-  def exponentiateWithPreComputedValues(base: ElemType, exponent: BigInteger)
+  def exponentiateWithPreComputedValues(base: ElemType, exponent: BigInteger): ElemType
 
   /**
     * This function cleans up any resources used by exponentiateWithPreComputedValues for the requested base.

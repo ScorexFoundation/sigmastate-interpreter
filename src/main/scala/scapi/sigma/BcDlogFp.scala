@@ -28,6 +28,80 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
   // of a string to be converted to a Group Element of this group.
   lazy val k = calcK(p)
 
+  /**
+    * The class GroupElementExponentiations is a nested class of DlogGroupAbs.<p>
+    * It performs the actual work of pre-computation of the exponentiations for one base.
+    * It is composed of two main elements. The group element for which the optimized computations
+    * are built for, called the base and a vector of group elements that are the result of
+    * exponentiations of order 1,2,4,8,
+    */
+  private class GroupElementsExponentiations(base: ElemType) //group element for which the optimized computations are built for
+  /**
+    * The constructor creates a map structure in memory.
+    * Then calculates the exponentiations of order 1,2,4,8 for the given base and save them in the map.
+    *
+    * @param base
+    * @throws IllegalArgumentException
+    */ { // build new vector of exponentiations
+
+    private val exponentiations = new mutable.ListBuffer[ElemType]()
+
+    exponentiations += this.base // add the base - base^1
+    val two = new BigInteger("2")
+    (1 until 4).foreach { i =>
+      exponentiations += exponentiate(exponentiations(i - 1), two)
+    }
+
+    /**
+      * Calculates the necessary additional exponentiations and fills the exponentiations vector with them.
+      *
+      * @param size - the required exponent
+      * @throws IllegalArgumentException
+      */
+    private def prepareExponentiations(size: BigInteger): Unit = { //find log of the number - this is the index of the size-exponent in the exponentiation array
+      val index = size.bitLength - 1
+      /* calculates the necessary exponentiations and put them in the exponentiations vector */ var i = exponentiations.size
+
+      (exponentiations.size to index).foreach { i =>
+        exponentiations += exponentiate(exponentiations(i - 1), two)
+      }
+    }
+
+    /**
+      * Checks if the exponentiations had already been calculated for the required size.
+      * If so, returns them, else it calls the private function prepareExponentiations with the given size.
+      *
+      * @param size - the required exponent
+      * @return groupElement - the exponentiate result
+      */
+    def getExponentiation(size: BigInteger): ElemType = {
+      /**
+        * The exponents in the exponents vector are all power of 2.
+        * In order to achieve the exponent size, we calculate its closest power 2 in the exponents vector
+        * and continue the calculations from there.
+        */
+      // find the the closest power 2 exponent
+      val index = size.bitLength - 1
+
+      /* if the requested index out of the vector bounds, the exponents have not been calculated yet, so calculates them.*/
+      if (exponentiations.size <= index) prepareExponentiations(size)
+
+      var exponent = exponentiations(index) //get the closest exponent in the exponentiations vector
+
+      /* if size is not power 2, calculates the additional multiplications */
+      val lastExp = two.pow(index)
+      val difference = size.subtract(lastExp)
+      if (difference.compareTo(BigInteger.ZERO) > 0) {
+        val diff = getExponentiation(size.subtract(lastExp))
+        exponent = multiplyGroupElements(diff, exponent)
+      }
+      exponent
+    }
+  }
+
+  //map for multExponentiationsWithSameBase calculations
+  private val exponentiationsMap = mutable.Map[ElemType, GroupElementsExponentiations]()
+
 
   //Create the generator
   //Assume that (x,y) are the coordinates of a point that is indeed a generator but check that (x,y) are the coordinates of a point.
@@ -451,7 +525,18 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @param exponent
     * @return the exponentiation result
     */
-  override def exponentiateWithPreComputedValues(base: ElemType, exponent: BigInteger): Unit = ???
+  override def exponentiateWithPreComputedValues(base: ElemType, exponent: BigInteger): ElemType = {
+    //extracts from the map the GroupElementsExponentiations object corresponding to the accepted base
+    val exponentiations = exponentiationsMap.getOrElse(key = base, {
+      // if there is no object that matches this base - create it and add it to the map
+      val exps = new GroupElementsExponentiations(base)
+      exponentiationsMap.put(base, exps)
+      exps
+    })
+
+    // calculates the required exponent
+    exponentiations.getExponentiation(exponent)
+  }
 
   /**
     * This function cleans up any resources used by exponentiateWithPreComputedValues for the requested base.
@@ -459,7 +544,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     *
     * @param base
     */
-  override def endExponentiateWithPreComputedValues(base: ElemType): Unit = ???
+  override def endExponentiateWithPreComputedValues(base: ElemType): Unit = exponentiationsMap -= base
 
   /**
     * This function returns the value <I>k</I> which is the maximum length of a string to be encoded to a Group Element of this group.<p>
@@ -472,14 +557,13 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
   override def maxLengthOfByteArrayForEncoding: Int = ???
 
 
-
   /*
 	 * Computes the simultaneousMultiplyExponentiate using a naive algorithm
 	 */
   protected def computeNaive(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType =
     groupElements.zip(exponentiations)
-      .map{case (base, exp) => exponentiate(base, exp)}
-      .foldLeft(identity){case (r, elem) => multiplyGroupElements(elem, r)}
+      .map { case (base, exp) => exponentiate(base, exp) }
+      .foldLeft(identity) { case (r, elem) => multiplyGroupElements(elem, r) }
 
 
   /*
@@ -504,7 +588,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     //computes the first loop of the algorithm. This loop returns in the next part of the algorithm with one single tiny change.
 
     //computes the third part of the algorithm
-    (t - 2).to(0, -1).foreach{ j =>
+    (t - 2).to(0, -1).foreach { j =>
       //Y = Y^2
       result = exponentiate(result, new BigInteger("2"))
       //computes the inner loop
@@ -527,7 +611,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     var res = result
     (0 until h).foreach { k =>
       var e = 0
-      (k * w until (k * w + w)).foreach{i =>
+      (k * w until (k * w + w)).foreach { i =>
         if (i < exponentiations.length) { //if the bit is set, change the e value
           if (exponentiations(i).testBit(bitIndex)) {
             val twoPow = Math.pow(2, i - k * w).toInt
@@ -548,9 +632,9 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     //create the pre-computation table of size h*(2^(w))
     val preComp: Seq[mutable.Seq[ElemType]] = Seq.fill(h)(mutable.Seq.fill(twoPowW)(identity))
 
-    (0 until h).foreach{k =>
-      (0 until twoPowW).foreach{ e =>
-        (0 until w).foreach{i =>
+    (0 until h).foreach { k =>
+      (0 until twoPowW).foreach { e =>
+        (0 until w).foreach { i =>
           val baseIndex = k * w + i
           if (baseIndex < groupElements.length) {
             val base = groupElements(baseIndex)
@@ -581,12 +665,32 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 }
 
 
-object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1"))
+object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1")) with App {
+  val elems = 5000
+  val base = generator
+  val exps = (1 to elems).map { _ =>
+    val one = BigInteger.ONE
+    val qMinusOne = x9params.getN.subtract(one)
+    // choose a random number x in Zq*
+    BigIntegers.createRandomInRange(one, qMinusOne, random)
+  }.toArray
+
+  println(exps.map(e => exponentiateWithPreComputedValues(base, e) == exponentiate(base, e)).forall(_ == true))
+
+  var t0 = System.currentTimeMillis()
+  exps.foreach(exp => exponentiate(base, exp))
+  println(System.currentTimeMillis() - t0)
+
+
+  t0 = System.currentTimeMillis()
+  exps.foreach(exp => exponentiateWithPreComputedValues(base, exp))
+  println(System.currentTimeMillis() - t0)
+}
 
 object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("secp521r1")) with App {
   val elems = 1000
   val bases = (1 to elems).map(_ => createRandomGenerator()).toArray
-  val exps = (1 to elems).map{_ =>
+  val exps = (1 to elems).map { _ =>
     val one = BigInteger.ONE
     val qMinusOne = x9params.getN.subtract(one)
     // choose a random number x in Zq*
