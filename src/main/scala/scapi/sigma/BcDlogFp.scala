@@ -401,7 +401,8 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @return <code>true</code> if the order is greater than 2^numBits;<p>
     *         <code>false</code> otherwise.
     **/
-  override def orderGreaterThan(numBits: Int): Boolean = ???
+  override def orderGreaterThan(numBits: Int): Boolean =
+    if (order.compareTo(new BigInteger("2").pow(numBits)) > 0) true else false
 
   /**
     * Multiplies two GroupElements
