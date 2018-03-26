@@ -583,7 +583,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1"))
 
 object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("secp521r1")) with App {
-  val elems = 1
+  val elems = 1000
   val bases = (1 to elems).map(_ => createRandomGenerator()).toArray
   val exps = (1 to elems).map{_ =>
     val one = BigInteger.ONE
@@ -592,8 +592,13 @@ object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("s
     BigIntegers.createRandomInRange(one, qMinusOne, random)
   }.toArray
 
+  var t0 = System.currentTimeMillis()
   val naive = computeNaive(bases, exps)
+  println(System.currentTimeMillis() - t0)
+
+  t0 = System.currentTimeMillis()
   val ll = computeLL(bases, exps)
+  println(System.currentTimeMillis() - t0)
 
   println(naive.normalize().getAffineXCoord)
   println(naive.normalize().getAffineYCoord)
