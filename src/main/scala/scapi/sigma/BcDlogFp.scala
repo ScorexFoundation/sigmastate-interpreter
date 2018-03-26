@@ -10,6 +10,7 @@ import org.bouncycastle.math.ec.custom.sec.{SecP384R1Point, SecP521R1Point}
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import org.bouncycastle.util.BigIntegers
 
+import scala.collection.mutable
 import scala.util.Try
 
 
@@ -327,7 +328,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     //However, if a specific Dlog Group has a more efficient implementation then is it advised to override this function in that concrete
     //Dlog group. For example we do so in CryptoPpDlogZpSafePrime.
     val one = BigInteger.ONE
-    val qMinusOne = x9params.getN
+    val qMinusOne = x9params.getN.subtract(one)
     // choose a random number x in Zq*
     val randNum = BigIntegers.createRandomInRange(one, qMinusOne, random)
     // compute g^x to get a new element
@@ -433,7 +434,9 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @param exponentiations
     * @return the exponentiation result
     */
-  override def simultaneousMultipleExponentiations(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType = ???
+  override def simultaneousMultipleExponentiations(groupElements: Array[ElemType],
+                                                   exponentiations: Array[BigInteger]): ElemType =
+    computeLL(groupElements, exponentiations)
 
   /**
     * Computes the product of several exponentiations of the same base
@@ -466,11 +469,139 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @return k the maximum length of a string to be encoded to a Group Element of this group. k can be zero if there is no maximum.
     */
   override def maxLengthOfByteArrayForEncoding: Int = ???
+
+
+
+  /*
+	 * Computes the simultaneousMultiplyExponentiate using a naive algorithm
+	 */
+  protected def computeNaive(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType =
+    groupElements.zip(exponentiations)
+      .map{case (base, exp) => exponentiate(base, exp)}
+      .foldLeft(identity){case (r, elem) => multiplyGroupElements(elem, r)}
+
+
+  /*
+   * Compute the simultaneousMultiplyExponentiate by LL algorithm.
+   * The code is taken from the pseudo code of LL algorithm in http://dasan.sejong.ac.kr/~chlim/pub/multi_exp.ps.
+   */
+  protected def computeLL(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType = {
+    val n = groupElements.length
+    //get the biggest exponent
+    val bigExp = exponentiations.max
+    val t = bigExp.bitLength //num bits of the biggest exponent.
+    val w = getLLW(t) //window size, choose it according to the value of t
+
+    //h = n/w
+    val h = if ((n % w) == 0) n / w else (n / w).toInt + 1
+
+    //create pre computation table
+    val preComp = createLLPreCompTable(groupElements, w, h)
+
+    //holds the computation result
+    var result: ElemType = computeLoop(exponentiations, w, h, preComp, identity, t - 1)
+    //computes the first loop of the algorithm. This loop returns in the next part of the algorithm with one single tiny change.
+
+    //computes the third part of the algorithm
+    (t - 2).to(0, -1).foreach{ j =>
+      //Y = Y^2
+      result = exponentiate(result, new BigInteger("2"))
+      //computes the inner loop
+      result = computeLoop(exponentiations, w, h, preComp, result, j)
+    }
+    result
+  }
+
+  /*
+   * Computes the loop the repeats in the algorithm.
+   * for k=0 to h-1
+   * 		e=0
+   * 		for i=kw to kw+w-1
+   *			if the bitIndex bit in ci is set:
+   *			calculate e += 2^(i-kw)
+   *		result = result *preComp[k][e]
+   *
+   */
+  private def computeLoop(exponentiations: Array[BigInteger], w: Int, h: Int, preComp: Seq[Seq[ElemType]], result: ElemType, bitIndex: Int) = {
+    var res = result
+    (0 until h).foreach { k =>
+      var e = 0
+      (k * w until (k * w + w)).foreach{i =>
+        if (i < exponentiations.length) { //if the bit is set, change the e value
+          if (exponentiations(i).testBit(bitIndex)) {
+            val twoPow = Math.pow(2, i - k * w).toInt
+            e += twoPow
+          }
+        }
+      }
+      res = multiplyGroupElements(res, preComp(k)(e))
+    }
+    res
+  }
+
+  /*
+   * Creates the preComputation table.
+   */
+  private def createLLPreCompTable(groupElements: Array[ElemType], w: Int, h: Int) = {
+    val twoPowW = Math.pow(2, w).toInt
+    //create the pre-computation table of size h*(2^(w))
+    val preComp: Seq[mutable.Seq[ElemType]] = Seq.fill(h)(mutable.Seq.fill(twoPowW)(identity))
+
+    (0 until h).foreach{k =>
+      (0 until twoPowW).foreach{ e =>
+        (0 until w).foreach{i =>
+          val baseIndex = k * w + i
+          if (baseIndex < groupElements.length) {
+            val base = groupElements(baseIndex)
+            //if bit i in e is set, change preComp[k][e]
+            if ((e & (1 << i)) != 0) { //bit i is set
+              preComp(k)(e) = multiplyGroupElements(preComp(k)(e), base)
+            }
+          }
+        }
+      }
+    }
+    preComp
+  }
+
+  /*
+   * returns the w value according to the given t
+   */
+  private def getLLW(t: Int): Int = {
+    if (t <= 10) 2
+    else if (t <= 24) 3
+    else if (t <= 60) 4
+    else if (t <= 144) 5
+    else if (t <= 342) 6
+    else if (t <= 797) 7
+    else if (t <= 1828) 8
+    else 9
+  }
 }
 
 
 object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1"))
 
-object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("secp521r1"))
+object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("secp521r1")) with App {
+  val elems = 1
+  val bases = (1 to elems).map(_ => createRandomGenerator()).toArray
+  val exps = (1 to elems).map{_ =>
+    val one = BigInteger.ONE
+    val qMinusOne = x9params.getN.subtract(one)
+    // choose a random number x in Zq*
+    BigIntegers.createRandomInRange(one, qMinusOne, random)
+  }.toArray
+
+  val naive = computeNaive(bases, exps)
+  val ll = computeLL(bases, exps)
+
+  println(naive.normalize().getAffineXCoord)
+  println(naive.normalize().getAffineYCoord)
+
+  println(ll.normalize().getAffineXCoord)
+  println(ll.normalize().getAffineYCoord)
+
+  println(naive == ll)
+}
 
 object Curve25519 extends BcDlogFp[Curve25519Point](CustomNamedCurves.getByName("curve25519"))
