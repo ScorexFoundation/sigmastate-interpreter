@@ -332,14 +332,15 @@ class UtxoInterpreterSpecification extends PropSpec
     val prover = new UtxoProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
 
-//    val env = Map("blake" -> Blake2b256(preimage))
-//    val compiledScript = compile(env,
-//      """{
-//       |  Blake2b256(taggedByteArray(1)) == blake
-//       |}
-//      """.stripMargin)
+    val env = Map("blake" -> Blake2b256(preimage))
+    val compiledScript = compile(env,
+      """{
+       |  Blake2b256(taggedByteArray(1)) == blake
+       |}
+      """.stripMargin)
 
     val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
+    compiledScript shouldBe prop
 
     val ctx = UtxoContext.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
