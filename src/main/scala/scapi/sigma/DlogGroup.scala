@@ -125,19 +125,6 @@ trait DlogGroup[ElemType <: ECPoint] {
   }
 
   /**
-    * This function allows the generation of a group element by a protocol that holds a Dlog Group but does not know if it is a Zp Dlog Group or an Elliptic Curve Dlog Group.
-    * It receives the possible values of a group element and whether to check membership of the group element to the group or not.
-    * It may be not necessary to check membership if the source of values is a trusted source (it can be the group itself after some calculation). On the other hand,
-    * to work with a generated group element that is not really an element in the group is wrong. It is up to the caller of the function to decide if to check membership or not.
-    * If bCheckMembership is false always generate the element. Else, generate it only if the values are correct.
-    * @param bCheckMembership
-    * @param values
-    * @return the generated GroupElement
-    * @throws IllegalArgumentException
-    */
-  def generateElement(bCheckMembership: Boolean, values: BigInteger*): ElemType
-
-  /**
     * Reconstructs a GroupElement given the GroupElementSendableData data, which might have been received through a Channel open between the party holding this DlogGroup and
     * some other party.
     * @param bCheckMembership whether to check that the data provided can actually reconstruct an element of this DlogGroup. Since this action is expensive it should be used only if necessary.
