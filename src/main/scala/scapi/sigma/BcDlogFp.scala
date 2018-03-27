@@ -554,7 +554,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     *
     * @return k the maximum length of a string to be encoded to a Group Element of this group. k can be zero if there is no maximum.
     */
-  override def maxLengthOfByteArrayForEncoding: Int = ???
+  override lazy val maxLengthOfByteArrayForEncoding: Int = k
 
 
   /*
