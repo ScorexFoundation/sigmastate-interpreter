@@ -46,7 +46,7 @@ object SigmaPredef {
   }
 
   val AllSym = PredefIdent("allOf")
-  val AnySym = PredefIdent("allOf")
+  val AnySym = PredefIdent("anyOf")
 
   val TaggedByteArraySym = PredefIdent("taggedByteArray")
   val TaggedIntSym = PredefIdent("taggedInt")

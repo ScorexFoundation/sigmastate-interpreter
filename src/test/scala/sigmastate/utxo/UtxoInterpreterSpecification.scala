@@ -499,39 +499,41 @@ class UtxoInterpreterSpecification extends PropSpec
     val deadlineA = 1000
     val deadlineB = 500
 
-//    val env = Map(
-//      "height1" -> height1, "height2" -> height2,
-//      "deadlineA" -> deadlineA, "deadlineB" -> deadlineB,
-//      "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
-//    val compiledProp1 = compile(env,
-//      """{
-//       |  anyOf(Array(
-//       |    HEIGHT > height1 + deadlineA && pubkeyA,
-//       |    pubkeyB && blake2b256(taggedByteArray(1)) == hx
-//       |  ))
-//       |}
-//      """.stripMargin)
+    val env = Map(
+      "height1" -> height1, "height2" -> height2,
+      "deadlineA" -> deadlineA, "deadlineB" -> deadlineB,
+      "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
+    val compiledProp1 = compile(env,
+      """{
+       |  anyOf(Array(
+       |    HEIGHT > height1 + deadlineA && pubkeyA,
+       |    pubkeyB && blake2b256(taggedByteArray(1)) == hx
+       |  ))
+       |}
+      """.stripMargin)
 
     //chain1 script
     val prop1 = OR(
-      AND(GT(Height, IntConstant(height1 + deadlineA)), pubkeyA),
+      AND(GT(Height, Plus(IntConstant(height1), IntConstant(deadlineA))), pubkeyA),
       AND(pubkeyB, EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
     )
+    compiledProp1 shouldBe prop1
 
-//    val compiledProp2 = compile(env,
-//      """{
-//       |  anyOf(Array(
-//       |    HEIGHT > height2 + deadlineB && pubkeyB,
-//       |    pubkeyA && blake2b256(taggedByteArray(1)) == hx
-//       |  ))
-//       |}
-//      """.stripMargin)
+    val compiledProp2 = compile(env,
+      """{
+       |  anyOf(Array(
+       |    HEIGHT > height2 + deadlineB && pubkeyB,
+       |    pubkeyA && blake2b256(taggedByteArray(1)) == hx
+       |  ))
+       |}
+      """.stripMargin)
 
     //chain2 script
     val prop2 = OR(
-      AND(GT(Height, IntConstant(height2 + deadlineB)), pubkeyB),
+      AND(GT(Height, Plus(IntConstant(height2), IntConstant(deadlineB))), pubkeyB),
       AND(pubkeyA, EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
     )
+    compiledProp2 shouldBe prop2
 
     //Preliminary checks:
 
@@ -594,10 +596,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-//    val compiledProp = compile(env, """pubkeyA \/ pubkeyB""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
+    val compiledProp = compile(env, """pubkeyA || pubkeyB""")
 
     val prop = OR(pubkeyA, pubkeyB)
+    compiledProp shouldBe prop
 
     val ctx = UtxoContext(
       currentHeight = 1,
@@ -625,10 +628,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-//    val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, pubkeyC))""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
+    val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, pubkeyC))""")
 
     val prop = OR(pubkeyA, pubkeyB, pubkeyC)
+    compiledProp shouldBe prop
 
     val ctx = UtxoContext(
       currentHeight = 1,
@@ -658,10 +662,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA3 = proverA.dlogSecrets(2).publicImage
     val pubkeyA4 = proverA.dlogSecrets(3).publicImage
 
-//    val env = Map("pubkeyA1" -> pubkeyA1, "pubkeyA2" -> pubkeyA2, "pubkeyA3" -> pubkeyA3, "pubkeyA4" -> pubkeyA4)
-//    val compiledProp = compile(env, """anyOf(Array(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""")
+    val env = Map("pubkeyA1" -> pubkeyA1, "pubkeyA2" -> pubkeyA2, "pubkeyA3" -> pubkeyA3, "pubkeyA4" -> pubkeyA4)
+    val compiledProp = compile(env, """anyOf(Array(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""")
 
     val prop = OR(Seq(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))
+    compiledProp shouldBe prop
 
     val ctx = UtxoContext(
       currentHeight = 1,
@@ -687,10 +692,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-//    val compiledProp = compile(env, """pubkeyA && pubkeyB || pubkeyC && pubkeyD""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+    val compiledProp = compile(env, """pubkeyA && pubkeyB || pubkeyC && pubkeyD""")
 
     val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyC, pubkeyD))
+    compiledProp shouldBe prop
 
     val ctx = UtxoContext(
       currentHeight = 1,
@@ -726,10 +732,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-//    val compiledProp = compile(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+    val compiledProp = compile(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""")
 
     val prop = OR(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    compiledProp shouldBe prop
 
     val ctx = UtxoContext(
       currentHeight = 1,
@@ -765,10 +772,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-//    val compiledProp = compile(env, """(pubkeyA || pubkeyB) && (pubkeyC || pubkeyD)""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+    val compiledProp = compile(env, """(pubkeyA || pubkeyB) && (pubkeyC || pubkeyD)""")
 
     val prop = AND(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    compiledProp shouldBe prop
 
     val ctx = UtxoContext(
       currentHeight = 1,
@@ -804,10 +812,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-//    val compiledProp = compile(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+    val compiledProp = compile(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""")
 
     val prop = AND(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    compiledProp shouldBe prop
 
     val ctx = UtxoContext(
       currentHeight = 1,
@@ -846,11 +855,12 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyC = proverC.dlogSecrets.head.publicImage
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-//    val compiledProp = compile(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
+    val compiledProp = compile(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""")
 
     val prop = OR(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
-
+    compiledProp shouldBe prop
+    
     val ctx = UtxoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -881,10 +891,11 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-//    val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, HEIGHT > 500))""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
+    val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, HEIGHT > 500))""")
 
     val prop = OR(pubkeyA, pubkeyB, GT(Height, IntConstant(500)))
+    compiledProp shouldBe prop
 
     val ctx1 = UtxoContext(
       currentHeight = 1,
@@ -919,11 +930,12 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-//    val compiledProp = compile(env, """anyOf(Array(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
+    val compiledProp = compile(env, """anyOf(Array(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
 
     val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntConstant(500))))
-
+    compiledProp shouldBe prop
+    
     val ctx1 = UtxoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -989,11 +1001,12 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubdhB = proverB.dhSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubdhB" -> pubdhB)
-//    val compiledProp = compile(env, """pubkeyA || pubdhB""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubdhB" -> pubdhB)
+    val compiledProp = compile(env, """pubkeyA || pubdhB""")
 
     val prop = OR(pubkeyA, pubdhB)
-
+    compiledProp shouldBe prop
+    
     val ctx = UtxoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -1014,11 +1027,12 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubdhA = proverA.dhSecrets.head.publicImage
 
-//    val env = Map("pubkeyA" -> pubkeyA, "pubdhA" -> pubdhA)
-//    val compiledProp = compile(env, """pubkeyA && pubdhB""")
+    val env = Map("pubkeyA" -> pubkeyA, "pubdhA" -> pubdhA)
+    val compiledProp = compile(env, """pubkeyA && pubdhA""")
 
     val prop = AND(pubkeyA, pubdhA)
-
+    compiledProp shouldBe prop
+    
     val ctx = UtxoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -1066,12 +1080,14 @@ class UtxoInterpreterSpecification extends PropSpec
 //          |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
 //           }""".stripMargin)
 
-      OR(
+      val prop = OR(
         AND(LE(Height, IntConstant(timeout)),
           EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytes(TaggedBox(21))))),
             ByteArrayConstant(properHash))),
         AND(GT(Height, IntConstant(timeout)), sender)
       )
+//      compiledProp shouldBe prop
+      prop
     }
 
     val ctx = UtxoContext(
@@ -1106,6 +1122,7 @@ class UtxoInterpreterSpecification extends PropSpec
 //         }""".stripMargin)
 
     val prop = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), IntConstant(20)))
+//    compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(11, pubkey)
     val newBox2 = ErgoBox(10, pubkey)
@@ -1130,10 +1147,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkey" -> pubkey)
-//    val compiledProp = compile(env, """pubkey && OUTPUTS(0).value > 10""")
+    val env = Map("pubkey" -> pubkey)
+    val compiledProp = compile(env, """pubkey && OUTPUTS(0).value > 10""")
 
     val prop = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntConstant(10)))
+    compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(11, pubkey)
     val newBox2 = ErgoBox(10, pubkey)
@@ -1199,6 +1217,7 @@ class UtxoInterpreterSpecification extends PropSpec
 //    val compiledProp = compile(Map(), "OUTPUTS.exists(fun (box: Box) = box.value + 5 > 10)")
 
     val prop = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), IntConstant(5)), IntConstant(10)))
+//    compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(16, pubkey)
     val newBox2 = ErgoBox(15, pubkey)
@@ -1227,6 +1246,7 @@ class UtxoInterpreterSpecification extends PropSpec
 //    val compiledProp = compile(Map(), "OUTPUTS.forall(fun (box: Box) = box.value == 10)")
 
     val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
+//    compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBox2 = ErgoBox(10, pubkey)
@@ -1283,6 +1303,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3)(SInt),
       Plus(ExtractRegisterAs(Self, R3)(SInt), IntConstant(1))))
+//    compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(3)))
     val newBox2 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(6)))
@@ -1317,6 +1338,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = Exists(Outputs, 21,
       EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntConstant(0L))),
         Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
+//    compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBox2 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(6)))
@@ -1362,6 +1384,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = IsMember(ExtractRegisterAs(Self, R3),
       ByteArrayConstant(key),
       ByteArrayConstant(proof))
+//    compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
@@ -1406,6 +1429,7 @@ class UtxoInterpreterSpecification extends PropSpec
 //    val compiledProp = compile(env, """isMember(SELF.R3, SELF.R4, proofId)""")
 
     val prop = IsMember(ExtractRegisterAs(Self, R3), ExtractRegisterAs(Self, R4), TaggedByteArray(proofId))
+//    compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
@@ -1436,6 +1460,7 @@ class UtxoInterpreterSpecification extends PropSpec
 //    val compiledProp = compile(Map(), """ProveDlog(SELF.R3) && ProveDlog(SELF.R4)""")
 
     val prop = AND(new ProveDlog(ExtractRegisterAs(Self, R3)), new ProveDlog(ExtractRegisterAs(Self, R4)))
+//    compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(10, pubkey3)
     val newBoxes = IndexedSeq(newBox1)
@@ -1485,6 +1510,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(brother.id)))
+//    compiledProp shouldBe prop
 
     val s = ErgoBox(10, prop, Map())
 

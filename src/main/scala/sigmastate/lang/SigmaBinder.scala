@@ -57,6 +57,10 @@ class SigmaBinder(env: Map[String, Any]) {
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(AND(args))
 
+    // Rule: all(Array(...)) --> AND(...)
+    case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
+      Some(OR(args))
+
     // Rule: exists(input, f) -->
 //    case Apply(ExistsSym, Seq(input: Value[SCollection[SType]]@unchecked, pred: Value[SFunc]@unchecked)) =>
 //      val tItem = input.tpe.elemType

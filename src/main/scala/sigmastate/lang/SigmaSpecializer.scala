@@ -3,12 +3,12 @@ package sigmastate.lang
 import java.math.BigInteger
 
 import edu.biu.scapi.primitives.dlog.GroupElement
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, strategy, rewrite}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rewrite, reduce}
 import sigmastate.Values.Value.Typed
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Lambda, Let, Apply, Select, Block, Ident}
+import sigmastate.lang.Terms.{Lambda, Let, SelectGen, Apply, Select, Block, Ident, ValueOps}
 import sigmastate.utxo._
 
 class SigmaSpecializer {
@@ -32,6 +32,8 @@ class SigmaSpecializer {
       Some(CalcBlake2b256(arg))
     case Apply(TaggedByteArraySym, Seq(IntConstant(i))) =>
       Some(TaggedByteArray(i.toByte))
+    case SelectGen(obj, "value", SInt) if obj.tpe == SBox =>
+      Some(ExtractAmount(obj.asValue[SBox.type]))
   })))(e)
 
   def specialize(typed: SValue): SValue = {
