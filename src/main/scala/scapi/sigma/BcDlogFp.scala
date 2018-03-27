@@ -213,7 +213,6 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * A point is in the group if it in the q-order group which is a sub-group of the Elliptic Curve.
     * Base assumption of this function is that checkCurveMembership function is already been called and returned true.
     *
-    * @param curve
     * @param point
     * @return true if the given point is in the given dlog group.
     */
