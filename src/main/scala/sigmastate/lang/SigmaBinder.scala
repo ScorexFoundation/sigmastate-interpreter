@@ -6,10 +6,9 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import sigmastate.lang.Terms._
 import sigmastate._
 import Values._
-import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.utxo._
-import sigmastate.SCollection._
 import sigmastate.Values.Value.Typed
+import sigmastate.interpreter.GroupSettings
 
 class SigmaBinder(env: Map[String, Any]) {
   import SigmaBinder._
@@ -24,7 +23,7 @@ class SigmaBinder(env: Map[String, Any]) {
         case v: Int => Some(IntConstant(v))
         case v: Long => Some(IntConstant(v))
         case v: BigInteger => Some(BigIntConstant(v))
-        case v: GroupElement => Some(GroupElementConstant(v))
+        case v: GroupSettings.EcPointType => Some(GroupElementConstant(v))
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
         case v: SValue => Some(v)
         case _ => None

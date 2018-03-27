@@ -2,9 +2,10 @@ package sigmastate.lang
 
 import sigmastate.lang.Terms.Ident
 import sigmastate.Values.Value
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate._
 import java.math.BigInteger
+
+import sigmastate.interpreter.GroupSettings
 
 trait LangTests {
 
@@ -17,8 +18,8 @@ trait LangTests {
 
   val EV: Map[String, Any] = Map()
 
-  val dlog = ProveDlog.dlogGroup
-  val g1 = dlog.getGenerator
+  val dlog = GroupSettings.dlogGroup
+  val g1 = dlog.generator
   val g2 = dlog.multiplyGroupElements(g1, g1)
   protected val n: BigInteger = BigInt(10).underlying()
 

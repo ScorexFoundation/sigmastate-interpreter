@@ -24,7 +24,7 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
       //real proving
       case true =>
         val firstMsg = prover.firstMessage
-        val e = Blake2b256(firstMsg.ecData.getX.toByteArray ++ firstMsg.ecData.getY.toByteArray ++ challenge)
+        val e = Blake2b256(firstMsg.ecData.getEncoded(true) ++ challenge)
         firstMsg -> prover.secondMessage(Challenge(e))
       //simulation
       case false => prover.simulate(Challenge(challenge))
@@ -36,21 +36,23 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
   }
 }
 
-object SchnorrSigner extends GroupSettings {
+object SchnorrSigner {
+
+  import GroupSettings.dlogGroup
 
   def serialize(fm: FirstDLogProverMessage, sm: SecondDLogProverMessage): Array[Byte] = {
     val grec = fm.ecData
     val z = sm.z
 
-    val grxb = grec.getX.toByteArray
-    val gryb = grec.getY.toByteArray
+    val grb = grec.getEncoded(true)
     val zb = z.toByteArray
-    Array(grxb.length.toByte, gryb.length.toByte, zb.length.toByte) ++ grxb ++ gryb ++ zb
+    //todo: is byte enough for any group?
+    Array(grb.length.toByte, zb.length.toByte) ++ grb  ++ zb
   }
 
   def generate(privateInput: DLogProverInput): SchnorrSigner = {
     val publicInput: ProveDlog = {
-      val g = dlogGroup.getGenerator
+      val g = dlogGroup.generator
       val gw = dlogGroup.exponentiate(g, privateInput.w)
 
       ProveDlog(gw)

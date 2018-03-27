@@ -2,7 +2,6 @@ package sigmastate
 
 import java.math.BigInteger
 
-import edu.biu.scapi.primitives.dlog.GroupElement
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
@@ -47,7 +46,7 @@ object Values {
     implicit def liftLong(n: Long): Value[SInt.type] = IntConstant(n)
     implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray.type] = ByteArrayConstant(arr)
     implicit def liftBigInt(arr: BigInteger): Value[SBigInt.type] = BigIntConstant(arr)
-    implicit def liftGroupElement(g: GroupElement): Value[SGroupElement.type] = GroupElementConstant(g)
+    implicit def liftGroupElement(g: GroupSettings.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
@@ -156,19 +155,20 @@ object Values {
   case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.type] with NotReadyValueAvlTree {
   }
 
-  case class GroupElementConstant(value: GroupElement) extends EvaluatedValue[SGroupElement.type] {
-    override val cost = 10
 
-    override def tpe = SGroupElement
-  }
+case class GroupElementConstant(value: GroupSettings.EcPointType) extends EvaluatedValue[SGroupElement.type] {
+  override val cost = 10
+  override def tpe = SGroupElement
+}
 
-  case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with GroupSettings {
-    override val cost = 10
 
-    override def tpe = SGroupElement
+case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
+  import GroupSettings.dlogGroup
 
-    override val value: GroupElement = dlogGroup.getGenerator
-  }
+  override val cost = 10
+  override def tpe = SGroupElement
+  override val value: GroupSettings.EcPointType = dlogGroup.generator
+}
 
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
     override val cost = 10
@@ -264,5 +264,4 @@ object Values {
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
-
 }

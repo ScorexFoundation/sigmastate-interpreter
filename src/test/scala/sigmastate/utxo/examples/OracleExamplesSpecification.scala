@@ -9,6 +9,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate._
 import sigmastate.Values._
+import sigmastate.interpreter.GroupSettings
 import sigmastate.utxo._
 import sigmastate.utxo.SigmaStateBox._
 
@@ -74,18 +75,18 @@ class OracleExamplesSpecification extends PropSpec
     val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val group = oraclePubKey.dlogGroup
+    val group = GroupSettings.dlogGroup
 
     val temperature: Long = 18
 
     val r = BigInt.apply(128, new SecureRandom()) //128 bits random number
-    val a = group.exponentiate(group.getGenerator, r.bigInteger)
+    val a = group.exponentiate(group.generator, r.bigInteger)
 
     val ts = System.currentTimeMillis()
 
     val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature) ++ Longs.toByteArray(ts)))
 
-    val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.getOrder).bigInteger // todo : check
+    val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger // todo : check
 
     val oracleBox = SigmaStateBox(
       value = 1L,

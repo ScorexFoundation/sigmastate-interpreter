@@ -1,12 +1,10 @@
 package sigmastate
 
 import java.math.BigInteger
-import javafx.animation.SequentialTransitionBuilder
-
-import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.SType.TypeCode
+import sigmastate.interpreter.GroupSettings
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo.{Box, SigmaStateBox}
+import sigmastate.utxo.SigmaStateBox
 import sigmastate.Values._
 
 import scala.collection.mutable
@@ -68,7 +66,7 @@ object SType {
     case b: Boolean => SBoolean
     case arr: Array[Byte] => SByteArray
     case big: BigInteger => SBigInt
-    case g: GroupElement => SGroupElement
+    case g: GroupSettings.EcPointType => SGroupElement
     case box: SigmaStateBox => SBox
     case _: Unit => SUnit
     case v: SValue => v.tpe
@@ -140,7 +138,7 @@ case object SAvlTree extends SProduct {
 }
 
 case object SGroupElement extends SProduct {
-  override type WrappedType = GroupElement
+  override type WrappedType = GroupSettings.EcPointType
   override val typeCode: TypeCode = 6: Byte
   val fields = Seq(
     "isIdentity" -> SBoolean,

@@ -10,9 +10,9 @@ import scorex.crypto.hash.{Digest32, Blake2b256, Blake2b256Unsafe}
 import sigmastate._
 import sigmastate.Values._
 import BoxHelpers.createBox
-import edu.biu.scapi.primitives.dlog.GroupElement
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import sigmastate.interpreter.GroupSettings
 import sigmastate.lang.{SigmaBinder, SigmaParser, SigmaTyper, SigmaSpecializer}
 import sigmastate.utxo.SigmaStateBox._
 
@@ -22,9 +22,8 @@ class UtxoInterpreterSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
-  implicit def grElemConvert(leafConstant: GroupElementConstant): GroupElement = leafConstant.value
-
-  implicit def grLeafConvert(elem: GroupElement): Value[SGroupElement.type] = GroupElementConstant(elem)
+  implicit def grElemConvert(leafConstant: GroupElementConstant): GroupSettings.EcPointType = leafConstant.value
+  implicit def grLeafConvert(elem: GroupSettings.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 
   import BoxHelpers.{fakeMessage, fakeSelf}
 
