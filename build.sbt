@@ -1,3 +1,5 @@
+organization := "org.scorexplatform"
+
 name := "sigma-state"
 
 version := "0.0.1"
