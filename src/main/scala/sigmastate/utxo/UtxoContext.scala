@@ -8,9 +8,9 @@ import sigmastate.utxo.UtxoContext.Height
 
 case class UtxoContext(currentHeight: Height,
                        lastBlockUtxoRoot: AvlTreeData,
-                       boxesToSpend: IndexedSeq[SigmaStateBox],
-                       spendingTransaction: SigmaStateTransaction,
-                       self: SigmaStateBox,
+                       boxesToSpend: IndexedSeq[ErgoBox],
+                       spendingTransaction: ErgoTransaction,
+                       self: ErgoBox,
                        override val extension: ContextExtension = ContextExtension(Map())
                       ) extends Context[UtxoContext] {
   override def withExtension(newExtension: ContextExtension): UtxoContext = this.copy(extension = newExtension)
@@ -19,7 +19,7 @@ case class UtxoContext(currentHeight: Height,
 object UtxoContext {
   type Height = Long
 
-  def dummy(selfDesc: SigmaStateBox) = UtxoContext(currentHeight = 0,
+  def dummy(selfDesc: ErgoBox) = UtxoContext(currentHeight = 0,
     lastBlockUtxoRoot = AvlTreeData.dummy, boxesToSpend = IndexedSeq(),
                           spendingTransaction = null, self = selfDesc)
 

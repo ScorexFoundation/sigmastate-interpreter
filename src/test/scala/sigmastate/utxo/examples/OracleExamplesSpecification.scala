@@ -11,7 +11,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utxo._
-import sigmastate.utxo.SigmaStateBox._
+import sigmastate.utxo.ErgoBox._
 
 
 class OracleExamplesSpecification extends PropSpec
@@ -88,7 +88,7 @@ class OracleExamplesSpecification extends PropSpec
 
     val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger // todo : check
 
-    val oracleBox = SigmaStateBox(
+    val oracleBox = ErgoBox(
       value = 1L,
       proposition = oraclePubKey,
       additionalRegisters = Map(
@@ -131,23 +131,23 @@ class OracleExamplesSpecification extends PropSpec
     avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
     val proof = avlProver.generateProof()
 
-    val newBox1 = SigmaStateBox(20, alicePubKey)
+    val newBox1 = ErgoBox(20, alicePubKey)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
     val sinceHeight = 40
     val timeout = 60
 
     val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp)
 
-    val sAlice = SigmaStateBox(10, propAlice, Map())
+    val sAlice = ErgoBox(10, propAlice, Map())
 
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs,0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
-    val sBob = SigmaStateBox(10, propBob, Map())
+    val sBob = ErgoBox(10, propBob, Map())
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -199,7 +199,7 @@ class OracleExamplesSpecification extends PropSpec
 
     val temperature: Long = 18
 
-    val oracleBox = SigmaStateBox(
+    val oracleBox = ErgoBox(
       value = 1L,
       proposition = oraclePubKey,
       additionalRegisters = Map(R3 -> IntConstant(temperature))
@@ -214,12 +214,12 @@ class OracleExamplesSpecification extends PropSpec
     )
 
     val sOracle = oracleBox
-    val sAlice = SigmaStateBox(10, prop, Map())
-    val sBob = SigmaStateBox(10, prop, Map())
+    val sAlice = ErgoBox(10, prop, Map())
+    val sBob = ErgoBox(10, prop, Map())
 
-    val newBox1 = SigmaStateBox(20, alicePubKey)
+    val newBox1 = ErgoBox(20, alicePubKey)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
     val ctx = UtxoContext(
       currentHeight = 50,

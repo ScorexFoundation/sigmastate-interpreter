@@ -4,7 +4,7 @@ import java.math.BigInteger
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo.SigmaStateBox
+import sigmastate.utxo.ErgoBox
 import sigmastate.Values._
 
 import scala.collection.mutable
@@ -67,7 +67,7 @@ object SType {
     case arr: Array[Byte] => SByteArray
     case big: BigInteger => SBigInt
     case g: GroupSettings.EcPointType => SGroupElement
-    case box: SigmaStateBox => SBox
+    case box: ErgoBox => SBox
     case _: Unit => SUnit
     case v: SValue => v.tpe
     case _ => sys.error(s"Don't know how to return SType for $x: ${x.getClass}")
@@ -147,7 +147,7 @@ case object SGroupElement extends SProduct {
 }
 
 case object SBox extends SProduct {
-  override type WrappedType = SigmaStateBox
+  override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 7: Byte
   val fields = Seq(
     "value" -> SInt,

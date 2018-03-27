@@ -138,8 +138,8 @@ class SpamSpecification extends PropSpec
             )
           )
 
-        val txOutputs = ((1 to outCnt) map (_ => SigmaStateBox(11, spamProp))) :+ SigmaStateBox(11, propToCompare)
-        val tx = SigmaStateTransaction(IndexedSeq(), txOutputs)
+        val txOutputs = ((1 to outCnt) map (_ => ErgoBox(11, spamProp))) :+ ErgoBox(11, propToCompare)
+        val tx = ErgoTransaction(IndexedSeq(), txOutputs)
 
         val ctx = UtxoContext.dummy(createBox(0, propToCompare)).copy(spendingTransaction = tx)
 
@@ -164,16 +164,16 @@ class SpamSpecification extends PropSpec
     val inputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
     val outputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(6))))
 
-    val inputs = ((1 to 999) map (_ => SigmaStateBox(11, inputScript))) :+ SigmaStateBox(11, outputScript)
-    val outputs = (1 to 1000) map (_ => SigmaStateBox(11, outputScript))
+    val inputs = ((1 to 999) map (_ => ErgoBox(11, inputScript))) :+ ErgoBox(11, outputScript)
+    val outputs = (1 to 1000) map (_ => ErgoBox(11, outputScript))
 
-    val tx = SigmaStateTransaction(IndexedSeq(), outputs)
+    val tx = ErgoTransaction(IndexedSeq(), outputs)
 
     val ctx = new UtxoContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = SigmaStateBox(11, prop))
+      self = ErgoBox(11, prop))
 
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(prop, ctx, message).get

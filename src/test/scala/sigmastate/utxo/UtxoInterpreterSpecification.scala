@@ -14,7 +14,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.lang.{SigmaBinder, SigmaParser, SigmaTyper, SigmaSpecializer}
-import sigmastate.utxo.SigmaStateBox._
+import sigmastate.utxo.ErgoBox._
 
 
 class UtxoInterpreterSpecification extends PropSpec
@@ -124,15 +124,15 @@ class UtxoInterpreterSpecification extends PropSpec
     )
 //    crowdFundingAst shouldBe crowdFundingScript
 
-    val outputToSpend = SigmaStateBox(10, crowdFundingScript)
+    val outputToSpend = ErgoBox(10, crowdFundingScript)
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
 
-    val tx1Output1 = SigmaStateBox(minToRaise.value, projectPubKey)
-    val tx1Output2 = SigmaStateBox(1, projectPubKey)
+    val tx1Output1 = ErgoBox(minToRaise.value, projectPubKey)
+    val tx1Output2 = ErgoBox(1, projectPubKey)
 
     //normally this transaction would invalid, but we're not checking it in this test
-    val tx1 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+    val tx1 = ErgoTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
 
     val ctx1 = UtxoContext(
       currentHeight = timeout.value - 1,
@@ -151,9 +151,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
     //Second case: height < timeout, project is NOT able to claim amount of tokens not less than required threshold
 
-    val tx2Output1 = SigmaStateBox(minToRaise.value - 1, projectPubKey)
-    val tx2Output2 = SigmaStateBox(1, projectPubKey)
-    val tx2 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx2Output1, tx2Output2))
+    val tx2Output1 = ErgoBox(minToRaise.value - 1, projectPubKey)
+    val tx2Output2 = ErgoBox(1, projectPubKey)
+    val tx2 = ErgoTransaction(IndexedSeq(), IndexedSeq(tx2Output1, tx2Output2))
 
     val ctx2 = UtxoContext(
       currentHeight = timeout.value - 1,
@@ -173,9 +173,9 @@ class UtxoInterpreterSpecification extends PropSpec
     //Third case: height >= timeout
 
     //project raised enough money but too late...
-    val tx3Output1 = SigmaStateBox(minToRaise.value + 1, projectPubKey)
-    val tx3Output2 = SigmaStateBox(1, projectPubKey)
-    val tx3 = SigmaStateTransaction(IndexedSeq(), IndexedSeq(tx3Output1, tx3Output2))
+    val tx3Output1 = ErgoBox(minToRaise.value + 1, projectPubKey)
+    val tx3Output2 = ErgoBox(1, projectPubKey)
+    val tx3 = ErgoTransaction(IndexedSeq(), IndexedSeq(tx3Output1, tx3Output2))
 
     val ctx3 = UtxoContext(
       currentHeight = timeout.value,
@@ -254,9 +254,9 @@ class UtxoInterpreterSpecification extends PropSpec
     val curHeight = outHeight + demurragePeriod
 
     //case 1: demurrage time hasn't come yet
-    val tx1 = SigmaStateTransaction(
+    val tx1 = ErgoTransaction(
       IndexedSeq(),
-      IndexedSeq(SigmaStateBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+      IndexedSeq(ErgoBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
     val ctx1 = UtxoContext(
       currentHeight = outHeight + demurragePeriod - 1,
@@ -285,8 +285,8 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(script, ctx2, uProof2, fakeMessage).get shouldBe true
 
     //miner can spend "demurrageCost" tokens
-    val tx3 = SigmaStateTransaction(IndexedSeq(),
-      IndexedSeq(SigmaStateBox(outValue - demurrageCost, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+    val tx3 = ErgoTransaction(IndexedSeq(),
+      IndexedSeq(ErgoBox(outValue - demurrageCost, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
     val ctx3 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -300,8 +300,8 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(script, ctx3, NoProof, fakeMessage).get shouldBe true
 
     //miner can't spend more
-    val tx4 = SigmaStateTransaction(IndexedSeq(),
-      IndexedSeq(SigmaStateBox(outValue - demurrageCost - 1, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+    val tx4 = ErgoTransaction(IndexedSeq(),
+      IndexedSeq(ErgoBox(outValue - demurrageCost - 1, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
     val ctx4 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -312,8 +312,8 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(script, ctx4, NoProof, fakeMessage).get shouldBe false
 
     //miner can spend less
-    val tx5 = SigmaStateTransaction(IndexedSeq(),
-      IndexedSeq(SigmaStateBox(outValue - demurrageCost + 1, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+    val tx5 = ErgoTransaction(IndexedSeq(),
+      IndexedSeq(ErgoBox(outValue - demurrageCost + 1, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
     val ctx5 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
@@ -1039,8 +1039,8 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyB2 = proverB.dlogSecrets.head.publicImage
 
-    val newBox1 = SigmaStateBox(10, pubkeyB2)
-    val newBox2 = SigmaStateBox(10, pubkeyA2)
+    val newBox1 = ErgoBox(10, pubkeyB2)
+    val newBox2 = ErgoBox(10, pubkeyA2)
 
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
@@ -1048,7 +1048,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val properHash = Blake2b256(properBytes)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = {
 //      val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
@@ -1102,11 +1102,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), IntConstant(20)))
 
-    val newBox1 = SigmaStateBox(11, pubkey)
-    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBox1 = ErgoBox(11, pubkey)
+    val newBox2 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1130,11 +1130,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntConstant(10)))
 
-    val newBox1 = SigmaStateBox(11, pubkey)
-    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBox1 = ErgoBox(11, pubkey)
+    val newBox2 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1162,13 +1162,13 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(pubkey, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
 
-    val newBox1 = SigmaStateBox(11, pubkey)
-    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBox1 = ErgoBox(11, pubkey)
+    val newBox2 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s = SigmaStateBox(21, pubkey)
+    val s = ErgoBox(21, pubkey)
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1195,11 +1195,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), IntConstant(5)), IntConstant(10)))
 
-    val newBox1 = SigmaStateBox(16, pubkey)
-    val newBox2 = SigmaStateBox(15, pubkey)
+    val newBox1 = ErgoBox(16, pubkey)
+    val newBox2 = ErgoBox(15, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1223,11 +1223,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
 
-    val newBox1 = SigmaStateBox(10, pubkey)
-    val newBox2 = SigmaStateBox(10, pubkey)
+    val newBox1 = ErgoBox(10, pubkey)
+    val newBox2 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1249,11 +1249,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
 
-    val newBox1 = SigmaStateBox(10, pubkey)
-    val newBox2 = SigmaStateBox(11, pubkey)
+    val newBox1 = ErgoBox(10, pubkey)
+    val newBox2 = ErgoBox(11, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1279,13 +1279,13 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3)(SInt),
       Plus(ExtractRegisterAs(Self, R3)(SInt), IntConstant(1))))
 
-    val newBox1 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(3)))
-    val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(6)))
+    val newBox1 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(3)))
+    val newBox2 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
+    val s = ErgoBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1313,13 +1313,13 @@ class UtxoInterpreterSpecification extends PropSpec
       EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntConstant(0L))),
         Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
 
-    val newBox1 = SigmaStateBox(10, pubkey)
-    val newBox2 = SigmaStateBox(10, pubkey, Map(R3 -> IntConstant(6)))
+    val newBox1 = ErgoBox(10, pubkey)
+    val newBox2 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
+    val s = ErgoBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1358,12 +1358,12 @@ class UtxoInterpreterSpecification extends PropSpec
       ByteArrayConstant(key),
       ByteArrayConstant(proof))
 
-    val newBox1 = SigmaStateBox(10, pubkey)
+    val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData)))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1402,12 +1402,12 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = IsMember(ExtractRegisterAs(Self, R3), ExtractRegisterAs(Self, R4), TaggedByteArray(proofId))
 
-    val newBox1 = SigmaStateBox(10, pubkey)
+    val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key)))
+    val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key)))
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1432,11 +1432,11 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val prop = AND(new ProveDlog(ExtractRegisterAs(Self, R3)), new ProveDlog(ExtractRegisterAs(Self, R4)))
 
-    val newBox1 = SigmaStateBox(10, pubkey3)
+    val newBox1 = ErgoBox(10, pubkey3)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s = SigmaStateBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
+    val s = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
 
 
     val ctx = UtxoContext(
@@ -1462,12 +1462,12 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey1 = prover.dlogSecrets.head.publicImage
     val pubkey2 = prover.dlogSecrets(1).publicImage
 
-    val brother = SigmaStateBox(10, pubkey1)
+    val brother = ErgoBox(10, pubkey1)
 
-    val newBox = SigmaStateBox(20, pubkey2)
+    val newBox = ErgoBox(20, pubkey2)
 
     val newBoxes = IndexedSeq(newBox)
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
 //    val env = Map("brother" -> brother)
 //    val compiledProp = compile(env,
@@ -1481,7 +1481,7 @@ class UtxoInterpreterSpecification extends PropSpec
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(brother.id)))
 
-    val s = SigmaStateBox(10, prop, Map())
+    val s = ErgoBox(10, prop, Map())
 
     val ctx = UtxoContext(
       currentHeight = 50,
@@ -1513,14 +1513,14 @@ class UtxoInterpreterSpecification extends PropSpec
                       ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 1), R3),
                       ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3))))
 
-    val input0 = SigmaStateBox(10, pubkey, Map())
-    val input1 = SigmaStateBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimage)))
-    val input2 = SigmaStateBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimageWrong)))
-    val input3 = SigmaStateBox(10, prop, Map())
+    val input0 = ErgoBox(10, pubkey, Map())
+    val input1 = ErgoBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimage)))
+    val input2 = ErgoBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimageWrong)))
+    val input3 = ErgoBox(10, prop, Map())
 
-    val output = SigmaStateBox(22, pubkey, Map())
+    val output = ErgoBox(22, pubkey, Map())
 
-    val spendingTransaction = SigmaStateTransaction(IndexedSeq(), IndexedSeq(output))
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), IndexedSeq(output))
 
     val ctx = UtxoContext(
       currentHeight = 50,

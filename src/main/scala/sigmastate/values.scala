@@ -11,7 +11,7 @@ import sigmastate.interpreter.GroupSettings
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo.SigmaStateBox
+import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.CostTable.Cost
 
 import scala.collection.immutable
@@ -217,7 +217,7 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
     override def tpe = SBoolean
   }
 
-  case class BoxConstant(value: SigmaStateBox) extends EvaluatedValue[SBox.type] {
+  case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {
     override def cost: Int = 10
 
     override def tpe = SBox

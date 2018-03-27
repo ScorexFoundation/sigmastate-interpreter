@@ -6,7 +6,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import Values._
 import sigmastate.serialization.{Serializer, ValueSerializer}
-import sigmastate.utxo.SigmaStateBox.NonMandatoryIdentifier
+import sigmastate.utxo.ErgoBox.NonMandatoryIdentifier
 
 import scala.util.Try
 
@@ -45,12 +45,12 @@ object Box {
   * @param additionalRegisters
   * @param nonce to differentiate this instance from otherwise identical instances
   */
-class SigmaStateBox private(
+class ErgoBox private(
     override val value: Long,
     override val proposition: Value[SBoolean.type],
     additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
     nonce: Array[Byte]) extends Box[Value[SBoolean.type]] {
-  import sigmastate.utxo.SigmaStateBox._
+  import sigmastate.utxo.ErgoBox._
 
   def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {
@@ -67,39 +67,42 @@ class SigmaStateBox private(
 
   lazy val bytes = serializer.toBytes(this)
 
-  def serializer: Serializer[SigmaStateBox] = new Serializer[SigmaStateBox] {
+  def serializer: Serializer[ErgoBox] = new Serializer[ErgoBox] {
     //todo: serialize registers
-    override def toBytes(obj: SigmaStateBox): Array[Byte] =
+    override def toBytes(obj: ErgoBox): Array[Byte] =
       Longs.toByteArray(obj.value) ++ obj.propositionBytes ++ nonce
 
-    override def parseBytes(bytes: Array[Byte]): Try[SigmaStateBox] = ???
+    override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = ???
   }
 }
 
-object SigmaStateBox {
+object ErgoBox {
   def apply(value: Long,
             proposition: Value[SBoolean.type],
             additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
             nonce: Array[Byte] = Array.fill(32)(0: Byte)
-           ): SigmaStateBox =
-    new SigmaStateBox(value, proposition, additionalRegisters, nonce)
+           ): ErgoBox =
+    new ErgoBox(value, proposition, additionalRegisters, nonce)
 
-  sealed trait RegisterIdentifier
+  sealed trait RegisterIdentifier {
+    val number: Byte
+  }
+
   sealed trait NonMandatoryIdentifier extends RegisterIdentifier
 
-  object R1 extends RegisterIdentifier
-  object R2 extends RegisterIdentifier
-  object R3 extends RegisterIdentifier with NonMandatoryIdentifier
-  object R4 extends RegisterIdentifier with NonMandatoryIdentifier
-  object R5 extends RegisterIdentifier with NonMandatoryIdentifier
-  object R6 extends RegisterIdentifier with NonMandatoryIdentifier
-  object R7 extends RegisterIdentifier with NonMandatoryIdentifier
-  object R8 extends RegisterIdentifier with NonMandatoryIdentifier
-  object R9 extends RegisterIdentifier with NonMandatoryIdentifier
-  object R10 extends RegisterIdentifier with NonMandatoryIdentifier
+  object R0 extends RegisterIdentifier {override val number = 0}
+  object R1 extends RegisterIdentifier {override val number = 1}
+  object R2 extends RegisterIdentifier {override val number = 2}
+  object R3 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 3}
+  object R4 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 4}
+  object R5 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 5}
+  object R6 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 6}
+  object R7 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 7}
+  object R8 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 8}
+  object R9 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 9}
 }
 
-case class SigmaStateTransaction(inputs: IndexedSeq[SigmaStateBox], outputs: IndexedSeq[SigmaStateBox]) {
+case class ErgoTransaction(inputs: IndexedSeq[ErgoBox], outputs: IndexedSeq[ErgoBox]) {
   def concatBytes(seq: Traversable[Array[Byte]]): Array[Byte] = {
     val length: Int = seq.map(_.length).sum
     val result: Array[Byte] = new Array[Byte](length)
