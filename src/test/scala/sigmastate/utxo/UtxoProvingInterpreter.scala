@@ -1,10 +1,10 @@
 package sigmastate.utxo
 
-import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
+import scapi.sigma.DLogProtocol.DLogProverInput
 import scapi.sigma.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import scorex.utils.Random
 import sigmastate.Values._
-import sigmastate.{SType}
+import sigmastate.SType
 import sigmastate.interpreter.ProverInterpreter
 
 class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
