@@ -153,7 +153,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @throws IndexOutOfBoundsException if the length of the binary array to encode is longer than k
     * @return an FpPoint with the coordinates of the corresponding GroupElement point or null if could not find the encoding in reasonable time
     */
-  def findPointRepresentedByByteArray(binaryString: Array[Byte], k: Int): ElemType = { //Pseudo-code:
+  def findPointRepresentedByByteArray(binaryString: Array[Byte], k: Int): Try[ElemType] = Try { //Pseudo-code:
     /*If the length of binaryString exceeds k then throw IndexOutOfBoundsException.
 
               Let L be the length in bytes of p
@@ -200,11 +200,12 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
       y = findYInCurveEquationForX(x)
       counter += 1
     } while ( {
-      (y == null) && (counter <= 80)
+      (y == null) && (counter <= 80) // todo: magic number
     }) //we limit the amount of times we try to 80 which is an arbitrary number.
 
     //If found the correct y in reasonable time then return the (x,y) FpPoint
-    if (y != null) curve.createPoint(x, y).asInstanceOf[ElemType] else ??? //todo: fix, Option result?
+    if (y != null) curve.createPoint(x, y).asInstanceOf[ElemType]
+    else throw new Exception("Had no success within a certain number of iterations in findPointRepresentedByByteArray")
   }
 
 
@@ -423,9 +424,10 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @throws IndexOutOfBoundsException if the length of the binary array to encode is longer than k
     * @return the created group Element or null if could not find the encoding in reasonable time
     */
-  override def encodeByteArrayToGroupElement(binaryString: Array[Byte]): ElemType = {
-    val fpPoint = findPointRepresentedByByteArray(binaryString, k)
-    curve.importPoint(fpPoint).asInstanceOf[ElemType]
+  override def encodeByteArrayToGroupElement(binaryString: Array[Byte]): Try[ElemType] = {
+    findPointRepresentedByByteArray(binaryString, k).map {fpPoint =>
+      curve.importPoint(fpPoint).asInstanceOf[ElemType]
+    }
   }
 
   /**

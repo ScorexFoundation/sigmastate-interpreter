@@ -178,7 +178,7 @@ trait DlogGroup[ElemType <: ECPoint] {
     * @param binaryString the byte array to encode
     * @return the encoded group Element <B> or null </B>if element could not be encoded
     */
-  def encodeByteArrayToGroupElement(binaryString: Array[Byte]): ElemType
+  def encodeByteArrayToGroupElement(binaryString: Array[Byte]): Try[ElemType]
 
   /**
     * This function decodes a group element to a byte array. This function is guaranteed to work properly ONLY if the group element was obtained as a result of
