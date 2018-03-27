@@ -2,7 +2,10 @@ package scapi.sigma
 
 import java.math.BigInteger
 import java.security.SecureRandom
+
 import org.bouncycastle.math.ec.ECPoint
+
+import scala.util.Try
 
 
 /**
@@ -131,7 +134,7 @@ trait DlogGroup[ElemType <: ECPoint] {
     * @param data the GroupElementSendableData from which we wish to "reconstruct" an element of this DlogGroup
     * @return the reconstructed GroupElement
     */
-  def reconstructElement(bCheckMembership: Boolean, data: GroupAgnosticEcElement): ElemType //todo: make data Array[Byte]
+  def reconstructElement(bCheckMembership: Boolean, data: GroupAgnosticEcElement): Try[ElemType]
 
   /**
     * Computes the product of several exponentiations with distinct bases

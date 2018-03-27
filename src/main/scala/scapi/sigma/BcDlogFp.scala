@@ -350,7 +350,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
   }
 
 
-  def createPoint(x: BigInteger, y: BigInteger): ECPoint = curve.createPoint(x, y)
+  def createPoint(x: BigInteger, y: BigInteger): ElemType = curve.createPoint(x, y).asInstanceOf[ElemType]
 
 
   /**
@@ -497,7 +497,12 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @param data             the GroupElementSendableData from which we wish to "reconstruct" an element of this DlogGroup
     * @return the reconstructed GroupElement
     */
-  override def reconstructElement(bCheckMembership: Boolean, data: GroupAgnosticEcElement): ElemType = ???
+  override def reconstructElement(bCheckMembership: Boolean, data: GroupAgnosticEcElement): Try[ElemType] = Try {
+    val point = createPoint(data.x, data.y)
+    if(bCheckMembership) assert(isMember(point))
+    point
+  }
+
 
   /**
     * Computes the product of several exponentiations with distinct bases

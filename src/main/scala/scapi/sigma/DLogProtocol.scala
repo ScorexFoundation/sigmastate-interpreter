@@ -49,7 +49,7 @@ object DLogProtocol {
     def fromBytes(bytes: Array[Byte]): ProveDlog = {
       val (x, y) = EcPointFunctions.decodeBigIntPair(bytes).get
       val xy = GroupAgnosticEcElement(x, y)
-      val h = dlogGroup.reconstructElement(bCheckMembership = true, xy)
+      val h = dlogGroup.reconstructElement(bCheckMembership = true, xy).get //todo: .get
       ProveDlog(h)
     }
 //    val fields = Seq(
