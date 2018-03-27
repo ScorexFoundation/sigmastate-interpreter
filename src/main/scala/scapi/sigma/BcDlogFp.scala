@@ -153,7 +153,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @throws IndexOutOfBoundsException if the length of the binary array to encode is longer than k
     * @return an FpPoint with the coordinates of the corresponding GroupElement point or null if could not find the encoding in reasonable time
     */
-  def findPointRepresentedByByteArray(binaryString: Array[Byte], k: Int): Try[ElemType] = Try { //Pseudo-code:
+  def findPointRepresentedByByteArray(binaryString: Array[Byte]): Try[ElemType] = Try { //Pseudo-code:
     /*If the length of binaryString exceeds k then throw IndexOutOfBoundsException.
 
               Let L be the length in bytes of p
@@ -425,7 +425,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * @return the created group Element or null if could not find the encoding in reasonable time
     */
   override def encodeByteArrayToGroupElement(binaryString: Array[Byte]): Try[ElemType] = {
-    findPointRepresentedByByteArray(binaryString, k).map {fpPoint =>
+    findPointRepresentedByByteArray(binaryString).map {fpPoint =>
       curve.importPoint(fpPoint).asInstanceOf[ElemType]
     }
   }
