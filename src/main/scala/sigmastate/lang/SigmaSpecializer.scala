@@ -14,6 +14,16 @@ import sigmastate.utxo._
 class SigmaSpecializer {
   import SigmaSpecializer._
 
+  /** Create name -> TaggedXXX(tag) pair to be used in environment. */
+  def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
+    val tagged = tpe match {
+      case SInt => TaggedInt(tag)
+      case SBox => TaggedBox(tag)
+      case _ => error(s"Don't know how to mkTagged($name, $tpe, $tag)")
+    }
+    tagged.asInstanceOf[TaggedVariable[SType]]
+  }
+
   /** Rewriting of AST with respect to environment to resolve all references
     * to let bound and lambda bound names. */
   private def eval(env: Map[String, SValue], e: SValue): SValue = rewrite(reduce(strategy[SValue]({
@@ -32,8 +42,23 @@ class SigmaSpecializer {
       Some(CalcBlake2b256(arg))
     case Apply(TaggedByteArraySym, Seq(IntConstant(i))) =>
       Some(TaggedByteArray(i.toByte))
+    case SelectGen(obj, field, _) if obj.tpe == SBox => (obj.asValue[SBox.type], field) match {
+      case (box, SBox.Value) => Some(ExtractAmount(box))
+      case (box, SBox.PropositionBytes) => Some(ExtractScriptBytes(box))
+      case (box, SBox.Id) => Some(ExtractId(box))
+      case (box, SBox.Bytes) => Some(ExtractBytes(box))
+    }
+    case SelectGen(obj: SigmaBoolean, field, _) => field match {
+      case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.propBytes))
+      case SigmaBoolean.IsValid => Some(obj)
+    }
+
     case SelectGen(obj, "value", SInt) if obj.tpe == SBox =>
       Some(ExtractAmount(obj.asValue[SBox.type]))
+    case Apply(SelectGen(col,"exists", tpe), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+      val tagged = mkTagged(n, t, 21)
+      val body1 = eval(env + (n -> tagged), body)
+      Some(Exists(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
   })))(e)
 
   def specialize(typed: SValue): SValue = {

@@ -149,12 +149,15 @@ case object SGroupElement extends SProduct {
 case object SBox extends SProduct {
   override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 7: Byte
-  val fields = Seq(
-    "value" -> SInt,
-    "nonce" -> SByteArray,
-    "propositionBytes" -> SByteArray,
-    "bytes" -> SByteArray,
-    "id" -> SByteArray
+  val PropositionBytes = "propositionBytes"
+  val Value = "value"
+  val Id = "id"
+  val Bytes = "bytes"
+  val fields = Vector(
+    Value -> SInt,                   // see ExtractAmount
+    PropositionBytes -> SByteArray,  // see ExtractScriptBytes
+    Bytes -> SByteArray,             // see ExtractBytes
+    Id -> SByteArray                 // see ExtractId
   )
 }
 

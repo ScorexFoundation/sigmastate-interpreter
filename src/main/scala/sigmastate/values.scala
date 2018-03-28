@@ -216,8 +216,16 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
     */
   trait SigmaBoolean extends NotReadyValue[SBoolean.type] {
     override lazy val evaluated = true
-
     override def tpe = SBoolean
+    def fields: Seq[(String, SType)] = SigmaBoolean.fields
+  }
+  object SigmaBoolean {
+    val PropBytes = "propBytes"
+    val IsValid = "isValid"
+    val fields = Seq(
+      PropBytes -> SByteArray,
+      IsValid -> SBoolean
+    )
   }
 
   case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {

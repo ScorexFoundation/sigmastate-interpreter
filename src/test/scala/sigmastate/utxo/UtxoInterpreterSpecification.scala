@@ -14,6 +14,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.lang.{SigmaBinder, SigmaParser, SigmaTyper, SigmaSpecializer}
+import sigmastate.lang.Terms._
 import sigmastate.utxo.ErgoBox._
 
 
@@ -93,19 +94,20 @@ class UtxoInterpreterSpecification extends PropSpec
       "backerPubKey" -> backerPubKey,
       "projectPubKey" -> projectPubKey,
     )
-//    val compiledScript = compile(env,
-//      """{
-//       | let c1 = HEIGHT >= timeout && backerPubKey
-//       | let c2 = all(Array(
-//       |   HEIGHT < timeout,
-//       |   projectPubKey,
-//       |   OUTPUTS.exists(fun (out: Box) = {
-//       |     out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
-//       |   })
-//       | ))
-//       | c1 || c2
-//       | }
-//      """.stripMargin)
+    val compiledScript = compile(env,
+      """{
+       | let c1 = HEIGHT >= timeout && backerPubKey
+       | let c2 = allOf(Array(
+       |   HEIGHT < timeout,
+       |   projectPubKey,
+       |   OUTPUTS.exists(fun (out: Box) = {
+       |     out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
+       |   })
+       | ))
+       | c1 || c2
+       | }
+      """.stripMargin)
+
 //    // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
       AND(GE(Height, timeout), backerPubKey),
@@ -122,7 +124,7 @@ class UtxoInterpreterSpecification extends PropSpec
         )
       )
     )
-//    crowdFundingAst shouldBe crowdFundingScript
+    compiledScript shouldBe crowdFundingScript
 
     val outputToSpend = ErgoBox(10, crowdFundingScript)
 
@@ -221,13 +223,13 @@ class UtxoInterpreterSpecification extends PropSpec
     val regScript = userProver.dlogSecrets.head.publicImage
 
 //    val env = Map(
-//      "demurragePeriod" -> 100,
-//      "demurrageCost" -> 2,
+//      "demurragePeriod" -> demurragePeriod,
+//      "demurrageCost" -> demurrageCost,
 //      "regScript" -> regScript,
 //    )
 //    val compiledScript = compile(env,
 //      """{
-//       | let c2 = all(Array(
+//       | let c2 = allOf(Array(
 //       |   HEIGHT >= SELF.R3 + demurragePeriod,
 //       |   OUTPUTS.exists(fun (out: Box) = {
 //       |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
@@ -248,6 +250,7 @@ class UtxoInterpreterSpecification extends PropSpec
         )
       )
     )
+//    compiledScript shouldBe script
 
     val outHeight = 100
     val outValue = 10
@@ -1214,10 +1217,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-//    val compiledProp = compile(Map(), "OUTPUTS.exists(fun (box: Box) = box.value + 5 > 10)")
+    val prop = compile(Map(), "OUTPUTS.exists(fun (box: Box) = box.value + 5 > 10)").asBoolValue
 
-    val prop = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), IntConstant(5)), IntConstant(10)))
-//    compiledProp shouldBe prop
+    val expProp = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), IntConstant(5)), IntConstant(10)))
+    prop shouldBe expProp
 
     val newBox1 = ErgoBox(16, pubkey)
     val newBox2 = ErgoBox(15, pubkey)
@@ -1499,18 +1502,18 @@ class UtxoInterpreterSpecification extends PropSpec
     val newBoxes = IndexedSeq(newBox)
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-//    val env = Map("brother" -> brother)
-//    val compiledProp = compile(env,
-//      """{
-//        |  let okInputs = INPUTS.size == 2
-//        |  let okIds = INPUTS(0).id == brother.id
-//        |  okInputs && okIds
-//         }""".stripMargin)
+    val env = Map("brother" -> brother)
+    val prop = compile(env,
+      """{
+        |  let okInputs = INPUTS.size == 2
+        |  let okIds = INPUTS(0).id == brother.id
+        |  okInputs && okIds
+         }""".stripMargin).asBoolValue
 
-    val prop = AND(
+    val propExpected = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
-      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(brother.id)))
-//    compiledProp shouldBe prop
+      EQ(ExtractId(ByIndex(Inputs, 0)), ExtractId(BoxConstant(brother))))
+    prop shouldBe propExpected
 
     val s = ErgoBox(10, prop, Map())
 

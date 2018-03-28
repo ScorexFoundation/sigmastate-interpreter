@@ -98,6 +98,7 @@ object Terms {
 
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
+    def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
   }
 
 }

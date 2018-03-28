@@ -212,15 +212,22 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case e => error(s"Don't know how to compute type for $e")
     }
 
-  def typeOfSelect(sel: Select): SType = tipe(sel.obj) match {
-    case s: SProduct =>
+  def typeOfSelect(sel: Select): SType = (sel.obj, tipe(sel.obj)) match {
+    case (_, s: SProduct) =>
       val iField = s.fieldIndex(sel.field)
       if (iField != -1) {
         s.fields(iField)._2
       }
       else
         error(s"Cannot find field '${sel.field}' in product type with fields ${s.fields}")
-    case t =>
+    case (obj: SigmaBoolean, SBoolean) =>
+      val iField = obj.fields.indexWhere(_._1 == sel.field)
+      if (iField != -1) {
+        obj.fields(iField)._2
+      }
+      else
+        error(s"Cannot find field '${sel.field}' in Sigma type with fields ${obj.fields}")
+    case (_, t) =>
       error(s"Cannot get field '${sel.field}' of non-product type $t")
   }
 
