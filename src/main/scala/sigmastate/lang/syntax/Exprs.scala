@@ -51,8 +51,8 @@ trait Exprs extends Core with Types {
 //      }
       val PostfixLambda = P( PostfixExpr ~ ((`=>` ~ LambdaRhs.?) | SuperPostfixSuffix) ).map {
         case (e, None) => e
-        case (Tuple(args), Some(body)) => mkLambda(args, body)
-        case (e, Some(body)) => error(s"Invalid declaration of lambda")
+        case (Tuple(args), Some(body)) => mkLambda(args.toSeq, body)
+        case (e, Some(body)) => error(s"Invalid declaration of lambda $e => $body")
       }
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
 //      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => Ident(IndexedSeq(n), t)}

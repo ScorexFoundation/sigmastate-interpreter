@@ -14,8 +14,8 @@ class SigmaBinder(env: Map[String, Any]) {
   import SigmaBinder._
   import SigmaPredef._
 
-  /** Rewriting of AST with respect to environment to resolve all references and infer types.
-    * If successfull, returns type-checked Value which is ready for evaluation by the interpreter. */
+  /** Rewriting of AST with respect to environment to resolve all references to global names
+    * and infer their types. */
   private def eval(e: SValue, env: Map[String, Any]): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
@@ -25,6 +25,7 @@ class SigmaBinder(env: Map[String, Any]) {
         case v: BigInteger => Some(BigIntConstant(v))
         case v: GroupSettings.EcPointType => Some(GroupElementConstant(v))
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
+        case b: ErgoBox => Some(BoxConstant(b))
         case v: SValue => Some(v)
         case _ => None
       }
@@ -35,6 +36,7 @@ class SigmaBinder(env: Map[String, Any]) {
           case "INPUTS" => Some(Inputs)
           case "OUTPUTS" => Some(Outputs)
           case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
+          case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
           case "SELF" => Some(Self)
           case _ => None
         }
@@ -53,18 +55,13 @@ class SigmaBinder(env: Map[String, Any]) {
     case Apply(Typed(obj, tCol: SCollection[_]), Seq(IntConstant(i))) =>
       Some(ByIndex(obj.asValue[SCollection[SType]], i.toInt))
 
-    // Rule: all(Array(...)) --> AND(...)
+    // Rule: allOf(Array(...)) --> AND(...)
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(AND(args))
 
-    // Rule: exists(input, f) -->
-    case Apply(ExistsSym, Seq(input: Value[SCollection[SType]]@unchecked, pred: Value[SFunc]@unchecked)) =>
-      val tItem = input.tpe.elemType
-      val expectedTpe = SFunc(Vector(tItem), SBoolean)
-      if (!pred.tpe.canBeTypedAs(expectedTpe))
-        error(s"Invalid type of $pred. Expected $expectedTpe")
-      val args = expectedTpe.tDom.zipWithIndex.map { case (t, i) => (s"arg${i+1}", t) }
-      Some(ExistsSym)
+    // Rule: anyOf(Array(...)) --> AND(...)
+    case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
+      Some(OR(args))
 
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>
@@ -90,7 +87,7 @@ class SigmaBinder(env: Map[String, Any]) {
         None
   })))(e)
 
-  def bind(e: Value[SType]): Value[SType] = eval(e, env)
+  def bind(e: SValue): SValue = eval(e, env)
 }
 
 class BinderException(msg: String) extends Exception(msg)

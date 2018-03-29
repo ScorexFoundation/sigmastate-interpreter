@@ -149,12 +149,15 @@ case object SGroupElement extends SProduct {
 case object SBox extends SProduct {
   override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 7: Byte
-  val fields = Seq(
-    "value" -> SInt,
-    "nonce" -> SByteArray,
-    "propositionBytes" -> SByteArray,
-    "bytes" -> SByteArray,
-    "id" -> SByteArray
+  val PropositionBytes = "propositionBytes"
+  val Value = "value"
+  val Id = "id"
+  val Bytes = "bytes"
+  val fields = Vector(
+    Value -> SInt,                   // see ExtractAmount
+    PropositionBytes -> SByteArray,  // see ExtractScriptBytes
+    Bytes -> SByteArray,             // see ExtractBytes
+    Id -> SByteArray                 // see ExtractId
   )
 }
 
@@ -182,7 +185,7 @@ case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
 
   override def hashCode() = (31 + typeCode) * 31 + elemType.hashCode()
 
-  override def toString = s"SCollection($elemType)"
+  override def toString = s"Array[$elemType]"
 }
 
 object SCollection {
@@ -203,11 +206,7 @@ object SCollection {
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {
   override type WrappedType = Seq[Any] => tRange.WrappedType
   override val typeCode = SFunc.TypeCode
-//  override def equals(obj: scala.Any) = obj match {
-//    case that: SFunc[_,_] => that.tDom == tDom && that.tRange == tRange
-//    case _ => false
-//  }
-//  override def hashCode() = ((31 + typeCode) * 31 + tDom.hashCode()) * 31 + tRange.hashCode()
+  override def toString = s"(${tDom.mkString(",")}) => $tRange"
 }
 
 object SFunc {
@@ -228,6 +227,7 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
     }
     b.result
   }
+  override def toString = s"(${items.mkString(",")})"
 }
 
 object STuple {
@@ -247,6 +247,7 @@ object STypeApply {
 case class STypeIdent(name: String) extends SType {
   override type WrappedType = Any
   override val typeCode = STypeIdent.TypeCode
+  override def toString = name
 }
 object STypeIdent {
   val TypeCode = 111: Byte

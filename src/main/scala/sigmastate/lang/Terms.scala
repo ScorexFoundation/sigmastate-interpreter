@@ -98,6 +98,11 @@ object Terms {
 
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
+    def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
+    def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
+    def asByteArray: Value[SByteArray.type] = v.asInstanceOf[Value[SByteArray.type]]
+    def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
+    def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]
   }
 
 }

@@ -5,7 +5,9 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{Inputs, ByIndex}
+import sigmastate.utxo._
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * Analyses for typed lambda calculus expressions.  A simple free variable
@@ -53,7 +55,7 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     * The environment of an expression is the list of variable names that
     * are visible in that expression and their types.
     */
-  val env : SValue => List[(Idn, SType)] =
+  val scope : SValue => List[(Idn, SType)] =
     attr {
       // Inside a lambda expression the bound variable is now visible
       // in addition to everything that is visible from above. Note
@@ -62,25 +64,25 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       // of the env and we search the env list below in tipe from
       // beginning to end
       case e @ tree.parent(p @ Lambda(args, t, Some(body))) if e eq body =>
-        (args ++ env(p)).toList
+        (args ++ scope(p)).toList
 
       // Inside the result expression of a block all bindings are visible
       case e @ tree.parent(p @ Block(bs, res)) if e eq res =>
         val fromLets = bs.map(l => (l.name, l.givenType.?:(tipe(l.body))))
-        val res = (fromLets ++ env(p))
+        val res = (fromLets ++ scope(p))
         res.toList
 
       // Inside any binding of a block all the previous names are visible
       case e @ tree.parent(p @ Block(bs, res)) if bs.exists(_ eq e) =>
         val iLet = bs.indexWhere(_ eq e)
         val boundNames = bs.take(iLet).map(l => (l.name, l.givenType.?:(tipe(l.body))))
-        val res = (boundNames ++ env(p))
+        val res = (boundNames ++ scope(p))
         res.toList
 
       // Other expressions do not bind new identifiers so they just
       // get their environment from their parent
       case tree.parent(p : SValue) =>
-        env(p)
+        scope(p)
 
       // global level contains all predefined names
       case _ =>
@@ -140,7 +142,7 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       // expression.  If we find it, then we use the type that we find.
       // Otherwise it's an error.
       case e @ Ident(x,_) =>
-        env(e).collectFirst {
+        scope(e).collectFirst {
           case (y, t) if x == y => t
         }.getOrElse {
           NoType
@@ -212,15 +214,22 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       case e => error(s"Don't know how to compute type for $e")
     }
 
-  def typeOfSelect(sel: Select): SType = tipe(sel.obj) match {
-    case s: SProduct =>
+  def typeOfSelect(sel: Select): SType = (sel.obj, tipe(sel.obj)) match {
+    case (_, s: SProduct) =>
       val iField = s.fieldIndex(sel.field)
       if (iField != -1) {
         s.fields(iField)._2
       }
       else
         error(s"Cannot find field '${sel.field}' in product type with fields ${s.fields}")
-    case t =>
+    case (obj: SigmaBoolean, SBoolean) =>
+      val iField = obj.fields.indexWhere(_._1 == sel.field)
+      if (iField != -1) {
+        obj.fields(iField)._2
+      }
+      else
+        error(s"Cannot find field '${sel.field}' in Sigma type with fields ${obj.fields}")
+    case (_, t) =>
       error(s"Cannot get field '${sel.field}' of non-product type $t")
   }
 
@@ -236,29 +245,37 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
     else
       error(s"Invalid argument type $t of $op")
 
-  def assignType(bound: SValue): SValue = bound match {
+  def assignType(env: Map[String, SType], bound: SValue): SValue = bound match {
     case Block(bs, res) =>
-      Block(bs.map(l => assignType(l).asInstanceOf[Let]), assignType(res))
+      var curEnv = env
+      val bs1 = ArrayBuffer[Let]()
+      for (Let(n, t, b) <- bs) {
+        if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
+        val b1 = assignType(curEnv, b)
+        curEnv = curEnv + (n -> b1.tpe)
+        bs1 += Let(n, b1.tpe, b1)
+      }
+      val res1 = assignType(curEnv, res)
+      Block(bs1, res1)
+//      Block(bs.map(l => assignType(l).asInstanceOf[Let]), assignType(res))
 
-    case Let(n, _, body) =>
-      Let(n, tipe(body), assignType(body))
+    case Tuple(items) => Tuple(items.map(assignType(env, _)))
 
-    case Tuple(items) => Tuple(items.map(assignType))
-
-    case c @ ConcreteCollection(items) => ConcreteCollection(items.map(assignType))(c.tItem)
+    case c @ ConcreteCollection(items) => ConcreteCollection(items.map(assignType(env, _)))(c.tItem)
 
     case v @ Ident(n, _) =>
-      env(v).find(_._1 == n) match {
-        case Some((_, t)) =>
-          Ident(n, t)
-        case None => error(s"Cannot assign type for variable '$n'")
+      env.get(n) match {
+        case Some(t) => Ident(n, t)
+        case None => error(s"Cannot assign type for variable '$n' because it is not found in env $env")
       }
 
     case sel @ Select(o, n) =>
-      SelectGen(assignType(o), n, tipe(sel))
+      SelectGen(assignType(env, o), n, tipe(sel))
 
     case Lambda(args, t, body) =>
-      Lambda(args, body.fold(t)(tipe), body.map(assignType))
+      val lambdaEnv = env ++ args
+      val newBody = body.map(assignType(lambdaEnv, _))
+      Lambda(args, newBody.fold(t)(_.tpe), newBody)
 
     case app @ Apply(sel @ Select(obj, n), args) =>
       tipe(sel) match {
@@ -268,44 +285,62 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
               val newFun = applySubst(tFun, subst)
-              Apply(SelectGen(assignType(obj), n, newFun), args.map(assignType))
+              val newObj = assignType(env, obj)
+              val newArgs = args.map(assignType(env, _))
+              val newApply = Apply(SelectGen(newObj, n, newFun), newArgs)
+              newApply
             case None =>
               error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
           }
         case _ =>
-          Apply(Select(assignType(obj), n), args.map(assignType))
+          Apply(Select(assignType(env, obj), n), args.map(assignType(env, _)))
       }
 
     case Apply(f, args) =>
-      Apply(assignType(f), args.map(assignType))
+      Apply(assignType(env, f), args.map(assignType(env, _)))
 
     case If(c, t, e) =>
-      If(assignType(c).asValue[SBoolean.type], assignType(t), assignType(e))
+      If(assignType(env, c).asValue[SBoolean.type], assignType(env, t), assignType(env, e))
 
-    case AND(input) => AND(assignType(input).asValue[SCollection[SBoolean.type]])
-    case OR(input) => OR(assignType(input).asValue[SCollection[SBoolean.type]])
+    case AND(input) => AND(assignType(env, input).asValue[SCollection[SBoolean.type]])
+    case OR(input) => OR(assignType(env, input).asValue[SCollection[SBoolean.type]])
 
-    case GE(l, r) => bimap(l, r)(GE)
-    case LE(l, r) => bimap(l, r)(LE)
-    case GT(l, r) => bimap(l, r)(GT)
-    case LT(l, r) => bimap(l, r)(LT)
-    case EQ(l, r) => bimap(l, r)(EQ[SType])
-    case NEQ(l, r) => bimap(l, r)(NEQ)
+    case GE(l, r) => bimap(env, l, r)(GE)
+    case LE(l, r) => bimap(env, l, r)(LE)
+    case GT(l, r) => bimap(env, l, r)(GT)
+    case LT(l, r) => bimap(env, l, r)(LT)
+    case EQ(l, r) => bimap(env, l, r)(EQ[SType])
+    case NEQ(l, r) => bimap(env, l, r)(NEQ)
 
-    case Plus(l, r) => bimap(l, r)(Plus)
-    case Minus(l, r) => bimap(l, r)(Minus)
-    case v => v
+    case Plus(l, r) => bimap(env, l, r)(Plus)
+    case Minus(l, r) => bimap(env, l, r)(Minus)
+    case Xor(l, r) => bimap(env, l, r)(Xor)
+    case MultiplyGroup(l, r) => bimap(env, l, r)(MultiplyGroup)
+    case AppendBytes(l, r) => bimap(env, l, r)(AppendBytes)
+
+    case Exponentiate(l, r) => Exponentiate(assignType(env, l).asGroupElement, assignType(env, r).asBigInt)
+    case ByIndex(col, i) => ByIndex(assignType(env, col).asCollection, i)
+    case SizeOf(col) => SizeOf(assignType(env, col).asCollection)
+    
+    case Height => Height
+    case Self => Self
+    case Inputs => Inputs
+    case Outputs => Outputs
+    case LastBlockUtxoRootHash => LastBlockUtxoRootHash
+    case v: EvaluatedValue[_] => v
+    case v: SigmaBoolean => v
+    case v => error(s"Don't know how to assignType($v)")
   }
 
-  def bimap[T <: SType](l: Value[T], r: Value[T])(f: (Value[T], Value[T]) => SValue): SValue = {
-    f(assignType(l).asValue[T], assignType(r).asValue[T])
+  def bimap[T <: SType](env: Map[String, SType], l: Value[T], r: Value[T])(f: (Value[T], Value[T]) => SValue): SValue = {
+    f(assignType(env, l).asValue[T], assignType(env, r).asValue[T])
   }
 
   def typecheck(bound: SValue): SValue = {
     val t = tipe(bound)
     if (t == NoType) error(s"No type can be assigned to expression $bound")
     if(errors.nonEmpty) error(s"Errors found while typing expression $bound:\n${errors.mkString("\n")}\n")
-    val assigned = assignType(bound)
+    val assigned = assignType(SigmaPredef.predefinedEnv.mapValues(_.tpe), bound)
 
     // traverse the tree bottom-up checking that all the nodes have a type
     var untyped: SValue = null

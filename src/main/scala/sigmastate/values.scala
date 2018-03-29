@@ -1,6 +1,7 @@
 package sigmastate
 
 import java.math.BigInteger
+import java.util
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
@@ -116,17 +117,17 @@ object Values {
       case ob: ByteArrayConstant => value sameElements ob.value
       case _ => false
     }
+
+    override def hashCode(): Int = util.Arrays.hashCode(value)
   }
 
-  object EmptyByteArray extends ByteArrayConstant(Array.emptyByteArray)
+//  object EmptyByteArray extends ByteArrayConstant(Array.emptyByteArray)
 
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type] {
     override lazy val cost: Int = Cost.ByteArrayDeclaration
 
     override def tpe = SByteArray
   }
-
-  case object UnknownByteArray extends NotReadyValueByteArray
 
   case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray {
   }
@@ -213,8 +214,16 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
     */
   trait SigmaBoolean extends NotReadyValue[SBoolean.type] {
     override lazy val evaluated = true
-
     override def tpe = SBoolean
+    def fields: Seq[(String, SType)] = SigmaBoolean.fields
+  }
+  object SigmaBoolean {
+    val PropBytes = "propBytes"
+    val IsValid = "isValid"
+    val fields = Seq(
+      PropBytes -> SByteArray,
+      IsValid -> SBoolean
+    )
   }
 
   case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {
