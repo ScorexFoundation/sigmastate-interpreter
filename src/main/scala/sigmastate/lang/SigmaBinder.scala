@@ -25,7 +25,7 @@ class SigmaBinder(env: Map[String, Any]) {
         case v: BigInteger => Some(BigIntConstant(v))
         case v: GroupSettings.EcPointType => Some(GroupElementConstant(v))
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
-        case b: SigmaStateBox => Some(BoxConstant(b))
+        case b: ErgoBox => Some(BoxConstant(b))
         case v: SValue => Some(v)
         case _ => None
       }

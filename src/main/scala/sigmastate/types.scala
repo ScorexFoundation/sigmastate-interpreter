@@ -1,12 +1,10 @@
 package sigmastate
 
 import java.math.BigInteger
-import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
-import sigmastate.utxo.{SigmaStateBox}
 import sigmastate.Values._
 
 import scala.collection.mutable

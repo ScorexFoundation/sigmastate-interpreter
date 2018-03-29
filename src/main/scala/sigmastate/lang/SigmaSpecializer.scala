@@ -2,9 +2,7 @@ package sigmastate.lang
 
 import java.math.BigInteger
 
-import edu.biu.scapi.primitives.dlog.GroupElement
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rewrite, reduce}
-import sigmastate.Values.Value.Typed
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
