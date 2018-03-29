@@ -1073,15 +1073,15 @@ class UtxoInterpreterSpecification extends PropSpec
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = {
-//      val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
-//      val compiledProp = compile(env,
-//        """{
-//          |  let notTimePassed = HEIGHT <= timeout
-//          |  let outBytes = OUTPUT.map(fun (box: Box) = box.bytes)
-//          |  val outSumBytes = outBytes.fold(EmptyByteArray, fun (arr1: ByteArray, arr2: ByteArray) = arr1 ++ arr2)
-//          |  val timePassed = HEIGHT > timeout
-//          |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
-//           }""".stripMargin)
+      val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
+      val compiledProp = compile(env,
+        """{
+          |  let notTimePassed = HEIGHT <= timeout
+          |  let outBytes = OUTPUTS.map(fun (box: Box) = box.bytes)
+          |  let outSumBytes = outBytes.fold(EmptyByteArray, fun (arr1: ByteArray, arr2: ByteArray) = arr2 ++ arr1)
+          |  let timePassed = HEIGHT > timeout
+          |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
+           }""".stripMargin).asBoolValue
 
       val prop = OR(
         AND(LE(Height, IntConstant(timeout)),
@@ -1089,8 +1089,8 @@ class UtxoInterpreterSpecification extends PropSpec
             ByteArrayConstant(properHash))),
         AND(GT(Height, IntConstant(timeout)), sender)
       )
-//      compiledProp shouldBe prop
-      prop
+      compiledProp shouldBe prop
+      compiledProp
     }
 
     val ctx = UtxoContext(
@@ -1117,15 +1117,15 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-//    val env = Map("pubkey" -> pubkey)
-//    val compiledProp = compile(env,
-//      """{
-//        |  let outValues = OUTPUTS.map(fun (box: Box) = box.value)
-//        |  pubkey && outValues.fold(0, fun (x: Int, y: Int) = x + y) > 20
-//         }""".stripMargin)
+    val env = Map("pubkey" -> pubkey)
+    val prop = compile(env,
+      """{
+        |  let outValues = OUTPUTS.map(fun (box: Box) = box.value)
+        |  pubkey && outValues.fold(0, fun (x: Int, y: Int) = y + x) > 20
+         }""".stripMargin).asBoolValue
 
-    val prop = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), IntConstant(20)))
-//    compiledProp shouldBe prop
+    val propExp = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), IntConstant(20)))
+    prop shouldBe propExp
 
     val newBox1 = ErgoBox(11, pubkey)
     val newBox2 = ErgoBox(10, pubkey)
@@ -1243,13 +1243,12 @@ class UtxoInterpreterSpecification extends PropSpec
   property("forall") {
     val prover = new UtxoProvingInterpreter
     val verifier = new UtxoInterpreter
-
     val pubkey = prover.dlogSecrets.head.publicImage
 
-//    val compiledProp = compile(Map(), "OUTPUTS.forall(fun (box: Box) = box.value == 10)")
+    val prop = compile(Map(), "OUTPUTS.forall(fun (box: Box) = box.value == 10)").asBoolValue
 
-    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
-//    compiledProp shouldBe prop
+    val propTree = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
+    prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBox2 = ErgoBox(10, pubkey)

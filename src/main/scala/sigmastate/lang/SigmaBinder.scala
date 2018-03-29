@@ -36,6 +36,7 @@ class SigmaBinder(env: Map[String, Any]) {
           case "INPUTS" => Some(Inputs)
           case "OUTPUTS" => Some(Outputs)
           case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
+          case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
           case "SELF" => Some(Self)
           case _ => None
         }
@@ -54,22 +55,13 @@ class SigmaBinder(env: Map[String, Any]) {
     case Apply(Typed(obj, tCol: SCollection[_]), Seq(IntConstant(i))) =>
       Some(ByIndex(obj.asValue[SCollection[SType]], i.toInt))
 
-    // Rule: all(Array(...)) --> AND(...)
+    // Rule: allOf(Array(...)) --> AND(...)
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(AND(args))
 
-    // Rule: all(Array(...)) --> AND(...)
+    // Rule: anyOf(Array(...)) --> AND(...)
     case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(OR(args))
-
-    // Rule: exists(input, f) -->
-//    case Apply(ExistsSym, Seq(input: Value[SCollection[SType]]@unchecked, pred: Value[SFunc]@unchecked)) =>
-//      val tItem = input.tpe.elemType
-//      val expectedTpe = SFunc(Vector(tItem), SBoolean)
-//      if (!pred.tpe.canBeTypedAs(expectedTpe))
-//        error(s"Invalid type of $pred. Expected $expectedTpe")
-//      val args = expectedTpe.tDom.zipWithIndex.map { case (t, i) => (s"arg${i+1}", t) }
-//      Some(ExistsSym)
 
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>

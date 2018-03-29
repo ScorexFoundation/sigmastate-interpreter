@@ -121,15 +121,13 @@ object Values {
     override def hashCode(): Int = util.Arrays.hashCode(value)
   }
 
-  object EmptyByteArray extends ByteArrayConstant(Array.emptyByteArray)
+//  object EmptyByteArray extends ByteArrayConstant(Array.emptyByteArray)
 
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type] {
     override lazy val cost: Int = Cost.ByteArrayDeclaration
 
     override def tpe = SByteArray
   }
-
-  case object UnknownByteArray extends NotReadyValueByteArray
 
   case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray {
   }

@@ -33,7 +33,7 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
 case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                                    id: Byte,
-                                                   mapper: Transformer[IV, OV])(implicit val tOV: OV)
+                                                   mapper: SValue)(implicit val tOV: OV)
   extends Transformer[SCollection[IV], SCollection[OV]] with Rewritable {
   val tpe = SCollection[OV]
   def arity = 4
@@ -113,7 +113,7 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              id: Byte,
                              zero: Value[IV],
                              accId: Byte,
-                             foldOp: TwoArgumentsOperation[IV, IV, IV])(implicit val tpe: IV)
+                             foldOp: SValue)(implicit val tpe: IV)
   extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] with Rewritable {
   def arity = 6
   def deconstruct = immutable.Seq[Any](input, id, zero, accId, foldOp, tpe)
@@ -157,7 +157,7 @@ object Fold {
     Fold(input, 21, IntConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
 
   def sumBytes(input: Value[SCollection[SByteArray.type]]) =
-    Fold[SByteArray.type](input, 21, EmptyByteArray, 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
+    Fold[SByteArray.type](input, 21, ByteArrayConstant(Array.emptyByteArray), 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
 case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)

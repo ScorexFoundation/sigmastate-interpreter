@@ -1,10 +1,12 @@
 package sigmastate
 
 import java.math.BigInteger
+import edu.biu.scapi.primitives.dlog.GroupElement
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
+import sigmastate.utxo.{SigmaStateBox}
 import sigmastate.Values._
 
 import scala.collection.mutable
@@ -185,7 +187,7 @@ case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
 
   override def hashCode() = (31 + typeCode) * 31 + elemType.hashCode()
 
-  override def toString = s"SCollection($elemType)"
+  override def toString = s"Array[$elemType]"
 }
 
 object SCollection {
@@ -206,11 +208,7 @@ object SCollection {
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {
   override type WrappedType = Seq[Any] => tRange.WrappedType
   override val typeCode = SFunc.TypeCode
-//  override def equals(obj: scala.Any) = obj match {
-//    case that: SFunc[_,_] => that.tDom == tDom && that.tRange == tRange
-//    case _ => false
-//  }
-//  override def hashCode() = ((31 + typeCode) * 31 + tDom.hashCode()) * 31 + tRange.hashCode()
+  override def toString = s"(${tDom.mkString(",")}) => $tRange"
 }
 
 object SFunc {
@@ -231,6 +229,7 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
     }
     b.result
   }
+  override def toString = s"(${items.mkString(",")})"
 }
 
 object STuple {
@@ -250,6 +249,7 @@ object STypeApply {
 case class STypeIdent(name: String) extends SType {
   override type WrappedType = Any
   override val typeCode = STypeIdent.TypeCode
+  override def toString = name
 }
 object STypeIdent {
   val TypeCode = 111: Byte

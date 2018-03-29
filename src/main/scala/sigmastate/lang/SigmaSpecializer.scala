@@ -17,8 +17,13 @@ class SigmaSpecializer {
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
   def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
     val tagged = tpe match {
+      case SBoolean => TaggedBoolean(tag)
       case SInt => TaggedInt(tag)
+      case SBigInt => TaggedBigInt(tag)
       case SBox => TaggedBox(tag)
+      case SByteArray => TaggedByteArray(tag)
+      case SGroupElement => TaggedGroupElement(tag)
+      case SAvlTree => TaggedAvlTree(tag)
       case _ => error(s"Don't know how to mkTagged($name, $tpe, $tag)")
     }
     tagged.asInstanceOf[TaggedVariable[SType]]
@@ -47,6 +52,7 @@ class SigmaSpecializer {
       case (box, SBox.PropositionBytes) => Some(ExtractScriptBytes(box))
       case (box, SBox.Id) => Some(ExtractId(box))
       case (box, SBox.Bytes) => Some(ExtractBytes(box))
+      case _ => error(s"Don't know how to specialize $e")
     }
     case SelectGen(obj: SigmaBoolean, field, _) => field match {
       case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.propBytes))
@@ -59,6 +65,19 @@ class SigmaSpecializer {
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(Exists(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
+    case Apply(SelectGen(col,"forall", tpe), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+      val tagged = mkTagged(n, t, 21)
+      val body1 = eval(env + (n -> tagged), body)
+      Some(ForAll(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
+    case Apply(SelectGen(col,"map", tpe), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+      val tagged = mkTagged(n, t, 21)
+      val body1 = eval(env + (n -> tagged), body)
+      Some(MapCollection(col.asValue[SCollection[SType]], tagged.id, body1)(body1.tpe))
+    case Apply(SelectGen(col,"fold", tpe), Seq(zero, Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
+      val taggedZero = mkTagged(zeroArg, tZero, 21)
+      val taggedOp = mkTagged(opArg, tOp, 22)
+      val body1 = eval(env ++ Seq(zeroArg -> taggedZero, opArg -> taggedOp), body)
+      Some(Fold(col.asValue[SCollection[SType]], taggedZero.id, zero, taggedOp.id, body1)(body1.tpe))
   })))(e)
 
   def specialize(typed: SValue): SValue = {
