@@ -3,7 +3,6 @@ package scapi.sigma
 import java.security.SecureRandom
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
-import sigmastate.interpreter.GroupSettings
 import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
 
 import scala.concurrent.ExecutionContext.Implicits.global
