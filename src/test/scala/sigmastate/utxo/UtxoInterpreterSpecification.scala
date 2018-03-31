@@ -35,7 +35,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val binder = new SigmaBinder(env)
     val bound = binder.bind(parsed)
     val st = new SigmaTree(bound)
-    val typer = new SigmaTyper(env, st)
+    val typer = new SigmaTyper
     val typed = typer.typecheck(bound)
     val spec = new SigmaSpecializer
     val ir = spec.specialize(typed)

@@ -25,29 +25,29 @@ object Terms {
     def apply(name: String, value: SValue): Let = Let(name, NoType, value)
   }
 
-  case class Select(obj: Value[SType], field: String) extends Value[SType] {
+  case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
-    val tpe: SType = obj.tpe match {
+    val tpe: SType = resType.getOrElse(obj.tpe match {
       case p: SProduct =>
         val i = p.fieldIndex(field)
         if (i == -1) NoType
         else p.fields(i)._2
       case _ => NoType
-    }
+    })
   }
 
-  case class SelectGen(obj: Value[SType], field: String, tpe: SType) extends Value[SType] {
-    override def cost: Int = ???
-    override def evaluated: Boolean = ???
-//    val tpe: SType = obj.tpe match {
-//      case p: SProduct =>
-//        val i = p.fieldIndex(field)
-//        if (i == -1) NoType
-//        else SigmaTyper.applySubst(p.fields(i)._2, tpeArgs)
-//      case _ => NoType
-//    }
-  }
+//  case class SelectGen(obj: Value[SType], field: String, tpe: SType) extends Value[SType] {
+//    override def cost: Int = ???
+//    override def evaluated: Boolean = ???
+////    val tpe: SType = obj.tpe match {
+////      case p: SProduct =>
+////        val i = p.fieldIndex(field)
+////        if (i == -1) NoType
+////        else SigmaTyper.applySubst(p.fields(i)._2, tpeArgs)
+////      case _ => NoType
+////    }
+//  }
 
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???
@@ -93,6 +93,8 @@ object Terms {
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
     def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
+    def asIntValue: Value[SInt.type] = v.asInstanceOf[Value[SInt.type]]
+    def asSigmaValue: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
     def asByteArray: Value[SByteArray.type] = v.asInstanceOf[Value[SByteArray.type]]
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]

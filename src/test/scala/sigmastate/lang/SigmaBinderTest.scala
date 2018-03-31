@@ -1,7 +1,5 @@
 package sigmastate.lang
 
-import java.math.BigInteger
-
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
@@ -12,15 +10,9 @@ import sigmastate.utxo._
 class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
   def bind(env: Map[String, Any], x: String): SValue = {
-    try {
-      val ast = SigmaParser(x).get.value
-      val binder = new SigmaBinder(env)
-      binder.bind(ast)
-    } catch {
-      case e: Exception =>
-//        SigmaParser.logged.foreach(println)
-        throw e
-    }
+    val ast = SigmaParser(x).get.value
+    val binder = new SigmaBinder(env)
+    binder.bind(ast)
   }
 
   property("simple expressions") {
@@ -29,7 +21,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "c1 && c2") shouldBe AND(TrueLeaf, FalseLeaf)
     bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
     bind(env, "HEIGHT + 1") shouldBe Plus(Height, 1)
-    bind(env, "INPUTS.size > 1") shouldBe GT(SizeOf(Inputs), 1)
+    bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
     bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10,20))
     bind(env, "arr1 ++ arr2") shouldBe AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
     bind(env, "g1 ^ n") shouldBe Exponentiate(g1, n)

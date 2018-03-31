@@ -13,7 +13,7 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
     val parsed = SigmaParser(x).get.value
     val binder = new SigmaBinder(env)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(env, new SigmaTree(bound))
+    val typer = new SigmaTyper
     val typed = typer.typecheck(bound)
     typed
   }

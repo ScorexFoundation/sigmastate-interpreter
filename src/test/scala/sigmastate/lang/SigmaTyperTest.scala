@@ -16,7 +16,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val binder = new SigmaBinder(env)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper(env, st)
+      val typer = new SigmaTyper
       val typed = typer.typecheck(bound)
      typed.tpe
     } catch {
@@ -30,7 +30,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val binder = new SigmaBinder(env)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper(env, st)
+      val typer = new SigmaTyper
       val typed = typer.typecheck(bound)
       assert(false, s"Should not typecheck: $x")
     } catch {
@@ -144,7 +144,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "fun (p: (Int, GroupElement), box: Box): Boolean = p._1 > box.value && p._2.isIdentity") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
 
-    typefail(env, "fun (a) = a + 1", "Errors found")
+    typefail(env, "fun (a) = a + 1", "undefined type of argument")
   }
 
   property("function definitions") {
