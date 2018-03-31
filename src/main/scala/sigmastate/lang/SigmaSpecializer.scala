@@ -59,19 +59,23 @@ class SigmaSpecializer {
 
     case SelectGen(obj, "value", SInt) if obj.tpe == SBox =>
       Some(ExtractAmount(obj.asValue[SBox.type]))
-    case Apply(SelectGen(col,"exists", tpe), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+
+    case Apply(SelectGen(col,"exists", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(Exists(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
-    case Apply(SelectGen(col,"forall", tpe), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+
+    case Apply(SelectGen(col,"forall", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(ForAll(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
-    case Apply(SelectGen(col,"map", tpe), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+
+    case Apply(SelectGen(col,"map", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(MapCollection(col.asValue[SCollection[SType]], tagged.id, body1)(body1.tpe))
-    case Apply(SelectGen(col,"fold", tpe), Seq(zero, Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
+
+    case Apply(SelectGen(col,"fold", _), Seq(zero, Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
       val taggedZero = mkTagged(zeroArg, tZero, 21)
       val taggedOp = mkTagged(opArg, tOp, 22)
       val body1 = eval(env ++ Seq(zeroArg -> taggedZero, opArg -> taggedOp), body)

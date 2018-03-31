@@ -21,229 +21,240 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
   import org.bitbucket.inkytonik.kiama.util.Messaging.{check, collectMessages, message, Messages}
 
   /** The semantic error messages for the tree based on the inferred attributes. */
-  lazy val errors : Messages =
-    collectMessages(tree) {
-      case e : SValue =>
-        check(e) {
-          case e @ Ident(x, _) =>
-            message(e, s"unknown name '$x'", tipe(e) == NoType)
-          case e: SValue =>
-            message(e, s"Expression ${e} doesn't have type: context ${tree.parent(e)}", tipe(e) == NoType)
-        }
-    }
+//  lazy val errors : Messages =
+//    collectMessages(tree) {
+//      case e : SValue =>
+//        check(e) {
+//          case e @ Ident(x, _) =>
+//            message(e, s"unknown name '$x'", tipe(e) == NoType)
+//          case e: SValue =>
+//            message(e, s"Expression ${e} doesn't have type: context ${tree.parent(e)}", tipe(e) == NoType)
+//        }
+//    }
 
   /**
     * The variables that are free in the given expression.
     */
-  val fv : SValue => List[Idn] =
-    attr {
-      case IntConstant(_)            => List()
-      case Ident(v, _)               => List(v)
-      case Lambda(args, _, Some(e))  =>
-        val argNames = args.map(_._1).toList
-        fv(e).filterNot(argNames.contains(_))
-      case Apply(e1, args)           => args.foldLeft(fv(e1))((acc, e) => acc ++ fv(e))
-      case Let(i, t, e) => fv(e)
-      case Block(bs, e) => {
-        val fbv = bs.map(_.body).map(fv).flatten
-        val bvars = bs.map(_.name)
-        fbv.toList ++ (fv(e).filterNot(bvars.contains(_)))
-      }
-    }
+//  val fv : SValue => List[Idn] =
+//    attr {
+//      case IntConstant(_)            => List()
+//      case Ident(v, _)               => List(v)
+//      case Lambda(args, _, Some(e))  =>
+//        val argNames = args.map(_._1).toList
+//        fv(e).filterNot(argNames.contains(_))
+//      case Apply(e1, args)           => args.foldLeft(fv(e1))((acc, e) => acc ++ fv(e))
+//      case Let(i, t, e) => fv(e)
+//      case Block(bs, e) => {
+//        val fbv = bs.map(_.body).map(fv).flatten
+//        val bvars = bs.map(_.name)
+//        fbv.toList ++ (fv(e).filterNot(bvars.contains(_)))
+//      }
+//    }
 
   /**
     * The environment of an expression is the list of variable names that
     * are visible in that expression and their types.
     */
-  val scope : SValue => List[(Idn, SType)] =
-    attr {
-      // Inside a lambda expression the bound variable is now visible
-      // in addition to everything that is visible from above. Note
-      // that an inner declaration of a var hides an outer declaration
-      // of the same var since we add inner bindings at the beginning
-      // of the env and we search the env list below in tipe from
-      // beginning to end
-      case e @ tree.parent(p @ Lambda(args, t, Some(body))) if e eq body =>
-        (args ++ scope(p)).toList
-
-      // Inside the result expression of a block all bindings are visible
-      case e @ tree.parent(p @ Block(bs, res)) if e eq res =>
-        val fromLets = bs.map(l => (l.name, l.givenType.?:(tipe(l.body))))
-        val res = (fromLets ++ scope(p))
-        res.toList
-
-      // Inside any binding of a block all the previous names are visible
-      case e @ tree.parent(p @ Block(bs, res)) if bs.exists(_ eq e) =>
-        val iLet = bs.indexWhere(_ eq e)
-        val boundNames = bs.take(iLet).map(l => (l.name, l.givenType.?:(tipe(l.body))))
-        val res = (boundNames ++ scope(p))
-        res.toList
-
-      // Other expressions do not bind new identifiers so they just
-      // get their environment from their parent
-      case tree.parent(p : SValue) =>
-        scope(p)
-
-      // global level contains all predefined names
-      case _ =>
-        val predef = SigmaPredef.predefinedEnv.mapValues(_.tpe).toList
-        predef ++ globalEnv.mapValues(SType.typeOfData).toList
-    }
+//  val scope : SValue => List[(Idn, SType)] =
+//    attr {
+//      // Inside a lambda expression the bound variable is now visible
+//      // in addition to everything that is visible from above. Note
+//      // that an inner declaration of a var hides an outer declaration
+//      // of the same var since we add inner bindings at the beginning
+//      // of the env and we search the env list below in tipe from
+//      // beginning to end
+//      case e @ tree.parent(p @ Lambda(args, t, Some(body))) if e eq body =>
+//        (args ++ scope(p)).toList
+//
+//      // Inside the result expression of a block all bindings are visible
+//      case e @ tree.parent(p @ Block(bs, res)) if e eq res =>
+//        val fromLets = bs.map(l => (l.name, l.givenType.?:(tipe(l.body))))
+//        val res = (fromLets ++ scope(p))
+//        res.toList
+//
+//      // Inside any binding of a block all the previous names are visible
+//      case e @ tree.parent(p @ Block(bs, res)) if bs.exists(_ eq e) =>
+//        val iLet = bs.indexWhere(_ eq e)
+//        val boundNames = bs.take(iLet).map(l => (l.name, l.givenType.?:(tipe(l.body))))
+//        val res = (boundNames ++ scope(p))
+//        res.toList
+//
+//      // Other expressions do not bind new identifiers so they just
+//      // get their environment from their parent
+//      case tree.parent(p : SValue) =>
+//        scope(p)
+//
+//      // global level contains all predefined names
+//      case _ =>
+//        val predef = SigmaPredef.predefinedEnv.mapValues(_.tpe).toList
+//        predef ++ globalEnv.mapValues(SType.typeOfData).toList
+//    }
 
   /**
     * The type of an expression.  Checks constituent names and types.  Uses
     * the env attribute to get the bound variables and their types.
     */
-  val tipe : SValue => SType =
-    attr {
-      // this case should be before general EvaluatedValue
-      case c @ ConcreteCollection(items) =>  {
-        val types = items.map(tipe).distinct
-        val eItem =
-          if (types.isEmpty) NoType
-          else
-          if (types.size == 1) types(0)
-          else
-            error(s"All element of array $c should have the same type but found $types")
-        SCollection(eItem)
-      }
+//  val tipe : SValue => SType =
+//    attr {
+//      // this case should be before general EvaluatedValue
+//      case c @ ConcreteCollection(items) =>  {
+//        val types = items.map(tipe).distinct
+//        val eItem =
+//          if (types.isEmpty) NoType
+//          else
+//          if (types.size == 1) types(0)
+//          else
+//            error(s"All element of array $c should have the same type but found $types")
+//        SCollection(eItem)
+//      }
+//
+//      // this case should be before general EvaluatedValue
+//      case Tuple(items) =>
+//        STuple(items.map(tipe))
+//
+//      case v: EvaluatedValue[_] => v.tpe
+//      case v: NotReadyValueInt => v.tpe
+//      case Inputs => Inputs.tpe
+//
+//      // An operation must be applied to two arguments of the same type
+//      case op @ GT(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
+//      case op @ LT(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
+//      case op @ GE(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
+//      case op @ LE(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
+//      case op @ EQ(e1, e2) => binOpTipe(op, e1, e2)(tipe(e1), SBoolean)
+//      case op @ NEQ(e1, e2) => binOpTipe(op, e1, e2)(tipe(e1), SBoolean)
+//
+//      case op @ AND(xs) =>
+//        val xsT = checkTyped(op, tipe(xs), SCollection(SBoolean))
+//        xsT.elemType
+//      case op @ OR(xs) =>
+//        val xsT = checkTyped(op, tipe(xs), SCollection(SBoolean))
+//        xsT.elemType
+//
+//      case ite @ If(c, t, e) =>
+//        val tCond = tipe(c)
+//        if (tCond != SBoolean) error(s"Invalid type of condition in $ite: expected Boolean; actual: $tCond")
+//        val tThen = tipe(t)
+//        val tElse = tipe(e)
+//        if (tThen != tElse) error(s"Invalid type of condition $ite: both branches should have the same type but was $tThen and $tElse")
+//        tThen
+//      // An identifier is looked up in the environement of the current
+//      // expression.  If we find it, then we use the type that we find.
+//      // Otherwise it's an error.
+//      case e @ Ident(x,_) =>
+//        scope(e).collectFirst {
+//          case (y, t) if x == y => t
+//        }.getOrElse {
+//          NoType
+//        }
+//
+//      // A lambda expression is a function from the type of its argument
+//      // to the type of the body expression
+//      case lam @ Lambda(args, t, body) =>
+//        for ((name, t) <- args)
+//          if (t == NoType)
+//            error(s"Invalid function $lam: undefined type of argument $name")
+//        val argTypes = args.map(_._2)
+//        if (t == NoType) {
+//          val tRes = body.fold(NoType: SType)(tipe)
+//          if (tRes == NoType)
+//            error(s"Invalid function $lam: undefined type of result")
+//          SFunc(argTypes, tRes)
+//        }
+//        else {
+//          if (body.isDefined && t != tipe(body.get))
+//            error(s"Invalid function $lam: resulting expression type ${tipe(body.get)} doesn't equal expected type $t")
+//          SFunc(argTypes, t)
+//        }
+//
+//      // For an application we first determine the type of the expression
+//      // being applied.
+//      case app @ Apply(f, args) =>
+//        tipe(f) match {
+//          case SFunc(argTypes, tRes) =>
+//            // If it's a function then the application has type of that function's return type.
+//            val actualTypes = args.map(tipe)
+//            unifyTypeLists(argTypes, actualTypes) match {
+//              case Some(subst) =>
+//                val newRes = applySubst(tRes, subst)
+//                newRes
+//              case None =>
+//                error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
+//            }
+//
+//          case tCol: SCollection[_] =>
+//            // If it's a collection then the application has type of that collection's element.
+//            // Only constant indices are supported so far
+//            args match {
+//              case Seq(IntConstant(i)) =>
+//                tCol.elemType
+//              case _ =>
+//                error(s"Invalid argument of array application $app: expected integer constant; actual: $args")
+//            }
+//          case t =>
+//            error(s"Invalid function/array application $app: function/array type is expected but was $t")
+//        }
+//
+//      case ByIndex(col, i) =>
+//        val tItem = col.tpe.elemType
+//        if (tItem == NoType) error(s"Invalid type in $col: undefined element type")
+//        tItem
+//
+//      // A block returns the type of the result expression
+//      case Block(bs, e) =>
+//        tipe(e)
+//
+//      // Let can be thought as an expression with the side effect of introducing a new variable
+//      case Let(_, _, body) => tipe(body)
+//
+//      case sel: Select => typeOfSelect(sel)
+//
+////      case ApplyTypes(input, targs) =>
+//      case v: SValue if v.tpe != NoType => v.tpe
+//
+//      case e => error(s"Don't know how to compute type for $e")
+//    }
 
-      // this case should be before general EvaluatedValue
-      case Tuple(items) =>
-        STuple(items.map(tipe))
+//  def typeOfSelect(sel: Select): SType = (sel.obj, tipe(sel.obj)) match {
+//    case (_, s: SProduct) =>
+//      val iField = s.fieldIndex(sel.field)
+//      if (iField != -1) {
+//        s.fields(iField)._2
+//      }
+//      else
+//        error(s"Cannot find field '${sel.field}' in product type with fields ${s.fields}")
+//    case (obj: SigmaBoolean, SBoolean) =>
+//      val iField = obj.fields.indexWhere(_._1 == sel.field)
+//      if (iField != -1) {
+//        obj.fields(iField)._2
+//      }
+//      else
+//        error(s"Cannot find field '${sel.field}' in Sigma type with fields ${obj.fields}")
+//    case (_, t) =>
+//      error(s"Cannot get field '${sel.field}' of non-product type $t")
+//  }
 
-      case v: EvaluatedValue[_] => v.tpe
-      case v: NotReadyValueInt => v.tpe
-      case Inputs => Inputs.tpe
-
-      // An operation must be applied to two arguments of the same type
-      case op @ GT(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
-      case op @ LT(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
-      case op @ GE(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
-      case op @ LE(e1, e2) => binOpTipe(op, e1, e2)(SInt, SBoolean)
-      case op @ EQ(e1, e2) => binOpTipe(op, e1, e2)(tipe(e1), SBoolean)
-      case op @ NEQ(e1, e2) => binOpTipe(op, e1, e2)(tipe(e1), SBoolean)
-
-      case op @ AND(xs) =>
-        val xsT = checkTyped(op, tipe(xs), SCollection(SBoolean))
-        xsT.elemType
-      case op @ OR(xs) =>
-        val xsT = checkTyped(op, tipe(xs), SCollection(SBoolean))
-        xsT.elemType
-
-      case ite @ If(c, t, e) =>
-        val tCond = tipe(c)
-        if (tCond != SBoolean) error(s"Invalid type of condition in $ite: expected Boolean; actual: $tCond")
-        val tThen = tipe(t)
-        val tElse = tipe(e)
-        if (tThen != tElse) error(s"Invalid type of condition $ite: both branches should have the same type but was $tThen and $tElse")
-        tThen
-      // An identifier is looked up in the environement of the current
-      // expression.  If we find it, then we use the type that we find.
-      // Otherwise it's an error.
-      case e @ Ident(x,_) =>
-        scope(e).collectFirst {
-          case (y, t) if x == y => t
-        }.getOrElse {
-          NoType
-        }
-
-      // A lambda expression is a function from the type of its argument
-      // to the type of the body expression
-      case lam @ Lambda(args, t, body) =>
-        for ((name, t) <- args)
-          if (t == NoType)
-            error(s"Invalid function $lam: undefined type of argument $name")
-        val argTypes = args.map(_._2)
-        if (t == NoType) {
-          val tRes = body.fold(NoType: SType)(tipe)
-          if (tRes == NoType)
-            error(s"Invalid function $lam: undefined type of result")
-          SFunc(argTypes, tRes)
-        }
-        else {
-          if (body.isDefined && t != tipe(body.get))
-            error(s"Invalid function $lam: resulting expression type ${tipe(body.get)} doesn't equal expected type $t")
-          SFunc(argTypes, t)
-        }
-
-      // For an application we first determine the type of the expression
-      // being applied.
-      case app @ Apply(f, args) =>
-        tipe(f) match {
-          case SFunc(argTypes, tRes) =>
-            // If it's a function then the application has type of that function's return type.
-            val actualTypes = args.map(tipe)
-            unifyTypeLists(argTypes, actualTypes) match {
-              case Some(subst) =>
-                val newRes = applySubst(tRes, subst)
-                newRes
-              case None =>
-                error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
-            }
-
-          case tCol: SCollection[_] =>
-            // If it's a collection then the application has type of that collection's element.
-            // Only constant indices are supported so far
-            args match {
-              case Seq(IntConstant(i)) =>
-                tCol.elemType
-              case _ =>
-                error(s"Invalid argument of array application $app: expected integer constant; actual: $args")
-            }
-          case t =>
-            error(s"Invalid function/array application $app: function/array type is expected but was $t")
-        }
-
-      case ByIndex(col, i) =>
-        val tItem = col.tpe.elemType
-        if (tItem == NoType) error(s"Invalid type in $col: undefined element type")
-        tItem
-
-      // A block returns the type of the result expression
-      case Block(bs, e) =>
-        tipe(e)
-
-      // Let can be thought as an expression with the side effect of introducing a new variable
-      case Let(_, _, body) => tipe(body)
-
-      case sel: Select => typeOfSelect(sel)
-
-      case v: SValue if v.tpe != NoType => v.tpe
-      
-      case e => error(s"Don't know how to compute type for $e")
-    }
-
-  def typeOfSelect(sel: Select): SType = (sel.obj, tipe(sel.obj)) match {
-    case (_, s: SProduct) =>
-      val iField = s.fieldIndex(sel.field)
-      if (iField != -1) {
-        s.fields(iField)._2
-      }
-      else
-        error(s"Cannot find field '${sel.field}' in product type with fields ${s.fields}")
-    case (obj: SigmaBoolean, SBoolean) =>
-      val iField = obj.fields.indexWhere(_._1 == sel.field)
-      if (iField != -1) {
-        obj.fields(iField)._2
-      }
-      else
-        error(s"Cannot find field '${sel.field}' in Sigma type with fields ${obj.fields}")
-    case (_, t) =>
-      error(s"Cannot get field '${sel.field}' of non-product type $t")
-  }
-
-  def binOpTipe(op: SValue, e1: SValue, e2: SValue)(arg: SType, res: SType): SType =
-    if ((tipe(e1) == arg) && (tipe(e2) == arg))
-      res
-    else
-      error(s"Invalid binary operation $op: expected argument types ($arg, $arg); actual: (${tipe(e1)}, ${tipe(e2)})")
+//  def binOpTipe(op: SValue, e1: SValue, e2: SValue)(arg: SType, res: SType): SType =
+//    if ((tipe(e1) == arg) && (tipe(e2) == arg))
+//      res
+//    else
+//      error(s"Invalid binary operation $op: expected argument types ($arg, $arg); actual: (${tipe(e1)}, ${tipe(e2)})")
 
   def checkTyped[T <: SType](op: SValue, t: SType, expected: T): T =
     if (t == expected)
       t.asInstanceOf[T]
     else
       error(s"Invalid argument type $t of $op")
+
+  /** Most Specific General(MSG) type of ts.
+    * Currently just the type of the first element as long as all the elements have the same type. */
+  def msgTypeOf(ts: Seq[SType]): Option[SType] = {
+    val types = ts.distinct
+    if (types.isEmpty) None
+    else
+    if (types.size == 1) Some(types(0))
+    else None
+  }
 
   def assignType(env: Map[String, SType], bound: SValue): SValue = bound match {
     case Block(bs, res) =>
@@ -257,11 +268,15 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       }
       val res1 = assignType(curEnv, res)
       Block(bs1, res1)
-//      Block(bs.map(l => assignType(l).asInstanceOf[Let]), assignType(res))
 
     case Tuple(items) => Tuple(items.map(assignType(env, _)))
 
-    case c @ ConcreteCollection(items) => ConcreteCollection(items.map(assignType(env, _)))(c.tItem)
+    case c @ ConcreteCollection(items) =>
+      val newItems = items.map(assignType(env, _))
+      val types = newItems.map(_.tpe).distinct
+      val tItem = msgTypeOf(types).getOrElse(
+        error(s"All element of array $c should have the same type but found $types"))
+      ConcreteCollection(newItems)(tItem)
 
     case v @ Ident(n, _) =>
       env.get(n) match {
@@ -269,8 +284,7 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
         case None => error(s"Cannot assign type for variable '$n' because it is not found in env $env")
       }
 
-    case sel @ Select(o, n) =>
-      SelectGen(assignType(env, o), n, tipe(sel))
+    case sel @ Select(o, n) => Select(assignType(env, o), n)
 
     case Lambda(args, t, body) =>
       val lambdaEnv = env ++ args
@@ -278,26 +292,41 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
       Lambda(args, newBody.fold(t)(_.tpe), newBody)
 
     case app @ Apply(sel @ Select(obj, n), args) =>
-      tipe(sel) match {
-        case tFun @ SFunc(argTypes, tRes) =>
+      val newSel = assignType(env, sel)
+      val newArgs = args.map(assignType(env, _))
+      newSel.tpe match {
+        case genFunTpe @ SFunc(argTypes, tRes) =>
           // If it's a function then the application has type of that function's return type.
-          val actualTypes = args.map(tipe)
+          val actualTypes = newArgs.map(_.tpe)
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
-              val newFun = applySubst(tFun, subst)
+              val concrFunTpe = applySubst(genFunTpe, subst)
               val newObj = assignType(env, obj)
-              val newArgs = args.map(assignType(env, _))
-              val newApply = Apply(SelectGen(newObj, n, newFun), newArgs)
+              val newApply = Apply(SelectGen(newObj, n, concrFunTpe), newArgs)
               newApply
             case None =>
               error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
           }
         case _ =>
-          Apply(Select(assignType(env, obj), n), args.map(assignType(env, _)))
+          Apply(newSel, args.map(assignType(env, _)))
       }
 
-    case Apply(f, args) =>
-      Apply(assignType(env, f), args.map(assignType(env, _)))
+    case app @ Apply(f, args) =>
+      val new_f = assignType(env, f)
+      val newArgs = args.map(assignType(env, _))
+      f.tpe match {
+        case tCol: SCollection[_] =>
+          // If it's a collection then the application has type of that collection's element.
+          // Only constant indices are supported so far
+          args match {
+            case Seq(IntConstant(i)) =>
+              ByIndex[SType](new_f.asCollection, i.toInt)
+            case _ =>
+              error(s"Invalid argument of array application $app: expected integer constant; actual: $args")
+          }
+        case t =>
+          error(s"Invalid array application $app: array type is expected but was $t")
+      }
 
     case If(c, t, e) =>
       If(assignType(env, c).asValue[SBoolean.type], assignType(env, t), assignType(env, e))
@@ -337,10 +366,12 @@ class SigmaTyper(globalEnv: Map[String, Any], tree : SigmaTree) extends Attribut
   }
 
   def typecheck(bound: SValue): SValue = {
-    val t = tipe(bound)
-    if (t == NoType) error(s"No type can be assigned to expression $bound")
-    if(errors.nonEmpty) error(s"Errors found while typing expression $bound:\n${errors.mkString("\n")}\n")
+    Apply(ByIndex(ConcreteCollection(Vector(IntConstant(0))),0),Vector(IntConstant(0)))
+//    val t = tipe(bound)
+//    if (t == NoType) error(s"No type can be assigned to expression $bound")
+//    if(errors.nonEmpty) error(s"Errors found while typing expression $bound:\n${errors.mkString("\n")}\n")
     val assigned = assignType(SigmaPredef.predefinedEnv.mapValues(_.tpe), bound)
+    if (assigned.tpe == NoType) error(s"No type can be assigned to expression $assigned")
 
     // traverse the tree bottom-up checking that all the nodes have a type
     var untyped: SValue = null
