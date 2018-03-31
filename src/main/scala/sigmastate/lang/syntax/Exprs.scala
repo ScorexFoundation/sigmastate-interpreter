@@ -3,7 +3,7 @@ package sigmastate.lang.syntax
 import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Lambda, Let, MethodCall, Apply, Select, Ident, ValueOps}
+import sigmastate.lang.Terms.{Lambda, ApplyTypes, Let, MethodCall, Apply, ValueOps, Select, Ident}
 import sigmastate.lang.{Terms, syntax, Types}
 import sigmastate.lang.syntax.Basic._
 
@@ -66,7 +66,9 @@ trait Exprs extends Core with Types {
     val ExprPrefix = P( WL ~ CharIn("-+!~").! ~~ !syntax.Basic.OpChar ~ WS)
     val ExprSuffix = P(
       (WL ~ "." ~/ Id.!.map(Ident(_))
-      | /*WL ~ TypeArgs |*/ NoSemis ~ ArgList ).repX /* ~~ (NoSemis  ~ `_`).? */ )
+      | WL ~ TypeArgs.map(items => STypeApply("", items.toIndexedSeq))
+      | NoSemis ~ ArgList ).repX /* ~~ (NoSemis  ~ `_`).? */
+    )
 
     val PrefixExpr = P( ExprPrefix.? ~ SimpleExpr ).map {
       case (Some(op), e) => mkUnaryOp(op, e)
@@ -123,6 +125,11 @@ trait Exprs extends Core with Types {
     case _ => Apply(func, args)
   }
 
+  def mkApplyTypes(input: Value[SType], targs: IndexedSeq[SType]): Value[SType] = {
+    val subst = targs.zipWithIndex.map { case (t, i) => (STypeIdent(s"_${i + 1}") -> t) }.toMap
+    ApplyTypes(input, subst)
+  }
+
   /** The precedence of an infix operator is determined by the operator's first character.
     * Characters are listed below in increasing order of precedence, with characters on the same line
     * having the same precedence. */
@@ -170,12 +177,16 @@ trait Exprs extends Core with Types {
     build(Nil, lhs, rhss.toList)
   }
 
-  protected def applySuffix(f: Value[SType], args: Seq[Value[SType]]): Value[SType] = {
+
+
+  protected def applySuffix(f: Value[SType], args: Seq[SigmaNode]): Value[SType] = {
     val rhs = args.foldLeft(f)((acc, arg) => arg match {
       case Ident(name, t) => Select(acc, name)
       case UnitConstant => mkApply(acc, IndexedSeq.empty)
       case Tuple(xs) => mkApply(acc, xs)
-      case arg => mkApply(acc, IndexedSeq(arg))
+      case STypeApply("", targs) => mkApplyTypes(acc, targs)
+      case arg: SValue => mkApply(acc, IndexedSeq(arg))
+      case t => error(s"Error after expression $f: invalid suffixes $args")
     })
     rhs
   }

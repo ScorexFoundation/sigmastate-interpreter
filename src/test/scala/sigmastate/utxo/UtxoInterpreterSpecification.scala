@@ -1186,7 +1186,10 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = AND(pubkey, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
+    val env = Map("pubkey" -> pubkey)
+    val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asBoolValue
+    val propTree = AND(pubkey, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
+    prop shouldBe propTree
 
     val newBox1 = ErgoBox(11, pubkey)
     val newBox2 = ErgoBox(10, pubkey)
@@ -1274,7 +1277,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
+    val prop = compile(Map(), "OUTPUTS.forall(fun (box: Box) = box.value == 10)").asBoolValue
+    val propTree = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
+    prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBox2 = ErgoBox(11, pubkey)
@@ -1300,7 +1305,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
 //    val compiledProp = compile(Map(),
 //      """OUTPUTS.exists(fun (box: Box) = {
-//        |  box.R3.get == SELF.R3.get + 1
+//        |  box.R3[Int] == SELF.R3[Int] + 1
 //         })""".stripMargin)
 
     val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3)(SInt),
@@ -1381,7 +1386,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val treeData = new AvlTreeData(digest, 32, None)
 
 //    val env = Map("key" -> key, "proof" -> proof)
-//    val compiledProp = compile(env, """isMember(SELF.R3, key, proof)""")
+//    val compiledProp = compile(env, """isMember(SELF.R3[AvlTree], key, proof)""")
 
     val prop = IsMember(ExtractRegisterAs(Self, R3),
       ByteArrayConstant(key),

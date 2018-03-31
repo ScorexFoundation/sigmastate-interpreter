@@ -67,18 +67,12 @@ object Terms {
     }
   }
 
-//  case class ApplyGen(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
-//    override def cost: Int = ???
-//    override def evaluated: Boolean = false
-//    lazy val tpe: SType = func.tpe match {
-//      case SFunc(_, r) => SigmaTyper.applySubst(r, tpeArgs)
-//      case tCol: SCollection[_] => SigmaTyper.applySubst(tCol.elemType, tpeArgs)
-//      case _ => NoType
-//    }
-//  }
-//  object Apply {
-//    def apply(func: Value[SType], args: IndexedSeq[Value[SType]]): Apply = Apply(func, args, SigmaTyper.emptySubst)
-//  }
+  /** Apply types for type parameters of input value. */
+  case class ApplyTypes(input: Value[SType], tpeArgs: STypeSubst) extends Value[SType] {
+    override def cost: Int = ???
+    override def evaluated: Boolean = false
+    lazy val tpe: SType = SigmaTyper.applySubst(input.tpe, tpeArgs)
+  }
 
   case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???

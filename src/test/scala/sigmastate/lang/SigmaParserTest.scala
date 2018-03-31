@@ -256,4 +256,16 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("fun (box: Box): ByteArray = box.id") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "id"))
   }
 
+  property("type parameters") {
+    parse("X[Int]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt))
+    parse("X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt)), "isDefined")
+    parse("X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> STuple(SInt, SBoolean)))
+    parse("X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt, STypeIdent("_2") -> SBoolean))
+    parse("SELF.R1[Int]") shouldBe ApplyTypes(Select(Ident("SELF"), "R1"), Map(STypeIdent("_1") -> SInt))
+    parse("SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Ident("SELF"), "R1"), Map(STypeIdent("_1") -> SInt)),"isDefined")
+    parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Map(STypeIdent("_1") -> SInt)), IndexedSeq(IntConstant(10)))
+    parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Map(STypeIdent("_1") -> SInt))
+    parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Map(STypeIdent("_1") -> SInt)), IndexedSeq(IntConstant(10)))
+  }
+
 }
