@@ -160,6 +160,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("type parameters") {
+    typecheck(env, "SELF.R1[Int]") shouldBe SOption(SInt)
 //    typecheck(env, "X[Int]") shouldBe SInt
 //    typecheck(env, "X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt)), "isDefined")
 //    typecheck(env, "X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> STuple(SInt, SBoolean)))

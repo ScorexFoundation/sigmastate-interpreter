@@ -67,7 +67,7 @@ class SigmaPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
   def typeToDoc(t : SType) : Doc =
     t match {
       case SInt       => "Int"
-      case SFunc(dom, t2) => parens(lsep(dom.map(typeToDoc).to, comma)) <+> "->" <+> typeToDoc(t2)
+      case SFunc(dom, t2, _) => parens(lsep(dom.map(typeToDoc).to, comma)) <+> "->" <+> typeToDoc(t2)
       case NoType        => "NoType" // Not used
       case _ => s"<unknown type $t>"
     }

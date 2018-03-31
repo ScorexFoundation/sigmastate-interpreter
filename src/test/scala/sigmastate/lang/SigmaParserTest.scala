@@ -257,15 +257,15 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("type parameters") {
-    parse("X[Int]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt))
-    parse("X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt)), "isDefined")
-    parse("X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> STuple(SInt, SBoolean)))
-    parse("X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt, STypeIdent("_2") -> SBoolean))
-    parse("SELF.R1[Int]") shouldBe ApplyTypes(Select(Ident("SELF"), "R1"), Map(STypeIdent("_1") -> SInt))
-    parse("SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Ident("SELF"), "R1"), Map(STypeIdent("_1") -> SInt)),"isDefined")
-    parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Map(STypeIdent("_1") -> SInt)), IndexedSeq(IntConstant(10)))
-    parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Map(STypeIdent("_1") -> SInt))
-    parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Map(STypeIdent("_1") -> SInt)), IndexedSeq(IntConstant(10)))
+    parse("X[Int]") shouldBe ApplyTypes(Ident("X"), Seq(SInt))
+    parse("X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Seq(SInt)), "isDefined")
+    parse("X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Seq(STuple(SInt, SBoolean)))
+    parse("X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Seq(SInt, SBoolean))
+    parse("SELF.R1[Int]") shouldBe ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SInt))
+    parse("SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SInt)),"isDefined")
+    parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
+    parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt))
+    parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
   }
 
 }

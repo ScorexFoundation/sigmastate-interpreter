@@ -101,7 +101,7 @@ class SigmaTyper {
       val newSel = assignType(env, sel)
       val newArgs = args.map(assignType(env, _))
       newSel.tpe match {
-        case genFunTpe @ SFunc(argTypes, tRes) =>
+        case genFunTpe @ SFunc(argTypes, tRes, _) =>
           // If it's a function then the application has type of that function's return type.
           val actualTypes = newArgs.map(_.tpe)
           unifyTypeLists(argTypes, actualTypes) match {
@@ -121,7 +121,7 @@ class SigmaTyper {
       val new_f = assignType(env, f)
       val newArgs = args.map(assignType(env, _))
       f.tpe match {
-        case SFunc(argTypes, tRes) =>
+        case SFunc(argTypes, tRes, _) =>
           // If it's a pre-defined function application
           val actualTypes = newArgs.map(_.tpe)
           if (actualTypes != argTypes)
@@ -138,6 +138,17 @@ class SigmaTyper {
           }
         case t =>
           error(s"Invalid array application $app: array type is expected but was $t")
+      }
+
+    case app @ ApplyTypes(sel: Select, targs) =>
+      val newSel @ Select(obj, n, _) = assignType(env, sel)
+      newSel.tpe match {
+        case genFunTpe @ SFunc(argTypes, tRes, tyVars) if tyVars.length == targs.length =>
+          val subst = tyVars.zip(targs).toMap
+          val concrFunTpe = applySubst(genFunTpe, subst).asFunc
+          Select(obj, n, Some(concrFunTpe.tRange))
+        case _ =>
+          error(s"Invalid application of type arguments $app: function $sel doesn't have type parameters")
       }
 
     case If(c, t, e) =>
@@ -287,7 +298,7 @@ object SigmaTyper {
     case (STypeApply(name1, args1), STypeApply(name2, args2))
       if name1 == name2 && args1.length == args2.length =>
       unifyTypeLists(args1, args2)
-    case (e1: SPrimType, e2: SPrimType) if e1 == e2 =>
+    case (SPrimType(e1), SPrimType(e2)) if e1 == e2 =>
       Some(Map())
     case (e1: SProduct, e2: SProduct) if e1.sameFields(e2) =>
       unifyTypeLists(e1.fields.map(_._2), e2.fields.map(_._2))

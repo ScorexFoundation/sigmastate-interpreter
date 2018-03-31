@@ -61,17 +61,22 @@ object Terms {
     override def cost: Int = ???
     override def evaluated: Boolean = false
     lazy val tpe: SType = func.tpe match {
-      case SFunc(_, r) => r
+      case SFunc(_, r, _) => r
       case tCol: SCollection[_] => tCol.elemType
       case _ => NoType
     }
   }
 
   /** Apply types for type parameters of input value. */
-  case class ApplyTypes(input: Value[SType], tpeArgs: STypeSubst) extends Value[SType] {
+  case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = false
-    lazy val tpe: SType = SigmaTyper.applySubst(input.tpe, tpeArgs)
+    lazy val tpe: SType = input.tpe match {
+      case funcType: SFunc =>
+        val subst = funcType.tpeArgs.zip(tpeArgs).toMap
+        SigmaTyper.applySubst(input.tpe, subst)
+      case _ => input.tpe
+    }
   }
 
   case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {

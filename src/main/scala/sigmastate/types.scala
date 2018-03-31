@@ -58,6 +58,7 @@ object SType {
         val okRange = f1.tRange.canBeTypedAs(f2.tRange)
         okDom && okRange
     }
+    def asFunc: SFunc = tpe.asInstanceOf[SFunc]
   }
 
   def typeOfData(x: Any): SType = x match {
@@ -149,6 +150,10 @@ case object SGroupElement extends SProduct {
 case object SBox extends SProduct {
   override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 7: Byte
+  private val tT = STypeIdent("T")
+  def registers(): Seq[(String, SType)] = {
+    (1 to 10).map(i => s"R$i" -> SFunc(IndexedSeq(), SOption(tT), Seq(tT)))
+  }
   val PropositionBytes = "propositionBytes"
   val Value = "value"
   val Id = "id"
@@ -158,7 +163,7 @@ case object SBox extends SProduct {
     PropositionBytes -> SByteArray,  // see ExtractScriptBytes
     Bytes -> SByteArray,             // see ExtractBytes
     Id -> SByteArray                 // see ExtractId
-  )
+  ) ++ registers()
 }
 
 /** The type with single inhabitant value `()` */
@@ -194,19 +199,46 @@ object SCollection {
   private val tOV = STypeIdent("OV")
   val fields = Seq(
     "size" -> SInt,
-    "map" -> SFunc(SFunc(tIV, tOV), SCollection(tOV)),
-    "exists" -> SFunc(SFunc(tIV, SBoolean), SBoolean),
-    "fold" -> SFunc(IndexedSeq(tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV),
-    "forall" -> SFunc(SFunc(tIV, SBoolean), SBoolean)
+    "map" -> SFunc(IndexedSeq(SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV)),
+    "exists" -> SFunc(IndexedSeq(SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
+    "fold" -> SFunc(IndexedSeq(tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV, Seq(tIV)),
+    "forall" -> SFunc(IndexedSeq(SFunc(tIV, SBoolean)), SBoolean, Seq(tIV))
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 }
 
-case class SFunc(tDom: IndexedSeq[SType],  tRange: SType) extends SType {
+case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
+  override type WrappedType = Option[Value[ElemType]]
+  override val typeCode: TypeCode = SOption.TypeCode
+  override def fields = SOption.fields
+
+  override def equals(obj: scala.Any) = obj match {
+    case that: SOption[_] => that.elemType == elemType
+    case _ => false
+  }
+  override def hashCode() = (31 + typeCode) * 31 + elemType.hashCode()
+  override def toString = s"Option[$elemType]"
+}
+
+object SOption {
+  val TypeCode: TypeCode = 81: Byte
+  private val tT = STypeIdent("T")
+  val fields = Seq(
+    "isDefined" -> SBoolean,
+    "value" -> tT
+  )
+  def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
+  def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
+}
+
+case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil) extends SType {
   override type WrappedType = Seq[Any] => tRange.WrappedType
   override val typeCode = SFunc.TypeCode
-  override def toString = s"(${tDom.mkString(",")}) => $tRange"
+  override def toString = {
+    val args = if (tpeArgs.isEmpty) "" else tpeArgs.mkString("[", ",", "]")
+    s"$args(${tDom.mkString(",")}) => $tRange"
+  }
 }
 
 object SFunc {
