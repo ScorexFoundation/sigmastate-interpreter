@@ -142,4 +142,17 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "fun (box: Box): ByteArray = box.bytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "bytes"))
     bind(env, "fun (box: Box): ByteArray = box.id") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "id"))
   }
+
+  property("type parameters") {
+    bind(env, "X[Int]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt))
+    bind(env, "X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt)), "isDefined")
+    bind(env, "X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> STuple(SInt, SBoolean)))
+    bind(env, "X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt, STypeIdent("_2") -> SBoolean))
+    bind(env, "SELF.R1[Int]") shouldBe ApplyTypes(Select(Self, "R1"), Map(STypeIdent("_1") -> SInt))
+    bind(env, "SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Self, "R1"), Map(STypeIdent("_1") -> SInt)),"isDefined")
+    bind(env, "f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Map(STypeIdent("_1") -> SInt)), IndexedSeq(IntConstant(10)))
+    bind(env, "INPUTS.map[Int]") shouldBe ApplyTypes(Select(Inputs, "map"), Map(STypeIdent("_1") -> SInt))
+    bind(env, "INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Inputs, "map"), Map(STypeIdent("_1") -> SInt)), IndexedSeq(IntConstant(10)))
+  }
+
 }
