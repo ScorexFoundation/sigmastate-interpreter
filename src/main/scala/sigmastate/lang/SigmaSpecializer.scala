@@ -1,7 +1,5 @@
 package sigmastate.lang
 
-import java.math.BigInteger
-
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rewrite, reduce}
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.Values.Value.Typed
@@ -9,7 +7,6 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.{Lambda, Let, Apply, ValueOps, Select, Block, Ident}
-import sigmastate.utxo.ErgoBox.R3
 import sigmastate.utxo._
 
 class SigmaSpecializer {
@@ -84,6 +81,7 @@ class SigmaSpecializer {
           None  // leave it as it is and handle on a level of parent node
         case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
       }
+
     case Select(obj: SigmaBoolean, field, _) =>
       field match {
         case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.propBytes))
@@ -123,7 +121,6 @@ class SigmaSpecializer {
     val res = eval(env, typed)
     res
   }
-
 }
 
 class SpecializerException(msg: String) extends Exception(msg)

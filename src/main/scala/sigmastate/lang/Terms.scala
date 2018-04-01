@@ -1,7 +1,6 @@
 package sigmastate.lang
 
 import sigmastate.Values._
-import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
 
@@ -36,18 +35,6 @@ object Terms {
       case _ => NoType
     })
   }
-
-//  case class SelectGen(obj: Value[SType], field: String, tpe: SType) extends Value[SType] {
-//    override def cost: Int = ???
-//    override def evaluated: Boolean = ???
-////    val tpe: SType = obj.tpe match {
-////      case p: SProduct =>
-////        val i = p.fieldIndex(field)
-////        if (i == -1) NoType
-////        else SigmaTyper.applySubst(p.fields(i)._2, tpeArgs)
-////      case _ => NoType
-////    }
-//  }
 
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???

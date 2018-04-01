@@ -2,7 +2,6 @@ package sigmastate
 
 import java.math.BigInteger
 import java.util
-
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
@@ -14,7 +13,6 @@ import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.CostTable.Cost
-
 import scala.collection.immutable
 
 object Values {
@@ -120,8 +118,6 @@ object Values {
 
     override def hashCode(): Int = util.Arrays.hashCode(value)
   }
-
-//  object EmptyByteArray extends ByteArrayConstant(Array.emptyByteArray)
 
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type] {
     override lazy val cost: Int = Cost.ByteArrayDeclaration

@@ -5,7 +5,6 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
-
 import scala.collection.mutable.ArrayBuffer
 
 /**

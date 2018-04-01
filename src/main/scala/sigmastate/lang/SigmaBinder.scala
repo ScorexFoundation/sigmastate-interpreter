@@ -42,11 +42,11 @@ class SigmaBinder(env: Map[String, Any]) {
         }
       }
     }
+
     // Rule: Array(...) -->
     case Apply(Ident("Array", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
       Some(ConcreteCollection(args)(tpe))
-
 
     // Rule: col(i) --> ByIndex(col, i)
     case Apply(Typed(obj, tCol: SCollection[_]), Seq(IntConstant(i))) =>
