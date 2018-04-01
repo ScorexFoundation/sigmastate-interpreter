@@ -161,15 +161,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("type parameters") {
     typecheck(env, "SELF.R1[Int]") shouldBe SOption(SInt)
-//    typecheck(env, "X[Int]") shouldBe SInt
-//    typecheck(env, "X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt)), "isDefined")
-//    typecheck(env, "X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> STuple(SInt, SBoolean)))
-//    typecheck(env, "X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Map(STypeIdent("_1") -> SInt, STypeIdent("_2") -> SBoolean))
-//    typecheck(env, "SELF.R1[Int]") shouldBe ApplyTypes(Select(Self, "R1"), Map(STypeIdent("_1") -> SInt))
-//    typecheck(env, "SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Self, "R1"), Map(STypeIdent("_1") -> SInt)),"isDefined")
-//    typecheck(env, "f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Map(STypeIdent("_1") -> SInt)), IndexedSeq(IntConstant(10)))
-//    typecheck(env, "INPUTS.map[Int]") shouldBe ApplyTypes(Select(Inputs, "map"), Map(STypeIdent("_1") -> SInt))
-//    typecheck(env, "INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Inputs, "map"), Map(STypeIdent("_1") -> SInt)), IndexedSeq(IntConstant(10)))
+    typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
+    typecheck(env, "SELF.R1[Int].value") shouldBe SInt
+    typefail(env, "X[Int]", "expression doesn't have type parameters")
+    typefail(env, "arr1[Int]", "expression doesn't have type parameters")
+    typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))
+    typecheck(env, "SELF.R1[(Int,Boolean)].value") shouldBe STuple(SInt, SBoolean)
+    typefail(env, "SELF.R1[Int,Boolean].value", "Wrong number of type arguments")
   }
   
   property("compute unifying type substitution") {

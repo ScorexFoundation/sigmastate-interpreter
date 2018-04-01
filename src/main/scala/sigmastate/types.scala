@@ -1,11 +1,13 @@
 package sigmastate
 
 import java.math.BigInteger
+
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
 import sigmastate.Values._
+import sigmastate.lang.SigmaTyper
 
 import scala.collection.mutable
 
@@ -211,7 +213,10 @@ object SCollection {
 case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
   override type WrappedType = Option[Value[ElemType]]
   override val typeCode: TypeCode = SOption.TypeCode
-  override def fields = SOption.fields
+  override lazy val fields = {
+    val subst = Map(SOption.tT -> elemType)
+    SOption.fields.map { case (n, t) => (n, SigmaTyper.applySubst(t, subst)) }
+  }
 
   override def equals(obj: scala.Any) = obj match {
     case that: SOption[_] => that.elemType == elemType
@@ -224,7 +229,7 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
 object SOption {
   val TypeCode: TypeCode = 81: Byte
   private val tT = STypeIdent("T")
-  val fields = Seq(
+  val fields: Seq[(String, SType)] = Seq(
     "isDefined" -> SBoolean,
     "value" -> tT
   )

@@ -143,13 +143,18 @@ class SigmaTyper {
     case app @ ApplyTypes(sel: Select, targs) =>
       val newSel @ Select(obj, n, _) = assignType(env, sel)
       newSel.tpe match {
-        case genFunTpe @ SFunc(argTypes, tRes, tyVars) if tyVars.length == targs.length =>
+        case genFunTpe @ SFunc(argTypes, tRes, tyVars) =>
+          if (tyVars.length != targs.length)
+            error(s"Wrong number of type arguments $app: expected $tyVars but provided $targs")
           val subst = tyVars.zip(targs).toMap
           val concrFunTpe = applySubst(genFunTpe, subst).asFunc
           Select(obj, n, Some(concrFunTpe.tRange))
         case _ =>
           error(s"Invalid application of type arguments $app: function $sel doesn't have type parameters")
       }
+
+    case app @ ApplyTypes(in, targs) =>
+      error(s"Invalid application of type arguments $app: expression doesn't have type parameters")
 
     case If(c, t, e) =>
       val c1 = assignType(env, c).asValue[SBoolean.type]
@@ -305,11 +310,15 @@ object SigmaTyper {
     case _ => None
   }
 
-  def applySubst(tpe: SType, subst: STypeSubst): SType = {
-    val substRule = rule[SType] {
-      case id: STypeIdent if subst.contains(id) => subst(id)
-    }
-    rewrite(everywherebu(substRule))(tpe)
+  def applySubst(tpe: SType, subst: STypeSubst): SType = tpe match {
+    case SFunc(args, res, tvars) =>
+      val remainingVars = tvars.filterNot(subst.contains(_))
+      SFunc(args.map(applySubst(_, subst)), applySubst(res, subst), remainingVars)
+    case _ =>
+      val substRule = rule[SType] {
+        case id: STypeIdent if subst.contains(id) => subst(id)
+      }
+      rewrite(everywherebu(substRule))(tpe)
   }
 
   def error(msg: String) = throw new TyperException(msg)
