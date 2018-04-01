@@ -1,6 +1,6 @@
-#ErgoScript Language Description
+# ErgoScript Language Description
 
-##Introduction
+## Introduction
 
 #### ErgoScript language features
 
@@ -32,6 +32,8 @@
 - `Unit` - a type with a single value `()`
 - `Long` - 64 bit signed integer
 - `Boolean` - a type with two logical values `true` and `false`
+- `Sigma`  - a type which represent a logical value which can be be obtained by 
+             executing a Sigma protocol with zero-knowledge proof of knowledge
 - `BigInt`  - immutable arbitrary-precision integers
 - `ByteArray` - arbitrary sequence of bytes
 - `AvlTree`
@@ -41,7 +43,7 @@
 - `Array[T]` - arrays of arbitrary length with all values of type `T` 
 - `(T1, ..., Tn)` - tuples
 
-####Literal syntax and Constants
+#### Literal syntax and Constants
 
 There is a syntax for literals, which can be used to introduce values 
 of some types directly in program text like the following examples:
@@ -69,7 +71,10 @@ The following data objects available in every script using predefined variables
 #### Predefined data structures
 
 ##### Box
-TBD
+
+- `id: ByteArray` - Blake2b256 hash of this box's content 
+- `value: Int` - boxed value
+- `propositionBytes: ByteArray` - guarding script, which should be evaluated to true in order to open this box 
 
 ##### AvlTree
 TBD
