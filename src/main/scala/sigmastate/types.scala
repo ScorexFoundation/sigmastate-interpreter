@@ -92,6 +92,7 @@ object SPrimType {
 trait SProduct extends SType {
   /** Returns -1 if `field` is not found. */
   def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
+  def hasField(field: String) = fieldIndex(field) != -1
   def fields: Seq[(String, SType)]
   def sameFields(that: SProduct): Boolean = {
     if (fields.length != that.fields.length) return false
@@ -184,14 +185,6 @@ case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
   override type WrappedType = IndexedSeq[Value[ElemType]]
   override val typeCode: TypeCode = SCollection.TypeCode
   override def fields = SCollection.fields
-
-  override def equals(obj: scala.Any) = obj match {
-    case that: SCollection[_] => that.elemType == elemType
-    case _ => false
-  }
-
-  override def hashCode() = (31 + typeCode) * 31 + elemType.hashCode()
-
   override def toString = s"Array[$elemType]"
 }
 
@@ -217,12 +210,6 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
     val subst = Map(SOption.tT -> elemType)
     SOption.fields.map { case (n, t) => (n, SigmaTyper.applySubst(t, subst)) }
   }
-
-  override def equals(obj: scala.Any) = obj match {
-    case that: SOption[_] => that.elemType == elemType
-    case _ => false
-  }
-  override def hashCode() = (31 + typeCode) * 31 + elemType.hashCode()
   override def toString = s"Option[$elemType]"
 }
 
@@ -231,7 +218,8 @@ object SOption {
   private val tT = STypeIdent("T")
   val fields: Seq[(String, SType)] = Seq(
     "isDefined" -> SBoolean,
-    "value" -> tT
+    "value" -> tT,
+    "valueOrElse" -> SFunc(tT, tT)
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)

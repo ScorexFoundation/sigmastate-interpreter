@@ -100,6 +100,8 @@ object ErgoBox {
   object R7 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 7}
   object R8 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 8}
   object R9 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 9}
+  val allRegisters = Vector(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
+  val registerByName = allRegisters.map(r => (s"R${r.number}" -> r)).toMap
 }
 
 case class ErgoTransaction(inputs: IndexedSeq[ErgoBox], outputs: IndexedSeq[ErgoBox]) {

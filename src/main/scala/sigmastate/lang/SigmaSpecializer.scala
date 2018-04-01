@@ -3,10 +3,13 @@ package sigmastate.lang
 import java.math.BigInteger
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rewrite, reduce}
+import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.Values.Value.Typed
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.{Lambda, Let, Apply, ValueOps, Select, Block, Ident}
+import sigmastate.utxo.ErgoBox.R3
 import sigmastate.utxo._
 
 class SigmaSpecializer {
@@ -48,6 +51,12 @@ class SigmaSpecializer {
     case Apply(TaggedByteArraySym, Seq(IntConstant(i))) =>
       Some(TaggedByteArray(i.toByte))
 
+    case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray.type]@unchecked, proof: Value[SByteArray.type]@unchecked)) =>
+      Some(IsMember(tree, key, proof))
+
+    case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
+      Some(ProveDlog(g))
+
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>
       if (obj.tpe.isCollection)
@@ -55,17 +64,31 @@ class SigmaSpecializer {
       else
         error(s"The type of $obj is expected to be Collection to select 'size' property")
 
-    case Select(obj, field, _) if obj.tpe == SBox => (obj.asValue[SBox.type], field) match {
-      case (box, SBox.Value) => Some(ExtractAmount(box))
-      case (box, SBox.PropositionBytes) => Some(ExtractScriptBytes(box))
-      case (box, SBox.Id) => Some(ExtractId(box))
-      case (box, SBox.Bytes) => Some(ExtractBytes(box))
-      case _ => error(s"Don't know how to specialize $e")
-    }
-    case Select(obj: SigmaBoolean, field, _) => field match {
-      case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.propBytes))
-      case SigmaBoolean.IsValid => Some(obj)
-    }
+    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(regType)), Seq(arg)) =>
+      val reg = ErgoBox.registerByName.getOrElse(regName,
+        error(s"Invalid register name $regName in expression $sel"))
+      Some(ExtractRegisterAs(box.asBox, reg, Some(arg))(arg.tpe))
+
+    case sel @ Select(Select(Typed(box, SBox), regName, _), "value", Some(regType)) =>
+      val reg = ErgoBox.registerByName.getOrElse(regName,
+        error(s"Invalid register name $regName in expression $sel"))
+      Some(ExtractRegisterAs(box.asBox, reg)(regType))
+
+    case sel @ Select(obj, field, _) if obj.tpe == SBox =>
+      (obj.asValue[SBox.type], field) match {
+        case (box, SBox.Value) => Some(ExtractAmount(box))
+        case (box, SBox.PropositionBytes) => Some(ExtractScriptBytes(box))
+        case (box, SBox.Id) => Some(ExtractId(box))
+        case (box, SBox.Bytes) => Some(ExtractBytes(box))
+        case (box, _) if box.tpe.hasField(field) =>
+          None  // leave it as it is and handle on a level of parent node
+        case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
+      }
+    case Select(obj: SigmaBoolean, field, _) =>
+      field match {
+        case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.propBytes))
+        case SigmaBoolean.IsValid => Some(obj)
+      }
 
     case Select(obj, "value", Some(SInt)) if obj.tpe == SBox =>
       Some(ExtractAmount(obj.asValue[SBox.type]))

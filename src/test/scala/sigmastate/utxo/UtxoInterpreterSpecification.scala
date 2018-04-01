@@ -222,23 +222,23 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val regScript = userProver.dlogSecrets.head.publicImage
 
-//    val env = Map(
-//      "demurragePeriod" -> demurragePeriod,
-//      "demurrageCost" -> demurrageCost,
-//      "regScript" -> regScript,
-//    )
-//    val compiledScript = compile(env,
-//      """{
-//       | let c2 = allOf(Array(
-//       |   HEIGHT >= SELF.R3 + demurragePeriod,
-//       |   OUTPUTS.exists(fun (out: Box) = {
-//       |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
-//       |   })
-//       | ))
-//       | regScript || c2
-//       | }
-//      """.stripMargin)
-    val script = OR(
+    val env = Map(
+      "demurragePeriod" -> demurragePeriod,
+      "demurrageCost" -> demurrageCost,
+      "regScript" -> regScript,
+    )
+    val prop = compile(env,
+      """{
+       | let c2 = allOf(Array(
+       |   HEIGHT >= SELF.R3[Int].value + demurragePeriod,
+       |   OUTPUTS.exists(fun (out: Box) = {
+       |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
+       |   })
+       | ))
+       | regScript || c2
+       | }
+      """.stripMargin).asBoolValue
+    val propTree = OR(
       regScript,
       AND(
         GE(Height, Plus(ExtractRegisterAs[SInt.type](Self, R3), IntConstant(demurragePeriod))),
@@ -250,7 +250,7 @@ class UtxoInterpreterSpecification extends PropSpec
         )
       )
     )
-//    compiledScript shouldBe script
+    prop shouldBe propTree
 
     val outHeight = 100
     val outValue = 10
@@ -259,21 +259,21 @@ class UtxoInterpreterSpecification extends PropSpec
     //case 1: demurrage time hasn't come yet
     val tx1 = ErgoTransaction(
       IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+      IndexedSeq(ErgoBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
     val ctx1 = UtxoContext(
       currentHeight = outHeight + demurragePeriod - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
     //user can spend all the money
-    val uProof1 = userProver.prove(script, ctx1, fakeMessage).get.proof
-    verifier.verify(script, ctx1, uProof1, fakeMessage).get shouldBe true
+    val uProof1 = userProver.prove(prop, ctx1, fakeMessage).get.proof
+    verifier.verify(prop, ctx1, uProof1, fakeMessage).get shouldBe true
 
     //miner can't spend any money
-    verifier.verify(script, ctx1, NoProof, fakeMessage).get shouldBe false
+    verifier.verify(prop, ctx1, NoProof, fakeMessage).get shouldBe false
 
     //case 2: demurrage time has come
     val ctx2 = UtxoContext(
@@ -281,51 +281,51 @@ class UtxoInterpreterSpecification extends PropSpec
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
     //user can spend all the money
-    val uProof2 = userProver.prove(script, ctx1, fakeMessage).get.proof
-    verifier.verify(script, ctx2, uProof2, fakeMessage).get shouldBe true
+    val uProof2 = userProver.prove(prop, ctx1, fakeMessage).get.proof
+    verifier.verify(prop, ctx2, uProof2, fakeMessage).get shouldBe true
 
     //miner can spend "demurrageCost" tokens
     val tx3 = ErgoTransaction(IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue - demurrageCost, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+      IndexedSeq(ErgoBox(outValue - demurrageCost, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
     val ctx3 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx3,
-      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
-    verifier.verify(script, ctx3, NoProof, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx3, NoProof, fakeMessage).get shouldBe true
 
     //miner can't spend more
     val tx4 = ErgoTransaction(IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue - demurrageCost - 1, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+      IndexedSeq(ErgoBox(outValue - demurrageCost - 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
     val ctx4 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx4,
-      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
-    verifier.verify(script, ctx4, NoProof, fakeMessage).get shouldBe false
+    verifier.verify(prop, ctx4, NoProof, fakeMessage).get shouldBe false
 
     //miner can spend less
     val tx5 = ErgoTransaction(IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue - demurrageCost + 1, script, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+      IndexedSeq(ErgoBox(outValue - demurrageCost + 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
     val ctx5 = UtxoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx5,
-      self = createBox(outValue, script, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
-    verifier.verify(script, ctx5, NoProof, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx5, NoProof, fakeMessage).get shouldBe true
   }
 
   /**
@@ -1303,14 +1303,14 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-//    val compiledProp = compile(Map(),
-//      """OUTPUTS.exists(fun (box: Box) = {
-//        |  box.R3[Int] == SELF.R3[Int] + 1
-//         })""".stripMargin)
+    val prop = compile(Map(),
+      """OUTPUTS.exists(fun (box: Box) = {
+        |  box.R3[Int].value == SELF.R3[Int].value + 1
+         })""".stripMargin).asBoolValue
 
-    val prop = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3)(SInt),
+    val propTree = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3)(SInt),
       Plus(ExtractRegisterAs(Self, R3)(SInt), IntConstant(1))))
-//    compiledProp shouldBe prop
+    prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(3)))
     val newBox2 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(6)))
@@ -1337,15 +1337,15 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-//    val compiledProp = compile(Map(),
-//      """OUTPUTS.exists(fun (box: Box) = {
-//        |  box.R3.getOrElse(0) == SELF.R3.get + 1
-//         })""".stripMargin)
+    val prop = compile(Map(),
+      """OUTPUTS.exists(fun (box: Box) = {
+        |  box.R3[Int].valueOrElse(0) == SELF.R3[Int].value + 1
+         })""".stripMargin).asBoolValue
 
-    val prop = Exists(Outputs, 21,
+    val propTree = Exists(Outputs, 21,
       EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntConstant(0L))),
         Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
-//    compiledProp shouldBe prop
+    prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBox2 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(6)))
@@ -1385,13 +1385,13 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val treeData = new AvlTreeData(digest, 32, None)
 
-//    val env = Map("key" -> key, "proof" -> proof)
-//    val compiledProp = compile(env, """isMember(SELF.R3[AvlTree], key, proof)""")
+    val env = Map("key" -> key, "proof" -> proof)
+    val prop = compile(env, """isMember(SELF.R3[AvlTree].value, key, proof)""").asBoolValue
 
-    val prop = IsMember(ExtractRegisterAs(Self, R3),
+    val propTree = IsMember(ExtractRegisterAs(Self, R3),
       ByteArrayConstant(key),
       ByteArrayConstant(proof))
-//    compiledProp shouldBe prop
+    prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
@@ -1432,11 +1432,17 @@ class UtxoInterpreterSpecification extends PropSpec
     val verifier = new UtxoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-//    val env = Map("proofId" -> proofId)
-//    val compiledProp = compile(env, """isMember(SELF.R3, SELF.R4, proofId)""")
+    val env = Map("proofId" -> proofId.toLong)
+    val prop = compile(env,
+      """{
+        |  let tree = SELF.R3[AvlTree].value
+        |  let key = SELF.R4[ByteArray].value
+        |  let proof = taggedByteArray(proofId)
+        |  isMember(tree, key, proof)
+        |}""".stripMargin).asBoolValue
 
-    val prop = IsMember(ExtractRegisterAs(Self, R3), ExtractRegisterAs(Self, R4), TaggedByteArray(proofId))
-//    compiledProp shouldBe prop
+    val propTree = IsMember(ExtractRegisterAs(Self, R3), ExtractRegisterAs(Self, R4), TaggedByteArray(proofId))
+    prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
@@ -1464,10 +1470,15 @@ class UtxoInterpreterSpecification extends PropSpec
     val pubkey2 = prover.dlogSecrets(1).publicImage
     val pubkey3 = prover.dlogSecrets(2).publicImage
 
-//    val compiledProp = compile(Map(), """ProveDlog(SELF.R3) && ProveDlog(SELF.R4)""")
+    val prop = compile(Map(),
+      """{
+        |  let pubkey1 = SELF.R3[GroupElement].value
+        |  let pubkey2 = SELF.R4[GroupElement].value
+        |  proveDlog(pubkey1) && proveDlog(pubkey2)
+        |}""".stripMargin).asBoolValue
 
-    val prop = AND(new ProveDlog(ExtractRegisterAs(Self, R3)), new ProveDlog(ExtractRegisterAs(Self, R4)))
-//    compiledProp shouldBe prop
+    val propTree = AND(new ProveDlog(ExtractRegisterAs(Self, R3)), new ProveDlog(ExtractRegisterAs(Self, R4)))
+    prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey3)
     val newBoxes = IndexedSeq(newBox1)

@@ -100,6 +100,7 @@ object Terms {
     def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
     def asIntValue: Value[SInt.type] = v.asInstanceOf[Value[SInt.type]]
     def asSigmaValue: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
+    def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
     def asByteArray: Value[SByteArray.type] = v.asInstanceOf[Value[SByteArray.type]]
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
