@@ -64,13 +64,13 @@ object SType {
   }
 
   def typeOfData(x: Any): SType = x match {
-    case i: Int => SInt
-    case l: Long => SInt
-    case b: Boolean => SBoolean
-    case arr: Array[Byte] => SByteArray
-    case big: BigInteger => SBigInt
-    case g: GroupSettings.EcPointType => SGroupElement
-    case box: ErgoBox => SBox
+    case _: Int => SInt
+    case _: Long => SInt
+    case _: Boolean => SBoolean
+    case _: Array[Byte] => SByteArray
+    case _: BigInteger => SBigInt
+    case _: GroupSettings.EcPointType => SGroupElement
+    case _: ErgoBox => SBox
     case _: Unit => SUnit
     case v: SValue => v.tpe
     case _ => sys.error(s"Don't know how to return SType for $x: ${x.getClass}")
