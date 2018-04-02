@@ -232,7 +232,7 @@ trait Interpreter {
 
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 
-    case or: COr2UncheckedNode =>
+    case or: COrUncheckedNode =>
       val challenges = or.children map {
         case u: UncheckedConjecture[_] => u.challengeOpt.get
         case sn: SchnorrNode => sn.challenge

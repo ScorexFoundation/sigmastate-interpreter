@@ -1,9 +1,17 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
+import scorex.crypto.authds.ADKey
+import sigmastate.UncheckedTree
+import sigmastate.interpreter.ProverResult
 
 
-case class ErgoTransaction(inputs: IndexedSeq[ErgoBox], outputs: IndexedSeq[ErgoBox]) {
+case class Input(boxId: ADKey, spendingProof: ProverResult[UncheckedTree]) {
+  def bytes: Array[Byte] = Array()
+}
+
+
+case class ErgoTransaction(inputs: IndexedSeq[Input], outputs: IndexedSeq[ErgoBox]) {
   def concatBytes(seq: Traversable[Array[Byte]]): Array[Byte] = {
     val length: Int = seq.map(_.length).sum
     val result: Array[Byte] = new Array[Byte](length)

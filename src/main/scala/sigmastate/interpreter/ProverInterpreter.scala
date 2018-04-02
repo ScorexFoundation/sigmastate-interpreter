@@ -334,7 +334,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case and: CAndUnproven =>
       CAndUncheckedNode(and.proposition, None, Seq(), and.children.map(convertToUnchecked))
     case or: COrUnproven =>
-      COr2UncheckedNode(or.proposition, None, Seq(), or.children.map(convertToUnchecked))
+      COrUncheckedNode(or.proposition, None, Seq(), or.children.map(convertToUnchecked))
     case s: SchnorrNode => s
     case d: DiffieHellmanTupleUncheckedNode => d
     case _ => ???

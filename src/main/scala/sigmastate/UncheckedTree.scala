@@ -40,8 +40,8 @@ case class CAndUncheckedNode(override val proposition: CAND,
 }
 
 
-case class COr2UncheckedNode(override val proposition: COR,
-                             override val challengeOpt: Option[Array[Byte]],
-                             override val commitments: Seq[FirstProverMessage[_]],
-                             children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
+case class COrUncheckedNode(override val proposition: COR,
+                            override val challengeOpt: Option[Array[Byte]],
+                            override val commitments: Seq[FirstProverMessage[_]],
+                            children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
 }
