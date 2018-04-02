@@ -1,7 +1,6 @@
 package sigmastate.lang
 
 import sigmastate.Values._
-import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
 
@@ -25,28 +24,16 @@ object Terms {
     def apply(name: String, value: SValue): Let = Let(name, NoType, value)
   }
 
-  case class Select(obj: Value[SType], field: String) extends Value[SType] {
+  case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {
     override def cost: Int = ???
     override def evaluated: Boolean = ???
-    val tpe: SType = obj.tpe match {
+    val tpe: SType = resType.getOrElse(obj.tpe match {
       case p: SProduct =>
         val i = p.fieldIndex(field)
         if (i == -1) NoType
         else p.fields(i)._2
       case _ => NoType
-    }
-  }
-
-  case class SelectGen(obj: Value[SType], field: String, tpe: SType) extends Value[SType] {
-    override def cost: Int = ???
-    override def evaluated: Boolean = ???
-//    val tpe: SType = obj.tpe match {
-//      case p: SProduct =>
-//        val i = p.fieldIndex(field)
-//        if (i == -1) NoType
-//        else SigmaTyper.applySubst(p.fields(i)._2, tpeArgs)
-//      case _ => NoType
-//    }
+    })
   }
 
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
@@ -61,24 +48,23 @@ object Terms {
     override def cost: Int = ???
     override def evaluated: Boolean = false
     lazy val tpe: SType = func.tpe match {
-      case SFunc(_, r) => r
+      case SFunc(_, r, _) => r
       case tCol: SCollection[_] => tCol.elemType
       case _ => NoType
     }
   }
 
-//  case class ApplyGen(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
-//    override def cost: Int = ???
-//    override def evaluated: Boolean = false
-//    lazy val tpe: SType = func.tpe match {
-//      case SFunc(_, r) => SigmaTyper.applySubst(r, tpeArgs)
-//      case tCol: SCollection[_] => SigmaTyper.applySubst(tCol.elemType, tpeArgs)
-//      case _ => NoType
-//    }
-//  }
-//  object Apply {
-//    def apply(func: Value[SType], args: IndexedSeq[Value[SType]]): Apply = Apply(func, args, SigmaTyper.emptySubst)
-//  }
+  /** Apply types for type parameters of input value. */
+  case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] {
+    override def cost: Int = ???
+    override def evaluated: Boolean = false
+    lazy val tpe: SType = input.tpe match {
+      case funcType: SFunc =>
+        val subst = funcType.tpeArgs.zip(tpeArgs).toMap
+        SigmaTyper.applySubst(input.tpe, subst)
+      case _ => input.tpe
+    }
+  }
 
   case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
     override def cost: Int = ???
@@ -99,6 +85,9 @@ object Terms {
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
     def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
+    def asIntValue: Value[SInt.type] = v.asInstanceOf[Value[SInt.type]]
+    def asSigmaValue: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
+    def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
     def asByteArray: Value[SByteArray.type] = v.asInstanceOf[Value[SByteArray.type]]
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]

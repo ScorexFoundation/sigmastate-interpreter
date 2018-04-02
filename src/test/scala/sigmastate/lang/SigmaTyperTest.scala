@@ -6,7 +6,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.utxo.Outputs
+import sigmastate.utxo.{Outputs, Self, Inputs}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
@@ -16,7 +16,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val binder = new SigmaBinder(env)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper(env, st)
+      val typer = new SigmaTyper
       val typed = typer.typecheck(bound)
      typed.tpe
     } catch {
@@ -30,14 +30,15 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val binder = new SigmaBinder(env)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val an = new SigmaTyper(env, st)
-      an.tipe(bound)
-      an.errors shouldBe empty
+      val typer = new SigmaTyper
+      val typed = typer.typecheck(bound)
       assert(false, s"Should not typecheck: $x")
     } catch {
       case e: TyperException =>
         if (messageSubstr.nonEmpty)
-          assert(e.getMessage.contains(messageSubstr)/*, s"error message '${e.getMessage}' does't contain '${messageSubstr}'"*/)
+          if (!e.getMessage.contains(messageSubstr)) {
+            throw new AssertionError(s"Error message '${e.getMessage}' doesn't contain '$messageSubstr'.", e)
+          }
     }
   }
 
@@ -115,9 +116,9 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("array literals") {
-    typecheck(env, "Array()") shouldBe SCollection(NoType)
-    typecheck(env, "Array(Array())") shouldBe SCollection(SCollection(NoType))
-    typecheck(env, "Array(Array(Array()))") shouldBe SCollection(SCollection(SCollection(NoType)))
+    typefail(env, "Array()", "should have the same type")
+    typefail(env, "Array(Array())", "should have the same type")
+    typefail(env, "Array(Array(Array()))", "should have the same type")
 
     typecheck(env, "Array(1)") shouldBe SCollection(SInt)
     typecheck(env, "Array(1, x)") shouldBe SCollection(SInt)
@@ -128,9 +129,9 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("array indexed access") {
-    typefail(env, "Array()(0)", "undefined element type")
+    typefail(env, "Array()(0)", "should have the same type")
     typecheck(env, "Array(0)(0)") shouldBe SInt
-    typefail(env, "Array(0)(0)(0)", "function/array type is expected")
+    typefail(env, "Array(0)(0)(0)", "array type is expected")
   }
 
   property("lambdas") {
@@ -158,6 +159,17 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "fun (box: Box): ByteArray = box.id") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
   }
 
+  property("type parameters") {
+    typecheck(env, "SELF.R1[Int]") shouldBe SOption(SInt)
+    typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
+    typecheck(env, "SELF.R1[Int].value") shouldBe SInt
+    typefail(env, "X[Int]", "expression doesn't have type parameters")
+    typefail(env, "arr1[Int]", "expression doesn't have type parameters")
+    typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))
+    typecheck(env, "SELF.R1[(Int,Boolean)].value") shouldBe STuple(SInt, SBoolean)
+    typefail(env, "SELF.R1[Int,Boolean].value", "Wrong number of type arguments")
+  }
+  
   property("compute unifying type substitution") {
     import SigmaTyper._
     def check(s1: String, s2: String, exp: Option[STypeSubst] = Some(emptySubst)): Unit = {

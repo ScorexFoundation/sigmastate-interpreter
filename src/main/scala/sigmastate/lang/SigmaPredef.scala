@@ -33,9 +33,9 @@ object SigmaPredef {
     "taggedAvlTree" -> Lambda(Vector("input" -> SInt), SAvlTree, None),
     "taggedBoolean" -> Lambda(Vector("input" -> SInt), SBoolean, None),
 
-    "ProveDiffieHellmanTuple" -> Lambda(Vector(
+    "proveDHTuple" -> Lambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),
-    "ProveDlog" -> Lambda(Vector("value" -> SGroupElement), SBoolean, None),
+    "proveDlog" -> Lambda(Vector("value" -> SGroupElement), SBoolean, None),
     "isMember" -> Lambda(Vector(
        "tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
   ).toMap
@@ -58,4 +58,6 @@ object SigmaPredef {
 
   val Blake2b256Sym = PredefIdent("blake2b256")
   val IsMemberSym = PredefIdent("isMember")
+  val ProveDlogSym = PredefIdent("proveDlog")
+  val ProveDHTupleSym = PredefIdent("proveDHTuple")
 }

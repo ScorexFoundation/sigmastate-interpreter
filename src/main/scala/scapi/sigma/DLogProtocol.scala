@@ -2,7 +2,6 @@ package scapi.sigma
 
 import java.math.BigInteger
 import java.security.SecureRandom
-
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
@@ -10,11 +9,8 @@ import sigmastate.utxo.CostTable.Cost
 import sigmastate._
 import sigmastate.interpreter.GroupSettings
 import sigmastate.interpreter.GroupSettings.EcPointType
-
 import scala.concurrent.Future
 import scala.util.Try
-
-
 
 object DLogProtocol {
 
@@ -30,8 +26,6 @@ object DLogProtocol {
 
     override val cost: Int = Cost.Dlog
     override val soundness: Int = 256
-
-//    override def fields = ProveDlog.fields
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
@@ -52,9 +46,6 @@ object DLogProtocol {
       val h = dlogGroup.reconstructElement(bCheckMembership = true, xy).get //todo: .get
       ProveDlog(h)
     }
-//    val fields = Seq(
-//      "propBytes" -> SByteArray,
-//    )
   }
 
 
