@@ -23,7 +23,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
   override val maxCost = CostTable.ScriptLimit
 
   override lazy val secrets: Seq[DLogProverInput] = {
-    import SchnorrSignature._
+    import GroupSettings.soundness
 
     Seq(DLogProverInput.random(), DLogProverInput.random())
   }
@@ -42,7 +42,7 @@ class TestingInterpreterSpecification extends PropSpec
 
   import TestingInterpreter._
 
-  implicit val soundness = 256
+  implicit val soundness = GroupSettings.soundness
 
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>

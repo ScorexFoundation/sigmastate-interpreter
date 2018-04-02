@@ -69,7 +69,7 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
 
   override val cost: Int = Cost.Dlog * 2
 
-  override val soundness: Int = 256
+  override val soundness: Int = GroupSettings.soundness
 
 
   //todo: fix code below , we should consider that class parameters could be not evaluated

@@ -25,7 +25,7 @@ object DLogProtocol {
     import GroupSettings.dlogGroup
 
     override val cost: Int = Cost.Dlog
-    override val soundness: Int = 256
+    override val soundness: Int = GroupSettings.soundness
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value

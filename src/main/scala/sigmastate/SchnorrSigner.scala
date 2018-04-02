@@ -8,11 +8,6 @@ import sigmastate.interpreter.GroupSettings
 
 // TODO: make implementation corresponding to RFC-8032 standard for EdDSA signatures
 
-object SchnorrSignature {
-  implicit val soundness = 256
-
-  implicit val hf = Blake2b256
-}
 
 case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: Option[DLogProverInput])
   extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, ProveDlog, SchnorrNode] {

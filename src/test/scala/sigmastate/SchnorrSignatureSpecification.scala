@@ -14,7 +14,7 @@ class SchnorrSignatureSpecification extends PropSpec
   ignore("sign-verify roundtrip") {
     forAll() { (message: Array[Byte], modifier: Byte) =>
 
-      import SchnorrSignature._
+      import sigmastate.interpreter.GroupSettings.soundness
 
       val pi = DLogProverInput.random()
       val ci = pi.publicImage

@@ -10,7 +10,7 @@ import sigmastate.interpreter.ProverInterpreter
 class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
   extends UtxoInterpreter(maxCost) with ProverInterpreter {
 
-  private implicit val soundness: Int = 256
+  import sigmastate.interpreter.GroupSettings.soundness
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
     (1 to 4).map(_ => DLogProverInput.random()) ++
