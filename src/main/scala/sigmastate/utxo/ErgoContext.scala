@@ -4,22 +4,22 @@ import sigmastate._
 import Values._
 import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.UtxoContext.Height
+import sigmastate.utxo.ErgoContext.Height
 
-case class UtxoContext(currentHeight: Height,
+case class ErgoContext(currentHeight: Height,
                        lastBlockUtxoRoot: AvlTreeData,
                        boxesToSpend: IndexedSeq[ErgoBox],
                        spendingTransaction: ErgoTransaction,
                        self: ErgoBox,
                        override val extension: ContextExtension = ContextExtension(Map())
-                      ) extends Context[UtxoContext] {
-  override def withExtension(newExtension: ContextExtension): UtxoContext = this.copy(extension = newExtension)
+                      ) extends Context[ErgoContext] {
+  override def withExtension(newExtension: ContextExtension): ErgoContext = this.copy(extension = newExtension)
 }
 
-object UtxoContext {
+object ErgoContext {
   type Height = Long
 
-  def dummy(selfDesc: ErgoBox) = UtxoContext(currentHeight = 0,
+  def dummy(selfDesc: ErgoBox) = ErgoContext(currentHeight = 0,
     lastBlockUtxoRoot = AvlTreeData.dummy, boxesToSpend = IndexedSeq(),
                           spendingTransaction = null, self = selfDesc)
 

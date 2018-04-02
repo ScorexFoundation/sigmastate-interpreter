@@ -63,11 +63,11 @@ class OracleExamplesSpecification extends PropSpec
     *
     */
   property("oracle example") {
-    val oracle = new UtxoProvingInterpreter
-    val aliceTemplate = new UtxoProvingInterpreter
-    val bob = new UtxoProvingInterpreter
+    val oracle = new ErgoProvingInterpreter
+    val aliceTemplate = new ErgoProvingInterpreter
+    val bob = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
@@ -149,7 +149,7 @@ class OracleExamplesSpecification extends PropSpec
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = ErgoBox(10, propBob, Map())
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
       boxesToSpend = IndexedSeq(sAlice, sBob),
@@ -185,11 +185,11 @@ class OracleExamplesSpecification extends PropSpec
     *
     */
   property("lightweight oracle example"){
-    val oracle = new UtxoProvingInterpreter
-    val alice = new UtxoProvingInterpreter
-    val bob = new UtxoProvingInterpreter
+    val oracle = new ErgoProvingInterpreter
+    val alice = new ErgoProvingInterpreter
+    val bob = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
@@ -221,7 +221,7 @@ class OracleExamplesSpecification extends PropSpec
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),

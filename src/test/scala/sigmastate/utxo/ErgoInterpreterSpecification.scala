@@ -18,7 +18,7 @@ import sigmastate.lang.Terms._
 import sigmastate.utxo.ErgoBox._
 
 
-class UtxoInterpreterSpecification extends PropSpec
+class ErgoInterpreterSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers {
@@ -43,15 +43,15 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("scripts EQ/NEQ") {
-    val prover1 = new UtxoProvingInterpreter
-    val prover2 = new UtxoProvingInterpreter
+    val prover1 = new ErgoProvingInterpreter
+    val prover2 = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val h1 = prover1.dlogSecrets.head.publicImage
     val h2 = prover2.dlogSecrets.head.publicImage
 
-    val ctx = UtxoContext.dummy(fakeSelf)
+    val ctx = ErgoContext.dummy(fakeSelf)
 
     val e = compile(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
     val exp = EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes))
@@ -74,13 +74,13 @@ class UtxoInterpreterSpecification extends PropSpec
   property("Evaluation - Crowdfunding Example") {
 
     //a blockchain node verifying a block containing a spending transaction
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     //backer's prover with his private key
-    val backerProver = new UtxoProvingInterpreter
+    val backerProver = new ErgoProvingInterpreter
 
     //project's prover with his private key
-    val projectProver = new UtxoProvingInterpreter
+    val projectProver = new ErgoProvingInterpreter
 
     val backerPubKey = backerProver.dlogSecrets.head.publicImage
     val projectPubKey = projectProver.dlogSecrets.head.publicImage
@@ -136,7 +136,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //normally this transaction would invalid, but we're not checking it in this test
     val tx1 = ErgoTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
 
-    val ctx1 = UtxoContext(
+    val ctx1 = ErgoContext(
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -157,7 +157,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val tx2Output2 = ErgoBox(1, projectPubKey)
     val tx2 = ErgoTransaction(IndexedSeq(), IndexedSeq(tx2Output1, tx2Output2))
 
-    val ctx2 = UtxoContext(
+    val ctx2 = ErgoContext(
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -179,7 +179,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val tx3Output2 = ErgoBox(1, projectPubKey)
     val tx3 = ErgoTransaction(IndexedSeq(), IndexedSeq(tx3Output1, tx3Output2))
 
-    val ctx3 = UtxoContext(
+    val ctx3 = ErgoContext(
       currentHeight = timeout.value,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -215,10 +215,10 @@ class UtxoInterpreterSpecification extends PropSpec
     val demurrageCost = 2
 
     //a blockchain node veryfing a block containing a spending transaction
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     //backer's prover with his private key
-    val userProver = new UtxoProvingInterpreter
+    val userProver = new ErgoProvingInterpreter
 
     val regScript = userProver.dlogSecrets.head.publicImage
 
@@ -261,7 +261,7 @@ class UtxoInterpreterSpecification extends PropSpec
       IndexedSeq(),
       IndexedSeq(ErgoBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
-    val ctx1 = UtxoContext(
+    val ctx1 = ErgoContext(
       currentHeight = outHeight + demurragePeriod - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -276,7 +276,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx1, NoProof, fakeMessage).get shouldBe false
 
     //case 2: demurrage time has come
-    val ctx2 = UtxoContext(
+    val ctx2 = ErgoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -290,7 +290,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //miner can spend "demurrageCost" tokens
     val tx3 = ErgoTransaction(IndexedSeq(),
       IndexedSeq(ErgoBox(outValue - demurrageCost, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
-    val ctx3 = UtxoContext(
+    val ctx3 = ErgoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -305,7 +305,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //miner can't spend more
     val tx4 = ErgoTransaction(IndexedSeq(),
       IndexedSeq(ErgoBox(outValue - demurrageCost - 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
-    val ctx4 = UtxoContext(
+    val ctx4 = ErgoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -318,7 +318,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val tx5 = ErgoTransaction(IndexedSeq(),
       IndexedSeq(ErgoBox(outValue - demurrageCost + 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
-    val ctx5 = UtxoContext(
+    val ctx5 = ErgoContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -332,7 +332,7 @@ class UtxoInterpreterSpecification extends PropSpec
     * The script is asking for a hash function preimage. The "proof" could be replayed, so not really a proof.
     */
   property("prover enriching context") {
-    val prover = new UtxoProvingInterpreter
+    val prover = new ErgoProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
 
     val env = Map("blake" -> Blake2b256(preimage))
@@ -345,18 +345,18 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
     compiledScript shouldBe prop
 
-    val ctx = UtxoContext.dummy(fakeSelf)
+    val ctx = ErgoContext.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
     verifier.verify(prop, ctx, pr.proof, fakeMessage).get shouldBe false //context w/out extensions
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
 
   property("prover enriching context 2") {
-    val prover = new UtxoProvingInterpreter
+    val prover = new ErgoProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
 
@@ -371,12 +371,12 @@ class UtxoInterpreterSpecification extends PropSpec
       ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
     compiledScript shouldBe prop
 
-    val ctx = UtxoContext.dummy(fakeSelf)
+    val ctx = ErgoContext.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
     verifier.verify(prop, ctx, pr.proof, fakeMessage).get shouldBe false //context w/out extensions
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
@@ -390,7 +390,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val r = Base16.decode("bb6633db20")
 
-    val prover = new UtxoProvingInterpreter()
+    val prover = new ErgoProvingInterpreter()
       .withContextExtender(k1, ByteArrayConstant(v1))
       .withContextExtender(k2, ByteArrayConstant(v2))
 
@@ -404,18 +404,18 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = EQ(Xor(TaggedByteArray(k1), TaggedByteArray(k2)), ByteArrayConstant(r))
     compiledScript shouldBe prop
 
-    val ctx = UtxoContext.dummy(fakeSelf)
+    val ctx = ErgoContext.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
     verifier.verify(prop, ctx, pr.proof, fakeMessage).get shouldBe false //context w/out extensions
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
 
   property("context enriching mixed w. crypto") {
-    val prover = new UtxoProvingInterpreter
+    val prover = new ErgoProvingInterpreter
     val preimage = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -431,20 +431,20 @@ class UtxoInterpreterSpecification extends PropSpec
     )
     compiledScript shouldBe prop
 
-    val ctx = UtxoContext.dummy(fakeSelf)
+    val ctx = ErgoContext.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     pr.proof.isInstanceOf[SchnorrNode] shouldBe true
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
     verifier.verify(prop, ctx, pr.proof, fakeMessage).getOrElse(false) shouldBe false //context w/out extensions
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
 
   property("context enriching mixed w. crypto 2") {
-    val prover = new UtxoProvingInterpreter
+    val prover = new ErgoProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
@@ -465,14 +465,14 @@ class UtxoInterpreterSpecification extends PropSpec
     )
     compiledScript shouldBe prop
 
-    val ctx = UtxoContext.dummy(fakeSelf)
+    val ctx = ErgoContext.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     pr.proof.isInstanceOf[SchnorrNode] shouldBe true
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
     verifier.verify(prop, ctx, pr.proof, fakeMessage).getOrElse(false) shouldBe false //context w/out extensions
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get shouldBe true
   }
@@ -487,11 +487,11 @@ class UtxoInterpreterSpecification extends PropSpec
     * this implementation is simpler. In particular, only one transaction(one output) is required per party.
     */
   property("atomic cross-chain trading") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val x = proverA.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val hx = ByteArrayConstant(Blake2b256(x))
@@ -541,7 +541,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //Preliminary checks:
 
     //B can't spend coins of A in chain1 (generate a valid proof)
-    val ctxf1 = UtxoContext(
+    val ctxf1 = ErgoContext(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -554,7 +554,7 @@ class UtxoInterpreterSpecification extends PropSpec
     proverA.prove(prop1, ctxf1, fakeMessage).isFailure shouldBe true
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
-    val ctxf2 = UtxoContext(
+    val ctxf2 = ErgoContext(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(), spendingTransaction = null, self = fakeSelf)
@@ -563,7 +563,7 @@ class UtxoInterpreterSpecification extends PropSpec
     //Successful run below:
 
     //A spends coins of B in chain2
-    val ctx1 = UtxoContext(
+    val ctx1 = ErgoContext(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -577,7 +577,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[ByteArrayConstant])
 
     //B spends coins of A in chain1 with knowledge of x
-    val ctx2 = UtxoContext(
+    val ctx2 = ErgoContext(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -591,10 +591,10 @@ class UtxoInterpreterSpecification extends PropSpec
     * Whether A or B, or both are able to sign a transaction
     */
   property("simplest linear-sized ring signature (1-out-of-2 OR)") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
-    val proverC = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
+    val proverC = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -605,7 +605,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(pubkeyA, pubkeyB)
     compiledProp shouldBe prop
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -622,10 +622,10 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("simplest linear-sized ring signature (1-out-of-3 OR)") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
-    val proverC = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
+    val proverC = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -637,7 +637,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(pubkeyA, pubkeyB, pubkeyC)
     compiledProp shouldBe prop
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -656,9 +656,9 @@ class UtxoInterpreterSpecification extends PropSpec
 
   //two secrets are known, nevertheless, one will be simulated
   property("simplest linear-sized ring signature (1-out-of-4 OR), all secrets are known") {
-    val proverA = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA1 = proverA.dlogSecrets.head.publicImage
     val pubkeyA2 = proverA.dlogSecrets(1).publicImage
@@ -671,7 +671,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(Seq(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))
     compiledProp shouldBe prop
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -683,12 +683,12 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("complex sig scheme - OR of two ANDs") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
-    val proverC = new UtxoProvingInterpreter
-    val proverD = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
+    val proverC = new ErgoProvingInterpreter
+    val proverD = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -701,7 +701,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -723,12 +723,12 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("complex sig scheme - OR of AND and OR") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
-    val proverC = new UtxoProvingInterpreter
-    val proverD = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
+    val proverC = new ErgoProvingInterpreter
+    val proverD = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -741,7 +741,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -763,12 +763,12 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("complex sig scheme - AND of two ORs") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
-    val proverC = new UtxoProvingInterpreter
-    val proverD = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
+    val proverC = new ErgoProvingInterpreter
+    val proverD = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -781,7 +781,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = AND(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -803,12 +803,12 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("complex sig scheme - AND of AND and OR") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
-    val proverC = new UtxoProvingInterpreter
-    val proverD = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
+    val proverC = new ErgoProvingInterpreter
+    val proverD = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -821,7 +821,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = AND(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -846,12 +846,12 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("complex sig scheme - OR of two ORs") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
-    val proverC = new UtxoProvingInterpreter
-    val proverD = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
+    val proverC = new ErgoProvingInterpreter
+    val proverD = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -864,7 +864,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
     
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -885,11 +885,11 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("complex sig scheme - OR w. predicate") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
-    val proverC = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
+    val proverC = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -900,7 +900,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(pubkeyA, pubkeyB, GT(Height, IntConstant(500)))
     compiledProp shouldBe prop
 
-    val ctx1 = UtxoContext(
+    val ctx1 = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -912,7 +912,7 @@ class UtxoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx1, prB, fakeMessage).get shouldBe true
     proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
-    val ctx2 = UtxoContext(
+    val ctx2 = ErgoContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -923,11 +923,11 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
-    val proverC = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
+    val proverC = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -939,7 +939,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntConstant(500))))
     compiledProp shouldBe prop
     
-    val ctx1 = UtxoContext(
+    val ctx1 = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -953,7 +953,7 @@ class UtxoInterpreterSpecification extends PropSpec
     proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
 
-    val ctx2 = UtxoContext(
+    val ctx2 = ErgoContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -969,10 +969,10 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("DH tuple") {
-    val prover = new UtxoProvingInterpreter
-    val fakeProver = new UtxoProvingInterpreter
+    val prover = new ErgoProvingInterpreter
+    val fakeProver = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val secret = prover.dhSecrets.head
 
@@ -981,7 +981,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)
     val wrongProp = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.u)
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -996,10 +996,10 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("DH tuple - simulation") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubdhB = proverB.dhSecrets.head.publicImage
@@ -1010,7 +1010,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = OR(pubkeyA, pubdhB)
     compiledProp shouldBe prop
     
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1022,10 +1022,10 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("DH tuple and DLOG") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubdhA = proverA.dhSecrets.head.publicImage
@@ -1036,7 +1036,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val prop = AND(pubkeyA, pubdhA)
     compiledProp shouldBe prop
     
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1050,10 +1050,10 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("mixing scenario w. timeout") {
-    val proverA = new UtxoProvingInterpreter
-    val proverB = new UtxoProvingInterpreter
+    val proverA = new ErgoProvingInterpreter
+    val proverB = new ErgoProvingInterpreter
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyA2 = proverA.dlogSecrets.head.publicImage
@@ -1093,7 +1093,7 @@ class UtxoInterpreterSpecification extends PropSpec
       compiledProp
     }
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1112,8 +1112,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("map + sum") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1133,7 +1133,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1145,8 +1145,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("byindex") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1162,7 +1162,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1181,8 +1181,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("sizeof - num of outputs = num of inputs + 1") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1199,7 +1199,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val s = ErgoBox(21, pubkey)
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(s),
@@ -1215,8 +1215,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("exists") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1231,7 +1231,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1244,8 +1244,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("forall") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = compile(Map(), "OUTPUTS.forall(fun (box: Box) = box.value == 10)").asBoolValue
@@ -1259,7 +1259,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1273,7 +1273,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
 
   property("forall - fail") {
-    val prover = new UtxoProvingInterpreter
+    val prover = new ErgoProvingInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1287,7 +1287,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1298,8 +1298,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("counter") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1320,7 +1320,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1332,8 +1332,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("counter - no register in outputs") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1355,7 +1355,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1367,8 +1367,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("avl tree - simplest case") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1400,7 +1400,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData)))
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1428,8 +1428,8 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val proofId = 31: Byte
 
-    val prover = new UtxoProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
+    val verifier = new ErgoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("proofId" -> proofId.toLong)
@@ -1451,7 +1451,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key)))
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1463,8 +1463,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("prove keys from registers") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey1 = prover.dlogSecrets.head.publicImage
     val pubkey2 = prover.dlogSecrets(1).publicImage
@@ -1487,7 +1487,7 @@ class UtxoInterpreterSpecification extends PropSpec
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
 
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -1504,8 +1504,8 @@ class UtxoInterpreterSpecification extends PropSpec
     * (and no more outputs could be provided as an input of a spending transaction).
     */
   property("Along with a brother") {
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey1 = prover.dlogSecrets.head.publicImage
     val pubkey2 = prover.dlogSecrets(1).publicImage
@@ -1532,7 +1532,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val s = ErgoBox(10, prop, Map())
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(brother, s),
@@ -1546,8 +1546,8 @@ class UtxoInterpreterSpecification extends PropSpec
   }
 
   property("Not / If"){
-    val prover = new UtxoProvingInterpreter
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -1571,7 +1571,7 @@ class UtxoInterpreterSpecification extends PropSpec
 
     val spendingTransaction = ErgoTransaction(IndexedSeq(), IndexedSeq(output))
 
-    val ctx = UtxoContext(
+    val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(input0, input1, input2, input3),

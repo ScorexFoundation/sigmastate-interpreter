@@ -7,8 +7,8 @@ import sigmastate.Values._
 import sigmastate.SType
 import sigmastate.interpreter.ProverInterpreter
 
-class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
-  extends UtxoInterpreter(maxCost) with ProverInterpreter {
+class ErgoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
+  extends ErgoInterpreter(maxCost) with ProverInterpreter {
 
   import sigmastate.interpreter.GroupSettings.soundness
 
@@ -28,21 +28,21 @@ class UtxoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
     i.toByte -> ByteArrayConstant(ba)
   }.toMap
 
-  def withContextExtender(tag: Byte, value: EvaluatedValue[_ <: SType]): UtxoProvingInterpreter = {
+  def withContextExtender(tag: Byte, value: EvaluatedValue[_ <: SType]): ErgoProvingInterpreter = {
     val s = secrets
     val ce = contextExtenders
 
-    new UtxoProvingInterpreter(maxCost) {
+    new ErgoProvingInterpreter(maxCost) {
       override lazy val secrets = s
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce + (tag -> value)
     }
   }
 
-  def withSecrets(additionalSecrets: Seq[DLogProverInput]): UtxoProvingInterpreter = {
+  def withSecrets(additionalSecrets: Seq[DLogProverInput]): ErgoProvingInterpreter = {
     val ce = contextExtenders
     val s = secrets ++ additionalSecrets
 
-    new UtxoProvingInterpreter(maxCost) {
+    new ErgoProvingInterpreter(maxCost) {
       override lazy val secrets = s
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
     }

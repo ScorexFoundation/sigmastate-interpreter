@@ -51,11 +51,11 @@ class SpamSpecification extends PropSpec
 
     val id = 11: Byte
 
-    val prover = new UtxoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
+    val prover = new ErgoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
     val spamScript = EQ(CalcBlake2b256(TaggedByteArray(id)), CalcBlake2b256(TaggedByteArray(id)))
 
-    val ctx = UtxoContext.dummy(fakeSelf)
+    val ctx = ErgoContext.dummy(fakeSelf)
 
     val prt = prover.prove(spamScript, ctx, message)
     prt.isSuccess shouldBe true
@@ -64,7 +64,7 @@ class SpamSpecification extends PropSpec
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
     val (res, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, message))
 
     res.isFailure shouldBe true
@@ -76,7 +76,7 @@ class SpamSpecification extends PropSpec
 
     val id = 21: Byte
 
-    val prover = new UtxoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
+    val prover = new ErgoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
     val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256(TaggedByteArray(id))) { case (script, _) =>
       CalcBlake2b256(script)
@@ -84,7 +84,7 @@ class SpamSpecification extends PropSpec
 
     val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayConstant(Array.fill(32)(0: Byte))))
 
-    val ctx = UtxoContext.dummy(fakeSelf)
+    val ctx = ErgoContext.dummy(fakeSelf)
 
     val prt = prover.prove(spamScript, ctx, message)
     prt.isSuccess shouldBe true
@@ -93,21 +93,21 @@ class SpamSpecification extends PropSpec
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
     val (_, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, message))
     terminated shouldBe true
   }
 
   property("ring signature - maximum ok ring size") {
-    val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 2)
-    val verifier = new UtxoInterpreter
+    val prover = new ErgoProvingInterpreter(maxCost = CostTable.ScriptLimit * 2)
+    val verifier = new ErgoInterpreter
     val secret = prover.dlogSecrets.head
 
     val simulated = (1 to 98).map { _ =>
-      new UtxoProvingInterpreter().dlogSecrets.head.publicImage
+      new ErgoProvingInterpreter().dlogSecrets.head.publicImage
     }
 
-    val ctx = UtxoContext.dummy(fakeSelf)
+    val ctx = ErgoContext.dummy(fakeSelf)
 
     val publicImages = secret.publicImage +: simulated
     val prop = OR(publicImages)
@@ -123,7 +123,7 @@ class SpamSpecification extends PropSpec
   property("transaction with many outputs") {
     forAll(Gen.choose(10, 200), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
       whenever(orCnt > 10 && outCnt > 200) {
-        val prover = new UtxoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
+        val prover = new ErgoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
 
         val propToCompare = OR((1 to orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))))
 
@@ -141,14 +141,14 @@ class SpamSpecification extends PropSpec
         val txOutputs = ((1 to outCnt) map (_ => ErgoBox(11, spamProp))) :+ ErgoBox(11, propToCompare)
         val tx = ErgoTransaction(IndexedSeq(), txOutputs)
 
-        val ctx = UtxoContext.dummy(createBox(0, propToCompare)).copy(spendingTransaction = tx)
+        val ctx = ErgoContext.dummy(createBox(0, propToCompare)).copy(spendingTransaction = tx)
 
         val pt0 = System.currentTimeMillis()
         val proof = prover.prove(spamScript, ctx, message).get
         val pt = System.currentTimeMillis()
         println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
-        val verifier = new UtxoInterpreter
+        val verifier = new ErgoInterpreter
         val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, message))
         terminated shouldBe true
       }
@@ -156,7 +156,7 @@ class SpamSpecification extends PropSpec
   }
 
   property("transaction with many inputs and outputs") {
-    val prover = new UtxoProvingInterpreter(maxCost = Int.MaxValue)
+    val prover = new ErgoProvingInterpreter(maxCost = Int.MaxValue)
 
     val prop = Exists(Inputs, 21, Exists(Outputs, 22,
       EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
@@ -169,7 +169,7 @@ class SpamSpecification extends PropSpec
 
     val tx = ErgoTransaction(IndexedSeq(), outputs)
 
-    val ctx = new UtxoContext(currentHeight = 0,
+    val ctx = new ErgoContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = inputs,
       spendingTransaction = tx,
@@ -180,7 +180,7 @@ class SpamSpecification extends PropSpec
     val pt = System.currentTimeMillis()
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
-    val verifier = new UtxoInterpreter
+    val verifier = new ErgoInterpreter
     val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
     terminated shouldBe true
     res.isFailure shouldBe true

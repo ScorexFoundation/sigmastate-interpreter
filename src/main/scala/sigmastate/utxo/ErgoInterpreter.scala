@@ -5,10 +5,10 @@ import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 
 
-class UtxoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends Interpreter {
-  override type CTX = UtxoContext
+class ErgoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends Interpreter {
+  override type CTX = ErgoContext
 
-  override def specificTransformations(context: UtxoContext): PartialFunction[Value[_ <: SType], Value[_ <: SType]] = {
+  override def specificTransformations(context: ErgoContext): PartialFunction[Value[_ <: SType], Value[_ <: SType]] = {
     case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxConstant.apply))
 
     case Outputs => ConcreteCollection(context.spendingTransaction.outputs.map(BoxConstant.apply))
