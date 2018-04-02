@@ -24,8 +24,7 @@ object GroupSettings {
   type EcPointType = Curve25519Point
   val dlogGroup: DlogGroup[EcPointType] = Curve25519
 
-  implicit val soundness = 256
-  implicit val hf = Blake2b256
+  implicit val soundness: Int = 256
 }
 
 trait Interpreter {
