@@ -301,7 +301,7 @@ sealed trait UnprovenTree extends ProofTree {
 
   val simulated: Boolean
 
-  lazy val real: Boolean = !simulated
+  def real: Boolean = !simulated
 
   val challengeOpt: Option[Array[Byte]]
 
