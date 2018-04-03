@@ -72,9 +72,25 @@ The following data objects available in every script using predefined variables
 
 ##### Box
 
+Every box has the following properties: 
+
 - `id: ByteArray` - Blake2b256 hash of this box's content 
 - `value: Int` - boxed value
 - `propositionBytes: ByteArray` - guarding script, which should be evaluated to true in order to open this box 
+
+Besides properties, every box can have up to 10 numbered registers.
+The following syntax is supported to access registers on box objects:
+```
+SELF.R3[Int].value     // access R3 register, cast its value to Int and return it
+SELF.R3.isDefined      // check that value of R3  is defined
+SELF.R3[Int].isDefined // check that value of R3  is defined and has type Int
+```
+Note, that Option[T] is introduced at frontend to represent the type of register value
+```
+SELF.R3: Option[Any]   // where Any is the supertype of all types
+SELF.R3[Int]: Option[Int]   
+```
+However, Option is not supported by `Interpreter`, so all `Option` operations are eliminated during compilation.
 
 ##### AvlTree
 TBD
