@@ -92,6 +92,26 @@ SELF.R3[Int]: Option[Int]
 ```
 However, Option is not supported by `Interpreter`, so all `Option` operations are eliminated during compilation.
 
+##### Array[T]
+
+As in many languages Array is a collection of items of the same type. 
+`Array[T]` - is a collection of items of type `T`.
+Even though ErgoScript is not object-oriented language, Array operations use the syntax of method invocations. 
+For example the following script check an existance of some element in the array satisfying some predicate (condition)
+
+```
+let ok = OUTPUTS.exists(fun (box: Box) = box.value > 1000)
+``` 
+
+The following operations can be used with arrays
+
+Function  | Description
+--------- | ------------
+`fun Array[T].exists(p: T => Boolean): Boolean ` | Returns true if there exists an item `x` in the array for which `p(x) == true`  
+`fun Array[T].forall(f: T => Boolean): Boolean ` | Returns true if for all items `x` in the array `p(x) == true`   
+`fun Array[T].map[R](f: T => R): Array[R] ` | Applies function `f` for each element of array collecting results in a new array of type `R`. 
+`fun Array[T].reduce(f: (T, T) => T): T ` | For an array `Array(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
+
 ##### AvlTree
 TBD
 
@@ -175,7 +195,7 @@ an input got into a block in the register R3 (if the transaction is not included
 into the blockchain yet, then R3 contains the current height of the blockchain).
     
 ```
-guard CrowdFunding(demurragePeriod: Int, demurrageCost: Int, regularScript: Sigma) {
+guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript: Sigma) {
   let c2 = allOf(Array(
    HEIGHT >= SELF.R3[Int].value + demurragePeriod,
    OUTPUTS.exists(fun (out: Box) = {
@@ -188,10 +208,12 @@ guard CrowdFunding(demurragePeriod: Int, demurrageCost: Int, regularScript: Sigm
 
 #### Ring Signature
 
-Simplest linear-sized ring signature (1-out-of-N OR), all secrets are known.
+Simplest linear-sized ring signature (1-out-of-N OR). 
+The ring is an array of public keys which correspond to some secret keys (of some parties).
+The script below checks that at least one party provided the signature WITHOUT disclosing this party.
 
 ```
-guard CrowdFunding(ring: Array[Sigma]) {
+guard RingSignature(ring: Array[Sigma]) {
   anyOf(ring)
 }
 ```

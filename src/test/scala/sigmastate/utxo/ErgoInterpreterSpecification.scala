@@ -506,37 +506,36 @@ class ErgoInterpreterSpecification extends PropSpec
       "height1" -> height1, "height2" -> height2,
       "deadlineA" -> deadlineA, "deadlineB" -> deadlineB,
       "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
-    val compiledProp1 = compile(env,
+    val prop1 = compile(env,
       """{
        |  anyOf(Array(
        |    HEIGHT > height1 + deadlineA && pubkeyA,
        |    pubkeyB && blake2b256(taggedByteArray(1)) == hx
        |  ))
-       |}
-      """.stripMargin)
+       |}""".stripMargin).asBoolValue
 
     //chain1 script
-    val prop1 = OR(
+    val prop1Tree = OR(
       AND(GT(Height, Plus(IntConstant(height1), IntConstant(deadlineA))), pubkeyA),
       AND(pubkeyB, EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
     )
-    compiledProp1 shouldBe prop1
+    prop1 shouldBe prop1Tree
 
-    val compiledProp2 = compile(env,
+    val prop2 = compile(env,
       """{
        |  anyOf(Array(
        |    HEIGHT > height2 + deadlineB && pubkeyB,
        |    pubkeyA && blake2b256(taggedByteArray(1)) == hx
        |  ))
        |}
-      """.stripMargin)
+      """.stripMargin).asBoolValue
 
     //chain2 script
-    val prop2 = OR(
+    val prop2Tree = OR(
       AND(GT(Height, Plus(IntConstant(height2), IntConstant(deadlineB))), pubkeyB),
       AND(pubkeyA, EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
     )
-    compiledProp2 shouldBe prop2
+    prop2 shouldBe prop2Tree
 
     //Preliminary checks:
 
@@ -550,8 +549,7 @@ class ErgoInterpreterSpecification extends PropSpec
     proverB.prove(prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //A can't withdraw her coins in chain1 (generate a valid proof)
-    println(proverA.prove(prop1, ctxf1, fakeMessage))
-    proverA.prove(prop1, ctxf1, fakeMessage).isFailure shouldBe true
+    proverA.prove(prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
     val ctxf2 = ErgoContext(
@@ -660,7 +658,7 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val verifier = new ErgoInterpreter
 
-    val pubkeyA1 = proverA.dlogSecrets.head.publicImage
+    val pubkeyA1 = proverA.dlogSecrets(0).publicImage
     val pubkeyA2 = proverA.dlogSecrets(1).publicImage
     val pubkeyA3 = proverA.dlogSecrets(2).publicImage
     val pubkeyA4 = proverA.dlogSecrets(3).publicImage
