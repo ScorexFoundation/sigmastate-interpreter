@@ -6,3 +6,4 @@ pdflatex sigma
 rm sigma.aux
 rm sigma.log
 rm sigma.out
+rm sigma.toc
