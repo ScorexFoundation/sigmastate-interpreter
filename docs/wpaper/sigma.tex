@@ -1,7 +1,8 @@
+\documentclass[]{llncs}
+
 \def\shownotes{1}
 \def\notesinmargins{0}
 
-\documentclass[]{llncs}
 \usepackage{fullpage}
 
 \usepackage{amsmath,color,xcolor,hyperref,graphicx,wrapfig,listings}
@@ -22,7 +23,7 @@
 
 \newcommand{\lnote}[1]{{\authnote{\textcolor{orange}{Leo notes}}{#1}}}
 \newcommand{\knote}[1]{{\authnote{\textcolor{green}{kushti notes}}{#1}}}
-\newcommand{\mnote}[1]{{\authnote{\textcolor{blue}{morphic}}{#1}}}
+\newcommand{\mnote}[1]{{\authnote{\textcolor{blue}{morphic notes}}{#1}}}
 
 \newcommand{\ret}{\mathsf{ret}}
 \newcommand{\new}{\mathsf{new}}
@@ -69,6 +70,7 @@ We report on design and implementation of \langname, a more powerful, protocol-f
 \end{abstract}
 
 
+
 \section{Introduction}
 
 Since very early days, Bitcoin~\cite{Nak08} is not just about simple money transfers: it has a scripting language named Bitcoin Script. The language is a primitive stack-based language without loops. A program in this language is protecting a transaction output~(usually, from a party who does not know some secret information). To spend the output, a spending transaction must provide a script in the same language, such as concatenation of both scripts is to be interpreted in {\em true} value on top of the stack. Combined with a maximum size of a 10 kilobytes, the absence of loops provides a guarantee of strictly finite validation time. However, some denial-of-service attacks were found against script validation time. \knote{links}
@@ -83,7 +85,11 @@ The idea behind the language is that a subset of zero-knowledge protocols known 
 In blockchain systems, there is a strict need to tackle the problem of denial-of-service attack carrying by crafting scripts which are too costly to validate. For example, if it is needed for more time to validate a script than average delay between blocks on commodity hardware, network could be obviously attacked, with nodes stuck in processing, and also increased number of forks as result. 
 
 
-\subsection{Related Work}
+
+\subsection{Organization of the Paper}
+
+
+\section{Related Work}
 
 \knote{A good survey is available at https://arxiv.org/pdf/1801.00687.pdf, pg. 11}
 
@@ -94,8 +100,6 @@ In blockchain systems, there is a strict need to tackle the problem of denial-of
     \item{Rholang}
 \end{itemize}
 
-
-\subsection{Organization of the Paper}
 
 \section{Language Design}
 
@@ -131,6 +135,7 @@ In addition to secret information, which knowledge is to be proven in zero-knowl
 $$dlog(x) \land (blake2b256(c) = C)$$
 
 where $C$ is some constant~\footnote{we avoid provide a value for the constant due to column size limit}, and $blake2b256$ is operation which calculates hash value for function Blake2b256~(\knote{link}). The prover then needs to prove knowledge of discrete logarithm of $x$ and also to present value $c$ such as Blake2b256 on $c$ evaluates to $C$. Even if verifier does not know $c$ before being presented a proof, we can not count $c$ as secret, as it could be replayed by an eavesdropper.   
+
 
 
 \subsection{Language Details} 

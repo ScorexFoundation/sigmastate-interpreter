@@ -6,6 +6,11 @@ import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoContext.Height
 
+import scala.util.Try
+
+case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
+
+// todo: write description
 case class ErgoContext(currentHeight: Height,
                        lastBlockUtxoRoot: AvlTreeData,
                        boxesToSpend: IndexedSeq[ErgoBox],
@@ -23,6 +28,22 @@ object ErgoContext {
     lastBlockUtxoRoot = AvlTreeData.dummy, boxesToSpend = IndexedSeq(),
                           spendingTransaction = null, self = selfDesc)
 
+  def fromTransaction(tx: ErgoTransaction,
+                      blockchainState: BlockchainState,
+                      boxesReader: ErgoBoxReader,
+                      inputIndex: Int): Try[ErgoContext] = Try {
+
+    val boxes = tx.inputs.map(_.boxId).map(id => boxesReader.byId(id).get)
+
+    val proverExtension = tx.inputs(inputIndex).spendingProof.extension
+
+    ErgoContext(blockchainState.currentHeight,
+                blockchainState.lastBlockUtxoRoot,
+                boxes,
+                tx,
+                boxes(inputIndex),
+                proverExtension)
+  }
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */

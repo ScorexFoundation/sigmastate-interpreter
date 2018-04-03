@@ -5,6 +5,12 @@ import scorex.crypto.authds.ADKey
 import sigmastate.UncheckedTree
 import sigmastate.interpreter.ProverResult
 
+import scala.util.Try
+
+
+trait ErgoBoxReader {
+  def byId(boxId: ADKey): Try[ErgoBox]
+}
 
 case class Input(boxId: ADKey, spendingProof: ProverResult[UncheckedTree]) {
   def bytes: Array[Byte] = Array()
