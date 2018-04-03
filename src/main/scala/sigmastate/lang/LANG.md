@@ -26,12 +26,8 @@ In case of any error it throws `BinderException`
 `SigmaTyper` takes a bound AST from the output of `SigmaBinder` and assigns types
 to all tree nodes. Since AST is immutable data structure the typer produces a new tree. 
 
-Type assignment is performed in two steps:
-1) Computing `env` and `tipe` mutually recursive attributes using 
-[Kiama Attribution](https://bitbucket.org/inkytonik/kiama/src/f71e980b74c350a7666dc9f3aa82c155bc79b419/wiki/Attribution.md?fileviewer=file-view-default) package.
-2) Using bottom-up rewriting strategy to traverse all the tree nodes to search for nodes 
-with unspecified types (signified by NoType object). For every such node rewriter has 
-a rule case which replaces NoType with the type computed by `tipe` attribute.
+Type assignment is performed by `assignType` tree transformation which assign correct types for all 
+tree nodes.
 
 In case of any error it throws `TyperException`
 
