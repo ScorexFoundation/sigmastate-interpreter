@@ -19,8 +19,6 @@ object SigmaPredef {
   val predefinedEnv: Map[String, SValue] = Seq(
     "allOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "anyOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-    "sigmaAll" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-    "sigmaAny" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "blake2b256" -> Lambda(Vector("input" -> SByteArray), SByteArray, None),
     "byteArrayToBigInt" -> Lambda(Vector("input" -> SByteArray), SBigInt, None),
     "intToByteArray" -> Lambda(Vector("input" -> SInt), SByteArray, None),
