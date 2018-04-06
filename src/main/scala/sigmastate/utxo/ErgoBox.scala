@@ -43,13 +43,13 @@ object Box {
   * @param value
   * @param proposition guarding script, which should be evaluated to true in order to open this box
   * @param additionalRegisters
-  * @param nonce to differentiate this instance from otherwise identical instances
+  * @param nonce       to differentiate this instance from otherwise identical instances
   */
-class ErgoBox private(
-    override val value: Long,
-    override val proposition: Value[SBoolean.type],
-    additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
-    nonce: Array[Byte]) extends Box[Value[SBoolean.type]] {
+class ErgoBox private( override val value: Long,
+                       override val proposition: Value[SBoolean.type],
+                       additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
+                       nonce: Array[Byte]) extends Box[Value[SBoolean.type]] {
+
   import sigmastate.utxo.ErgoBox._
 
   def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
@@ -90,16 +90,46 @@ object ErgoBox {
 
   sealed trait NonMandatoryIdentifier extends RegisterIdentifier
 
-  object R0 extends RegisterIdentifier {override val number = 0}
-  object R1 extends RegisterIdentifier {override val number = 1}
-  object R2 extends RegisterIdentifier {override val number = 2}
-  object R3 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 3}
-  object R4 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 4}
-  object R5 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 5}
-  object R6 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 6}
-  object R7 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 7}
-  object R8 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 8}
-  object R9 extends RegisterIdentifier with NonMandatoryIdentifier {override val number = 9}
+  object R0 extends RegisterIdentifier {
+    override val number = 0
+  }
+
+  object R1 extends RegisterIdentifier {
+    override val number = 1
+  }
+
+  object R2 extends RegisterIdentifier {
+    override val number = 2
+  }
+
+  object R3 extends RegisterIdentifier with NonMandatoryIdentifier {
+    override val number = 3
+  }
+
+  object R4 extends RegisterIdentifier with NonMandatoryIdentifier {
+    override val number = 4
+  }
+
+  object R5 extends RegisterIdentifier with NonMandatoryIdentifier {
+    override val number = 5
+  }
+
+  object R6 extends RegisterIdentifier with NonMandatoryIdentifier {
+    override val number = 6
+  }
+
+  object R7 extends RegisterIdentifier with NonMandatoryIdentifier {
+    override val number = 7
+  }
+
+  object R8 extends RegisterIdentifier with NonMandatoryIdentifier {
+    override val number = 8
+  }
+
+  object R9 extends RegisterIdentifier with NonMandatoryIdentifier {
+    override val number = 9
+  }
+
   val allRegisters = Vector(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
   val registerByName = allRegisters.map(r => s"R${r.number}" -> r).toMap
 }
