@@ -60,7 +60,7 @@ class ErgoBox private( override val value: Long,
     }
   }
 
-  override lazy val id = ADKey @@ Blake2b256.hash(bytes)
+  override lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
   //TODO: val propositionBytes = ValueSerializer.serialize(proposition)
   val propositionBytes = proposition.toString.getBytes
@@ -77,6 +77,8 @@ class ErgoBox private( override val value: Long,
 }
 
 object ErgoBox {
+  type BoxId = ADKey
+
   def apply(value: Long,
             proposition: Value[SBoolean.type],
             additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
