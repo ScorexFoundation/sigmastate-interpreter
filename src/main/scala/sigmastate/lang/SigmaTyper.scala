@@ -263,8 +263,6 @@ class SigmaTyper {
   }
 }
 
-class TyperException(msg: String) extends Exception(msg)
-
 object SigmaTyper {
 
   type STypeSubst = Map[STypeIdent, SType]
@@ -320,5 +318,5 @@ object SigmaTyper {
       rewrite(everywherebu(substRule))(tpe)
   }
 
-  def error(msg: String) = throw new TyperException(msg)
+  def error(msg: String) = throw new TyperException(msg, None)
 }

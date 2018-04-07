@@ -87,8 +87,6 @@ class SigmaBinder(env: Map[String, Any]) {
   def bind(e: SValue): SValue = eval(e, env)
 }
 
-class BinderException(msg: String) extends Exception(msg)
-
 object SigmaBinder {
-  def error(msg: String) = throw new BinderException(msg)
+  def error(msg: String) = throw new BinderException(msg, None)
 }

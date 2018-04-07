@@ -3,6 +3,7 @@ package sigmastate.lang.syntax
 import fastparse.all._
 import fastparse.CharPredicates._
 import fastparse.core.Parsed.Failure
+import sigmastate.lang.{SigmaException, SourceContext}
 
 object Basic {
   val UnicodeEscape = P( "u" ~ HexDigit ~ HexDigit ~ HexDigit ~ HexDigit )
@@ -39,7 +40,8 @@ object Basic {
     throw new ParserException(msg, parseError)
 }
 
-class ParserException(val message: String, val parseError: Option[Failure[_,_]]) extends Exception(message)
+class ParserException(message: String, val parseError: Option[Failure[_,_]])
+  extends SigmaException(message, parseError.map(e => SourceContext(e.index)))
 
 /**
   * Most keywords don't just require the correct characters to match,
