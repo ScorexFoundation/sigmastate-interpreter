@@ -69,9 +69,9 @@ class BlockchainSimulationSpecification extends PropSpec
     private lazy val hash = new Blake2b256Unsafe()
 
     val initBlock = Block {
-      (1 to 100).map{ i =>
-        val h = hash.hash(scala.util.Random.nextString(12).getBytes)
-        val boxes = (1 to 100).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), h))
+      (1 to 20).map{ i =>
+        val h = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), h))
         ErgoTransaction(IndexedSeq(), boxes)
       }
     }
@@ -98,8 +98,11 @@ class BlockchainSimulationSpecification extends PropSpec
     val miner = new ErgoProvingInterpreter()
     val minerPubKey = miner.dlogSecrets.head.publicImage
 
+    println(state.boxesReader.allIds.size)
+
     val txs = boxesToSpend.map{box =>
       val newBox = ErgoBox(10, minerPubKey, Map())
+      println("new box id: " + Base16.encode(newBox.id))
       val fakeInput = Input(box.id, null)
       val tx = ErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBox))
       val context = ErgoContext(state.state.currentHeight + 1,
@@ -116,8 +119,9 @@ class BlockchainSimulationSpecification extends PropSpec
 
     val block = Block(txs)
 
-    state.applyBlock(block).isSuccess shouldBe true
+    val updStateTry = state.applyBlock(block)
+    updStateTry.isSuccess shouldBe true
 
-    //println(state.boxesReader.allIds.map(Base16.encode).mkString("\n"))
+    println(updStateTry.get.boxesReader.allIds.size)
   }
 }
