@@ -8,6 +8,10 @@ import sigmastate.Values.EvaluatedValue
   */
 case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]])
 
+object ContextExtension {
+  val empty = ContextExtension(Map())
+}
+
 
 trait Context[C <: Context[C]] {
   val extension: ContextExtension

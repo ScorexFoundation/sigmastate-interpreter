@@ -4,8 +4,10 @@ import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
+import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
 import sigmastate.Values.IntConstant
+import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.ErgoBox.R3
 import sigmastate.{AvlTreeData, GE}
 
@@ -22,7 +24,10 @@ class BlockchainSimulationSpecification extends PropSpec
 
     override def byId(boxId: ADKey): Try[ErgoBox] = Try(boxes(boxId))
 
-    def byR3Value(i: Int): Iterable[ErgoBox] = boxes.values.filter(_.get(R3).getOrElse(IntConstant(i+1)) == IntConstant(i))
+    def byR3Value(i: Int): Iterable[ErgoBox] =
+      boxes.values.filter(_.get(R3).getOrElse(IntConstant(i+1)) == IntConstant(i))
+
+    def allIds: Iterable[ErgoBox.BoxId] = boxes.keys
 
     def applyBlock(block: Block): Unit = {
       val toRemove = block.txs.flatMap(_.inputs).map(_.boxId)
@@ -42,9 +47,17 @@ class BlockchainSimulationSpecification extends PropSpec
   case class Block(txs: IndexedSeq[ErgoTransaction])
 
   case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader) {
-    def applyBlock(block: Block): ValidationState = {
-      boxesReader.applyBlock(block)
+    def applyBlock(block: Block): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
+
+      block.txs.foreach {tx =>
+        ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader) match {
+          case Left(throwable) => throw throwable
+          case Right(_) =>
+        }
+      }
+
+      boxesReader.applyBlock(block)
       val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(startingDigest = boxesReader.digest))
       ValidationState(newState, boxesReader)
     }
@@ -74,7 +87,7 @@ class BlockchainSimulationSpecification extends PropSpec
 
       val boxReader = new InMemoryErgoBoxReader(prover)
 
-      ValidationState(bs, boxReader).applyBlock(initBlock)
+      ValidationState(bs, boxReader).applyBlock(initBlock).get
     }
   }
 
@@ -82,6 +95,29 @@ class BlockchainSimulationSpecification extends PropSpec
     val state = ValidationState.initialState()
     val boxesToSpend = state.boxesReader.byR3Value(1)
 
-    println(boxesToSpend.size)
+    val miner = new ErgoProvingInterpreter()
+    val minerPubKey = miner.dlogSecrets.head.publicImage
+
+    val txs = boxesToSpend.map{box =>
+      val newBox = ErgoBox(10, minerPubKey, Map())
+      val fakeInput = Input(box.id, null)
+      val tx = ErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBox))
+      val context = ErgoContext(state.state.currentHeight + 1,
+                                state.state.lastBlockUtxoRoot,
+                                IndexedSeq(box),
+                                tx,
+                                box,
+                                ContextExtension.empty)
+      val proverResult = miner.prove(box.proposition, context, tx.messageToSign).get
+
+      val realInput = Input(box.id, proverResult)
+      ErgoTransaction(IndexedSeq(realInput), IndexedSeq(newBox))
+    }.toIndexedSeq
+
+    val block = Block(txs)
+
+    state.applyBlock(block).isSuccess shouldBe true
+
+    //println(state.boxesReader.allIds.map(Base16.encode).mkString("\n"))
   }
 }
