@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
 import scorex.crypto.authds.ADKey
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.UncheckedTree
 import sigmastate.interpreter.ProverResult
 
@@ -31,5 +32,7 @@ case class ErgoTransaction(inputs: IndexedSeq[Input], outputs: IndexedSeq[ErgoBo
 
   lazy val messageToSign: Array[Byte] =
     Bytes.concat(if (outputs.nonEmpty) concatBytes(outputs.map(_.bytes)) else Array[Byte](),
-      concatBytes(inputs.map(_.bytes)))
+      concatBytes(inputs.map(_.boxId)))
+
+  lazy val id: Digest32 = Blake2b256.hash(messageToSign)
 }
