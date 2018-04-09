@@ -69,8 +69,8 @@ class BlockchainSimulationSpecification extends PropSpec
 
     val initBlock = Block {
       (1 to 20).map{ i =>
-        val h = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), h))
+        val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
         ErgoTransaction(IndexedSeq(), boxes)
       }
     }
@@ -98,8 +98,8 @@ class BlockchainSimulationSpecification extends PropSpec
     val minerPubKey = miner.dlogSecrets.head.publicImage
 
     val txs = boxesToSpend.map{box =>
-      val h = hash.hash(scala.util.Random.nextString(16).getBytes)
-      val newBox = ErgoBox(10, minerPubKey, Map(), h)
+      val txId = hash.hash(scala.util.Random.nextString(16).getBytes)
+      val newBox = ErgoBox(10, minerPubKey, Map(), txId)
       val fakeInput = Input(box.id, null)
       val tx = ErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBox))
       val context = ErgoContext(state.state.currentHeight + 1,

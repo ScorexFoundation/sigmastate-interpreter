@@ -119,7 +119,7 @@ class OracleExamplesSpecification extends PropSpec
       AND(LE(extract(R3), IntConstant(15)), bobPubKey))
 
     val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
-      EQ(extract[SByteArray.type](R2), ByteArrayConstant(oraclePubKey.propBytes)),
+      EQ(extract[SByteArray.type](R1), ByteArrayConstant(oraclePubKey.propBytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),
           Exponentiate(oraclePubKey.value,

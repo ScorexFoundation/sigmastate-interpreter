@@ -1,8 +1,8 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Longs
+import com.google.common.primitives.{Longs, Shorts}
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate._
 import Values._
 import sigmastate.serialization.Serializer
@@ -43,19 +43,21 @@ object Box {
   * @param value
   * @param proposition guarding script, which should be evaluated to true in order to open this box
   * @param additionalRegisters
-  * @param nonce       to differentiate this instance from otherwise identical instances
   */
 class ErgoBox private( override val value: Long,
                        override val proposition: Value[SBoolean.type],
-                       additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
-                       nonce: Array[Byte]) extends Box[Value[SBoolean.type]] {
+                       val transactionId: Digest32,
+                       val boxId: Short,
+                       additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()
+                     ) extends Box[Value[SBoolean.type]] {
 
   import sigmastate.utxo.ErgoBox._
 
   def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {
-      case R1 => Some(IntConstant(value))
-      case R2 => Some(ByteArrayConstant(propositionBytes))
+      case R0 => Some(IntConstant(value))
+      case R1 => Some(ByteArrayConstant(propositionBytes))
+      case R2 => Some(ByteArrayConstant(transactionId ++ Shorts.toByteArray(boxId)))
       case n: NonMandatoryIdentifier => additionalRegisters.get(n)
     }
   }
@@ -70,7 +72,7 @@ class ErgoBox private( override val value: Long,
   def serializer: Serializer[ErgoBox] = new Serializer[ErgoBox] {
     //todo: serialize registers
     override def toBytes(obj: ErgoBox): Array[Byte] =
-      Longs.toByteArray(obj.value) ++ obj.propositionBytes ++ nonce
+      Longs.toByteArray(obj.value) ++ obj.propositionBytes ++ transactionId ++ Shorts.toByteArray(boxId)
 
     override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = ???
   }
@@ -82,9 +84,10 @@ object ErgoBox {
   def apply(value: Long,
             proposition: Value[SBoolean.type],
             additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
-            nonce: Array[Byte] = Array.fill(32)(0: Byte)
+            transactionId: Digest32 = Digest32 @@ Array.fill(32)(0: Byte),
+            boxId: Short = 0
            ): ErgoBox =
-    new ErgoBox(value, proposition, additionalRegisters, nonce)
+    new ErgoBox(value, proposition, transactionId, boxId, additionalRegisters)
 
   sealed trait RegisterIdentifier {
     val number: Byte
