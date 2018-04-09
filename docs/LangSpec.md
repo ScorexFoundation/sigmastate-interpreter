@@ -30,7 +30,7 @@
 
 - `Any` - a supertype of any other type
 - `Unit` - a type with a single value `()`
-- `Long` - 64 bit signed integer
+- `Int` - 64 bit signed integer
 - `Boolean` - a type with two logical values `true` and `false`
 - `Sigma`  - a type which represent a logical value which can be be obtained by 
              executing a Sigma protocol with zero-knowledge proof of knowledge
@@ -49,7 +49,7 @@ There is a syntax for literals, which can be used to introduce values
 of some types directly in program text like the following examples:
 ```
  let unit: Unit = ()       // unit constant
- let long: Long = 10       // interger value literal
+ let long: Int = 10       // interger value literal
  let bool: Boolean = true  // logical literal
  let arr = Array(1, 2, 3)  // constructs array with given items
 ```
@@ -60,7 +60,7 @@ by applying operations.
 
 The following data objects available in every script using predefined variables 
 
-- `HEIGHT: Array[Box]` - height (block number) of the current block
+- `HEIGHT: Int` - height (block number) of the current block
 - `SELF: Box` - block to be opened when currently executing script evaluates to `true`
 - `INPUTS: Array[Box]` - an array of inputs of the current spending transaction
 - `OUTPUTS: Array[Box]` - an array of outputs of current spending transaction
@@ -68,9 +68,9 @@ The following data objects available in every script using predefined variables
 
 ## Data Types
 
-#### Predefined data structures
+### Predefined data structures
 
-##### Box
+#### Box
 
 Every box has the following properties: 
 
@@ -92,30 +92,44 @@ SELF.R3[Int]: Option[Int]
 ```
 However, Option is not supported by `Interpreter`, so all `Option` operations are eliminated during compilation.
 
-##### Array[T]
+#### Array[T]
 
 As in many languages Array is a collection of items of the same type. 
 `Array[T]` - is a collection of items of type `T`.
+
+Each item can be accessed by constant index, for example:
+```
+let myOutput = OUTPUTS(0)
+let myInput = INPUTS(0)
+```
+
+Array have `size` property which returns number of elements in an array. 
+
+```
+let size = OUTPUTS.size
+```
+
 Even though ErgoScript is not object-oriented language, Array operations use the syntax of method invocations. 
-For example the following script check an existance of some element in the array satisfying some predicate (condition)
+For example the following script check an existence of some element in the array satisfying some predicate (condition)
 
 ```
 let ok = OUTPUTS.exists(fun (box: Box) = box.value > 1000)
 ``` 
 
-The following operations can be used with arrays
+The following properties and methods can be used with arrays
 
 Function  | Description
 --------- | ------------
+`Array[T].size` |  number of items in the array
 `fun Array[T].exists(p: T => Boolean): Boolean ` | Returns true if there exists an item `x` in the array for which `p(x) == true`  
 `fun Array[T].forall(f: T => Boolean): Boolean ` | Returns true if for all items `x` in the array `p(x) == true`   
 `fun Array[T].map[R](f: T => R): Array[R] ` | Applies function `f` for each element of array collecting results in a new array of type `R`. 
 `fun Array[T].reduce(f: (T, T) => T): T ` | For an array `Array(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
 
-##### AvlTree
+#### AvlTree
 TBD
 
-#### Predefined global functions
+### Predefined global functions
 
 ErgoScript standard library include predefined functions that can be called 
 without prior declaration. 
