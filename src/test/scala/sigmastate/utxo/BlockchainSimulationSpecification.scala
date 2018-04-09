@@ -5,7 +5,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.encode.Base16
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate.Values.IntConstant
 import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.ErgoBox.R3
@@ -18,6 +18,8 @@ class BlockchainSimulationSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers {
+
+  private lazy val hash = Blake2b256
 
   class InMemoryErgoBoxReader(prover: ValidationState.BatchProver) extends ErgoBoxReader {
     private val boxes = mutable.Map[ErgoBox.BoxId, ErgoBox]()
@@ -66,8 +68,6 @@ class BlockchainSimulationSpecification extends PropSpec
   object ValidationState {
     type BatchProver = BatchAVLProver[Digest32, Blake2b256Unsafe]
 
-    private lazy val hash = new Blake2b256Unsafe()
-
     val initBlock = Block {
       (1 to 20).map{ i =>
         val h = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
@@ -98,11 +98,9 @@ class BlockchainSimulationSpecification extends PropSpec
     val miner = new ErgoProvingInterpreter()
     val minerPubKey = miner.dlogSecrets.head.publicImage
 
-    println(state.boxesReader.allIds.size)
-
     val txs = boxesToSpend.map{box =>
-      val newBox = ErgoBox(10, minerPubKey, Map())
-      println("new box id: " + Base16.encode(newBox.id))
+      val h = hash.hash(scala.util.Random.nextString(16).getBytes)
+      val newBox = ErgoBox(10, minerPubKey, Map(), h)
       val fakeInput = Input(box.id, null)
       val tx = ErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBox))
       val context = ErgoContext(state.state.currentHeight + 1,
@@ -121,7 +119,5 @@ class BlockchainSimulationSpecification extends PropSpec
 
     val updStateTry = state.applyBlock(block)
     updStateTry.isSuccess shouldBe true
-
-    println(updStateTry.get.boxesReader.allIds.size)
   }
 }
