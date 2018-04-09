@@ -2,9 +2,8 @@ package sigmastate.utxo
 
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
-import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate.Values.IntConstant
 import sigmastate.interpreter.ContextExtension
@@ -43,7 +42,7 @@ class BlockchainSimulationSpecification extends PropSpec
       prover.generateProof()
     }
 
-    def digest = prover.digest
+    def digest: ADDigest = prover.digest
   }
 
   case class Block(txs: IndexedSeq[ErgoTransaction])
