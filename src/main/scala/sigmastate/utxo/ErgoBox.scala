@@ -40,8 +40,10 @@ object Box {
   * A transaction is unsealing a box. As a box can not be open twice, any further valid transaction can not link to the
   * same box.
   *
-  * @param value
+  * @param value - amount of money associated with the box
   * @param proposition guarding script, which should be evaluated to true in order to open this box
+  * @param transactionId - id of transaction which created the box
+  * @param boxId - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
   * @param additionalRegisters
   */
 class ErgoBox private( override val value: Long,
