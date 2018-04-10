@@ -98,6 +98,7 @@ class BlockchainSimulationSpecification extends PropSpec
     val minerPubKey = miner.dlogSecrets.head.publicImage
 
     val txs = boxesToSpend.map{box =>
+      //todo: real txId in newBox
       val txId = hash.hash(scala.util.Random.nextString(16).getBytes)
       val newBox = ErgoBox(10, minerPubKey, Map(), txId)
       val fakeInput = Input(box.id, null)

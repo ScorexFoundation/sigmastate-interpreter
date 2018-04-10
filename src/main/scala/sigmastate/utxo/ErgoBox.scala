@@ -67,9 +67,9 @@ class ErgoBox private( override val value: Long,
   override lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
   //TODO: val propositionBytes = ValueSerializer.serialize(proposition)
-  val propositionBytes = proposition.toString.getBytes
+  val propositionBytes: Array[Byte] = proposition.toString.getBytes
 
-  lazy val bytes = serializer.toBytes(this)
+  lazy val bytes: Array[Byte] = serializer.toBytes(this)
 
   def serializer: Serializer[ErgoBox] = new Serializer[ErgoBox] {
     //todo: serialize registers
