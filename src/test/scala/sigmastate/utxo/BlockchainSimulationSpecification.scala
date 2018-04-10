@@ -99,8 +99,8 @@ class BlockchainSimulationSpecification extends PropSpec
 
     val txs = boxesToSpend.map{box =>
       val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey)
-      val fakeInput = Input(box.id, null)
-      val tx = ErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBoxCandidate))
+      val fakeInput = UnsignedInput(box.id)
+      val tx = UnsignedErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBoxCandidate))
       val context = ErgoContext(state.state.currentHeight + 1,
                                 state.state.lastBlockUtxoRoot,
                                 IndexedSeq(box),
@@ -109,8 +109,7 @@ class BlockchainSimulationSpecification extends PropSpec
                                 ContextExtension.empty)
       val proverResult = miner.prove(box.proposition, context, tx.messageToSign).get
 
-      val realInput = Input(box.id, proverResult)
-      ErgoTransaction(IndexedSeq(realInput), IndexedSeq(newBoxCandidate))
+      tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq
 
     val block = Block(txs)
