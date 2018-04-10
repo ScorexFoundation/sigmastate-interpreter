@@ -90,7 +90,7 @@ class BlockchainSimulationSpecification extends PropSpec
     }
   }
 
-  property("apply one block") {
+  property("apply one valid block") {
     val state = ValidationState.initialState()
     val boxesToSpend = state.boxesReader.byR3Value(1)
 
@@ -98,11 +98,9 @@ class BlockchainSimulationSpecification extends PropSpec
     val minerPubKey = miner.dlogSecrets.head.publicImage
 
     val txs = boxesToSpend.map{box =>
-      //todo: real txId in newBox
-      val txId = hash.hash(scala.util.Random.nextString(16).getBytes)
-      val newBox = ErgoBox(10, minerPubKey, Map(), txId)
+      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey)
       val fakeInput = Input(box.id, null)
-      val tx = ErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBox))
+      val tx = ErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBoxCandidate))
       val context = ErgoContext(state.state.currentHeight + 1,
                                 state.state.lastBlockUtxoRoot,
                                 IndexedSeq(box),
@@ -112,7 +110,7 @@ class BlockchainSimulationSpecification extends PropSpec
       val proverResult = miner.prove(box.proposition, context, tx.messageToSign).get
 
       val realInput = Input(box.id, proverResult)
-      ErgoTransaction(IndexedSeq(realInput), IndexedSeq(newBox))
+      ErgoTransaction(IndexedSeq(realInput), IndexedSeq(newBoxCandidate))
     }.toIndexedSeq
 
     val block = Block(txs)
