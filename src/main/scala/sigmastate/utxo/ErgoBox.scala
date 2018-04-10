@@ -71,13 +71,7 @@ class ErgoBox private( override val value: Long,
 
   lazy val bytes: Array[Byte] = serializer.toBytes(this)
 
-  def serializer: Serializer[ErgoBox] = new Serializer[ErgoBox] {
-    //todo: serialize registers
-    override def toBytes(obj: ErgoBox): Array[Byte] =
-      Longs.toByteArray(obj.value) ++ obj.propositionBytes ++ transactionId ++ Shorts.toByteArray(boxId)
-
-    override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = ???
-  }
+  lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
 }
 
 object ErgoBox {
@@ -87,9 +81,18 @@ object ErgoBox {
             proposition: Value[SBoolean.type],
             additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
             transactionId: Digest32 = Digest32 @@ Array.fill(32)(0: Byte),
-            boxId: Short = 0
-           ): ErgoBox =
+            boxId: Short = 0): ErgoBox =
     new ErgoBox(value, proposition, transactionId, boxId, additionalRegisters)
+
+  object serializer extends Serializer[ErgoBox] {
+    override def toBytes(obj: ErgoBox): Array[Byte] =
+       bytesWithNoRef(obj) ++ obj.transactionId ++ Shorts.toByteArray(obj.boxId)
+
+    //todo: serialize registers
+    def bytesWithNoRef(obj: ErgoBox): Array[Byte] = Longs.toByteArray(obj.value) ++ obj.propositionBytes
+
+    override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = ???
+  }
 
   sealed trait RegisterIdentifier {
     val number: Byte
