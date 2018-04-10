@@ -6,30 +6,35 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate._
 import Values._
 import sigmastate.serialization.Serializer
-import sigmastate.utxo.ErgoBox.NonMandatoryIdentifier
+import sigmastate.utxo.ErgoBox.{NonMandatoryIdentifier, serializer}
 
 import scala.util.Try
 
-/**
-  *
-  * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In bitcoin, such an object
-  * is associated with some monetary value (arbitrary, but with predefined precision, so we use integer arithmetic to
-  * work with the value), guarding script (aka proposition) to protect the box from unauthorized opening.
-  *
-  * In other way, a box is a state element locked by some proposition.
-  */
-trait Box[P <: Value[SBoolean.type]] {
-  val value: Box.Amount
-  val proposition: P
-
-  val id: ADKey
-}
 
 object Box {
   type Amount = Long
 }
 
+class ErgoBoxCandidate ( val value: Long,
+                         val proposition: Value[SBoolean.type],
+                         val additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()) {
+
+  //TODO: val propositionBytes = ValueSerializer.serialize(proposition)
+  val propositionBytes: Array[Byte] = proposition.toString.getBytes
+
+  lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
+
+  def toBox(txId: Digest32, boxId: Short) = ErgoBox(value, proposition, additionalRegisters, txId, boxId)
+}
+
+
 /**
+  * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In bitcoin, such an object
+  * is associated with some monetary value (arbitrary, but with predefined precision, so we use integer arithmetic to
+  * work with the value), guarding script (aka proposition) to protect the box from unauthorized opening.
+  *
+  * In other way, a box is a state element locked by some proposition.
+  *
   * We add two additional fields to the box. In the first place, for carrying data along we use registers.
   * Corresponding field is called "additional registers", as we consider that amount and proposition are also stored
   * in the registers R1 and R2. In the second place, we have a "nonce" field to guarantee unique id. For a real
@@ -50,8 +55,8 @@ class ErgoBox private( override val value: Long,
                        override val proposition: Value[SBoolean.type],
                        val transactionId: Digest32,
                        val boxId: Short,
-                       additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()
-                     ) extends Box[Value[SBoolean.type]] {
+                       override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()
+                     ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
 
   import sigmastate.utxo.ErgoBox._
 
@@ -64,14 +69,9 @@ class ErgoBox private( override val value: Long,
     }
   }
 
-  override lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
-
-  //TODO: val propositionBytes = ValueSerializer.serialize(proposition)
-  val propositionBytes: Array[Byte] = proposition.toString.getBytes
+  lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
   lazy val bytes: Array[Byte] = serializer.toBytes(this)
-
-  lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
 }
 
 object ErgoBox {
@@ -89,7 +89,7 @@ object ErgoBox {
        bytesWithNoRef(obj) ++ obj.transactionId ++ Shorts.toByteArray(obj.boxId)
 
     //todo: serialize registers
-    def bytesWithNoRef(obj: ErgoBox): Array[Byte] = Longs.toByteArray(obj.value) ++ obj.propositionBytes
+    def bytesWithNoRef(obj: ErgoBoxCandidate): Array[Byte] = Longs.toByteArray(obj.value) ++ obj.propositionBytes
 
     override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = ???
   }

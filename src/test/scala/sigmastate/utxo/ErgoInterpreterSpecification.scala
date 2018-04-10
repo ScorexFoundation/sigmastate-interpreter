@@ -1059,12 +1059,12 @@ class ErgoInterpreterSpecification extends PropSpec
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyB2 = proverB.dlogSecrets.head.publicImage
 
-    val newBox1 = ErgoBox(10, pubkeyB2)
-    val newBox2 = ErgoBox(10, pubkeyA2)
+    val newBox1 = new ErgoBoxCandidate(10, pubkeyB2)
+    val newBox2 = new ErgoBoxCandidate(10, pubkeyA2)
 
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val properBytes = Bytes.concat(newBoxes.map(_.bytes): _*)
+    val properBytes = Bytes.concat(newBoxes.map(_.bytesWithNoRef): _*)
 
     val properHash = Blake2b256(properBytes)
 
@@ -1075,7 +1075,7 @@ class ErgoInterpreterSpecification extends PropSpec
       val compiledProp = compile(env,
         """{
           |  let notTimePassed = HEIGHT <= timeout
-          |  let outBytes = OUTPUTS.map(fun (box: Box) = box.bytes)
+          |  let outBytes = OUTPUTS.map(fun (box: Box) = box.bytesWithNoRef)
           |  let outSumBytes = outBytes.fold(EmptyByteArray, fun (arr1: ByteArray, arr2: ByteArray) = arr2 ++ arr1)
           |  let timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
@@ -1083,7 +1083,7 @@ class ErgoInterpreterSpecification extends PropSpec
 
       val prop = OR(
         AND(LE(Height, IntConstant(timeout)),
-          EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytes(TaggedBox(21))))),
+          EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))))),
             ByteArrayConstant(properHash))),
         AND(GT(Height, IntConstant(timeout)), sender)
       )

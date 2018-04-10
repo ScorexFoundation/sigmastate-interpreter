@@ -18,7 +18,13 @@ case class Input(boxId: ADKey, spendingProof: ProverResult[UncheckedTree]) {
 }
 
 
-case class ErgoTransaction(inputs: IndexedSeq[Input], outputs: IndexedSeq[ErgoBox]) {
+case class ErgoTransaction(inputs: IndexedSeq[Input],
+                           private val outputCandidates: IndexedSeq[ErgoBoxCandidate]) {
+
+  require(outputCandidates.size <= Short.MaxValue)
+
+  lazy val outputs = outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
+
   def concatBytes(seq: Traversable[Array[Byte]]): Array[Byte] = {
     val length: Int = seq.map(_.length).sum
     val result: Array[Byte] = new Array[Byte](length)
@@ -31,7 +37,7 @@ case class ErgoTransaction(inputs: IndexedSeq[Input], outputs: IndexedSeq[ErgoBo
   }
 
   lazy val messageToSign: Array[Byte] =
-    Bytes.concat(if (outputs.nonEmpty) concatBytes(outputs.map(_.bytesWithNoRef)) else Array[Byte](),
+    Bytes.concat(if (outputCandidates.nonEmpty) concatBytes(outputCandidates.map(_.bytesWithNoRef)) else Array[Byte](),
       concatBytes(inputs.map(_.boxId)))
 
   lazy val id: Digest32 = Blake2b256.hash(messageToSign)

@@ -213,6 +213,12 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytes)
 }
 
+case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override lazy val cost: Int = 1000 //todo: make it PerKb * max box size in kbs
+
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytesWithNoRef)
+}
+
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
   override lazy val cost: Int = 10
 

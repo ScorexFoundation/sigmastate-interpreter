@@ -161,10 +161,12 @@ case object SBox extends SProduct {
   val Value = "value"
   val Id = "id"
   val Bytes = "bytes"
+  val BytesWithNoRef = "bytesWithNoRef"
   val fields = Vector(
     Value -> SInt,                   // see ExtractAmount
     PropositionBytes -> SByteArray,  // see ExtractScriptBytes
     Bytes -> SByteArray,             // see ExtractBytes
+    BytesWithNoRef -> SByteArray,    // see ExtractBytesWithNoRef
     Id -> SByteArray                 // see ExtractId
   ) ++ registers()
 }
