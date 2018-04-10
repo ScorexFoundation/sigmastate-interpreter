@@ -31,7 +31,7 @@ case class ErgoTransaction(inputs: IndexedSeq[Input], outputs: IndexedSeq[ErgoBo
   }
 
   lazy val messageToSign: Array[Byte] =
-    Bytes.concat(if (outputs.nonEmpty) concatBytes(outputs.map(_.bytes)) else Array[Byte](),
+    Bytes.concat(if (outputs.nonEmpty) concatBytes(outputs.map(_.bytesWithNoRef)) else Array[Byte](),
       concatBytes(inputs.map(_.boxId)))
 
   lazy val id: Digest32 = Blake2b256.hash(messageToSign)
