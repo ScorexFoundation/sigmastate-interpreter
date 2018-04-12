@@ -66,7 +66,6 @@ object Values {
     val id: Byte
   }
 
-  //todo: make PreservingNonNegativeIntLeaf for registers which value should be preserved?
   case object UnitConstant extends EvaluatedValue[SUnit.type] {
     override val opCode = ValueSerializer.UnitConstantCode
     override val cost = 1

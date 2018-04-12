@@ -115,6 +115,8 @@ case object NoType extends SType {
   val typeCode = 0
 }
 
+
+//todo: make PreservingNonNegativeInt type for registers which value should be preserved?
 case object SInt extends SPrimType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 1: Byte

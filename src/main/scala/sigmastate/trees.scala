@@ -77,6 +77,8 @@ object OR {
 case class AND(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
 
+  override val opCode: ValueSerializer.OpCode = ValueSerializer.AndCode
+
   override def cost: Int = input match {
     case c: EvaluatedValue[SCollection[SBoolean.type]] =>
       c.value.map(_.cost).sum + c.value.length * Cost.AndPerChild + Cost.AndDeclaration
