@@ -96,7 +96,8 @@ trait Interpreter {
           require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
           ByteArrayConstant(l.value ++ r.value
           )
-        case c@CalcBlake2b256(l: EvaluatedValue[SByteArray.type]) if l.evaluated => c.function(l)
+
+        case c:CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray.type]])
 
         case Exponentiate(l: GroupElementConstant, r: BigIntConstant) =>
           GroupElementConstant(dlogGroup.exponentiate(l.value, r.value))

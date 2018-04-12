@@ -6,12 +6,13 @@ import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
 import scapi.sigma._
 import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.hash.{Blake2b256, CryptographicHash, CryptographicHash32, Sha256}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.OpCode
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.Values._
+
 import scala.annotation.tailrec
 import scala.collection.mutable
 
@@ -149,14 +150,23 @@ case class ByteArrayToBigInt(input: Value[SByteArray.type])
   override lazy val cost: Int = input.cost + 1 //todo: externalize cost
 }
 
+trait CalcHash extends Transformer[SByteArray.type, SByteArray.type] with NotReadyValueByteArray {
+  val input: Value[SByteArray.type]
 
-case class CalcBlake2b256(input: Value[SByteArray.type])
-  extends Transformer[SByteArray.type, SByteArray.type] with NotReadyValueByteArray {
+  val hashFn: CryptographicHash32
 
   override def function(bal: EvaluatedValue[SByteArray.type]): Value[SByteArray.type] =
-    ByteArrayConstant(Blake2b256(bal.value))
+    ByteArrayConstant(hashFn.apply(bal.value))
 
   override lazy val cost: Int = input.cost + Cost.Blake256bDeclaration
+}
+
+case class CalcBlake2b256(override val input: Value[SByteArray.type]) extends CalcHash {
+  override val hashFn: CryptographicHash32 = Blake2b256
+}
+
+case class CalcSha256(override val input: Value[SByteArray.type]) extends CalcHash {
+  override val hashFn: CryptographicHash32 = Sha256
 }
 
 case class Not(input: Value[SBoolean.type])
