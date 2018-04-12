@@ -18,10 +18,10 @@ class RelationSerializerSpecification extends TableSerializationSpecification {
       (NEQ(TrueLeaf, FalseLeaf), Base58.decode("9kSQ").get)
     )
 
-  tableRoundTripTest("Relation serializers roundtrip")
-  tablePredefinedBytesTest("Relations deserialize from predefined bytes")
+  tableRoundTripTest("Relations: serializer round trip")
+  tablePredefinedBytesTest("Relations: deserialize from predefined bytes")
 
-  property("serialization LT(bool, bool) must fail") {
+  property("Relations: serialization LT(bool, bool) must fail") {
     assertThrows[Error] {
       deserialize(Array[Byte](21, 12, 13))
     }
