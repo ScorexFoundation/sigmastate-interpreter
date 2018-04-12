@@ -1,6 +1,5 @@
 package sigmastate.serialization
 
-import scorex.crypto.encode.Base58
 import sigmastate.Values.IntConstant
 
 class IntConstantSerializerSpecification extends SerializationSpecification {
@@ -13,7 +12,7 @@ class IntConstantSerializerSpecification extends SerializationSpecification {
 
   property("IntConstant deserialize from predefined bytes") {
     val value = IntConstant(1)
-    val bytes = Base58.decode("981jCC8syJPa").get
+    val bytes = Array[Byte](11, 0, 0, 0, 0, 0, 0, 0, 1)
     predefinedBytesTest(bytes, value)
   }
 }

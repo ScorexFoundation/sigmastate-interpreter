@@ -1,8 +1,7 @@
 package sigmastate.serialization
 
-import scorex.crypto.encode.Base58
-import sigmastate._
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.serialization.ValueSerializer._
 
 class RelationSerializerSpecification extends TableSerializationSpecification {
@@ -10,12 +9,12 @@ class RelationSerializerSpecification extends TableSerializationSpecification {
   override val objects =
     Table(
       ("object", "bytes"),
-      (LT(IntConstant(2), IntConstant(3)), Base58.decode("4rSL7c2zGG9UMVp7sCiUkULyV4").get),
-      (LE(IntConstant(2), IntConstant(3)), Base58.decode("534BTm8S6piPbJymrgrtX8dpBL").get),
-      (GT(IntConstant(6), IntConstant(5)), Base58.decode("5Dg2ovDswPHJqMBQqM9ia9UCXN").get),
-      (GE(IntConstant(6), IntConstant(5)), Base58.decode("5QHtA5KKmwrE5AM4pqJ8Lom3De").get),
-      (EQ(TrueLeaf, FalseLeaf), Base58.decode("9QxU").get),
-      (NEQ(TrueLeaf, FalseLeaf), Base58.decode("9kSQ").get)
+      (LT(IntConstant(2), IntConstant(3)), Array[Byte](21, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (LE(IntConstant(2), IntConstant(3)), Array[Byte](22, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (GT(IntConstant(6), IntConstant(5)), Array[Byte](23, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
+      (GE(IntConstant(6), IntConstant(5)), Array[Byte](24, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
+      (EQ(TrueLeaf, FalseLeaf), Array[Byte](25, 12, 13)),
+      (NEQ(TrueLeaf, FalseLeaf), Array[Byte](26, 12, 13))
     )
 
   tableRoundTripTest("Relations: serializer round trip")

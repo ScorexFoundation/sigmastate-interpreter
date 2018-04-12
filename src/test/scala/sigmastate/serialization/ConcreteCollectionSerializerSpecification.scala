@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.SInt
-import sigmastate.Values.{IntConstant, TaggedInt, TaggedBox, ConcreteCollection}
+import sigmastate.Values.{ConcreteCollection, IntConstant, TaggedInt}
 
 import scala.util.Random
 
