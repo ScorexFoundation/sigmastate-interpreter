@@ -4,14 +4,14 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks, TableD
 import org.scalatest.{Assertion, Matchers, PropSpec}
 import sigmastate.Values._
 import sigmastate.SType
-import sigmastate.serialization.generators.{ConcreteCollectionGenerators, SingleValueGenerators}
+import sigmastate.serialization.generators.{ConcreteCollectionGenerators, ValueGeneratots}
 
 trait SerializationSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with TableDrivenPropertyChecks
   with Matchers
-  with SingleValueGenerators
+  with ValueGeneratots
   with ConcreteCollectionGenerators {
 
   protected def roundTripTest[V <: Value[_ <: SType]](v: V): Assertion = {
