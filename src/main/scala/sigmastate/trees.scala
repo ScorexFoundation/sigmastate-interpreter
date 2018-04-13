@@ -33,6 +33,8 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
 
+  override val opCode: ValueSerializer.OpCode = ValueSerializer.OrCode
+
   override def cost: Int = input match {
     case c: ConcreteCollection[SBoolean.type] =>
       c.value.map(_.cost).sum + c.value.length * Cost.AndPerChild + Cost.AndDeclaration
