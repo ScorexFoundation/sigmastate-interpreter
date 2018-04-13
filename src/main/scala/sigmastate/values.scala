@@ -42,14 +42,19 @@ object Values {
     type PropositionCode = Byte
 
     implicit def liftInt(n: Int): Value[SInt.type] = IntConstant(n)
+
     implicit def liftLong(n: Long): Value[SInt.type] = IntConstant(n)
+
     implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray.type] = ByteArrayConstant(arr)
+
     implicit def liftBigInt(arr: BigInteger): Value[SBigInt.type] = BigIntConstant(arr)
+
     implicit def liftGroupElement(g: GroupSettings.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
     }
+
   }
 
   trait EvaluatedValue[S <: SType] extends Value[S] {
@@ -152,19 +157,23 @@ object Values {
   }
 
 
-case class GroupElementConstant(value: GroupSettings.EcPointType) extends EvaluatedValue[SGroupElement.type] {
-  override val cost = 10
-  override def tpe = SGroupElement
-}
+  case class GroupElementConstant(value: GroupSettings.EcPointType) extends EvaluatedValue[SGroupElement.type] {
+    override val cost = 10
+
+    override def tpe = SGroupElement
+  }
 
 
-case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
-  import GroupSettings.dlogGroup
+  case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
 
-  override val cost = 10
-  override def tpe = SGroupElement
-  override val value: GroupSettings.EcPointType = dlogGroup.generator
-}
+    import GroupSettings.dlogGroup
+
+    override val cost = 10
+
+    override def tpe = SGroupElement
+
+    override val value: GroupSettings.EcPointType = dlogGroup.generator
+  }
 
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
     override val cost = 10
@@ -173,7 +182,7 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
   }
 
   case class TaggedGroupElement(override val id: Byte)
-      extends TaggedVariable[SGroupElement.type] with NotReadyValueGroupElement {
+    extends TaggedVariable[SGroupElement.type] with NotReadyValueGroupElement {
   }
 
   sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type] {
@@ -209,9 +218,12 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
     */
   trait SigmaBoolean extends NotReadyValue[SBoolean.type] {
     override lazy val evaluated = true
+
     override def tpe = SBoolean
+
     def fields: Seq[(String, SType)] = SigmaBoolean.fields
   }
+
   object SigmaBoolean {
     val PropBytes = "propBytes"
     val IsValid = "isValid"
@@ -250,7 +262,7 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
   }
 
   case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tItem: V)
-      extends EvaluatedValue[SCollection[V]] with Rewritable {
+    extends EvaluatedValue[SCollection[V]] with Rewritable {
     override val opCode = ValueSerializer.ConcreteCollectionCode
     val cost: Int = value.size
     val tpe = SCollection[V](tItem)
@@ -261,7 +273,7 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
     def deconstruct = immutable.Seq[Any](tItem) ++ items
 
     def reconstruct(cs: immutable.Seq[Any]) = cs match {
-      case Seq(t: SType, vs @ _*) => ConcreteCollection[SType](vs.asInstanceOf[Seq[Value[V]]].toIndexedSeq)(t)
+      case Seq(t: SType, vs@_*) => ConcreteCollection[SType](vs.asInstanceOf[Seq[Value[V]]].toIndexedSeq)(t)
       case _ =>
         illegalArgs("ConcreteCollection", "(IndexedSeq, SType)", cs)
     }
