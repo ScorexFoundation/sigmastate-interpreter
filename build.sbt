@@ -4,7 +4,7 @@ name := "sigma-state"
 
 version := "0.0.1"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.5"
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
