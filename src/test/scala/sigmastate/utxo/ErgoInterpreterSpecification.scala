@@ -10,11 +10,14 @@ import scorex.crypto.hash.{Digest32, Blake2b256, Blake2b256Unsafe}
 import sigmastate._
 import sigmastate.Values._
 import BoxHelpers.createBox
+import fastparse.core.{Parsed, ParseError}
+import fastparse.core.Parsed.{Success, Failure}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import sigmastate.interpreter.GroupSettings
-import sigmastate.lang.{SigmaBinder, SigmaParser, SigmaTyper, SigmaSpecializer}
+import sigmastate.lang._
 import sigmastate.lang.Terms._
+import sigmastate.lang.syntax.ParserException
 import sigmastate.utxo.ErgoBox._
 
 
@@ -28,18 +31,9 @@ class ErgoInterpreterSpecification extends PropSpec
 
   import BoxHelpers.{fakeMessage, fakeSelf}
 
-  def parse(x: String): SValue = SigmaParser(x).get.value
-
+  val compiler = new SigmaCompiler
   def compile(env: Map[String, Any], code: String): Value[SType] = {
-    val parsed = parse(code)
-    val binder = new SigmaBinder(env)
-    val bound = binder.bind(parsed)
-    val st = new SigmaTree(bound)
-    val typer = new SigmaTyper
-    val typed = typer.typecheck(bound)
-    val spec = new SigmaSpecializer
-    val ir = spec.specialize(typed)
-    ir
+    compiler.compile(env, code)
   }
 
   property("scripts EQ/NEQ") {
