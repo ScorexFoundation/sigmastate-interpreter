@@ -39,6 +39,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   val TupleCode = 36: Byte
   val AndCode = 37: Byte
   val OrCode = 38: Byte
+  val NotCode = 39: Byte
 
   val table = Seq[ValueSerializer[_ <: Value[SType]]](
     RelationSerializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
