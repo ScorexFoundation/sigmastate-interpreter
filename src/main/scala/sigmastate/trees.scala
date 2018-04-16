@@ -174,6 +174,8 @@ case class CalcSha256(override val input: Value[SByteArray.type]) extends CalcHa
 case class Not(input: Value[SBoolean.type])
   extends Transformer[SBoolean.type, SBoolean.type] with NotReadyValueBoolean {
 
+  override val opCode: OpCode = ValueSerializer.NotCode
+
   override def function(bal: EvaluatedValue[SBoolean.type]): Value[SBoolean.type] =
     BooleanConstant.fromBoolean(!bal.value)
 

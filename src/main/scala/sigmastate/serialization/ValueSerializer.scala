@@ -54,7 +54,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ConcreteCollectionSerializer,
     AndSerializer,
     OrSerializer,
-    TaggedVariableSerializer
+    TaggedVariableSerializer,
+    NotSerializer
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
