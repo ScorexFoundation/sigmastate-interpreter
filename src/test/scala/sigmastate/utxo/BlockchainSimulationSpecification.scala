@@ -1,7 +1,9 @@
 package sigmastate.utxo
 
+import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
@@ -10,6 +12,7 @@ import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.ErgoBox.R3
 import sigmastate.{AvlTreeData, GE}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Try
 
@@ -90,31 +93,56 @@ class BlockchainSimulationSpecification extends PropSpec
     }
   }
 
-  property("apply one valid block") {
-    val state = ValidationState.initialState()
-    val boxesToSpend = state.boxesReader.byR3Value(1)
 
-    val miner = new ErgoProvingInterpreter()
+  def generateBlock(state: ValidationState, miner: ErgoProvingInterpreter, height: Int = 1): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
-
+    val boxesToSpend = state.boxesReader.byR3Value(height)
     val txs = boxesToSpend.map{box =>
       val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey)
       val fakeInput = UnsignedInput(box.id)
       val tx = UnsignedErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBoxCandidate))
       val context = ErgoContext(state.state.currentHeight + 1,
-                                state.state.lastBlockUtxoRoot,
-                                IndexedSeq(box),
-                                tx,
-                                box,
-                                ContextExtension.empty)
+        state.state.lastBlockUtxoRoot,
+        IndexedSeq(box),
+        tx,
+        box,
+        ContextExtension.empty)
       val proverResult = miner.prove(box.proposition, context, tx.messageToSign).get
 
       tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq
 
-    val block = Block(txs)
+    Block(txs)
+  }
 
+  property("apply one valid block") {
+    val state = ValidationState.initialState()
+    val miner = new ErgoProvingInterpreter()
+    val block = generateBlock(state, miner)
     val updStateTry = state.applyBlock(block)
     updStateTry.isSuccess shouldBe true
+  }
+
+  property("apply many blocks") {
+    val state = ValidationState.initialState()
+    val miner = new ErgoProvingInterpreter()
+
+    @tailrec
+    def checkState(state: ValidationState,
+                   miner: ErgoProvingInterpreter,
+                   currentLevel: Int,
+                   limit: Int): Unit = currentLevel match {
+      case i if i >= limit =>
+         ()
+      case _ => {
+        val block = generateBlock(state, miner, currentLevel + 1)
+        val updStateTry = state.applyBlock(block)
+        updStateTry.isSuccess shouldBe true
+        checkState(updStateTry.get, miner, currentLevel + 1, limit)
+      }
+    }
+
+    val randomDeepness = Gen.chooseNum(10, 20).sample.getOrElse(15)
+    checkState(state, miner, 0, randomDeepness)
   }
 }
