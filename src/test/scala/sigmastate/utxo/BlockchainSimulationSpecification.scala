@@ -94,9 +94,9 @@ class BlockchainSimulationSpecification extends PropSpec
   }
 
 
-  def generateBlock(state: ValidationState, miner: ErgoProvingInterpreter): Block = {
+  def generateBlock(state: ValidationState, miner: ErgoProvingInterpreter, height: Int = 1): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
-    val boxesToSpend = state.boxesReader.byR3Value(1)
+    val boxesToSpend = state.boxesReader.byR3Value(height)
     val txs = boxesToSpend.map{box =>
       val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey)
       val fakeInput = UnsignedInput(box.id)
@@ -132,16 +132,17 @@ class BlockchainSimulationSpecification extends PropSpec
                    miner: ErgoProvingInterpreter,
                    currentLevel: Int,
                    limit: Int): Unit = currentLevel match {
-      case i if i >= limit => ()
+      case i if i >= limit =>
+         ()
       case _ => {
-        val block = generateBlock(state, miner)
+        val block = generateBlock(state, miner, currentLevel + 1)
         val updStateTry = state.applyBlock(block)
         updStateTry.isSuccess shouldBe true
         checkState(updStateTry.get, miner, currentLevel + 1, limit)
       }
     }
 
-    val randomDeepness = Gen.chooseNum(100, 150).sample.getOrElse(100)
+    val randomDeepness = Gen.chooseNum(10, 20).sample.getOrElse(15)
     checkState(state, miner, 0, randomDeepness)
   }
 }
