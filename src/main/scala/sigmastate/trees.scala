@@ -184,8 +184,6 @@ case class Not(input: Value[SBoolean.type])
 
 
 
-
-
 /**
   * A tree node with left and right descendants
   */
@@ -197,40 +195,69 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
   override def cost: Int = left.cost + right.cost + Cost.TripleDeclaration
 }
 
+// TwoArgumentsOperation
 
-sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType] extends Triple[LIV, RIV, OV]
+sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
+  extends Triple[LIV, RIV, OV]
 
-case class Plus(override val left: Value[SInt.type], override val right: Value[SInt.type])
-  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
+case class Plus(override val left: Value[SInt.type],
+                override val right: Value[SInt.type])
+  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
+    with NotReadyValueInt {
 
-case class Minus(override val left: Value[SInt.type], override val right: Value[SInt.type])
-  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
+  override val opCode: OpCode = ValueSerializer.PlusCode
+}
+
+case class Minus(override val left: Value[SInt.type],
+                 override val right: Value[SInt.type])
+  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
+    with NotReadyValueInt {
+
+  override val opCode: OpCode = ValueSerializer.MinusCode
+}
 
 case class Xor(override val left: Value[SByteArray.type],
                override val right: Value[SByteArray.type])
-  extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type] with NotReadyValueByteArray
+  extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type]
+    with NotReadyValueByteArray {
+
+  override val opCode: OpCode = ValueSerializer.XorCode
+
+}
 
 case class AppendBytes(override val left: Value[SByteArray.type],
                        override val right: Value[SByteArray.type])
-  extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type] with NotReadyValueByteArray
+  extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type]
+    with NotReadyValueByteArray {
+
+  override val opCode: OpCode = ValueSerializer.AppendBytesCode
+}
 
 
-case class Exponentiate(override val left: Value[SGroupElement.type], override val right: Value[SBigInt.type])
+case class Exponentiate(override val left: Value[SGroupElement.type],
+                        override val right: Value[SBigInt.type])
   extends TwoArgumentsOperation[SGroupElement.type, SBigInt.type, SGroupElement.type]
     with NotReadyValueGroupElement {
+
+  override val opCode: OpCode = ValueSerializer.ExponentiateCode
 
   override val cost = 5000
 }
 
-case class MultiplyGroup(override val left: Value[SGroupElement.type], override val right: Value[SGroupElement.type])
+case class MultiplyGroup(override val left: Value[SGroupElement.type],
+                         override val right: Value[SGroupElement.type])
   extends TwoArgumentsOperation[SGroupElement.type, SGroupElement.type, SGroupElement.type]
     with NotReadyValueGroupElement{
+
+  override val opCode: OpCode = ValueSerializer.MultiplyGroupCode
 
   override val cost = 50
 }
 
+// Relation
 
-sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type] with NotReadyValueBoolean
+sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type]
+  with NotReadyValueBoolean
 
 
 case class LT(override val left: Value[SInt.type],
@@ -254,7 +281,9 @@ case class GE(override val left: Value[SInt.type],
 }
 
 //todo: make EQ to really accept only values of the same type, now EQ(TrueLeaf, IntConstant(5)) is valid
-case class EQ[S <: SType](override val left: Value[S], override val right: Value[S]) extends Relation[S, S] {
+case class EQ[S <: SType](override val left: Value[S],
+                          override val right: Value[S])
+  extends Relation[S, S] {
   override val opCode: OpCode = ValueSerializer.EqCode
 }
 

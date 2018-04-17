@@ -1,11 +1,10 @@
 package sigmastate.serialization
 
 import com.google.common.primitives.Chars
-import sigmastate.serialization.ValueSerializer.Position
+import sigmastate.SType
 import sigmastate.Values._
-import sigmastate.{SCollection,SType}
+import sigmastate.serialization.ValueSerializer.Position
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object ConcreteCollectionSerializer extends ValueSerializer[ConcreteCollection[_ <: SType]] {

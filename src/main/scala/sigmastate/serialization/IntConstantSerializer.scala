@@ -1,9 +1,9 @@
 package sigmastate.serialization
 
 import com.google.common.primitives.Longs
-import sigmastate.Values._
-import sigmastate.{SInt}
+import sigmastate.SInt
 import sigmastate.SType.TypeCode
+import sigmastate.Values._
 
 object IntConstantSerializer extends ValueSerializer[IntConstant] {
   import ValueSerializer._
@@ -17,3 +17,4 @@ object IntConstantSerializer extends ValueSerializer[IntConstant] {
 
   override def serializeBody(c: IntConstant) = Longs.toByteArray(c.value)
 }
+
