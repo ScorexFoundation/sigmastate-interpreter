@@ -78,7 +78,15 @@ class BlockchainSimulationSpecification extends PropSpec
       }
     }
 
-    def initialState(): ValidationState = {
+    val bigBlock = Block {
+      (1 to 400).map { i =>
+        val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
+        val boxes = (1 to 500).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
+        ErgoTransaction(IndexedSeq(), boxes)
+      }
+    }
+
+    def initialState(block: Block = initBlock): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 
@@ -89,7 +97,7 @@ class BlockchainSimulationSpecification extends PropSpec
 
       val boxReader = new InMemoryErgoBoxReader(prover)
 
-      ValidationState(bs, boxReader).applyBlock(initBlock).get
+      ValidationState(bs, boxReader).applyBlock(block).get
     }
   }
 
@@ -143,4 +151,37 @@ class BlockchainSimulationSpecification extends PropSpec
     val randomDeepness = Gen.chooseNum(10, 20).sample.getOrElse(15)
     checkState(state, miner, 0, randomDeepness)
   }
+
+  def bench(numberOfBlocks: Int) = {
+    property(s"apply $numberOfBlocks blocks benchmark") {
+      val state = ValidationState.initialState(ValidationState.bigBlock)
+      val miner = new ErgoProvingInterpreter()
+
+      @tailrec
+      def checkState(state: ValidationState,
+                     miner: ErgoProvingInterpreter,
+                     currentLevel: Int,
+                     limit: Int): Unit = currentLevel match {
+        case i if i >= limit => ()
+        case _ =>
+          val block = generateBlock(state, miner, currentLevel + 1)
+          val updStateTry = state.applyBlock(block)
+          updStateTry.isSuccess shouldBe true
+          checkState(updStateTry.get, miner, currentLevel + 1, limit)
+      }
+
+      val start = System.currentTimeMillis()
+      checkState(state, miner, 0, numberOfBlocks)
+      val end = System.currentTimeMillis()
+
+      println(s"Total time for $numberOfBlocks blocks: ${end - start} ms")
+    }
+  }
+
+  bench(100)
+  bench(150)
+  bench(200)
+  bench(300)
+  bench(400)
+
 }
