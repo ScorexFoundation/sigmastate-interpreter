@@ -19,7 +19,7 @@ object ByteArrayConstantSerializer extends ValueSerializer[ByteArrayConstant]{
 
     val valueBuffer = bytes.slice(pos + IntSize,  pos + IntSize + size)
 
-    (ByteArrayConstant(valueBuffer), pos + IntSize + size)
+    (ByteArrayConstant(valueBuffer), IntSize + size)
   }
 
   override def serializeBody(obj: ByteArrayConstant): Array[Byte] = {
