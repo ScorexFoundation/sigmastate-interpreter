@@ -9,6 +9,7 @@ import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.{SecP384R1Point, SecP521R1Point}
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import org.bouncycastle.util.BigIntegers
+import sigmastate.serialization.Serializer
 
 import scala.collection.mutable
 import scala.util.Try
@@ -668,6 +669,12 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     else if (t <= 1828) 8
     else 9
   }
+}
+
+class EcPointSerializer[ElemType <: ECPoint](curve: BcDlogFp[ElemType]) extends Serializer[ElemType] {
+  override def toBytes(obj: ElemType): Array[Byte] = ???
+
+  override def parseBytes(bytes: Array[Byte]): Try[ElemType] = ???
 }
 
 
