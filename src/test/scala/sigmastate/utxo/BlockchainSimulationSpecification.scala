@@ -15,6 +15,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Try
 
+
 class BlockchainSimulationSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
@@ -28,7 +29,7 @@ class BlockchainSimulationSpecification extends PropSpec
     override def byId(boxId: ADKey): Try[ErgoBox] = Try(boxes(boxId))
 
     def byR3Value(i: Int): Iterable[ErgoBox] =
-      boxes.values.filter(_.get(R3).getOrElse(IntConstant(i+1)) == IntConstant(i))
+      boxes.values.filter(_.get(R3).getOrElse(IntConstant(i + 1)) == IntConstant(i))
 
     def allIds: Iterable[ErgoBox.BoxId] = boxes.keys
 
@@ -53,7 +54,7 @@ class BlockchainSimulationSpecification extends PropSpec
     def applyBlock(block: Block): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
 
-      block.txs.foreach {tx =>
+      block.txs.foreach { tx =>
         ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader) match {
           case Left(throwable) => throw throwable
           case Right(_) =>
@@ -70,7 +71,7 @@ class BlockchainSimulationSpecification extends PropSpec
     type BatchProver = BatchAVLProver[Digest32, Blake2b256Unsafe]
 
     val initBlock = Block {
-      (1 to 20).map{ i =>
+      (1 to 20).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
         val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
         ErgoTransaction(IndexedSeq(), boxes)
@@ -84,7 +85,7 @@ class BlockchainSimulationSpecification extends PropSpec
       val digest = prover.digest
       val utxoRoot = AvlTreeData(digest, keySize)
 
-      val bs =  BlockchainState(currentHeight = 0, utxoRoot)
+      val bs = BlockchainState(currentHeight = 0, utxoRoot)
 
       val boxReader = new InMemoryErgoBoxReader(prover)
 
@@ -96,7 +97,7 @@ class BlockchainSimulationSpecification extends PropSpec
   def generateBlock(state: ValidationState, miner: ErgoProvingInterpreter, height: Int = 1): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
     val boxesToSpend = state.boxesReader.byR3Value(height)
-    val txs = boxesToSpend.map{box =>
+    val txs = boxesToSpend.map { box =>
       val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey)
       val fakeInput = UnsignedInput(box.id)
       val tx = UnsignedErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBoxCandidate))
