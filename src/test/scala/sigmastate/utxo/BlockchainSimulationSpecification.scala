@@ -1,5 +1,7 @@
 package sigmastate.utxo
 
+import java.io.{File, FileWriter, PrintWriter}
+
 import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
@@ -109,7 +111,7 @@ class BlockchainSimulationSpecification extends PropSpec
       val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey)
       val fakeInput = UnsignedInput(box.id)
       val tx = UnsignedErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBoxCandidate))
-      val context = ErgoContext(state.state.currentHeight + 1,
+      val context = ErgoContext(height + 1,
         state.state.lastBlockUtxoRoot,
         IndexedSeq(box),
         tx,
@@ -156,32 +158,37 @@ class BlockchainSimulationSpecification extends PropSpec
     property(s"apply $numberOfBlocks blocks benchmark") {
       val state = ValidationState.initialState(ValidationState.bigBlock)
       val miner = new ErgoProvingInterpreter()
+      val blocks = (0 to numberOfBlocks - 1).map { generateBlock(state, miner, _) }
+      val start = System.currentTimeMillis()
 
-      @tailrec
-      def checkState(state: ValidationState,
-                     miner: ErgoProvingInterpreter,
-                     currentLevel: Int,
-                     limit: Int): Unit = currentLevel match {
-        case i if i >= limit => ()
-        case _ =>
-          val block = generateBlock(state, miner, currentLevel + 1)
-          val updStateTry = state.applyBlock(block)
-          updStateTry.isSuccess shouldBe true
-          checkState(updStateTry.get, miner, currentLevel + 1, limit)
+      blocks.foldLeft(state: ValidationState) { case (s, b) =>
+        val updStateTry = s.applyBlock(b)
+        updStateTry.isSuccess shouldBe true
+        updStateTry.get
       }
 
-      val start = System.currentTimeMillis()
-      checkState(state, miner, 0, numberOfBlocks)
       val end = System.currentTimeMillis()
+      val time = end - start
 
-      println(s"Total time for $numberOfBlocks blocks: ${end - start} ms")
+      println(s"Total time for $numberOfBlocks blocks: $time ms")
+      printResults(numberOfBlocks, time)
     }
   }
 
   bench(100)
-  bench(150)
   bench(200)
   bench(300)
   bench(400)
+
+
+  def printResults(number: Int, time: Long): Unit = {
+    val file = new File("target/bench")
+    file.mkdirs()
+    val writer = new FileWriter(s"target/bench/result$number.csv", false)
+    writer.write("time\n")
+    writer.write(s"$time\n")
+    writer.flush
+    writer.close
+  }
 
 }
