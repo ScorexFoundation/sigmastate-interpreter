@@ -1,12 +1,12 @@
 package sigmastate.utxo
 
-import java.io.{File, FileWriter, PrintWriter}
+import java.io.{File, FileWriter}
 
 import org.scalacheck.Gen
-import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
+import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate.Values.IntConstant
 import sigmastate.interpreter.ContextExtension
@@ -14,6 +14,7 @@ import sigmastate.utxo.ErgoBox.R3
 import sigmastate.{AvlTreeData, GE}
 
 import scala.annotation.tailrec
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.util.Try
 
@@ -154,11 +155,16 @@ class BlockchainSimulationSpecification extends PropSpec
     checkState(state, miner, 0, randomDeepness)
   }
 
-  def bench(numberOfBlocks: Int) = {
-    property(s"apply $numberOfBlocks blocks benchmark") {
+  property(s"benchmarking applying many blocks") {
+    val results = new TrieMap[Int, Long]
+
+    def bench(numberOfBlocks: Int): Unit = {
+
       val state = ValidationState.initialState(ValidationState.bigBlock)
       val miner = new ErgoProvingInterpreter()
-      val blocks = (0 to numberOfBlocks - 1).map { generateBlock(state, miner, _) }
+      val blocks = (0 to numberOfBlocks - 1).map {
+        generateBlock(state, miner, _)
+      }
       val start = System.currentTimeMillis()
 
       blocks.foldLeft(state: ValidationState) { case (s, b) =>
@@ -171,24 +177,27 @@ class BlockchainSimulationSpecification extends PropSpec
       val time = end - start
 
       println(s"Total time for $numberOfBlocks blocks: $time ms")
-      printResults(numberOfBlocks, time)
+      results.put(numberOfBlocks, time)
+    }
+
+    bench(100)
+    bench(200)
+    bench(300)
+    bench(400)
+
+    printResults(results.toMap)
+
+    def printResults(results: Map[Int, Long]): Unit = {
+      val file = new File("target/bench")
+      file.mkdirs()
+      val writer = new FileWriter(s"target/bench/result.csv", false)
+      val sorted = results.toList.sortBy{case (i, _) => i}
+      val header = sorted.map(_._1).mkString(",")
+      writer.write(s"$header\n")
+      val values = sorted.map(_._2).mkString(",")
+      writer.write(s"$values\n")
+      writer.flush
+      writer.close
     }
   }
-
-  bench(100)
-  bench(200)
-  bench(300)
-  bench(400)
-
-
-  def printResults(number: Int, time: Long): Unit = {
-    val file = new File("target/bench")
-    file.mkdirs()
-    val writer = new FileWriter(s"target/bench/result$number.csv", false)
-    writer.write("time\n")
-    writer.write(s"$time\n")
-    writer.flush
-    writer.close
-  }
-
 }
