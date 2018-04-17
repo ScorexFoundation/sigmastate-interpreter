@@ -142,7 +142,7 @@ class SigmaTyper {
     case app @ ApplyTypes(sel: Select, targs) =>
       val newSel @ Select(obj, n, _) = assignType(env, sel)
       newSel.tpe match {
-        case genFunTpe @ SFunc(argTypes, tRes, tyVars) =>
+        case genFunTpe @ SFunc(_, _, tyVars) =>
           if (tyVars.length != targs.length)
             error(s"Wrong number of type arguments $app: expected $tyVars but provided $targs")
           val subst = tyVars.zip(targs).toMap
@@ -268,6 +268,8 @@ object SigmaTyper {
   type STypeSubst = Map[STypeIdent, SType]
   val emptySubst = Map.empty[STypeIdent, SType]
 
+  /** Performs pairwise type unification making sure each type variable is equally
+    * substituted in all items. */
   def unifyTypeLists(items1: Seq[SType], items2: Seq[SType]): Option[STypeSubst] = {
     // unify items pairwise independently
     val itemsUni = (items1, items2).zipped.map((t1, t2) => unifyTypes(t1,t2))
@@ -286,6 +288,7 @@ object SigmaTyper {
       None
   }
 
+  /** Finds a substitution of type variables such that applySubst(t1, subst) shouldBe t2 */
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
     case (id1 @ STypeIdent(n1), id2 @ STypeIdent(n2)) =>
       if (n1 == n2) Some(Map(id1 -> t2)) else None
