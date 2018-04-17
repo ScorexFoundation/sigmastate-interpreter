@@ -3,7 +3,6 @@ package sigmastate.utxo
 import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
@@ -132,14 +131,12 @@ class BlockchainSimulationSpecification extends PropSpec
                    miner: ErgoProvingInterpreter,
                    currentLevel: Int,
                    limit: Int): Unit = currentLevel match {
-      case i if i >= limit =>
-         ()
-      case _ => {
+      case i if i >= limit => ()
+      case _ =>
         val block = generateBlock(state, miner, currentLevel + 1)
         val updStateTry = state.applyBlock(block)
         updStateTry.isSuccess shouldBe true
         checkState(updStateTry.get, miner, currentLevel + 1, limit)
-      }
     }
 
     val randomDeepness = Gen.chooseNum(10, 20).sample.getOrElse(15)
