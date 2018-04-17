@@ -2,32 +2,16 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 
-import sigmastate.Values.{BigIntConstant, IntConstant}
+import sigmastate.Values.{BigIntConstant, ByteArrayConstant, IntConstant}
 
-class BigIntConstantSerializerSpecification extends SerializationSpecification {
+class BigIntConstantSerializerSpecification extends TableSerializationSpecification {
 
-  property("BigIntConstant: Serializer round trip") {
-    forAll { i: IntConstant =>
-      roundTripTest(i)
-    }
-  }
+  override def objects = Table(
+    ("object", "bytes"),
+    (BigIntConstant(BigInteger.valueOf(0)), Array[Byte](15, 0, 0, 0, 1, 0)),
+    (BigIntConstant(new BigInteger(Array[Byte](1,2,3,4,5))), Array[Byte](15, 0, 1, 0, 1, 1, 2, 3, 4, 5))
+  )
 
-  property("BigIntConstant = 0, deserialize from predefined bytes") {
-
-    val value = BigIntConstant(BigInteger.valueOf(0))
-
-    val bytes = Array[Byte](15, 0, 0, 0, 1, 0)
-
-    predefinedBytesTest(bytes, value)
-  }
-
-  property("BigIntConstant deserialize from predefined bytes") {
-
-    val value = BigIntConstant(new BigInteger(Array[Byte](1,2,3,4,5)))
-
-    val bytes = Array[Byte](15, 0, 1, 0, 1, 1, 2, 3, 4, 5)
-
-    predefinedBytesTest(bytes, value)
-  }
+  tableRoundTripTest("BigIntConstant: Serializer round trip")
+  tablePredefinedBytesTest("BigIntConstant: deserialize from predefined bytes")
 }
-

@@ -12,7 +12,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
 
-  val IntSize = 4
+  val IntSize = Integer.BYTES
 
   override val opCode: OpCode = ValueSerializer.BigIntConstantCode
 
@@ -30,12 +30,13 @@ object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
   override def serializeBody(c: BigIntConstant): Array[OpCode] = {
 
     val array = c.value.toByteArray
-    val size = array.size
-    require(size <= Int.MaxValue, "max collection size is Int.MaxValue")
-    val sizeBytes = Ints.toByteArray(array.size)
+    val length = array.size
+
+    require(length <= Int.MaxValue, "max collection size is Int.MaxValue")
+    val lengthBytes = Ints.toByteArray(length)
 
     val b = ArrayBuffer[Byte]()
-    b ++= sizeBytes
+    b ++= lengthBytes
     b ++= array
 
     b.toArray

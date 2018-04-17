@@ -116,6 +116,8 @@ object Values {
   case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
     override def cost: Int = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
+    override val opCode: OpCode = ValueSerializer.ByteArrayConstantCode
+
     override def tpe = SByteArray
 
     override def equals(obj: scala.Any): Boolean = obj match {

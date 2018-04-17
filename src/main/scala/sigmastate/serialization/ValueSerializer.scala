@@ -25,11 +25,12 @@ trait OpCodes {
 
   // EvaluatedValue descendants
 
-  val IntConstantCode:      OpCode = 11: Byte
-  val TrueCode:             OpCode = 12: Byte
-  val FalseCode:            OpCode = 13: Byte
-  val UnitConstantCode:     OpCode = 14: Byte
-  val BigIntConstantCode:   OpCode = 15: Byte
+  val IntConstantCode:        OpCode = 11: Byte
+  val TrueCode:               OpCode = 12: Byte
+  val FalseCode:              OpCode = 13: Byte
+  val UnitConstantCode:       OpCode = 14: Byte
+  val BigIntConstantCode:     OpCode = 15: Byte
+  val ByteArrayConstantCode:  OpCode = 16: Byte
 
   // Relation descendants
 
@@ -88,7 +89,8 @@ object ValueSerializer
     OrSerializer,
     TaggedVariableSerializer,
     NotSerializer,
-    BigIntConstantSerializer
+    BigIntConstantSerializer,
+    ByteArrayConstantSerializer
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
