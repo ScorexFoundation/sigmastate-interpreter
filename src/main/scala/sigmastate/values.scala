@@ -165,6 +165,8 @@ object Values {
   case class GroupElementConstant(value: GroupSettings.EcPointType) extends EvaluatedValue[SGroupElement.type] {
     override val cost = 10
 
+    override val opCode: OpCode = ValueSerializer.GroupElementConstantCode
+
     override def tpe = SGroupElement
   }
 

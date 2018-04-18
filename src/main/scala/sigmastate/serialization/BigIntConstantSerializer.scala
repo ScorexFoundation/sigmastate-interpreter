@@ -24,7 +24,7 @@ object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
     val size: Int = Ints.fromByteArray(sizeBuffer)
 
     val valueBuffer = bytes.slice(pos + IntSize,  pos + IntSize + size)
-    (BigIntConstant(new BigInteger(valueBuffer)), pos + IntSize + size)
+    (BigIntConstant(new BigInteger(valueBuffer)), IntSize + size)
   }
 
   override def serializeBody(c: BigIntConstant): Array[OpCode] = {

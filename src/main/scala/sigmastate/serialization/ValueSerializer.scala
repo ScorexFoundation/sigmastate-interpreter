@@ -25,12 +25,13 @@ trait OpCodes {
 
   // EvaluatedValue descendants
 
-  val IntConstantCode:        OpCode = 11: Byte
-  val TrueCode:               OpCode = 12: Byte
-  val FalseCode:              OpCode = 13: Byte
-  val UnitConstantCode:       OpCode = 14: Byte
-  val BigIntConstantCode:     OpCode = 15: Byte
-  val ByteArrayConstantCode:  OpCode = 16: Byte
+  val IntConstantCode:          OpCode = 11: Byte
+  val TrueCode:                 OpCode = 12: Byte
+  val FalseCode:                OpCode = 13: Byte
+  val UnitConstantCode:         OpCode = 14: Byte
+  val BigIntConstantCode:       OpCode = 15: Byte
+  val ByteArrayConstantCode:    OpCode = 16: Byte
+  val GroupElementConstantCode: OpCode = 17: Byte
 
   // Relation descendants
 
@@ -81,6 +82,7 @@ object ValueSerializer
     TwoArgumentsSerializerChecked(MinusCode, Minus.apply),
     TwoArgumentsSerializerChecked(PlusCode, Plus.apply),
 
+    GroupElementSerializer,
     IntConstantSerializer,
     TrueLeafSerializer,
     FalseLeafSerializer,
