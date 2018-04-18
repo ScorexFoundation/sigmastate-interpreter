@@ -8,11 +8,9 @@ import sigmastate.SType.TypeCode
 import sigmastate.Values.BigIntConstant
 import sigmastate.serialization.ValueSerializer._
 
-import scala.collection.mutable.ArrayBuffer
-
 object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
 
-  val IntSize = Integer.BYTES
+  val IntSize: Int = Integer.BYTES
 
   override val opCode: OpCode = ValueSerializer.BigIntConstantCode
 
@@ -24,21 +22,16 @@ object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
     val size: Int = Ints.fromByteArray(sizeBuffer)
 
     val valueBuffer = bytes.slice(pos + IntSize,  pos + IntSize + size)
-    (BigIntConstant(new BigInteger(valueBuffer)), IntSize + size)
+    BigIntConstant(new BigInteger(valueBuffer)) -> (IntSize + size)
   }
 
-  override def serializeBody(c: BigIntConstant): Array[OpCode] = {
+  override def serializeBody(obj: BigIntConstant): Array[Byte] = {
 
-    val array = c.value.toByteArray
-    val length = array.size
+    val data: Array[Byte] = obj.value.toByteArray
+    val length = data.length
 
     require(length <= Int.MaxValue, "max collection size is Int.MaxValue")
-    val lengthBytes = Ints.toByteArray(length)
 
-    val b = ArrayBuffer[Byte]()
-    b ++= lengthBytes
-    b ++= array
-
-    b.toArray
+    Ints.toByteArray(length) ++ data
   }
 }
