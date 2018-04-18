@@ -1,10 +1,12 @@
 package sigmastate.utxo
 
+import java.io.{File, FileWriter}
+
 import org.scalacheck.Gen
-import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
+import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate.Values.IntConstant
 import sigmastate.interpreter.ContextExtension
@@ -12,6 +14,7 @@ import sigmastate.utxo.ErgoBox.R3
 import sigmastate.{AvlTreeData, GE}
 
 import scala.annotation.tailrec
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.util.Try
 
@@ -78,7 +81,15 @@ class BlockchainSimulationSpecification extends PropSpec
       }
     }
 
-    def initialState(): ValidationState = {
+    val bigBlock = Block {
+      (1 to 400).map { i =>
+        val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
+        val boxes = (1 to 500).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
+        ErgoTransaction(IndexedSeq(), boxes)
+      }
+    }
+
+    def initialState(block: Block = initBlock): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 
@@ -89,7 +100,7 @@ class BlockchainSimulationSpecification extends PropSpec
 
       val boxReader = new InMemoryErgoBoxReader(prover)
 
-      ValidationState(bs, boxReader).applyBlock(initBlock).get
+      ValidationState(bs, boxReader).applyBlock(block).get
     }
   }
 
@@ -101,7 +112,7 @@ class BlockchainSimulationSpecification extends PropSpec
       val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey)
       val fakeInput = UnsignedInput(box.id)
       val tx = UnsignedErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBoxCandidate))
-      val context = ErgoContext(state.state.currentHeight + 1,
+      val context = ErgoContext(height + 1,
         state.state.lastBlockUtxoRoot,
         IndexedSeq(box),
         tx,
@@ -142,5 +153,51 @@ class BlockchainSimulationSpecification extends PropSpec
 
     val randomDeepness = Gen.chooseNum(10, 20).sample.getOrElse(15)
     checkState(state, miner, 0, randomDeepness)
+  }
+
+  property(s"benchmarking applying many blocks") {
+    val results = new TrieMap[Int, Long]
+
+    def bench(numberOfBlocks: Int): Unit = {
+
+      val state = ValidationState.initialState(ValidationState.bigBlock)
+      val miner = new ErgoProvingInterpreter()
+      val blocks = (0 to numberOfBlocks - 1).map {
+        generateBlock(state, miner, _)
+      }
+      val start = System.currentTimeMillis()
+
+      blocks.foldLeft(state: ValidationState) { case (s, b) =>
+        val updStateTry = s.applyBlock(b)
+        updStateTry.isSuccess shouldBe true
+        updStateTry.get
+      }
+
+      val end = System.currentTimeMillis()
+      val time = end - start
+
+      println(s"Total time for $numberOfBlocks blocks: $time ms")
+      results.put(numberOfBlocks, time)
+    }
+
+    bench(100)
+    bench(200)
+    bench(300)
+    bench(400)
+
+    printResults(results.toMap)
+
+    def printResults(results: Map[Int, Long]): Unit = {
+      val file = new File("target/bench")
+      file.mkdirs()
+      val writer = new FileWriter(s"target/bench/result.csv", false)
+      val sorted = results.toList.sortBy{case (i, _) => i}
+      val header = sorted.map(_._1).mkString(",")
+      writer.write(s"$header\n")
+      val values = sorted.map(_._2).mkString(",")
+      writer.write(s"$values\n")
+      writer.flush
+      writer.close
+    }
   }
 }
