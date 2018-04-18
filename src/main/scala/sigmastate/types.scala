@@ -125,6 +125,8 @@ case object SInt extends SPrimType {
 case object SBigInt extends SPrimType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 2: Byte
+
+  val Max = GroupSettings.dlogGroup.order //todo: we use mod q, maybe mod p instead?
 }
 
 case object SBoolean extends SPrimType {

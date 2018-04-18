@@ -99,7 +99,7 @@ object ErgoBox {
     def bytesWithNoRef(obj: ErgoBoxCandidate): Array[Byte] = {
       val registerBytes = nonMandatoryRegisters.foldLeft(Array.emptyByteArray){ case (ba, regId) =>
         obj.get(regId) match {
-          case Some(v) => ba //todo: fix ++ ValueSerializer.serialize(v)
+          case Some(v) => ba ++ ValueSerializer.serialize(v)
           case None => ba
         }
       }
