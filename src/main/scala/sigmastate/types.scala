@@ -218,6 +218,8 @@ object SCollection {
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 }
 
+/** Type description of optional values. Instances of `Option`
+  *  are either constructed by `Some` or by `None` constructors. */
 case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
   override type WrappedType = Option[Value[ElemType]]
   override val typeCode: TypeCode = SOption.TypeCode
