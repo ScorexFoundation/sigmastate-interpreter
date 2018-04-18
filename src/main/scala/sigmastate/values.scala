@@ -114,7 +114,6 @@ object Values {
   }
 
   case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
-    override val opCode = 15: Byte
 
     override def cost: Int = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
