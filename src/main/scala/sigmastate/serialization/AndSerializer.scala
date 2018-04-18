@@ -14,7 +14,7 @@ object AndSerializer extends ValueSerializer[AND] {
   // todo: (it is not checked by Scala)
   override def parseBody(bytes: Array[Byte], pos: Position) = {
     val (body, consumed) = ValueSerializer.deserialize(bytes, pos)
-    new AND(body.asInstanceOf[Value[SCollection[SBoolean.type]]]) -> consumed
+    AND(body.asInstanceOf[Value[SCollection[SBoolean.type]]]) -> consumed
   }
 
   override def serializeBody(and: AND): Array[TypeCode] = ValueSerializer.serialize(and.input)

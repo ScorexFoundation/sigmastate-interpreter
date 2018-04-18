@@ -12,7 +12,7 @@ object NotSerializer extends ValueSerializer[Not] {
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
     val (body, consumed) = ValueSerializer.deserialize(bytes, pos)
-    new Not(body.asInstanceOf[Value[SBoolean.type]]) -> consumed
+    Not(body.asInstanceOf[Value[SBoolean.type]]) -> consumed
   }
 
   override def serializeBody(not: Not): Array[TypeCode] = ValueSerializer.serialize(not.input)

@@ -10,7 +10,7 @@ object TrueLeafSerializer extends ValueSerializer[TrueLeaf.type] {
 
   val typeCode: TypeCode = SBoolean.typeCode
 
-  override def parseBody(bytes: Array[Byte], pos: Position) = (TrueLeaf, 0)
+  override def parseBody(bytes: Array[Byte], pos: Position) = (TrueLeaf, pos)
 
   override def serializeBody(obj: TrueLeaf.type) = Array[Byte]()
 }
