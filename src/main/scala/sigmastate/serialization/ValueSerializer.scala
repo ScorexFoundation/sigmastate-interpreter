@@ -28,6 +28,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   val FalseCode = 13: Byte
   val UnitConstantCode = 14: Byte
   val ByteArrayConstantCode = 15: Byte
+  val BigIntConstantCode = 16: Byte
 
   val LtCode = 21: Byte
   val LeCode = 22: Byte
@@ -49,6 +50,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     RelationSerializer(EqCode, EQ.applyNonTyped, Seq(Constraints.sameType2)),
     RelationSerializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
     IntConstantSerializer,
+    BigIntConstantSerializer,
     ByteArrayConstantSerializer,
     TrueLeafSerializer,
     FalseLeafSerializer,

@@ -2,14 +2,15 @@ package sigmastate.serialization.generators
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary._
-import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox, TaggedInt}
+import sigmastate.Values._
 
-trait ValueGeneratots {
+trait ValueGenerators {
 
   implicit val arbIntConstants: Arbitrary[IntConstant] = Arbitrary(intConstGen)
   implicit val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedIntGen)
   implicit val arbTaggedBox: Arbitrary[TaggedBox] = Arbitrary(taggedBoxGen)
   implicit val arbByteArrayConstant: Arbitrary[ByteArrayConstant] = Arbitrary(byteArrayConstantGen)
+  implicit val arbBigIntConstant: Arbitrary[BigIntConstant] = Arbitrary(bigIntConstantGen)
 
   val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map{v => IntConstant(v)}
   val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map{v => TaggedInt(v)}
@@ -18,6 +19,6 @@ trait ValueGeneratots {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
   } yield ByteArrayConstant(bytes.toArray)
-
+  val bigIntConstantGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map {v => BigIntConstant(v.bigInteger)}
 
 }

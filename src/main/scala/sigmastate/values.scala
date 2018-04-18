@@ -96,6 +96,7 @@ object Values {
   }
 
   case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
+    override val opCode = ValueSerializer.BigIntConstantCode
     override val cost = 1
 
     override def tpe = SBigInt
