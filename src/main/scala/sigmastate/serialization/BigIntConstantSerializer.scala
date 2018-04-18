@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 
-import com.google.common.primitives.Ints
+import com.google.common.primitives.{Ints, Shorts}
 import sigmastate.SBigInt
 import sigmastate.SType.TypeCode
 import sigmastate.Values.BigIntConstant
@@ -10,7 +10,7 @@ import sigmastate.serialization.ValueSerializer._
 
 object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
 
-  val IntSize: Int = Integer.BYTES
+  val lengthSize: Int = 2
 
   override val opCode: OpCode = ValueSerializer.BigIntConstantCode
 
@@ -18,11 +18,11 @@ object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
 
   override def parseBody(bytes: Array[Byte], pos: Position): (BigIntConstant, Position) = {
 
-    val sizeBuffer = bytes.slice(pos, pos + IntSize)
-    val size: Int = Ints.fromByteArray(sizeBuffer)
+    val sizeBuffer = bytes.slice(pos, pos + lengthSize)
+    val size: Short = Shorts.fromByteArray(sizeBuffer)
 
-    val valueBuffer = bytes.slice(pos + IntSize,  pos + IntSize + size)
-    BigIntConstant(new BigInteger(valueBuffer)) -> (IntSize + size)
+    val valueBuffer = bytes.slice(pos + lengthSize,  pos + lengthSize + size)
+    BigIntConstant(new BigInteger(valueBuffer)) -> (lengthSize + size)
   }
 
   override def serializeBody(obj: BigIntConstant): Array[Byte] = {
@@ -30,8 +30,8 @@ object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
     val data: Array[Byte] = obj.value.toByteArray
     val length = data.length
 
-    require(length <= Int.MaxValue, "max collection size is Int.MaxValue")
+    require(length <= Short.MaxValue, "max collection size is Short.MaxValue")
 
-    Ints.toByteArray(length) ++ data
+    Shorts.toByteArray(length.toShort) ++ data
   }
 }
