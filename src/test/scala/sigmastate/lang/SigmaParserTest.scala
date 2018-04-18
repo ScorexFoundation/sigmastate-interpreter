@@ -1,23 +1,38 @@
 package sigmastate.lang
 
+import fastparse.core.ParseError
+import fastparse.core.Parsed.Failure
+import org.scalactic.source.Position
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{SizeOf, Exists, Outputs}
+import sigmastate.utxo.{Outputs, SizeOf, Exists}
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
   def parse(x: String): SValue = {
     try {
       val res = SigmaParser(x).get.value
-//      Parser.logged.foreach(println)
       res
     } catch {
       case e: Exception =>
-//        SigmaParser.logged.foreach(println)
         throw e
+    }
+  }
+
+  def fail(x: String, index: Int): Unit = {
+    try {
+      val res = SigmaParser(x).get.value
+      assert(false, s"Error expected")
+    } catch {
+      case e: TestFailedException =>
+        throw e
+      case pe: ParseError[_,_] =>
+        val l = pe.failure.index
+        l shouldBe index
     }
   }
 
@@ -268,4 +283,12 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
   }
 
+  property("negative tests") {
+    fail("(10", 3)
+    fail("10)", 2)
+    fail("X)", 1)
+    fail("(X", 2)
+    fail("{ X", 3)
+    fail("{ let X", 7)
+  }
 }

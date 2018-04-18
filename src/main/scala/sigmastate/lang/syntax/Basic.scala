@@ -2,6 +2,8 @@ package sigmastate.lang.syntax
 
 import fastparse.all._
 import fastparse.CharPredicates._
+import fastparse.core.Parsed.Failure
+import sigmastate.lang.{SigmaException, SourceContext}
 
 object Basic {
   val UnicodeEscape = P( "u" ~ HexDigit ~ HexDigit ~ HexDigit ~ HexDigit )
@@ -34,10 +36,12 @@ object Basic {
   val Lower = P( CharPred(c => isLower(c) || c == '$' | c == '_') )
   val Upper = P( CharPred(isUpper) )
 
-  def error(msg: String) = throw new ParserException(msg)
+  def error(msg: String, parseError: Option[Failure[_,_]] = None) =
+    throw new ParserException(msg, parseError)
 }
 
-class ParserException(msg: String) extends Exception(msg)
+class ParserException(message: String, val parseError: Option[Failure[_,_]])
+  extends SigmaException(message, parseError.map(e => SourceContext(e.index)))
 
 /**
   * Most keywords don't just require the correct characters to match,

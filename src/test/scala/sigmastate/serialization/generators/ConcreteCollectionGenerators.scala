@@ -4,7 +4,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.SInt
 import sigmastate.Values.ConcreteCollection
 
-trait ConcreteCollectionGenerators { self: SingleValueGenerators =>
+trait ConcreteCollectionGenerators { self: ValueGeneratots =>
 
   val minCollLength = 1
   val maxCollLength = 10

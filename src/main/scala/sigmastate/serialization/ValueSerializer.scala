@@ -84,6 +84,7 @@ object ValueSerializer
 
     GroupElementSerializer,
     IntConstantSerializer,
+    ByteArrayConstantSerializer,
     TrueLeafSerializer,
     FalseLeafSerializer,
     ConcreteCollectionSerializer,
