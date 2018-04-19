@@ -33,26 +33,25 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
         AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
   }
 
-    property("let constructs") {
-      bind(env, "{let X = 10; X > 2}") shouldBe
-        Block(Let("X", SInt, IntConstant(10)), GT(IntIdent("X"), 2))
-      bind(env, "{let X = 10; X >= X}") shouldBe
-        Block(Let("X", SInt, IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
-      bind(env, "{let X = 10 + 1; X >= X}") shouldBe
-          Block(Let("X", SInt, Plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
-      bind(env,
-        """{let X = 10
-         |let Y = 11
-         |X > Y}
-        """.stripMargin) shouldBe Block(
-        Seq(Let("X", SInt, IntConstant(10)), Let("Y", SInt, IntConstant(11))),
-        GT(IntIdent("X"), IntIdent("Y")))
-      bind(env, "{let X = (10, true); X._1 > 2 && X._2}") shouldBe
-          Block(
-            Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)),
-            AND(GT(Select(IntIdent("X"), "_1").asValue[SInt.type], 2), Select(IntIdent("X"), "_2").asValue[SBoolean.type]))
-    }
-
+  property("let constructs") {
+    bind(env, "{let X = 10; X > 2}") shouldBe
+      Block(Let("X", SInt, IntConstant(10)), GT(IntIdent("X"), 2))
+    bind(env, "{let X = 10; X >= X}") shouldBe
+      Block(Let("X", SInt, IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
+    bind(env, "{let X = 10 + 1; X >= X}") shouldBe
+        Block(Let("X", SInt, Plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
+    bind(env,
+      """{let X = 10
+       |let Y = 11
+       |X > Y}
+      """.stripMargin) shouldBe Block(
+      Seq(Let("X", SInt, IntConstant(10)), Let("Y", SInt, IntConstant(11))),
+      GT(IntIdent("X"), IntIdent("Y")))
+    bind(env, "{let X = (10, true); X._1 > 2 && X._2}") shouldBe
+        Block(
+          Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)),
+          AND(GT(Select(IntIdent("X"), "_1").asValue[SInt.type], 2), Select(IntIdent("X"), "_2").asValue[SBoolean.type]))
+  }
 
   property("predefined Exists with lambda argument") {
     val minToRaise = IntConstant(1000)

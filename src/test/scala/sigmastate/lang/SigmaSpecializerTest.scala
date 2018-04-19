@@ -9,7 +9,7 @@ import sigmastate.lang.Terms.Ident
 
 class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
-  def typed(env: Map[String, Any], x: String): SValue = {
+  def typed(env: Map[String, SValue], x: String): SValue = {
     val parsed = SigmaParser(x).get.value
     val binder = new SigmaBinder(env)
     val bound = binder.bind(parsed)
@@ -23,6 +23,18 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
   }
   def spec(code: String): SValue = {
     spec(Map(), typed(Map(), code))
+  }
+  def fail(env: Map[String, SValue], code: String, messageSubstr: String = ""): Unit = {
+    try {
+      spec(env, typed(env, code))
+      assert(false, s"Should fail: $code")
+    } catch {
+      case e: SpecializerException =>
+        if (messageSubstr.nonEmpty)
+          if (!e.getMessage.contains(messageSubstr)) {
+            throw new AssertionError(s"Error message '${e.getMessage}' doesn't contain '$messageSubstr'.", e)
+          }
+    }
   }
 
   property("resolve let-bound names and substitute") {
@@ -41,5 +53,14 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
     spec("{ let X = 10; let Y = X; let Z = Y; Z }") shouldBe IntConstant(10)
     spec("{ let X = 10; let Y = X + 1; let Z = Y + X; Z + Y + X }") shouldBe
       Plus(Plus(/*Z=*/Plus(/*Y=*/Plus(10, 1), 10), /*Y=*/Plus(10, 1)), 10)
+  }
+
+  property("Option constructors") {
+    fail(Map(), "None", "Option values are not supported")
+    fail(Map(), "Some(10)", "Option values are not supported")
+    //    bind(env, "Some(None)") shouldBe SomeValue(NoneValue(NoType))
+//    bind(env, "Some(X)") shouldBe SomeValue(Ident("X"))
+//    bind(env, "Some(Some(X + 1))") shouldBe
+//        SomeValue(SomeValue(Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
   }
 }
