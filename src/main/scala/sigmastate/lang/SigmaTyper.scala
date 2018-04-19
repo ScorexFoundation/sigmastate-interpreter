@@ -298,10 +298,10 @@ object SigmaTyper {
       unifyTypes(e1.elemType, e2.elemType)
     case (e1: SOption[_], e2: SOption[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
-    case (e1: SOption[_], e2: SSome[_]) =>
-      unifyTypes(e1.elemType, e2.elemType)
-    case (e1: SOption[_], e2: SNone[_]) =>
-      unifyTypes(e1.elemType, e2.elemType)
+//    case (e1: SOption[_], e2: SSome[_]) =>
+//      unifyTypes(e1.elemType, e2.elemType)
+//    case (e1: SOption[_], e2: SNone[_]) =>
+//      unifyTypes(e1.elemType, e2.elemType)
     case (e1: STuple, e2: STuple) if e1.items.length == e2.items.length =>
       unifyTypeLists(e1.items, e2.items)
     case (e1: SFunc, e2: SFunc) if e1.tDom.length == e2.tDom.length =>

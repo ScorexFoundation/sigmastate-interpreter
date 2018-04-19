@@ -99,6 +99,15 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
           If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
   }
 
+  property("Option constructors") {
+    bind(env, "None") shouldBe NoneValue(NoType)
+    bind(env, "Some(None)") shouldBe SomeValue(NoneValue(NoType))
+    bind(env, "Some(10)") shouldBe SomeValue(IntConstant(10))
+    bind(env, "Some(X)") shouldBe SomeValue(Ident("X"))
+    bind(env, "Some(Some(X + 1))") shouldBe
+      SomeValue(SomeValue(Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
+  }
+
   property("array indexed access") {
     val col =
     bind(env, "Array(1)(0)") shouldBe ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0)

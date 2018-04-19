@@ -128,6 +128,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "Array(1, false)")
   }
 
+  property("Option constructors") {
+    typecheck(env, "Some(10)") shouldBe SOption(SInt)
+    typecheck(env, "Some(x)") shouldBe SOption(SInt)
+    typecheck(env, "Some(x + 1)") shouldBe SOption(SInt)
+    typecheck(env, "Some(Some(10))") shouldBe SOption(SOption(SInt))
+  }
+
   property("array indexed access") {
     typefail(env, "Array()(0)", "should have the same type")
     typecheck(env, "Array(0)(0)") shouldBe SInt
@@ -237,10 +244,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     check("Array[Array[A]]", "Array[Array[B]]", None)
 
     // NOTE: types SNone and SSome are only exist in IR but cannot be used in concrete syntax
-    checkTypes(SOption(SInt), SNone(SInt), Some(emptySubst))
-    checkTypes(SOption(SOption(SInt)), SOption(SNone(SInt)), Some(emptySubst))
-    checkTypes(SOption(SInt), SSome(SInt), Some(emptySubst))
-    checkTypes(SOption(SOption(SInt)), SOption(SSome(SInt)), Some(emptySubst))
+//    checkTypes(SOption(SInt), SNone(SInt), Some(emptySubst))
+//    checkTypes(SOption(SOption(SInt)), SOption(SNone(SInt)), Some(emptySubst))
+//    checkTypes(SOption(SInt), SSome(SInt), Some(emptySubst))
+//    checkTypes(SOption(SOption(SInt)), SOption(SSome(SInt)), Some(emptySubst))
 
     unify("A", "Option[Boolean]", ("A", ty("Option[Boolean]")))
     unify("Option[A]", "Option[Int]", ("A", SInt))
