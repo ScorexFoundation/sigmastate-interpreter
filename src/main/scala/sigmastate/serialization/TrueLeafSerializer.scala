@@ -4,9 +4,10 @@ import sigmastate.SBoolean
 import sigmastate.SType.TypeCode
 import sigmastate.Values.TrueLeaf
 import sigmastate.serialization.ValueSerializer.Position
+import OpCodes._
 
 object TrueLeafSerializer extends ValueSerializer[TrueLeaf.type] {
-  override val opCode = ValueSerializer.TrueCode
+  override val opCode: OpCode = TrueCode
 
   val typeCode: TypeCode = SBoolean.typeCode
 

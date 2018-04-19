@@ -4,10 +4,11 @@ import sigmastate.Values.GroupElementConstant
 import ValueSerializer._
 import sigmastate.interpreter.GroupSettings
 import sigmastate.interpreter.GroupSettings.EcPointType
+import sigmastate.serialization.OpCodes._
 
 object GroupElementSerializer extends ValueSerializer[GroupElementConstant] {
 
-  override val opCode: OpCode = ValueSerializer.GroupElementConstantCode
+  override val opCode: OpCode = GroupElementConstantCode
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
 

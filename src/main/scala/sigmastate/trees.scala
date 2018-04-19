@@ -8,7 +8,7 @@ import scapi.sigma._
 import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, CryptographicHash32, Sha256}
 import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.ValueSerializer.OpCode
+import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.Values._
@@ -33,7 +33,7 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
 
-  override val opCode: ValueSerializer.OpCode = ValueSerializer.OrCode
+  override val opCode: OpCode = OrCode
 
   override def cost: Int = input match {
     case c: ConcreteCollection[SBoolean.type] =>
@@ -80,7 +80,7 @@ object OR {
 case class AND(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
 
-  override val opCode: ValueSerializer.OpCode = ValueSerializer.AndCode
+  override val opCode: OpCode = AndCode
 
   override def cost: Int = input match {
     case c: EvaluatedValue[SCollection[SBoolean.type]] =>
@@ -174,7 +174,7 @@ case class CalcSha256(override val input: Value[SByteArray.type]) extends CalcHa
 case class Not(input: Value[SBoolean.type])
   extends Transformer[SBoolean.type, SBoolean.type] with NotReadyValueBoolean {
 
-  override val opCode: OpCode = ValueSerializer.NotCode
+  override val opCode: OpCode = NotCode
 
   override def function(bal: EvaluatedValue[SBoolean.type]): Value[SBoolean.type] =
     BooleanConstant.fromBoolean(!bal.value)
@@ -205,7 +205,7 @@ case class Plus(override val left: Value[SInt.type],
   extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
     with NotReadyValueInt {
 
-  override val opCode: OpCode = ValueSerializer.PlusCode
+  override val opCode: OpCode = PlusCode
 }
 
 case class Minus(override val left: Value[SInt.type],
@@ -213,7 +213,7 @@ case class Minus(override val left: Value[SInt.type],
   extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
     with NotReadyValueInt {
 
-  override val opCode: OpCode = ValueSerializer.MinusCode
+  override val opCode: OpCode = MinusCode
 }
 
 case class Xor(override val left: Value[SByteArray.type],
@@ -221,7 +221,7 @@ case class Xor(override val left: Value[SByteArray.type],
   extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type]
     with NotReadyValueByteArray {
 
-  override val opCode: OpCode = ValueSerializer.XorCode
+  override val opCode: OpCode = XorCode
 
 }
 
@@ -230,7 +230,7 @@ case class AppendBytes(override val left: Value[SByteArray.type],
   extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type]
     with NotReadyValueByteArray {
 
-  override val opCode: OpCode = ValueSerializer.AppendBytesCode
+  override val opCode: OpCode = AppendBytesCode
 }
 
 
@@ -239,7 +239,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
   extends TwoArgumentsOperation[SGroupElement.type, SBigInt.type, SGroupElement.type]
     with NotReadyValueGroupElement {
 
-  override val opCode: OpCode = ValueSerializer.ExponentiateCode
+  override val opCode: OpCode = ExponentiateCode
 
   override val cost = 5000
 }
@@ -249,7 +249,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
   extends TwoArgumentsOperation[SGroupElement.type, SGroupElement.type, SGroupElement.type]
     with NotReadyValueGroupElement{
 
-  override val opCode: OpCode = ValueSerializer.MultiplyGroupCode
+  override val opCode: OpCode = MultiplyGroupCode
 
   override val cost = 50
 }
@@ -262,29 +262,29 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
 
 case class LT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]{
-  override val opCode: OpCode = ValueSerializer.LtCode
+  override val opCode: OpCode = LtCode
 }
 
 case class LE(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
-  override val opCode: OpCode = ValueSerializer.LeCode
+  override val opCode: OpCode = LeCode
 }
 
 case class GT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
-  override val opCode: OpCode = ValueSerializer.GtCode
+  override val opCode: OpCode = GtCode
 }
 
 case class GE(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
-  override val opCode: OpCode = ValueSerializer.GeCode
+  override val opCode: OpCode = GeCode
 }
 
 //todo: make EQ to really accept only values of the same type, now EQ(TrueLeaf, IntConstant(5)) is valid
 case class EQ[S <: SType](override val left: Value[S],
                           override val right: Value[S])
   extends Relation[S, S] {
-  override val opCode: OpCode = ValueSerializer.EqCode
+  override val opCode: OpCode = EqCode
 }
 
 object EQ {
@@ -293,7 +293,7 @@ object EQ {
 
 case class NEQ(override val left: Value[SType],
                                          override val right: Value[SType]) extends Relation[SType, SType] {
-  override val opCode: OpCode = ValueSerializer.NeqCode
+  override val opCode: OpCode = NeqCode
 }
 
 

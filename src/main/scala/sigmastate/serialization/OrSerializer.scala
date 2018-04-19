@@ -2,11 +2,12 @@ package sigmastate.serialization
 
 import sigmastate.SType.TypeCode
 import sigmastate.Values.Value
-import sigmastate.serialization.ValueSerializer.{OpCode, Position}
+import sigmastate.serialization.ValueSerializer.Position
 import sigmastate.{OR, SBoolean, SCollection}
+import sigmastate.serialization.OpCodes._
 
 object OrSerializer extends ValueSerializer[OR] {
-  override val opCode: OpCode = ValueSerializer.OrCode
+  override val opCode: OpCode = OrCode
   val typeCode: TypeCode = SBoolean.typeCode
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {

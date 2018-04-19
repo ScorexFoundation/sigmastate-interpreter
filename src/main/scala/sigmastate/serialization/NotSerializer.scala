@@ -4,10 +4,11 @@ import sigmastate.SType.TypeCode
 import sigmastate.Values.Value
 import sigmastate.serialization.ValueSerializer.Position
 import sigmastate.{Not, SBoolean}
+import sigmastate.serialization.OpCodes._
 
 object NotSerializer extends ValueSerializer[Not] {
 
-  override val opCode = ValueSerializer.NotCode
+  override val opCode = NotCode
   val typeCode: TypeCode = SBoolean.typeCode
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
