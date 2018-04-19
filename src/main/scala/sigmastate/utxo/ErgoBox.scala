@@ -103,10 +103,16 @@ object ErgoBox {
           case None => ba
         }
       }
-      Longs.toByteArray(obj.value) ++ obj.propositionBytes ++ registerBytes
+      val propBytes = obj.propositionBytes
+      val propBytesLength = Shorts.toByteArray(propBytes.length.toShort)
+      Longs.toByteArray(obj.value) ++ propBytesLength ++ propBytes ++ registerBytes
     }
 
-    override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = ???
+    override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = Try {
+      require(bytes.length > 42, "box(long value + proposition + txid + outid) should be 43 bytes at least")
+      val value = Longs.fromByteArray(bytes.take(8))
+      ???
+    }
   }
 
   sealed trait RegisterIdentifier {
