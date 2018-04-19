@@ -1454,7 +1454,7 @@ class ErgoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctxv, pr, fakeMessage).get shouldBe true
   }
 
-  property("prove keys from registers") {
+  property("Prove keys from registers") {
     val prover = new ErgoProvingInterpreter
     val verifier = new ErgoInterpreter
 
@@ -1476,19 +1476,30 @@ class ErgoInterpreterSpecification extends PropSpec
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
-
+    val s1 = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
 
     val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
-      self = s)
+      self = s1)
+
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
 
-    //todo: check failing cases
+
+    //make sure that wrong case couldn't be proved
+    val s2 = ErgoBox(20, TrueLeaf, Map(R4 -> pubkey2.value, R5 -> pubkey1.value))
+    val wrongCtx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction,
+      self = s2)
+
+    prover.prove(prop, wrongCtx, fakeMessage).toOption shouldBe None
+    verifier.verify(prop, wrongCtx, pr, fakeMessage).toOption shouldBe None
   }
 
   /**
@@ -1503,6 +1514,7 @@ class ErgoInterpreterSpecification extends PropSpec
     val pubkey2 = prover.dlogSecrets(1).publicImage
 
     val brother = ErgoBox(10, pubkey1)
+    val brotherWithWrongId = ErgoBox(10, pubkey1, boxId = 120: Short)
 
     val newBox = ErgoBox(20, pubkey2)
 
@@ -1534,7 +1546,15 @@ class ErgoInterpreterSpecification extends PropSpec
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
 
-    //todo: check failing branches
+    val wrongCtx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(brotherWithWrongId, s),
+      spendingTransaction,
+      self = s)
+
+    prover.prove(prop, wrongCtx, fakeMessage).toOption shouldBe None
+    verifier.verify(prop, wrongCtx, pr, fakeMessage).get shouldBe false
   }
 
   property("Not / If"){
