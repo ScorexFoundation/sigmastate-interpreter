@@ -243,12 +243,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     unify("Array[Array[A]]", "Array[Array[A]]")
     check("Array[Array[A]]", "Array[Array[B]]", None)
 
-    // NOTE: types SNone and SSome are only exist in IR but cannot be used in concrete syntax
-//    checkTypes(SOption(SInt), SNone(SInt), Some(emptySubst))
-//    checkTypes(SOption(SOption(SInt)), SOption(SNone(SInt)), Some(emptySubst))
-//    checkTypes(SOption(SInt), SSome(SInt), Some(emptySubst))
-//    checkTypes(SOption(SOption(SInt)), SOption(SSome(SInt)), Some(emptySubst))
-
     unify("A", "Option[Boolean]", ("A", ty("Option[Boolean]")))
     unify("Option[A]", "Option[Int]", ("A", SInt))
     unify("Option[A]", "Option[(Int, Box)]", ("A", ty("(Int, Box)")))

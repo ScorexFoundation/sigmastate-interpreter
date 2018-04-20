@@ -245,48 +245,6 @@ object SOption {
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
 
-//case class SSome[ElemType <: SType](elemType: ElemType) extends SProduct {
-//  override type WrappedType = Some[Value[ElemType]]
-//  override val typeCode: TypeCode = SSome.TypeCode
-//
-//  val ancestors = Seq(SOption(elemType))
-//
-//  override lazy val fields = {
-//    val subst = Map(SSome.tT -> elemType)
-//    SSome.fields.map { case (n, t) => (n, SigmaTyper.applySubst(t, subst)) }
-//  }
-//  override def toString = s"Some[$elemType]"
-//}
-//
-//object SSome {
-//  val TypeCode: TypeCode = 82: Byte
-//  private val tT = STypeIdent("T")
-//  val fields: Seq[(String, SType)] = SOption.createFields(tT)
-//  def apply[T <: SType](implicit elemType: T, ov: Overload1): SSome[T] = SSome(elemType)
-//  def unapply[T <: SType](tOpt: SSome[T]): Option[T] = Some(tOpt.elemType)
-//}
-//
-//case class SNone[ElemType <: SType](elemType: ElemType) extends SProduct {
-//  override type WrappedType = None.type
-//  override val typeCode: TypeCode = SNone.TypeCode
-//
-//  val ancestors = Seq(SOption(elemType))
-//
-//  override lazy val fields = {
-//    val subst = Map(SNone.tT -> elemType)
-//    SNone.fields.map { case (n, t) => (n, SigmaTyper.applySubst(t, subst)) }
-//  }
-//  override def toString = s"None[$elemType]"
-//}
-
-//object SNone {
-//  val TypeCode: TypeCode = 83: Byte
-//  private val tT = STypeIdent("T")
-//  val fields: Seq[(String, SType)] = SOption.createFields(tT)
-//  def apply[T <: SType](implicit elemType: T, ov: Overload1): SNone[T] = SNone(elemType)
-//  def unapply[T <: SType](tOpt: SNone[T]): Option[T] = Some(tOpt.elemType)
-//}
-
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil) extends SType {
   override type WrappedType = Seq[Any] => tRange.WrappedType
   override val typeCode = SFunc.TypeCode

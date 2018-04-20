@@ -4,7 +4,6 @@ import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Ident
 
 class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers with LangTests {
@@ -58,9 +57,5 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
   property("Option constructors") {
     fail(Map(), "None", "Option values are not supported")
     fail(Map(), "Some(10)", "Option values are not supported")
-    //    bind(env, "Some(None)") shouldBe SomeValue(NoneValue(NoType))
-//    bind(env, "Some(X)") shouldBe SomeValue(Ident("X"))
-//    bind(env, "Some(Some(X + 1))") shouldBe
-//        SomeValue(SomeValue(Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
   }
 }
