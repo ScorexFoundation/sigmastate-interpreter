@@ -263,6 +263,23 @@ object Values {
     def apply(items: Seq[Value[SType]])(implicit o: Overload1): Tuple = Tuple(items.toIndexedSeq)
   }
 
+  trait OptionValue[T <: SType] extends EvaluatedValue[SOption[T]] {
+  }
+
+  case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
+    override val opCode = ValueSerializer.SomeValueCode
+    def cost: Int = x.cost + 1
+    val tpe = SOption(x.tpe)
+    lazy val value = Some(x)
+  }
+
+  case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
+    override val opCode = ValueSerializer.NoneValueCode
+    def cost: Int = 1
+    val tpe = SOption(elemType)
+    lazy val value = None
+  }
+
   case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tItem: V)
     extends EvaluatedValue[SCollection[V]] with Rewritable {
     override val opCode = ValueSerializer.ConcreteCollectionCode
