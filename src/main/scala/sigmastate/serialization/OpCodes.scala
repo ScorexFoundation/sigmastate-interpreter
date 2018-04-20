@@ -40,4 +40,7 @@ object OpCodes {
   val AppendBytesCode:    OpCode = 43: Byte
   val ExponentiateCode:   OpCode = 44: Byte
   val MultiplyGroupCode:  OpCode = 45: Byte
+
+  val SomeValueCode: OpCode = 50: Byte
+  val NoneValueCode: OpCode = 51: Byte
 }
