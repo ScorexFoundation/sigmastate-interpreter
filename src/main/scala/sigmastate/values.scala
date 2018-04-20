@@ -273,14 +273,14 @@ object Values {
   }
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
-    override val opCode = ValueSerializer.SomeValueCode
+    override val opCode = SomeValueCode
     def cost: Int = x.cost + 1
     val tpe = SOption(x.tpe)
     lazy val value = Some(x)
   }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
-    override val opCode = ValueSerializer.NoneValueCode
+    override val opCode = NoneValueCode
     def cost: Int = 1
     val tpe = SOption(elemType)
     lazy val value = None

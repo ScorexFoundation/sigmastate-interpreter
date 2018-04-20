@@ -21,7 +21,7 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
 object ValueSerializer
   extends SigmaSerializerCompanion[Value[SType]] {
 
-  val table = Seq[ValueSerializer[_ <: Value[SType]]](
+  val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
 
     RelationSerializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
     RelationSerializer(GeCode, GE.apply, Seq(Constraints.onlyInt2)),
@@ -53,7 +53,7 @@ object ValueSerializer
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
     val c = bytes(pos)
     val handler = table(c)
-    val (v, consumed) = handler.parseBody(bytes, pos + 1)
+    val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
     (v, consumed + 1)
   }
 
