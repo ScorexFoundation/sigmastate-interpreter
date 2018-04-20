@@ -3,6 +3,7 @@ package sigmastate.utxo
 import com.google.common.primitives.Bytes
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.encode.Base16
@@ -19,7 +20,6 @@ import sigmastate.lang._
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
 import sigmastate.utxo.ErgoBox._
-
 
 class ErgoInterpreterSpecification extends PropSpec
   with PropertyChecks
@@ -1485,8 +1485,8 @@ class ErgoInterpreterSpecification extends PropSpec
       spendingTransaction,
       self = s1)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    val pr = prover.prove(prop, ctx, fakeMessage).success.value
+    verifier.verify(prop, ctx, pr, fakeMessage).success.value shouldBe true
 
 
     //make sure that wrong case couldn't be proved
@@ -1498,8 +1498,8 @@ class ErgoInterpreterSpecification extends PropSpec
       spendingTransaction,
       self = s2)
 
-    prover.prove(prop, wrongCtx, fakeMessage).toOption shouldBe None
-    verifier.verify(prop, wrongCtx, pr, fakeMessage).toOption shouldBe None
+    prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
+    verifier.verify(prop, wrongCtx, pr, fakeMessage).isFailure shouldBe true
   }
 
   /**
@@ -1543,8 +1543,8 @@ class ErgoInterpreterSpecification extends PropSpec
       spendingTransaction,
       self = s)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    val pr = prover.prove(prop, ctx, fakeMessage).success.value
+    verifier.verify(prop, ctx, pr, fakeMessage).success.value shouldBe true
 
     val wrongCtx = ErgoContext(
       currentHeight = 50,
@@ -1553,8 +1553,18 @@ class ErgoInterpreterSpecification extends PropSpec
       spendingTransaction,
       self = s)
 
-    prover.prove(prop, wrongCtx, fakeMessage).toOption shouldBe None
-    verifier.verify(prop, wrongCtx, pr, fakeMessage).get shouldBe false
+    prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
+    verifier.verify(prop, wrongCtx, pr, fakeMessage).success.value shouldBe false
+
+    val prop2 = compile(env,
+      """{
+        |  let okInputs = INPUTS.size == 3
+        |  let okIds = INPUTS(0).id == brother.id
+        |  okInputs && okIds
+         }""".stripMargin).asBoolValue
+
+    prover.prove(prop2, ctx, fakeMessage).isFailure shouldBe true
+    verifier.verify(prop2, ctx, pr, fakeMessage).success.value shouldBe false
   }
 
   property("Not / If"){
