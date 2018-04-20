@@ -34,7 +34,7 @@ object ValueSerializer
 
     TwoArgumentsSerializer(XorCode, Xor.apply),
     TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
-    TwoConstrainedArgumentsSerializer(ExponentiateCode, Exponentiate.apply, Seq(Constraints.sameType2)),
+    TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
     TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
     TwoArgumentsSerializer(MinusCode, Minus.apply),
     TwoArgumentsSerializer(PlusCode, Plus.apply),
