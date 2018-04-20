@@ -1,11 +1,17 @@
 package gf2t;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+//import static org.junit.Assert.assertTrue;
+
+@RunWith(ReadableTest.class)
 public class GF2_128Test {
 
     private static class GF2t {
@@ -99,52 +105,61 @@ public class GF2_128Test {
     }
 
     @Test
-    public void constructorAndEqualityTest() {
-        System.out.println("Testing constructors, isZero, isOne, equality");
+    public void constructorEmpty() {
         GF2_128 t = new GF2_128();
         long[] r = t.toLongArray();
-        if (!t.isZero() || r.length != 2 || r[1] != 0l || r[0] != 0l) {
-            System.out.println("Fail: empty constructor.");
+        assertFalse("Fail: empty constructor.", !t.isZero() || r.length != 2 || r[1] != 0l || r[0] != 0l);
+    }
 
-        }
+    @Test
+    public void constructorZero() {
+        GF2_128 t = new GF2_128(0);
+        long[] r = t.toLongArray();
+        assertFalse("Fail: constructor on 0 int", !t.isZero() || r.length != 2 || r[1] != 0l || r[0] != 0l);
+    }
 
-        t = new GF2_128(0);
-        r = t.toLongArray();
-        if (!t.isZero() || r.length != 2 || r[1] != 0l || r[0] != 0l) {
-            System.out.println("Fail: constructor on 0 int");
-        }
+    @Test
+    public void constructorOne() {
+        GF2_128 t = new GF2_128(1);
+        long[] r = t.toLongArray();
+        assertFalse("Fail: constructor on 1 int", !t.isOne() || r.length != 2 || r[1] != 0l || r[1] != 0l);
+    }
 
-        t = new GF2_128(1);
-        r = t.toLongArray();
-        if (!t.isOne() || r.length != 2 || r[1] != 0l || r[1] != 0l) {
-            System.out.println("Fail: constructor on 1 int");
-        }
+    @Test
+    public void constructorNegativeOne() {
+        GF2_128 t = new GF2_128(-1);
+        long[] r = t.toLongArray();
+        assertFalse("Fail: constructor on 0xFFFFFFFF int", r[0] != 0xFFFFFFFFL || r[1] != 0l);
+    }
 
-        t = new GF2_128(-1);
-        r = t.toLongArray();
-        if (r[0] != 0xFFFFFFFFL || r[1] != 0l) {
-            System.out.println("Fail: constructor on 0xFFFFFFFF int " + t);
-        }
-
+    @Test
+    public void constructorLongArray() {
         long[] s = new long[2];
-
         s[0] = 123345l;
         s[1] = 123567891234567l;
+        GF2_128 t = new GF2_128(s);
+        long[] r = t.toLongArray();
+        assertFalse("Fail: constructor on long array", r[0] != s[0] || r[1] != s[1]);
+    }
 
-        t = new GF2_128(s);
-
+    @Test
+    public void constructorCopy() {
+        long[] s = new long[2];
+        s[0] = 123345l;
+        s[1] = 123567891234567l;
+        GF2_128 t = new GF2_128(s);
         GF2_128 t1 = new GF2_128(t);
+        long[] r = t1.toLongArray();
+        assertFalse("Fail: copy constructor", r[0] != s[0] || r[1] != s[1]);
+    }
 
-        r = t.toLongArray();
-        if (r[0] != s[0] || r[1] != s[1]) {
-            System.out.println("Fail: constructor on long array");
-        }
-
-
-        r = t1.toLongArray();
-        if (r[0] != s[0] || r[1] != s[1]) {
-            System.out.println("Fail: copy constructor");
-        }
+    @Test
+    public void constructorByteArray() {
+        long[] s = new long[2];
+        s[0] = 123345l;
+        s[1] = 123567891234567l;
+        GF2_128 t = new GF2_128(s);
+        long[] r = t.toLongArray();
 
         byte[] b = new byte[16];
         for (int i = 0; i < 8; i++) {
@@ -157,27 +172,35 @@ public class GF2_128Test {
 
         t = new GF2_128(b);
         s = t.toLongArray();
-        if (r[0] != s[0] || r[1] != s[1]) {
-            System.out.println("Fail: constructor on byte array");
-        }
+        assertFalse("Fail: constructor on byte array", r[0] != s[0] || r[1] != s[1]);
+    }
 
+    @Test
+    public void constructorAllOne() {
+        long[] s = new long[2];
         s[0] = 0xFFFFFFFFFFFFFFFFL;
         s[1] = 0xFFFFFFFFFFFFFFFFL;
 
-        t = new GF2_128(s);
+        GF2_128 t = new GF2_128(s);
+        GF2_128 t1 = new GF2_128(t);
 
-        t1 = new GF2_128(t);
-
-        r = t.toLongArray();
-        if (r[0] != s[0] || r[1] != s[1]) {
-            System.out.println("Fail: constructor on long array of all 1s");
-        }
-
+        long[] r = t.toLongArray();
+        assertFalse("Fail: constructor on long array of all 1s", r[0] != s[0] || r[1] != s[1]);
 
         r = t1.toLongArray();
-        if (r[0] != s[0] || r[1] != s[1]) {
-            System.out.println("Fail: copy constructor");
-        }
+        assertFalse("Fail: copy constructor", r[0] != s[0] || r[1] != s[1]);
+    }
+
+    @Test
+    public void constructorByteArrayAllOne() {
+        long[] s = new long[2];
+        s[0] = 0xFFFFFFFFFFFFFFFFL;
+        s[1] = 0xFFFFFFFFFFFFFFFFL;
+
+        GF2_128 t = new GF2_128(s);
+        long[] r = t.toLongArray();
+
+        byte[] b = new byte[16];
 
         for (int i = 0; i < 8; i++) {
             b[i] = (byte) (r[0] >>> (i * 8));
@@ -189,17 +212,191 @@ public class GF2_128Test {
 
         t = new GF2_128(b);
         s = t.toLongArray();
-        if (r[0] != s[0] || r[1] != s[1]) {
-            System.out.println("Fail: constructor on byte array of all 1s");
-        }
-
+        assertFalse("Fail: constructor on byte array of all 1s", r[0] != s[0] || r[1] != s[1]);
     }
 
     // TODO: write addition tests
     // TODO: write tests where arguments and/or results are same and/or different objects
 
     @Test
-    public void mulAndInvertTest() {
+    public void squaring() {
+
+        GF2t res1 = new GF2t();
+        int[] pentanomial = {128, 7, 2, 1, 0};
+        GF2t.Modulus m = new GF2t.Modulus(pentanomial);
+
+        long[][] testValues = new long[1000][];
+        GF2_128 res = new GF2_128();
+
+        for (int i = 0; i < testValues.length; i++) {
+            testValues[i] = new long[2];
+        }
+
+        long[] temp = new long[2];
+        GF2_128 zero = new GF2_128(temp);
+        temp[0] = 1l;
+        GF2_128 one = new GF2_128(temp);
+
+        // Test squaring
+        GF2_128.sqr(res, zero);
+        assertTrue("Fail: square16 of 0", res.isZero());
+
+        GF2_128.sqr(res, one);
+        assertTrue("Fail: square16 of 1", res.isOne());
+
+
+        for (long[] p : testValues) {
+            GF2_128.sqr(res, new GF2_128(p));
+            GF2t.mulBits(res1, p, p);
+            GF2t.modReduce(res1, m);
+            assertTrue("Fail: square16 " + new GF2_128(p), res1.equals(res.toLongArray()));
+        }
+
+    }
+
+    @Test
+    public void power() {
+        long[][] testValues = new long[1000][];
+        GF2_128 res = new GF2_128();
+
+        for (int i = 0; i < testValues.length; i++) {
+            testValues[i] = new long[2];
+        }
+
+        long[] temp = new long[2];
+        GF2_128 zero = new GF2_128(temp);
+        temp[0] = 1l;
+        GF2_128 one = new GF2_128(temp);
+
+        // Test power 65536
+        GF2_128.pow65536(res, zero);
+        if (!res.isZero()) {
+            System.out.println("Fail: pow65536 of 0");
+            return;
+        }
+        GF2_128.pow65536(res, one);
+        if (!res.isOne()) {
+            System.out.println("Fail: pow65536 of 1");
+            return;
+        }
+
+        GF2_128 res2 = new GF2_128();
+        for (long[] p : testValues) {
+            GF2_128 p1 = new GF2_128(p);
+            GF2_128.pow65536(res, p1);
+            GF2_128.sqr(res2, p1);
+            for (int k = 1; k < 16; k++) {
+                GF2_128.sqr(res2, res2);
+            }
+            assertTrue("Fail: pow65536 " + new GF2_128(p), res.equals(res2));
+        }
+    }
+
+    @Test
+    public void multiplicationByOneAndZero() {
+
+        long[][] testValues = new long[1000][];
+        GF2_128 res = new GF2_128();
+
+        for (int i = 0; i < testValues.length; i++) {
+            testValues[i] = new long[2];
+        }
+
+        long[] temp = new long[2];
+        GF2_128 zero = new GF2_128(temp);
+        temp[0] = 1l;
+        GF2_128 one = new GF2_128(temp);
+
+        // Run everything times 0 and 0 times everything
+        // and everything times 1 and 1 times everything
+        // where 0 and 1 are GF2_128
+
+
+        System.out.println("Testing multiplication by 0 and 1");
+
+        for (long[] p : testValues) {
+            GF2_128 p1 = new GF2_128(p);
+            GF2_128.mul(res, p1, zero);
+            assertTrue("Fail: " + p1 + " * 0", res.isZero());
+
+            GF2_128.mul(res, zero, p1);
+            assertTrue("Fail: 0 * " + p1, res.isZero());
+
+            GF2_128.mul(res, p1, one);
+            assertTrue("Fail: " + p1 + " * 1", res.equals(p1));
+
+            GF2_128.mul(res, one, p1);
+            assertTrue("Fail: 1 * " + p1, res.equals(p1));
+        }
+
+        // Run everything times 0
+        // and everything times 1
+        // where 0 and 1 are bytes
+        for (long[] p : testValues) {
+            GF2_128 p1 = new GF2_128(p);
+            GF2_128.mul(res, p1, (byte) 0);
+            assertTrue("Fail: " + p1 + " * 0 byte", res.isZero());
+
+            GF2_128.mul(res, p1, (byte) 1);
+            assertTrue("Fail: " + p1 + " * 1 byte ", res.equals(p1));
+        }
+    }
+
+    @Test
+    public void generalMultiplicationBySingleBytes() {
+        GF2t res1 = new GF2t();
+        int[] pentanomial = {128, 7, 2, 1, 0};
+        GF2t.Modulus m = new GF2t.Modulus(pentanomial);
+
+        // Run everything times every byte
+
+        long[][] testValues = new long[1000][];
+        GF2_128 res = new GF2_128();
+
+        for (int i = 0; i < testValues.length; i++) {
+            testValues[i] = new long[2];
+        }
+
+        long[] temp = new long[1];
+        for (long[] p : testValues) {
+            GF2_128 p1 = new GF2_128(p);
+            for (int i = 2; i < 256; i++) {
+                temp[0] = i;
+                GF2_128.mul(res, p1, (byte) i);
+                GF2t.mulBits(res1, p, temp);
+                GF2t.modReduce(res1, m);
+                assertTrue("Fail: " + p1 + " * " + i + " byte", res1.equals(res.toLongArray()));
+            }
+        }
+    }
+
+    @Test
+    public void generalMultiplication() {
+        GF2t res1 = new GF2t();
+        int[] pentanomial = {128, 7, 2, 1, 0};
+        GF2t.Modulus m = new GF2t.Modulus(pentanomial);
+        long[][] testValues = new long[1000][];
+        GF2_128 res = new GF2_128();
+
+        for (int i = 0; i < testValues.length; i++) {
+            testValues[i] = new long[2];
+        }
+
+        for (long[] p : testValues) {
+            GF2_128 p1 = new GF2_128(p);
+            for (long[] q : testValues) {
+                GF2_128 q1 = new GF2_128(q);
+                GF2_128.mul(res, p1, new GF2_128(q1));
+                GF2t.mulBits(res1, p, q);
+                GF2t.modReduce(res1, m);
+                assertTrue("Fail: " + p1 + " * " + q1, res1.equals(res.toLongArray()));
+            }
+        }
+
+    }
+
+    @Test
+    public void invertion() {
 
         GF2t res1 = new GF2t();
         int[] pentanomial = {128, 7, 2, 1, 0};
@@ -263,50 +460,9 @@ public class GF2_128Test {
         // and everything times 1 and 1 times everything
         // where 0 and 1 are GF2_128
         long[] temp = new long[2];
-        GF2_128 zero = new GF2_128(temp);
         temp[0] = 1l;
         GF2_128 one = new GF2_128(temp);
 
-
-        System.out.println("Testing squaring");
-
-        // Test squaring
-        GF2_128.sqr(res, zero);
-
-        if (!res.isZero()) {
-            System.out.println("Fail: square16 of 0");
-            return;
-        }
-        GF2_128.sqr(res, one);
-        if (!res.isOne()) {
-            System.out.println("Fail: square16 of 1");
-            return;
-        }
-
-        for (long[] p : testValues) {
-            GF2_128.sqr(res, new GF2_128(p));
-            GF2t.mulBits(res1, p, p);
-            GF2t.modReduce(res1, m);
-            if (!res1.equals(res.toLongArray())) {
-                System.out.println("Fail: square16 " + new GF2_128(p));
-                return;
-            }
-        }
-
-
-        System.out.println("Testing power 65535");
-
-        // Test power 65536
-        GF2_128.pow65536(res, zero);
-        if (!res.isZero()) {
-            System.out.println("Fail: pow65536 of 0");
-            return;
-        }
-        GF2_128.pow65536(res, one);
-        if (!res.isOne()) {
-            System.out.println("Fail: pow65536 of 1");
-            return;
-        }
 
         GF2_128 res2 = new GF2_128();
         for (long[] p : testValues) {
@@ -316,105 +472,11 @@ public class GF2_128Test {
             for (int k = 1; k < 16; k++) {
                 GF2_128.sqr(res2, res2);
             }
-
-            if (!res.equals(res2)) {
-                System.out.println("Fail: pow65536 " + new GF2_128(p));
-                return;
-            }
         }
-
-        // Run everything times 0 and 0 times everything
-        // and everything times 1 and 1 times everything
-        // where 0 and 1 are GF2_128
-
-
-        System.out.println("Testing multiplication by 0 and 1");
-
-        for (long[] p : testValues) {
-            GF2_128 p1 = new GF2_128(p);
-            GF2_128.mul(res, p1, zero);
-            if (!res.isZero()) {
-                System.out.println("Fail: " + p1 + " * 0");
-                return;
-            }
-            GF2_128.mul(res, zero, p1);
-            if (!res.isZero()) {
-                System.out.println("Fail: 0 * " + p1);
-            }
-            GF2_128.mul(res, p1, one);
-            if (!res.equals(p1)) {
-                System.out.println("Fail: " + p1 + " * 1");
-                return;
-            }
-            GF2_128.mul(res, one, p1);
-            if (!res.equals(p1)) {
-                System.out.println("Fail: 1 * " + p1);
-                return;
-            }
-        }
-
-        // Run everything times 0
-        // and everything times 1
-        // where 0 and 1 are bytes
-        for (long[] p : testValues) {
-            GF2_128 p1 = new GF2_128(p);
-            GF2_128.mul(res, p1, (byte) 0);
-            if (!res.isZero()) {
-                System.out.println("Fail: " + p1 + " * 0 byte");
-                return;
-            }
-            GF2_128.mul(res, p1, (byte) 1);
-            if (!res.equals(p1)) {
-                System.out.println("Fail: " + p1 + " * 1 byte ");
-                return;
-            }
-        }
-
-        System.out.println("Testing multiplication by single bytes");
-
-        // Run everything times every byte
-        temp = new long[1];
-        for (long[] p : testValues) {
-            GF2_128 p1 = new GF2_128(p);
-            for (int i = 2; i < 256; i++) {
-                temp[0] = i;
-                GF2_128.mul(res, p1, (byte) i);
-                GF2t.mulBits(res1, p, temp);
-                GF2t.modReduce(res1, m);
-                if (!res1.equals(res.toLongArray())) {
-                    System.out.println("Fail: " + p1 + " * " + i + " byte");
-                    return;
-                }
-            }
-        }
-
-        System.out.println("Testing general multiplication");
-
-        // Now run everything times everything in the test array
-        // TODO: speed this up
-        for (long[] p : testValues) {
-            GF2_128 p1 = new GF2_128(p);
-            for (long[] q : testValues) {
-                GF2_128 q1 = new GF2_128(q);
-                GF2_128.mul(res, p1, new GF2_128(q1));
-                GF2t.mulBits(res1, p, q);
-                GF2t.modReduce(res1, m);
-                if (!res1.equals(res.toLongArray())) {
-                    System.out.println("Fail: " + p1 + " * " + q1);
-                    return;
-                }
-            }
-        }
-
-        System.out.println("Testing general inversion");
 
         // Test inversion of 1
         GF2_128.invert(res, one);
-        if (!res.isOne()) {
-            System.out.println("Fail: inversion of 1");
-            //return;
-
-        }
+        assertTrue("Fail: inversion of 1", res.isOne());
 
         // Test inversion of everything
         for (long[] p : testValues) {
@@ -422,23 +484,17 @@ public class GF2_128Test {
             if (p1.isZero()) continue;
             GF2_128.invert(res, p1);
             GF2_128.mul(res2, p1, res);
-            if (!res2.isOne()) {
-                System.out.println("Fail: inversion of " + p1 + " self-test ");
-            }
+            assertTrue("Fail: inversion of " + p1 + " self-test ", res2.isOne());
+
             GF2t.mulBits(res1, res.toLongArray(), p);
             GF2t.modReduce(res1, m);
-            if (!res1.isOne()) {
-                System.out.println("Fail: inversion of " + p1 + " gf2t-test");
-            }
+            assertTrue("Fail: inversion of " + p1 + " gf2t-test", res1.isOne());
         }
 
     }
 
     @Test
     public void interpolateTest() {
-        System.out.println("Testing interpolation and evaluation");
-
-
         // TODO: test behavior on null arguments
 
         Random rand = new Random();
@@ -453,7 +509,7 @@ public class GF2_128Test {
                     byte b;
                     do {
                         b = (byte) rand.nextInt();
-                    } while (b==(byte)0);
+                    } while (b == (byte) 0);
                     int j;
                     for (j = 0; j < i; j++) {
                         if (b == points[j]) { // detected equality with something in the array
@@ -474,30 +530,22 @@ public class GF2_128Test {
             GF2_128_Poly res = GF2_128_Poly.interpolate(points, values, Optional.empty());
             for (int i = 0; i < len; i++) {
                 GF2_128 t = res.evaluate(points[i]);
-                if (!t.equals(values[i])) {
-                    System.out.println("Interpolation error on length = " + len + " at input point number " + i);
-                }
+                assertTrue("Interpolation error on length = " + len + " at input point number " + i, t.equals(values[i]));
             }
+
             rand.nextBytes(temp);
             GF2_128 valueAt0 = new GF2_128(temp);
             res = GF2_128_Poly.interpolate(points, values, Optional.of(valueAt0));
             for (int i = 0; i < len; i++) {
                 GF2_128 t = res.evaluate(points[i]);
-                if (!t.equals(values[i])) {
-                    System.out.println("Interpolation error on length =  " + len + " at input point number " + i + "(with optional 0)");
-                }
+                assertTrue("Interpolation error on length =  " + len + " at input point number " + i + "(with optional 0)", t.equals(values[i]));
 
             }
+
             GF2_128 t = res.evaluate((byte) 0);
-            if (!t.equals(valueAt0)) {
-                System.out.println("Interpolation error on length =  " + len + " at input optional 0");
-                System.out.println(Arrays.toString(points));
-                System.out.println(Arrays.toString(values));
-                System.out.println(valueAt0);
-                System.out.println(res);
-                System.out.println(t);
-            }
+            assertTrue("Interpolation error on length =  " + len + " at input optional 0", t.equals(valueAt0));
         }
+
         for (int len = 1; len < 100; len++) {
             byte[] points = new byte[len];
             GF2_128[] values = new GF2_128[len];
@@ -527,60 +575,8 @@ public class GF2_128Test {
             GF2_128_Poly res = GF2_128_Poly.interpolate(points, values, Optional.empty());
             for (int i = 0; i < len; i++) {
                 GF2_128 t = res.evaluate(points[i]);
-                if (!t.equals(values[i])) {
-                    System.out.println("Interpolation error on length =  " + len + " " + i + "(with 0 allowed but not additional)");
-                }
+                assertTrue("Interpolation error on length =  " + len + " " + i + "(with 0 allowed but not additional)", t.equals(values[i]));
             }
         }
     }
-
-    public static void time() {
-        GF2_128 p;
-        long[] d = new long[2];
-        GF2_128 res = new GF2_128();
-        Random rand = new Random();
-        d[0] = rand.nextLong();
-        d[1] = rand.nextLong();
-        p = new GF2_128(d);
-        long t1, t2, t3, t4;
-
-
-
-        t1 = System.nanoTime();
-        for (int i = 0; i < 10000000; i++) {
-            d[0] = rand.nextLong();
-            d[1] = rand.nextLong();
-            p = new GF2_128(d);
-            GF2_128.invert(res, p);
-        }
-        t2 = System.nanoTime();
-
-        System.out.println((t2 - t1) / 10000000.0);
-
-/*        t1 = System.nanoTime();
-        for (int i = 0; i<1000000000; i++) {
-            GF2_128.sqr(res, p);
-        }
-        t2 = System.nanoTime();
-        System.out.println((t2-t1)/1000000.0);
-
-        long t3 = System.nanoTime();
-        for (int i = 0; i<100000000; i++) {
-            GF2_128.mul(res, p,p);
-        }
-        long t4 = System.nanoTime();
-        System.out.println((t4-t3)/1000000.0);
-
-        System.out.println(((double)t4-t3)/(t2-t1)/10.0);
-*/
-   /*     t1 = System.nanoTime();
-        for (int i = 0; i<50000000; i++) {
-            GF2_128.pow65536(res, p);
-        }
-        t2 = System.nanoTime();
-        System.out.println((t2-t1)/1000000.0);
-
-        */
-    }
-
 }

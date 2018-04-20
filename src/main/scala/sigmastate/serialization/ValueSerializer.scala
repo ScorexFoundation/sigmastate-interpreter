@@ -21,8 +21,6 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
 object ValueSerializer
   extends SigmaSerializerCompanion[Value[SType]] {
 
-  type Tag = OpCode
-
   val table = Seq[ValueSerializer[_ <: Value[SType]]](
 
     RelationSerializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),

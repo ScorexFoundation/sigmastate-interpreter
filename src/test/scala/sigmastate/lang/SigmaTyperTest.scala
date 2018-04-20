@@ -128,6 +128,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "Array(1, false)")
   }
 
+  property("Option constructors") {
+    typecheck(env, "Some(10)") shouldBe SOption(SInt)
+    typecheck(env, "Some(x)") shouldBe SOption(SInt)
+    typecheck(env, "Some(x + 1)") shouldBe SOption(SInt)
+    typecheck(env, "Some(Some(10))") shouldBe SOption(SOption(SInt))
+  }
+
   property("array indexed access") {
     typefail(env, "Array()(0)", "should have the same type")
     typecheck(env, "Array(0)(0)") shouldBe SInt
@@ -172,14 +179,17 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   
   property("compute unifying type substitution") {
     import SigmaTyper._
-    def check(s1: String, s2: String, exp: Option[STypeSubst] = Some(emptySubst)): Unit = {
-      val t1 = ty(s1); val t2 = ty(s2)
+    def checkTypes(t1: SType, t2: SType, exp: Option[STypeSubst]): Unit = {
       unifyTypes(t1, t2) shouldBe exp
       exp match {
         case Some(subst) =>
-          applySubst(t1, subst) shouldBe t2
+          unifyTypes(applySubst(t1, subst), t2) shouldBe Some(emptySubst)
         case None =>
       }
+    }
+    def check(s1: String, s2: String, exp: Option[STypeSubst] = Some(emptySubst)): Unit = {
+      val t1 = ty(s1); val t2 = ty(s2)
+      checkTypes(t1, t2, exp)
     }
     def unify(s1: String, s2: String, subst: (STypeIdent, SType)*): Unit =
       check(s1, s2, Some(subst.toMap))
@@ -201,19 +211,25 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     check("Array[(Int,Box)]", "Array[Int]", None)
     check("Array[(Int,Box)]", "Array[(Int,Box)]")
     check("Array[Array[Int]]", "Array[Array[Int]]")
+    
+    check("Option[Int]", "Option[Boolean]", None)
+    check("Option[Int]", "Option[Int]")
+    check("Option[(Int,Box)]", "Option[Int]", None)
+    check("Option[(Int,Box)]", "Option[(Int,Box)]")
+    check("Option[Option[Int]]", "Option[Option[Int]]")
 
     check("Int => Int", "Int => Boolean", None)
     check("Int => Int", "Int => Int")
     check("(Int, Boolean) => Int", "Int => Int", None)
     check("(Int, Boolean) => Int", "(Int,Boolean) => Int")
 
-    unify("A", "A", ("A", STypeIdent("A")))
+    unify("A", "A")
     check("A", "B", None)
 
     check("(Int, A)", "Int", None)
-    unify("(Int, A)", "(Int, A)", ("A", STypeIdent("A")))
+    unify("(Int, A)", "(Int, A)")
     unify("(Int, A)", "(Int, Int)", ("A", SInt))
-    unify("(A, B)", "(A, B)", ("A", STypeIdent("A")), ("B", STypeIdent("B")))
+    unify("(A, B)", "(A, B)")
     unify("(A, B)", "(Int, Boolean)", ("A", SInt), ("B", SBoolean))
     check("(A, B)", "(Int, Boolean, Box)", None)
     check("(A, Boolean)", "(Int, B)", None)
@@ -224,8 +240,16 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     unify("Array[A]", "Array[(Int, Box)]", ("A", ty("(Int, Box)")))
     unify("Array[(Int, A)]", "Array[(Int, Box)]", ("A", SBox))
     unify("Array[Array[A]]", "Array[Array[Int]]", ("A", SInt))
-    unify("Array[Array[A]]", "Array[Array[A]]", ("A", STypeIdent("A")))
+    unify("Array[Array[A]]", "Array[Array[A]]")
     check("Array[Array[A]]", "Array[Array[B]]", None)
+
+    unify("A", "Option[Boolean]", ("A", ty("Option[Boolean]")))
+    unify("Option[A]", "Option[Int]", ("A", SInt))
+    unify("Option[A]", "Option[(Int, Box)]", ("A", ty("(Int, Box)")))
+    unify("Option[(Int, A)]", "Option[(Int, Box)]", ("A", SBox))
+    unify("Option[Option[A]]", "Option[Option[Int]]", ("A", SInt))
+    unify("Option[Option[A]]", "Option[Option[A]]")
+    check("Option[Option[A]]", "Option[Option[B]]", None)
 
     unify("A => Int", "Int => Int", ("A", SInt))
     check("A => Int", "Int => Boolean", None)
@@ -238,7 +262,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     unify(
       "((A,Int), Array[B] => Array[(Array[C], B)]) => A",
       "((Int,Int), Array[Boolean] => Array[(Array[C], Boolean)]) => Int",
-      ("A", SInt), ("B", SBoolean), ("C", ty("C")))
+      ("A", SInt), ("B", SBoolean))
   }
 
 }

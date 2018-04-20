@@ -90,10 +90,15 @@ object SPrimType {
 
 /** Base trait for all types which have fields (aka properties) */
 trait SProduct extends SType {
+  def ancestors: Seq[SType]
   /** Returns -1 if `field` is not found. */
   def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
   def hasField(field: String) = fieldIndex(field) != -1
+
+  /** Returns all the fields of this product type. */
   def fields: Seq[(String, SType)]
+
+  /** Checks if `this` product has exactly the same fields as `that`. */
   def sameFields(that: SProduct): Boolean = {
     if (fields.length != that.fields.length) return false
     // imperative to avoid allocation as it is supposed to be used frequently
@@ -125,6 +130,8 @@ case object SInt extends SPrimType {
 case object SBigInt extends SPrimType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 2: Byte
+
+  val Max = GroupSettings.dlogGroup.order //todo: we use mod q, maybe mod p instead?
 }
 
 case object SBoolean extends SPrimType {
@@ -140,12 +147,14 @@ case object SByteArray extends SPrimType {
 case object SAvlTree extends SProduct {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 5: Byte
-  val fields = Seq()
+  def ancestors = Nil
+  val fields = Nil
 }
 
 case object SGroupElement extends SProduct {
   override type WrappedType = GroupSettings.EcPointType
   override val typeCode: TypeCode = 6: Byte
+  def ancestors = Nil
   val fields = Seq(
     "isIdentity" -> SBoolean,
     "nonce" -> SByteArray
@@ -155,6 +164,9 @@ case object SGroupElement extends SProduct {
 case object SBox extends SProduct {
   override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 7: Byte
+
+  def ancestors = Nil
+
   private val tT = STypeIdent("T")
   def registers(): Seq[(String, SType)] = {
     (1 to 10).map(i => s"R$i" -> SFunc(IndexedSeq(), SOption(tT), Seq(tT)))
@@ -188,6 +200,7 @@ case object SAny extends SPrimType {
 case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
   override type WrappedType = IndexedSeq[Value[ElemType]]
   override val typeCode: TypeCode = SCollection.TypeCode
+  def ancestors = Nil
   override def fields = SCollection.fields
   override def toString = s"Array[$elemType]"
 }
@@ -207,9 +220,12 @@ object SCollection {
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 }
 
+/** Type description of optional values. Instances of `Option`
+  *  are either constructed by `Some` or by `None` constructors. */
 case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
   override type WrappedType = Option[Value[ElemType]]
   override val typeCode: TypeCode = SOption.TypeCode
+  def ancestors = Nil
   override lazy val fields = {
     val subst = Map(SOption.tT -> elemType)
     SOption.fields.map { case (n, t) => (n, SigmaTyper.applySubst(t, subst)) }
@@ -219,12 +235,14 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
 
 object SOption {
   val TypeCode: TypeCode = 81: Byte
+  private[sigmastate] def createFields(tArg: STypeIdent) =
+    Seq(
+      "isDefined" -> SBoolean,
+      "value" -> tArg,
+      "valueOrElse" -> SFunc(tArg, tArg)
+    )
   private val tT = STypeIdent("T")
-  val fields: Seq[(String, SType)] = Seq(
-    "isDefined" -> SBoolean,
-    "value" -> tT,
-    "valueOrElse" -> SFunc(tT, tT)
-  )
+  val fields: Seq[(String, SType)] = createFields(tT)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
@@ -247,6 +265,9 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
   import STuple._
   override type WrappedType = Seq[Any]
   override val typeCode = STuple.TypeCode
+
+  def ancestors = Nil
+
   override val fields = {
     val b = new mutable.ArrayBuffer[(String, SType)](items.size)
     var i = 0

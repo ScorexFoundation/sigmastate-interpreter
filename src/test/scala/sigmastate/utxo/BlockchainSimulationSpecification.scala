@@ -26,6 +26,8 @@ class BlockchainSimulationSpecification extends PropSpec
 
   private lazy val hash = Blake2b256
 
+  val windowSize = 10
+
   class InMemoryErgoBoxReader(prover: ValidationState.BatchProver) extends ErgoBoxReader {
     private val boxes = mutable.Map[ErgoBox.BoxId, ErgoBox]()
 
@@ -74,17 +76,9 @@ class BlockchainSimulationSpecification extends PropSpec
     type BatchProver = BatchAVLProver[Digest32, Blake2b256Unsafe]
 
     val initBlock = Block {
-      (1 to 20).map { i =>
+      (1 to windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
         val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
-        ErgoTransaction(IndexedSeq(), boxes)
-      }
-    }
-
-    val bigBlock = Block {
-      (1 to 400).map { i =>
-        val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
-        val boxes = (1 to 500).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
         ErgoTransaction(IndexedSeq(), boxes)
       }
     }
@@ -105,13 +99,14 @@ class BlockchainSimulationSpecification extends PropSpec
   }
 
 
-  def generateBlock(state: ValidationState, miner: ErgoProvingInterpreter, height: Int = 1): Block = {
+  def generateBlock(state: ValidationState, miner: ErgoProvingInterpreter, height: Int): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
     val boxesToSpend = state.boxesReader.byR3Value(height)
+
     val txs = boxesToSpend.map { box =>
-      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey)
-      val fakeInput = UnsignedInput(box.id)
-      val tx = UnsignedErgoTransaction(IndexedSeq(fakeInput), IndexedSeq(newBoxCandidate))
+      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey, Map(R3 -> IntConstant(height + windowSize)))
+      val unsignedInput = UnsignedInput(box.id)
+      val tx = UnsignedErgoTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoContext(height + 1,
         state.state.lastBlockUtxoRoot,
         IndexedSeq(box),
@@ -129,7 +124,7 @@ class BlockchainSimulationSpecification extends PropSpec
   property("apply one valid block") {
     val state = ValidationState.initialState()
     val miner = new ErgoProvingInterpreter()
-    val block = generateBlock(state, miner)
+    val block = generateBlock(state, miner, 1)
     val updStateTry = state.applyBlock(block)
     updStateTry.isSuccess shouldBe true
   }
@@ -160,21 +155,19 @@ class BlockchainSimulationSpecification extends PropSpec
 
     def bench(numberOfBlocks: Int): Unit = {
 
-      val state = ValidationState.initialState(ValidationState.bigBlock)
+      val state = ValidationState.initialState()
       val miner = new ErgoProvingInterpreter()
-      val blocks = (0 to numberOfBlocks - 1).map {
-        generateBlock(state, miner, _)
-      }
-      val start = System.currentTimeMillis()
 
-      blocks.foldLeft(state: ValidationState) { case (s, b) =>
+      val (_, time) = (0 until numberOfBlocks).foldLeft(state -> 0L) { case ((s, timeAcc), h) =>
+        val b = generateBlock(state, miner, h)
+
+        val t0 = System.currentTimeMillis()
         val updStateTry = s.applyBlock(b)
-        updStateTry.isSuccess shouldBe true
-        updStateTry.get
-      }
+        val t = System.currentTimeMillis()
 
-      val end = System.currentTimeMillis()
-      val time = end - start
+        updStateTry.isSuccess shouldBe true
+        updStateTry.get -> (timeAcc + (t-t0))
+      }
 
       println(s"Total time for $numberOfBlocks blocks: $time ms")
       results.put(numberOfBlocks, time)

@@ -5,8 +5,8 @@ import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate._
 import Values._
-import sigmastate.serialization.Serializer
-import sigmastate.utxo.ErgoBox.{NonMandatoryIdentifier, serializer}
+import sigmastate.serialization.{Serializer, ValueSerializer}
+import sigmastate.utxo.ErgoBox._
 
 import scala.util.Try
 
@@ -25,6 +25,16 @@ class ErgoBoxCandidate ( val value: Long,
   lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
 
   def toBox(txId: Digest32, boxId: Short) = ErgoBox(value, proposition, additionalRegisters, txId, boxId)
+
+  def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
+    identifier match {
+      case R0 => Some(IntConstant(value))
+      case R1 => Some(ByteArrayConstant(propositionBytes))
+      case R2 => None
+      case n: NonMandatoryIdentifier => additionalRegisters.get(n)
+    }
+  }
+
 }
 
 
@@ -60,16 +70,14 @@ class ErgoBox private( override val value: Long,
 
   import sigmastate.utxo.ErgoBox._
 
-  def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
+  lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
+
+  override def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {
-      case R0 => Some(IntConstant(value))
-      case R1 => Some(ByteArrayConstant(propositionBytes))
       case R2 => Some(ByteArrayConstant(transactionId ++ Shorts.toByteArray(boxId)))
-      case n: NonMandatoryIdentifier => additionalRegisters.get(n)
+      case _ => super.get(identifier)
     }
   }
-
-  lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
   lazy val bytes: Array[Byte] = serializer.toBytes(this)
 }
@@ -88,10 +96,23 @@ object ErgoBox {
     override def toBytes(obj: ErgoBox): Array[Byte] =
        bytesWithNoRef(obj) ++ obj.transactionId ++ Shorts.toByteArray(obj.boxId)
 
-    //todo: serialize registers
-    def bytesWithNoRef(obj: ErgoBoxCandidate): Array[Byte] = Longs.toByteArray(obj.value) ++ obj.propositionBytes
+    def bytesWithNoRef(obj: ErgoBoxCandidate): Array[Byte] = {
+      val registerBytes = nonMandatoryRegisters.foldLeft(Array.emptyByteArray){ case (ba, regId) =>
+        obj.get(regId) match {
+          case Some(v) => ba ++ ValueSerializer.serialize(v)
+          case None => ba
+        }
+      }
+      val propBytes = obj.propositionBytes
+      val propBytesLength = Shorts.toByteArray(propBytes.length.toShort)
+      Longs.toByteArray(obj.value) ++ propBytesLength ++ propBytes ++ registerBytes
+    }
 
-    override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = ???
+    override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = Try {
+      require(bytes.length > 42, "box(long value + proposition + txid + outid) should be 43 bytes at least")
+      val value = Longs.fromByteArray(bytes.take(8))
+      ???
+    }
   }
 
   sealed trait RegisterIdentifier {
@@ -140,6 +161,8 @@ object ErgoBox {
     override val number = 9
   }
 
-  val allRegisters = Vector(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
+  val nonMandatoryRegisters = Vector(R3, R4, R5, R6, R7, R8, R9)
+
+  val allRegisters = Vector(R0, R1, R2) ++ nonMandatoryRegisters
   val registerByName = allRegisters.map(r => s"R${r.number}" -> r).toMap
 }

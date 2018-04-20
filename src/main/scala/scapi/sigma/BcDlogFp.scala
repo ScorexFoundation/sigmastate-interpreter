@@ -3,12 +3,15 @@ package scapi.sigma
 import java.math.BigInteger
 import java.security.SecureRandom
 
+import com.google.common.primitives.Shorts
+import org.bouncycastle.asn1.{ASN1EncodableVector, ASN1Encoding, ASN1Integer, DERSequence}
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.{SecP384R1Point, SecP521R1Point}
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import org.bouncycastle.util.BigIntegers
+import sigmastate.serialization.Serializer
 
 import scala.collection.mutable
 import scala.util.Try
@@ -668,6 +671,32 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     else if (t <= 1828) 8
     else 9
   }
+}
+
+//todo: for know, no any compression is used, fix it when concrete group is known
+class EcPointSerializer[ElemType <: ECPoint](curve: BcDlogFp[ElemType]) extends Serializer[ElemType] {
+  override def toBytes(point: ElemType): Array[Byte] = {
+    val xCoord = point.getAffineXCoord.toBigInteger.mod(curve.x9params.getN).toByteArray
+    val yCoord = point.getAffineYCoord.toBigInteger.mod(curve.x9params.getN).toByteArray
+
+    val xSize = xCoord.size.toShort
+    val ySize = yCoord.size.toShort
+
+    Shorts.toByteArray(xSize) ++
+      Shorts.toByteArray(ySize) ++
+      xCoord ++
+      yCoord
+  }
+
+  override def parseBytes(bytes: Array[Byte]): Try[ElemType] = Try {
+    val xSize = Shorts.fromByteArray(bytes.slice(0, 2))
+    val ySize = Shorts.fromByteArray(bytes.slice(2, 4))
+
+    val xCoord = new BigInteger(1, bytes.slice(4, 4 + xSize))
+    val yCoord = new BigInteger(1, bytes.slice(4 + xSize, 4 + xSize + ySize))
+
+    curve.reconstructElement(bCheckMembership = true, GroupAgnosticEcElement(xCoord, yCoord))
+  }.flatten
 }
 
 
