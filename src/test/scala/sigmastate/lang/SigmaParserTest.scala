@@ -274,7 +274,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       """.stripMargin) shouldBe Select(Ident("X"), "Y")
   }
 
-  property("predefined primitives") {
+  property("Box properties") {
     parse("fun (box: Box): Int = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SInt, Select(Ident("box"), "value"))
     parse("fun (box: Box): ByteArray = box.propositionBytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), SBox.PropositionBytes))
     parse("fun (box: Box): ByteArray = box.bytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "bytes"))

@@ -150,7 +150,7 @@ class BlockchainSimulationSpecification extends PropSpec
     checkState(state, miner, 0, randomDeepness)
   }
 
-  property(s"benchmarking applying many blocks") {
+  ignore(s"benchmarking applying many blocks") {
     val results = new TrieMap[Int, Long]
 
     def bench(numberOfBlocks: Int): Unit = {

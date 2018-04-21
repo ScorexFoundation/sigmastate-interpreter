@@ -1537,25 +1537,37 @@ class ErgoInterpreterSpecification extends PropSpec
     //todo: check failing branches
   }
 
-  property("Not / If"){
+  property("If") {
     val prover = new ErgoProvingInterpreter
     val verifier = new ErgoInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val preimage = "hello world".getBytes("UTF-8")
+    val preimageHello = "hello world".getBytes("UTF-8")
     val preimageWrong = "wrong".getBytes("UTF-8")
 
-    val hash = Blake2b256.hash(preimage)
+    val helloHash = Blake2b256.hash(preimageHello)
 
-    val prop = EQ(ByteArrayConstant(hash),
+    val env = Map("helloHash" -> helloHash)
+    val prop = compile(env,
+      """{
+        |  let cond = INPUTS(0).value > 10
+        |  let preimage = if (cond)
+        |    INPUTS(2).R3[ByteArray].value
+        |  else
+        |    INPUTS(1).R3[ByteArray].value
+        |  helloHash == blake2b256(preimage)
+         }""".stripMargin).asBoolValue
+
+    val propExpected = EQ(ByteArrayConstant(helloHash),
                   CalcBlake2b256(
-                    If(Not(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10))),
-                      ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 1), R3),
-                      ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3))))
+                    If(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10)),
+                      ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3),
+                      ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 1), R3))))
+    prop shouldBe propExpected
 
     val input0 = ErgoBox(10, pubkey, Map())
-    val input1 = ErgoBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimage)))
+    val input1 = ErgoBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimageHello)))
     val input2 = ErgoBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimageWrong)))
     val input3 = ErgoBox(10, prop, Map())
 
