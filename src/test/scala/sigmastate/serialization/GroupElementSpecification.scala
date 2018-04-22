@@ -4,7 +4,6 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import org.bouncycastle.math.ec.custom.djb.{Curve25519, Curve25519Point}
-import sigmastate.Not
 import sigmastate.Values.BooleanConstant
 
 import scala.util.Try

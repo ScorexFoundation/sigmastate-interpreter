@@ -146,6 +146,9 @@ fun anyOf(conditions: Array[Boolean]): Boolean
 /** Cryptographic hash function Blake2b */
 fun blake2b256(input: ByteArray): ByteArray
 
+/** Cryptographic hash function Sha256 */
+fun sha256(input: ByteArray): ByteArray
+
 /** Create BigInt from byte array representation. */
 fun byteArrayToBigInt(input: ByteArray): BigInt
 

@@ -45,6 +45,9 @@ class SigmaSpecializer {
     case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray.type]@unchecked)) =>
       Some(CalcBlake2b256(arg))
 
+    case Apply(Sha256Sym, Seq(arg: Value[SByteArray.type]@unchecked)) =>
+      Some(CalcSha256(arg))
+
     case Apply(TaggedByteArraySym, Seq(IntConstant(i))) =>
       Some(TaggedByteArray(i.toByte))
 
