@@ -194,6 +194,16 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
                   Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
   }
 
+  property("Option constructors") {
+    parse("None") shouldBe Ident("None")
+    parse("Some(None)") shouldBe Apply(Ident("Some"), IndexedSeq(Ident("None")))
+    parse("Some(10)") shouldBe Apply(Ident("Some"), IndexedSeq(IntConstant(10)))
+    parse("Some(X)") shouldBe Apply(Ident("Some"), IndexedSeq(Ident("X")))
+    parse("Some(Some(X + 1))") shouldBe Apply(Ident("Some"),
+      IndexedSeq(Apply(Ident("Some"), IndexedSeq(
+                  Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
+  }
+
   property("array indexed access") {
     parse("Array()(0)") shouldBe Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0)))
     parse("Array()(0)(0)") shouldBe Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
@@ -264,7 +274,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       """.stripMargin) shouldBe Select(Ident("X"), "Y")
   }
 
-  property("predefined primitives") {
+  property("Box properties") {
     parse("fun (box: Box): Int = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SInt, Select(Ident("box"), "value"))
     parse("fun (box: Box): ByteArray = box.propositionBytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), SBox.PropositionBytes))
     parse("fun (box: Box): ByteArray = box.bytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "bytes"))

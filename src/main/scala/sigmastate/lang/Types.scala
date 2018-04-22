@@ -90,6 +90,7 @@ trait Types extends Core {
     P( BasicType ~ TypeArgs.rep ).map {
       case (t: STuple, Seq()) => t
       case (STypeApply("Array", IndexedSeq()), Seq(Seq(t))) => SCollection(t)
+      case (STypeApply("Option", IndexedSeq()), Seq(Seq(t))) => SOption(t)
       case (SPrimType(t), Seq()) => t
       case (STypeApply(tn, IndexedSeq()), args) if args.isEmpty => STypeIdent(tn)
       case t => error(s"Unsupported type $t")

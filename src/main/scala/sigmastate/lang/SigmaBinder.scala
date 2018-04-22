@@ -38,6 +38,7 @@ class SigmaBinder(env: Map[String, Any]) {
           case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
           case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
           case "SELF" => Some(Self)
+          case "None" => Some(NoneValue(NoType))
           case _ => None
         }
       }
@@ -47,6 +48,13 @@ class SigmaBinder(env: Map[String, Any]) {
     case Apply(Ident("Array", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
       Some(ConcreteCollection(args)(tpe))
+
+    // Rule: Some(x) -->
+    case Apply(Ident("Some", _), args) =>
+      val arg =
+        if (args.length == 1) args(0)
+        else error(s"Invalid arguments of Some: expected one argument but found $args")
+      Some(SomeValue(arg))
 
     // Rule: col(i) --> ByIndex(col, i)
     case Apply(Typed(obj, tCol: SCollection[_]), Seq(IntConstant(i))) =>
