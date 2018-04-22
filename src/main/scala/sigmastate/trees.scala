@@ -171,19 +171,6 @@ case class CalcSha256(override val input: Value[SByteArray.type]) extends CalcHa
   override val hashFn: CryptographicHash32 = Sha256
 }
 
-case class Not(input: Value[SBoolean.type])
-  extends Transformer[SBoolean.type, SBoolean.type] with NotReadyValueBoolean {
-
-  override def function(bal: EvaluatedValue[SBoolean.type]): Value[SBoolean.type] =
-    BooleanConstant.fromBoolean(!bal.value)
-
-  override lazy val cost: Int = input.cost + 1 //todo: externalize cost
-}
-
-
-
-
-
 /**
   * A tree node with left and right descendants
   */

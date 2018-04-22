@@ -20,6 +20,7 @@ object SigmaPredef {
     "allOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "anyOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "blake2b256" -> Lambda(Vector("input" -> SByteArray), SByteArray, None),
+    "sha256" -> Lambda(Vector("input" -> SByteArray), SByteArray, None),
     "byteArrayToBigInt" -> Lambda(Vector("input" -> SByteArray), SBigInt, None),
     "intToByteArray" -> Lambda(Vector("input" -> SInt), SByteArray, None),
 
@@ -55,6 +56,7 @@ object SigmaPredef {
   val TaggedBooleanSym = PredefIdent("taggedBoolean")
 
   val Blake2b256Sym = PredefIdent("blake2b256")
+  val Sha256Sym = PredefIdent("sha256")
   val IsMemberSym = PredefIdent("isMember")
   val ProveDlogSym = PredefIdent("proveDlog")
   val ProveDHTupleSym = PredefIdent("proveDHTuple")
