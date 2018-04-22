@@ -9,7 +9,7 @@ import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256Unsafe}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.ValueSerializer.OpCode
+import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.CostTable.Cost
@@ -23,7 +23,7 @@ object Values {
   type Idn = String
 
   trait Value[+S <: SType] extends SigmaNode {
-    val opCode: ValueSerializer.OpCode = 0: Byte
+    val opCode: OpCode = 0: Byte
 
     def tpe: S
 
@@ -67,12 +67,12 @@ object Values {
   }
 
   trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
-    override val opCode: OpCode = ValueSerializer.TaggedVariableCode
+    override val opCode: OpCode = TaggedVariableCode
     val id: Byte
   }
 
   case object UnitConstant extends EvaluatedValue[SUnit.type] {
-    override val opCode = ValueSerializer.UnitConstantCode
+    override val opCode = UnitConstantCode
     override val cost = 1
 
     override def tpe = SUnit
@@ -81,7 +81,7 @@ object Values {
   }
 
   case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
-    override val opCode = ValueSerializer.IntConstantCode
+    override val opCode: OpCode = IntConstantCode
     override val cost = 1
 
     override def tpe = SInt
@@ -96,6 +96,9 @@ object Values {
   }
 
   case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
+
+    override val opCode: OpCode = BigIntConstantCode
+
     override val cost = 1
 
     override def tpe = SBigInt
@@ -111,9 +114,10 @@ object Values {
   }
 
   case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
-    override val opCode = 15: Byte
 
     override def cost: Int = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
+
+    override val opCode: OpCode = ByteArrayConstantCode
 
     override def tpe = SByteArray
 
@@ -162,6 +166,8 @@ object Values {
   case class GroupElementConstant(value: GroupSettings.EcPointType) extends EvaluatedValue[SGroupElement.type] {
     override val cost = 10
 
+    override val opCode: OpCode = GroupElementConstantCode
+
     override def tpe = SGroupElement
   }
 
@@ -196,13 +202,13 @@ object Values {
   }
 
   case object TrueLeaf extends BooleanConstant(true) {
-    override val opCode: OpCode = ValueSerializer.TrueCode
+    override val opCode: OpCode = TrueCode
 
     override def cost: Int = Cost.ConstantNode
   }
 
   case object FalseLeaf extends BooleanConstant(false) {
-    override val opCode: OpCode = ValueSerializer.FalseCode
+    override val opCode: OpCode = FalseCode
 
     override def cost: Int = Cost.ConstantNode
   }
@@ -251,7 +257,7 @@ object Values {
   }
 
   case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] {
-    override val opCode = ValueSerializer.TupleCode
+    override val opCode: OpCode = TupleCode
     val cost: Int = value.size
     val tpe = STuple(items.map(_.tpe))
     lazy val value = items
@@ -267,14 +273,14 @@ object Values {
   }
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
-    override val opCode = ValueSerializer.SomeValueCode
+    override val opCode = SomeValueCode
     def cost: Int = x.cost + 1
     val tpe = SOption(x.tpe)
     lazy val value = Some(x)
   }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
-    override val opCode = ValueSerializer.NoneValueCode
+    override val opCode = NoneValueCode
     def cost: Int = 1
     val tpe = SOption(elemType)
     lazy val value = None
@@ -282,7 +288,7 @@ object Values {
 
   case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tItem: V)
     extends EvaluatedValue[SCollection[V]] with Rewritable {
-    override val opCode = ValueSerializer.ConcreteCollectionCode
+    override val opCode: OpCode = ConcreteCollectionCode
     val cost: Int = value.size
     val tpe = SCollection[V](tItem)
 

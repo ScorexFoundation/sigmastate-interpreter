@@ -1,16 +1,16 @@
 package sigmastate.serialization
 
 import com.google.common.primitives.Chars
-import sigmastate.serialization.ValueSerializer.Position
+import sigmastate.SType
 import sigmastate.Values._
-import sigmastate.{SCollection,SType}
+import sigmastate.serialization.ValueSerializer.Position
+import sigmastate.serialization.OpCodes._
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object ConcreteCollectionSerializer extends ValueSerializer[ConcreteCollection[_ <: SType]] {
 
-  override val opCode: Byte = ValueSerializer.ConcreteCollectionCode
+  override val opCode: Byte = ConcreteCollectionCode
 
   override def parseBody(bytes: Array[Byte], pos: Position): (ConcreteCollection[SType], Position) = {
     val size = Chars.fromBytes(bytes(pos), bytes(pos + 1))

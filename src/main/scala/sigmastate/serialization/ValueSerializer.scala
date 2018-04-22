@@ -3,6 +3,7 @@ package sigmastate.serialization
 import sigmastate._
 import Values._
 import scala.util.Try
+import OpCodes._
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -17,53 +18,44 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
   }
 }
 
-object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
-  type OpCode = Byte
+object ValueSerializer
+  extends SigmaSerializerCompanion[Value[SType]] {
+
   type Tag = OpCode
 
-  val TaggedVariableCode = 1: Byte
+  val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
 
-  val IntConstantCode = 11: Byte
-  val TrueCode = 12: Byte
-  val FalseCode = 13: Byte
-  val UnitConstantCode = 14: Byte
-  val ByteArrayConstantCode = 15: Byte
-
-  val LtCode = 21: Byte
-  val LeCode = 22: Byte
-  val GtCode = 23: Byte
-  val GeCode = 24: Byte
-  val EqCode = 25: Byte
-  val NeqCode = 26: Byte
-
-  val ConcreteCollectionCode = 35: Byte
-  val TupleCode = 36: Byte
-  val AndCode = 37: Byte
-  val OrCode = 38: Byte
-  val SomeValueCode = 39: Byte
-  val NoneValueCode = 40: Byte
-
-  val table = Seq[ValueSerializer[_ <: Value[SType]]](
     RelationSerializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
     RelationSerializer(GeCode, GE.apply, Seq(Constraints.onlyInt2)),
     RelationSerializer(LtCode, LT.apply, Seq(Constraints.onlyInt2)),
     RelationSerializer(LeCode, LE.apply, Seq(Constraints.onlyInt2)),
     RelationSerializer(EqCode, EQ.applyNonTyped, Seq(Constraints.sameType2)),
     RelationSerializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
+
+    TwoArgumentsSerializer(XorCode, Xor.apply),
+    TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
+    TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
+    TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
+    TwoArgumentsSerializer(MinusCode, Minus.apply),
+    TwoArgumentsSerializer(PlusCode, Plus.apply),
+
+    GroupElementSerializer,
     IntConstantSerializer,
-    ByteArrayConstantSerializer,
     TrueLeafSerializer,
     FalseLeafSerializer,
     ConcreteCollectionSerializer,
     AndSerializer,
     OrSerializer,
-    TaggedVariableSerializer
+    TaggedVariableSerializer,
+    NotSerializer,
+    BigIntConstantSerializer,
+    ByteArrayConstantSerializer
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
     val c = bytes(pos)
     val handler = table(c)
-    val (v, consumed) = handler.parseBody(bytes, pos + 1)
+    val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
     (v, consumed + 1)
   }
 

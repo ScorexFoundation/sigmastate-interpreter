@@ -22,3 +22,7 @@ project/plugins/project/
 
 # IntelliJ Idea 
 .idea/
+
+# file system
+
+**/.DS_Store

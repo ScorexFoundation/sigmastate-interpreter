@@ -3,10 +3,11 @@ package sigmastate.serialization
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.serialization.ValueSerializer.Position
+import OpCodes._
 
 object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: SType]] {
 
-  override val opCode = ValueSerializer.TaggedVariableCode
+  override val opCode: OpCode = TaggedVariableCode
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
     val tc = bytes(pos)

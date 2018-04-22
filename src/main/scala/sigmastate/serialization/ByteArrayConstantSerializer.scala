@@ -1,14 +1,15 @@
 package sigmastate.serialization
-
+    
 import com.google.common.primitives.Shorts
 import sigmastate.SByteArray
 import sigmastate.SType.TypeCode
 import sigmastate.Values.ByteArrayConstant
-import sigmastate.serialization.ValueSerializer.{Consumed, OpCode, Position}
+import sigmastate.serialization.OpCodes._
+import sigmastate.serialization.ValueSerializer.{Consumed, Position}
 
 object ByteArrayConstantSerializer extends ValueSerializer[ByteArrayConstant] {
 
-  override val opCode: OpCode = ValueSerializer.ByteArrayConstantCode
+  override val opCode: OpCode = ByteArrayConstantCode
   val typeCode: TypeCode = SByteArray.typeCode
 
   override def parseBody(bytes: Array[Byte], pos: Position): (ByteArrayConstant, Consumed) = {
