@@ -47,7 +47,6 @@ object ValueSerializer
     AndSerializer,
     OrSerializer,
     TaggedVariableSerializer,
-    NotSerializer,
     BigIntConstantSerializer,
     ByteArrayConstantSerializer
   ).map(s => (s.opCode, s)).toMap
