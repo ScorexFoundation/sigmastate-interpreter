@@ -182,8 +182,6 @@ case class Not(input: Value[SBoolean.type])
   override lazy val cost: Int = input.cost + 1 //todo: externalize cost
 }
 
-
-
 /**
   * A tree node with left and right descendants
   */
