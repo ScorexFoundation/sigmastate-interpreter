@@ -3,6 +3,7 @@ package sigmastate.utxo
 import com.google.common.primitives.Bytes
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.encode.Base16
@@ -19,7 +20,6 @@ import sigmastate.lang._
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
 import sigmastate.utxo.ErgoBox._
-
 
 class ErgoInterpreterSpecification extends PropSpec
   with PropertyChecks
@@ -1454,7 +1454,7 @@ class ErgoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctxv, pr, fakeMessage).get shouldBe true
   }
 
-  property("prove keys from registers") {
+  property("Prove keys from registers") {
     val prover = new ErgoProvingInterpreter
     val verifier = new ErgoInterpreter
 
@@ -1476,19 +1476,30 @@ class ErgoInterpreterSpecification extends PropSpec
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
-
+    val s1 = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
 
     val ctx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
-      self = s)
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+      self = s1)
 
-    //todo: check failing cases
+    val pr = prover.prove(prop, ctx, fakeMessage).success.value
+    verifier.verify(prop, ctx, pr, fakeMessage).success.value shouldBe true
+
+
+    //make sure that wrong case couldn't be proved
+    val s2 = ErgoBox(20, TrueLeaf, Map(R4 -> pubkey2.value, R5 -> pubkey1.value))
+    val wrongCtx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction,
+      self = s2)
+
+    prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
+    verifier.verify(prop, wrongCtx, pr, fakeMessage).isFailure shouldBe true
   }
 
   /**
@@ -1503,6 +1514,7 @@ class ErgoInterpreterSpecification extends PropSpec
     val pubkey2 = prover.dlogSecrets(1).publicImage
 
     val brother = ErgoBox(10, pubkey1)
+    val brotherWithWrongId = ErgoBox(10, pubkey1, boxId = 120: Short)
 
     val newBox = ErgoBox(20, pubkey2)
 
@@ -1531,10 +1543,28 @@ class ErgoInterpreterSpecification extends PropSpec
       spendingTransaction,
       self = s)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    val pr = prover.prove(prop, ctx, fakeMessage).success.value
+    verifier.verify(prop, ctx, pr, fakeMessage).success.value shouldBe true
 
-    //todo: check failing branches
+    val wrongCtx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(brotherWithWrongId, s),
+      spendingTransaction,
+      self = s)
+
+    prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
+    verifier.verify(prop, wrongCtx, pr, fakeMessage).success.value shouldBe false
+
+    val prop2 = compile(env,
+      """{
+        |  let okInputs = INPUTS.size == 3
+        |  let okIds = INPUTS(0).id == brother.id
+        |  okInputs && okIds
+         }""".stripMargin).asBoolValue
+
+    prover.prove(prop2, ctx, fakeMessage).isFailure shouldBe true
+    verifier.verify(prop2, ctx, pr, fakeMessage).success.value shouldBe false
   }
 
   property("If") {
