@@ -1407,6 +1407,32 @@ class ErgoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 
+  property("P2SH") {
+    //TODO incorrect - works with incorrect hash preimage
+    val preimageHello = "hello world".getBytes("UTF-8")
+    val preimageWrong = "wrong".getBytes("UTF-8")
+    val helloHash = Blake2b256.hash(preimageHello)
+
+    val customProposition = EQ(ByteArrayConstant(helloHash), CalcBlake2b256(ExtractRegisterAs(Self, R4)))
+    val propositionBytesHash = ByteArrayConstant(Blake2b256(customProposition.propBytes))
+    val prover = new ErgoProvingInterpreter()
+
+    val prop: Value[SBoolean.type] = AND(ExtractRegisterAs(Self, R3),
+      EQ(CalcBlake2b256(ExtractRegisterAs(Self, R3)), propositionBytesHash))
+
+    val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
+    val ctx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
+      self = ErgoBox(20, TrueLeaf, Map(R3 -> customProposition, R4 -> ByteArrayConstant(preimageHello))))
+
+    val proof = prover.prove(prop, ctx, fakeMessage).get
+
+    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
+  }
+
   property("avl tree - leaf satisfying condition exists") {
     val elements = Seq(BigInt(123), BigInt(22)).map(_.toByteArray).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
     val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
@@ -1416,7 +1442,7 @@ class ErgoInterpreterSpecification extends PropSpec
     val proofId = 0: Byte
     val elementId = 1: Byte
 
-    val prop = AND(
+    val prop: Value[SBoolean.type] = AND(
       GE(TaggedInt(elementId), IntConstant(120)),
       IsMember(AvlTreeConstant(treeData), CalcBlake2b256(TaggedByteArray(elementId)), TaggedByteArray(proofId))
     )
