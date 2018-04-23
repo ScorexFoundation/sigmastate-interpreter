@@ -1,6 +1,11 @@
 sudo: required
 dist: trusty
 
+branches:
+  only:
+    - master
+    - /^\d\.\d+$/
+
 # Tricks to avoid unnecessary cache updates
 before_cache:
   - find $HOME/.sbt -name "*.lock" | xargs rm
