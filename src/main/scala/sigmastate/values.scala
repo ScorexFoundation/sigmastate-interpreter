@@ -66,6 +66,9 @@ object Values {
     override lazy val evaluated = false
   }
 
+  /**
+    * Variable with specified `id`, that will be provided by a prover
+    */
   trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
     override val opCode: OpCode = TaggedVariableCode
     val id: Byte
@@ -135,8 +138,7 @@ object Values {
     override def tpe = SByteArray
   }
 
-  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray {
-  }
+  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray
 
   case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
     override val cost = 50
@@ -274,14 +276,18 @@ object Values {
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override val opCode = SomeValueCode
+
     def cost: Int = x.cost + 1
+
     val tpe = SOption(x.tpe)
     lazy val value = Some(x)
   }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
     override val opCode = NoneValueCode
+
     def cost: Int = 1
+
     val tpe = SOption(elemType)
     lazy val value = None
   }
@@ -305,4 +311,5 @@ object Values {
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
+
 }

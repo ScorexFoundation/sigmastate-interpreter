@@ -247,27 +247,42 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
   with NotReadyValueBoolean
 
 
+/**
+  * Checks that left is less than right
+  */
 case class LT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]{
   override val opCode: OpCode = LtCode
 }
 
+/**
+  * Checks that left is less or equal than right
+  */
 case class LE(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
   override val opCode: OpCode = LeCode
 }
 
+/**
+  * Checks that left is greater than right
+  */
 case class GT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
   override val opCode: OpCode = GtCode
 }
 
+/**
+  * Checks that left is greater or equal than right
+  */
 case class GE(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
   override val opCode: OpCode = GeCode
 }
 
 //todo: make EQ to really accept only values of the same type, now EQ(TrueLeaf, IntConstant(5)) is valid
+/**
+  * Checks that left and right are equal
+  */
 case class EQ[S <: SType](override val left: Value[S],
                           override val right: Value[S])
   extends Relation[S, S] {

@@ -1,20 +1,22 @@
 package sigmastate.utxo
 
+import java.math.BigInteger
+
 import com.google.common.primitives.Bytes
-import org.scalatest.{PropSpec, Matchers}
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.encode.Base16
-import scorex.crypto.hash.{Digest32, Blake2b256, Blake2b256Unsafe}
+import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
 import sigmastate._
 import sigmastate.Values._
 import BoxHelpers.createBox
-import fastparse.core.{Parsed, ParseError}
-import fastparse.core.Parsed.{Success, Failure}
+import fastparse.core.{ParseError, Parsed}
+import fastparse.core.Parsed.{Failure, Success}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.lang._
 import sigmastate.lang.Terms._
@@ -27,11 +29,13 @@ class ErgoInterpreterSpecification extends PropSpec
   with Matchers {
 
   implicit def grElemConvert(leafConstant: GroupElementConstant): GroupSettings.EcPointType = leafConstant.value
+
   implicit def grLeafConvert(elem: GroupSettings.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 
   import BoxHelpers.{fakeMessage, fakeSelf}
 
   val compiler = new SigmaCompiler
+
   def compile(env: Map[String, Any], code: String): Value[SType] = {
     compiler.compile(env, code)
   }
@@ -90,19 +94,19 @@ class ErgoInterpreterSpecification extends PropSpec
     )
     val compiledScript = compile(env,
       """{
-       | let c1 = HEIGHT >= timeout && backerPubKey
-       | let c2 = allOf(Array(
-       |   HEIGHT < timeout,
-       |   projectPubKey,
-       |   OUTPUTS.exists(fun (out: Box) = {
-       |     out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
-       |   })
-       | ))
-       | c1 || c2
-       | }
+        | let c1 = HEIGHT >= timeout && backerPubKey
+        | let c2 = allOf(Array(
+        |   HEIGHT < timeout,
+        |   projectPubKey,
+        |   OUTPUTS.exists(fun (out: Box) = {
+        |     out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
+        |   })
+        | ))
+        | c1 || c2
+        | }
       """.stripMargin)
 
-//    // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
+    //    // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
       AND(GE(Height, timeout), backerPubKey),
       AND(
@@ -223,14 +227,14 @@ class ErgoInterpreterSpecification extends PropSpec
     )
     val prop = compile(env,
       """{
-       | let c2 = allOf(Array(
-       |   HEIGHT >= SELF.R3[Int].value + demurragePeriod,
-       |   OUTPUTS.exists(fun (out: Box) = {
-       |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
-       |   })
-       | ))
-       | regScript || c2
-       | }
+        | let c2 = allOf(Array(
+        |   HEIGHT >= SELF.R3[Int].value + demurragePeriod,
+        |   OUTPUTS.exists(fun (out: Box) = {
+        |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
+        |   })
+        | ))
+        | regScript || c2
+        | }
       """.stripMargin).asBoolValue
     val propTree = OR(
       regScript,
@@ -332,8 +336,8 @@ class ErgoInterpreterSpecification extends PropSpec
     val env = Map("blake" -> Blake2b256(preimage))
     val compiledScript = compile(env,
       """{
-       |  blake2b256(taggedByteArray(1)) == blake
-       |}
+        |  blake2b256(taggedByteArray(1)) == blake
+        |}
       """.stripMargin)
 
     val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
@@ -357,8 +361,8 @@ class ErgoInterpreterSpecification extends PropSpec
     val env = Map("blake" -> Blake2b256(preimage2 ++ preimage1))
     val compiledScript = compile(env,
       """{
-       |  blake2b256(taggedByteArray(2) ++ taggedByteArray(1)) == blake
-       |}
+        |  blake2b256(taggedByteArray(2) ++ taggedByteArray(1)) == blake
+        |}
       """.stripMargin)
 
     val prop = EQ(CalcBlake2b256(AppendBytes(TaggedByteArray(2), TaggedByteArray(1))),
@@ -391,8 +395,8 @@ class ErgoInterpreterSpecification extends PropSpec
     val env = Map("k1" -> k1.toInt, "k2" -> k2.toInt, "r" -> r)
     val compiledScript = compile(env,
       """{
-       |  (taggedByteArray(k1) | taggedByteArray(k2)) == r
-       |}
+        |  (taggedByteArray(k1) | taggedByteArray(k2)) == r
+        |}
       """.stripMargin)
 
     val prop = EQ(Xor(TaggedByteArray(k1), TaggedByteArray(k2)), ByteArrayConstant(r))
@@ -416,8 +420,8 @@ class ErgoInterpreterSpecification extends PropSpec
     val env = Map("blake" -> Blake2b256(preimage), "pubkey" -> pubkey)
     val compiledScript = compile(env,
       """{
-       |  pubkey && blake2b256(taggedByteArray(1)) == blake
-       |}
+        |  pubkey && blake2b256(taggedByteArray(1)) == blake
+        |}
       """.stripMargin)
     val prop = AND(
       pubkey,
@@ -446,8 +450,8 @@ class ErgoInterpreterSpecification extends PropSpec
     val env = Map("blake" -> Blake2b256(preimage1 ++ preimage2), "pubkey" -> pubkey)
     val compiledScript = compile(env,
       """{
-       |  pubkey && blake2b256(taggedByteArray(1) ++ taggedByteArray(2)) == blake
-       |}
+        |  pubkey && blake2b256(taggedByteArray(1) ++ taggedByteArray(2)) == blake
+        |}
       """.stripMargin)
 
     val prop = AND(
@@ -502,11 +506,11 @@ class ErgoInterpreterSpecification extends PropSpec
       "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
     val prop1 = compile(env,
       """{
-       |  anyOf(Array(
-       |    HEIGHT > height1 + deadlineA && pubkeyA,
-       |    pubkeyB && blake2b256(taggedByteArray(1)) == hx
-       |  ))
-       |}""".stripMargin).asBoolValue
+        |  anyOf(Array(
+        |    HEIGHT > height1 + deadlineA && pubkeyA,
+        |    pubkeyB && blake2b256(taggedByteArray(1)) == hx
+        |  ))
+        |}""".stripMargin).asBoolValue
 
     //chain1 script
     val prop1Tree = OR(
@@ -517,11 +521,11 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val prop2 = compile(env,
       """{
-       |  anyOf(Array(
-       |    HEIGHT > height2 + deadlineB && pubkeyB,
-       |    pubkeyA && blake2b256(taggedByteArray(1)) == hx
-       |  ))
-       |}
+        |  anyOf(Array(
+        |    HEIGHT > height2 + deadlineB && pubkeyB,
+        |    pubkeyA && blake2b256(taggedByteArray(1)) == hx
+        |  ))
+        |}
       """.stripMargin).asBoolValue
 
     //chain2 script
@@ -855,7 +859,7 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val prop = OR(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
-    
+
     val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -930,7 +934,7 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntConstant(500))))
     compiledProp shouldBe prop
-    
+
     val ctx1 = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -1001,7 +1005,7 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val prop = OR(pubkeyA, pubdhB)
     compiledProp shouldBe prop
-    
+
     val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -1027,7 +1031,7 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val prop = AND(pubkeyA, pubdhA)
     compiledProp shouldBe prop
-    
+
     val ctx = ErgoContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -1403,6 +1407,46 @@ class ErgoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 
+  property("avl tree - leaf satisfying condition exists") {
+    val elements = Seq(BigInt(123), BigInt(22)).map(_.toByteArray).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
+    elements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
+    avlProver.generateProof()
+    val treeData = new AvlTreeData(avlProver.digest, 32, None)
+    val proofId = 0: Byte
+    val elementId = 1: Byte
+
+    val prop = AND(
+      GE(TaggedInt(elementId), IntConstant(120)),
+      IsMember(AvlTreeConstant(treeData), CalcBlake2b256(TaggedByteArray(elementId)), TaggedByteArray(proofId))
+    )
+    val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
+    val ctx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
+      self = ErgoBox(20, TrueLeaf, Map()))
+
+    avlProver.performOneOperation(Lookup(ADKey @@ elements.head._1))
+    val bigLeafProof = avlProver.generateProof()
+    val prover = new ErgoProvingInterpreter()
+      .withContextExtender(proofId, ByteArrayConstant(bigLeafProof))
+      .withContextExtender(elementId, ByteArrayConstant(elements.head._2))
+    val proof = prover.prove(prop, ctx, fakeMessage).get
+
+    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
+
+    avlProver.performOneOperation(Lookup(ADKey @@ elements.head._1))
+    val smallLeafTreeProof = avlProver.generateProof()
+    val smallProver = new ErgoProvingInterpreter()
+      .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
+      .withContextExtender(elementId, ByteArrayConstant(elements.head._2))
+    val smallLeafProof = prover.prove(prop, ctx, fakeMessage).get
+    (new ErgoInterpreter).verify(prop, ctx, smallLeafProof, fakeMessage).get shouldBe false
+
+  }
+
   property("avl tree - prover provides proof") {
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
@@ -1422,7 +1466,6 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val prover = new ErgoProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
     val verifier = new ErgoInterpreter
-    val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("proofId" -> proofId.toLong)
     val prop = compile(env,
@@ -1436,6 +1479,7 @@ class ErgoInterpreterSpecification extends PropSpec
     val propTree = IsMember(ExtractRegisterAs(Self, R3), ExtractRegisterAs(Self, R4), TaggedByteArray(proofId))
     prop shouldBe propTree
 
+    val pubkey = prover.dlogSecrets.head.publicImage
     val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
 
@@ -1590,10 +1634,10 @@ class ErgoInterpreterSpecification extends PropSpec
          }""".stripMargin).asBoolValue
 
     val propExpected = EQ(ByteArrayConstant(helloHash),
-                  CalcBlake2b256(
-                    If(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10)),
-                      ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3),
-                      ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 1), R3))))
+      CalcBlake2b256(
+        If(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10)),
+          ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3),
+          ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 1), R3))))
     prop shouldBe propExpected
 
     val input0 = ErgoBox(10, pubkey, Map())
