@@ -1,28 +1,47 @@
 package sigmastate.serialization
 
+import java.math.BigInteger
+
 import sigmastate.Values.GroupElementConstant
-import ValueSerializer._
+import com.google.common.primitives.Shorts
+import scapi.sigma.GroupAgnosticEcElement
 import sigmastate.interpreter.GroupSettings
-import sigmastate.interpreter.GroupSettings.EcPointType
 import sigmastate.serialization.OpCodes._
 
+
+//todo: for now, no any compression is used, fix it when concrete group is known
 object GroupElementSerializer extends ValueSerializer[GroupElementConstant] {
+
+  type ElemType = GroupSettings.EcPointType
+
+  private val curve = GroupSettings.dlogGroup
 
   override val opCode: OpCode = GroupElementConstantCode
 
-  override def parseBody(bytes: Array[Byte], pos: Position) = {
+  override def serializeBody(gec: GroupElementConstant): Array[Byte] = {
+    val point = gec.value.normalize()
 
-    // TODO: Yet remains to be done
+    val xCoord = point.getAffineXCoord.toBigInteger.mod(curve.x9params.getN).toByteArray
+    val yCoord = point.getAffineYCoord.toBigInteger.mod(curve.x9params.getN).toByteArray
 
-    GroupElementConstant(null) -> 0
+    val xSize = xCoord.size.toShort
+    val ySize = yCoord.size.toShort
+
+    Shorts.toByteArray(xSize) ++
+      Shorts.toByteArray(ySize) ++
+      xCoord ++
+      yCoord
   }
 
-  override def serializeBody(obj: GroupElementConstant): Array[Byte] = {
+  override def parseBody(bytes: Array[Byte], pos: Int): (GroupElementConstant, Int) = {
+    val xSize = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
+    val ySize = Shorts.fromByteArray(bytes.slice(pos + 2, pos + 4))
 
-    // TODO: Yet remains to be done
+    val xCoord = new BigInteger(bytes.slice(pos + 4, pos + 4 + xSize))
+    val yCoord = new BigInteger(bytes.slice(pos + 4 + xSize, pos + 4 + xSize + ySize))
 
-    val value: EcPointType = obj.value
-
-    Array[Byte]()
+    (GroupElementConstant(curve.reconstructElement(bCheckMembership = true,
+                          GroupAgnosticEcElement(xCoord, yCoord)).get),
+      4 + xSize + ySize)
   }
 }
