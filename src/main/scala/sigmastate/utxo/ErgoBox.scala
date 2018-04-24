@@ -124,7 +124,7 @@ object ErgoBox {
       val (prop, consumed) = ValueSerializer.deserialize(bytes, 8)
       val regNum = bytes(8 + consumed)
       val (regs, finalPos) = (0 to regNum).foldLeft(Map[NonMandatoryIdentifier, Value[SType]]() -> (9 + consumed)){ case ((m, pos), regIdx) =>
-          val regId = registerByIndex(regIdx.toByte).asInstanceOf[NonMandatoryIdentifier]
+          val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryIdentifier]
           val (reg, consumed) = ValueSerializer.deserialize(bytes, pos)
           (m.updated(regId, reg), pos + consumed)
       }
