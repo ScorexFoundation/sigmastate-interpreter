@@ -1402,6 +1402,19 @@ class ErgoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 
+  property(">= compile") {
+    val elementId = 1: Byte
+    val env = Map("elementId" -> elementId.toLong)
+    val propTree = GE(TaggedInt(elementId), IntConstant(120))
+    val propComp =compile(env,
+      """{
+        |  taggedInt(elementId) >= 120
+        |}""".stripMargin).asBoolValue
+    propComp shouldBe propTree
+    //    Expected :GE(TaggedInt(1),IntConstant(120))
+    //    Actual   :GE(Apply(Ident(taggedInt,(SInt) => SInt),Vector(IntConstant(1))),IntConstant(120))
+  }
+
   property("avl tree - leaf satisfying condition exists") {
     val elements = Seq(123, 22)
     val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
