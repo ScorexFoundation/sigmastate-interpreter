@@ -1443,7 +1443,7 @@ class ErgoInterpreterSpecification extends PropSpec
     (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
   }
 
-  ignore("avl tree - leaf satisfying condition exists") {
+  property("avl tree - leaf satisfying condition exists") {
     val elements = Seq(BigInt(123), BigInt(22)).map(_.toByteArray).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
     val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
     elements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
@@ -1454,12 +1454,14 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val env = Map("elementId" -> elementId, "proofId" -> proofId, "treeData" -> treeData)
     val prop = compile(env,
-      """taggedInt(elementId) > 120 && isMember(treeData, blake2b256(taggedByteArray(elementId)), taggedByteArray(proofId))"""
+      """taggedInt(elementId) >= 120 && isMember(treeData, blake2b256(taggedByteArray(elementId)), taggedByteArray(proofId))"""
     ).asBoolValue
     val propExp: Value[SBoolean.type] = AND(
       GE(TaggedInt(elementId), IntConstant(120)),
       IsMember(AvlTreeConstant(treeData), CalcBlake2b256(TaggedByteArray(elementId)), TaggedByteArray(proofId))
     )
+    prop shouldBe propExp
+
     val recipientInt = new ErgoProvingInterpreter()
     val recipientProposition = recipientInt.dlogSecrets.head.publicImage
     val ctx = ErgoContext(
