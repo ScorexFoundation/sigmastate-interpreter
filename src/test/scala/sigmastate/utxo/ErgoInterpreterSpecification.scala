@@ -1414,8 +1414,21 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val prop: Value[SBoolean.type] = AND(
       GE(TaggedInt(elementId), IntConstant(120)),
-      IsMember(AvlTreeConstant(treeData), CalcBlake2b256(IntToByteArray(TaggedInt(elementId))), TaggedByteArray(proofId))
+      IsMember(ExtractRegisterAs(Self, R3), CalcBlake2b256(IntToByteArray(TaggedInt(elementId))), TaggedByteArray(proofId))
     )
+    val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
+    val propCompiled = compile(env,
+      """{
+        |  let tree = SELF.R3[AvlTree].value
+        |  let proof = taggedByteArray(proofId)
+        |  let element = taggedInt(elementId)
+        |  let elementKey = blake2b256(intToByteArray(element))
+        |  element >= 120 && isMember(tree, elementKey, proof)
+        |}""".stripMargin).asBoolValue
+
+
+    // todo
+    //    prop shouldBe propCompiled
 
     val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
     val ctx = ErgoContext(
@@ -1423,7 +1436,7 @@ class ErgoInterpreterSpecification extends PropSpec
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = ErgoBox(20, TrueLeaf, Map()))
+      self = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData))))
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
     val bigLeafProof = avlProver.generateProof()
