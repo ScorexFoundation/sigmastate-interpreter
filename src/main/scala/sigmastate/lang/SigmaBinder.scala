@@ -20,12 +20,14 @@ class SigmaBinder(env: Map[String, Any]) {
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
         case arr: Array[Byte] => Some(ByteArrayConstant(arr))
+        case v: Byte => Some(IntConstant(v))
         case v: Int => Some(IntConstant(v))
         case v: Long => Some(IntConstant(v))
         case v: BigInteger => Some(BigIntConstant(v))
         case v: GroupSettings.EcPointType => Some(GroupElementConstant(v))
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
         case b: ErgoBox => Some(BoxConstant(b))
+        case avl: AvlTreeData => Some(AvlTreeConstant(avl))
         case v: SValue => Some(v)
         case _ => None
       }

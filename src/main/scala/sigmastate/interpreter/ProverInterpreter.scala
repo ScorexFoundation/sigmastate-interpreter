@@ -111,8 +111,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[ProverResult[ProofT]] = Try {
     val reducedProp = reduceToCrypto(exp, context.withExtension(knownExtensions)).get
-
-    ProverResult(reducedProp match {
+    val proof = reducedProp match {
       case bool: BooleanConstant =>
         bool match {
           case TrueLeaf => NoProof
@@ -121,7 +120,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       case _ =>
         val ct = convertToUnproven(reducedProp.asInstanceOf[SigmaBoolean])
         prove(ct, message)
-    }, knownExtensions)
+    }
+    ProverResult(proof, knownExtensions)
   }
 
   /**
