@@ -8,30 +8,26 @@ import scorex.crypto.hash.Digest32
 import sigmastate.SType
 import sigmastate.Values.{FalseLeaf, TrueLeaf, Value}
 import sigmastate.utxo.ErgoBox.{NonMandatoryIdentifier, R3}
+import collection.JavaConverters._
 
 class ErgoBoxSerializerSpec extends PropSpec with GeneratorDrivenPropertyChecks with SerializationRoundTripSpec {
 
   implicit val ergoBoxSerializer = ErgoBox.serializer
 
-  val arGen: Gen[(NonMandatoryIdentifier, Value[SType])] = for {
-    rIndex <- Gen.chooseNum[Byte](3, 9)
-    r = ErgoBox.registerByIndex(rIndex).asInstanceOf[NonMandatoryIdentifier]
-    v <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield (r, v)
-
-  val arMapGen: Gen[Map[NonMandatoryIdentifier, Value[SType]]] = for {
-    length <- Gen.chooseNum(0, 3)
-    list <- Gen.listOfN(length, arGen)
-  } yield list.toMap
-
+  def arGen(cnt: Byte): Seq[Gen[(NonMandatoryIdentifier, Value[SType])]] = {
+    (0 until cnt).map(_ + ErgoBox.startingNonMandatoryIndex)
+      .map(rI => ErgoBox.registerByIndex(rI.toByte).asInstanceOf[NonMandatoryIdentifier])
+      .map(r => Gen.oneOf(TrueLeaf, FalseLeaf).map(v => r -> v))
+  }
 
   val ergoBoxGen: Gen[ErgoBox] = for {
     l <- arbLong.arbitrary
     b <- Gen.oneOf(TrueLeaf, FalseLeaf)
     tId <- Gen.listOfN(32, arbByte.arbitrary)
     boxId <- arbShort.arbitrary
-    ar <- arMapGen
-  } yield ErgoBox(l, b, ar, Digest32 @@ tId.toArray, boxId)
+    regNum <- Gen.chooseNum[Byte](0, 7)
+    ar <- Gen.sequence(arGen(regNum))
+  } yield ErgoBox(l, b, ar.asScala.toMap, Digest32 @@ tId.toArray, boxId)
 
   implicit val arbBox: Arbitrary[ErgoBox] = Arbitrary(ergoBoxGen)
 
