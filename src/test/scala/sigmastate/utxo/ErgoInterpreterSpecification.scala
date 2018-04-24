@@ -51,10 +51,10 @@ class ErgoInterpreterSpecification extends PropSpec
     val exp = EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes))
     e shouldBe exp
 
-    verifier.reduceToCrypto(exp, ctx)
+    verifier.reduceToCrypto(ctx, exp)
       .get.isInstanceOf[TrueLeaf.type] shouldBe true
 
-    verifier.reduceToCrypto(EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes)), ctx)
+    verifier.reduceToCrypto(ctx, EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes)))
       .get.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
@@ -1443,7 +1443,7 @@ class ErgoInterpreterSpecification extends PropSpec
     (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
   }
 
-  property("avl tree - leaf satisfying condition exists") {
+  ignore("avl tree - leaf satisfying condition exists") {
     val elements = Seq(BigInt(123), BigInt(22)).map(_.toByteArray).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
     val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
     elements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
