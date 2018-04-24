@@ -12,8 +12,8 @@ object SigmaPredef {
     /** Function declaration without body */
     declaration: Lambda,
     /** Builder of SigmaIR node which is equivalent to function application
-      * Rule: Apply(f, args) -->  irBuilder(args) */
-    irBuilder: Seq[SValue] => SValue
+      * Rule: Apply(f, args) -->  irBuilder(f, args) */
+    irBuilder: (SValue, Seq[SValue]) => SValue
   )
   
   val predefinedEnv: Map[String, SValue] = Seq(
