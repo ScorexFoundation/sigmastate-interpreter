@@ -3,12 +3,13 @@ package sigmastate.utxo
 import com.google.common.primitives.{Longs, Shorts}
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigmastate.Values._
 import sigmastate._
-import Values._
 import sigmastate.serialization.{Serializer, ValueSerializer}
 import sigmastate.utxo.ErgoBox._
 
 import scala.annotation.tailrec
+import scala.runtime.ScalaRunTime
 import scala.util.Try
 
 
@@ -20,8 +21,7 @@ class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
                        val additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()) {
 
-  //TODO: val propositionBytes = ValueSerializer.serialize(proposition)
-  val propositionBytes: Array[Byte] = proposition.toString.getBytes
+  val propositionBytes: Array[Byte] = ValueSerializer.serialize(proposition)
 
   lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
 
@@ -62,12 +62,12 @@ class ErgoBoxCandidate(val value: Long,
   * @param boxId         - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
   * @param additionalRegisters
   */
-class ErgoBox private(override val value: Long,
-                      override val proposition: Value[SBoolean.type],
-                      val transactionId: Digest32,
-                      val boxId: Short,
-                      override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()
-                     ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
+case class ErgoBox(override val value: Long,
+                   override val proposition: Value[SBoolean.type],
+                   override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
+                   transactionId: Digest32 = Digest32 @@ Array.fill(32)(0: Byte),
+                   boxId: Short = 0,
+                  ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
 
   import sigmastate.utxo.ErgoBox._
 
@@ -81,18 +81,17 @@ class ErgoBox private(override val value: Long,
   }
 
   lazy val bytes: Array[Byte] = serializer.toBytes(this)
+
+  override def equals(arg:Any) = arg match {
+    case ErgoBox(v, p, ar, tId, bId) =>
+      value == v && proposition == p && additionalRegisters == ar && transactionId.sameElements(tId) && boxId == bId
+    case _ => false
+  }
+  override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalRegisters, boxId))
 }
 
 object ErgoBox {
   type BoxId = ADKey
-
-  def apply(value: Long,
-            proposition: Value[SBoolean.type],
-            additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
-            transactionId: Digest32 = Digest32 @@ Array.fill(32)(0: Byte),
-            boxId: Short = 0): ErgoBox =
-    new ErgoBox(value, proposition, transactionId, boxId, additionalRegisters)
-
 
   object serializer extends Serializer[ErgoBox] {
     override def toBytes(obj: ErgoBox): Array[Byte] =
@@ -123,7 +122,7 @@ object ErgoBox {
       val value = Longs.fromByteArray(bytes.take(8))
       val (prop, consumed) = ValueSerializer.deserialize(bytes, 8)
       val regNum = bytes(8 + consumed)
-      val (regs, finalPos) = (0 to regNum).foldLeft(Map[NonMandatoryIdentifier, Value[SType]]() -> (9 + consumed)){ case ((m, pos), regIdx) =>
+      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, Value[SType]]() -> (9 + consumed)){ case ((m, pos), regIdx) =>
           val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryIdentifier]
           val (reg, consumed) = ValueSerializer.deserialize(bytes, pos)
           (m.updated(regId, reg), pos + consumed)
