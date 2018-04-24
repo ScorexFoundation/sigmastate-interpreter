@@ -21,8 +21,7 @@ class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
                        val additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()) {
 
-  //TODO: val propositionBytes = ValueSerializer.serialize(proposition)
-  val propositionBytes: Array[Byte] = proposition.toString.getBytes
+  val propositionBytes: Array[Byte] = ValueSerializer.serialize(proposition)
 
   lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
 
@@ -103,7 +102,8 @@ object ErgoBox {
       @tailrec
       def collectRegister(collectedBytes: Array[Byte], collectedRegisters: Byte): (Array[Byte], Byte) = {
         val regIdx = (startingNonMandatoryIndex + collectedRegisters).toByte
-        obj.get(registerByIndex(regIdx)) match {
+        val regByIdOpt = registerByIndex.get(regIdx)
+        regByIdOpt.flatMap(obj.get) match {
           case Some(v) =>
             collectRegister(collectedBytes ++ ValueSerializer.serialize(v), (collectedRegisters + 1).toByte)
           case None =>

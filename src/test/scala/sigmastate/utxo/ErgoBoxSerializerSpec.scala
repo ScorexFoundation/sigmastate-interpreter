@@ -7,7 +7,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.hash.Digest32
 import sigmastate.SType
 import sigmastate.Values.{FalseLeaf, TrueLeaf, Value}
-import sigmastate.utxo.ErgoBox.{NonMandatoryIdentifier, R3}
+import sigmastate.utxo.ErgoBox.NonMandatoryIdentifier
 import collection.JavaConverters._
 
 class ErgoBoxSerializerSpec extends PropSpec with GeneratorDrivenPropertyChecks with SerializationRoundTripSpec {
@@ -36,5 +36,4 @@ class ErgoBoxSerializerSpec extends PropSpec with GeneratorDrivenPropertyChecks 
       roundTripTest(b)
     }
   }
-
 }
