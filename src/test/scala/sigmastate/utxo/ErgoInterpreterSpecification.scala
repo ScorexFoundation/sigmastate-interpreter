@@ -15,6 +15,7 @@ import sigmastate._
 import sigmastate.interpreter.GroupSettings
 import sigmastate.lang.Terms._
 import sigmastate.lang._
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.BoxHelpers.createBox
 import sigmastate.utxo.ErgoBox._
 
@@ -1411,6 +1412,32 @@ class ErgoInterpreterSpecification extends PropSpec
         |  taggedInt(elementId) >= 120
         |}""".stripMargin).asBoolValue
     propComp shouldBe propTree
+  }
+
+  property("P2SH") {
+    val scriptId = 1.toByte
+
+    val customScript = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
+    val scriptBytes = ValueSerializer.serialize(customScript)
+    val prover = new ErgoProvingInterpreter()
+      .withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
+    val scriptHash = Blake2b256(scriptBytes)
+
+    val hashEquals = EQ(CalcBlake2b256(TaggedByteArray(scriptId)), scriptHash)
+    val scriptIsCorrect = ???
+    val prop = AND(hashEquals, scriptIsCorrect)
+
+    val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
+    val ctx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
+      self = ErgoBox(20, TrueLeaf, Map()))
+
+    val proof = prover.prove(prop, ctx, fakeMessage).get
+
+    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
   }
 
   ignore("Colored coins") {
