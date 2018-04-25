@@ -110,7 +110,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   }
 
   def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[ProverResult[ProofT]] = Try {
-    val reducedProp = reduceToCrypto(exp, context.withExtension(knownExtensions)).get
+    val reducedProp = reduceToCrypto(context.withExtension(knownExtensions), exp).get
     val proof = reducedProp match {
       case bool: BooleanConstant =>
         bool match {

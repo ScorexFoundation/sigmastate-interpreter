@@ -5,13 +5,14 @@ import java.math.BigInteger
 import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
 import scapi.sigma._
-import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import scorex.crypto.hash.{Blake2b256, CryptographicHash, CryptographicHash32, Sha256}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
+import scorex.crypto.hash.{Sha256, CryptographicHash, Blake2b256, CryptographicHash32}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.Transformer
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.Values._
+import sigmastate.interpreter.Interpreter
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -78,7 +79,8 @@ object OR {
 }
 
 case class AND(input: Value[SCollection[SBoolean.type]])
-  extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
+    extends Transformer[SCollection[SBoolean.type], SBoolean.type]
+    with NotReadyValueBoolean {
 
   override val opCode: OpCode = AndCode
 
@@ -92,7 +94,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[SBoolean.type]].value.forall(_.evaluated)
 
-  override def function(input: EvaluatedValue[SCollection[SBoolean.type]]) = {
+  override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
     def iterChildren(children: IndexedSeq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
@@ -106,13 +108,18 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     val reduced = iterChildren(input.value, mutable.Buffer())
 
     reduced.size match {
-      case i: Int if i == 0 => TrueLeaf
-      case i: Int if i == 1 => reduced.head
+      case 0 => TrueLeaf
+      case 1 => reduced.head
       case _ =>
+        // TODO we may have Sigma and Boolean values in different order
+        // current implementation is "all or nothing"
         if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
           CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
+        else if (reduced.forall(!_.isInstanceOf[SigmaBoolean]))
+          AND(reduced)
         else
-          AND(reduced)  // TODO is it ok if not all but some of the items in reduced are SigmaBoolean
+          Interpreter.error(
+            s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: ${reduced}")
     }
   }
 }
