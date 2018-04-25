@@ -50,10 +50,10 @@ class ErgoInterpreterSpecification extends PropSpec
     val exp = EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes))
     e shouldBe exp
 
-    verifier.reduceToCrypto(exp, ctx)
+    verifier.reduceToCrypto(ctx, exp)
       .get.isInstanceOf[TrueLeaf.type] shouldBe true
 
-    verifier.reduceToCrypto(EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes)), ctx)
+    verifier.reduceToCrypto(ctx, EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes)))
       .get.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
@@ -1404,9 +1404,9 @@ class ErgoInterpreterSpecification extends PropSpec
 
   property(">= compile") {
     val elementId = 1: Byte
-    val env = Map("elementId" -> elementId.toLong)
+    val env = Map("elementId" -> elementId)
     val propTree = GE(TaggedInt(elementId), IntConstant(120))
-    val propComp =compile(env,
+    val propComp = compile(env,
       """{
         |  taggedInt(elementId) >= 120
         |}""".stripMargin).asBoolValue
@@ -1439,9 +1439,7 @@ class ErgoInterpreterSpecification extends PropSpec
         |  element >= 120 && isMember(tree, elementKey, proof)
         |}""".stripMargin).asBoolValue
 
-
-    // todo
-    //    prop shouldBe propCompiled
+    prop shouldBe propCompiled
 
     val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
     val ctx = ErgoContext(

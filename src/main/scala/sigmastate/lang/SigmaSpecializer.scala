@@ -48,8 +48,26 @@ class SigmaSpecializer {
     case Apply(Sha256Sym, Seq(arg: Value[SByteArray.type]@unchecked)) =>
       Some(CalcSha256(arg))
 
+    case Apply(TaggedAvlTreeSym, Seq(IntConstant(i))) =>
+      Some(TaggedAvlTree(i.toByte))
+
+    case Apply(TaggedGroupElementSym, Seq(IntConstant(i))) =>
+      Some(TaggedGroupElement(i.toByte))
+
+    case Apply(TaggedBoxSym, Seq(IntConstant(i))) =>
+      Some(TaggedBox(i.toByte))
+
     case Apply(TaggedByteArraySym, Seq(IntConstant(i))) =>
       Some(TaggedByteArray(i.toByte))
+
+    case Apply(TaggedBigIntSym, Seq(IntConstant(i))) =>
+      Some(TaggedBigInt(i.toByte))
+
+    case Apply(TaggedIntSym, Seq(IntConstant(i))) =>
+      Some(TaggedInt(i.toByte))
+
+    case Apply(TaggedBooleanSym, Seq(IntConstant(i))) =>
+      Some(TaggedBoolean(i.toByte))
 
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray.type]@unchecked, proof: Value[SByteArray.type]@unchecked)) =>
       Some(IsMember(tree, key, proof))

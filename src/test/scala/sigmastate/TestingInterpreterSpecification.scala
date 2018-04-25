@@ -10,13 +10,14 @@ import sigmastate.utxo.{CostTable, Height}
 
 import scala.util.Random
 
-
-case class TestingContext(height: Int,
-                          override val extension: ContextExtension = ContextExtension(values = Map())) extends Context[TestingContext] {
+case class TestingContext(
+    height: Int,
+    override val extension: ContextExtension = ContextExtension(values = Map())
+) extends Context[TestingContext] {
   override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
 }
 
-
+/** An interpreter for tests with 2 random secrets*/
 object TestingInterpreter extends Interpreter with ProverInterpreter {
   override type CTX = TestingContext
 
@@ -30,8 +31,9 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
 
   override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
 
-  override def specificTransformations(context: TestingContext): PartialFunction[Value[_ <: SType], Value[_ <: SType]] = {
+  override def specificTransformations(context: TestingContext, tree: SValue): SValue = tree match {
     case Height => IntConstant(context.height)
+    case _ => super.specificTransformations(context, tree)
   }
 }
 
@@ -49,14 +51,14 @@ class TestingInterpreterSpecification extends PropSpec
       whenever(h > 0 && h < Int.MaxValue - 1) {
         val dk1 = DLogProverInput.random().publicImage
 
-        val env = TestingContext(h)
-        assert(reduceToCrypto(AND(GE(Height, IntConstant(h - 1)), dk1), env).get.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(AND(GE(Height, IntConstant(h)), dk1), env).get.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(AND(GE(Height, IntConstant(h + 1)), dk1), env).get.isInstanceOf[FalseLeaf.type])
+        val ctx = TestingContext(h)
+        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get.isInstanceOf[FalseLeaf.type])
 
-        assert(reduceToCrypto(OR(GE(Height, IntConstant(h - 1)), dk1), env).get.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(OR(GE(Height, IntConstant(h)), dk1), env).get.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(OR(GE(Height, IntConstant(h + 1)), dk1), env).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get.isInstanceOf[ProveDlog])
       }
     }
   }
@@ -69,29 +71,29 @@ class TestingInterpreterSpecification extends PropSpec
         val dk1 = DLogProverInput.random().publicImage
         val dk2 = DLogProverInput.random().publicImage
 
-        val env = TestingContext(h)
+        val ctx = TestingContext(h)
 
-        assert(reduceToCrypto(OR(
-          AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
-          AND(GT(Height, IntConstant(h + 1)), dk1)
-        ), env).get.isInstanceOf[CAND])
-
-
-        assert(reduceToCrypto(OR(
-          AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, IntConstant(h - 1)), dk1)
-        ), env).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, OR(
+                  AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h + 1)), dk1)
+                )).get.isInstanceOf[CAND])
 
 
-        assert(reduceToCrypto(OR(
-          AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, IntConstant(h + 1)), dk1)
-        ), env).get.isInstanceOf[FalseLeaf.type])
+        assert(reduceToCrypto(ctx, OR(
+                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h - 1)), dk1)
+                )).get.isInstanceOf[ProveDlog])
 
-        assert(reduceToCrypto(OR(OR(
-          AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, IntConstant(h + 1)), dk1)
-        ), AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1)))), env).get.isInstanceOf[TrueLeaf.type])
+
+        assert(reduceToCrypto(ctx, OR(
+                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h + 1)), dk1)
+                )).get.isInstanceOf[FalseLeaf.type])
+
+        assert(reduceToCrypto(ctx, OR(OR(
+                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h + 1)), dk1)
+                ), AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1))))).get.isInstanceOf[TrueLeaf.type])
 
       }
     }
