@@ -23,7 +23,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "HEIGHT + 1") shouldBe Plus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
     bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10,20))
-    bind(env, "arr1 ++ arr2") shouldBe AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
+    bind(env, "arr1 ++ arr2") shouldBe MethodCall(Array[Byte](1, 2), "++", IndexedSeq(Array[Byte](10,20)))  // AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
     bind(env, "g1 ^ n") shouldBe Exponentiate(g1, n)
     bind(env, "g1 * g2") shouldBe MultiplyGroup(g1, g2)
   }

@@ -139,6 +139,18 @@ class SigmaTyper {
           error(s"Invalid array application $app: array type is expected but was $t")
       }
 
+    case mc @ MethodCall(obj, m, args, _) =>
+      val newObj = assignType(env, obj)
+      val newArgs = args.map(assignType(env, _))
+      newObj.tpe match {
+        case SByteArray => (m, newArgs) match {
+          case ("++", Seq(r)) => AppendBytes(newObj.asValue[SByteArray.type], r.asValue[SByteArray.type])
+          case _ => error(s"Unknown symbol $m, which is used as operation with arguments $newArgs")
+        }
+        case t =>
+          error(s"Invalid operation $mc on type $t")
+      }
+
     case app @ ApplyTypes(sel: Select, targs) =>
       val newSel @ Select(obj, n, _) = assignType(env, sel)
       newSel.tpe match {
