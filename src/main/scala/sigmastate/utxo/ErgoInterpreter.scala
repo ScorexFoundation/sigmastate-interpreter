@@ -25,6 +25,10 @@ class ErgoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
       else
         null
 //        Interpreter.error(s"Tagged variable with id=${t.id} not found in context ${context.extension.values}")
+
+    case d: Deserialize[_] if d.transformationReady =>
+      d.function(d.input.asInstanceOf[EvaluatedValue[SByteArray.type]])
+
     case _ =>
       super.specificTransformations(context, tree)
   }

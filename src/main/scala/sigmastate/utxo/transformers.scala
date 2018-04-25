@@ -4,8 +4,9 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import sigmastate._
 import Values._
 import sigmastate.utxo.ErgoBox.RegisterIdentifier
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.CostTable.Cost
 
 import scala.collection.immutable
@@ -235,4 +236,26 @@ case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
 
   override def function(box: EvaluatedValue[SBox.type]): Value[V] =
     box.value.get(registerId).orElse(default).get.asInstanceOf[Value[V]]
+}
+
+
+
+case class Deserialize[V <: SType](input: Value[SByteArray.type])(implicit val tpe: V)
+  extends Transformer[SByteArray.type, V] with NotReadyValue[V] with Rewritable {
+
+  def arity = 2
+
+  def deconstruct = immutable.Seq[Any](input, tpe)
+
+  def reconstruct(cs: immutable.Seq[Any]) = cs match {
+    case Seq(input: Value[SByteArray.type]@unchecked, t: V@unchecked) =>
+      Deserialize[V](input)(t)
+    case _ =>
+      illegalArgs("Deserialize", "(Value[SByteArray.type])(tpe: V)", cs)
+  }
+
+  override def cost: Int = 1000 //todo: consider limits
+
+  override def function(box: EvaluatedValue[SByteArray.type]): Value[V] =
+    ValueSerializer.deserialize(box.value).asInstanceOf[Value[V]]
 }
