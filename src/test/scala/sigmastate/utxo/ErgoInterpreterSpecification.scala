@@ -1413,6 +1413,32 @@ class ErgoInterpreterSpecification extends PropSpec
     propComp shouldBe propTree
   }
 
+  ignore("Colored coins") {
+    // TODO
+  }
+
+  ignore("One signature for multiple outputs") {
+    // at least one input have correct signature for concrete public key
+    /*
+    val prover = new ErgoProvingInterpreter
+    val pubkey1 = prover.dlogSecrets.head.publicImage
+    val recipientProposition = recipientProposition
+
+    val prop = Exists(Inputs, 21, ???)
+//    new ProveDlog(ExtractRegisterAs(Self, R3))
+    val tx = ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition)))
+
+    val ctx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      tx,
+      self = ErgoBox(20, TrueLeaf, Map()))
+
+    val verifier = new ErgoInterpreter
+   */
+  }
+
   property("avl tree - leaf satisfying condition exists") {
     val elements = Seq(123, 22)
     val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
