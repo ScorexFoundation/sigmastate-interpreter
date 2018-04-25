@@ -40,6 +40,7 @@ object ValueSerializer
     TwoArgumentsSerializer(PlusCode, Plus.apply),
 
     GroupElementSerializer,
+    ProveDlogSerializer,
     IntConstantSerializer,
     TrueLeafSerializer,
     FalseLeafSerializer,
@@ -48,7 +49,9 @@ object ValueSerializer
     OrSerializer,
     TaggedVariableSerializer,
     BigIntConstantSerializer,
-    ByteArrayConstantSerializer
+    ByteArrayConstantSerializer,
+    HeightSerializer,
+    MapCollectionSerializer
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
@@ -62,6 +65,7 @@ object ValueSerializer
 
   def serialize(v: Value[SType]): Array[Byte] = {
     val opCode = v.opCode
+    if (opCode == 0) { println(v.toString) }
     val serFn = table(opCode).asInstanceOf[SigmaSerializer[Value[SType], v.type]]
     opCode +: serFn.serializeBody(v)
   }

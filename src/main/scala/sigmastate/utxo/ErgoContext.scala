@@ -3,6 +3,8 @@ package sigmastate.utxo
 import sigmastate._
 import Values._
 import sigmastate.interpreter.{Context, ContextExtension}
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoContext.Height
 
@@ -48,6 +50,8 @@ object ErgoContext {
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
 case object Height extends NotReadyValueInt {
+  override val opCode: OpCode = OpCodes.HeightCode
+
   override lazy val cost: Int = Cost.HeightAccess
 }
 

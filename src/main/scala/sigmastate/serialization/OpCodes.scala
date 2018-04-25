@@ -16,6 +16,7 @@ object OpCodes {
   val ByteArrayConstantCode:    OpCode = 16: Byte
   val GroupElementConstantCode: OpCode = 17: Byte
 
+
   // Relation descendants
 
   val LtCode:     OpCode = 21: Byte
@@ -43,4 +44,11 @@ object OpCodes {
 
   val SomeValueCode: OpCode = 50: Byte
   val NoneValueCode: OpCode = 51: Byte
+
+  val ProveDlogCode:   OpCode = 60: Byte
+  val HeightCode:      OpCode = 61: Byte
+
+  val MapCollectionCode: OpCode = 70: Byte
+
+
 }

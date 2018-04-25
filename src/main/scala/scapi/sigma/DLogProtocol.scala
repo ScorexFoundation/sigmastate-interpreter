@@ -2,6 +2,7 @@ package scapi.sigma
 
 import java.math.BigInteger
 import java.security.SecureRandom
+
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
@@ -9,6 +10,9 @@ import sigmastate.utxo.CostTable.Cost
 import sigmastate._
 import sigmastate.interpreter.GroupSettings
 import sigmastate.interpreter.GroupSettings.EcPointType
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes.OpCode
+
 import scala.concurrent.Future
 import scala.util.Try
 
@@ -21,6 +25,8 @@ object DLogProtocol {
 
   case class ProveDlog(value: Value[SGroupElement.type])
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
+
+    override val opCode: OpCode = OpCodes.ProveDlogCode
 
     import GroupSettings.dlogGroup
 

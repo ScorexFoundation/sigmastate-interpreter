@@ -4,8 +4,10 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import sigmastate._
 import Values._
 import sigmastate.utxo.ErgoBox.RegisterIdentifier
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
 
 import scala.collection.immutable
@@ -35,6 +37,9 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
                                                    id: Byte,
                                                    mapper: SValue)(implicit val tOV: OV)
   extends Transformer[SCollection[IV], SCollection[OV]] with Rewritable {
+
+  override val opCode: OpCode = OpCodes.MapCollectionCode
+
   val tpe = SCollection[OV]
   def arity = 4
   def deconstruct = immutable.Seq[Any](input, id, mapper, tOV)
