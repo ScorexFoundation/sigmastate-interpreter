@@ -72,7 +72,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
       case i: Int if i == 1 => reduced.head
       case _ =>
         if (reduced.forall(_.isInstanceOf[SigmaBoolean])) COR(reduced.map(_.asInstanceOf[SigmaBoolean]))
-        else OR(reduced: _*)
+        else OR.fromSeq(reduced)
     }
   }
 }
@@ -128,7 +128,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
         if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
           CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
         else if (reduced.forall(!_.isInstanceOf[SigmaBoolean]))
-          AND(reduced: _*)
+          AND.fromSeq(reduced)
         else
           Interpreter.error(
             s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: ${reduced}")

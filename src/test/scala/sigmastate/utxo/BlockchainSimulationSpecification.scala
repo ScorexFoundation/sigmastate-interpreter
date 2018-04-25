@@ -7,7 +7,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values.IntConstant
 import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.ErgoBox.R3
@@ -73,7 +73,7 @@ class BlockchainSimulationSpecification extends PropSpec
   }
 
   object ValidationState {
-    type BatchProver = BatchAVLProver[Digest32, Blake2b256Unsafe]
+    type BatchProver = BatchAVLProver[Digest32, Blake2b256.type ]
 
     val initBlock = Block {
       (1 to windowSize).map { i =>

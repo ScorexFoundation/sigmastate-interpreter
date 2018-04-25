@@ -77,7 +77,7 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    OR(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
+    OR.fromSeq(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
 }
 
@@ -97,7 +97,7 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    AND(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
+    AND.fromSeq(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
 }
 

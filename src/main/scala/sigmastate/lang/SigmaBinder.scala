@@ -64,11 +64,11 @@ class SigmaBinder(env: Map[String, Any]) {
 
     // Rule: allOf(Array(...)) --> AND(...)
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
-      Some(AND(args))
+      Some(AND.fromSeq(args))
 
     // Rule: anyOf(Array(...)) --> AND(...)
     case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
-      Some(OR(args))
+      Some(OR.fromSeq(args))
 
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>

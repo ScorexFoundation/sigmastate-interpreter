@@ -9,7 +9,7 @@ import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.encode.Base16
-import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.GroupSettings
@@ -374,13 +374,13 @@ class ErgoInterpreterSpecification extends PropSpec
   }
 
   property("prover enriching context - xor") {
-    val v1 = Base16.decode("abcdef7865")
+    val v1 = Base16.decode("abcdef7865").get
     val k1 = 21: Byte
 
-    val v2 = Base16.decode("10abdca345")
+    val v2 = Base16.decode("10abdca345").get
     val k2 = 22: Byte
 
-    val r = Base16.decode("bb6633db20")
+    val r = Base16.decode("bb6633db20").get
 
     val prover = new ErgoProvingInterpreter()
       .withContextExtender(k1, ByteArrayConstant(v1))
@@ -1362,7 +1362,7 @@ class ErgoInterpreterSpecification extends PropSpec
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
 
     val key = Blake2b256("hello world")
     avlProver.performOneOperation(Insert(ADKey @@ key, ADValue @@ key))
@@ -1467,7 +1467,7 @@ class ErgoInterpreterSpecification extends PropSpec
   property("avl tree - leaf satisfying condition exists") {
     val elements = Seq(123, 22)
     val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
     avlProver.generateProof()
     val treeData = new AvlTreeData(avlProver.digest, 32, None)
@@ -1519,7 +1519,7 @@ class ErgoInterpreterSpecification extends PropSpec
 
   property("avl tree - prover provides proof") {
 
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
 
     val key = Blake2b256("hello world")
     avlProver.performOneOperation(Insert(ADKey @@ key, ADValue @@ key))

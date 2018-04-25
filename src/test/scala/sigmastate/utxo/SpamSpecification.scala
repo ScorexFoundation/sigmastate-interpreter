@@ -1,13 +1,13 @@
 package sigmastate.utxo
 
 import org.scalacheck.Gen
-import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe}
+import org.scalatest.{Matchers, PropSpec}
+import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
-import sigmastate._
 import sigmastate.Values._
-import BoxHelpers.createBox
+import sigmastate._
+import sigmastate.utxo.BoxHelpers.createBox
 
 
 /**
@@ -27,7 +27,7 @@ class SpamSpecification extends PropSpec
   // (for the Blake2b256 hash function over a single block input)
   val Timeout: Long = {
     val block = Array.fill(16)(0: Byte)
-    val hf = new Blake2b256Unsafe
+    val hf = Blake2b256
 
     //just in case to heat up JVM
     (1 to 1000000).foreach(_ => hf(block))
@@ -110,7 +110,7 @@ class SpamSpecification extends PropSpec
     val ctx = ErgoContext.dummy(fakeSelf)
 
     val publicImages = secret.publicImage +: simulated
-    val prop = OR(publicImages)
+    val prop = OR.fromSeq(publicImages)
 
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(prop, ctx, message).get
@@ -125,9 +125,9 @@ class SpamSpecification extends PropSpec
       whenever(orCnt > 10 && outCnt > 200) {
         val prover = new ErgoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
 
-        val propToCompare = OR((1 to orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))))
+        val propToCompare = OR.fromSeq((1 to orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))))
 
-        val spamProp = OR((1 until orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))) :+
+        val spamProp = OR.fromSeq((1 until orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))) :+
           EQ(IntConstant(6), IntConstant(6)))
 
         val spamScript =
@@ -161,8 +161,8 @@ class SpamSpecification extends PropSpec
     val prop = Exists(Inputs, 21, Exists(Outputs, 22,
       EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
 
-    val inputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
-    val outputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(6))))
+    val inputScript = OR.fromSeq((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
+    val outputScript = OR.fromSeq((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(6))))
 
     val inputs = ((1 to 999) map (_ => ErgoBox(11, inputScript))) :+ ErgoBox(11, outputScript)
     val outputs = (1 to 1000) map (_ => ErgoBox(11, outputScript))
