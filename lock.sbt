@@ -17,8 +17,8 @@ dependencyOverrides ++= Seq(
   "org.rogach" % "scallop_2.12" % "2.1.1",
   "org.rudogma" % "supertagged_2.12" % "1.4",
   "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
-  "org.scorexfoundation" % "scrypto_2.12" % "2.0.5",
+  "org.scorexfoundation" % "scrypto_2.12" % "2.1.0",
   "org.slf4j" % "slf4j-api" % "1.7.25",
   "org.whispersystems" % "curve25519-java" % "0.4.1"
 )
-// LIBRARY_DEPENDENCIES_HASH 801c96700d9ab33ec988ac4ee6460f14a1d31dad
+// LIBRARY_DEPENDENCIES_HASH 4ea09b1bda9229d2867019e99347eff3f3ef8fce

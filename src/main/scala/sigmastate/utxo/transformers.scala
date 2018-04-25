@@ -77,7 +77,7 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    OR(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
+    OR.fromSeq(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
 }
 
@@ -97,7 +97,7 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    AND(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
+    AND.fromSeq(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
 }
 
@@ -146,13 +146,22 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
 }
 
 object Fold {
+  /**
+    * Sum elements of SInt collection
+    */
   def sum(input: Value[SCollection[SInt.type]]) =
     Fold(input, 21, IntConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
 
+  /**
+    * Concatenate bytes of SByteArray collection
+    */
   def sumBytes(input: Value[SCollection[SByteArray.type]]) =
     Fold[SByteArray.type](input, 21, ByteArrayConstant(Array.emptyByteArray), 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
+/**
+  * Element from collection by index
+  */
 case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
   def tpe = input.tpe.elemType
@@ -170,6 +179,9 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   override def cost = 1
 }
 
+/**
+  * Size of colleaction `input`
+  */
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
 
@@ -183,13 +195,18 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
   override def function(box: EvaluatedValue[SBox.type]): Value[V]
 }
 
+/**
+  * Number of coin kept in this box
+  */
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueInt {
   override lazy val cost: Int = 10
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] = IntConstant(box.value.value)
 }
 
-
+/**
+  * Binary representation of the box script
+  */
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
   override lazy val cost: Int = 1000
 
@@ -198,7 +215,9 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
   }
 }
 
-
+/**
+  * Binary representation of the box
+  */
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
   override lazy val cost: Int = 1000 //todo: make it PerKb * max box size in kbs
 
@@ -211,12 +230,18 @@ case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteA
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytesWithNoRef)
 }
 
+/**
+  * Box id
+  */
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
   override lazy val cost: Int = 10
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.id)
 }
 
+/**
+  * Value of register with `registerId` from box `input` and default value `default`
+  */
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
                                          default: Option[Value[V]] = None)(implicit val tpe: V)

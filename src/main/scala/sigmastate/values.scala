@@ -2,17 +2,18 @@ package sigmastate
 
 import java.math.BigInteger
 import java.util
+
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256Unsafe}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.interpreter.GroupSettings
-import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.ErgoBox
+
 import scala.collection.immutable
 
 object Values {
@@ -66,6 +67,9 @@ object Values {
     override lazy val evaluated = false
   }
 
+  /**
+    * Variable with specified `id`, that will be provided by a prover
+    */
   trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
     override val opCode: OpCode = TaggedVariableCode
     val id: Byte
@@ -135,8 +139,7 @@ object Values {
     override def tpe = SByteArray
   }
 
-  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray {
-  }
+  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray
 
   case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
     override val cost = 50
@@ -144,7 +147,7 @@ object Values {
     override def tpe = SAvlTree
 
     def createVerifier(proof: SerializedAdProof) =
-      new BatchAVLVerifier[Digest32, Blake2b256Unsafe](
+      new BatchAVLVerifier[Digest32, Blake2b256.type](
         value.startingDigest,
         proof,
         value.keyLength,
@@ -274,14 +277,18 @@ object Values {
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override val opCode = SomeValueCode
+
     def cost: Int = x.cost + 1
+
     val tpe = SOption(x.tpe)
     lazy val value = Some(x)
   }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
     override val opCode = NoneValueCode
+
     def cost: Int = 1
+
     val tpe = SOption(elemType)
     lazy val value = None
   }
@@ -305,4 +312,5 @@ object Values {
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
+
 }
