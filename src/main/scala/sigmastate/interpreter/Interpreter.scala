@@ -134,7 +134,6 @@ trait Interpreter {
     // We can estimate cost of the tree evaluation only after this step.
     val substRule = strategy[Value[_ <: SType]] { case x => Option(specificTransformations(context, x)) }
 
-    //todo: controversial .asInstanceOf?
     val substTree = everywherebu(substRule)(exp) match {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
