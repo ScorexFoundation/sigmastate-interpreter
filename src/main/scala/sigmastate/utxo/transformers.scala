@@ -101,13 +101,6 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
   }
 }
 
-/*
-todo: implement
-
-object Append
-object Slice
-*/
-
 
 case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              id: Byte,
@@ -184,7 +177,6 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
 
   override def cost = 1
 }
-
 
 
 sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
