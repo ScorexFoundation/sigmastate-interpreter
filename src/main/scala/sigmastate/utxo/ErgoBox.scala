@@ -81,6 +81,8 @@ class ErgoBox private(override val value: Long,
   }
 
   lazy val bytes: Array[Byte] = serializer.toBytes(this)
+
+  def toCandidate: ErgoBoxCandidate = new ErgoBoxCandidate(value, proposition, additionalRegisters)
 }
 
 object ErgoBox {
