@@ -1,5 +1,7 @@
 package sigmastate.lang
 
+import java.beans.IndexedPropertyDescriptor
+
 import fastparse.core.ParseError
 import fastparse.core.Parsed.Failure
 import org.scalactic.source.Position
@@ -50,7 +52,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("false || false || false") shouldBe OR(OR(FalseLeaf, FalseLeaf), FalseLeaf)
     parse("(1>= 0)||(3 >2)") shouldBe OR(GE(1, 0), GT(3, 2))
     parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
-    parse("arr1 ++ arr2") shouldBe AppendBytes(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
+    parse("arr1 ++ arr2") shouldBe MethodCall(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
+    parse("col1 ++ col2") shouldBe MethodCall(Ident("col1"), "++", IndexedSeq(Ident("col2")))
     parse("ge ^ n") shouldBe Exponentiate(GEIdent("ge"), BigIntIdent("n"))
     parse("g1 * g2") shouldBe MultiplyGroup(GEIdent("g1"), GEIdent("g2"))
   }

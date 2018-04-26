@@ -62,6 +62,20 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
   override def cost: Int = input.cost * mapper.cost
 }
 
+case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SCollection[IV]])
+  extends Transformer[SCollection[IV], SCollection[IV]]{
+  val tpe = input.tpe
+
+  override def transformationReady: Boolean =
+    ConcreteCollection.isEvaluated(input) && ConcreteCollection.isEvaluated(col2)
+
+  override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
+    ConcreteCollection(cl.value ++ col2.asInstanceOf[EvaluatedValue[SCollection[IV]]].value)(tpe.elemType)
+  }
+
+  override def cost: Int = input.cost * col2.cost
+}
+
 case class Exists[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
                                condition: Value[SBoolean.type])

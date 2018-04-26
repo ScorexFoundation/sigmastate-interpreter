@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import sigmastate.lang.Terms.Ident
-import sigmastate.Values.Value
+import sigmastate.Values.{Value, IntConstant, ConcreteCollection}
 import sigmastate._
 import java.math.BigInteger
 
@@ -27,6 +27,8 @@ trait LangTests {
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
     "arr1" -> Array[Byte](1, 2),
     "arr2" -> Array[Byte](10, 20),
+    "col1" -> ConcreteCollection(IntConstant(1), IntConstant(2)),
+    "col2" -> ConcreteCollection(IntConstant(10), IntConstant(20)),
     "g1" -> g1,
     "g2" -> g2,
     "n" -> n

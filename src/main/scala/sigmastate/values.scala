@@ -308,6 +308,11 @@ object Values {
         illegalArgs("ConcreteCollection", "(IndexedSeq, SType)", cs)
     }
   }
+  object ConcreteCollection {
+    def apply[V <: SType](items: Value[V]*)(implicit tV: V) = new ConcreteCollection(items.toIndexedSeq)
+    def isEvaluated[V <: SType](c: Value[SCollection[V]]) =
+      c.evaluated && c.asInstanceOf[ConcreteCollection[V]].value.forall(_.evaluated)
+  }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
