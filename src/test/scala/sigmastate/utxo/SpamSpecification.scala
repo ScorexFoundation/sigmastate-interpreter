@@ -3,7 +3,7 @@ package sigmastate.utxo
 import org.scalacheck.Gen
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe}
+import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate._
 import sigmastate.Values._
@@ -27,7 +27,7 @@ class SpamSpecification extends PropSpec
   // (for the Blake2b256 hash function over a single block input)
   val Timeout: Long = {
     val block = Array.fill(16)(0: Byte)
-    val hf = new Blake2b256Unsafe
+    val hf = Blake2b256
 
     //just in case to heat up JVM
     (1 to 1000000).foreach(_ => hf(block))

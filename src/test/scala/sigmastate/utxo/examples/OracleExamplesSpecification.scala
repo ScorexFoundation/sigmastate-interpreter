@@ -6,7 +6,7 @@ import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.GroupSettings
@@ -98,7 +98,7 @@ class OracleExamplesSpecification extends PropSpec
         R6 -> IntConstant(ts))
     )
 
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
 
     avlProver.performOneOperation(Insert(ADKey @@ oracleBox.id, ADValue @@ oracleBox.bytes))
     avlProver.generateProof()

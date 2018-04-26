@@ -7,7 +7,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values.IntConstant
 import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.ErgoBox.R3
@@ -73,7 +73,7 @@ class BlockchainSimulationSpecification extends PropSpec
   }
 
   object ValidationState {
-    type BatchProver = BatchAVLProver[Digest32, Blake2b256Unsafe]
+    type BatchProver = BatchAVLProver[Digest32, Blake2b256.type]
 
     val initBlock = Block {
       (1 to windowSize).map { i =>
@@ -166,7 +166,7 @@ class BlockchainSimulationSpecification extends PropSpec
         val t = System.currentTimeMillis()
 
         updStateTry.isSuccess shouldBe true
-        updStateTry.get -> (timeAcc + (t-t0))
+        updStateTry.get -> (timeAcc + (t - t0))
       }
 
       println(s"Total time for $numberOfBlocks blocks: $time ms")
@@ -184,7 +184,7 @@ class BlockchainSimulationSpecification extends PropSpec
       val file = new File("target/bench")
       file.mkdirs()
       val writer = new FileWriter(s"target/bench/result.csv", false)
-      val sorted = results.toList.sortBy{case (i, _) => i}
+      val sorted = results.toList.sortBy { case (i, _) => i }
       val header = sorted.map(_._1).mkString(",")
       writer.write(s"$header\n")
       val values = sorted.map(_._2).mkString(",")

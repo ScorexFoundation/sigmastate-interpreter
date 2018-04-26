@@ -11,7 +11,7 @@ class CalcSha256Specification extends PropSpec
   with Matchers {
 
   def stringToByteConstant(in: String): ByteArrayConstant = ByteArrayConstant(in.getBytes("UTF-8"))
-  def decodeString(in: String): ByteArrayConstant = ByteArrayConstant(Base16.decode(in))
+  def decodeString(in: String): ByteArrayConstant = ByteArrayConstant(Base16.decode(in).get)
 
   /**
     * https://www.di-mgt.com.au/sha_testvectors.html
