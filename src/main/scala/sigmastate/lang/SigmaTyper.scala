@@ -35,7 +35,7 @@ class SigmaTyper {
     case Block(bs, res) =>
       var curEnv = env
       val bs1 = ArrayBuffer[Let]()
-      for (Let(n, t, b) <- bs) {
+      for (Let(n, _, b) <- bs) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
@@ -53,13 +53,13 @@ class SigmaTyper {
         error(s"All element of array $c should have the same type but found $types"))
       ConcreteCollection(newItems)(tItem)
 
-    case v @ Ident(n, _) =>
+    case _ @ Ident(n, _) =>
       env.get(n) match {
         case Some(t) => Ident(n, t)
         case None => error(s"Cannot assign type for variable '$n' because it is not found in env $env")
       }
 
-    case sel @ Select(obj: SigmaBoolean, n, None) =>
+    case _ @ Select(obj: SigmaBoolean, n, None) =>
       val newObj = assignType(env, obj).asSigmaValue
       val iField = newObj.fields.indexWhere(_._1 == n)
       val tRes = if (iField != -1) {
@@ -69,15 +69,16 @@ class SigmaTyper {
         error(s"Cannot find field '$n' in the object $obj of Sigma type with fields ${obj.fields}")
       Select(newObj, n, Some(tRes))
 
-    case sel @ Select(obj, n, None) =>
+    case _ @ Select(obj, n, None) =>
       val newObj = assignType(env, obj)
       newObj.tpe match {
         case s: SProduct =>
           val iField = s.fieldIndex(n)
           val tRes = if (iField != -1) {
             s.fields(iField)._2
-          } else
+          } else {
             error(s"Cannot find field '$n' in in the object $obj of Product type with fields ${s.fields}")
+          }
           Select(newObj, n, Some(tRes))
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t")
@@ -100,7 +101,7 @@ class SigmaTyper {
       val newSel = assignType(env, sel)
       val newArgs = args.map(assignType(env, _))
       newSel.tpe match {
-        case genFunTpe @ SFunc(argTypes, tRes, _) =>
+        case genFunTpe @ SFunc(argTypes, _, _) =>
           // If it's a function then the application has type of that function's return type.
           val actualTypes = newArgs.map(_.tpe)
           unifyTypeLists(argTypes, actualTypes) match {
@@ -120,13 +121,13 @@ class SigmaTyper {
       val new_f = assignType(env, f)
       val newArgs = args.map(assignType(env, _))
       f.tpe match {
-        case SFunc(argTypes, tRes, _) =>
+        case SFunc(argTypes, _, _) =>
           // If it's a pre-defined function application
           val actualTypes = newArgs.map(_.tpe)
           if (actualTypes != argTypes)
             error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
           Apply(new_f, newArgs)
-        case tCol: SCollection[_] =>
+        case _: SCollection[_] =>
           // If it's a collection then the application has type of that collection's element.
           // Only constant indices are supported so far
           args match {
@@ -152,7 +153,7 @@ class SigmaTyper {
           error(s"Invalid application of type arguments $app: function $sel doesn't have type parameters")
       }
 
-    case app @ ApplyTypes(in, targs) =>
+    case app: ApplyTypes =>
       error(s"Invalid application of type arguments $app: expression doesn't have type parameters")
 
     case If(c, t, e) =>
@@ -290,9 +291,9 @@ object SigmaTyper {
 
   /** Finds a substitution `subst` of type variables such that unifyTypes(applySubst(t1, subst), t2) shouldBe Some(emptySubst) */
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
-    case (id1 @ STypeIdent(n1), id2 @ STypeIdent(n2)) =>
+    case (_ @ STypeIdent(n1), _ @ STypeIdent(n2)) =>
       if (n1 == n2) Some(emptySubst) else None
-    case (id1 @ STypeIdent(n), _) =>
+    case (id1 @ STypeIdent(_), _) =>
       Some(Map(id1 -> t2))
     case (e1: SCollection[_], e2: SCollection[_]) =>
       unifyTypes(e1.elemType, e2.elemType)

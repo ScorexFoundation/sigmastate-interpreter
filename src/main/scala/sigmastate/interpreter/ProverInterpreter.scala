@@ -242,7 +242,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         case uc: UnprovenConjecture => uc.childrenCommitments
         case sn: SchnorrNode => sn.firstMessageOpt.toSeq
         case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
-        case a: Any => ???
+        case _ => ???
       }
       or.copy(childrenCommitments = commitments)
 

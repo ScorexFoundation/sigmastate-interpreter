@@ -11,7 +11,7 @@ class SigmaCompiler {
 
   def parse(x: String): SValue = {
     SigmaParser(x) match {
-      case Success(v, i) => v
+      case Success(v, _) => v
       case f: Parsed.Failure[_,_] =>
         throw new ParserException("Syntax error: ", Some(f))
     }
@@ -21,7 +21,6 @@ class SigmaCompiler {
     val parsed = parse(code)
     val binder = new SigmaBinder(env)
     val bound = binder.bind(parsed)
-    val st = new SigmaTree(bound)
     val typer = new SigmaTyper
     val typed = typer.typecheck(bound)
     val spec = new SigmaSpecializer
