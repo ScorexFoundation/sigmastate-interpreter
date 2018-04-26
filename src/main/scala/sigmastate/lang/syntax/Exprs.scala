@@ -181,12 +181,12 @@ trait Exprs extends Core with Types {
 
   protected def applySuffix(f: Value[SType], args: Seq[SigmaNode]): Value[SType] = {
     val rhs = args.foldLeft(f)((acc, arg) => arg match {
-      case Ident(name, t) => Select(acc, name)
+      case Ident(name, _) => Select(acc, name)
       case UnitConstant => mkApply(acc, IndexedSeq.empty)
       case Tuple(xs) => mkApply(acc, xs)
       case STypeApply("", targs) => mkApplyTypes(acc, targs)
       case arg: SValue => mkApply(acc, IndexedSeq(arg))
-      case t => error(s"Error after expression $f: invalid suffixes $args")
+      case _ => error(s"Error after expression $f: invalid suffixes $args")
     })
     rhs
   }
@@ -194,7 +194,7 @@ trait Exprs extends Core with Types {
   val LambdaDef = {
     val Body = P( WL ~ `=` ~ StatCtx.Expr )
     P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-      case (secs @ Seq(args), resType, body) => Lambda(args.toIndexedSeq, resType.getOrElse(NoType), body)
+      case (_ @ Seq(args), resType, body) => Lambda(args.toIndexedSeq, resType.getOrElse(NoType), body)
       case (secs, resType, body) => error(s"Function can only have single argument list: fun ($secs): $resType = $body")
     }
   }
@@ -221,8 +221,7 @@ trait Exprs extends Core with Types {
     if (stats.nonEmpty) {
       val lets = stats.iterator.take(stats.size - 1).map(_ match {
         case l: Let => l
-        case e =>
-          error(s"Block should contain a list of Let bindings and one expression: but was $stats")
+        case _ => error(s"Block should contain a list of Let bindings and one expression: but was $stats")
       })
       (lets.toList, stats.last)
     }
@@ -254,7 +253,7 @@ trait Exprs extends Core with Types {
   }
 
   val TypePat = P( CompoundType )
-  val ParenArgList = P( "(" ~/ (Exprs /*~ (`:` ~/ `_*`).?*/).? ~ TrailingComma ~ ")" ).map {
+  val ParenArgList = P( "(" ~/ Exprs /*~ (`:` ~/ `_*`).?*/.? ~ TrailingComma ~ ")" ).map {
     case Some(exprs) => Tuple(exprs)
     case None => UnitConstant
   }

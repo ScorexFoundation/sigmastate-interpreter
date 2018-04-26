@@ -1,13 +1,13 @@
 package sigmastate.utxo
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
-import sigmastate._
-import Values._
-import sigmastate.utxo.ErgoBox.RegisterIdentifier
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+import sigmastate.Values._
+import sigmastate._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.ErgoBox.RegisterIdentifier
 
 import scala.collection.immutable
 
@@ -56,7 +56,7 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    ConcreteCollection(cl.value.map(el => (rl(el)(mapper)).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
+    ConcreteCollection(cl.value.map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
   }
 
   override def cost: Int = input.cost * mapper.cost
@@ -159,12 +159,10 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   def tpe = input.tpe.elemType
   def arity = 3
   def deconstruct = immutable.Seq[Any](input, index, tpe)
+
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[V]] @unchecked,
-      index: Int,
-      t: V @unchecked) => ByIndex[V](input, index)
-    case _ =>
-      illegalArgs("ByIndex", "(Value[SCollection[V]], index: Int)(tpe: V)", cs)
+    case Seq(input: Value[SCollection[V]]@unchecked, index: Int, _) => ByIndex[V](input, index)
+    case _ => illegalArgs("ByIndex", "(Value[SCollection[V]], index: Int)(tpe: V)", cs)
   }
   override def function(input: EvaluatedValue[SCollection[V]]) = input.value.apply(index)
 
