@@ -31,4 +31,10 @@ class RelationsSpecification extends TableSerializationSpecification {
       roundTripTest(im)
     }
   }
+
+  property("If: Serializer round trip") {
+    forAll { i: If[SInt.type] =>
+      roundTripTest(i)
+    }
+  }
 }

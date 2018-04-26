@@ -2,17 +2,19 @@ package sigmastate
 
 import java.math.BigInteger
 import java.util
+
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256Unsafe}
+import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
 import sigmastate.interpreter.GroupSettings
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.CostTable.Cost
+
 import scala.collection.immutable
 
 object Values {
@@ -173,6 +175,8 @@ object Values {
 
 
   case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
+
+    override val opCode: OpCode = OpCodes.GroupGeneratorCode
 
     import GroupSettings.dlogGroup
 

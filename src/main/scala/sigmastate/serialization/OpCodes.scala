@@ -15,6 +15,7 @@ object OpCodes {
   val BigIntConstantCode:       OpCode = 15: Byte
   val ByteArrayConstantCode:    OpCode = 16: Byte
   val GroupElementConstantCode: OpCode = 17: Byte
+  val GroupGeneratorCode:       OpCode = 18: Byte
 
 
   // Relation descendants
@@ -26,6 +27,7 @@ object OpCodes {
   val EqCode:       OpCode = 25: Byte
   val NeqCode:      OpCode = 26: Byte
   val IsMemberCode: OpCode = 27: Byte
+  val IfCode:       OpCode = 28: Byte
 
   val ConcreteCollectionCode: OpCode = 35: Byte
 
@@ -46,8 +48,12 @@ object OpCodes {
   val SomeValueCode: OpCode = 50: Byte
   val NoneValueCode: OpCode = 51: Byte
 
-  val ProveDlogCode:   OpCode = 60: Byte
-  val HeightCode:      OpCode = 61: Byte
+  val ProveDlogCode:             OpCode = 60: Byte
+  val HeightCode:                OpCode = 61: Byte
+  val InputsCode:                OpCode = 62: Byte
+  val OutputsCode:               OpCode = 63: Byte
+  val LastBlockUtxoRootHashCode: OpCode = 64: Byte
+  val SelfCode:                  OpCode = 65: Byte
 
   val MapCollectionCode:         OpCode = 70: Byte
   val ExistsCode:                OpCode = 71: Byte

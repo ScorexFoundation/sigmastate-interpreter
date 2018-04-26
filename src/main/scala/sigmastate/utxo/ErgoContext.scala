@@ -57,21 +57,29 @@ case object Height extends NotReadyValueInt {
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
 case object Inputs extends LazyCollection[SBox.type] {
+  override val opCode: OpCode = OpCodes.InputsCode
+
   val cost = 1
   val tpe = SCollection(SBox)
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
 case object Outputs extends LazyCollection[SBox.type] {
+  override val opCode: OpCode = OpCodes.OutputsCode
+
   val cost = 1
   val tpe = SCollection(SBox)
 }
 
 /** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */
-case object LastBlockUtxoRootHash extends NotReadyValueAvlTree
+case object LastBlockUtxoRootHash extends NotReadyValueAvlTree {
+  override val opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
+}
 
 
 /** When interpreted evaluates to a BoxConstant built from Context.self */
 case object Self extends NotReadyValueBox {
+  override val opCode: OpCode = OpCodes.SelfCode
+
   override def cost: Int = 10
 }

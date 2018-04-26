@@ -1,16 +1,17 @@
-package sigmastate.serialization
+package sigmastate.serialization.trees
 
 import sigmastate.SType.TypeCode
-import sigmastate._
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.serialization.ValueSerializer.Position
+import sigmastate.serialization.{Constraints, ValueSerializer}
 
 case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
   (override val opCode: Byte,
    constructor: (Value[S1], Value[S2]) => R,
    constraints: Seq[Constraints.Constraint2]) extends ValueSerializer[R] {
 
-  import ValueSerializer.{serialize, deserialize}
+  import ValueSerializer.{deserialize, serialize}
 
   val typeCode: TypeCode = SBoolean.typeCode
 

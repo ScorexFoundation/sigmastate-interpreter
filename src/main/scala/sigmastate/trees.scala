@@ -315,6 +315,8 @@ case class IsMember(tree: Value[SAvlTree.type],
 
 case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T], falseBranch: Value[T])
   extends Quadruple[SBoolean.type, T, T, T] {
+  override val opCode: OpCode = OpCodes.IfCode
+
   override def tpe = trueBranch.tpe
   override lazy val first = condition
   override lazy val second = trueBranch

@@ -2,9 +2,11 @@ package sigmastate.serialization
 
 import sigmastate._
 import Values._
+
 import scala.util.Try
 import OpCodes._
 import sigmastate.serialization.transformers._
+import sigmastate.serialization.trees.{QuadrupelSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utxo._
 
 
@@ -34,6 +36,7 @@ object ValueSerializer
     Relation2Serializer(EqCode, EQ.applyNonTyped, Seq(Constraints.sameType2)),
     Relation2Serializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
     Relation3Serializer(IsMemberCode, IsMember.apply),
+    QuadrupelSerializer[SBoolean.type, SInt.type, SInt.type, SInt.type](IfCode, If.apply),
 
     TwoArgumentsSerializer(XorCode, Xor.apply),
     TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
@@ -45,15 +48,20 @@ object ValueSerializer
     GroupElementSerializer,
     ProveDlogSerializer,
     IntConstantSerializer,
-    TrueLeafSerializer,
-    FalseLeafSerializer,
+    CaseObjectSerialization(TrueCode, TrueLeaf),
+    CaseObjectSerialization(FalseCode, FalseLeaf),
     ConcreteCollectionSerializer,
     AndSerializer,
     OrSerializer,
     TaggedVariableSerializer,
     BigIntConstantSerializer,
     ByteArrayConstantSerializer,
-    HeightSerializer,
+    CaseObjectSerialization(HeightCode, Height),
+    CaseObjectSerialization(InputsCode, Inputs),
+    CaseObjectSerialization(OutputsCode, Outputs),
+    CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),
+    CaseObjectSerialization(SelfCode, Self),
+    CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
     MapCollectionSerializer,
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
