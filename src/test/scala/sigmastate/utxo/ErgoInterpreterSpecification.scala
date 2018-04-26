@@ -1,6 +1,9 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.{Bytes, Longs}
+import com.google.common.primitives.Bytes
+import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.TryValues._
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
@@ -12,10 +15,20 @@ import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigmastate._
+import sigmastate.Values._
+import BoxHelpers.createBox
+import fastparse.core.{ParseError, Parsed}
+import fastparse.core.Parsed.{Failure, Success}
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.lang.Terms._
 import sigmastate.lang._
 import sigmastate.utxo.BoxHelpers.createBox
+import sigmastate.lang.syntax.ParserException
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.ErgoBox._
 
 class ErgoInterpreterSpecification extends PropSpec
@@ -1411,6 +1424,32 @@ class ErgoInterpreterSpecification extends PropSpec
         |  taggedInt(elementId) >= 120
         |}""".stripMargin).asBoolValue
     propComp shouldBe propTree
+  }
+
+  property("P2SH") {
+    val scriptId = 21.toByte
+
+    val customScript = TrueLeaf // new ErgoProvingInterpreter().dlogSecrets.head.publicImage
+    val scriptBytes = ValueSerializer.serialize(customScript)
+    val prover = new ErgoProvingInterpreter()
+      .withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
+    val scriptHash = Blake2b256(scriptBytes)
+
+    val hashEquals = EQ(CalcBlake2b256(TaggedByteArray(scriptId)), scriptHash)
+    val scriptIsCorrect = Deserialize[SBoolean.type](TaggedByteArray(scriptId))
+    val prop = AND(hashEquals, scriptIsCorrect)
+
+    val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
+    val ctx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
+      self = ErgoBox(20, TrueLeaf, Map()))
+
+    val proof = prover.prove(prop, ctx, fakeMessage).get
+
+    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
   }
 
   property("avl tree - leaf satisfying condition exists") {
