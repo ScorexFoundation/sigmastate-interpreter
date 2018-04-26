@@ -18,6 +18,7 @@ trait TransformerGenerators { self: ValueGeneratots with ConcreteCollectionGener
   implicit val arbExtractBytes: Arbitrary[ExtractBytes] = Arbitrary(extractBytesGen)
   implicit val arbExtractBytesWithNoRef: Arbitrary[ExtractBytesWithNoRef] = Arbitrary(extractBytesWithNoRefGen)
   implicit val arbExtractId: Arbitrary[ExtractId] = Arbitrary(extractIdGen)
+  implicit val arbExtractRegisterAs: Arbitrary[ExtractRegisterAs[SInt.type]] = Arbitrary(extractRegisterAsGen)
 
   val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
@@ -50,5 +51,11 @@ trait TransformerGenerators { self: ValueGeneratots with ConcreteCollectionGener
   val extractBytesGen: Gen[ExtractBytes] = arbTaggedBox.arbitrary.map{b => ExtractBytes(b)}
   val extractBytesWithNoRefGen: Gen[ExtractBytesWithNoRef] = arbTaggedBox.arbitrary.map{b => ExtractBytesWithNoRef(b)}
   val extractIdGen: Gen[ExtractId] = arbTaggedBox.arbitrary.map{b => ExtractId(b)}
+  val extractRegisterAsGen: Gen[ExtractRegisterAs[SInt.type]] = for {
+    input <- arbTaggedBox.arbitrary
+    r <- arbRegisterIdentifier.arbitrary
+    dvInt <- arbIntConstants.arbitrary
+    dv <- Gen.oneOf(None, Some(dvInt))
+  } yield ExtractRegisterAs(input, r, dv)
 
 }

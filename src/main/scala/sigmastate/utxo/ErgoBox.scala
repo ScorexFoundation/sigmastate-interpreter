@@ -188,4 +188,6 @@ object ErgoBox {
   val allRegisters = (Vector(R0, R1, R2) ++ nonMandatoryRegisters).ensuring(_.size == maxRegisters)
   val registerByName: Map[String, RegisterIdentifier] = allRegisters.map(r => s"R${r.number}" -> r).toMap
   val registerByIndex: Map[Byte, RegisterIdentifier] = allRegisters.map(r => r.number -> r).toMap
+
+  def findRegisterByIndex(i: Byte): Option[RegisterIdentifier] = registerByIndex.get(i)
 }

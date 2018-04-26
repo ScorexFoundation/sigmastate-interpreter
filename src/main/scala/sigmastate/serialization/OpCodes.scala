@@ -58,6 +58,7 @@ object OpCodes {
   val ExtractBytesCode:          OpCode = 77: Byte
   val ExtractBytesWithNoRefCode: OpCode = 78: Byte
   val ExtractIdCode:             OpCode = 79: Byte
+  val ExtractRegisterAs:         OpCode = 80: Byte
 
 
 }

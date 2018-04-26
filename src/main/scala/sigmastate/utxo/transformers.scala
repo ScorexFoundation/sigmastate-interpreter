@@ -254,6 +254,8 @@ case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
                                          default: Option[Value[V]] = None)(implicit val tpe: V)
     extends Extract[V] with NotReadyValue[V] with Rewritable {
+  override val opCode: OpCode = OpCodes.ExtractRegisterAs
+
   def arity = 4
   def deconstruct = immutable.Seq[Any](input, registerId, default, tpe)
   def reconstruct(cs: immutable.Seq[Any]) = cs match {

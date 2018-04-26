@@ -62,7 +62,8 @@ object ValueSerializer
     SimpleTransformerSerializer[SBox.type, SByteArray.type, Transformer[SBox.type, SByteArray.type]](ExtractScriptBytesCode, ExtractScriptBytes.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray.type, Transformer[SBox.type, SByteArray.type]](ExtractBytesCode, ExtractBytes.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray.type, Transformer[SBox.type, SByteArray.type]](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray.type, Transformer[SBox.type, SByteArray.type]](ExtractIdCode, ExtractId.apply)
+    SimpleTransformerSerializer[SBox.type, SByteArray.type, Transformer[SBox.type, SByteArray.type]](ExtractIdCode, ExtractId.apply),
+    ExtractRegisterAsSerializer
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {

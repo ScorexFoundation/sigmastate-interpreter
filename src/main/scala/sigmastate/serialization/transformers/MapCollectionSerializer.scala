@@ -16,7 +16,7 @@ object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, STyp
     val inputAsCollection = input.asInstanceOf[Value[SCollection[SType]]]
     val idByte = bytes(pos + consumed)
     val (mapper, mapperConsumed) = ValueSerializer.deserialize(bytes, pos + consumed + 1)
-    val tOVByteCode = bytes(consumed + 1 + mapperConsumed + 1)
+    val tOVByteCode = bytes(pos + consumed + 1 + mapperConsumed)
     val tOV = SType.allPredefTypes.filter(_.typeCode == tOVByteCode).head
     MapCollection(inputAsCollection, idByte, mapper)(tOV) -> (consumed + 1 + mapperConsumed + 1)
   }

@@ -4,6 +4,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.Values._
+import sigmastate.utxo.ErgoBox._
 
 trait ValueGeneratots {
 
@@ -13,6 +14,7 @@ trait ValueGeneratots {
   implicit val arbByteArrayConstant: Arbitrary[ByteArrayConstant] = Arbitrary(byteArrayConstantGen)
   implicit val arbGroupElementConstant: Arbitrary[GroupElementConstant] = Arbitrary(groupElementConstantGen)
   implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
+  implicit val arbRegisterIdentifier: Arbitrary[RegisterIdentifier] = Arbitrary(registerIdentifierGen)
 
   val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map{v => IntConstant(v)}
   val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map{v => TaggedInt(v)}
@@ -27,5 +29,7 @@ trait ValueGeneratots {
   } yield GroupElementConstant(el)
 
   val proveDlogGen: Gen[ProveDlog] = arbGroupElementConstant.arbitrary.map(v => ProveDlog(v))
+
+  val registerIdentifierGen: Gen[RegisterIdentifier] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
 }
