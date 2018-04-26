@@ -1,25 +1,20 @@
 package sigmastate.utxo.examples
 
 import java.security.SecureRandom
+
 import com.google.common.primitives.Longs
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import scorex.crypto.hash.{Blake2b256, Blake2b256Unsafe, Digest32}
-import sigmastate._
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
+import sigmastate._
+import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.GroupSettings
-import sigmastate.utxo._
 import sigmastate.utxo.ErgoBox._
+import sigmastate.utxo._
 
 
-class OracleExamplesSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
-
-  import BoxHelpers.fakeMessage
+class OracleExamplesSpecification extends SigmaTestingCommons {
 
   /**
     *
@@ -98,7 +93,7 @@ class OracleExamplesSpecification extends PropSpec
         R6 -> IntConstant(ts))
     )
 
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 32, None)
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
 
     avlProver.performOneOperation(Insert(ADKey @@ oracleBox.id, ADValue @@ oracleBox.bytes))
     avlProver.generateProof()
@@ -109,7 +104,7 @@ class OracleExamplesSpecification extends PropSpec
 
     def extract[T <: SType](Rn: RegisterIdentifier)(implicit tT: T) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
 
-    def withinTimeframe(sinceHeight:Int,
+    def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
                         fallback: Value[SBoolean.type])(script: Value[SBoolean.type]) =
       OR(AND(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
@@ -145,7 +140,7 @@ class OracleExamplesSpecification extends PropSpec
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
-      EQ(ExtractId(ByIndex(Inputs,0)), ByteArrayConstant(sAlice.id)))
+      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = ErgoBox(10, propBob, Map())
 
@@ -157,8 +152,8 @@ class OracleExamplesSpecification extends PropSpec
       self = null)
 
     val alice = aliceTemplate
-      .withContextExtender(22:Byte, BoxConstant(oracleBox))
-      .withContextExtender(23:Byte, ByteArrayConstant(proof))
+      .withContextExtender(22: Byte, BoxConstant(oracleBox))
+      .withContextExtender(23: Byte, ByteArrayConstant(proof))
     val prA = alice.prove(propAlice, ctx, fakeMessage).get
 
     val prB = bob.prove(propBob, ctx, fakeMessage).get
@@ -184,7 +179,7 @@ class OracleExamplesSpecification extends PropSpec
     * Heavyweight authentication from the previous example is not needed then.
     *
     */
-  property("lightweight oracle example"){
+  property("lightweight oracle example") {
     val oracle = new ErgoProvingInterpreter
     val alice = new ErgoProvingInterpreter
     val bob = new ErgoProvingInterpreter
@@ -205,11 +200,11 @@ class OracleExamplesSpecification extends PropSpec
       additionalRegisters = Map(R3 -> IntConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs(ByIndex(Inputs,0), R3), IntConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs(ByIndex(Inputs,0), R3), IntConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs(ByIndex(Inputs, 0), R3), IntConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs(ByIndex(Inputs, 0), R3), IntConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
-      EQ(ExtractScriptBytes(ByIndex(Inputs,0)), ByteArrayConstant(oraclePubKey.propBytes)),
+      EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.propBytes)),
       contractLogic
     )
 

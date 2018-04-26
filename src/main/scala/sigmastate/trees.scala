@@ -4,24 +4,27 @@ import java.math.BigInteger
 
 import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
-import scapi.sigma._
-import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import scorex.crypto.hash.{Sha256, CryptographicHash, Blake2b256, CryptographicHash32}
-import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.OpCodes._
-import sigmastate.utxo.Transformer
-import sigmastate.utxo.CostTable.Cost
+import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
+import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.OpCodes._
+import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.Transformer
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-
+/**
+  * AND conjunction for sigma propositions
+  */
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 }
 
+/**
+  * OR conjunction for sigma propositions
+  */
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 }
@@ -30,7 +33,10 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
   extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
 
-//todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
+/**
+  * OR logical conjunction
+  * todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
+  */
 case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
 
@@ -50,7 +56,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     @tailrec
     def iterChildren(children: Seq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
-      if (children.isEmpty) currentBuffer else children.head.asInstanceOf[Value[SBoolean.type]] match {
+      if (children.isEmpty) currentBuffer else children.head match {
         case TrueLeaf => mutable.Buffer(TrueLeaf)
         case FalseLeaf => iterChildren(children.tail, currentBuffer)
         case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
@@ -70,16 +76,20 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 }
 
 
+/**
+  * OR logical conjunction
+  */
 object OR {
   def apply(children: Seq[Value[SBoolean.type]]): OR = OR(ConcreteCollection(children.toIndexedSeq))
 
-  def apply(left: Value[SBoolean.type], right: Value[SBoolean.type]): OR = apply(Seq(left, right))
-
-  def apply(arg1: Value[SBoolean.type], arg2: Value[SBoolean.type], arg3: Value[SBoolean.type]): OR = apply(Seq(arg1, arg2, arg3))
+  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): OR = apply(head +: tail)
 }
 
+/**
+  * AND logical conjunction
+  */
 case class AND(input: Value[SCollection[SBoolean.type]])
-    extends Transformer[SCollection[SBoolean.type], SBoolean.type]
+  extends Transformer[SCollection[SBoolean.type], SBoolean.type]
     with NotReadyValueBoolean {
 
   override val opCode: OpCode = AndCode
@@ -119,27 +129,23 @@ case class AND(input: Value[SCollection[SBoolean.type]])
           AND(reduced)
         else
           Interpreter.error(
-            s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: ${reduced}")
+            s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: $reduced")
     }
   }
 }
 
+/**
+  * AND logical conjunction
+  */
 object AND {
   def apply(children: Seq[Value[SBoolean.type]]): AND = new AND(ConcreteCollection(children.toIndexedSeq))
 
-  def apply(left: Value[SBoolean.type], right: Value[SBoolean.type]): AND = apply(Seq(left, right))
-
-  def apply(arg1: Value[SBoolean.type],
-            arg2: Value[SBoolean.type],
-            arg3: Value[SBoolean.type]): AND = apply(Seq(arg1, arg2, arg3))
-
-  def apply(arg1: Value[SBoolean.type],
-            arg2: Value[SBoolean.type],
-            arg3: Value[SBoolean.type],
-            arg4: Value[SBoolean.type]): AND = apply(Seq(arg1, arg2, arg3, arg4))
+  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
 
-
+/**
+  * Cast SInt to SByteArray
+  */
 case class IntToByteArray(input: Value[SInt.type])
   extends Transformer[SInt.type, SByteArray.type] with NotReadyValueByteArray {
 
@@ -149,7 +155,9 @@ case class IntToByteArray(input: Value[SInt.type])
   override lazy val cost: Int = input.cost + 1 //todo: externalize cost
 }
 
-
+/**
+  * Cast SByteArray to SBigInt
+  */
 case class ByteArrayToBigInt(input: Value[SByteArray.type])
   extends Transformer[SByteArray.type, SBigInt.type] with NotReadyValueBigInt {
 
@@ -170,10 +178,16 @@ trait CalcHash extends Transformer[SByteArray.type, SByteArray.type] with NotRea
   override lazy val cost: Int = input.cost + Cost.Blake256bDeclaration
 }
 
+/**
+  * Calculate Blake2b hash from `input`
+  */
 case class CalcBlake2b256(override val input: Value[SByteArray.type]) extends CalcHash {
   override val hashFn: CryptographicHash32 = Blake2b256
 }
 
+/**
+  * Calculate Sha256 hash from `input`
+  */
 case class CalcSha256(override val input: Value[SByteArray.type]) extends CalcHash {
   override val hashFn: CryptographicHash32 = Sha256
 }
@@ -190,10 +204,12 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
 }
 
 // TwoArgumentsOperation
-
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
   extends Triple[LIV, RIV, OV]
 
+/**
+  * SInt addition
+  */
 case class Plus(override val left: Value[SInt.type],
                 override val right: Value[SInt.type])
   extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
@@ -202,6 +218,9 @@ case class Plus(override val left: Value[SInt.type],
   override val opCode: OpCode = PlusCode
 }
 
+/**
+  * SInt subtraction
+  */
 case class Minus(override val left: Value[SInt.type],
                  override val right: Value[SInt.type])
   extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
@@ -210,6 +229,9 @@ case class Minus(override val left: Value[SInt.type],
   override val opCode: OpCode = MinusCode
 }
 
+/**
+  * XOR for two SByteArray
+  */
 case class Xor(override val left: Value[SByteArray.type],
                override val right: Value[SByteArray.type])
   extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type]
@@ -219,6 +241,9 @@ case class Xor(override val left: Value[SByteArray.type],
 
 }
 
+/**
+  * SByteArray concatenation
+  */
 case class AppendBytes(override val left: Value[SByteArray.type],
                        override val right: Value[SByteArray.type])
   extends TwoArgumentsOperation[SByteArray.type, SByteArray.type, SByteArray.type]
@@ -241,7 +266,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
 case class MultiplyGroup(override val left: Value[SGroupElement.type],
                          override val right: Value[SGroupElement.type])
   extends TwoArgumentsOperation[SGroupElement.type, SGroupElement.type, SGroupElement.type]
-    with NotReadyValueGroupElement{
+    with NotReadyValueGroupElement {
 
   override val opCode: OpCode = MultiplyGroupCode
 
@@ -254,27 +279,42 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
   with NotReadyValueBoolean
 
 
+/**
+  * Less operation for SInt
+  */
 case class LT(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type]{
+              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
   override val opCode: OpCode = LtCode
 }
 
+/**
+  * Less or equals operation for SInt
+  */
 case class LE(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
   override val opCode: OpCode = LeCode
 }
 
+/**
+  * Greater operation for SInt
+  */
 case class GT(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
   override val opCode: OpCode = GtCode
 }
 
+/**
+  * Greater or equals operation for SInt
+  */
 case class GE(override val left: Value[SInt.type],
               override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
   override val opCode: OpCode = GeCode
 }
 
-//todo: make EQ to really accept only values of the same type, now EQ(TrueLeaf, IntConstant(5)) is valid
+/**
+  * Equals operation for SType
+  * todo: make EQ to really accept only values of the same type, now EQ(TrueLeaf, IntConstant(5)) is valid
+  */
 case class EQ[S <: SType](override val left: Value[S],
                           override val right: Value[S])
   extends Relation[S, S] {
@@ -285,8 +325,11 @@ object EQ {
   def applyNonTyped(left: Value[SType], right: Value[SType]): EQ[SType] = apply(left, right)
 }
 
+/**
+  * Non-Equals operation for SType
+  */
 case class NEQ(override val left: Value[SType],
-                                         override val right: Value[SType]) extends Relation[SType, SType] {
+               override val right: Value[SType]) extends Relation[SType, SType] {
   override val opCode: OpCode = NeqCode
 }
 
@@ -322,13 +365,11 @@ case class IsMember(tree: Value[SAvlTree.type],
 case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T], falseBranch: Value[T])
   extends Quadruple[SBoolean.type, T, T, T] {
   override def tpe = trueBranch.tpe
+
   override lazy val first = condition
   override lazy val second = trueBranch
   override lazy val third = falseBranch
 }
-
-
-
 
 
 //Proof tree

@@ -23,7 +23,7 @@ class SigmaTyper {
     val types = ts.distinct
     if (types.isEmpty) None
     else
-    if (types.size == 1) Some(types(0))
+    if (types.lengthCompare(1) == 0) Some(types.head)
     else None
   }
 
@@ -66,7 +66,7 @@ class SigmaTyper {
         obj.fields(iField)._2
       }
       else
-        error(s"Cannot find field '${n}' in the object $obj of Sigma type with fields ${obj.fields}")
+        error(s"Cannot find field '$n' in the object $obj of Sigma type with fields ${obj.fields}")
       Select(newObj, n, Some(tRes))
 
     case sel @ Select(obj, n, None) =>
@@ -77,10 +77,10 @@ class SigmaTyper {
           val tRes = if (iField != -1) {
             s.fields(iField)._2
           } else
-            error(s"Cannot find field '${n}' in in the object $obj of Product type with fields ${s.fields}")
+            error(s"Cannot find field '$n' in in the object $obj of Product type with fields ${s.fields}")
           Select(newObj, n, Some(tRes))
         case t =>
-          error(s"Cannot get field '${n}' in in the object $obj of non-product type $t")
+          error(s"Cannot get field '$n' in in the object $obj of non-product type $t")
       }
 
     case lam @ Lambda(args, t, body) =>
@@ -143,7 +143,7 @@ class SigmaTyper {
       val newSel @ Select(obj, n, _) = assignType(env, sel)
       newSel.tpe match {
         case genFunTpe @ SFunc(_, _, tyVars) =>
-          if (tyVars.length != targs.length)
+          if (tyVars.lengthCompare(targs.length) != 0)
             error(s"Wrong number of type arguments $app: expected $tyVars but provided $targs")
           val subst = tyVars.zip(targs).toMap
           val concrFunTpe = applySubst(genFunTpe, subst).asFunc

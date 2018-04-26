@@ -19,7 +19,7 @@ case class RelationSerializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
     val (secondArg, consumed2) = deserialize(bytes, pos + consumed)
     assert(constraints.forall(c => c(firstArg.tpe.typeCode, secondArg.tpe.typeCode)))
     (constructor(firstArg.asInstanceOf[Value[S1]], secondArg.asInstanceOf[Value[S2]]),
-      (consumed + consumed2))
+      consumed + consumed2)
   }
 
   override def serializeBody(rel: R) = {
