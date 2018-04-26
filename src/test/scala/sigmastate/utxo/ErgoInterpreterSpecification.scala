@@ -250,10 +250,12 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
 
   property("P2SH") {
     val scriptId = 21.toByte
+    val secretId = 22.toByte
 
-    val customScript = TrueLeaf // new ErgoProvingInterpreter().dlogSecrets.head.publicImage
+    val customScript = EQ(TaggedInt(secretId), IntConstant(12))
     val scriptBytes = ValueSerializer.serialize(customScript)
     val prover = new ErgoProvingInterpreter()
+      .withContextExtender(secretId, IntConstant(12))
       .withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
     val scriptHash = Blake2b256(scriptBytes)
 
