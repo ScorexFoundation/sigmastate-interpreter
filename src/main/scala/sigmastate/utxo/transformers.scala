@@ -8,6 +8,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.utxo.BooleanTransformer.ResultConstructor
 import sigmastate.utxo.CostTable.Cost
 
 import scala.collection.immutable
@@ -66,44 +67,49 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
   override def cost: Int = input.cost * mapper.cost
 }
 
-case class Exists[IV <: SType](input: Value[SCollection[IV]],
-                               id: Byte,
-                               condition: Value[SBoolean.type])
-  extends Transformer[SCollection[IV], SBoolean.type] {
+trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBoolean.type] {
+  override val input: Value[SCollection[IV]]
+  val id: Byte
+  val condition: Value[SBoolean.type]
+  val f: ResultConstructor
+
   override def tpe = SBoolean
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override val cost: Int = input.cost * condition.cost + input.cost * Cost.OrDeclaration
+  override def function(input: EvaluatedValue[SCollection[IV]]
 
-  //todo: cost
-  override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
+                       ): Value[SBoolean.type] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })
-
-    OR(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
+    f(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
+}
+
+object BooleanTransformer{
+  type ResultConstructor = (Seq[Value[SBoolean.type]]) => Transformer[SCollection[SBoolean.type], SBoolean.type]
+}
+
+case class Exists[IV <: SType](input: Value[SCollection[IV]],
+                               id: Byte,
+                               condition: Value[SBoolean.type])
+  extends BooleanTransformer[IV] {
+
+  override val opCode: OpCode = OpCodes.ExistsCode
+  override val cost: Int = input.cost * condition.cost + input.cost * Cost.OrDeclaration
+  override val f: ResultConstructor = OR.apply
+
 }
 
 case class ForAll[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
                                condition: Value[SBoolean.type])
-  extends Transformer[SCollection[IV], SBoolean.type] {
-  override def tpe = SBoolean
-  override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
+  extends BooleanTransformer[IV] {
 
+  override val opCode: OpCode = OpCodes.ForAllCode
   override val cost: Int = input.cost * condition.cost + input.cost * Cost.AndDeclaration
-
-  //todo: cost
-  override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
-    def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
-    })
-
-    AND(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
-  }
+  override val f: ResultConstructor = AND.apply
 }
 
 /*
@@ -120,6 +126,8 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              accId: Byte,
                              foldOp: SValue)(implicit val tpe: IV)
   extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] with Rewritable {
+  override val opCode: OpCode = OpCodes.FoldCode
+
   def arity = 6
   def deconstruct = immutable.Seq[Any](input, id, zero, accId, foldOp, tpe)
   def reconstruct(cs: immutable.Seq[Any]) = cs match {

@@ -4,6 +4,8 @@ import sigmastate._
 import Values._
 import scala.util.Try
 import OpCodes._
+import sigmastate.serialization.transformers._
+import sigmastate.utxo._
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -51,7 +53,10 @@ object ValueSerializer
     BigIntConstantSerializer,
     ByteArrayConstantSerializer,
     HeightSerializer,
-    MapCollectionSerializer
+    MapCollectionSerializer,
+    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
+    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
+    FoldSerializer
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {

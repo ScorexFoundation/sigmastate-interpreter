@@ -49,6 +49,9 @@ object OpCodes {
   val HeightCode:      OpCode = 61: Byte
 
   val MapCollectionCode: OpCode = 70: Byte
+  val ExistsCode:        OpCode = 71: Byte
+  val ForAllCode:        OpCode = 72: Byte
+  val FoldCode:          OpCode = 73: Byte
 
 
 }

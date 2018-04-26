@@ -1,11 +1,11 @@
-package sigmastate.serialization
+package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.MapCollection
 import sigmastate.{SCollection, SType, Values}
-import sigmastate.SType._
 
 object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, SType]]{
 
@@ -23,7 +23,6 @@ object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, STyp
 
   override def serializeBody(obj: MapCollection[SType, SType]): Array[Byte] = {
     val tOV = obj.tOV
-
     val inputBytes = ValueSerializer.serialize(obj.input)
     val idByte = obj.id
     val mapperBytes = ValueSerializer.serialize(obj.mapper)
