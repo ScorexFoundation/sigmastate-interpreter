@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Bytes
+import com.google.common.primitives.{Bytes, Longs}
 import org.scalatest.TryValues._
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
@@ -1413,6 +1413,57 @@ class ErgoInterpreterSpecification extends PropSpec
     propComp shouldBe propTree
   }
 
+  property("avl tree - leaf satisfying condition exists") {
+    val elements = Seq(123, 22)
+    val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
+    avlProver.generateProof()
+    val treeData = new AvlTreeData(avlProver.digest, 32, None)
+    val proofId = 0: Byte
+    val elementId = 1: Byte
+
+    val prop: Value[SBoolean.type] = AND(
+      GE(TaggedInt(elementId), IntConstant(120)),
+      IsMember(ExtractRegisterAs(Self, R3), CalcBlake2b256(IntToByteArray(TaggedInt(elementId))), TaggedByteArray(proofId))
+    )
+    val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
+    val propCompiled = compile(env,
+      """{
+        |  let tree = SELF.R3[AvlTree].value
+        |  let proof = taggedByteArray(proofId)
+        |  let element = taggedInt(elementId)
+        |  let elementKey = blake2b256(intToByteArray(element))
+        |  element >= 120 && isMember(tree, elementKey, proof)
+        |}""".stripMargin).asBoolValue
+
+    // TODO propCompiled shouldBe prop
+
+    val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
+    val ctx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
+      self = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData))))
+
+    avlProver.performOneOperation(Lookup(treeElements.head._1))
+    val bigLeafProof = avlProver.generateProof()
+    val prover = new ErgoProvingInterpreter()
+      .withContextExtender(proofId, ByteArrayConstant(bigLeafProof))
+      .withContextExtender(elementId, IntConstant(elements.head))
+    val proof = prover.prove(prop, ctx, fakeMessage).get
+
+    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
+
+    avlProver.performOneOperation(Lookup(treeElements.last._1))
+    val smallLeafTreeProof = avlProver.generateProof()
+    val smallProver = new ErgoProvingInterpreter()
+      .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
+      .withContextExtender(elementId, IntConstant(elements.head))
+    smallProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+    // TODO check that verifier return false for incorrect proofs?
+  }
 
   property("avl tree - prover provides proof") {
 
