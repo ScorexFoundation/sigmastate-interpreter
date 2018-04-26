@@ -1,26 +1,18 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.{Bytes, Longs}
+import com.google.common.primitives.Bytes
 import org.scalatest.TryValues._
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
-import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.encode.Base16
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.interpreter.GroupSettings
 import sigmastate.lang.Terms._
-import sigmastate.lang._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.ErgoBox._
 
-class ErgoInterpreterSpecification extends SigmaTesting {
-
-  import BoxHelpers.{fakeMessage, fakeSelf}
+class ErgoInterpreterSpecification extends SigmaTestingCommons {
 
   property("scripts EQ/NEQ") {
     val prover1 = new ErgoProvingInterpreter
@@ -1078,17 +1070,6 @@ class ErgoInterpreterSpecification extends SigmaTesting {
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
-  }
-
-  property(">= compile") {
-    val elementId = 1: Byte
-    val env = Map("elementId" -> elementId)
-    val propTree = GE(TaggedInt(elementId), IntConstant(120))
-    val propComp = compile(env,
-      """{
-        |  taggedInt(elementId) >= 120
-        |}""".stripMargin).asBoolValue
-    propComp shouldBe propTree
   }
 
   property("P2SH") {

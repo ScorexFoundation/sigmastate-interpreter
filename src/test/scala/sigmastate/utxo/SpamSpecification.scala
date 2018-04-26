@@ -7,16 +7,12 @@ import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate._
 import sigmastate.Values._
-import BoxHelpers.createBox
 
 
 /**
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
   */
-class SpamSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
+class SpamSpecification extends SigmaTestingCommons {
 
   private val fakeSelf = createBox(0, TrueLeaf)
 

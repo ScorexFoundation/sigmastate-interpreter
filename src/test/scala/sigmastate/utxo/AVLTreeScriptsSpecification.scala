@@ -6,11 +6,10 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.utxo.BoxHelpers.fakeMessage
 import sigmastate.utxo.ErgoBox.{R3, R4}
 import sigmastate.lang.Terms._
 
-class AVLTreeScriptsSpecification extends SigmaTesting {
+class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
   property("avl tree - simplest case") {
     val prover = new ErgoProvingInterpreter

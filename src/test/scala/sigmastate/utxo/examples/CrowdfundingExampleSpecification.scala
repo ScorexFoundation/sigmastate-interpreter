@@ -1,14 +1,10 @@
 package sigmastate.utxo.examples
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox}
 import sigmastate._
 import sigmastate.utxo._
 
-class CrowdfundingExampleSpecification extends SigmaTesting {
-
-  import BoxHelpers.fakeMessage
+class CrowdfundingExampleSpecification extends SigmaTestingCommons {
 
   /**
     * Crowdfunding example:

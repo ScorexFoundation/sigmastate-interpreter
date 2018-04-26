@@ -2,14 +2,11 @@ package sigmastate.utxo.examples
 
 import sigmastate.Values.{IntConstant, TaggedBox}
 import sigmastate._
-import sigmastate.utxo.BoxHelpers.createBox
 import sigmastate.utxo.ErgoBox.R3
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
-class DemurrageExampleSpecification extends SigmaTesting {
-
-  import BoxHelpers.fakeMessage
+class DemurrageExampleSpecification extends SigmaTestingCommons {
 
   /**
     * Demurrage currency example.

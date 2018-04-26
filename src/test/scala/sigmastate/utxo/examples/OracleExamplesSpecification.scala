@@ -13,9 +13,7 @@ import sigmastate.utxo.ErgoBox._
 import sigmastate.utxo._
 
 
-class OracleExamplesSpecification extends SigmaTesting {
-
-  import BoxHelpers.fakeMessage
+class OracleExamplesSpecification extends SigmaTestingCommons {
 
   /**
     *
