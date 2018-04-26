@@ -1402,93 +1402,6 @@ class ErgoInterpreterSpecification extends PropSpec
     verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
   }
 
-  ignore("P2SH") {
-    //TODO incorrect - works with incorrect hash preimage
-    val preimageHello = "hello world".getBytes("UTF-8")
-    val preimageWrong = "wrong".getBytes("UTF-8")
-    val helloHash = Blake2b256.hash(preimageHello)
-
-    val env = Map("helloHash" -> helloHash)
-    val customProposition = compile(env, """helloHash == blake2b256(SELF.R4[ByteArray].value)""").asBoolValue
-    val customPropositionExp = EQ(ByteArrayConstant(helloHash), CalcBlake2b256(ExtractRegisterAs(Self, R4)))
-    customProposition shouldBe customPropositionExp
-
-    val propositionBytesHash = Blake2b256(customProposition.propBytes)
-
-    val env2 = Map("propositionBytesHash" -> propositionBytesHash)
-    val prop = compile(env2,
-      """SELF.R3[Boolean].value && blake2b256(SELF.R3[ByteArray].value) == propositionBytesHash"""
-    ).asBoolValue
-    val propExp: Value[SBoolean.type] = AND(ExtractRegisterAs(Self, R3),
-      EQ(CalcBlake2b256(ExtractRegisterAs(Self, R3)), ByteArrayConstant(propositionBytesHash)))
-    prop shouldBe propExp
-
-    val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
-
-    val selfBox = ErgoBox(20, TrueLeaf, Map(
-      R3 -> customProposition,
-      R4 -> ByteArrayConstant(preimageHello))
-    )
-    val ctx = ErgoContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = selfBox)
-
-    val prover = new ErgoProvingInterpreter()
-    val proof = prover.prove(prop, ctx, fakeMessage).get
-
-    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
-  }
-
-  ignore("avl tree - leaf satisfying condition exists") {
-    val elements = Seq(BigInt(123), BigInt(22)).map(_.toByteArray).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    elements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
-    avlProver.generateProof()
-    val treeData = new AvlTreeData(avlProver.digest, 32, None)
-    val proofId = 0: Byte
-    val elementId = 1: Byte
-
-    val env = Map("elementId" -> elementId, "proofId" -> proofId, "treeData" -> treeData)
-    val prop = compile(env,
-      """taggedInt(elementId) >= 120 && isMember(treeData, blake2b256(taggedByteArray(elementId)), taggedByteArray(proofId))"""
-    ).asBoolValue
-    val propExp: Value[SBoolean.type] = AND(
-      GE(TaggedInt(elementId), IntConstant(120)),
-      IsMember(AvlTreeConstant(treeData), CalcBlake2b256(TaggedByteArray(elementId)), TaggedByteArray(proofId))
-    )
-    prop shouldBe propExp
-
-    val recipientInt = new ErgoProvingInterpreter()
-    val recipientProposition = recipientInt.dlogSecrets.head.publicImage
-    val ctx = ErgoContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = ErgoBox(20, TrueLeaf, Map()))
-
-    avlProver.performOneOperation(Lookup(ADKey @@ elements.head._1))
-    val bigLeafProof = avlProver.generateProof()
-    val prover = new ErgoProvingInterpreter()
-      .withContextExtender(proofId, ByteArrayConstant(bigLeafProof))
-      .withContextExtender(elementId, ByteArrayConstant(elements.head._2))
-    val proof = prover.prove(prop, ctx, fakeMessage).get
-
-    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
-
-    avlProver.performOneOperation(Lookup(ADKey @@ elements.head._1))
-    val smallLeafTreeProof = avlProver.generateProof()
-    val smallProver = new ErgoProvingInterpreter()
-      .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
-      .withContextExtender(elementId, ByteArrayConstant(elements.head._2))
-    val smallLeafProof = prover.prove(prop, ctx, fakeMessage).get
-    (new ErgoInterpreter).verify(prop, ctx, smallLeafProof, fakeMessage).get shouldBe false
-
-  }
-
   property(">= compile") {
     val elementId = 1: Byte
     val env = Map("elementId" -> elementId)
@@ -1498,8 +1411,6 @@ class ErgoInterpreterSpecification extends PropSpec
         |  taggedInt(elementId) >= 120
         |}""".stripMargin).asBoolValue
     propComp shouldBe propTree
-    //    Expected :GE(TaggedInt(1),IntConstant(120))
-    //    Actual   :GE(Apply(Ident(taggedInt,(SInt) => SInt),Vector(IntConstant(1))),IntConstant(120))
   }
 
 
