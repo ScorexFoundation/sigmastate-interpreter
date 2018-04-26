@@ -1,13 +1,14 @@
 package sigmastate
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
+import sigmastate.lang.SigmaCompiler
 import sigmastate.utxo.{CostTable, Height}
-
+import sigmastate.lang.Terms._
 import scala.util.Random
 
 
@@ -72,6 +73,30 @@ class TestingInterpreterSpecification extends PropSpec
 
       }
     }
+  }
+
+  val compiler = new SigmaCompiler
+  def compile(env: Map[String, Any], code: String): Value[SType] = {
+    compiler.compile(env, code)
+  }
+
+  property("Evaluate ops") {
+    val dk1 = ProveDlog(secrets(0).publicImage.h)
+
+    val ctx = TestingContext(99)
+
+    val env = Map("dk1" -> dk1)
+    val prop = compile(env,
+      """{
+        |  let arr = Array(1, 2) ++ Array(3, 4)
+        |  arr.size == 4
+        |}""".stripMargin
+    ).asBoolValue
+
+    val challenge = Array.fill(32)(Random.nextInt(100).toByte)
+
+    val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
+    verify(prop, ctx, proof1, challenge).getOrElse(false) shouldBe true
   }
 
   property("Evaluation example #1") {

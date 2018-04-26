@@ -147,6 +147,10 @@ class SigmaTyper {
           case ("++", Seq(r)) => AppendBytes(newObj.asValue[SByteArray.type], r.asValue[SByteArray.type])
           case _ => error(s"Unknown symbol $m, which is used as operation with arguments $newArgs")
         }
+        case tCol: SCollection[a] => (m, newArgs) match {
+          case ("++", Seq(r)) => Append(newObj.asCollection[a], r.asCollection[a])
+          case _ => error(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs")
+        }
         case t =>
           error(s"Invalid operation $mc on type $t")
       }
