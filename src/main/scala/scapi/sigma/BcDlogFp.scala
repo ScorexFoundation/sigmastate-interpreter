@@ -86,7 +86,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
       val index = size.bitLength - 1
 
       /* if the requested index out of the vector bounds, the exponents have not been calculated yet, so calculates them.*/
-      if (exponentiations.size <= index) prepareExponentiations(size)
+      if (exponentiations.lengthCompare(index) <= 0) prepareExponentiations(size)
 
       var exponent = exponentiations(index) //get the closest exponent in the exponentiations vector
 

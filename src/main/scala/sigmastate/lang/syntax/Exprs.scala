@@ -106,7 +106,7 @@ trait Exprs extends Core with Types {
         | `_`.!.map(Ident(_))
         | Parened.map(items =>
             if (items.isEmpty) UnitConstant
-            else if (items.size == 1) items(0)
+            else if (items.lengthCompare(1) == 0) items.head
             else Tuple(items)) )
     }
     val Guard : P0 = P( `if` ~/ PostfixExpr ).ignore

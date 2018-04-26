@@ -23,7 +23,7 @@ class SigmaTyper {
     val types = ts.distinct
     if (types.isEmpty) None
     else
-    if (types.size == 1) Some(types(0))
+    if (types.lengthCompare(1) == 0) Some(types.head)
     else None
   }
 
@@ -143,7 +143,7 @@ class SigmaTyper {
       val newSel @ Select(obj, n, _) = assignType(env, sel)
       newSel.tpe match {
         case genFunTpe @ SFunc(_, _, tyVars) =>
-          if (tyVars.length != targs.length)
+          if (tyVars.lengthCompare(targs.length) != 0)
             error(s"Wrong number of type arguments $app: expected $tyVars but provided $targs")
           val subst = tyVars.zip(targs).toMap
           val concrFunTpe = applySubst(genFunTpe, subst).asFunc
