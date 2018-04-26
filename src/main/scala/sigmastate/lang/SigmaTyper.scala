@@ -66,7 +66,7 @@ class SigmaTyper {
         obj.fields(iField)._2
       }
       else
-        error(s"Cannot find field '${n}' in the object $obj of Sigma type with fields ${obj.fields}")
+        error(s"Cannot find field '$n' in the object $obj of Sigma type with fields ${obj.fields}")
       Select(newObj, n, Some(tRes))
 
     case sel @ Select(obj, n, None) =>
@@ -77,10 +77,10 @@ class SigmaTyper {
           val tRes = if (iField != -1) {
             s.fields(iField)._2
           } else
-            error(s"Cannot find field '${n}' in in the object $obj of Product type with fields ${s.fields}")
+            error(s"Cannot find field '$n' in in the object $obj of Product type with fields ${s.fields}")
           Select(newObj, n, Some(tRes))
         case t =>
-          error(s"Cannot get field '${n}' in in the object $obj of non-product type $t")
+          error(s"Cannot get field '$n' in in the object $obj of non-product type $t")
       }
 
     case lam @ Lambda(args, t, body) =>

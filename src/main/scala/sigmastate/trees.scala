@@ -56,7 +56,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     @tailrec
     def iterChildren(children: Seq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
-      if (children.isEmpty) currentBuffer else children.head.asInstanceOf[Value[SBoolean.type]] match {
+      if (children.isEmpty) currentBuffer else children.head match {
         case TrueLeaf => mutable.Buffer(TrueLeaf)
         case FalseLeaf => iterChildren(children.tail, currentBuffer)
         case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
@@ -129,7 +129,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
           AND(reduced)
         else
           Interpreter.error(
-            s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: ${reduced}")
+            s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: $reduced")
     }
   }
 }

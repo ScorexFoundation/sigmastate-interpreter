@@ -586,7 +586,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     val w = getLLW(t) //window size, choose it according to the value of t
 
     //h = n/w
-    val h = if ((n % w) == 0) n / w else (n / w).toInt + 1
+    val h = if ((n % w) == 0) n / w else (n / w) + 1
 
     //create pre computation table
     val preComp = createLLPreCompTable(groupElements, w, h)
