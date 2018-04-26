@@ -8,6 +8,7 @@ import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.ErgoBox._

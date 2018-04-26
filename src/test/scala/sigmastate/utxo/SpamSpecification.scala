@@ -1,23 +1,17 @@
 package sigmastate.utxo
 
 import org.scalacheck.Gen
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
-import sigmastate._
 import sigmastate.Values._
+import sigmastate._
+import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 
 
 /**
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
   */
 class SpamSpecification extends SigmaTestingCommons {
-
-  private val fakeSelf = createBox(0, TrueLeaf)
-
-  //fake message, in a real-life a message is to be derived from a spending transaction
-  private val message = Blake2b256("Hello World")
 
   //we assume that verifier must finish verification of any script in less time than 3M hash calculations
   // (for the Blake2b256 hash function over a single block input)
@@ -53,7 +47,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoContext.dummy(fakeSelf)
 
-    val prt = prover.prove(spamScript, ctx, message)
+    val prt = prover.prove(spamScript, ctx, fakeMessage)
     prt.isSuccess shouldBe true
 
     val pr = prt.get
@@ -61,7 +55,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoInterpreter
-    val (res, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, message))
+    val (res, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, fakeMessage))
 
     res.isFailure shouldBe true
     terminated shouldBe true
@@ -82,7 +76,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoContext.dummy(fakeSelf)
 
-    val prt = prover.prove(spamScript, ctx, message)
+    val prt = prover.prove(spamScript, ctx, fakeMessage)
     prt.isSuccess shouldBe true
 
     val pr = prt.get
@@ -90,7 +84,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoInterpreter
-    val (_, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, message))
+    val (_, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, fakeMessage))
     terminated shouldBe true
   }
 
@@ -109,10 +103,10 @@ class SpamSpecification extends SigmaTestingCommons {
     val prop = OR(publicImages)
 
     val pt0 = System.currentTimeMillis()
-    val proof = prover.prove(prop, ctx, message).get
+    val proof = prover.prove(prop, ctx, fakeMessage).get
     val pt = System.currentTimeMillis()
 
-    val (_, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
+    val (_, terminated) = termination(() => verifier.verify(prop, ctx, proof, fakeMessage))
     terminated shouldBe true
   }
 
@@ -140,12 +134,12 @@ class SpamSpecification extends SigmaTestingCommons {
         val ctx = ErgoContext.dummy(createBox(0, propToCompare)).copy(spendingTransaction = tx)
 
         val pt0 = System.currentTimeMillis()
-        val proof = prover.prove(spamScript, ctx, message).get
+        val proof = prover.prove(spamScript, ctx, fakeMessage).get
         val pt = System.currentTimeMillis()
         println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
         val verifier = new ErgoInterpreter
-        val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, message))
+        val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, fakeMessage))
         terminated shouldBe true
       }
     }
@@ -172,12 +166,12 @@ class SpamSpecification extends SigmaTestingCommons {
       self = ErgoBox(11, prop))
 
     val pt0 = System.currentTimeMillis()
-    val proof = prover.prove(prop, ctx, message).get
+    val proof = prover.prove(prop, ctx, fakeMessage).get
     val pt = System.currentTimeMillis()
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
     val verifier = new ErgoInterpreter
-    val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, message))
+    val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, fakeMessage))
     terminated shouldBe true
     res.isFailure shouldBe true
   }

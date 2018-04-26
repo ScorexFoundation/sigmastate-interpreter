@@ -9,6 +9,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values.IntConstant
+import sigmastate.helpers.ErgoProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.ErgoBox.R3
 import sigmastate.{AvlTreeData, GE}

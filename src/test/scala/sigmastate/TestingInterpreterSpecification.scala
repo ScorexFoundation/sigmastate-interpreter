@@ -10,32 +10,7 @@ import sigmastate.utxo.{CostTable, Height}
 
 import scala.util.Random
 
-case class TestingContext(
-    height: Int,
-    override val extension: ContextExtension = ContextExtension(values = Map())
-) extends Context[TestingContext] {
-  override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
-}
 
-/** An interpreter for tests with 2 random secrets*/
-object TestingInterpreter extends Interpreter with ProverInterpreter {
-  override type CTX = TestingContext
-
-  override val maxCost = CostTable.ScriptLimit
-
-  override lazy val secrets: Seq[DLogProverInput] = {
-    import GroupSettings.soundness
-
-    Seq(DLogProverInput.random(), DLogProverInput.random())
-  }
-
-  override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
-
-  override def specificTransformations(context: TestingContext, tree: SValue): SValue = tree match {
-    case Height => IntConstant(context.height)
-    case _ => super.specificTransformations(context, tree)
-  }
-}
 
 class TestingInterpreterSpecification extends PropSpec
   with PropertyChecks
@@ -177,5 +152,32 @@ class TestingInterpreterSpecification extends PropSpec
     val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes))
 
     verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
+  }
+}
+
+
+case class TestingContext(height: Int,
+                          override val extension: ContextExtension = ContextExtension(values = Map())
+                         ) extends Context[TestingContext] {
+  override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
+}
+
+/** An interpreter for tests with 2 random secrets*/
+object TestingInterpreter extends Interpreter with ProverInterpreter {
+  override type CTX = TestingContext
+
+  override val maxCost = CostTable.ScriptLimit
+
+  override lazy val secrets: Seq[DLogProverInput] = {
+    import GroupSettings.soundness
+
+    Seq(DLogProverInput.random(), DLogProverInput.random())
+  }
+
+  override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
+
+  override def specificTransformations(context: TestingContext, tree: SValue): SValue = tree match {
+    case Height => IntConstant(context.height)
+    case _ => super.specificTransformations(context, tree)
   }
 }

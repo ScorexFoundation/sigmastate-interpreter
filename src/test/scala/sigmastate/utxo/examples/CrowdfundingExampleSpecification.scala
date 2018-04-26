@@ -2,6 +2,7 @@ package sigmastate.utxo.examples
 
 import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox}
 import sigmastate._
+import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo._
 
 class CrowdfundingExampleSpecification extends SigmaTestingCommons {

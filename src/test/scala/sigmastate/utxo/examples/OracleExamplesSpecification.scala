@@ -8,6 +8,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utxo.ErgoBox._
 import sigmastate.utxo._

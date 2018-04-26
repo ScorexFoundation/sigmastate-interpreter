@@ -2,8 +2,12 @@ package sigmastate.utxo
 
 import sigmastate.Values.{IntConstant, TaggedInt}
 import sigmastate.lang.Terms._
-import sigmastate.{GE, SigmaTestingCommons}
+import sigmastate.GE
+import sigmastate.helpers.SigmaTestingCommons
 
+/**
+  * Specification for compile function
+  */
 class SigmaCompilerSpecification extends SigmaTestingCommons {
 
   property(">= compile") {
