@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.SInt
+import sigmastate._
 import sigmastate.utxo._
 
 class TransformersSerializationSpec extends SerializationSpecification {
@@ -68,6 +68,36 @@ class TransformersSerializationSpec extends SerializationSpecification {
   property("ExtractRegisterAs: Serializer round trip") {
     forAll { e: ExtractRegisterAs[SInt.type ] =>
       roundTripTest(e)
+    }
+  }
+
+  property("IntToByteArray: Serializer round trip") {
+    forAll { itba: IntToByteArray =>
+      roundTripTest(itba)
+    }
+  }
+
+  property("ByteArrayToBigInt: Serializer round trip") {
+    forAll { batbi: ByteArrayToBigInt =>
+      roundTripTest(batbi)
+    }
+  }
+
+  property("CalcBlake2b256: Serializer round trip") {
+    forAll { b256: CalcBlake2b256 =>
+      roundTripTest(b256)
+    }
+  }
+
+  property("CalcSha256: Serializer round trip") {
+    forAll { s256: CalcSha256 =>
+      roundTripTest(s256)
+    }
+  }
+
+  property("ByIndex: Serializer round trip") {
+    forAll { bi: ByIndex[SInt.type ] =>
+      roundTripTest(bi)
     }
   }
 

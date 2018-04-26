@@ -134,6 +134,7 @@ object AND {
 
 case class IntToByteArray(input: Value[SInt.type])
   extends Transformer[SInt.type, SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.IntToByteArrayCode
 
   override def function(bal: EvaluatedValue[SInt.type]): Value[SByteArray.type] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
@@ -144,6 +145,8 @@ case class IntToByteArray(input: Value[SInt.type])
 
 case class ByteArrayToBigInt(input: Value[SByteArray.type])
   extends Transformer[SByteArray.type, SBigInt.type] with NotReadyValueBigInt {
+
+  override val opCode: OpCode = OpCodes.ByteArrayToBigIntCode
 
   override def function(bal: EvaluatedValue[SByteArray.type]): Value[SBigInt.type] =
     BigIntConstant(new BigInteger(1, bal.value))
@@ -163,10 +166,14 @@ trait CalcHash extends Transformer[SByteArray.type, SByteArray.type] with NotRea
 }
 
 case class CalcBlake2b256(override val input: Value[SByteArray.type]) extends CalcHash {
+  override val opCode: OpCode = OpCodes.CalcBlake2b256Code
+
   override val hashFn: CryptographicHash32 = Blake2b256
 }
 
 case class CalcSha256(override val input: Value[SByteArray.type]) extends CalcHash {
+  override val opCode: OpCode = OpCodes.CalcSha256Code
+
   override val hashFn: CryptographicHash32 = Sha256
 }
 

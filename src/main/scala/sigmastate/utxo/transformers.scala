@@ -175,6 +175,8 @@ object Fold {
 
 case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
+  override val opCode: OpCode = OpCodes.ByIndexCode
+
   def tpe = input.tpe.elemType
   def arity = 3
   def deconstruct = immutable.Seq[Any](input, index, tpe)

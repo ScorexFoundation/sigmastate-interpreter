@@ -2,7 +2,7 @@ package sigmastate.serialization.generators
 
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import sigmastate.SInt
+import sigmastate._
 import sigmastate.Values.{FalseLeaf, TrueLeaf}
 import sigmastate.utxo._
 
@@ -19,6 +19,11 @@ trait TransformerGenerators { self: ValueGeneratots with ConcreteCollectionGener
   implicit val arbExtractBytesWithNoRef: Arbitrary[ExtractBytesWithNoRef] = Arbitrary(extractBytesWithNoRefGen)
   implicit val arbExtractId: Arbitrary[ExtractId] = Arbitrary(extractIdGen)
   implicit val arbExtractRegisterAs: Arbitrary[ExtractRegisterAs[SInt.type]] = Arbitrary(extractRegisterAsGen)
+  implicit val arbIntToByteArray: Arbitrary[IntToByteArray] = Arbitrary(intToByteArrayGen)
+  implicit val arbByteArrayToBigInt: Arbitrary[ByteArrayToBigInt] = Arbitrary(byteArrayToBigIntGen)
+  implicit val arbCalcBlake2b256: Arbitrary[CalcBlake2b256] = Arbitrary(calcBlake2b256Gen)
+  implicit val arbCalcSha256: Arbitrary[CalcSha256] = Arbitrary(calcSha256Gen)
+  implicit val arbByIndex: Arbitrary[ByIndex[SInt.type ]] = Arbitrary(byIndexGen)
 
   val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
@@ -57,5 +62,15 @@ trait TransformerGenerators { self: ValueGeneratots with ConcreteCollectionGener
     dvInt <- arbIntConstants.arbitrary
     dv <- Gen.oneOf(None, Some(dvInt))
   } yield ExtractRegisterAs(input, r, dv)
+
+  val intToByteArrayGen: Gen[IntToByteArray] = arbIntConstants.arbitrary.map{ v => IntToByteArray(v)}
+  val byteArrayToBigIntGen: Gen[ByteArrayToBigInt] = arbByteArrayConstant.arbitrary.map{v => ByteArrayToBigInt(v)}
+  val calcBlake2b256Gen: Gen[CalcBlake2b256] = arbByteArrayConstant.arbitrary.map{ v => CalcBlake2b256(v)}
+  val calcSha256Gen: Gen[CalcSha256] = arbByteArrayConstant.arbitrary.map{ v => CalcSha256(v)}
+
+  val byIndexGen: Gen[ByIndex[SInt.type]] = for {
+    input <- arbCCOfIntConstant.arbitrary
+    index <- arbInt.arbitrary
+  } yield ByIndex(input, index)
 
 }
