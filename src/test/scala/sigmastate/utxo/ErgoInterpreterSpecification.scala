@@ -6,7 +6,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
-import scorex.crypto.authds.avltree.batch.BatchAVLProver
+import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -18,22 +18,9 @@ import sigmastate.lang._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.ErgoBox._
 
-class ErgoInterpreterSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
-
-  implicit def grElemConvert(leafConstant: GroupElementConstant): GroupSettings.EcPointType = leafConstant.value
-
-  implicit def grLeafConvert(elem: GroupSettings.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
+class ErgoInterpreterSpecification extends SigmaTesting {
 
   import BoxHelpers.{fakeMessage, fakeSelf}
-
-  val compiler = new SigmaCompiler
-
-  def compile(env: Map[String, Any], code: String): Value[SType] = {
-    compiler.compile(env, code)
-  }
 
   property("scripts EQ/NEQ") {
     val prover1 = new ErgoProvingInterpreter

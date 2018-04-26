@@ -6,10 +6,7 @@ import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox}
 import sigmastate._
 import sigmastate.utxo._
 
-class CrowdfundingExampleSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
+class CrowdfundingExampleSpecification extends SigmaTesting {
 
   import BoxHelpers.fakeMessage
 

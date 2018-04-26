@@ -1,17 +1,13 @@
 package sigmastate.utxo.examples
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values.{IntConstant, TaggedBox}
 import sigmastate._
 import sigmastate.utxo.BoxHelpers.createBox
 import sigmastate.utxo.ErgoBox.R3
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
-class DemurrageExampleSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
+class DemurrageExampleSpecification extends SigmaTesting {
 
   import BoxHelpers.fakeMessage
 
