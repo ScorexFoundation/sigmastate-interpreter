@@ -19,12 +19,13 @@ object OpCodes {
 
   // Relation descendants
 
-  val LtCode:     OpCode = 21: Byte
-  val LeCode:     OpCode = 22: Byte
-  val GtCode:     OpCode = 23: Byte
-  val GeCode:     OpCode = 24: Byte
-  val EqCode:     OpCode = 25: Byte
-  val NeqCode:    OpCode = 26: Byte
+  val LtCode:       OpCode = 21: Byte
+  val LeCode:       OpCode = 22: Byte
+  val GtCode:       OpCode = 23: Byte
+  val GeCode:       OpCode = 24: Byte
+  val EqCode:       OpCode = 25: Byte
+  val NeqCode:      OpCode = 26: Byte
+  val IsMemberCode: OpCode = 27: Byte
 
   val ConcreteCollectionCode: OpCode = 35: Byte
 

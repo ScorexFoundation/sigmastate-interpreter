@@ -4,14 +4,13 @@ import java.math.BigInteger
 
 import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
-import scapi.sigma._
-import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import scorex.crypto.hash.{Blake2b256, CryptographicHash, CryptographicHash32, Sha256}
-import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.OpCodes._
-import sigmastate.utxo.Transformer
-import sigmastate.utxo.CostTable.Cost
+import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
+import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.Values._
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes._
+import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.Transformer
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -306,6 +305,8 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
 case class IsMember(tree: Value[SAvlTree.type],
                     key: Value[SByteArray.type],
                     proof: Value[SByteArray.type]) extends Relation3[SAvlTree.type, SByteArray.type, SByteArray.type] {
+  override val opCode: OpCode = OpCodes.IsMemberCode
+
   override lazy val first = tree
   override lazy val second = key
   override lazy val third = proof

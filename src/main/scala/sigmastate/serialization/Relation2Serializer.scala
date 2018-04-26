@@ -5,7 +5,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.serialization.ValueSerializer.Position
 
-case class RelationSerializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
+case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
   (override val opCode: Byte,
    constructor: (Value[S1], Value[S2]) => R,
    constraints: Seq[Constraints.Constraint2]) extends ValueSerializer[R] {

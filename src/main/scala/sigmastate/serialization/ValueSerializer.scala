@@ -27,12 +27,13 @@ object ValueSerializer
 
   val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
 
-    RelationSerializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
-    RelationSerializer(GeCode, GE.apply, Seq(Constraints.onlyInt2)),
-    RelationSerializer(LtCode, LT.apply, Seq(Constraints.onlyInt2)),
-    RelationSerializer(LeCode, LE.apply, Seq(Constraints.onlyInt2)),
-    RelationSerializer(EqCode, EQ.applyNonTyped, Seq(Constraints.sameType2)),
-    RelationSerializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
+    Relation2Serializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
+    Relation2Serializer(GeCode, GE.apply, Seq(Constraints.onlyInt2)),
+    Relation2Serializer(LtCode, LT.apply, Seq(Constraints.onlyInt2)),
+    Relation2Serializer(LeCode, LE.apply, Seq(Constraints.onlyInt2)),
+    Relation2Serializer(EqCode, EQ.applyNonTyped, Seq(Constraints.sameType2)),
+    Relation2Serializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
+    Relation3Serializer(IsMemberCode, IsMember.apply),
 
     TwoArgumentsSerializer(XorCode, Xor.apply),
     TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),

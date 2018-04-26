@@ -4,7 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.ValueSerializer._
 
-class RelationSerializerSpecification extends TableSerializationSpecification {
+class RelationsSpecification extends TableSerializationSpecification {
 
   override val objects =
     Table(
@@ -23,6 +23,12 @@ class RelationSerializerSpecification extends TableSerializationSpecification {
   property("Relations: serialization LT(bool, bool) must fail") {
     assertThrows[Error] {
       deserialize(Array[Byte](21, 12, 13))
+    }
+  }
+
+  property("IsMember: Serializer round trip") {
+    forAll { im: IsMember =>
+      roundTripTest(im)
     }
   }
 }
