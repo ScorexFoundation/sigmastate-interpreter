@@ -1,12 +1,12 @@
 package sigmastate.utxo.examples
 
-import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import sigmastate._
+import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox}
+import sigmastate._
 import sigmastate.utxo._
 
-class CrowdfundingExampleSpecification  extends PropSpec
+class CrowdfundingExampleSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers {
