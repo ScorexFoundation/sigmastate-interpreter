@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.SInt
-import sigmastate.utxo.{Exists, Fold, ForAll, MapCollection}
+import sigmastate.utxo._
 
 class TransformersSerializationSpec extends SerializationSpecification {
 
@@ -26,6 +26,42 @@ class TransformersSerializationSpec extends SerializationSpecification {
   property("Fold: Serializer round trip") {
     forAll { f: Fold[SInt.type] =>
       roundTripTest(f)
+    }
+  }
+
+  property("SizeOf: Serializer round trip") {
+    forAll { s: SizeOf[SInt.type] =>
+      roundTripTest(s)
+    }
+  }
+
+  property("ExtractAmount: Serializer round trip") {
+    forAll { e: ExtractAmount =>
+      roundTripTest(e)
+    }
+  }
+
+  property("ExtractScriptBytes: Serializer round trip") {
+    forAll { e: ExtractScriptBytes =>
+      roundTripTest(e)
+    }
+  }
+
+  property("ExtractBytes: Serializer round trip") {
+    forAll { e: ExtractBytes =>
+      roundTripTest(e)
+    }
+  }
+
+  property("ExtractBytesWithNoRef: Serializer round trip") {
+    forAll { e: ExtractBytesWithNoRef =>
+      roundTripTest(e)
+    }
+  }
+
+  property("ExtractId: Serializer round trip") {
+    forAll { e: ExtractId =>
+      roundTripTest(e)
     }
   }
 

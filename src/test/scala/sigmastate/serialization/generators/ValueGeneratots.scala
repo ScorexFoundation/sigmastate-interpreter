@@ -12,7 +12,7 @@ trait ValueGeneratots {
   implicit val arbTaggedBox: Arbitrary[TaggedBox] = Arbitrary(taggedBoxGen)
   implicit val arbByteArrayConstant: Arbitrary[ByteArrayConstant] = Arbitrary(byteArrayConstantGen)
   implicit val arbGroupElementConstant: Arbitrary[GroupElementConstant] = Arbitrary(groupElementConstantGen)
-  implicit val proveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
+  implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
 
   val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map{v => IntConstant(v)}
   val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map{v => TaggedInt(v)}

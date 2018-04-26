@@ -56,7 +56,13 @@ object ValueSerializer
     MapCollectionSerializer,
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
-    FoldSerializer
+    FoldSerializer,
+    SimpleTransformerSerializer[SCollection[SType], SInt.type, Transformer[SCollection[SType], SInt.type]](SizeOfCode, SizeOf.apply),
+    SimpleTransformerSerializer[SBox.type, SInt.type, Transformer[SBox.type, SInt.type]](ExtractAmountCode, ExtractAmount.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray.type, Transformer[SBox.type, SByteArray.type]](ExtractScriptBytesCode, ExtractScriptBytes.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray.type, Transformer[SBox.type, SByteArray.type]](ExtractBytesCode, ExtractBytes.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray.type, Transformer[SBox.type, SByteArray.type]](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray.type, Transformer[SBox.type, SByteArray.type]](ExtractIdCode, ExtractId.apply)
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {

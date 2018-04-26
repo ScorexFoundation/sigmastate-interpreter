@@ -48,10 +48,16 @@ object OpCodes {
   val ProveDlogCode:   OpCode = 60: Byte
   val HeightCode:      OpCode = 61: Byte
 
-  val MapCollectionCode: OpCode = 70: Byte
-  val ExistsCode:        OpCode = 71: Byte
-  val ForAllCode:        OpCode = 72: Byte
-  val FoldCode:          OpCode = 73: Byte
+  val MapCollectionCode:         OpCode = 70: Byte
+  val ExistsCode:                OpCode = 71: Byte
+  val ForAllCode:                OpCode = 72: Byte
+  val FoldCode:                  OpCode = 73: Byte
+  val SizeOfCode:                OpCode = 74: Byte
+  val ExtractAmountCode:         OpCode = 75: Byte
+  val ExtractScriptBytesCode:    OpCode = 76: Byte
+  val ExtractBytesCode:          OpCode = 77: Byte
+  val ExtractBytesWithNoRefCode: OpCode = 78: Byte
+  val ExtractIdCode:             OpCode = 79: Byte
 
 
 }

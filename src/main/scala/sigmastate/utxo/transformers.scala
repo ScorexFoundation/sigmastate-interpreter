@@ -193,6 +193,8 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
 
+  override val opCode: OpCode = OpCodes.SizeOfCode
+
   override def function(input: EvaluatedValue[SCollection[V]]) = IntConstant(input.value.length)
 
   override def cost = 1
@@ -205,6 +207,8 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
 }
 
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueInt {
+  override val opCode: OpCode = OpCodes.ExtractAmountCode
+
   override lazy val cost: Int = 10
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] = IntConstant(box.value.value)
@@ -212,6 +216,8 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] wit
 
 
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.ExtractScriptBytesCode
+
   override lazy val cost: Int = 1000
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = {
@@ -221,18 +227,24 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
 
 
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.ExtractBytesCode
+
   override lazy val cost: Int = 1000 //todo: make it PerKb * max box size in kbs
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytes)
 }
 
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.ExtractBytesWithNoRefCode
+
   override lazy val cost: Int = 1000 //todo: make it PerKb * max box size in kbs
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytesWithNoRef)
 }
 
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.ExtractIdCode
+
   override lazy val cost: Int = 10
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.id)
