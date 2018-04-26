@@ -140,7 +140,7 @@ object BlockchainSimulationSpecification {
 
     def byTwoInts(r1Id: ErgoBox.RegisterIdentifier, int1: Int,
                   r2Id: ErgoBox.RegisterIdentifier, int2: Int): Option[ErgoBox] =
-      boxes.values.find{box =>
+      boxes.values.find { box =>
         box.get(r1Id).getOrElse(IntConstant(int1 + 1)) == IntConstant(int1) &&
           box.get(r2Id).getOrElse(IntConstant(int2 + 1)) == IntConstant(int2)
       }
@@ -205,4 +205,5 @@ object BlockchainSimulationSpecification {
       ValidationState(bs, boxReader).applyBlock(block).get
     }
   }
+
 }

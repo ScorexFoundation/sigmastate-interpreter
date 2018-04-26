@@ -1,13 +1,13 @@
 package sigmastate.utxo.examples
 
-import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{BooleanConstant, FalseLeaf, IntConstant, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.ErgoProvingInterpreter
 import sigmastate.interpreter.ContextExtension
-import sigmastate.utxo.ErgoBox.{R3, R4, R5, R6}
+import sigmastate.utxo.ErgoBox.{R4, R5, R6}
 import sigmastate.utxo._
 
 /**
@@ -24,9 +24,9 @@ class Rule110Specification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
-  import BlockchainSimulationSpecification.{ValidationState, Block}
+  import BlockchainSimulationSpecification.{Block, ValidationState}
 
-  def calcRule110(left: Boolean, center: Boolean, right: Boolean):Boolean =
+  def calcRule110(left: Boolean, center: Boolean, right: Boolean): Boolean =
     (left, center, right) match {
       case (true, true, true) => false
       case (true, true, false) => true
@@ -129,7 +129,7 @@ class Rule110Specification extends PropSpec
     val coins = (0 until bitsInString).map { col =>
       val row = R4 -> IntConstant(0)
       val column = R5 -> IntConstant(col)
-      val value = if(col == 15) R6 -> TrueLeaf else R6 -> FalseLeaf
+      val value = if (col == 15) R6 -> TrueLeaf else R6 -> FalseLeaf
       ErgoBox(0L, prop, Map(row, column, value), txId, col.toShort)
     }
 
@@ -139,20 +139,20 @@ class Rule110Specification extends PropSpec
 
     val genesisState = ValidationState.initialState(initBlock)
 
-    def byPos(state: ValidationState, row: Int, pos:Int) =
+    def byPos(state: ValidationState, row: Int, pos: Int) =
       state.boxesReader.byTwoInts(R4, row, R5, pos).get
 
     def generateTransactionsForRow(state: ValidationState, row: Int): IndexedSeq[ErgoTransaction] = {
-      require(row >=1)
+      require(row >= 1)
 
       (0 until bitsInString).map { col =>
         val leftCol = if (col == 0) lastBitIndex else col - 1
         val centerCol = col
         val rightCol = if (col == lastBitIndex) 0 else col + 1
 
-        val left = byPos(state, row-1, leftCol)
-        val center = byPos(state, row-1, centerCol)
-        val right = byPos(state, row-1, rightCol)
+        val left = byPos(state, row - 1, leftCol)
+        val center = byPos(state, row - 1, centerCol)
+        val right = byPos(state, row - 1, rightCol)
 
         val lv = left.get(R6).get.asInstanceOf[BooleanConstant].value
         val cv = center.get(R6).get.asInstanceOf[BooleanConstant].value
@@ -163,7 +163,7 @@ class Rule110Specification extends PropSpec
         val c = new ErgoBoxCandidate(0L, prop, Map(R4 -> IntConstant(row), R5 -> IntConstant(col), value))
 
         val ut = UnsignedErgoTransaction(
-          IndexedSeq(UnsignedInput(left.id),UnsignedInput(center.id),UnsignedInput(right.id)),
+          IndexedSeq(UnsignedInput(left.id), UnsignedInput(center.id), UnsignedInput(right.id)),
           IndexedSeq(c, left.toCandidate, center.toCandidate, right.toCandidate)
         )
 
@@ -201,7 +201,7 @@ class Rule110Specification extends PropSpec
     val t1 = System.currentTimeMillis()
 
     println(s"Script cost: ${prop.cost}")
-    println(s"First row time ${t1-t0} ms.")
+    println(s"First row time ${t1 - t0} ms.")
 
     firstRowState.boxesReader.byTwoInts(R4, 1, R5, 13).get.get(R6).get.asInstanceOf[BooleanConstant].value shouldBe false
     firstRowState.boxesReader.byTwoInts(R4, 1, R5, 14).get.get(R6).get.asInstanceOf[BooleanConstant].value shouldBe true
