@@ -59,7 +59,7 @@ class SigmaBinder(env: Map[String, Any]) {
       Some(SomeValue(arg))
 
     // Rule: col(i) --> ByIndex(col, i)
-    case Apply(Typed(obj, _), Seq(IntConstant(i))) =>
+    case Apply(Typed(obj, tCol: SCollection[_]), Seq(IntConstant(i))) =>
       Some(ByIndex(obj.asValue[SCollection[SType]], i.toInt))
 
     // Rule: allOf(Array(...)) --> AND(...)

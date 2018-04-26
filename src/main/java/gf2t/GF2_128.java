@@ -1,5 +1,7 @@
 package gf2t;
 
+import java.util.Arrays;
+
 public class GF2_128 {
     private long [] word = new long[2];
 
