@@ -5,7 +5,9 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utxo.BooleanTransformer.ResultConstructor
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox.RegisterIdentifier
 

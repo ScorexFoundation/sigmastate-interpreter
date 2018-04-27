@@ -8,6 +8,7 @@ import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivat
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.Transformer

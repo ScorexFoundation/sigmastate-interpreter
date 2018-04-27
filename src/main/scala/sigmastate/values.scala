@@ -9,11 +9,10 @@ import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.interpreter.GroupSettings
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
-
 import sigmastate.utxo.ErgoBox
 
 import scala.collection.immutable
