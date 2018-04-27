@@ -51,7 +51,8 @@ trait ValueGeneratots {
 
   val ergoBoxGen: Gen[ErgoBox] = for {
     l <- arbLong.arbitrary
-    b <- Gen.oneOf(TrueLeaf, FalseLeaf)
+    p <- proveDlogGen
+    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
     tId <- Gen.listOfN(32, arbByte.arbitrary)
     boxId <- arbShort.arbitrary
     regNum <- Gen.chooseNum[Byte](0, 7)
