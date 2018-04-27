@@ -27,4 +27,5 @@ matrix:
       install: . ./install-jdk.sh -F 10 -L BCL
 
 script:
+  - java --version
   - sbt -jvm-opts .travis.jvmopts test
