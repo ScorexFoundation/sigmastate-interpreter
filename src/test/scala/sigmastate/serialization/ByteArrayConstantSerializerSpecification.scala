@@ -1,6 +1,5 @@
 package sigmastate.serialization
 
-import com.google.common.primitives.Ints
 import sigmastate.Values.ByteArrayConstant
 
 class ByteArrayConstantSerializerSpecification extends TableSerializationSpecification {
