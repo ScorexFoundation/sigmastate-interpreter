@@ -21,8 +21,8 @@ object GroupElementSerializer extends ValueSerializer[GroupElementConstant] {
   override def serializeBody(gec: GroupElementConstant): Array[Byte] = {
     val point = gec.value.normalize()
 
-    val xCoord = point.getAffineXCoord.toBigInteger.mod(curve.x9params.getN).toByteArray
-    val yCoord = point.getAffineYCoord.toBigInteger.mod(curve.x9params.getN).toByteArray
+    val xCoord = point.getAffineXCoord.toBigInteger.toByteArray
+    val yCoord = point.getAffineYCoord.toBigInteger.toByteArray
 
     val xSize = xCoord.size.toShort
     val ySize = yCoord.size.toShort
@@ -41,7 +41,6 @@ object GroupElementSerializer extends ValueSerializer[GroupElementConstant] {
     val yCoord = new BigInteger(bytes.slice(pos + 4 + xSize, pos + 4 + xSize + ySize))
 
     (GroupElementConstant(curve.reconstructElement(bCheckMembership = true,
-                          GroupAgnosticEcElement(xCoord, yCoord)).get),
-      4 + xSize + ySize)
+      GroupAgnosticEcElement(xCoord, yCoord)).get), 4 + xSize + ySize)
   }
 }

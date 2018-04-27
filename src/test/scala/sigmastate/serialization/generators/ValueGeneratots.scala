@@ -26,7 +26,7 @@ trait ValueGeneratots {
   } yield ByteArrayConstant(bytes.toArray)
   val groupElementConstantGen: Gen[GroupElementConstant] = for {
     _ <- Gen.const(1)
-    el = scapi.sigma.Curve25519.createRandomElement()
+    el = scapi.sigma.Curve25519.createRandomGenerator()
   } yield GroupElementConstant(el)
 
   val proveDlogGen: Gen[ProveDlog] = arbGroupElementConstant.arbitrary.map(v => ProveDlog(v))
