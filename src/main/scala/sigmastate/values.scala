@@ -246,6 +246,8 @@ object Values {
   }
 
   case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {
+    override val opCode: OpCode = OpCodes.BoxConstantCode
+
     override def cost: Int = 10
 
     override def tpe = SBox

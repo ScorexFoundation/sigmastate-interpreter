@@ -16,6 +16,7 @@ object OpCodes {
   val ByteArrayConstantCode:    OpCode = 16: Byte
   val GroupElementConstantCode: OpCode = 17: Byte
   val GroupGeneratorCode:       OpCode = 18: Byte
+  val BoxConstantCode:          OpCode = 19: Byte
 
 
   // Relation descendants

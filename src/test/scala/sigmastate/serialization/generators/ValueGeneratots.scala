@@ -3,8 +3,13 @@ package sigmastate.serialization.generators
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
+import scorex.crypto.hash.Digest32
+import sigmastate.SType
 import sigmastate.Values._
+import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.ErgoBox._
+
+import collection.JavaConverters._
 
 trait ValueGeneratots {
 
@@ -16,6 +21,9 @@ trait ValueGeneratots {
   implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
   implicit val arbRegisterIdentifier: Arbitrary[RegisterIdentifier] = Arbitrary(registerIdentifierGen)
   implicit val arbAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedAvlTreeGen)
+  implicit val arbBox: Arbitrary[ErgoBox] = Arbitrary(ergoBoxGen)
+  implicit val arbBoxConstants: Arbitrary[BoxConstant] = Arbitrary(boxConstantGen)
+
 
   val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map{v => IntConstant(v)}
   val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map{v => TaggedInt(v)}
@@ -34,5 +42,24 @@ trait ValueGeneratots {
   val registerIdentifierGen: Gen[RegisterIdentifier] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
   val taggedAvlTreeGen: Gen[TaggedAvlTree] = arbByte.arbitrary.map{v => TaggedAvlTree(v)}
+
+  def arGen(cnt: Byte): Seq[Gen[(NonMandatoryIdentifier, Value[SType])]] = {
+    (0 until cnt).map(_ + ErgoBox.startingNonMandatoryIndex)
+      .map(rI => ErgoBox.registerByIndex(rI.toByte).asInstanceOf[NonMandatoryIdentifier])
+      .map(r => Gen.oneOf(TrueLeaf, FalseLeaf).map(v => r -> v))
+  }
+
+  val ergoBoxGen: Gen[ErgoBox] = for {
+    l <- arbLong.arbitrary
+    b <- Gen.oneOf(TrueLeaf, FalseLeaf)
+    tId <- Gen.listOfN(32, arbByte.arbitrary)
+    boxId <- arbShort.arbitrary
+    regNum <- Gen.chooseNum[Byte](0, 7)
+    ar <- Gen.sequence(arGen(regNum))
+  } yield ErgoBox(l, b, ar.asScala.toMap, Digest32 @@ tId.toArray, boxId)
+
+  val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map{v => BoxConstant(v)}
+
+
 
 }
