@@ -55,6 +55,7 @@ object OpCodes {
   val OutputsCode:               OpCode = 63: Byte
   val LastBlockUtxoRootHashCode: OpCode = 64: Byte
   val SelfCode:                  OpCode = 65: Byte
+  val AvlTreeConstantCode:       OpCode = 66: Byte
 
   val MapCollectionCode:         OpCode = 70: Byte
   val ExistsCode:                OpCode = 71: Byte

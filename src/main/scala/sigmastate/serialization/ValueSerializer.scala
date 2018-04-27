@@ -78,7 +78,8 @@ object ValueSerializer
     SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcSha256Code, CalcSha256.apply),
     ExtractRegisterAsSerializer,
     ByIndexSerializer,
-    BoxConstantSerializer
+    BoxConstantSerializer,
+    AvlTreeConstantSerializer
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {

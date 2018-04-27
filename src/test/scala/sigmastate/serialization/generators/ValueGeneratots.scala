@@ -3,8 +3,9 @@ package sigmastate.serialization.generators
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
+import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
-import sigmastate.SType
+import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values._
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.ErgoBox._
@@ -23,6 +24,7 @@ trait ValueGeneratots {
   implicit val arbAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedAvlTreeGen)
   implicit val arbBox: Arbitrary[ErgoBox] = Arbitrary(ergoBoxGen)
   implicit val arbBoxConstants: Arbitrary[BoxConstant] = Arbitrary(boxConstantGen)
+  implicit val arbAvlTreeConstant: Arbitrary[AvlTreeConstant] = Arbitrary(avlTreeConstantGen)
 
 
   val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map{v => IntConstant(v)}
@@ -61,6 +63,20 @@ trait ValueGeneratots {
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map{v => BoxConstant(v)}
 
+  val smallIntGen: Gen[Int] = Gen.chooseNum(2, 16)
+  val smallIntOptGen: Gen[Option[Int]] = for {
+    int <- smallIntGen
+    opt <- Gen.oneOf(Some(int), None)
+  } yield opt
 
 
+  def avlTreeDataGen: Gen[AvlTreeData] = for {
+    digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
+    keyLength <- smallIntGen
+    vl <- smallIntOptGen
+    mn <- arbOption[Int].arbitrary
+    md <- arbOption[Int].arbitrary
+  } yield AvlTreeData(ADDigest @@ digest, keyLength, vl, mn, md)
+
+  def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map{v => AvlTreeConstant(v)}
 }
