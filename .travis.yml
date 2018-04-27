@@ -18,8 +18,13 @@ cache:
 
 language: scala
 
-jdk:
-  - oraclejdk8
+before_install:
+  - wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
+
+matrix:
+  include:
+    - env: JDK='Oracle JDK 10'
+      install: . ./install-jdk.sh -F 10 -L BCL
 
 script:
   - sbt -jvm-opts .travis.jvmopts test
