@@ -32,9 +32,9 @@ class SigmaSpecializer {
   private def eval(env: Map[String, SValue], e: SValue): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, _) => env.get(n)
 
-    case block @ Block(binds, res) =>
+    case _ @ Block(binds, res) =>
       var curEnv = env
-      for (Let(n, t, b) <- binds) {
+      for (Let(n, _, b) <- binds) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = eval(curEnv, b)
         curEnv = curEnv + (n -> b1)
@@ -82,7 +82,7 @@ class SigmaSpecializer {
       else
         error(s"The type of $obj is expected to be Collection to select 'size' property")
 
-    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(regType)), Seq(arg)) =>
+    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(_)), Seq(arg)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
       Some(ExtractRegisterAs(box.asBox, reg, Some(arg))(arg.tpe))

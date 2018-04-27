@@ -1,11 +1,12 @@
-package sigmastate.utxo
+package sigmastate.helpers
 
 import scapi.sigma.DLogProtocol.DLogProverInput
 import scapi.sigma.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import scorex.utils.Random
-import sigmastate.Values._
 import sigmastate.SType
+import sigmastate.Values._
 import sigmastate.interpreter.ProverInterpreter
+import sigmastate.utxo.{CostTable, ErgoInterpreter}
 
 class ErgoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
   extends ErgoInterpreter(maxCost) with ProverInterpreter {
