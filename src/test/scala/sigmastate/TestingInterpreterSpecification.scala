@@ -1,39 +1,17 @@
 package sigmastate
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
+import sigmastate.lang.SigmaCompiler
 import sigmastate.utxo.{CostTable, Height}
-
+import sigmastate.lang.Terms._
 import scala.util.Random
 
 
-case class TestingContext(height: Int,
-                          override val extension: ContextExtension = ContextExtension(values = Map())) extends Context[TestingContext] {
-  override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
-}
-
-
-object TestingInterpreter extends Interpreter with ProverInterpreter {
-  override type CTX = TestingContext
-
-  override val maxCost = CostTable.ScriptLimit
-
-  override lazy val secrets: Seq[DLogProverInput] = {
-    import GroupSettings.soundness
-
-    Seq(DLogProverInput.random(), DLogProverInput.random())
-  }
-
-  override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
-
-  override def specificTransformations(context: TestingContext): PartialFunction[Value[_ <: SType], Value[_ <: SType]] = {
-    case Height => IntConstant(context.height)
-  }
-}
 
 class TestingInterpreterSpecification extends PropSpec
   with PropertyChecks
@@ -49,14 +27,14 @@ class TestingInterpreterSpecification extends PropSpec
       whenever(h > 0 && h < Int.MaxValue - 1) {
         val dk1 = DLogProverInput.random().publicImage
 
-        val env = TestingContext(h)
-        assert(reduceToCrypto(AND(GE(Height, IntConstant(h - 1)), dk1), env).get.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(AND(GE(Height, IntConstant(h)), dk1), env).get.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(AND(GE(Height, IntConstant(h + 1)), dk1), env).get.isInstanceOf[FalseLeaf.type])
+        val ctx = TestingContext(h)
+        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get.isInstanceOf[FalseLeaf.type])
 
-        assert(reduceToCrypto(OR(GE(Height, IntConstant(h - 1)), dk1), env).get.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(OR(GE(Height, IntConstant(h)), dk1), env).get.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(OR(GE(Height, IntConstant(h + 1)), dk1), env).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get.isInstanceOf[ProveDlog])
       }
     }
   }
@@ -69,32 +47,56 @@ class TestingInterpreterSpecification extends PropSpec
         val dk1 = DLogProverInput.random().publicImage
         val dk2 = DLogProverInput.random().publicImage
 
-        val env = TestingContext(h)
+        val ctx = TestingContext(h)
 
-        assert(reduceToCrypto(OR(
-          AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
-          AND(GT(Height, IntConstant(h + 1)), dk1)
-        ), env).get.isInstanceOf[CAND])
-
-
-        assert(reduceToCrypto(OR(
-          AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, IntConstant(h - 1)), dk1)
-        ), env).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, OR(
+                  AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h + 1)), dk1)
+                )).get.isInstanceOf[CAND])
 
 
-        assert(reduceToCrypto(OR(
-          AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, IntConstant(h + 1)), dk1)
-        ), env).get.isInstanceOf[FalseLeaf.type])
+        assert(reduceToCrypto(ctx, OR(
+                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h - 1)), dk1)
+                )).get.isInstanceOf[ProveDlog])
 
-        assert(reduceToCrypto(OR(OR(
-          AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, IntConstant(h + 1)), dk1)
-        ), AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1)))), env).get.isInstanceOf[TrueLeaf.type])
+
+        assert(reduceToCrypto(ctx, OR(
+                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h + 1)), dk1)
+                )).get.isInstanceOf[FalseLeaf.type])
+
+        assert(reduceToCrypto(ctx, OR(OR(
+                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h + 1)), dk1)
+                ), AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1))))).get.isInstanceOf[TrueLeaf.type])
 
       }
     }
+  }
+
+  val compiler = new SigmaCompiler
+  def compile(env: Map[String, Any], code: String): Value[SType] = {
+    compiler.compile(env, code)
+  }
+
+  property("Evaluate ops") {
+    val dk1 = ProveDlog(secrets(0).publicImage.h)
+
+    val ctx = TestingContext(99)
+
+    val env = Map("dk1" -> dk1)
+    val prop = compile(env,
+      """{
+        |  let arr = Array(1, 2) ++ Array(3, 4)
+        |  arr.size == 4
+        |}""".stripMargin
+    ).asBoolValue
+
+    val challenge = Array.fill(32)(Random.nextInt(100).toByte)
+
+    val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
+    verify(prop, ctx, proof1, challenge).getOrElse(false) shouldBe true
   }
 
   property("Evaluation example #1") {
@@ -175,5 +177,32 @@ class TestingInterpreterSpecification extends PropSpec
     val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes))
 
     verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
+  }
+}
+
+
+case class TestingContext(height: Int,
+                          override val extension: ContextExtension = ContextExtension(values = Map())
+                         ) extends Context[TestingContext] {
+  override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
+}
+
+/** An interpreter for tests with 2 random secrets*/
+object TestingInterpreter extends Interpreter with ProverInterpreter {
+  override type CTX = TestingContext
+
+  override val maxCost = CostTable.ScriptLimit
+
+  override lazy val secrets: Seq[DLogProverInput] = {
+    import GroupSettings.soundness
+
+    Seq(DLogProverInput.random(), DLogProverInput.random())
+  }
+
+  override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
+
+  override def specificTransformations(context: TestingContext, tree: SValue): SValue = tree match {
+    case Height => IntConstant(context.height)
+    case _ => super.specificTransformations(context, tree)
   }
 }

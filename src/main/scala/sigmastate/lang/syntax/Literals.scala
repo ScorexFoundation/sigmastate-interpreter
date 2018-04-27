@@ -76,8 +76,8 @@ trait Literals { l =>
 
     class InterpCtx(interp: Option[P0]){
       val Literal = P(
-        ("-".!.? ~ (/*Float |*/ Int.!)).map {
-            case (Some(s), i) => IntConstant(-i.toLong)
+        ("-".!.? ~ /*Float |*/ Int.!).map {
+            case (Some(_), i) => IntConstant(-i.toLong)
             case (None, i) => IntConstant(i.toLong)
           }
         | Bool

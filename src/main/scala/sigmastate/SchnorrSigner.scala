@@ -3,10 +3,7 @@ package sigmastate
 import scapi.sigma.{Challenge, NonInteractiveProver}
 import scapi.sigma.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.interpreter.GroupSettings
 
-
-// TODO: make implementation corresponding to RFC-8032 standard for EdDSA signatures
 
 
 case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: Option[DLogProverInput])
@@ -28,31 +25,5 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
     //val sb = SchnorrSigner.serialize(fm, sm)
 
     SchnorrNode(publicInput, Some(fm), challenge, sm)
-  }
-}
-
-object SchnorrSigner {
-
-  import GroupSettings.dlogGroup
-
-  def serialize(fm: FirstDLogProverMessage, sm: SecondDLogProverMessage): Array[Byte] = {
-    val grec = fm.ecData
-    val z = sm.z
-
-    val grb = grec.getEncoded(true)
-    val zb = z.toByteArray
-    //todo: is byte enough for any group?
-    Array(grb.length.toByte, zb.length.toByte) ++ grb  ++ zb
-  }
-
-  def generate(privateInput: DLogProverInput): SchnorrSigner = {
-    val publicInput: ProveDlog = {
-      val g = dlogGroup.generator
-      val gw = dlogGroup.exponentiate(g, privateInput.w)
-
-      ProveDlog(gw)
-    }
-
-    SchnorrSigner(publicInput, Some(privateInput))
   }
 }

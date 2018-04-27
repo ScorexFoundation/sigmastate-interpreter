@@ -10,13 +10,13 @@ import sigmastate.Values._
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, rule, everywherebu, log, strategy}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.utxo.{CostTable, Transformer}
+import sigmastate.utxo.{CostTable, Transformer, Height}
 
 import scala.annotation.tailrec
 
@@ -35,19 +35,79 @@ trait Interpreter {
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
 
+  final val MaxByteArrayLength = 10000
+
   /**
     * Max cost of a script interpreter can accept
     */
   def maxCost: Int
 
-  /**
-    * Implementation-specific tree reductions, to be defined in descendants
+  /** First, both the prover and the verifier are making context-dependent tree transformations
+    * (usually, context variables substitutions).
+    * This method defines implementation-specific tree reductions, to be extended in descendants
+    * using stackable-override pattern.
+    * No rewriting is defined on this abstract level.
     *
-    * @param context - context instance
-    * @return - processed tree
+    * @param context a context instance
+    * @param tree to be rewritten
+    * @return a new rewritten tree or `null` if `tree` cannot be rewritten.
     */
-  def specificTransformations(context: CTX): PartialFunction[Value[_ <: SType], Value[_ <: SType]]
+  def specificTransformations(context: CTX, tree: SValue): SValue = null
 
+  def evaluateNode(context: CTX, node: SValue): SValue = node match {
+    case GroupGenerator =>
+      GroupElementConstant(dlogGroup.generator) // TODO should we use GroupGenerator.value instead
+
+    //operations
+    case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
+    case Minus(l: IntConstant, r: IntConstant) => IntConstant(l.value - r.value)
+    case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
+      assert(l.value.length == r.value.length)
+      ByteArrayConstant(Helpers.xor(l.value, r.value))
+
+    case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
+      require(l.length + r.length < MaxByteArrayLength)
+      ByteArrayConstant(l ++ r)
+
+    case c: CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray.type]])
+
+    case Exponentiate(GroupElementConstant(l), BigIntConstant(r)) =>
+      GroupElementConstant(dlogGroup.exponentiate(l, r))
+
+    case MultiplyGroup(l: GroupElementConstant, r: GroupElementConstant) =>
+      GroupElementConstant(dlogGroup.multiplyGroupElements(l.value, r.value))
+
+    //relations
+    case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
+      BooleanConstant.fromBoolean(l == r)
+    case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
+      BooleanConstant.fromBoolean(l != r)
+    case GT(l: IntConstant, r: IntConstant) =>
+      BooleanConstant.fromBoolean(l.value > r.value)
+    case GE(l: IntConstant, r: IntConstant) =>
+      BooleanConstant.fromBoolean(l.value >= r.value)
+    case LT(l: IntConstant, r: IntConstant) =>
+      BooleanConstant.fromBoolean(l.value < r.value)
+    case LE(l: IntConstant, r: IntConstant) =>
+      BooleanConstant.fromBoolean(l.value <= r.value)
+    case IsMember(tree: AvlTreeConstant, key: ByteArrayConstant, proof: ByteArrayConstant) =>
+      val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
+      val res = bv.performOneOperation(Lookup(ADKey @@ key.value))
+      BooleanConstant.fromBoolean(res.isSuccess) // TODO should we also check res.get.isDefined
+    case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
+      if (cond.value) trueBranch else falseBranch
+
+    //conjectures
+    case a @ AND(children) if a.transformationReady =>
+      a.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
+
+    case o @ OR(children) if o.transformationReady =>
+      o.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
+
+    case t: Transformer[_, _] if t.transformationReady => t.function()
+
+    case _ => null  // this means the node cannot be evaluated
+  }
 
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,
   // reduction state carried between reductions is number of transformations done.
@@ -66,89 +126,14 @@ trait Interpreter {
     * @param context
     * @return
     */
-  def reduceToCrypto(exp: Value[SBoolean.type], context: CTX): Try[Value[SBoolean.type]] = Try {
+  def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]) = Try {
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
 
-    @tailrec
-    def reductionStep(tree: Value[SBoolean.type],
-                      reductionState: ReductionState): (Value[SBoolean.type], ReductionState) = {
-      var state = reductionState
-
-      def statefulTransformation(rules: PartialFunction[Value[_ <: SType], Value[_ <: SType]]):
-      PartialFunction[Value[_ <: SType], Value[_ <: SType]] = rules.andThen({ newTree =>
-        state = state.recordTransformation()
-        newTree
-      })
-
-      val transformations = ({
-        case GroupGenerator =>
-          GroupElementConstant(dlogGroup.generator) // TODO should we use GroupGenerator.value instead
-
-        case t: Transformer[_, _] if t.transformationReady => t.function()
-
-        //operations
-        case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
-        case Minus(l: IntConstant, r: IntConstant) => IntConstant(l.value - r.value)
-        case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
-          assert(l.value.length == r.value.length)
-          ByteArrayConstant(Helpers.xor(l.value, r.value))
-        case AppendBytes(l: ByteArrayConstant, r: ByteArrayConstant) =>
-          require(l.value.length + r.value.length < 10000) //todo: externalize this maximum intermediate value length limit
-          ByteArrayConstant(l.value ++ r.value
-          )
-
-        case c:CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray.type]])
-
-        case Exponentiate(l: GroupElementConstant, r: BigIntConstant) =>
-          GroupElementConstant(dlogGroup.exponentiate(l.value, r.value))
-
-        case MultiplyGroup(l: GroupElementConstant, r: GroupElementConstant) =>
-          GroupElementConstant(dlogGroup.multiplyGroupElements(l.value, r.value))
-
-        //relations
-        case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-          BooleanConstant.fromBoolean(l == r)
-        case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-          BooleanConstant.fromBoolean(l != r)
-        case GT(l: IntConstant, r: IntConstant) =>
-          BooleanConstant.fromBoolean(l.value > r.value)
-        case GE(l: IntConstant, r: IntConstant) =>
-          BooleanConstant.fromBoolean(l.value >= r.value)
-        case LT(l: IntConstant, r: IntConstant) =>
-          BooleanConstant.fromBoolean(l.value < r.value)
-        case LE(l: IntConstant, r: IntConstant) =>
-          BooleanConstant.fromBoolean(l.value <= r.value)
-        case IsMember(tree: AvlTreeConstant, key: ByteArrayConstant, proof: ByteArrayConstant) =>
-          val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
-          BooleanConstant.fromBoolean(bv.performOneOperation(Lookup(ADKey @@ key.value)).isSuccess)
-        case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
-          if (cond.value) trueBranch else falseBranch
-
-        //conjectures
-        case a@AND(children) if a.transformationReady =>
-          a.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
-
-        case o@OR(children) if o.transformationReady =>
-          o.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
-      }: PartialFunction[Value[_ <: SType], Value[_ <: SType]]).orElse(specificTransformations(context))
-
-      //todo: use and(s1, s2) strategy to combine rules below with specific phases
-      val rules: Strategy = rule[Value[_ <: SType]](statefulTransformation(transformations))
-
-      val newTree = everywherebu(rules)(tree).get.asInstanceOf[Value[SBoolean.type]]
-
-      if (state.numberOfTransformations == 0)
-        (newTree, state)
-      else
-        reductionStep(newTree, state.copy(numberOfTransformations = 0))
-    }
-
-    // First, both the prover and the verifier are making context-dependent tree transformations
-    // (usually, context variables substitutions).
+    // Make context-dependent tree transformations (substitute references to a context
+    // with data values from the context).
     // We can estimate cost of the tree evaluation only after this step.
-    val substRule = rule[Value[_ <: SType]](specificTransformations(context))
+    val substRule = strategy[Value[_ <: SType]] { case x => Option(specificTransformations(context, x)) }
 
-    //todo: controversial .asInstanceOf?
     val substTree = everywherebu(substRule)(exp) match {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
@@ -156,12 +141,29 @@ trait Interpreter {
     if (substTree.cost > maxCost) throw new Error("Estimated expression complexity exceeds the limit")
 
     // After performing context-dependent transformations and checking cost of the resulting tree, both the prover
-    // and the verifier are evaluating the tree by applying rewriting rules, until no any rule triggers during tree
-    // traversal (so interpreter checks whether no any nodes were rewritten during last rewriting, and aborts if so).
-    // todo: any attacks possible on rewriting itself? Maybe, adversary can construct such a tree that its rewriting
-    // todo: takes long time. Further investigation is needed.
-    val initialState = ReductionState(0)
-    reductionStep(substTree, initialState)._1
+    // and the verifier are evaluating the tree by applying rewriting rules, until no rules trigger during tree
+    // traversal (so interpreter checks whether any nodes were rewritten during last rewriting, and aborts if so).
+    // Because each rewriting reduces size of the tree the process terminates with number of steps <= substTree.cost.
+    var wasRewritten = false
+    val rules: Strategy = strategy[Value[_ <: SType]] { case node =>
+      var rewritten = evaluateNode(context, node)
+      if (rewritten == null) {
+        rewritten = specificTransformations(context, node)
+      }
+      if (rewritten != null) {
+        wasRewritten = true
+        Some(rewritten)
+      }
+      else
+        None
+    }
+    var currTree = substTree
+    do {
+      wasRewritten = false
+      currTree = everywherebu(rules)(currTree).get.asInstanceOf[Value[SBoolean.type]]
+    } while (wasRewritten)
+
+    currTree
   }
 
   /**
@@ -179,7 +181,7 @@ trait Interpreter {
              context: CTX,
              proof: UncheckedTree,
              message: Array[Byte]): Try[Boolean] = Try {
-    val cProp = reduceToCrypto(exp, context).get
+    val cProp = reduceToCrypto(context, exp).get
 
     cProp match {
       case TrueLeaf => true

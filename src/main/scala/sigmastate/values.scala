@@ -7,13 +7,14 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.CostTable.Cost
+
+import sigmastate.utxo.ErgoBox
 
 import scala.collection.immutable
 
@@ -146,7 +147,7 @@ object Values {
     override def tpe = SAvlTree
 
     def createVerifier(proof: SerializedAdProof) =
-      new BatchAVLVerifier[Digest32, Blake2b256Unsafe](
+      new BatchAVLVerifier[Digest32, Blake2b256.type](
         value.startingDigest,
         proof,
         value.keyLength,
@@ -278,14 +279,18 @@ object Values {
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override val opCode = SomeValueCode
+
     def cost: Int = x.cost + 1
+
     val tpe = SOption(x.tpe)
     lazy val value = Some(x)
   }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
     override val opCode = NoneValueCode
+
     def cost: Int = 1
+
     val tpe = SOption(elemType)
     lazy val value = None
   }
@@ -307,6 +312,12 @@ object Values {
         illegalArgs("ConcreteCollection", "(IndexedSeq, SType)", cs)
     }
   }
+  object ConcreteCollection {
+    def apply[V <: SType](items: Value[V]*)(implicit tV: V) = new ConcreteCollection(items.toIndexedSeq)
+    def isEvaluated[V <: SType](c: Value[SCollection[V]]) =
+      c.evaluated && c.asInstanceOf[ConcreteCollection[V]].value.forall(_.evaluated)
+  }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
+
 }

@@ -32,9 +32,9 @@ class SigmaSpecializer {
   private def eval(env: Map[String, SValue], e: SValue): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, _) => env.get(n)
 
-    case block @ Block(binds, res) =>
+    case _ @ Block(binds, res) =>
       var curEnv = env
-      for (Let(n, t, b) <- binds) {
+      for (Let(n, _, b) <- binds) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = eval(curEnv, b)
         curEnv = curEnv + (n -> b1)
@@ -48,8 +48,26 @@ class SigmaSpecializer {
     case Apply(Sha256Sym, Seq(arg: Value[SByteArray.type]@unchecked)) =>
       Some(CalcSha256(arg))
 
+    case Apply(TaggedAvlTreeSym, Seq(IntConstant(i))) =>
+      Some(TaggedAvlTree(i.toByte))
+
+    case Apply(TaggedGroupElementSym, Seq(IntConstant(i))) =>
+      Some(TaggedGroupElement(i.toByte))
+
+    case Apply(TaggedBoxSym, Seq(IntConstant(i))) =>
+      Some(TaggedBox(i.toByte))
+
     case Apply(TaggedByteArraySym, Seq(IntConstant(i))) =>
       Some(TaggedByteArray(i.toByte))
+
+    case Apply(TaggedBigIntSym, Seq(IntConstant(i))) =>
+      Some(TaggedBigInt(i.toByte))
+
+    case Apply(TaggedIntSym, Seq(IntConstant(i))) =>
+      Some(TaggedInt(i.toByte))
+
+    case Apply(TaggedBooleanSym, Seq(IntConstant(i))) =>
+      Some(TaggedBoolean(i.toByte))
 
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray.type]@unchecked, proof: Value[SByteArray.type]@unchecked)) =>
       Some(IsMember(tree, key, proof))
@@ -64,7 +82,7 @@ class SigmaSpecializer {
       else
         error(s"The type of $obj is expected to be Collection to select 'size' property")
 
-    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(regType)), Seq(arg)) =>
+    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(_)), Seq(arg)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
       Some(ExtractRegisterAs(box.asBox, reg, Some(arg))(arg.tpe))

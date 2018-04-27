@@ -105,7 +105,7 @@ trait Types extends Core {
     val Args = P( FunArg.repTC(1) )
     val FunArgs = P( OneNLMax ~ "(" ~/ Args.? ~ ")" ).map(_.toSeq.flatten)
     val FunTypeArgs = P( "[" ~/ (Annot.rep ~ TypeArg).repTC(1) ~ "]" )
-    P( (FunTypeArgs).? ~~ FunArgs.rep )
+    P( FunTypeArgs.? ~~ FunArgs.rep )
   }
 
   val TypeBounds: P0 = P( (`>:` ~/ Type).? ~ (`<:` ~/ Type).? ).ignore

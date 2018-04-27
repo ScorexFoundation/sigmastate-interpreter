@@ -100,7 +100,7 @@ trait SProduct extends SType {
 
   /** Checks if `this` product has exactly the same fields as `that`. */
   def sameFields(that: SProduct): Boolean = {
-    if (fields.length != that.fields.length) return false
+    if (fields.lengthCompare(that.fields.length) != 0) return false
     // imperative to avoid allocation as it is supposed to be used frequently
     for (i <- fields.indices) {
       if (fields(i)._1 != that.fields(i)._1) return false

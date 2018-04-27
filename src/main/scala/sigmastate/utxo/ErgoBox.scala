@@ -88,6 +88,8 @@ case class ErgoBox(override val value: Long,
     case _ => false
   }
   override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalRegisters, boxId))
+
+  def toCandidate: ErgoBoxCandidate = new ErgoBoxCandidate(value, proposition, additionalRegisters)
 }
 
 object ErgoBox {
