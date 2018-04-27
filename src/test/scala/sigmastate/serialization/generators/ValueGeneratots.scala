@@ -25,9 +25,11 @@ trait ValueGeneratots {
   implicit val arbBox: Arbitrary[ErgoBox] = Arbitrary(ergoBoxGen)
   implicit val arbBoxConstants: Arbitrary[BoxConstant] = Arbitrary(boxConstantGen)
   implicit val arbAvlTreeConstant: Arbitrary[AvlTreeConstant] = Arbitrary(avlTreeConstantGen)
+  implicit val arbBigIntConstants: Arbitrary[BigIntConstant] = Arbitrary(bigIntConstGen)
 
 
   val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map{v => IntConstant(v)}
+  val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map{ v => BigIntConstant(v.bigInteger)}
   val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map{v => TaggedInt(v)}
   val taggedBoxGen: Gen[TaggedBox] = arbByte.arbitrary.map{v => TaggedBox(v)}
   val byteArrayConstantGen: Gen[ByteArrayConstant] = for {
