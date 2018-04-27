@@ -33,8 +33,9 @@ class SigmaPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
     t match {
       case IntConstant(d) => value(d)
       case Ident(i,_) => i
-      case Lambda(i, t, Some(e)) => parens('\\' <> parens(lsep(i.map { case (n, t) => n <+> ": " <+> typedeclToDoc(t) }.to, comma)) <>
-          typedeclToDoc(t) <+> '.' <+>
+      case Lambda(args, tLam, Some(e)) =>
+        parens('\\' <> parens(lsep(args.map { case (n, targ) => n <+> ": " <+> typedeclToDoc(targ) }.to, comma)) <>
+          typedeclToDoc(tLam) <+> '.' <+>
           group(nest(toDoc(e))))
       case Apply(e, args)        => parens(toDoc(e) <+> parens(lsep(args.map(toDoc).to, comma)))
 

@@ -12,14 +12,12 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
   def prove(challenge: Array[Byte]): SchnorrNode = {
     val prover = new DLogInteractiveProver(publicInput, privateInputOpt)
 
-    val (fm, sm) = privateInputOpt.isDefined match {
-      //real proving
-      case true =>
-        val firstMsg = prover.firstMessage
-        val e = Blake2b256(firstMsg.ecData.getEncoded(true) ++ challenge)
-        firstMsg -> prover.secondMessage(Challenge(e))
-      //simulation
-      case false => prover.simulate(Challenge(challenge))
+    val (fm, sm) = if (privateInputOpt.isDefined) {
+      val firstMsg = prover.firstMessage
+      val e = Blake2b256(firstMsg.ecData.getEncoded(true) ++ challenge)
+      firstMsg -> prover.secondMessage(Challenge(e))
+    } else {
+      prover.simulate(Challenge(challenge))
     }
 
     //val sb = SchnorrSigner.serialize(fm, sm)

@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.Values._
-import sigmastate.{SBoolean}
+import sigmastate.SBoolean
 import sigmastate.SType.TypeCode
 import sigmastate.serialization.ValueSerializer.Position
 import sigmastate.serialization.OpCodes._

@@ -78,7 +78,7 @@ class SigmaBinder(env: Map[String, Any]) {
       if (newLam != lam) Some(newLam) else None
 
     // Rule: { e } --> e
-    case Block(Seq(), e) => Some(e)
+    case Block(Seq(), body) => Some(body)
     
     case block @ Block(binds, t) =>
       val newBinds = for (Let(n, t, b) <- binds) yield {

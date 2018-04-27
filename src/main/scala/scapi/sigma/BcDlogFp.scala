@@ -438,7 +438,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     * encoding a binary string of length in bytes up to k.
     * This is because the encoding-decoding functionality is not a bijection, that is, it is a 1-1 function
     * but is not onto. Therefore, any string of length in bytes up to k can be encoded to a group element but not any
-    * group element can be decoded to a binary sting in the group of binary strings of length up to 2^k.
+    * group element can be decoded to a binary sting in the group of binary strings of length up to `2^k`.
     *
     *
     * @param point the element to convert
@@ -450,7 +450,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
     val b2 = new Array[Byte](bOriginalSize)
     System.arraycopy(xByteArray, xByteArray.length - 1 - bOriginalSize, b2, 0, bOriginalSize)
-    return b2
+    b2
   }
 
   /**
@@ -473,9 +473,9 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
 
   /**
     *
-    * Checks if the order of this group is greater than 2^numBits
+    * Checks if the order of this group is greater than `2^numBits`
     * @param numBits
-    * @return <code>true</code> if the order is greater than 2^numBits;<p>
+    * @return <code>true</code> if the order is greater than `2^numBits`;<p>
     *         <code>false</code> otherwise.
     **/
   override def orderGreaterThan(numBits: Int): Boolean =

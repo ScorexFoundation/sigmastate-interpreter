@@ -1,15 +1,14 @@
 package sigmastate
 
 import java.math.BigInteger
-
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
 import sigmastate.Values._
 import sigmastate.lang.SigmaTyper
-
 import scala.collection.mutable
+import scala.language.implicitConversions
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product

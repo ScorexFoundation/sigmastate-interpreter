@@ -15,7 +15,7 @@ import scala.util.Try
   *
   * The discrete logarithm problem is as follows: given a generator g of a finite
   * group G and a random element h in G, find the (unique) integer x such that
-  * g^x = h.
+  * `g^x = h`.
   *
   * In cryptography, we are interested in groups for which the discrete logarithm problem
   * (Dlog for short) is assumed to be hard. The most known groups of that kind are some Elliptic curve groups.
@@ -70,9 +70,9 @@ trait DlogGroup[ElemType <: ECPoint] {
   def isMember(element: ElemType): Boolean
 
   /**
-    * Checks if the order of this group is greater than 2^numBits
+    * Checks if the order of this group is greater than `2^numBits`
     * @param numBits
-    * @return <code>true</code> if the order is greater than 2^numBits;<p>
+    * @return <code>true</code> if the order is greater than `2^numBits`;<p>
     * 		   <code>false</code> otherwise.
     */
   def orderGreaterThan(numBits: Int): Boolean
@@ -117,12 +117,12 @@ trait DlogGroup[ElemType <: ECPoint] {
   def createRandomGenerator(): ElemType = {
     // in prime order groups every element except the identity is a generator.
     // get a random element in the group
-    var randGen = createRandomElement
+    var randGen = createRandomElement()
 
     // if the given element is the identity, get a new random element
     while ( {
       randGen.isInfinity
-    }) randGen = createRandomElement
+    }) randGen = createRandomElement()
 
     randGen
   }
@@ -170,10 +170,15 @@ trait DlogGroup[ElemType <: ECPoint] {
 
   /**
     * This function takes any string of length up to k bytes and encodes it to a Group Element.
-    * k can be obtained by calling getMaxLengthOfByteArrayForEncoding() and it is calculated upon construction of this group; it depends on the length in bits of p.<p>
-    * The encoding-decoding functionality is not a bijection, that is, it is a 1-1 function but is not onto.
-    * Therefore, any string of length in bytes up to k can be encoded to a group element but not every group element can be decoded to a binary string in the group of binary strings of length up to 2^k.<p>
-    * Thus, the right way to use this functionality is first to encode a byte array and then to decode it, and not the opposite.
+    * k can be obtained by calling getMaxLengthOfByteArrayForEncoding() and it is calculated upon
+    * construction of this group; it depends on the length in bits of p.<p>
+    * The encoding-decoding functionality is not a bijection, that is, it is a 1-1 function
+    * but is not onto.
+    * Therefore, any string of length in bytes up to k can be encoded to a group element
+    * but not every group element can be decoded to a binary string in the group of binary strings
+    * of length up to `2^k`.<p>
+    * Thus, the right way to use this functionality is first to encode a byte array and then to
+    * decode it, and not the opposite.
     *
     * @param binaryString the byte array to encode
     * @return the encoded group Element <B> or null </B>if element could not be encoded
@@ -181,11 +186,12 @@ trait DlogGroup[ElemType <: ECPoint] {
   def encodeByteArrayToGroupElement(binaryString: Array[Byte]): Try[ElemType]
 
   /**
-    * This function decodes a group element to a byte array. This function is guaranteed to work properly ONLY if the group element was obtained as a result of
+    * This function decodes a group element to a byte array. This function is guaranteed
+    * to work properly ONLY if the group element was obtained as a result of
     * encoding a binary string of length in bytes up to k.<p>
     * This is because the encoding-decoding functionality is not a bijection, that is, it is a 1-1 function but is not onto.
     * Therefore, any string of length in bytes up to k can be encoded to a group element but not any group element can be decoded
-    * to a binary sting in the group of binary strings of length up to 2^k.
+    * to a binary sting in the group of binary strings of length up to `2^k`.
     *
     * @param groupElement the element to decode
     * @return the decoded byte array
