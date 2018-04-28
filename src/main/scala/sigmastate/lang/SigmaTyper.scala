@@ -102,11 +102,11 @@ class SigmaTyper {
       newSel.tpe match {
         case genFunTpe @ SFunc(argTypes, tRes, _) =>
           // If it's a function then the application has type of that function's return type.
-          val actualTypes = newArgs.map(_.tpe)
+          val newObj = assignType(env, obj)
+          val actualTypes = newObj.tpe +: newArgs.map(_.tpe)
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
-              val newObj = assignType(env, obj)
               val newApply = Apply(Select(newObj, n, Some(concrFunTpe)), newArgs)
               newApply
             case None =>

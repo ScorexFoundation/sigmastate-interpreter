@@ -227,9 +227,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         Select(Apply(Ident("Array"), Vector(IntConstant(1), IntConstant(2))), "fold"),
         Vector(IntConstant(0), Lambda(Vector(("n1",SInt), ("n2",SInt)), Plus(IntIdent("n1"), IntIdent("n2"))))
       )
-
-//    parse("OUTPUTS.slice(0, 10)") shouldBe
-//        Apply(Select(Ident("OUTPUTS"), "slice"), Vector(IntConstant(0), IntConstant(10)))
+    parse("OUTPUTS.slice(0, 10)") shouldBe
+        Apply(Select(Ident("OUTPUTS"), "slice"), Vector(IntConstant(0), IntConstant(10)))
+    parse("OUTPUTS.where(fun (out: Box) = out.value > 0)") shouldBe
+        Apply(Select(Ident("OUTPUTS"), "where"),
+          Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
   }
 
   property("global functions") {
