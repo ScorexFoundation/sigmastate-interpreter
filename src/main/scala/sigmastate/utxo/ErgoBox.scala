@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.{Longs, Shorts}
+import com.google.common.primitives.{Ints, Longs, Shorts}
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
@@ -21,7 +21,12 @@ class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
                        val additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()) {
 
-  val propositionBytes: Array[Byte] = ValueSerializer.serialize(proposition)
+  val propositionBytes: Array[Byte] = {
+//    if (value == 10) {println("Candidate")
+//    println(proposition.toString) }
+//    proposition.toString.getBytes
+    ValueSerializer.serialize(proposition)
+  }
 
   lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
 
@@ -71,7 +76,11 @@ case class ErgoBox(override val value: Long,
 
   import sigmastate.utxo.ErgoBox._
 
-  lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
+  lazy val id: BoxId = {
+    val (regBytes, regNum) = ErgoBox.serializer.collectRegister(this, Array.emptyByteArray, 0: Byte)
+    val bytes = Longs.toByteArray(value) ++ (regNum +: regBytes) ++ transactionId ++ Shorts.toByteArray(boxId)
+    ADKey @@Blake2b256.hash(bytes)
+  }
 
   override def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {
@@ -101,22 +110,22 @@ object ErgoBox {
 
 
     def bytesWithNoRef(obj: ErgoBoxCandidate): Array[Byte] = {
-      @tailrec
-      def collectRegister(collectedBytes: Array[Byte], collectedRegisters: Byte): (Array[Byte], Byte) = {
-        val regIdx = (startingNonMandatoryIndex + collectedRegisters).toByte
-        val regByIdOpt = registerByIndex.get(regIdx)
-        regByIdOpt.flatMap(obj.get) match {
-          case Some(v) =>
-            collectRegister(collectedBytes ++ ValueSerializer.serialize(v), (collectedRegisters + 1).toByte)
-          case None =>
-            (collectedBytes, collectedRegisters)
-        }
-      }
-
       val propBytes = obj.propositionBytes
-      val (regBytes, regNum) = collectRegister(Array.emptyByteArray, 0: Byte)
+      val (regBytes, regNum) = collectRegister(obj, Array.emptyByteArray, 0: Byte)
 
       Longs.toByteArray(obj.value) ++ propBytes ++ (regNum +: regBytes)
+    }
+
+    @tailrec
+    def collectRegister(obj: ErgoBoxCandidate, collectedBytes: Array[Byte], collectedRegisters: Byte): (Array[Byte], Byte) = {
+      val regIdx = (startingNonMandatoryIndex + collectedRegisters).toByte
+      val regByIdOpt = registerByIndex.get(regIdx)
+      regByIdOpt.flatMap(obj.get) match {
+        case Some(v) =>
+          collectRegister(obj, collectedBytes ++ ValueSerializer.serialize(v), (collectedRegisters + 1).toByte)
+        case None =>
+          (collectedBytes, collectedRegisters)
+      }
     }
 
 
