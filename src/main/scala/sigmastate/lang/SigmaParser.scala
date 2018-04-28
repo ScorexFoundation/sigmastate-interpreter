@@ -32,13 +32,14 @@ object SigmaParser extends Exprs with Types with Core {
 
   val BlockDef = P( Dcl )
 
+  val Constr = P( AnnotType ~~ (NotNewline ~ ParenArgList ).repX )
   val Constrs = P( (WL ~ Constr).rep(1, `with`.~/) )
   val EarlyDefTmpl = P( TmplBody ~ (`with` ~/ Constr).rep ~ TmplBody.? )
   val NamedTmpl = P( Constrs ~ TmplBody.? )
 
-  val DefTmpl = P( (`extends` | `<:`) ~ AnonTmpl | TmplBody )
   val AnonTmpl = P( EarlyDefTmpl | NamedTmpl | TmplBody ).ignore
-  val Constr = P( AnnotType ~~ (NotNewline ~ ParenArgList ).repX )
+  val DefTmpl = P( (`extends` | `<:`) ~ AnonTmpl | TmplBody )
+
 
   val logged = mutable.Buffer.empty[String]
   implicit val logger = Logger(logged.append(_))

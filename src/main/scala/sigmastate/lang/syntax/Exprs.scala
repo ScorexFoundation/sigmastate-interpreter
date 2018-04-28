@@ -51,7 +51,7 @@ trait Exprs extends Core with Types {
 //      }
       val PostfixLambda = P( PostfixExpr ~ ((`=>` ~ LambdaRhs.?) | SuperPostfixSuffix) ).map {
         case (e, None) => e
-        case (Tuple(args), Some(body)) => mkLambda(args.toSeq, body)
+        case (Tuple(args), Some(body)) => mkLambda(args, body)
         case (e, Some(body)) => error(s"Invalid declaration of lambda $e => $body")
       }
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
@@ -219,10 +219,10 @@ trait Exprs extends Core with Types {
 
   def extractBlockStats(stats: Seq[SValue]): (Seq[Let], SValue) = {
     if (stats.nonEmpty) {
-      val lets = stats.iterator.take(stats.size - 1).map(_ match {
+      val lets = stats.iterator.take(stats.size - 1).map {
         case l: Let => l
         case _ => error(s"Block should contain a list of Let bindings and one expression: but was $stats")
-      })
+      }
       (lets.toList, stats.last)
     }
     else

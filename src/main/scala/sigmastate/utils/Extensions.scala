@@ -1,6 +1,7 @@
 package sigmastate.utils
 
 import scala.collection.generic.CanBuildFrom
+import scala.language.higherKinds
 import scala.reflect.ClassTag
 
 object Extensions {
@@ -20,7 +21,7 @@ object Extensions {
         val y = f(x)
         if (y.isDefined) return y
       }
-      return None
+      None
     }
 
     def cast[B:ClassTag](implicit cbf: CanBuildFrom[Source[A], B, Source[B]]): Source[B] = {

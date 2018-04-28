@@ -31,20 +31,20 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     * and Bob are referencing to the coin by using Merkle proofs against UTXO set root hash of the latest known block.
     *
     * A tricky moment is how Alice and Bob can be sure that a coin is indeed created by the service, having just the
-    * coin (and also service's public key x = g^w, where service's secret w is not known.
+    * coin (and also service's public key `x = g^w`, where service's secret w is not known.
     *
     *
     * For that, we consider that the service creates a coin with registers of following semantics (R0 & R1 are standard):
     *
     * R1 - coin amount
-    * R2 - protecting script, which is the pubkey of the service, x =  g^w
+    * R2 - protecting script, which is the pubkey of the service, `x =  g^w`
     * R3 - temperature data, number
-    * R4 - a = g^r, where r is secret random nonce
+    * R4 - `a = g^r`, where r is secret random nonce
     * R5 - z = r + ew mod q
     * R6 - timestamp
     *
     * Then Alice and Bob are requiring from the coin that the following equation holds:
-    * (g^z = a * x^e, where e = hash(R3 ++ R6)
+    * (`g^z = a * x^e`, where e = hash(R3 ++ R6)
     *
     * Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
     * "the coin is spendable by presenting a proof of Alice's private key knowledge if against UTXO set root hash for

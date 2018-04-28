@@ -125,10 +125,12 @@ trait ActorVerifier[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]]
   var started = false
   var transcript_ : Option[ST] = None
 
-  override def transcript = started match {
-    case false => Future(None)
-    case true => ???
-  }
+  override def transcript =
+    if (started) {
+      ???
+    } else {
+      Future(None)
+    }
 
   def construct(x: CI, a: SP#A, e: Challenge, z: SP#Z): ST
 
