@@ -114,7 +114,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
-    verifier.verify(prop, ctx3, NoProof, fakeMessage).get shouldBe false
+    verifier.verify(prop, ctx3, NoProof, fakeMessage).get shouldBe true
 
     //miner can't spend more
     val tx4 = ErgoTransaction(IndexedSeq(),
@@ -139,7 +139,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       spendingTransaction = tx5,
       self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
-    verifier.verify(prop, ctx5, NoProof, fakeMessage).get shouldBe false
+    verifier.verify(prop, ctx5, NoProof, fakeMessage).get shouldBe true
   }
 
 }
