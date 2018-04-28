@@ -7,6 +7,7 @@ import sigmastate.lang.Terms.Ident
 import sigmastate.lang.syntax.Core
 import syntax.Basic.error
 
+//noinspection ForwardReference
 trait Types extends Core {
   import WhitespaceApi._
   def TypeExpr: P[Value[SType]]

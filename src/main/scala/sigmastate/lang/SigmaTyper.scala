@@ -35,7 +35,7 @@ class SigmaTyper {
     case Block(bs, res) =>
       var curEnv = env
       val bs1 = ArrayBuffer[Let]()
-      for (Let(n, t, b) <- bs) {
+      for (Let(n, _, b) <- bs) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
@@ -53,7 +53,7 @@ class SigmaTyper {
         error(s"All element of array $c should have the same type but found $types"))
       ConcreteCollection(newItems)(tItem)
 
-    case v @ Ident(n, _) =>
+    case Ident(n, _) =>
       env.get(n) match {
         case Some(t) => Ident(n, t)
         case None => error(s"Cannot assign type for variable '$n' because it is not found in env $env")
@@ -334,7 +334,7 @@ object SigmaTyper {
 
   def applySubst(tpe: SType, subst: STypeSubst): SType = tpe match {
     case SFunc(args, res, tvars) =>
-      val remainingVars = tvars.filterNot(subst.contains(_))
+      val remainingVars = tvars.filterNot(subst.contains)
       SFunc(args.map(applySubst(_, subst)), applySubst(res, subst), remainingVars)
     case _ =>
       val substRule = rule[SType] {
