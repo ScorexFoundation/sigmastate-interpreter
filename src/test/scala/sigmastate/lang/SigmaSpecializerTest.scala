@@ -5,6 +5,7 @@ import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms.Ident
+import sigmastate.utxo._
 
 class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
@@ -58,4 +59,21 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
     fail(Map(), "None", "Option values are not supported")
     fail(Map(), "Some(10)", "Option values are not supported")
   }
+
+  property("generic methods of arrays") {
+    spec("OUTPUTS.map(fun (out: Box) = { out.value >= 10 })") shouldBe
+      MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), IntConstant(10)))(SBoolean)
+    spec("OUTPUTS.exists(fun (out: Box) = { out.value >= 10 })") shouldBe
+        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), IntConstant(10)))
+    spec("OUTPUTS.forall(fun (out: Box) = { out.value >= 10 })") shouldBe
+        ForAll(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), IntConstant(10)))
+    spec("{ let arr = Array(1,2); arr.fold(0, fun (n1: Int, n2: Int) = n1 + n2)}") shouldBe
+        Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
+             21, IntConstant(0), 22, Plus(TaggedInt(21), TaggedInt(22)))
+    spec("OUTPUTS.slice(0, 10)") shouldBe
+        Slice(Outputs, IntConstant(0), IntConstant(10))
+    spec("OUTPUTS.where(fun (out: Box) = { out.value >= 10 })") shouldBe
+        Where(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), IntConstant(10)))
+  }
+
 }
