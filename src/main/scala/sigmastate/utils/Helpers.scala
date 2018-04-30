@@ -5,6 +5,17 @@ object Helpers {
 
   def xor(bas: Array[Byte]*): Array[Byte] =
     bas.reduce({case (ba, ba1) => xor(ba, ba1)}: ((Array[Byte], Array[Byte]) => Array[Byte]))
+
+  def concatBytes(seq: Traversable[Array[Byte]]): Array[Byte] = {
+    val length: Int = seq.foldLeft(0)((acc, arr) => acc + arr.length)
+    val result: Array[Byte] = new Array[Byte](length)
+    var pos: Int = 0
+    seq.foreach{ array =>
+      System.arraycopy(array, 0, result, pos, array.length)
+      pos += array.length
+    }
+    result
+  }
 }
 
 object Overloading {
