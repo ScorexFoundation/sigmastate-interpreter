@@ -42,7 +42,7 @@ object SigmaParser extends Exprs with Types with Core {
 
 
   val logged = mutable.Buffer.empty[String]
-  implicit val logger = Logger(logged.append(_))
+  implicit val logger = Logger(m => this.synchronized { logged.append(m) })
 
   private val Base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
@@ -71,7 +71,7 @@ object SigmaParser extends Exprs with Types with Core {
     case _ => error(s"Unknown binary operation $opName")
   }
 
-  def apply(str: String): core.Parsed[Value[_ <: SType], Char, String] = (StatCtx.Expr ~ End).log().parse(str)
+  def apply(str: String): core.Parsed[Value[_ <: SType], Char, String] = (StatCtx.Expr ~ End).parse(str)
 
-  def parseType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).log().parse(str)
+  def parseType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
 }
