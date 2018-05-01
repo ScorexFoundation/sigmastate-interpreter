@@ -41,7 +41,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
   val nIters = 100
   val nTasks = 100
 
-  property("Evaluation by Precompiled Kernel") {
+  ignore("Evaluation by Precompiled Kernel") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
       val backerProver = new ErgoProvingInterpreter
@@ -64,7 +64,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
     }
   }
 
-  property("Evaluation by Script Interpretation") {
+  ignore("Evaluation by Script Interpretation") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
       val backerProver = new ErgoProvingInterpreter

@@ -142,14 +142,16 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val simulated = or.children.forall(_.asInstanceOf[UnprovenTree].simulated)
       or.copy(simulated = simulated)
     case su: SchnorrUnproven =>
-      val secretKnown = secrets
-        .filter(_.isInstanceOf[DLogProverInput])
-        .exists(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
+      val secretKnown = secrets.exists {
+        case in: DLogProverInput => in.publicImage == su.proposition
+        case _ => false
+      }
       su.copy(simulated = !secretKnown)
     case dhu: DiffieHellmanTupleUnproven =>
-      val secretKnown = secrets
-        .filter(_.isInstanceOf[DiffieHellmanTupleProverInput])
-        .exists(_.asInstanceOf[DiffieHellmanTupleProverInput].publicImage == dhu.proposition)
+      val secretKnown = secrets.exists {
+        case in: DiffieHellmanTupleProverInput => in.publicImage == dhu.proposition
+        case _ => false
+      }
       dhu.copy(simulated = !secretKnown)
     case t =>
       error(s"Don't know how to markSimulated($t)")

@@ -22,17 +22,19 @@ class CrowdFundingKernelContract(
   def isValid(pubKey: ProveDlog, message: Array[Byte]): projectProver.ProofT = {
     import projectProver._
     var su = SchnorrUnproven(pubKey, None, None, None, simulated = false)
-    val secretKnown = secrets
-        .filter(_.isInstanceOf[DLogProverInput])
-        .exists(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
+    val secretKnown = secrets.exists {
+      case in: DLogProverInput => in.publicImage == pubKey
+      case _ => false
+    }
 
     val step4: UnprovenTree = if (!secretKnown) {
       assert(su.challengeOpt.isDefined)
       SchnorrSigner(su.proposition, None).prove(su.challengeOpt.get).asInstanceOf[UnprovenTree]
     } else {
       val (r, commitment) = DLogInteractiveProver.firstMessage(su.proposition)
-      su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
+      SchnorrUnproven(pubKey, Some(commitment), Some(r), None, simulated = false)
     }
+
     val commitments = step4 match {
       case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
       case uc: UnprovenConjecture => uc.childrenCommitments
