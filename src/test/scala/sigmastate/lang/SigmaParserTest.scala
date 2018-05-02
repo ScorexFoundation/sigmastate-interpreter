@@ -212,6 +212,28 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("Array()(0)(0)") shouldBe Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
   }
 
+  property("generic methods of arrays") {
+    parse("OUTPUTS.map(fun (out: Box) = out.value)") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "map"),
+            Vector(Lambda(Vector(("out",SBox)), Select(Ident("out"),"value"))))
+    parse("OUTPUTS.exists(fun (out: Box) = out.value > 0)") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "exists"),
+            Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
+    parse("OUTPUTS.forall(fun (out: Box) = out.value > 0)") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "forall"),
+            Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
+    parse("Array(1,2).fold(0, fun (n1: Int, n2: Int) = n1 + n2)") shouldBe
+      Apply(
+        Select(Apply(Ident("Array"), Vector(IntConstant(1), IntConstant(2))), "fold"),
+        Vector(IntConstant(0), Lambda(Vector(("n1",SInt), ("n2",SInt)), Plus(IntIdent("n1"), IntIdent("n2"))))
+      )
+    parse("OUTPUTS.slice(0, 10)") shouldBe
+        Apply(Select(Ident("OUTPUTS"), "slice"), Vector(IntConstant(0), IntConstant(10)))
+    parse("OUTPUTS.where(fun (out: Box) = out.value > 0)") shouldBe
+        Apply(Select(Ident("OUTPUTS"), "where"),
+          Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
+  }
+
   property("global functions") {
     parse("f(x)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x")))
     parse("f((x, y))") shouldBe Apply(Ident("f"), IndexedSeq(Tuple(IndexedSeq(Ident("x"), Ident("y")))))

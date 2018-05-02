@@ -2,10 +2,12 @@ package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.UncheckedTree
 import sigmastate.interpreter.ProverResult
+import sigmastate.utils.Helpers._
 
+import scala.collection.immutable
 import scala.util.Try
 
 
@@ -20,7 +22,8 @@ trait InputTemplate {
 
 case class UnsignedInput(override val boxId: ADKey) extends InputTemplate
 
-case class Input(override val boxId: ADKey, spendingProof: ProverResult[UncheckedTree]) extends InputTemplate {
+case class Input(override val boxId: ADKey, spendingProof: ProverResult[UncheckedTree])
+  extends InputTemplate {
   def bytes: Array[Byte] = Array()
 }
 
@@ -30,23 +33,16 @@ trait ErgoTransactionTemplate[IT <: InputTemplate] {
 
   require(outputCandidates.size <= Short.MaxValue)
 
-  lazy val outputs = outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
+  lazy val outputs: IndexedSeq[ErgoBox] = outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
 
-  //todo: move to some util class
-  def concatBytes(seq: Traversable[Array[Byte]]): Array[Byte] = {
-    val length: Int = seq.map(_.length).sum
-    val result: Array[Byte] = new Array[Byte](length)
-    var pos: Int = 0
-    seq.foreach{ array =>
-      System.arraycopy(array, 0, result, pos, array.length)
-      pos += array.length
-    }
-    result
+  lazy val messageToSign: Array[Byte] = {
+    val outBytes = if (outputCandidates.nonEmpty)
+        concatBytes(outputCandidates.map(_.bytesWithNoRef))
+      else
+        Array[Byte]()
+    val inBytes = concatBytes(inputs.map(_.boxId))
+    Bytes.concat(outBytes, inBytes)
   }
-
-  lazy val messageToSign: Array[Byte] =
-    Bytes.concat(if (outputCandidates.nonEmpty) concatBytes(outputCandidates.map(_.bytesWithNoRef)) else Array[Byte](),
-      concatBytes(inputs.map(_.boxId)))
 
   lazy val id: Digest32 = Blake2b256.hash(messageToSign)
 }

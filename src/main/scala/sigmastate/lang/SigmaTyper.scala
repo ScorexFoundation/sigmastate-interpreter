@@ -102,11 +102,11 @@ class SigmaTyper {
       newSel.tpe match {
         case genFunTpe @ SFunc(argTypes, tRes, _) =>
           // If it's a function then the application has type of that function's return type.
-          val actualTypes = newArgs.map(_.tpe)
+          val newObj = assignType(env, obj)
+          val actualTypes = newObj.tpe +: newArgs.map(_.tpe)
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
-              val newObj = assignType(env, obj)
               val newApply = Apply(Select(newObj, n, Some(concrFunTpe)), newArgs)
               newApply
             case None =>
@@ -144,12 +144,19 @@ class SigmaTyper {
       val newArgs = args.map(assignType(env, _))
       newObj.tpe match {
         case SByteArray => (m, newArgs) match {
-          case ("++", Seq(r)) => AppendBytes(newObj.asValue[SByteArray.type], r.asValue[SByteArray.type])
-          case _ => error(s"Unknown symbol $m, which is used as operation with arguments $newArgs")
+          case ("++", Seq(r)) if r.tpe == SByteArray =>
+            AppendBytes(newObj.asValue[SByteArray.type], r.asValue[SByteArray.type])
+          case _ =>
+            error(s"Unknown symbol $m, which is used as operation with arguments $newArgs")
         }
         case tCol: SCollection[a] => (m, newArgs) match {
-          case ("++", Seq(r)) => Append(newObj.asCollection[a], r.asCollection[a])
-          case _ => error(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs")
+          case ("++", Seq(r)) =>
+            if (r.tpe == tCol)
+              Append(newObj.asCollection[a], r.asCollection[a])
+            else
+              error(s"Invalid argument type for $m, expected $tCol but was ${r.tpe}")
+          case _ =>
+            error(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs")
         }
         case t =>
           error(s"Invalid operation $mc on type $t")

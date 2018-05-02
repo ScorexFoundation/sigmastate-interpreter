@@ -80,23 +80,29 @@ class TestingInterpreterSpecification extends PropSpec
     compiler.compile(env, code)
   }
 
-  property("Evaluate ops") {
+  def testeval(code: String) = {
     val dk1 = ProveDlog(secrets(0).publicImage.h)
-
     val ctx = TestingContext(99)
-
     val env = Map("dk1" -> dk1)
-    val prop = compile(env,
-      """{
-        |  let arr = Array(1, 2) ++ Array(3, 4)
-        |  arr.size == 4
-        |}""".stripMargin
-    ).asBoolValue
-
+    val prop = compile(env, code).asBoolValue
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
-
     val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
     verify(prop, ctx, proof1, challenge).getOrElse(false) shouldBe true
+  }
+
+  property("Evaluate array ops") {
+    testeval("""{
+              |  let arr = Array(1, 2) ++ Array(3, 4)
+              |  arr.size == 4
+              |}""".stripMargin)
+    testeval("""{
+              |  let arr = Array(1, 2, 3)
+              |  arr.slice(1, 3) == Array(2, 3)
+              |}""".stripMargin)
+//    testeval("""{
+//              |  let arr = Array(1, 2, 3)
+//              |  arr.where(fun (i: Int) = i < 3) == Array(1, 2)
+//              |}""".stripMargin)
   }
 
   property("Evaluation example #1") {

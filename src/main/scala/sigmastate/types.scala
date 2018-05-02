@@ -210,10 +210,12 @@ object SCollection {
   private val tOV = STypeIdent("OV")
   val fields = Seq(
     "size" -> SInt,
-    "map" -> SFunc(IndexedSeq(SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV)),
-    "exists" -> SFunc(IndexedSeq(SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
-    "fold" -> SFunc(IndexedSeq(tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV, Seq(tIV)),
-    "forall" -> SFunc(IndexedSeq(SFunc(tIV, SBoolean)), SBoolean, Seq(tIV))
+    "map" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV)),
+    "exists" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
+    "fold" -> SFunc(IndexedSeq(SCollection(tIV), tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV, Seq(tIV)),
+    "forall" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
+    "slice" -> SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV)),
+    "where" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV))
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
@@ -238,7 +240,7 @@ object SOption {
     Seq(
       "isDefined" -> SBoolean,
       "value" -> tArg,
-      "valueOrElse" -> SFunc(tArg, tArg)
+      "valueOrElse" -> SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(tT))
     )
   private val tT = STypeIdent("T")
   val fields: Seq[(String, SType)] = createFields(tT)

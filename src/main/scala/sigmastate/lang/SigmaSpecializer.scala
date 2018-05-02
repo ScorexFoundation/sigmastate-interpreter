@@ -113,6 +113,14 @@ class SigmaSpecializer {
     case Select(obj, "value", Some(SInt)) if obj.tpe == SBox =>
       Some(ExtractAmount(obj.asValue[SBox.type]))
 
+    case Apply(Select(col, "slice", _), Seq(from, until)) =>
+      Some(Slice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
+
+    case Apply(Select(col, "where", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+      val tagged = mkTagged(n, t, 21)
+      val body1 = eval(env + (n -> tagged), body)
+      Some(Where(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
+
     case Apply(Select(col,"exists", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)

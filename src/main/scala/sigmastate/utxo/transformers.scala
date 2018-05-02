@@ -78,7 +78,45 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
     ConcreteCollection(cl.value ++ col2.asInstanceOf[EvaluatedValue[SCollection[IV]]].value)(tpe.elemType)
   }
 
-  override def cost: Int = input.cost * col2.cost
+  override def cost: Int = input.cost + col2.cost
+}
+
+case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
+  extends Transformer[SCollection[IV], SCollection[IV]]{
+  val tpe = input.tpe
+
+  override def transformationReady: Boolean =
+    ConcreteCollection.isEvaluated(input) && from.evaluated && until.evaluated
+
+  override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
+    val fromValue = from.asInstanceOf[EvaluatedValue[SInt.type]].value
+    val untilValue = until.asInstanceOf[EvaluatedValue[SInt.type]].value
+    ConcreteCollection(cl.value.slice(fromValue.toInt, untilValue.toInt))(tpe.elemType)
+  }
+
+  override def cost: Int = input.cost * 2 + from.cost + until.cost
+}
+
+case class Where[IV <: SType](input: Value[SCollection[IV]],
+                               id: Byte,
+                               condition: Value[SBoolean.type])
+  extends Transformer[SCollection[IV], SCollection[IV]] {
+  override def tpe: SCollection[IV] = input.tpe
+  override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
+
+  override def cost: Int = input.cost * condition.cost + input.cost * Cost.OrDeclaration
+
+  override def function(input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {
+    def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
+      case t: TaggedVariable[IV] if t.id == id => arg
+    })
+    def p(x: Value[IV]): Boolean = {
+      val res = rl(x)(condition).get
+      res.asInstanceOf[EvaluatedValue[SBoolean.type]].value
+    }
+    val filtered = input.value.filter(p)
+    ConcreteCollection(filtered)(tpe.elemType)
+  }
 }
 
 trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBoolean.type] {
@@ -88,8 +126,7 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
   val f: ResultConstructor
 
   override def tpe = SBoolean
-  override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
+  override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
 
   override def function(input: EvaluatedValue[SCollection[IV]]
 
