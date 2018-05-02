@@ -24,7 +24,7 @@ case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
 }
 
 /**
-  * OR conjunction for sigma propositions
+  * OR disjunction for sigma propositions
   */
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
@@ -427,7 +427,7 @@ case class COrUnproven(override val proposition: COR,
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
-case class SchnorrUnproven(override val proposition: ProveDlog,
+case class UnprovenSchnorr(override val proposition: ProveDlog,
                            override val commitmentOpt: Option[FirstDLogProverMessage],
                            randomnessOpt: Option[BigInteger],
                            override val challengeOpt: Option[Array[Byte]] = None,
@@ -438,7 +438,7 @@ case class SchnorrUnproven(override val proposition: ProveDlog,
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
-case class DiffieHellmanTupleUnproven(override val proposition: ProveDiffieHellmanTuple,
+case class UnprovenDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
                                       override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Array[Byte]] = None,

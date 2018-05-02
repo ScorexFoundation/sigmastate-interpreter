@@ -141,13 +141,13 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case or: COrUnproven =>
       val simulated = or.children.forall(_.asInstanceOf[UnprovenTree].simulated)
       or.copy(simulated = simulated)
-    case su: SchnorrUnproven =>
+    case su: UnprovenSchnorr =>
       val secretKnown = secrets.exists {
         case in: DLogProverInput => in.publicImage == su.proposition
         case _ => false
       }
       su.copy(simulated = !secretKnown)
-    case dhu: DiffieHellmanTupleUnproven =>
+    case dhu: UnprovenDiffieHellmanTuple =>
       val secretKnown = secrets.exists {
         case in: DiffieHellmanTupleProverInput => in.publicImage == dhu.proposition
         case _ => false
@@ -180,8 +180,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         }._1
         or.copy(children = newChildren)
       }
-    case su: SchnorrUnproven => su
-    case dhu: DiffieHellmanTupleUnproven => dhu
+    case su: UnprovenSchnorr => su
+    case dhu: UnprovenDiffieHellmanTuple => dhu
     case _ => ???
   })
 
@@ -215,8 +215,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val h = unprovenChildren.head.withChallenge(xoredChallenge)
       or.copy(children = h +: t)
 
-    case su: SchnorrUnproven => su
-    case dhu: DiffieHellmanTupleUnproven => dhu
+    case su: UnprovenSchnorr => su
+    case dhu: UnprovenDiffieHellmanTuple => dhu
 
     case a: Any => error(s"Don't know how to challengeSimulated($a)")
   })
@@ -232,8 +232,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val commitments = and.children.flatMap {
         case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
         case uc: UnprovenConjecture => uc.childrenCommitments
-        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
-        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
         case _ => ???
       }
       and.copy(childrenCommitments = commitments)
@@ -242,13 +242,13 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val commitments = or.children.flatMap {
         case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
         case uc: UnprovenConjecture => uc.childrenCommitments
-        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
-        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
         case a: Any => ???
       }
       or.copy(childrenCommitments = commitments)
 
-    case su: SchnorrUnproven =>
+    case su: UnprovenSchnorr =>
       if (su.simulated) {
         assert(su.challengeOpt.isDefined)
         SchnorrSigner(su.proposition, None).prove(su.challengeOpt.get)
@@ -257,12 +257,12 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
       }
 
-    case dhu: DiffieHellmanTupleUnproven =>
+    case dhu: UnprovenDiffieHellmanTuple =>
       if (dhu.simulated) {
         assert(dhu.challengeOpt.isDefined)
         val prover = new DiffieHellmanTupleInteractiveProver(dhu.proposition, None)
         val (fm, sm) = prover.simulate(Challenge(dhu.challengeOpt.get))
-        DiffieHellmanTupleUncheckedNode(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
+        UncheckedDiffieHellmanTuple(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
       } else {
         val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(dhu.proposition)
         dhu.copy(commitmentOpt = Some(fm), randomnessOpt = Some(r))
@@ -273,8 +273,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
     case upt: UnprovenTree => upt.challengeOpt
-    case sn: SchnorrNode => Some(sn.challenge)
-    case dh: DiffieHellmanTupleUncheckedNode => Some(dh.challenge)
+    case sn: UncheckedSchnorr => Some(sn.challenge)
+    case dh: UncheckedDiffieHellmanTuple => Some(dh.challenge)
     case _ => ???
   }
 
@@ -301,28 +301,28 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         case p: ProofTree => p
       })
 
-    case su: SchnorrUnproven if su.real =>
+    case su: UnprovenSchnorr if su.real =>
       assert(su.challengeOpt.isDefined)
       val privKey = secrets
         .filter(_.isInstanceOf[DLogProverInput])
         .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
         .get.asInstanceOf[DLogProverInput]
       val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, Challenge(su.challengeOpt.get))
-      SchnorrNode(su.proposition, None, su.challengeOpt.get, z)
+      UncheckedSchnorr(su.proposition, None, su.challengeOpt.get, z)
 
-    case dhu: DiffieHellmanTupleUnproven if dhu.real =>
+    case dhu: UnprovenDiffieHellmanTuple if dhu.real =>
       assert(dhu.challengeOpt.isDefined)
       val privKey = secrets
         .filter(_.isInstanceOf[DiffieHellmanTupleProverInput])
         .find(_.asInstanceOf[DiffieHellmanTupleProverInput].publicImage == dhu.proposition)
         .get.asInstanceOf[DiffieHellmanTupleProverInput]
       val z = DiffieHellmanTupleInteractiveProver.secondMessage(privKey, dhu.randomnessOpt.get, Challenge(dhu.challengeOpt.get))
-      DiffieHellmanTupleUncheckedNode(dhu.proposition, None, dhu.challengeOpt.get, z)
+      UncheckedDiffieHellmanTuple(dhu.proposition, None, dhu.challengeOpt.get, z)
 
 
-    case sn: SchnorrNode => sn
+    case sn: UncheckedSchnorr => sn
 
-    case dh: DiffieHellmanTupleUncheckedNode => dh
+    case dh: UncheckedDiffieHellmanTuple => dh
 
     case ut: UnprovenTree => ut
 
@@ -337,9 +337,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case COR(children) =>
       COrUnproven(COR(children), Seq(), None, simulated = false, children.map(convertToUnproven))
     case ci: ProveDlog =>
-      SchnorrUnproven(ci, None, None, None, simulated = false)
+      UnprovenSchnorr(ci, None, None, None, simulated = false)
     case dh: ProveDiffieHellmanTuple =>
-      DiffieHellmanTupleUnproven(dh, None, None, None, simulated = false)
+      UnprovenDiffieHellmanTuple(dh, None, None, None, simulated = false)
   }
 
   //converts ProofTree => UncheckedTree
@@ -348,8 +348,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       CAndUncheckedNode(and.proposition, None, Seq(), and.children.map(convertToUnchecked))
     case or: COrUnproven =>
       COrUncheckedNode(or.proposition, None, Seq(), or.children.map(convertToUnchecked))
-    case s: SchnorrNode => s
-    case d: DiffieHellmanTupleUncheckedNode => d
+    case s: UncheckedSchnorr => s
+    case d: UncheckedDiffieHellmanTuple => d
     case _ => ???
   }
 

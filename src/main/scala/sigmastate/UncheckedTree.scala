@@ -17,19 +17,20 @@ trait UncheckedConjecture[ST <: SigmaBoolean] extends UncheckedSigmaTree[ST] {
   val commitments: Seq[FirstProverMessage[_]]
 }
 
+trait UncheckedLeaf[ST <: SigmaBoolean] extends UncheckedSigmaTree[ST]
 
-case class SchnorrNode(override val proposition: ProveDlog,
+case class UncheckedSchnorr(override val proposition: ProveDlog,
                        firstMessageOpt: Option[FirstDLogProverMessage],
                        challenge: Array[Byte],
                        secondMessage: SecondDLogProverMessage)
-  extends UncheckedSigmaTree[ProveDlog] {
+  extends UncheckedLeaf[ProveDlog] {
 }
 
-case class DiffieHellmanTupleUncheckedNode(override val proposition: ProveDiffieHellmanTuple,
+case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
                                            firstMessageOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                            challenge: Array[Byte],
                                            secondMessage: SecondDiffieHellmanTupleProverMessage)
-  extends UncheckedSigmaTree[ProveDiffieHellmanTuple] {
+  extends UncheckedLeaf[ProveDiffieHellmanTuple] {
 }
 
 case class CAndUncheckedNode(override val proposition: CAND,

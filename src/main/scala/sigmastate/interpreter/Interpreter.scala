@@ -195,8 +195,8 @@ trait Interpreter {
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
             val (challenge, rootCommitments) = newRoot match {
               case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
-              case sn: SchnorrNode => (sn.challenge, sn.firstMessageOpt.toSeq)
-              case dh: DiffieHellmanTupleUncheckedNode => (dh.challenge, dh.firstMessageOpt.toSeq)
+              case sn: UncheckedSchnorr => (sn.challenge, sn.firstMessageOpt.toSeq)
+              case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.firstMessageOpt.toSeq)
             }
 
             val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
@@ -219,14 +219,14 @@ trait Interpreter {
 
       val challenges: Seq[Array[Byte]] = and.leafs.map {
         case u: UncheckedConjecture[_] => u.challengeOpt.get
-        case sn: SchnorrNode => sn.challenge
-        case dh: DiffieHellmanTupleUncheckedNode => dh.challenge
+        case sn: UncheckedSchnorr => sn.challenge
+        case dh: UncheckedDiffieHellmanTuple => dh.challenge
       }
 
       val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
         case u: UncheckedConjecture[_] => u.commitments
-        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
-        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
       }
 
       val challenge = challenges.head
@@ -238,21 +238,21 @@ trait Interpreter {
     case or: COrUncheckedNode =>
       val challenges = or.children map {
         case u: UncheckedConjecture[_] => u.challengeOpt.get
-        case sn: SchnorrNode => sn.challenge
-        case dh: DiffieHellmanTupleUncheckedNode => dh.challenge
+        case sn: UncheckedSchnorr => sn.challenge
+        case dh: UncheckedDiffieHellmanTuple => dh.challenge
         case a: Any => println(a); ???
       }
 
       val commitments = or.children flatMap {
         case u: UncheckedConjecture[_] => u.commitments
-        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
-        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
         case _ => ???
       }
 
       or.copy(challengeOpt = Some(Helpers.xor(challenges: _*)), commitments = commitments)
 
-    case sn: SchnorrNode =>
+    case sn: UncheckedSchnorr =>
 
       val dlog = GroupSettings.dlogGroup
       val g = dlog.generator
@@ -266,7 +266,7 @@ trait Interpreter {
 
     //todo: check that g,h belong to the group
     //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
-    case dh: DiffieHellmanTupleUncheckedNode =>
+    case dh: UncheckedDiffieHellmanTuple =>
       val dlog = GroupSettings.dlogGroup
 
       val g = dh.proposition.g

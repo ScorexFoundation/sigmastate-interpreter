@@ -8,6 +8,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.helpers.ErgoProvingInterpreter
 import sigmastate.interpreter.GroupSettings
+import sigmastate.utils.Helpers
 import sigmastate.utxo.ErgoContext
 
 import scala.util.Try
@@ -21,18 +22,18 @@ class CrowdFundingKernelContract(
 
   def isValid(pubKey: ProveDlog, message: Array[Byte]): projectProver.ProofT = {
     import projectProver._
-    var su = SchnorrUnproven(pubKey, None, None, None, simulated = false)
+    var su = UnprovenSchnorr(pubKey, None, None, None, simulated = false)
     val secretKnown = secrets.exists {
       case in: DLogProverInput => in.publicImage == pubKey
       case _ => false
     }
-
-    val step4: UnprovenTree = if (!secretKnown) {
+    val simulated = !secretKnown
+    val step4: UnprovenTree = if (simulated) {
       assert(su.challengeOpt.isDefined)
       SchnorrSigner(su.proposition, None).prove(su.challengeOpt.get).asInstanceOf[UnprovenTree]
     } else {
-      val (r, commitment) = DLogInteractiveProver.firstMessage(su.proposition)
-      SchnorrUnproven(pubKey, Some(commitment), Some(r), None, simulated = false)
+      val (r, commitment) = DLogInteractiveProver.firstMessage(pubKey)
+      UnprovenSchnorr(pubKey, Some(commitment), Some(r), None, simulated = false)
     }
 
     val commitments = step4 match {
@@ -40,16 +41,16 @@ class CrowdFundingKernelContract(
       case uc: UnprovenConjecture => uc.childrenCommitments
     }
 
-    val rootChallenge = Blake2b256(commitments.map(_.bytes).reduce(_ ++ _) ++ message)
+    val rootChallenge = Blake2b256(Helpers.concatBytes(commitments.map(_.bytes) :+ message))
 
-    su = step4.withChallenge(rootChallenge).asInstanceOf[SchnorrUnproven]
+    su = step4.withChallenge(rootChallenge).asInstanceOf[UnprovenSchnorr]
     assert(su.challengeOpt.isDefined)
     val privKey = secrets
         .filter(_.isInstanceOf[DLogProverInput])
         .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
         .get.asInstanceOf[DLogProverInput]
     val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, Challenge(su.challengeOpt.get))
-    SchnorrNode(su.proposition, None, su.challengeOpt.get, z)
+    UncheckedSchnorr(su.proposition, None, su.challengeOpt.get, z)
   }
 
   def prove(ctx: ErgoContext, message: Array[Byte]): projectProver.ProofT = {
@@ -66,7 +67,7 @@ class CrowdFundingKernelContract(
   }
 
   def verify(proof: projectProver.ProofT, ctx: ErgoContext, message: Array[Byte]): Try[Boolean] = Try {
-    var sn = proof.asInstanceOf[SchnorrNode]
+    var sn = proof.asInstanceOf[UncheckedSchnorr]
     val dlog = GroupSettings.dlogGroup
     val g = dlog.generator
     val h = sn.proposition.h
