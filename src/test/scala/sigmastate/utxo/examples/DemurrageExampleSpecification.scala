@@ -39,7 +39,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val env = Map(
       "demurragePeriod" -> demurragePeriod,
       "demurrageCost" -> demurrageCost,
-      "regScript" -> regScript,
+      "regScript" -> regScript
     )
     val prop = compile(env,
       """{

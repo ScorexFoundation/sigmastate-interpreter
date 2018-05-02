@@ -90,7 +90,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
         R3 -> IntConstant(temperature),
         R4 -> GroupElementConstant(a),
         R5 -> BigIntConstant(z),
-        R6 -> IntConstant(ts))
+        R6 -> IntConstant(ts)),
+      boxId = 1
     )
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
@@ -126,7 +127,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
     val proof = avlProver.generateProof()
 
-    val newBox1 = ErgoBox(20, alicePubKey)
+    val newBox1 = ErgoBox(20, alicePubKey, boxId = 2)
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
@@ -135,14 +136,14 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp)
 
-    val sAlice = ErgoBox(10, propAlice, Map())
+    val sAlice = ErgoBox(10, propAlice, Map(), boxId = 3)
 
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
-    val sBob = ErgoBox(10, propBob, Map())
+    val sBob = ErgoBox(10, propBob, Map(), boxId = 4)
 
     val ctx = ErgoContext(
       currentHeight = 50,

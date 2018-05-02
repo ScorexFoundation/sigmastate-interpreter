@@ -9,6 +9,7 @@ import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.interpreter.GroupSettings
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
@@ -35,7 +36,7 @@ object Values {
     /** Returns true if this value represent some constant or sigma statement, false otherwise */
     def evaluated: Boolean
 
-    //todo: remove after serialization, replace with just .bytes
+    //TODO: Should be ValueSerializer.serialize(this)
     lazy val propBytes = this.toString.getBytes
   }
 
@@ -140,6 +141,8 @@ object Values {
   }
 
   case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
+    override val opCode: OpCode = OpCodes.AvlTreeConstantCode
+
     override val cost = 50
 
     override def tpe = SAvlTree
@@ -174,6 +177,8 @@ object Values {
 
 
   case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
+
+    override val opCode: OpCode = OpCodes.GroupGeneratorCode
 
     import GroupSettings.dlogGroup
 
@@ -243,6 +248,8 @@ object Values {
   }
 
   case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {
+    override val opCode: OpCode = OpCodes.BoxConstantCode
+
     override def cost: Int = 10
 
     override def tpe = SBox

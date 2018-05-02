@@ -2,8 +2,12 @@ package sigmastate.serialization
 
 import sigmastate._
 import Values._
+
 import scala.util.Try
 import OpCodes._
+import sigmastate.serialization.transformers._
+import sigmastate.serialization.trees.{QuadrupelSerializer, Relation2Serializer, Relation3Serializer}
+import sigmastate.utxo._
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -25,12 +29,14 @@ object ValueSerializer
 
   val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
 
-    RelationSerializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
-    RelationSerializer(GeCode, GE.apply, Seq(Constraints.onlyInt2)),
-    RelationSerializer(LtCode, LT.apply, Seq(Constraints.onlyInt2)),
-    RelationSerializer(LeCode, LE.apply, Seq(Constraints.onlyInt2)),
-    RelationSerializer(EqCode, EQ.applyNonTyped, Seq(Constraints.sameType2)),
-    RelationSerializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
+    Relation2Serializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
+    Relation2Serializer(GeCode, GE.apply, Seq(Constraints.onlyInt2)),
+    Relation2Serializer(LtCode, LT.apply, Seq(Constraints.onlyInt2)),
+    Relation2Serializer(LeCode, LE.apply, Seq(Constraints.onlyInt2)),
+    Relation2Serializer(EqCode, EQ.applyNonTyped, Seq(Constraints.sameType2)),
+    Relation2Serializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
+    Relation3Serializer(IsMemberCode, IsMember.apply),
+    QuadrupelSerializer[SBoolean.type, SInt.type, SInt.type, SInt.type](IfCode, If.apply),
 
     TwoArgumentsSerializer(XorCode, Xor.apply),
     TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
@@ -40,15 +46,40 @@ object ValueSerializer
     TwoArgumentsSerializer(PlusCode, Plus.apply),
 
     GroupElementSerializer,
+    ProveDlogSerializer,
     IntConstantSerializer,
-    TrueLeafSerializer,
-    FalseLeafSerializer,
+    CaseObjectSerialization(TrueCode, TrueLeaf),
+    CaseObjectSerialization(FalseCode, FalseLeaf),
     ConcreteCollectionSerializer,
-    AndSerializer,
-    OrSerializer,
+    SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](AndCode, AND.apply),
+    SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](OrCode, OR.apply),
     TaggedVariableSerializer,
     BigIntConstantSerializer,
-    ByteArrayConstantSerializer
+    ByteArrayConstantSerializer,
+    CaseObjectSerialization(HeightCode, Height),
+    CaseObjectSerialization(InputsCode, Inputs),
+    CaseObjectSerialization(OutputsCode, Outputs),
+    CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),
+    CaseObjectSerialization(SelfCode, Self),
+    CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
+    MapCollectionSerializer,
+    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
+    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
+    FoldSerializer,
+    SimpleTransformerSerializer[SCollection[SType], SInt.type](SizeOfCode, SizeOf.apply),
+    SimpleTransformerSerializer[SBox.type, SInt.type](ExtractAmountCode, ExtractAmount.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray.type](ExtractScriptBytesCode, ExtractScriptBytes.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray.type](ExtractBytesCode, ExtractBytes.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray.type](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray.type](ExtractIdCode, ExtractId.apply),
+    SimpleTransformerSerializer[SInt.type, SByteArray.type](IntToByteArrayCode, IntToByteArray.apply),
+    SimpleTransformerSerializer[SByteArray.type, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
+    SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcBlake2b256Code, CalcBlake2b256.apply),
+    SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcSha256Code, CalcSha256.apply),
+    ExtractRegisterAsSerializer,
+    ByIndexSerializer,
+    BoxConstantSerializer,
+    AvlTreeConstantSerializer
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {

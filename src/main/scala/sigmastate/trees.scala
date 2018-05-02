@@ -8,6 +8,7 @@ import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivat
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.Transformer
@@ -148,6 +149,7 @@ object AND {
   */
 case class IntToByteArray(input: Value[SInt.type])
   extends Transformer[SInt.type, SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.IntToByteArrayCode
 
   override def function(bal: EvaluatedValue[SInt.type]): Value[SByteArray.type] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
@@ -160,6 +162,8 @@ case class IntToByteArray(input: Value[SInt.type])
   */
 case class ByteArrayToBigInt(input: Value[SByteArray.type])
   extends Transformer[SByteArray.type, SBigInt.type] with NotReadyValueBigInt {
+
+  override val opCode: OpCode = OpCodes.ByteArrayToBigIntCode
 
   override def function(bal: EvaluatedValue[SByteArray.type]): Value[SBigInt.type] =
     BigIntConstant(new BigInteger(1, bal.value))
@@ -182,6 +186,8 @@ trait CalcHash extends Transformer[SByteArray.type, SByteArray.type] with NotRea
   * Calculate Blake2b hash from `input`
   */
 case class CalcBlake2b256(override val input: Value[SByteArray.type]) extends CalcHash {
+  override val opCode: OpCode = OpCodes.CalcBlake2b256Code
+
   override val hashFn: CryptographicHash32 = Blake2b256
 }
 
@@ -189,6 +195,8 @@ case class CalcBlake2b256(override val input: Value[SByteArray.type]) extends Ca
   * Calculate Sha256 hash from `input`
   */
 case class CalcSha256(override val input: Value[SByteArray.type]) extends CalcHash {
+  override val opCode: OpCode = OpCodes.CalcSha256Code
+
   override val hashFn: CryptographicHash32 = Sha256
 }
 
@@ -207,9 +215,6 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
   extends Triple[LIV, RIV, OV]
 
-/**
-  * SInt addition
-  */
 case class Plus(override val left: Value[SInt.type],
                 override val right: Value[SInt.type])
   extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
@@ -356,6 +361,8 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
 case class IsMember(tree: Value[SAvlTree.type],
                     key: Value[SByteArray.type],
                     proof: Value[SByteArray.type]) extends Relation3[SAvlTree.type, SByteArray.type, SByteArray.type] {
+  override val opCode: OpCode = OpCodes.IsMemberCode
+
   override lazy val first = tree
   override lazy val second = key
   override lazy val third = proof
@@ -364,6 +371,8 @@ case class IsMember(tree: Value[SAvlTree.type],
 
 case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T], falseBranch: Value[T])
   extends Quadruple[SBoolean.type, T, T, T] {
+  override val opCode: OpCode = OpCodes.IfCode
+
   override def tpe = trueBranch.tpe
 
   override lazy val first = condition

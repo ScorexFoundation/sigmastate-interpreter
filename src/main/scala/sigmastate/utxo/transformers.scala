@@ -5,7 +5,9 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utxo.BooleanTransformer.ResultConstructor
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox.RegisterIdentifier
 
@@ -36,6 +38,9 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
                                                    id: Byte,
                                                    mapper: SValue)(implicit val tOV: OV)
   extends Transformer[SCollection[IV], SCollection[OV]] with Rewritable {
+
+  override val opCode: OpCode = OpCodes.MapCollectionCode
+
   val tpe = SCollection[OV]
   def arity = 4
   def deconstruct = immutable.Seq[Any](input, id, mapper, tOV)
@@ -76,44 +81,47 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   override def cost: Int = input.cost * col2.cost
 }
 
-case class Exists[IV <: SType](input: Value[SCollection[IV]],
-                               id: Byte,
-                               condition: Value[SBoolean.type])
-  extends Transformer[SCollection[IV], SBoolean.type] {
+trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBoolean.type] {
+  override val input: Value[SCollection[IV]]
+  val id: Byte
+  val condition: Value[SBoolean.type]
+  val f: ResultConstructor
+
   override def tpe = SBoolean
   override def transformationReady: Boolean =
     input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
 
-  override val cost: Int = input.cost * condition.cost + input.cost * Cost.OrDeclaration
+  override def function(input: EvaluatedValue[SCollection[IV]]
 
-  //todo: cost
-  override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
+                       ): Value[SBoolean.type] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })
-
-    OR(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
+    f(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
+}
+
+object BooleanTransformer{
+  type ResultConstructor = (Seq[Value[SBoolean.type]]) => Transformer[SCollection[SBoolean.type], SBoolean.type]
+}
+
+case class Exists[IV <: SType](input: Value[SCollection[IV]],
+                               id: Byte,
+                               condition: Value[SBoolean.type])
+  extends BooleanTransformer[IV] {
+  override val opCode: OpCode = OpCodes.ExistsCode
+  override val cost: Int = input.cost * condition.cost + input.cost * Cost.OrDeclaration
+  override val f: ResultConstructor = OR.apply
 }
 
 case class ForAll[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
                                condition: Value[SBoolean.type])
-  extends Transformer[SCollection[IV], SBoolean.type] {
-  override def tpe = SBoolean
-  override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
+  extends BooleanTransformer[IV] {
 
+  override val opCode: OpCode = OpCodes.ForAllCode
   override val cost: Int = input.cost * condition.cost + input.cost * Cost.AndDeclaration
-
-  //todo: cost
-  override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
-    def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
-    })
-
-    AND(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
-  }
+  override val f: ResultConstructor = AND.apply
 }
 
 
@@ -123,6 +131,8 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              accId: Byte,
                              foldOp: SValue)(implicit val tpe: IV)
   extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] with Rewritable {
+  override val opCode: OpCode = OpCodes.FoldCode
+
   def arity = 6
   def deconstruct = immutable.Seq[Any](input, id, zero, accId, foldOp, tpe)
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
@@ -170,6 +180,8 @@ object Fold {
 
 case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
+  override val opCode: OpCode = OpCodes.ByIndexCode
+
   def tpe = input.tpe.elemType
   def arity = 3
   def deconstruct = immutable.Seq[Any](input, index, tpe)
@@ -186,6 +198,8 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
 
+  override val opCode: OpCode = OpCodes.SizeOfCode
+
   override def function(input: EvaluatedValue[SCollection[V]]) = IntConstant(input.value.length)
 
   override def cost = 1
@@ -197,6 +211,8 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
 }
 
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueInt {
+  override val opCode: OpCode = OpCodes.ExtractAmountCode
+
   override lazy val cost: Int = 10
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] = IntConstant(box.value.value)
@@ -204,6 +220,8 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] wit
 
 
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.ExtractScriptBytesCode
+
   override lazy val cost: Int = 1000
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = {
@@ -213,18 +231,24 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
 
 
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.ExtractBytesCode
+
   override lazy val cost: Int = 1000 //todo: make it PerKb * max box size in kbs
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytes)
 }
 
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.ExtractBytesWithNoRefCode
+
   override lazy val cost: Int = 1000 //todo: make it PerKb * max box size in kbs
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytesWithNoRef)
 }
 
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.ExtractIdCode
+
   override lazy val cost: Int = 10
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.id)
@@ -234,6 +258,8 @@ case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
                                          default: Option[Value[V]] = None)(implicit val tpe: V)
     extends Extract[V] with NotReadyValue[V] with Rewritable {
+  override val opCode: OpCode = OpCodes.ExtractRegisterAs
+
   def arity = 4
   def deconstruct = immutable.Seq[Any](input, registerId, default, tpe)
   def reconstruct(cs: immutable.Seq[Any]) = cs match {

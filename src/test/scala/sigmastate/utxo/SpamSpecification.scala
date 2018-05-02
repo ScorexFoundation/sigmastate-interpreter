@@ -124,7 +124,7 @@ class SpamSpecification extends SigmaTestingCommons {
           Exists(Outputs, 21,
             AND(
               GE(ExtractAmount(TaggedBox(21)), IntConstant(10)),
-              EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(propToCompare.toString.getBytes))
+              EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(propToCompare.propBytes))
             )
           )
 
