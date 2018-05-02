@@ -1,6 +1,7 @@
 package sigmastate.utxo.benchmarks
 
 import java.math.BigInteger
+import java.util
 
 import scapi.sigma.Challenge
 import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver, ProveDlog, DLogProverInput}
@@ -23,10 +24,11 @@ class CrowdFundingKernelContract(
   def isValid(pubKey: ProveDlog, message: Array[Byte]): projectProver.ProofT = {
     import projectProver._
     var su = UnprovenSchnorr(pubKey, None, None, None, simulated = false)
-    val secretKnown = secrets.exists {
+    val secret = secrets.find {
       case in: DLogProverInput => in.publicImage == pubKey
       case _ => false
     }
+    val secretKnown = secret.isDefined
     val simulated = !secretKnown
     val step4: UnprovenTree = if (simulated) {
       assert(su.challengeOpt.isDefined)
@@ -43,14 +45,10 @@ class CrowdFundingKernelContract(
 
     val rootChallenge = Blake2b256(Helpers.concatBytes(commitments.map(_.bytes) :+ message))
 
-    su = step4.withChallenge(rootChallenge).asInstanceOf[UnprovenSchnorr]
-    assert(su.challengeOpt.isDefined)
-    val privKey = secrets
-        .filter(_.isInstanceOf[DLogProverInput])
-        .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
-        .get.asInstanceOf[DLogProverInput]
-    val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, Challenge(su.challengeOpt.get))
-    UncheckedSchnorr(su.proposition, None, su.challengeOpt.get, z)
+    su = step4.asInstanceOf[UnprovenSchnorr]
+    val privKey = secret.get.asInstanceOf[DLogProverInput]
+    val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, Challenge(rootChallenge))
+    UncheckedSchnorr(su.proposition, None, rootChallenge, z)
   }
 
   def prove(ctx: ErgoContext, message: Array[Byte]): projectProver.ProofT = {
@@ -58,7 +56,7 @@ class CrowdFundingKernelContract(
     val c2 = Array(
       ctx.currentHeight < timeout,
       ctx.spendingTransaction.outputs.exists(out => {
-        out.value >= minToRaise && (out.propositionBytes sameElements projectPubKey.propBytes)
+        out.value >= minToRaise && util.Arrays.equals(out.propositionBytes, projectPubKey.propBytes)
       })
     ).forall(identity)
     var proof: projectProver.ProofT = null
@@ -76,11 +74,9 @@ class CrowdFundingKernelContract(
       dlog.exponentiate(g, sn.secondMessage.z.underlying()),
       dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
 
-    sn = sn.copy(firstMessageOpt = Some(FirstDLogProverMessage(a)))
+    val rootCommitment = FirstDLogProverMessage(a)
 
-    val (challenge, rootCommitments) = (sn.challenge, sn.firstMessageOpt.toSeq)
-
-    val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
-    challenge.sameElements(expectedChallenge)
+    val expectedChallenge = Blake2b256(Helpers.concatBytes(Seq(rootCommitment.bytes, message)))
+    util.Arrays.equals(sn.challenge, expectedChallenge)
   }
 }

@@ -1,6 +1,7 @@
 package sigmastate.interpreter
 
 import java.math.BigInteger
+import java.util.Arrays
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
@@ -10,13 +11,13 @@ import sigmastate.Values._
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, rule, everywherebu, log, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.utxo.{CostTable, Transformer, Height}
+import sigmastate.utxo.{CostTable, Height, Transformer}
 
 import scala.annotation.tailrec
 
@@ -199,8 +200,8 @@ trait Interpreter {
               case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.firstMessageOpt.toSeq)
             }
 
-            val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
-            challenge.sameElements(expectedChallenge)
+            val expectedChallenge = Blake2b256(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))
+            Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false
     }
@@ -231,7 +232,7 @@ trait Interpreter {
 
       val challenge = challenges.head
 
-      assert(challenges.tail.forall(_.sameElements(challenge)))
+      assert(challenges.tail.forall(Arrays.equals(_, challenge)))
 
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 

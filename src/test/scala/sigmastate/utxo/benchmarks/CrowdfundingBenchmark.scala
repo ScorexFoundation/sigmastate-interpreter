@@ -38,8 +38,8 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
 
   val timeout = 100L
   val minToRaise = 1000L
-  val nIters = 100
-  val nTasks = 100
+  val nIters = 10000
+  val nTasks = 1
 
   ignore("Evaluation by Precompiled Kernel") {
     runTasks(nTasks) { iTask =>
