@@ -1,7 +1,7 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util
+import java.util.Arrays
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
@@ -14,6 +14,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox
+
 import scala.collection.immutable
 import scala.language.implicitConversions
 
@@ -124,11 +125,11 @@ object Values {
     override def tpe = SByteArray
 
     override def equals(obj: scala.Any): Boolean = obj match {
-      case ob: ByteArrayConstant => value sameElements ob.value
+      case c: ByteArrayConstant => Arrays.equals(value, c.value)
       case _ => false
     }
 
-    override def hashCode(): Int = util.Arrays.hashCode(value)
+    override def hashCode(): Int = Arrays.hashCode(value)
   }
 
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type] {

@@ -1,6 +1,7 @@
 package sigmastate.interpreter
 
 import java.math.BigInteger
+import java.util.Arrays
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
@@ -10,13 +11,13 @@ import sigmastate.Values._
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, rule, everywherebu, log, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.utxo.{CostTable, Transformer, Height}
+import sigmastate.utxo.{CostTable, Height, Transformer}
 
 import scala.annotation.tailrec
 
@@ -195,12 +196,12 @@ trait Interpreter {
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
             val (challenge, rootCommitments) = newRoot match {
               case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
-              case sn: SchnorrNode => (sn.challenge, sn.firstMessageOpt.toSeq)
-              case dh: DiffieHellmanTupleUncheckedNode => (dh.challenge, dh.firstMessageOpt.toSeq)
+              case sn: UncheckedSchnorr => (sn.challenge, sn.firstMessageOpt.toSeq)
+              case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.firstMessageOpt.toSeq)
             }
 
-            val expectedChallenge = Blake2b256(rootCommitments.map(_.bytes).reduce(_ ++ _) ++ message)
-            challenge.sameElements(expectedChallenge)
+            val expectedChallenge = Blake2b256(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))
+            Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false
     }
@@ -219,40 +220,40 @@ trait Interpreter {
 
       val challenges: Seq[Array[Byte]] = and.leafs.map {
         case u: UncheckedConjecture[_] => u.challengeOpt.get
-        case sn: SchnorrNode => sn.challenge
-        case dh: DiffieHellmanTupleUncheckedNode => dh.challenge
+        case sn: UncheckedSchnorr => sn.challenge
+        case dh: UncheckedDiffieHellmanTuple => dh.challenge
       }
 
       val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
         case u: UncheckedConjecture[_] => u.commitments
-        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
-        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
       }
 
       val challenge = challenges.head
 
-      assert(challenges.tail.forall(_.sameElements(challenge)))
+      assert(challenges.tail.forall(Arrays.equals(_, challenge)))
 
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 
     case or: COrUncheckedNode =>
       val challenges = or.children map {
         case u: UncheckedConjecture[_] => u.challengeOpt.get
-        case sn: SchnorrNode => sn.challenge
-        case dh: DiffieHellmanTupleUncheckedNode => dh.challenge
+        case sn: UncheckedSchnorr => sn.challenge
+        case dh: UncheckedDiffieHellmanTuple => dh.challenge
         case a: Any => println(a); ???
       }
 
       val commitments = or.children flatMap {
         case u: UncheckedConjecture[_] => u.commitments
-        case sn: SchnorrNode => sn.firstMessageOpt.toSeq
-        case dh: DiffieHellmanTupleUncheckedNode => dh.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
         case _ => ???
       }
 
       or.copy(challengeOpt = Some(Helpers.xor(challenges: _*)), commitments = commitments)
 
-    case sn: SchnorrNode =>
+    case sn: UncheckedSchnorr =>
 
       val dlog = GroupSettings.dlogGroup
       val g = dlog.generator
@@ -266,7 +267,7 @@ trait Interpreter {
 
     //todo: check that g,h belong to the group
     //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
-    case dh: DiffieHellmanTupleUncheckedNode =>
+    case dh: UncheckedDiffieHellmanTuple =>
       val dlog = GroupSettings.dlogGroup
 
       val g = dh.proposition.g

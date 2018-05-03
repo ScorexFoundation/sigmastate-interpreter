@@ -7,9 +7,9 @@ import scorex.crypto.hash.Blake2b256
 
 
 case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: Option[DLogProverInput])
-  extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, ProveDlog, SchnorrNode] {
+  extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, ProveDlog, UncheckedSchnorr] {
 
-  def prove(challenge: Array[Byte]): SchnorrNode = {
+  def prove(challenge: Array[Byte]): UncheckedSchnorr = {
     val prover = new DLogInteractiveProver(publicInput, privateInputOpt)
 
     val (fm, sm) = if (privateInputOpt.isDefined) {
@@ -22,6 +22,6 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
 
     //val sb = SchnorrSigner.serialize(fm, sm)
 
-    SchnorrNode(publicInput, Some(fm), challenge, sm)
+    UncheckedSchnorr(publicInput, Some(fm), challenge, sm)
   }
 }

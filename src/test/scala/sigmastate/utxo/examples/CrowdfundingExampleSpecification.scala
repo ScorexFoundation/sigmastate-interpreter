@@ -4,6 +4,7 @@ import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox}
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
 class CrowdfundingExampleSpecification extends SigmaTestingCommons {
 
@@ -35,7 +36,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       "timeout" -> 100,
       "minToRaise" -> 1000,
       "backerPubKey" -> backerPubKey,
-      "projectPubKey" -> projectPubKey,
+      "projectPubKey" -> projectPubKey
     )
     val compiledScript = compile(env,
       """{
@@ -49,9 +50,8 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
         | ))
         | c1 || c2
         | }
-      """.stripMargin)
+      """.stripMargin).asBoolValue
 
-    //    // (height >= timeout /\ dlog_g backerKey) \/ (height < timeout /\ dlog_g projKey /\ has_output(amount >= minToRaise, proposition = dlog_g projKey)
     val crowdFundingScript = OR(
       AND(GE(Height, timeout), backerPubKey),
       AND(
@@ -69,7 +69,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     )
     compiledScript shouldBe crowdFundingScript
 
-    val outputToSpend = ErgoBox(10, crowdFundingScript)
+    val outputToSpend = ErgoBox(10, compiledScript)
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
 
@@ -87,11 +87,11 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       self = outputToSpend)
 
     //project is generating a proof and it is passing verification
-    val proofP = projectProver.prove(crowdFundingScript, ctx1, fakeMessage).get.proof
-    verifier.verify(crowdFundingScript, ctx1, proofP, fakeMessage).get shouldBe true
+    val proofP = projectProver.prove(compiledScript, ctx1, fakeMessage).get.proof
+    verifier.verify(compiledScript, ctx1, proofP, fakeMessage).get shouldBe true
 
     //backer can't generate a proof
-    backerProver.prove(crowdFundingScript, ctx1, fakeMessage).isFailure shouldBe true
+    backerProver.prove(compiledScript, ctx1, fakeMessage).isFailure shouldBe true
 
 
     //Second case: height < timeout, project is NOT able to claim amount of tokens not less than required threshold
@@ -108,11 +108,11 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       self = outputToSpend)
 
     //project cant' generate a proof
-    val proofP2Try = projectProver.prove(crowdFundingScript, ctx2, fakeMessage)
+    val proofP2Try = projectProver.prove(compiledScript, ctx2, fakeMessage)
     proofP2Try.isSuccess shouldBe false
 
     //backer can't generate a proof
-    val proofB2Try = backerProver.prove(crowdFundingScript, ctx2, fakeMessage)
+    val proofB2Try = backerProver.prove(compiledScript, ctx2, fakeMessage)
     proofB2Try.isSuccess shouldBe false
 
     //Third case: height >= timeout
@@ -130,11 +130,11 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       self = outputToSpend)
 
     //project cant' generate a proof
-    projectProver.prove(crowdFundingScript, ctx3, fakeMessage).isFailure shouldBe true
+    projectProver.prove(compiledScript, ctx3, fakeMessage).isFailure shouldBe true
 
     //backer is generating a proof and it is passing verification
-    val proofB = backerProver.prove(crowdFundingScript, ctx3, fakeMessage).get.proof
-    verifier.verify(crowdFundingScript, ctx3, proofB, fakeMessage).get shouldBe true
+    val proofB = backerProver.prove(compiledScript, ctx3, fakeMessage).get.proof
+    verifier.verify(compiledScript, ctx3, proofB, fakeMessage).get shouldBe true
   }
 
 

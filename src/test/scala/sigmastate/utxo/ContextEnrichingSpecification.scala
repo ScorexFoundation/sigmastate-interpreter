@@ -30,7 +30,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    pr.proof.isInstanceOf[SchnorrNode] shouldBe true
+    pr.proof.isInstanceOf[UncheckedSchnorr] shouldBe true
 
     val verifier = new ErgoInterpreter
     verifier.verify(prop, ctx, pr.proof, fakeMessage).getOrElse(false) shouldBe false //context w/out extensions
@@ -64,7 +64,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    pr.proof.isInstanceOf[SchnorrNode] shouldBe true
+    pr.proof.isInstanceOf[UncheckedSchnorr] shouldBe true
 
     val verifier = new ErgoInterpreter
     verifier.verify(prop, ctx, pr.proof, fakeMessage).getOrElse(false) shouldBe false //context w/out extensions

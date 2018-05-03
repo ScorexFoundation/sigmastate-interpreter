@@ -37,11 +37,10 @@ trait ErgoTransactionTemplate[IT <: InputTemplate] {
 
   lazy val messageToSign: Array[Byte] = {
     val outBytes = if (outputCandidates.nonEmpty)
-        concatBytes(outputCandidates.map(_.bytesWithNoRef))
+        outputCandidates.map(_.bytesWithNoRef)
       else
-        Array[Byte]()
-    val inBytes = concatBytes(inputs.map(_.boxId))
-    Bytes.concat(outBytes, inBytes)
+        Vector(Array[Byte]())
+    concatBytes(outBytes ++ inputs.map(_.boxId))
   }
 
   lazy val id: Digest32 = Blake2b256.hash(messageToSign)
