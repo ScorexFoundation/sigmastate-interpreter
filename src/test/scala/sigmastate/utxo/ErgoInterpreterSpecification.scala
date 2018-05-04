@@ -30,10 +30,10 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     e shouldBe exp
 
     verifier.reduceToCrypto(ctx, exp)
-      .get.isInstanceOf[TrueLeaf.type] shouldBe true
+      .get._1.isInstanceOf[TrueLeaf.type] shouldBe true
 
     verifier.reduceToCrypto(ctx, EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes)))
-      .get.isInstanceOf[FalseLeaf.type] shouldBe true
+      .get._1.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
   property("DH tuple") {
@@ -57,7 +57,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     fakeProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
     prover.prove(wrongProp, ctx, fakeMessage).isSuccess shouldBe false
@@ -86,7 +86,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
   }
 
   property("DH tuple and DLOG") {
@@ -112,7 +112,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
 
     proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
@@ -170,12 +170,12 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
 
     //before timeout
     val prA = proverA.prove(mixingRequestProp(pubkeyA, 100), ctx, fakeMessage).get
-    verifier.verify(mixingRequestProp(pubkeyA, 100), ctx, prA, fakeMessage).get shouldBe true
-    verifier.verify(mixingRequestProp(pubkeyB, 100), ctx, prA, fakeMessage).get shouldBe true
+    verifier.verify(mixingRequestProp(pubkeyA, 100), ctx, prA, fakeMessage).get._1 shouldBe true
+    verifier.verify(mixingRequestProp(pubkeyB, 100), ctx, prA, fakeMessage).get._1 shouldBe true
 
     //after timeout
     val prA2 = proverA.prove(mixingRequestProp(pubkeyA, 40), ctx, fakeMessage).get
-    verifier.verify(mixingRequestProp(pubkeyA, 40), ctx, prA2, fakeMessage).get shouldBe true
+    verifier.verify(mixingRequestProp(pubkeyA, 40), ctx, prA2, fakeMessage).get._1 shouldBe true
     verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).isSuccess shouldBe false
   }
 
@@ -273,7 +273,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
+    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
   }
 
   property("Prove keys from registers") {
@@ -308,7 +308,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       self = s1)
 
     val pr = prover.prove(prop, ctx, fakeMessage).success.value
-    verifier.verify(prop, ctx, pr, fakeMessage).success.value shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).success.value._1 shouldBe true
 
 
     //make sure that wrong case couldn't be proved
@@ -366,7 +366,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       self = s)
 
     val pr = prover.prove(prop, ctx, fakeMessage).success.value
-    verifier.verify(prop, ctx, pr, fakeMessage).success.value shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).success.value._1 shouldBe true
 
     val wrongCtx = ErgoContext(
       currentHeight = 50,
@@ -376,7 +376,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       self = s)
 
     prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
-    verifier.verify(prop, wrongCtx, pr, fakeMessage).success.value shouldBe false
+    verifier.verify(prop, wrongCtx, pr, fakeMessage).success.value._1 shouldBe false
 
     val prop2 = compile(env,
       """{
@@ -386,7 +386,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
          }""".stripMargin).asBoolValue
 
     prover.prove(prop2, ctx, fakeMessage).isFailure shouldBe true
-    verifier.verify(prop2, ctx, pr, fakeMessage).success.value shouldBe false
+    verifier.verify(prop2, ctx, pr, fakeMessage).success.value._1 shouldBe false
   }
 
   property("If") {
@@ -435,7 +435,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       self = input3)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     //todo: check failing branches
   }

@@ -11,12 +11,13 @@ import sigmastate.Values._
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
+import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.utxo.{CostTable, Transformer}
 
 
@@ -30,6 +31,8 @@ object GroupSettings {
 trait Interpreter {
 
   import GroupSettings._
+
+  import Interpreter.ReductionResult
 
   type CTX <: Context[CTX]
 
@@ -49,7 +52,7 @@ trait Interpreter {
     * No rewriting is defined on this abstract level.
     *
     * @param context a context instance
-    * @param tree to be rewritten
+    * @param tree    to be rewritten
     * @return a new rewritten tree or `null` if `tree` cannot be rewritten.
     */
   def specificTransformations(context: CTX, tree: SValue): SValue = null
@@ -98,15 +101,15 @@ trait Interpreter {
       if (cond.value) trueBranch else falseBranch
 
     //conjectures
-    case a @ AND(children) if a.transformationReady =>
+    case a@AND(children) if a.transformationReady =>
       a.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
 
-    case o @ OR(children) if o.transformationReady =>
+    case o@OR(children) if o.transformationReady =>
       o.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
 
     case t: Transformer[_, _] if t.transformationReady => t.function()
 
-    case _ => null  // this means the node cannot be evaluated
+    case _ => null // this means the node cannot be evaluated
   }
 
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,
@@ -126,8 +129,10 @@ trait Interpreter {
     * @param context
     * @return
     */
-  def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]): Try[Value[SBoolean.type]] = Try {
-    require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
+  def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]): Try[ReductionResult] = Try {
+    require(new Tree(exp).nodes.length < CostTable.MaxExpressions,
+      s"Too long expression, contains ${new Tree(exp).nodes.length} nodes, " +
+        s"allowed maximum is ${CostTable.MaxExpressions}")
 
     // Make context-dependent tree transformations (substitute references to a context
     // with data values from the context).
@@ -138,7 +143,12 @@ trait Interpreter {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
     }
-    if (substTree.cost > maxCost) throw new Error("Estimated expression complexity exceeds the limit")
+
+    val cost = substTree.cost
+
+    if (cost > maxCost) {
+      throw new Error(s"Estimated expression complexity $substTree exceeds the limit ($maxCost)")
+    }
 
     // After performing context-dependent transformations and checking cost of the resulting tree, both the prover
     // and the verifier are evaluating the tree by applying rewriting rules, until no rules trigger during tree
@@ -163,7 +173,7 @@ trait Interpreter {
       currTree = everywherebu(rules)(currTree).get.asInstanceOf[Value[SBoolean.type]]
     } while (wasRewritten)
 
-    currTree
+    currTree -> cost
   }
 
   /**
@@ -180,10 +190,10 @@ trait Interpreter {
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proof: UncheckedTree,
-             message: Array[Byte]): Try[Boolean] = Try {
-    val cProp = reduceToCrypto(context, exp).get
+             message: Array[Byte]): Try[VerificationResult] = Try {
+    val (cProp, cost) = reduceToCrypto(context, exp).get
 
-    cProp match {
+    val checkingResult = cProp match {
       case TrueLeaf => true
       case FalseLeaf => false
       case b: Value[SBoolean.type] if b.evaluated =>
@@ -204,6 +214,7 @@ trait Interpreter {
         }
       case _: Value[_] => false
     }
+    checkingResult -> cost
   }
 
   /**
@@ -294,13 +305,17 @@ trait Interpreter {
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proverResult: ProverResult[ProofT],
-             message: Array[Byte]): Try[Boolean] = {
+             message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
     verify(exp, ctxv, proverResult.proof, message)
   }
 }
 
 object Interpreter {
+  type VerificationResult = (Boolean, Int)
+
+  type ReductionResult = (Value[SBoolean.type], Int)
+
   def error(msg: String) = throw new InterpreterException(msg)
 }
 

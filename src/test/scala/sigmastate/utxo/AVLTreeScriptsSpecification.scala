@@ -54,7 +54,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       self = s)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("avl tree - leaf satisfying condition exists") {
@@ -98,7 +98,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       .withContextExtender(elementId, IntConstant(elements.head))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
+    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
 
     avlProver.performOneOperation(Lookup(treeElements.last._1))
     val smallLeafTreeProof = avlProver.generateProof()
@@ -157,7 +157,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
-    verifier.verify(prop, ctxv, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctxv, pr, fakeMessage).get._1 shouldBe true
   }
 
 

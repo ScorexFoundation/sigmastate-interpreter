@@ -84,10 +84,10 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //user can spend all the money
     val uProof1 = userProver.prove(prop, ctx1, fakeMessage).get.proof
-    verifier.verify(prop, ctx1, uProof1, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx1, uProof1, fakeMessage).get._1 shouldBe true
 
     //miner can't spend any money
-    verifier.verify(prop, ctx1, NoProof, fakeMessage).get shouldBe false
+    verifier.verify(prop, ctx1, NoProof, fakeMessage).get._1 shouldBe false
 
     //case 2: demurrage time has come
     val ctx2 = ErgoContext(
@@ -99,7 +99,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //user can spend all the money
     val uProof2 = userProver.prove(prop, ctx1, fakeMessage).get.proof
-    verifier.verify(prop, ctx2, uProof2, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
 
     //miner can spend "demurrageCost" tokens
     val tx3 = ErgoTransaction(IndexedSeq(),
@@ -114,7 +114,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
-    verifier.verify(prop, ctx3, NoProof, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx3, NoProof, fakeMessage).get._1 shouldBe true
 
     //miner can't spend more
     val tx4 = ErgoTransaction(IndexedSeq(),
@@ -126,7 +126,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       spendingTransaction = tx4,
       self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
-    verifier.verify(prop, ctx4, NoProof, fakeMessage).get shouldBe false
+    verifier.verify(prop, ctx4, NoProof, fakeMessage).get._1 shouldBe false
 
     //miner can spend less
     val tx5 = ErgoTransaction(IndexedSeq(),
@@ -139,7 +139,6 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       spendingTransaction = tx5,
       self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
 
-    verifier.verify(prop, ctx5, NoProof, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx5, NoProof, fakeMessage).get._1 shouldBe true
   }
-
 }

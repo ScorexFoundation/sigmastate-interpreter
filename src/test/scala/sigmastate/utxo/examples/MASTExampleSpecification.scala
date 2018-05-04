@@ -66,6 +66,6 @@ class MASTExampleSpecification extends SigmaTestingCommons {
       .withContextExtender(proofId, ByteArrayConstant(knownSecretPathProof))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get shouldBe true
+    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
   }
 }

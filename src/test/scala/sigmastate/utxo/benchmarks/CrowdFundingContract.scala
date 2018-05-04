@@ -1,6 +1,7 @@
 package sigmastate.utxo.benchmarks
 
 import sigmastate.helpers.ErgoProvingInterpreter
+import sigmastate.interpreter.Interpreter
 import sigmastate.utxo.{ErgoContext, ErgoInterpreter, SigmaContract}
 
 import scala.util.Try
@@ -18,5 +19,7 @@ abstract class CrowdFundingContract(
 
   def prove(ctx: ErgoContext, fakeMessage: Array[Byte]): projectProver.ProofT
 
-  def verify(proof: projectProver.ProofT, ctx: ErgoContext, fakeMessage: Array[Byte]): Try[Boolean]
+  def verify(proof: projectProver.ProofT,
+             ctx: ErgoContext,
+             fakeMessage: Array[Byte]): Try[Interpreter.VerificationResult]
 }

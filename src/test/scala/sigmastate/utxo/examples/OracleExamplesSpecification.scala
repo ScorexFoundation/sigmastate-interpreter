@@ -160,9 +160,9 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val prB = bob.prove(propBob, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(prA.extension)
-    verifier.verify(propAlice, ctxv, prA, fakeMessage).get shouldBe true
+    verifier.verify(propAlice, ctxv, prA, fakeMessage).get._1 shouldBe true
 
-    verifier.verify(propBob, ctx, prB, fakeMessage).get shouldBe true
+    verifier.verify(propBob, ctx, prB, fakeMessage).get._1 shouldBe true
 
     //todo: check timing conditions - write tests for height  < 40 and >= 60
   }
@@ -225,6 +225,6 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       self = null)
 
     val prA = alice.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
   }
 }
