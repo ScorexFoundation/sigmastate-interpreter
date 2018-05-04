@@ -17,9 +17,8 @@ import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.utxo.{CostTable, Height, Transformer}
+import sigmastate.utxo.{CostTable, Transformer}
 
-import scala.annotation.tailrec
 
 object GroupSettings {
   type EcPointType = Curve25519Point
@@ -113,11 +112,11 @@ trait Interpreter {
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,
   // reduction state carried between reductions is number of transformations done.
   // when it becomes zero, it means that it is time to stop (tree becomes irreducible)
+  //todo: should we limit number of steps?
   case class ReductionState(numberOfTransformations: Int) {
     def recordTransformation(): ReductionState = ReductionState(numberOfTransformations + 1)
   }
 
-  //todo: return cost as well
   /**
     * As the first step both prover and verifier are applying context-specific transformations and then estimating
     * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
@@ -127,7 +126,7 @@ trait Interpreter {
     * @param context
     * @return
     */
-  def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]) = Try {
+  def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]): Try[Value[SBoolean.type]] = Try {
     require(new Tree(exp).nodes.length < CostTable.MaxExpressions)
 
     // Make context-dependent tree transformations (substitute references to a context
@@ -301,8 +300,8 @@ trait Interpreter {
   }
 }
 
-class InterpreterException(msg: String) extends Exception(msg)
-
 object Interpreter {
   def error(msg: String) = throw new InterpreterException(msg)
 }
+
+class InterpreterException(msg: String) extends Exception(msg)
