@@ -4,26 +4,24 @@ import java.math.BigInteger
 import java.util.Arrays
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import scorex.crypto.hash.Blake2b256
-import sigmastate.{SType, _}
-import sigmastate.utils.Helpers
-import sigmastate.Values._
-
-import scala.util.Try
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
+import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.utxo.{CostTable, Height, Transformer}
+import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import scorex.crypto.hash.Blake2b256
+import sigmastate.Values._
+import sigmastate.utils.Helpers
+import sigmastate.utxo.{CostTable, Transformer}
+import sigmastate.{SType, _}
 
-import scala.annotation.tailrec
+import scala.util.Try
 
 object GroupSettings {
-  type EcPointType = Curve25519Point
-  val dlogGroup: BcDlogFp[EcPointType] = Curve25519
+  type EcPointType = SecP384R1Point
+  val dlogGroup: BcDlogFp[EcPointType] = SecP384R1
 
   implicit val soundness: Int = 256
 }
@@ -50,7 +48,7 @@ trait Interpreter {
     * No rewriting is defined on this abstract level.
     *
     * @param context a context instance
-    * @param tree to be rewritten
+    * @param tree    to be rewritten
     * @return a new rewritten tree or `null` if `tree` cannot be rewritten.
     */
   def specificTransformations(context: CTX, tree: SValue): SValue = null
@@ -99,15 +97,15 @@ trait Interpreter {
       if (cond.value) trueBranch else falseBranch
 
     //conjectures
-    case a @ AND(children) if a.transformationReady =>
+    case a@AND(children) if a.transformationReady =>
       a.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
 
-    case o @ OR(children) if o.transformationReady =>
+    case o@OR(children) if o.transformationReady =>
       o.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
 
     case t: Transformer[_, _] if t.transformationReady => t.function()
 
-    case _ => null  // this means the node cannot be evaluated
+    case _ => null // this means the node cannot be evaluated
   }
 
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,
