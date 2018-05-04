@@ -197,7 +197,7 @@ class Rule110Specification extends PropSpec
     val firstRowBlock = Block(generateTransactionsForRow(genesisState, 1))
 
     val t0 = System.currentTimeMillis()
-    val firstRowState = genesisState.applyBlock(firstRowBlock).get
+    val firstRowState = genesisState.applyBlock(firstRowBlock, 10000000).get
     val t1 = System.currentTimeMillis()
 
     println(s"Script cost: ${prop.cost}")

@@ -128,6 +128,8 @@ object BlockchainSimulationSpecification {
 
   val windowSize = 10
 
+  val MaxBlockCost = 700000
+
   case class Block(txs: IndexedSeq[ErgoTransaction])
 
   class InMemoryErgoBoxReader(prover: ValidationState.BatchProver) extends ErgoBoxReader {
@@ -164,15 +166,17 @@ object BlockchainSimulationSpecification {
 
 
   case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader) {
-    def applyBlock(block: Block): Try[ValidationState] = Try {
+    def applyBlock(block: Block, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
 
-      block.txs.foreach { tx =>
+      val blockCost = block.txs.foldLeft(0) {case (accCost, tx) =>
         ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader) match {
           case Left(throwable) => throw throwable
-          case Right(_) =>
+          case Right(cost) => accCost + cost
         }
       }
+
+      assert(blockCost <= maxCost, s"Block cost $blockCost exceeds limit $maxCost")
 
       boxesReader.applyBlock(block)
       val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(startingDigest = boxesReader.digest))
@@ -205,5 +209,4 @@ object BlockchainSimulationSpecification {
       ValidationState(bs, boxReader).applyBlock(block).get
     }
   }
-
 }
