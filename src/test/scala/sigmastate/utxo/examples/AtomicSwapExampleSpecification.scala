@@ -100,7 +100,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
     val pr = proverA.prove(prop2, ctx1, fakeMessage).get
-    verifier.verify(prop2, ctx1, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop2, ctx1, pr, fakeMessage).get._1 shouldBe true
 
     //B extracts preimage x of hx
     val t = pr.extension.values(1)
@@ -114,7 +114,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
     val pr2 = proverB2.prove(prop1, ctx2, fakeMessage).get
-    verifier.verify(prop1, ctx2, pr2, fakeMessage).get shouldBe true
+    verifier.verify(prop1, ctx2, pr2, fakeMessage).get._1 shouldBe true
   }
 
 }

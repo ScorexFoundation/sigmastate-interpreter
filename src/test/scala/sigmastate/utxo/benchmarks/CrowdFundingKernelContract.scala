@@ -4,11 +4,11 @@ import java.math.BigInteger
 import java.util
 
 import scapi.sigma.Challenge
-import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver, ProveDlog, DLogProverInput}
+import scapi.sigma.DLogProtocol.{DLogInteractiveProver, DLogProverInput, FirstDLogProverMessage, ProveDlog}
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.helpers.ErgoProvingInterpreter
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.{GroupSettings, Interpreter}
 import sigmastate.utils.Helpers
 import sigmastate.utxo.ErgoContext
 
@@ -64,7 +64,9 @@ class CrowdFundingKernelContract(
     proof
   }
 
-  def verify(proof: projectProver.ProofT, ctx: ErgoContext, message: Array[Byte]): Try[Boolean] = Try {
+  def verify(proof: projectProver.ProofT,
+             ctx: ErgoContext,
+             message: Array[Byte]): Try[Interpreter.VerificationResult] = Try {
     var sn = proof.asInstanceOf[UncheckedSchnorr]
     val dlog = GroupSettings.dlogGroup
     val g = dlog.generator
@@ -77,6 +79,6 @@ class CrowdFundingKernelContract(
     val rootCommitment = FirstDLogProverMessage(a)
 
     val expectedChallenge = Blake2b256(Helpers.concatBytes(Seq(rootCommitment.bytes, message)))
-    util.Arrays.equals(sn.challenge, expectedChallenge)
+    util.Arrays.equals(sn.challenge, expectedChallenge) -> 0
   }
 }

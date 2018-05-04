@@ -1,21 +1,10 @@
 package sigmastate.utxo.benchmarks
 
-import java.math.BigInteger
 
-import scapi.sigma.Challenge
-import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver, ProveDlog, DLogProverInput}
-import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.helpers.{SigmaTestingCommons, ErgoProvingInterpreter}
 import sigmastate.Values._
-import sigmastate.interpreter.GroupSettings
-import sigmastate.lang.Terms._
 import sigmastate.utxo._
-
-import scala.concurrent.{Future, Await}
-import scala.concurrent.duration._
-import scala.util.Try
-
 
 
 class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons {
@@ -54,7 +43,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
         var res = true
         for ( i <- 1 to nIters ) {
           val proof = contract.prove(ctx, fakeMessage)
-          res = contract.verify(proof, ctx, fakeMessage).get
+          res = contract.verify(proof, ctx, fakeMessage).get._1
           res shouldBe true
         }
         res
@@ -77,7 +66,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
         var res = true
         for ( i <- 1 to nIters ) {
           val proof = contract.prove(ctx, fakeMessage)
-          res = contract.verify(proof, ctx, fakeMessage).get
+          res = contract.verify(proof, ctx, fakeMessage).get._1
           res shouldBe true
         }
         res

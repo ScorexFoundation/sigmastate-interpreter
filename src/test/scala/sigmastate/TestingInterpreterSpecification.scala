@@ -28,13 +28,13 @@ class TestingInterpreterSpecification extends PropSpec
         val dk1 = DLogProverInput.random().publicImage
 
         val ctx = TestingContext(h)
-        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get.isInstanceOf[FalseLeaf.type])
+        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1.isInstanceOf[FalseLeaf.type])
 
-        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1.isInstanceOf[ProveDlog])
       }
     }
   }
@@ -52,24 +52,24 @@ class TestingInterpreterSpecification extends PropSpec
         assert(reduceToCrypto(ctx, OR(
                   AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
                   AND(GT(Height, IntConstant(h + 1)), dk1)
-                )).get.isInstanceOf[CAND])
+                )).get._1.isInstanceOf[CAND])
 
 
         assert(reduceToCrypto(ctx, OR(
                   AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
                   AND(GT(Height, IntConstant(h - 1)), dk1)
-                )).get.isInstanceOf[ProveDlog])
+                )).get._1.isInstanceOf[ProveDlog])
 
 
         assert(reduceToCrypto(ctx, OR(
                   AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
                   AND(GT(Height, IntConstant(h + 1)), dk1)
-                )).get.isInstanceOf[FalseLeaf.type])
+                )).get._1.isInstanceOf[FalseLeaf.type])
 
         assert(reduceToCrypto(ctx, OR(OR(
                   AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
                   AND(GT(Height, IntConstant(h + 1)), dk1)
-                ), AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1))))).get.isInstanceOf[TrueLeaf.type])
+                ), AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1))))).get._1.isInstanceOf[TrueLeaf.type])
 
       }
     }
@@ -87,7 +87,7 @@ class TestingInterpreterSpecification extends PropSpec
     val prop = compile(env, code).asBoolValue
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
-    verify(prop, ctx, proof1, challenge).getOrElse(false) shouldBe true
+    verify(prop, ctx, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 
   property("Evaluate array ops") {
@@ -121,9 +121,9 @@ class TestingInterpreterSpecification extends PropSpec
 
     val proof1 = TestingInterpreter.prove(prop, env1, challenge).get.proof
 
-    verify(prop, env1, proof1, challenge).getOrElse(false) shouldBe true
+    verify(prop, env1, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    verify(prop, env2, proof1, challenge).getOrElse(false) shouldBe false
+    verify(prop, env2, proof1, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
   property("Evaluation - no real proving - true case") {
@@ -133,16 +133,16 @@ class TestingInterpreterSpecification extends PropSpec
     val proof = NoProof
     val env = TestingContext(99)
 
-    verify(prop1, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
     val prop2 = OR(TrueLeaf, FalseLeaf)
-    verify(prop2, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
     val prop3 = AND(TrueLeaf, TrueLeaf)
-    verify(prop3, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
     val prop4 = GT(Height, IntConstant(90))
-    verify(prop4, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 
   property("Evaluation - no real proving - false case") {
@@ -152,16 +152,16 @@ class TestingInterpreterSpecification extends PropSpec
     val proof = NoProof
     val env = TestingContext(99)
 
-    verify(prop1, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
     val prop2 = OR(FalseLeaf, FalseLeaf)
-    verify(prop2, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
     val prop3 = AND(FalseLeaf, TrueLeaf)
-    verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
     val prop4 = GT(Height, IntConstant(100))
-    verify(prop4, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
   property("Evaluation - hash function") {
@@ -174,15 +174,15 @@ class TestingInterpreterSpecification extends PropSpec
     val proof = NoProof
     val env = TestingContext(99)
 
-    verify(prop1, env, proof, challenge).getOrElse(false) shouldBe true
+    verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
     val prop2 = NEQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash))
 
-    verify(prop2, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
     val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes))
 
-    verify(prop3, env, proof, challenge).getOrElse(false) shouldBe false
+    verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 }
 

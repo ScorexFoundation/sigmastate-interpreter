@@ -88,7 +88,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
 
     //project is generating a proof and it is passing verification
     val proofP = projectProver.prove(compiledScript, ctx1, fakeMessage).get.proof
-    verifier.verify(compiledScript, ctx1, proofP, fakeMessage).get shouldBe true
+    verifier.verify(compiledScript, ctx1, proofP, fakeMessage).get._1 shouldBe true
 
     //backer can't generate a proof
     backerProver.prove(compiledScript, ctx1, fakeMessage).isFailure shouldBe true
@@ -134,7 +134,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
 
     //backer is generating a proof and it is passing verification
     val proofB = backerProver.prove(compiledScript, ctx3, fakeMessage).get.proof
-    verifier.verify(compiledScript, ctx3, proofB, fakeMessage).get shouldBe true
+    verifier.verify(compiledScript, ctx3, proofB, fakeMessage).get._1 shouldBe true
   }
 
 

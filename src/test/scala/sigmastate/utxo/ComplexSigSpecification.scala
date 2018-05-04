@@ -32,10 +32,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
 
     val prB = proverB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prB, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prB, fakeMessage).get._1 shouldBe true
 
     proverC.prove(prop, ctx, fakeMessage).isFailure shouldBe true
   }
@@ -64,13 +64,13 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
 
     val prB = proverB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prB, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prB, fakeMessage).get._1 shouldBe true
 
     val prC = proverC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prC, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prC, fakeMessage).get._1 shouldBe true
   }
 
   //two secrets are known, nevertheless, one will be simulated
@@ -98,7 +98,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of two ANDs") {
@@ -134,11 +134,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
     val pr = proverAB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val proverCD = proverC.withSecrets(Seq(proverD.dlogSecrets.head))
     val pr2 = proverCD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr2, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr2, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of AND and OR") {
@@ -171,14 +171,14 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
 
     val prC = proverC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prC, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prC, fakeMessage).get._1 shouldBe true
 
     val prD = proverD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prD, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prD, fakeMessage).get._1 shouldBe true
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
     val pr = proverAB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - AND of two ORs") {
@@ -214,11 +214,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val proverAC = proverA.withSecrets(Seq(proverC.dlogSecrets.head))
     val pr = proverAC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val proverBD = proverB.withSecrets(Seq(proverD.dlogSecrets.head))
     val pr2 = proverBD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr2, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr2, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - AND of AND and OR") {
@@ -257,11 +257,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val proverABC = proverAB.withSecrets(Seq(proverC.dlogSecrets.head))
     val prABC = proverABC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prABC, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prABC, fakeMessage).get._1 shouldBe true
 
     val proverABD = proverAB.withSecrets(Seq(proverC.dlogSecrets.head))
     val prABD = proverABD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prABD, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prABD, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of two ORs") {
@@ -291,16 +291,16 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
 
     val prB = proverB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prB, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prB, fakeMessage).get._1 shouldBe true
 
     val prC = proverC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prC, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prC, fakeMessage).get._1 shouldBe true
 
     val prD = proverD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prD, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, prD, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR w. predicate") {
@@ -326,9 +326,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
     val prA = proverA.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prA, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx1, prA, fakeMessage).get._1 shouldBe true
     val prB = proverB.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prB, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx1, prB, fakeMessage).get._1 shouldBe true
     proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
     val ctx2 = ErgoContext(
@@ -338,7 +338,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
     val prC = proverC.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prC, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx2, prC, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate") {
@@ -366,9 +366,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prA, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx1, prA, fakeMessage).get._1 shouldBe true
     val prB = proverB.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prB, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx1, prB, fakeMessage).get._1 shouldBe true
     proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
 
@@ -380,11 +380,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA2 = proverA.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prA2, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx2, prA2, fakeMessage).get._1 shouldBe true
     val prB2 = proverB.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prB2, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx2, prB2, fakeMessage).get._1 shouldBe true
     val prC2 = proverC.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prC2, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx2, prC2, fakeMessage).get._1 shouldBe true
   }
-
 }

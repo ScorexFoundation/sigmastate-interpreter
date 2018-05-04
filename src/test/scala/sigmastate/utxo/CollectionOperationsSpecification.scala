@@ -33,7 +33,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
     //todo: finish
   }
 
@@ -61,7 +61,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
     //todo: finish
   }
 
@@ -122,7 +122,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       self = s)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("counter - no register in outputs") {
@@ -157,7 +157,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       self = s)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get shouldBe true
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("sizeof - num of outputs = num of inputs + 1") {
