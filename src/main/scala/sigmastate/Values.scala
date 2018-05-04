@@ -37,8 +37,7 @@ object Values {
     /** Returns true if this value represent some constant or sigma statement, false otherwise */
     def evaluated: Boolean
 
-    //TODO: Should be ValueSerializer.serialize(this)
-    lazy val propBytes = this.toString.getBytes
+    lazy val propBytes = ValueSerializer.serialize(this)
   }
 
   object Value {

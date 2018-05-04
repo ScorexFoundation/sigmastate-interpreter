@@ -12,8 +12,7 @@ class ErgoBoxSerializerSpec extends PropSpec
 
   implicit val ergoBoxSerializer = ErgoBox.serializer
 
-  //todo: fix it
-  ignore("ErgoBox: Serializer round trip") {
+  property("ErgoBox: Serializer round trip") {
     forAll { b: ErgoBox =>
       val bytes = ergoBoxSerializer.toBytes(b)
       val b1 = ergoBoxSerializer.parseBytes(bytes).success.value
