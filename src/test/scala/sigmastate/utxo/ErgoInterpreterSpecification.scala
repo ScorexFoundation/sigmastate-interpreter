@@ -248,7 +248,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     prover.prove(fProp2, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  property("P2SH") {
+  ignore("P2SH") {
     val scriptId = 21.toByte
     val secretId = 22.toByte
 
