@@ -157,9 +157,6 @@ trait Interpreter {
     var wasRewritten = false
     val rules: Strategy = strategy[Value[_ <: SType]] { case node =>
       var rewritten = evaluateNode(context, node)
-      if (rewritten == null) {
-        rewritten = specificTransformations(context, node)
-      }
       if (rewritten != null) {
         wasRewritten = true
         Some(rewritten)
