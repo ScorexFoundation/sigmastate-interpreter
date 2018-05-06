@@ -79,7 +79,7 @@ Smart contracts platform Ethereum is allowing arbitrary program to be run on top
 Our paper is introducing a new language, which is more powerful than Bitcoin Script, and more friendly to cryptographic protocols and applications. It is also providing better guarantees for validation to be finished within target timeout. \knote{continue}
 
 
-The idea behind the language is that a subset of zero-knowledge protocols known as $\Sigma$-protocols (sigma protocols) could be combined via $\land$ and $\lor$ connectives forming complex statements like ``prove me a knowledge of discrete logarithm of (publicly known) $x_1$ or knowledge of Pedersen commitment $x_2$ preimage''. We make an observation that sigma protocol statements and theit conjectures are isomorphic to boolean values, and we can add arbitrary boolean predicates to a statement provable via a $\Sigma$-protocol, if both prover and verifier are able to evaluate the predicates in exactly the same way. This is the case if predicates are evaluated deterministically in the same way by both the prover and the verifier, and inputs for the predicates are the same on both sides. We use predicates over state of blockchain system during script validation~(which happens when a transaction tries to spend an output protected by the script). To avoid inefficient processing and impossibility for a light client to validate a transaction, this state is very lean but nevertheless it is richer than in Bitcoin. Like in Bitcoin, we use current height of the blockchain, but also a spending transaction with outputs it creates and outputs it tries to spend. Unlike Bitcoin, we allow outputs to contain more fields than amount and protecting script, in form of additional registers an outut can have. In addition to $\land$ and $\lor$ connectives, we have different operations over typed arguments. We filter out trivially wrong expressions, like $2 + 2 > true$, thanks to a type system used. 
+The idea behind the language is that a subset of zero-knowledge protocols known as $\Sigma$-protocols (sigma protocols) could be combined via $\land$ and $\lor$ connectives forming complex statements like ``prove me a knowledge of discrete logarithm of (publicly known) $x_1$ or knowledge of Pedersen commitment $x_2$ preimage''. We make an observation that sigma protocol statements and their conjectures are homomorphic to boolean values, and we can add arbitrary boolean predicates to statements provable via a $\Sigma$-protocol, if both prover and verifier are able to evaluate the predicates in exactly the same way. This is the case if predicates are evaluated deterministically in the same way by both the prover and the verifier, and inputs for the predicates are the same on both sides. We use predicates over state of blockchain system during script validation~(which happens when a transaction tries to spend an output protected by the script). To avoid inefficient processing and impossibility for a light client to validate a transaction, this state is very lean but nevertheless it is richer than in Bitcoin. Like in Bitcoin, we use current height of the blockchain, but also a spending transaction with outputs it creates and inputs it tries to spend. Unlike Bitcoin, we allow outputs to contain more fields than amount and protecting script, in a form of additional registers an output can have. In addition to $\land$ and $\lor$ connectives, we have different operations over statically typed arguments. We reject out during compilation time expressions with type errors, like $2 + 2 > true$, thanks to a type system used.
 
 In blockchain systems, there is a strict need to tackle the problem of denial-of-service attack carrying by crafting scripts which are too costly to validate. For example, if it is needed for more time to validate a script than average delay between blocks on commodity hardware, network could be obviously attacked, with nodes stuck in processing, and also increased number of forks as result. 
 
@@ -102,19 +102,69 @@ In blockchain systems, there is a strict need to tackle the problem of denial-of
 
 \section{Language Design}
 
-We assume that a {\em prover} and a {verifier} have a shared context. As we are designing a language for cryptocurrencies, this context is about current state of the blockchain (such as height $h$ of a best block in the blockchain, a spending transaction with outputs it spends and newly created outputs, etc). Please note that the language can be repurposed for other areas where shared context is possible, but this is out of scope of the paper.
+We assume that a {\em prover} and a {\em verifier} have a shared {\em context}. As we are designing a language for cryptocurrencies, the context is about current state of the blockchain (such as height $h$ of a best block in the blockchain, a spending transaction with outputs it spends and newly created outputs, etc). Please note that the language can be repurposed for other areas where shared context is possible, but this is out of scope of the paper.
 
 \subsection{Notation}
 
-We use $dlog(x)$ to denote a statement ``prove a knowledge of such $w$ that $x = g^w$''. Proving is to be done in zero knowledge~(with no presenting the secret $w$). Statement $dlog(x_1) \land dlog(x_2)$ means ``prove a knowledge of both $w_1$ and $w_2$, such as $x_1 = g^{w_1}, x_2 = g^{w_2}$'', similarly, $dlog(x_1) \lor dlog(x_2)$ is about a proof knowledge of whether $w_1$ or $w_2$. 
+We use $dlog(x)$ to denote a statement ``prove a knowledge of such $w$ that $x = g^w$''. Proving is to be done by a prover in zero knowledge~(with no presenting the secret $w$ to a verifier). Statement $dlog(x_1) \land dlog(x_2)$ means ``prove a knowledge of both $w_1$ and $w_2$, such as $x_1 = g^{w_1}, x_2 = g^{w_2}$'', similarly, $dlog(x_1) \lor dlog(x_2)$ is about a proof of knowledge of either $w_1$ or $w_2$.
 
 \subsection{UTXO model}
 
-We assume a transactional model close to Bitcoin's. That is, a transaction spends unspent outputs from previous transaction written into the blockchain, and creates new outputs. An output is associated with arbitrary amount of money, and also a protecting script. In Bitcoin, there is a special kind of transaction, so-called {\em coinbase transaction}, which can create some amount of money out of thin air~(to reward a block generator). In Bitcoin transaction fees money flow is not captured in outputs, a transaction fee is just a difference of amounts of outputs being spent and outputs being created. In Appendix~\ref{apx:unified} we provide a way to avoid coinbase transactions, and also express fees explicitly as outputs. In Appendix~\ref{apx:account} we discuss how to make a language for a cryptocurrency with account-based transactions~(such as Waves).
+We assume a transactional model close to Bitcoin's. That is, a transaction spends unspent outputs from previous transaction written into the blockchain, and creates new outputs. An output is associated with arbitrary amount of money, and also a protecting script. In Bitcoin, there is a special kind of transaction, so-called {\em coinbase transaction}, which can create some amount of money out of thin air~(to reward a block generator). In Bitcoin transaction fees money flow is not captured in outputs, a transaction fee is just a difference of amounts of outputs being spent and outputs being created. In Appendix~\ref{apx:unified} we provide a way to avoid coinbase transactions, and also express fees explicitly as outputs. In Appendix~\ref{apx:account} we discuss how to make a language for a cryptocurrency with account-based transactions~(such as Waves~\cite{Waves}).
+
+\subsection{Sigma to Boolean Homomorphism}
+
+Cryptocraphic proofs verifiable via sigma-protocols are represented by values of type $Sigma$.
+There are two binary operations over sigma values:
+\begin{itemize}
+\item $\lor: (Sigma, Sigma) -> Sigma$
+\item $\land: (Sigma, Sigma) -> Sigma$
+\end{itemize}
+
+This operations allow to construct complex cryptographic statements out of basic cryptographic
+primitives (such as $dlog$, which is also of type $Sigma$).
+Any expression of $Sigma$ type can be verified using sigma protocol.
+
+If $H: Sigma -> Boolean$ is verification procedure, then for our purposes it should satisfy the following properties. For any two $sigma1, sigma2: Sigma$:
+\begin{itemize}
+    \item $H(sigma1 \lor sigma2) = H(sigma1) || H(sigma2)$
+    \item $H(sigma1 \land sigma2) = H(sigma1) && H(sigma2)$
+\end{itemize}
+
+%H: Sigma -> Boolean
+%изоморфизма тут нет, но есть гомоморфизм H: Sigma -> Boolean.
+%Который в данном случае выражается равенством H(sigma1 \/ sigma2) = H(sigma1) || H(sigma2)
+%Аналогично H(sigma1 /\ sigma2) = H(sigma1) && H(sigma2)
+%Это свойство будет сохранено
+%s: Sigma, x: Boolean, s \/ x := H(s) || x
+%
+%и кстати H(sigma1 \/ sigma2) = H(sigma1) || H(sigma2) должно быть симметричным
+%т.е. действовать в обе стороны
+%
+%из того что я знаю один из секретов для sigma1, sigma2 следует что я знаю секрет для sigma1 или я знаю секрет для  sigma2?
+%
+%в протоколах есть нюанс, что неизвестно, какой именно из серкретов ты знаешь
+%сохранен ли он здесь?
+%
+%нет, H(sigma1) || H(sigma2) такой вариант содержит дополнительный бит информации
+%известно какой знаем левый или правый
+%в этом и есть разница типов
+%поэтому если не хочется этот бит раскрывать то не надо делать трансформацию
+%H(sigma1 \/ sigma2) --> H(sigma1) || H(sigma2)
+%
+%и это не относится к языку, это к тому как на нем писать
+%можно написать не то что хотел, понять это и исправить
+%можно сделать анализатор количества раскрываемой информации
+%который по программе скажет где и что раскрывается и можно ли оптимизировать
+%это интересное потенциальное развитие
+%для первой версии можно и без этого всего
+%
+%||: (Boolean,Boolean) => Boolean
+%\/: (Sigma,Sigma) => Sigma
 
 \subsection{General Idea}
 
-By using a $\Sigma$-protocol, a prover can prove a knowledge of secret information corresponding to publicly known values, in zero-knowledge, for some relations between secret and public values. Unlike generic proof systems, $\Sigma$-protocols are efficient~(for both the prover and the verifier). For a cryptocurrency setting, the pros of this class of protocols are generic transformation from an interactive protocol to non-interactive one~(by using Fiat-Shamir transformation), and also composability: we can combine statements provable with $\Sigma$-protocols via $\land$, $\lor$ and k-out-of-N conjectures, and the compound statement is also provable via a $\Sigma$-protocol. An observation which is lying in the foundation of our work is that we can view a (potentially complex) statement provable via a $\Sigma$-protocol as a logic formula. For example, the statement $dlog(x_1) \lor dlog(x_2)$ could be viewed as a logic formula consisting of two boolean values. Then we can enrich the language of $\Sigma$-protocols (which describes relations between prover's secrets and their publicly known images) with deterministic predicates over a context shared between the prover and the verifier. Still, we are using only $\land$, $\lor$ and k-out-of-N conjectures. By evaluating predicates over the context into concrete boolean values and then eliminating them, both (honest) the prover and verifier do agree on the same reduction procedure output, which could be one of the following: boolean value (true or false) or a statement provable via a $\Sigma$-protocol. However, in the light of denial-of-service attacks found against scripting capabilities of Bitcoin and Ethereum \knote{todo: links}, we need to limit possible complexity of the reduction procedure. For that, we have two measures against possible overload issues. In the first place, we have to use only context which is efficiently computable. For example, we can not have predicates over transactional history, as it is linearly growing with time, and also could not be hold by a light client. In opposite, we can use height of a block which contains the transaction spending the output of interest, access to this information is constant-time and available to light clients. If a validation state~(which is similar to UTXO set in Bitcoin for Bitcoin-like cryptocurrencies) is authenticated~(like proposed in the paper \knote{cite AVL paper}), we can construct a predicate for existence of an unspent output (with some conditions to be met), then the prover is providing a Merkle proof for an output satisfying the predicate, and even a light client can validate the predicate efficiently. In the second place, we put a limit on size of an initial logic formula which protects an output, and also we take care that the formula will not become too big due rewritings (as some transformations in our proposal could actually increase a size of the formula) and number of transformations is below an upper limit.
+By using a $\Sigma$-protocol, a prover can prove a knowledge of secret information corresponding to publicly known values, in zero-knowledge(i.e. without disclosing a secret value), for some relations between secret and public values. Unlike generic proof systems, $\Sigma$-protocols are efficient~(for both the prover and the verifier). For a cryptocurrency setting, the pros of this class of protocols are generic transformation from an interactive protocol to non-interactive one~(by using Fiat-Shamir transformation), and also composability: we can combine statements provable with $\Sigma$-protocols via $\land$, $\lor$ and k-out-of-N conjectures, and the compound statement is also provable via a $\Sigma$-protocol. An observation which is lying in the foundation of our work is that we can view a (potentially complex) statement provable via a $\Sigma$-protocol as a formula over sigma values homomorphic to logical formula. For example, the statement $dlog(x_1) \lor dlog(x_2)$ could be viewed as a formula consisting of two sigma values connected by $\lor$ and which is homomorphic to the formula $b1 or b2$. Then we can enrich the language of $\Sigma$-protocols (which describes relations between prover's secrets and their publicly known images) with deterministic predicates over a context shared between the prover and the verifier. Still, we are using only $\land$, $\lor$ and k-out-of-N conjectures. By evaluating predicates over the context into concrete boolean values and then eliminating them, both (honest) the prover and verifier do agree on the same reduction procedure output, which could be one of the following: boolean value (true or false) or a statement provable via a $\Sigma$-protocol. However, in the light of denial-of-service attacks found against scripting capabilities of Bitcoin and Ethereum \knote{todo: links}, we need to limit possible complexity of the reduction procedure. For that, we have two measures against possible overload issues. In the first place, we have to use only context which is efficiently computable. For example, we can not have predicates over transactional history, as it is linearly growing with time, and also could not be hold by a light client. In opposite, we can use height of a block which contains the transaction spending the output of interest, access to this information is constant-time and available to light clients. If a validation state~(which is similar to UTXO set in Bitcoin for Bitcoin-like cryptocurrencies) is authenticated~(like proposed in the paper \knote{cite AVL paper}), we can construct a predicate for existence of an unspent output (with some conditions to be met), then the prover is providing a Merkle proof for an output satisfying the predicate, and even a light client can validate the predicate efficiently. In the second place, we put a limit on size of an initial logic formula which protects an output, and also we take care that the formula will not become too big due rewritings (as some transformations in our proposal could actually increase a size of the formula\mnote{For example? Looks like all the transforms are decreasing.}) and number of transformations is below an upper limit.
 
 \subsection{Model}
 
@@ -125,7 +175,7 @@ An output to spend is protected by a logical expression, which we are also calli
 dlog(x_1) \lor ((h > 5) \land dlog(x_2))
 \end{equation}
 
-which is to be read as ``proof of knowledge of a secret with public image $x_1$ is always enough, also, if height of a block containing spending transaction is more than 5, knowledge of a secret with public image $x_2$ is also enough''.
+which is to be read as ``proof of knowledge of a secret with public image $x_1$ is always enough, also, if height of a block containing spending transaction is more than 5, knowledge of a secret with public image $x_2$ is also enough'' to admit spending of the output.
 
 Both the prover and the verifier are first reducing the statement by substituting shared context variables and evaluating parts of the expression which are possible to evaluate. Four outcomes of the reduction process are possible: {\em true}, {\em false}, failure to reduce~(if statement is invalid, or transformations of it are taking too much time or result in unreasonably big statement), which is equivalent to {\em false}; or statement which contains only cryptographic statements. For the example, if $h = 10$, the reduced statement is $dlog(x_1) \lor dlog(x_2)$. In this case, the prover is generating a proof, and verifier is checking validity of the proof, accepting or rejecting it. We use cryptographic statements which are provable via {\em sigma protocols}~(\knote{links}). These protocols are efficient zero-knowledge \knote{special honest verifier ZK actually} proof-of-knowledge protocols which are composable via $\land$, $\lor$ and k-out-of-N conjectures, also any sigma protocol has a standard way to be converted into a signature by using the Fiat-Shamir transformation. 
 
@@ -133,7 +183,7 @@ In addition to secret information, which knowledge is to be proven in zero-knowl
 
 $$dlog(x) \land (blake2b256(c) = C)$$
 
-where $C$ is some constant~\footnote{we avoid provide a value for the constant due to column size limit}, and $blake2b256$ is operation which calculates hash value for function Blake2b256~(\knote{link}). The prover then needs to prove knowledge of discrete logarithm of $x$ and also to present value $c$ such as Blake2b256 on $c$ evaluates to $C$. Even if verifier does not know $c$ before being presented a proof, we can not count $c$ as secret, as it could be replayed by an eavesdropper.   
+where $C$ is some constant~\footnote{we avoid providing a value for the constant due to column size limit}, and $blake2b256$ is operation which calculates hash value for function Blake2b256~(\knote{link}). The prover then needs to prove knowledge of discrete logarithm of $x$ and also to present value $c$ such as Blake2b256 on $c$ evaluates to $C$. Even if verifier does not know $c$ before being presented a proof, we can not count $c$ as secret, as it could be replayed by an eavesdropper.
 
 
 
