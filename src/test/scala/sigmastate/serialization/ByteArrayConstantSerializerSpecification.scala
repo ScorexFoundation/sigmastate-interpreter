@@ -3,7 +3,7 @@ package sigmastate.serialization
 import sigmastate.Values.ByteArrayConstant
 
 class ByteArrayConstantSerializerSpecification extends TableSerializationSpecification {
-  
+
   property("ByteArrayConstant: Serializer round trip") {
     forAll { arr: ByteArrayConstant =>
       roundTripTest(arr)
@@ -32,6 +32,6 @@ class ByteArrayConstantSerializerSpecification extends TableSerializationSpecifi
 
   def checkConsumed(array: Array[Byte]) {
     val (_, consumed) = ValueSerializer.deserialize(array, 0)
-    consumed should equal (array.length)
+    consumed should equal(array.length)
   }
 }
