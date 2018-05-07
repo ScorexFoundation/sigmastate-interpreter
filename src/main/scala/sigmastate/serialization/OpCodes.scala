@@ -4,6 +4,7 @@ object OpCodes {
 
   type OpCode = Byte
 
+  val Undefined: OpCode = 0: Byte
   val TaggedVariableCode:   OpCode = 1: Byte
 
   // EvaluatedValue descendants

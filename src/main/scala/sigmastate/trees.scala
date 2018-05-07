@@ -20,6 +20,8 @@ import scala.collection.mutable
   * AND conjunction for sigma propositions
   */
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  override val opCode: OpCode = OpCodes.Undefined
+
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 }
 
@@ -27,6 +29,8 @@ case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   * OR disjunction for sigma propositions
   */
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  override val opCode: OpCode = OpCodes.Undefined
+
   override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 }
 

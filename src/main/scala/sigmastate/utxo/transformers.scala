@@ -69,6 +69,8 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
 
 case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SCollection[IV]])
   extends Transformer[SCollection[IV], SCollection[IV]]{
+  override val opCode: OpCode = OpCodes.Undefined
+
   val tpe = input.tpe
 
   override def transformationReady: Boolean =
@@ -83,6 +85,8 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 
 case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
   extends Transformer[SCollection[IV], SCollection[IV]]{
+  override val opCode: OpCode = OpCodes.Undefined
+
   val tpe = input.tpe
 
   override def transformationReady: Boolean =
@@ -101,6 +105,8 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
                                condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
+  override val opCode: OpCode = OpCodes.Undefined
+
   override def tpe: SCollection[IV] = input.tpe
   override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
 
@@ -317,6 +323,7 @@ case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
 
 case class Deserialize[V <: SType](input: Value[SByteArray.type])(implicit val tpe: V)
   extends Transformer[SByteArray.type, V] with NotReadyValue[V] with Rewritable {
+  override val opCode: OpCode = OpCodes.Undefined
 
   def arity = 2
 

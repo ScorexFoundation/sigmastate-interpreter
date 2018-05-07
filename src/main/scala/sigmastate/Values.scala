@@ -26,7 +26,7 @@ object Values {
   type Idn = String
 
   trait Value[+S <: SType] extends SigmaNode {
-    val opCode: OpCode = 0: Byte
+    val opCode: OpCode
 
     def tpe: S
 
