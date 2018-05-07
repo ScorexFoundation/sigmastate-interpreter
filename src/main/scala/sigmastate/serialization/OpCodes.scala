@@ -74,6 +74,7 @@ object OpCodes {
   val CalcBlake2b256Code:        OpCode = 83: Byte
   val CalcSha256Code:            OpCode = 84: Byte
   val ByIndexCode:               OpCode = 85: Byte
+  val DeserializeCode:           OpCode = 86: Byte
 
 
 }

@@ -323,7 +323,7 @@ case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
 
 case class Deserialize[V <: SType](input: Value[SByteArray.type])(implicit val tpe: V)
   extends Transformer[SByteArray.type, V] with NotReadyValue[V] with Rewritable {
-  override val opCode: OpCode = OpCodes.Undefined
+  override val opCode: OpCode = OpCodes.DeserializeCode
 
   def arity = 2
 

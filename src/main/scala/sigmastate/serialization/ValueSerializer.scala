@@ -76,6 +76,7 @@ object ValueSerializer
     SimpleTransformerSerializer[SByteArray.type, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
     SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcBlake2b256Code, CalcBlake2b256.apply),
     SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcSha256Code, CalcSha256.apply),
+    DeserializeSerializer,
     ExtractRegisterAsSerializer,
     ByIndexSerializer,
     BoxConstantSerializer,
