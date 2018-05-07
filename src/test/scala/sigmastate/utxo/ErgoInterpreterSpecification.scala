@@ -248,16 +248,16 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     prover.prove(fProp2, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  ignore("P2SH") {
+  property("P2SH") {
     val scriptId = 21.toByte
-    val secretId = 22.toByte
 
-    val customScript = EQ(TaggedInt(secretId), IntConstant(12))
+    val prover0 = new ErgoProvingInterpreter()
+
+    val customScript = prover0.dlogSecrets.head.publicImage
     val scriptBytes = ValueSerializer.serialize(customScript)
-    val prover = new ErgoProvingInterpreter()
-      .withContextExtender(secretId, IntConstant(12))
-      .withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
     val scriptHash = Blake2b256(scriptBytes)
+
+    val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
 
     val hashEquals = EQ(CalcBlake2b256(TaggedByteArray(scriptId)), scriptHash)
     val scriptIsCorrect = Deserialize[SBoolean.type](TaggedByteArray(scriptId))

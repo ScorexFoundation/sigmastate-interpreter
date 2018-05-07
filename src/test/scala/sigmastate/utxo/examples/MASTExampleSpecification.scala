@@ -1,6 +1,5 @@
 package sigmastate.utxo.examples
 
-import com.google.common.primitives.Longs
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -31,6 +30,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val scriptId = 21.toByte
     val proofId = 22.toByte
     val secretId = 23.toByte
+
     val allSecrets = (0 until 5).map(i => Random.nextString(32).getBytes("UTF-8"))
     val scriptBranches = allSecrets.map(s => EQ(ByteArrayConstant(s), TaggedByteArray(secretId)))
     val scriptBranchesBytes = scriptBranches.map(b => ValueSerializer.serialize(b))
