@@ -1,12 +1,15 @@
 package sigmastate.serialization
 
-import scala.util.Try
-import sigmastate._
 import sigmastate.SType.TypeCode
+import sigmastate._
 import sigmastate.serialization.STypeSerializer.Position
 
+import scala.util.Try
+
 trait STypeSerializer[T <: SType] extends SigmaSerializer[SType, T] {
+
   import STypeSerializer._
+
   val typeCode: TypeCode
 
   override def toBytes(obj: T): Array[Byte] = serialize(obj)

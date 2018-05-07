@@ -10,9 +10,8 @@ import sigmastate.{SCollection, SType}
 
 object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
 
-  val intLength = Ints.BYTES
-
   override val opCode: OpCode = OpCodes.ByIndexCode
+  val intLength = Ints.BYTES
 
   override def parseBody(bytes: Array[Byte], pos: Position): (ByIndex[SType], Consumed) = {
     val (input, consumed) = ValueSerializer.deserialize(bytes, pos)

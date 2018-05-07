@@ -23,14 +23,19 @@ object AvlTreeConstantSerializer extends ValueSerializer[AvlTreeConstant] {
 
     val vlOptStart = keyLengthStart + IntLength
     val vlOpt = read(bytes.slice(vlOptStart, bytes.length))
-    val mnoOptStart = vlOptStart + vlOpt.fold(1) { _ => IntLength + 1}
+    val mnoOptStart = vlOptStart + vlOpt.fold(1) { _ => IntLength + 1 }
     val mnoOpt = read(bytes.slice(mnoOptStart, bytes.length))
-    val mdOptStart = mnoOptStart + mnoOpt.fold(1) { _ => IntLength + 1}
+    val mdOptStart = mnoOptStart + mnoOpt.fold(1) { _ => IntLength + 1 }
     val mdOpt = read(bytes.slice(mdOptStart, bytes.length))
 
-    val consumed = mdOptStart + mdOpt.fold(1) { _ => IntLength + 1}
+    val consumed = mdOptStart + mdOpt.fold(1) { _ => IntLength + 1 }
     val data = AvlTreeData(ADDigest @@ digestBytes, keyLength, vlOpt, mnoOpt, mdOpt)
     AvlTreeConstant(data) -> consumed
+  }
+
+  private def read(bytes: Array[Byte]): Option[Int] = bytes.headOption.flatMap {
+    case x: Byte if x == 0 => None
+    case _ => Some(Ints.fromByteArray(bytes.drop(1)))
   }
 
   override def serializeBody(obj: AvlTreeConstant): Array[Byte] = {
@@ -46,13 +51,7 @@ object AvlTreeConstantSerializer extends ValueSerializer[AvlTreeConstant] {
     digestBytes ++ keyLengthBytes ++ valueLengthBytes ++ maxNumOpBytes ++ maxDeletesBytes
   }
 
-
   private def optionIntToBytes(opt: Option[Int]): Array[Byte] =
-    opt.fold(Array(0: Byte)) { v => Array(1: Byte) ++ Ints.toByteArray(v)}
-
-  private def read(bytes: Array[Byte]): Option[Int] = bytes.headOption.flatMap{
-    case x: Byte if x == 0 => None
-    case _ => Some(Ints.fromByteArray(bytes.drop(1)))
-  }
+    opt.fold(Array(0: Byte)) { v => Array(1: Byte) ++ Ints.toByteArray(v) }
 
 }

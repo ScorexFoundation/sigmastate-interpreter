@@ -3,8 +3,8 @@ package sigmastate.serialization
 import com.google.common.primitives.Chars
 import sigmastate.SType
 import sigmastate.Values._
-import sigmastate.serialization.ValueSerializer.Position
 import sigmastate.serialization.OpCodes._
+import sigmastate.serialization.ValueSerializer.Position
 
 import scala.collection.mutable.ArrayBuffer
 

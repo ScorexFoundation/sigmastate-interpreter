@@ -1,9 +1,9 @@
 package sigmastate.serialization
 
-import sigmastate._
 import sigmastate.Values._
+import sigmastate._
+import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer.Position
-import OpCodes._
 
 object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: SType]] {
 

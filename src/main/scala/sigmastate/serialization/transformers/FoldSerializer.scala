@@ -7,14 +7,14 @@ import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.Fold
 import sigmastate.{SCollection, SType}
 
-object FoldSerializer extends ValueSerializer[Fold[SType]]{
+object FoldSerializer extends ValueSerializer[Fold[SType]] {
   override val opCode: OpCode = OpCodes.FoldCode
 
   override def parseBody(bytes: Array[Byte], pos: Position): (Fold[SType], Consumed) = {
     val (input, c1) = ValueSerializer.deserialize(bytes, pos)
     val id = bytes(pos + c1)
     val (zero, c2) = ValueSerializer.deserialize(bytes, pos + c1 + 1)
-    val accId = bytes (pos + c1 + 1 + c2)
+    val accId = bytes(pos + c1 + 1 + c2)
     val (foldOp, c3) = ValueSerializer.deserialize(bytes, pos + c1 + 1 + c2 + 1)
     val tpeTypeCode = bytes(pos + c1 + 1 + c2 + 1 + c3)
     val tpe = SType.allPredefTypes.filter(_.typeCode == tpeTypeCode).head
