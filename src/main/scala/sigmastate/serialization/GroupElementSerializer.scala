@@ -18,8 +18,8 @@ object GroupElementSerializer extends ValueSerializer[GroupElementConstant] {
 
   override def parseBody(bytesIn: Array[Byte], pos: Int): (GroupElementConstant, Int) = {
     val consumed = 1 + (curve.curve.getFieldSize + 7) / 8
-    val bytes = bytesIn.slice(pos, pos + consumed)
-    val p: SecP384R1Point = curve.curve.decodePoint(bytes).asInstanceOf[SecP384R1Point]
-    (GroupElementConstant(p), consumed)
+    val encoded = bytesIn.slice(pos, pos + consumed)
+    val point: SecP384R1Point = curve.curve.decodePoint(encoded).asInstanceOf[SecP384R1Point]
+    (GroupElementConstant(point), consumed)
   }
 }
