@@ -32,7 +32,7 @@ object Values {
 
     def typeCode: SType.TypeCode = tpe.typeCode
 
-    def cost[C <: Context[C]](context: C): Int
+    def cost[C <: Context[C]](context: C): Long
 
     /** Returns true if this value represent some constant or sigma statement, false otherwise */
     def evaluated: Boolean
@@ -117,7 +117,7 @@ object Values {
 
   case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
 
-    override def cost[C <: Context[C]](context: C): Int = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
+    override def cost[C <: Context[C]](context: C): Long = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
     override val opCode: OpCode = ByteArrayConstantCode
 
@@ -203,13 +203,13 @@ object Values {
   case object TrueLeaf extends BooleanConstant(true) {
     override val opCode: OpCode = TrueCode
 
-    override def cost[C <: Context[C]](context: C): Int = Cost.ConstantNode
+    override def cost[C <: Context[C]](context: C): Long = Cost.ConstantNode
   }
 
   case object FalseLeaf extends BooleanConstant(false) {
     override val opCode: OpCode = FalseCode
 
-    override def cost[C <: Context[C]](context: C): Int = Cost.ConstantNode
+    override def cost[C <: Context[C]](context: C): Long = Cost.ConstantNode
   }
 
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
@@ -243,7 +243,7 @@ object Values {
   case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {
     override val opCode: OpCode = OpCodes.BoxConstantCode
 
-    override def cost[C <: Context[C]](context: C): Int = Cost.BoxConstant
+    override def cost[C <: Context[C]](context: C): Long = Cost.BoxConstant
 
     override def tpe = SBox
   }
@@ -276,7 +276,7 @@ object Values {
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override val opCode = SomeValueCode
 
-    def cost[C <: Context[C]](context: C): Int = x.cost(context) + 1
+    def cost[C <: Context[C]](context: C): Long = x.cost(context) + 1
 
     val tpe = SOption(x.tpe)
     lazy val value = Some(x)
@@ -285,7 +285,7 @@ object Values {
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
     override val opCode = NoneValueCode
 
-    def cost[C <: Context[C]](context: C): Int = 1
+    def cost[C <: Context[C]](context: C): Long = 1
 
     val tpe = SOption(elemType)
     lazy val value = None
@@ -295,7 +295,7 @@ object Values {
     extends EvaluatedValue[SCollection[V]] with Rewritable {
     override val opCode: OpCode = ConcreteCollectionCode
 
-    def cost[C <: Context[C]](context: C): Int = value.size
+    def cost[C <: Context[C]](context: C): Long = value.size
 
     val tpe = SCollection[V](tItem)
 

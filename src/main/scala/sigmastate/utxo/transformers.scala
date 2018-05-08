@@ -76,7 +76,7 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
     * @tparam C
     * @return
     */
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     Cost.MapDeclaration + input.cost(context) * (mapper.cost(context) + 1)
 }
 
@@ -91,7 +91,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
     ConcreteCollection(cl.value ++ col2.asInstanceOf[EvaluatedValue[SCollection[IV]]].value)(tpe.elemType)
   }
 
-  override def cost[C <: Context[C]](context: C): Int = input.cost(context) + col2.cost(context)
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + col2.cost(context)
 }
 
 case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
@@ -107,7 +107,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
     ConcreteCollection(cl.value.slice(fromValue.toInt, untilValue.toInt))(tpe.elemType)
   }
 
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) * 2 + from.cost(context) + until.cost(context)
 }
 
@@ -119,7 +119,7 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
 
   override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
 
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) * condition.cost(context) + input.cost(context)
 
   override def function(input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {
@@ -168,7 +168,7 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
   extends BooleanTransformer[IV] {
   override val opCode: OpCode = OpCodes.ExistsCode
 
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     Cost.ExistsDeclaration + input.cost(context) * condition.cost(context) + Cost.OrDeclaration
 
   override val f: ResultConstructor = OR.apply
@@ -217,7 +217,7 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
       input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated) &&
       zero.isInstanceOf[EvaluatedValue[IV]]
 
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     Cost.FoldDeclaration + zero.cost(context) + input.cost(context) * foldOp.cost(context)
 
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[IV] = {
@@ -299,7 +299,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.ExtractBytesCode
 
-  override def cost[C <: Context[C]](context: C): Int = 1000 //todo: make it PerKb * max box size in kbs
+  override def cost[C <: Context[C]](context: C): Long = 1000 //todo: make it PerKb * max box size in kbs
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytes)
 }
@@ -362,7 +362,7 @@ case class DeserializeContext[V <: SType](id: Byte)(implicit val tpe: V)
       illegalArgs("DeserializeContext", "(Byte)(tpe: V)", cs)
   }
 
-  override def cost[C <: Context[C]](context: C): Int = 1000 //todo: rework, consider limits
+  override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }
 
 
@@ -382,5 +382,5 @@ case class DeserializeRegister[V <: SType](reg: RegisterIdentifier,
       illegalArgs("DeserializeRegister", "(RegisterIdentifier, Option[Value[V]])(tpe: V)", cs)
   }
 
-  override def cost[C <: Context[C]](context: C): Int = 1000 //todo: rework, consider limits
+  override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }

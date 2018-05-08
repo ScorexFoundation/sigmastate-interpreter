@@ -20,7 +20,7 @@ import scorex.utils.Random
   */
 case class ProverResult[ProofT <: UncheckedTree](proof: ProofT,
                                                  extension: ContextExtension,
-                                                 cost: Int)
+                                                 cost: Long)
 
 /**
   * Interpreter with enhanced functionality to prove statements.

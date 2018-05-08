@@ -67,7 +67,7 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
 
-  override def cost[C <: Context[C]](context: C): Int = Cost.Dlog * 2
+  override def cost[C <: Context[C]](context: C): Long = Cost.Dlog * 2
 
   override val soundness: Int = GroupSettings.soundness
 

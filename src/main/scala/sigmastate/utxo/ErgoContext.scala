@@ -52,7 +52,7 @@ object ErgoContext {
 case object Height extends NotReadyValueInt {
   override val opCode: OpCode = OpCodes.HeightCode
 
-  override def cost[C <: Context[C]](context: C): Int = 2 * Cost.IntConstantDeclaration
+  override def cost[C <: Context[C]](context: C): Long = 2 * Cost.IntConstantDeclaration
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */

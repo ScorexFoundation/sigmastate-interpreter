@@ -1,12 +1,12 @@
 package sigmastate.utxo
 
-import sigmastate._
+import sigmastate.{SByteArray, SType}
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ValueSerializer
 
 
-class ErgoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends Interpreter {
+class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends Interpreter {
   override type CTX = ErgoContext
 
   override def specificTransformations(context: ErgoContext, tree: SValue): SValue = tree match {
@@ -27,24 +27,18 @@ class ErgoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
         null
 //        Interpreter.error(s"Tagged variable with id=${t.id} not found in context ${context.extension.values}")
 
-    case d: DeserializeContext[_] =>
-      if (context.extension.values.contains(d.id))
-        context.extension.values(d.id) match {
-          case eba: EvaluatedValue[SByteArray.type] => ValueSerializer.deserialize(eba.value)
-          case _ => null
-        }
-      else
-        null
-
-    case d: DeserializeRegister[_] =>
-      context.self.get(d.reg).map { v =>
-        v match {
-          case eba: EvaluatedValue[SByteArray.type] => ValueSerializer.deserialize(eba.value)
-          case _ => null
-        }
-      }.orElse(d.default).orNull
-
     case _ =>
       super.specificTransformations(context, tree)
   }
+
+  override def substDeserialize(context: CTX): PartialFunction[Value[_ <: SType], Option[Value[_ <: SType]]] =
+    ({
+      case d: DeserializeRegister[_] =>
+        context.self.get(d.reg).flatMap { v =>
+          v match {
+            case eba: EvaluatedValue[SByteArray.type] => Some(ValueSerializer.deserialize(eba.value))
+            case _ => None
+          }
+        }.orElse(d.default)
+    }: PartialFunction[Value[_ <: SType], Option[Value[_ <: SType]]]) orElse super.substDeserialize(context)
 }

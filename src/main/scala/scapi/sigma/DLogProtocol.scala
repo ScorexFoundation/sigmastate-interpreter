@@ -30,7 +30,7 @@ object DLogProtocol {
 
     import GroupSettings.dlogGroup
 
-    override def cost[C <: Context[C]](context: C): Int = Cost.Dlog
+    override def cost[C <: Context[C]](context: C): Long = Cost.Dlog
     override val soundness: Int = GroupSettings.soundness
 
     //todo: fix, we should consider that class parameter could be not evaluated

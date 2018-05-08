@@ -20,7 +20,7 @@ import scala.collection.mutable
   * AND conjunction for sigma propositions
   */
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 }
 
@@ -28,7 +28,7 @@ case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   * OR disjunction for sigma propositions
   */
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 }
 
@@ -45,7 +45,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
   override val opCode: OpCode = OrCode
 
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.AndDeclaration
 
 
@@ -95,7 +95,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
   override val opCode: OpCode = AndCode
 
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.AndDeclaration
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
@@ -151,7 +151,7 @@ case class IntToByteArray(input: Value[SInt.type])
   override def function(bal: EvaluatedValue[SInt.type]): Value[SByteArray.type] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
-  override def cost[C <: Context[C]](context: C): Int = input.cost(context) + 1 //todo: externalize cost
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
 }
 
 /**
@@ -165,7 +165,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray.type])
   override def function(bal: EvaluatedValue[SByteArray.type]): Value[SBigInt.type] =
     BigIntConstant(new BigInteger(1, bal.value))
 
-  override def cost[C <: Context[C]](context: C): Int = input.cost(context) + 1 //todo: externalize cost
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
 }
 
 trait CalcHash extends Transformer[SByteArray.type, SByteArray.type] with NotReadyValueByteArray {
@@ -176,7 +176,7 @@ trait CalcHash extends Transformer[SByteArray.type, SByteArray.type] with NotRea
   override def function(bal: EvaluatedValue[SByteArray.type]): Value[SByteArray.type] =
     ByteArrayConstant(hashFn.apply(bal.value))
 
-  override def cost[C <: Context[C]](context: C): Int = input.cost(context) + Cost.Blake256bDeclaration
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.Blake256bDeclaration
 }
 
 /**
@@ -205,7 +205,7 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
   val left: Value[LIV]
   val right: Value[RIV]
 
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     left.cost(context) + right.cost(context) + Cost.TripleDeclaration
 }
 
@@ -345,7 +345,7 @@ sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] ex
   val second: Value[IV2]
   val third: Value[IV3]
 
-  override def cost[C <: Context[C]](context: C): Int =
+  override def cost[C <: Context[C]](context: C): Long =
     first.cost(context) + second.cost(context) + third.cost(context) + Cost.QuadrupleDeclaration
 }
 

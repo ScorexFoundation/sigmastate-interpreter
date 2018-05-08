@@ -26,7 +26,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     * In the provided example there are 5 different branches of a tree, each one require to reveal some secret.
     *
     */
-  ignore("Merklized Abstract Syntax Tree") {
+  property("Merklized Abstract Syntax Tree") {
     val scriptId = 21.toByte
     val proofId = 22.toByte
     val secretId = 23.toByte
