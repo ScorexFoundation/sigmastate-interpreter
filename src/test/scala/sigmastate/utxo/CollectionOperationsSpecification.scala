@@ -266,5 +266,21 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
-  // todo Fold
+  property("map fold") {
+    val outputBoxValues = IndexedSeq(10L, 10L)
+    val code =
+      """OUTPUTS
+        |.map(fun (box: Box) = box.value)
+        |.fold(0, fun (acc: Int, val: Int) = acc + val) == 20""".stripMargin
+    val expectedPropTree = EQ(
+      Fold(
+        MapCollection(Outputs,21,ExtractAmount(TaggedBox(21)))(SInt),
+        21,
+        IntConstant(0),
+        22,
+        Plus(TaggedInt(21),TaggedInt(22))),
+      IntConstant(20))
+    assertProof(code, expectedPropTree, outputBoxValues)
+  }
+
 }
