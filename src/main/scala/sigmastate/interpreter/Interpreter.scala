@@ -144,7 +144,7 @@ trait Interpreter {
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
     }
 
-    val cost = substTree.cost
+    val cost = substTree.cost(context)
 
     if (cost > maxCost) {
       throw new Error(s"Estimated expression complexity $substTree exceeds the limit ($maxCost)")

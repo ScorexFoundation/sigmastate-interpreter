@@ -100,7 +100,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).get._1 shouldBe false //context w/out extensions
+    verifier.verify(prop, ctx, pr.proof, fakeMessage).isSuccess shouldBe false //context w/out extensions
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
@@ -127,7 +127,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).get._1 shouldBe false //context w/out extensions
+    verifier.verify(prop, ctx, pr.proof, fakeMessage).isSuccess shouldBe false //context w/out extensions
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
@@ -153,7 +153,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).get._1 shouldBe false //context w/out extensions
+    verifier.verify(prop, ctx, pr.proof, fakeMessage).isSuccess shouldBe false //context w/out extensions
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 }

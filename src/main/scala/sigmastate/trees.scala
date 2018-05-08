@@ -7,7 +7,7 @@ import scapi.sigma.DLogProtocol._
 import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.Values._
-import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
@@ -20,14 +20,16 @@ import scala.collection.mutable
   * AND conjunction for sigma propositions
   */
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
+  override def cost[C <: Context[C]](context: C): Int =
+    sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 }
 
 /**
   * OR disjunction for sigma propositions
   */
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override def cost: Int = sigmaBooleans.map(_.cost).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
+  override def cost[C <: Context[C]](context: C): Int =
+    sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 }
 
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
@@ -43,11 +45,9 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
   override val opCode: OpCode = OrCode
 
-  override def cost: Int = input match {
-    case c: ConcreteCollection[SBoolean.type] =>
-      c.value.map(_.cost).sum + c.value.length * Cost.AndPerChild + Cost.AndDeclaration
-    case _ => Cost.AndDeclaration
-  }
+  override def cost[C <: Context[C]](context: C): Int =
+    input.cost(context) + Cost.AndDeclaration
+
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
@@ -95,11 +95,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
   override val opCode: OpCode = AndCode
 
-  override def cost: Int = input match {
-    case c: EvaluatedValue[SCollection[SBoolean.type]] =>
-      c.value.map(_.cost).sum + c.value.length * Cost.AndPerChild + Cost.AndDeclaration
-    case _ => Cost.AndDeclaration
-  }
+  override def cost[C <: Context[C]](context: C): Int =
+    input.cost(context) + Cost.AndDeclaration
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
@@ -154,7 +151,7 @@ case class IntToByteArray(input: Value[SInt.type])
   override def function(bal: EvaluatedValue[SInt.type]): Value[SByteArray.type] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
-  override lazy val cost: Int = input.cost + 1 //todo: externalize cost
+  override def cost[C <: Context[C]](context: C): Int = input.cost(context) + 1 //todo: externalize cost
 }
 
 /**
@@ -168,7 +165,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray.type])
   override def function(bal: EvaluatedValue[SByteArray.type]): Value[SBigInt.type] =
     BigIntConstant(new BigInteger(1, bal.value))
 
-  override lazy val cost: Int = input.cost + 1 //todo: externalize cost
+  override def cost[C <: Context[C]](context: C): Int = input.cost(context) + 1 //todo: externalize cost
 }
 
 trait CalcHash extends Transformer[SByteArray.type, SByteArray.type] with NotReadyValueByteArray {
@@ -179,7 +176,7 @@ trait CalcHash extends Transformer[SByteArray.type, SByteArray.type] with NotRea
   override def function(bal: EvaluatedValue[SByteArray.type]): Value[SByteArray.type] =
     ByteArrayConstant(hashFn.apply(bal.value))
 
-  override lazy val cost: Int = input.cost + Cost.Blake256bDeclaration
+  override def cost[C <: Context[C]](context: C): Int = input.cost(context) + Cost.Blake256bDeclaration
 }
 
 /**
@@ -208,7 +205,8 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
   val left: Value[LIV]
   val right: Value[RIV]
 
-  override def cost: Int = left.cost + right.cost + Cost.TripleDeclaration
+  override def cost[C <: Context[C]](context: C): Int =
+    left.cost(context) + right.cost(context) + Cost.TripleDeclaration
 }
 
 // TwoArgumentsOperation
@@ -264,7 +262,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
 
   override val opCode: OpCode = ExponentiateCode
 
-  override val cost = 5000
+  override def cost[C <: Context[C]](context: C) = 5000 + left.cost(context) + right.cost(context)
 }
 
 case class MultiplyGroup(override val left: Value[SGroupElement.type],
@@ -274,7 +272,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
 
   override val opCode: OpCode = MultiplyGroupCode
 
-  override val cost = 50
+  override def cost[C <: Context[C]](context: C) = 50 + left.cost(context) + right.cost(context)
 }
 
 // Relation
@@ -347,7 +345,8 @@ sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] ex
   val second: Value[IV2]
   val third: Value[IV3]
 
-  override def cost: Int = first.cost + second.cost + third.cost + Cost.QuadrupleDeclaration
+  override def cost[C <: Context[C]](context: C): Int =
+    first.cost(context) + second.cost(context) + third.cost(context) + Cost.QuadrupleDeclaration
 }
 
 sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]

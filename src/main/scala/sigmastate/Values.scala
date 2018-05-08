@@ -7,13 +7,13 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
-import sigmastate.interpreter.GroupSettings
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigmastate.interpreter.{Context, GroupSettings}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.ErgoBox
+import sigmastate.utxo.{ErgoBox, ErgoContext}
 
 import scala.collection.immutable
 import scala.language.implicitConversions
@@ -32,7 +32,7 @@ object Values {
 
     def typeCode: SType.TypeCode = tpe.typeCode
 
-    def cost: Int
+    def cost[C <: Context[C]](context: C): Int
 
     /** Returns true if this value represent some constant or sigma statement, false otherwise */
     def evaluated: Boolean
@@ -71,11 +71,13 @@ object Values {
   trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
     override val opCode: OpCode = TaggedVariableCode
     val id: Byte
+
+    override def cost[C <: Context[C]](context: C) = context.extension.cost(id) + 1
   }
 
   case object UnitConstant extends EvaluatedValue[SUnit.type] {
     override val opCode = UnitConstantCode
-    override val cost = 1
+    override def cost[C <: Context[C]](context: C) = 1
 
     override def tpe = SUnit
 
@@ -84,7 +86,7 @@ object Values {
 
   case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
     override val opCode: OpCode = IntConstantCode
-    override val cost = 1
+    override def cost[C <: Context[C]](context: C) = Cost.IntConstantDeclaration
 
     override def tpe = SInt
   }
@@ -94,21 +96,19 @@ object Values {
   }
 
   case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt {
-    override val cost = 1
+    override def cost[C <: Context[C]](context: C) = 1
   }
 
   case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
 
     override val opCode: OpCode = BigIntConstantCode
 
-    override val cost = 1
+    override def cost[C <: Context[C]](context: C) = 1
 
     override def tpe = SBigInt
   }
 
   trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type] {
-    override lazy val cost: Int = 1
-
     override def tpe = SBigInt
   }
 
@@ -117,7 +117,7 @@ object Values {
 
   case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
 
-    override def cost: Int = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
+    override def cost[C <: Context[C]](context: C): Int = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
     override val opCode: OpCode = ByteArrayConstantCode
 
@@ -132,18 +132,15 @@ object Values {
   }
 
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type] {
-    override lazy val cost: Int = Cost.ByteArrayDeclaration
-
     override def tpe = SByteArray
   }
 
-  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray {
-  }
+  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray
 
   case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
     override val opCode: OpCode = OpCodes.AvlTreeConstantCode
 
-    override val cost = 50
+    override def cost[C <: Context[C]](context: C) = Cost.AvlTreeConstant
 
     override def tpe = SAvlTree
 
@@ -158,8 +155,6 @@ object Values {
   }
 
   trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
-    override val cost = 50
-
     override def tpe = SAvlTree
   }
 
@@ -168,7 +163,7 @@ object Values {
 
 
   case class GroupElementConstant(value: GroupSettings.EcPointType) extends EvaluatedValue[SGroupElement.type] {
-    override val cost = 10
+    override def cost[C <: Context[C]](context: C) = 10
 
     override val opCode: OpCode = GroupElementConstantCode
 
@@ -182,7 +177,7 @@ object Values {
 
     import GroupSettings.dlogGroup
 
-    override val cost = 10
+    override def cost[C <: Context[C]](context: C) = 10
 
     override def tpe = SGroupElement
 
@@ -190,8 +185,6 @@ object Values {
   }
 
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
-    override val cost = 10
-
     override def tpe = SGroupElement
   }
 
@@ -210,13 +203,13 @@ object Values {
   case object TrueLeaf extends BooleanConstant(true) {
     override val opCode: OpCode = TrueCode
 
-    override def cost: Int = Cost.ConstantNode
+    override def cost[C <: Context[C]](context: C): Int = Cost.ConstantNode
   }
 
   case object FalseLeaf extends BooleanConstant(false) {
     override val opCode: OpCode = FalseCode
 
-    override def cost: Int = Cost.ConstantNode
+    override def cost[C <: Context[C]](context: C): Int = Cost.ConstantNode
   }
 
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
@@ -224,7 +217,7 @@ object Values {
   }
 
   case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.type] with NotReadyValueBoolean {
-    override def cost = 1
+    override def cost[C <: Context[C]](context: C) = 1
   }
 
   /**
@@ -250,14 +243,12 @@ object Values {
   case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {
     override val opCode: OpCode = OpCodes.BoxConstantCode
 
-    override def cost: Int = 10
+    override def cost[C <: Context[C]](context: C): Int = Cost.BoxConstant
 
     override def tpe = SBox
   }
 
   trait NotReadyValueBox extends NotReadyValue[SBox.type] {
-    override def cost: Int = 10
-
     def tpe = SBox
   }
 
@@ -269,6 +260,8 @@ object Values {
     val cost: Int = value.size
     val tpe = STuple(items.map(_.tpe))
     lazy val value = items
+
+    override def cost[C <: Context[C]](context: C) = items.map(_.cost(context)).sum
   }
 
   object Tuple {
@@ -283,7 +276,7 @@ object Values {
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override val opCode = SomeValueCode
 
-    def cost: Int = x.cost + 1
+    def cost[C <: Context[C]](context: C): Int = x.cost(context) + 1
 
     val tpe = SOption(x.tpe)
     lazy val value = Some(x)
@@ -292,7 +285,7 @@ object Values {
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
     override val opCode = NoneValueCode
 
-    def cost: Int = 1
+    def cost[C <: Context[C]](context: C): Int = 1
 
     val tpe = SOption(elemType)
     lazy val value = None
@@ -301,7 +294,9 @@ object Values {
   case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tItem: V)
     extends EvaluatedValue[SCollection[V]] with Rewritable {
     override val opCode: OpCode = ConcreteCollectionCode
-    val cost: Int = value.size
+
+    def cost[C <: Context[C]](context: C): Int = value.size
+
     val tpe = SCollection[V](tItem)
 
     def items = value // convenience accessor for code readability

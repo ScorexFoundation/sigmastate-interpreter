@@ -8,7 +8,7 @@ import sigmastate.Values._
 import Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.{Context, GroupSettings}
 import sigmastate.interpreter.GroupSettings.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
@@ -30,7 +30,7 @@ object DLogProtocol {
 
     import GroupSettings.dlogGroup
 
-    override val cost: Int = Cost.Dlog
+    override def cost[C <: Context[C]](context: C): Int = Cost.Dlog
     override val soundness: Int = GroupSettings.soundness
 
     //todo: fix, we should consider that class parameter could be not evaluated

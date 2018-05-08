@@ -5,7 +5,7 @@ import java.security.SecureRandom
 
 import org.bouncycastle.util.BigIntegers
 import sigmastate._
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.{Context, GroupSettings}
 import sigmastate.Values._
 import Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
@@ -67,7 +67,7 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
 
-  override val cost: Int = Cost.Dlog * 2
+  override def cost[C <: Context[C]](context: C): Int = Cost.Dlog * 2
 
   override val soundness: Int = GroupSettings.soundness
 
