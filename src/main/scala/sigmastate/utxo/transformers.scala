@@ -66,7 +66,7 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
 
   /**
     * We consider transformation cost as size of collection * cost of trasfomation of one element of the collection.
-    * We also need to add cost of resulting collection, but as we can not calculate it in priot, we assume that cost of
+    * We also need to add cost of resulting collection, but as we can not calculate it in prior, we assume that cost of
     * resulting collection is no more than cost of initial collection, so we taker latter as the estimation.
     *
     * @param context
