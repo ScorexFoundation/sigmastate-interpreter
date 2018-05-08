@@ -3,6 +3,7 @@ package sigmastate.utxo
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.ValueSerializer
 
 
 class ErgoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends Interpreter {
@@ -26,8 +27,22 @@ class ErgoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
         null
 //        Interpreter.error(s"Tagged variable with id=${t.id} not found in context ${context.extension.values}")
 
-    case d: Deserialize[_] if d.transformationReady =>
-      d.function(d.input.asInstanceOf[EvaluatedValue[SByteArray.type]])
+    case d: DeserializeContext[_] =>
+      if (context.extension.values.contains(d.id))
+        context.extension.values(d.id) match {
+          case eba: EvaluatedValue[SByteArray.type] => ValueSerializer.deserialize(eba.value)
+          case _ => null
+        }
+      else
+        null
+
+    case d: DeserializeRegister[_] =>
+      context.self.get(d.reg).map { v =>
+        v match {
+          case eba: EvaluatedValue[SByteArray.type] => ValueSerializer.deserialize(eba.value)
+          case _ => null
+        }
+      }.orElse(d.default).orNull
 
     case _ =>
       super.specificTransformations(context, tree)

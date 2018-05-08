@@ -6,7 +6,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.OpCodes
 import sigmastate.utxo.BooleanTransformer.ResultConstructor
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox.RegisterIdentifier
@@ -22,7 +22,7 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
   def function(input: EvaluatedValue[IV]): Value[OV]
 
-  def function(): Value[OV] = input match{
+  def function(): Value[OV] = input match {
     case ev: EvaluatedValue[IV] => function(ev)
     case _ => Interpreter.error(s"Transformer function can be called only after input value is evaluated: $input")
   }
@@ -42,13 +42,16 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
   override val opCode: OpCode = OpCodes.MapCollectionCode
 
   val tpe = SCollection[OV]
+
   def arity = 4
+
   def deconstruct = immutable.Seq[Any](input, id, mapper, tOV)
+
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[IV]] @unchecked,
-             id: Byte,
-             mapper: Transformer[IV, OV],
-             t: OV @unchecked) => MapCollection[IV, OV](input, id, mapper)(t)
+    case Seq(input: Value[SCollection[IV]]@unchecked,
+    id: Byte,
+    mapper: Transformer[IV, OV],
+    t: OV@unchecked) => MapCollection[IV, OV](input, id, mapper)(t)
     case _ =>
       illegalArgs("MapCollection", "(Value[SCollection[IV]], Byte, Transformer[IV, OV], SType)", cs)
   }
@@ -78,7 +81,7 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
 }
 
 case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SCollection[IV]])
-  extends Transformer[SCollection[IV], SCollection[IV]]{
+  extends Transformer[SCollection[IV], SCollection[IV]] {
   val tpe = input.tpe
 
   override def transformationReady: Boolean =
@@ -92,7 +95,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 }
 
 case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
-  extends Transformer[SCollection[IV], SCollection[IV]]{
+  extends Transformer[SCollection[IV], SCollection[IV]] {
   val tpe = input.tpe
 
   override def transformationReady: Boolean =
@@ -109,10 +112,11 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
 }
 
 case class Where[IV <: SType](input: Value[SCollection[IV]],
-                               id: Byte,
-                               condition: Value[SBoolean.type])
+                              id: Byte,
+                              condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override def tpe: SCollection[IV] = input.tpe
+
   override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
 
   override def cost[C <: Context[C]](context: C): Int =
@@ -122,10 +126,12 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })
+
     def p(x: Value[IV]): Boolean = {
       val res = rl(x)(condition).get
       res.asInstanceOf[EvaluatedValue[SBoolean.type]].value
     }
+
     val filtered = input.value.filter(p)
     ConcreteCollection(filtered)(tpe.elemType)
   }
@@ -138,6 +144,7 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
   val f: ResultConstructor
 
   override def tpe = SBoolean
+
   override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
 
   override def function(input: EvaluatedValue[SCollection[IV]]
@@ -146,11 +153,12 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })
+
     f(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
 }
 
-object BooleanTransformer{
+object BooleanTransformer {
   type ResultConstructor = (Seq[Value[SBoolean.type]]) => Transformer[SCollection[SBoolean.type], SBoolean.type]
 }
 
@@ -159,8 +167,10 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
                                condition: Value[SBoolean.type])
   extends BooleanTransformer[IV] {
   override val opCode: OpCode = OpCodes.ExistsCode
+
   override def cost[C <: Context[C]](context: C): Int =
     Cost.ExistsDeclaration + input.cost(context) * condition.cost(context) + Cost.OrDeclaration
+
   override val f: ResultConstructor = OR.apply
 }
 
@@ -187,14 +197,16 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
   override val opCode: OpCode = OpCodes.FoldCode
 
   def arity = 6
+
   def deconstruct = immutable.Seq[Any](input, id, zero, accId, foldOp, tpe)
+
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[IV]] @unchecked,
-             id: Byte,
-             zero: Value[IV],
-             accId: Byte,
-             foldOp: TwoArgumentsOperation[IV, IV, IV],
-             t: IV @unchecked) => Fold[IV](input, id, zero, accId, foldOp)(t)
+    case Seq(input: Value[SCollection[IV]]@unchecked,
+    id: Byte,
+    zero: Value[IV],
+    accId: Byte,
+    foldOp: TwoArgumentsOperation[IV, IV, IV],
+    t: IV@unchecked) => Fold[IV](input, id, zero, accId, foldOp)(t)
     case _ =>
       illegalArgs("Fold",
         "(Value[SCollection[IV]], id: Byte, zero: Value[IV], accId: Byte, foldOp: TwoArgumentsOperation[IV, IV, IV])(tpe: IV)", cs)
@@ -206,7 +218,7 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
       zero.isInstanceOf[EvaluatedValue[IV]]
 
   override def cost[C <: Context[C]](context: C): Int =
-     Cost.FoldDeclaration + zero.cost(context) + input.cost(context) * foldOp.cost(context)
+    Cost.FoldDeclaration + zero.cost(context) + input.cost(context) * foldOp.cost(context)
 
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[IV] = {
     def rl(arg: Value[IV], acc: Value[IV]) = everywherebu(rule[Value[IV]] {
@@ -214,7 +226,7 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
       case t: TaggedVariable[IV] if t.id == accId => acc
     })
 
-    input.value.foldLeft(zero) {case (acc: Value[IV], elem: Value[IV]) =>
+    input.value.foldLeft(zero) { case (acc: Value[IV], elem: Value[IV]) =>
       rl(elem, acc)(foldOp).get.asInstanceOf[Value[IV]]
     }
   }
@@ -233,13 +245,16 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   override val opCode: OpCode = OpCodes.ByIndexCode
 
   def tpe = input.tpe.elemType
+
   def arity = 3
+
   def deconstruct = immutable.Seq[Any](input, index, tpe)
 
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
     case Seq(input: Value[SCollection[V]]@unchecked, index: Int, _) => ByIndex[V](input, index)
     case _ => illegalArgs("ByIndex", "(Value[SCollection[V]], index: Int)(tpe: V)", cs)
   }
+
   override def function(input: EvaluatedValue[SCollection[V]]) = input.value.apply(index)
 
   override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.ByIndexDeclaration
@@ -308,16 +323,18 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] w
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
                                          registerId: RegisterIdentifier,
                                          default: Option[Value[V]] = None)(implicit val tpe: V)
-    extends Extract[V] with NotReadyValue[V] with Rewritable {
+  extends Extract[V] with NotReadyValue[V] with Rewritable {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
 
   def arity = 4
+
   def deconstruct = immutable.Seq[Any](input, registerId, default, tpe)
+
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SBox.type] @unchecked,
-      registerId: RegisterIdentifier,
-      default: Option[Value[V]] @unchecked,
-      t: V @unchecked) => ExtractRegisterAs[V](input, registerId, default)(t)
+    case Seq(input: Value[SBox.type]@unchecked,
+    registerId: RegisterIdentifier,
+    default: Option[Value[V]]@unchecked,
+    t: V@unchecked) => ExtractRegisterAs[V](input, registerId, default)(t)
     case _ =>
       illegalArgs("ExtractRegisterAs", "(Value[SBox.type], registerId: RegisterIdentifier, default: Option[Value[V]])(tpe: V)", cs)
   }
@@ -328,24 +345,42 @@ case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
     box.value.get(registerId).orElse(default).get.asInstanceOf[Value[V]]
 }
 
+trait Deserialize[V <: SType] extends NotReadyValue[V] with Rewritable
 
 
-case class Deserialize[V <: SType](input: Value[SByteArray.type])(implicit val tpe: V)
-  extends Transformer[SByteArray.type, V] with NotReadyValue[V] with Rewritable {
+case class DeserializeContext[V <: SType](id: Byte)(implicit val tpe: V)
+  extends Deserialize[V] {
 
   def arity = 2
 
-  def deconstruct = immutable.Seq[Any](input, tpe)
+  def deconstruct = immutable.Seq[Any](id, tpe)
 
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SByteArray.type]@unchecked, t: V@unchecked) =>
-      Deserialize[V](input)(t)
+    case Seq(id: Byte@unchecked, t: V@unchecked) =>
+      DeserializeContext[V](id)(t)
     case _ =>
-      illegalArgs("Deserialize", "(Value[SByteArray.type])(tpe: V)", cs)
+      illegalArgs("DeserializeContext", "(Byte)(tpe: V)", cs)
   }
 
   override def cost[C <: Context[C]](context: C): Int = 1000 //todo: rework, consider limits
+}
 
-  override def function(box: EvaluatedValue[SByteArray.type]): Value[V] =
-    ValueSerializer.deserialize(box.value).asInstanceOf[Value[V]]
+
+//todo: write test for this class
+case class DeserializeRegister[V <: SType](reg: RegisterIdentifier,
+                                           default: Option[Value[V]] = None)(implicit val tpe: V)
+  extends Deserialize[V] {
+
+  def arity = 3
+
+  def deconstruct = immutable.Seq[Any](reg, default, tpe)
+
+  def reconstruct(cs: immutable.Seq[Any]) = cs match {
+    case Seq(reg: RegisterIdentifier@unchecked, default: Option[Value[V]]@unchecked, t: V@unchecked) =>
+      DeserializeRegister[V](reg, default)(t)
+    case _ =>
+      illegalArgs("DeserializeRegister", "(RegisterIdentifier, Option[Value[V]])(tpe: V)", cs)
+  }
+
+  override def cost[C <: Context[C]](context: C): Int = 1000 //todo: rework, consider limits
 }

@@ -260,7 +260,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
 
     val hashEquals = EQ(CalcBlake2b256(TaggedByteArray(scriptId)), scriptHash)
-    val scriptIsCorrect = Deserialize[SBoolean.type](TaggedByteArray(scriptId))
+    val scriptIsCorrect = DeserializeContext[SBoolean.type](scriptId)
     val prop = AND(hashEquals, scriptIsCorrect)
 
     val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
