@@ -21,15 +21,29 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
                           expectedComp: Value[SType],
                           outputBoxValues: IndexedSeq[Long],
                           boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
+    val (prover, verifier, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues,
+      boxesToSpendValues)
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
+
+  private def assertProverFail(code: String,
+                              expectedComp: Value[SType],
+                              outputBoxValues: IndexedSeq[Long],
+                              boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
+    val (prover, _, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues, boxesToSpendValues)
+    prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+  }
+
+  private def buildEnv(code: String, expectedComp: Value[SType], outputBoxValues: IndexedSeq[Long], boxesToSpendValues: IndexedSeq[Long]) = {
     val prover = new ErgoProvingInterpreter
     val verifier = new ErgoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
-    val prop = compile(Map(),code).asBoolValue
+    val prop = compile(Map(), code).asBoolValue
     prop shouldBe expectedComp
     val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey)),
       outputBoxValues.map(ErgoBox(_, pubkey)))
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    (prover, verifier, prop, ctx)
   }
 
   property("exists") {
@@ -228,4 +242,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
+  property("slice - fail") {
+    val outputBoxValues = IndexedSeq(10L, 10L)
+    val code = "OUTPUTS.slice(3, OUTPUTS.size).size == 1"
+    val expectedPropTree = EQ(
+      SizeOf(Slice(Outputs,IntConstant(3),SizeOf(Outputs))),
+      IntConstant(1))
+    assertProverFail(code, expectedPropTree, outputBoxValues)
+  }
 }
