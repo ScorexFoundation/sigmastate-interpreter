@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import sigmastate._
-import sigmastate.Values.{IntConstant, TaggedBox, TrueLeaf}
+import sigmastate.Values._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo.ErgoBox.R3
 import sigmastate.lang.Terms._
@@ -194,5 +194,36 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     prover.prove(fProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
+  property("slice") {
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val prop = compile(Map(),
+      "OUTPUTS.slice(1, OUTPUTS.size).forall(fun (box: Box) = box.value == 10)").asBoolValue
+
+    val propTree = ForAll(
+      Slice(Outputs,IntConstant(1),SizeOf(Outputs)),
+      21,
+      EQ(ExtractAmount(TaggedBox(21)),IntConstant(10)))
+
+    prop shouldBe propTree
+
+    val newBox1 = ErgoBox(14, pubkey)
+    val newBox2 = ErgoBox(10, pubkey)
+    val newBoxes = IndexedSeq(newBox1, newBox2)
+
+    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+
+    val ctx = ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction,
+      self = fakeSelf)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
 
 }
