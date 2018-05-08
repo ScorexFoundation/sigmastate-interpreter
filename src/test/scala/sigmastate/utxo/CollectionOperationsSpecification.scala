@@ -258,4 +258,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expectedPropTree = EQ(SizeOf(Append(Outputs,Outputs)),IntConstant(4))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
+
+  property("by index") {
+    val outputBoxValues = IndexedSeq(10L, 10L)
+    val code = "OUTPUTS(0).value == 10"
+    val expectedPropTree = EQ(ExtractAmount(ByIndex(Outputs,0)),IntConstant(10))
+    assertProof(code, expectedPropTree, outputBoxValues)
+  }
+
+  // todo Fold
 }
