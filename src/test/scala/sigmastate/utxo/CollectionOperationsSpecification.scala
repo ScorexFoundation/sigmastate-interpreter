@@ -8,6 +8,30 @@ import sigmastate.lang.Terms._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
 
+  private def context(boxesToSpend:IndexedSeq[ErgoBox] = IndexedSeq(),
+                  outputs: IndexedSeq[ErgoBox]): ErgoContext =
+    ErgoContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = boxesToSpend,
+      spendingTransaction = ErgoTransaction(IndexedSeq(), outputs),
+      self = fakeSelf)
+
+  private def assertProof(code: String,
+                          expectedComp: Value[SType],
+                          outputBoxValues: IndexedSeq[Long],
+                          boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
+    val pubkey = prover.dlogSecrets.head.publicImage
+    val prop = compile(Map(),code).asBoolValue
+    prop shouldBe expectedComp
+    val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey)),
+      outputBoxValues.map(ErgoBox(_, pubkey)))
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
+
   property("exists") {
     val prover = new ErgoProvingInterpreter
     val verifier = new ErgoInterpreter
@@ -195,35 +219,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("slice") {
-    val prover = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
-    val pubkey = prover.dlogSecrets.head.publicImage
-
-    val prop = compile(Map(),
-      "OUTPUTS.slice(1, OUTPUTS.size).forall(fun (box: Box) = box.value == 10)").asBoolValue
-
-    val propTree = ForAll(
+    val outputBoxValues = IndexedSeq(10L, 10L)
+    val code = "OUTPUTS.slice(1, OUTPUTS.size).forall(fun (box: Box) = box.value == 10)"
+    val expectedPropTree = ForAll(
       Slice(Outputs,IntConstant(1),SizeOf(Outputs)),
       21,
       EQ(ExtractAmount(TaggedBox(21)),IntConstant(10)))
-
-    prop shouldBe propTree
-
-    val newBox1 = ErgoBox(14, pubkey)
-    val newBox2 = ErgoBox(10, pubkey)
-    val newBoxes = IndexedSeq(newBox1, newBox2)
-
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
-
-    val ctx = ErgoContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction,
-      self = fakeSelf)
-
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    assertProof(code, expectedPropTree, outputBoxValues)
   }
 
 }
