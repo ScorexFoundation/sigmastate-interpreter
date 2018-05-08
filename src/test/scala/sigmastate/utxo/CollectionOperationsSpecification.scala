@@ -244,10 +244,18 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   property("slice - fail") {
     val outputBoxValues = IndexedSeq(10L, 10L)
+    // starting index out of bounds
     val code = "OUTPUTS.slice(3, OUTPUTS.size).size == 1"
     val expectedPropTree = EQ(
       SizeOf(Slice(Outputs,IntConstant(3),SizeOf(Outputs))),
       IntConstant(1))
     assertProverFail(code, expectedPropTree, outputBoxValues)
+  }
+
+  property("append") {
+    val outputBoxValues = IndexedSeq(10L, 10L)
+    val code = "(OUTPUTS ++ OUTPUTS).size == 4"
+    val expectedPropTree = EQ(SizeOf(Append(Outputs,Outputs)),IntConstant(4))
+    assertProof(code, expectedPropTree, outputBoxValues)
   }
 }
