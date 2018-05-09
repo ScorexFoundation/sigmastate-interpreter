@@ -9,9 +9,8 @@ import sigmastate.serialization.ValueSerializer._
 
 object ProveDlogSerializer extends ValueSerializer[ProveDlog] {
 
-  val INT_LENGTH = Ints.BYTES
-
   override val opCode: OpCode = OpCodes.ProveDlogCode
+  val INT_LENGTH = Ints.BYTES
 
   override def parseBody(bytes: Array[Byte], pos: Position): (ProveDlog, Consumed) = {
     val (ge, consumed) = ValueSerializer.deserialize(bytes, pos)

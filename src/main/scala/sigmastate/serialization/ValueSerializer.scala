@@ -1,17 +1,19 @@
 package sigmastate.serialization
 
+import sigmastate.Values._
 import sigmastate._
-import Values._
-
-import scala.util.Try
-import OpCodes._
+import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupelSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utxo._
 
+import scala.util.Try
+
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
+
   import ValueSerializer._
+
   override val companion = ValueSerializer
   val opCode: OpCode
 
@@ -82,14 +84,14 @@ object ValueSerializer
     AvlTreeConstantSerializer
   ).map(s => (s.opCode, s)).toMap
 
+  def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
+
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
     val c = bytes(pos)
     val handler = table(c)
     val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
     (v, consumed + 1)
   }
-
-  def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
 
   def serialize(v: Value[SType]): Array[Byte] = {
     val opCode = v.opCode
@@ -102,8 +104,13 @@ object Constraints {
   type Constraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
   type ConstraintN = Seq[SType.TypeCode] => Boolean
 
-  def onlyInt2: Constraint2 = {case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode}
-  def sameType2: Constraint2 = {case (tc1, tc2) => tc1 == tc2}
+  def onlyInt2: Constraint2 = {
+    case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode
+  }
 
-  def sameTypeN: ConstraintN = {tcs => tcs.tail.forall(_ == tcs.head)}
+  def sameType2: Constraint2 = {
+    case (tc1, tc2) => tc1 == tc2
+  }
+
+  def sameTypeN: ConstraintN = { tcs => tcs.tail.forall(_ == tcs.head) }
 }

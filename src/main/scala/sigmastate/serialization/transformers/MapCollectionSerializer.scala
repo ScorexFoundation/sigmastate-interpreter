@@ -7,7 +7,7 @@ import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.MapCollection
 import sigmastate.{SCollection, SType, Values}
 
-object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, SType]]{
+object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, SType]] {
 
   override val opCode: OpCode = OpCodes.MapCollectionCode
 

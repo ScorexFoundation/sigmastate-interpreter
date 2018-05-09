@@ -1,11 +1,11 @@
 package sigmastate.serialization
 
+import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks, TableDrivenPropertyChecks}
 import org.scalatest.{Assertion, Matchers, PropSpec}
-import org.scalacheck.Arbitrary._
-import sigmastate.Values._
 import sigmastate.SType
+import sigmastate.Values._
 import sigmastate.serialization.generators.{ConcreteCollectionGenerators, RelationGenerators, TransformerGenerators, ValueGeneratots}
 
 trait SerializationSpecification extends PropSpec

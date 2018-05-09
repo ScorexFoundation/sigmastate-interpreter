@@ -2,9 +2,9 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 
-import sigmastate.Values.GroupElementConstant
 import com.google.common.primitives.Shorts
 import scapi.sigma.GroupAgnosticEcElement
+import sigmastate.Values.GroupElementConstant
 import sigmastate.interpreter.GroupSettings
 import sigmastate.serialization.OpCodes._
 
@@ -13,10 +13,8 @@ import sigmastate.serialization.OpCodes._
 object GroupElementSerializer extends ValueSerializer[GroupElementConstant] {
 
   type ElemType = GroupSettings.EcPointType
-
-  private val curve = GroupSettings.dlogGroup
-
   override val opCode: OpCode = GroupElementConstantCode
+  private val curve = GroupSettings.dlogGroup
 
   override def serializeBody(gec: GroupElementConstant): Array[Byte] = {
     val point = gec.value.normalize()

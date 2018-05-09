@@ -7,7 +7,9 @@ import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
 
 object IntConstantSerializer extends ValueSerializer[IntConstant] {
+
   import ValueSerializer._
+
   override val opCode = IntConstantCode
 
   val typeCode: TypeCode = SInt.typeCode
