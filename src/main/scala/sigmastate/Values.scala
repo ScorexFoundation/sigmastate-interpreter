@@ -295,7 +295,7 @@ object Values {
     extends EvaluatedValue[SCollection[V]] with Rewritable {
     override val opCode: OpCode = ConcreteCollectionCode
 
-    def cost[C <: Context[C]](context: C): Long = value.size
+    def cost[C <: Context[C]](context: C): Long = items.map(_.cost(context)).sum
 
     val tpe = SCollection[V](tItem)
 
