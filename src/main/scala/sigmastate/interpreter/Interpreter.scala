@@ -58,7 +58,7 @@ trait Interpreter {
     */
   def specificTransformations(context: CTX, tree: SValue): SValue = null
 
-  def substDeserialize(context: CTX): PartialFunction[Value[_ <: SType], Option[Value[_ <: SType]]] =  {
+  def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
@@ -149,7 +149,7 @@ trait Interpreter {
 
     // Substitute Deserialize* nodes with deserialized subtrees
     // We can estimate cost of the tree evaluation only after this step.
-    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context)(x) }
+    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
 
     val substTree = everywherebu(substRule)(exp) match {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v

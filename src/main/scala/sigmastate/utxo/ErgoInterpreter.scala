@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.{SByteArray, SType}
+import sigmastate.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ValueSerializer
@@ -31,8 +31,7 @@ class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extend
       super.specificTransformations(context, tree)
   }
 
-  override def substDeserialize(context: CTX): PartialFunction[Value[_ <: SType], Option[Value[_ <: SType]]] =
-    ({
+  override def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
       case d: DeserializeRegister[_] =>
         context.self.get(d.reg).flatMap { v =>
           v match {
@@ -40,5 +39,6 @@ class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extend
             case _ => None
           }
         }.orElse(d.default)
-    }: PartialFunction[Value[_ <: SType], Option[Value[_ <: SType]]]) orElse super.substDeserialize(context)
+      case _ => super.substDeserialize(context, node)
+    }
 }

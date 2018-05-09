@@ -120,7 +120,7 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
   override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
 
   override def cost[C <: Context[C]](context: C): Long =
-    input.cost(context) * condition.cost(context) + input.cost(context)
+    Cost.WhereDeclaration + input.cost(context) * condition.cost(context) + input.cost(context)
 
   override def function(input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
@@ -147,9 +147,7 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
 
   override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
 
-  override def function(input: EvaluatedValue[SCollection[IV]]
-
-                       ): Value[SBoolean.type] = {
+  override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })

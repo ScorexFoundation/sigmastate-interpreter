@@ -55,15 +55,17 @@ object CostTable {
 
     val SelfVariableDeclaration = 1
 
-    val FoldDeclaration = 20
+    val FoldDeclaration = 200
 
     val ByIndexDeclaration = 50
 
     val MapDeclaration = 100
 
-    val ExistsDeclaration = 20
+    val WhereDeclaration = 200
 
-    val ForAllDeclaration = 20
+    val ExistsDeclaration = 200
+
+    val ForAllDeclaration = 200
 
     val SizeOfDeclaration = 50
   }
