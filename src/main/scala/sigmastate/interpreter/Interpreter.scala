@@ -72,7 +72,7 @@ trait Interpreter {
 
   def evaluateNode(context: CTX, node: SValue): SValue = node match {
     case GroupGenerator =>
-      GroupElementConstant(dlogGroup.generator) // TODO should we use GroupGenerator.value instead
+      GroupElementConstant(GroupGenerator.value)
 
     //operations
     case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
