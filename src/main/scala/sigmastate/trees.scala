@@ -11,7 +11,7 @@ import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.Transformer
+import sigmastate.utxo.{CostTable, Transformer}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -266,7 +266,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
 
   override val opCode: OpCode = ExponentiateCode
 
-  override def cost[C <: Context[C]](context: C) = 5000 + left.cost(context) + right.cost(context)
+  override def cost[C <: Context[C]](context: C) = Cost.Exponentiate + left.cost(context) + right.cost(context)
 }
 
 case class MultiplyGroup(override val left: Value[SGroupElement.type],
@@ -276,7 +276,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
 
   override val opCode: OpCode = MultiplyGroupCode
 
-  override def cost[C <: Context[C]](context: C) = 50 + left.cost(context) + right.cost(context)
+  override def cost[C <: Context[C]](context: C) = Cost.MultiplyGroup + left.cost(context) + right.cost(context)
 }
 
 // Relation

@@ -72,5 +72,9 @@ object CostTable {
     val SizeOfDeclaration = 50
 
     val ConcreteCollection = 20
+
+    val Exponentiate = 5000
+
+    val MultiplyGroup = 50
   }
 }
