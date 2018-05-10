@@ -243,7 +243,6 @@ case class Xor(override val left: Value[SByteArray.type],
     with NotReadyValueByteArray {
 
   override val opCode: OpCode = XorCode
-
 }
 
 /**
