@@ -15,6 +15,7 @@ trait TransformerGenerators {
   implicit val arbFold: Arbitrary[Fold[SInt.type]] = Arbitrary(foldGen)
   implicit val arbAppend: Arbitrary[Append[SInt.type]] = Arbitrary(appendGen)
   implicit val arbSlice: Arbitrary[Slice[SInt.type]] = Arbitrary(sliceGen)
+  implicit val arbWhere: Arbitrary[Where[SInt.type]] = Arbitrary(whereGen)
   implicit val sizeOf: Arbitrary[SizeOf[SInt.type]] = Arbitrary(sizeOfGen)
   implicit val arbExtractAmount: Arbitrary[ExtractAmount] = Arbitrary(extractAmountGen)
   implicit val arbExtractScriptBytes: Arbitrary[ExtractScriptBytes] = Arbitrary(extractScriptBytesGen)
@@ -56,6 +57,12 @@ trait TransformerGenerators {
     from <- intConstGen
     until <- intConstGen
   } yield Slice(col1, from, until)
+
+  val whereGen: Gen[Where[SInt.type]] = for {
+    col1 <- arbCCOfIntConstant.arbitrary
+    id <- Arbitrary.arbitrary[Byte]
+    condition <- booleanGen
+  } yield Where(col1, id, condition)
 
   val appendGen: Gen[Append[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary

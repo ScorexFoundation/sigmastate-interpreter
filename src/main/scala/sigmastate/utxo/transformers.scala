@@ -105,7 +105,7 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
                                id: Byte,
                                condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
-  override val opCode: OpCode = OpCodes.Undefined
+  override val opCode: OpCode = OpCodes.WhereCode
 
   override def tpe: SCollection[IV] = input.tpe
   override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)

@@ -77,6 +77,7 @@ object OpCodes {
   val DeserializeCode:           OpCode = 86: Byte
   val AppendCode:                OpCode = 87: Byte
   val SliceCode:                 OpCode = 88: Byte
+  val WhereCode:                 OpCode = 89: Byte
 
   // TODO group operations logically, e.g. move ByIndex, Append, Slice, etc. to other collections operations
 

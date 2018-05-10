@@ -78,6 +78,7 @@ object ValueSerializer
     SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcSha256Code, CalcSha256.apply),
     DeserializeSerializer,
     ExtractRegisterAsSerializer,
+    WhereSerializer,
     SliceSerializer,
     ByIndexSerializer,
     AppendSerializer,

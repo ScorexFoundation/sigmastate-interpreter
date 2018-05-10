@@ -5,7 +5,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
-import sigmastate.{AvlTreeData, SType}
+import sigmastate.{AvlTreeData, SBoolean, SType}
 import sigmastate.Values._
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.ErgoBox._
@@ -28,6 +28,7 @@ trait ValueGeneratots {
   implicit val arbBigIntConstants: Arbitrary[BigIntConstant] = Arbitrary(bigIntConstGen)
 
 
+  val booleanGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
   val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map{v => IntConstant(v)}
   val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map{ v => BigIntConstant(v.bigInteger)}
   val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map{v => TaggedInt(v)}
