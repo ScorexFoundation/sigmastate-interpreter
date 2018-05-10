@@ -6,6 +6,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.{Serializer, ValueSerializer}
+import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox.{NonMandatoryIdentifier, _}
 
 import scala.annotation.tailrec
@@ -20,6 +21,8 @@ object Box {
 class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
                        val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map()) {
+
+  lazy val cost = (bytesWithNoRef.size / 1024 + 1) * Cost.BoxPerKilobyte
 
   val propositionBytes: Array[Byte] = proposition.bytes
 
@@ -71,6 +74,8 @@ class ErgoBox private(override val value: Long,
   import sigmastate.utxo.ErgoBox._
 
   lazy val id: BoxId = ADKey @@Blake2b256.hash(bytes)
+
+  override lazy val cost = (bytesWithNoRef.size / 1024 + 1) * Cost.BoxPerKilobyte
 
   override def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {

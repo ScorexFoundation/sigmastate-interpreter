@@ -113,7 +113,7 @@ class SpamSpecification extends SigmaTestingCommons {
   property("transaction with many outputs") {
     forAll(Gen.choose(10, 200), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
       whenever(orCnt > 10 && outCnt > 200) {
-        val prover = new ErgoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
+        val prover = new ErgoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
 
         val propToCompare = OR((1 to orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))))
 

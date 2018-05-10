@@ -60,7 +60,7 @@ case object Inputs extends LazyCollection[SBox.type] {
   override val opCode: OpCode = OpCodes.InputsCode
 
   override def cost[C <: Context[C]](context: C) =
-    context.asInstanceOf[ErgoContext].boxesToSpend.size * Cost.BoxConstant
+    context.asInstanceOf[ErgoContext].boxesToSpend.map(_.cost).sum + Cost.ConcreteCollection
 
   val tpe = SCollection(SBox)
 }
@@ -70,7 +70,7 @@ case object Outputs extends LazyCollection[SBox.type] {
   override val opCode: OpCode = OpCodes.OutputsCode
 
   override def cost[C <: Context[C]](context: C) =
-    context.asInstanceOf[ErgoContext].spendingTransaction.outputs.size * Cost.BoxConstant
+    context.asInstanceOf[ErgoContext].spendingTransaction.outputs.map(_.cost).sum + Cost.ConcreteCollection
 
   val tpe = SCollection(SBox)
 }
@@ -87,5 +87,5 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree {
 case object Self extends NotReadyValueBox {
   override val opCode: OpCode = OpCodes.SelfCode
 
-  override def cost[C <: Context[C]](context: C) = Cost.BoxConstant
+  override def cost[C <: Context[C]](context: C) = context.asInstanceOf[ErgoContext].self.cost
 }

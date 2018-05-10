@@ -243,7 +243,7 @@ object Values {
   case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {
     override val opCode: OpCode = OpCodes.BoxConstantCode
 
-    override def cost[C <: Context[C]](context: C): Long = Cost.BoxConstant
+    override def cost[C <: Context[C]](context: C): Long = value.cost
 
     override def tpe = SBox
   }
@@ -261,7 +261,7 @@ object Values {
     val tpe = STuple(items.map(_.tpe))
     lazy val value = items
 
-    override def cost[C <: Context[C]](context: C) = items.map(_.cost(context)).sum
+    override def cost[C <: Context[C]](context: C) = Cost.ConcreteCollection + items.map(_.cost(context)).sum
   }
 
   object Tuple {
@@ -295,7 +295,7 @@ object Values {
     extends EvaluatedValue[SCollection[V]] with Rewritable {
     override val opCode: OpCode = ConcreteCollectionCode
 
-    def cost[C <: Context[C]](context: C): Long = items.map(_.cost(context)).sum
+    def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollection + items.map(_.cost(context)).sum
 
     val tpe = SCollection[V](tItem)
 

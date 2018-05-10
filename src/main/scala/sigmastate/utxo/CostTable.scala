@@ -22,6 +22,8 @@ object CostTable {
 
     val ByteArrayPerKilobyte = 200
 
+    val BoxPerKilobyte = 50
+
     val TripleDeclaration = 3
 
     val QuadrupleDeclaration = 4
@@ -68,5 +70,7 @@ object CostTable {
     val ForAllDeclaration = 200
 
     val SizeOfDeclaration = 50
+
+    val ConcreteCollection = 20
   }
 }
