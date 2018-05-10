@@ -247,7 +247,7 @@ object Fold {
     Fold[SByteArray](input, 21, ByteArrayConstant(Array.emptyByteArray), 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
-case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
+case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.type])
   extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
   override val opCode: OpCode = OpCodes.ByIndexCode
 
@@ -258,12 +258,13 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   def deconstruct = immutable.Seq[Any](input, index, tpe)
 
   def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[V]]@unchecked, index: Int, _) => ByIndex[V](input, index)
-    case _ => illegalArgs("ByIndex", "(Value[SCollection[V]], index: Int)(tpe: V)", cs)
+    case Seq(input: Value[SCollection[V]]@unchecked, index: Value[SInt.type], _) =>
+      ByIndex[V](input, index)
+    case _ => illegalArgs("ByIndex", "(Value[SCollection[V]], index: Value[SInt.type])(tpe: V)", cs)
   }
 
   override def function(input: EvaluatedValue[SCollection[V]]) =
-    input.items.apply(index)
+    input.value.apply(index.asInstanceOf[EvaluatedValue[SInt.type]].value.toInt)
 
   override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.ByIndexDeclaration
 }
