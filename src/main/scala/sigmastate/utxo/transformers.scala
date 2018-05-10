@@ -85,7 +85,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 
 case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
   extends Transformer[SCollection[IV], SCollection[IV]]{
-  override val opCode: OpCode = OpCodes.Undefined
+  override val opCode: OpCode = OpCodes.SliceCode
 
   val tpe = input.tpe
 

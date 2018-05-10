@@ -29,6 +29,12 @@ class TransformersSerializationSpec extends SerializationSpecification {
     }
   }
 
+  property("Slice: Serializer round trip") {
+    forAll { f: Slice[SInt.type] =>
+      roundTripTest(f)
+    }
+  }
+
   property("Append: Serializer round trip") {
     forAll { f: Append[SInt.type] =>
       roundTripTest(f)
