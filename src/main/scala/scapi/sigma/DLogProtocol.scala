@@ -28,15 +28,11 @@ object DLogProtocol {
 
     override val opCode: OpCode = OpCodes.ProveDlogCode
 
-    import GroupSettings.dlogGroup
-
     override def cost[C <: Context[C]](context: C): Long = Cost.Dlog
     override val soundness: Int = GroupSettings.soundness
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
-
-    lazy val bytes: Array[Byte] = dlogGroup.mapAnyGroupElementToByteArray(h)
   }
 
   object ProveDlog {

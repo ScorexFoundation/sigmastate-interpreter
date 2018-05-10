@@ -61,7 +61,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
           Exists(Outputs, 21,
             AND(
               GE(ExtractAmount(TaggedBox(21)), minToRaise),
-              EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(projectPubKey.propBytes))
+              EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(projectPubKey.bytes))
             )
           )
         )

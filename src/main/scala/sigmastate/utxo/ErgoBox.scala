@@ -21,9 +21,7 @@ class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
                        val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
-
-
-  val propositionBytes: Array[Byte] = proposition.propBytes
+  val propositionBytes: Array[Byte] = proposition.bytes
 
   lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
 
