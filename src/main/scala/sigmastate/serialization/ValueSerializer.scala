@@ -79,6 +79,7 @@ object ValueSerializer
     DeserializeSerializer,
     ExtractRegisterAsSerializer,
     ByIndexSerializer,
+    AppendSerializer,
     BoxConstantSerializer,
     AvlTreeConstantSerializer
   ).map(s => (s.opCode, s)).toMap

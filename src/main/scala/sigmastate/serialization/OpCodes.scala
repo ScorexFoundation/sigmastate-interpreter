@@ -75,6 +75,8 @@ object OpCodes {
   val CalcSha256Code:            OpCode = 84: Byte
   val ByIndexCode:               OpCode = 85: Byte
   val DeserializeCode:           OpCode = 86: Byte
+  val AppendCode:                OpCode = 87: Byte
 
+  // TODO group operations logically, e.g. move ByIndex, Append, Slice, etc. to other collections operations
 
 }

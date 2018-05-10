@@ -69,7 +69,7 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
 
 case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SCollection[IV]])
   extends Transformer[SCollection[IV], SCollection[IV]]{
-  override val opCode: OpCode = OpCodes.Undefined
+  override val opCode: OpCode = OpCodes.AppendCode
 
   val tpe = input.tpe
 
