@@ -245,11 +245,11 @@ class SigmaTyper {
         error(s"Invalid binary operation Exponentiate: expected argument types ($SGroupElement, $SBigInt); actual: (${l.tpe}, ${r.tpe})")
       Exponentiate(l1, r1)
 
-    case ByIndex(col, i) =>
+    case ByIndex(col, i, default) =>
       val c1 = assignType(env, col).asCollection[SType]
       if (!c1.tpe.isCollection)
         error(s"Invalid operation ByIndex: expected argument types ($SCollection); actual: (${col.tpe})")
-      ByIndex(c1, i)
+      ByIndex(c1, i, default)
 
     case SizeOf(col) =>
       val c1 = assignType(env, col).asCollection[SType]

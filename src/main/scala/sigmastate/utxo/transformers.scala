@@ -270,7 +270,9 @@ object Fold {
 //    Fold[SByteArray](input, 21, ByteArrayConstant(Array.emptyByteArray), 22, Append(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
-case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.type])
+case class ByIndex[V <: SType](input: Value[SCollection[V]],
+                               index: Value[SInt.type],
+                               default: Option[Value[V]] = None)
   extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
   override val opCode: OpCode = OpCodes.ByIndexCode
 
