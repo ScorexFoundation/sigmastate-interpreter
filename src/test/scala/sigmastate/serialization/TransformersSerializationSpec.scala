@@ -95,6 +95,18 @@ class TransformersSerializationSpec extends SerializationSpecification {
     }
   }
 
+  property("DeserializeContext: Serializer round trip") {
+    forAll { itba: DeserializeContext[SBoolean.type ] =>
+      roundTripTest(itba)
+    }
+  }
+
+  property("DeserializeRegister: Serializer round trip") {
+    forAll { itba: DeserializeRegister[SBoolean.type ] =>
+      roundTripTest(itba)
+    }
+  }
+
   property("ByteArrayToBigInt: Serializer round trip") {
     forAll { batbi: ByteArrayToBigInt =>
       roundTripTest(batbi)

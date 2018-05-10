@@ -355,7 +355,7 @@ trait Deserialize[V <: SType] extends NotReadyValue[V] with Rewritable
 case class DeserializeContext[V <: SType](id: Byte)(implicit val tpe: V)
   extends Deserialize[V] {
 
-  override val opCode: OpCode = OpCodes.DeserializeCode
+  override val opCode: OpCode = OpCodes.DeserializeContextCode
 
   def arity = 2
 
@@ -377,7 +377,7 @@ case class DeserializeRegister[V <: SType](reg: RegisterIdentifier,
                                            default: Option[Value[V]] = None)(implicit val tpe: V)
   extends Deserialize[V] {
 
-  override val opCode: OpCode = OpCodes.DeserializeCode
+  override val opCode: OpCode = OpCodes.DeserializeRegisterCode
 
   def arity = 3
 

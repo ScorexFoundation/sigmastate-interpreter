@@ -4,6 +4,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.Values.{FalseLeaf, TrueLeaf}
 import sigmastate._
+import sigmastate.utxo.ErgoBox.RegisterIdentifier
 import sigmastate.utxo._
 
 trait TransformerGenerators {
@@ -28,6 +29,8 @@ trait TransformerGenerators {
   implicit val arbCalcBlake2b256: Arbitrary[CalcBlake2b256] = Arbitrary(calcBlake2b256Gen)
   implicit val arbCalcSha256: Arbitrary[CalcSha256] = Arbitrary(calcSha256Gen)
   implicit val arbByIndex: Arbitrary[ByIndex[SInt.type]] = Arbitrary(byIndexGen)
+  implicit val arbDeserializeContext: Arbitrary[DeserializeContext[SBoolean.type]] = Arbitrary(deserializeContextGen)
+  implicit val arbDeserializeRegister: Arbitrary[DeserializeRegister[SBoolean.type]] = Arbitrary(deserializeRegisterGen)
 
   val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
@@ -83,6 +86,14 @@ trait TransformerGenerators {
     dvInt <- arbIntConstants.arbitrary
     dv <- Gen.oneOf(None, Some(dvInt))
   } yield ExtractRegisterAs(input, r, dv)
+  val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] = Arbitrary.arbitrary[Byte].map(b => DeserializeContext(b))
+
+  val deserializeRegisterGen: Gen[DeserializeRegister[SBoolean.type]] = for {
+    r <- arbRegisterIdentifier.arbitrary
+    default <- booleanGen
+    isDefined <- Arbitrary.arbitrary[Boolean]
+    defaultOpt = if (isDefined) Some(default) else None
+  } yield DeserializeRegister(r, defaultOpt)
 
   val intToByteArrayGen: Gen[IntToByteArray] = arbIntConstants.arbitrary.map { v => IntToByteArray(v) }
   val byteArrayToBigIntGen: Gen[ByteArrayToBigInt] = arbByteArrayConstant.arbitrary.map { v => ByteArrayToBigInt(v) }
