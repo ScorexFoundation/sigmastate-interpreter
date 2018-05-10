@@ -13,6 +13,7 @@ import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
+import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
@@ -22,8 +23,8 @@ import sigmastate.utxo.{CostTable, Transformer}
 
 
 object GroupSettings {
-  type EcPointType = Curve25519Point
-  val dlogGroup: BcDlogFp[EcPointType] = Curve25519
+  type EcPointType = SecP384R1Point
+  val dlogGroup: BcDlogFp[EcPointType] = SecP384R1
 
   implicit val soundness: Int = 256
 }
