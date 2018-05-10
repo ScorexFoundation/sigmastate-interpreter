@@ -1,6 +1,5 @@
 package sigmastate.serialization.transformers
 
-import com.google.common.primitives.Ints
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer._
@@ -9,8 +8,6 @@ import sigmastate.utxo.ByIndex
 import sigmastate.{SCollection, SInt, SType}
 
 object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
-
-  private val intLength = Ints.BYTES
 
   override val opCode: OpCode = OpCodes.ByIndexCode
 
