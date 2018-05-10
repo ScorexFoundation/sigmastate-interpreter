@@ -13,6 +13,7 @@ trait TransformerGenerators {
   implicit val arbExists: Arbitrary[Exists[SInt.type]] = Arbitrary(existsGen)
   implicit val arbForAll: Arbitrary[ForAll[SInt.type]] = Arbitrary(forAllGen)
   implicit val arbFold: Arbitrary[Fold[SInt.type]] = Arbitrary(foldGen)
+  implicit val arbAppend: Arbitrary[Append[SInt.type]] = Arbitrary(appendGen)
   implicit val sizeOf: Arbitrary[SizeOf[SInt.type]] = Arbitrary(sizeOfGen)
   implicit val arbExtractAmount: Arbitrary[ExtractAmount] = Arbitrary(extractAmountGen)
   implicit val arbExtractScriptBytes: Arbitrary[ExtractScriptBytes] = Arbitrary(extractScriptBytesGen)
@@ -48,6 +49,11 @@ trait TransformerGenerators {
   val foldGen: Gen[Fold[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
   } yield Fold.sum(input)
+
+  val appendGen: Gen[Append[SInt.type]] = for {
+    col1 <- arbCCOfIntConstant.arbitrary
+    col2 <- arbCCOfIntConstant.arbitrary
+  } yield Append(col1, col2)
 
   val sizeOfGen: Gen[SizeOf[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
