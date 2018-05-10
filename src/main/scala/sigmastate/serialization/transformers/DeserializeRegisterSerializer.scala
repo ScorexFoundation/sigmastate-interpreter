@@ -21,14 +21,14 @@ object DeserializeRegisterSerializer extends ValueSerializer[DeserializeRegister
   }
 
   override def parseBody(bytes: Array[Byte], pos: Position): (DeserializeRegister[SType], Consumed) = {
-    val registedId = ErgoBox.findRegisterByIndex(bytes(pos)).get
+    val registerId = ErgoBox.findRegisterByIndex(bytes(pos)).get
     val tpeByte = bytes(pos + 1)
     val tpe = SType.allPredefTypes.filter(_.typeCode == tpeByte).head
     if (bytes(pos + 2) == 0) {
-      (DeserializeRegister(registedId, None)(tpe), 3)
+      (DeserializeRegister(registerId, None)(tpe), 3)
     } else {
       val (dv, consumed) = ValueSerializer.deserialize(bytes, pos + 2)
-      (DeserializeRegister(registedId, Some(dv))(tpe), consumed + 2)
+      (DeserializeRegister(registerId, Some(dv))(tpe), consumed + 2)
     }
   }
 

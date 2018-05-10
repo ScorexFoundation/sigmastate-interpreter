@@ -11,7 +11,9 @@ import sigmastate.utxo._
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
+
   import ValueSerializer._
+
   override val companion = ValueSerializer
   val opCode: OpCode
 
@@ -108,8 +110,13 @@ object Constraints {
   type Constraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
   type ConstraintN = Seq[SType.TypeCode] => Boolean
 
-  def onlyInt2: Constraint2 = {case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode}
-  def sameType2: Constraint2 = {case (tc1, tc2) => tc1 == tc2}
+  def onlyInt2: Constraint2 = {
+    case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode
+  }
 
-  def sameTypeN: ConstraintN = {tcs => tcs.tail.forall(_ == tcs.head)}
+  def sameType2: Constraint2 = {
+    case (tc1, tc2) => tc1 == tc2
+  }
+
+  def sameTypeN: ConstraintN = { tcs => tcs.tail.forall(_ == tcs.head) }
 }
