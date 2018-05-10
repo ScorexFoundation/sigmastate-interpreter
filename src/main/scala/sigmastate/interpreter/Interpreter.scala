@@ -19,7 +19,7 @@ import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{CostTable, DeserializeContext, DeserializeRegister, Transformer}
+import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
 
 
 object GroupSettings {
@@ -46,18 +46,6 @@ trait Interpreter {
     */
   def maxCost: Long
 
-  /** First, both the prover and the verifier are making context-dependent tree transformations
-    * (usually, context variables substitutions).
-    * This method defines implementation-specific tree reductions, to be extended in descendants
-    * using stackable-override pattern.
-    * No rewriting is defined on this abstract level.
-    *
-    * @param context a context instance
-    * @param tree    to be rewritten
-    * @return a new rewritten tree or `null` if `tree` cannot be rewritten.
-    */
-  def specificTransformations(context: CTX, tree: SValue): SValue = null
-
   def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
@@ -70,7 +58,17 @@ trait Interpreter {
     case _ => None
   }
 
-  def evaluateNode(context: CTX, node: SValue): SValue = node match {
+  /** First, both the prover and the verifier are making context-dependent tree transformations
+    * (usually, context variables substitutions).
+    * Context-specific transformations should be defined in descendants.
+    *
+    * This is the only function to define all the tree rewrites, except of deserializations.
+    *
+    * @param context a context instance
+    * @param tree    to be rewritten
+    * @return a new rewritten tree or `null` if `tree` cannot be rewritten.
+    */
+  def evaluateNode(context: CTX, tree: SValue): SValue = tree match {
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
 
@@ -122,7 +120,7 @@ trait Interpreter {
 
     case t: Transformer[_, _] if t.transformationReady => t.function()
 
-    case v: SValue  => specificTransformations(context, v)
+    case _ => null
   }
 
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,

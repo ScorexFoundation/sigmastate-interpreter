@@ -207,8 +207,8 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
 
   override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
 
-  override def specificTransformations(context: TestingContext, tree: SValue): SValue = tree match {
+  override def evaluateNode(context: TestingContext, tree: SValue): SValue = tree match {
     case Height => IntConstant(context.height)
-    case _ => super.specificTransformations(context, tree)
+    case _ => super.evaluateNode(context, tree)
   }
 }

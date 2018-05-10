@@ -9,7 +9,7 @@ import sigmastate.serialization.ValueSerializer
 class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends Interpreter {
   override type CTX = ErgoContext
 
-  override def specificTransformations(context: ErgoContext, tree: SValue): SValue = tree match {
+  override def evaluateNode(context: ErgoContext, tree: SValue): SValue = tree match {
     case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxConstant.apply))
 
     case Outputs => ConcreteCollection(context.spendingTransaction.outputs.map(BoxConstant.apply))
@@ -28,7 +28,7 @@ class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extend
 //        Interpreter.error(s"Tagged variable with id=${t.id} not found in context ${context.extension.values}")
 
     case _ =>
-      super.specificTransformations(context, tree)
+      super.evaluateNode(context, tree)
   }
 
   override def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
