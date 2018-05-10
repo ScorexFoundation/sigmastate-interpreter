@@ -45,6 +45,7 @@ object ValueSerializer
     TwoArgumentsSerializer(MinusCode, Minus.apply),
     TwoArgumentsSerializer(PlusCode, Plus.apply),
 
+    ProveDiffieHellmanTupleSerializer,
     GroupElementSerializer,
     ProveDlogSerializer,
     IntConstantSerializer,

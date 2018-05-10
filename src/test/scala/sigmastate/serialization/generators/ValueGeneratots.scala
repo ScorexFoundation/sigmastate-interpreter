@@ -3,9 +3,10 @@ package sigmastate.serialization.generators
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
+import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
-import sigmastate.{AvlTreeData, SBoolean, SType}
+import sigmastate.{AvlTreeData, SBoolean, SGroupElement, SType}
 import sigmastate.Values._
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.ErgoBox._
@@ -20,6 +21,7 @@ trait ValueGeneratots {
   implicit val arbByteArrayConstant: Arbitrary[ByteArrayConstant] = Arbitrary(byteArrayConstantGen)
   implicit val arbGroupElementConstant: Arbitrary[GroupElementConstant] = Arbitrary(groupElementConstantGen)
   implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
+  implicit val arbProveDHT: Arbitrary[ProveDiffieHellmanTuple] = Arbitrary(proveDHTGen)
   implicit val arbRegisterIdentifier: Arbitrary[RegisterIdentifier] = Arbitrary(registerIdentifierGen)
   implicit val arbAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedAvlTreeGen)
   implicit val arbBox: Arbitrary[ErgoBox] = Arbitrary(ergoBoxGen)
@@ -29,10 +31,10 @@ trait ValueGeneratots {
 
 
   val booleanGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
-  val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map{v => IntConstant(v)}
-  val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map{ v => BigIntConstant(v.bigInteger)}
-  val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map{v => TaggedInt(v)}
-  val taggedBoxGen: Gen[TaggedBox] = arbByte.arbitrary.map{v => TaggedBox(v)}
+  val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map { v => IntConstant(v) }
+  val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map { v => BigIntConstant(v.bigInteger) }
+  val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map { v => TaggedInt(v) }
+  val taggedBoxGen: Gen[TaggedBox] = arbByte.arbitrary.map { v => TaggedBox(v) }
   val byteArrayConstantGen: Gen[ByteArrayConstant] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
@@ -43,10 +45,16 @@ trait ValueGeneratots {
   } yield GroupElementConstant(el)
 
   val proveDlogGen: Gen[ProveDlog] = arbGroupElementConstant.arbitrary.map(v => ProveDlog(v))
+  val proveDHTGen: Gen[ProveDiffieHellmanTuple] = for {
+    gv: Value[SGroupElement.type] <- groupElementConstantGen
+    hv: Value[SGroupElement.type] <- groupElementConstantGen
+    uv: Value[SGroupElement.type] <- groupElementConstantGen
+    vv: Value[SGroupElement.type] <- groupElementConstantGen
+  } yield ProveDiffieHellmanTuple(gv, hv, uv, vv)
 
   val registerIdentifierGen: Gen[RegisterIdentifier] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
-  val taggedAvlTreeGen: Gen[TaggedAvlTree] = arbByte.arbitrary.map{v => TaggedAvlTree(v)}
+  val taggedAvlTreeGen: Gen[TaggedAvlTree] = arbByte.arbitrary.map { v => TaggedAvlTree(v) }
 
   def arGen(cnt: Byte): Seq[Gen[(NonMandatoryIdentifier, Value[SType])]] = {
     (0 until cnt).map(_ + ErgoBox.startingNonMandatoryIndex)
@@ -64,7 +72,7 @@ trait ValueGeneratots {
     ar <- Gen.sequence(arGen(regNum))
   } yield ErgoBox(l, b, ar.asScala.toMap, Digest32 @@ tId.toArray, boxId)
 
-  val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map{v => BoxConstant(v)}
+  val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
 
   val smallIntGen: Gen[Int] = Gen.chooseNum(2, 16)
   val smallIntOptGen: Gen[Option[Int]] = for {
@@ -81,5 +89,5 @@ trait ValueGeneratots {
     md <- arbOption[Int].arbitrary
   } yield AvlTreeData(ADDigest @@ digest, keyLength, vl, mn, md)
 
-  def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map{v => AvlTreeConstant(v)}
+  def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
 }

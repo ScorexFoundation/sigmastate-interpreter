@@ -70,7 +70,7 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
 
 
-  override val opCode: OpCode = OpCodes.Undefined
+  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 
   override val cost: Int = Cost.Dlog * 2
 

@@ -4,6 +4,7 @@ object OpCodes {
 
   type OpCode = Byte
 
+  // serialization is not required
   val Undefined: OpCode = 0: Byte
   val TaggedVariableCode:   OpCode = 1: Byte
 
@@ -78,6 +79,8 @@ object OpCodes {
   val AppendCode:                OpCode = 87: Byte
   val SliceCode:                 OpCode = 88: Byte
   val WhereCode:                 OpCode = 89: Byte
+
+  val ProveDiffieHellmanTupleCode: OpCode = 100: Byte
 
   // TODO group operations logically, e.g. move ByIndex, Append, Slice, etc. to other collections operations
 
