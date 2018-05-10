@@ -1,14 +1,15 @@
 package sigmastate.helpers
 
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{TrueLeaf, Value, GroupElementConstant}
+import sigmastate.Values.{EvaluatedValue, GroupElementConstant, TrueLeaf, Value}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.lang.SigmaCompiler
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.ErgoBox.NonMandatoryIdentifier
-import sigmastate.{SGroupElement, SBoolean, SType}
+import sigmastate.{SBoolean, SGroupElement, SType}
+
 import scala.language.implicitConversions
 
 trait SigmaTestingCommons extends PropSpec
@@ -34,7 +35,7 @@ trait SigmaTestingCommons extends PropSpec
 
   def createBox(value: Int,
                 proposition: Value[SBoolean.type],
-                additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map())
+                additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map())
   = ErgoBox(value, proposition, additionalRegisters)
 
 }

@@ -117,7 +117,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  property("mixing scenario w. timeout") {
+    property("mixing scenario w. timeout") {
     val proverA = new ErgoProvingInterpreter
     val proverB = new ErgoProvingInterpreter
 
@@ -298,7 +298,8 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s1 = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
+    val s1 = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value.asInstanceOf[GroupElementConstant],
+                                       R4 -> pubkey2.value.asInstanceOf[GroupElementConstant]))
 
     val ctx = ErgoContext(
       currentHeight = 50,
@@ -312,7 +313,8 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
 
 
     //make sure that wrong case couldn't be proved
-    val s2 = ErgoBox(20, TrueLeaf, Map(R4 -> pubkey2.value, R5 -> pubkey1.value))
+    val s2 = ErgoBox(20, TrueLeaf, Map(R4 -> pubkey2.value.asInstanceOf[GroupElementConstant],
+                                        R5 -> pubkey1.value.asInstanceOf[GroupElementConstant]))
     val wrongCtx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,

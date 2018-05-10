@@ -19,10 +19,11 @@ object Box {
 
 class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
-                       val additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()) {
+                       val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map()) {
+
+
 
   val propositionBytes: Array[Byte] = proposition.propBytes
-
 
   lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
 
@@ -36,7 +37,6 @@ class ErgoBoxCandidate(val value: Long,
       case n: NonMandatoryIdentifier => additionalRegisters.get(n)
     }
   }
-
 }
 
 
@@ -67,7 +67,7 @@ class ErgoBox private(override val value: Long,
                       override val proposition: Value[SBoolean.type],
                       val transactionId: Digest32,
                       val boxId: Short,
-                      override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map()
+                      override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map()
                      ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
 
   import sigmastate.utxo.ErgoBox._
@@ -102,7 +102,7 @@ object ErgoBox {
 
   def apply(value: Long,
             proposition: Value[SBoolean.type],
-            additionalRegisters: Map[NonMandatoryIdentifier, _ <: Value[SType]] = Map(),
+            additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: Digest32 = Digest32 @@ Array.fill(32)(0: Byte),
             boxId: Short = 0): ErgoBox =
     new ErgoBox(value, proposition, transactionId, boxId, additionalRegisters)
@@ -137,10 +137,10 @@ object ErgoBox {
       val value = Longs.fromByteArray(bytes.take(8))
       val (prop, consumed) = ValueSerializer.deserialize(bytes, 8)
       val regNum = bytes(8 + consumed)
-      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, Value[SType]]() -> (9 + consumed)){ case ((m, pos), regIdx) =>
+      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, EvaluatedValue[SType]]() -> (9 + consumed)){ case ((m, pos), regIdx) =>
           val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryIdentifier]
           val (reg, consumed) = ValueSerializer.deserialize(bytes, pos)
-          (m.updated(regId, reg), pos + consumed)
+          (m.updated(regId, reg.asInstanceOf[EvaluatedValue[SType]]), pos + consumed)
       }
       val txId = Digest32 @@  bytes.slice(finalPos, finalPos + 32)
       val boxId = Shorts.fromByteArray(bytes.slice(finalPos + 32, finalPos + 34))
