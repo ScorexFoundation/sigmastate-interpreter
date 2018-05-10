@@ -5,7 +5,7 @@ import java.security.SecureRandom
 
 import org.bouncycastle.util.BigIntegers
 import sigmastate._
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.{Context, GroupSettings}
 import sigmastate.Values._
 import Value.PropositionCode
 import sigmastate.serialization.OpCodes
@@ -69,10 +69,9 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
 
-
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 
-  override val cost: Int = Cost.Dlog * 2
+  override def cost[C <: Context[C]](context: C): Long = Cost.Dlog * 2
 
   override val soundness: Int = GroupSettings.soundness
 

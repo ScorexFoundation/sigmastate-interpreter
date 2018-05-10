@@ -89,12 +89,6 @@ class TransformersSerializationSpec extends SerializationSpecification {
     }
   }
 
-  property("Deserialize: Serializer round trip") {
-    forAll { e: Deserialize[SBoolean.type] =>
-      roundTripTest(e)
-    }
-  }
-
   property("IntToByteArray: Serializer round trip") {
     forAll { itba: IntToByteArray =>
       roundTripTest(itba)

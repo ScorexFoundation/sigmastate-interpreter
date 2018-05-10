@@ -22,7 +22,6 @@ trait TransformerGenerators {
   implicit val arbExtractBytes: Arbitrary[ExtractBytes] = Arbitrary(extractBytesGen)
   implicit val arbExtractBytesWithNoRef: Arbitrary[ExtractBytesWithNoRef] = Arbitrary(extractBytesWithNoRefGen)
   implicit val arbExtractId: Arbitrary[ExtractId] = Arbitrary(extractIdGen)
-  implicit val arbDeserialize: Arbitrary[Deserialize[SBoolean.type]] = Arbitrary(deserializeGen)
   implicit val arbExtractRegisterAs: Arbitrary[ExtractRegisterAs[SInt.type]] = Arbitrary(extractRegisterAsGen)
   implicit val arbIntToByteArray: Arbitrary[IntToByteArray] = Arbitrary(intToByteArrayGen)
   implicit val arbByteArrayToBigInt: Arbitrary[ByteArrayToBigInt] = Arbitrary(byteArrayToBigIntGen)
@@ -84,7 +83,6 @@ trait TransformerGenerators {
     dvInt <- arbIntConstants.arbitrary
     dv <- Gen.oneOf(None, Some(dvInt))
   } yield ExtractRegisterAs(input, r, dv)
-  val deserializeGen: Gen[Deserialize[SBoolean.type]] = byteArrayConstantGen.map(ba => Deserialize[SBoolean.type](ba))
 
   val intToByteArrayGen: Gen[IntToByteArray] = arbIntConstants.arbitrary.map { v => IntToByteArray(v) }
   val byteArrayToBigIntGen: Gen[ByteArrayToBigInt] = arbByteArrayConstant.arbitrary.map { v => ByteArrayToBigInt(v) }

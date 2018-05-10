@@ -8,10 +8,12 @@ import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
 import sigmastate.{AvlTreeData, SBoolean, SGroupElement, SType}
 import sigmastate.Values._
+import sigmastate.interpreter.GroupSettings
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.ErgoBox._
+import sigmastate.{AvlTreeData, SType}
 
-import collection.JavaConverters._
+import scala.collection.JavaConverters._
 
 trait ValueGeneratots {
 
@@ -41,7 +43,7 @@ trait ValueGeneratots {
   } yield ByteArrayConstant(bytes.toArray)
   val groupElementConstantGen: Gen[GroupElementConstant] = for {
     _ <- Gen.const(1)
-    el = scapi.sigma.Curve25519.createRandomGenerator()
+    el = GroupSettings.dlogGroup.createRandomGenerator()
   } yield GroupElementConstant(el)
 
   val proveDlogGen: Gen[ProveDlog] = arbGroupElementConstant.arbitrary.map(v => ProveDlog(v))
@@ -56,10 +58,10 @@ trait ValueGeneratots {
 
   val taggedAvlTreeGen: Gen[TaggedAvlTree] = arbByte.arbitrary.map { v => TaggedAvlTree(v) }
 
-  def arGen(cnt: Byte): Seq[Gen[(NonMandatoryIdentifier, Value[SType])]] = {
+  def arGen(cnt: Byte): Seq[Gen[(NonMandatoryIdentifier, EvaluatedValue[SType])]] = {
     (0 until cnt).map(_ + ErgoBox.startingNonMandatoryIndex)
       .map(rI => ErgoBox.registerByIndex(rI.toByte).asInstanceOf[NonMandatoryIdentifier])
-      .map(r => Gen.oneOf(TrueLeaf, FalseLeaf).map(v => r -> v))
+      .map(r => Gen.oneOf(TrueLeaf, FalseLeaf).map(v => r -> v.asInstanceOf[EvaluatedValue[SType]]))
   }
 
   val ergoBoxGen: Gen[ErgoBox] = for {

@@ -200,7 +200,6 @@ class Rule110Specification extends PropSpec
     val firstRowState = genesisState.applyBlock(firstRowBlock, 10000000).get
     val t1 = System.currentTimeMillis()
 
-    println(s"Script cost: ${prop.cost}")
     println(s"First row time ${t1 - t0} ms.")
 
     firstRowState.boxesReader.byTwoInts(R4, 1, R5, 13).get.get(R6).get.asInstanceOf[BooleanConstant].value shouldBe false

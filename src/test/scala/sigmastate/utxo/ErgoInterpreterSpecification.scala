@@ -117,7 +117,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  property("mixing scenario w. timeout") {
+    property("mixing scenario w. timeout") {
     val proverA = new ErgoProvingInterpreter
     val proverB = new ErgoProvingInterpreter
 
@@ -248,19 +248,19 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     prover.prove(fProp2, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  ignore("P2SH") {
+  property("P2SH") {
     val scriptId = 21.toByte
-    val secretId = 22.toByte
 
-    val customScript = EQ(TaggedInt(secretId), IntConstant(12))
+    val prover0 = new ErgoProvingInterpreter()
+
+    val customScript = prover0.dlogSecrets.head.publicImage
     val scriptBytes = ValueSerializer.serialize(customScript)
-    val prover = new ErgoProvingInterpreter()
-      .withContextExtender(secretId, IntConstant(12))
-      .withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
     val scriptHash = Blake2b256(scriptBytes)
 
+    val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
+
     val hashEquals = EQ(CalcBlake2b256(TaggedByteArray(scriptId)), scriptHash)
-    val scriptIsCorrect = Deserialize[SBoolean.type](TaggedByteArray(scriptId))
+    val scriptIsCorrect = DeserializeContext[SBoolean.type](scriptId)
     val prop = AND(hashEquals, scriptIsCorrect)
 
     val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
@@ -298,7 +298,8 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s1 = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value, R4 -> pubkey2.value))
+    val s1 = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value.asInstanceOf[GroupElementConstant],
+                                       R4 -> pubkey2.value.asInstanceOf[GroupElementConstant]))
 
     val ctx = ErgoContext(
       currentHeight = 50,
@@ -312,7 +313,8 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
 
 
     //make sure that wrong case couldn't be proved
-    val s2 = ErgoBox(20, TrueLeaf, Map(R4 -> pubkey2.value, R5 -> pubkey1.value))
+    val s2 = ErgoBox(20, TrueLeaf, Map(R4 -> pubkey2.value.asInstanceOf[GroupElementConstant],
+                                        R5 -> pubkey1.value.asInstanceOf[GroupElementConstant]))
     val wrongCtx = ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,

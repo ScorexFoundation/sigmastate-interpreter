@@ -1,6 +1,5 @@
 package sigmastate.utxo.examples
 
-import com.google.common.primitives.Longs
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -27,10 +26,11 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     * In the provided example there are 5 different branches of a tree, each one require to reveal some secret.
     *
     */
-  ignore("Merklized Abstract Syntax Tree") {
+  property("Merklized Abstract Syntax Tree") {
     val scriptId = 21.toByte
     val proofId = 22.toByte
     val secretId = 23.toByte
+
     val allSecrets = (0 until 5).map(i => Random.nextString(32).getBytes("UTF-8"))
     val scriptBranches = allSecrets.map(s => EQ(ByteArrayConstant(s), TaggedByteArray(secretId)))
     val scriptBranchesBytes = scriptBranches.map(b => ValueSerializer.serialize(b))
@@ -46,7 +46,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val merklePathToScript = IsMember(ExtractRegisterAs(Self, R3),
       CalcBlake2b256(TaggedByteArray(scriptId)),
       TaggedByteArray(proofId))
-    val scriptIsCorrect = Deserialize[SBoolean.type](TaggedByteArray(scriptId))
+    val scriptIsCorrect = DeserializeContext[SBoolean.type](scriptId)
     val prop = AND(merklePathToScript, scriptIsCorrect)
 
     val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage

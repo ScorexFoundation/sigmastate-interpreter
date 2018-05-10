@@ -1,14 +1,15 @@
 package sigmastate.utxo
 
-import sigmastate._
+import sigmastate.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.ValueSerializer
 
 
-class ErgoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends Interpreter {
+class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends Interpreter {
   override type CTX = ErgoContext
 
-  override def specificTransformations(context: ErgoContext, tree: SValue): SValue = tree match {
+  override def evaluateNode(context: ErgoContext, tree: SValue): SValue = tree match {
     case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxConstant.apply))
 
     case Outputs => ConcreteCollection(context.spendingTransaction.outputs.map(BoxConstant.apply))
@@ -26,10 +27,18 @@ class ErgoInterpreter(override val maxCost: Int = CostTable.ScriptLimit) extends
         null
 //        Interpreter.error(s"Tagged variable with id=${t.id} not found in context ${context.extension.values}")
 
-    case d: Deserialize[_] if d.transformationReady =>
-      d.function(d.input.asInstanceOf[EvaluatedValue[SByteArray.type]])
-
     case _ =>
-      super.specificTransformations(context, tree)
+      super.evaluateNode(context, tree)
   }
+
+  override def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
+      case d: DeserializeRegister[_] =>
+        context.self.get(d.reg).flatMap { v =>
+          v match {
+            case eba: EvaluatedValue[SByteArray.type] => Some(ValueSerializer.deserialize(eba.value))
+            case _ => None
+          }
+        }.orElse(d.default)
+      case _ => super.substDeserialize(context, node)
+    }
 }

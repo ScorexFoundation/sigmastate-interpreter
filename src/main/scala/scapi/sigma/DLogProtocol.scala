@@ -8,7 +8,7 @@ import sigmastate.Values._
 import Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.{Context, GroupSettings}
 import sigmastate.interpreter.GroupSettings.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
@@ -28,15 +28,11 @@ object DLogProtocol {
 
     override val opCode: OpCode = OpCodes.ProveDlogCode
 
-    import GroupSettings.dlogGroup
-
-    override val cost: Int = Cost.Dlog
+    override def cost[C <: Context[C]](context: C): Long = Cost.Dlog
     override val soundness: Int = GroupSettings.soundness
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
-
-    lazy val bytes: Array[Byte] = dlogGroup.mapAnyGroupElementToByteArray(h)
   }
 
   object ProveDlog {
