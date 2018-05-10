@@ -19,8 +19,8 @@ object ProveDiffieHellmanTupleSerializer extends ValueSerializer[ProveDiffieHell
   override def parseBody(bytes: Array[Byte], pos: Position): (ProveDiffieHellmanTuple, Consumed) = {
     val (gv, c) = ValueSerializer.deserialize(bytes, pos)
     val (hv, c2) = ValueSerializer.deserialize(bytes, pos + c)
-    val (uv, c3) = ValueSerializer.deserialize(bytes, pos + c2)
-    val (vv, c4) = ValueSerializer.deserialize(bytes, pos + c3)
+    val (uv, c3) = ValueSerializer.deserialize(bytes, pos + c + c2)
+    val (vv, c4) = ValueSerializer.deserialize(bytes, pos + c + c2 + c3)
     val tuple = ProveDiffieHellmanTuple(gv.asInstanceOf[Value[SGroupElement.type]],
       hv.asInstanceOf[Value[SGroupElement.type]],
       uv.asInstanceOf[Value[SGroupElement.type]],
