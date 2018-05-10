@@ -206,7 +206,7 @@ case class CalcSha256(override val input: Value[SByteArray.type]) extends CalcHa
   */
 sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
-  val left: Value[LIV]
+  val left : Value[LIV]
   val right: Value[RIV]
 
   override def cost[C <: Context[C]](context: C): Long =
@@ -234,6 +234,17 @@ case class Minus(override val left: Value[SInt.type],
     with NotReadyValueInt {
 
   override val opCode: OpCode = MinusCode
+}
+
+/**
+  * SInt multiplication
+  */
+case class Multiply(override val left: Value[SInt.type],
+                    override val right: Value[SInt.type])
+  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
+    with NotReadyValueInt {
+
+  override val opCode: OpCode = MultiplyCode
 }
 
 /**
@@ -345,9 +356,9 @@ case class NEQ(override val left: Value[SType],
   */
 sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] extends NotReadyValue[OV] {
 
-  val first: Value[IV1]
+  val first : Value[IV1]
   val second: Value[IV2]
-  val third: Value[IV3]
+  val third : Value[IV3]
 
   override def cost[C <: Context[C]](context: C): Long =
     first.cost(context) + second.cost(context) + third.cost(context) + Cost.QuadrupleDeclaration
@@ -365,9 +376,9 @@ case class IsMember(tree: Value[SAvlTree.type],
                     proof: Value[SByteArray.type]) extends Relation3[SAvlTree.type, SByteArray.type, SByteArray.type] {
   override val opCode: OpCode = OpCodes.IsMemberCode
 
-  override lazy val first = tree
+  override lazy val first  = tree
   override lazy val second = key
-  override lazy val third = proof
+  override lazy val third  = proof
 }
 
 
@@ -377,9 +388,9 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 
   override def tpe = trueBranch.tpe
 
-  override lazy val first = condition
+  override lazy val first  = condition
   override lazy val second = trueBranch
-  override lazy val third = falseBranch
+  override lazy val third  = falseBranch
 }
 
 

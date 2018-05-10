@@ -76,6 +76,7 @@ trait Interpreter {
     //operations
     case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
     case Minus(l: IntConstant, r: IntConstant) => IntConstant(l.value - r.value)
+    case Multiply(l: IntConstant, r: IntConstant) => IntConstant(l.value * r.value)
     case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
       assert(l.value.length == r.value.length)
       ByteArrayConstant(Helpers.xor(l.value, r.value))

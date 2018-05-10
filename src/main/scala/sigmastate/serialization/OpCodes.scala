@@ -5,7 +5,7 @@ object OpCodes {
   type OpCode = Byte
 
   // serialization is not required
-  val Undefined         : OpCode = 0: Byte
+  val Undefined: OpCode = 0: Byte
 
   // variable
   val TaggedVariableCode: OpCode = 1: Byte
@@ -43,6 +43,7 @@ object OpCodes {
   val XorCode          : OpCode = 43: Byte
   val ExponentiateCode : OpCode = 44: Byte
   val MultiplyGroupCode: OpCode = 45: Byte
+  val MultiplyCode     : OpCode = 46: Byte
 
   // Environment codes
   val HeightCode               : OpCode = 51: Byte
