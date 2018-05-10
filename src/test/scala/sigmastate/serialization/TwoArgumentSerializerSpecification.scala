@@ -11,10 +11,10 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
   override val objects =
     Table(
       ("object", "bytes"),
-      (Minus(IntConstant(2), IntConstant(3)), Array[Byte](40, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (Plus(IntConstant(2), IntConstant(3)), Array[Byte](41, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (Xor(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](42, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4)),
-      (AppendBytes(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](43, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4))
+      (Minus(IntConstant(2), IntConstant(3)), Array[Byte](41, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (Plus(IntConstant(2), IntConstant(3)), Array[Byte](42, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (Xor(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](43, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4)),
+      (AppendBytes(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](68, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4))
     )
 
   tableRoundTripTest("TwoArguments: serializer round trip")

@@ -9,12 +9,12 @@ class RelationsSpecification extends TableSerializationSpecification {
   override val objects =
     Table(
       ("object", "bytes"),
-      (LT(IntConstant(2), IntConstant(3)), Array[Byte](21, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (LE(IntConstant(2), IntConstant(3)), Array[Byte](22, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (GT(IntConstant(6), IntConstant(5)), Array[Byte](23, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
-      (GE(IntConstant(6), IntConstant(5)), Array[Byte](24, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
-      (EQ(TrueLeaf, FalseLeaf), Array[Byte](25, 12, 13)),
-      (NEQ(TrueLeaf, FalseLeaf), Array[Byte](26, 12, 13))
+      (LT(IntConstant(2), IntConstant(3)), Array[Byte](31, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (LE(IntConstant(2), IntConstant(3)), Array[Byte](32, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (GT(IntConstant(6), IntConstant(5)), Array[Byte](33, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
+      (GE(IntConstant(6), IntConstant(5)), Array[Byte](34, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
+      (EQ(TrueLeaf, FalseLeaf), Array[Byte](35, 12, 13)),
+      (NEQ(TrueLeaf, FalseLeaf), Array[Byte](36, 12, 13))
     )
 
   tableRoundTripTest("Relations: serializer round trip")
@@ -22,7 +22,7 @@ class RelationsSpecification extends TableSerializationSpecification {
 
   property("Relations: serialization LT(bool, bool) must fail") {
     assertThrows[Error] {
-      deserialize(Array[Byte](21, 12, 13))
+      deserialize(Array[Byte](31, 12, 13))
     }
   }
 

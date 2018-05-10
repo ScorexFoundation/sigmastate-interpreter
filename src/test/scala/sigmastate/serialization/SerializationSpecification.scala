@@ -25,6 +25,7 @@ trait SerializationSpecification extends PropSpec
   }
 
   protected def predefinedBytesTest[V <: Value[_ <: SType]](bytes: Array[Byte], v: V): Assertion = {
+    bytes shouldEqual ValueSerializer.serialize(v)
     ValueSerializer.deserialize(bytes) shouldBe v
   }
 
