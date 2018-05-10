@@ -256,7 +256,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.t
   override def deconstruct = immutable.Seq[Any](input, index, tpe)
 
   override def reconstruct(cs: immutable.Seq[Any]): ByIndex[V] = cs match {
-    case Seq(input: Value[SCollection[V]]@unchecked, index: Value[SInt.type], _) =>
+    case Seq(input: Value[SCollection[V]]@unchecked, index: Value[SInt.type]@unchecked, _) =>
       ByIndex[V](input, index)
     case _ => illegalArgs("ByIndex", "(Value[SCollection[V]], index: Value[SInt.type])(tpe: V)", cs)
   }
