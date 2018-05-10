@@ -8,7 +8,7 @@ import sigmastate.Values._
 import sigmastate.interpreter.ProverInterpreter
 import sigmastate.utxo.{CostTable, ErgoInterpreter}
 
-class ErgoProvingInterpreter(override val maxCost: Int = CostTable.ScriptLimit)
+class ErgoProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)
   extends ErgoInterpreter(maxCost) with ProverInterpreter {
 
   import sigmastate.interpreter.GroupSettings.soundness

@@ -8,7 +8,7 @@ object ErgoTransactionValidator {
   //todo: check that outputs are well-formed?
   def validate(tx: ErgoTransaction,
                blockchainState: BlockchainState,
-               boxesReader: ErgoBoxReader): Either[Throwable, Int] = {
+               boxesReader: ErgoBoxReader): Either[Throwable, Long] = {
 
     val msg = tx.messageToSign
     val inputs = tx.inputs
@@ -16,11 +16,11 @@ object ErgoTransactionValidator {
     val boxes: IndexedSeq[ErgoBox] = tx.inputs.map(_.boxId).map{id =>
       boxesReader.byId(id) match {
         case Success(box) => box
-        case Failure(e) => return Left[Throwable, Int](e)
+        case Failure(e) => return Left[Throwable, Long](e)
       }
     }
 
-    val txCost = boxes.zipWithIndex.foldLeft(0) { case (accCost, (box, idx)) =>
+    val txCost = boxes.zipWithIndex.foldLeft(0L) { case (accCost, (box, idx)) =>
       val input = inputs(idx)
       val proof = input.spendingProof
 
@@ -29,12 +29,12 @@ object ErgoTransactionValidator {
       val context =
         ErgoContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, boxes, tx, box, proverExtension)
 
-      val scriptCost: Int = verifier.verify(box.proposition, context, proof, msg) match {
+      val scriptCost: Long = verifier.verify(box.proposition, context, proof, msg) match {
         case Success((res, cost)) =>
-          if(!res) return Left[Throwable, Int](new Exception(s"Validation failed for input #$idx"))
+          if(!res) return Left[Throwable, Long](new Exception(s"Validation failed for input #$idx"))
           else cost
         case Failure(e) =>
-          return Left[Throwable, Int](e)
+          return Left[Throwable, Long](e)
       }
       accCost + scriptCost
     }

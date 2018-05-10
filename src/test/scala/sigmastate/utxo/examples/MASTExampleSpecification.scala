@@ -26,7 +26,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     * In the provided example there are 5 different branches of a tree, each one require to reveal some secret.
     *
     */
-  ignore("Merklized Abstract Syntax Tree") {
+  property("Merklized Abstract Syntax Tree") {
     val scriptId = 21.toByte
     val proofId = 22.toByte
     val secretId = 23.toByte
@@ -46,7 +46,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val merklePathToScript = IsMember(ExtractRegisterAs(Self, R3),
       CalcBlake2b256(TaggedByteArray(scriptId)),
       TaggedByteArray(proofId))
-    val scriptIsCorrect = Deserialize[SBoolean.type](TaggedByteArray(scriptId))
+    val scriptIsCorrect = DeserializeContext[SBoolean.type](scriptId)
     val prop = AND(merklePathToScript, scriptIsCorrect)
 
     val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage

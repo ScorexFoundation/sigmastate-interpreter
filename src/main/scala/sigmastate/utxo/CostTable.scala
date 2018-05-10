@@ -22,11 +22,15 @@ object CostTable {
 
     val ByteArrayPerKilobyte = 200
 
+    val BoxPerKilobyte = 50
+
     val TripleDeclaration = 3
 
     val QuadrupleDeclaration = 4
 
-
+    val IntConstantDeclaration = 1
+    val BoxConstant = 10
+    val AvlTreeConstant = 50
 
     val AndDeclaration = 10
     val AndPerChild = 1
@@ -39,7 +43,7 @@ object CostTable {
     val PropLeafDeclaration = 500
 
     //Cost of Blake256 declaration
-    val Blake256bDeclaration = 10
+    val Blake256bDeclaration = 20
 
     val Dlog = 10000
 
@@ -52,5 +56,21 @@ object CostTable {
     val TxOutBytes = 10
 
     val SelfVariableDeclaration = 1
+
+    val FoldDeclaration = 200
+
+    val ByIndexDeclaration = 50
+
+    val MapDeclaration = 100
+
+    val WhereDeclaration = 200
+
+    val ExistsDeclaration = 200
+
+    val ForAllDeclaration = 200
+
+    val SizeOfDeclaration = 50
+
+    val ConcreteCollection = 20
   }
 }

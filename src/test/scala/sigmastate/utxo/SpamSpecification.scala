@@ -20,10 +20,10 @@ class SpamSpecification extends SigmaTestingCommons {
     val hf = Blake2b256
 
     //just in case to heat up JVM
-    (1 to 1000000).foreach(_ => hf(block))
+    (1 to 2000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 3000000).foreach(_ => hf(block))
+    (1 to 4000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -113,7 +113,7 @@ class SpamSpecification extends SigmaTestingCommons {
   property("transaction with many outputs") {
     forAll(Gen.choose(10, 200), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
       whenever(orCnt > 10 && outCnt > 200) {
-        val prover = new ErgoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000)
+        val prover = new ErgoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
 
         val propToCompare = OR((1 to orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))))
 
@@ -124,7 +124,7 @@ class SpamSpecification extends SigmaTestingCommons {
           Exists(Outputs, 21,
             AND(
               GE(ExtractAmount(TaggedBox(21)), IntConstant(10)),
-              EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(propToCompare.propBytes))
+              EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(propToCompare.bytes))
             )
           )
 
@@ -146,7 +146,7 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   property("transaction with many inputs and outputs") {
-    val prover = new ErgoProvingInterpreter(maxCost = Int.MaxValue)
+    val prover = new ErgoProvingInterpreter(maxCost = Long.MaxValue)
 
     val prop = Exists(Inputs, 21, Exists(Outputs, 22,
       EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))

@@ -19,7 +19,8 @@ import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.utxo.{CostTable, Transformer}
+import sigmastate.serialization.ValueSerializer
+import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
 
 
 object GroupSettings {
@@ -44,23 +45,33 @@ trait Interpreter {
   /**
     * Max cost of a script interpreter can accept
     */
-  def maxCost: Int
+  def maxCost: Long
+
+  def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
+    case d: DeserializeContext[_] =>
+      if (context.extension.values.contains(d.id))
+        context.extension.values(d.id) match {
+          case eba: EvaluatedValue[SByteArray.type] => Some(ValueSerializer.deserialize(eba.value))
+          case _ => None
+        }
+      else
+        None
+    case _ => None
+  }
 
   /** First, both the prover and the verifier are making context-dependent tree transformations
     * (usually, context variables substitutions).
-    * This method defines implementation-specific tree reductions, to be extended in descendants
-    * using stackable-override pattern.
-    * No rewriting is defined on this abstract level.
+    * Context-specific transformations should be defined in descendants.
+    *
+    * This is the only function to define all the tree rewrites, except of deserializations.
     *
     * @param context a context instance
     * @param tree    to be rewritten
     * @return a new rewritten tree or `null` if `tree` cannot be rewritten.
     */
-  def specificTransformations(context: CTX, tree: SValue): SValue = null
-
-  def evaluateNode(context: CTX, node: SValue): SValue = node match {
+  def evaluateNode(context: CTX, tree: SValue): SValue = tree match {
     case GroupGenerator =>
-      GroupElementConstant(dlogGroup.generator) // TODO should we use GroupGenerator.value instead
+      GroupElementConstant(GroupGenerator.value)
 
     //operations
     case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
@@ -110,7 +121,7 @@ trait Interpreter {
 
     case t: Transformer[_, _] if t.transformationReady => t.function()
 
-    case _ => null // this means the node cannot be evaluated
+    case _ => null
   }
 
   // new reducer: 1 phase only which is constantly being repeated until non-reducible,
@@ -135,29 +146,28 @@ trait Interpreter {
       s"Too long expression, contains ${new Tree(exp).nodes.length} nodes, " +
         s"allowed maximum is ${CostTable.MaxExpressions}")
 
-    // Make context-dependent tree transformations (substitute references to a context
-    // with data values from the context).
+    // Substitute Deserialize* nodes with deserialized subtrees
     // We can estimate cost of the tree evaluation only after this step.
-    val substRule = strategy[Value[_ <: SType]] { case x => Option(specificTransformations(context, x)) }
+    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
 
     val substTree = everywherebu(substRule)(exp) match {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
     }
 
-    val cost = substTree.cost
+    val cost = substTree.cost(context)
 
     if (cost > maxCost) {
       throw new Error(s"Estimated expression complexity $substTree exceeds the limit ($maxCost)")
     }
 
-    // After performing context-dependent transformations and checking cost of the resulting tree, both the prover
+    // After performing deserializations and checking cost of the resulting tree, both the prover
     // and the verifier are evaluating the tree by applying rewriting rules, until no rules trigger during tree
     // traversal (so interpreter checks whether any nodes were rewritten during last rewriting, and aborts if so).
     // Because each rewriting reduces size of the tree the process terminates with number of steps <= substTree.cost.
     var wasRewritten = false
     val rules: Strategy = strategy[Value[_ <: SType]] { case node =>
-      var rewritten = evaluateNode(context, node)
+      val rewritten = evaluateNode(context, node)
       if (rewritten != null) {
         wasRewritten = true
         Some(rewritten)
@@ -310,9 +320,9 @@ trait Interpreter {
 }
 
 object Interpreter {
-  type VerificationResult = (Boolean, Int)
+  type VerificationResult = (Boolean, Long)
 
-  type ReductionResult = (Value[SBoolean.type], Int)
+  type ReductionResult = (Value[SBoolean.type], Long)
 
   def error(msg: String) = throw new InterpreterException(msg)
 }

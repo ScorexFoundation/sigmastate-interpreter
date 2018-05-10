@@ -169,7 +169,7 @@ object BlockchainSimulationSpecification {
     def applyBlock(block: Block, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
 
-      val blockCost = block.txs.foldLeft(0) {case (accCost, tx) =>
+      val blockCost = block.txs.foldLeft(0L) {case (accCost, tx) =>
         ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader) match {
           case Left(throwable) => throw throwable
           case Right(cost) => accCost + cost

@@ -48,10 +48,10 @@ trait ValueGeneratots {
 
   val taggedAvlTreeGen: Gen[TaggedAvlTree] = arbByte.arbitrary.map { v => TaggedAvlTree(v) }
 
-  def arGen(cnt: Byte): Seq[Gen[(NonMandatoryIdentifier, Value[SType])]] = {
+  def arGen(cnt: Byte): Seq[Gen[(NonMandatoryIdentifier, EvaluatedValue[SType])]] = {
     (0 until cnt).map(_ + ErgoBox.startingNonMandatoryIndex)
       .map(rI => ErgoBox.registerByIndex(rI.toByte).asInstanceOf[NonMandatoryIdentifier])
-      .map(r => Gen.oneOf(TrueLeaf, FalseLeaf).map(v => r -> v))
+      .map(r => Gen.oneOf(TrueLeaf, FalseLeaf).map(v => r -> v.asInstanceOf[EvaluatedValue[SType]]))
   }
 
   val ergoBoxGen: Gen[ErgoBox] = for {

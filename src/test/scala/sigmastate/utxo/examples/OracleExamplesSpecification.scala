@@ -115,7 +115,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       AND(LE(extract(R3), IntConstant(15)), bobPubKey))
 
     val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
-      EQ(extract[SByteArray.type](R1), ByteArrayConstant(oraclePubKey.propBytes)),
+      EQ(extract[SByteArray.type](R1), ByteArrayConstant(oraclePubKey.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),
           Exponentiate(oraclePubKey.value,
@@ -205,7 +205,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       AND(LE(ExtractRegisterAs(ByIndex(Inputs, 0), R3), IntConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
-      EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.propBytes)),
+      EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),
       contractLogic
     )
 
