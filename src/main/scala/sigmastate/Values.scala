@@ -91,6 +91,12 @@ object Values {
     override def tpe = SInt
   }
 
+  case class ByteConstant(value: Byte) extends EvaluatedValue[SByte.type] {
+    override val opCode: OpCode = ByteConstantCode
+    override def cost[C <: Context[C]](context: C) = Cost.ByteConstantDeclaration
+    override def tpe = SByte
+  }
+
   trait NotReadyValueInt extends NotReadyValue[SInt.type] {
     override def tpe = SInt
   }

@@ -107,6 +107,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("types") {
+    parse("{let X: Byte = 10; 3 > 2}") shouldBe Block(Seq(Let("X", SByte, IntConstant(10))), GT(3, 2))
     parse("{let X: Int = 10; 3 > 2}") shouldBe Block(Seq(Let("X", SInt, IntConstant(10))), GT(3, 2))
     parse("""{let X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe
       Block(Seq(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
@@ -307,6 +308,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("type parameters") {
+    parse("X[Byte]") shouldBe ApplyTypes(Ident("X"), Seq(SByte))
     parse("X[Int]") shouldBe ApplyTypes(Ident("X"), Seq(SInt))
     parse("X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Seq(SInt)), "isDefined")
     parse("X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Seq(STuple(SInt, SBoolean)))

@@ -11,12 +11,14 @@ object OpCodes {
   val TaggedVariableCode: OpCode = 1: Byte
 
   // EvaluatedValue descendants
-  val IntConstantCode         : OpCode = 11: Byte
-  val TrueCode                : OpCode = 12: Byte
-  val FalseCode               : OpCode = 13: Byte
-  val UnitConstantCode        : OpCode = 14: Byte
-  val BigIntConstantCode      : OpCode = 15: Byte
-  val ByteArrayConstantCode   : OpCode = 16: Byte
+
+  val ByteConstantCode:          OpCode = 10: Byte
+  val IntConstantCode:          OpCode = 11: Byte
+  val TrueCode:                 OpCode = 12: Byte
+  val FalseCode:                OpCode = 13: Byte
+  val UnitConstantCode:         OpCode = 14: Byte
+  val BigIntConstantCode:       OpCode = 15: Byte
+  val ByteArrayConstantCode:    OpCode = 16: Byte
   val GroupElementConstantCode: OpCode = 17: Byte
   val GroupGeneratorCode      : OpCode = 18: Byte
   val BoxConstantCode         : OpCode = 19: Byte

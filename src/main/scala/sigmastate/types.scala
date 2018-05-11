@@ -45,7 +45,7 @@ object SType {
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
   /** All primitive types should be listed here. Note, NoType is not primitive type. */
-  val allPredefTypes = Seq(SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SByte, SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   implicit class STypeOps(tpe: SType) {
@@ -194,6 +194,11 @@ case object SUnit extends SPrimType {
 case object SAny extends SPrimType {
   override type WrappedType = Any
   override val typeCode: Byte = 9: Byte
+}
+
+case object SByte extends SPrimType {
+  override type WrappedType = Byte
+  override val typeCode: TypeCode = 10: Byte //TODO change to 4 after SByteArray is removed
 }
 
 case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
