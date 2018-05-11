@@ -35,8 +35,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val prop = compile(env, """isMember(SELF.R3[AvlTree].value, key, proof)""").asBoolValue
 
     val propTree = IsMember(ExtractRegisterAs(Self, R3),
-      ByteArrayConstant(key),
-      ByteArrayConstant(proof))
+      CollectionConstant(key),
+      CollectionConstant(proof))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
@@ -94,7 +94,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(treeElements.head._1))
     val bigLeafProof = avlProver.generateProof()
     val prover = new ErgoProvingInterpreter()
-      .withContextExtender(proofId, ByteArrayConstant(bigLeafProof))
+      .withContextExtender(proofId, CollectionConstant(bigLeafProof))
       .withContextExtender(elementId, IntConstant(elements.head))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
@@ -103,7 +103,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(treeElements.last._1))
     val smallLeafTreeProof = avlProver.generateProof()
     val smallProver = new ErgoProvingInterpreter()
-      .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
+      .withContextExtender(proofId, CollectionConstant(smallLeafTreeProof))
       .withContextExtender(elementId, IntConstant(elements.head))
     smallProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
     // TODO check that verifier return false for incorrect proofs?
@@ -126,7 +126,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val proofId = 31: Byte
 
-    val prover = new ErgoProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
+    val prover = new ErgoProvingInterpreter().withContextExtender(proofId, CollectionConstant(proof))
     val verifier = new ErgoInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -147,7 +147,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key)))
+    val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> CollectionConstant(key)))
 
     val ctx = ErgoContext(
       currentHeight = 50,

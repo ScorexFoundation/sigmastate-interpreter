@@ -1,26 +1,26 @@
 package sigmastate.serialization
 
-import sigmastate.Values.ByteArrayConstant
+import sigmastate.Values.CollectionConstant
 
-class ByteArrayConstantSerializerSpecification extends TableSerializationSpecification {
+class CollectionConstantSerializerSpecification extends TableSerializationSpecification {
   
   property("ByteArrayConstant: Serializer round trip") {
-    forAll { arr: ByteArrayConstant =>
+    forAll { arr: CollectionConstant =>
       roundTripTest(arr)
     }
   }
 
   property("ByteArrayConstant: Deserialize predefined bytes") {
-    val value = ByteArrayConstant(Array[Byte](1, 3, 5, 9, 10, 100))
+    val value = CollectionConstant(Array[Byte](1, 3, 5, 9, 10, 100))
     val bytes = Array[Byte](16, 0, 6, 1, 3, 5, 9, 10, 100)
     predefinedBytesTest(bytes, value)
   }
 
   override def objects = Table(
     ("object", "bytes"),
-    (ByteArrayConstant(Array[Byte]()), Array[Byte](16, 0, 0)),
-    (ByteArrayConstant(Array[Byte](1)), Array[Byte](16, 0, 1, 1)),
-    (ByteArrayConstant(Array[Byte](1, 2, 3, 4, 5)), Array[Byte](16, 0, 5, 1, 2, 3, 4, 5))
+    (CollectionConstant(Array[Byte]()), Array[Byte](16, 0, 0)),
+    (CollectionConstant(Array[Byte](1)), Array[Byte](16, 0, 1, 1)),
+    (CollectionConstant(Array[Byte](1, 2, 3, 4, 5)), Array[Byte](16, 0, 5, 1, 2, 3, 4, 5))
   )
 
   tableRoundTripTest("ByteArrayConstant: Serializer table round trip")

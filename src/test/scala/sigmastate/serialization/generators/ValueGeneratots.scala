@@ -20,7 +20,7 @@ trait ValueGeneratots {
   implicit val arbIntConstants: Arbitrary[IntConstant] = Arbitrary(intConstGen)
   implicit val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedIntGen)
   implicit val arbTaggedBox: Arbitrary[TaggedBox] = Arbitrary(taggedBoxGen)
-  implicit val arbByteArrayConstant: Arbitrary[ByteArrayConstant] = Arbitrary(byteArrayConstantGen)
+  implicit val arbByteArrayConstant: Arbitrary[CollectionConstant] = Arbitrary(byteArrayConstantGen)
   implicit val arbGroupElementConstant: Arbitrary[GroupElementConstant] = Arbitrary(groupElementConstantGen)
   implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
   implicit val arbProveDHT: Arbitrary[ProveDiffieHellmanTuple] = Arbitrary(proveDHTGen)
@@ -37,10 +37,10 @@ trait ValueGeneratots {
   val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map { v => BigIntConstant(v.bigInteger) }
   val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map { v => TaggedInt(v) }
   val taggedBoxGen: Gen[TaggedBox] = arbByte.arbitrary.map { v => TaggedBox(v) }
-  val byteArrayConstantGen: Gen[ByteArrayConstant] = for {
+  val byteArrayConstantGen: Gen[CollectionConstant] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
-  } yield ByteArrayConstant(bytes.toArray)
+  } yield CollectionConstant(bytes.toArray)
   val groupElementConstantGen: Gen[GroupElementConstant] = for {
     _ <- Gen.const(1)
     el = GroupSettings.dlogGroup.createRandomGenerator()

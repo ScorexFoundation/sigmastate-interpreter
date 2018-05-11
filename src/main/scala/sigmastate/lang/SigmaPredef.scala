@@ -24,13 +24,13 @@ object SigmaPredef {
     "byteArrayToBigInt" -> Lambda(Vector("input" -> SByteArray), SBigInt, None),
     "intToByteArray" -> Lambda(Vector("input" -> SInt), SByteArray, None),
 
-    "taggedByteArray" -> Lambda(Vector("input" -> SInt), SByteArray, None),
-    "taggedInt" -> Lambda(Vector("input" -> SInt), SInt, None),
-    "taggedBigInt" -> Lambda(Vector("input" -> SInt), SBigInt, None),
-    "taggedBox" -> Lambda(Vector("input" -> SInt), SBox, None),
-    "taggedGroupElement" -> Lambda(Vector("input" -> SInt), SGroupElement, None),
-    "taggedAvlTree" -> Lambda(Vector("input" -> SInt), SAvlTree, None),
-    "taggedBoolean" -> Lambda(Vector("input" -> SInt), SBoolean, None),
+    "taggedByteArray" -> Lambda(Vector("input" -> SByte), SByteArray, None),
+    "taggedInt" -> Lambda(Vector("input" -> SByte), SInt, None),
+    "taggedBigInt" -> Lambda(Vector("input" -> SByte), SBigInt, None),
+    "taggedBox" -> Lambda(Vector("input" -> SByte), SBox, None),
+    "taggedGroupElement" -> Lambda(Vector("input" -> SByte), SGroupElement, None),
+    "taggedAvlTree" -> Lambda(Vector("input" -> SByte), SAvlTree, None),
+    "taggedBoolean" -> Lambda(Vector("input" -> SByte), SBoolean, None),
 
     "proveDHTuple" -> Lambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),

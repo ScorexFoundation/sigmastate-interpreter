@@ -168,7 +168,7 @@ class TestingInterpreterSpecification extends PropSpec
     val bytes = "hello world".getBytes
     val hash = Blake2b256(bytes)
 
-    val prop1 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash))
+    val prop1 = EQ(CalcBlake2b256(CollectionConstant(bytes)), CollectionConstant(hash))
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -176,11 +176,11 @@ class TestingInterpreterSpecification extends PropSpec
 
     verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop2 = NEQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash))
+    val prop2 = NEQ(CalcBlake2b256(CollectionConstant(bytes)), CollectionConstant(hash))
 
     verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
-    val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes))
+    val prop3 = EQ(CalcBlake2b256(CollectionConstant(bytes)), CollectionConstant(bytes))
 
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
@@ -205,7 +205,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
     Seq(DLogProverInput.random(), DLogProverInput.random())
   }
 
-  override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
+  override val contextExtenders: Map[Byte, CollectionConstant] = Map[Byte, CollectionConstant]()
 
   override def evaluateNode(context: TestingContext, tree: SValue): SValue = tree match {
     case Height => IntConstant(context.height)

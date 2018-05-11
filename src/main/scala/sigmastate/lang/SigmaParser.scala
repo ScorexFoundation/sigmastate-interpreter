@@ -46,9 +46,9 @@ object SigmaParser extends Exprs with Types with Core {
 
   private val Base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
-  private def byteVectorP: P[ByteArrayConstant] =
+  private def byteVectorP: P[CollectionConstant] =
     P("base58'" ~ CharsWhileIn(Base58Chars).! ~ "'")
-        .map(x => ByteArrayConstant(Base58.decode(x).get))
+        .map(x => CollectionConstant(Base58.decode(x).get))
 
   def mkUnaryOp(opName: String, arg: Value[SType]) = opName match {
     case _ => error(s"Unknown prefix operation $opName")

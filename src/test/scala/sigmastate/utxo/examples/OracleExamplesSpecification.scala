@@ -115,7 +115,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       AND(LE(extract(R3), IntConstant(15)), bobPubKey))
 
     val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
-      EQ(extract[SByteArray.type](R1), ByteArrayConstant(oraclePubKey.bytes)),
+      EQ(extract[SByteArray.type](R1), CollectionConstant(oraclePubKey.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),
           Exponentiate(oraclePubKey.value,
@@ -141,7 +141,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
-      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
+      EQ(ExtractId(ByIndex(Inputs, 0)), CollectionConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = ErgoBox(10, propBob, Map(), boxId = 4)
 
@@ -154,7 +154,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val alice = aliceTemplate
       .withContextExtender(22: Byte, BoxConstant(oracleBox))
-      .withContextExtender(23: Byte, ByteArrayConstant(proof))
+      .withContextExtender(23: Byte, CollectionConstant(proof))
     val prA = alice.prove(propAlice, ctx, fakeMessage).get
 
     val prB = bob.prove(propBob, ctx, fakeMessage).get
@@ -205,7 +205,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       AND(LE(ExtractRegisterAs(ByIndex(Inputs, 0), R3), IntConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
-      EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),
+      EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), CollectionConstant(oraclePubKey.bytes)),
       contractLogic
     )
 

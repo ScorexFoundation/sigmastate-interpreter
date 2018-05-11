@@ -33,7 +33,7 @@ class ErgoBoxCandidate(val value: Long,
   def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {
       case R0 => Some(IntConstant(value))
-      case R1 => Some(ByteArrayConstant(propositionBytes))
+      case R1 => Some(CollectionConstant(propositionBytes))
       case R2 => None
       case n: NonMandatoryIdentifier => additionalRegisters.get(n)
     }
@@ -79,7 +79,7 @@ class ErgoBox private(override val value: Long,
 
   override def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {
-      case R2 => Some(ByteArrayConstant(transactionId ++ Shorts.toByteArray(boxId)))
+      case R2 => Some(CollectionConstant(transactionId ++ Shorts.toByteArray(boxId)))
       case _ => super.get(identifier)
     }
   }

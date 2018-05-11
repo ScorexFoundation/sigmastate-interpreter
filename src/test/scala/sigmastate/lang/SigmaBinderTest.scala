@@ -17,9 +17,10 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("simple expressions") {
     bind(env, "x") shouldBe IntConstant(10)
+    bind(env, "b1") shouldBe ByteConstant(1)
     bind(env, "x+y") shouldBe Plus(10, 11)
     bind(env, "c1 && c2") shouldBe AND(TrueLeaf, FalseLeaf)
-    bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
+    bind(env, "arr1") shouldBe CollectionConstant(Array(1, 2))
     bind(env, "HEIGHT + 1") shouldBe Plus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
     bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10,20))

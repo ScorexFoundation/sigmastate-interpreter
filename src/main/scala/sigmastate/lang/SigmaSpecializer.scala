@@ -57,14 +57,14 @@ class SigmaSpecializer {
     case Apply(TaggedBoxSym, Seq(IntConstant(i))) =>
       Some(TaggedBox(i.toByte))
 
-    case Apply(TaggedByteArraySym, Seq(IntConstant(i))) =>
-      Some(TaggedByteArray(i.toByte))
+    case Apply(TaggedByteArraySym, Seq(ByteConstant(i))) =>
+      Some(TaggedByteArray(i))
 
     case Apply(TaggedBigIntSym, Seq(IntConstant(i))) =>
       Some(TaggedBigInt(i.toByte))
 
-    case Apply(TaggedIntSym, Seq(IntConstant(i))) =>
-      Some(TaggedInt(i.toByte))
+    case Apply(TaggedIntSym, Seq(ByteConstant(i))) =>
+      Some(TaggedInt(i))
 
     case Apply(TaggedBooleanSym, Seq(IntConstant(i))) =>
       Some(TaggedBoolean(i.toByte))
@@ -106,7 +106,7 @@ class SigmaSpecializer {
 
     case Select(obj: SigmaBoolean, field, _) =>
       field match {
-        case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.bytes))
+        case SigmaBoolean.PropBytes => Some(CollectionConstant(obj.bytes))
         case SigmaBoolean.IsValid => Some(obj)
       }
 

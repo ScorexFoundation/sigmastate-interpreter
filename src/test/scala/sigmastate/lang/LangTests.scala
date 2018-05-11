@@ -26,6 +26,8 @@ trait LangTests {
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
+    "b1" -> 1.toByte,
+    "b2" -> 2.toByte,
     "arr1" -> Array[Byte](1, 2),
     "arr2" -> Array[Byte](10, 20),
     "col1" -> ConcreteCollection(IntConstant(1), IntConstant(2)),
