@@ -6,7 +6,7 @@ import org.scalatest.{Assertion, Matchers, PropSpec}
 import org.scalacheck.Arbitrary._
 import sigmastate.Values._
 import sigmastate.SType
-import sigmastate.serialization.generators.{ConcreteCollectionGenerators, RelationGenerators, TransformerGenerators, ValueGeneratots}
+import sigmastate.serialization.generators._
 
 trait SerializationSpecification extends PropSpec
   with PropertyChecks
@@ -15,6 +15,7 @@ trait SerializationSpecification extends PropSpec
   with Matchers
   with ValueGeneratots
   with ConcreteCollectionGenerators
+  with OpcodesGen
   with TransformerGenerators
   with RelationGenerators {
 

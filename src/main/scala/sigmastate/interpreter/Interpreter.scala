@@ -4,24 +4,22 @@ import java.math.BigInteger
 import java.util.Arrays
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import scorex.crypto.hash.Blake2b256
-import sigmastate.{SType, _}
-import sigmastate.utils.Helpers
-import sigmastate.Values._
-
-import scala.util.Try
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
+import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import scorex.crypto.hash.Blake2b256
+import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.Helpers
 import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.{SType, _}
+
+import scala.util.Try
 
 
 object GroupSettings {
@@ -34,7 +32,6 @@ object GroupSettings {
 trait Interpreter {
 
   import GroupSettings._
-
   import Interpreter.ReductionResult
 
   type CTX <: Context[CTX]
@@ -76,11 +73,20 @@ trait Interpreter {
 
     //operations
     case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.PlusCode) =>
-      IntConstant(l.value + r.value)
+      IntConstant(Math.addExact(l.value, r.value))
+
     case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MinusCode) =>
-      IntConstant(l.value - r.value)
+      IntConstant(Math.subtractExact(l.value, r.value))
+
     case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MultiplyCode) =>
-      IntConstant(l.value * r.value)
+      IntConstant(Math.multiplyExact(l.value, r.value))
+
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.ModuloCode) =>
+      IntConstant(l.value % r.value)
+
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.DivisionCode) =>
+      IntConstant(l.value / r.value)
+
     case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
       assert(l.value.length == r.value.length)
       ByteArrayConstant(Helpers.xor(l.value, r.value))

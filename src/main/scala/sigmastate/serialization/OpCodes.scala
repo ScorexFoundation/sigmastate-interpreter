@@ -41,9 +41,11 @@ object OpCodes {
   val MinusCode        : OpCode = 41: Byte
   val PlusCode         : OpCode = 42: Byte
   val XorCode          : OpCode = 43: Byte
-  val ExponentiateCode : OpCode = 44: Byte
-  val MultiplyGroupCode: OpCode = 45: Byte
-  val MultiplyCode     : OpCode = 46: Byte
+  val MultiplyCode     : OpCode = 44: Byte
+  val DivisionCode     : OpCode = 45: Byte
+  val ModuloCode       : OpCode = 46: Byte
+  val ExponentiateCode : OpCode = 47: Byte
+  val MultiplyGroupCode: OpCode = 48: Byte
 
   // Environment codes
   val HeightCode               : OpCode = 51: Byte

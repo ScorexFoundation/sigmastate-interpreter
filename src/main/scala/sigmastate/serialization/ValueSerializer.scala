@@ -46,6 +46,8 @@ object ValueSerializer
     TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
     TwoArgumentsSerializer(MinusCode, Minus),
     TwoArgumentsSerializer(MultiplyCode, Multiply),
+    TwoArgumentsSerializer(DivisionCode, Divide),
+    TwoArgumentsSerializer(ModuloCode, Modulo),
     TwoArgumentsSerializer(PlusCode, Plus),
 
     ProveDiffieHellmanTupleSerializer,

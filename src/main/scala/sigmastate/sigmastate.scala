@@ -1,5 +1,5 @@
 import sigmastate.Values.Value
-import sigmastate.serialization.OpCodes.{MinusCode, MultiplyCode, PlusCode}
+import sigmastate.serialization.OpCodes._
 
 package object sigmastate {
 
@@ -17,5 +17,16 @@ package object sigmastate {
     * SInt multiplication
     */
   def Multiply(left: Value[SInt.type], right: Value[SInt.type]): ArithmeticOperations = ArithmeticOperations(left, right, MultiplyCode)
+
+  /**
+    * SInt division
+    */
+  def Divide(left: Value[SInt.type], right: Value[SInt.type]): ArithmeticOperations = ArithmeticOperations(left, right, DivisionCode)
+
+  /**
+    * SInt modulo
+    */
+  def Modulo(left: Value[SInt.type], right: Value[SInt.type]): ArithmeticOperations = ArithmeticOperations(left, right, ModuloCode)
+
 
 }

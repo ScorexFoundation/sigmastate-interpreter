@@ -213,6 +213,8 @@ class SigmaTyper {
     case ArithmeticOperations(l, r, OpCodes.MinusCode) => bimap(env, "-", l, r)(Minus)(SInt, SInt)
     case ArithmeticOperations(l, r, OpCodes.PlusCode) => bimap(env, "+", l, r)(Plus)(SInt, SInt)
     case ArithmeticOperations(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l, r)(Multiply)(SInt, SInt)
+    case ArithmeticOperations(l, r, OpCodes.ModuloCode) => bimap(env, "%", l, r)(Modulo)(SInt, SInt)
+    case ArithmeticOperations(l, r, OpCodes.DivisionCode) => bimap(env, "/", l, r)(Divide)(SInt, SInt)
     case Xor(l, r) => bimap(env, "|", l, r)(Xor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(MultiplyGroup)(SGroupElement, SGroupElement)
     case AppendBytes(l, r) => bimap(env, "++", l, r)(AppendBytes)(SByteArray, SByteArray)

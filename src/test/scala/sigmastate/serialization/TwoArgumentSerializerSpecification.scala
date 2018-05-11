@@ -3,6 +3,7 @@ package sigmastate.serialization
 import sigmastate.Values.{BigIntConstant, ByteArrayConstant, GroupElementConstant, IntConstant}
 import sigmastate._
 import sigmastate.interpreter.GroupSettings
+import sigmastate.serialization.OpCodes.OpCode
 
 class TwoArgumentSerializerSpecification extends TableSerializationSpecification {
 
@@ -11,9 +12,9 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
   override val objects =
     Table(
       ("object", "bytes"),
-      (Multiply(IntConstant(2), IntConstant(3)), Array[Byte](46, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
       (Minus(IntConstant(2), IntConstant(3)), Array[Byte](41, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
       (Plus(IntConstant(2), IntConstant(3)), Array[Byte](42, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (Multiply(IntConstant(2), IntConstant(3)), Array[Byte](44, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
       (Xor(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](43, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4)),
       (AppendBytes(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](68, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4))
     )
@@ -21,9 +22,9 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
   tableRoundTripTest("TwoArguments: serializer round trip")
   tablePredefinedBytesTest("TwoArguments: deserialize from predefined bytes")
 
-  property("Multiply: Serializer round trip") {
-    forAll { (x1: IntConstant, x2: IntConstant) =>
-      roundTripTest(Multiply(x1, x2))
+  property("ArithmeticOperations: Serializer round trip") {
+    forAll(intConstGen, intConstGen, aritmeticCodeGen) { (x1: IntConstant, x2: IntConstant, opCode: OpCode) =>
+      roundTripTest(ArithmeticOperations(x1, x2, opCode))
     }
   }
 
