@@ -19,7 +19,8 @@ import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
 
 
@@ -74,9 +75,12 @@ trait Interpreter {
       GroupElementConstant(GroupGenerator.value)
 
     //operations
-    case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
-    case Minus(l: IntConstant, r: IntConstant) => IntConstant(l.value - r.value)
-    case Multiply(l: IntConstant, r: IntConstant) => IntConstant(l.value * r.value)
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.PlusCode) =>
+      IntConstant(l.value + r.value)
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MinusCode) =>
+      IntConstant(l.value - r.value)
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MultiplyCode) =>
+      IntConstant(l.value * r.value)
     case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
       assert(l.value.length == r.value.length)
       ByteArrayConstant(Helpers.xor(l.value, r.value))

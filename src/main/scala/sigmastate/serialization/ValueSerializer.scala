@@ -44,9 +44,9 @@ object ValueSerializer
     TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
     TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
     TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
-    TwoArgumentsSerializer(MinusCode, Minus.apply),
-    TwoArgumentsSerializer(MultiplyCode, Multiply.apply),
-    TwoArgumentsSerializer(PlusCode, Plus.apply),
+    TwoArgumentsSerializer(MinusCode, Minus),
+    TwoArgumentsSerializer(MultiplyCode, Multiply),
+    TwoArgumentsSerializer(PlusCode, Plus),
 
     ProveDiffieHellmanTupleSerializer,
     GroupElementSerializer,

@@ -217,34 +217,9 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
   extends Triple[LIV, RIV, OV]
 
-sealed trait ArithmeticOperations extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
+case class ArithmeticOperations(left: Value[SInt.type], right: Value[SInt.type], opCode: OpCode)
+  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
 
-case class Plus(override val left: Value[SInt.type],
-                override val right: Value[SInt.type])
-  extends ArithmeticOperations {
-
-  override val opCode: OpCode = PlusCode
-}
-
-/**
-  * SInt subtraction
-  */
-case class Minus(override val left: Value[SInt.type],
-                 override val right: Value[SInt.type])
-  extends ArithmeticOperations {
-
-  override val opCode: OpCode = MinusCode
-}
-
-/**
-  * SInt multiplication
-  */
-case class Multiply(override val left: Value[SInt.type],
-                    override val right: Value[SInt.type])
-  extends ArithmeticOperations {
-
-  override val opCode: OpCode = MultiplyCode
-}
 
 /**
   * XOR for two SByteArray
