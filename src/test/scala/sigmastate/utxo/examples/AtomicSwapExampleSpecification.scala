@@ -1,7 +1,7 @@
 package sigmastate.utxo.examples
 
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{CollectionConstant, IntConstant, TaggedByteArray}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedByteArray}
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo.{ErgoContext, ErgoInterpreter, Height}
@@ -26,7 +26,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val verifier = new ErgoInterpreter
 
     val x = proverA.contextExtenders(1).value.asInstanceOf[Array[Byte]]
-    val hx = CollectionConstant(Blake2b256(x))
+    val hx = ByteArrayConstant(Blake2b256(x))
 
     val height1 = 100000
     val height2 = 50000
@@ -104,7 +104,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     //B extracts preimage x of hx
     val t = pr.extension.values(1)
-    val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[CollectionConstant])
+    val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[ByteArrayConstant])
 
     //B spends coins of A in chain1 with knowledge of x
     val ctx2 = ErgoContext(

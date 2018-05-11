@@ -106,7 +106,7 @@ class SigmaSpecializer {
 
     case Select(obj: SigmaBoolean, field, _) =>
       field match {
-        case SigmaBoolean.PropBytes => Some(CollectionConstant(obj.bytes))
+        case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.bytes))
         case SigmaBoolean.IsValid => Some(obj)
       }
 

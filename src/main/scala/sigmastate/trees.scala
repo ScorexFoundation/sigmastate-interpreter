@@ -153,7 +153,7 @@ case class IntToByteArray(input: Value[SInt.type])
   override val opCode: OpCode = OpCodes.IntToByteArrayCode
 
   override def function(bal: EvaluatedValue[SInt.type]): Value[SByteArray.type] =
-    CollectionConstant(Longs.toByteArray(bal.value))
+    ByteArrayConstant(Longs.toByteArray(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
 }
@@ -178,7 +178,7 @@ trait CalcHash extends Transformer[SByteArray.type, SByteArray.type] with NotRea
   val hashFn: CryptographicHash32
 
   override def function(bal: EvaluatedValue[SByteArray.type]): Value[SByteArray.type] =
-    CollectionConstant(hashFn.apply(bal.value))
+    ByteArrayConstant(hashFn.apply(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.Blake256bDeclaration
 }

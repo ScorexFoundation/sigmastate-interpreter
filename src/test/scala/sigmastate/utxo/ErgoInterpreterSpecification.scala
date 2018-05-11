@@ -26,13 +26,13 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val ctx = ErgoContext.dummy(fakeSelf)
 
     val e = compile(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
-    val exp = EQ(CollectionConstant(h1.bytes), CollectionConstant(h1.bytes))
+    val exp = EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes))
     e shouldBe exp
 
     verifier.reduceToCrypto(ctx, exp)
       .get._1.isInstanceOf[TrueLeaf.type] shouldBe true
 
-    verifier.reduceToCrypto(ctx, EQ(CollectionConstant(h1.bytes), CollectionConstant(h2.bytes)))
+    verifier.reduceToCrypto(ctx, EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes)))
       .get._1.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
@@ -154,7 +154,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       val prop = OR(
         AND(LE(Height, IntConstant(timeout)),
           EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))))),
-            CollectionConstant(properHash))),
+            ByteArrayConstant(properHash))),
         AND(GT(Height, IntConstant(timeout)), sender)
       )
       compiledProp shouldBe prop
@@ -257,7 +257,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val scriptBytes = ValueSerializer.serialize(customScript)
     val scriptHash = Blake2b256(scriptBytes)
 
-    val prover = prover0.withContextExtender(scriptId, CollectionConstant(scriptBytes))
+    val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
 
     val hashEquals = EQ(CalcBlake2b256(TaggedByteArray(scriptId)), scriptHash)
     val scriptIsCorrect = DeserializeContext[SBoolean.type](scriptId)
@@ -413,7 +413,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
         |  helloHash == blake2b256(preimage)
          }""".stripMargin).asBoolValue
 
-    val propExpected = EQ(CollectionConstant(helloHash),
+    val propExpected = EQ(ByteArrayConstant(helloHash),
       CalcBlake2b256(
         If(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10)),
           ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3),
@@ -421,8 +421,8 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     prop shouldBe propExpected
 
     val input0 = ErgoBox(10, pubkey, Map())
-    val input1 = ErgoBox(1, pubkey, Map(R3 -> CollectionConstant(preimageHello)))
-    val input2 = ErgoBox(1, pubkey, Map(R3 -> CollectionConstant(preimageWrong)))
+    val input1 = ErgoBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimageHello)))
+    val input2 = ErgoBox(1, pubkey, Map(R3 -> ByteArrayConstant(preimageWrong)))
     val input3 = ErgoBox(10, prop, Map())
 
     val output = ErgoBox(22, pubkey, Map())

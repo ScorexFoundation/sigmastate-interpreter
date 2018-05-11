@@ -19,7 +19,7 @@ class SigmaBinder(env: Map[String, Any]) {
   private def eval(e: SValue, env: Map[String, Any]): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
-        case arr: Array[Byte] => Some(CollectionConstant(arr))
+        case arr: Array[Byte] => Some(ByteArrayConstant(arr))
         case v: Byte => Some(ByteConstant(v))
         case v: Int => Some(IntConstant(v))
         case v: Long => Some(IntConstant(v))
@@ -38,7 +38,7 @@ class SigmaBinder(env: Map[String, Any]) {
           case "INPUTS" => Some(Inputs)
           case "OUTPUTS" => Some(Outputs)
           case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
-          case "EmptyByteArray" => Some(CollectionConstant(Array.emptyByteArray))
+          case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
           case "SELF" => Some(Self)
           case "None" => Some(NoneValue(NoType))
           case _ => None

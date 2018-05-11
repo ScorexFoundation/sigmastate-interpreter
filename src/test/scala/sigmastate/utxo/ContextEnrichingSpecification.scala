@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{CollectionConstant, TaggedByteArray}
+import sigmastate.Values.{ByteArrayConstant, TaggedByteArray}
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 
@@ -21,7 +21,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       """.stripMargin)
     val prop = AND(
       pubkey,
-      EQ(CalcBlake2b256(TaggedByteArray(1)), CollectionConstant(Blake2b256(preimage)))
+      EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
     )
     compiledScript shouldBe prop
 
@@ -54,7 +54,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       pubkey,
       EQ(
         CalcBlake2b256(AppendBytes(TaggedByteArray(1), TaggedByteArray(2))),
-        CollectionConstant(Blake2b256(preimage1 ++ preimage2))
+        ByteArrayConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
     compiledScript shouldBe prop
@@ -81,8 +81,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val r = Base16.decode("bb6633db20").get
 
     val prover = new ErgoProvingInterpreter()
-      .withContextExtender(k1, CollectionConstant(v1))
-      .withContextExtender(k2, CollectionConstant(v2))
+      .withContextExtender(k1, ByteArrayConstant(v1))
+      .withContextExtender(k2, ByteArrayConstant(v2))
 
     val env = Map("k1" -> k1.toInt, "k2" -> k2.toInt, "r" -> r)
     val compiledScript = compile(env,
@@ -91,7 +91,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
         |}
       """.stripMargin)
 
-    val prop = EQ(Xor(TaggedByteArray(k1), TaggedByteArray(k2)), CollectionConstant(r))
+    val prop = EQ(Xor(TaggedByteArray(k1), TaggedByteArray(k2)), ByteArrayConstant(r))
     compiledScript shouldBe prop
 
     val ctx = ErgoContext.dummy(fakeSelf)
@@ -118,7 +118,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
         |}
       """.stripMargin)
 
-    val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), CollectionConstant(Blake2b256(preimage)))
+    val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
     compiledScript shouldBe prop
 
     val ctx = ErgoContext.dummy(fakeSelf)
@@ -144,7 +144,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       """.stripMargin)
 
     val prop = EQ(CalcBlake2b256(AppendBytes(TaggedByteArray(2), TaggedByteArray(1))),
-      CollectionConstant(Blake2b256(preimage2 ++ preimage1)))
+      ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
     compiledScript shouldBe prop
 
     val ctx = ErgoContext.dummy(fakeSelf)

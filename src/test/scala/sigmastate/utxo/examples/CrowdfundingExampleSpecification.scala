@@ -1,6 +1,6 @@
 package sigmastate.utxo.examples
 
-import sigmastate.Values.{CollectionConstant, IntConstant, TaggedBox}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox}
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo._
@@ -61,7 +61,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
           Exists(Outputs, 21,
             AND(
               GE(ExtractAmount(TaggedBox(21)), minToRaise),
-              EQ(ExtractScriptBytes(TaggedBox(21)), CollectionConstant(projectPubKey.bytes))
+              EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(projectPubKey.bytes))
             )
           )
         )

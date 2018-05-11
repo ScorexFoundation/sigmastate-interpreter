@@ -41,7 +41,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val id = 11: Byte
 
-    val prover = new ErgoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, CollectionConstant(ba))
+    val prover = new ErgoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
     val spamScript = EQ(CalcBlake2b256(TaggedByteArray(id)), CalcBlake2b256(TaggedByteArray(id)))
 
@@ -66,13 +66,13 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val id = 21: Byte
 
-    val prover = new ErgoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, CollectionConstant(ba))
+    val prover = new ErgoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
     val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256(TaggedByteArray(id))) { case (script, _) =>
       CalcBlake2b256(script)
     }
 
-    val spamScript = NEQ(bigSubScript, CalcBlake2b256(CollectionConstant(Array.fill(32)(0: Byte))))
+    val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayConstant(Array.fill(32)(0: Byte))))
 
     val ctx = ErgoContext.dummy(fakeSelf)
 
@@ -124,7 +124,7 @@ class SpamSpecification extends SigmaTestingCommons {
           Exists(Outputs, 21,
             AND(
               GE(ExtractAmount(TaggedBox(21)), IntConstant(10)),
-              EQ(ExtractScriptBytes(TaggedBox(21)), CollectionConstant(propToCompare.bytes))
+              EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(propToCompare.bytes))
             )
           )
 

@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{BigIntConstant, CollectionConstant, GroupElementConstant, IntConstant}
+import sigmastate.Values.{BigIntConstant, ByteArrayConstant, GroupElementConstant, IntConstant}
 import sigmastate._
 import sigmastate.interpreter.GroupSettings
 import sigmastate.serialization.OpCodes.OpCode

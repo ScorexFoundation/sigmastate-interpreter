@@ -32,11 +32,11 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val secretId = 23.toByte
 
     val allSecrets = (0 until 5).map(i => Random.nextString(32).getBytes("UTF-8"))
-    val scriptBranches = allSecrets.map(s => EQ(CollectionConstant(s), TaggedByteArray(secretId)))
+    val scriptBranches = allSecrets.map(s => EQ(ByteArrayConstant(s), TaggedByteArray(secretId)))
     val scriptBranchesBytes = scriptBranches.map(b => ValueSerializer.serialize(b))
     val treeElements = scriptBranchesBytes.map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
     val knownSecretTreeKey = treeElements.head._1
-    val knownSecret = CollectionConstant(allSecrets.head)
+    val knownSecret = ByteArrayConstant(allSecrets.head)
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
@@ -62,8 +62,8 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val usedBranch = scriptBranchesBytes.head
     val prover = new ErgoProvingInterpreter()
       .withContextExtender(secretId, knownSecret)
-      .withContextExtender(scriptId, CollectionConstant(usedBranch))
-      .withContextExtender(proofId, CollectionConstant(knownSecretPathProof))
+      .withContextExtender(scriptId, ByteArrayConstant(usedBranch))
+      .withContextExtender(proofId, ByteArrayConstant(knownSecretPathProof))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
     (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true

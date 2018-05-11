@@ -241,7 +241,7 @@ object Fold {
     Fold(input, 21, IntConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
 
   def sumBytes(input: Value[SCollection[SByteArray.type]]) =
-    Fold[SByteArray.type](input, 21, CollectionConstant(Array.emptyByteArray), 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
+    Fold[SByteArray.type](input, 21, ByteArrayConstant(Array.emptyByteArray), 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
 case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
@@ -295,7 +295,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
   override def cost[C <: Context[C]](context: C) = 1000
 
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = {
-    CollectionConstant(box.value.propositionBytes)
+    ByteArrayConstant(box.value.propositionBytes)
   }
 }
 
@@ -305,7 +305,7 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type
 
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: make it PerKb * max box size in kbs
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = CollectionConstant(box.value.bytes)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytes)
 }
 
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
@@ -313,7 +313,7 @@ case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteA
 
   override def cost[C <: Context[C]](context: C) = 1000 //todo: make it PerKb * max box size in kbs
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = CollectionConstant(box.value.bytesWithNoRef)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytesWithNoRef)
 }
 
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
@@ -321,7 +321,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] w
 
   override def cost[C <: Context[C]](context: C) = 10
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = CollectionConstant(box.value.id)
+  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.id)
 }
 
 case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],

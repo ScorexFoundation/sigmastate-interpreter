@@ -89,11 +89,11 @@ trait Interpreter {
 
     case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
       assert(l.value.length == r.value.length)
-      CollectionConstant(Helpers.xor(l.value, r.value))
+      ByteArrayConstant(Helpers.xor(l.value, r.value))
 
-    case AppendBytes(CollectionConstant(l), CollectionConstant(r)) =>
+    case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       require(l.length + r.length < MaxByteArrayLength)
-      CollectionConstant(l ++ r)
+      ByteArrayConstant(l ++ r)
 
     case c: CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray.type]])
 
@@ -116,7 +116,7 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l.value < r.value)
     case LE(l: IntConstant, r: IntConstant) =>
       BooleanConstant.fromBoolean(l.value <= r.value)
-    case IsMember(tree: AvlTreeConstant, key: CollectionConstant, proof: CollectionConstant) =>
+    case IsMember(tree: AvlTreeConstant, key: ByteArrayConstant, proof: ByteArrayConstant) =>
       val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
       val res = bv.performOneOperation(Lookup(ADKey @@ key.value))
       BooleanConstant.fromBoolean(res.isSuccess) // TODO should we also check res.get.isDefined

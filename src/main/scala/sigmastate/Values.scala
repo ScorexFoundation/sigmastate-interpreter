@@ -47,7 +47,7 @@ object Values {
 
     implicit def liftLong(n: Long): Value[SInt.type] = IntConstant(n)
 
-    implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray.type] = CollectionConstant(arr)
+    implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray.type] = ByteArrayConstant(arr)
 
     implicit def liftBigInt(arr: BigInteger): Value[SBigInt.type] = BigIntConstant(arr)
 
@@ -121,7 +121,7 @@ object Values {
   case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt {
   }
 
-  case class CollectionConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
+  case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
 
     override def cost[C <: Context[C]](context: C): Long = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
@@ -130,7 +130,7 @@ object Values {
     override def tpe = SByteArray
 
     override def equals(obj: scala.Any): Boolean = obj match {
-      case c: CollectionConstant => Arrays.equals(value, c.value)
+      case c: ByteArrayConstant => Arrays.equals(value, c.value)
       case _ => false
     }
 

@@ -26,7 +26,7 @@ class ErgoProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)
 
   override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = (1 to 10).map { i =>
     val ba = Random.randomBytes(75)
-    i.toByte -> CollectionConstant(ba)
+    i.toByte -> ByteArrayConstant(ba)
   }.toMap
 
   def withContextExtender(tag: Byte, value: EvaluatedValue[_ <: SType]): ErgoProvingInterpreter = {
