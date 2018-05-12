@@ -1,5 +1,7 @@
 package sigmastate.utils
 
+import java.util
+
 object Helpers {
   def xor(ba1: Array[Byte], ba2: Array[Byte]): Array[Byte] = ba1.zip(ba2).map(t => (t._1 ^ t._2).toByte)
 
@@ -15,6 +17,11 @@ object Helpers {
       pos += array.length
     }
     result
+  }
+
+  def deepHashCode[T](arr: Array[T]): Int = arr match {
+    case arr: Array[Byte] => util.Arrays.hashCode(arr)
+    case arr: Array[Int] => util.Arrays.hashCode(arr)
   }
 }
 

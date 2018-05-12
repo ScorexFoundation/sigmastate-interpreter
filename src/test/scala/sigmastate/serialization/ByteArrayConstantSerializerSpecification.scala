@@ -1,11 +1,12 @@
 package sigmastate.serialization
 
-import sigmastate.Values.ByteArrayConstant
+import sigmastate.SByte
+import sigmastate.Values.{CollectionConstant, ByteArrayConstant}
 
 class ByteArrayConstantSerializerSpecification extends TableSerializationSpecification {
   
   property("ByteArrayConstant: Serializer round trip") {
-    forAll { arr: ByteArrayConstant =>
+    forAll { arr: CollectionConstant[SByte.type] =>
       roundTripTest(arr)
     }
   }

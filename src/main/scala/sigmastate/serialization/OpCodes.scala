@@ -18,7 +18,7 @@ object OpCodes {
   val FalseCode:                OpCode = 13: Byte
   val UnitConstantCode:         OpCode = 14: Byte
   val BigIntConstantCode:       OpCode = 15: Byte
-  val ByteArrayConstantCode:    OpCode = 16: Byte
+  val CollectionConstantCode:   OpCode = 16: Byte
   val GroupElementConstantCode: OpCode = 17: Byte
   val GroupGeneratorCode      : OpCode = 18: Byte
   val BoxConstantCode         : OpCode = 19: Byte

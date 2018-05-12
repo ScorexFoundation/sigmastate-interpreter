@@ -46,7 +46,7 @@ object SigmaParser extends Exprs with Types with Core {
 
   private val Base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
-  private def byteVectorP: P[ByteArrayConstant] =
+  private def byteVectorP: P[Value[SByteArray]] =
     P("base58'" ~ CharsWhileIn(Base58Chars).! ~ "'")
         .map(x => ByteArrayConstant(Base58.decode(x).get))
 

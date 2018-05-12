@@ -1,25 +1,25 @@
 package sigmastate.serialization
 
 import com.google.common.primitives.Shorts
-import sigmastate.SByteArray
+import sigmastate.SByte
 import sigmastate.SType.TypeCode
-import sigmastate.Values.ByteArrayConstant
+import sigmastate.Values.{CollectionConstant, ByteArrayConstant, Value, SByteArray}
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ValueSerializer.{Consumed, Position}
+import sigmastate.serialization.ValueSerializer.{Position, Consumed}
 
-object ByteArrayConstantSerializer extends ValueSerializer[ByteArrayConstant] {
+object ByteArrayConstantSerializer extends ValueSerializer[CollectionConstant[SByte.type]] {
 
-  override val opCode: OpCode = ByteArrayConstantCode
+  override val opCode: OpCode = CollectionConstantCode
   val typeCode: TypeCode = SByteArray.typeCode
 
-  override def parseBody(bytes: Array[Byte], pos: Position): (ByteArrayConstant, Consumed) = {
+  override def parseBody(bytes: Array[Byte], pos: Position): (CollectionConstant[SByte.type], Consumed) = {
     val length = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
     val consumed = 2 + length
     val array = bytes.slice(pos + 2 , pos + consumed)
     (ByteArrayConstant(array), consumed)
   }
 
-  override def serializeBody(arr: ByteArrayConstant): Array[Byte] = {
+  override def serializeBody(arr: CollectionConstant[SByte.type]): Array[Byte] = {
     val lengthBytes = Shorts.toByteArray(arr.value.length.toShort)
     lengthBytes ++ arr.value
   }

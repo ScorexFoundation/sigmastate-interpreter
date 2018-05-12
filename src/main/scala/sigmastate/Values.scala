@@ -1,22 +1,26 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.Arrays
+import java.util
+import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.interpreter.{Context, GroupSettings}
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.serialization.OpCodes._
+import sigmastate.utils.Helpers
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{ErgoBox, ErgoContext}
+import sigmastate.utxo.{ErgoContext, ErgoBox}
+import sigmastate.utils.Extensions._
 
 import scala.collection.immutable
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 object Values {
 
@@ -47,7 +51,7 @@ object Values {
 
     implicit def liftLong(n: Long): Value[SInt.type] = IntConstant(n)
 
-    implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray.type] = ByteArrayConstant(arr)
+    implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray] = ByteArrayConstant(arr)
 
     implicit def liftBigInt(arr: BigInteger): Value[SBigInt.type] = BigIntConstant(arr)
 
@@ -121,27 +125,38 @@ object Values {
   case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt {
   }
 
-  case class ByteArrayConstant(value: Array[Byte]) extends EvaluatedValue[SByteArray.type] {
+  case class CollectionConstant[T <: SType](override val value: Array[T#WrappedType], elementType: T) extends EvaluatedValue[SCollection[T]] {
 
     override def cost[C <: Context[C]](context: C): Long = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
-    override val opCode: OpCode = ByteArrayConstantCode
+    override val opCode: OpCode = CollectionConstantCode
 
-    override def tpe = SByteArray
+    override val tpe = SCollection(elementType)
 
     override def equals(obj: scala.Any): Boolean = obj match {
-      case c: ByteArrayConstant => Arrays.equals(value, c.value)
+      case c: CollectionConstant[_] => util.Objects.deepEquals(value, c.value) && elementType == c.elementType
       case _ => false
     }
 
-    override def hashCode(): Int = Arrays.hashCode(value)
+    override def hashCode(): Int = 31 * Helpers.deepHashCode(value) + elementType.hashCode()
   }
 
-  trait NotReadyValueByteArray extends NotReadyValue[SByteArray.type] {
-    override def tpe = SByteArray
+  type SByteArray = SCollection[SByte.type]
+  val SByteArray = SCollection(SByte)
+  
+  object ByteArrayConstant {
+    def apply(value: Array[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value, SByte)
+    def unapply(node: SValue): Option[Array[Byte]] = node match {
+      case arr: CollectionConstant[SByte.type] @unchecked if arr.elementType == SByte => Some(arr.value)
+      case _ => None
+    }
   }
 
-  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray.type] with NotReadyValueByteArray
+  trait NotReadyValueByteArray extends NotReadyValue[SByteArray] {
+    override val tpe = SCollection(SByte)
+  }
+
+  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray] with NotReadyValueByteArray
 
   case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
     override val opCode: OpCode = OpCodes.AvlTreeConstantCode
@@ -297,7 +312,7 @@ object Values {
     lazy val value = None
   }
 
-  case class ConcreteCollection[V <: SType](value: IndexedSeq[Value[V]])(implicit val tItem: V)
+  case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]])(implicit val tItem: V)
     extends EvaluatedValue[SCollection[V]] with Rewritable {
     override val opCode: OpCode = ConcreteCollectionCode
 
@@ -305,8 +320,12 @@ object Values {
 
     val tpe = SCollection[V](tItem)
 
-    def items = value // convenience accessor for code readability
-    def arity = 1 + value.size
+    val value = {
+      val xs = items.cast[EvaluatedValue[V]].map(_.value)
+      xs.toArray(tItem.classTag.asInstanceOf[ClassTag[V#WrappedType]])
+    }
+
+    def arity = 1 + items.size
 
     def deconstruct = immutable.Seq[Any](tItem) ++ items
 
@@ -319,7 +338,7 @@ object Values {
   object ConcreteCollection {
     def apply[V <: SType](items: Value[V]*)(implicit tV: V) = new ConcreteCollection(items.toIndexedSeq)
     def isEvaluated[V <: SType](c: Value[SCollection[V]]) =
-      c.evaluated && c.asInstanceOf[ConcreteCollection[V]].value.forall(_.evaluated)
+      c.evaluated && c.asInstanceOf[ConcreteCollection[V]].items.forall(_.evaluated)
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]

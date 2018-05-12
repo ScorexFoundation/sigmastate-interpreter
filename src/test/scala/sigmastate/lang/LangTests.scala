@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import sigmastate.lang.Terms.Ident
-import sigmastate.Values.{Value, IntConstant, ConcreteCollection}
+import sigmastate.Values.{ConcreteCollection, Value, IntConstant, SByteArray}
 import sigmastate._
 import java.math.BigInteger
 
@@ -12,7 +12,7 @@ trait LangTests {
   def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
   def IntIdent(name: String): Value[SInt.type] = Ident(name).asValue[SInt.type]
   def ByteIdent(name: String): Value[SByte.type] = Ident(name).asValue[SByte.type]
-  def ByteArrayIdent(name: String): Value[SByteArray.type] = Ident(name).asValue[SByteArray.type]
+  def ByteArrayIdent(name: String): Value[SByteArray] = Ident(name).asValue[SByteArray]
   def GEIdent(name: String): Value[SGroupElement.type] = Ident(name).asValue[SGroupElement.type]
   def BigIntIdent(name: String): Value[SBigInt.type] = Ident(name).asValue[SBigInt.type]
 

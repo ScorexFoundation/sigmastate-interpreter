@@ -1,17 +1,17 @@
 package sigmastate
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks, TableFor2}
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.prop.{PropertyChecks, TableFor2, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
 import scorex.crypto.encode.Base16
-import sigmastate.Values.ByteArrayConstant
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant}
 
 class CalcSha256Specification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers {
 
-  def stringToByteConstant(in: String): ByteArrayConstant = ByteArrayConstant(in.getBytes("UTF-8"))
-  def decodeString(in: String): ByteArrayConstant = ByteArrayConstant(Base16.decode(in).get)
+  def stringToByteConstant(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(in.getBytes("UTF-8"))
+  def decodeString(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(Base16.decode(in).get)
 
   /**
     * https://www.di-mgt.com.au/sha_testvectors.html

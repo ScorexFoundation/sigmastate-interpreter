@@ -205,7 +205,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
     Seq(DLogProverInput.random(), DLogProverInput.random())
   }
 
-  override val contextExtenders: Map[Byte, ByteArrayConstant] = Map[Byte, ByteArrayConstant]()
+  override val contextExtenders: Map[Byte, CollectionConstant[SByte.type]] = Map[Byte, CollectionConstant[SByte.type]]()
 
   override def evaluateNode(context: TestingContext, tree: SValue): SValue = tree match {
     case Height => IntConstant(context.height)

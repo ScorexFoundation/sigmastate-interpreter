@@ -416,8 +416,8 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val propExpected = EQ(ByteArrayConstant(helloHash),
       CalcBlake2b256(
         If(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10)),
-          ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3),
-          ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 1), R3))))
+          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 2), R3),
+          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 1), R3))))
     prop shouldBe propExpected
 
     val input0 = ErgoBox(10, pubkey, Map())
