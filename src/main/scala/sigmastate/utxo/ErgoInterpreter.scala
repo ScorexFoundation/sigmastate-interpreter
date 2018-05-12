@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import sigmastate.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ValueSerializer

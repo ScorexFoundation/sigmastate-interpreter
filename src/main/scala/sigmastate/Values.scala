@@ -320,7 +320,7 @@ object Values {
 
     val tpe = SCollection[V](tItem)
 
-    val value = {
+    lazy val value = {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
       xs.toArray(tItem.classTag.asInstanceOf[ClassTag[V#WrappedType]])
     }
@@ -342,5 +342,15 @@ object Values {
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
+
+  implicit class CollectionOps[T <: SType](coll: Value[SCollection[T]]) {
+    def length: Int = run(_.items.length, _.value.length)
+    def items = run(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"))
+    private def run[R](whenConcrete: ConcreteCollection[T] => R, whenEvaluated: EvaluatedValue[SCollection[T]] => R): R = coll match {
+      case cc: ConcreteCollection[T]@unchecked => whenConcrete(cc)
+      case v: EvaluatedValue[SCollection[T]] if v.tpe.isCollection => whenEvaluated(v)
+      case _ => sys.error(s"Unexpected node $coll")
+    }
+  }
 
 }

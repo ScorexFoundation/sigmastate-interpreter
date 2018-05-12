@@ -58,15 +58,14 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
   }
 
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].items.forall(_.evaluated)
+    input.evaluated && input.items.forall(_.evaluated)
 
   override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    val items = cl.asInstanceOf[ConcreteCollection[IV]].items
-    ConcreteCollection(items.map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
+    ConcreteCollection(cl.items.map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
   }
 
   /**
@@ -234,7 +233,7 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
       case t: TaggedVariable[IV] if t.id == accId => acc
     })
 
-    input.value.foldLeft(zero) { case (acc: Value[IV], elem: Value[IV]) =>
+    input.items.foldLeft(zero) { case (acc: Value[IV], elem: Value[IV]) =>
       rl(elem, acc)(foldOp).get.asInstanceOf[Value[IV]]
     }
   }
@@ -264,7 +263,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
   }
 
   override def function(input: EvaluatedValue[SCollection[V]]) =
-    input.asConcreteCollection[V].items.apply(index)
+    input.items.apply(index)
 
   override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.ByIndexDeclaration
 }
@@ -274,7 +273,7 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
 
   override val opCode: OpCode = OpCodes.SizeOfCode
 
-  override def function(input: EvaluatedValue[SCollection[V]]) = IntConstant(input.value.length)
+  override def function(input: EvaluatedValue[SCollection[V]]) = IntConstant(input.length)
 
   //todo: isn't this cost too high? we can get size of a collection without touching it
   override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.SizeOfDeclaration
