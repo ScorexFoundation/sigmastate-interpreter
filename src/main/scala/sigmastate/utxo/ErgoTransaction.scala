@@ -1,13 +1,11 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Bytes
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.UncheckedTree
 import sigmastate.interpreter.ProverResult
 import sigmastate.utils.Helpers._
 
-import scala.collection.immutable
 import scala.util.Try
 
 
