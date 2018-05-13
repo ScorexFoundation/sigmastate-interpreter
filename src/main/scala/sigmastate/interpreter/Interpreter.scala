@@ -17,6 +17,7 @@ import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
+import sigmastate.SCollection.SByteArray
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._

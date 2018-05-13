@@ -1,10 +1,11 @@
 package sigmastate.lang
 
 import sigmastate.lang.Terms.Ident
-import sigmastate.Values.{ConcreteCollection, Value, IntConstant, SByteArray}
+import sigmastate.Values.{ConcreteCollection, Value, IntConstant}
 import sigmastate._
 import java.math.BigInteger
 
+import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.GroupSettings
 
 trait LangTests {

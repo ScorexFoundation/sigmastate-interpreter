@@ -9,6 +9,8 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.SCollection.SByteArray
+import sigmastate.SType.TypeCode
 import sigmastate.interpreter.{Context, GroupSettings}
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.serialization.OpCodes._
@@ -145,9 +147,6 @@ object Values {
     override def hashCode(): Int = 31 * Helpers.deepHashCode(value) + elementType.hashCode()
   }
 
-  type SByteArray = SCollection[SByte.type]
-  val SByteArray = SCollection(SByte)
-  
   object ByteArrayConstant {
     def apply(value: Array[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value, SByte)
     def unapply(node: SValue): Option[Array[Byte]] = node match {
@@ -157,10 +156,12 @@ object Values {
   }
 
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray] {
-    override val tpe = SCollection(SByte)
+    override def tpe = SByteArray
   }
 
-  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray] with NotReadyValueByteArray
+  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray] with NotReadyValueByteArray {
+    override def typeCode: TypeCode = SCollection.SByteArrayTypeCode
+  }
 
   case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
     override val opCode: OpCode = OpCodes.AvlTreeConstantCode

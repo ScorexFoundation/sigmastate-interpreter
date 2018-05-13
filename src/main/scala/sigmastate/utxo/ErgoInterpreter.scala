@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ValueSerializer
@@ -34,7 +35,7 @@ class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extend
       case d: DeserializeRegister[_] =>
         context.self.get(d.reg).flatMap { v =>
           v match {
-            case eba: EvaluatedValue[SByteArray.type] => Some(ValueSerializer.deserialize(eba.value))
+            case eba: EvaluatedValue[SByteArray] => Some(ValueSerializer.deserialize(eba.value))
             case _ => None
           }
         }.orElse(d.default)

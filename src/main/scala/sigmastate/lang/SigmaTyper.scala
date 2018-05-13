@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
+import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
@@ -154,7 +155,7 @@ class SigmaTyper {
       newObj.tpe match {
         case SByteArray => (m, newArgs) match {
           case ("++", Seq(r)) if r.tpe == SByteArray =>
-            AppendBytes(newObj.asValue[SByteArray.type], r.asValue[SByteArray.type])
+            AppendBytes(newObj.asValue[SByteArray], r.asValue[SByteArray])
           case _ =>
             error(s"Unknown symbol $m, which is used as operation with arguments $newArgs")
         }

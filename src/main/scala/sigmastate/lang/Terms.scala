@@ -1,5 +1,6 @@
 package sigmastate.lang
 
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._

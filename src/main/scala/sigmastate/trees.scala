@@ -4,8 +4,9 @@ import java.math.BigInteger
 
 import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
-import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
-import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
+import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes

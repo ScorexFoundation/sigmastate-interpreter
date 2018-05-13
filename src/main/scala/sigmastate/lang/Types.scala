@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import fastparse.noApi._
 import sigmastate._
+import sigmastate.SCollection.SByteArray
 import Values._
 import sigmastate.lang.Terms.Ident
 import sigmastate.lang.syntax.Core

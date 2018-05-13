@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rewrite, reduce}
 import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
 import sigmastate.Values._
@@ -42,10 +43,10 @@ class SigmaSpecializer {
       val res1 = eval(curEnv, res)
       Some(res1)
 
-    case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray.type]@unchecked)) =>
+    case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(CalcBlake2b256(arg))
 
-    case Apply(Sha256Sym, Seq(arg: Value[SByteArray.type]@unchecked)) =>
+    case Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(CalcSha256(arg))
 
     case Apply(TaggedAvlTreeSym, Seq(IntConstant(i))) =>
@@ -69,7 +70,7 @@ class SigmaSpecializer {
     case Apply(TaggedBooleanSym, Seq(IntConstant(i))) =>
       Some(TaggedBoolean(i.toByte))
 
-    case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray.type]@unchecked, proof: Value[SByteArray.type]@unchecked)) =>
+    case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
       Some(IsMember(tree, key, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>

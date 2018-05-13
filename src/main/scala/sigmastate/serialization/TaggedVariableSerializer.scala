@@ -19,7 +19,7 @@ object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: STyp
       case b: Byte if b == SInt.typeCode => TaggedInt(id)
       case b: Byte if b == SBigInt.typeCode => TaggedBigInt(id)
       case b: Byte if b == SBoolean.typeCode => TaggedBoolean(id)
-      case b: Byte if b == SByteArray.typeCode => TaggedByteArray(id)
+      case b: Byte if b == SCollection.SByteArrayTypeCode => TaggedByteArray(id)
       case b: Byte if b == SAvlTree.typeCode => TaggedAvlTree(id)
       case b: Byte if b == SGroupElement.typeCode => TaggedGroupElement(id)
       case b: Byte if b == SBox.typeCode => TaggedBox(id)

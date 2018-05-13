@@ -2,8 +2,8 @@ package sigmastate.lang
 
 import sigmastate.Values.SValue
 import sigmastate._
+import sigmastate.SCollection.SByteArray
 import sigmastate.lang.Terms.{Lambda, Ident}
-import sigmastate.Values.SByteArray
 
 object SigmaPredef {
 

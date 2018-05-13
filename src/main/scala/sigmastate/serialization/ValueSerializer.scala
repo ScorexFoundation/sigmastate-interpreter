@@ -5,8 +5,9 @@ import Values._
 
 import scala.util.Try
 import OpCodes._
+import sigmastate.SCollection.SByteArray
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{QuadrupelSerializer, Relation2Serializer, Relation3Serializer}
+import sigmastate.serialization.trees.{Relation3Serializer, Relation2Serializer, QuadrupelSerializer}
 import sigmastate.utxo._
 
 

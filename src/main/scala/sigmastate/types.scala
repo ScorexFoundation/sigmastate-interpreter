@@ -8,6 +8,7 @@ import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
 import sigmastate.Values._
 import sigmastate.lang.SigmaTyper
+import sigmastate.SCollection.SByteArray
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -148,12 +149,6 @@ case object SBoolean extends SPrimType {
   override val typeCode: TypeCode = 3: Byte
 }
 
-
-//case object SByteArray extends SPrimType {
-//  override type WrappedType = Array[Byte]
-//  override val typeCode: TypeCode = 4: Byte
-//}
-
 case object SAvlTree extends SProduct {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 5: Byte
@@ -235,6 +230,10 @@ object SCollection {
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
+
+  type SByteArray = SCollection[SByte.type]
+  val SByteArray = SCollection(SByte)
+  val SByteArrayTypeCode: Byte = 4 //TODO remove after CollectionConstant serializer implemented
 }
 
 /** Type description of optional values. Instances of `Option`
