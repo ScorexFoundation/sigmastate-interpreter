@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 
-class ContextVariableSerializerSpecification extends SerializationSpecification {
+class TaggedVariableSerializerSpecification extends SerializationSpecification {
 
   property("TaggedVariable: TaggedInt serializer round trip") {
     forAll { ti: TaggedInt =>

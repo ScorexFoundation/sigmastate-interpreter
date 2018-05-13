@@ -74,15 +74,15 @@ object Values {
     override lazy val evaluated = false
   }
 
+  /** Base class for references to context variables. */
   trait ContextVariable[S <: SType] extends NotReadyValue[S] {
-    override val opCode: OpCode = ContextVariableCode
-    val id: Byte
-
-    override def cost[C <: Context[C]](context: C) = context.extension.cost(id) + 1
   }
 
-  case class TaggedVariable[T <: SType](override val id: Byte, override val tpe: T)
-      extends ContextVariable[T]
+  /** Reference a context variable by id. */
+  case class TaggedVariable[T <: SType](varId: Byte, override val tpe: T) extends ContextVariable[T] {
+    override val opCode: OpCode = TaggedVariableCode
+    override def cost[C <: Context[C]](context: C) = context.extension.cost(varId) + 1
+  }
 
   case object UnitConstant extends EvaluatedValue[SUnit.type] {
     override val opCode = UnitConstantCode

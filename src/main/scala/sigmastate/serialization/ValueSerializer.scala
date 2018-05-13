@@ -63,7 +63,7 @@ object ValueSerializer
     ConcreteCollectionSerializer,
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](AndCode, AND.apply),
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](OrCode, OR.apply),
-    ContextVariableSerializer,
+    TaggedVariableSerializer,
     BigIntConstantSerializer,
     ByteArrayConstantSerializer,
     CaseObjectSerialization(HeightCode, Height),

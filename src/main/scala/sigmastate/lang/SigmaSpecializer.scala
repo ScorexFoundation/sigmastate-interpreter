@@ -14,18 +14,9 @@ class SigmaSpecializer {
   import SigmaSpecializer._
 
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
-  def mkTagged(name: String, tpe: SType, tag: Byte): ContextVariable[SType] = {
-    val tagged = tpe match {
-      case SBoolean => TaggedBoolean(tag)
-      case SInt => TaggedInt(tag)
-      case SBigInt => TaggedBigInt(tag)
-      case SBox => TaggedBox(tag)
-      case SByteArray => TaggedByteArray(tag)
-      case SGroupElement => TaggedGroupElement(tag)
-      case SAvlTree => TaggedAvlTree(tag)
-      case _ => error(s"Don't know how to mkTagged($name, $tpe, $tag)")
-    }
-    tagged.asInstanceOf[ContextVariable[SType]]
+  def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
+    val tagged = TaggedVariable(tag, tpe)
+    tagged
   }
 
   /** Rewriting of AST with respect to environment to resolve all references
@@ -120,28 +111,28 @@ class SigmaSpecializer {
     case Apply(Select(col, "where", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(Where(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
+      Some(Where(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
     case Apply(Select(col,"exists", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(Exists(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
+      Some(Exists(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
     case Apply(Select(col,"forall", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(ForAll(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
+      Some(ForAll(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
     case Apply(Select(col,"map", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(MapCollection(col.asValue[SCollection[SType]], tagged.id, body1)(body1.tpe))
+      Some(MapCollection(col.asValue[SCollection[SType]], tagged.varId, body1)(body1.tpe))
 
     case Apply(Select(col,"fold", _), Seq(zero, Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
       val taggedZero = mkTagged(zeroArg, tZero, 21)
       val taggedOp = mkTagged(opArg, tOp, 22)
       val body1 = eval(env ++ Seq(zeroArg -> taggedZero, opArg -> taggedOp), body)
-      Some(Fold(col.asValue[SCollection[SType]], taggedZero.id, zero, taggedOp.id, body1)(body1.tpe))
+      Some(Fold(col.asValue[SCollection[SType]], taggedZero.varId, zero, taggedOp.varId, body1)(body1.tpe))
 
     case opt: OptionValue[_] =>
       error(s"Option values are not supported: $opt")

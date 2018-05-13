@@ -20,9 +20,9 @@ class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extend
 
     case LastBlockUtxoRootHash => AvlTreeConstant(context.lastBlockUtxoRoot)
 
-    case t: ContextVariable[_] =>
-      if (context.extension.values.contains(t.id))
-        context.extension.values(t.id)
+    case t: TaggedVariable[_] =>
+      if (context.extension.values.contains(t.varId))
+        context.extension.values(t.varId)
       else
         null
 //        Interpreter.error(s"Tagged variable with id=${t.id} not found in context ${context.extension.values}")
@@ -35,7 +35,7 @@ class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extend
       case d: DeserializeRegister[_] =>
         context.self.get(d.reg).flatMap { v =>
           v match {
-            case eba: EvaluatedValue[SByteArray] => Some(ValueSerializer.deserialize(eba.value))
+            case eba: EvaluatedValue[SByteArray]@unchecked => Some(ValueSerializer.deserialize(eba.value))
             case _ => None
           }
         }.orElse(d.default)
