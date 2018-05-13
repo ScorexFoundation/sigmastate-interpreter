@@ -110,9 +110,8 @@ object Values {
     override def tpe = SInt
   }
 
-  case class TaggedInt(override val id: Byte) extends ContextVariable[SInt.type] with NotReadyValueInt {
-    override def cost[C <: Context[C]](context: C) = 1
-  }
+  type TaggedInt = TaggedVariable[SInt.type]
+  def TaggedInt(id: Byte): TaggedInt = TaggedVariable(id, SInt)
 
   case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
 
@@ -127,8 +126,8 @@ object Values {
     override def tpe = SBigInt
   }
 
-  case class TaggedBigInt(override val id: Byte) extends ContextVariable[SBigInt.type] with NotReadyValueBigInt {
-  }
+  type TaggedBigInt = TaggedVariable[SBigInt.type]
+  def TaggedBigInt(id: Byte): TaggedBigInt = TaggedVariable(id, SBigInt)
 
   trait EvaluatedCollection[T <: SType] extends EvaluatedValue[SCollection[T]] {
     def elementType: T
@@ -170,7 +169,8 @@ object Values {
     override def tpe = SByteArray
   }
 
-  def TaggedByteArray(id: Byte): TaggedVariable[SCollection[SByte.type]] = TaggedVariable(id, SByteArray)
+  type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
+  def TaggedByteArray(id: Byte): TaggedByteArray = TaggedVariable(id, SByteArray)
 
   case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
     override val opCode: OpCode = OpCodes.AvlTreeConstantCode
@@ -193,9 +193,8 @@ object Values {
     override def tpe = SAvlTree
   }
 
-  case class TaggedAvlTree(override val id: Byte) extends ContextVariable[SAvlTree.type] with NotReadyValueAvlTree {
-  }
-
+  type TaggedAvlTree = TaggedVariable[SAvlTree.type]
+  def TaggedAvlTree(id: Byte): TaggedAvlTree = TaggedVariable(id, SAvlTree)
 
   case class GroupElementConstant(value: GroupSettings.EcPointType) extends EvaluatedValue[SGroupElement.type] {
     override def cost[C <: Context[C]](context: C) = 10
@@ -223,9 +222,8 @@ object Values {
     override def tpe = SGroupElement
   }
 
-  case class TaggedGroupElement(override val id: Byte)
-    extends ContextVariable[SGroupElement.type] with NotReadyValueGroupElement {
-  }
+  type TaggedGroupElement = TaggedVariable[SGroupElement.type]
+  def TaggedGroupElement(id: Byte): TaggedGroupElement = TaggedVariable(id, SGroupElement)
 
   sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type] {
     override def tpe = SBoolean
@@ -251,9 +249,8 @@ object Values {
     override def tpe = SBoolean
   }
 
-  case class TaggedBoolean(override val id: Byte) extends ContextVariable[SBoolean.type] with NotReadyValueBoolean {
-    override def cost[C <: Context[C]](context: C) = 1
-  }
+  type TaggedBoolean = TaggedVariable[SBoolean.type]
+  def TaggedBoolean(id: Byte): TaggedBoolean = TaggedVariable(id, SBoolean)
 
   /**
     * For sigma statements
@@ -287,8 +284,8 @@ object Values {
     def tpe = SBox
   }
 
-  case class TaggedBox(override val id: Byte) extends ContextVariable[SBox.type] with NotReadyValueBox {
-  }
+  type TaggedBox = TaggedVariable[SBox.type]
+  def TaggedBox(id: Byte): TaggedBox = TaggedVariable(id, SBox)
 
   case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] {
     override val opCode: OpCode = TupleCode
