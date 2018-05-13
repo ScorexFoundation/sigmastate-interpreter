@@ -74,12 +74,15 @@ object Values {
     override lazy val evaluated = false
   }
 
-  trait TaggedVariable[S <: SType] extends NotReadyValue[S] {
+  trait ContextVariable[S <: SType] extends NotReadyValue[S] {
     override val opCode: OpCode = TaggedVariableCode
     val id: Byte
 
     override def cost[C <: Context[C]](context: C) = context.extension.cost(id) + 1
   }
+
+  case class TaggedVariable[T <: SType](override val id: Byte, override val tpe: T)
+      extends ContextVariable[T]
 
   case object UnitConstant extends EvaluatedValue[SUnit.type] {
     override val opCode = UnitConstantCode
@@ -107,7 +110,7 @@ object Values {
     override def tpe = SInt
   }
 
-  case class TaggedInt(override val id: Byte) extends TaggedVariable[SInt.type] with NotReadyValueInt {
+  case class TaggedInt(override val id: Byte) extends ContextVariable[SInt.type] with NotReadyValueInt {
     override def cost[C <: Context[C]](context: C) = 1
   }
 
@@ -124,7 +127,7 @@ object Values {
     override def tpe = SBigInt
   }
 
-  case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt {
+  case class TaggedBigInt(override val id: Byte) extends ContextVariable[SBigInt.type] with NotReadyValueBigInt {
   }
 
   trait EvaluatedCollection[T <: SType] extends EvaluatedValue[SCollection[T]] {
@@ -155,13 +158,23 @@ object Values {
     }
   }
 
+  object IntArrayConstant {
+    def apply(value: Array[Long]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value, SInt)
+    def unapply(node: SValue): Option[Array[Long]] = node match {
+      case arr: CollectionConstant[SInt.type] @unchecked if arr.elementType == SInt => Some(arr.value)
+      case _ => None
+    }
+  }
+
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray] {
     override def tpe = SByteArray
   }
 
-  case class TaggedByteArray(override val id: Byte) extends TaggedVariable[SByteArray] with NotReadyValueByteArray {
+  case class TaggedByteArray(override val id: Byte) extends ContextVariable[SByteArray] with NotReadyValueByteArray {
     override def typeCode: TypeCode = SCollection.SByteArrayTypeCode
   }
+
+//  def TaggedByteArray(id: Byte): TaggedVariable[SCollection[SByte.type]] = TaggedVariable(id, SByteArray)
 
   case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
     override val opCode: OpCode = OpCodes.AvlTreeConstantCode
@@ -184,7 +197,7 @@ object Values {
     override def tpe = SAvlTree
   }
 
-  case class TaggedAvlTree(override val id: Byte) extends TaggedVariable[SAvlTree.type] with NotReadyValueAvlTree {
+  case class TaggedAvlTree(override val id: Byte) extends ContextVariable[SAvlTree.type] with NotReadyValueAvlTree {
   }
 
 
@@ -215,7 +228,7 @@ object Values {
   }
 
   case class TaggedGroupElement(override val id: Byte)
-    extends TaggedVariable[SGroupElement.type] with NotReadyValueGroupElement {
+    extends ContextVariable[SGroupElement.type] with NotReadyValueGroupElement {
   }
 
   sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type] {
@@ -242,7 +255,7 @@ object Values {
     override def tpe = SBoolean
   }
 
-  case class TaggedBoolean(override val id: Byte) extends TaggedVariable[SBoolean.type] with NotReadyValueBoolean {
+  case class TaggedBoolean(override val id: Byte) extends ContextVariable[SBoolean.type] with NotReadyValueBoolean {
     override def cost[C <: Context[C]](context: C) = 1
   }
 
@@ -278,7 +291,7 @@ object Values {
     def tpe = SBox
   }
 
-  case class TaggedBox(override val id: Byte) extends TaggedVariable[SBox.type] with NotReadyValueBox {
+  case class TaggedBox(override val id: Byte) extends ContextVariable[SBox.type] with NotReadyValueBox {
   }
 
   case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] {

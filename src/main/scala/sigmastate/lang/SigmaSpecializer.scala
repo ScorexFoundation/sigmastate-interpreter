@@ -14,7 +14,7 @@ class SigmaSpecializer {
   import SigmaSpecializer._
 
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
-  def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
+  def mkTagged(name: String, tpe: SType, tag: Byte): ContextVariable[SType] = {
     val tagged = tpe match {
       case SBoolean => TaggedBoolean(tag)
       case SInt => TaggedInt(tag)
@@ -25,7 +25,7 @@ class SigmaSpecializer {
       case SAvlTree => TaggedAvlTree(tag)
       case _ => error(s"Don't know how to mkTagged($name, $tpe, $tag)")
     }
-    tagged.asInstanceOf[TaggedVariable[SType]]
+    tagged.asInstanceOf[ContextVariable[SType]]
   }
 
   /** Rewriting of AST with respect to environment to resolve all references

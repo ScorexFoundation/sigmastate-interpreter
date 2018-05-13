@@ -63,7 +63,7 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
 
   override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
+      case t: ContextVariable[IV] if t.id == id => arg
     })
 
     ConcreteCollection(cl.items.map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
@@ -133,7 +133,7 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
 
   override def function(input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
+      case t: ContextVariable[IV] if t.id == id => arg
     })
 
     def p(x: Value[IV]): Boolean = {
@@ -158,7 +158,7 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
 
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
+      case t: ContextVariable[IV] if t.id == id => arg
     })
 
     f(input.items.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
@@ -229,8 +229,8 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
 
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[IV] = {
     def rl(arg: Value[IV], acc: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
-      case t: TaggedVariable[IV] if t.id == accId => acc
+      case t: ContextVariable[IV] if t.id == id => arg
+      case t: ContextVariable[IV] if t.id == accId => acc
     })
 
     input.items.foldLeft(zero) { case (acc: Value[IV], elem: Value[IV]) =>

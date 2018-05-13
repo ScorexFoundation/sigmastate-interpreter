@@ -5,7 +5,7 @@ import sigmastate.Values._
 import sigmastate.serialization.ValueSerializer.Position
 import OpCodes._
 
-object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: SType]] {
+object TaggedVariableSerializer extends ValueSerializer[ContextVariable[_ <: SType]] {
 
   override val opCode: OpCode = TaggedVariableCode
 
@@ -26,7 +26,7 @@ object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: STyp
     }, consumed)
   }
 
-  override def serializeBody(v: TaggedVariable[_ <: SType]) = {
+  override def serializeBody(v: ContextVariable[_ <: SType]) = {
     Array(v.typeCode, v.id)
   }
 }

@@ -20,7 +20,7 @@ class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extend
 
     case LastBlockUtxoRootHash => AvlTreeConstant(context.lastBlockUtxoRoot)
 
-    case t: TaggedVariable[_] =>
+    case t: ContextVariable[_] =>
       if (context.extension.values.contains(t.id))
         context.extension.values(t.id)
       else

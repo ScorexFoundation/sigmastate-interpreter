@@ -234,6 +234,8 @@ object SCollection {
   type SByteArray = SCollection[SByte.type]
   val SByteArray = SCollection(SByte)
   val SByteArrayTypeCode: Byte = 4 //TODO remove after CollectionConstant serializer implemented
+  type SIntArray = SCollection[SInt.type]
+  val SIntArray = SCollection(SInt)
 }
 
 /** Type description of optional values. Instances of `Option`
