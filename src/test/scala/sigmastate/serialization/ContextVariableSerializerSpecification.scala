@@ -17,6 +17,6 @@ class ContextVariableSerializerSpecification extends SerializationSpecification 
   }
 
   property("TaggedVariable deserialize from predefined bytes") {
-    predefinedBytesTest(Array(1, 7, 10), TaggedBox(10))
+    predefinedBytesTest(Array(1, 10, 7), TaggedBox(10))
   }
 }

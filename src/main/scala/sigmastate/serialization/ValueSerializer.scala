@@ -16,6 +16,9 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
   import ValueSerializer._
 
   override val companion = ValueSerializer
+
+  /** Code of the corresponding tree node (Value.opCode) which is used to lookup this serizalizer
+    * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
   val opCode: OpCode
 
   override def toBytes(obj: V): Array[Byte] = serialize(obj)
@@ -60,7 +63,7 @@ object ValueSerializer
     ConcreteCollectionSerializer,
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](AndCode, AND.apply),
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](OrCode, OR.apply),
-    TaggedVariableSerializer,
+    ContextVariableSerializer,
     BigIntConstantSerializer,
     ByteArrayConstantSerializer,
     CaseObjectSerialization(HeightCode, Height),

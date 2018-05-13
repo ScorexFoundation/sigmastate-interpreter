@@ -38,10 +38,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   val knownExtensions = ContextExtension(contextExtenders)
 
   def enrichContext(tree: Value[SBoolean.type]): ContextExtension = {
-    val targetName = TaggedByteArray.getClass.getSimpleName.replace("$", "")
+//    val targetName = TaggedByteArray.getClass.getSimpleName.replace("$", "")
 
     val ce: Map[Byte, EvaluatedValue[_ <: SType]] = new Tree(tree.asValue[SType]).nodes.flatMap {
-      case TaggedByteArray(tag) =>
+      case TaggedVariable(tag, SCollection.SByteArray) =>
         contextExtenders.get(tag).map(v => tag -> v)
       case _ => None
     }.toMap

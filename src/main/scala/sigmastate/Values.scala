@@ -75,7 +75,7 @@ object Values {
   }
 
   trait ContextVariable[S <: SType] extends NotReadyValue[S] {
-    override val opCode: OpCode = TaggedVariableCode
+    override val opCode: OpCode = ContextVariableCode
     val id: Byte
 
     override def cost[C <: Context[C]](context: C) = context.extension.cost(id) + 1
@@ -170,11 +170,7 @@ object Values {
     override def tpe = SByteArray
   }
 
-  case class TaggedByteArray(override val id: Byte) extends ContextVariable[SByteArray] with NotReadyValueByteArray {
-    override def typeCode: TypeCode = SCollection.SByteArrayTypeCode
-  }
-
-//  def TaggedByteArray(id: Byte): TaggedVariable[SCollection[SByte.type]] = TaggedVariable(id, SByteArray)
+  def TaggedByteArray(id: Byte): TaggedVariable[SCollection[SByte.type]] = TaggedVariable(id, SByteArray)
 
   case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
     override val opCode: OpCode = OpCodes.AvlTreeConstantCode
