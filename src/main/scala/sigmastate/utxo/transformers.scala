@@ -87,12 +87,11 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 
   val tpe = input.tpe
 
-  override def transformationReady: Boolean =
-    ConcreteCollection.isEvaluated(input) && ConcreteCollection.isEvaluated(col2)
+  override def transformationReady: Boolean = input.isEvaluated && col2.isEvaluated
 
   override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
-    val items = cl.asInstanceOf[ConcreteCollection[IV]].items
-    val items2 = col2.asInstanceOf[ConcreteCollection[IV]].items
+    val items = cl.items
+    val items2 = col2.items
     ConcreteCollection(items ++ items2)(tpe.elemType)
   }
 
@@ -106,12 +105,12 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
   val tpe = input.tpe
 
   override def transformationReady: Boolean =
-    ConcreteCollection.isEvaluated(input) && from.evaluated && until.evaluated
+    input.isEvaluated && from.evaluated && until.evaluated
 
   override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
     val fromValue = from.asInstanceOf[EvaluatedValue[SInt.type]].value
     val untilValue = until.asInstanceOf[EvaluatedValue[SInt.type]].value
-    ConcreteCollection(cl.asConcreteCollection[IV].items.slice(fromValue.toInt, untilValue.toInt))(tpe.elemType)
+    ConcreteCollection(cl.items.slice(fromValue.toInt, untilValue.toInt))(tpe.elemType)
   }
 
   override def cost[C <: Context[C]](context: C): Long =
@@ -126,7 +125,7 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
 
   override def tpe: SCollection[IV] = input.tpe
 
-  override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
+  override def transformationReady: Boolean = input.isEvaluated
 
   override def cost[C <: Context[C]](context: C): Long =
     Cost.WhereDeclaration + input.cost(context) * condition.cost(context) + input.cost(context)
@@ -141,7 +140,7 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
       res.asInstanceOf[EvaluatedValue[SBoolean.type]].value
     }
 
-    val filtered = input.asConcreteCollection[IV].items.filter(p)
+    val filtered = input.items.filter(p)
     ConcreteCollection(filtered)(tpe.elemType)
   }
 }
@@ -154,14 +153,14 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
 
   override def tpe = SBoolean
 
-  override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
+  override def transformationReady: Boolean = input.isEvaluated
 
   override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
       case t: TaggedVariable[IV] if t.id == id => arg
     })
 
-    f(input.asConcreteCollection[IV].items.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
+    f(input.items.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
   }
 }
 
@@ -221,7 +220,7 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
 
   override def transformationReady: Boolean =
     input.evaluated &&
-      input.asInstanceOf[ConcreteCollection[IV]].items.forall(_.evaluated) &&
+      input.items.forall(_.evaluated) &&
       zero.isInstanceOf[EvaluatedValue[IV]]
 
   override def cost[C <: Context[C]](context: C): Long =

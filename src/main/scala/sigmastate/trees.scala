@@ -55,7 +55,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[SBoolean.type]].items.forall(_.evaluated)
+    input.evaluated && input.items.forall(_.evaluated)
 
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
@@ -68,9 +68,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
       }
     }
 
-    val items = input.asInstanceOf[ConcreteCollection[SBoolean.type]].items
-    val reduced = iterChildren(items, mutable.Buffer())
-
+    val reduced = iterChildren(input.items, mutable.Buffer())
     reduced.size match {
       case i: Int if i == 0 => FalseLeaf
       case i: Int if i == 1 => reduced.head
@@ -105,7 +103,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[SBoolean.type]].items.forall(_.evaluated)
+    input.evaluated && input.items.forall(_.evaluated)
 
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
@@ -118,9 +116,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
       }
     }
 
-    val items = input.asInstanceOf[ConcreteCollection[SBoolean.type]].items
-    val reduced = iterChildren(items, mutable.Buffer())
-
+    val reduced = iterChildren(input.items, mutable.Buffer())
     reduced.size match {
       case 0 => TrueLeaf
       case 1 => reduced.head

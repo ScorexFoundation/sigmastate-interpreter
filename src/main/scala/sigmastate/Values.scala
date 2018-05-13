@@ -125,7 +125,11 @@ object Values {
   case class TaggedBigInt(override val id: Byte) extends TaggedVariable[SBigInt.type] with NotReadyValueBigInt {
   }
 
-  case class CollectionConstant[T <: SType](override val value: Array[T#WrappedType], elementType: T) extends EvaluatedValue[SCollection[T]] {
+  trait EvaluatedCollection[T <: SType] extends EvaluatedValue[SCollection[T]] {
+    def elementType: T
+  }
+
+  case class CollectionConstant[T <: SType](value: Array[T#WrappedType], elementType: T) extends EvaluatedCollection[T] {
 
     override def cost[C <: Context[C]](context: C): Long = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
@@ -312,22 +316,22 @@ object Values {
     lazy val value = None
   }
 
-  case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]])(implicit val tItem: V)
-    extends EvaluatedValue[SCollection[V]] with Rewritable {
+  case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]])(implicit val elementType: V)
+    extends EvaluatedCollection[V] with Rewritable {
     override val opCode: OpCode = ConcreteCollectionCode
 
     def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollection + items.map(_.cost(context)).sum
 
-    val tpe = SCollection[V](tItem)
+    val tpe = SCollection[V](elementType)
 
     lazy val value = {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
-      xs.toArray(tItem.classTag.asInstanceOf[ClassTag[V#WrappedType]])
+      xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]])
     }
 
     def arity = 1 + items.size
 
-    def deconstruct = immutable.Seq[Any](tItem) ++ items
+    def deconstruct = immutable.Seq[Any](elementType) ++ items
 
     def reconstruct(cs: immutable.Seq[Any]) = cs match {
       case Seq(t: SType, vs@_*) => ConcreteCollection[SType](vs.asInstanceOf[Seq[Value[V]]].toIndexedSeq)(t)
@@ -337,18 +341,18 @@ object Values {
   }
   object ConcreteCollection {
     def apply[V <: SType](items: Value[V]*)(implicit tV: V) = new ConcreteCollection(items.toIndexedSeq)
-    def isEvaluated[V <: SType](c: Value[SCollection[V]]) =
-      c.evaluated && c.asInstanceOf[ConcreteCollection[V]].items.forall(_.evaluated)
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
   implicit class CollectionOps[T <: SType](coll: Value[SCollection[T]]) {
-    def length: Int = run(_.items.length, _.value.length)
-    def items = run(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"))
-    private def run[R](whenConcrete: ConcreteCollection[T] => R, whenEvaluated: EvaluatedValue[SCollection[T]] => R): R = coll match {
+    def length: Int = fold(_.items.length, _.value.length)
+    def items = fold(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"))
+    def isEvaluated =
+      coll.evaluated && fold(_.items.forall(_.evaluated), _ => true)
+    def fold[R](whenConcrete: ConcreteCollection[T] => R, whenConstant: CollectionConstant[T] => R): R = coll match {
       case cc: ConcreteCollection[T]@unchecked => whenConcrete(cc)
-      case v: EvaluatedValue[SCollection[T]] if v.tpe.isCollection => whenEvaluated(v)
+      case const: CollectionConstant[T]@unchecked => whenConstant(const)
       case _ => sys.error(s"Unexpected node $coll")
     }
   }
