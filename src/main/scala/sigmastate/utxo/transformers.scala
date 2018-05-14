@@ -225,8 +225,12 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.t
   extends Transformer[SCollection[V], V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.ByIndexCode
   override val tpe = input.tpe.elemType
+  // todo account for default value
   override def transformationReady: Boolean = input.isEvaluated && index.evaluated
 
+  // todo restore default value application
+  // input.items.lift(index.asInstanceOf[EvaluatedValue[SInt.type]].value.toInt)
+  //      .orElse(default).get
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[V]]): Value[V] = {
     val i = index.asInstanceOf[EvaluatedValue[SInt.type]].value
     input.matchCase(

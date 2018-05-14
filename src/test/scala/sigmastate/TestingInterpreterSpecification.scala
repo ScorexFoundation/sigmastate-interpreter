@@ -159,6 +159,9 @@ class TestingInterpreterSpecification extends PropSpec
     testeval("5 % 2 == 1")
   }
 
+  property("Array indexing (out of bounds with default value)") {
+    testeval("Array(1, 2)(3, 0) == 0")
+  }
   property("Evaluation example #1") {
     val dk1 = ProveDlog(secrets(0).publicImage.h)
     val dk2 = ProveDlog(secrets(1).publicImage.h)
