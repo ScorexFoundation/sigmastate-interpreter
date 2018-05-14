@@ -82,6 +82,8 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
 
 case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SCollection[IV]])
   extends Transformer[SCollection[IV], SCollection[IV]] {
+  override val opCode: OpCode = OpCodes.AppendCode
+
   val tpe = input.tpe
 
   override def transformationReady: Boolean =
@@ -96,6 +98,8 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 
 case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
+  override val opCode: OpCode = OpCodes.SliceCode
+
   val tpe = input.tpe
 
   override def transformationReady: Boolean =
@@ -115,6 +119,8 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
                               id: Byte,
                               condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
+  override val opCode: OpCode = OpCodes.WhereCode
+
   override def tpe: SCollection[IV] = input.tpe
 
   override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
@@ -349,6 +355,8 @@ trait Deserialize[V <: SType] extends NotReadyValue[V] with Rewritable
 case class DeserializeContext[V <: SType](id: Byte)(implicit val tpe: V)
   extends Deserialize[V] {
 
+  override val opCode: OpCode = OpCodes.DeserializeContextCode
+
   def arity = 2
 
   def deconstruct = immutable.Seq[Any](id, tpe)
@@ -368,6 +376,8 @@ case class DeserializeContext[V <: SType](id: Byte)(implicit val tpe: V)
 case class DeserializeRegister[V <: SType](reg: RegisterIdentifier,
                                            default: Option[Value[V]] = None)(implicit val tpe: V)
   extends Deserialize[V] {
+
+  override val opCode: OpCode = OpCodes.DeserializeRegisterCode
 
   def arity = 3
 

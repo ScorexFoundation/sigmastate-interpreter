@@ -11,7 +11,7 @@ import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.Transformer
+import sigmastate.utxo.{CostTable, Transformer}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -20,6 +20,8 @@ import scala.collection.mutable
   * AND conjunction for sigma propositions
   */
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  override val opCode: OpCode = OpCodes.Undefined
+
   override def cost[C <: Context[C]](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 }
@@ -28,6 +30,8 @@ case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   * OR disjunction for sigma propositions
   */
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  override val opCode: OpCode = OpCodes.Undefined
+
   override def cost[C <: Context[C]](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 }
@@ -202,7 +206,7 @@ case class CalcSha256(override val input: Value[SByteArray.type]) extends CalcHa
   */
 sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
-  val left: Value[LIV]
+  val left : Value[LIV]
   val right: Value[RIV]
 
   override def cost[C <: Context[C]](context: C): Long =
@@ -213,24 +217,9 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
   extends Triple[LIV, RIV, OV]
 
-case class Plus(override val left: Value[SInt.type],
-                override val right: Value[SInt.type])
-  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
-    with NotReadyValueInt {
+case class ArithmeticOperations(left: Value[SInt.type], right: Value[SInt.type], opCode: OpCode)
+  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
 
-  override val opCode: OpCode = PlusCode
-}
-
-/**
-  * SInt subtraction
-  */
-case class Minus(override val left: Value[SInt.type],
-                 override val right: Value[SInt.type])
-  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type]
-    with NotReadyValueInt {
-
-  override val opCode: OpCode = MinusCode
-}
 
 /**
   * XOR for two SByteArray
@@ -262,7 +251,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
 
   override val opCode: OpCode = ExponentiateCode
 
-  override def cost[C <: Context[C]](context: C) = 5000 + left.cost(context) + right.cost(context)
+  override def cost[C <: Context[C]](context: C) = Cost.Exponentiate + left.cost(context) + right.cost(context)
 }
 
 case class MultiplyGroup(override val left: Value[SGroupElement.type],
@@ -272,7 +261,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
 
   override val opCode: OpCode = MultiplyGroupCode
 
-  override def cost[C <: Context[C]](context: C) = 50 + left.cost(context) + right.cost(context)
+  override def cost[C <: Context[C]](context: C) = Cost.MultiplyGroup + left.cost(context) + right.cost(context)
 }
 
 // Relation
@@ -341,9 +330,9 @@ case class NEQ(override val left: Value[SType],
   */
 sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] extends NotReadyValue[OV] {
 
-  val first: Value[IV1]
+  val first : Value[IV1]
   val second: Value[IV2]
-  val third: Value[IV3]
+  val third : Value[IV3]
 
   override def cost[C <: Context[C]](context: C): Long =
     first.cost(context) + second.cost(context) + third.cost(context) + Cost.QuadrupleDeclaration
@@ -361,9 +350,9 @@ case class IsMember(tree: Value[SAvlTree.type],
                     proof: Value[SByteArray.type]) extends Relation3[SAvlTree.type, SByteArray.type, SByteArray.type] {
   override val opCode: OpCode = OpCodes.IsMemberCode
 
-  override lazy val first = tree
+  override lazy val first  = tree
   override lazy val second = key
-  override lazy val third = proof
+  override lazy val third  = proof
 }
 
 
@@ -373,9 +362,9 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 
   override def tpe = trueBranch.tpe
 
-  override lazy val first = condition
+  override lazy val first  = condition
   override lazy val second = trueBranch
-  override lazy val third = falseBranch
+  override lazy val third  = falseBranch
 }
 
 

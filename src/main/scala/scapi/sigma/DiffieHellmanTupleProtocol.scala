@@ -8,6 +8,8 @@ import sigmastate._
 import sigmastate.interpreter.{Context, GroupSettings}
 import sigmastate.Values._
 import Value.PropositionCode
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
@@ -66,6 +68,8 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
                                    vv: Value[SGroupElement.type])
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
+
+  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 
   override def cost[C <: Context[C]](context: C): Long = Cost.Dlog * 2
 

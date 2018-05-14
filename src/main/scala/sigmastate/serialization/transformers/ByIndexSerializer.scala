@@ -10,7 +10,7 @@ import sigmastate.{SCollection, SType}
 
 object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
 
-  val intLength = Ints.BYTES
+  private val intLength = Ints.BYTES
 
   override val opCode: OpCode = OpCodes.ByIndexCode
 

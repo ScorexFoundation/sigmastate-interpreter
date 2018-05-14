@@ -4,7 +4,9 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
+import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -208,8 +210,11 @@ class SigmaTyper {
     case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])((l,r) => l == r)
     case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ)((l,r) => l == r)
 
-    case Plus(l, r) => bimap(env, "+", l, r)(Plus)(SInt, SInt)
-    case Minus(l, r) => bimap(env, "-", l, r)(Minus)(SInt, SInt)
+    case ArithmeticOperations(l, r, OpCodes.MinusCode) => bimap(env, "-", l, r)(Minus)(SInt, SInt)
+    case ArithmeticOperations(l, r, OpCodes.PlusCode) => bimap(env, "+", l, r)(Plus)(SInt, SInt)
+    case ArithmeticOperations(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l, r)(Multiply)(SInt, SInt)
+    case ArithmeticOperations(l, r, OpCodes.ModuloCode) => bimap(env, "%", l, r)(Modulo)(SInt, SInt)
+    case ArithmeticOperations(l, r, OpCodes.DivisionCode) => bimap(env, "/", l, r)(Divide)(SInt, SInt)
     case Xor(l, r) => bimap(env, "|", l, r)(Xor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(MultiplyGroup)(SGroupElement, SGroupElement)
     case AppendBytes(l, r) => bimap(env, "++", l, r)(AppendBytes)(SByteArray, SByteArray)

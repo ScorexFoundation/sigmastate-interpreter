@@ -11,7 +11,9 @@ import sigmastate.utxo._
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
+
   import ValueSerializer._
+
   override val companion = ValueSerializer
   val opCode: OpCode
 
@@ -42,9 +44,13 @@ object ValueSerializer
     TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
     TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
     TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
-    TwoArgumentsSerializer(MinusCode, Minus.apply),
-    TwoArgumentsSerializer(PlusCode, Plus.apply),
+    TwoArgumentsSerializer(MinusCode, Minus),
+    TwoArgumentsSerializer(MultiplyCode, Multiply),
+    TwoArgumentsSerializer(DivisionCode, Divide),
+    TwoArgumentsSerializer(ModuloCode, Modulo),
+    TwoArgumentsSerializer(PlusCode, Plus),
 
+    ProveDiffieHellmanTupleSerializer,
     GroupElementSerializer,
     ProveDlogSerializer,
     IntConstantSerializer,
@@ -76,8 +82,13 @@ object ValueSerializer
     SimpleTransformerSerializer[SByteArray.type, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
     SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcBlake2b256Code, CalcBlake2b256.apply),
     SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcSha256Code, CalcSha256.apply),
+    DeserializeContextSerializer,
+    DeserializeRegisterSerializer,
     ExtractRegisterAsSerializer,
+    WhereSerializer,
+    SliceSerializer,
     ByIndexSerializer,
+    AppendSerializer,
     BoxConstantSerializer,
     AvlTreeConstantSerializer
   ).map(s => (s.opCode, s)).toMap
@@ -102,8 +113,13 @@ object Constraints {
   type Constraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
   type ConstraintN = Seq[SType.TypeCode] => Boolean
 
-  def onlyInt2: Constraint2 = {case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode}
-  def sameType2: Constraint2 = {case (tc1, tc2) => tc1 == tc2}
+  def onlyInt2: Constraint2 = {
+    case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode
+  }
 
-  def sameTypeN: ConstraintN = {tcs => tcs.tail.forall(_ == tcs.head)}
+  def sameType2: Constraint2 = {
+    case (tc1, tc2) => tc1 == tc2
+  }
+
+  def sameTypeN: ConstraintN = { tcs => tcs.tail.forall(_ == tcs.head) }
 }

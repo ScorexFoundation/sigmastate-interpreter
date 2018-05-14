@@ -7,9 +7,9 @@ import sigmastate.serialization.ValueSerializer.{deserialize, serialize}
 
 
 case class TwoArgumentsSerializer[ArgType1 <: SType, ArgType2 <: SType, Operation <: TwoArgumentsOperation[ArgType1, ArgType2, ArgType1]](
-   override val opCode: Byte,
-   constructor: (Value[ArgType1], Value[ArgType2]) => Operation
- ) extends ValueSerializer[Operation] {
+                                                                                                                                           override val opCode: Byte,
+                                                                                                                                           constructor: (Value[ArgType1], Value[ArgType2]) => Operation
+                                                                                                                                         ) extends ValueSerializer[Operation] {
 
   override def parseBody(bytes: Array[TypeCode], pos: companion.Position): (Value[SType], companion.Consumed) = {
     val (firstArg, consumed) = deserialize(bytes, pos)

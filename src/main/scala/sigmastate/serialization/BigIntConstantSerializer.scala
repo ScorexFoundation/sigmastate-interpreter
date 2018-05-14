@@ -22,7 +22,7 @@ object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
     val sizeBuffer = bytes.slice(pos, pos + LengthSize)
     val size: Short = Shorts.fromByteArray(sizeBuffer)
 
-    val valueBuffer = bytes.slice(pos + LengthSize,  pos + LengthSize + size)
+    val valueBuffer = bytes.slice(pos + LengthSize, pos + LengthSize + size)
     BigIntConstant(new BigInteger(valueBuffer)) -> (LengthSize + size)
   }
 

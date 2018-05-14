@@ -1,5 +1,5 @@
 package sigmastate.serialization
-    
+
 import com.google.common.primitives.Shorts
 import sigmastate.SByteArray
 import sigmastate.SType.TypeCode
@@ -15,7 +15,7 @@ object ByteArrayConstantSerializer extends ValueSerializer[ByteArrayConstant] {
   override def parseBody(bytes: Array[Byte], pos: Position): (ByteArrayConstant, Consumed) = {
     val length = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
     val consumed = 2 + length
-    val array = bytes.slice(pos + 2 , pos + consumed)
+    val array = bytes.slice(pos + 2, pos + consumed)
     (ByteArrayConstant(array), consumed)
   }
 
