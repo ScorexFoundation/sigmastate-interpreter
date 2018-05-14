@@ -223,6 +223,15 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("Array()(0)(0)") shouldBe Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
   }
 
+  property("array indexed access with default values") {
+    parse("Array()(0, 1)") shouldBe
+      Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0), IntConstant(1)))
+    parse("Array()(0, 1)(0)") shouldBe
+      Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty),
+        IndexedSeq(IntConstant(0), IntConstant(1))),
+        IndexedSeq(IntConstant(0)))
+  }
+
   property("generic methods of arrays") {
     parse("OUTPUTS.map(fun (out: Box) = out.value)") shouldBe
       Apply(Select(Ident("OUTPUTS"), "map"),
