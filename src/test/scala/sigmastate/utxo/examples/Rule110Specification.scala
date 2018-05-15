@@ -1,13 +1,12 @@
 package sigmastate.utxo.examples
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{BooleanConstant, FalseLeaf, IntConstant, TrueLeaf}
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, FalseLeaf, IntConstant, TaggedInt, TrueLeaf, Value}
 import sigmastate._
-import sigmastate.helpers.ErgoProvingInterpreter
+import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.utxo.ErgoBox.{R4, R5, R6}
+import sigmastate.utxo.ErgoBox.{R3, R4, R5, R6}
 import sigmastate.utxo._
 
 /**
@@ -19,10 +18,7 @@ import sigmastate.utxo._
   * R5 - index of column
   * R6 - bit value (represented as a boolean)
   */
-class Rule110Specification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
+class Rule110Specification extends SigmaTestingCommons {
 
   import BlockchainSimulationSpecification.{Block, ValidationState}
 
@@ -37,6 +33,63 @@ class Rule110Specification extends PropSpec
       case (false, false, true) => true
       case (false, false, false) => false
     }
+
+  property("rule110 - one layer in register") {
+    val prover = new ErgoProvingInterpreter
+    val verifier = new ErgoInterpreter
+
+    val indexId = 21.toByte
+    val f = ByteConstant(0)
+    val t = ByteConstant(1)
+    val indexCollection = new ConcreteCollection((0 until 6).map(i => IntConstant(i)))
+    val string = ExtractRegisterAs[SByteArray](Self, R3)
+    val resultString = ExtractRegisterAs[SByteArray](ByIndex(Outputs, 0), R3)
+    val index = TaggedInt(indexId)
+    val output0: Value[SByte.type] = ByIndex(resultString, index)
+    val input0: Value[SByte.type] = If(LE(index, 0), ByIndex(string, Minus(index, 1)), ByIndex(string, 6))
+    val input1: Value[SByte.type] = ByIndex(string, index)
+    val input2: Value[SByte.type] = If(GE(index, 6), ByIndex(string, Plus(index, 1)), ByIndex(string, 0))
+    val elementRule = OR(Seq(
+      AND(EQ(input0, t), EQ(input1, t), EQ(input2, t), EQ(output0, f)),
+      AND(EQ(input0, t), EQ(input1, t), EQ(input2, f), EQ(output0, t)),
+      AND(EQ(input0, t), EQ(input1, f), EQ(input2, t), EQ(output0, t)),
+      AND(EQ(input0, t), EQ(input1, f), EQ(input2, f), EQ(output0, f)),
+      AND(EQ(input0, f), EQ(input1, t), EQ(input2, t), EQ(output0, t)),
+      AND(EQ(input0, f), EQ(input1, t), EQ(input2, f), EQ(output0, t)),
+      AND(EQ(input0, f), EQ(input1, f), EQ(input2, t), EQ(output0, t)),
+      AND(EQ(input0, f), EQ(input1, f), EQ(input2, f), EQ(output0, f))
+    ))
+    val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(ByIndex(Outputs, 0)))
+    val prop = AND(sameScriptRule, ForAll(indexCollection, indexId, elementRule))
+
+    val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 0, 1, 0))))
+    val output = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 1, 1, 0))))
+    val tx = UnsignedErgoTransaction(IndexedSeq(UnsignedInput(input.id)), IndexedSeq(output))
+
+    val ctx = ErgoContext(
+      currentHeight = 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      tx,
+      self = input)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+
+    /*    val compiledScript = compile(Map.empty,
+          """{
+            |  let indices = Array(1,2,3)
+            |  let string = SELF.R3[Array[Byte]]
+            |
+            |  indices.exist(fun (i: Int) =
+            |    let e = string(i)
+            |    e == 10
+            |  )
+            |}
+          """.stripMargin)
+
+        compiledScript shouldBe expectedPropTree*/
+  }
 
   property("rule110") {
     val prover = new ErgoProvingInterpreter()
