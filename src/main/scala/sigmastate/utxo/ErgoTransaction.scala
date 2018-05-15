@@ -14,17 +14,6 @@ trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
 }
 
-trait InputTemplate {
-  val boxId: ADKey
-}
-
-
-case class UnsignedInput(override val boxId: ADKey) extends InputTemplate
-
-case class Input(override val boxId: ADKey, spendingProof: ProverResult[UncheckedTree])
-  extends InputTemplate {
-  def bytes: Array[Byte] = Array()
-}
 
 trait ErgoTransactionTemplate[IT <: InputTemplate] {
   val inputs: IndexedSeq[IT]
@@ -65,3 +54,17 @@ case class UnsignedErgoTransaction(override val inputs: IndexedSeq[UnsignedInput
 case class ErgoTransaction(override val inputs: IndexedSeq[Input],
                            override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoTransactionTemplate[Input]
+
+
+object ErgoTransaction {
+
+  object serializer extends Serializer[ErgoTransaction] {
+    override def toBytes(tx: ErgoTransaction): Array[Byte] = {
+      val inputsCount = tx.inputs.size
+      val outputCandidatesCount = tx.outputCandidates.size
+      ???
+    }
+
+    override def parseBytes(bytes: Array[Byte]): Try[ErgoTransaction] = ???
+  }
+}
