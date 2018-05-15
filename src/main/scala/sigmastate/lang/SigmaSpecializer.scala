@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rewrite, reduce}
 import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
 import sigmastate.Values._
@@ -14,17 +15,8 @@ class SigmaSpecializer {
 
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
   def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
-    val tagged = tpe match {
-      case SBoolean => TaggedBoolean(tag)
-      case SInt => TaggedInt(tag)
-      case SBigInt => TaggedBigInt(tag)
-      case SBox => TaggedBox(tag)
-      case SByteArray => TaggedByteArray(tag)
-      case SGroupElement => TaggedGroupElement(tag)
-      case SAvlTree => TaggedAvlTree(tag)
-      case _ => error(s"Don't know how to mkTagged($name, $tpe, $tag)")
-    }
-    tagged.asInstanceOf[TaggedVariable[SType]]
+    val tagged = TaggedVariable(tag, tpe)
+    tagged
   }
 
   /** Rewriting of AST with respect to environment to resolve all references
@@ -42,10 +34,10 @@ class SigmaSpecializer {
       val res1 = eval(curEnv, res)
       Some(res1)
 
-    case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray.type]@unchecked)) =>
+    case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(CalcBlake2b256(arg))
 
-    case Apply(Sha256Sym, Seq(arg: Value[SByteArray.type]@unchecked)) =>
+    case Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(CalcSha256(arg))
 
     case Apply(TaggedAvlTreeSym, Seq(IntConstant(i))) =>
@@ -57,19 +49,19 @@ class SigmaSpecializer {
     case Apply(TaggedBoxSym, Seq(IntConstant(i))) =>
       Some(TaggedBox(i.toByte))
 
-    case Apply(TaggedByteArraySym, Seq(IntConstant(i))) =>
-      Some(TaggedByteArray(i.toByte))
+    case Apply(TaggedByteArraySym, Seq(ByteConstant(i))) =>
+      Some(TaggedByteArray(i))
 
     case Apply(TaggedBigIntSym, Seq(IntConstant(i))) =>
       Some(TaggedBigInt(i.toByte))
 
-    case Apply(TaggedIntSym, Seq(IntConstant(i))) =>
-      Some(TaggedInt(i.toByte))
+    case Apply(TaggedIntSym, Seq(ByteConstant(i))) =>
+      Some(TaggedInt(i))
 
     case Apply(TaggedBooleanSym, Seq(IntConstant(i))) =>
       Some(TaggedBoolean(i.toByte))
 
-    case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray.type]@unchecked, proof: Value[SByteArray.type]@unchecked)) =>
+    case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
       Some(IsMember(tree, key, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
@@ -119,28 +111,28 @@ class SigmaSpecializer {
     case Apply(Select(col, "where", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(Where(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
+      Some(Where(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
     case Apply(Select(col,"exists", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(Exists(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
+      Some(Exists(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
     case Apply(Select(col,"forall", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(ForAll(col.asValue[SCollection[SType]], tagged.id, body1.asValue[SBoolean.type]))
+      Some(ForAll(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
     case Apply(Select(col,"map", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(MapCollection(col.asValue[SCollection[SType]], tagged.id, body1)(body1.tpe))
+      Some(MapCollection(col.asValue[SCollection[SType]], tagged.varId, body1)(body1.tpe))
 
     case Apply(Select(col,"fold", _), Seq(zero, Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
       val taggedZero = mkTagged(zeroArg, tZero, 21)
       val taggedOp = mkTagged(opArg, tOp, 22)
       val body1 = eval(env ++ Seq(zeroArg -> taggedZero, opArg -> taggedOp), body)
-      Some(Fold(col.asValue[SCollection[SType]], taggedZero.id, zero, taggedOp.id, body1)(body1.tpe))
+      Some(Fold(col.asValue[SCollection[SType]], taggedZero.varId, zero, taggedOp.varId, body1)(body1.tpe))
 
     case opt: OptionValue[_] =>
       error(s"Option values are not supported: $opt")

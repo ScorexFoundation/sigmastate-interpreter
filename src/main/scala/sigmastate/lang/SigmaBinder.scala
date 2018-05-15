@@ -20,7 +20,7 @@ class SigmaBinder(env: Map[String, Any]) {
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
         case arr: Array[Byte] => Some(ByteArrayConstant(arr))
-        case v: Byte => Some(IntConstant(v))
+        case v: Byte => Some(ByteConstant(v))
         case v: Int => Some(IntConstant(v))
         case v: Long => Some(IntConstant(v))
         case v: BigInteger => Some(BigIntConstant(v))
@@ -69,6 +69,10 @@ class SigmaBinder(env: Map[String, Any]) {
     // Rule: anyOf(Array(...)) --> AND(...)
     case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(OR(args))
+
+    case Apply(ApplyTypes(f @ GetVarSym, targs), Seq(IntConstant(i))) =>
+      if (targs.length != 1) error(s"Wrong number of arguments in $e: expected one type argument")
+      Some(TaggedVariable(i.toByte, targs.head))
 
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>

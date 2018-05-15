@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
+import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
@@ -33,7 +34,9 @@ class SigmaTyper {
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
     * the env map to resolve bound variables and their types.
     */
-  def assignType(env: Map[String, SType], bound: SValue): SValue = bound match {
+  def assignType(env: Map[String, SType],
+                 bound: SValue,
+                 expected: Option[SType] = None): SValue = bound match {
     case Block(bs, res) =>
       var curEnv = env
       val bs1 = ArrayBuffer[Let]()
@@ -120,10 +123,15 @@ class SigmaTyper {
 
     case app @ Apply(f, args) =>
       val new_f = assignType(env, f)
-      val newArgs = args.map(assignType(env, _))
-      f.tpe match {
+
+      new_f.tpe match {
         case SFunc(argTypes, tRes, _) =>
           // If it's a pre-defined function application
+          if (args.length != argTypes.length)
+            error(s"Invalid argument type of application $app: invalid number of arguments")
+          val newArgs = args.zip(argTypes).map {
+            case (arg, expectedType) => assignType(env, arg, Some(expectedType))
+          }
           val actualTypes = newArgs.map(_.tpe)
           if (actualTypes != argTypes)
             error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
@@ -147,7 +155,7 @@ class SigmaTyper {
       newObj.tpe match {
         case SByteArray => (m, newArgs) match {
           case ("++", Seq(r)) if r.tpe == SByteArray =>
-            AppendBytes(newObj.asValue[SByteArray.type], r.asValue[SByteArray.type])
+            AppendBytes(newObj.asValue[SByteArray], r.asValue[SByteArray])
           case _ =>
             error(s"Unknown symbol $m, which is used as operation with arguments $newArgs")
         }
@@ -243,6 +251,9 @@ class SigmaTyper {
     case Inputs => Inputs
     case Outputs => Outputs
     case LastBlockUtxoRootHash => LastBlockUtxoRootHash
+    case IntConstant(i) if expected.isDefined && expected.get == SByte =>
+      if (i >= 0 && i <= Byte.MaxValue) ByteConstant(i.toByte)
+      else error(s"Value $i of type Long cannot be converted to Byte.")
     case v: EvaluatedValue[_] => v
     case v: SigmaBoolean => v
     case v => error(s"Don't know how to assignType($v)")
@@ -326,10 +337,6 @@ object SigmaTyper {
       unifyTypes(e1.elemType, e2.elemType)
     case (e1: SOption[_], e2: SOption[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
-//    case (e1: SOption[_], e2: SSome[_]) =>
-//      unifyTypes(e1.elemType, e2.elemType)
-//    case (e1: SOption[_], e2: SNone[_]) =>
-//      unifyTypes(e1.elemType, e2.elemType)
     case (e1: STuple, e2: STuple) if e1.items.length == e2.items.length =>
       unifyTypeLists(e1.items, e2.items)
     case (e1: SFunc, e2: SFunc) if e1.tDom.length == e2.tDom.length =>

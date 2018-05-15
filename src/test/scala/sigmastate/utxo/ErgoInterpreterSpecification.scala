@@ -5,9 +5,10 @@ import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.hash.Blake2b256
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{SigmaTestingCommons, ErgoProvingInterpreter}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.ErgoBox._
@@ -416,8 +417,8 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val propExpected = EQ(ByteArrayConstant(helloHash),
       CalcBlake2b256(
         If(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10)),
-          ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3),
-          ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 1), R3))))
+          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 2), R3),
+          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 1), R3))))
     prop shouldBe propExpected
 
     val input0 = ErgoBox(10, pubkey, Map())

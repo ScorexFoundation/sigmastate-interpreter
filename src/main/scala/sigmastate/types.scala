@@ -1,14 +1,19 @@
 package sigmastate
 
 import java.math.BigInteger
+
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
 import sigmastate.Values._
 import sigmastate.lang.SigmaTyper
+import sigmastate.SCollection.SByteArray
+
 import scala.collection.mutable
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
+import scala.reflect.classTag
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -34,10 +39,10 @@ sealed trait SType extends SigmaNode {
 object SType {
   type TypeCode = Byte
 
+  implicit val typeByte = SByte
   implicit val typeInt = SInt
   implicit val typeBigInt = SBigInt
   implicit val typeBoolean = SBoolean
-  implicit val typeByteArray = SByteArray
   implicit val typeAvlTree = SAvlTree
   implicit val typeGroupElement = SGroupElement
   implicit val typeBox = SBox
@@ -45,10 +50,10 @@ object SType {
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
   /** All primitive types should be listed here. Note, NoType is not primitive type. */
-  val allPredefTypes = Seq(SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SByte, SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
-  implicit class STypeOps(tpe: SType) {
+  implicit class STypeOps(val tpe: SType) {
     def isCollection: Boolean = tpe.isInstanceOf[SCollection[_]]
     def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
       case (NoType, _) => true
@@ -60,6 +65,12 @@ object SType {
         okDom && okRange
     }
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
+    def classTag: ClassTag[tpe.WrappedType] = (tpe match {
+      case SByte => reflect.classTag[Byte]
+      case SInt => reflect.classTag[Long]
+      case SBoolean => reflect.classTag[Boolean]
+      case _ => sys.error(s"Cannot get ClassTag for type $tpe")
+    }).asInstanceOf[ClassTag[tpe.WrappedType]]
   }
 
   def typeOfData(x: Any): SType = x match {
@@ -138,11 +149,6 @@ case object SBoolean extends SPrimType {
   override val typeCode: TypeCode = 3: Byte
 }
 
-case object SByteArray extends SPrimType {
-  override type WrappedType = Array[Byte]
-  override val typeCode: TypeCode = 4: Byte
-}
-
 case object SAvlTree extends SProduct {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 5: Byte
@@ -196,8 +202,13 @@ case object SAny extends SPrimType {
   override val typeCode: Byte = 9: Byte
 }
 
+case object SByte extends SPrimType {
+  override type WrappedType = Byte
+  override val typeCode: TypeCode = 10: Byte //TODO change to 4 after SByteArray is removed
+}
+
 case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
-  override type WrappedType = IndexedSeq[Value[ElemType]]
+  override type WrappedType = Array[ElemType#WrappedType] //IndexedSeq[Value[ElemType]]
   override val typeCode: TypeCode = SCollection.TypeCode
   def ancestors = Nil
   override def fields = SCollection.fields
@@ -219,6 +230,12 @@ object SCollection {
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
+
+  type SByteArray = SCollection[SByte.type]
+  val SByteArray = SCollection(SByte)
+  val SByteArrayTypeCode: Byte = 4 //TODO remove after CollectionConstant serializer implemented
+  type SIntArray = SCollection[SInt.type]
+  val SIntArray = SCollection(SInt)
 }
 
 /** Type description of optional values. Instances of `Option`

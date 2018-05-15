@@ -5,8 +5,9 @@ import Values._
 
 import scala.util.Try
 import OpCodes._
+import sigmastate.SCollection.SByteArray
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{QuadrupelSerializer, Relation2Serializer, Relation3Serializer}
+import sigmastate.serialization.trees.{Relation3Serializer, Relation2Serializer, QuadrupelSerializer}
 import sigmastate.utxo._
 
 
@@ -15,6 +16,9 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
   import ValueSerializer._
 
   override val companion = ValueSerializer
+
+  /** Code of the corresponding tree node (Value.opCode) which is used to lookup this serizalizer
+    * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
   val opCode: OpCode
 
   override def toBytes(obj: V): Array[Byte] = serialize(obj)
@@ -61,7 +65,7 @@ object ValueSerializer
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](OrCode, OR.apply),
     TaggedVariableSerializer,
     BigIntConstantSerializer,
-    ByteArrayConstantSerializer,
+    CollectionConstantSerializer,
     CaseObjectSerialization(HeightCode, Height),
     CaseObjectSerialization(InputsCode, Inputs),
     CaseObjectSerialization(OutputsCode, Outputs),
@@ -74,14 +78,14 @@ object ValueSerializer
     FoldSerializer,
     SimpleTransformerSerializer[SCollection[SType], SInt.type](SizeOfCode, SizeOf.apply),
     SimpleTransformerSerializer[SBox.type, SInt.type](ExtractAmountCode, ExtractAmount.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray.type](ExtractScriptBytesCode, ExtractScriptBytes.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray.type](ExtractBytesCode, ExtractBytes.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray.type](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray.type](ExtractIdCode, ExtractId.apply),
-    SimpleTransformerSerializer[SInt.type, SByteArray.type](IntToByteArrayCode, IntToByteArray.apply),
-    SimpleTransformerSerializer[SByteArray.type, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
-    SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcBlake2b256Code, CalcBlake2b256.apply),
-    SimpleTransformerSerializer[SByteArray.type, SByteArray.type](CalcSha256Code, CalcSha256.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractScriptBytesCode, ExtractScriptBytes.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesCode, ExtractBytes.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, ExtractId.apply),
+    SimpleTransformerSerializer[SInt.type, SByteArray](IntToByteArrayCode, IntToByteArray.apply),
+    SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
+    SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
+    SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, CalcSha256.apply),
     DeserializeContextSerializer,
     DeserializeRegisterSerializer,
     ExtractRegisterAsSerializer,

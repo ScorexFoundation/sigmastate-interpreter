@@ -3,6 +3,7 @@ package sigmastate.lang
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
@@ -17,6 +18,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("simple expressions") {
     bind(env, "x") shouldBe IntConstant(10)
+    bind(env, "b1") shouldBe ByteConstant(1)
     bind(env, "x+y") shouldBe Plus(10, 11)
     bind(env, "c1 && c2") shouldBe AND(TrueLeaf, FalseLeaf)
     bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
@@ -35,6 +37,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   property("predefined functions") {
     bind(env, "allOf(Array(c1, c2))") shouldBe
         AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
+    bind(env, "getVar[Byte](10)") shouldBe TaggedVariable(10, SByte)
+    bind(env, "getVar[Array[Byte]](10)") shouldBe TaggedVariable(10, SByteArray)
   }
 
   property("let constructs") {

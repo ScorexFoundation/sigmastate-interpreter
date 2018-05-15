@@ -10,23 +10,14 @@ object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: STyp
   override val opCode: OpCode = TaggedVariableCode
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
-    val tc = bytes(pos)
-    val id = bytes(pos + 1)
-
-    val consumed = 2
-
-    (tc match {
-      case b: Byte if b == SInt.typeCode => TaggedInt(id)
-      case b: Byte if b == SBigInt.typeCode => TaggedBigInt(id)
-      case b: Byte if b == SBoolean.typeCode => TaggedBoolean(id)
-      case b: Byte if b == SByteArray.typeCode => TaggedByteArray(id)
-      case b: Byte if b == SAvlTree.typeCode => TaggedAvlTree(id)
-      case b: Byte if b == SGroupElement.typeCode => TaggedGroupElement(id)
-      case b: Byte if b == SBox.typeCode => TaggedBox(id)
-    }, consumed)
+    val varId = bytes(pos)
+    val (tpe, consumed) = STypeSerializer.deserialize(bytes, pos + 1)
+    val node = TaggedVariable(varId, tpe)
+    (node, consumed + 1)
   }
 
   override def serializeBody(v: TaggedVariable[_ <: SType]) = {
-    Array(v.typeCode, v.id)
+    val tpeBytes = STypeSerializer.serialize(v.tpe)
+    Array(v.varId, tpeBytes: _*)
   }
 }
