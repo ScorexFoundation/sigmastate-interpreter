@@ -20,8 +20,15 @@ object Helpers {
   }
 
   def deepHashCode[T](arr: Array[T]): Int = arr match {
+    case arr: Array[AnyRef] => util.Arrays.deepHashCode(arr)
     case arr: Array[Byte] => util.Arrays.hashCode(arr)
+    case arr: Array[Short] => util.Arrays.hashCode(arr)
     case arr: Array[Int] => util.Arrays.hashCode(arr)
+    case arr: Array[Long] => util.Arrays.hashCode(arr)
+    case arr: Array[Char] => util.Arrays.hashCode(arr)
+    case arr: Array[Float] => util.Arrays.hashCode(arr)
+    case arr: Array[Double] => util.Arrays.hashCode(arr)
+    case arr: Array[Boolean] => util.Arrays.hashCode(arr)
   }
 }
 
