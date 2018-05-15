@@ -261,8 +261,8 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.t
     case _ => illegalArgs("ByIndex", "(Value[SCollection[V]], index: Value[SInt.type])(tpe: V)", cs)
   }
 
-  override def function(input: EvaluatedValue[SCollection[V]]) =
-    input.value.apply(index.asInstanceOf[EvaluatedValue[SInt.type]].value.toInt)
+  override def function(input: EvaluatedValue[SCollection[V]]): Value[V] =
+    input.items.apply(index.asInstanceOf[EvaluatedValue[SInt.type]].value.toInt)
 
   override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.ByIndexDeclaration
 }
