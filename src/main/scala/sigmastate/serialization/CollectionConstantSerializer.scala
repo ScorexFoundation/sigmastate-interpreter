@@ -7,7 +7,7 @@ import sigmastate.Values.{CollectionConstant, ByteArrayConstant, Value}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer.{Position, Consumed}
 
-object ByteArrayConstantSerializer extends ValueSerializer[CollectionConstant[SByte.type]] {
+object CollectionConstantSerializer extends ValueSerializer[CollectionConstant[SByte.type]] {
 
   override val opCode: OpCode = CollectionConstantCode
   val typeCode: TypeCode = SCollection.SByteArrayTypeCode

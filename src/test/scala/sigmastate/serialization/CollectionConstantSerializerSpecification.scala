@@ -3,7 +3,7 @@ package sigmastate.serialization
 import sigmastate.SByte
 import sigmastate.Values.{CollectionConstant, ByteArrayConstant}
 
-class ByteArrayConstantSerializerSpecification extends TableSerializationSpecification {
+class CollectionConstantSerializerSpecification extends TableSerializationSpecification {
   
   property("ByteArrayConstant: Serializer round trip") {
     forAll { arr: CollectionConstant[SByte.type] =>

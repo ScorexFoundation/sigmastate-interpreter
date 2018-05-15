@@ -65,7 +65,7 @@ object ValueSerializer
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](OrCode, OR.apply),
     TaggedVariableSerializer,
     BigIntConstantSerializer,
-    ByteArrayConstantSerializer,
+    CollectionConstantSerializer,
     CaseObjectSerialization(HeightCode, Height),
     CaseObjectSerialization(InputsCode, Inputs),
     CaseObjectSerialization(OutputsCode, Outputs),
