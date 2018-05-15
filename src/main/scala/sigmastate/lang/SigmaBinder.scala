@@ -70,6 +70,10 @@ class SigmaBinder(env: Map[String, Any]) {
     case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(OR(args))
 
+    case Apply(ApplyTypes(f @ GetVarSym, targs), Seq(IntConstant(i))) =>
+      if (targs.length != 1) error(s"Wrong number of arguments in $e: expected one type argument")
+      Some(TaggedVariable(i.toByte, targs.head))
+
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>
       val b1 = eval(body, env)

@@ -16,7 +16,10 @@ object SigmaPredef {
       * Rule: Apply(f, args) -->  irBuilder(f, args) */
     irBuilder: (SValue, Seq[SValue]) => SValue
   )
-  
+
+  /** Type variable used in the signatures of global functions below.*/
+  private val tT = STypeIdent("T")
+
   val predefinedEnv: Map[String, SValue] = Seq(
     "allOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "anyOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
@@ -24,6 +27,8 @@ object SigmaPredef {
     "sha256" -> Lambda(Vector("input" -> SByteArray), SByteArray, None),
     "byteArrayToBigInt" -> Lambda(Vector("input" -> SByteArray), SBigInt, None),
     "intToByteArray" -> Lambda(Vector("input" -> SInt), SByteArray, None),
+
+    "getVar" -> Lambda(Vector("varId" -> SByte), tT, None),
 
     "taggedByteArray" -> Lambda(Vector("input" -> SByte), SByteArray, None),
     "taggedInt" -> Lambda(Vector("input" -> SByte), SInt, None),
@@ -47,6 +52,8 @@ object SigmaPredef {
 
   val AllSym = PredefIdent("allOf")
   val AnySym = PredefIdent("anyOf")
+
+  val GetVarSym = PredefIdent("getVar")
 
   val TaggedByteArraySym = PredefIdent("taggedByteArray")
   val TaggedIntSym = PredefIdent("taggedInt")

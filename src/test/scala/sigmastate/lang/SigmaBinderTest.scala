@@ -37,6 +37,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   property("predefined functions") {
     bind(env, "allOf(Array(c1, c2))") shouldBe
         AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
+    bind(env, "getVar[Byte](10)") shouldBe TaggedVariable(10, SByte)
+    bind(env, "getVar[Array[Byte]](10)") shouldBe TaggedVariable(10, SByteArray)
   }
 
   property("let constructs") {
