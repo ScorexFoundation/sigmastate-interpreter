@@ -23,26 +23,24 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
                        firstMessageOpt: Option[FirstDLogProverMessage],
                        challenge: Array[Byte],
                        secondMessage: SecondDLogProverMessage)
-  extends UncheckedLeaf[ProveDlog] {
-}
+  extends UncheckedLeaf[ProveDlog]
+
 
 case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
                                            firstMessageOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                            challenge: Array[Byte],
                                            secondMessage: SecondDiffieHellmanTupleProverMessage)
-  extends UncheckedLeaf[ProveDiffieHellmanTuple] {
-}
+  extends UncheckedLeaf[ProveDiffieHellmanTuple]
+
 
 case class CAndUncheckedNode(override val proposition: CAND,
                              override val challengeOpt: Option[Array[Byte]],
                              override val commitments: Seq[FirstProverMessage[_]],
                              leafs: Seq[ProofTree])
-  extends UncheckedConjecture[CAND] {
-}
+  extends UncheckedConjecture[CAND]
 
 
 case class COrUncheckedNode(override val proposition: COR,
                             override val challengeOpt: Option[Array[Byte]],
                             override val commitments: Seq[FirstProverMessage[_]],
-                            children: Seq[ProofTree]) extends UncheckedConjecture[COR] {
-}
+                            children: Seq[ProofTree]) extends UncheckedConjecture[COR]
