@@ -97,9 +97,9 @@ trait Interpreter {
     case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.DivisionCode) =>
       IntConstant(l.value / r.value)
 
-    case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
-      assert(l.value.length == r.value.length)
-      ByteArrayConstant(Helpers.xor(l.value, r.value))
+    case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
+      assert(l.length == r.length)
+      ByteArrayConstant(Helpers.xor(l, r))
 
     case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       require(l.length + r.length < MaxByteArrayLength)
