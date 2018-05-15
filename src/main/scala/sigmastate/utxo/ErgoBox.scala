@@ -7,6 +7,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.{Serializer, ValueSerializer}
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.ErgoBox.serializer.collectRegister
 import sigmastate.utxo.ErgoBox.{NonMandatoryIdentifier, _}
 
 import scala.annotation.tailrec
@@ -26,7 +27,7 @@ class ErgoBoxCandidate(val value: Long,
 
   val propositionBytes: Array[Byte] = proposition.bytes
 
-  lazy val bytesWithNoRef: Array[Byte] = serializer.bytesWithNoRef(this)
+  lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   def toBox(txId: Digest32, boxId: Short) = ErgoBox(value, proposition, additionalRegisters, txId, boxId)
 
@@ -36,6 +37,29 @@ class ErgoBoxCandidate(val value: Long,
       case R1 => Some(ByteArrayConstant(propositionBytes))
       case R2 => None
       case n: NonMandatoryIdentifier => additionalRegisters.get(n)
+    }
+  }
+}
+
+object ErgoBoxCandidate {
+  object serializer extends Serializer[ErgoBoxCandidate] {
+    override def toBytes(obj: ErgoBoxCandidate): Array[Byte] = {
+      val propBytes = obj.propositionBytes
+      val (regBytes, regNum) = collectRegister(obj, Array.emptyByteArray, 0: Byte)
+
+      Longs.toByteArray(obj.value) ++ propBytes ++ (regNum +: regBytes)
+    }
+
+    override def parseBytes(bytes: Array[Byte]): Try[ErgoBoxCandidate] = Try {
+      val value = Longs.fromByteArray(bytes.take(8))
+      val (prop, consumed) = ValueSerializer.deserialize(bytes, 8)
+      val regNum = bytes(8 + consumed)
+      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, EvaluatedValue[SType]]() -> (9 + consumed)){ case ((m, pos), regIdx) =>
+        val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryIdentifier]
+        val (reg, consumed) = ValueSerializer.deserialize(bytes, pos)
+        (m.updated(regId, reg.asInstanceOf[EvaluatedValue[SType]]), pos + consumed)
+      }
+      new ErgoBoxCandidate(value, prop.asInstanceOf[Value[SBoolean.type]], regs)
     }
   }
 }
@@ -112,15 +136,8 @@ object ErgoBox {
 
   object serializer extends Serializer[ErgoBox] {
     override def toBytes(obj: ErgoBox): Array[Byte] =
-      bytesWithNoRef(obj) ++ obj.transactionId ++ Shorts.toByteArray(obj.boxId)
+      ErgoBoxCandidate.serializer.toBytes(obj) ++ obj.transactionId ++ Shorts.toByteArray(obj.boxId)
 
-
-    def bytesWithNoRef(obj: ErgoBoxCandidate): Array[Byte] = {
-      val propBytes = obj.propositionBytes
-      val (regBytes, regNum) = collectRegister(obj, Array.emptyByteArray, 0: Byte)
-
-      Longs.toByteArray(obj.value) ++ propBytes ++ (regNum +: regBytes)
-    }
 
     @tailrec
     def collectRegister(obj: ErgoBoxCandidate, collectedBytes: Array[Byte], collectedRegisters: Byte): (Array[Byte], Byte) = {
@@ -137,17 +154,13 @@ object ErgoBox {
 
     override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = Try {
       require(bytes.length > 42, "box(long value + proposition + txid + outid) should be 43 bytes at least")
-      val value = Longs.fromByteArray(bytes.take(8))
-      val (prop, consumed) = ValueSerializer.deserialize(bytes, 8)
-      val regNum = bytes(8 + consumed)
-      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, EvaluatedValue[SType]]() -> (9 + consumed)){ case ((m, pos), regIdx) =>
-          val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryIdentifier]
-          val (reg, consumed) = ValueSerializer.deserialize(bytes, pos)
-          (m.updated(regId, reg.asInstanceOf[EvaluatedValue[SType]]), pos + consumed)
+    }.flatMap{_ =>
+      ErgoBoxCandidate.serializer.parseBytes(bytes).map{c =>
+        val bl = bytes.length
+        val txId = Digest32 @@  bytes.slice(bl - 34, bl - 2)
+        val boxId = Shorts.fromByteArray(bytes.slice(bl - 2, bl))
+        c.toBox(txId, boxId)
       }
-      val txId = Digest32 @@  bytes.slice(finalPos, finalPos + 32)
-      val boxId = Shorts.fromByteArray(bytes.slice(finalPos + 32, finalPos + 34))
-      ErgoBox(value, prop.asInstanceOf[Value[SBoolean.type]], regs, txId, boxId)
     }
   }
 

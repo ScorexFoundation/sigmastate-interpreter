@@ -1,9 +1,10 @@
 package sigmastate.utxo
 
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.UncheckedTree
 import sigmastate.interpreter.ProverResult
+import sigmastate.serialization.Serializer
 import sigmastate.utils.Helpers._
 
 import scala.util.Try
@@ -35,9 +36,9 @@ trait ErgoTransactionTemplate[IT <: InputTemplate] {
 
   lazy val messageToSign: Array[Byte] = {
     val outBytes = if (outputCandidates.nonEmpty)
-        outputCandidates.map(_.bytesWithNoRef)
-      else
-        Vector(Array[Byte]())
+      outputCandidates.map(_.bytesWithNoRef)
+    else
+      Vector(Array[Byte]())
     concatBytes(outBytes ++ inputs.map(_.boxId))
   }
 
@@ -50,13 +51,14 @@ case class UnsignedErgoTransaction(override val inputs: IndexedSeq[UnsignedInput
 
   def toSigned(proofs: IndexedSeq[ProverResult[UncheckedTree]]): ErgoTransaction = {
     require(proofs.size == inputs.size)
-    val ins = inputs.zip(proofs).map{case (ui, proof) => Input(ui.boxId, proof)}
+    val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof) }
     ErgoTransaction(ins, outputCandidates)
   }
 }
 
 /**
   * Fully signed transaction
+  *
   * @param inputs
   * @param outputCandidates
   */
