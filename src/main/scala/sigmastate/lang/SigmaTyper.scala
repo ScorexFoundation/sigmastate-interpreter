@@ -254,6 +254,7 @@ class SigmaTyper {
     case IntConstant(i) if expected.isDefined && expected.get == SByte =>
       if (i >= 0 && i <= Byte.MaxValue) ByteConstant(i.toByte)
       else error(s"Value $i of type Long cannot be converted to Byte.")
+    case v: ContextVariable[_] => v
     case v: EvaluatedValue[_] => v
     case v: SigmaBoolean => v
     case v => error(s"Don't know how to assignType($v)")

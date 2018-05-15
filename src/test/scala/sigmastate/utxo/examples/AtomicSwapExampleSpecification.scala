@@ -42,7 +42,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       """{
         |  anyOf(Array(
         |    HEIGHT > height1 + deadlineA && pubkeyA,
-        |    pubkeyB && blake2b256(taggedByteArray(1)) == hx
+        |    pubkeyB && blake2b256(getVar[Array[Byte]](1)) == hx
         |  ))
         |}""".stripMargin).asBoolValue
 
@@ -57,7 +57,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       """{
         |  anyOf(Array(
         |    HEIGHT > height2 + deadlineB && pubkeyB,
-        |    pubkeyA && blake2b256(taggedByteArray(1)) == hx
+        |    pubkeyA && blake2b256(getVar[Array[Byte]](1)) == hx
         |  ))
         |}
       """.stripMargin).asBoolValue
