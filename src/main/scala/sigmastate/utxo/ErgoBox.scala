@@ -52,20 +52,22 @@ object ErgoBoxCandidate {
     }
 
     override def parseBytes(bytes: Array[Byte]): Try[ErgoBoxCandidate] = Try {
-      val value = Longs.fromByteArray(bytes.take(8))
-      val (prop, consumed) = ValueSerializer.deserialize(bytes, 8)
-      val regNum = bytes(8 + consumed)
-      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, EvaluatedValue[SType]]() -> (9 + consumed)){ case ((m, pos), regIdx) =>
-        val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryIdentifier]
-        val (reg, consumed) = ValueSerializer.deserialize(bytes, pos)
-        (m.updated(regId, reg.asInstanceOf[EvaluatedValue[SType]]), pos + consumed)
-      }
-      new ErgoBoxCandidate(value, prop.asInstanceOf[Value[SBoolean.type]], regs)
+      parseBody(bytes, 0)._1
     }
 
-    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoBoxCandidate, Consumed) = ???
+    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoBoxCandidate, Consumed) = {
+      val value = Longs.fromByteArray(bytes.slice(pos, pos + 8))
+      val (prop, consumed) = ValueSerializer.deserialize(bytes, pos + 8)
+      val regNum = bytes(pos + 8 + consumed)
+      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, EvaluatedValue[SType]]() -> (9 + consumed)){ case ((m, p), regIdx) =>
+        val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryIdentifier]
+        val (reg, consumed) = ValueSerializer.deserialize(bytes, p)
+        (m.updated(regId, reg.asInstanceOf[EvaluatedValue[SType]]), p + consumed)
+      }
+      new ErgoBoxCandidate(value, prop.asInstanceOf[Value[SBoolean.type]], regs) -> finalPos
+    }
 
-    override def serializeBody(obj: ErgoBoxCandidate): Array[Byte] = ???
+    override def serializeBody(obj: ErgoBoxCandidate): Array[Byte] = toBytes(obj)
   }
 }
 
