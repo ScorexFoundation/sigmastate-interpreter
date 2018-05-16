@@ -2,7 +2,7 @@ package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer.{Position, Consumed}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.Fold
 import sigmastate.{SCollection, SType}

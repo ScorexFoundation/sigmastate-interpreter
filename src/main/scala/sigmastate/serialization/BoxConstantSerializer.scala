@@ -3,7 +3,7 @@ package sigmastate.serialization
 import com.google.common.primitives.Ints
 import sigmastate.Values.BoxConstant
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer.{Position, Consumed}
 import sigmastate.utxo.ErgoBox
 
 object BoxConstantSerializer extends ValueSerializer[BoxConstant] {

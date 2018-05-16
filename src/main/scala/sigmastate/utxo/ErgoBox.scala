@@ -5,6 +5,7 @@ import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.serialization.{Serializer, ValueSerializer}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox.serializer.collectRegister
@@ -23,7 +24,7 @@ class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
                        val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
-  lazy val cost = (bytesWithNoRef.size / 1024 + 1) * Cost.BoxPerKilobyte
+  lazy val cost = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
 
   val propositionBytes: Array[Byte] = proposition.bytes
 
@@ -42,7 +43,7 @@ class ErgoBoxCandidate(val value: Long,
 }
 
 object ErgoBoxCandidate {
-  object serializer extends Serializer[ErgoBoxCandidate] {
+  object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
     override def toBytes(obj: ErgoBoxCandidate): Array[Byte] = {
       val propBytes = obj.propositionBytes
       val (regBytes, regNum) = collectRegister(obj, Array.emptyByteArray, 0: Byte)
@@ -61,6 +62,10 @@ object ErgoBoxCandidate {
       }
       new ErgoBoxCandidate(value, prop.asInstanceOf[Value[SBoolean.type]], regs)
     }
+
+    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoBoxCandidate, Consumed) = ???
+
+    override def serializeBody(obj: ErgoBoxCandidate): Array[Byte] = ???
   }
 }
 
@@ -134,13 +139,15 @@ object ErgoBox {
             boxId: Short = 0): ErgoBox =
     new ErgoBox(value, proposition, transactionId, boxId, additionalRegisters)
 
-  object serializer extends Serializer[ErgoBox] {
+  object serializer extends Serializer[ErgoBox, ErgoBox] {
     override def toBytes(obj: ErgoBox): Array[Byte] =
       ErgoBoxCandidate.serializer.toBytes(obj) ++ obj.transactionId ++ Shorts.toByteArray(obj.boxId)
 
 
     @tailrec
-    def collectRegister(obj: ErgoBoxCandidate, collectedBytes: Array[Byte], collectedRegisters: Byte): (Array[Byte], Byte) = {
+    def collectRegister(obj: ErgoBoxCandidate,
+                        collectedBytes: Array[Byte],
+                        collectedRegisters: Byte): (Array[Byte], Byte) = {
       val regIdx = (startingNonMandatoryIndex + collectedRegisters).toByte
       val regByIdOpt = registerByIndex.get(regIdx)
       regByIdOpt.flatMap(obj.get) match {
@@ -162,6 +169,10 @@ object ErgoBox {
         c.toBox(txId, boxId)
       }
     }
+
+    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoBox, Consumed) = ???
+
+    override def serializeBody(obj: ErgoBox): Array[Byte] = ???
   }
 
 

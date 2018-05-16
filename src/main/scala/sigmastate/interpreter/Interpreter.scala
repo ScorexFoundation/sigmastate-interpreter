@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import java.math.BigInteger
-import java.util.Arrays
+import java.util
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
@@ -12,7 +12,6 @@ import sigmastate.Values._
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
@@ -218,7 +217,7 @@ trait Interpreter {
             }
 
             val expectedChallenge = Blake2b256(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))
-            Arrays.equals(challenge, expectedChallenge)
+            util.Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false
     }
@@ -250,7 +249,7 @@ trait Interpreter {
 
       val challenge = challenges.head
 
-      assert(challenges.tail.forall(Arrays.equals(_, challenge)))
+      assert(challenges.tail.forall(util.Arrays.equals(_, challenge)))
 
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 

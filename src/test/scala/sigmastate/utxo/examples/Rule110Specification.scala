@@ -163,7 +163,7 @@ class Rule110Specification extends PropSpec
         val c = new ErgoBoxCandidate(0L, prop, Map(R4 -> IntConstant(row), R5 -> IntConstant(col), value))
 
         val ut = UnsignedErgoTransaction(
-          IndexedSeq(UnsignedInput(left.id), UnsignedInput(center.id), UnsignedInput(right.id)),
+          IndexedSeq(new UnsignedInput(left.id), new UnsignedInput(center.id), new UnsignedInput(right.id)),
           IndexedSeq(c, left.toCandidate, center.toCandidate, right.toCandidate)
         )
 

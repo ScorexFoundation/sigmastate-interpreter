@@ -16,7 +16,7 @@ case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData
 case class ErgoContext(currentHeight: Height,
                        lastBlockUtxoRoot: AvlTreeData,
                        boxesToSpend: IndexedSeq[ErgoBox],
-                       spendingTransaction: ErgoTransactionTemplate[_ <: InputTemplate],
+                       spendingTransaction: ErgoTransactionTemplate[_ <: UnsignedInput],
                        self: ErgoBox,
                        override val extension: ContextExtension = ContextExtension(Map())
                       ) extends Context[ErgoContext] {

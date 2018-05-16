@@ -5,7 +5,7 @@ import sigmastate.SByteArray
 import sigmastate.SType.TypeCode
 import sigmastate.Values.ByteArrayConstant
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ValueSerializer.{Consumed, Position}
+import sigmastate.serialization.Serializer.{Consumed, Position}
 
 object ByteArrayConstantSerializer extends ValueSerializer[ByteArrayConstant] {
 

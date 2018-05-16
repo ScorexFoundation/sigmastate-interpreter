@@ -3,7 +3,7 @@ package sigmastate.serialization.transformers
 import com.google.common.primitives.Ints
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer.{Position, Consumed}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.ByIndex
 import sigmastate.{SCollection, SType}
