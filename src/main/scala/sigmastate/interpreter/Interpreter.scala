@@ -101,9 +101,9 @@ trait Interpreter {
       assert(l.length == r.length)
       ByteArrayConstant(Helpers.xor(l, r))
 
-    case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
-      require(l.length + r.length < MaxByteArrayLength)
-      ByteArrayConstant(l ++ r)
+//    case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
+//      require(l.length + r.length < MaxByteArrayLength)
+//      ByteArrayConstant(l ++ r)
 
     case c: CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray]])
 

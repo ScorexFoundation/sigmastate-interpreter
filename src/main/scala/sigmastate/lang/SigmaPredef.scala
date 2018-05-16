@@ -30,14 +30,6 @@ object SigmaPredef {
 
     "getVar" -> Lambda(Vector("varId" -> SByte), tT, None),
 
-    "taggedByteArray" -> Lambda(Vector("input" -> SByte), SByteArray, None),
-    "taggedInt" -> Lambda(Vector("input" -> SByte), SInt, None),
-    "taggedBigInt" -> Lambda(Vector("input" -> SByte), SBigInt, None),
-    "taggedBox" -> Lambda(Vector("input" -> SByte), SBox, None),
-    "taggedGroupElement" -> Lambda(Vector("input" -> SByte), SGroupElement, None),
-    "taggedAvlTree" -> Lambda(Vector("input" -> SByte), SAvlTree, None),
-    "taggedBoolean" -> Lambda(Vector("input" -> SByte), SBoolean, None),
-
     "proveDHTuple" -> Lambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),
     "proveDlog" -> Lambda(Vector("value" -> SGroupElement), SBoolean, None),
@@ -54,14 +46,6 @@ object SigmaPredef {
   val AnySym = PredefIdent("anyOf")
 
   val GetVarSym = PredefIdent("getVar")
-
-  val TaggedByteArraySym = PredefIdent("taggedByteArray")
-  val TaggedIntSym = PredefIdent("taggedInt")
-  val TaggedBigIntSym = PredefIdent("taggedBigInt")
-  val TaggedBoxSym = PredefIdent("taggedBox")
-  val TaggedGroupElementSym = PredefIdent("taggedGroupElement")
-  val TaggedAvlTreeSym = PredefIdent("taggedAvlTree")
-  val TaggedBooleanSym = PredefIdent("taggedBoolean")
 
   val Blake2b256Sym = PredefIdent("blake2b256")
   val Sha256Sym = PredefIdent("sha256")

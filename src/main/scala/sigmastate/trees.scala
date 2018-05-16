@@ -231,16 +231,16 @@ case class Xor(override val left: Value[SByteArray],
   override val opCode: OpCode = XorCode
 }
 
-/**
-  * SByteArray concatenation
-  */
-case class AppendBytes(override val left: Value[SByteArray],
-                       override val right: Value[SByteArray])
-  extends TwoArgumentsOperation[SByteArray, SByteArray, SByteArray]
-    with NotReadyValueByteArray {
-
-  override val opCode: OpCode = AppendBytesCode
-}
+///**
+//  * SByteArray concatenation
+//  */
+//case class AppendBytes(override val left: Value[SByteArray],
+//                       override val right: Value[SByteArray])
+//  extends TwoArgumentsOperation[SByteArray, SByteArray, SByteArray]
+//    with NotReadyValueByteArray {
+//
+//  override val opCode: OpCode = AppendBytesCode
+//}
 
 
 case class Exponentiate(override val left: Value[SGroupElement.type],

@@ -9,6 +9,7 @@ import sigmastate._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
+import sigmastate.utils.Helpers
 import sigmastate.utxo.BooleanTransformer.ResultConstructor
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox.RegisterIdentifier
@@ -90,10 +91,26 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 
   override def transformationReady: Boolean = input.isEvaluated && col2.isEvaluated
 
-  override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
-    val items = cl.items
-    val items2 = col2.items
-    ConcreteCollection(items ++ items2)(tpe.elemType)
+  override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = (cl, col2) match {
+    case (ConcreteCollection(items), ConcreteCollection(items2)) =>
+      ConcreteCollection(items ++ items2)(tpe.elemType)
+
+    case (CollectionConstant(arr, t1), CollectionConstant(arr2, t2)) =>
+      if (t1 != t2)
+        Interpreter.error(s"Cannot Append arrays of different types $t1 and $t2")
+      val newArr = Helpers.concatArrays(Seq(arr, arr2))(t1.classTag)
+      CollectionConstant(newArr, t1)
+
+    case (CollectionConstant(arr, t1), arr2 @ ConcreteCollection(_)) =>
+      val newArr = Helpers.concatArrays(Seq(arr, arr2.value))(t1.classTag)
+      CollectionConstant(newArr, t1)
+
+    case (arr @ ConcreteCollection(_), CollectionConstant(arr2, t2)) =>
+      val newArr = Helpers.concatArrays(Seq(arr.value, arr2))(t2.classTag)
+      CollectionConstant(newArr, t2)
+
+    case _ =>
+      Interpreter.error(s"Don't know how to append $cl and $col2")
   }
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + col2.cost(context)
@@ -212,7 +229,7 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
     id: Byte,
     zero: Value[IV],
     accId: Byte,
-    foldOp: TwoArgumentsOperation[IV, IV, IV],
+    foldOp: Value[IV],
     t: IV@unchecked) => Fold[IV](input, id, zero, accId, foldOp)(t)
     case _ =>
       illegalArgs("Fold",
@@ -243,8 +260,15 @@ object Fold {
   def sum(input: Value[SCollection[SInt.type]]) =
     Fold(input, 21, IntConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
 
-  def sumBytes(input: Value[SCollection[SByteArray]]) =
-    Fold[SByteArray](input, 21, ByteArrayConstant(Array.emptyByteArray), 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
+  def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T) = {
+    val tCol = SCollection(tT)
+    Fold[SCollection[T]](
+      input, 21, ConcreteCollection()(tT), 22,
+      Append(TaggedVariable(22, tCol), TaggedVariable(21, tCol)))
+  }
+
+//  def sumBytes(input: Value[SCollection[SByteArray]]) =
+//    Fold[SByteArray](input, 21, ByteArrayConstant(Array.emptyByteArray), 22, Append(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
 case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)

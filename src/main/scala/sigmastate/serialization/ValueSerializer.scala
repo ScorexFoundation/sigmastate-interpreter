@@ -45,7 +45,7 @@ object ValueSerializer
     QuadrupelSerializer[SBoolean.type, SInt.type, SInt.type, SInt.type](IfCode, If.apply),
 
     TwoArgumentsSerializer(XorCode, Xor.apply),
-    TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
+//    TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
     TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
     TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
     TwoArgumentsSerializer(MinusCode, Minus),

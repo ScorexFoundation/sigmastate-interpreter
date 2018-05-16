@@ -210,6 +210,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("array indexed access") {
+    parse("Array()") shouldBe Apply(Ident("Array"), IndexedSeq.empty)
     parse("Array()(0)") shouldBe Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0)))
     parse("Array()(0)(0)") shouldBe Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
   }
@@ -320,6 +321,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
     parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt))
     parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
+    parse("Array[Int]()") shouldBe Apply(ApplyTypes(Ident("Array"), Seq(SInt)), IndexedSeq.empty)
   }
 
   property("negative tests") {

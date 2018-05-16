@@ -144,32 +144,26 @@ fun allOf(conditions: Array[Boolean]): Boolean
 fun anyOf(conditions: Array[Boolean]): Boolean
 
 /** Cryptographic hash function Blake2b */
-fun blake2b256(input: ByteArray): ByteArray
+fun blake2b256(input: Array[Byte]): Array[Byte]
 
 /** Cryptographic hash function Sha256 */
-fun sha256(input: ByteArray): ByteArray
+fun sha256(input: Array[Byte]): Array[Byte]
 
 /** Create BigInt from byte array representation. */
-fun byteArrayToBigInt(input: ByteArray): BigInt
+fun byteArrayToBigInt(input: Array[Byte]): BigInt
 
 /** Returns bytes representation of integer value. */
-fun intToByteArray(input: Int): ByteArray
+fun intToByteArray(input: Int): Array[Byte]
 
-/** Returns valued from environment by its tag*/
-fun taggedByteArray(tag: Int): ByteArray
-fun taggedInt(tag: Int): Int
-fun taggedBigInt(tag: Int): BigInt
-fun taggedBox(tag: Int): Box
-fun taggedGroupElement(tag: Int): GroupElement
-fun taggedAvlTree(tag: Int): AvlTree
-fun taggedBoolean(tag: Int): Boolean
+/** Returns value of the given type from the environment by its tag.*/
+fun getVar[T](tag: Int): T
 
 fun proveDHTuple(g: GroupElement, h: GroupElement, 
                  u: GroupElement, v: GroupElement): Boolean
 fun proveDlog(value: GroupElement): Boolean
 
 /** Predicate which checks whether a key is in a tree, by using a membership proof. */
-fun isMember(tree: AvlTree, key: ByteArray, proof: ByteArray): Boolean
+fun isMember(tree: AvlTree, key: Array[Byte], proof: Array[Byte]): Boolean
 ```
 
 ## Examples

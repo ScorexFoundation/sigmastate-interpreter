@@ -121,7 +121,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
         MultiplyGroup(extract[SGroupElement.type](R4),
           Exponentiate(oraclePubKey.value,
             ByteArrayToBigInt(CalcBlake2b256(
-              AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
+              Append(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
       ),
       contractLogic)
 

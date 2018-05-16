@@ -65,12 +65,12 @@ object SType {
         okDom && okRange
     }
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
-    def classTag: ClassTag[tpe.WrappedType] = (tpe match {
+    def classTag[T <: SType#WrappedType]: ClassTag[T] = (tpe match {
       case SByte => reflect.classTag[Byte]
       case SInt => reflect.classTag[Long]
       case SBoolean => reflect.classTag[Boolean]
       case _ => sys.error(s"Cannot get ClassTag for type $tpe")
-    }).asInstanceOf[ClassTag[tpe.WrappedType]]
+    }).asInstanceOf[ClassTag[T]]
   }
 
   def typeOfData(x: Any): SType = x match {

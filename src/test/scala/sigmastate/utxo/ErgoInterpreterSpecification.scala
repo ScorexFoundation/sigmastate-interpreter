@@ -147,14 +147,14 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
         """{
           |  let notTimePassed = HEIGHT <= timeout
           |  let outBytes = OUTPUTS.map(fun (box: Box) = box.bytesWithNoRef)
-          |  let outSumBytes = outBytes.fold(EmptyByteArray, fun (arr1: ByteArray, arr2: ByteArray) = arr2 ++ arr1)
+          |  let outSumBytes = outBytes.fold(Array[Byte](), fun (arr1: Array[Byte], arr2: Array[Byte]) = arr2 ++ arr1)
           |  let timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asBoolValue
 
       val prop = OR(
         AND(LE(Height, IntConstant(timeout)),
-          EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))))),
+          EQ(CalcBlake2b256(Fold.concat(MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))))),
             ByteArrayConstant(properHash))),
         AND(GT(Height, IntConstant(timeout)), sender)
       )

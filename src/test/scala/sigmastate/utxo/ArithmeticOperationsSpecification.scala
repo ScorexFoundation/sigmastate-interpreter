@@ -15,7 +15,7 @@ class ArithmeticOperationsSpecification extends SigmaTestingCommons {
     val env = Map("elementId" -> elementId.toLong)
     val compiledScript = compile(env,
       """{
-        |  10 + taggedInt(elementId) == 4 + 2 * 3
+        |  10 + getVar[Int](elementId) == 4 + 2 * 3
         |}
       """.stripMargin)
     compiledScript shouldBe prop

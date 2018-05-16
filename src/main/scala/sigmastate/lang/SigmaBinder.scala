@@ -46,6 +46,17 @@ class SigmaBinder(env: Map[String, Any]) {
       }
     }
 
+    // Rule: Array[Int](...) -->
+    case e @ Apply(ApplyTypes(Ident("Array", _), Seq(tpe)), args) =>
+      val resTpe = if (args.isEmpty) tpe
+      else {
+        val elemType = args(0).tpe
+        if (elemType != tpe)
+          error(s"Invalid construction of array $e: expected type $tpe, actual type $elemType")
+        elemType
+      }
+      Some(ConcreteCollection(args)(resTpe))
+
     // Rule: Array(...) -->
     case Apply(Ident("Array", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
@@ -70,9 +81,14 @@ class SigmaBinder(env: Map[String, Any]) {
     case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(OR(args))
 
-    case Apply(ApplyTypes(f @ GetVarSym, targs), Seq(IntConstant(i))) =>
-      if (targs.length != 1) error(s"Wrong number of arguments in $e: expected one type argument")
-      Some(TaggedVariable(i.toByte, targs.head))
+    case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
+      if (targs.length != 1 || args.length != 1)
+        error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
+      val id = args.head match {
+        case IntConstant(i) => i.toByte
+        case ByteConstant(i) => i
+      }
+      Some(TaggedVariable(id, targs.head))
 
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>
