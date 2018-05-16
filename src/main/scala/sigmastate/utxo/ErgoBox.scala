@@ -43,6 +43,7 @@ class ErgoBoxCandidate(val value: Long,
 }
 
 object ErgoBoxCandidate {
+
   object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
     override def toBytes(obj: ErgoBoxCandidate): Array[Byte] = {
       val propBytes = obj.propositionBytes
@@ -59,7 +60,7 @@ object ErgoBoxCandidate {
       val value = Longs.fromByteArray(bytes.slice(pos, pos + 8))
       val (prop, consumed) = ValueSerializer.deserialize(bytes, pos + 8)
       val regNum = bytes(pos + 8 + consumed)
-      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, EvaluatedValue[SType]]() -> (9 + consumed)){ case ((m, p), regIdx) =>
+      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, EvaluatedValue[SType]]() -> (9 + consumed)) { case ((m, p), regIdx) =>
         val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryIdentifier]
         val (reg, consumed) = ValueSerializer.deserialize(bytes, p)
         (m.updated(regId, reg.asInstanceOf[EvaluatedValue[SType]]), p + consumed)
@@ -69,6 +70,7 @@ object ErgoBoxCandidate {
 
     override def serializeBody(obj: ErgoBoxCandidate): Array[Byte] = toBytes(obj)
   }
+
 }
 
 
@@ -104,7 +106,7 @@ class ErgoBox private(override val value: Long,
 
   import sigmastate.utxo.ErgoBox._
 
-  lazy val id: BoxId = ADKey @@Blake2b256.hash(bytes)
+  lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
   override lazy val cost = (bytesWithNoRef.size / 1024 + 1) * Cost.BoxPerKilobyte
 
@@ -117,7 +119,7 @@ class ErgoBox private(override val value: Long,
 
   lazy val bytes: Array[Byte] = serializer.toBytes(this)
 
-  override def equals(arg:Any) = arg match {
+  override def equals(arg: Any) = arg match {
     case x: ErgoBox =>
       value == x.value &&
         proposition == x.proposition &&
@@ -126,6 +128,7 @@ class ErgoBox private(override val value: Long,
         boxId == x.boxId
     case _ => false
   }
+
   override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalRegisters, boxId))
 
   def toCandidate: ErgoBoxCandidate = new ErgoBoxCandidate(value, proposition, additionalRegisters)
@@ -142,6 +145,7 @@ object ErgoBox {
     new ErgoBox(value, proposition, transactionId, boxId, additionalRegisters)
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
+
     override def toBytes(obj: ErgoBox): Array[Byte] =
       ErgoBoxCandidate.serializer.toBytes(obj) ++ obj.transactionId ++ Shorts.toByteArray(obj.boxId)
 
@@ -160,21 +164,20 @@ object ErgoBox {
       }
     }
 
-
     override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = Try {
       require(bytes.length > 42, "box(long value + proposition + txid + outid) should be 43 bytes at least")
-    }.flatMap{_ =>
-      ErgoBoxCandidate.serializer.parseBytes(bytes).map{c =>
-        val bl = bytes.length
-        val txId = Digest32 @@  bytes.slice(bl - 34, bl - 2)
-        val boxId = Shorts.fromByteArray(bytes.slice(bl - 2, bl))
-        c.toBox(txId, boxId)
-      }
+      parseBody(bytes, 0)._1
     }
 
-    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoBox, Consumed) = ???
+    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoBox, Consumed) = {
+      val (candidate, consumed) = ErgoBoxCandidate.serializer.parseBody(bytes, pos)
 
-    override def serializeBody(obj: ErgoBox): Array[Byte] = ???
+      val newPos = pos + consumed
+
+      val txId = Digest32 @@ bytes.slice(newPos, newPos + 32)
+      val boxId = Shorts.fromByteArray(bytes.slice(newPos + 32, newPos + 34))
+      candidate.toBox(txId, boxId) -> (consumed + 34)
+    }
   }
 
 

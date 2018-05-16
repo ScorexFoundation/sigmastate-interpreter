@@ -9,7 +9,7 @@ trait Serializer[TFamily, T <: TFamily] {
   def parseBytes(bytes: Array[Byte]): Try[TFamily]
 
   def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
-  def serializeBody(obj: T): Array[Byte]
+  def serializeBody(obj: T): Array[Byte] = toBytes(obj)
 }
 
 object Serializer {
