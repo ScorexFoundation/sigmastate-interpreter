@@ -20,6 +20,8 @@ class SigmaBinder(env: Map[String, Any]) {
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
         case arr: Array[Byte] => Some(ByteArrayConstant(arr))
+        case arr: Array[Long] => Some(IntArrayConstant(arr))
+        case arr: Array[Boolean] => Some(BoolArrayConstant(arr))
         case v: Byte => Some(ByteConstant(v))
         case v: Int => Some(IntConstant(v))
         case v: Long => Some(IntConstant(v))
@@ -77,9 +79,17 @@ class SigmaBinder(env: Map[String, Any]) {
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(AND(args))
 
-    // Rule: anyOf(Array(...)) --> AND(...)
+    // Rule: anyOf(Array(...)) --> OR(...)
     case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(OR(args))
+
+    // Rule: allOf(arr) --> AND(arr)
+    case Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
+      Some(AND(arr))
+
+    // Rule: anyOf(arr) --> OR(arr)
+    case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
+      Some(OR(arr))
 
     case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
       if (targs.length != 1 || args.length != 1)

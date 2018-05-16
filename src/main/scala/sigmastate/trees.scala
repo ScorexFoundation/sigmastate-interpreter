@@ -13,6 +13,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.{CostTable, Transformer}
+import sigmastate.utils.Helpers._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -56,7 +57,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.items.forall(_.evaluated)
+    input.evaluated && input.fold(_.items.forall(_.evaluated), c => true)
 
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
@@ -69,14 +70,18 @@ case class OR(input: Value[SCollection[SBoolean.type]])
       }
     }
 
-    val reduced = iterChildren(input.items, mutable.Buffer())
-    reduced.size match {
-      case i: Int if i == 0 => FalseLeaf
-      case i: Int if i == 1 => reduced.head
-      case _ =>
-        if (reduced.forall(_.isInstanceOf[SigmaBoolean])) COR(reduced.map(_.asInstanceOf[SigmaBoolean]))
-        else OR(reduced)
-    }
+    input.fold(in => {
+        val reduced = iterChildren(in.items, mutable.Buffer())
+        reduced.size match {
+          case i: Int if i == 0 => FalseLeaf
+          case i: Int if i == 1 => reduced.head
+          case _ =>
+            if (reduced.forall(_.isInstanceOf[SigmaBoolean])) COR(reduced.map(_.asInstanceOf[SigmaBoolean]))
+            else OR(reduced)
+        }
+      },
+      c => if (anyOf(c.value)) TrueLeaf else FalseLeaf
+    )
   }
 }
 
@@ -104,7 +109,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.items.forall(_.evaluated)
+    input.evaluated && input.fold(_.items.forall(_.evaluated), c => true)
 
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
@@ -117,21 +122,25 @@ case class AND(input: Value[SCollection[SBoolean.type]])
       }
     }
 
-    val reduced = iterChildren(input.items, mutable.Buffer())
-    reduced.size match {
-      case 0 => TrueLeaf
-      case 1 => reduced.head
-      case _ =>
-        // TODO we may have Sigma and Boolean values in different order
-        // current implementation is "all or nothing"
-        if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
-          CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
-        else if (reduced.forall(!_.isInstanceOf[SigmaBoolean]))
-          AND(reduced)
-        else
-          Interpreter.error(
-            s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: $reduced")
-    }
+    input.fold(in => {
+        val reduced = iterChildren(in.items, mutable.Buffer())
+        reduced.size match {
+          case 0 => TrueLeaf
+          case 1 => reduced.head
+          case _ =>
+            // TODO we may have Sigma and Boolean values in different order
+            // current implementation is "all or nothing"
+            if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
+              CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
+            else if (reduced.forall(!_.isInstanceOf[SigmaBoolean]))
+              AND(reduced)
+            else
+              Interpreter.error(
+                s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: $reduced")
+      }
+      },
+      c => if (allOf(c.value)) TrueLeaf else FalseLeaf
+    )
   }
 }
 

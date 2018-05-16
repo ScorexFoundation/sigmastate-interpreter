@@ -165,6 +165,14 @@ object Values {
     }
   }
 
+  object BoolArrayConstant {
+    def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
+    def unapply(node: SValue): Option[Array[Boolean]] = node match {
+      case arr: CollectionConstant[SBoolean.type] @unchecked if arr.elementType == SBoolean => Some(arr.value)
+      case _ => None
+    }
+  }
+
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray] {
     override def tpe = SByteArray
   }
