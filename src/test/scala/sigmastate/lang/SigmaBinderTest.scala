@@ -161,6 +161,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
     bind(env, "INPUTS.map[Int]") shouldBe ApplyTypes(Select(Inputs, "map"), Seq(SInt))
     bind(env, "INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Inputs, "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
+    bind(env, "Array[Int]()") shouldBe ConcreteCollection()(SInt)
   }
 
 }

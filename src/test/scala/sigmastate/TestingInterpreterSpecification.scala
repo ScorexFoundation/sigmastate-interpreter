@@ -83,7 +83,7 @@ class TestingInterpreterSpecification extends PropSpec
   def testeval(code: String) = {
     val dk1 = ProveDlog(secrets(0).publicImage.h)
     val ctx = TestingContext(99)
-    val env = Map("dk1" -> dk1)
+    val env = Map("dk1" -> dk1, "bytes1" -> Array[Byte](1, 2, 3), "bytes2" -> Array[Byte](4, 5, 6))
     val prop = compile(env, code).asBoolValue
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
@@ -98,6 +98,18 @@ class TestingInterpreterSpecification extends PropSpec
     testeval("""{
               |  let arr = Array(1, 2, 3)
               |  arr.slice(1, 3) == Array(2, 3)
+              |}""".stripMargin)
+    testeval("""{
+              |  let arr = bytes1 ++ bytes2
+              |  arr.size == 6
+              |}""".stripMargin)
+    testeval("""{
+              |  let arr = bytes1 ++ Array[Byte]()
+              |  arr.size == 3
+              |}""".stripMargin)
+    testeval("""{
+              |  let arr = Array[Byte]() ++ bytes1
+              |  arr.size == 3
               |}""".stripMargin)
 //    testeval("""{
 //              |  let arr = Array(1, 2, 3)

@@ -53,7 +53,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val prop = AND(
       pubkey,
       EQ(
-        CalcBlake2b256(AppendBytes(TaggedByteArray(1), TaggedByteArray(2))),
+        CalcBlake2b256(Append(TaggedByteArray(1), TaggedByteArray(2))),
         ByteArrayConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
@@ -143,7 +143,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
         |}
       """.stripMargin)
 
-    val prop = EQ(CalcBlake2b256(AppendBytes(TaggedByteArray(2), TaggedByteArray(1))),
+    val prop = EQ(CalcBlake2b256(Append(TaggedByteArray(2), TaggedByteArray(1))),
       ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
     compiledScript shouldBe prop
 
