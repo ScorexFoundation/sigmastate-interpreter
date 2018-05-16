@@ -255,6 +255,9 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.t
   override def arity = 3
   override def deconstruct = immutable.Seq[Any](input, index, tpe)
 
+  override def transformationReady: Boolean =
+    input.isEvaluated && index.evaluated
+
   override def reconstruct(cs: immutable.Seq[Any]): ByIndex[V] = cs match {
     case Seq(input: Value[SCollection[V]]@unchecked, index: Value[SInt.type]@unchecked, _) =>
       ByIndex[V](input, index)
