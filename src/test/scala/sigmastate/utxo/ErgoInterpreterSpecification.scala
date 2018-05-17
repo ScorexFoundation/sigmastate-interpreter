@@ -112,6 +112,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
+
     verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
 
     proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false

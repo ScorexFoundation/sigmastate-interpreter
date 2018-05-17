@@ -13,6 +13,7 @@ import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
+import org.bouncycastle.util.BigIntegers
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
@@ -243,7 +244,12 @@ trait Interpreter {
 
       val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
         case u: UncheckedConjecture[_] => u.commitments
-        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr =>
+          /*
+          val exp = sn.secondMessage.z - BigIntegers.fromUnsignedByteArray(sn.challenge)
+          val a = dlogGroup.exponentiate(dlogGroup.generator, exp.bigInteger)
+          Seq(FirstDLogProverMessage(a))*/
+          sn.firstMessageOpt.toSeq
         case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
       }
 

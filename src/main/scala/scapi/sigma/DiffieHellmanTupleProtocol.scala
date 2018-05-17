@@ -48,7 +48,6 @@ case class FirstDiffieHellmanTupleProverMessage(a: GroupSettings.EcPointType, b:
 
     val bb = b.getEncoded(true)
 
-    //todo: is toByte enough? check for a concrete group used!
     Array(ba.length.toByte, bb.length.toByte) ++ ba ++ bb
   }
 }
