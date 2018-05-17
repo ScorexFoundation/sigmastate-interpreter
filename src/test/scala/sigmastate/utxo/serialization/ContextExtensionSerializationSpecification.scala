@@ -4,9 +4,9 @@ import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks, TableDrivenPropertyChecks}
 import sigmastate.Values.{IntConstant, TrueLeaf}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.serialization.generators.{ConcreteCollectionGenerators, RelationGenerators, TransformerGenerators, ValueGeneratots}
+import sigmastate.serialization.generators._
 
-class ContextExtensionSerialization extends PropSpec
+class ContextExtensionSerializationSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with TableDrivenPropertyChecks
