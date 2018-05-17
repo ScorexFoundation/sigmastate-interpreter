@@ -134,7 +134,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         |  let tree = SELF.R3[AvlTree].value
-        |  let key = SELF.R4[ByteArray].value
+        |  let key = SELF.R4[Array[Byte]].value
         |  let proof = getVar[Array[Byte]](proofId)
         |  isMember(tree, key, proof)
         |}""".stripMargin).asBoolValue
