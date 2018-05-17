@@ -244,13 +244,33 @@ trait Interpreter {
 
       val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
         case u: UncheckedConjecture[_] => u.commitments
+
+        //todo: reduce boilerplate below, replace additive notation w. multiplicative
         case sn: UncheckedSchnorr =>
-          /*
-          val exp = sn.secondMessage.z - BigIntegers.fromUnsignedByteArray(sn.challenge)
-          val a = dlogGroup.exponentiate(dlogGroup.generator, exp.bigInteger)
-          Seq(FirstDLogProverMessage(a))*/
-          sn.firstMessageOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
+          //a = g^z/h^e
+          val h = sn.proposition.h
+          val he = dlogGroup.exponentiate(h, BigIntegers.fromUnsignedByteArray(sn.challenge))
+          val gz = dlogGroup.exponentiate(dlogGroup.generator, sn.secondMessage.z.bigInteger)
+          val a = he.negate().add(gz).asInstanceOf[EcPointType] // additive notation
+          Seq(FirstDLogProverMessage(a))
+
+        case dh: UncheckedDiffieHellmanTuple =>
+          //a = g^z/u^e
+          //b = h^z/v^e
+
+          val u = dh.proposition.u
+          val v = dh.proposition.v
+
+          val ue = dlogGroup.exponentiate(u, BigIntegers.fromUnsignedByteArray(dh.challenge))
+          val gz = dlogGroup.exponentiate(dh.proposition.g, dh.secondMessage.z)
+          val a = ue.negate().add(gz).asInstanceOf[EcPointType] // additive notation
+
+
+          val ve = dlogGroup.exponentiate(v, BigIntegers.fromUnsignedByteArray(dh.challenge))
+          val hz = dlogGroup.exponentiate(dh.proposition.h, dh.secondMessage.z)
+          val b = ve.negate().add(hz).asInstanceOf[EcPointType] // additive notation
+
+          Seq(FirstDiffieHellmanTupleProverMessage(a, b))
       }
 
       val challenge = challenges.head
