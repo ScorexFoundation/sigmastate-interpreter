@@ -197,7 +197,7 @@ trait Interpreter {
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
-             proof: UncheckedTree,
+             proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
     val (cProp, cost) = reduceToCrypto(context, exp).get
 
@@ -205,7 +205,7 @@ trait Interpreter {
       case TrueLeaf => true
       case FalseLeaf => false
       case b: Value[SBoolean.type] if b.evaluated =>
-        proof match {
+        SigSerializer.parse(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree[_] =>
             assert(sp.proposition == cProp)
@@ -246,31 +246,9 @@ trait Interpreter {
         case u: UncheckedConjecture[_] => u.commitments
 
         //todo: reduce boilerplate below, replace additive notation w. multiplicative
-        case sn: UncheckedSchnorr =>
-          //a = g^z/h^e
-          val h = sn.proposition.h
-          val he = dlogGroup.exponentiate(h, BigIntegers.fromUnsignedByteArray(sn.challenge))
-          val gz = dlogGroup.exponentiate(dlogGroup.generator, sn.secondMessage.z.bigInteger)
-          val a = he.negate().add(gz).asInstanceOf[EcPointType] // additive notation
-          Seq(FirstDLogProverMessage(a))
+        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
 
-        case dh: UncheckedDiffieHellmanTuple =>
-          //a = g^z/u^e
-          //b = h^z/v^e
-
-          val u = dh.proposition.u
-          val v = dh.proposition.v
-
-          val ue = dlogGroup.exponentiate(u, BigIntegers.fromUnsignedByteArray(dh.challenge))
-          val gz = dlogGroup.exponentiate(dh.proposition.g, dh.secondMessage.z)
-          val a = ue.negate().add(gz).asInstanceOf[EcPointType] // additive notation
-
-
-          val ve = dlogGroup.exponentiate(v, BigIntegers.fromUnsignedByteArray(dh.challenge))
-          val hz = dlogGroup.exponentiate(dh.proposition.h, dh.secondMessage.z)
-          val b = ve.negate().add(hz).asInstanceOf[EcPointType] // additive notation
-
-          Seq(FirstDiffieHellmanTupleProverMessage(a, b))
+        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
       }
 
       val challenge = challenges.head
@@ -335,12 +313,21 @@ trait Interpreter {
     case _ => ???
   })
 
+  //below are two sugaric methods for tests
+
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proverResult: ProverResult[ProofT],
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
     verify(exp, ctxv, proverResult.proof, message)
+  }
+
+  def verify(exp: Value[SBoolean.type],
+             context: CTX,
+             proof: ProofT,
+             message: Array[Byte]): Try[VerificationResult] = {
+    verify(exp, context, SigSerializer.toBytes(proof), message)
   }
 }
 

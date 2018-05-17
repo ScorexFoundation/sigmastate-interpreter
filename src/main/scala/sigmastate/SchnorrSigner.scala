@@ -52,7 +52,10 @@ object SigSerializer {
         }
     }
 
-    traverseNode(tree, Array[Byte]())
+    tree match {
+      case NoProof => Array.emptyByteArray
+      case _ => traverseNode (tree, Array[Byte] () )
+    }
   }
 
 
@@ -81,6 +84,6 @@ object SigSerializer {
         COrUncheckedNode(or, None, Seq(), seq) -> (finalPos - pos)
     }
 
-    traverseNode(exp, bytes, 0)._1
+    if(bytes.isEmpty) NoProof else traverseNode(exp, bytes, 0)._1
   }
 }
