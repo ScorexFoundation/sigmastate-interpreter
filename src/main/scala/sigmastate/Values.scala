@@ -361,11 +361,11 @@ object Values {
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
   implicit class CollectionOps[T <: SType](coll: Value[SCollection[T]]) {
-    def length: Int = fold(_.items.length, _.value.length)
-    def items = fold(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"))
+    def length: Int = matchCase(_.items.length, _.value.length)
+    def items = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"))
     def isEvaluated =
-      coll.evaluated && fold(_.items.forall(_.evaluated), _ => true)
-    def fold[R](whenConcrete: ConcreteCollection[T] => R, whenConstant: CollectionConstant[T] => R): R = coll match {
+      coll.evaluated && matchCase(_.items.forall(_.evaluated), _ => true)
+    def matchCase[R](whenConcrete: ConcreteCollection[T] => R, whenConstant: CollectionConstant[T] => R): R = coll match {
       case cc: ConcreteCollection[T]@unchecked => whenConcrete(cc)
       case const: CollectionConstant[T]@unchecked => whenConstant(const)
       case _ => sys.error(s"Unexpected node $coll")

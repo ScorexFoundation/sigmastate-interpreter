@@ -57,7 +57,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.fold(_.items.forall(_.evaluated), c => true)
+    input.evaluated && input.matchCase(_.items.forall(_.evaluated), c => true)
 
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
@@ -70,7 +70,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
       }
     }
 
-    input.fold(in => {
+    input.matchCase(in => {
         val reduced = iterChildren(in.items, mutable.Buffer())
         reduced.size match {
           case i: Int if i == 0 => FalseLeaf
@@ -109,7 +109,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.fold(_.items.forall(_.evaluated), c => true)
+    input.evaluated && input.matchCase(_.items.forall(_.evaluated), c => true)
 
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
@@ -122,7 +122,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
       }
     }
 
-    input.fold(in => {
+    input.matchCase(in => {
         val reduced = iterChildren(in.items, mutable.Buffer())
         reduced.size match {
           case 0 => TrueLeaf
