@@ -22,7 +22,7 @@ object SigSerializer {
           traverseNode(leaf.asInstanceOf[UncheckedTree], ba)
         }
       case or: COrUncheckedNode =>
-        or.children.foldLeft(acc) { case (ba, leaf) =>
+        or.leafs.foldLeft(acc) { case (ba, leaf) =>
           traverseNode(leaf.asInstanceOf[UncheckedTree], ba)
         }
     }
