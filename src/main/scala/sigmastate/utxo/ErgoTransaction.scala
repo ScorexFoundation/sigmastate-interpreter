@@ -34,7 +34,7 @@ case class UnsignedErgoTransaction(override val inputs: IndexedSeq[UnsignedInput
                                    override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoTransactionTemplate[UnsignedInput] {
 
-  def toSigned(proofs: IndexedSeq[ProverResult[UncheckedTree]]): ErgoTransaction = {
+  def toSigned(proofs: IndexedSeq[ProverResult]): ErgoTransaction = {
     require(proofs.size == inputs.size)
     val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof) }
     ErgoTransaction(ins, outputCandidates)

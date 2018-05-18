@@ -29,7 +29,7 @@ object UnsignedInput {
   }
 }
 
-case class Input(override val boxId: ADKey, spendingProof: ProverResult[UncheckedTree])
+case class Input(override val boxId: ADKey, spendingProof: ProverResult)
   extends UnsignedInput(boxId) {
 }
 

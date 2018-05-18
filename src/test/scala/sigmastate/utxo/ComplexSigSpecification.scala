@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import sigmastate.Values.IntConstant
-import sigmastate.{AND, AvlTreeData, GT, OR}
+import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 
 class ComplexSigSpecification extends SigmaTestingCommons {
@@ -214,6 +214,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val proverAC = proverA.withSecrets(Seq(proverC.dlogSecrets.head))
     val pr = proverAC.prove(prop, ctx, fakeMessage).get
+    println("proof size: " + SigSerializer.toBytes(pr.proof).length)
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val proverBD = proverB.withSecrets(Seq(proverD.dlogSecrets.head))

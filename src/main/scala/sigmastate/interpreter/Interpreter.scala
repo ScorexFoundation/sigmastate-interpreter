@@ -338,7 +338,7 @@ trait Interpreter {
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
-             proverResult: ProverResult[ProofT],
+             proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
     verify(exp, ctxv, proverResult.proof, message)
