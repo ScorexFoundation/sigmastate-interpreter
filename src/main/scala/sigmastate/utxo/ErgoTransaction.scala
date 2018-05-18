@@ -3,7 +3,6 @@ package sigmastate.utxo
 import com.google.common.primitives.Shorts
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.UncheckedTree
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
 import sigmastate.serialization.Serializer.{Consumed, Position}

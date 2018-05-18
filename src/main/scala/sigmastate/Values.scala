@@ -2,7 +2,6 @@ package sigmastate
 
 import java.math.BigInteger
 import java.util
-import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
@@ -10,19 +9,18 @@ import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
-import sigmastate.SType.TypeCode
 import sigmastate.interpreter.{Context, GroupSettings}
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{ErgoContext, ErgoBox}
+import sigmastate.utxo.ErgoBox
 import sigmastate.utils.Extensions._
-
 import scala.collection.immutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
 
 object Values {
 
@@ -371,5 +369,4 @@ object Values {
       case _ => sys.error(s"Unexpected node $coll")
     }
   }
-
 }
