@@ -258,14 +258,14 @@ trait Interpreter {
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 
     case or: COrUncheckedNode =>
-      val challenges = or.children map {
+      val challenges = or.leafs map {
         case u: UncheckedConjecture[_] => u.challengeOpt.get
         case sn: UncheckedSchnorr => sn.challenge
         case dh: UncheckedDiffieHellmanTuple => dh.challenge
         case a: Any => println(a); ???
       }
 
-      val commitments = or.children flatMap {
+      val commitments = or.leafs flatMap {
         case u: UncheckedConjecture[_] => u.commitments
         case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
         case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
