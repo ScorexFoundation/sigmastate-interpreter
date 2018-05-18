@@ -36,7 +36,7 @@ case class UnsignedErgoTransaction(override val inputs: IndexedSeq[UnsignedInput
 
   def toSigned(proofs: IndexedSeq[ProverResult]): ErgoTransaction = {
     require(proofs.size == inputs.size)
-    val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof) }
+    val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof.toSerialized) }
     ErgoTransaction(ins, outputCandidates)
   }
 }

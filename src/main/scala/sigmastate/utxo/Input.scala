@@ -1,8 +1,7 @@
 package sigmastate.utxo
 
 import scorex.crypto.authds.ADKey
-import sigmastate.UncheckedTree
-import sigmastate.interpreter.ProverResult
+import sigmastate.interpreter.SerializedProverResult
 import sigmastate.serialization.Serializer
 import sigmastate.serialization.Serializer.{Consumed, Position}
 
@@ -29,7 +28,7 @@ object UnsignedInput {
   }
 }
 
-case class Input(override val boxId: ADKey, spendingProof: ProverResult)
+case class Input(override val boxId: ADKey, spendingProof: SerializedProverResult)
   extends UnsignedInput(boxId) {
 }
 
