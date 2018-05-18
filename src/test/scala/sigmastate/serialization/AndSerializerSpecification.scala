@@ -9,10 +9,10 @@ class AndSerializerSpecification extends TableSerializationSpecification {
 
   override def objects = Table(
     ("object", "bytes"),
-    (AND(boolConst(true),boolConst(true)), Array[Byte](38, 20, 0, 2, 3, 12, 12)),
-    (AND(boolConst(true),boolConst(false)), Array[Byte](38, 20, 0, 2, 3, 12, 13)),
-    (AND(boolConst(false),boolConst(true)), Array[Byte](38, 20, 0, 2, 3, 13, 12)),
-    (AND(boolConst(false),boolConst(false)), Array[Byte](38, 20, 0, 2, 3, 13, 13))
+    (AND(boolConst(true),boolConst(true)), Array[Byte](38, 20, 0, 2, 2, 12, 12)),
+    (AND(boolConst(true),boolConst(false)), Array[Byte](38, 20, 0, 2, 2, 12, 13)),
+    (AND(boolConst(false),boolConst(true)), Array[Byte](38, 20, 0, 2, 2, 13, 12)),
+    (AND(boolConst(false),boolConst(false)), Array[Byte](38, 20, 0, 2, 2, 13, 13))
   )
 
   tableRoundTripTest("And: Serializer round trip")

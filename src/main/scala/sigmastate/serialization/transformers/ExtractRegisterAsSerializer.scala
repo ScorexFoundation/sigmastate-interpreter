@@ -19,7 +19,7 @@ object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[STy
       val (dv, consumed) = ValueSerializer.deserialize(bytes, pos + c1 + 1)
       Some(dv) -> consumed
     }
-    val tpeByte = bytes(pos + c1 + 1 + c2)
+    val tpeByte = bytes(pos + c1 + 1 + c2) //TODO support non-primitive types
     val tpe = SType.allPredefTypes.filter(_.typeCode == tpeByte).head
     ExtractRegisterAs(input.asInstanceOf[Value[SBox.type]], registerId, defaultValue)(tpe) -> (pos + c1 + 1 + c2 + 1)
   }

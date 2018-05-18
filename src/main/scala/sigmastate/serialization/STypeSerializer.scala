@@ -22,7 +22,7 @@ object STypeSerializer extends SigmaSerializerCompanion[SType] {
   override type Tag = SType.TypeCode
   val table: Map[Tag, SigmaSerializer[SType, _]] = {
     val primSers = SType.allPredefTypes.map(t => (t.typeCode, new PrimitiveTypeSerializer(t.typeCode))).toMap
-    primSers + (SCollection.TypeCode -> SCollectionSerializer)
+    primSers + (SCollection.CollectionTypeCode -> SCollectionSerializer)
   }
 
   override def deserialize(bytes: Array[TypeCode], pos: Position): (SType, Consumed) = {
@@ -56,7 +56,7 @@ class PrimitiveTypeSerializer(val typeCode: TypeCode) extends STypeSerializer[ST
 
 object SCollectionSerializer extends STypeSerializer[SCollection[SType]] {
   override val companion = STypeSerializer
-  val typeCode = SCollection.TypeCode
+  val typeCode = SCollection.CollectionTypeCode
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
     val (tElem, len) = STypeSerializer.deserialize(bytes, pos)
