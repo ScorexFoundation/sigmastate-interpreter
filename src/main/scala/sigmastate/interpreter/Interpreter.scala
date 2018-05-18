@@ -334,6 +334,15 @@ trait Interpreter {
     case _ => ???
   })
 
+  def verify(exp: Value[SBoolean.type],
+             context: CTX,
+             proverResult: SerializedProverResult,
+             message: Array[Byte]): Try[VerificationResult] = {
+    val ctxv = context.withExtension(proverResult.extension)
+    verify(exp, ctxv, proverResult.prooBytes, message)
+  }
+
+
   //below are two sugaric methods for tests
 
   def verify(exp: Value[SBoolean.type],
