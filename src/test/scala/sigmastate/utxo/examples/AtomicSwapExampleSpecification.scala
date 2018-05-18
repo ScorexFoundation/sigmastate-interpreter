@@ -1,10 +1,10 @@
 package sigmastate.utxo.examples
 
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedByteArray}
+import sigmastate.Values.{TaggedByteArray, ByteArrayConstant, IntConstant, CollectionConstant}
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo.{ErgoContext, ErgoInterpreter, Height}
+import sigmastate.helpers.{SigmaTestingCommons, ErgoProvingInterpreter}
+import sigmastate.utxo.{ErgoContext, Height, ErgoInterpreter}
 import sigmastate.lang.Terms._
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
@@ -42,7 +42,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       """{
         |  anyOf(Array(
         |    HEIGHT > height1 + deadlineA && pubkeyA,
-        |    pubkeyB && blake2b256(taggedByteArray(1)) == hx
+        |    pubkeyB && blake2b256(getVar[Array[Byte]](1)) == hx
         |  ))
         |}""".stripMargin).asBoolValue
 
@@ -57,7 +57,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       """{
         |  anyOf(Array(
         |    HEIGHT > height2 + deadlineB && pubkeyB,
-        |    pubkeyA && blake2b256(taggedByteArray(1)) == hx
+        |    pubkeyA && blake2b256(getVar[Array[Byte]](1)) == hx
         |  ))
         |}
       """.stripMargin).asBoolValue
@@ -104,7 +104,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     //B extracts preimage x of hx
     val t = pr.extension.values(1)
-    val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[ByteArrayConstant])
+    val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[CollectionConstant[SByte.type]])
 
     //B spends coins of A in chain1 with knowledge of x
     val ctx2 = ErgoContext(

@@ -5,9 +5,10 @@ import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.hash.Blake2b256
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{SigmaTestingCommons, ErgoProvingInterpreter}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.ErgoBox._
@@ -147,14 +148,14 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
         """{
           |  let notTimePassed = HEIGHT <= timeout
           |  let outBytes = OUTPUTS.map(fun (box: Box) = box.bytesWithNoRef)
-          |  let outSumBytes = outBytes.fold(EmptyByteArray, fun (arr1: ByteArray, arr2: ByteArray) = arr2 ++ arr1)
+          |  let outSumBytes = outBytes.fold(Array[Byte](), fun (arr1: Array[Byte], arr2: Array[Byte]) = arr2 ++ arr1)
           |  let timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asBoolValue
 
       val prop = OR(
         AND(LE(Height, IntConstant(timeout)),
-          EQ(CalcBlake2b256(Fold.sumBytes(MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))))),
+          EQ(CalcBlake2b256(Fold.concat(MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))))),
             ByteArrayConstant(properHash))),
         AND(GT(Height, IntConstant(timeout)), sender)
       )
@@ -409,17 +410,17 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       """{
         |  let cond = INPUTS(0).value > 10
         |  let preimage = if (cond)
-        |    INPUTS(2).R3[ByteArray].value
+        |    INPUTS(2).R3[Array[Byte]].value
         |  else
-        |    INPUTS(1).R3[ByteArray].value
+        |    INPUTS(1).R3[Array[Byte]].value
         |  helloHash == blake2b256(preimage)
          }""".stripMargin).asBoolValue
 
     val propExpected = EQ(ByteArrayConstant(helloHash),
       CalcBlake2b256(
         If(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10)),
-          ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 2), R3),
-          ExtractRegisterAs[SByteArray.type](ByIndex(Inputs, 1), R3))))
+          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 2), R3),
+          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 1), R3))))
     prop shouldBe propExpected
 
     val input0 = ErgoBox(10, pubkey, Map())

@@ -20,7 +20,9 @@ class SigmaBinder(env: Map[String, Any]) {
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
         case arr: Array[Byte] => Some(ByteArrayConstant(arr))
-        case v: Byte => Some(IntConstant(v))
+        case arr: Array[Long] => Some(IntArrayConstant(arr))
+        case arr: Array[Boolean] => Some(BoolArrayConstant(arr))
+        case v: Byte => Some(ByteConstant(v))
         case v: Int => Some(IntConstant(v))
         case v: Long => Some(IntConstant(v))
         case v: BigInteger => Some(BigIntConstant(v))
@@ -46,6 +48,17 @@ class SigmaBinder(env: Map[String, Any]) {
       }
     }
 
+    // Rule: Array[Int](...) -->
+    case e @ Apply(ApplyTypes(Ident("Array", _), Seq(tpe)), args) =>
+      val resTpe = if (args.isEmpty) tpe
+      else {
+        val elemType = args(0).tpe
+        if (elemType != tpe)
+          error(s"Invalid construction of array $e: expected type $tpe, actual type $elemType")
+        elemType
+      }
+      Some(ConcreteCollection(args)(resTpe))
+
     // Rule: Array(...) -->
     case Apply(Ident("Array", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
@@ -66,9 +79,26 @@ class SigmaBinder(env: Map[String, Any]) {
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(AND(args))
 
-    // Rule: anyOf(Array(...)) --> AND(...)
+    // Rule: anyOf(Array(...)) --> OR(...)
     case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
       Some(OR(args))
+
+    // Rule: allOf(arr) --> AND(arr)
+    case Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
+      Some(AND(arr))
+
+    // Rule: anyOf(arr) --> OR(arr)
+    case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
+      Some(OR(arr))
+
+    case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
+      if (targs.length != 1 || args.length != 1)
+        error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
+      val id = args.head match {
+        case IntConstant(i) => i.toByte
+        case ByteConstant(i) => i
+      }
+      Some(TaggedVariable(id, targs.head))
 
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>

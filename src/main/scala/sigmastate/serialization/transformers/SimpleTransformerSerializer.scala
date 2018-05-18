@@ -8,8 +8,8 @@ import sigmastate.utxo.Transformer
 import sigmastate.serialization.Serializer.{Position, Consumed}
 
 case class SimpleTransformerSerializer[I <: SType, O <: SType]
-  (code: OpCode,
-   cons: Value[I] => Transformer[I, O]) extends ValueSerializer[Transformer[I, O]] {
+(code: OpCode,
+ cons: Value[I] => Transformer[I, O]) extends ValueSerializer[Transformer[I, O]] {
 
   override val opCode: OpCode = code
 

@@ -6,7 +6,9 @@ import sigmastate.SType.TypeCode
 import sigmastate.serialization.Serializer.{Position, Consumed}
 
 trait STypeSerializer[T <: SType] extends SigmaSerializer[SType, T] {
+
   import STypeSerializer._
+
   val typeCode: TypeCode
 
   override def toBytes(obj: T): Array[Byte] = serialize(obj)

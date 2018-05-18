@@ -1,17 +1,19 @@
 package sigmastate.lang
 
 import sigmastate.lang.Terms.Ident
-import sigmastate.Values.{Value, IntConstant, ConcreteCollection}
+import sigmastate.Values.{ConcreteCollection, Value, IntConstant}
 import sigmastate._
 import java.math.BigInteger
 
+import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.GroupSettings
 
 trait LangTests {
 
   def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
   def IntIdent(name: String): Value[SInt.type] = Ident(name).asValue[SInt.type]
-  def ByteArrayIdent(name: String): Value[SByteArray.type] = Ident(name).asValue[SByteArray.type]
+  def ByteIdent(name: String): Value[SByte.type] = Ident(name).asValue[SByte.type]
+  def ByteArrayIdent(name: String): Value[SByteArray] = Ident(name).asValue[SByteArray]
   def GEIdent(name: String): Value[SGroupElement.type] = Ident(name).asValue[SGroupElement.type]
   def BigIntIdent(name: String): Value[SBigInt.type] = Ident(name).asValue[SBigInt.type]
 
@@ -25,6 +27,8 @@ trait LangTests {
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
+    "b1" -> 1.toByte,
+    "b2" -> 2.toByte,
     "arr1" -> Array[Byte](1, 2),
     "arr2" -> Array[Byte](10, 20),
     "col1" -> ConcreteCollection(IntConstant(1), IntConstant(2)),

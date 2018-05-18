@@ -16,7 +16,7 @@ class SigmaCompilerSpecification extends SigmaTestingCommons {
     val propTree = GE(TaggedInt(elementId), IntConstant(120))
     val propComp = compile(env,
       """{
-        |  taggedInt(elementId) >= 120
+        |  getVar[Int](elementId) >= 120
         |}""".stripMargin).asBoolValue
     propComp shouldBe propTree
   }

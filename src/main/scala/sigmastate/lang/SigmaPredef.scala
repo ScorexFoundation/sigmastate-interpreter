@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import sigmastate.Values.SValue
 import sigmastate._
+import sigmastate.SCollection.SByteArray
 import sigmastate.lang.Terms.{Lambda, Ident}
 
 object SigmaPredef {
@@ -15,7 +16,10 @@ object SigmaPredef {
       * Rule: Apply(f, args) -->  irBuilder(f, args) */
     irBuilder: (SValue, Seq[SValue]) => SValue
   )
-  
+
+  /** Type variable used in the signatures of global functions below.*/
+  private val tT = STypeIdent("T")
+
   val predefinedEnv: Map[String, SValue] = Seq(
     "allOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "anyOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
@@ -24,13 +28,7 @@ object SigmaPredef {
     "byteArrayToBigInt" -> Lambda(Vector("input" -> SByteArray), SBigInt, None),
     "intToByteArray" -> Lambda(Vector("input" -> SInt), SByteArray, None),
 
-    "taggedByteArray" -> Lambda(Vector("input" -> SInt), SByteArray, None),
-    "taggedInt" -> Lambda(Vector("input" -> SInt), SInt, None),
-    "taggedBigInt" -> Lambda(Vector("input" -> SInt), SBigInt, None),
-    "taggedBox" -> Lambda(Vector("input" -> SInt), SBox, None),
-    "taggedGroupElement" -> Lambda(Vector("input" -> SInt), SGroupElement, None),
-    "taggedAvlTree" -> Lambda(Vector("input" -> SInt), SAvlTree, None),
-    "taggedBoolean" -> Lambda(Vector("input" -> SInt), SBoolean, None),
+    "getVar" -> Lambda(Vector("varId" -> SByte), tT, None),
 
     "proveDHTuple" -> Lambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),
@@ -47,13 +45,7 @@ object SigmaPredef {
   val AllSym = PredefIdent("allOf")
   val AnySym = PredefIdent("anyOf")
 
-  val TaggedByteArraySym = PredefIdent("taggedByteArray")
-  val TaggedIntSym = PredefIdent("taggedInt")
-  val TaggedBigIntSym = PredefIdent("taggedBigInt")
-  val TaggedBoxSym = PredefIdent("taggedBox")
-  val TaggedGroupElementSym = PredefIdent("taggedGroupElement")
-  val TaggedAvlTreeSym = PredefIdent("taggedAvlTree")
-  val TaggedBooleanSym = PredefIdent("taggedBoolean")
+  val GetVarSym = PredefIdent("getVar")
 
   val Blake2b256Sym = PredefIdent("blake2b256")
   val Sha256Sym = PredefIdent("sha256")

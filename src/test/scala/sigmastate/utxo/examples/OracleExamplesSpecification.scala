@@ -3,12 +3,13 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{SigmaTestingCommons, ErgoProvingInterpreter}
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utxo.ErgoBox._
 import sigmastate.utxo._
@@ -115,12 +116,12 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       AND(LE(extract(R3), IntConstant(15)), bobPubKey))
 
     val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
-      EQ(extract[SByteArray.type](R1), ByteArrayConstant(oraclePubKey.bytes)),
+      EQ(extract[SByteArray](R1), ByteArrayConstant(oraclePubKey.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),
           Exponentiate(oraclePubKey.value,
             ByteArrayToBigInt(CalcBlake2b256(
-              AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
+              Append(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
       ),
       contractLogic)
 

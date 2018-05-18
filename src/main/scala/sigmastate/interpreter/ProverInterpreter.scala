@@ -8,6 +8,7 @@ import sigmastate._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
 import Values._
+import sigmastate.lang.Terms._
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
@@ -39,13 +40,12 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   val knownExtensions = ContextExtension(contextExtenders)
 
   def enrichContext(tree: Value[SBoolean.type]): ContextExtension = {
-    val targetName = TaggedByteArray.getClass.getSimpleName.replace("$", "")
+//    val targetName = TaggedByteArray.getClass.getSimpleName.replace("$", "")
 
-    val ce: Map[Byte, EvaluatedValue[_ <: SType]] = new Tree(tree).nodes.flatMap { n =>
-      if (n.productPrefix == targetName) {
-        val tag = n.productIterator.next().asInstanceOf[Byte]
+    val ce: Map[Byte, EvaluatedValue[_ <: SType]] = new Tree(tree.asValue[SType]).nodes.flatMap {
+      case TaggedVariable(tag, SCollection.SByteArray) =>
         contextExtenders.get(tag).map(v => tag -> v)
-      } else None
+      case _ => None
     }.toMap
 
     ContextExtension(ce)

@@ -1,14 +1,19 @@
 package sigmastate
 
 import java.math.BigInteger
+
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.GroupSettings
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
 import sigmastate.Values._
 import sigmastate.lang.SigmaTyper
+import sigmastate.SCollection.SByteArray
+
 import scala.collection.mutable
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
+import scala.reflect.classTag
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -34,10 +39,10 @@ sealed trait SType extends SigmaNode {
 object SType {
   type TypeCode = Byte
 
+  implicit val typeByte = SByte
   implicit val typeInt = SInt
   implicit val typeBigInt = SBigInt
   implicit val typeBoolean = SBoolean
-  implicit val typeByteArray = SByteArray
   implicit val typeAvlTree = SAvlTree
   implicit val typeGroupElement = SGroupElement
   implicit val typeBox = SBox
@@ -45,10 +50,10 @@ object SType {
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
   /** All primitive types should be listed here. Note, NoType is not primitive type. */
-  val allPredefTypes = Seq(SInt, SBigInt, SBoolean, SByteArray, SAvlTree, SGroupElement, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SByte, SInt, SBigInt, SBoolean, SAvlTree, SGroupElement, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
-  implicit class STypeOps(tpe: SType) {
+  implicit class STypeOps(val tpe: SType) {
     def isCollection: Boolean = tpe.isInstanceOf[SCollection[_]]
     def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
       case (NoType, _) => true
@@ -60,6 +65,12 @@ object SType {
         okDom && okRange
     }
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
+    def classTag[T <: SType#WrappedType]: ClassTag[T] = (tpe match {
+      case SByte => reflect.classTag[Byte]
+      case SInt => reflect.classTag[Long]
+      case SBoolean => reflect.classTag[Boolean]
+      case _ => sys.error(s"Cannot get ClassTag for type $tpe")
+    }).asInstanceOf[ClassTag[T]]
   }
 
   def typeOfData(x: Any): SType = x match {
@@ -75,16 +86,6 @@ object SType {
     case _ => sys.error(s"Don't know how to return SType for $x: ${x.getClass}")
   }
 
-}
-
-/** Base trait for all primitive types which don't have internal type items. */
-trait SPrimType extends SType {
-}
-
-/** Primitive type recognizer to pattern match on TypeCode */
-object SPrimType {
-  def unapply(tc: TypeCode): Option[SType] = SType.typeCodeToType.get(tc)
-  def unapply(t: SType): Option[SType] = SType.allPredefTypes.find(_ == t)
 }
 
 /** Base trait for all types which have fields (aka properties) */
@@ -119,6 +120,16 @@ case object NoType extends SType {
   val typeCode = 0
 }
 
+/** Base trait for all primitive types which don't have internal type items (aka atoms).
+  * All primitive types can occupy a reserved interval of codes from 1 to 20. */
+trait SPrimType extends SType {
+}
+
+/** Primitive type recognizer to pattern match on TypeCode */
+object SPrimType {
+  def unapply(tc: TypeCode): Option[SType] = SType.typeCodeToType.get(tc)
+  def unapply(t: SType): Option[SType] = SType.allPredefTypes.find(_ == t)
+}
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
 case object SInt extends SPrimType {
@@ -138,19 +149,19 @@ case object SBoolean extends SPrimType {
   override val typeCode: TypeCode = 3: Byte
 }
 
-case object SByteArray extends SPrimType {
-  override type WrappedType = Array[Byte]
-  override val typeCode: TypeCode = 4: Byte
+case object SByte extends SPrimType {
+  override type WrappedType = Byte
+  override val typeCode: TypeCode = 4: Byte //TODO change to 4 after SByteArray is removed
 }
 
-case object SAvlTree extends SProduct {
+case object SAvlTree extends SProduct with SPrimType {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 5: Byte
   def ancestors = Nil
   val fields = Nil
 }
 
-case object SGroupElement extends SProduct {
+case object SGroupElement extends SProduct with SPrimType {
   override type WrappedType = GroupSettings.EcPointType
   override val typeCode: TypeCode = 6: Byte
   def ancestors = Nil
@@ -160,7 +171,7 @@ case object SGroupElement extends SProduct {
   )
 }
 
-case object SBox extends SProduct {
+case object SBox extends SProduct with SPrimType {
   override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 7: Byte
 
@@ -196,8 +207,9 @@ case object SAny extends SPrimType {
   override val typeCode: Byte = 9: Byte
 }
 
+
 case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
-  override type WrappedType = IndexedSeq[Value[ElemType]]
+  override type WrappedType = Array[ElemType#WrappedType] //IndexedSeq[Value[ElemType]]
   override val typeCode: TypeCode = SCollection.TypeCode
   def ancestors = Nil
   override def fields = SCollection.fields
@@ -206,6 +218,7 @@ case class SCollection[ElemType <: SType](elemType: ElemType) extends SProduct {
 
 object SCollection {
   val TypeCode: TypeCode = 80: Byte
+
   private val tIV = STypeIdent("IV")
   private val tOV = STypeIdent("OV")
   val fields = Seq(
@@ -219,6 +232,12 @@ object SCollection {
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
+
+  type SByteArray = SCollection[SByte.type]
+  val SByteArray = SCollection(SByte)
+  val SByteArrayTypeCode: Byte = 4 //TODO remove after CollectionConstant serializer implemented
+  type SIntArray = SCollection[SInt.type]
+  val SIntArray = SCollection(SInt)
 }
 
 /** Type description of optional values. Instances of `Option`
@@ -235,7 +254,7 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
 }
 
 object SOption {
-  val TypeCode: TypeCode = 81: Byte
+  val TypeCode: TypeCode = 91: Byte
   private[sigmastate] def createFields(tArg: STypeIdent) =
     Seq(
       "isDefined" -> SBoolean,
@@ -258,7 +277,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIden
 }
 
 object SFunc {
-  val TypeCode = 90: Byte
+  val TypeCode = 92: Byte
   def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
 }
 
@@ -282,7 +301,7 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
 }
 
 object STuple {
-  val TypeCode = 100: Byte
+  val TypeCode = 93: Byte
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
   val componentNames = Range(1, 31).map(i => s"_$i")
 }
@@ -292,7 +311,7 @@ case class STypeApply(name: String, args: IndexedSeq[SType] = IndexedSeq()) exte
   override val typeCode = STypeApply.TypeCode
 }
 object STypeApply {
-  val TypeCode = 110: Byte
+  val TypeCode = 94: Byte
 }
 
 case class STypeIdent(name: String) extends SType {
@@ -301,7 +320,7 @@ case class STypeIdent(name: String) extends SType {
   override def toString = name
 }
 object STypeIdent {
-  val TypeCode = 111: Byte
+  val TypeCode = 95: Byte
   implicit def liftString(n: String): STypeIdent = STypeIdent(n)
 }
 

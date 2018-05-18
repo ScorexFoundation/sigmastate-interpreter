@@ -16,7 +16,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage), "pubkey" -> pubkey)
     val compiledScript = compile(env,
       """{
-        |  pubkey && blake2b256(taggedByteArray(1)) == blake
+        |  pubkey && blake2b256(getVar[Array[Byte]](1)) == blake
         |}
       """.stripMargin)
     val prop = AND(
@@ -46,14 +46,14 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage1 ++ preimage2), "pubkey" -> pubkey)
     val compiledScript = compile(env,
       """{
-        |  pubkey && blake2b256(taggedByteArray(1) ++ taggedByteArray(2)) == blake
+        |  pubkey && blake2b256(getVar[Array[Byte]](1) ++ getVar[Array[Byte]](2)) == blake
         |}
       """.stripMargin)
 
     val prop = AND(
       pubkey,
       EQ(
-        CalcBlake2b256(AppendBytes(TaggedByteArray(1), TaggedByteArray(2))),
+        CalcBlake2b256(Append(TaggedByteArray(1), TaggedByteArray(2))),
         ByteArrayConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
@@ -87,7 +87,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("k1" -> k1.toInt, "k2" -> k2.toInt, "r" -> r)
     val compiledScript = compile(env,
       """{
-        |  (taggedByteArray(k1) | taggedByteArray(k2)) == r
+        |  (getVar[Array[Byte]](k1) | getVar[Array[Byte]](k2)) == r
         |}
       """.stripMargin)
 
@@ -114,7 +114,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage))
     val compiledScript = compile(env,
       """{
-        |  blake2b256(taggedByteArray(1)) == blake
+        |  blake2b256(getVar[Array[Byte]](1)) == blake
         |}
       """.stripMargin)
 
@@ -139,11 +139,11 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage2 ++ preimage1))
     val compiledScript = compile(env,
       """{
-        |  blake2b256(taggedByteArray(2) ++ taggedByteArray(1)) == blake
+        |  blake2b256(getVar[Array[Byte]](2) ++ getVar[Array[Byte]](1)) == blake
         |}
       """.stripMargin)
 
-    val prop = EQ(CalcBlake2b256(AppendBytes(TaggedByteArray(2), TaggedByteArray(1))),
+    val prop = EQ(CalcBlake2b256(Append(TaggedByteArray(2), TaggedByteArray(1))),
       ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
     compiledScript shouldBe prop
 

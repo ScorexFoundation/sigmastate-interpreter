@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.SByteArray
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ValueSerializer
@@ -21,8 +21,8 @@ class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extend
     case LastBlockUtxoRootHash => AvlTreeConstant(context.lastBlockUtxoRoot)
 
     case t: TaggedVariable[_] =>
-      if (context.extension.values.contains(t.id))
-        context.extension.values(t.id)
+      if (context.extension.values.contains(t.varId))
+        context.extension.values(t.varId)
       else
         null
 //        Interpreter.error(s"Tagged variable with id=${t.id} not found in context ${context.extension.values}")
@@ -35,7 +35,7 @@ class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extend
       case d: DeserializeRegister[_] =>
         context.self.get(d.reg).flatMap { v =>
           v match {
-            case eba: EvaluatedValue[SByteArray.type] => Some(ValueSerializer.deserialize(eba.value))
+            case eba: EvaluatedValue[SByteArray]@unchecked => Some(ValueSerializer.deserialize(eba.value))
             case _ => None
           }
         }.orElse(d.default)

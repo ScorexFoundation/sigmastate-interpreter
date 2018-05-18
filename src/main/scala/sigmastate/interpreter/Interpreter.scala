@@ -7,7 +7,7 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
 import sigmastate.{SType, _}
 import sigmastate.utils.Helpers
-import sigmastate.Values._
+import sigmastate.Values.{ByteArrayConstant, _}
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
@@ -16,11 +16,20 @@ import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import org.bouncycastle.util.BigIntegers
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
+import sigmastate.SCollection.SByteArray
+import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import scorex.crypto.hash.Blake2b256
+import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.serialization.ValueSerializer
+import sigmastate.utxo.{DeserializeContext, CostTable, Transformer}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.Helpers
 import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.{SType, _}
+
+import scala.util.Try
 
 
 object GroupSettings {
@@ -33,7 +42,6 @@ object GroupSettings {
 trait Interpreter {
 
   import GroupSettings._
-
   import Interpreter.ReductionResult
 
   type CTX <: Context[CTX]
@@ -51,7 +59,7 @@ trait Interpreter {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
-          case eba: EvaluatedValue[SByteArray.type] => Some(ValueSerializer.deserialize(eba.value))
+          case eba: EvaluatedValue[SByteArray] @unchecked if eba.tpe == SByteArray => Some(ValueSerializer.deserialize(eba.value))
           case _ => None
         }
       else
@@ -74,17 +82,30 @@ trait Interpreter {
       GroupElementConstant(GroupGenerator.value)
 
     //operations
-    case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
-    case Minus(l: IntConstant, r: IntConstant) => IntConstant(l.value - r.value)
-    case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
-      assert(l.value.length == r.value.length)
-      ByteArrayConstant(Helpers.xor(l.value, r.value))
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.PlusCode) =>
+      IntConstant(Math.addExact(l.value, r.value))
 
-    case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
-      require(l.length + r.length < MaxByteArrayLength)
-      ByteArrayConstant(l ++ r)
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MinusCode) =>
+      IntConstant(Math.subtractExact(l.value, r.value))
 
-    case c: CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray.type]])
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MultiplyCode) =>
+      IntConstant(Math.multiplyExact(l.value, r.value))
+
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.ModuloCode) =>
+      IntConstant(l.value % r.value)
+
+    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.DivisionCode) =>
+      IntConstant(l.value / r.value)
+
+    case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
+      assert(l.length == r.length)
+      ByteArrayConstant(Helpers.xor(l, r))
+
+//    case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
+//      require(l.length + r.length < MaxByteArrayLength)
+//      ByteArrayConstant(l ++ r)
+
+    case c: CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray]])
 
     case Exponentiate(GroupElementConstant(l), BigIntConstant(r)) =>
       GroupElementConstant(dlogGroup.exponentiate(l, r))
@@ -105,9 +126,9 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l.value < r.value)
     case LE(l: IntConstant, r: IntConstant) =>
       BooleanConstant.fromBoolean(l.value <= r.value)
-    case IsMember(tree: AvlTreeConstant, key: ByteArrayConstant, proof: ByteArrayConstant) =>
-      val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
-      val res = bv.performOneOperation(Lookup(ADKey @@ key.value))
+    case IsMember(tree: AvlTreeConstant, ByteArrayConstant(key), ByteArrayConstant(proof)) =>
+      val bv = tree.createVerifier(SerializedAdProof @@ proof)
+      val res = bv.performOneOperation(Lookup(ADKey @@ key))
       BooleanConstant.fromBoolean(res.isSuccess) // TODO should we also check res.get.isDefined
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
