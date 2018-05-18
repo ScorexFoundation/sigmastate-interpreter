@@ -10,16 +10,28 @@ object SigSerializer {
   val hashSize = 32
   val order = 48 //bytes
 
-  def toBytes(tree: UncheckedTree) = {
+  def toBytes(tree: UncheckedTree): Array[Byte] = {
 
-    def traverseNode(node: UncheckedTree, acc: Array[Byte]): Array[Byte] = node match {
+    def traverseNode(node: UncheckedTree,
+                     acc: Array[Byte],
+                     writingChallenge: Boolean = true): Array[Byte] = node match {
       case dl: UncheckedSchnorr =>
-        acc ++ dl.challenge ++ BigIntegers.asUnsignedByteArray(order, dl.secondMessage.z.bigInteger)
+        acc ++
+          (if (writingChallenge) dl.challenge else Array.emptyByteArray) ++
+          BigIntegers.asUnsignedByteArray(order, dl.secondMessage.z.bigInteger)
       case dh: UncheckedDiffieHellmanTuple =>
-        acc ++ dh.challenge ++ BigIntegers.asUnsignedByteArray(order, dh.secondMessage.z)
+        acc ++
+          (if (writingChallenge) dh.challenge else Array.emptyByteArray) ++
+          BigIntegers.asUnsignedByteArray(order, dh.secondMessage.z)
       case and: CAndUncheckedNode =>
-        and.leafs.foldLeft(acc) { case (ba, leaf) =>
-          traverseNode(leaf.asInstanceOf[UncheckedTree], ba)
+        val leafs = and.leafs
+        val challenge = leafs.find(pt => pt match{
+          case _: UncheckedLeaf[_] => true
+          case _ => false
+        }).map(_.asInstanceOf[UncheckedLeaf[_]].challenge).getOrElse(Array.emptyByteArray)
+
+        leafs.foldLeft(acc ++ challenge) { case (ba, leaf) =>
+          traverseNode(leaf.asInstanceOf[UncheckedTree], ba, writingChallenge = false)
         }
       case or: COrUncheckedNode =>
         or.leafs.foldLeft(acc) { case (ba, leaf) =>
@@ -29,36 +41,51 @@ object SigSerializer {
 
     tree match {
       case NoProof => Array.emptyByteArray
-      case _ => traverseNode (tree, Array[Byte] () )
+      case _ => traverseNode(tree, Array[Byte]())
     }
   }
 
 
   def parse(exp: Value[SBoolean.type], bytes: Array[Byte]): UncheckedTree = {
 
-    def traverseNode(exp: Value[SBoolean.type], bytes: Array[Byte], pos: Int): (UncheckedTree, Int) = exp match {
+    def traverseNode(exp: Value[SBoolean.type],
+                     bytes: Array[Byte],
+                     pos: Int,
+                     challengeOpt: Option[Array[Byte]] = None): (UncheckedTree, Int) = exp match {
       case dl: ProveDlog =>
-        val e = bytes.slice(pos, pos + hashSize)
-        val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + hashSize, pos + hashSize + order))
-        UncheckedSchnorr(dl, None, e, SecondDLogProverMessage(z)) -> (hashSize + order)
+        val (e, hp) = if (challengeOpt.isEmpty) {
+          bytes.slice(pos, pos + hashSize) -> hashSize
+        } else {
+          challengeOpt.get -> 0
+        }
+        val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + hp, pos + hp + order))
+        UncheckedSchnorr(dl, None, e, SecondDLogProverMessage(z)) -> (hp + order)
       case dh: ProveDiffieHellmanTuple =>
-        val e = bytes.slice(pos, pos + hashSize)
-        val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + hashSize, pos + hashSize + order))
-        UncheckedDiffieHellmanTuple(dh, None, e, SecondDiffieHellmanTupleProverMessage(z)) -> (hashSize + order)
+        val (e, hp) = if (challengeOpt.isEmpty) {
+          bytes.slice(pos, pos + hashSize) -> hashSize
+        } else {
+          challengeOpt.get -> 0
+        }
+        val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + hp, pos + hp + order))
+        UncheckedDiffieHellmanTuple(dh, None, e, SecondDiffieHellmanTupleProverMessage(z)) -> (hp + order)
       case and: CAND =>
-        val (seq, finalPos) = and.sigmaBooleans.foldLeft(Seq[UncheckedTree]() -> pos){case ((s, p), leaf) =>
-          val (rewrittenLeaf, consumed) = traverseNode(leaf, bytes, p)
+        println(and)
+        val (challenge, cc) = if(and.sigmaBooleans.exists(!_.isInstanceOf[COR]))
+          Some(bytes.slice(pos, pos + hashSize)) -> hashSize else None -> 0
+
+        val (seq, finalPos) = and.sigmaBooleans.foldLeft(Seq[UncheckedTree]() -> (pos + cc)) { case ((s, p), leaf) =>
+          val (rewrittenLeaf, consumed) = traverseNode(leaf, bytes, p, challenge)
           (s :+ rewrittenLeaf, p + consumed)
         }
         CAndUncheckedNode(and, None, Seq(), seq) -> (finalPos - pos)
       case or: COR =>
-        val (seq, finalPos) = or.sigmaBooleans.foldLeft(Seq[UncheckedTree]() -> pos){case ((s, p), leaf) =>
+        val (seq, finalPos) = or.sigmaBooleans.foldLeft(Seq[UncheckedTree]() -> pos) { case ((s, p), leaf) =>
           val (rewrittenLeaf, consumed) = traverseNode(leaf, bytes, p)
           (s :+ rewrittenLeaf, p + consumed)
         }
         COrUncheckedNode(or, None, Seq(), seq) -> (finalPos - pos)
     }
 
-    if(bytes.isEmpty) NoProof else traverseNode(exp, bytes, 0)._1
+    if (bytes.isEmpty) NoProof else traverseNode(exp, bytes, 0)._1
   }
 }
