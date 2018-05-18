@@ -408,9 +408,9 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       """{
         |  let cond = INPUTS(0).value > 10
         |  let preimage = if (cond)
-        |    INPUTS(2).R3[ByteArray].value
+        |    INPUTS(2).R3[Array[Byte]].value
         |  else
-        |    INPUTS(1).R3[ByteArray].value
+        |    INPUTS(1).R3[Array[Byte]].value
         |  helloHash == blake2b256(preimage)
          }""".stripMargin).asBoolValue
 

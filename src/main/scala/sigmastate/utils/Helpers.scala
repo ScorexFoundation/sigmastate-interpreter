@@ -10,6 +10,9 @@ object Helpers {
   def xor(bas: Array[Byte]*): Array[Byte] =
     bas.reduce({case (ba, ba1) => xor(ba, ba1)}: ((Array[Byte], Array[Byte]) => Array[Byte]))
 
+  def anyOf(arr: Array[Boolean]): Boolean = arr.exists(identity)
+  def allOf(arr: Array[Boolean]): Boolean = arr.forall(identity)
+
   def concatBytes(seq: Traversable[Array[Byte]]): Array[Byte] = {
     val length: Int = seq.foldLeft(0)((acc, arr) => acc + arr.length)
     val result: Array[Byte] = new Array[Byte](length)

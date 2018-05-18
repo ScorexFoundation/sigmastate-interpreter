@@ -7,8 +7,10 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
 import sigmastate.lang.SigmaCompiler
-import sigmastate.utxo.{CostTable, Height}
+import sigmastate.utxo.{CostTable, Height, ErgoBox}
 import sigmastate.lang.Terms._
+import sigmastate.utxo.ErgoBox.{R3, R4}
+
 import scala.util.Random
 
 
@@ -83,7 +85,13 @@ class TestingInterpreterSpecification extends PropSpec
   def testeval(code: String) = {
     val dk1 = ProveDlog(secrets(0).publicImage.h)
     val ctx = TestingContext(99)
-    val env = Map("dk1" -> dk1, "bytes1" -> Array[Byte](1, 2, 3), "bytes2" -> Array[Byte](4, 5, 6))
+    val env = Map(
+      "dk1" -> dk1,
+      "bytes1" -> Array[Byte](1, 2, 3),
+      "bytes2" -> Array[Byte](4, 5, 6),
+      "box1" -> ErgoBox(10, TrueLeaf, Map(
+          R3 -> IntArrayConstant(Array[Long](1, 2, 3)),
+          R4 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
@@ -110,6 +118,18 @@ class TestingInterpreterSpecification extends PropSpec
     testeval("""{
               |  let arr = Array[Byte]() ++ bytes1
               |  arr.size == 3
+              |}""".stripMargin)
+    testeval("""{
+              |  let arr = box1.R3[Array[Int]].value
+              |  arr.size == 3
+              |}""".stripMargin)
+    testeval("""{
+              |  let arr = box1.R4[Array[Boolean]].value
+              |  anyOf(arr)
+              |}""".stripMargin)
+    testeval("""{
+              |  let arr = box1.R4[Array[Boolean]].value
+              |  allOf(arr) == false
               |}""".stripMargin)
 //    testeval("""{
 //              |  let arr = Array(1, 2, 3)
