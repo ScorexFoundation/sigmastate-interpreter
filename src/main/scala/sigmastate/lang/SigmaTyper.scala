@@ -142,14 +142,19 @@ class SigmaTyper {
           if (actualTypes != argTypes)
             error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
           Apply(new_f, newArgs)
-        case tCol: SCollection[_] =>
+        case _: SCollection[_] =>
           // If it's a collection then the application has type of that collection's element.
-          // Only constant indices are supported so far
           args match {
             case Seq(IntConstant(i)) =>
               ByIndex[SType](new_f.asCollection, i.toInt)
+            case Seq(arg) =>
+              val newArg = assignType(env, arg)
+              if (newArg.tpe == SInt)
+                ByIndex[SType](new_f.asCollection, newArg.asIntValue)
+              else
+                error(s"Invalid argument type of array application $app: expected integer; actual: $newArg")
             case _ =>
-              error(s"Invalid argument of array application $app: expected integer constant; actual: $args")
+              error(s"Invalid argument of array application $app: expected integer value; actual: $args")
           }
         case t =>
           error(s"Invalid array application $app: array type is expected but was $t")
