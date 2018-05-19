@@ -34,12 +34,14 @@ case class Input(override val boxId: ADKey, spendingProof: SerializedProverResul
 
 object Input {
   object serializer extends Serializer[Input, Input] {
-    override def toBytes(input: Input): Array[Byte] = ???
+    override def toBytes(input: Input): Array[Byte] = {
+      input.boxId ++ SerializedProverResult.serializer.toBytes(input.spendingProof)
+    }
 
-    override def parseBytes(bytes: Array[Byte]): Try[Input] = ???
-
-    override def parseBody(bytes: Array[Byte], pos: Position): (Input, Consumed) = ???
-
-    override def serializeBody(obj: Input): Array[Byte] = ???
+    override def parseBody(bytes: Array[Byte], pos: Position): (Input, Consumed) = {
+      val boxId = bytes.slice(pos, pos + 32)
+      val (spendingProof, consumed) = SerializedProverResult.serializer.parseBody(bytes, pos + 32)
+      Input(ADKey @@ boxId, spendingProof) -> (consumed + 32)
+    }
   }
 }

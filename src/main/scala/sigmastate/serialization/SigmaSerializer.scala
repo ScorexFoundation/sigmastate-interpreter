@@ -6,7 +6,9 @@ import Serializer.{Position, Consumed}
 trait Serializer[TFamily, T <: TFamily] {
   def toBytes(obj: T): Array[Byte]
 
-  def parseBytes(bytes: Array[Byte]): Try[TFamily]
+  def parseBytes(bytes: Array[Byte]): Try[TFamily] = Try {
+    parseBody(bytes, 0)._1
+  }
 
   def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
   def serializeBody(obj: T): Array[Byte] = toBytes(obj)
