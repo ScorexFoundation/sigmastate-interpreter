@@ -3,7 +3,7 @@ package sigmastate.utxo
 import com.google.common.primitives.Shorts
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.interpreter.ProverResult
+import sigmastate.interpreter.{ProverResult, SerializedProverResult}
 import sigmastate.serialization.Serializer
 import sigmastate.serialization.Serializer.{Consumed, Position}
 
@@ -82,15 +82,36 @@ object ErgoTransaction {
 
 
     override def toBytes(tx: ErgoTransaction): Array[Byte] = {
-      val inputsCount = tx.inputs.size
-      val outputCandidatesCount = tx.outputCandidates.size
-      ???
+      tx.inputs.map(_.spendingProof).foldLeft(bytesToSign(tx)){case (bytes, proof) =>
+          bytes ++ SerializedProverResult.serializer.toBytes(proof)
+      }
     }
 
-    override def parseBytes(bytes: Array[Byte]): Try[ErgoTransaction] = ???
+    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoTransaction, Consumed) = {
+      val inputsCount = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
+      val inputs = (0 until inputsCount).foldLeft(Seq[ADKey]()) {case (ins, i) =>
+        val boxId = ADKey @@ bytes.slice(pos + 2 + i*32, pos + 2 + (i + 1)*32)
+        ins :+ boxId
+      }
 
-    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoTransaction, Consumed) = ???
+      val posBeforeOuts = pos + 2 + inputsCount * 32
 
-    override def serializeBody(obj: ErgoTransaction): Array[Byte] = ???
+      val outsCount = Shorts.fromByteArray(bytes.slice(posBeforeOuts, posBeforeOuts + 2))
+      val (outputs, posBeforeProofs) = (0 until outsCount).foldLeft(Seq[ErgoBoxCandidate]() -> (posBeforeOuts + 2)){case ((outs, p), _) =>
+        val (bc, cs) = ErgoBoxCandidate.serializer.parseBody(bytes, p)
+        (outs :+ bc) -> (p + cs)
+      }
+
+      val (proofs, finalPos) = (0 until inputsCount).foldLeft(Seq[SerializedProverResult]() -> posBeforeProofs){case ((prs, p), _) =>
+        val (pr, cs) = SerializedProverResult.serializer.parseBody(bytes, p)
+        (prs :+ pr) -> (p + cs)
+      }
+
+      val signedInputs = inputs.zip(proofs).map {case (inp, pr) =>
+        Input(inp, pr)
+      }
+
+      ErgoTransaction(signedInputs.toIndexedSeq, outputs.toIndexedSeq) -> (finalPos - pos)
+    }
   }
 }
