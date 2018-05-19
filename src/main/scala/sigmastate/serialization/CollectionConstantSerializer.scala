@@ -10,7 +10,6 @@ import sigmastate.serialization.ValueSerializer.{Position, Consumed}
 object CollectionConstantSerializer extends ValueSerializer[CollectionConstant[SByte.type]] {
 
   override val opCode: OpCode = CollectionConstantCode
-  val typeCode: TypeCode = SCollection.SByteArrayTypeCode
 
   override def parseBody(bytes: Array[Byte], pos: Position): (CollectionConstant[SByte.type], Consumed) = {
     val length = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
