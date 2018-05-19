@@ -113,12 +113,13 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(prop, ctx, fakeMessage).get
+
     verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
 
     proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-    property("mixing scenario w. timeout") {
+  property("mixing scenario w. timeout") {
     val proverA = new ErgoProvingInterpreter
     val proverB = new ErgoProvingInterpreter
 
@@ -177,7 +178,8 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     //after timeout
     val prA2 = proverA.prove(mixingRequestProp(pubkeyA, 40), ctx, fakeMessage).get
     verifier.verify(mixingRequestProp(pubkeyA, 40), ctx, prA2, fakeMessage).get._1 shouldBe true
-    verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).isSuccess shouldBe false
+
+    verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).map(_._1).getOrElse(false) shouldBe false
   }
 
   property("map + sum") {

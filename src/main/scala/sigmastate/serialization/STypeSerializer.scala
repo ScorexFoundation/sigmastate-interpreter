@@ -3,7 +3,7 @@ package sigmastate.serialization
 import scala.util.Try
 import sigmastate._
 import sigmastate.SType.TypeCode
-import sigmastate.serialization.STypeSerializer.Position
+import sigmastate.serialization.Serializer.{Position, Consumed}
 
 trait STypeSerializer[T <: SType] extends SigmaSerializer[SType, T] {
 

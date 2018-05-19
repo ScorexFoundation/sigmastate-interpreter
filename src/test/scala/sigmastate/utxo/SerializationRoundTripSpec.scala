@@ -6,12 +6,12 @@ import sigmastate.serialization.Serializer
 
 trait SerializationRoundTripSpec extends Matchers {
 
-  protected def roundTripTest[T](v: T)(implicit serializer: Serializer[T]): Assertion = {
+  protected def roundTripTest[T](v: T)(implicit serializer: Serializer[T, T]): Assertion = {
     val bytes = serializer.toBytes(v)
     predefinedBytesTest(bytes, v)
   }
 
-  protected def predefinedBytesTest[T](bytes: Array[Byte], v: T)(implicit serializer: Serializer[T]): Assertion = {
+  protected def predefinedBytesTest[T](bytes: Array[Byte], v: T)(implicit serializer: Serializer[T, T]): Assertion = {
     serializer.parseBytes(bytes).success.value shouldBe v
   }
 }

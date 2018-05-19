@@ -1,6 +1,25 @@
 package sigmastate.serialization
 
-trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[T] {
+import scala.util.Try
+import Serializer.{Position, Consumed}
+
+trait Serializer[TFamily, T <: TFamily] {
+  def toBytes(obj: T): Array[Byte]
+
+  def parseBytes(bytes: Array[Byte]): Try[TFamily] = Try {
+    parseBody(bytes, 0)._1
+  }
+
+  def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
+  def serializeBody(obj: T): Array[Byte] = toBytes(obj)
+}
+
+object Serializer {
+  type Position = Int
+  type Consumed = Int
+}
+
+trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T] {
   val companion: SigmaSerializerCompanion[TFamily]
 
   import companion._
@@ -11,8 +30,6 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[T] {
 }
 
 trait SigmaSerializerCompanion[TFamily] {
-  type Position = Int
-  type Consumed = Int
   type Tag
   val table: Map[Tag, SigmaSerializer[TFamily, _]]
 

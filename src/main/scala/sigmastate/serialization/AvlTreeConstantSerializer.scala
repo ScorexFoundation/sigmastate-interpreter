@@ -5,7 +5,7 @@ import scorex.crypto.authds.ADDigest
 import sigmastate.AvlTreeData
 import sigmastate.Values.AvlTreeConstant
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer.{Position, Consumed}
 
 object AvlTreeConstantSerializer extends ValueSerializer[AvlTreeConstant] {
   override val opCode: OpCode = OpCodes.AvlTreeConstantCode

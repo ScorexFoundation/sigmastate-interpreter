@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import java.math.BigInteger
-import java.util.Arrays
+import java.util
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import scorex.crypto.hash.Blake2b256
@@ -12,8 +12,8 @@ import sigmastate.Values.{ByteArrayConstant, _}
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
+import org.bouncycastle.util.BigIntegers
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
@@ -218,7 +218,7 @@ trait Interpreter {
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
-             proof: UncheckedTree,
+             proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
     val (cProp, cost) = reduceToCrypto(context, exp).get
 
@@ -226,7 +226,7 @@ trait Interpreter {
       case TrueLeaf => true
       case FalseLeaf => false
       case b: Value[SBoolean.type] if b.evaluated =>
-        proof match {
+        SigSerializer.parse(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree[_] =>
             assert(sp.proposition == cProp)
@@ -239,7 +239,7 @@ trait Interpreter {
             }
 
             val expectedChallenge = Blake2b256(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))
-            Arrays.equals(challenge, expectedChallenge)
+            util.Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false
     }
@@ -265,25 +265,28 @@ trait Interpreter {
 
       val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
         case u: UncheckedConjecture[_] => u.commitments
+
+        //todo: reduce boilerplate below, replace additive notation w. multiplicative
         case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
+
         case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
       }
 
       val challenge = challenges.head
 
-      assert(challenges.tail.forall(Arrays.equals(_, challenge)))
+      assert(challenges.tail.forall(util.Arrays.equals(_, challenge)))
 
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 
     case or: COrUncheckedNode =>
-      val challenges = or.children map {
+      val challenges = or.leafs map {
         case u: UncheckedConjecture[_] => u.challengeOpt.get
         case sn: UncheckedSchnorr => sn.challenge
         case dh: UncheckedDiffieHellmanTuple => dh.challenge
         case a: Any => println(a); ???
       }
 
-      val commitments = or.children flatMap {
+      val commitments = or.leafs flatMap {
         case u: UncheckedConjecture[_] => u.commitments
         case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
         case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
@@ -333,10 +336,28 @@ trait Interpreter {
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
-             proverResult: ProverResult[ProofT],
+             proverResult: SerializedProverResult,
+             message: Array[Byte]): Try[VerificationResult] = {
+    val ctxv = context.withExtension(proverResult.extension)
+    verify(exp, ctxv, proverResult.prooBytes, message)
+  }
+
+
+  //below are two sugaric methods for tests
+
+  def verify(exp: Value[SBoolean.type],
+             context: CTX,
+             proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
     verify(exp, ctxv, proverResult.proof, message)
+  }
+
+  def verify(exp: Value[SBoolean.type],
+             context: CTX,
+             proof: ProofT,
+             message: Array[Byte]): Try[VerificationResult] = {
+    verify(exp, context, SigSerializer.toBytes(proof), message)
   }
 }
 

@@ -3,9 +3,9 @@ package sigmastate.serialization
 import com.google.common.primitives.Shorts
 import sigmastate.{SByte, SCollection}
 import sigmastate.SType.TypeCode
-import sigmastate.Values.{CollectionConstant, ByteArrayConstant, Value}
+import sigmastate.Values.{CollectionConstant, ByteArrayConstant}
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ValueSerializer.{Position, Consumed}
+import sigmastate.serialization.Serializer.{Position, Consumed}
 
 object CollectionConstantSerializer extends ValueSerializer[CollectionConstant[SByte.type]] {
 

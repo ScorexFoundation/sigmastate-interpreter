@@ -2,7 +2,7 @@ package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer._
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.Where
 import sigmastate.{SBoolean, SCollection, SType}

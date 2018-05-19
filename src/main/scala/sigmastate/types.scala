@@ -14,7 +14,7 @@ import sigmastate.interpreter.GroupSettings.EcPointType
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scala.reflect.classTag
+
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product

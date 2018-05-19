@@ -7,7 +7,7 @@ import sigmastate.SBigInt
 import sigmastate.SType.TypeCode
 import sigmastate.Values.BigIntConstant
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer.Position
 
 object BigIntConstantSerializer extends ValueSerializer[BigIntConstant] {
 

@@ -5,7 +5,6 @@ import scapi.sigma.DLogProtocol._
 import scorex.crypto.hash.Blake2b256
 
 
-
 case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: Option[DLogProverInput])
   extends NonInteractiveProver[DLogSigmaProtocol, DLogProverInput, ProveDlog, UncheckedSchnorr] {
 
@@ -19,8 +18,6 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
     } else {
       prover.simulate(Challenge(challenge))
     }
-
-    //val sb = SchnorrSigner.serialize(fm, sm)
 
     UncheckedSchnorr(publicInput, Some(fm), challenge, sm)
   }

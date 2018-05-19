@@ -5,7 +5,7 @@ import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.Transformer
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer.{Position, Consumed}
 
 case class SimpleTransformerSerializer[I <: SType, O <: SType]
 (code: OpCode,

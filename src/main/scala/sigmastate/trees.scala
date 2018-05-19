@@ -12,7 +12,7 @@ import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{CostTable, Transformer}
+import sigmastate.utxo.Transformer
 import sigmastate.utils.Helpers._
 
 import scala.annotation.tailrec
@@ -118,6 +118,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
       if (children.isEmpty) currentBuffer else children.head match {
         case FalseLeaf => mutable.Buffer(FalseLeaf)
         case TrueLeaf => iterChildren(children.tail, currentBuffer)
+        case and: CAND => iterChildren(and.sigmaBooleans.toIndexedSeq ++ children.tail, currentBuffer)
         case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }
     }

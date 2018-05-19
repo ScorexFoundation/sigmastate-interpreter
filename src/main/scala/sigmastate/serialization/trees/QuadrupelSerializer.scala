@@ -3,7 +3,7 @@ package sigmastate.serialization.trees
 import sigmastate.Values._
 import sigmastate.{Quadruple, _}
 import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.ValueSerializer.Position
+import sigmastate.serialization.Serializer.Position
 
 case class QuadrupelSerializer[S1 <: SType, S2 <: SType, S3 <: SType, S4 <: SType]
 (override val opCode: Byte,

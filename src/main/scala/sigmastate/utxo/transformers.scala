@@ -4,7 +4,6 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode

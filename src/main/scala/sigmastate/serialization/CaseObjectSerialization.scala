@@ -3,7 +3,8 @@ package sigmastate.serialization
 import sigmastate.SType
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
+
+import sigmastate.serialization.Serializer.{Position, Consumed}
 
 case class CaseObjectSerialization[V <: Value[SType]](override val opCode: OpCode, obj: V)
   extends ValueSerializer[V] {

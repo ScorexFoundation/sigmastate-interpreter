@@ -4,7 +4,7 @@ import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SGroupElement
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer._
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 
 object ProveDiffieHellmanTupleSerializer extends ValueSerializer[ProveDiffieHellmanTuple] {

@@ -5,7 +5,7 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.SGroupElement
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer.{Position, Consumed}
 
 object ProveDlogSerializer extends ValueSerializer[ProveDlog] {
 

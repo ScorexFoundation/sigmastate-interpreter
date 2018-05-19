@@ -2,7 +2,7 @@ package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer._
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.Slice
 import sigmastate.{SCollection, SInt, SType}
@@ -22,5 +22,4 @@ object SliceSerializer extends ValueSerializer[Slice[SType]] {
     (Slice(input.asInstanceOf[Value[SCollection[SType]]], from.asInstanceOf[Value[SInt.type]],
       until.asInstanceOf[Value[SInt.type]]), consumed + consumed2 + consumed3)
   }
-
 }
