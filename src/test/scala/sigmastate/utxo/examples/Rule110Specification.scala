@@ -4,6 +4,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, FalseLeaf, IntConstant, TaggedInt, TrueLeaf, Value}
 import sigmastate._
+import sigmastate.lang.Terms._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.ErgoBox.{R3, R4, R5, R6}
@@ -42,6 +43,32 @@ class Rule110Specification extends SigmaTestingCommons {
     val f = ByteConstant(0)
     val t = ByteConstant(1)
     val indexCollection = new ConcreteCollection((0 until 6).map(i => IntConstant(i)))
+    val env = Map("indexId" -> indexId, "f" -> f, "t" -> t)
+    val compiled = compile(env,
+      """{
+        |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
+        |  let string = SELF.R3[Array[Byte]].value
+        |  let resultString = OUTPUTS(0).R3[Array[Byte]].value
+        |  fun elementRule(index: Int) = {
+        |    let output0 = resultString(index)
+        |    let input0 = if (index < 0) string(index - 1) else string(6)
+        |    let input1 = string(index)
+        |    let input2 = if (index >= 6) string(index + 1) else string(0)
+        |    let io = Array(input0, input1, input2, output0)
+        |    anyOf(Array(
+        |      io == Array(t, t, t, f),
+        |      io == Array(t, t, f, t),
+        |      io == Array(t, f, t, t),
+        |      io == Array(t, f, f, f),
+        |      io == Array(f, t, t, t),
+        |      io == Array(f, t, f, t),
+        |      io == Array(f, f, t, t),
+        |      io == Array(f, f, f, f),
+        |    ))
+        |  }
+        |  let isSameScript = SELF.propositionBytes == OUTPUTS(0).propositionBytes
+        |  isSameScript && indexCollection.forall(elementRule)
+         }""".stripMargin).asBoolValue
     val string = ExtractRegisterAs[SByteArray](Self, R3)
     val resultString = ExtractRegisterAs[SByteArray](ByIndex(Outputs, 0), R3)
     val index = TaggedInt(indexId)

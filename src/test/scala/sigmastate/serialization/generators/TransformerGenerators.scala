@@ -8,7 +8,7 @@ import sigmastate.utxo.ErgoBox.RegisterIdentifier
 import sigmastate.utxo._
 
 trait TransformerGenerators {
-  self: ValueGeneratots with ConcreteCollectionGenerators =>
+  self: ValueGenerators with ConcreteCollectionGenerators =>
 
   implicit val arbMapCollection: Arbitrary[MapCollection[SInt.type, SInt.type]] = Arbitrary(mapCollectionGen)
   implicit val arbExists: Arbitrary[Exists[SInt.type]] = Arbitrary(existsGen)
