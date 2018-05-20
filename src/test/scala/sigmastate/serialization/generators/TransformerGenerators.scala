@@ -63,7 +63,7 @@ trait TransformerGenerators {
   val whereGen: Gen[Where[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
     id <- Arbitrary.arbitrary[Byte]
-    condition <- booleanGen
+    condition <- booleanConstGen
   } yield Where(col1, id, condition)
 
   val appendGen: Gen[Append[SInt.type]] = for {
@@ -90,7 +90,7 @@ trait TransformerGenerators {
 
   val deserializeRegisterGen: Gen[DeserializeRegister[SBoolean.type]] = for {
     r <- arbRegisterIdentifier.arbitrary
-    default <- booleanGen
+    default <- booleanConstGen
     isDefined <- Arbitrary.arbitrary[Boolean]
     defaultOpt = if (isDefined) Some(default) else None
   } yield DeserializeRegister(r, defaultOpt)

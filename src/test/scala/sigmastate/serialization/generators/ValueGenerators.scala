@@ -6,17 +6,17 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
-import sigmastate.{AvlTreeData, SBoolean, SGroupElement, SType}
+import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.ErgoBox._
-import sigmastate.{AvlTreeData, SType, SByte}
 
 import scala.collection.JavaConverters._
 
-trait ValueGenerators {
+trait ValueGenerators extends TypeGenerators {
 
+  implicit val arbByteConstants: Arbitrary[ByteConstant] = Arbitrary(byteConstGen)
   implicit val arbIntConstants: Arbitrary[IntConstant] = Arbitrary(intConstGen)
   implicit val arbByteArrayConstant: Arbitrary[CollectionConstant[SByte.type]] = Arbitrary(byteArrayConstGen)
   implicit val arbGroupElementConstant: Arbitrary[GroupElementConstant] = Arbitrary(groupElementConstGen)
@@ -24,8 +24,8 @@ trait ValueGenerators {
   implicit val arbAvlTreeConstant: Arbitrary[AvlTreeConstant] = Arbitrary(avlTreeConstantGen)
   implicit val arbBigIntConstant: Arbitrary[BigIntConstant] = Arbitrary(bigIntConstGen)
 
-  implicit val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedIntGen)
-  implicit val arbTaggedBox: Arbitrary[TaggedBox] = Arbitrary(taggedBoxGen)
+  implicit val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedVar[SInt.type])
+  implicit val arbTaggedBox: Arbitrary[TaggedBox] = Arbitrary(taggedVar[SBox.type])
 
   implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
   implicit val arbProveDHT: Arbitrary[ProveDiffieHellmanTuple] = Arbitrary(proveDHTGen)
@@ -35,7 +35,8 @@ trait ValueGenerators {
 
 
 
-  val booleanGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
+  val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
+  val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
   val intConstGen: Gen[IntConstant] = arbLong.arbitrary.map { v => IntConstant(v) }
   val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map { v => BigIntConstant(v.bigInteger) }
   val byteArrayConstGen: Gen[CollectionConstant[SByte.type]] = for {
@@ -47,8 +48,11 @@ trait ValueGenerators {
     el = CryptoConstants.dlogGroup.createRandomGenerator()
   } yield GroupElementConstant(el)
 
-  val taggedIntGen: Gen[TaggedInt] = arbByte.arbitrary.map { v => TaggedInt(v) }
-  val taggedBoxGen: Gen[TaggedBox] = arbByte.arbitrary.map { v => TaggedBox(v) }
+  def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {
+    t <- aT.arbitrary
+    id <- arbByte.arbitrary
+  } yield TaggedVariable(id, t)
+
 
   val proveDlogGen: Gen[ProveDlog] = arbGroupElementConstant.arbitrary.map(v => ProveDlog(v))
   val proveDHTGen: Gen[ProveDiffieHellmanTuple] = for {
