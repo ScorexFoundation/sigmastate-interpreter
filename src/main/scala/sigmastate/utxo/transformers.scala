@@ -271,7 +271,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.t
   extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
   override val opCode: OpCode = OpCodes.ByIndexCode
 
-  override def tpe = input.tpe.elemType
+  override val tpe = input.tpe.elemType
   override def arity = 3
   override def deconstruct = immutable.Seq[Any](input, index, tpe)
 
@@ -284,9 +284,13 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.t
     case _ => illegalArgs("ByIndex", "(Value[SCollection[V]], index: Value[SInt.type])(tpe: V)", cs)
   }
 
-  override def function(input: EvaluatedValue[SCollection[V]]): Value[V] =
-    input.items.apply(index.asInstanceOf[EvaluatedValue[SInt.type]].value.toInt)
-
+  override def function(input: EvaluatedValue[SCollection[V]]): Value[V] = {
+    val i = index.asInstanceOf[EvaluatedValue[SInt.type]].value.toInt
+    input.matchCase(
+      cc => cc.items(i),
+      const => Value.apply(tpe)(const.value(i).asInstanceOf[tpe.WrappedType])
+    )
+  }
   override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.ByIndexDeclaration
 }
 

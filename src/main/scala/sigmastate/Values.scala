@@ -57,6 +57,8 @@ object Values {
 
     implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
+    def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.lift(const)
+
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
     }
