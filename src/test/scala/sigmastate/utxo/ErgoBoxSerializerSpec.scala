@@ -3,12 +3,12 @@ package sigmastate.utxo
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.TryValues._
-import sigmastate.serialization.generators.ValueGeneratots
+import sigmastate.serialization.generators.ValueGenerators
 
 class ErgoBoxSerializerSpec extends PropSpec
   with GeneratorDrivenPropertyChecks
   with SerializationRoundTripSpec
-  with ValueGeneratots {
+  with ValueGenerators {
 
   implicit val ergoBoxSerializer = ErgoBox.serializer
 

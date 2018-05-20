@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
-import sigmastate._
+import sigmastate.SCollection.SByteArray
+import sigmastate.{SByte, _}
 import sigmastate.Values._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo.ErgoBox.R3
@@ -8,8 +9,8 @@ import sigmastate.lang.Terms._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
 
-  private def context(boxesToSpend:IndexedSeq[ErgoBox] = IndexedSeq(),
-                  outputs: IndexedSeq[ErgoBox]): ErgoContext =
+  private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
+                      outputs: IndexedSeq[ErgoBox]): ErgoContext =
     ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -28,9 +29,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   private def assertProverFail(code: String,
-                              expectedComp: Value[SType],
-                              outputBoxValues: IndexedSeq[Long],
-                              boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
+                               expectedComp: Value[SType],
+                               outputBoxValues: IndexedSeq[Long],
+                               boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
     val (prover, _, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues, boxesToSpendValues)
     prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
@@ -236,9 +237,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code = "OUTPUTS.slice(1, OUTPUTS.size).forall(fun (box: Box) = box.value == 10)"
     val expectedPropTree = ForAll(
-      Slice(Outputs,IntConstant(1),SizeOf(Outputs)),
+      Slice(Outputs, IntConstant(1), SizeOf(Outputs)),
       21,
-      EQ(ExtractAmount(TaggedBox(21)),IntConstant(10)))
+      EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
@@ -247,7 +248,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     // starting index out of bounds
     val code = "OUTPUTS.slice(3, OUTPUTS.size).size == 1"
     val expectedPropTree = EQ(
-      SizeOf(Slice(Outputs,IntConstant(3),SizeOf(Outputs))),
+      SizeOf(Slice(Outputs, IntConstant(3), SizeOf(Outputs))),
       IntConstant(1))
     assertProverFail(code, expectedPropTree, outputBoxValues)
   }
@@ -255,14 +256,14 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   property("append") {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code = "(OUTPUTS ++ OUTPUTS).size == 4"
-    val expectedPropTree = EQ(SizeOf(Append(Outputs,Outputs)),IntConstant(4))
+    val expectedPropTree = EQ(SizeOf(Append(Outputs, Outputs)), IntConstant(4))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
   property("by index") {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code = "OUTPUTS(0).value == 10"
-    val expectedPropTree = EQ(ExtractAmount(ByIndex(Outputs,0)),IntConstant(10))
+    val expectedPropTree = EQ(ExtractAmount(ByIndex(Outputs, 0)), IntConstant(10))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
@@ -285,11 +286,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |.fold(0, fun (acc: Int, val: Int) = acc + val) == 20""".stripMargin
     val expectedPropTree = EQ(
       Fold(
-        MapCollection(Outputs,21,ExtractAmount(TaggedBox(21)))(SInt),
+        MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))(SInt),
         21,
         IntConstant(0),
         22,
-        Plus(TaggedInt(21),TaggedInt(22))),
+        Plus(TaggedInt(21), TaggedInt(22))),
       IntConstant(20))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
