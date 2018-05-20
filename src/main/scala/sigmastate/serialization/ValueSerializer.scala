@@ -58,6 +58,7 @@ object ValueSerializer
     ProveDiffieHellmanTupleSerializer,
     GroupElementSerializer,
     ProveDlogSerializer,
+    ByteConstantSerializer,
     IntConstantSerializer,
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
