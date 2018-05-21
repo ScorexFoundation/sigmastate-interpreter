@@ -70,7 +70,6 @@ object SigSerializer {
         val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + hp, pos + hp + order))
         UncheckedDiffieHellmanTuple(dh, None, e, SecondDiffieHellmanTupleProverMessage(z)) -> (hp + order)
       case and: CAND =>
-        println(and)
         val (challenge, cc) = if(and.sigmaBooleans.exists(!_.isInstanceOf[COR]))
           Some(bytes.slice(pos, pos + hashSize)) -> hashSize else None -> 0
 
