@@ -84,7 +84,7 @@ public class ByteArrayBuilder {
     }
 
     public final ByteArrayBuilder append(boolean b) {
-        append(b ? 0x01 : 0x00);
+        append((byte)(b ? 0x01 : 0x00));
         return this;
     }
 
