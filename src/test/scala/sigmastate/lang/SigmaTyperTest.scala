@@ -168,6 +168,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "Array(0)(0, Array(1))", "expected default value type")
   }
 
+  property("array indexed access with default value with evaluation") {
+    typecheck(env, "Array(0)(0, (2 - 1) + 0)") shouldBe SInt
+  }
+
   property("lambdas") {
     typecheck(env, "fun (a: Int) = a + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
     typecheck(env, "fun (a: Int): Int = a + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
