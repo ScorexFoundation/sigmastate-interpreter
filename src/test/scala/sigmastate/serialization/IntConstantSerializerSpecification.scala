@@ -1,5 +1,6 @@
 package sigmastate.serialization
 
+import sigmastate.SInt
 import sigmastate.Values.IntConstant
 
 class IntConstantSerializerSpecification extends SerializationSpecification {
@@ -12,7 +13,7 @@ class IntConstantSerializerSpecification extends SerializationSpecification {
 
   property("IntConstant deserialize from predefined bytes") {
     val value = IntConstant(1)
-    val bytes = Array[Byte](11, 0, 0, 0, 0, 0, 0, 0, 1)
+    val bytes = Array[Byte]((OpCodes.ConstantCode + SInt.typeCode).toByte, 0, 0, 0, 0, 0, 0, 0, 1)
     predefinedBytesTest(bytes, value)
   }
 }
