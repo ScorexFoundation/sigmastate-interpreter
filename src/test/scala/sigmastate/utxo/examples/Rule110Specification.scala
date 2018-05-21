@@ -75,9 +75,9 @@ class Rule110Specification extends SigmaTestingCommons {
     val resultString = ExtractRegisterAs[SByteArray](ByIndex(Outputs, 0), R3)
     val index = TaggedInt(indexId)
     val output0: Value[SByte.type] = ByIndex(resultString, index)
-    val input0: Value[SByte.type] = If(LE(index, 0), ByIndex(string, Minus(index, 1)), ByIndex(string, 6))
+    val input0: Value[SByte.type] = If(EQ(index, 0), ByIndex(string, 5), ByIndex(string, Minus(index, 1)))
     val input1: Value[SByte.type] = ByIndex(string, index)
-    val input2: Value[SByte.type] = If(GE(index, 6), ByIndex(string, Plus(index, 1)), ByIndex(string, 0))
+    val input2: Value[SByte.type] = If(EQ(index, 5), ByIndex(string, 0), ByIndex(string, Plus(index, 1)))
     val elementRule = OR(Seq(
       AND(EQ(input0, t), EQ(input1, t), EQ(input2, t), EQ(output0, f)),
       AND(EQ(input0, t), EQ(input1, t), EQ(input2, f), EQ(output0, t)),
@@ -89,7 +89,8 @@ class Rule110Specification extends SigmaTestingCommons {
       AND(EQ(input0, f), EQ(input1, f), EQ(input2, f), EQ(output0, f))
     ))
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(ByIndex(Outputs, 0)))
-    val prop = compiled //AND(sameScriptRule, ForAll(indexCollection, indexId, elementRule))
+    val prop = AND(sameScriptRule, ForAll(indexCollection, indexId, elementRule))
+//    val prop = compiled //AND(sameScriptRule, ForAll(indexCollection, indexId, elementRule))
 
     val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 0, 1, 0))))
     val output = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 1, 1, 0))))
