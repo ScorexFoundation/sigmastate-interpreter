@@ -4,9 +4,9 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, FalseLeaf, IntConstant, TaggedInt, TrueLeaf, Value}
 import sigmastate._
-import sigmastate.lang.Terms._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
+import sigmastate.lang.Terms._
 import sigmastate.utxo.ErgoBox.{R3, R4, R5, R6}
 import sigmastate.utxo._
 
@@ -35,7 +35,7 @@ class Rule110Specification extends SigmaTestingCommons {
       case (false, false, false) => false
     }
 
-  ignore("rule110 - one layer in register") {
+  property("rule110 - one layer in register") {
     val prover = new ErgoProvingInterpreter {
       override val maxCost: Long = 2000000
     }
@@ -48,36 +48,32 @@ class Rule110Specification extends SigmaTestingCommons {
     val env = Map("indexId" -> indexId, "f" -> f, "t" -> t)
     val compiled = compile(env,
       """{
-        |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
         |  let string = SELF.R3[Array[Byte]].value
         |  let resultString = OUTPUTS(0).R3[Array[Byte]].value
-        |  fun elementRule(index: Int) = {
+        |  fun r110(index: Int) = {
         |    let output0 = resultString(index)
-        |    let input0 = if (index <= 0) string(5) else string(index - 1)
+        |    let input0 = string(if (index <= 0) 5 else (index - 1))
         |    let input1 = string(index)
-        |    let input2 = if (index >= 5) string(0) else string(index + 1)
-        |    let io = Array(input0, input1, input2, output0)
-        |    anyOf(Array(
-        |      io == Array(t, t, t, f),
-        |      io == Array(t, t, f, t),
-        |      io == Array(t, f, t, t),
-        |      io == Array(t, f, f, f),
-        |      io == Array(f, t, t, t),
-        |      io == Array(f, t, f, t),
-        |      io == Array(f, f, t, t),
-        |      io == Array(f, f, f, f),
-        |    ))
+        |    let input2 = string(if (index >= 5) 0 else (index + 1))
+        |    (input0 == t && input1 == t && input2 == t && output0 == f) ||
+        |    (input0 == t && input1 == t && input2 == f && output0 == t) ||
+        |    (input0 == t && input1 == f && input2 == t && output0 == t) ||
+        |    (input0 == t && input1 == f && input2 == f && output0 == f) ||
+        |    (input0 == f && input1 == t && input2 == t && output0 == t) ||
+        |    (input0 == f && input1 == t && input2 == f && output0 == t) ||
+        |    (input0 == f && input1 == f && input2 == t && output0 == t) ||
+        |    (input0 == f && input1 == f && input2 == f && output0 == f)
         |  }
         |  let isSameScript = SELF.propositionBytes == OUTPUTS(0).propositionBytes
-        |  isSameScript && indexCollection.exists(elementRule)
+        |  isSameScript && r110(0) && r110(1) && r110(2) && r110(3) && r110(4) && r110(5)
          }""".stripMargin).asBoolValue
     val string = ExtractRegisterAs[SByteArray](Self, R3)
     val resultString = ExtractRegisterAs[SByteArray](ByIndex(Outputs, 0), R3)
     val index = TaggedInt(indexId)
     val output0: Value[SByte.type] = ByIndex(resultString, index)
-    val input0: Value[SByte.type] = If(EQ(index, 0), ByIndex(string, 5), ByIndex(string, Minus(index, 1)))
+    val input0: Value[SByte.type] = ByIndex(string, If(EQ(index, 0), 5, Minus(index, 1)))
     val input1: Value[SByte.type] = ByIndex(string, index)
-    val input2: Value[SByte.type] = If(EQ(index, 5), ByIndex(string, 0), ByIndex(string, Plus(index, 1)))
+    val input2: Value[SByte.type] = ByIndex(string, If(EQ(index, 5), 0, Plus(index, 1)))
     val elementRule = OR(Seq(
       AND(EQ(input0, t), EQ(input1, t), EQ(input2, t), EQ(output0, f)),
       AND(EQ(input0, t), EQ(input1, t), EQ(input2, f), EQ(output0, t)),
@@ -89,8 +85,8 @@ class Rule110Specification extends SigmaTestingCommons {
       AND(EQ(input0, f), EQ(input1, f), EQ(input2, f), EQ(output0, f))
     ))
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(ByIndex(Outputs, 0)))
-    val prop = AND(sameScriptRule, ForAll(indexCollection, indexId, elementRule))
-//    val prop = compiled //AND(sameScriptRule, ForAll(indexCollection, indexId, elementRule))
+    //    val prop = AND(sameScriptRule, ForAll(indexCollection, indexId, elementRule))
+    val prop = compiled
 
     val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 0, 1, 0))))
     val output = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 1, 1, 0))))
