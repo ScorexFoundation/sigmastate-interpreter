@@ -265,9 +265,6 @@ object Fold {
       input, 21, ConcreteCollection()(tT), 22,
       Append(TaggedVariable(22, tCol), TaggedVariable(21, tCol)))
   }
-
-//  def sumBytes(input: Value[SCollection[SByteArray]]) =
-//    Fold[SByteArray](input, 21, ByteArrayConstant(Array.emptyByteArray), 22, Append(TaggedByteArray(22), TaggedByteArray(21)))
 }
 
 case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.type])
