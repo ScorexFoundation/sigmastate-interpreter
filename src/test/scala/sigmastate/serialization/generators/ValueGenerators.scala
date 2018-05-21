@@ -99,7 +99,7 @@ trait ValueGenerators extends TypeGenerators {
     p <- proveDlogGen
     b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
     regNum <- Gen.chooseNum[Byte](0, 7)
-    ar <- Gen.sequence(arGen(regNum))
+    ar <- Gen.sequence(additionalRegistersGen(regNum))
   } yield ErgoBoxCandidate(l, b, ar.asScala.toMap)
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }

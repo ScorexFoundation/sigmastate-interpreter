@@ -2,14 +2,14 @@ package sigmastate.utxo
 
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import sigmastate.serialization.generators.ValueGeneratots
+import sigmastate.serialization.generators.ValueGenerators
 
 import scala.util.Success
 
 class ErgoTransactionSerializerSpec extends PropSpec
   with GeneratorDrivenPropertyChecks
   with SerializationRoundTripSpec
-  with ValueGeneratots {
+  with ValueGenerators {
 
   private val ergoTransactionSerializer = ErgoTransaction.serializer
 
