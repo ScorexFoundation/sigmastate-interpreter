@@ -57,7 +57,7 @@ object Values {
 
     implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
-    def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.lift(const)
+    def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.mkConstant(const)
 
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
@@ -70,9 +70,9 @@ object Values {
     override lazy val evaluated = true
   }
 
-  case class Constant[S <: SType](val value: S#WrappedType, val tpe: S, val constCost: Long) extends EvaluatedValue[S] {
-    override val opCode: OpCode = ConstantCode
-    override def cost[C <: Context[C]](context: C) = constCost
+  case class Constant[S <: SType](val value: S#WrappedType, val tpe: S) extends EvaluatedValue[S] {
+    override val opCode: OpCode = (ConstantCode + tpe.typeCode).toByte
+    override def cost[C <: Context[C]](context: C) = tpe.dataCost(value)
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -102,16 +102,16 @@ object Values {
   type IntConstant = Constant[SInt.type]
 
   object ByteConstant {
-    def apply(value: Byte): Constant[SByte.type] = Constant[SByte.type](value, SByte, Cost.ByteConstantDeclaration)
+    def apply(value: Byte): Constant[SByte.type] = Constant[SByte.type](value, SByte)
     def unapply(v: SValue): Option[Byte] = v match {
-      case Constant(value: Byte, SByte, _) => Some(value)
+      case Constant(value: Byte, SByte) => Some(value)
       case _ => None
     }
   }
   object IntConstant {
-    def apply(value: Long): Constant[SInt.type]  = Constant[SInt.type](value, SInt, Cost.IntConstantDeclaration)
+    def apply(value: Long): Constant[SInt.type]  = Constant[SInt.type](value, SInt)
     def unapply(v: SValue): Option[Long] = v match {
-      case Constant(value: Long, SInt, _) => Some(value)
+      case Constant(value: Long, SInt) => Some(value)
       case _ => None
     }
   }
