@@ -295,4 +295,27 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
-}
+  property("forall for custom collection") {
+    val outputBoxValues = IndexedSeq(10L, 10L)
+    val code =
+      """{
+        |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
+        |  fun elementRule(index: Int) = {
+        |    let boundaryIndex = if (index == 0) 5 else (index - 1)
+        |    boundaryIndex >= 0 && boundaryIndex <= 5
+        |  }
+        |  indexCollection.forall(elementRule)
+         }""".stripMargin
+
+    val indexCollection = new ConcreteCollection((0 until 6).map(i => IntConstant(i)))
+    val indexId = 21.toByte
+    val index = TaggedInt(indexId)
+    val boundaryIndex = If(EQ(index, 0), 5, Minus(index, 1))
+    val elementRule = AND(GE(boundaryIndex, 0), LE(boundaryIndex, 5))
+    val expectedPropTree = ForAll(indexCollection, indexId, elementRule)
+    assertProof(code, expectedPropTree, outputBoxValues)
+
+  }
+
+
+  }
