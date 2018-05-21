@@ -33,11 +33,11 @@ object CryptoConstants {
   val groupSize: Int = 384 / 8 //48 bytes
 
   //size of challenge in Sigma protocols, in bits
-  implicit val soundnessBits: Int = 192
+  implicit val soundnessBits: Int = 184
 }
 
 object CryptoFunctions {
-  lazy val soundnessBytes = (CryptoConstants.soundnessBits / 8).ensuring(_ % 8 == 0, "soundness must be fit in bytes")
+  lazy val soundnessBytes = CryptoConstants.soundnessBits / 8
 
   def hashFn(input: Array[Byte]): Array[Byte] = {
     Blake2b256.hash(input).take(soundnessBytes)
