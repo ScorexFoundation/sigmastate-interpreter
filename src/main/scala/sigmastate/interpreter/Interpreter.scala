@@ -183,7 +183,7 @@ trait Interpreter {
     val cost = substTree.cost(context)
 
     if (cost > maxCost) {
-      throw new Error(s"Estimated expression complexity $substTree exceeds the limit ($maxCost)")
+      throw new Error(s"Estimated expression complexity $cost exceeds the limit $maxCost in $substTree")
     }
 
     // After performing deserializations and checking cost of the resulting tree, both the prover

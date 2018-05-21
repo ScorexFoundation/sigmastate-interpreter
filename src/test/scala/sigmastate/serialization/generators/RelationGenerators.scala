@@ -4,7 +4,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.Values.{FalseLeaf, TrueLeaf}
 import sigmastate.{If, IsMember, SInt}
 
-trait RelationGenerators { this: ValueGeneratots with ConcreteCollectionGenerators =>
+trait RelationGenerators { this: ValueGenerators with ConcreteCollectionGenerators =>
 
   implicit val arbIsMember: Arbitrary[IsMember] = Arbitrary(isMemberGen)
   implicit val arbIf: Arbitrary[If[SInt.type]] = Arbitrary(ifGen)

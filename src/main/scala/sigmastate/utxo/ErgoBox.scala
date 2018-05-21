@@ -1,12 +1,14 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.{Longs, Shorts}
+import java.util.Arrays
+import com.google.common.primitives.{Shorts, Longs}
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.serialization.{Serializer, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, Serializer}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox.serializer.collectRegister
 import sigmastate.utxo.ErgoBox.{NonMandatoryIdentifier, _}
@@ -124,7 +126,7 @@ class ErgoBox private(override val value: Long,
       value == x.value &&
         proposition == x.proposition &&
         additionalRegisters == x.additionalRegisters &&
-        transactionId.sameElements(x.transactionId) &&
+        Arrays.equals(transactionId, x.transactionId) &&
         boxId == x.boxId
     case _ => false
   }
