@@ -324,7 +324,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
         |  fun elementRule(index: Int) = {
         |    let boundedIndex = if (index <= 0) 5 else (index - 1)
-        |    string(boundedIndex)
+        |    let element = string(boundedIndex)
+        |    element == 0 || element == 1
         |  }
         |  indexCollection.forall(elementRule)
          }""".stripMargin
