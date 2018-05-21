@@ -11,7 +11,7 @@ import sigmastate.utxo.{CostTable, ErgoInterpreter}
 class ErgoProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)
   extends ErgoInterpreter(maxCost) with ProverInterpreter {
 
-  import sigmastate.interpreter.CryptoConstants.soundnessBits
+  //import sigmastate.interpreter.CryptoConstants.soundnessBits
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
     (1 to 4).map(_ => DLogProverInput.random()) ++

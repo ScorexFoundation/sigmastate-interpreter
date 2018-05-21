@@ -4,26 +4,19 @@ import java.math.BigInteger
 import java.util
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import scorex.crypto.hash.Blake2b256
-import sigmastate.{SType, _}
-import sigmastate.utils.Helpers
 import sigmastate.Values.{ByteArrayConstant, _}
-
-import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
-import org.bouncycastle.util.BigIntegers
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{DeserializeContext, CostTable, Transformer}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
@@ -40,7 +33,15 @@ object CryptoConstants {
   val groupSize: Int = 384 / 8 //48 bytes
 
   //size of challenge in Sigma protocols, in bits
-  implicit val soundnessBits: Int = 256
+  implicit val soundnessBits: Int = 192
+}
+
+object CryptoFunctions {
+  lazy val soundnessBytes = (CryptoConstants.soundnessBits / 8).ensuring(_ % 8 == 0, "soundness must be fit in bytes")
+
+  def hashFn(input: Array[Byte]): Array[Byte] = {
+    Blake2b256.hash(input).take(soundnessBytes)
+  }
 }
 
 trait Interpreter {
@@ -242,7 +243,7 @@ trait Interpreter {
               case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.firstMessageOpt.toSeq)
             }
 
-            val expectedChallenge = Blake2b256(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))
+            val expectedChallenge = CryptoFunctions.hashFn(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))
             util.Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false

@@ -2,7 +2,7 @@ package sigmastate
 
 import scapi.sigma.{Challenge, NonInteractiveProver}
 import scapi.sigma.DLogProtocol._
-import scorex.crypto.hash.Blake2b256
+import sigmastate.interpreter.CryptoFunctions
 
 
 case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: Option[DLogProverInput])
@@ -13,7 +13,7 @@ case class SchnorrSigner(override val publicInput: ProveDlog, privateInputOpt: O
 
     val (fm, sm) = if (privateInputOpt.isDefined) {
       val firstMsg = prover.firstMessage
-      val e = Blake2b256(firstMsg.ecData.getEncoded(true) ++ challenge)
+      val e = CryptoFunctions.hashFn(firstMsg.ecData.getEncoded(true) ++ challenge)
       firstMsg -> prover.secondMessage(Challenge(e))
     } else {
       prover.simulate(Challenge(challenge))

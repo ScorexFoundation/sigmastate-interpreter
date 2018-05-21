@@ -18,7 +18,6 @@ trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtoco
 }
 
 case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDiffieHellmanTuple)
-                                        (implicit soundness: Int)
   extends SigmaProtocolPrivateInput[DiffieHellmanTupleProtocol, ProveDiffieHellmanTuple] {
 
   override lazy val publicImage: ProveDiffieHellmanTuple = commonInput
@@ -27,7 +26,7 @@ case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDiffie
 object DiffieHellmanTupleProverInput {
   import sigmastate.interpreter.CryptoConstants.dlogGroup
 
-  def random()(implicit soundness: Int): DiffieHellmanTupleProverInput = {
+  def random(): DiffieHellmanTupleProverInput = {
     val g = dlogGroup.generator
     val h = dlogGroup.createRandomGenerator()
 

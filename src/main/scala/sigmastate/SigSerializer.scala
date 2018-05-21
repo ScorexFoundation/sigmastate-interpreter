@@ -8,7 +8,7 @@ import sigmastate.interpreter.CryptoConstants
 
 
 object SigSerializer {
-  val hashSize = 32
+  val hashSize = CryptoConstants.soundnessBits / 8
   val order = CryptoConstants.groupSize
 
   def toBytes(tree: UncheckedTree): Array[Byte] = {

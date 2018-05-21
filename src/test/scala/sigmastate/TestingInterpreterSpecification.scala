@@ -231,11 +231,8 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
 
   override val maxCost = CostTable.ScriptLimit
 
-  override lazy val secrets: Seq[DLogProverInput] = {
-    import CryptoConstants.soundnessBits
-
+  override lazy val secrets: Seq[DLogProverInput] =
     Seq(DLogProverInput.random(), DLogProverInput.random())
-  }
 
   override val contextExtenders: Map[Byte, CollectionConstant[SByte.type]] = Map[Byte, CollectionConstant[SByte.type]]()
 

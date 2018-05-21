@@ -171,7 +171,6 @@ trait Verifier[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] exte
   type ST <: SigmaProtocolTranscript[SP, CI]
 
   lazy val challenge = Challenge({
-    require(publicInput.soundness % 8 == 0, "soundness must be fit in bytes")
     val ch = new Array[Byte](publicInput.soundness / 8)
     new SecureRandom().nextBytes(ch) //modifies ch
     ch

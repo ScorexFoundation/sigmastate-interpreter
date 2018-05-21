@@ -15,7 +15,6 @@ import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma._
-import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.serialization.Serializer
 import sigmastate.serialization.Serializer.{Consumed, Position}
@@ -135,7 +134,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       case uc: UnprovenConjecture => uc.childrenCommitments
     }
 
-    val rootChallenge = Blake2b256(commitments.map(_.bytes).reduce(_ ++ _) ++ message)
+    val rootChallenge = CryptoFunctions.hashFn(commitments.map(_.bytes).reduce(_ ++ _) ++ message)
 
     val step5 = step4.withChallenge(rootChallenge)
 
@@ -237,14 +236,14 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case or: COrUnproven if or.real =>
       val newChildren = or.children.cast[UnprovenTree].map(c =>
         if (c.real) c
-        else c.withChallenge(Random.randomBytes())
+        else c.withChallenge(Random.randomBytes(CryptoFunctions.soundnessBytes))
       )
       or.copy(children = newChildren)
 
     case or: COrUnproven if or.simulated =>
       assert(or.challengeOpt.isDefined)
       val unprovenChildren = or.children.cast[UnprovenTree]
-      val t = unprovenChildren.tail.map(_.withChallenge(Random.randomBytes()))
+      val t = unprovenChildren.tail.map(_.withChallenge(Random.randomBytes(CryptoFunctions.soundnessBytes)))
       val toXor: Seq[Array[Byte]] = or.challengeOpt.get +: t.map(_.challengeOpt.get)
       val xoredChallenge = Helpers.xor(toXor: _*)
       val h = unprovenChildren.head.withChallenge(xoredChallenge)
