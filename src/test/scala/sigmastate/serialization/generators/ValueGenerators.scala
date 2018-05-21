@@ -110,6 +110,13 @@ trait ValueGenerators extends TypeGenerators {
     opt <- Gen.oneOf(Some(int), None)
   } yield opt
 
+  // todo implement (make sure empty seq is covered)
+//  val inputGen: Gen[Input] = ???
+
+  val ergoTransactionGen: Gen[ErgoTransaction] = for {
+//    inputs <- Gen.listOf(inputGen)
+    outputCandidates <- Gen.listOf(ergoBoxGen)
+  } yield ErgoTransaction(IndexedSeq(), outputCandidates.toIndexedSeq)
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
