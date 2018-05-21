@@ -52,9 +52,9 @@ class Rule110Specification extends SigmaTestingCommons {
         |  let resultString = OUTPUTS(0).R3[Array[Byte]].value
         |  fun r110(index: Int) = {
         |    let output0 = resultString(index)
-        |    let input0 = string(if (index <= 0) 5 else (index - 1))
+        |    let input0 = string(if (index == 0) 5 else (index - 1))
         |    let input1 = string(index)
-        |    let input2 = string(if (index >= 5) 0 else (index + 1))
+        |    let input2 = string(if (index == 5) 0 else (index + 1))
         |    (input0 == t && input1 == t && input2 == t && output0 == f) ||
         |    (input0 == t && input1 == t && input2 == f && output0 == t) ||
         |    (input0 == t && input1 == f && input2 == t && output0 == t) ||
