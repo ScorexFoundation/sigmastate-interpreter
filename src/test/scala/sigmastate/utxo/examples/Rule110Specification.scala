@@ -64,8 +64,9 @@ class Rule110Specification extends SigmaTestingCommons {
         |    (input0 == f && input1 == f && input2 == t && output0 == t) ||
         |    (input0 == f && input1 == f && input2 == f && output0 == f)
         |  }
+        |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
         |  let isSameScript = SELF.propositionBytes == OUTPUTS(0).propositionBytes
-        |  isSameScript && r110(0) && r110(1) && r110(2) && r110(3) && r110(4) && r110(5)
+        |  isSameScript && indexCollection.exists(r110)
          }""".stripMargin).asBoolValue
     val string = ExtractRegisterAs[SByteArray](Self, R3)
     val resultString = ExtractRegisterAs[SByteArray](ByIndex(Outputs, 0), R3)
