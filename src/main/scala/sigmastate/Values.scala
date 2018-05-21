@@ -70,6 +70,11 @@ object Values {
     override lazy val evaluated = true
   }
 
+  case class Constant[S <: SType](val value: S#WrappedType, val tpe: S, val constCost: Long) extends EvaluatedValue[S] {
+    override val opCode: OpCode = ConstantCode
+    override def cost[C <: Context[C]](context: C) = constCost
+  }
+
   trait NotReadyValue[S <: SType] extends Value[S] {
     override lazy val evaluated = false
   }
@@ -93,17 +98,22 @@ object Values {
     val value = ()
   }
 
-  case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
-    override val opCode: OpCode = IntConstantCode
-    override def cost[C <: Context[C]](context: C) = Cost.IntConstantDeclaration
+  type ByteConstant = Constant[SByte.type]
+  type IntConstant = Constant[SInt.type]
 
-    override def tpe = SInt
+  object ByteConstant {
+    def apply(value: Byte): Constant[SByte.type] = Constant[SByte.type](value, SByte, Cost.ByteConstantDeclaration)
+    def unapply(v: SValue): Option[Byte] = v match {
+      case Constant(value: Byte, SByte, _) => Some(value)
+      case _ => None
+    }
   }
-
-  case class ByteConstant(value: Byte) extends EvaluatedValue[SByte.type] {
-    override val opCode: OpCode = ByteConstantCode
-    override def cost[C <: Context[C]](context: C) = Cost.ByteConstantDeclaration
-    override def tpe = SByte
+  object IntConstant {
+    def apply(value: Long): Constant[SInt.type]  = Constant[SInt.type](value, SInt, Cost.IntConstantDeclaration)
+    def unapply(v: SValue): Option[Long] = v match {
+      case Constant(value: Long, SInt, _) => Some(value)
+      case _ => None
+    }
   }
 
   trait NotReadyValueInt extends NotReadyValue[SInt.type] {

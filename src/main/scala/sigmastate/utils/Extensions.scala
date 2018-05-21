@@ -1,5 +1,7 @@
 package sigmastate.utils
 
+import java.nio.ByteBuffer
+
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
 import scala.reflect.ClassTag
@@ -43,4 +45,13 @@ object Extensions {
       b.result()
     }
   }
+
+  implicit class ByteBufferOps(buf: ByteBuffer) {
+    def toBytes: Array[Byte] = {
+      val res = new Array[Byte](buf.position())
+      buf.array().copyToArray(res, 0, res.length)
+      res
+    }
+  }
+
 }

@@ -35,7 +35,7 @@ trait SigmaNode extends Product
   * */
 sealed trait SType extends SigmaNode {
   type WrappedType
-  val typeCode: SType.TypeCode
+  val typeCode: SType.TypeCode  //TODO remove, because in general type is encoded by more than one byte
 
   def isPrimitive: Boolean = SType.allPredefTypes.contains(this)
 

@@ -59,7 +59,7 @@ object ValueSerializer
     GroupElementSerializer,
     ProveDlogSerializer,
     ByteConstantSerializer,
-    IntConstantSerializer,
+    ConstantSerializer,
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
     ConcreteCollectionSerializer,
