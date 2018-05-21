@@ -1,11 +1,10 @@
 package sigmastate.utxo
 
-import sigmastate.SCollection.SByteArray
-import sigmastate.{SByte, _}
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo.ErgoBox.R3
 import sigmastate.lang.Terms._
+import sigmastate.utxo.ErgoBox.R3
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
 
@@ -273,7 +272,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expectedPropTree = EQ(
       ExtractAmount(
         ByIndex(Outputs,
-          ArithmeticOperations(SizeOf(Outputs),IntConstant(1),41))),
+          ArithmeticOperations(SizeOf(Outputs), IntConstant(1), 41))),
       IntConstant(10))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
@@ -317,5 +316,29 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   }
 
+  property("ByIndex for non-evaluated index") {
+    val outputBoxValues = IndexedSeq(10L, 10L)
+    val code =
+      """{
+        |  let string = Array(1, 1, 0, 0, 0, 1)
+        |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
+        |  fun elementRule(index: Int) = {
+        |    let element = if (index <= 0) string(5) else string(index - 1)
+        |    element == 0 || element == 1
+        |  }
+        |  indexCollection.forall(elementRule)
+         }""".stripMargin
+
+    val indexCollection = new ConcreteCollection((0 until 6).map(i => IntConstant(i)))
+    val string = new ConcreteCollection(Array(1, 1, 0, 0, 0, 1).map(i => IntConstant(i)))
+    val indexId = 21.toByte
+    val index = TaggedInt(indexId)
+    val element = If(LE(index, 0), ByIndex(string, 5), ByIndex(string, Minus(index, 1)))
+    val elementRule = OR(EQ(element, 0), EQ(element, 1))
+    val expectedPropTree = ForAll(indexCollection, indexId, elementRule)
+    assertProof(code, expectedPropTree, outputBoxValues)
 
   }
+
+
+}
