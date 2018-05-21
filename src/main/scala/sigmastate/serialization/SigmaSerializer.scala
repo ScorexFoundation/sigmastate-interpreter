@@ -22,8 +22,6 @@ object Serializer {
 trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T] {
   val companion: SigmaSerializerCompanion[TFamily]
 
-  import companion._
-
   def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
 
   def serializeBody(obj: T): Array[Byte]
