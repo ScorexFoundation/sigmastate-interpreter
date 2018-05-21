@@ -41,6 +41,8 @@ sealed trait SType extends SigmaNode {
 
   /** Elvis operator for types. See https://en.wikipedia.org/wiki/Elvis_operator*/
   def ?:(whenNoType: => SType): SType = if (this == NoType) whenNoType else this
+  def lift(v: WrappedType): Value[this.type] =
+    sys.error(s"Don't know how to lift data value $v to Value[T] with T = $this")
 }
 
 object SType {
@@ -161,6 +163,7 @@ object SPrimType {
 case object SByte extends SPrimType {
   override type WrappedType = Byte
   override val typeCode: TypeCode = 1: Byte //TODO change to 4 after SByteArray is removed
+  override def lift(v: Byte): Value[SByte.type] = ByteConstant(v)
 }
 
 case object SBoolean extends SPrimType {
@@ -172,6 +175,7 @@ case object SBoolean extends SPrimType {
 case object SInt extends SPrimType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 3: Byte
+  override def lift(v: Long): Value[SInt.type] = IntConstant(v)
 }
 
 case object SBigInt extends SPrimType {

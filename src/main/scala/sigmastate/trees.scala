@@ -364,7 +364,14 @@ case class IsMember(tree: Value[SAvlTree.type],
   override lazy val third  = proof
 }
 
-
+/**
+  * If conditional function.
+  * Non-lazy - evaluate both branches.
+  *
+  * @param condition - condition to check
+  * @param trueBranch - branch that will be used if condition is true
+  * @param falseBranch - branch that will be used if condition is false
+  */
 case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T], falseBranch: Value[T])
   extends Quadruple[SBoolean.type, T, T, T] {
   override val opCode: OpCode = OpCodes.IfCode

@@ -11,7 +11,7 @@ class ContextExtensionSerializationSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with TableDrivenPropertyChecks
   with Matchers
-  with ValueGeneratots
+  with ValueGenerators
   with ConcreteCollectionGenerators
   with TransformerGenerators
   with RelationGenerators {
