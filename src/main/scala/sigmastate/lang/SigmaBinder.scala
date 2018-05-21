@@ -8,7 +8,7 @@ import sigmastate._
 import Values._
 import sigmastate.utxo._
 import sigmastate.Values.Value.Typed
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.CryptoConstants
 
 class SigmaBinder(env: Map[String, Any]) {
   import SigmaBinder._
@@ -26,7 +26,7 @@ class SigmaBinder(env: Map[String, Any]) {
         case v: Int => Some(IntConstant(v))
         case v: Long => Some(IntConstant(v))
         case v: BigInteger => Some(BigIntConstant(v))
-        case v: GroupSettings.EcPointType => Some(GroupElementConstant(v))
+        case v: CryptoConstants.EcPointType => Some(GroupElementConstant(v))
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
         case b: ErgoBox => Some(BoxConstant(b))
         case avl: AvlTreeData => Some(AvlTreeConstant(avl))

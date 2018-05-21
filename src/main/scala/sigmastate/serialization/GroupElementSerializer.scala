@@ -2,15 +2,15 @@ package sigmastate.serialization
 
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import sigmastate.Values.GroupElementConstant
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.OpCodes._
 
 
 object GroupElementSerializer extends ValueSerializer[GroupElementConstant] {
 
-  type ElemType = GroupSettings.EcPointType
+  type ElemType = CryptoConstants.EcPointType
 
-  private val curve = GroupSettings.dlogGroup
+  private val curve = CryptoConstants.dlogGroup
 
   override val opCode: OpCode = GroupElementConstantCode
 

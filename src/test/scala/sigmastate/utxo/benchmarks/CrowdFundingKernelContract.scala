@@ -8,7 +8,7 @@ import scapi.sigma.DLogProtocol.{DLogInteractiveProver, DLogProverInput, FirstDL
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.helpers.ErgoProvingInterpreter
-import sigmastate.interpreter.{GroupSettings, Interpreter}
+import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.utils.Helpers
 import sigmastate.utxo.ErgoContext
 
@@ -68,7 +68,7 @@ class CrowdFundingKernelContract(
              ctx: ErgoContext,
              message: Array[Byte]): Try[Interpreter.VerificationResult] = Try {
     var sn = proof.asInstanceOf[UncheckedSchnorr]
-    val dlog = GroupSettings.dlogGroup
+    val dlog = CryptoConstants.dlogGroup
     val g = dlog.generator
     val h = sn.proposition.h
 

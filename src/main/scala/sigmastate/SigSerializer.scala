@@ -4,11 +4,12 @@ import org.bouncycastle.util.BigIntegers
 import scapi.sigma.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import scapi.sigma.{ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.Values.Value
+import sigmastate.interpreter.CryptoConstants
 
 
 object SigSerializer {
   val hashSize = 32
-  val order = 48 //bytes
+  val order = CryptoConstants.groupSize
 
   def toBytes(tree: UncheckedTree): Array[Byte] = {
 

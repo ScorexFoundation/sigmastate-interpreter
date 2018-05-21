@@ -2,13 +2,13 @@ package sigmastate.serialization
 
 import sigmastate.Values.{ByteArrayConstant, GroupElementConstant, IntConstant, BigIntConstant}
 import sigmastate._
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.Append
 
 class TwoArgumentSerializerSpecification extends TableSerializationSpecification {
 
-  private lazy val randomPoint = GroupSettings.dlogGroup.createRandomGenerator()
+  private lazy val randomPoint = CryptoConstants.dlogGroup.createRandomGenerator()
 
   override val objects =
     Table(

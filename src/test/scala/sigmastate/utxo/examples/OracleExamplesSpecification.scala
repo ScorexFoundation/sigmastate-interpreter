@@ -10,7 +10,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{SigmaTestingCommons, ErgoProvingInterpreter}
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.utxo.ErgoBox._
 import sigmastate.utxo._
 
@@ -71,7 +71,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val group = GroupSettings.dlogGroup
+    val group = CryptoConstants.dlogGroup
 
     val temperature: Long = 18
 

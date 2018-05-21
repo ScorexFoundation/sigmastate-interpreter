@@ -8,7 +8,7 @@ import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
 import sigmastate.{AvlTreeData, SBoolean, SGroupElement, SType}
 import sigmastate.Values._
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.ErgoBox._
 import sigmastate.{AvlTreeData, SType, SByte}
@@ -43,7 +43,7 @@ trait ValueGeneratots {
   } yield ByteArrayConstant(bytes.toArray)
   val groupElementConstantGen: Gen[GroupElementConstant] = for {
     _ <- Gen.const(1)
-    el = GroupSettings.dlogGroup.createRandomGenerator()
+    el = CryptoConstants.dlogGroup.createRandomGenerator()
   } yield GroupElementConstant(el)
 
   val proveDlogGen: Gen[ProveDlog] = arbGroupElementConstant.arbitrary.map(v => ProveDlog(v))

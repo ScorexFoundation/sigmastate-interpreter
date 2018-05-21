@@ -22,7 +22,7 @@ class TestingInterpreterSpecification extends PropSpec
 
   import TestingInterpreter._
 
-  implicit val soundness = GroupSettings.soundness
+  implicit val soundness = CryptoConstants.soundnessBits
 
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
@@ -232,7 +232,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
   override val maxCost = CostTable.ScriptLimit
 
   override lazy val secrets: Seq[DLogProverInput] = {
-    import GroupSettings.soundness
+    import CryptoConstants.soundnessBits
 
     Seq(DLogProverInput.random(), DLogProverInput.random())
   }

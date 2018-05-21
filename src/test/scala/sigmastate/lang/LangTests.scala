@@ -6,7 +6,7 @@ import sigmastate._
 import java.math.BigInteger
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.CryptoConstants
 
 trait LangTests {
 
@@ -20,7 +20,7 @@ trait LangTests {
 
   val EV: Map[String, Any] = Map()
 
-  val dlog = GroupSettings.dlogGroup
+  val dlog = CryptoConstants.dlogGroup
   val g1 = dlog.generator
   val g2 = dlog.multiplyGroupElements(g1, g1)
   protected val n: BigInteger = BigInt(10).underlying()

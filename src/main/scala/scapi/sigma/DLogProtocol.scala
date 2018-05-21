@@ -8,8 +8,8 @@ import sigmastate.Values._
 import Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
-import sigmastate.interpreter.{Context, GroupSettings}
-import sigmastate.interpreter.GroupSettings.EcPointType
+import sigmastate.interpreter.{Context, CryptoConstants}
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 
@@ -29,16 +29,15 @@ object DLogProtocol {
     override val opCode: OpCode = OpCodes.ProveDlogCode
 
     override def cost[C <: Context[C]](context: C): Long = Cost.Dlog
-    override val soundness: Int = GroupSettings.soundness
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
   }
 
   object ProveDlog {
-    import GroupSettings.dlogGroup
+    import CryptoConstants.dlogGroup
 
-    def apply(h: GroupSettings.EcPointType): ProveDlog = ProveDlog(GroupElementConstant(h))
+    def apply(h: CryptoConstants.EcPointType): ProveDlog = ProveDlog(GroupElementConstant(h))
 
     val Code: PropositionCode = 102: Byte
 
@@ -54,7 +53,7 @@ object DLogProtocol {
   case class DLogProverInput(w: BigInteger)(implicit soundness: Int)
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol, ProveDlog] {
 
-    import GroupSettings.dlogGroup
+    import CryptoConstants.dlogGroup
 
     override lazy val publicImage: ProveDlog = {
       val g = dlogGroup.generator
@@ -64,7 +63,7 @@ object DLogProtocol {
 
   object DLogProverInput {
 
-    import GroupSettings.dlogGroup
+    import CryptoConstants.dlogGroup
 
     /** Create random secret in a range 0..q-1, where q - an order of DLog group. */
     def random()(implicit soundness: Int): DLogProverInput = {
@@ -74,7 +73,7 @@ object DLogProtocol {
     }
   }
 
-  case class FirstDLogProverMessage(ecData: GroupSettings.EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
+  case class FirstDLogProverMessage(ecData: CryptoConstants.EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
     override def bytes: Array[Byte] = {
       val bytes = ecData.getEncoded(true)
 
@@ -90,7 +89,7 @@ object DLogProtocol {
   class DLogInteractiveProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
     extends InteractiveProver[DLogSigmaProtocol, ProveDlog, DLogProverInput] {
 
-    import GroupSettings.dlogGroup
+    import CryptoConstants.dlogGroup
 
     var rOpt: Option[BigInteger] = None
 
@@ -135,7 +134,7 @@ object DLogProtocol {
 
   object DLogInteractiveProver {
     def firstMessage(publicInput: ProveDlog): (BigInteger, FirstDLogProverMessage) = {
-      import GroupSettings.dlogGroup
+      import CryptoConstants.dlogGroup
 
       val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
       val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
@@ -144,7 +143,7 @@ object DLogProtocol {
     }
 
     def secondMessage(privateInput: DLogProverInput, rnd: BigInteger, challenge: Challenge): SecondDLogProverMessage = {
-      import GroupSettings.dlogGroup
+      import CryptoConstants.dlogGroup
 
       val q: BigInteger = dlogGroup.order
       val e: BigInteger = new BigInteger(1, challenge.bytes)
@@ -163,7 +162,7 @@ object DLogProtocol {
                             override val z: SecondDLogProverMessage)
     extends SigmaProtocolTranscript[DLogSigmaProtocol, ProveDlog] {
 
-    import GroupSettings.dlogGroup
+    import CryptoConstants.dlogGroup
 
 
     override lazy val accepted: Boolean = Try {

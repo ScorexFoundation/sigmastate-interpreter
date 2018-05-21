@@ -3,13 +3,13 @@ package sigmastate
 import java.math.BigInteger
 
 import sigmastate.SType.TypeCode
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.ErgoBox
 import sigmastate.Values._
 import sigmastate.lang.SigmaTyper
 import sigmastate.SCollection._
-import sigmastate.interpreter.GroupSettings.EcPointType
+import sigmastate.interpreter.CryptoConstants.EcPointType
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -92,7 +92,7 @@ object SType {
     case _: Long => SInt
     case _: Boolean => SBoolean
     case _: BigInteger => SBigInt
-    case _: GroupSettings.EcPointType => SGroupElement
+    case _: CryptoConstants.EcPointType => SGroupElement
     case _: ErgoBox => SBox
     case _: AvlTreeData => SAvlTree
     case _: Unit => SUnit
@@ -178,11 +178,11 @@ case object SBigInt extends SPrimType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 4: Byte
 
-  val Max = GroupSettings.dlogGroup.order //todo: we use mod q, maybe mod p instead?
+  val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
 }
 
 case object SGroupElement extends SProduct with SPrimType {
-  override type WrappedType = GroupSettings.EcPointType
+  override type WrappedType = CryptoConstants.EcPointType
   override val typeCode: TypeCode = 5: Byte
   def ancestors = Nil
   val fields = Seq(

@@ -5,7 +5,7 @@ import java.security.SecureRandom
 
 import org.bouncycastle.util.BigIntegers
 import sigmastate._
-import sigmastate.interpreter.{Context, GroupSettings}
+import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.Values._
 import Value.PropositionCode
 import sigmastate.serialization.OpCodes
@@ -25,7 +25,7 @@ case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDiffie
 }
 
 object DiffieHellmanTupleProverInput {
-  import sigmastate.interpreter.GroupSettings.dlogGroup
+  import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   def random()(implicit soundness: Int): DiffieHellmanTupleProverInput = {
     val g = dlogGroup.generator
@@ -43,7 +43,7 @@ object DiffieHellmanTupleProverInput {
 }
 
 //a = g^r, b = h^r
-case class FirstDiffieHellmanTupleProverMessage(a: GroupSettings.EcPointType, b: GroupSettings.EcPointType)
+case class FirstDiffieHellmanTupleProverMessage(a: CryptoConstants.EcPointType, b: CryptoConstants.EcPointType)
   extends FirstProverMessage[DiffieHellmanTupleProtocol] {
   override def bytes: Array[Byte] = {
     val ba = a.getEncoded(true)
@@ -72,9 +72,6 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
 
   override def cost[C <: Context[C]](context: C): Long = Cost.Dlog * 2
 
-  override val soundness: Int = GroupSettings.soundness
-
-
   //todo: fix code below , we should consider that class parameters could be not evaluated
   lazy val g = gv.asInstanceOf[GroupElementConstant].value
   lazy val h = hv.asInstanceOf[GroupElementConstant].value
@@ -91,7 +88,7 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieH
                                           override val privateInputOpt: Option[DiffieHellmanTupleProverInput])
   extends InteractiveProver[DiffieHellmanTupleProtocol, ProveDiffieHellmanTuple, DiffieHellmanTupleProverInput] {
 
-  import sigmastate.interpreter.GroupSettings.dlogGroup
+  import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   var rOpt: Option[BigInteger] = None
 
@@ -139,7 +136,7 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieH
 }
 
 object DiffieHellmanTupleInteractiveProver {
-  import sigmastate.interpreter.GroupSettings.dlogGroup
+  import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   def firstMessage(publicInput: ProveDiffieHellmanTuple): (BigInteger, FirstDiffieHellmanTupleProverMessage) = {
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)

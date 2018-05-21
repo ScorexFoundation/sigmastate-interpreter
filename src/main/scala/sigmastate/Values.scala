@@ -9,7 +9,7 @@ import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
-import sigmastate.interpreter.{Context, GroupSettings}
+import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers
@@ -55,7 +55,7 @@ object Values {
 
     implicit def liftBigInt(arr: BigInteger): Value[SBigInt.type] = BigIntConstant(arr)
 
-    implicit def liftGroupElement(g: GroupSettings.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
+    implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
@@ -202,7 +202,7 @@ object Values {
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   def TaggedAvlTree(id: Byte): TaggedAvlTree = TaggedVariable(id, SAvlTree)
 
-  case class GroupElementConstant(value: GroupSettings.EcPointType) extends EvaluatedValue[SGroupElement.type] {
+  case class GroupElementConstant(value: CryptoConstants.EcPointType) extends EvaluatedValue[SGroupElement.type] {
     override def cost[C <: Context[C]](context: C) = 10
 
     override val opCode: OpCode = GroupElementConstantCode
@@ -215,13 +215,13 @@ object Values {
 
     override val opCode: OpCode = OpCodes.GroupGeneratorCode
 
-    import GroupSettings.dlogGroup
+    import CryptoConstants.dlogGroup
 
     override def cost[C <: Context[C]](context: C) = 10
 
     override def tpe = SGroupElement
 
-    override val value: GroupSettings.EcPointType = dlogGroup.generator
+    override val value: CryptoConstants.EcPointType = dlogGroup.generator
   }
 
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {

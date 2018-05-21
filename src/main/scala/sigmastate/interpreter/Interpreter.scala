@@ -32,16 +32,20 @@ import sigmastate.{SType, _}
 import scala.util.Try
 
 
-object GroupSettings {
+object CryptoConstants {
   type EcPointType = SecP384R1Point
-  val dlogGroup: BcDlogFp[EcPointType] = SecP384R1
 
-  implicit val soundness: Int = 256
+  val dlogGroup: BcDlogFp[EcPointType] = SecP384R1
+  val groupSizeBits: Int = 384
+  val groupSize: Int = 384 / 8 //48 bytes
+
+  //size of challenge in Sigma protocols, in bits
+  implicit val soundnessBits: Int = 256
 }
 
 trait Interpreter {
 
-  import GroupSettings._
+  import CryptoConstants._
   import Interpreter.ReductionResult
 
   type CTX <: Context[CTX]
@@ -297,7 +301,7 @@ trait Interpreter {
 
     case sn: UncheckedSchnorr =>
 
-      val dlog = GroupSettings.dlogGroup
+      val dlog = CryptoConstants.dlogGroup
       val g = dlog.generator
       val h = sn.proposition.h
 
@@ -310,7 +314,7 @@ trait Interpreter {
     //todo: check that g,h belong to the group
     //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
     case dh: UncheckedDiffieHellmanTuple =>
-      val dlog = GroupSettings.dlogGroup
+      val dlog = CryptoConstants.dlogGroup
 
       val g = dh.proposition.g
       val h = dh.proposition.h

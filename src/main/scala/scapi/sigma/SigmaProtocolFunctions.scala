@@ -3,6 +3,7 @@ package scapi.sigma
 import java.security.SecureRandom
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -50,7 +51,7 @@ trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
 
 
 trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] {
-  val soundness: Int
+  val soundness: Int = CryptoConstants.soundnessBits
 }
 
 trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] {
