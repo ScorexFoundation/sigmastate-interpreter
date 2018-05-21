@@ -94,6 +94,14 @@ trait ValueGenerators extends TypeGenerators {
     ar <- Gen.sequence(additionalRegistersGen(regNum))
   } yield ergoplatform.ErgoBox(l, b, ar.asScala.toMap, Digest32 @@ tId.toArray, boxId)
 
+  val ergoBoxCandidateGen: Gen[ErgoBoxCandidate] = for {
+    l <- arbLong.arbitrary
+    p <- proveDlogGen
+    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
+    regNum <- Gen.chooseNum[Byte](0, 7)
+    ar <- Gen.sequence(arGen(regNum))
+  } yield ErgoBoxCandidate(l, b, ar.asScala.toMap)
+
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
 
   val smallIntGen: Gen[Int] = Gen.chooseNum(2, 16)
