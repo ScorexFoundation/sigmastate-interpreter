@@ -323,8 +323,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  let string = Array(1, 1, 0, 0, 0, 1)
         |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
         |  fun elementRule(index: Int) = {
-        |    let element = if (index <= 0) string(5) else string(index - 1)
-        |    element == 0 || element == 1
+        |    let boundedIndex = if (index <= 0) 5 else (index - 1)
+        |    string(boundedIndex)
         |  }
         |  indexCollection.forall(elementRule)
          }""".stripMargin
@@ -333,7 +333,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val string = new ConcreteCollection(Array(1, 1, 0, 0, 0, 1).map(i => IntConstant(i)))
     val indexId = 21.toByte
     val index = TaggedInt(indexId)
-    val element = If(LE(index, 0), ByIndex(string, 5), ByIndex(string, Minus(index, 1)))
+    val element = ByIndex(string, If(LE(index, 0), 5, Minus(index, 1)))
     val elementRule = OR(EQ(element, 0), EQ(element, 1))
     val expectedPropTree = ForAll(indexCollection, indexId, elementRule)
     assertProof(code, expectedPropTree, outputBoxValues)
