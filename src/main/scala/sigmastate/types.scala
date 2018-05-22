@@ -206,6 +206,8 @@ case object SGroupElement extends SProduct with SPrimType {
 case object SAvlTree extends SProduct with SPrimType {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 6: Byte
+  override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.AvlTreeConstant
   def ancestors = Nil
   val fields = Nil
 }

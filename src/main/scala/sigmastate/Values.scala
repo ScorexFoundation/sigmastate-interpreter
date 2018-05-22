@@ -17,6 +17,7 @@ import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox
 import sigmastate.utils.Extensions._
+
 import scala.collection.immutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -102,7 +103,7 @@ object Values {
   type IntConstant = Constant[SInt.type]
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
-//  type AvlTreeConstant = Constant[SAvlTree.type]
+  type AvlTreeConstant = Constant[SAvlTree.type]
 
   object ByteConstant {
     def apply(value: Byte): Constant[SByte.type] = Constant[SByte.type](value, SByte)
@@ -132,6 +133,25 @@ object Values {
       case Constant(value: ErgoBox, SBox) => Some(value)
       case _ => None
     }
+  }
+
+  object AvlTreeConstant {
+    def apply(value: AvlTreeData): Constant[SAvlTree.type]  = Constant[SAvlTree.type](value, SAvlTree)
+    def unapply(v: SValue): Option[AvlTreeData] = v match {
+      case Constant(value: AvlTreeData, SAvlTree) => Some(value)
+      case _ => None
+    }
+  }
+
+  implicit class AvlTreeConstantOps(c: AvlTreeConstant) {
+    def createVerifier(proof: SerializedAdProof) =
+      new BatchAVLVerifier[Digest32, Blake2b256.type](
+        c.value.startingDigest,
+        proof,
+        c.value.keyLength,
+        c.value.valueLengthOpt,
+        c.value.maxNumOperations,
+        c.value.maxDeletes)
   }
 
   trait NotReadyValueInt extends NotReadyValue[SInt.type] {
@@ -206,23 +226,6 @@ object Values {
 
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray] {
     override def tpe = SByteArray
-  }
-
-  case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
-    override val opCode: OpCode = OpCodes.AvlTreeConstantCode
-
-    override def cost[C <: Context[C]](context: C) = Cost.AvlTreeConstant
-
-    override def tpe = SAvlTree
-
-    def createVerifier(proof: SerializedAdProof) =
-      new BatchAVLVerifier[Digest32, Blake2b256.type](
-        value.startingDigest,
-        proof,
-        value.keyLength,
-        value.valueLengthOpt,
-        value.maxNumOperations,
-        value.maxDeletes)
   }
 
   trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
