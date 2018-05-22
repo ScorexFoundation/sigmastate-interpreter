@@ -3,7 +3,6 @@ package sigmastate.utxo
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatest.PropSpec
-import org.scalatest.TryValues._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import sigmastate.serialization.generators.ValueGenerators
 
@@ -16,11 +15,7 @@ class ErgoBoxCandidateSerializerSpec extends PropSpec
 
   property("ErgoBoxCandidate: Serializer round trip") {
     forAll { b: ErgoBoxCandidate =>
-      val bytes = ergoBoxCandidateSerializer.toBytes(b)
-      val b1 = ergoBoxCandidateSerializer.parseBytes(bytes).success.value
-      b1.value shouldBe b.value
-      b1.proposition shouldBe b.proposition
-      b1.additionalRegisters shouldEqual b.additionalRegisters
+      ergoBoxCandidateSerializer.parseBytes(ergoBoxCandidateSerializer.toBytes(b)).get shouldEqual b
     }
   }
 
