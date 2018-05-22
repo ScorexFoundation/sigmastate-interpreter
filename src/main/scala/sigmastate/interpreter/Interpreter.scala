@@ -13,7 +13,6 @@ import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
-import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
