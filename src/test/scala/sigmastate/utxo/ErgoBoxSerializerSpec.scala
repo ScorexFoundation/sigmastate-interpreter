@@ -1,5 +1,7 @@
 package sigmastate.utxo
 
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Gen
 import org.ergoplatform.ErgoBox
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
@@ -23,6 +25,15 @@ class ErgoBoxSerializerSpec extends PropSpec
       b1.transactionId.sameElements(b.transactionId) shouldBe true
       b1.boxId shouldBe b.boxId
       b1.additionalRegisters shouldBe b.additionalRegisters
+    }
+  }
+
+  property("ErgoBox: start pos and consumed bytes") {
+    forAll { b: ErgoBox =>
+      val randomBytesCount = Gen.chooseNum(1, 20).sample.get
+      val randomBytes = Gen.listOfN(randomBytesCount, arbByte.arbitrary).sample.get.toArray
+      val bytes = ergoBoxSerializer.toBytes(b)
+      ergoBoxSerializer.parseBody(randomBytes ++ bytes, randomBytesCount) shouldEqual (b, bytes.length)
     }
   }
 }
