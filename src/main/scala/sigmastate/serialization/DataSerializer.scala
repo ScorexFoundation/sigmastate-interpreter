@@ -3,16 +3,13 @@ package sigmastate.serialization
 import java.math.BigInteger
 import java.nio.ByteBuffer
 
-import com.google.common.primitives.Ints
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
-import sigmastate.Values.BoxConstant
+import scorex.crypto.authds.ADDigest
 import sigmastate.utils.ByteArrayBuilder
 import sigmastate._
 import sigmastate.utils.Extensions._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.serialization.AvlTreeConstantSerializer.optionIntToBytes
-import sigmastate.serialization.BoxConstantSerializer.IntLength
 import sigmastate.utxo.ErgoBox
 
 object DataSerializer {
@@ -35,14 +32,14 @@ object DataSerializer {
     case SBox =>
       val bytes = ErgoBox.serializer.toBytes(v.asInstanceOf[ErgoBox])
       buf.append(bytes.length).append(bytes)
-//    case SAvlTree =>
-//      val data = v.asInstanceOf[AvlTreeData]
-//      buf.append(data.startingDigest.length)
-//      buf.append(data.startingDigest)
-//      buf.append(data.keyLength)
-//      buf.appendOption(data.valueLengthOpt, buf.append(_))
-//      buf.appendOption(data.maxNumOperations, buf.append(_))
-//      buf.appendOption(data.maxDeletes, buf.append(_))
+    case SAvlTree =>
+      val data = v.asInstanceOf[AvlTreeData]
+      buf.append(data.startingDigest.length)
+      buf.append(data.startingDigest)
+      buf.append(data.keyLength)
+      buf.appendOption(data.valueLengthOpt)(buf.append(_))
+      buf.appendOption(data.maxNumOperations)(buf.append(_))
+      buf.appendOption(data.maxDeletes)(buf.append(_))
 
     case tCol: SCollection[a] =>
       val arr = v.asInstanceOf[tCol.WrappedType]
@@ -81,10 +78,18 @@ object DataSerializer {
       val bytes = buf.getBytes(len)
       val box = ErgoBox.serializer.parseBytes(bytes).get
       box
-
+    case SAvlTree =>
+      val digestLength = buf.getInt()
+      val digestBytes = buf.getBytes(digestLength)
+      val keyLength = buf.getInt()
+      val vlOpt = buf.getOption(buf.getInt())
+      val mnoOpt = buf.getOption(buf.getInt())
+      val mdOpt = buf.getOption(buf.getInt())
+      val data = AvlTreeData(ADDigest @@ digestBytes, keyLength, vlOpt, mnoOpt, mdOpt)
+      data
     case tCol: SCollection[a] =>
       val len = buf.getInt()
-      val arr = (new Array(len)).asInstanceOf[SCollection[a]#WrappedType]
+      val arr = new Array(len).asInstanceOf[SCollection[a]#WrappedType]
       for (i <- 0 until len) {
         arr(i) = deserialize(tCol.elemType, buf)
       }

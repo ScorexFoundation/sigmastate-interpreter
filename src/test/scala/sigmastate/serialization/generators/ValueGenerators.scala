@@ -13,6 +13,7 @@ import sigmastate.utxo.ErgoBox
 import sigmastate.utxo.ErgoBox._
 
 import scala.collection.JavaConverters._
+import scala.reflect.ClassTag
 
 trait ValueGenerators extends TypeGenerators {
 
@@ -110,4 +111,19 @@ trait ValueGenerators extends TypeGenerators {
   } yield AvlTreeData(ADDigest @@ digest, keyLength, vl, mn, md)
 
   def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
+
+  implicit def arrayGen[T: Gen: ClassTag]: Gen[Array[T]] = for {
+    length <- Gen.chooseNum(1, 100)
+    bytes <- Gen.listOfN(length, arbitrary[T])
+  } yield bytes.toArray
+
+  def wrappedTypeGen[T <: SType](tpe: T): Gen[T#WrappedType] = (tpe match {
+    case SByte => arbByte
+    case SInt => arbLong
+    case SBoolean => arbBool
+    case SBigInt => arbBigInteger
+    case SAvlTree => arbAvlTreeData
+    case SGroupElement => arbGroupElement
+    case SBox => arbBox
+  }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
 }

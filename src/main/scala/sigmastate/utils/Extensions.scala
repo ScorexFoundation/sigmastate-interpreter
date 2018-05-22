@@ -47,7 +47,7 @@ object Extensions {
   }
 
   implicit class ByteArrayBuilderOps(b: ByteArrayBuilder) {
-    def appendOption[T](opt: Option[T], putValue: T => Unit): ByteArrayBuilder = {
+    def appendOption[T](opt: Option[T])(putValue: T => Unit): ByteArrayBuilder = {
       opt match {
         case Some(v) =>
           b.append(1.toByte)
