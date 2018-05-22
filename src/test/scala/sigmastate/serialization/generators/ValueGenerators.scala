@@ -115,7 +115,7 @@ trait ValueGenerators extends TypeGenerators {
 
   val ergoTransactionGen: Gen[ErgoTransaction] = for {
 //    inputs <- Gen.listOf(inputGen)
-    outputCandidates <- Gen.listOf(ergoBoxGen)
+    outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
   } yield ErgoTransaction(IndexedSeq(), outputCandidates.toIndexedSeq)
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
