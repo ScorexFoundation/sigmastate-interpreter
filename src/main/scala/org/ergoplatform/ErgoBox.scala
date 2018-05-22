@@ -64,11 +64,9 @@ class ErgoBox private(override val value: Long,
 
   lazy val bytes: Array[Byte] = serializer.toBytes(this)
 
-  override def equals(arg: Any) = arg match {
+  override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox =>
-      value == x.value &&
-        proposition == x.proposition &&
-        additionalRegisters == x.additionalRegisters &&
+      super.equals(x) &&
         Arrays.equals(transactionId, x.transactionId) &&
         boxId == x.boxId
     case _ => false
