@@ -1,14 +1,17 @@
 package sigmastate.serialization
 
+import java.math.BigInteger
 import java.nio.ByteBuffer
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.{SInt, SBoolean, SType, SByte}
+import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate._
 import sigmastate.utils.ByteArrayBuilder
+import sigmastate.utxo.ErgoBox
 
 class DataSerializerSpecification extends SerializationSpecification {
 
-  def test[T <: SType](obj: T#WrappedType, tpe: T) = {
+  def roundtrip[T <: SType](obj: T#WrappedType, tpe: T) = {
     val b = new ByteArrayBuilder()
     DataSerializer.serialize(obj, tpe, b)
     val buf = ByteBuffer.wrap(b.toBytes)
@@ -17,10 +20,14 @@ class DataSerializerSpecification extends SerializationSpecification {
   }
 
   property("Data serialization round trip") {
-    forAll { x: Byte => test[SByte.type](x, SByte) }
-    forAll { x: Boolean => test[SBoolean.type](x, SBoolean) }
-    forAll { x: Long => test[SInt.type](x, SInt) }
-    forAll { x: Array[Byte] => test[SByteArray](x, SByteArray) }
+    forAll { x: Byte => roundtrip[SByte.type](x, SByte) }
+    forAll { x: Boolean => roundtrip[SBoolean.type](x, SBoolean) }
+    forAll { x: Long => roundtrip[SInt.type](x, SInt) }
+    forAll { x: BigInteger => roundtrip[SBigInt.type](x, SBigInt) }
+    forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
+    forAll { x: ErgoBox => roundtrip[SBox.type](x, SBox) }
+//    forAll { x: AvlTreeData => roundtrip[SAvlTree.type](x, SAvlTree) }
+    forAll { x: Array[Byte] => roundtrip[SByteArray](x, SByteArray) }
   }
 
 }

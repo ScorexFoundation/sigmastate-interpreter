@@ -94,6 +94,12 @@ public class ByteArrayBuilder {
         return this;
     }
 
+    public final ByteArrayBuilder append(short n) {
+        ensureCapacity(2);
+        buf.putShort(n);
+        return this;
+    }
+
     public final ByteArrayBuilder append(int n) {
         ensureCapacity(4);
         buf.putInt(n);

@@ -46,11 +46,36 @@ object Extensions {
     }
   }
 
+  implicit class ByteArrayBuilderOps(b: ByteArrayBuilder) {
+    def appendOption[T](opt: Option[T], putValue: T => Unit): ByteArrayBuilder = {
+      opt match {
+        case Some(v) =>
+          b.append(1.toByte)
+          putValue(v)
+          b
+        case None =>
+          b.append(0.toByte)
+      }
+    }
+  }
+
   implicit class ByteBufferOps(buf: ByteBuffer) {
     def toBytes: Array[Byte] = {
       val res = new Array[Byte](buf.position())
       buf.array().copyToArray(res, 0, res.length)
       res
+    }
+    def getBytes(size: Int): Array[Byte] = {
+      val res = new Array[Byte](size)
+      buf.get(res)
+      res
+    }
+    def getOption[T](getValue: => T): Option[T] = {
+      val tag = buf.get()
+      if (tag != 0)
+        Some(getValue)
+      else
+        None
     }
   }
 
