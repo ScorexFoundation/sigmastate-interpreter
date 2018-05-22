@@ -213,6 +213,8 @@ case object SAvlTree extends SProduct with SPrimType {
 case object SBox extends SProduct with SPrimType {
   override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 7: Byte
+  override def mkConstant(v: ErgoBox): Value[SBox.type] = BoxConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = v.asInstanceOf[this.WrappedType].cost
 
   def ancestors = Nil
 

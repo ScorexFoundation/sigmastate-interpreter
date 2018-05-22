@@ -101,7 +101,7 @@ object Values {
   type ByteConstant = Constant[SByte.type]
   type IntConstant = Constant[SInt.type]
   type BigIntConstant = Constant[SBigInt.type]
-//  type BoxConstant = Constant[SBox.type]
+  type BoxConstant = Constant[SBox.type]
 //  type AvlTreeConstant = Constant[SAvlTree.type]
 
   object ByteConstant {
@@ -122,6 +122,14 @@ object Values {
     def apply(value: BigInteger): Constant[SBigInt.type]  = Constant[SBigInt.type](value, SBigInt)
     def unapply(v: SValue): Option[BigInteger] = v match {
       case Constant(value: BigInteger, SBigInt) => Some(value)
+      case _ => None
+    }
+  }
+
+  object BoxConstant {
+    def apply(value: ErgoBox): Constant[SBox.type]  = Constant[SBox.type](value, SBox)
+    def unapply(v: SValue): Option[ErgoBox] = v match {
+      case Constant(value: ErgoBox, SBox) => Some(value)
       case _ => None
     }
   }
@@ -289,14 +297,6 @@ object Values {
       PropBytes -> SByteArray,
       IsValid -> SBoolean
     )
-  }
-
-  case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {
-    override val opCode: OpCode = OpCodes.BoxConstantCode
-
-    override def cost[C <: Context[C]](context: C): Long = value.cost
-
-    override def tpe = SBox
   }
 
   trait NotReadyValueBox extends NotReadyValue[SBox.type] {
