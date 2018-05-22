@@ -188,7 +188,8 @@ case object SInt extends SPrimType {
 case object SBigInt extends SPrimType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 4: Byte
-
+  override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.BigIntConstantDeclaration
   val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
 }
 

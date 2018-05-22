@@ -100,6 +100,9 @@ object Values {
 
   type ByteConstant = Constant[SByte.type]
   type IntConstant = Constant[SInt.type]
+  type BigIntConstant = Constant[SBigInt.type]
+//  type BoxConstant = Constant[SBox.type]
+//  type AvlTreeConstant = Constant[SAvlTree.type]
 
   object ByteConstant {
     def apply(value: Byte): Constant[SByte.type] = Constant[SByte.type](value, SByte)
@@ -115,18 +118,16 @@ object Values {
       case _ => None
     }
   }
+  object BigIntConstant {
+    def apply(value: BigInteger): Constant[SBigInt.type]  = Constant[SBigInt.type](value, SBigInt)
+    def unapply(v: SValue): Option[BigInteger] = v match {
+      case Constant(value: BigInteger, SBigInt) => Some(value)
+      case _ => None
+    }
+  }
 
   trait NotReadyValueInt extends NotReadyValue[SInt.type] {
     override def tpe = SInt
-  }
-
-  case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
-
-    override val opCode: OpCode = BigIntConstantCode
-
-    override def cost[C <: Context[C]](context: C) = 1
-
-    override def tpe = SBigInt
   }
 
   trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type] {

@@ -60,13 +60,18 @@ object ValueSerializer
     ProveDlogSerializer,
     ConstantSerializer(SByte),
     ConstantSerializer(SInt),
+    ConstantSerializer(SBigInt),
+    BoxConstantSerializer,
+    AvlTreeConstantSerializer,
+//    ConstantSerializer(SAvlTree),
+//    ConstantSerializer(SBox),
+//    ConstantSerializer(SGroupElement),
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
     ConcreteCollectionSerializer,
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](AndCode, AND.apply),
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](OrCode, OR.apply),
     TaggedVariableSerializer,
-    BigIntConstantSerializer,
     CollectionConstantSerializer,
     CaseObjectSerialization(HeightCode, Height),
     CaseObjectSerialization(InputsCode, Inputs),
@@ -94,9 +99,7 @@ object ValueSerializer
     WhereSerializer,
     SliceSerializer,
     ByIndexSerializer,
-    AppendSerializer,
-    BoxConstantSerializer,
-    AvlTreeConstantSerializer
+    AppendSerializer
   ).map(s => (s.opCode, s)).toMap
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
