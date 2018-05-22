@@ -2,9 +2,9 @@ organization := "org.scorexplatform"
 
 name := "sigma-state"
 
-version := "0.0.1"
+version := "0.9.0"
 
-scalaVersion := "2.12.5"
+scalaVersion := "2.12.6"
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
