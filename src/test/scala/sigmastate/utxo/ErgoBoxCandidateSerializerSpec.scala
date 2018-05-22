@@ -18,7 +18,7 @@ class ErgoBoxCandidateSerializerSpec extends PropSpec
       val b1 = ergoBoxCandidateSerializer.parseBytes(bytes).success.value
       b1.value shouldBe b.value
       b1.proposition shouldBe b.proposition
-      b1.additionalRegisters shouldBe b.additionalRegisters
+      b1.additionalRegisters shouldEqual b.additionalRegisters
     }
   }
 }
