@@ -40,6 +40,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbBox          = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData  = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
+  implicit val arbTransaction  = Arbitrary(ergoTransactionGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)

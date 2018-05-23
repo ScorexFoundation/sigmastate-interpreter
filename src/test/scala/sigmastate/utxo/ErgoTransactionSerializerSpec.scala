@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import org.ergoplatform.ErgoTransaction
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatest.PropSpec
