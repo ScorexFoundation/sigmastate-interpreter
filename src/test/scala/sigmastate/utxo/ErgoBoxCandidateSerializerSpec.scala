@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import org.ergoplatform.ErgoBoxCandidate
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatest.PropSpec

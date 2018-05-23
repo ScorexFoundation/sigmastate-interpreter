@@ -32,6 +32,14 @@ class ErgoBoxCandidate(val value: Long,
       case n: NonMandatoryIdentifier => additionalRegisters.get(n)
     }
   }
+
+  override def equals(arg: Any): Boolean = arg match {
+    case x: ErgoBoxCandidate =>
+      value == x.value &&
+        proposition == x.proposition &&
+        additionalRegisters == x.additionalRegisters
+    case _ => false
+  }
 }
 
 object ErgoBoxCandidate {
