@@ -3,6 +3,7 @@ package sigmastate.utxo.benchmarks
 import java.math.BigInteger
 import java.util
 
+import org.ergoplatform.ErgoContext
 import scapi.sigma.Challenge
 import scapi.sigma.DLogProtocol.{DLogInteractiveProver, DLogProverInput, FirstDLogProverMessage, ProveDlog}
 import scorex.crypto.hash.Blake2b256
@@ -10,7 +11,6 @@ import sigmastate._
 import sigmastate.helpers.ErgoProvingInterpreter
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.utils.Helpers
-import sigmastate.utxo.ErgoContext
 
 import scala.util.Try
 

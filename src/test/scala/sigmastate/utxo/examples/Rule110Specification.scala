@@ -7,7 +7,8 @@ import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
-import sigmastate.utxo.ErgoBox.{R3, R4, R5, R6}
+import org.ergoplatform.ErgoBox.{R3, R4, R5, R6}
+import org.ergoplatform._
 import sigmastate.utxo._
 
 /**

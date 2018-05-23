@@ -1,15 +1,16 @@
 package sigmastate
 
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
-import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Matchers, PropSpec}
+import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
 import sigmastate.lang.SigmaCompiler
-import sigmastate.utxo.{CostTable, Height, ErgoBox}
+import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
-import sigmastate.utxo.ErgoBox.{R3, R4}
+import org.ergoplatform.ErgoBox.{R3, R4}
+import org.ergoplatform.{ErgoBox, Height}
 
 import scala.util.Random
 

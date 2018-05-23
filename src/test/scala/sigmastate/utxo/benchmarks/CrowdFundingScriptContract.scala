@@ -1,11 +1,11 @@
 package sigmastate.utxo.benchmarks
 
+import org.ergoplatform.ErgoContext
 import sigmastate.SBoolean
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.helpers.ErgoProvingInterpreter
 import sigmastate.interpreter.Interpreter
-import sigmastate.utxo.ErgoContext
 
 import scala.util.Try
 

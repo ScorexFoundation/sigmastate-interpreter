@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import java.io.{File, FileWriter}
 
+import org.ergoplatform
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
@@ -11,7 +12,8 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values.IntConstant
 import sigmastate.helpers.ErgoProvingInterpreter
 import sigmastate.interpreter.ContextExtension
-import sigmastate.utxo.ErgoBox.R3
+import org.ergoplatform.ErgoBox.R3
+import org.ergoplatform._
 import sigmastate.{AvlTreeData, GE}
 
 import scala.annotation.tailrec
@@ -191,7 +193,7 @@ object BlockchainSimulationSpecification {
       (1 to windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
         val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
-        ErgoTransaction(IndexedSeq(), boxes)
+        ergoplatform.ErgoTransaction(IndexedSeq(), boxes)
       }
     }
 

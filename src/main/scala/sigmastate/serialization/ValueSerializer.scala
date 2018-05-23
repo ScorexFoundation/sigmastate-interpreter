@@ -7,9 +7,10 @@ import scala.util.Try
 import OpCodes._
 import sigmastate.SCollection.SByteArray
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{Relation3Serializer, Relation2Serializer, QuadrupelSerializer}
+import sigmastate.serialization.trees.{QuadrupelSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utxo._
 import Serializer.Consumed
+import org.ergoplatform._
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {

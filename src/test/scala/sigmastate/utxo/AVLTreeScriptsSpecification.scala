@@ -7,7 +7,8 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo.ErgoBox.{R3, R4}
+import org.ergoplatform.ErgoBox.{R3, R4}
+import org.ergoplatform._
 import sigmastate.lang.Terms._
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons {

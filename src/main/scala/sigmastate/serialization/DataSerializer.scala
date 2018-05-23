@@ -4,13 +4,13 @@ import java.math.BigInteger
 import java.nio.ByteBuffer
 
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
+import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.ADDigest
 import sigmastate.utils.ByteArrayBuilder
 import sigmastate._
 import sigmastate.utils.Extensions._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.utxo.ErgoBox
 
 object DataSerializer {
   private val curve = CryptoConstants.dlogGroup

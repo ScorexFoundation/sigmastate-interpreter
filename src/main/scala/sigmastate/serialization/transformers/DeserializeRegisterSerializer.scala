@@ -1,10 +1,11 @@
 package sigmastate.serialization.transformers
 
+import org.ergoplatform.ErgoBox
 import sigmastate.SType
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.Serializer._
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utxo.{DeserializeRegister, ErgoBox}
+import sigmastate.utxo.DeserializeRegister
 
 object DeserializeRegisterSerializer extends ValueSerializer[DeserializeRegister[SType]] {
 

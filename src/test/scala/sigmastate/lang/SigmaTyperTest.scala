@@ -5,9 +5,7 @@ import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.utxo.{Outputs, Self, Inputs}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
@@ -278,5 +276,4 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       "((Int,Int), Array[Boolean] => Array[(Array[C], Boolean)]) => Int",
       ("A", SInt), ("B", SBoolean))
   }
-
 }

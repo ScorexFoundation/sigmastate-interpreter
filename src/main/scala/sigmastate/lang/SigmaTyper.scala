@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
+import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values._

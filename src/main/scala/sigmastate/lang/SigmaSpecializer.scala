@@ -1,13 +1,14 @@
 package sigmastate.lang
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rewrite, reduce}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
+import org.ergoplatform.ErgoBox
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Lambda, Let, Apply, ValueOps, Select, Block, Ident}
+import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Let, Select, ValueOps}
 import sigmastate.utxo._
 
 class SigmaSpecializer {

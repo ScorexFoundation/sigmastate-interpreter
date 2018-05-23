@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import org.ergoplatform.ErgoBox
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.TryValues._

@@ -8,10 +8,11 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{SigmaTestingCommons, ErgoProvingInterpreter}
+import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.ErgoBox._
+import org.ergoplatform.ErgoBox._
+import org.ergoplatform._
 
 class ErgoInterpreterSpecification extends SigmaTestingCommons {
 

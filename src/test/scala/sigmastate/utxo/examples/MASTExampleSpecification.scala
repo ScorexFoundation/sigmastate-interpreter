@@ -7,7 +7,8 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.ErgoBox.R3
+import org.ergoplatform.ErgoBox.R3
+import org.ergoplatform._
 import sigmastate.utxo._
 
 import scala.util.Random

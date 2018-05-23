@@ -1,10 +1,10 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.{ErgoContext, ErgoInterpreter, Height}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{TaggedByteArray, ByteArrayConstant, IntConstant, CollectionConstant}
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant, IntConstant, TaggedByteArray}
 import sigmastate._
-import sigmastate.helpers.{SigmaTestingCommons, ErgoProvingInterpreter}
-import sigmastate.utxo.{ErgoContext, Height, ErgoInterpreter}
+import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
@@ -116,5 +116,4 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val pr2 = proverB2.prove(prop1, ctx2, fakeMessage).get
     verifier.verify(prop1, ctx2, pr2, fakeMessage).get._1 shouldBe true
   }
-
 }

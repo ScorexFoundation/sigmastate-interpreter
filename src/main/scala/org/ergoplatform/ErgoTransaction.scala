@@ -1,4 +1,4 @@
-package sigmastate.utxo
+package org.ergoplatform
 
 import com.google.common.primitives.Shorts
 import scorex.crypto.authds.ADKey

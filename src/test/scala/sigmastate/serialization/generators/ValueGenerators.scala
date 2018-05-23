@@ -1,5 +1,8 @@
 package sigmastate.serialization.generators
 
+import org.ergoplatform
+import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
@@ -9,8 +12,6 @@ import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.utxo.ErgoBox
-import sigmastate.utxo.ErgoBox._
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -91,7 +92,7 @@ trait ValueGenerators extends TypeGenerators {
     boxId <- arbShort.arbitrary
     regNum <- Gen.chooseNum[Byte](0, 7)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-  } yield ErgoBox(l, b, ar.asScala.toMap, Digest32 @@ tId.toArray, boxId)
+  } yield ergoplatform.ErgoBox(l, b, ar.asScala.toMap, Digest32 @@ tId.toArray, boxId)
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
 

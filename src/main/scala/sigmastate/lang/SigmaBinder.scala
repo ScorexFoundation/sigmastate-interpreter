@@ -6,6 +6,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import sigmastate.lang.Terms._
 import sigmastate._
 import Values._
+import org.ergoplatform._
 import sigmastate.utxo._
 import sigmastate.Values.Value.Typed
 import sigmastate.interpreter.CryptoConstants

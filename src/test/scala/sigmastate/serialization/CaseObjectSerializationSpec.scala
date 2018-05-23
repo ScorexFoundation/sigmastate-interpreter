@@ -1,5 +1,6 @@
 package sigmastate.serialization
 
+import org.ergoplatform._
 import sigmastate.Values.{FalseLeaf, GroupGenerator, TrueLeaf}
 import sigmastate.utxo._
 

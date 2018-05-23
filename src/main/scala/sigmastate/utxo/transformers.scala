@@ -11,7 +11,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
 import sigmastate.utxo.BooleanTransformer.ResultConstructor
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.ErgoBox.RegisterIdentifier
+import org.ergoplatform.ErgoBox.RegisterIdentifier
 
 import scala.collection.immutable
 

@@ -1,4 +1,4 @@
-package sigmastate.utxo
+package org.ergoplatform
 
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.SerializedProverResult

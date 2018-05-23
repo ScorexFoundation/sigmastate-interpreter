@@ -1,12 +1,12 @@
-package sigmastate.utxo
+package org.ergoplatform
 
+import org.ergoplatform.ErgoContext.Height
+import sigmastate.Values._
 import sigmastate._
-import Values._
 import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.ErgoContext.Height
 
 import scala.util.Try
 

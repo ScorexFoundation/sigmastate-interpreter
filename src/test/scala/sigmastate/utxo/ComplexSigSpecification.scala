@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import org.ergoplatform.{ErgoContext, ErgoInterpreter, Height}
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}

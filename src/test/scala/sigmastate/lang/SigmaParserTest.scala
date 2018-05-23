@@ -12,7 +12,7 @@ import sigmastate._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{Outputs, SizeOf, Exists}
+import sigmastate.utxo.{SizeOf, Exists}
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 

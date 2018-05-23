@@ -1,8 +1,9 @@
 package sigmastate.utxo.benchmarks
 
+import org.ergoplatform.{ErgoContext, ErgoInterpreter}
 import sigmastate.helpers.ErgoProvingInterpreter
 import sigmastate.interpreter.Interpreter
-import sigmastate.utxo.{ErgoContext, ErgoInterpreter, SigmaContract}
+import sigmastate.utxo.SigmaContract
 
 import scala.util.Try
 

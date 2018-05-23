@@ -1,16 +1,18 @@
 package sigmastate.utxo
 
+import org.ergoplatform
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.ErgoBox.R3
+import org.ergoplatform.ErgoBox.R3
+import org.ergoplatform._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
                       outputs: IndexedSeq[ErgoBox]): ErgoContext =
-    ErgoContext(
+    ergoplatform.ErgoContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = boxesToSpend,

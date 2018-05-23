@@ -1,9 +1,10 @@
-package sigmastate.utxo
+package org.ergoplatform
 
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ValueSerializer
+import sigmastate.utxo._
 
 
 class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends Interpreter {

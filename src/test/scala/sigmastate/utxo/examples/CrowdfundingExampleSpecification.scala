@@ -1,5 +1,6 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform._
 import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox}
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}

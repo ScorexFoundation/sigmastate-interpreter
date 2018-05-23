@@ -1,4 +1,4 @@
-package sigmastate.utxo
+package org.ergoplatform
 
 import scala.util.{Failure, Success}
 

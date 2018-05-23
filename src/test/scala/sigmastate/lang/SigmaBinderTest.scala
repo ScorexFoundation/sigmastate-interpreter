@@ -1,6 +1,7 @@
 package sigmastate.lang
 
-import org.scalatest.{PropSpec, Matchers}
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.SCollection.SByteArray

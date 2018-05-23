@@ -1,11 +1,12 @@
 package sigmastate.serialization.transformers
 
+import org.ergoplatform.ErgoBox
 import sigmastate.{SBox, SType}
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.Serializer.{Position, Consumed}
-import sigmastate.serialization.{ValueSerializer, OpCodes, STypeSerializer}
-import sigmastate.utxo.{ExtractRegisterAs, ErgoBox}
+import sigmastate.serialization.Serializer.{Consumed, Position}
+import sigmastate.serialization.{OpCodes, STypeSerializer, ValueSerializer}
+import sigmastate.utxo.ExtractRegisterAs
 
 object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[SType]] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs

@@ -3,7 +3,8 @@ package sigmastate.utxo.examples
 import sigmastate.Values.{IntConstant, TaggedBox}
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo.ErgoBox.R3
+import org.ergoplatform.ErgoBox.R3
+import org.ergoplatform._
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 

@@ -4,7 +4,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.Values.{FalseLeaf, TrueLeaf}
 import sigmastate._
-import sigmastate.utxo.ErgoBox.RegisterIdentifier
+import org.ergoplatform.ErgoBox.RegisterIdentifier
 import sigmastate.utxo._
 
 trait TransformerGenerators {

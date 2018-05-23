@@ -5,17 +5,17 @@ import java.util
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
+import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.{Context, CryptoConstants}
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.ErgoBox
 import sigmastate.utils.Extensions._
 
 import scala.collection.immutable

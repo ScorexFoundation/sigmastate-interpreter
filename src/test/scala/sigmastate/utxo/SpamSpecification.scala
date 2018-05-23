@@ -1,5 +1,7 @@
 package sigmastate.utxo
 
+import org.ergoplatform
+import org.ergoplatform._
 import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
@@ -157,7 +159,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val inputs = ((1 to 999) map (_ => ErgoBox(11, inputScript))) :+ ErgoBox(11, outputScript)
     val outputs = (1 to 1000) map (_ => ErgoBox(11, outputScript))
 
-    val tx = ErgoTransaction(IndexedSeq(), outputs)
+    val tx = ergoplatform.ErgoTransaction(IndexedSeq(), outputs)
 
     val ctx = new ErgoContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy,

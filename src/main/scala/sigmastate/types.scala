@@ -2,10 +2,10 @@ package sigmastate
 
 import java.math.BigInteger
 
+import org.ergoplatform.ErgoBox
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo.ErgoBox
 import sigmastate.Values._
 import sigmastate.lang.SigmaTyper
 import sigmastate.SCollection._

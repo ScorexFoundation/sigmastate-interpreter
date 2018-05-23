@@ -2,12 +2,13 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
+
+import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate._
 import sigmastate.utils.ByteArrayBuilder
-import sigmastate.utxo.ErgoBox
 
 class DataSerializerSpecification extends SerializationSpecification {
 
