@@ -1,7 +1,7 @@
 package sigmastate.serialization.generators
 
 import org.ergoplatform
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTransaction}
 import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
@@ -39,6 +39,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbGroupElement = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
   implicit val arbBox          = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData  = Arbitrary(avlTreeDataGen)
+  implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -100,7 +101,7 @@ trait ValueGenerators extends TypeGenerators {
     b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
     regNum <- Gen.chooseNum[Byte](0, 7)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-  } yield ErgoBoxCandidate(l, b, ar.asScala.toMap)
+  } yield new ErgoBoxCandidate(l, b, ar.asScala.toMap)
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
 
