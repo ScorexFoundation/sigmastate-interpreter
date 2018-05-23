@@ -10,6 +10,7 @@ import sigmastate.Values._
 import sigmastate.lang.SigmaTyper
 import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.utxo.CostTable.Cost
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -35,14 +36,18 @@ trait SigmaNode extends Product
   * */
 sealed trait SType extends SigmaNode {
   type WrappedType
-  val typeCode: SType.TypeCode
+  val typeCode: SType.TypeCode  //TODO remove, because in general type is encoded by more than one byte
+
+  def dataCost(v: SType#WrappedType): Long = sys.error(s"Don't know how to compute dataCost($v) with T = $this")
 
   def isPrimitive: Boolean = SType.allPredefTypes.contains(this)
 
   /** Elvis operator for types. See https://en.wikipedia.org/wiki/Elvis_operator*/
   def ?:(whenNoType: => SType): SType = if (this == NoType) whenNoType else this
-  def lift(v: WrappedType): Value[this.type] =
-    sys.error(s"Don't know how to lift data value $v to Value[T] with T = $this")
+
+  /** Construct tree node Constant for a given data object. */
+  def mkConstant(v: WrappedType): Value[this.type] =
+    sys.error(s"Don't know how mkConstant for data value $v with T = $this")
 }
 
 object SType {
@@ -163,7 +168,8 @@ object SPrimType {
 case object SByte extends SPrimType {
   override type WrappedType = Byte
   override val typeCode: TypeCode = 1: Byte //TODO change to 4 after SByteArray is removed
-  override def lift(v: Byte): Value[SByte.type] = ByteConstant(v)
+  override def mkConstant(v: Byte): Value[SByte.type] = ByteConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.ByteConstantDeclaration
 }
 
 case object SBoolean extends SPrimType {
@@ -175,13 +181,15 @@ case object SBoolean extends SPrimType {
 case object SInt extends SPrimType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 3: Byte
-  override def lift(v: Long): Value[SInt.type] = IntConstant(v)
+  override def mkConstant(v: Long): Value[SInt.type] = IntConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.IntConstantDeclaration
 }
 
 case object SBigInt extends SPrimType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 4: Byte
-
+  override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.BigIntConstantDeclaration
   val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
 }
 
@@ -198,6 +206,8 @@ case object SGroupElement extends SProduct with SPrimType {
 case object SAvlTree extends SProduct with SPrimType {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 6: Byte
+  override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.AvlTreeConstant
   def ancestors = Nil
   val fields = Nil
 }
@@ -205,6 +215,8 @@ case object SAvlTree extends SProduct with SPrimType {
 case object SBox extends SProduct with SPrimType {
   override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 7: Byte
+  override def mkConstant(v: ErgoBox): Value[SBox.type] = BoxConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = v.asInstanceOf[this.WrappedType].cost
 
   def ancestors = Nil
 

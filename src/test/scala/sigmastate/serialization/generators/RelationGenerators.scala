@@ -10,7 +10,7 @@ trait RelationGenerators { this: ValueGenerators with ConcreteCollectionGenerato
   implicit val arbIf: Arbitrary[If[SInt.type]] = Arbitrary(ifGen)
 
   val isMemberGen: Gen[IsMember] = for {
-    t <- arbAvlTree.arbitrary
+    t <- arbTaggedAvlTree.arbitrary
     b1 <- arbByteArrayConstant.arbitrary
     b2 <- arbByteArrayConstant.arbitrary
   } yield IsMember(t, b1, b2)

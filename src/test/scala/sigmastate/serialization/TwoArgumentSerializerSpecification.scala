@@ -13,9 +13,9 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
   override val objects =
     Table(
       ("object", "bytes"),
-      (Minus(IntConstant(2), IntConstant(3)), Array[Byte](41, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (Plus(IntConstant(2), IntConstant(3)), Array[Byte](42, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (Multiply(IntConstant(2), IntConstant(3)), Array[Byte](44, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (Minus(IntConstant(2), IntConstant(3)), Array[Byte](41, -108, 0, 0, 0, 0, 0, 0, 0, 2, -108, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (Plus(IntConstant(2), IntConstant(3)), Array[Byte](42, -108, 0, 0, 0, 0, 0, 0, 0, 2, -108, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (Multiply(IntConstant(2), IntConstant(3)), Array[Byte](44, -108, 0, 0, 0, 0, 0, 0, 0, 2, -108, 0, 0, 0, 0, 0, 0, 0, 3)),
       (Xor(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](43, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4)),
       (Append(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](67, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4))
     )

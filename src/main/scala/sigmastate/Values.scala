@@ -17,6 +17,7 @@ import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ErgoBox
 import sigmastate.utils.Extensions._
+
 import scala.collection.immutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -57,7 +58,7 @@ object Values {
 
     implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
-    def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.lift(const)
+    def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.mkConstant(const)
 
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
@@ -68,6 +69,11 @@ object Values {
   trait EvaluatedValue[S <: SType] extends Value[S] {
     val value: S#WrappedType
     override lazy val evaluated = true
+  }
+
+  case class Constant[S <: SType](val value: S#WrappedType, val tpe: S) extends EvaluatedValue[S] {
+    override val opCode: OpCode = (ConstantCode + tpe.typeCode).toByte
+    override def cost[C <: Context[C]](context: C) = tpe.dataCost(value)
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -93,30 +99,63 @@ object Values {
     val value = ()
   }
 
-  case class IntConstant(value: Long) extends EvaluatedValue[SInt.type] {
-    override val opCode: OpCode = IntConstantCode
-    override def cost[C <: Context[C]](context: C) = Cost.IntConstantDeclaration
+  type ByteConstant = Constant[SByte.type]
+  type IntConstant = Constant[SInt.type]
+  type BigIntConstant = Constant[SBigInt.type]
+  type BoxConstant = Constant[SBox.type]
+  type AvlTreeConstant = Constant[SAvlTree.type]
 
-    override def tpe = SInt
+  object ByteConstant {
+    def apply(value: Byte): Constant[SByte.type] = Constant[SByte.type](value, SByte)
+    def unapply(v: SValue): Option[Byte] = v match {
+      case Constant(value: Byte, SByte) => Some(value)
+      case _ => None
+    }
+  }
+  object IntConstant {
+    def apply(value: Long): Constant[SInt.type]  = Constant[SInt.type](value, SInt)
+    def unapply(v: SValue): Option[Long] = v match {
+      case Constant(value: Long, SInt) => Some(value)
+      case _ => None
+    }
+  }
+  object BigIntConstant {
+    def apply(value: BigInteger): Constant[SBigInt.type]  = Constant[SBigInt.type](value, SBigInt)
+    def unapply(v: SValue): Option[BigInteger] = v match {
+      case Constant(value: BigInteger, SBigInt) => Some(value)
+      case _ => None
+    }
   }
 
-  case class ByteConstant(value: Byte) extends EvaluatedValue[SByte.type] {
-    override val opCode: OpCode = ByteConstantCode
-    override def cost[C <: Context[C]](context: C) = Cost.ByteConstantDeclaration
-    override def tpe = SByte
+  object BoxConstant {
+    def apply(value: ErgoBox): Constant[SBox.type]  = Constant[SBox.type](value, SBox)
+    def unapply(v: SValue): Option[ErgoBox] = v match {
+      case Constant(value: ErgoBox, SBox) => Some(value)
+      case _ => None
+    }
+  }
+
+  object AvlTreeConstant {
+    def apply(value: AvlTreeData): Constant[SAvlTree.type]  = Constant[SAvlTree.type](value, SAvlTree)
+    def unapply(v: SValue): Option[AvlTreeData] = v match {
+      case Constant(value: AvlTreeData, SAvlTree) => Some(value)
+      case _ => None
+    }
+  }
+
+  implicit class AvlTreeConstantOps(c: AvlTreeConstant) {
+    def createVerifier(proof: SerializedAdProof) =
+      new BatchAVLVerifier[Digest32, Blake2b256.type](
+        c.value.startingDigest,
+        proof,
+        c.value.keyLength,
+        c.value.valueLengthOpt,
+        c.value.maxNumOperations,
+        c.value.maxDeletes)
   }
 
   trait NotReadyValueInt extends NotReadyValue[SInt.type] {
     override def tpe = SInt
-  }
-
-  case class BigIntConstant(value: BigInteger) extends EvaluatedValue[SBigInt.type] {
-
-    override val opCode: OpCode = BigIntConstantCode
-
-    override def cost[C <: Context[C]](context: C) = 1
-
-    override def tpe = SBigInt
   }
 
   trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type] {
@@ -187,23 +226,6 @@ object Values {
 
   trait NotReadyValueByteArray extends NotReadyValue[SByteArray] {
     override def tpe = SByteArray
-  }
-
-  case class AvlTreeConstant(value: AvlTreeData) extends EvaluatedValue[SAvlTree.type] {
-    override val opCode: OpCode = OpCodes.AvlTreeConstantCode
-
-    override def cost[C <: Context[C]](context: C) = Cost.AvlTreeConstant
-
-    override def tpe = SAvlTree
-
-    def createVerifier(proof: SerializedAdProof) =
-      new BatchAVLVerifier[Digest32, Blake2b256.type](
-        value.startingDigest,
-        proof,
-        value.keyLength,
-        value.valueLengthOpt,
-        value.maxNumOperations,
-        value.maxDeletes)
   }
 
   trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
@@ -278,14 +300,6 @@ object Values {
       PropBytes -> SByteArray,
       IsValid -> SBoolean
     )
-  }
-
-  case class BoxConstant(value: ErgoBox) extends EvaluatedValue[SBox.type] {
-    override val opCode: OpCode = OpCodes.BoxConstantCode
-
-    override def cost[C <: Context[C]](context: C): Long = value.cost
-
-    override def tpe = SBox
   }
 
   trait NotReadyValueBox extends NotReadyValue[SBox.type] {
