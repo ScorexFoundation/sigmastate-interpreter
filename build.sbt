@@ -1,4 +1,4 @@
-organization := "org.scorexplatform"
+organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
