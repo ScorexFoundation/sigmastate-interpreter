@@ -1,5 +1,7 @@
 package sigmastate.serialization
 
+import java.nio.ByteBuffer
+
 import scala.util.Try
 import Serializer.{Position, Consumed}
 
@@ -17,6 +19,16 @@ trait Serializer[TFamily, T <: TFamily] {
 object Serializer {
   type Position = Int
   type Consumed = Int
+
+  /** Helper function to be use in serializers.
+    * val buf = Serializer.start(bytes, pos)
+    * ...
+    * obj -> buf.consumed() */
+  def start(bytes: Array[Byte], pos: Int) = {
+    val buf = ByteBuffer.wrap(bytes)
+    buf.position(pos)
+    buf
+  }
 }
 
 trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T] {

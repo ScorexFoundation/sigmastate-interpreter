@@ -22,8 +22,7 @@ case class ConstantSerializer[T <: SType](tpe: T)
   }
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
-    val buf = ByteBuffer.wrap(bytes)
-    buf.position(pos)
+    val buf = Serializer.start(bytes, pos)
     val obj = DataSerializer.deserialize[T](tpe, buf)
     Constant(obj, tpe) -> (buf.position() - pos)
   }
