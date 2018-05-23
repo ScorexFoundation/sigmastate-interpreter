@@ -18,7 +18,7 @@ object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, STyp
     val (mapper, mapperConsumed) = ValueSerializer.deserialize(bytes, pos + consumed + 1)
     val tOVByteCode = bytes(pos + consumed + 1 + mapperConsumed)
     val tOV = SType.allPredefTypes.filter(_.typeCode == tOVByteCode).head
-    MapCollection(inputAsCollection, idByte, mapper)(tOV) -> (consumed + 1 + mapperConsumed + 1)
+    MapCollection(inputAsCollection, idByte, mapper) -> (consumed + 1 + mapperConsumed + 1)
   }
 
   override def serializeBody(obj: MapCollection[SType, SType]): Array[Byte] = {

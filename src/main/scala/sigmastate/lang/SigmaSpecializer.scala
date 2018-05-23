@@ -127,7 +127,7 @@ class SigmaSpecializer {
     case Apply(Select(col,"map", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(MapCollection(col.asValue[SCollection[SType]], tagged.varId, body1)(body1.tpe))
+      Some(MapCollection(col.asValue[SCollection[SType]], tagged.varId, body1))
 
     case Apply(Select(col,"fold", _), Seq(zero, Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
       val taggedZero = mkTagged(zeroArg, tZero, 21)
