@@ -20,7 +20,7 @@ object WhereSerializer extends ValueSerializer[Where[SType]] {
     val (input, consumed) = ValueSerializer.deserialize(bytes, pos + 1)
     val (condition, consumed2) = ValueSerializer.deserialize(bytes, pos + consumed + 1)
     (Where(input.asInstanceOf[Value[SCollection[SType]]], id, condition.asInstanceOf[Value[SBoolean.type]]),
-      consumed + consumed2)
+      1 + consumed + consumed2)
   }
 
 }

@@ -1,7 +1,7 @@
 package sigmastate.serialization.generators
 
 import org.ergoplatform
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTransaction}
 import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
@@ -39,6 +39,8 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbGroupElement = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
   implicit val arbBox          = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData  = Arbitrary(avlTreeDataGen)
+  implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
+  implicit val arbTransactionEmptyInputs  = Arbitrary(ergoTransactionEmptyInputsGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -94,6 +96,14 @@ trait ValueGenerators extends TypeGenerators {
     ar <- Gen.sequence(additionalRegistersGen(regNum))
   } yield ergoplatform.ErgoBox(l, b, ar.asScala.toMap, Digest32 @@ tId.toArray, boxId)
 
+  val ergoBoxCandidateGen: Gen[ErgoBoxCandidate] = for {
+    l <- arbLong.arbitrary
+    p <- proveDlogGen
+    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
+    regNum <- Gen.chooseNum[Byte](0, 7)
+    ar <- Gen.sequence(additionalRegistersGen(regNum))
+  } yield new ErgoBoxCandidate(l, b, ar.asScala.toMap)
+
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
 
   val smallIntGen: Gen[Int] = Gen.chooseNum(2, 16)
@@ -102,6 +112,9 @@ trait ValueGenerators extends TypeGenerators {
     opt <- Gen.oneOf(Some(int), None)
   } yield opt
 
+  val ergoTransactionEmptyInputsGen: Gen[ErgoTransaction] = for {
+    outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
+  } yield ErgoTransaction(IndexedSeq(), outputCandidates.toIndexedSeq)
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)

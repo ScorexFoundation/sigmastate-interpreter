@@ -15,7 +15,7 @@ object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
     val (input, c1) = ValueSerializer.deserialize(bytes, pos)
     val (index, c2) = ValueSerializer.deserialize(bytes, pos + c1)
     ByIndex(input.asInstanceOf[Value[SCollection[SType]]],
-      index.asInstanceOf[Value[SInt.type]]) -> (pos + c1 + c2)
+      index.asInstanceOf[Value[SInt.type]]) -> (c1 + c2)
   }
 
   override def serializeBody(obj: ByIndex[SType]): Array[Byte] = {
