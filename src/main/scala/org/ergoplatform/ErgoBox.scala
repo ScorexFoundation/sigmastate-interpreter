@@ -79,6 +79,10 @@ class ErgoBox private(override val value: Long,
 
 object ErgoBox {
   type BoxId = ADKey
+  object BoxId {
+    val size: Short = 32
+  }
+
   type Amount = Long
 
   def apply(value: Long,
