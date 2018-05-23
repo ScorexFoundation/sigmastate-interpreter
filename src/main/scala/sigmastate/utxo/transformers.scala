@@ -203,25 +203,10 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              id: Byte,
                              zero: Value[IV],
                              accId: Byte,
-                             foldOp: SValue)(implicit val tpe: IV)
-  extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] with Rewritable {
+                             foldOp: SValue)
+  extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] {
   override val opCode: OpCode = OpCodes.FoldCode
-
-  def arity = 6
-
-  def deconstruct = immutable.Seq[Any](input, id, zero, accId, foldOp, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[IV]]@unchecked,
-    id: Byte,
-    zero: Value[IV],
-    accId: Byte,
-    foldOp: Value[IV],
-    t: IV@unchecked) => Fold[IV](input, id, zero, accId, foldOp)(t)
-    case _ =>
-      illegalArgs("Fold",
-        "(Value[SCollection[IV]], id: Byte, zero: Value[IV], accId: Byte, foldOp: TwoArgumentsOperation[IV, IV, IV])(tpe: IV)", cs)
-  }
+  implicit def tpe = input.tpe.elemType
 
   override def transformationReady: Boolean =
     input.evaluated &&

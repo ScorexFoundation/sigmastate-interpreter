@@ -18,8 +18,8 @@ object FoldSerializer extends ValueSerializer[Fold[SType]] {
     val (foldOp, c3) = ValueSerializer.deserialize(bytes, pos + c1 + 1 + c2 + 1)
     val tpeTypeCode = bytes(pos + c1 + 1 + c2 + 1 + c3)
     val tpe = SType.allPredefTypes.filter(_.typeCode == tpeTypeCode).head
-    val totalConsumed = c1 + 1 + c2 + 1 + c3 + 1
-    Fold(input.asInstanceOf[Value[SCollection[SType]]], id, zero, accId, foldOp)(tpe) -> totalConsumed
+    val totalConsumed = pos + c1 + 1 + c2 + 1 + c3 + 1
+    Fold(input.asInstanceOf[Value[SCollection[SType]]], id, zero, accId, foldOp) -> totalConsumed
   }
 
   override def serializeBody(obj: Fold[SType]): Array[Byte] = {

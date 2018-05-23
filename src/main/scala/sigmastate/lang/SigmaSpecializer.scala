@@ -133,7 +133,7 @@ class SigmaSpecializer {
       val taggedZero = mkTagged(zeroArg, tZero, 21)
       val taggedOp = mkTagged(opArg, tOp, 22)
       val body1 = eval(env ++ Seq(zeroArg -> taggedZero, opArg -> taggedOp), body)
-      Some(Fold(col.asValue[SCollection[SType]], taggedZero.varId, zero, taggedOp.varId, body1)(body1.tpe))
+      Some(Fold(col.asValue[SCollection[SType]], taggedZero.varId, zero, taggedOp.varId, body1))
 
     case opt: OptionValue[_] =>
       error(s"Option values are not supported: $opt")
