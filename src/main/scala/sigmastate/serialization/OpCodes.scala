@@ -1,6 +1,19 @@
 package sigmastate.serialization
 
-object OpCodes {
+/** Encoding of types for serialization. */
+trait TypeCodes {
+  val FirstDataType = 1.toByte
+  val LastDataType = 111.toByte
+  val FirstFuncType = LastDataType + 1.toByte
+  val LastFuncType = 255.toByte
+}
+
+/** Encoding of values for serialization. */
+trait ValueCodes extends TypeCodes {
+  val ConstantCode: Byte = (LastFuncType - LastDataType + 1).toByte
+}
+
+object OpCodes extends ValueCodes {
 
   type OpCode = Byte
 
@@ -11,7 +24,6 @@ object OpCodes {
   val TaggedVariableCode: OpCode = 1: Byte
 
   // EvaluatedValue descendants
-
   val ByteConstantCode:          OpCode = 10: Byte
   val IntConstantCode:          OpCode = 11: Byte
   val TrueCode:                 OpCode = 12: Byte

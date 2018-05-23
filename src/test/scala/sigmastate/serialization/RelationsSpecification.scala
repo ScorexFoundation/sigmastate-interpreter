@@ -9,10 +9,10 @@ class RelationsSpecification extends TableSerializationSpecification {
   override val objects =
     Table(
       ("object", "bytes"),
-      (LT(IntConstant(2), IntConstant(3)), Array[Byte](31, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (LE(IntConstant(2), IntConstant(3)), Array[Byte](32, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (GT(IntConstant(6), IntConstant(5)), Array[Byte](33, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
-      (GE(IntConstant(6), IntConstant(5)), Array[Byte](34, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
+      (LT(IntConstant(2), IntConstant(3)), Array[Byte](31, -108, 0, 0, 0, 0, 0, 0, 0, 2, -108, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (LE(IntConstant(2), IntConstant(3)), Array[Byte](32, -108, 0, 0, 0, 0, 0, 0, 0, 2, -108, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (GT(IntConstant(6), IntConstant(5)), Array[Byte](33, -108, 0, 0, 0, 0, 0, 0, 0, 6, -108, 0, 0, 0, 0, 0, 0, 0, 5)),
+      (GE(IntConstant(6), IntConstant(5)), Array[Byte](34, -108, 0, 0, 0, 0, 0, 0, 0, 6, -108, 0, 0, 0, 0, 0, 0, 0, 5)),
       (EQ(TrueLeaf, FalseLeaf), Array[Byte](35, 12, 13)),
       (NEQ(TrueLeaf, FalseLeaf), Array[Byte](36, 12, 13))
     )
