@@ -40,7 +40,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbBox          = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData  = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
-  implicit val arbTransaction  = Arbitrary(ergoTransactionGen)
+  implicit val arbTransactionEmptyInputs  = Arbitrary(ergoTransactionEmptyInputsGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -112,11 +112,7 @@ trait ValueGenerators extends TypeGenerators {
     opt <- Gen.oneOf(Some(int), None)
   } yield opt
 
-  // todo implement (make sure empty seq is covered)
-//  val inputGen: Gen[Input] = ???
-
-  val ergoTransactionGen: Gen[ErgoTransaction] = for {
-//    inputs <- Gen.listOf(inputGen)
+  val ergoTransactionEmptyInputsGen: Gen[ErgoTransaction] = for {
     outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
   } yield ErgoTransaction(IndexedSeq(), outputCandidates.toIndexedSeq)
 
