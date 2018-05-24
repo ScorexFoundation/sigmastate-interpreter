@@ -34,7 +34,9 @@ trait SerializationSpecification extends PropSpec
   protected def predefinedBytesTestNotFomZeroElement[V <: Value[_ <: SType]](bytes: Array[Byte], v: V): Assertion = {
     val randomInt = Gen.chooseNum(1, 20).sample.get
     val randomBytes = Gen.listOfN(randomInt, arbByte.arbitrary).sample.get.toArray
-    ValueSerializer.deserialize(randomBytes ++ bytes, randomInt)._1 shouldBe v
+    val (parsedVal, consumed) = ValueSerializer.deserialize(randomBytes ++ bytes, randomInt)
+    parsedVal shouldEqual v
+    consumed shouldBe bytes.length
   }
 
 }
