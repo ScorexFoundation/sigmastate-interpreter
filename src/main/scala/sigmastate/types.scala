@@ -194,8 +194,10 @@ case object SBigInt extends SPrimType {
 }
 
 case object SGroupElement extends SProduct with SPrimType {
-  override type WrappedType = CryptoConstants.EcPointType
+  override type WrappedType = EcPointType
   override val typeCode: TypeCode = 5: Byte
+  override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.GroupElementConstantDeclaration
   def ancestors = Nil
   val fields = Seq(
     "isIdentity" -> SBoolean,
@@ -207,7 +209,7 @@ case object SAvlTree extends SProduct with SPrimType {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 6: Byte
   override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.AvlTreeConstant
+  override def dataCost(v: SType#WrappedType): Long = Cost.AvlTreeConstantDeclaration
   def ancestors = Nil
   val fields = Nil
 }

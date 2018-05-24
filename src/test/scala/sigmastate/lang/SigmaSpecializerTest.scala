@@ -63,7 +63,7 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
 
   property("generic methods of arrays") {
     spec("OUTPUTS.map(fun (out: Box) = { out.value >= 10 })") shouldBe
-      MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), IntConstant(10)))(SBoolean)
+      MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), IntConstant(10)))
     spec("OUTPUTS.exists(fun (out: Box) = { out.value >= 10 })") shouldBe
         Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), IntConstant(10)))
     spec("OUTPUTS.forall(fun (out: Box) = { out.value >= 10 })") shouldBe

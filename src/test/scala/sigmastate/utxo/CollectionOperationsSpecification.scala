@@ -287,7 +287,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |.fold(0, fun (acc: Int, val: Int) = acc + val) == 20""".stripMargin
     val expectedPropTree = EQ(
       Fold(
-        MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))(SInt),
+        MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21))),
         21,
         IntConstant(0),
         22,

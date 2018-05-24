@@ -4,6 +4,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
+import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
@@ -36,30 +37,17 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 }
 
 
-case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                                                   id: Byte,
-                                                   mapper: SValue)(implicit val tOV: OV)
-  extends Transformer[SCollection[IV], SCollection[OV]] with Rewritable {
+case class MapCollection[IV <: SType, OV <: SType](
+    input: Value[SCollection[IV]],
+    id: Byte,
+    mapper: SValue)
+  extends Transformer[SCollection[IV], SCollection[OV]] {
 
   override val opCode: OpCode = OpCodes.MapCollectionCode
+  implicit def tOV = mapper.asValue[OV].tpe
+  val tpe = SCollection[OV](tOV)
 
-  val tpe = SCollection[OV]
-
-  def arity = 4
-
-  def deconstruct = immutable.Seq[Any](input, id, mapper, tOV)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[IV]]@unchecked,
-    id: Byte,
-    mapper: Transformer[IV, OV],
-    t: OV@unchecked) => MapCollection[IV, OV](input, id, mapper)(t)
-    case _ =>
-      illegalArgs("MapCollection", "(Value[SCollection[IV]], Byte, Transformer[IV, OV], SType)", cs)
-  }
-
-  override def transformationReady: Boolean =
-    input.evaluated && input.items.forall(_.evaluated)
+  override def transformationReady: Boolean = input.isEvaluated
 
   override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
     def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
@@ -215,25 +203,10 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              id: Byte,
                              zero: Value[IV],
                              accId: Byte,
-                             foldOp: SValue)(implicit val tpe: IV)
-  extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] with Rewritable {
+                             foldOp: SValue)
+  extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] {
   override val opCode: OpCode = OpCodes.FoldCode
-
-  def arity = 6
-
-  def deconstruct = immutable.Seq[Any](input, id, zero, accId, foldOp, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[IV]]@unchecked,
-    id: Byte,
-    zero: Value[IV],
-    accId: Byte,
-    foldOp: Value[IV],
-    t: IV@unchecked) => Fold[IV](input, id, zero, accId, foldOp)(t)
-    case _ =>
-      illegalArgs("Fold",
-        "(Value[SCollection[IV]], id: Byte, zero: Value[IV], accId: Byte, foldOp: TwoArgumentsOperation[IV, IV, IV])(tpe: IV)", cs)
-  }
+  implicit def tpe = input.tpe.elemType
 
   override def transformationReady: Boolean =
     input.evaluated &&
@@ -268,21 +241,10 @@ object Fold {
 }
 
 case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.type])
-  extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
+  extends Transformer[SCollection[V], V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.ByIndexCode
-
   override val tpe = input.tpe.elemType
-  override def arity = 3
-  override def deconstruct = immutable.Seq[Any](input, index, tpe)
-
-  override def transformationReady: Boolean =
-    input.isEvaluated && index.evaluated
-
-  override def reconstruct(cs: immutable.Seq[Any]): ByIndex[V] = cs match {
-    case Seq(input: Value[SCollection[V]]@unchecked, index: Value[SInt.type]@unchecked, _) =>
-      ByIndex[V](input, index)
-    case _ => illegalArgs("ByIndex", "(Value[SCollection[V]], index: Value[SInt.type])(tpe: V)", cs)
-  }
+  override def transformationReady: Boolean = input.isEvaluated && index.evaluated
 
   override def function(input: EvaluatedValue[SCollection[V]]): Value[V] = {
     val i = index.asInstanceOf[EvaluatedValue[SInt.type]].value.toInt

@@ -79,7 +79,7 @@ case object Outputs extends LazyCollection[SBox.type] {
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree {
   override val opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
 
-  override def cost[C <: Context[C]](context: C) = Cost.AvlTreeConstant + 1
+  override def cost[C <: Context[C]](context: C) = Cost.AvlTreeConstantDeclaration + 1
 }
 
 
