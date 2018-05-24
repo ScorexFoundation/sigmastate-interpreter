@@ -8,10 +8,11 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants}
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Overloading.Overload1
@@ -103,6 +104,7 @@ object Values {
   type IntConstant = Constant[SInt.type]
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
+  type GroupElementConstant = Constant[SGroupElement.type]
   type AvlTreeConstant = Constant[SAvlTree.type]
 
   object ByteConstant {
@@ -131,6 +133,14 @@ object Values {
     def apply(value: ErgoBox): Constant[SBox.type]  = Constant[SBox.type](value, SBox)
     def unapply(v: SValue): Option[ErgoBox] = v match {
       case Constant(value: ErgoBox, SBox) => Some(value)
+      case _ => None
+    }
+  }
+
+  object GroupElementConstant {
+    def apply(value: EcPointType): Constant[SGroupElement.type]  = Constant[SGroupElement.type](value, SGroupElement)
+    def unapply(v: SValue): Option[EcPointType] = v match {
+      case Constant(value: EcPointType, SGroupElement) => Some(value)
       case _ => None
     }
   }
@@ -231,15 +241,6 @@ object Values {
   trait NotReadyValueAvlTree extends NotReadyValue[SAvlTree.type] {
     override def tpe = SAvlTree
   }
-
-  case class GroupElementConstant(value: CryptoConstants.EcPointType) extends EvaluatedValue[SGroupElement.type] {
-    override def cost[C <: Context[C]](context: C) = 10
-
-    override val opCode: OpCode = GroupElementConstantCode
-
-    override def tpe = SGroupElement
-  }
-
 
   case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
 
