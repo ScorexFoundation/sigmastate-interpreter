@@ -11,7 +11,7 @@ import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.interpreter.{ContextExtension, CryptoConstants}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, SerializedProverResult}
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -42,6 +42,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
   implicit val arbTransactionEmptyInputs  = Arbitrary(ergoTransactionEmptyInputsGen)
   implicit val arbContextExtension = Arbitrary(contextExtensionGen)
+  implicit val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -131,6 +132,12 @@ trait ValueGenerators extends TypeGenerators {
   val contextExtensionGen: Gen[ContextExtension] = for {
     values <- Gen.sequence(contextExtensionValuesGen(0, 3))
   } yield ContextExtension(values.asScala.toMap)
+
+  val serializedProverResultGen: Gen[SerializedProverResult] = for {
+    length <- Gen.chooseNum(1, 100)
+    bytes <- Gen.listOfN(length, arbByte.arbitrary)
+    contextExt <- contextExtensionGen
+  } yield SerializedProverResult(bytes.toArray, contextExt)
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
