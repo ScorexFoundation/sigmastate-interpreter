@@ -40,11 +40,11 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbBox          = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData  = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
-  implicit val arbTransactionEmptyInputs  = Arbitrary(ergoTransactionEmptyInputsGen)
+  implicit val arbTransaction  = Arbitrary(ergoTransactionGen)
   implicit val arbContextExtension = Arbitrary(contextExtensionGen)
   implicit val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
   implicit val arbUnsignedInput = Arbitrary(unsignedInputGen)
-  implicit val arbInput = Arbitrary(inputGen)
+  implicit val arbInput         = Arbitrary(inputGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -116,21 +116,6 @@ trait ValueGenerators extends TypeGenerators {
     opt <- Gen.oneOf(Some(int), None)
   } yield opt
 
-  val ergoTransactionEmptyInputsGen: Gen[ErgoTransaction] = for {
-    outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
-  } yield ErgoTransaction(IndexedSeq(), outputCandidates.toIndexedSeq)
-
-  def contextExtensionValuesGen(min: Int, max: Int): Seq[Gen[(Byte, EvaluatedValue[SType])]] =
-    (0 until Gen.chooseNum(min, max).sample.get)
-      .map(_ + 1)
-      .map { varId =>
-        for {
-          arr <- byteArrayConstGen
-          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr)
-        }
-          yield varId.toByte -> v.asInstanceOf[EvaluatedValue[SType]]
-      }
-
   val contextExtensionGen: Gen[ContextExtension] = for {
     values <- Gen.sequence(contextExtensionValuesGen(0, 3))
   } yield ContextExtension(values.asScala.toMap)
@@ -153,6 +138,22 @@ trait ValueGenerators extends TypeGenerators {
     boxId <- boxIdGen
     proof <- serializedProverResultGen
   } yield Input(boxId, proof)
+
+  val ergoTransactionGen: Gen[ErgoTransaction] = for {
+    inputs <- Gen.listOf(inputGen)
+    outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
+  } yield ErgoTransaction(inputs.toIndexedSeq, outputCandidates.toIndexedSeq)
+
+  def contextExtensionValuesGen(min: Int, max: Int): Seq[Gen[(Byte, EvaluatedValue[SType])]] =
+    (0 until Gen.chooseNum(min, max).sample.get)
+      .map(_ + 1)
+      .map { varId =>
+        for {
+          arr <- byteArrayConstGen
+          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr)
+        }
+          yield varId.toByte -> v.asInstanceOf[EvaluatedValue[SType]]
+      }
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
