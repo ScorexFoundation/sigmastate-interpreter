@@ -16,9 +16,6 @@ import scala.annotation.tailrec
 import scala.runtime.ScalaRunTime
 import scala.util.Try
 
-
-
-
 /**
   * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In bitcoin, such an object
   * is associated with some monetary value (arbitrary, but with predefined precision, so we use integer arithmetic to

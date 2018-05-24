@@ -5,6 +5,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Assertion, Matchers, PropSpec}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.Serializer
 import sigmastate.serialization.generators.ValueGenerators
 
@@ -39,5 +40,10 @@ class SerializationRoundTripSpec extends PropSpec
   property("ErgoTransaction: Serializer round trip") {
     forAll { t: ErgoTransaction => roundTripTest(t)(ErgoTransaction.serializer) }
     forAll { t: ErgoTransaction => roundTripTestWithPos(t)(ErgoTransaction.serializer) }
+  }
+
+  property("ContextExtension: Serializer round trip") {
+    forAll { t: ContextExtension => roundTripTest(t)(ContextExtension.serializer) }
+    forAll { t: ContextExtension => roundTripTestWithPos(t)(ContextExtension.serializer) }
   }
 }

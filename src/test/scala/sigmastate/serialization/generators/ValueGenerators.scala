@@ -11,7 +11,7 @@ import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.{ContextExtension, CryptoConstants}
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -41,6 +41,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbAvlTreeData  = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
   implicit val arbTransactionEmptyInputs  = Arbitrary(ergoTransactionEmptyInputsGen)
+  implicit val arbContextExtension = Arbitrary(contextExtensionGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -115,6 +116,21 @@ trait ValueGenerators extends TypeGenerators {
   val ergoTransactionEmptyInputsGen: Gen[ErgoTransaction] = for {
     outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
   } yield ErgoTransaction(IndexedSeq(), outputCandidates.toIndexedSeq)
+
+  def contextExtensionValuesGen(min: Int, max: Int): Seq[Gen[(Byte, EvaluatedValue[SType])]] =
+    (0 until Gen.chooseNum(min, max).sample.get)
+      .map(_ + 1)
+      .map { varId =>
+        for {
+          arr <- byteArrayConstGen
+          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr)
+        }
+          yield varId.toByte -> v.asInstanceOf[EvaluatedValue[SType]]
+      }
+
+  val contextExtensionGen: Gen[ContextExtension] = for {
+    values <- Gen.sequence(contextExtensionValuesGen(0, 3))
+  } yield ContextExtension(values.asScala.toMap)
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
