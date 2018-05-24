@@ -45,7 +45,6 @@ class Rule110Specification extends SigmaTestingCommons {
     val indexId = 21.toByte
     val f = ByteConstant(0)
     val t = ByteConstant(1)
-    val indexCollection = new ConcreteCollection((0 until 6).map(i => IntConstant(i)))
     val env = Map("indexId" -> indexId, "f" -> f, "t" -> t)
     val compiled = compile(env,
       """{

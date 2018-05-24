@@ -57,7 +57,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.matchCase(_.items.forall(_.evaluated), c => true)
+    input.evaluated && input.matchCase(_.items.forall(_.evaluated), _ => true)
 
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
@@ -109,7 +109,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.matchCase(_.items.forall(_.evaluated), c => true)
+    input.evaluated && input.matchCase(_.items.forall(_.evaluated), _ => true)
 
   override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec

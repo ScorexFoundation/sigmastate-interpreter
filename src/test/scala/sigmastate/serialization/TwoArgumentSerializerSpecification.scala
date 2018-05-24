@@ -8,8 +8,6 @@ import sigmastate.utxo.Append
 
 class TwoArgumentSerializerSpecification extends TableSerializationSpecification {
 
-  private lazy val randomPoint = CryptoConstants.dlogGroup.createRandomGenerator()
-
   override val objects =
     Table(
       ("object", "bytes"),

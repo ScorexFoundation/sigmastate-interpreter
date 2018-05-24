@@ -62,8 +62,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
       */
     private def prepareExponentiations(size: BigInteger): Unit = { //find log of the number - this is the index of the size-exponent in the exponentiation array
       val index = size.bitLength - 1
-      /* calculates the necessary exponentiations and put them in the exponentiations vector */ var i = exponentiations.size
-
+      /* calculates the necessary exponentiations and put them in the exponentiations vector */
       (exponentiations.size to index).foreach { i =>
         exponentiations += exponentiate(exponentiations(i - 1), two)
       }

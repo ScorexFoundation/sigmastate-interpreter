@@ -5,7 +5,6 @@ import org.ergoplatform.{ErgoBox, ErgoContext, ErgoTransaction}
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.Values._
-import sigmastate.utxo._
 
 
 class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons {

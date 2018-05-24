@@ -117,7 +117,6 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("array indexed access") {
-    val col =
     bind(env, "Array(1)(0)") shouldBe ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0)
     bind(env, "Array(Array(1))(0)(0)") shouldBe
       ByIndex(ByIndex(ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)), 0), 0)

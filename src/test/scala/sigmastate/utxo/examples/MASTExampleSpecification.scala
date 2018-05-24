@@ -32,7 +32,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val proofId = 22.toByte
     val secretId = 23.toByte
 
-    val allSecrets = (0 until 5).map(i => Random.nextString(32).getBytes("UTF-8"))
+    val allSecrets = (0 until 5).map(_ => Random.nextString(32).getBytes("UTF-8"))
     val scriptBranches = allSecrets.map(s => EQ(ByteArrayConstant(s), TaggedByteArray(secretId)))
     val scriptBranchesBytes = scriptBranches.map(b => ValueSerializer.serialize(b))
     val treeElements = scriptBranchesBytes.map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
