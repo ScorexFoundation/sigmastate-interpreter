@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTransaction, UnsignedInput}
+import org.ergoplatform._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
@@ -55,5 +55,10 @@ class SerializationRoundTripSpec extends PropSpec
   property("UnsignedInput: Serializer round trip") {
     forAll { t: UnsignedInput => roundTripTest(t)(UnsignedInput.serializer) }
     forAll { t: UnsignedInput => roundTripTestWithPos(t)(UnsignedInput.serializer) }
+  }
+
+  property("Input: Serializer round trip") {
+    forAll { t: Input => roundTripTest(t)(Input.serializer) }
+    forAll { t: Input => roundTripTestWithPos(t)(Input.serializer) }
   }
 }

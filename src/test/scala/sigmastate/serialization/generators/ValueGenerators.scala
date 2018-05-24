@@ -1,7 +1,7 @@
 package sigmastate.serialization.generators
 
 import org.ergoplatform
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTransaction, UnsignedInput}
+import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
@@ -44,6 +44,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbContextExtension = Arbitrary(contextExtensionGen)
   implicit val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
   implicit val arbUnsignedInput = Arbitrary(unsignedInputGen)
+  implicit val arbInput = Arbitrary(inputGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -147,6 +148,11 @@ trait ValueGenerators extends TypeGenerators {
   val unsignedInputGen: Gen[UnsignedInput] = for {
     boxId <- boxIdGen
   } yield new UnsignedInput(boxId)
+
+  val inputGen: Gen[Input] = for {
+    boxId <- boxIdGen
+    proof <- serializedProverResultGen
+  } yield Input(boxId, proof)
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
