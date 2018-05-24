@@ -1,5 +1,7 @@
 package org.ergoplatform
 
+import java.util
+
 import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.SerializedProverResult
@@ -11,6 +13,11 @@ import scala.util.Try
 
 class UnsignedInput(val boxId: BoxId) {
   require(boxId.size == BoxId.size, s"incorrect boxId size, expected: $BoxId.size, got: ${boxId.size}")
+
+  override def equals(obj: Any): Boolean = obj match {
+    case x: UnsignedInput => util.Arrays.equals(boxId, x.boxId)
+    case _ => false
+  }
 }
 
 object UnsignedInput {

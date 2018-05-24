@@ -1,13 +1,13 @@
 package sigmastate.serialization.generators
 
 import org.ergoplatform
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTransaction}
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTransaction, UnsignedInput}
 import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
-import scorex.crypto.authds.ADDigest
+import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
@@ -43,6 +43,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbTransactionEmptyInputs  = Arbitrary(ergoTransactionEmptyInputsGen)
   implicit val arbContextExtension = Arbitrary(contextExtensionGen)
   implicit val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
+  implicit val arbUnsignedInput = Arbitrary(unsignedInputGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -138,6 +139,14 @@ trait ValueGenerators extends TypeGenerators {
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
     contextExt <- contextExtensionGen
   } yield SerializedProverResult(bytes.toArray, contextExt)
+
+  val boxIdGen: Gen[BoxId] = for {
+    bytes <- Gen.listOfN(BoxId.size, arbByte.arbitrary)
+  } yield ADKey @@ bytes.toArray
+
+  val unsignedInputGen: Gen[UnsignedInput] = for {
+    boxId <- boxIdGen
+  } yield new UnsignedInput(boxId)
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
