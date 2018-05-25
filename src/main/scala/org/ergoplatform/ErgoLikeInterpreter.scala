@@ -7,10 +7,10 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 
-class ErgoInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends Interpreter {
-  override type CTX = ErgoContext
+class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends Interpreter {
+  override type CTX = ErgoLikeContext
 
-  override def evaluateNode(context: ErgoContext, tree: SValue): SValue = tree match {
+  override def evaluateNode(context: ErgoLikeContext, tree: SValue): SValue = tree match {
     case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxConstant.apply))
 
     case Outputs => ConcreteCollection(context.spendingTransaction.outputs.map(BoxConstant.apply))

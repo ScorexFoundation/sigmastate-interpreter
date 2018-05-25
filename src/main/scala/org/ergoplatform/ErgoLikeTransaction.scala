@@ -15,7 +15,7 @@ trait ErgoBoxReader {
 }
 
 
-sealed trait ErgoTransactionTemplate[IT <: UnsignedInput] {
+sealed trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
   val inputs: IndexedSeq[IT]
   val outputCandidates: IndexedSeq[ErgoBoxCandidate]
 
@@ -33,15 +33,20 @@ sealed trait ErgoTransactionTemplate[IT <: UnsignedInput] {
 }
 
 
-case class UnsignedErgoTransaction(override val inputs: IndexedSeq[UnsignedInput],
-                                   override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
-  extends ErgoTransactionTemplate[UnsignedInput] {
+class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput],
+                                  override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
+  extends ErgoLikeTransactionTemplate[UnsignedInput] {
 
   def toSigned(proofs: IndexedSeq[ProverResult]): ErgoLikeTransaction = {
     require(proofs.size == inputs.size)
     val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof.toSerialized) }
     new ErgoLikeTransaction(ins, outputCandidates)
   }
+}
+
+object UnsignedErgoLikeTransaction {
+  def apply(inputs: IndexedSeq[UnsignedInput], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
+    new UnsignedErgoLikeTransaction(inputs, outputCandidates)
 }
 
 /**
@@ -52,7 +57,7 @@ case class UnsignedErgoTransaction(override val inputs: IndexedSeq[UnsignedInput
   */
 class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
                           override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
-  extends ErgoTransactionTemplate[Input] {
+  extends ErgoLikeTransactionTemplate[Input] {
 
   require(outputCandidates.length <= Short.MaxValue, s"${Short.MaxValue} is the maximum number of outputs")
 
@@ -91,7 +96,7 @@ object ErgoLikeTransaction {
         outputBytes
     }
 
-    def bytesToSign(tx: UnsignedErgoTransaction): Array[Byte] =
+    def bytesToSign(tx: UnsignedErgoLikeTransaction): Array[Byte] =
       bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
     def bytesToSign(tx: ErgoLikeTransaction): Array[Byte] =

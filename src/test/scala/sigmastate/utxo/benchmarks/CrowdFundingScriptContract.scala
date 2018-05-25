@@ -1,19 +1,19 @@
 package sigmastate.utxo.benchmarks
 
-import org.ergoplatform.ErgoContext
+import org.ergoplatform.ErgoLikeContext
 import sigmastate.SBoolean
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
-import sigmastate.helpers.ErgoProvingInterpreter
+import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.Interpreter
 
 import scala.util.Try
 
 class CrowdFundingScriptContract(
-    timeout: Long,
-    minToRaise: Long,
-    override val backerProver: ErgoProvingInterpreter,
-    override val projectProver: ErgoProvingInterpreter
+                                  timeout: Long,
+                                  minToRaise: Long,
+                                  override val backerProver: ErgoLikeProvingInterpreter,
+                                  override val projectProver: ErgoLikeProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
   val compiledProposition: Value[SBoolean.type] = {
@@ -39,13 +39,13 @@ class CrowdFundingScriptContract(
     compiledScript
   }
 
-  def prove(ctx: ErgoContext, fakeMessage: Array[Byte]): this.projectProver.ProofT = {
+  def prove(ctx: ErgoLikeContext, fakeMessage: Array[Byte]): this.projectProver.ProofT = {
     val proofP = projectProver.prove(compiledProposition, ctx, fakeMessage).get.proof
     proofP
   }
 
   def verify(proof: projectProver.ProofT,
-             ctx: ErgoContext,
+             ctx: ErgoLikeContext,
              fakeMessage: Array[Byte]): Try[Interpreter.VerificationResult] = {
     val res = verifier.verify(compiledProposition, ctx, proof, fakeMessage)
     res

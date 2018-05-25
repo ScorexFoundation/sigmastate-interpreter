@@ -1,10 +1,10 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoContext, ErgoInterpreter, Height}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant, IntConstant, TaggedByteArray}
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
@@ -19,11 +19,11 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     * this implementation is simpler. In particular, only one transaction(one output) is required per party.
     */
   property("atomic cross-chain trading") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val x = proverA.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val hx = ByteArrayConstant(Blake2b256(x))
@@ -72,7 +72,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     //Preliminary checks:
 
     //B can't spend coins of A in chain1 (generate a valid proof)
-    val ctxf1 = ErgoContext(
+    val ctxf1 = ErgoLikeContext(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -84,7 +84,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     proverA.prove(prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
-    val ctxf2 = ErgoContext(
+    val ctxf2 = ErgoLikeContext(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(), spendingTransaction = null, self = fakeSelf)
@@ -93,7 +93,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     //Successful run below:
 
     //A spends coins of B in chain2
-    val ctx1 = ErgoContext(
+    val ctx1 = ErgoLikeContext(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -107,7 +107,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[CollectionConstant[SByte.type]])
 
     //B spends coins of A in chain1 with knowledge of x
-    val ctx2 = ErgoContext(
+    val ctx2 = ErgoLikeContext(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),

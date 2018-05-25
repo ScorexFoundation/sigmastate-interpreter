@@ -7,7 +7,7 @@ import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 
 
 /**
@@ -43,11 +43,11 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val id = 11: Byte
 
-    val prover = new ErgoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
+    val prover = new ErgoLikeProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
     val spamScript = EQ(CalcBlake2b256(TaggedByteArray(id)), CalcBlake2b256(TaggedByteArray(id)))
 
-    val ctx = ErgoContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
 
     val prt = prover.prove(spamScript, ctx, fakeMessage)
     prt.isSuccess shouldBe true
@@ -56,7 +56,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
     val (res, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, fakeMessage))
 
     res.isFailure shouldBe true
@@ -68,7 +68,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val id = 21: Byte
 
-    val prover = new ErgoProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
+    val prover = new ErgoLikeProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
     val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256(TaggedByteArray(id))) { case (script, _) =>
       CalcBlake2b256(script)
@@ -76,7 +76,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayConstant(Array.fill(32)(0: Byte))))
 
-    val ctx = ErgoContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
 
     val prt = prover.prove(spamScript, ctx, fakeMessage)
     prt.isSuccess shouldBe true
@@ -85,21 +85,21 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
     val (_, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, fakeMessage))
     terminated shouldBe true
   }
 
   property("ring signature - maximum ok ring size") {
-    val prover = new ErgoProvingInterpreter(maxCost = CostTable.ScriptLimit * 2)
-    val verifier = new ErgoInterpreter
+    val prover = new ErgoLikeProvingInterpreter(maxCost = CostTable.ScriptLimit * 2)
+    val verifier = new ErgoLikeInterpreter
     val secret = prover.dlogSecrets.head
 
     val simulated = (1 to 98).map { _ =>
-      new ErgoProvingInterpreter().dlogSecrets.head.publicImage
+      new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage
     }
 
-    val ctx = ErgoContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
 
     val publicImages = secret.publicImage +: simulated
     val prop = OR(publicImages)
@@ -115,7 +115,7 @@ class SpamSpecification extends SigmaTestingCommons {
   property("transaction with many outputs") {
     forAll(Gen.choose(10, 200), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
       whenever(orCnt > 10 && outCnt > 200) {
-        val prover = new ErgoProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
+        val prover = new ErgoLikeProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
 
         val propToCompare = OR((1 to orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))))
 
@@ -133,14 +133,14 @@ class SpamSpecification extends SigmaTestingCommons {
         val txOutputs = ((1 to outCnt) map (_ => ErgoBox(11, spamProp))) :+ ErgoBox(11, propToCompare)
         val tx = ErgoLikeTransaction(IndexedSeq(), txOutputs)
 
-        val ctx = ErgoContext.dummy(createBox(0, propToCompare)).copy(spendingTransaction = tx)
+        val ctx = ErgoLikeContext.dummy(createBox(0, propToCompare)).withTransaction(tx)
 
         val pt0 = System.currentTimeMillis()
         val proof = prover.prove(spamScript, ctx, fakeMessage).get
         val pt = System.currentTimeMillis()
         println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
-        val verifier = new ErgoInterpreter
+        val verifier = new ErgoLikeInterpreter
         val (_, terminated) = termination(() => verifier.verify(spamScript, ctx, proof, fakeMessage))
         terminated shouldBe true
       }
@@ -148,7 +148,7 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   property("transaction with many inputs and outputs") {
-    val prover = new ErgoProvingInterpreter(maxCost = Long.MaxValue)
+    val prover = new ErgoLikeProvingInterpreter(maxCost = Long.MaxValue)
 
     val prop = Exists(Inputs, 21, Exists(Outputs, 22,
       EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
@@ -161,7 +161,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val tx = ergoplatform.ErgoLikeTransaction(IndexedSeq(), outputs)
 
-    val ctx = new ErgoContext(currentHeight = 0,
+    val ctx = new ErgoLikeContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = inputs,
       spendingTransaction = tx,
@@ -172,7 +172,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val pt = System.currentTimeMillis()
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
     val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, fakeMessage))
     terminated shouldBe true
     res.isFailure shouldBe true

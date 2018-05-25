@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox}
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -19,13 +19,13 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
   property("Evaluation - Crowdfunding Example") {
 
     //a blockchain node verifying a block containing a spending transaction
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     //backer's prover with his private key
-    val backerProver = new ErgoProvingInterpreter
+    val backerProver = new ErgoLikeProvingInterpreter
 
     //project's prover with his private key
-    val projectProver = new ErgoProvingInterpreter
+    val projectProver = new ErgoLikeProvingInterpreter
 
     val backerPubKey = backerProver.dlogSecrets.head.publicImage
     val projectPubKey = projectProver.dlogSecrets.head.publicImage
@@ -80,7 +80,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid, but we're not checking it in this test
     val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
 
-    val ctx1 = ErgoContext(
+    val ctx1 = ErgoLikeContext(
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -101,7 +101,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val tx2Output2 = ErgoBox(1, projectPubKey)
     val tx2 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx2Output1, tx2Output2))
 
-    val ctx2 = ErgoContext(
+    val ctx2 = ErgoLikeContext(
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -123,7 +123,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val tx3Output2 = ErgoBox(1, projectPubKey)
     val tx3 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx3Output1, tx3Output2))
 
-    val ctx3 = ErgoContext(
+    val ctx3 = ErgoLikeContext(
       currentHeight = timeout.value,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),

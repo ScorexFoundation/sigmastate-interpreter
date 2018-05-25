@@ -3,7 +3,7 @@ package sigmastate.utxo
 import org.ergoplatform
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
@@ -11,8 +11,8 @@ import org.ergoplatform._
 class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
-                      outputs: IndexedSeq[ErgoBox]): ErgoContext =
-    ergoplatform.ErgoContext(
+                      outputs: IndexedSeq[ErgoBox]): ErgoLikeContext =
+    ergoplatform.ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = boxesToSpend,
@@ -38,8 +38,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   private def buildEnv(code: String, expectedComp: Value[SType], outputBoxValues: IndexedSeq[Long], boxesToSpendValues: IndexedSeq[Long]) = {
-    val prover = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
     val prop = compile(Map(), code).asBoolValue
     prop shouldBe expectedComp
@@ -49,8 +49,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("exists") {
-    val prover = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -65,7 +65,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -78,8 +78,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("forall") {
-    val prover = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = compile(Map(), "OUTPUTS.forall(fun (box: Box) = box.value == 10)").asBoolValue
@@ -93,7 +93,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -107,7 +107,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
 
   property("forall - fail") {
-    val prover = new ErgoProvingInterpreter
+    val prover = new ErgoLikeProvingInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -121,7 +121,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -132,8 +132,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("counter") {
-    val prover = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -154,7 +154,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -166,8 +166,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("counter - no register in outputs") {
-    val prover = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -189,7 +189,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -201,8 +201,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("sizeof - num of outputs = num of inputs + 1") {
-    val prover = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -219,7 +219,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val s = ErgoBox(21, pubkey)
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(s),

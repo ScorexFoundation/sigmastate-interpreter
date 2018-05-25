@@ -3,22 +3,22 @@ package sigmastate.utxo.benchmarks
 import java.math.BigInteger
 import java.util
 
-import org.ergoplatform.ErgoContext
+import org.ergoplatform.ErgoLikeContext
 import scapi.sigma.Challenge
 import scapi.sigma.DLogProtocol.{DLogInteractiveProver, DLogProverInput, FirstDLogProverMessage, ProveDlog}
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
-import sigmastate.helpers.ErgoProvingInterpreter
+import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.utils.Helpers
 
 import scala.util.Try
 
 class CrowdFundingKernelContract(
-    timeout: Long,
-    minToRaise: Long,
-    override val backerProver: ErgoProvingInterpreter,
-    override val projectProver: ErgoProvingInterpreter
+                                  timeout: Long,
+                                  minToRaise: Long,
+                                  override val backerProver: ErgoLikeProvingInterpreter,
+                                  override val projectProver: ErgoLikeProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
   def isValid(pubKey: ProveDlog, message: Array[Byte]): projectProver.ProofT = {
@@ -51,7 +51,7 @@ class CrowdFundingKernelContract(
     UncheckedSchnorr(su.proposition, None, rootChallenge, z)
   }
 
-  def prove(ctx: ErgoContext, message: Array[Byte]): projectProver.ProofT = {
+  def prove(ctx: ErgoLikeContext, message: Array[Byte]): projectProver.ProofT = {
     val c1 = ctx.currentHeight >= timeout //&& isValid(backerPubKey, fakeMessage)
     val c2 = Array(
       ctx.currentHeight < timeout,
@@ -65,7 +65,7 @@ class CrowdFundingKernelContract(
   }
 
   def verify(proof: projectProver.ProofT,
-             ctx: ErgoContext,
+             ctx: ErgoLikeContext,
              message: Array[Byte]): Try[Interpreter.VerificationResult] = Try {
     var sn = proof.asInstanceOf[UncheckedSchnorr]
     val dlog = CryptoConstants.dlogGroup

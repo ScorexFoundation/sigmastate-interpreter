@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import sigmastate.Values.{IntConstant, TaggedBox}
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
 import sigmastate.utxo._
@@ -30,10 +30,10 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val demurrageCost = 2
 
     //a blockchain node veryfing a block containing a spending transaction
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     //backer's prover with his private key
-    val userProver = new ErgoProvingInterpreter
+    val userProver = new ErgoLikeProvingInterpreter
 
     val regScript = userProver.dlogSecrets.head.publicImage
 
@@ -76,7 +76,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       IndexedSeq(),
       IndexedSeq(ErgoBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
-    val ctx1 = ErgoContext(
+    val ctx1 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -91,7 +91,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx1, NoProof, fakeMessage).get._1 shouldBe false
 
     //case 2: demurrage time has come
-    val ctx2 = ErgoContext(
+    val ctx2 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -105,7 +105,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //miner can spend "demurrageCost" tokens
     val tx3 = ErgoLikeTransaction(IndexedSeq(),
       IndexedSeq(ErgoBox(outValue - demurrageCost, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
-    val ctx3 = ErgoContext(
+    val ctx3 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -120,7 +120,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //miner can't spend more
     val tx4 = ErgoLikeTransaction(IndexedSeq(),
       IndexedSeq(ErgoBox(outValue - demurrageCost - 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
-    val ctx4 = ErgoContext(
+    val ctx4 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -133,7 +133,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val tx5 = ErgoLikeTransaction(IndexedSeq(),
       IndexedSeq(ErgoBox(outValue - demurrageCost + 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
-    val ctx5 = ErgoContext(
+    val ctx5 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),

@@ -6,7 +6,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform.ErgoBox.{R3, R4}
 import org.ergoplatform._
 import sigmastate.lang.Terms._
@@ -14,8 +14,8 @@ import sigmastate.lang.Terms._
 class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
   property("avl tree - simplest case") {
-    val prover = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -47,7 +47,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData)))
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -84,8 +84,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     // TODO propCompiled shouldBe prop
 
-    val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
-    val ctx = ErgoContext(
+    val recipientProposition = new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -94,16 +94,16 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
     val bigLeafProof = avlProver.generateProof()
-    val prover = new ErgoProvingInterpreter()
+    val prover = new ErgoLikeProvingInterpreter()
       .withContextExtender(proofId, ByteArrayConstant(bigLeafProof))
       .withContextExtender(elementId, IntConstant(elements.head))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
 
     avlProver.performOneOperation(Lookup(treeElements.last._1))
     val smallLeafTreeProof = avlProver.generateProof()
-    val smallProver = new ErgoProvingInterpreter()
+    val smallProver = new ErgoLikeProvingInterpreter()
       .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
       .withContextExtender(elementId, IntConstant(elements.head))
     smallProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
@@ -127,8 +127,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val proofId = 31: Byte
 
-    val prover = new ErgoProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
-    val verifier = new ErgoInterpreter
+    val prover = new ErgoLikeProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
+    val verifier = new ErgoLikeInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("proofId" -> proofId.toLong)
@@ -150,7 +150,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key)))
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),

@@ -3,7 +3,7 @@ package org.ergoplatform
 import scala.util.{Failure, Success}
 
 object ErgoTransactionValidator {
-  val verifier = new ErgoInterpreter()
+  val verifier = new ErgoLikeInterpreter()
 
   //todo: check that outputs are well-formed?
   def validate(tx: ErgoLikeTransaction,
@@ -27,7 +27,7 @@ object ErgoTransactionValidator {
       val proverExtension = tx.inputs(idx).spendingProof.extension
 
       val context =
-        ErgoContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, boxes, tx, box, proverExtension)
+        ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, boxes, tx, box, proverExtension)
 
       val scriptCost: Long = verifier.verify(box.proposition, context, proof, msg) match {
         case Success((res, cost)) =>

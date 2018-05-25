@@ -4,7 +4,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, FalseLeaf, IntConstant, TaggedInt, TrueLeaf, Value}
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import org.ergoplatform.ErgoBox.{R3, R4, R5, R6}
@@ -37,10 +37,10 @@ class Rule110Specification extends SigmaTestingCommons {
     }
 
   property("rule110 - one layer in register") {
-    val prover = new ErgoProvingInterpreter {
+    val prover = new ErgoLikeProvingInterpreter {
       override val maxCost: Long = 2000000
     }
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val indexId = 21.toByte
     val f = ByteConstant(0)
@@ -91,9 +91,9 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 0, 1, 0))))
     val output = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 1, 1, 0))))
-    val tx = UnsignedErgoTransaction(IndexedSeq(new UnsignedInput(input.id)), IndexedSeq(output))
+    val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.id)), IndexedSeq(output))
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -105,7 +105,7 @@ class Rule110Specification extends SigmaTestingCommons {
   }
 
   property("rule110") {
-    val prover = new ErgoProvingInterpreter()
+    val prover = new ErgoLikeProvingInterpreter()
 
     val bitsInString = 31
     val lastBitIndex = bitsInString - 1
@@ -228,12 +228,12 @@ class Rule110Specification extends SigmaTestingCommons {
 
         val c = new ErgoBoxCandidate(0L, prop, Map(R4 -> IntConstant(row), R5 -> IntConstant(col), value))
 
-        val ut = UnsignedErgoTransaction(
+        val ut = UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(left.id), new UnsignedInput(center.id), new UnsignedInput(right.id)),
           IndexedSeq(c, left.toCandidate, center.toCandidate, right.toCandidate)
         )
 
-        val contextLeft = ErgoContext(row,
+        val contextLeft = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
           IndexedSeq(left, center, right),
           ut,
@@ -241,7 +241,7 @@ class Rule110Specification extends SigmaTestingCommons {
           ContextExtension.empty)
         val proverResultLeft = prover.prove(left.proposition, contextLeft, ut.messageToSign).get
 
-        val contextCenter = ErgoContext(row,
+        val contextCenter = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
           IndexedSeq(left, center, right),
           ut,
@@ -249,7 +249,7 @@ class Rule110Specification extends SigmaTestingCommons {
           ContextExtension.empty)
         val proverResultCenter = prover.prove(center.proposition, contextCenter, ut.messageToSign).get
 
-        val contextRight = ErgoContext(row,
+        val contextRight = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
           IndexedSeq(left, center, right),
           ut,

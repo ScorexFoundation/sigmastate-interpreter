@@ -9,7 +9,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform._
@@ -60,11 +60,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("oracle example") {
-    val oracle = new ErgoProvingInterpreter
-    val aliceTemplate = new ErgoProvingInterpreter
-    val bob = new ErgoProvingInterpreter
+    val oracle = new ErgoLikeProvingInterpreter
+    val aliceTemplate = new ErgoLikeProvingInterpreter
+    val bob = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
@@ -147,7 +147,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = ErgoBox(10, propBob, Map(), boxId = 4)
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
       boxesToSpend = IndexedSeq(sAlice, sBob),
@@ -183,11 +183,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("lightweight oracle example") {
-    val oracle = new ErgoProvingInterpreter
-    val alice = new ErgoProvingInterpreter
-    val bob = new ErgoProvingInterpreter
+    val oracle = new ErgoLikeProvingInterpreter
+    val alice = new ErgoLikeProvingInterpreter
+    val bob = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
@@ -219,7 +219,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),

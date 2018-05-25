@@ -5,7 +5,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
@@ -50,8 +50,8 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val scriptIsCorrect = DeserializeContext[SBoolean.type](scriptId)
     val prop = AND(merklePathToScript, scriptIsCorrect)
 
-    val recipientProposition = new ErgoProvingInterpreter().dlogSecrets.head.publicImage
-    val ctx = ErgoContext(
+    val recipientProposition = new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -61,12 +61,12 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))
     val knownSecretPathProof = avlProver.generateProof()
     val usedBranch = scriptBranchesBytes.head
-    val prover = new ErgoProvingInterpreter()
+    val prover = new ErgoLikeProvingInterpreter()
       .withContextExtender(secretId, knownSecret)
       .withContextExtender(scriptId, ByteArrayConstant(usedBranch))
       .withContextExtender(proofId, ByteArrayConstant(knownSecretPathProof))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
   }
 }

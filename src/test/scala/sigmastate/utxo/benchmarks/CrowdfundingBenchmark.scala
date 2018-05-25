@@ -1,22 +1,22 @@
 package sigmastate.utxo.benchmarks
 
 
-import org.ergoplatform.{ErgoBox, ErgoContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.Values._
 
 
 class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons {
 
-  def createTestContext(contract: CrowdFundingContract): ErgoContext = {
+  def createTestContext(contract: CrowdFundingContract): ErgoLikeContext = {
     val outputToSpend = ErgoBox(10, TrueLeaf)
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
     val tx1Output1 = ErgoBox(contract.minToRaise, contract.projectPubKey)
     val tx1Output2 = ErgoBox(1, contract.projectPubKey)
     //normally this transaction would invalid, but we're not checking it in this test
     val tx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = contract.timeout - 1, // HEIGHT < timeout,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -33,9 +33,9 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
   ignore("Evaluation by Precompiled Kernel") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
-      val backerProver = new ErgoProvingInterpreter
+      val backerProver = new ErgoLikeProvingInterpreter
       //project's prover with his private key
-      val projectProver = new ErgoProvingInterpreter
+      val projectProver = new ErgoLikeProvingInterpreter
       val contract = new CrowdFundingKernelContract(timeout, minToRaise, backerProver, projectProver)
       val ctx = createTestContext(contract)
 
@@ -56,9 +56,9 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
   ignore("Evaluation by Script Interpretation") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
-      val backerProver = new ErgoProvingInterpreter
+      val backerProver = new ErgoLikeProvingInterpreter
       //project's prover with his private key
-      val projectProver = new ErgoProvingInterpreter
+      val projectProver = new ErgoLikeProvingInterpreter
       val contract = new CrowdFundingScriptContract(timeout, minToRaise, backerProver, projectProver)
       val ctx = createTestContext(contract)
 
