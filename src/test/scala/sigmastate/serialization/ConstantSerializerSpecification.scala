@@ -15,12 +15,12 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     val b = new ByteArrayBuilder()
     b.appendValue(c)
     val bytes = b.toBytes
-    val buf = Serializer.start(bytes, 0)
-    val res = buf.getValue
+    val r = Serializer.startReader(bytes, 0)
+    val res = r.getValue
     res shouldBe c
     val randomPrefix = arrayGen[Byte].sample.get
-    val buf2 = Serializer.start(randomPrefix ++ bytes, randomPrefix.length)
-    val res2 = buf2.getValue
+    val r2 = Serializer.startReader(randomPrefix ++ bytes, randomPrefix.length)
+    val res2 = r2.getValue
     res2 shouldBe c
   }
 

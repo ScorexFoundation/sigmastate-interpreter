@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import sigmastate.SType
 import sigmastate.Values.Value
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{ValueSerializer, STypeSerializer}
 import sigmastate.lang.Terms._
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
@@ -65,6 +65,10 @@ object Extensions {
       val bytes = ValueSerializer.serialize(v)
       b.append(bytes)
     }
+    def appendType[T <: SType](v: T): ByteArrayBuilder = {
+      STypeSerializer.serialize(v, b)
+      b
+    }
   }
 
   implicit class ByteBufferOps(buf: ByteBuffer) {
@@ -90,6 +94,11 @@ object Extensions {
       buf.position(buf.position() + consumed)
       obj.asValue[T]
     }
+    def getType: SType = {
+      val t = STypeSerializer.deserialize(buf)
+      t
+    }
   }
 
 }
+

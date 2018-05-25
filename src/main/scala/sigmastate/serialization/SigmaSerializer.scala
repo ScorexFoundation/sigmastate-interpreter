@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 
 import scala.util.Try
 import Serializer.{Position, Consumed}
+import sigmastate.utils._
 
 trait Serializer[TFamily, T <: TFamily] {
   def toBytes(obj: T): Array[Byte]
@@ -20,14 +21,28 @@ object Serializer {
   type Position = Int
   type Consumed = Int
 
-  /** Helper function to be use in serializers.
-    * val buf = Serializer.start(bytes, pos)
-    * ...
-    * obj -> buf.consumed() */
-  def start(bytes: Array[Byte], pos: Int) = {
+    /** Helper function to be use in serializers.
+    * Starting position is marked and then used to compute number of consumed bytes.
+    * val r = Serializer.startReader(bytes, pos)
+    * val obj = r.getValue()
+    * obj -> r.consumed */
+  def startReader(bytes: Array[Byte], pos: Int): ByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
-    buf
+    val r = new ByteBufferReader(buf)
+        .mark()
+    r
+  }
+
+  /** Helper function to be use in serializers.
+    * val w = Serializer.startWriter()
+    * w.putLong(l)
+    * val res = w.toBytes
+    * res */
+  def startWriter(): ByteWriter = {
+    val b = new ByteArrayBuilder()
+    val w = new ByteArrayWriter(b)
+    w
   }
 }
 

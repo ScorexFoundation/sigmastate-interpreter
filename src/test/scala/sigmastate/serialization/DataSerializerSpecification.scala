@@ -11,15 +11,15 @@ import sigmastate.utils.ByteArrayBuilder
 class DataSerializerSpecification extends SerializationSpecification {
 
   def roundtrip[T <: SType](obj: T#WrappedType, tpe: T) = {
-    val b = new ByteArrayBuilder()
-    DataSerializer.serialize(obj, tpe, b)
-    val bytes = b.toBytes
-    val buf = Serializer.start(bytes, 0)
-    val res = DataSerializer.deserialize(tpe, buf)
+    val w = Serializer.startWriter()
+    DataSerializer.serialize(obj, tpe, w)
+    val bytes = w.toBytes
+    val r = Serializer.startReader(bytes, 0)
+    val res = DataSerializer.deserialize(tpe, r)
     res shouldBe obj
     val randomPrefix = arrayGen[Byte].sample.get
-    val buf2 = Serializer.start(randomPrefix ++ bytes, randomPrefix.length)
-    val res2 = DataSerializer.deserialize(tpe, buf2)
+    val r2 = Serializer.startReader(randomPrefix ++ bytes, randomPrefix.length)
+    val res2 = DataSerializer.deserialize(tpe, r2)
     res2 shouldBe obj
   }
 
