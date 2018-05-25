@@ -27,15 +27,15 @@ class ProverResult(val proof: UncheckedTree, val extension: ContextExtension) {
     new SerializedProverResult(SigSerializer.toBytes(proof), extension)
 }
 
-class SerializedProverResult(val prooBytes: Array[Byte], val extension: ContextExtension)
+case class SerializedProverResult(proofBytes: IndexedSeq[Byte], extension: ContextExtension)
 
 object SerializedProverResult {
   object serializer extends Serializer[SerializedProverResult, SerializedProverResult] {
     override def toBytes(pr: SerializedProverResult): Array[Byte] = {
       val ceBytes = ContextExtension.serializer.toBytes(pr.extension)
-      val sigBytesCount = pr.prooBytes.length.toShort
+      val sigBytesCount = pr.proofBytes.length.toShort
 
-      Shorts.toByteArray(sigBytesCount) ++ pr.prooBytes ++ ceBytes
+      Shorts.toByteArray(sigBytesCount) ++ pr.proofBytes ++ ceBytes
     }
 
     override def parseBytes(bytes: Array[Byte]): Try[SerializedProverResult] = Try {
@@ -46,7 +46,7 @@ object SerializedProverResult {
       val sigBytesCount = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
       val proofBytes = bytes.slice(pos + 2, pos + 2 + sigBytesCount)
       val (ce, ceConsumed) = ContextExtension.serializer.parseBody(bytes, pos + 2 + sigBytesCount)
-      new SerializedProverResult(proofBytes, ce) -> (2 + sigBytesCount + ceConsumed)
+      SerializedProverResult(proofBytes, ce) -> (2 + sigBytesCount + ceConsumed)
     }
   }
 }

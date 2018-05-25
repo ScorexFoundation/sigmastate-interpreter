@@ -343,7 +343,7 @@ trait Interpreter {
              proverResult: SerializedProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
-    verify(exp, ctxv, proverResult.prooBytes, message)
+    verify(exp, ctxv, proverResult.proofBytes.toArray, message)
   }
 
 

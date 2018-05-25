@@ -1,6 +1,7 @@
 package org.ergoplatform
 
 import com.google.common.primitives.Shorts
+import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.interpreter.{ProverResult, SerializedProverResult}
@@ -8,6 +9,7 @@ import sigmastate.serialization.Serializer
 import sigmastate.serialization.Serializer.{Consumed, Position}
 
 import scala.util.Try
+import org.ergoplatform.ErgoBox.BoxId
 
 
 trait ErgoBoxReader {
@@ -62,9 +64,9 @@ object ErgoTransaction {
     def bytesToSign(inputs: IndexedSeq[ADKey],
                     outputCandidates: IndexedSeq[ErgoBoxCandidate]): Array[Byte] = {
       val inputsCount = inputs.size.toShort
-      val inputBytes = new Array[Byte](inputsCount * 32)
+      val inputBytes = new Array[Byte](inputsCount * ErgoBox.BoxId.size)
       (0 until inputsCount).foreach { i =>
-        System.arraycopy(inputs(i), 0, inputBytes, i * 32, 32)
+        System.arraycopy(inputs(i), 0, inputBytes, i * BoxId.size, BoxId.size)
       }
 
       val outputsCount = outputCandidates.size.toShort
@@ -93,13 +95,14 @@ object ErgoTransaction {
     }
 
     override def parseBody(bytes: Array[Byte], pos: Position): (ErgoTransaction, Consumed) = {
-      val inputsCount = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
+      val posBeforeInputs = pos + 2
+      val inputsCount = Shorts.fromByteArray(bytes.slice(pos, posBeforeInputs))
       val inputs = (0 until inputsCount).foldLeft(Seq[ADKey]()) { case (ins, i) =>
-        val boxId = ADKey @@ bytes.slice(pos + 2 + i * 32, pos + 2 + (i + 1) * 32)
+        val boxId = ADKey @@ bytes.slice(posBeforeInputs + i * BoxId.size, posBeforeInputs + (i + 1) * BoxId.size)
         ins :+ boxId
       }
 
-      val posBeforeOuts = pos + 2 + inputsCount * 32
+      val posBeforeOuts = posBeforeInputs + inputsCount * BoxId.size
 
       val outsCount = Shorts.fromByteArray(bytes.slice(posBeforeOuts, posBeforeOuts + 2))
       val (outputs, posBeforeProofs) = (0 until outsCount).foldLeft(Seq[ErgoBoxCandidate]() -> (posBeforeOuts + 2)) { case ((outs, p), _) =>
