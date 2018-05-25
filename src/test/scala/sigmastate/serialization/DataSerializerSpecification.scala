@@ -1,8 +1,6 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
-import java.nio.ByteBuffer
-
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import sigmastate.SCollection.SByteArray
@@ -15,9 +13,14 @@ class DataSerializerSpecification extends SerializationSpecification {
   def roundtrip[T <: SType](obj: T#WrappedType, tpe: T) = {
     val b = new ByteArrayBuilder()
     DataSerializer.serialize(obj, tpe, b)
-    val buf = ByteBuffer.wrap(b.toBytes)
+    val bytes = b.toBytes
+    val buf = Serializer.start(bytes, 0)
     val res = DataSerializer.deserialize(tpe, buf)
     res shouldBe obj
+    val randomPrefix = arrayGen[Byte].sample.get
+    val buf2 = Serializer.start(randomPrefix ++ bytes, randomPrefix.length)
+    val res2 = DataSerializer.deserialize(tpe, buf2)
+    res2 shouldBe obj
   }
 
   def testCollection[T <: SType](tpe: T) = {

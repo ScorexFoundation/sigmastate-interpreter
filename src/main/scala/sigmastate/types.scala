@@ -162,7 +162,7 @@ object SPrimType {
   final val LastPrimTypeCode: Byte = 9: Byte
 
   /** Upper limit of the interval of valid type codes for primitive types */
-  final val MaxPrimTypeCode: Byte = 19: Byte
+  final val MaxPrimTypeCode: Byte = 11: Byte
 }
 
 case object SByte extends SPrimType {
@@ -175,6 +175,8 @@ case object SByte extends SPrimType {
 case object SBoolean extends SPrimType {
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 2: Byte
+  override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant.fromBoolean(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.BooleanConstantDeclaration
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?

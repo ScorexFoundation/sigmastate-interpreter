@@ -165,7 +165,7 @@ trait ValueGenerators extends TypeGenerators {
 
   def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
 
-  implicit def arrayGen[T: Gen: ClassTag]: Gen[Array[T]] = for {
+  implicit def arrayGen[T: Arbitrary: ClassTag]: Gen[Array[T]] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbitrary[T])
   } yield bytes.toArray

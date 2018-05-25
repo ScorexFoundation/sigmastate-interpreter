@@ -29,6 +29,7 @@ object CostTable {
     val QuadrupleDeclaration = 4
 
     val ByteConstantDeclaration = 1
+    val BooleanConstantDeclaration = 1
     val IntConstantDeclaration = 1
     val BigIntConstantDeclaration = 1
     val GroupElementConstantDeclaration = 10
