@@ -2,7 +2,6 @@ package sigmastate.serialization
 
 import sigmastate.Values.{ByteArrayConstant, GroupElementConstant, IntConstant, BigIntConstant}
 import sigmastate._
-import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.Append
 
