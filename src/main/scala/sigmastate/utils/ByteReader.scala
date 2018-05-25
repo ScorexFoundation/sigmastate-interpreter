@@ -1,11 +1,10 @@
 package sigmastate.utils
 
 import java.nio.ByteBuffer
-
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.SValue
 import sigmastate.SType
-import Extensions._
-import sigmastate.serialization.STypeSerializer
+import sigmastate.utils.Extensions._
+import sigmastate.serialization.TypeSerializer
 
 trait ByteReader {
   def get(): Byte
@@ -30,7 +29,7 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   @inline override def getLong(): Long = buf.getLong()
   @inline override def getBytes(size: Int): Array[Byte] = buf.getBytes(size)
   @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
-  @inline override def getType(): SType = STypeSerializer.deserialize(this)
+  @inline override def getType(): SType = TypeSerializer.deserialize(this)
   @inline override def getValue(): SValue = buf.getValue
 
   private var _mark: Int = _

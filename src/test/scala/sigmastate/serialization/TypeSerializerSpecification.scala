@@ -23,8 +23,16 @@ class TypeSerializerSpecification extends SerializationSpecification {
     res2 shouldBe tpe
   }
 
+  property("Codes of primitive types have correct order") {
+    for (i <- TypeSerializer.primIdToType.indices)
+      i shouldBe TypeSerializer.primIdToType(i).typeCode
+  }
+
   property("Primitive type serialization roundtrip") {
-    forAll { t: SPrimType => roundtrip(t) }
+    forAll { t: SPrimType =>
+      roundtrip(t)
+      roundtrip(SCollection(t))
+    }
   }
 
 }

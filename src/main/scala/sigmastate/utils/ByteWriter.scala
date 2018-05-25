@@ -3,7 +3,7 @@ package sigmastate.utils
 import sigmastate.SType
 import sigmastate.Values.Value
 import Extensions._
-import sigmastate.serialization.STypeSerializer
+import sigmastate.serialization.TypeSerializer
 
 trait ByteWriter {
   def put(x: Byte): ByteWriter
@@ -26,7 +26,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline def putLong(x: Long): ByteWriter = { b.append(x); this }
   @inline def putBytes(xs: Array[Byte]): ByteWriter = { b.append(xs); this }
   @inline def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
-  @inline def putType[T <: SType](x: T): ByteWriter = { STypeSerializer.serialize(x, this); this }
+  @inline def putType[T <: SType](x: T): ByteWriter = { TypeSerializer.serialize(x, this); this }
   @inline def putValue[T <: SType](x: Value[T]): ByteWriter = { b.appendValue(x); this }
   @inline def toBytes: Array[Byte] = b.toBytes
 }

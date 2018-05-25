@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import sigmastate.SType
 import sigmastate.Values.Value
-import sigmastate.serialization.{ValueSerializer, STypeSerializer}
+import sigmastate.serialization.ValueSerializer
 import sigmastate.lang.Terms._
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds

@@ -1,39 +1,55 @@
 package sigmastate.serialization
 
-import java.nio.ByteBuffer
-
 import sigmastate._
-import sigmastate.utils.Extensions._
-import sigmastate.utils.{ByteWriter, ByteArrayBuilder, ByteReader}
+import sigmastate.utils.{ByteWriter, ByteReader}
 
 trait ByteBufferSerializer[T] {
-  def serialize(tpe: SType, buf: ByteWriter): Unit
-  def deserialize(buf: ByteReader): SType
+  def serialize(tpe: T, buf: ByteWriter): Unit
+  def deserialize(buf: ByteReader): T
 }
 
-object STypeSerializer extends ByteBufferSerializer[SType] {
+object TypeSerializer extends ByteBufferSerializer[SType] {
 
   override def serialize(tpe: SType, w: ByteWriter) = tpe match {
     case p: SPrimType =>
       w.put(p.typeCode)
     case c: SCollection[a] => c.elemType match {
       case p: SPrimType =>
-//        buf.append(SCollection.)
-
+        val code = (SCollection.CollectionTypeCode + p.typeCode).toByte
+        w.put(code)
     }
   }
 
+  val primIdToType = Array[SType](NoType, SByte, SBoolean, SInt, SBigInt, SGroupElement, SAvlTree, SBox)
+
+  def getPrimType(code: Int): SType =
+    if (code <= 0 || code >= primIdToType.length)
+      sys.error(s"Cannot deserialize primitive type with code $code")
+    else
+      primIdToType(code)
+
   override def deserialize(r: ByteReader): SType = {
     val c = r.get().toInt
-    val tpe: SType = if (c <= 0)
+    if (c <= 0)
       sys.error(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
-    else if (c <= SPrimType.MaxPrimTypeCode)
-      c.toByte match {
-        case SPrimType(t) => t
-        case _ => sys.error(s"Cannot deserialize primitive type with code $c")
+    val tpe: SType = if (c < STuple.TupleTypeCode) {
+      val constrId = c / SPrimType.PrimRange
+      val primId   = c % SPrimType.PrimRange
+      constrId match {
+        case 0 => // primitive
+          getPrimType(c)
+        case 1 => // Array[_]
+          val tElem = if (primId == 0) {
+            deserialize(r)
+          } else {
+            getPrimType(primId)
+          }
+          SCollection(tElem)
       }
-    else //if (c <= SCollection.MaxCollectionTypeCode)
-      sys.error(s"Invalid type prefix $c")
+    }
+    else {//if (c == STuple.TupleTypeCode) {
+      NoType
+    }
     tpe
   }
 }

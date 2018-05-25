@@ -163,6 +163,7 @@ object SPrimType {
 
   /** Upper limit of the interval of valid type codes for primitive types */
   final val MaxPrimTypeCode: Byte = 11: Byte
+  final val PrimRange: Byte = (MaxPrimTypeCode + 1).toByte
 }
 
 case object SByte extends SPrimType {
@@ -263,8 +264,10 @@ case class SCollection[T <: SType](elemType: T) extends SProduct {
 }
 
 object SCollection {
-  val CollectionTypeCode: TypeCode = (SPrimType.MaxPrimTypeCode + 1).toByte
-  val MaxCollectionTypeCode: TypeCode = (CollectionTypeCode + SPrimType.MaxPrimTypeCode).toByte
+  val CollectionTypeConstrId = 1
+  val CollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * CollectionTypeConstrId).toByte
+  val NestedCollectionTypeConstrId = 2
+  val NestedCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * NestedCollectionTypeConstrId).toByte
 
   private val tIV = STypeIdent("IV")
   private val tOV = STypeIdent("OV")
@@ -311,8 +314,11 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
 }
 
 object SOption {
-  val OptionTypeCode: TypeCode = (MaxCollectionTypeCode + 1.toByte).toByte
-  val MaxOptionTypeCode: TypeCode = (OptionTypeCode + SPrimType.MaxPrimTypeCode).toByte
+  val OptionTypeConstrId = 3
+  val OptionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionTypeConstrId).toByte
+  val OptionCollectionTypeConstrId = 4
+  val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
+
   private[sigmastate] def createFields(tArg: STypeIdent) =
     Seq(
       "isDefined" -> SBoolean,
@@ -325,24 +331,10 @@ object SOption {
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
 
-case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil) extends SType {
-  override type WrappedType = Seq[Any] => tRange.WrappedType
-  override val typeCode = SFunc.FuncTypeCode
-  override def toString = {
-    val args = if (tpeArgs.isEmpty) "" else tpeArgs.mkString("[", ",", "]")
-    s"$args(${tDom.mkString(",")}) => $tRange"
-  }
-}
-
-object SFunc {
-  final val FuncTypeCode: TypeCode = (SOption.MaxOptionTypeCode + 1.toByte).toByte
-  def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
-}
-
 case class STuple(items: IndexedSeq[SType]) extends SProduct {
   import STuple._
   override type WrappedType = Seq[Any]
-  override val typeCode = STuple.TypeCode
+  override val typeCode = STuple.TupleTypeCode
 
   def ancestors = Nil
 
@@ -359,10 +351,36 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
 }
 
 object STuple {
-  val TypeCode = 93: Byte
+val Pair1TypeConstrId = 5
+  val Pair1TypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * Pair1TypeConstrId).toByte
+  val Pair2TypeConstrId = 6
+  val Pair2TypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * Pair2TypeConstrId).toByte
+  val PairSymmetricTypeConstrId = 7
+  val PairSymmetricTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * PairSymmetricTypeConstrId).toByte
+
+  val ReservedConstrId = 8
+  val ReservedConstrTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * ReservedConstrId).toByte
+   
+  val TupleTypeCode = ((SPrimType.MaxPrimTypeCode + 1) * 9).toByte
+
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
   val componentNames = Range(1, 31).map(i => s"_$i")
 }
+
+case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil) extends SType {
+  override type WrappedType = Seq[Any] => tRange.WrappedType
+  override val typeCode = SFunc.FuncTypeCode
+  override def toString = {
+    val args = if (tpeArgs.isEmpty) "" else tpeArgs.mkString("[", ",", "]")
+    s"$args(${tDom.mkString(",")}) => $tRange"
+  }
+}
+
+object SFunc {
+  final val FuncTypeCode: TypeCode = (SOption.OptionTypeCode + SPrimType.MaxPrimTypeCode + 1.toByte).toByte
+  def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
+}
+
 
 case class STypeApply(name: String, args: IndexedSeq[SType] = IndexedSeq()) extends SType {
   override type WrappedType = Any
