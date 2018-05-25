@@ -1,7 +1,7 @@
 package sigmastate.utxo.benchmarks
 
 
-import org.ergoplatform.{ErgoBox, ErgoContext, ErgoTransaction}
+import org.ergoplatform.{ErgoBox, ErgoContext, ErgoLikeTransaction}
 import sigmastate._
 import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
 import sigmastate.Values._
@@ -15,7 +15,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
     val tx1Output1 = ErgoBox(contract.minToRaise, contract.projectPubKey)
     val tx1Output2 = ErgoBox(1, contract.projectPubKey)
     //normally this transaction would invalid, but we're not checking it in this test
-    val tx = ErgoTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+    val tx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
     val ctx = ErgoContext(
       currentHeight = contract.timeout - 1, // HEIGHT < timeout,
       lastBlockUtxoRoot = AvlTreeData.dummy,

@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTransaction}
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeTransaction}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
@@ -37,7 +37,7 @@ class SerializationRoundTripSpec extends PropSpec
   }
 
   property("ErgoTransaction: Serializer round trip") {
-    forAll { t: ErgoTransaction => roundTripTest(t)(ErgoTransaction.serializer) }
-    forAll { t: ErgoTransaction => roundTripTestWithPos(t)(ErgoTransaction.serializer) }
+    forAll { t: ErgoLikeTransaction => roundTripTest(t)(ErgoLikeTransaction.serializer) }
+    forAll { t: ErgoLikeTransaction => roundTripTestWithPos(t)(ErgoLikeTransaction.serializer) }
   }
 }

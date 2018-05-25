@@ -6,7 +6,7 @@ object ErgoTransactionValidator {
   val verifier = new ErgoInterpreter()
 
   //todo: check that outputs are well-formed?
-  def validate(tx: ErgoTransaction,
+  def validate(tx: ErgoLikeTransaction,
                blockchainState: BlockchainState,
                boxesReader: ErgoBoxReader): Either[Throwable, Long] = {
 

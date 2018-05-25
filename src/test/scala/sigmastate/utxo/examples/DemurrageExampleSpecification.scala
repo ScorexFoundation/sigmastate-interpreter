@@ -72,7 +72,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val curHeight = outHeight + demurragePeriod
 
     //case 1: demurrage time hasn't come yet
-    val tx1 = ErgoTransaction(
+    val tx1 = ErgoLikeTransaction(
       IndexedSeq(),
       IndexedSeq(ErgoBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
@@ -103,7 +103,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
 
     //miner can spend "demurrageCost" tokens
-    val tx3 = ErgoTransaction(IndexedSeq(),
+    val tx3 = ErgoLikeTransaction(IndexedSeq(),
       IndexedSeq(ErgoBox(outValue - demurrageCost, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
     val ctx3 = ErgoContext(
       currentHeight = outHeight + demurragePeriod,
@@ -118,7 +118,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx3, NoProof, fakeMessage).get._1 shouldBe true
 
     //miner can't spend more
-    val tx4 = ErgoTransaction(IndexedSeq(),
+    val tx4 = ErgoLikeTransaction(IndexedSeq(),
       IndexedSeq(ErgoBox(outValue - demurrageCost - 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
     val ctx4 = ErgoContext(
       currentHeight = outHeight + demurragePeriod,
@@ -130,7 +130,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx4, NoProof, fakeMessage).get._1 shouldBe false
 
     //miner can spend less
-    val tx5 = ErgoTransaction(IndexedSeq(),
+    val tx5 = ErgoLikeTransaction(IndexedSeq(),
       IndexedSeq(ErgoBox(outValue - demurrageCost + 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
 
     val ctx5 = ErgoContext(

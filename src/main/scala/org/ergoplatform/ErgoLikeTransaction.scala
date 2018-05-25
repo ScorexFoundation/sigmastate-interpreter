@@ -21,9 +21,11 @@ sealed trait ErgoTransactionTemplate[IT <: UnsignedInput] {
 
   require(outputCandidates.size <= Short.MaxValue)
 
-  lazy val outputs: IndexedSeq[ErgoBox] = outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
+  lazy val outputs: IndexedSeq[ErgoBox] =
+    outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
 
-  lazy val messageToSign: Array[Byte] = ErgoTransaction.serializer.bytesToSign(inputs.map(_.boxId), outputCandidates)
+  lazy val messageToSign: Array[Byte] =
+    ErgoLikeTransaction.flattenedTxSerializer.bytesToSign(inputs.map(_.boxId), outputCandidates)
 
   lazy val id: Digest32 = Blake2b256.hash(messageToSign)
 
@@ -35,10 +37,10 @@ case class UnsignedErgoTransaction(override val inputs: IndexedSeq[UnsignedInput
                                    override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoTransactionTemplate[UnsignedInput] {
 
-  def toSigned(proofs: IndexedSeq[ProverResult]): ErgoTransaction = {
+  def toSigned(proofs: IndexedSeq[ProverResult]): ErgoLikeTransaction = {
     require(proofs.size == inputs.size)
     val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof.toSerialized) }
-    ErgoTransaction(ins, outputCandidates)
+    new ErgoLikeTransaction(ins, outputCandidates)
   }
 }
 
@@ -48,17 +50,27 @@ case class UnsignedErgoTransaction(override val inputs: IndexedSeq[UnsignedInput
   * @param inputs
   * @param outputCandidates
   */
-case class ErgoTransaction(override val inputs: IndexedSeq[Input],
-                           override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
+class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
+                          override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoTransactionTemplate[Input] {
 
   require(outputCandidates.length <= Short.MaxValue, s"${Short.MaxValue} is the maximum number of outputs")
+
+  override def equals(obj: Any): Boolean = obj match {
+    case tx: ErgoLikeTransaction => this.id sameElements tx.id  //we're ignoring spending proofs here
+    case _ => false
+  }
 }
 
 
-object ErgoTransaction {
+object ErgoLikeTransaction {
+  def apply(inputs: IndexedSeq[Input], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
+    new ErgoLikeTransaction(inputs, outputCandidates)
 
-  object serializer extends Serializer[ErgoTransaction, ErgoTransaction] {
+  type FlattenedTransaction = (IndexedSeq[Input], IndexedSeq[ErgoBoxCandidate])
+
+  object flattenedTxSerializer extends Serializer[FlattenedTransaction, FlattenedTransaction] {
+
     def bytesToSign(inputs: IndexedSeq[ADKey],
                     outputCandidates: IndexedSeq[ErgoBoxCandidate]): Array[Byte] = {
       val inputsCount = inputs.size.toShort
@@ -82,17 +94,17 @@ object ErgoTransaction {
     def bytesToSign(tx: UnsignedErgoTransaction): Array[Byte] =
       bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
-    def bytesToSign(tx: ErgoTransaction): Array[Byte] =
+    def bytesToSign(tx: ErgoLikeTransaction): Array[Byte] =
       bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
 
-    override def toBytes(tx: ErgoTransaction): Array[Byte] = {
-      tx.inputs.map(_.spendingProof).foldLeft(bytesToSign(tx)) { case (bytes, proof) =>
+    override def toBytes(ftx: FlattenedTransaction): Array[Byte] = {
+      ftx._1.map(_.spendingProof).foldLeft(bytesToSign(ftx._1.map(_.boxId), ftx._2)) { case (bytes, proof) =>
         bytes ++ SerializedProverResult.serializer.toBytes(proof)
       }
     }
 
-    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoTransaction, Consumed) = {
+    override def parseBody(bytes: Array[Byte], pos: Position): (FlattenedTransaction, Consumed) = {
       val inputsCount = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
       val inputs = (0 until inputsCount).foldLeft(Seq[ADKey]()) { case (ins, i) =>
         val boxId = ADKey @@ bytes.slice(pos + 2 + i * 32, pos + 2 + (i + 1) * 32)
@@ -116,7 +128,17 @@ object ErgoTransaction {
         Input(inp, pr)
       }
 
-      ErgoTransaction(signedInputs.toIndexedSeq, outputs.toIndexedSeq) -> (finalPos - pos)
+      (signedInputs.toIndexedSeq, outputs.toIndexedSeq) -> (finalPos - pos)
+    }
+  }
+
+  object serializer extends Serializer[ErgoLikeTransaction, ErgoLikeTransaction] {
+    override def toBytes(tx: ErgoLikeTransaction): Array[Byte] =
+      flattenedTxSerializer.toBytes(tx.inputs, tx.outputCandidates)
+
+    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoLikeTransaction, Consumed) = {
+      val ((inputs, outputCandidates), consumed) = flattenedTxSerializer.parseBody(bytes, pos)
+      ErgoLikeTransaction(inputs, outputCandidates) -> consumed
     }
   }
 }

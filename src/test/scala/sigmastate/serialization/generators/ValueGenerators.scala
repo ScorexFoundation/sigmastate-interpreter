@@ -1,7 +1,7 @@
 package sigmastate.serialization.generators
 
 import org.ergoplatform
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTransaction}
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeTransaction}
 import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
@@ -112,9 +112,9 @@ trait ValueGenerators extends TypeGenerators {
     opt <- Gen.oneOf(Some(int), None)
   } yield opt
 
-  val ergoTransactionEmptyInputsGen: Gen[ErgoTransaction] = for {
+  val ergoTransactionEmptyInputsGen: Gen[ErgoLikeTransaction] = for {
     outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
-  } yield ErgoTransaction(IndexedSeq(), outputCandidates.toIndexedSeq)
+  } yield new ErgoLikeTransaction(IndexedSeq(), outputCandidates.toIndexedSeq)
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)

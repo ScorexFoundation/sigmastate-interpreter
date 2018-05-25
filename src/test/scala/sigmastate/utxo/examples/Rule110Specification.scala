@@ -200,7 +200,7 @@ class Rule110Specification extends SigmaTestingCommons {
     }
 
     val initBlock = BlockchainSimulationSpecification.Block {
-      IndexedSeq(ErgoTransaction(IndexedSeq(), coins))
+      IndexedSeq(ErgoLikeTransaction(IndexedSeq(), coins))
     }
 
     val genesisState = ValidationState.initialState(initBlock)
@@ -208,7 +208,7 @@ class Rule110Specification extends SigmaTestingCommons {
     def byPos(state: ValidationState, row: Int, pos: Int) =
       state.boxesReader.byTwoInts(R4, row, R5, pos).get
 
-    def generateTransactionsForRow(state: ValidationState, row: Int): IndexedSeq[ErgoTransaction] = {
+    def generateTransactionsForRow(state: ValidationState, row: Int): IndexedSeq[ErgoLikeTransaction] = {
       require(row >= 1)
 
       (0 until bitsInString).map { col =>

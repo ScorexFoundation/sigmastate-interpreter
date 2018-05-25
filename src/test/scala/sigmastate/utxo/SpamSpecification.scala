@@ -131,7 +131,7 @@ class SpamSpecification extends SigmaTestingCommons {
           )
 
         val txOutputs = ((1 to outCnt) map (_ => ErgoBox(11, spamProp))) :+ ErgoBox(11, propToCompare)
-        val tx = ErgoTransaction(IndexedSeq(), txOutputs)
+        val tx = ErgoLikeTransaction(IndexedSeq(), txOutputs)
 
         val ctx = ErgoContext.dummy(createBox(0, propToCompare)).copy(spendingTransaction = tx)
 
@@ -159,7 +159,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val inputs = ((1 to 999) map (_ => ErgoBox(11, inputScript))) :+ ErgoBox(11, outputScript)
     val outputs = (1 to 1000) map (_ => ErgoBox(11, outputScript))
 
-    val tx = ergoplatform.ErgoTransaction(IndexedSeq(), outputs)
+    val tx = ergoplatform.ErgoLikeTransaction(IndexedSeq(), outputs)
 
     val ctx = new ErgoContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy,

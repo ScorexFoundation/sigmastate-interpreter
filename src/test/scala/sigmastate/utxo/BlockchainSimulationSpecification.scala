@@ -132,7 +132,7 @@ object BlockchainSimulationSpecification {
 
   val MaxBlockCost = 700000
 
-  case class Block(txs: IndexedSeq[ErgoTransaction])
+  case class Block(txs: IndexedSeq[ErgoLikeTransaction])
 
   class InMemoryErgoBoxReader(prover: ValidationState.BatchProver) extends ErgoBoxReader {
     private val boxes = mutable.Map[ErgoBox.BoxId, ErgoBox]()
@@ -193,7 +193,7 @@ object BlockchainSimulationSpecification {
       (1 to windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
         val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
-        ergoplatform.ErgoTransaction(IndexedSeq(), boxes)
+        ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       }
     }
 

@@ -43,7 +43,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData)))
 
@@ -89,7 +89,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
-      ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
+      new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
       self = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData))))
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
@@ -146,7 +146,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key)))
 

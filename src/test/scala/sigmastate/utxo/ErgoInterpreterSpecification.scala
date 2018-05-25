@@ -141,7 +141,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
 
     val properHash = Blake2b256(properBytes)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = {
       val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
@@ -203,7 +203,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val ctx = ErgoContext(
       currentHeight = 50,
@@ -232,7 +232,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val ctx = ErgoContext(
       currentHeight = 50,
@@ -272,7 +272,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
-      ErgoTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
       self = ErgoBox(20, TrueLeaf, Map()))
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
@@ -300,7 +300,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
 
     val newBox1 = ErgoBox(10, pubkey3)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val s1 = ErgoBox(20, TrueLeaf, Map(R3 -> pubkey1.value.asInstanceOf[GroupElementConstant],
                                        R4 -> pubkey2.value.asInstanceOf[GroupElementConstant]))
@@ -347,7 +347,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
     val newBox = ErgoBox(20, pubkey2)
 
     val newBoxes = IndexedSeq(newBox)
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val env = Map("brother" -> brother)
     val prop = compile(env,
@@ -431,7 +431,7 @@ class ErgoInterpreterSpecification extends SigmaTestingCommons {
 
     val output = ErgoBox(22, pubkey, Map())
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), IndexedSeq(output))
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(output))
 
     val ctx = ErgoContext(
       currentHeight = 50,

@@ -30,7 +30,7 @@ object ErgoContext {
     lastBlockUtxoRoot = AvlTreeData.dummy, boxesToSpend = IndexedSeq(),
                           spendingTransaction = null, self = selfDesc)
 
-  def fromTransaction(tx: ErgoTransaction,
+  def fromTransaction(tx: ErgoLikeTransaction,
                       blockchainState: BlockchainState,
                       boxesReader: ErgoBoxReader,
                       inputIndex: Int): Try[ErgoContext] = Try {

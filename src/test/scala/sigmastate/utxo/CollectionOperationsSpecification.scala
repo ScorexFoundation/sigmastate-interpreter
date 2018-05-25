@@ -16,7 +16,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = boxesToSpend,
-      spendingTransaction = ErgoTransaction(IndexedSeq(), outputs),
+      spendingTransaction = ErgoLikeTransaction(IndexedSeq(), outputs),
       self = fakeSelf)
 
   private def assertProof(code: String,
@@ -63,7 +63,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(15, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val ctx = ErgoContext(
       currentHeight = 50,
@@ -91,7 +91,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val ctx = ErgoContext(
       currentHeight = 50,
@@ -119,7 +119,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(11, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val ctx = ErgoContext(
       currentHeight = 50,
@@ -150,7 +150,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
@@ -185,7 +185,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, Map(R3 -> IntConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val s = ErgoBox(20, TrueLeaf, Map(R3 -> IntConstant(5)))
 
@@ -215,7 +215,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val s = ErgoBox(21, pubkey)
 

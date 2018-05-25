@@ -78,7 +78,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val tx1Output2 = ErgoBox(1, projectPubKey)
 
     //normally this transaction would invalid, but we're not checking it in this test
-    val tx1 = ErgoTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
 
     val ctx1 = ErgoContext(
       currentHeight = timeout.value - 1,
@@ -99,7 +99,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
 
     val tx2Output1 = ErgoBox(minToRaise.value - 1, projectPubKey)
     val tx2Output2 = ErgoBox(1, projectPubKey)
-    val tx2 = ErgoTransaction(IndexedSeq(), IndexedSeq(tx2Output1, tx2Output2))
+    val tx2 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx2Output1, tx2Output2))
 
     val ctx2 = ErgoContext(
       currentHeight = timeout.value - 1,
@@ -121,7 +121,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     //project raised enough money but too late...
     val tx3Output1 = ErgoBox(minToRaise.value + 1, projectPubKey)
     val tx3Output2 = ErgoBox(1, projectPubKey)
-    val tx3 = ErgoTransaction(IndexedSeq(), IndexedSeq(tx3Output1, tx3Output2))
+    val tx3 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx3Output1, tx3Output2))
 
     val ctx3 = ErgoContext(
       currentHeight = timeout.value,
