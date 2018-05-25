@@ -1,17 +1,17 @@
 package sigmastate.serialization.generators
 
 import org.ergoplatform
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeTransaction}
+import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
-import scorex.crypto.authds.ADDigest
+import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, SerializedProverResult}
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -40,7 +40,11 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbBox          = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData  = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
-  implicit val arbTransactionEmptyInputs  = Arbitrary(ergoTransactionEmptyInputsGen)
+  implicit val arbTransaction  = Arbitrary(ergoTransactionGen)
+  implicit val arbContextExtension = Arbitrary(contextExtensionGen)
+  implicit val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
+  implicit val arbUnsignedInput = Arbitrary(unsignedInputGen)
+  implicit val arbInput         = Arbitrary(inputGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -112,9 +116,44 @@ trait ValueGenerators extends TypeGenerators {
     opt <- Gen.oneOf(Some(int), None)
   } yield opt
 
-  val ergoTransactionEmptyInputsGen: Gen[ErgoLikeTransaction] = for {
+  val contextExtensionGen: Gen[ContextExtension] = for {
+    values <- Gen.sequence(contextExtensionValuesGen(0, 3))
+  } yield ContextExtension(values.asScala.toMap)
+
+  val serializedProverResultGen: Gen[SerializedProverResult] = for {
+    length <- Gen.chooseNum(1, 100)
+    bytes <- Gen.listOfN(length, arbByte.arbitrary)
+    contextExt <- contextExtensionGen
+  } yield SerializedProverResult(bytes.toArray, contextExt)
+
+  val boxIdGen: Gen[BoxId] = for {
+    bytes <- Gen.listOfN(BoxId.size, arbByte.arbitrary)
+  } yield ADKey @@ bytes.toArray
+
+  val unsignedInputGen: Gen[UnsignedInput] = for {
+    boxId <- boxIdGen
+  } yield new UnsignedInput(boxId)
+
+  val inputGen: Gen[Input] = for {
+    boxId <- boxIdGen
+    proof <- serializedProverResultGen
+  } yield Input(boxId, proof)
+
+  val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
+    inputs <- Gen.listOf(inputGen)
     outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
-  } yield new ErgoLikeTransaction(IndexedSeq(), outputCandidates.toIndexedSeq)
+  } yield ErgoLikeTransaction(inputs.toIndexedSeq, outputCandidates.toIndexedSeq)
+
+  def contextExtensionValuesGen(min: Int, max: Int): Seq[Gen[(Byte, EvaluatedValue[SType])]] =
+    (0 until Gen.chooseNum(min, max).sample.get)
+      .map(_ + 1)
+      .map { varId =>
+        for {
+          arr <- byteArrayConstGen
+          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr)
+        }
+          yield varId.toByte -> v.asInstanceOf[EvaluatedValue[SType]]
+      }
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)

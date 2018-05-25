@@ -1,5 +1,8 @@
 package org.ergoplatform
 
+import java.util
+
+import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.SerializedProverResult
 import sigmastate.serialization.Serializer
@@ -8,7 +11,14 @@ import sigmastate.serialization.Serializer.{Consumed, Position}
 import scala.util.Try
 
 
-class UnsignedInput(val boxId: ADKey)
+class UnsignedInput(val boxId: BoxId) {
+  require(boxId.size == BoxId.size, s"incorrect boxId size, expected: $BoxId.size, got: ${boxId.size}")
+
+  override def equals(obj: Any): Boolean = obj match {
+    case x: UnsignedInput => util.Arrays.equals(boxId, x.boxId)
+    case _ => false
+  }
+}
 
 object UnsignedInput {
   object serializer extends Serializer[UnsignedInput, UnsignedInput] {
@@ -20,7 +30,7 @@ object UnsignedInput {
       Try(parseBody(bytes, 0)._1)
 
     override def parseBody(bytes: Array[Byte], pos: Position): (UnsignedInput, Consumed) = {
-      new UnsignedInput(ADKey @@ bytes.slice(pos, pos+32)) -> 32
+      new UnsignedInput(ADKey @@ bytes.slice(pos, pos + BoxId.size)) -> BoxId.size
     }
 
     @inline
@@ -28,7 +38,7 @@ object UnsignedInput {
   }
 }
 
-case class Input(override val boxId: ADKey, spendingProof: SerializedProverResult)
+case class Input(override val boxId: BoxId, spendingProof: SerializedProverResult)
   extends UnsignedInput(boxId) {
 }
 
@@ -39,9 +49,9 @@ object Input {
     }
 
     override def parseBody(bytes: Array[Byte], pos: Position): (Input, Consumed) = {
-      val boxId = bytes.slice(pos, pos + 32)
-      val (spendingProof, consumed) = SerializedProverResult.serializer.parseBody(bytes, pos + 32)
-      Input(ADKey @@ boxId, spendingProof) -> (consumed + 32)
+      val boxId = bytes.slice(pos, pos + BoxId.size)
+      val (spendingProof, consumed) = SerializedProverResult.serializer.parseBody(bytes, pos + BoxId.size)
+      Input(ADKey @@ boxId, spendingProof) -> (consumed + BoxId.size)
     }
   }
 }
