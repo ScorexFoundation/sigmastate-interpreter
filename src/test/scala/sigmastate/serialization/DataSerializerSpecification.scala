@@ -38,7 +38,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: ErgoBox => roundtrip[SBox.type](x, SBox) }
     forAll { x: AvlTreeData => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x, SByteArray) }
-    forAll { t: SType => testCollection(t) }
+    forAll { t: SPrimType => testCollection(t) }
   }
 
 }

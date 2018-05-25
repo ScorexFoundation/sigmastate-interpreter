@@ -4,20 +4,18 @@ import java.nio.ByteBuffer
 
 import sigmastate._
 import sigmastate.utils.Extensions._
-import sigmastate.SType.TypeCode
-import sigmastate.serialization.Serializer.{Position}
-import sigmastate.utils.ByteArrayBuilder
+import sigmastate.utils.{ByteWriter, ByteArrayBuilder, ByteReader}
 
 trait ByteBufferSerializer[T] {
-  def serialize(tpe: SType, buf: ByteArrayBuilder): Unit
-  def deserialize(buf: ByteBuffer): SType
+  def serialize(tpe: SType, buf: ByteWriter): Unit
+  def deserialize(buf: ByteReader): SType
 }
 
 object STypeSerializer extends ByteBufferSerializer[SType] {
 
-  override def serialize(tpe: SType, buf: ByteArrayBuilder) = tpe match {
+  override def serialize(tpe: SType, w: ByteWriter) = tpe match {
     case p: SPrimType =>
-      buf.append(p.typeCode)
+      w.put(p.typeCode)
     case c: SCollection[a] => c.elemType match {
       case p: SPrimType =>
 //        buf.append(SCollection.)
@@ -25,10 +23,10 @@ object STypeSerializer extends ByteBufferSerializer[SType] {
     }
   }
 
-  override def deserialize(buf: ByteBuffer): SType = {
-    val c = buf.get().toInt
+  override def deserialize(r: ByteReader): SType = {
+    val c = r.get().toInt
     val tpe: SType = if (c <= 0)
-      sys.error(s"Cannot deserialize type prefix $c. Unexpected buffer $buf with bytes ${buf.getBytes(buf.remaining())}")
+      sys.error(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
     else if (c <= SPrimType.MaxPrimTypeCode)
       c.toByte match {
         case SPrimType(t) => t

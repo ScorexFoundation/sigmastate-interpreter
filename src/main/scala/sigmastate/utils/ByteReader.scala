@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import sigmastate.Values.{Value, SValue}
 import sigmastate.SType
 import Extensions._
+import sigmastate.serialization.STypeSerializer
 
 trait ByteReader {
   def get(): Byte
@@ -19,28 +20,31 @@ trait ByteReader {
   def consumed: Int
   def position: Int
   def position_=(p: Int)
+  def remaining: Int
 }
 
 class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
-  override def get(): Byte = buf.get
-  override def getShort(): Short = buf.getShort()
-  override def getInt(): Int = buf.getInt()
-  override def getLong(): Long = buf.getLong()
-  override def getBytes(size: Int): Array[Byte] = buf.getBytes(size)
-  override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
-  override def getType(): SType = buf.getType
-  override def getValue(): SValue = buf.getValue
+  @inline override def get(): Byte = buf.get
+  @inline override def getShort(): Short = buf.getShort()
+  @inline override def getInt(): Int = buf.getInt()
+  @inline override def getLong(): Long = buf.getLong()
+  @inline override def getBytes(size: Int): Array[Byte] = buf.getBytes(size)
+  @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
+  @inline override def getType(): SType = STypeSerializer.deserialize(this)
+  @inline override def getValue(): SValue = buf.getValue
 
   private var _mark: Int = _
-  override def mark(): ByteReader = {
+  @inline override def mark(): ByteReader = {
     _mark = buf.position()
     this
   }
-  override def consumed: Int = buf.position() - _mark
+  @inline override def consumed: Int = buf.position() - _mark
 
-  override def position: Int = buf.position()
+  @inline override def position: Int = buf.position()
 
-  override def position_=(p: Int): Unit = buf.position(p)
+  @inline override def position_=(p: Int): Unit = buf.position(p)
+
+  @inline override def remaining: Int = buf.remaining()
 }
 
 

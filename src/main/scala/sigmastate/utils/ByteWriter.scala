@@ -3,6 +3,7 @@ package sigmastate.utils
 import sigmastate.SType
 import sigmastate.Values.Value
 import Extensions._
+import sigmastate.serialization.STypeSerializer
 
 trait ByteWriter {
   def put(x: Byte): ByteWriter
@@ -18,14 +19,14 @@ trait ByteWriter {
 }
 
 class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
-  def put(x: Byte): ByteWriter = { b.append(x); this }
-  def putBoolean(x: Boolean): ByteWriter = { b.append(x); this }
-  def putShort(x: Short): ByteWriter = { b.append(x); this }
-  def putInt(x: Int): ByteWriter = { b.append(x); this }
-  def putLong(x: Long): ByteWriter = { b.append(x); this }
-  def putBytes(xs: Array[Byte]): ByteWriter = { b.append(xs); this }
-  def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
-  def putType[T <: SType](x: T): ByteWriter = { b.appendType(x); this }
-  def putValue[T <: SType](x: Value[T]): ByteWriter = { b.appendValue(x); this }
-  def toBytes: Array[Byte] = b.toBytes
+  @inline def put(x: Byte): ByteWriter = { b.append(x); this }
+  @inline def putBoolean(x: Boolean): ByteWriter = { b.append(x); this }
+  @inline def putShort(x: Short): ByteWriter = { b.append(x); this }
+  @inline def putInt(x: Int): ByteWriter = { b.append(x); this }
+  @inline def putLong(x: Long): ByteWriter = { b.append(x); this }
+  @inline def putBytes(xs: Array[Byte]): ByteWriter = { b.append(xs); this }
+  @inline def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
+  @inline def putType[T <: SType](x: T): ByteWriter = { STypeSerializer.serialize(x, this); this }
+  @inline def putValue[T <: SType](x: Value[T]): ByteWriter = { b.appendValue(x); this }
+  @inline def toBytes: Array[Byte] = b.toBytes
 }
