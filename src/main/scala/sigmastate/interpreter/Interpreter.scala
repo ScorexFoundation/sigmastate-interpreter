@@ -240,6 +240,8 @@ trait Interpreter {
               case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
               case sn: UncheckedSchnorr => (sn.challenge, sn.firstMessageOpt.toSeq)
               case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.firstMessageOpt.toSeq)
+              case _ =>
+                Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
             }
 
             val expectedChallenge = CryptoFunctions.hashFn(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))

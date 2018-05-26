@@ -10,6 +10,7 @@ import sigmastate.Values._
 import sigmastate.lang.SigmaTyper
 import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 
 import scala.collection.mutable
@@ -377,7 +378,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIden
 }
 
 object SFunc {
-  final val FuncTypeCode: TypeCode = (SOption.OptionTypeCode + SPrimType.MaxPrimTypeCode + 1.toByte).toByte
+  final val FuncTypeCode: TypeCode = OpCodes.FirstFuncType
   def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
 }
 
