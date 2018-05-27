@@ -56,19 +56,18 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
     ProveDiffieHellmanTupleSerializer,
     ProveDlogSerializer,
-    ConstantSerializer(SByte),
-    ConstantSerializer(SInt),
-    ConstantSerializer(SBigInt),
-    ConstantSerializer(SBox),
-    ConstantSerializer(SAvlTree),
-    ConstantSerializer(SGroupElement),
+//    ConstantSerializer(SByte),
+//    ConstantSerializer(SInt),
+//    ConstantSerializer(SBigInt),
+//    ConstantSerializer(SBox),
+//    ConstantSerializer(SAvlTree),
+//    ConstantSerializer(SGroupElement),
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
     ConcreteCollectionSerializer,
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](AndCode, AND.apply),
     SimpleTransformerSerializer[SCollection[SBoolean.type], SBoolean.type](OrCode, OR.apply),
     TaggedVariableSerializer,
-    CollectionConstantSerializer,
     CaseObjectSerialization(HeightCode, Height),
     CaseObjectSerialization(InputsCode, Inputs),
     CaseObjectSerialization(OutputsCode, Outputs),
@@ -98,20 +97,33 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     AppendSerializer
   ).map(s => (s.opCode, s)).toMap
 
+  def serialize(v: Value[SType]): Array[Byte] = v match {
+    case c: Constant[SType] =>
+      val w = Serializer.startWriter()
+      ConstantSerializer.serialize(c, w)
+      w.toBytes
+    case _ =>
+      val opCode = v.opCode
+      val serFn = table(opCode).asInstanceOf[SigmaSerializer[Value[SType], v.type]]
+      opCode +: serFn.serializeBody(v)
+  }
+
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
     val c = bytes(pos)
-    val handler = table(c)
-    val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
-    (v, consumed + 1)
+    if (c <= LastConstantCode) {
+      // look ahead byte tell us this is going to be a Constant
+      val r = Serializer.startReader(bytes, pos)
+      val c = ConstantSerializer.deserialize(r)
+      (c, r.consumed)
+    }
+    else {
+      val handler = table(c)
+      val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
+      (v, consumed + 1)
+    }
   }
 
   def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
-
-  def serialize(v: Value[SType]): Array[Byte] = {
-    val opCode = v.opCode
-    val serFn = table(opCode).asInstanceOf[SigmaSerializer[Value[SType], v.type]]
-    opCode +: serFn.serializeBody(v)
-  }
 }
 
 object Constraints {

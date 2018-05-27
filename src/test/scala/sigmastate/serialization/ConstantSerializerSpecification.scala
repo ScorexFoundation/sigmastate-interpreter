@@ -3,18 +3,17 @@ package sigmastate.serialization
 import java.math.BigInteger
 import org.ergoplatform._
 import org.scalacheck.Arbitrary._
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, BigIntConstant, GroupGenerator, IntConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate._
-import sigmastate.utils.Extensions._
-import sigmastate.utils.ByteArrayBuilder
 
 class ConstantSerializerSpecification extends TableSerializationSpecification {
 
   def roundtrip[T <: SType](c: Constant[T]) = {
-    val b = new ByteArrayBuilder()
-    b.appendValue(c)
-    val bytes = b.toBytes
+    val bytes = Serializer.startWriter()
+        .putValue(c)
+        .toBytes
     val r = Serializer.startReader(bytes, 0)
     val res = r.getValue
     res shouldBe c
@@ -24,11 +23,11 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     res2 shouldBe c
   }
 
-//  def testCollection[T <: SType](tpe: T) = {
-//    implicit val wWrapped = wrappedTypeGen(tpe)
-//    implicit val tag = tpe.classTag[T#WrappedType]
-//    forAll { x: Array[T#WrappedType] => roundtrip[SCollection[T]](CollectionConstant(x)) }
-//  }
+  def testCollection[T <: SType](tpe: T) = {
+    implicit val wWrapped = wrappedTypeGen(tpe)
+    implicit val tag = tpe.classTag[T#WrappedType]
+    forAll { x: Array[T#WrappedType] => roundtrip(Constant[SCollection[T]](x, SCollection(tpe))) }
+  }
 
   property("Constant serialization round trip") {
     forAll { x: Byte => roundtrip(Constant[SByte.type](x, SByte)) }
@@ -37,10 +36,10 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { x: Long => roundtrip(Constant[SInt.type](x, SInt)) }
     forAll { x: BigInteger => roundtrip(Constant[SBigInt.type](x, SBigInt)) }
     forAll { x: EcPointType => roundtrip(Constant[SGroupElement.type](x, SGroupElement)) }
-    forAll { x: ErgoBox => roundtrip(Constant[SBox.type](x, SBox)) }
+//    forAll { x: ErgoBox => roundtrip(Constant[SBox.type](x, SBox)) }
     forAll { x: AvlTreeData => roundtrip(Constant[SAvlTree.type](x, SAvlTree)) }
-//    forAll { x: Array[Byte] => roundtrip[SByteArray](x, SByteArray) }
-//    forAll { t: SType => testCollection(t) }
+    forAll { x: Array[Byte] => roundtrip(Constant[SByteArray](x, SByteArray)) }
+    forAll { t: SPrimType => testCollection(t) }
   }
 
   def caseObjectValue(v: SValue) = (v, Array[Byte](v.opCode))
@@ -63,4 +62,34 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
   tableRoundTripTest("Specific objects serializer round trip")
   tablePredefinedBytesTest("Specific objects deserialize from predefined bytes")
 
+//  property("ByteArrayConstant: Serializer round trip") {
+//    forAll { arr: CollectionConstant[SByte.type] =>
+//      roundTripTest(arr)
+//    }
+//  }
+//
+//  property("ByteArrayConstant: Deserialize predefined bytes") {
+//    val value = ByteArrayConstant(Array[Byte](1, 3, 5, 9, 10, 100))
+//    val bytes = Array[Byte](CollectionConstantCode, 0, 6, 1, 3, 5, 9, 10, 100)
+//    predefinedBytesTest(bytes, value)
+//  }
+//
+//  override def objects = Table(
+//    ("object", "bytes"),
+//    (ByteArrayConstant(Array[Byte]()), Array[Byte](CollectionConstantCode, 0, 0)),
+//    (ByteArrayConstant(Array[Byte](1)), Array[Byte](CollectionConstantCode, 0, 1, 1)),
+//    (ByteArrayConstant(Array[Byte](1, 2, 3, 4, 5)), Array[Byte](CollectionConstantCode, 0, 5, 1, 2, 3, 4, 5))
+//  )
+//
+//  tableRoundTripTest("ByteArrayConstant: Serializer table round trip")
+//  tablePredefinedBytesTest("ByteArrayConstant: deserialize from predefined bytes")
+//
+//  checkConsumed(Array[Byte](CollectionConstantCode, 0, 0))
+//  checkConsumed(Array[Byte](CollectionConstantCode, 0, 1, 1))
+//  checkConsumed(Array[Byte](CollectionConstantCode, 0, 5, 1, 2, 3, 4, 5))
+//
+//  def checkConsumed(array: Array[Byte]) {
+//    val (_, consumed) = ValueSerializer.deserialize(array, 0)
+//    consumed should equal (array.length)
+//  }
 }

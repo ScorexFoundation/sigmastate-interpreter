@@ -7,6 +7,7 @@ import sigmastate.SType.TypeCode
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.Values._
+import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaTyper
 import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -259,6 +260,13 @@ case object SAny extends SPrimType {
 case class SCollection[T <: SType](elemType: T) extends SProduct {
   override type WrappedType = Array[T#WrappedType]
   override val typeCode: TypeCode = SCollection.CollectionTypeCode
+
+  override def mkConstant(v: Array[T#WrappedType]): Value[this.type] =
+    CollectionConstant(v, elemType).asValue[this.type]
+
+  override def dataCost(v: SType#WrappedType): Long =
+    ((v.asInstanceOf[Array[T#WrappedType]].length / 1024) + 1) * Cost.ByteArrayPerKilobyte
+
   def ancestors = Nil
   override def fields = SCollection.fields
   override def toString = s"Array[$elemType]"

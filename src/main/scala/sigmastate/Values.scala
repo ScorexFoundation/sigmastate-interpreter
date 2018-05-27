@@ -1,7 +1,7 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util
+import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
@@ -14,7 +14,6 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Helpers
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
@@ -72,9 +71,16 @@ object Values {
     override lazy val evaluated = true
   }
 
-  case class Constant[S <: SType](val value: S#WrappedType, val tpe: S) extends EvaluatedValue[S] {
+  case class Constant[S <: SType](value: S#WrappedType, tpe: S) extends EvaluatedValue[S] {
     override val opCode: OpCode = (ConstantCode + tpe.typeCode).toByte
     override def cost[C <: Context[C]](context: C) = tpe.dataCost(value)
+
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case c: Constant[_] => Objects.deepEquals(value, c.value) && tpe == c.tpe
+      case _ => false
+    }
+
+    override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -194,26 +200,27 @@ object Values {
     def elementType: T
   }
 
-  case class CollectionConstant[T <: SType](value: Array[T#WrappedType], elementType: T) extends EvaluatedCollection[T] {
+  type CollectionConstant[T <: SType] = Constant[SCollection[T]]
 
-    override def cost[C <: Context[C]](context: C): Long = ((value.length / 1024) + 1) * Cost.ByteArrayPerKilobyte
-
-    override val opCode: OpCode = CollectionConstantCode
-
-    override val tpe = SCollection(elementType)
-
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case c: CollectionConstant[_] => util.Objects.deepEquals(value, c.value) && elementType == c.elementType
-      case _ => false
+  object CollectionConstant {
+    def apply[T <: SType](value: Array[T#WrappedType], elementType: T): Constant[SCollection[T]] =
+      Constant[SCollection[T]](value, SCollection(elementType))
+    def unapply[T <: SType](node: Value[SCollection[T]]): Option[(Array[T#WrappedType], T)] = node match {
+      case arr: Constant[SCollection[a]] @unchecked if arr.tpe.isCollection =>
+        val v = arr.value.asInstanceOf[Array[T#WrappedType]]
+        val t = arr.tpe.elemType.asInstanceOf[T]
+        Some((v, t))
+      case _ => None
     }
-
-    override def hashCode(): Int = 31 * Helpers.deepHashCode(value) + elementType.hashCode()
   }
 
   object ByteArrayConstant {
     def apply(value: Array[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value, SByte)
     def unapply(node: SValue): Option[Array[Byte]] = node match {
-      case arr: CollectionConstant[SByte.type] @unchecked if arr.elementType == SByte => Some(arr.value)
+      case coll: CollectionConstant[SByte.type] @unchecked => coll match {
+        case CollectionConstant(arr, SByte) => Some(arr)
+        case _ => None
+      }
       case _ => None
     }
   }
@@ -221,7 +228,10 @@ object Values {
   object IntArrayConstant {
     def apply(value: Array[Long]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value, SInt)
     def unapply(node: SValue): Option[Array[Long]] = node match {
-      case arr: CollectionConstant[SInt.type] @unchecked if arr.elementType == SInt => Some(arr.value)
+      case coll: CollectionConstant[SInt.type] @unchecked => coll match {
+        case CollectionConstant(arr, SInt) => Some(arr)
+        case _ => None
+      }
       case _ => None
     }
   }
@@ -229,7 +239,10 @@ object Values {
   object BoolArrayConstant {
     def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
     def unapply(node: SValue): Option[Array[Boolean]] = node match {
-      case arr: CollectionConstant[SBoolean.type] @unchecked if arr.elementType == SBoolean => Some(arr.value)
+      case coll: CollectionConstant[SBoolean.type] @unchecked => coll match {
+        case CollectionConstant(arr, SBoolean) => Some(arr)
+        case _ => None
+      }
       case _ => None
     }
   }

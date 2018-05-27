@@ -10,6 +10,8 @@ import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
+import scala.collection.mutable
+
 object DataSerializer {
   private val curve = CryptoConstants.dlogGroup
   private val LengthSize: Int = 2
@@ -86,11 +88,16 @@ object DataSerializer {
       data
     case tCol: SCollection[a] =>
       val len = r.getInt()
-      val arr = new Array(len).asInstanceOf[SCollection[a]#WrappedType]
-      for (i <- 0 until len) {
-        arr(i) = deserialize(tCol.elemType, r)
-      }
+      val arr = deserializeArray(len, tCol.elemType, r)
       arr
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
+
+  def deserializeArray[T <: SType](len: Int, tpe: T, r: ByteReader): Array[T#WrappedType] = {
+    val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
+    for (i <- 0 until len) {
+      b += deserialize(tpe, r)
+    }
+    b.result()
+  }
 }
