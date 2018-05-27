@@ -7,6 +7,7 @@ import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
+import sigmastate.serialization.OpCodes._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
 
@@ -274,7 +275,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expectedPropTree = EQ(
       ExtractAmount(
         ByIndex(Outputs,
-          ArithmeticOperations(SizeOf(Outputs), IntConstant(1), 41))),
+          ArithmeticOperations(SizeOf(Outputs), IntConstant(1), MinusCode))),
       IntConstant(10))
     assertProof(code, expectedPropTree, outputBoxValues)
   }

@@ -8,6 +8,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, BigIntConstant, GroupGenerator, ByteArrayConstant, IntConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate._
+import sigmastate.Values._
 
 class ConstantSerializerSpecification extends TableSerializationSpecification {
 
@@ -45,7 +46,6 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
 
   def caseObjectValue(v: SValue) = (v, Array[Byte](v.opCode))
 
-  val ByteArrayTypeCode = (SCollection.CollectionTypeCode + SByte.typeCode).toByte
   override def objects = Table(
     ("object", "bytes"),
     caseObjectValue(FalseLeaf),

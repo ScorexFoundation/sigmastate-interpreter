@@ -214,6 +214,8 @@ object Values {
     }
   }
 
+  val ByteArrayTypeCode = (SCollection.CollectionTypeCode + SByte.typeCode).toByte
+
   object ByteArrayConstant {
     def apply(value: Array[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value, SByte)
     def unapply(node: SValue): Option[Array[Byte]] = node match {

@@ -94,7 +94,7 @@ object OpCodes extends ValueCodes {
   val SizeOfCode       : OpCode = (LastConstantCode + 65).toByte
   val ByIndexCode      : OpCode = (LastConstantCode + 66).toByte
   val AppendCode       : OpCode = (LastConstantCode + 67).toByte
-  val AppendBytesCode  : OpCode = (LastConstantCode + 68).toByte
+//  val AppendBytesCode  : OpCode = (LastConstantCode + 68).toByte  // TODO remove
   val SliceCode        : OpCode = (LastConstantCode + 69).toByte
   val WhereCode        : OpCode = (LastConstantCode + 70).toByte
   val IsMemberCode     : OpCode = (LastConstantCode + 71).toByte

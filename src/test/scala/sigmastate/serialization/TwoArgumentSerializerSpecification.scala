@@ -2,19 +2,23 @@ package sigmastate.serialization
 
 import sigmastate.Values.{ByteArrayConstant, GroupElementConstant, IntConstant, BigIntConstant}
 import sigmastate._
+import sigmastate.Values._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.Append
+import OpCodes._
 
 class TwoArgumentSerializerSpecification extends TableSerializationSpecification {
 
   override val objects =
     Table(
       ("object", "bytes"),
-      (Minus(IntConstant(2), IntConstant(3)), Array[Byte](41, -108, 0, 0, 0, 0, 0, 0, 0, 2, -108, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (Plus(IntConstant(2), IntConstant(3)), Array[Byte](42, -108, 0, 0, 0, 0, 0, 0, 0, 2, -108, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (Multiply(IntConstant(2), IntConstant(3)), Array[Byte](44, -108, 0, 0, 0, 0, 0, 0, 0, 2, -108, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (Xor(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](43, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4)),
-      (Append(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))), Array[Byte](67, 16, 0, 3, 1, 2, 3, 16, 0, 2, 3, 4))
+      (Minus(IntConstant(2), IntConstant(3)), Array[Byte](MinusCode, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 2, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (Plus(IntConstant(2), IntConstant(3)), Array[Byte](PlusCode, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 2, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (Multiply(IntConstant(2), IntConstant(3)), Array[Byte](MultiplyCode, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 2, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (Xor(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))),
+          Array[Byte](XorCode, ByteArrayTypeCode, 0, 3, 1, 2, 3, ByteArrayTypeCode, 0, 2, 3, 4)),
+      (Append(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))),
+          Array[Byte](AppendCode, ByteArrayTypeCode, 0, 3, 1, 2, 3, ByteArrayTypeCode, 0, 2, 3, 4))
     )
 
   tableRoundTripTest("TwoArguments: serializer round trip")
