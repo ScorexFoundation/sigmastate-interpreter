@@ -4,9 +4,14 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox.NonMandatoryIdentifier
 import scorex.crypto.authds.ADDigest
+import scorex.crypto.hash.Digest32
+import sigmastate.Values.EvaluatedValue
 import sigmastate.utils.{ByteWriter, ByteReader}
 import sigmastate._
+import sigmastate.lang.Terms._
+import sigmastate.utils.Extensions._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
@@ -30,8 +35,32 @@ object DataSerializer {
       val bytes = v.asInstanceOf[EcPointType].getEncoded(true)
       w.putBytes(bytes)
     case SBox =>
-      val bytes = ErgoBox.serializer.toBytes(v.asInstanceOf[ErgoBox])
-      w.putInt(bytes.length).putBytes(bytes)
+      val obj = v.asInstanceOf[ErgoBox]
+      w.putLong(obj.value)
+      w.putBytes(obj.propositionBytes)
+
+      val nRegs = obj.additionalRegisters.keys.size
+      if (nRegs + ErgoBox.startingNonMandatoryIndex > 255)
+        sys.error(s"The number of non-mandatory indexes $nRegs exceeds ${255 - ErgoBox.startingNonMandatoryIndex} limit.")
+      w.put(nRegs.toByte)
+
+      // we assume non-mandatory indexes are densely packed from startingNonManadatoryIndex
+      // this convention allows to save 1 bite for each register
+      val startReg = ErgoBox.startingNonMandatoryIndex
+      val endReg = ErgoBox.startingNonMandatoryIndex + nRegs - 1
+      for (regId <- startReg to endReg) {
+        val reg = ErgoBox.findRegisterByIndex(regId.toByte).get
+        obj.get(reg) match {
+          case Some(v) =>
+            w.putValue(v)
+          case None =>
+            sys.error(s"Set of non-mandatory indexes is not densely packed: " +
+                      s"register R$regId is missing in the range [$startReg .. $endReg]")
+        }
+      }
+      w.putBytes(obj.transactionId)
+      w.putShort(obj.boxId)
+
     case SAvlTree =>
       val data = v.asInstanceOf[AvlTreeData]
       w.putInt(data.startingDigest.length)
@@ -43,22 +72,25 @@ object DataSerializer {
 
     case tCol: SCollection[a] =>
       val arr = v.asInstanceOf[tCol.WrappedType]
-      w.putInt(arr.length)
+      val len = arr.length
+      if (len > 0xFFFF)
+        sys.error(s"Length of array $arr exceeds ${0xFFFF} limit.")
+      w.putShort(len.toShort)
       for (x <- arr)
         DataSerializer.serialize(x, tCol.elemType, w)
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
 
   def deserialize[T <: SType](tpe: T, r: ByteReader): (T#WrappedType) = (tpe match {
-    case SByte => r.get()
-    case SBoolean => (r.get() != 0.toByte)
+    case SByte => r.getByte()
+    case SBoolean => r.getUByte() != 0
     case SInt => r.getLong()
     case SBigInt =>
       val size: Short = r.getShort()
       val valueBytes = r.getBytes(size)
       new BigInteger(valueBytes)
     case SGroupElement =>
-      r.get() match {
+      r.getByte() match {
         case 0 =>
           // infinity point is always compressed as 1 byte (X9.62 s 4.3.6)
           val point = curve.curve.decodePoint(Array(0)).asInstanceOf[SecP384R1Point]
@@ -73,10 +105,20 @@ object DataSerializer {
           throw new Error(s"Only compressed encoding is supported, $m given")
       }
     case SBox =>
-      val len = r.getInt()
-      val bytes = r.getBytes(len)
-      val box = ErgoBox.serializer.parseBytes(bytes).get
+      val value = r.getLong()
+      val proposition = r.getValue().asBoolValue
+      val nRegs = r.getUByte()
+      val regs = (0 until nRegs).map { iReg =>
+        val regId = ErgoBox.startingNonMandatoryIndex + iReg
+        val reg = ErgoBox.findRegisterByIndex(regId.toByte).get.asInstanceOf[NonMandatoryIdentifier]
+        val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
+        (reg, v)
+      }.toMap
+      val transId = r.getBytes(32)
+      val boxId = r.getShort()
+      val box = ErgoBox(value, proposition, regs, Digest32 @@ transId, boxId)
       box
+
     case SAvlTree =>
       val digestLength = r.getInt()
       val digestBytes = r.getBytes(digestLength)
@@ -87,7 +129,7 @@ object DataSerializer {
       val data = AvlTreeData(ADDigest @@ digestBytes, keyLength, vlOpt, mnoOpt, mdOpt)
       data
     case tCol: SCollection[a] =>
-      val len = r.getInt()
+      val len = r.getShort()
       val arr = deserializeArray(len, tCol.elemType, r)
       arr
     case _ => sys.error(s"Don't know how to deserialize $tpe")

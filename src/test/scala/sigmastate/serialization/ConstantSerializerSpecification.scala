@@ -1,10 +1,11 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
+
 import org.ergoplatform._
 import org.scalacheck.Arbitrary._
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, BigIntConstant, GroupGenerator, IntConstant}
+import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, BigIntConstant, GroupGenerator, ByteArrayConstant, IntConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate._
 
@@ -36,7 +37,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { x: Long => roundtrip(Constant[SInt.type](x, SInt)) }
     forAll { x: BigInteger => roundtrip(Constant[SBigInt.type](x, SBigInt)) }
     forAll { x: EcPointType => roundtrip(Constant[SGroupElement.type](x, SGroupElement)) }
-//    forAll { x: ErgoBox => roundtrip(Constant[SBox.type](x, SBox)) }
+    forAll { x: ErgoBox => roundtrip(Constant[SBox.type](x, SBox)) }
     forAll { x: AvlTreeData => roundtrip(Constant[SAvlTree.type](x, SAvlTree)) }
     forAll { x: Array[Byte] => roundtrip(Constant[SByteArray](x, SByteArray)) }
     forAll { t: SPrimType => testCollection(t) }
@@ -44,6 +45,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
 
   def caseObjectValue(v: SValue) = (v, Array[Byte](v.opCode))
 
+  val ByteArrayTypeCode = (SCollection.CollectionTypeCode + SByte.typeCode).toByte
   override def objects = Table(
     ("object", "bytes"),
     caseObjectValue(FalseLeaf),
@@ -55,41 +57,15 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     caseObjectValue(Self),
     caseObjectValue(GroupGenerator),
     (IntConstant(1), Array[Byte]((OpCodes.ConstantCode + SInt.typeCode).toByte, 0, 0, 0, 0, 0, 0, 0, 1)),
-    (BigIntConstant(BigInteger.valueOf(0)), Array[Byte](-107, 0, 1, 0)),
-    (BigIntConstant(new BigInteger(Array[Byte](3,4,5))), Array[Byte](-107, 0, 3, 3, 4, 5))
+    (BigIntConstant(BigInteger.valueOf(0)), Array[Byte](4, 0, 1, 0)),
+    (BigIntConstant(new BigInteger(Array[Byte](3,4,5))), Array[Byte](4, 0, 3, 3, 4, 5)),
+    (ByteArrayConstant(Array[Byte](1, 3, 5, 9, 10, 100)), Array[Byte](ByteArrayTypeCode, 0, 6, 1, 3, 5, 9, 10, 100)),
+    (ByteArrayConstant(Array[Byte]()), Array[Byte](ByteArrayTypeCode, 0, 0)),
+    (ByteArrayConstant(Array[Byte](1)), Array[Byte](ByteArrayTypeCode, 0, 1, 1)),
+    (ByteArrayConstant(Array[Byte](1, 2, 3, 4, 5)), Array[Byte](ByteArrayTypeCode, 0, 5, 1, 2, 3, 4, 5))
   )
 
   tableRoundTripTest("Specific objects serializer round trip")
   tablePredefinedBytesTest("Specific objects deserialize from predefined bytes")
 
-//  property("ByteArrayConstant: Serializer round trip") {
-//    forAll { arr: CollectionConstant[SByte.type] =>
-//      roundTripTest(arr)
-//    }
-//  }
-//
-//  property("ByteArrayConstant: Deserialize predefined bytes") {
-//    val value = ByteArrayConstant(Array[Byte](1, 3, 5, 9, 10, 100))
-//    val bytes = Array[Byte](CollectionConstantCode, 0, 6, 1, 3, 5, 9, 10, 100)
-//    predefinedBytesTest(bytes, value)
-//  }
-//
-//  override def objects = Table(
-//    ("object", "bytes"),
-//    (ByteArrayConstant(Array[Byte]()), Array[Byte](CollectionConstantCode, 0, 0)),
-//    (ByteArrayConstant(Array[Byte](1)), Array[Byte](CollectionConstantCode, 0, 1, 1)),
-//    (ByteArrayConstant(Array[Byte](1, 2, 3, 4, 5)), Array[Byte](CollectionConstantCode, 0, 5, 1, 2, 3, 4, 5))
-//  )
-//
-//  tableRoundTripTest("ByteArrayConstant: Serializer table round trip")
-//  tablePredefinedBytesTest("ByteArrayConstant: deserialize from predefined bytes")
-//
-//  checkConsumed(Array[Byte](CollectionConstantCode, 0, 0))
-//  checkConsumed(Array[Byte](CollectionConstantCode, 0, 1, 1))
-//  checkConsumed(Array[Byte](CollectionConstantCode, 0, 5, 1, 2, 3, 4, 5))
-//
-//  def checkConsumed(array: Array[Byte]) {
-//    val (_, consumed) = ValueSerializer.deserialize(array, 0)
-//    consumed should equal (array.length)
-//  }
 }

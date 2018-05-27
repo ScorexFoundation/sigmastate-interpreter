@@ -12,6 +12,17 @@ import scala.reflect.ClassTag
 
 object Extensions {
 
+  implicit class IntOps(i: Int) {
+    def toByteChecked: Byte = {
+      assert(i >= 0 && i <= 255, s"Cannot convert Int value $i to Byte")
+      i.toByte
+    }
+  }
+
+  implicit class ByteOps(b: Byte) {
+    @inline def toUByte: Int = b & 0xFF
+  }
+
   implicit class OptionOps[T](opt: Option[T]) {
     /** Elvis operator for Option. See https://en.wikipedia.org/wiki/Elvis_operator*/
     def ?:(whenNone: => T): T = if (opt.isDefined) opt.get else whenNone

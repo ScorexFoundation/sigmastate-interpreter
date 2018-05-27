@@ -21,13 +21,13 @@ trait SerializationSpecification extends PropSpec
 
   protected def roundTripTest[V <: Value[_ <: SType]](v: V): Assertion = {
     val bytes = ValueSerializer.serialize(v)
-    predefinedBytesTest(bytes, v)
+    predefinedBytesTest(v, bytes)
     predefinedBytesTestNotFomZeroElement(bytes, v)
   }
 
-  protected def predefinedBytesTest[V <: Value[_ <: SType]](bytes: Array[Byte], v: V): Assertion = {
-    bytes shouldEqual ValueSerializer.serialize(v)
-    ValueSerializer.deserialize(bytes) shouldBe v
+  protected def predefinedBytesTest[V <: Value[_ <: SType]](v: V, bytes: Array[Byte]): Assertion = {
+    ValueSerializer.serialize(v) shouldEqual bytes
+    v shouldBe ValueSerializer.deserialize(bytes)
   }
 
   //check that pos and consumed are being implented correctly

@@ -39,12 +39,13 @@ import scala.util.Try
   * @param boxId         - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
   * @param additionalRegisters
   */
-class ErgoBox private(override val value: Long,
-                      override val proposition: Value[SBoolean.type],
-                      val transactionId: Digest32,
-                      val boxId: Short,
-                      override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map()
-                     ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
+class ErgoBox private(
+    override val value: Long,
+    override val proposition: Value[SBoolean.type],
+    override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
+    val transactionId: Digest32,
+    val boxId: Short
+) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
 
   import ErgoBox._
 
@@ -87,7 +88,7 @@ object ErgoBox {
             additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: Digest32 = Digest32 @@ Array.fill(32)(0: Byte),
             boxId: Short = 0): ErgoBox =
-    new ErgoBox(value, proposition, transactionId, boxId, additionalRegisters)
+    new ErgoBox(value, proposition, additionalRegisters, transactionId, boxId)
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
 

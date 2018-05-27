@@ -23,7 +23,7 @@ object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[STy
   override def parseBody(bytes: Array[Byte], pos: Position): (ExtractRegisterAs[SType], Consumed) = {
     val r = Serializer.startReader(bytes, pos)
     val input = r.getValue()
-    val regId = r.get()
+    val regId = r.getByte()
     val register = ErgoBox.findRegisterByIndex(regId).get
     val defaultValue = r.getOption(r.getValue())
     val tpe = r.getType()

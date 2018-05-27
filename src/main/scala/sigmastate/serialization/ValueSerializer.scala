@@ -2,13 +2,13 @@ package sigmastate.serialization
 
 import sigmastate._
 import Values._
-
 import scala.util.Try
 import OpCodes._
 import sigmastate.SCollection.SByteArray
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupelSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utxo._
+import sigmastate.utils.Extensions._
 import Serializer.Consumed
 import org.ergoplatform._
 
@@ -110,7 +110,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
     val c = bytes(pos)
-    if (c <= LastConstantCode) {
+    if (c.toUByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
       val r = Serializer.startReader(bytes, pos)
       val c = ConstantSerializer.deserialize(r)

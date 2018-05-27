@@ -13,7 +13,7 @@ object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: STyp
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
     val r = Serializer.startReader(bytes, pos)
-    val varId = r.get()
+    val varId = r.getByte()
     val tpe = r.getType()
     val node = TaggedVariable(varId, tpe)
     (node, r.consumed)

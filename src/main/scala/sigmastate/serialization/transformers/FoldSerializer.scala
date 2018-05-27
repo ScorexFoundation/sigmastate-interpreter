@@ -24,10 +24,10 @@ object FoldSerializer extends ValueSerializer[Fold[SType]] {
 
   override def parseBody(bytes: Array[Byte], pos: Position): (Fold[SType], Consumed) = {
     val r = Serializer.startReader(bytes, pos)
-    val input = r.getValue
-    val id = r.get()
-    val zero = r.getValue
-    val accId = r.get()
+    val input  = r.getValue
+    val id     = r.getByte()
+    val zero   = r.getValue
+    val accId  = r.getByte()
     val foldOp = r.getValue
     val res = Fold(input.asInstanceOf[Value[SCollection[SType]]], id, zero, accId, foldOp)
     res -> r.consumed

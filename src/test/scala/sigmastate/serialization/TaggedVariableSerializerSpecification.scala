@@ -17,6 +17,6 @@ class TaggedVariableSerializerSpecification extends SerializationSpecification {
   }
 
   property("TaggedVariable deserialize from predefined bytes") {
-    predefinedBytesTest(Array(1, 10, 7), TaggedBox(10))
+    predefinedBytesTest(TaggedBox(10), Array(1, 10, 7))
   }
 }

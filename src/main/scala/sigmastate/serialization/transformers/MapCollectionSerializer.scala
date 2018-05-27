@@ -16,7 +16,7 @@ object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, STyp
   override def parseBody(bytes: Array[Byte], pos: Position): (Values.Value[SType], Consumed) = {
     val r = Serializer.startReader(bytes, pos)
     val input = r.getValue.asInstanceOf[Value[SCollection[SType]]]
-    val idByte = r.get()
+    val idByte = r.getByte()
     val mapper = r.getValue
     MapCollection(input, idByte, mapper) -> r.consumed
   }

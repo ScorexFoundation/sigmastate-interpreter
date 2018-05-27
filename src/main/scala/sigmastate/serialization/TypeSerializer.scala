@@ -71,7 +71,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
   }
 
   override def deserialize(r: ByteReader): SType = {
-    val c = r.get().toInt
+    val c = r.getUByte()
     if (c <= 0)
       sys.error(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
     val tpe: SType = if (c < STuple.TupleTypeCode) {
@@ -106,7 +106,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
       }
     }
     else if (c == STuple.TupleTypeCode) {
-      val len = r.get()
+      val len = r.getUByte()
       val items = (0 until len).map(_ => deserialize(r))
       STuple(items)
     } else {

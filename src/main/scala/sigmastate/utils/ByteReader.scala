@@ -7,7 +7,8 @@ import sigmastate.utils.Extensions._
 import sigmastate.serialization.TypeSerializer
 
 trait ByteReader {
-  def get(): Byte
+  def getByte(): Byte
+  def getUByte(): Int
   def getShort(): Short
   def getInt(): Int
   def getLong(): Long
@@ -23,7 +24,8 @@ trait ByteReader {
 }
 
 class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
-  @inline override def get(): Byte = buf.get
+  @inline override def getByte(): Byte = buf.get
+  @inline override def getUByte(): Int = buf.get & 0xFF
   @inline override def getShort(): Short = buf.getShort()
   @inline override def getInt(): Int = buf.getInt()
   @inline override def getLong(): Long = buf.getLong()
