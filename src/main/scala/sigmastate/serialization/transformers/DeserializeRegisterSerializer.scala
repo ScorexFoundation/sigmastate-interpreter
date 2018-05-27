@@ -26,10 +26,10 @@ object DeserializeRegisterSerializer extends ValueSerializer[DeserializeRegister
     val tpeByte = bytes(pos + 1)
     val tpe = SType.allPredefTypes.filter(_.typeCode == tpeByte).head
     if (bytes(pos + 2) == 0) {
-      (DeserializeRegister(registerId, None)(tpe), 3)
+      (DeserializeRegister(registerId, tpe), 3)
     } else {
       val (dv, consumed) = ValueSerializer.deserialize(bytes, pos + 2)
-      (DeserializeRegister(registerId, Some(dv))(tpe), consumed + 2)
+      (DeserializeRegister(registerId, tpe, Some(dv)), consumed + 2)
     }
   }
 

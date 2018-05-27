@@ -86,14 +86,14 @@ trait TransformerGenerators {
     dvInt <- arbIntConstants.arbitrary
     dv <- Gen.oneOf(None, Some(dvInt))
   } yield ExtractRegisterAs(input, r, dv)
-  val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] = Arbitrary.arbitrary[Byte].map(b => DeserializeContext(b))
+  val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] = Arbitrary.arbitrary[Byte].map(b => DeserializeContext(b, SBoolean))
 
   val deserializeRegisterGen: Gen[DeserializeRegister[SBoolean.type]] = for {
     r <- arbRegisterIdentifier.arbitrary
     default <- booleanConstGen
     isDefined <- Arbitrary.arbitrary[Boolean]
     defaultOpt = if (isDefined) Some(default) else None
-  } yield DeserializeRegister(r, defaultOpt)
+  } yield DeserializeRegister(r, SBoolean, defaultOpt)
 
   val intToByteArrayGen: Gen[IntToByteArray] = arbIntConstants.arbitrary.map { v => IntToByteArray(v) }
   val byteArrayToBigIntGen: Gen[ByteArrayToBigInt] = arbByteArrayConstant.arbitrary.map { v => ByteArrayToBigInt(v) }

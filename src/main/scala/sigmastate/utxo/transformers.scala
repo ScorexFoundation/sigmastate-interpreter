@@ -341,46 +341,19 @@ case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
     box.value.get(registerId).orElse(default).get.asInstanceOf[Value[V]]
 }
 
-trait Deserialize[V <: SType] extends NotReadyValue[V] with Rewritable
+trait Deserialize[V <: SType] extends NotReadyValue[V]
 
 
-case class DeserializeContext[V <: SType](id: Byte)(implicit val tpe: V)
-  extends Deserialize[V] {
-
+case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[V] {
   override val opCode: OpCode = OpCodes.DeserializeContextCode
-
-  def arity = 2
-
-  def deconstruct = immutable.Seq[Any](id, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(id: Byte@unchecked, t: V@unchecked) =>
-      DeserializeContext[V](id)(t)
-    case _ =>
-      illegalArgs("DeserializeContext", "(Byte)(tpe: V)", cs)
-  }
-
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }
 
 
 //todo: write test for this class
-case class DeserializeRegister[V <: SType](reg: RegisterIdentifier,
-                                           default: Option[Value[V]] = None)(implicit val tpe: V)
-  extends Deserialize[V] {
+case class DeserializeRegister[V <: SType](
+    reg: RegisterIdentifier, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
 
   override val opCode: OpCode = OpCodes.DeserializeRegisterCode
-
-  def arity = 3
-
-  def deconstruct = immutable.Seq[Any](reg, default, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(reg: RegisterIdentifier@unchecked, default: Option[Value[V]]@unchecked, t: V@unchecked) =>
-      DeserializeRegister[V](reg, default)(t)
-    case _ =>
-      illegalArgs("DeserializeRegister", "(RegisterIdentifier, Option[Value[V]])(tpe: V)", cs)
-  }
-
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }

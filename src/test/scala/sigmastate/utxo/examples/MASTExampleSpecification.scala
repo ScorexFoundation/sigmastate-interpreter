@@ -47,7 +47,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val merklePathToScript = IsMember(ExtractRegisterAs(Self, R3),
       CalcBlake2b256(TaggedByteArray(scriptId)),
       TaggedByteArray(proofId))
-    val scriptIsCorrect = DeserializeContext[SBoolean.type](scriptId)
+    val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(merklePathToScript, scriptIsCorrect)
 
     val recipientProposition = new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage
