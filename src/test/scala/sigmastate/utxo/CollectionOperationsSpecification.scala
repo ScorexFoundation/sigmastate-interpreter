@@ -179,7 +179,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val propTree = Exists(Outputs, 21,
       EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntConstant(0L))),
-        Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
+        Plus(ExtractRegisterAs[SInt.type](Self, R3), IntConstant(1))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)

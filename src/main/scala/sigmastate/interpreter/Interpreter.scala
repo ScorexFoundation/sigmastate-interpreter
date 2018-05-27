@@ -86,20 +86,20 @@ trait Interpreter {
       GroupElementConstant(GroupGenerator.value)
 
     //operations
-    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.PlusCode) =>
-      IntConstant(Math.addExact(l.value, r.value))
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.PlusCode) =>
+      IntConstant(Math.addExact(l, r))
 
-    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.MinusCode) =>
-      IntConstant(Math.subtractExact(l.value, r.value))
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MinusCode) =>
+      IntConstant(Math.subtractExact(l, r))
 
-    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.MultiplyCode) =>
-      IntConstant(Math.multiplyExact(l.value, r.value))
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MultiplyCode) =>
+      IntConstant(Math.multiplyExact(l, r))
 
-    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.ModuloCode) =>
-      IntConstant(l.value % r.value)
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.ModuloCode) =>
+      IntConstant(l % r)
 
-    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.DivisionCode) =>
-      IntConstant(l.value / r.value)
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.DivisionCode) =>
+      IntConstant(l / r)
 
     case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       assert(l.length == r.length)

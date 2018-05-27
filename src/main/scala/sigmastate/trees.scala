@@ -226,8 +226,10 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
   extends Triple[LIV, RIV, OV]
 
-case class ArithOp(left: Value[SInt.type], right: Value[SInt.type], opCode: OpCode)
-  extends TwoArgumentsOperation[SInt.type, SInt.type, SInt.type] with NotReadyValueInt
+case class ArithOp[T <: SType](left: Value[T], right: Value[T], opCode: OpCode)
+  extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
+  override def tpe: T = left.tpe
+}
 
 
 /**
