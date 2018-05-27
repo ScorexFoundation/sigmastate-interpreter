@@ -6,7 +6,7 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 
-class ArithmeticOperationsSpecification extends SigmaTestingCommons {
+class ArithOpSpecification extends SigmaTestingCommons {
 
   def test(env: Map[String, Any], ext: Seq[(Byte, EvaluatedValue[_ <: SType])], script: String, propExp: Value[SBoolean.type]) = {
     val prover = new ErgoLikeProvingInterpreter() {

@@ -275,7 +275,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expectedPropTree = EQ(
       ExtractAmount(
         ByIndex(Outputs,
-          ArithmeticOperations(SizeOf(Outputs), IntConstant(1), MinusCode))),
+          ArithOp(SizeOf(Outputs), IntConstant(1), MinusCode))),
       IntConstant(10))
     assertProof(code, expectedPropTree, outputBoxValues)
   }

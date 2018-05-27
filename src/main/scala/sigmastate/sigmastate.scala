@@ -6,27 +6,27 @@ package object sigmastate {
   /**
     * SInt addition
     */
-  def Plus(left: Value[SInt.type], right: Value[SInt.type]): ArithmeticOperations = ArithmeticOperations(left, right, PlusCode)
+  def Plus(left: Value[SInt.type], right: Value[SInt.type]): ArithOp = ArithOp(left, right, PlusCode)
 
   /**
     * SInt subtraction
     */
-  def Minus(left: Value[SInt.type], right: Value[SInt.type]): ArithmeticOperations = ArithmeticOperations(left, right, MinusCode)
+  def Minus(left: Value[SInt.type], right: Value[SInt.type]): ArithOp = ArithOp(left, right, MinusCode)
 
   /**
     * SInt multiplication
     */
-  def Multiply(left: Value[SInt.type], right: Value[SInt.type]): ArithmeticOperations = ArithmeticOperations(left, right, MultiplyCode)
+  def Multiply(left: Value[SInt.type], right: Value[SInt.type]): ArithOp = ArithOp(left, right, MultiplyCode)
 
   /**
     * SInt division
     */
-  def Divide(left: Value[SInt.type], right: Value[SInt.type]): ArithmeticOperations = ArithmeticOperations(left, right, DivisionCode)
+  def Divide(left: Value[SInt.type], right: Value[SInt.type]): ArithOp = ArithOp(left, right, DivisionCode)
 
   /**
     * SInt modulo
     */
-  def Modulo(left: Value[SInt.type], right: Value[SInt.type]): ArithmeticOperations = ArithmeticOperations(left, right, ModuloCode)
+  def Modulo(left: Value[SInt.type], right: Value[SInt.type]): ArithOp = ArithOp(left, right, ModuloCode)
 
 
 }

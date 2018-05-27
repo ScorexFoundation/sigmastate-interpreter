@@ -86,19 +86,19 @@ trait Interpreter {
       GroupElementConstant(GroupGenerator.value)
 
     //operations
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.PlusCode) =>
+    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.PlusCode) =>
       IntConstant(Math.addExact(l.value, r.value))
 
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MinusCode) =>
+    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.MinusCode) =>
       IntConstant(Math.subtractExact(l.value, r.value))
 
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MultiplyCode) =>
+    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.MultiplyCode) =>
       IntConstant(Math.multiplyExact(l.value, r.value))
 
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.ModuloCode) =>
+    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.ModuloCode) =>
       IntConstant(l.value % r.value)
 
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.DivisionCode) =>
+    case ArithOp(l: IntConstant, r: IntConstant, OpCodes.DivisionCode) =>
       IntConstant(l.value / r.value)
 
     case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>

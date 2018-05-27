@@ -26,7 +26,7 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
 
   property("ArithmeticOperations: Serializer round trip") {
     forAll(intConstGen, intConstGen, aritmeticCodeGen) { (x1: IntConstant, x2: IntConstant, opCode: OpCode) =>
-      roundTripTest(ArithmeticOperations(x1, x2, opCode))
+      roundTripTest(ArithOp(x1, x2, opCode))
     }
   }
 
