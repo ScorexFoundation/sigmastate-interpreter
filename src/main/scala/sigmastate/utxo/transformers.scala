@@ -316,29 +316,22 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
   override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray] = ByteArrayConstant(box.value.id)
 }
 
-case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
-                                         registerId: RegisterIdentifier,
-                                         default: Option[Value[V]] = None)(implicit val tpe: V)
-  extends Extract[V] with NotReadyValue[V] with Rewritable {
-  override val opCode: OpCode = OpCodes.ExtractRegisterAs
-
-  def arity = 4
-
-  def deconstruct = immutable.Seq[Any](input, registerId, default, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SBox.type]@unchecked,
+case class ExtractRegisterAs[V <: SType](
+    input: Value[SBox.type],
     registerId: RegisterIdentifier,
-    default: Option[Value[V]]@unchecked,
-    t: V@unchecked) => ExtractRegisterAs[V](input, registerId, default)(t)
-    case _ =>
-      illegalArgs("ExtractRegisterAs", "(Value[SBox.type], registerId: RegisterIdentifier, default: Option[Value[V]])(tpe: V)", cs)
-  }
-
+    tpe: V,
+    default: Option[Value[V]])
+  extends Extract[V] with NotReadyValue[V] {
+  override val opCode: OpCode = OpCodes.ExtractRegisterAs
   override def cost[C <: Context[C]](context: C) = 1000 //todo: the same as ExtractBytes.cost
-
   override def function(box: EvaluatedValue[SBox.type]): Value[V] =
     box.value.get(registerId).orElse(default).get.asInstanceOf[Value[V]]
+}
+
+object ExtractRegisterAs {
+  def apply[V <: SType](input: Value[SBox.type],
+      registerId: RegisterIdentifier,
+      default: Option[Value[V]] = None)(implicit tpe: V): ExtractRegisterAs[V] = ExtractRegisterAs(input, registerId, tpe, default)
 }
 
 trait Deserialize[V <: SType] extends NotReadyValue[V]
