@@ -168,6 +168,19 @@ case class IntToByteArray(input: Value[SInt.type])
 }
 
 /**
+  * Cast SInt to SBigInt
+  */
+case class IntToBigInt(input: Value[SInt.type])
+  extends Transformer[SInt.type, SBigInt.type] with NotReadyValueBigInt {
+  override val opCode: OpCode = OpCodes.IntToBigIntCode
+
+  override def function(bal: EvaluatedValue[SInt.type]): Value[SBigInt.type] =
+    BigIntConstant(BigInt(bal.value).underlying())
+
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+}
+
+/**
   * Cast SByteArray to SBigInt
   */
 case class ByteArrayToBigInt(input: Value[SByteArray])

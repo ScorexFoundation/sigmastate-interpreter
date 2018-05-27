@@ -85,7 +85,7 @@ trait Interpreter {
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
 
-    //operations
+    //Int Arith operations
     case ArithOp(IntConstant(l), IntConstant(r), OpCodes.PlusCode) =>
       IntConstant(Math.addExact(l, r))
 
@@ -100,14 +100,26 @@ trait Interpreter {
 
     case ArithOp(IntConstant(l), IntConstant(r), OpCodes.DivisionCode) =>
       IntConstant(l / r)
+      
+    //BigInt Arith operations
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.PlusCode) =>
+      BigIntConstant(l.add(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.MinusCode) =>
+      BigIntConstant(l.subtract(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.MultiplyCode) =>
+      BigIntConstant(l.multiply(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.ModuloCode) =>
+      BigIntConstant(l.mod(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.DivisionCode) =>
+      BigIntConstant(l.divide(r))
 
     case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       assert(l.length == r.length)
       ByteArrayConstant(Helpers.xor(l, r))
-
-//    case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
-//      require(l.length + r.length < MaxByteArrayLength)
-//      ByteArrayConstant(l ++ r)
 
     case c: CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray]])
 

@@ -31,6 +31,8 @@ class SigmaTyper {
     else None
   }
 
+  private val tT = STypeIdent("T") // to be used in typing rules
+
   /**
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
     * the env map to resolve bound variables and their types.
@@ -165,12 +167,6 @@ class SigmaTyper {
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       newObj.tpe match {
-//        case SByteArray => (m, newArgs) match {
-//          case ("++", Seq(r)) if r.tpe == SByteArray =>
-//            AppendBytes(newObj.asValue[SByteArray], r.asValue[SByteArray])
-//          case _ =>
-//            error(s"Unknown symbol $m, which is used as operation with arguments $newArgs")
-//        }
         case tCol: SCollection[a] => (m, newArgs) match {
           case ("++", Seq(r)) =>
             if (r.tpe == tCol)
@@ -179,6 +175,24 @@ class SigmaTyper {
               error(s"Invalid argument type for $m, expected $tCol but was ${r.tpe}")
           case _ =>
             error(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs")
+        }
+        case SGroupElement => (m, newArgs) match {
+          case ("*", Seq(r)) =>
+            if (r.tpe == SGroupElement)
+              MultiplyGroup(newObj.asGroupElement, r.asGroupElement)
+            else
+              error(s"Invalid argument type for $m, expected $SGroupElement but was ${r.tpe}")
+          case _ =>
+            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+        }
+        case SInt | SByte | SBigInt => (m, newArgs) match {
+          case ("*", Seq(r)) =>
+            if (r.tpe == newObj.tpe)
+              Multiply(newObj, r)
+            else
+              error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
+          case _ =>
+            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
         case t =>
           error(s"Invalid operation $mc on type $t")
@@ -223,21 +237,21 @@ class SigmaTyper {
         error(s"Invalid operation OR: $op")
       OR(input1)
 
-    case GE(l, r) => bimap(env, ">=", l, r)(GE[SType])(STypeIdent("T"), SBoolean)
-    case LE(l, r) => bimap(env, "<=", l, r)(LE[SType])(STypeIdent("T"), SBoolean)
-    case GT(l, r) => bimap(env, ">", l, r) (GT[SType])(STypeIdent("T"), SBoolean)
-    case LT(l, r) => bimap(env, "<", l, r) (LT[SType])(STypeIdent("T"), SBoolean)
+    case GE(l, r) => bimap(env, ">=", l, r)(GE[SType])(tT, SBoolean)
+    case LE(l, r) => bimap(env, "<=", l, r)(LE[SType])(tT, SBoolean)
+    case GT(l, r) => bimap(env, ">", l, r) (GT[SType])(tT, SBoolean)
+    case LT(l, r) => bimap(env, "<", l, r) (LT[SType])(tT, SBoolean)
     case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])((l,r) => l == r)
     case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ[SType])((l,r) => l == r)
 
-    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l, r)(Minus)(SInt, SInt)
-    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l, r)(Plus)(SInt, SInt)
-    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l, r)(Multiply)(SInt, SInt)
-    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l, r)(Modulo)(SInt, SInt)
-    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l, r)(Divide)(SInt, SInt)
+    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l, r)(Minus)(tT, tT)
+    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l, r)(Plus)(tT, tT)
+    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l, r)(Multiply)(tT, tT)
+    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l, r)(Modulo)(tT, tT)
+    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l, r)(Divide)(tT, tT)
+    
     case Xor(l, r) => bimap(env, "|", l, r)(Xor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(MultiplyGroup)(SGroupElement, SGroupElement)
-//    case AppendBytes(l, r) => bimap(env, "++", l, r)(AppendBytes)(SByteArray, SByteArray)
 
     case Exponentiate(l, r) =>
       val l1 = assignType(env, l).asGroupElement

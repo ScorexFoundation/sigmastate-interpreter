@@ -6,7 +6,7 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 
-class ArithOpSpecification extends SigmaTestingCommons {
+class BasicOpsSpecification extends SigmaTestingCommons {
 
   def test(env: Map[String, Any], ext: Seq[(Byte, EvaluatedValue[_ <: SType])], script: String, propExp: Value[SBoolean.type]) = {
     val prover = new ErgoLikeProvingInterpreter() {
@@ -32,6 +32,7 @@ class ArithOpSpecification extends SigmaTestingCommons {
   val byteVar2 = 4.toByte
   val bigIntVar1 = 5.toByte
   val bigIntVar2 = 6.toByte
+  val bigIntVar3 = 7.toByte
   val ext = Seq(
     (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
     (byteVar1, ByteConstant(1)), (byteVar2, ByteConstant(2)),
@@ -39,13 +40,9 @@ class ArithOpSpecification extends SigmaTestingCommons {
   val env = Map(
     "intVar1" -> intVar1, "intVar2" -> intVar2,
     "byteVar1" -> byteVar1, "byteVar2" -> byteVar2,
-    "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2)
+    "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2, "bigIntVar3" -> bigIntVar3)
 
-  property("Plus Minus Multiply") {
-//    test(env, ext,
-//      "{ 10 - getVar[Int](tag1) == 3 + 2 * 3 }",
-//      EQ(Minus(10, TaggedInt(intVar1)), Plus(3, Multiply(2, 3)))
-//      )
+  property("Relation operations") {
     test(env, ext,
       "{ getVar[Int](intVar2) > getVar[Int](intVar1) && getVar[Int](intVar1) < getVar[Int](intVar2) }",
       AND(GT(TaggedInt(intVar2), TaggedInt(intVar1)), LT(TaggedInt(intVar1), TaggedInt(intVar2)))
@@ -69,6 +66,17 @@ class ArithOpSpecification extends SigmaTestingCommons {
     test(env, ext,
       "{ getVar[BigInt](bigIntVar2) >= getVar[BigInt](bigIntVar1) && getVar[BigInt](bigIntVar1) <= getVar[BigInt](bigIntVar2) }",
       AND(GE(TaggedBigInt(bigIntVar2), TaggedBigInt(bigIntVar1)), LE(TaggedBigInt(bigIntVar1), TaggedBigInt(bigIntVar2)))
+    )
+  }
+
+  property("Arith operations") {
+    test(env, ext,
+      "{ getVar[Int](intVar2) * 2 + getVar[Int](intVar1) == 5 }",
+      EQ(Plus(Multiply(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(5))
+    )
+    test(env, ext :+ (bigIntVar3 -> BigIntConstant(50)),
+      "{ getVar[BigInt](bigIntVar2) * intToBigInt(2) + getVar[BigInt](bigIntVar1) == getVar[BigInt](bigIntVar3) }",
+      EQ(Plus(Multiply(TaggedBigInt(bigIntVar2), IntToBigInt(IntConstant(2))), TaggedBigInt(bigIntVar1)), TaggedBigInt(bigIntVar3))
     )
   }
 

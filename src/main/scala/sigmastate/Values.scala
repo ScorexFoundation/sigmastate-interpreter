@@ -129,6 +129,7 @@ object Values {
   }
   object BigIntConstant {
     def apply(value: BigInteger): Constant[SBigInt.type]  = Constant[SBigInt.type](value, SBigInt)
+    def apply(value: Long): Constant[SBigInt.type]  = Constant[SBigInt.type](BigInt(value).underlying(), SBigInt)
     def unapply(v: SValue): Option[BigInteger] = v match {
       case Constant(value: BigInteger, SBigInt) => Some(value)
       case _ => None
