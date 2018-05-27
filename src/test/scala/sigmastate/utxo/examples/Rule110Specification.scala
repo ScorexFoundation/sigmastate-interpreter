@@ -107,46 +107,49 @@ class Rule110Specification extends SigmaTestingCommons {
   property("rule110") {
     val prover = new ErgoLikeProvingInterpreter()
 
+    val RowReg = R3
+    val ColumnReg = R4
+    val ValueReg = R5
     val bitsInString = 31
     val lastBitIndex = bitsInString - 1
 
-    val midBitColumn = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), R5),
-      ExtractRegisterAs[SInt.type](ByIndex(Inputs, 1), R5))
+    val midBitColumn = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg),
+      ExtractRegisterAs[SInt.type](ByIndex(Inputs, 1), ColumnReg))
 
     val leftBitColumn =
       OR(
         AND(
-          EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), R5), IntConstant(0)),
-          EQ(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), R5), IntConstant(lastBitIndex))
+          EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg), IntConstant(0)),
+          EQ(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), ColumnReg), IntConstant(lastBitIndex))
         ),
-        EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), R5),
-          Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), R5), IntConstant(1)))
+        EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg),
+          Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), ColumnReg), IntConstant(1)))
       )
 
     val rightBitColumn =
       OR(
         AND(
-          EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), R5), IntConstant(lastBitIndex)),
-          EQ(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 2), R5), IntConstant(0))
+          EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg), IntConstant(lastBitIndex)),
+          EQ(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 2), ColumnReg), IntConstant(0))
         ),
-        EQ(Plus(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), R5), IntConstant(1)),
-          ExtractRegisterAs[SInt.type](ByIndex(Inputs, 2), R5))
+        EQ(Plus(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg), IntConstant(1)),
+          ExtractRegisterAs[SInt.type](ByIndex(Inputs, 2), ColumnReg))
       )
 
-    val row0 = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), R4),
-      Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), R4), IntConstant(1)))
+    val row0 = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), RowReg),
+      Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), RowReg), IntConstant(1)))
 
-    val row1 = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), R4),
-      Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 1), R4), IntConstant(1)))
+    val row1 = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), RowReg),
+      Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 1), RowReg), IntConstant(1)))
 
-    val row2 = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), R4),
-      Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 2), R4), IntConstant(1)))
+    val row2 = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), RowReg),
+      Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 2), RowReg), IntConstant(1)))
 
-    val input0 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 0), R6)
-    val input1 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 1), R6)
-    val input2 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 2), R6)
+    val input0 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 0), ValueReg)
+    val input1 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 1), ValueReg)
+    val input2 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 2), ValueReg)
 
-    val output = ExtractRegisterAs[SBoolean.type](ByIndex(Outputs, 0), R6)
+    val output = ExtractRegisterAs[SBoolean.type](ByIndex(Outputs, 0), ValueReg)
 
     val t = TrueLeaf
     val f = FalseLeaf
@@ -193,9 +196,9 @@ class Rule110Specification extends SigmaTestingCommons {
     // and check that the first row (after the genesis one) is satisfying the example
 
     val coins = (0 until bitsInString).map { col =>
-      val row = R4 -> IntConstant(0)
-      val column = R5 -> IntConstant(col)
-      val value = if (col == 15) R6 -> TrueLeaf else R6 -> FalseLeaf
+      val row = RowReg -> IntConstant(0)
+      val column = ColumnReg -> IntConstant(col)
+      val value = if (col == 15) ValueReg -> TrueLeaf else ValueReg -> FalseLeaf
       ErgoBox(0L, prop, Map(row, column, value), txId, col.toShort)
     }
 
@@ -206,7 +209,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val genesisState = ValidationState.initialState(initBlock)
 
     def byPos(state: ValidationState, row: Int, pos: Int) =
-      state.boxesReader.byTwoInts(R4, row, R5, pos).get
+      state.boxesReader.byTwoInts(RowReg, row, ColumnReg, pos).get
 
     def generateTransactionsForRow(state: ValidationState, row: Int): IndexedSeq[ErgoLikeTransaction] = {
       require(row >= 1)
@@ -220,13 +223,13 @@ class Rule110Specification extends SigmaTestingCommons {
         val center = byPos(state, row - 1, centerCol)
         val right = byPos(state, row - 1, rightCol)
 
-        val lv = left.get(R6).get.asInstanceOf[BooleanConstant].value
-        val cv = center.get(R6).get.asInstanceOf[BooleanConstant].value
-        val rv = right.get(R6).get.asInstanceOf[BooleanConstant].value
+        val lv = left.get(ValueReg).get.asInstanceOf[BooleanConstant].value
+        val cv = center.get(ValueReg).get.asInstanceOf[BooleanConstant].value
+        val rv = right.get(ValueReg).get.asInstanceOf[BooleanConstant].value
 
-        val value = R6 -> BooleanConstant.fromBoolean(calcRule110(lv, cv, rv))
+        val value = ValueReg -> BooleanConstant.fromBoolean(calcRule110(lv, cv, rv))
 
-        val c = new ErgoBoxCandidate(0L, prop, Map(R4 -> IntConstant(row), R5 -> IntConstant(col), value))
+        val c = new ErgoBoxCandidate(0L, prop, Map(RowReg -> IntConstant(row), ColumnReg -> IntConstant(col), value))
 
         val ut = UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(left.id), new UnsignedInput(center.id), new UnsignedInput(right.id)),
@@ -268,9 +271,9 @@ class Rule110Specification extends SigmaTestingCommons {
 
     println(s"First row time ${t1 - t0} ms.")
 
-    firstRowState.boxesReader.byTwoInts(R4, 1, R5, 13).get.get(R6).get.asInstanceOf[BooleanConstant].value shouldBe false
-    firstRowState.boxesReader.byTwoInts(R4, 1, R5, 14).get.get(R6).get.asInstanceOf[BooleanConstant].value shouldBe true
-    firstRowState.boxesReader.byTwoInts(R4, 1, R5, 15).get.get(R6).get.asInstanceOf[BooleanConstant].value shouldBe true
-    firstRowState.boxesReader.byTwoInts(R4, 1, R5, 16).get.get(R6).get.asInstanceOf[BooleanConstant].value shouldBe false
+    firstRowState.boxesReader.byTwoInts(RowReg, 1, ColumnReg, 13).get.get(ValueReg).get.asInstanceOf[BooleanConstant].value shouldBe false
+    firstRowState.boxesReader.byTwoInts(RowReg, 1, ColumnReg, 14).get.get(ValueReg).get.asInstanceOf[BooleanConstant].value shouldBe true
+    firstRowState.boxesReader.byTwoInts(RowReg, 1, ColumnReg, 15).get.get(ValueReg).get.asInstanceOf[BooleanConstant].value shouldBe true
+    firstRowState.boxesReader.byTwoInts(RowReg, 1, ColumnReg, 16).get.get(ValueReg).get.asInstanceOf[BooleanConstant].value shouldBe false
   }
 }
