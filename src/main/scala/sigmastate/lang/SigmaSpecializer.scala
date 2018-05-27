@@ -50,6 +50,9 @@ class SigmaSpecializer {
     case Apply(IntToBigSym, Seq(arg: Value[SInt.type]@unchecked)) =>
       Some(IntToBigInt(arg))
 
+    case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
+      Some(IntToByte(arg))
+
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>
       if (obj.tpe.isCollection)

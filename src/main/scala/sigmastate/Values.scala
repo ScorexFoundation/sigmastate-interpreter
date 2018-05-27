@@ -179,6 +179,10 @@ object Values {
     override def tpe = SBigInt
   }
 
+  trait NotReadyValueByte extends NotReadyValue[SByte.type] {
+    override def tpe = SByte
+  }
+
   type TaggedByte = TaggedVariable[SByte.type]
   type TaggedBoolean = TaggedVariable[SBoolean.type]
   type TaggedInt = TaggedVariable[SInt.type]

@@ -14,6 +14,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.Transformer
 import sigmastate.utils.Helpers._
+import sigmastate.utils.Extensions._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -176,6 +177,19 @@ case class IntToBigInt(input: Value[SInt.type])
 
   override def function(bal: EvaluatedValue[SInt.type]): Value[SBigInt.type] =
     BigIntConstant(BigInt(bal.value).underlying())
+
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+}
+
+/**
+  * Cast SInt to SByte
+  */
+case class IntToByte(input: Value[SInt.type])
+  extends Transformer[SInt.type, SByte.type] with NotReadyValueByte {
+  override val opCode: OpCode = OpCodes.IntToByteCode
+
+  override def function(bal: EvaluatedValue[SInt.type]): Value[SByte.type] =
+    ByteConstant(bal.value.toByteExact)
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
 }

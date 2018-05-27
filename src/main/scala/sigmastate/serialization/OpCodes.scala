@@ -109,6 +109,7 @@ object OpCodes extends ValueCodes {
   val IntToByteArrayCode       : OpCode = (LastConstantCode + 87).toByte
   val ByteArrayToBigIntCode    : OpCode = (LastConstantCode + 88).toByte
   val IntToBigIntCode          : OpCode = (LastConstantCode + 89).toByte
+  val IntToByteCode            : OpCode = (LastConstantCode + 90).toByte
 
   // Cryptographic operations codes
   val CalcBlake2b256Code         : OpCode = (LastConstantCode + 91).toByte

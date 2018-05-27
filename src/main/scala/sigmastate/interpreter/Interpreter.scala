@@ -18,6 +18,7 @@ import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
+import sigmastate.utils.Extensions._
 import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
 import sigmastate.{SType, _}
 
@@ -116,6 +117,22 @@ trait Interpreter {
 
     case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.DivisionCode) =>
       BigIntConstant(l.divide(r))
+      
+    //Byte Arith operations
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.PlusCode) =>
+      ByteConstant(l.addExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MinusCode) =>
+      ByteConstant(l.subtractExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MultiplyCode) =>
+      ByteConstant(l.multiplyExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.ModuloCode) =>
+      ByteConstant((l % r).toByte)
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.DivisionCode) =>
+      ByteConstant((l / r).toByte)
 
     case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       assert(l.length == r.length)
