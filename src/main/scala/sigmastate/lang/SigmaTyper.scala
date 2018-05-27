@@ -223,12 +223,12 @@ class SigmaTyper {
         error(s"Invalid operation OR: $op")
       OR(input1)
 
-    case GE(l, r) => bimap(env, ">=", l, r)(GE)(SInt, SBoolean)
-    case LE(l, r) => bimap(env, "<=", l, r)(LE)(SInt, SBoolean)
-    case GT(l, r) => bimap(env, ">", l, r)(GT)(SInt, SBoolean)
-    case LT(l, r) => bimap(env, "<", l, r)(LT)(SInt, SBoolean)
+    case GE(l, r) => bimap(env, ">=", l, r)(GE[SType])(STypeIdent("T"), SBoolean)
+    case LE(l, r) => bimap(env, "<=", l, r)(LE[SType])(STypeIdent("T"), SBoolean)
+    case GT(l, r) => bimap(env, ">", l, r) (GT[SType])(STypeIdent("T"), SBoolean)
+    case LT(l, r) => bimap(env, "<", l, r) (LT[SType])(STypeIdent("T"), SBoolean)
     case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])((l,r) => l == r)
-    case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ)((l,r) => l == r)
+    case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ[SType])((l,r) => l == r)
 
     case ArithmeticOperations(l, r, OpCodes.MinusCode) => bimap(env, "-", l, r)(Minus)(SInt, SInt)
     case ArithmeticOperations(l, r, OpCodes.PlusCode) => bimap(env, "+", l, r)(Plus)(SInt, SInt)
@@ -278,7 +278,8 @@ class SigmaTyper {
       (tArg: SType, tRes: SType): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
-    if ((l1.tpe == tArg) && (r1.tpe == tArg))
+    val substOpt = unifyTypes(SFunc(Vector(tArg, tArg), tRes), SFunc(Vector(l1.tpe, r1.tpe), tRes))
+    if (substOpt.isDefined)
       f(l1, r1)
     else
       error(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })")

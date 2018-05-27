@@ -31,7 +31,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       MethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         "++", IndexedSeq(ConcreteCollection(IntConstant(10), IntConstant(20))))
-    bind(env, "g1 ^ n") shouldBe Exponentiate(g1, n)
+    bind(env, "g1 ^ n1") shouldBe Exponentiate(g1, n1)
     bind(env, "g1 * g2") shouldBe MultiplyGroup(g1, g2)
   }
 

@@ -35,12 +35,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
 
-    Relation2Serializer(GtCode, GT.apply, Seq(Constraints.onlyInt2)),
-    Relation2Serializer(GeCode, GE.apply, Seq(Constraints.onlyInt2)),
-    Relation2Serializer(LtCode, LT.apply, Seq(Constraints.onlyInt2)),
-    Relation2Serializer(LeCode, LE.apply, Seq(Constraints.onlyInt2)),
-    Relation2Serializer(EqCode, EQ.applyNonTyped, Seq(Constraints.sameType2)),
-    Relation2Serializer(NeqCode, NEQ.apply, Seq(Constraints.sameType2)),
+    Relation2Serializer(GtCode, GT.apply[SType], Seq(Constraints.onlyInt2)),
+    Relation2Serializer(GeCode, GE.apply[SType], Seq(Constraints.onlyInt2)),
+    Relation2Serializer(LtCode, LT.apply[SType], Seq(Constraints.onlyInt2)),
+    Relation2Serializer(LeCode, LE.apply[SType], Seq(Constraints.onlyInt2)),
+    Relation2Serializer(EqCode, EQ.apply[SType], Seq(Constraints.sameType2)),
+    Relation2Serializer(NeqCode, NEQ.apply[SType], Seq(Constraints.sameType2)),
     Relation3Serializer(IsMemberCode, IsMember.apply),
     QuadrupelSerializer[SBoolean.type, SInt.type, SInt.type, SInt.type](IfCode, If.apply),
 

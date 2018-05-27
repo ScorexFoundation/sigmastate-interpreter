@@ -270,32 +270,28 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
 /**
   * Less operation for SInt
   */
-case class LT(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+case class LT[T <: SType](override val left: Value[T], override val right: Value[T]) extends Relation[T, T] {
   override val opCode: OpCode = LtCode
 }
 
 /**
   * Less or equals operation for SInt
   */
-case class LE(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+case class LE[T <: SType](override val left: Value[T], override val right: Value[T]) extends Relation[T, T] {
   override val opCode: OpCode = LeCode
 }
 
 /**
   * Greater operation for SInt
   */
-case class GT(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+case class GT[T <: SType](override val left: Value[T], override val right: Value[T]) extends Relation[T, T] {
   override val opCode: OpCode = GtCode
 }
 
 /**
   * Greater or equals operation for SInt
   */
-case class GE(override val left: Value[SInt.type],
-              override val right: Value[SInt.type]) extends Relation[SInt.type, SInt.type] {
+case class GE[T <: SType](override val left: Value[T], override val right: Value[T]) extends Relation[T, T] {
   override val opCode: OpCode = GeCode
 }
 
@@ -303,21 +299,16 @@ case class GE(override val left: Value[SInt.type],
   * Equals operation for SType
   * todo: make EQ to really accept only values of the same type, now EQ(TrueLeaf, IntConstant(5)) is valid
   */
-case class EQ[S <: SType](override val left: Value[S],
-                          override val right: Value[S])
+case class EQ[S <: SType](override val left: Value[S], override val right: Value[S])
   extends Relation[S, S] {
   override val opCode: OpCode = EqCode
-}
-
-object EQ {
-  def applyNonTyped(left: Value[SType], right: Value[SType]): EQ[SType] = apply(left, right)
 }
 
 /**
   * Non-Equals operation for SType
   */
-case class NEQ(override val left: Value[SType],
-               override val right: Value[SType]) extends Relation[SType, SType] {
+case class NEQ[S <: SType](override val left: Value[S], override val right: Value[S])
+  extends Relation[S, S] {
   override val opCode: OpCode = NeqCode
 }
 

@@ -122,14 +122,30 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l == r)
     case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
       BooleanConstant.fromBoolean(l != r)
-    case GT(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value > r.value)
-    case GE(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value >= r.value)
-    case LT(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value < r.value)
-    case LE(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value <= r.value)
+    case GT(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+    case GT(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+    case GT(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) > 0)
+    case GE(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) >= 0)
+    case LT(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) < 0)
+    case LE(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) <= 0)
     case IsMember(tree: AvlTreeConstant, ByteArrayConstant(key), ByteArrayConstant(proof)) =>
       val bv = tree.createVerifier(SerializedAdProof @@ proof)
       val res = bv.performOneOperation(Lookup(ADKey @@ key))
