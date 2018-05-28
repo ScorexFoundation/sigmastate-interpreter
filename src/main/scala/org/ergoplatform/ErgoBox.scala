@@ -40,7 +40,7 @@ class ErgoBox private(
     override val value: Long,
     override val proposition: Value[SBoolean.type],
     override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
-    val transactionId: Digest32,
+    val transactionId: Array[Byte],
     val boxId: Short
 ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
 
