@@ -2,8 +2,6 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
-import scorex.crypto.encode.Base16
-import scorex.crypto.hash.Blake2b256
 import scorex.utils.ScryptoLogging
 import sigmastate.Values.IntConstant
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
@@ -26,15 +24,13 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
 
 
   def emissionAtHeight(h: Long): Long = {
-//    if (h <= fixedRatePeriod) {
-//      fixedRate
-//    } else if (h > blocksTotal) {
-//      0
-//    } else {
-//      val epoch: Int = ((h - fixedRatePeriod) / rewardReductionPeriod).toInt
-//      fixedRate - fixedRate * epoch / decreasingEpochs
-//    }
-    1
+    if (h <= fixedRatePeriod) {
+      fixedRate
+    } else if (h > blocksTotal) {
+      0
+    } else {
+      fixedRate - fixedRate * ((h - fixedRatePeriod) / rewardReductionPeriod) / decreasingEpochs
+    }
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
@@ -46,7 +42,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
   property("emission specification") {
     val prover = new ErgoLikeProvingInterpreter()
 
-    val coinsToIssue = IntConstant(1)
+    val red = Multiply(fixedRate, Modulo(Modulo(Minus(Height, fixedRatePeriod), rewardReductionPeriod), decreasingEpochs))
+    val coinsToIssue = If(LE(Height, fixedRatePeriod), fixedRate, If(GT(Height, blocksTotal), 0, Minus(fixedRate, red)))
     val out = ByIndex(Outputs, 0)
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(out))
     val heightCorrect = EQ(ExtractRegisterAs[SInt.type](out, R4), Height)
@@ -56,7 +53,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val prop = AND(sameScriptRule, correctCoinsConsumed, heightIncreased, heightCorrect)
     val minerProp = prover.dlogSecrets.head.publicImage
 
-    val initialBoxCandidate:ErgoBox = ErgoBox(9773992500000000L, prop, Map(R4 -> IntConstant(-1)))
+    val initialBoxCandidate: ErgoBox = ErgoBox(9773992500000000L, prop, Map(R4 -> IntConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block {
       IndexedSeq(
         ErgoLikeTransaction(
