@@ -41,7 +41,7 @@ import scala.util.Try
   */
 class ErgoBox private(override val value: Long,
                       override val proposition: Value[SBoolean.type],
-                      val transactionId: Digest32,
+                      val transactionId: Array[Byte],
                       val boxId: Short,
                       override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map()
                      ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
@@ -85,7 +85,7 @@ object ErgoBox {
   def apply(value: Long,
             proposition: Value[SBoolean.type],
             additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
-            transactionId: Digest32 = Digest32 @@ Array.fill(32)(0: Byte),
+            transactionId: Array[Byte] = Array.fill(32)(0: Byte),
             boxId: Short = 0): ErgoBox =
     new ErgoBox(value, proposition, transactionId, boxId, additionalRegisters)
 
