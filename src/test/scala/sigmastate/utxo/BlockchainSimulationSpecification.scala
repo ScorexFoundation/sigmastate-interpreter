@@ -135,9 +135,12 @@ object BlockchainSimulationSpecification {
   case class Block(txs: IndexedSeq[ErgoLikeTransaction])
 
   class InMemoryErgoBoxReader(prover: ValidationState.BatchProver) extends ErgoBoxReader {
-    private val boxes = mutable.Map[ErgoBox.BoxId, ErgoBox]()
+    private type KeyType = mutable.WrappedArray.ofByte
+    private def getKey(id: Array[Byte]): KeyType = new mutable.WrappedArray.ofByte(id)
+    private val boxes = mutable.Map[KeyType, ErgoBox]()
 
-    override def byId(boxId: ADKey): Try[ErgoBox] = Try(boxes(boxId))
+    override def byId(boxId: ADKey): Try[ErgoBox] = byId(getKey(boxId))
+    def byId(boxId: KeyType): Try[ErgoBox] = Try(boxes(boxId))
 
     def byR3Value(i: Int): Iterable[ErgoBox] =
       boxes.values.filter(_.get(R3).getOrElse(IntConstant(i + 1)) == IntConstant(i))
@@ -149,16 +152,16 @@ object BlockchainSimulationSpecification {
           box.get(r2Id).getOrElse(IntConstant(int2 + 1)) == IntConstant(int2)
       }
 
-    def allIds: Iterable[ErgoBox.BoxId] = boxes.keys
+    def allIds: Iterable[KeyType] = boxes.keys
 
     def applyBlock(block: Block): Unit = {
       val toRemove = block.txs.flatMap(_.inputs).map(_.boxId)
       toRemove.foreach(k => prover.performOneOperation(Remove(k)))
-      toRemove.foreach(k => boxes.remove(k))
+      toRemove.foreach(k => boxes.remove(getKey(k)))
 
       val toAdd = block.txs.flatMap(_.outputs)
       toAdd.foreach(b => prover.performOneOperation(Insert(b.id, ADValue @@ b.bytes)))
-      toAdd.foreach(b => boxes.put(b.id, b))
+      toAdd.foreach(b => boxes.put(getKey(b.id), b))
 
       prover.generateProof()
     }
