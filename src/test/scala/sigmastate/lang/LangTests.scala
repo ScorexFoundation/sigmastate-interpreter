@@ -23,7 +23,8 @@ trait LangTests {
   val dlog = CryptoConstants.dlogGroup
   val g1 = dlog.generator
   val g2 = dlog.multiplyGroupElements(g1, g1)
-  protected val n: BigInteger = BigInt(10).underlying()
+  protected val n1: BigInteger = BigInt(10).underlying()
+  protected val n2: BigInteger = BigInt(20).underlying()
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
@@ -35,7 +36,8 @@ trait LangTests {
     "col2" -> ConcreteCollection(IntConstant(10), IntConstant(20)),
     "g1" -> g1,
     "g2" -> g2,
-    "n" -> n
+    "n1" -> n1,
+    "n2" -> n2
   )
 
   /** Parses string to SType tree */

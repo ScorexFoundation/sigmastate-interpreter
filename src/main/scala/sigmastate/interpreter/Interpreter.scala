@@ -18,6 +18,7 @@ import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
+import sigmastate.utils.Extensions._
 import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
 import sigmastate.{SType, _}
 
@@ -85,29 +86,57 @@ trait Interpreter {
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
 
-    //operations
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.PlusCode) =>
-      IntConstant(Math.addExact(l.value, r.value))
+    //Int Arith operations
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.PlusCode) =>
+      IntConstant(Math.addExact(l, r))
 
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MinusCode) =>
-      IntConstant(Math.subtractExact(l.value, r.value))
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MinusCode) =>
+      IntConstant(Math.subtractExact(l, r))
 
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.MultiplyCode) =>
-      IntConstant(Math.multiplyExact(l.value, r.value))
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MultiplyCode) =>
+      IntConstant(Math.multiplyExact(l, r))
 
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.ModuloCode) =>
-      IntConstant(l.value % r.value)
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.ModuloCode) =>
+      IntConstant(l % r)
 
-    case ArithmeticOperations(l: IntConstant, r: IntConstant, OpCodes.DivisionCode) =>
-      IntConstant(l.value / r.value)
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.DivisionCode) =>
+      IntConstant(l / r)
+      
+    //BigInt Arith operations
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.PlusCode) =>
+      BigIntConstant(l.add(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.MinusCode) =>
+      BigIntConstant(l.subtract(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.MultiplyCode) =>
+      BigIntConstant(l.multiply(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.ModuloCode) =>
+      BigIntConstant(l.mod(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.DivisionCode) =>
+      BigIntConstant(l.divide(r))
+      
+    //Byte Arith operations
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.PlusCode) =>
+      ByteConstant(l.addExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MinusCode) =>
+      ByteConstant(l.subtractExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MultiplyCode) =>
+      ByteConstant(l.multiplyExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.ModuloCode) =>
+      ByteConstant((l % r).toByte)
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.DivisionCode) =>
+      ByteConstant((l / r).toByte)
 
     case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       assert(l.length == r.length)
       ByteArrayConstant(Helpers.xor(l, r))
-
-//    case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
-//      require(l.length + r.length < MaxByteArrayLength)
-//      ByteArrayConstant(l ++ r)
 
     case c: CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray]])
 
@@ -122,14 +151,30 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l == r)
     case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
       BooleanConstant.fromBoolean(l != r)
-    case GT(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value > r.value)
-    case GE(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value >= r.value)
-    case LT(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value < r.value)
-    case LE(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value <= r.value)
+    case GT(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+    case GT(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+    case GT(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) > 0)
+    case GE(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) >= 0)
+    case LT(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) < 0)
+    case LE(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) <= 0)
     case IsMember(tree: AvlTreeConstant, ByteArrayConstant(key), ByteArrayConstant(proof)) =>
       val bv = tree.createVerifier(SerializedAdProof @@ proof)
       val res = bv.performOneOperation(Lookup(ADKey @@ key))
@@ -240,6 +285,8 @@ trait Interpreter {
               case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
               case sn: UncheckedSchnorr => (sn.challenge, sn.firstMessageOpt.toSeq)
               case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.firstMessageOpt.toSeq)
+              case _ =>
+                Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
             }
 
             val expectedChallenge = CryptoFunctions.hashFn(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))

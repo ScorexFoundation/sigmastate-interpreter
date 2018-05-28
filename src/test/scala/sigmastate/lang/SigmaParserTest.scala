@@ -56,7 +56,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("arr1 ++ arr2") shouldBe MethodCall(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
     parse("col1 ++ col2") shouldBe MethodCall(Ident("col1"), "++", IndexedSeq(Ident("col2")))
     parse("ge ^ n") shouldBe Exponentiate(GEIdent("ge"), BigIntIdent("n"))
-    parse("g1 * g2") shouldBe MultiplyGroup(GEIdent("g1"), GEIdent("g2"))
+    parse("g1 * g2") shouldBe MethodCall(Ident("g1"), "*", IndexedSeq(Ident("g2")))
   }
 
   property("precedence of binary operations") {

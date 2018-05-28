@@ -113,8 +113,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       OR(AND(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
         AND(GE(Height, IntConstant(timeoutHeight)), fallback))
 
-    val contractLogic = OR(AND(GT(extract(R3), IntConstant(15)), alicePubKey),
-      AND(LE(extract(R3), IntConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(extract[SInt.type](R3), IntConstant(15)), alicePubKey),
+      AND(LE(extract[SInt.type](R3), IntConstant(15)), bobPubKey))
 
     val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
       EQ(extract[SByteArray](R1), ByteArrayConstant(oraclePubKey.bytes)),
@@ -203,8 +203,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       additionalRegisters = Map(R3 -> IntConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs(ByIndex(Inputs, 0), R3), IntConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs(ByIndex(Inputs, 0), R3), IntConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), R3), IntConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), R3), IntConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
       EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),

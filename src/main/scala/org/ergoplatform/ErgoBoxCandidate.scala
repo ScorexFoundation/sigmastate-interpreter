@@ -2,14 +2,14 @@ package org.ergoplatform
 
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoBox.serializer.collectRegister
 import scorex.crypto.hash.Digest32
 import sigmastate.{SBoolean, SType}
-import sigmastate.Values.{ByteArrayConstant, EvaluatedValue, IntConstant, Value}
-import sigmastate.serialization.Serializer.{Consumed, Position}
-import sigmastate.serialization.{Serializer, ValueSerializer}
+import sigmastate.Values.{ByteArrayConstant, Value, EvaluatedValue, IntConstant}
+import sigmastate.serialization.Serializer.{Position, Consumed}
+import sigmastate.serialization.{ValueSerializer, Serializer}
 import sigmastate.utxo.CostTable.Cost
 
+import scala.annotation.tailrec
 import scala.util.Try
 
 class ErgoBoxCandidate(val value: Long,
@@ -45,6 +45,20 @@ class ErgoBoxCandidate(val value: Long,
 object ErgoBoxCandidate {
 
   object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
+    @tailrec
+    def collectRegister(obj: ErgoBoxCandidate,
+        collectedBytes: Array[Byte],
+        collectedRegisters: Byte): (Array[Byte], Byte) = {
+      val regIdx = (startingNonMandatoryIndex + collectedRegisters).toByte
+      val regByIdOpt = registerByIndex.get(regIdx)
+      regByIdOpt.flatMap(obj.get) match {
+        case Some(v) =>
+          collectRegister(obj, collectedBytes ++ ValueSerializer.serialize(v), (collectedRegisters + 1).toByte)
+        case None =>
+          (collectedBytes, collectedRegisters)
+      }
+    }
+
     override def toBytes(obj: ErgoBoxCandidate): Array[Byte] = {
       val propBytes = obj.propositionBytes
       val (regBytes, regNum) = collectRegister(obj, Array.emptyByteArray, 0: Byte)

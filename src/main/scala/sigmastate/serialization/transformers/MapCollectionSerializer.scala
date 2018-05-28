@@ -14,18 +14,18 @@ object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, STyp
   override val opCode: OpCode = OpCodes.MapCollectionCode
 
   override def parseBody(bytes: Array[Byte], pos: Position): (Values.Value[SType], Consumed) = {
-    val buf = Serializer.start(bytes, pos)
-    val input = buf.getValue.asInstanceOf[Value[SCollection[SType]]]
-    val idByte = buf.get()
-    val mapper = buf.getValue
-    MapCollection(input, idByte, mapper) -> (buf.position() - pos)
+    val r = Serializer.startReader(bytes, pos)
+    val input = r.getValue.asInstanceOf[Value[SCollection[SType]]]
+    val idByte = r.getByte()
+    val mapper = r.getValue
+    MapCollection(input, idByte, mapper) -> r.consumed
   }
 
   override def serializeBody(obj: MapCollection[SType, SType]): Array[Byte] = {
-    val b = new ByteArrayBuilder()
-        .appendValue(obj.input)
-        .append(obj.id)
-        .appendValue(obj.mapper)
-    b.toBytes
+    val w = Serializer.startWriter()
+        .putValue(obj.input)
+        .put(obj.id)
+        .putValue(obj.mapper)
+    w.toBytes
   }
 }

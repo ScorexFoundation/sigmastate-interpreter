@@ -1,8 +1,6 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
-import java.nio.ByteBuffer
-
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import sigmastate.SCollection.SByteArray
@@ -13,11 +11,16 @@ import sigmastate.utils.ByteArrayBuilder
 class DataSerializerSpecification extends SerializationSpecification {
 
   def roundtrip[T <: SType](obj: T#WrappedType, tpe: T) = {
-    val b = new ByteArrayBuilder()
-    DataSerializer.serialize(obj, tpe, b)
-    val buf = ByteBuffer.wrap(b.toBytes)
-    val res = DataSerializer.deserialize(tpe, buf)
+    val w = Serializer.startWriter()
+    DataSerializer.serialize(obj, tpe, w)
+    val bytes = w.toBytes
+    val r = Serializer.startReader(bytes, 0)
+    val res = DataSerializer.deserialize(tpe, r)
     res shouldBe obj
+    val randomPrefix = arrayGen[Byte].sample.get
+    val r2 = Serializer.startReader(randomPrefix ++ bytes, randomPrefix.length)
+    val res2 = DataSerializer.deserialize(tpe, r2)
+    res2 shouldBe obj
   }
 
   def testCollection[T <: SType](tpe: T) = {
@@ -35,7 +38,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: ErgoBox => roundtrip[SBox.type](x, SBox) }
     forAll { x: AvlTreeData => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x, SByteArray) }
-    forAll { t: SType => testCollection(t) }
+    forAll { t: SPrimType => testCollection(t) }
   }
 
 }
