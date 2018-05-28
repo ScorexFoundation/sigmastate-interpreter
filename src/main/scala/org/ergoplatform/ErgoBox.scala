@@ -87,7 +87,7 @@ object ErgoBox {
   def apply(value: Long,
             proposition: Value[SBoolean.type],
             additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
-            transactionId: Digest32 = Digest32 @@ Array.fill(32)(0: Byte),
+            transactionId: Array[Byte] = Array.fill(32)(0: Byte),
             boxId: Short = 0): ErgoBox =
     new ErgoBox(value, proposition, additionalRegisters, transactionId, boxId)
 
