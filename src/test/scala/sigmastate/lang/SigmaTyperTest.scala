@@ -54,8 +54,16 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "arr1 | arr2") shouldBe SByteArray
     typecheck(env, "arr1 ++ arr2") shouldBe SByteArray
     typecheck(env, "col1 ++ col2") shouldBe SCollection(SInt)
-    typecheck(env, "g1 ^ n") shouldBe SGroupElement
+    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
     typecheck(env, "g1 * g2") shouldBe SGroupElement
+    typecheck(env, "b1 < b2") shouldBe SBoolean
+    typecheck(env, "b1 > b2") shouldBe SBoolean
+    typecheck(env, "b1 <= b2") shouldBe SBoolean
+    typecheck(env, "b1 >= b2") shouldBe SBoolean
+    typecheck(env, "n1 < n2") shouldBe SBoolean
+    typecheck(env, "n1 > n2") shouldBe SBoolean
+    typecheck(env, "n1 <= n2") shouldBe SBoolean
+    typecheck(env, "n1 >= n2") shouldBe SBoolean
   }
 
   property("predefined functions") {
@@ -86,7 +94,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "OUTPUTS.map(fun (out: Box) = { out.value >= minToRaise })") shouldBe ty("Array[Boolean]")
     typecheck(env, "OUTPUTS.exists(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
     typecheck(env, "OUTPUTS.forall(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
-    typecheck(env, "{ let arr = Array(1,2,3); arr.fold(0, fun (n1: Int, n2: Int) = n1 + n2)}") shouldBe SInt
+    typecheck(env, "{ let arr = Array(1,2,3); arr.fold(0, fun (i1: Int, i2: Int) = i1 + i2)}") shouldBe SInt
     typecheck(env, "OUTPUTS.slice(0, 10)") shouldBe ty("Array[Box]")
     typecheck(env, "OUTPUTS.where(fun (out: Box) = { out.value >= minToRaise })") shouldBe ty("Array[Box]")
   }

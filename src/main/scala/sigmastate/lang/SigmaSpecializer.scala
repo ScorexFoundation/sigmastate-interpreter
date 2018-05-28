@@ -40,33 +40,18 @@ class SigmaSpecializer {
 
     case Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(CalcSha256(arg))
-//
-//    case Apply(TaggedAvlTreeSym, Seq(IntConstant(i))) =>
-//      Some(TaggedAvlTree(i.toByte))
-//
-//    case Apply(TaggedGroupElementSym, Seq(IntConstant(i))) =>
-//      Some(TaggedGroupElement(i.toByte))
-//
-//    case Apply(TaggedBoxSym, Seq(IntConstant(i))) =>
-//      Some(TaggedBox(i.toByte))
-
-//    case Apply(TaggedByteArraySym, Seq(ByteConstant(i))) =>
-//      Some(TaggedByteArray(i))
-//
-//    case Apply(TaggedBigIntSym, Seq(IntConstant(i))) =>
-//      Some(TaggedBigInt(i.toByte))
-//
-//    case Apply(TaggedIntSym, Seq(ByteConstant(i))) =>
-//      Some(TaggedInt(i))
-//
-//    case Apply(TaggedBooleanSym, Seq(IntConstant(i))) =>
-//      Some(TaggedBoolean(i.toByte))
 
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
       Some(IsMember(tree, key, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(ProveDlog(g))
+
+    case Apply(IntToBigSym, Seq(arg: Value[SInt.type]@unchecked)) =>
+      Some(IntToBigInt(arg))
+
+    case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
+      Some(IntToByte(arg))
 
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>

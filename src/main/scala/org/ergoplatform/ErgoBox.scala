@@ -3,19 +3,16 @@ package org.ergoplatform
 import java.util.Arrays
 
 import com.google.common.primitives.Shorts
-import org.ergoplatform.ErgoBox.{NonMandatoryIdentifier, _}
+import org.ergoplatform.ErgoBox.NonMandatoryIdentifier
 import scorex.crypto.authds.ADKey
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.serialization.Serializer.{Consumed, Position}
-import sigmastate.serialization.{Serializer, ValueSerializer}
+import sigmastate.serialization.{DataSerializer, Serializer}
 import sigmastate.utxo.CostTable.Cost
 
-import scala.annotation.tailrec
 import scala.runtime.ScalaRunTime
-import scala.util.Try
 
 /**
   * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In bitcoin, such an object
@@ -40,12 +37,13 @@ import scala.util.Try
   * @param boxId         - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
   * @param additionalRegisters
   */
-class ErgoBox private(override val value: Long,
-                      override val proposition: Value[SBoolean.type],
-                      val transactionId: Digest32,
-                      val boxId: Short,
-                      override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map()
-                     ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
+class ErgoBox private(
+    override val value: Long,
+    override val proposition: Value[SBoolean.type],
+    override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
+    val transactionId: Array[Byte],
+    val boxId: Short
+) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
 
   import ErgoBox._
 
@@ -60,7 +58,11 @@ class ErgoBox private(override val value: Long,
     }
   }
 
-  lazy val bytes: Array[Byte] = serializer.toBytes(this)
+  lazy val bytes: Array[Byte] = {
+    val w = Serializer.startWriter()
+    DataSerializer.serialize[SBox.type](this, SBox, w)
+    w.toBytes
+  }
 
   override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox =>
@@ -89,92 +91,23 @@ object ErgoBox {
   def apply(value: Long,
             proposition: Value[SBoolean.type],
             additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
-            transactionId: Digest32 = Digest32 @@ Array.fill(32)(0: Byte),
+            transactionId: Array[Byte] = Array.fill(32)(0: Byte),
             boxId: Short = 0): ErgoBox =
-    new ErgoBox(value, proposition, transactionId, boxId, additionalRegisters)
+    new ErgoBox(value, proposition, additionalRegisters, transactionId, boxId)
 
-  object serializer extends Serializer[ErgoBox, ErgoBox] {
+  abstract class RegisterIdentifier(val number: Byte)
+  abstract class NonMandatoryIdentifier(override val number: Byte) extends RegisterIdentifier(number)
 
-    override def toBytes(obj: ErgoBox): Array[Byte] =
-      ErgoBoxCandidate.serializer.toBytes(obj) ++ obj.transactionId ++ Shorts.toByteArray(obj.boxId)
-
-
-    @tailrec
-    def collectRegister(obj: ErgoBoxCandidate,
-                        collectedBytes: Array[Byte],
-                        collectedRegisters: Byte): (Array[Byte], Byte) = {
-      val regIdx = (startingNonMandatoryIndex + collectedRegisters).toByte
-      val regByIdOpt = registerByIndex.get(regIdx)
-      regByIdOpt.flatMap(obj.get) match {
-        case Some(v) =>
-          collectRegister(obj, collectedBytes ++ ValueSerializer.serialize(v), (collectedRegisters + 1).toByte)
-        case None =>
-          (collectedBytes, collectedRegisters)
-      }
-    }
-
-    override def parseBytes(bytes: Array[Byte]): Try[ErgoBox] = Try {
-      require(bytes.length > 42, "box(long value + proposition + txid + outid) should be 43 bytes at least")
-      parseBody(bytes, 0)._1
-    }
-
-    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoBox, Consumed) = {
-      val (candidate, consumed) = ErgoBoxCandidate.serializer.parseBody(bytes, pos)
-
-      val newPos = pos + consumed
-
-      val txId = Digest32 @@ bytes.slice(newPos, newPos + 32)
-      val boxId = Shorts.fromByteArray(bytes.slice(newPos + 32, newPos + 34))
-      candidate.toBox(txId, boxId) -> (consumed + 34)
-    }
-  }
-
-
-  sealed trait RegisterIdentifier {
-    val number: Byte
-  }
-
-  sealed trait NonMandatoryIdentifier extends RegisterIdentifier
-
-  object R0 extends RegisterIdentifier {
-    override val number = 0
-  }
-
-  object R1 extends RegisterIdentifier {
-    override val number = 1
-  }
-
-  object R2 extends RegisterIdentifier {
-    override val number = 2
-  }
-
-  object R3 extends RegisterIdentifier with NonMandatoryIdentifier {
-    override val number = 3
-  }
-
-  object R4 extends RegisterIdentifier with NonMandatoryIdentifier {
-    override val number = 4
-  }
-
-  object R5 extends RegisterIdentifier with NonMandatoryIdentifier {
-    override val number = 5
-  }
-
-  object R6 extends RegisterIdentifier with NonMandatoryIdentifier {
-    override val number = 6
-  }
-
-  object R7 extends RegisterIdentifier with NonMandatoryIdentifier {
-    override val number = 7
-  }
-
-  object R8 extends RegisterIdentifier with NonMandatoryIdentifier {
-    override val number = 8
-  }
-
-  object R9 extends RegisterIdentifier with NonMandatoryIdentifier {
-    override val number = 9
-  }
+  object R0 extends RegisterIdentifier(0)
+  object R1 extends RegisterIdentifier(1)
+  object R2 extends RegisterIdentifier(2)
+  object R3 extends NonMandatoryIdentifier(3)
+  object R4 extends NonMandatoryIdentifier(4)
+  object R5 extends NonMandatoryIdentifier(5)
+  object R6 extends NonMandatoryIdentifier(6)
+  object R7 extends NonMandatoryIdentifier(7)
+  object R8 extends NonMandatoryIdentifier(8)
+  object R9 extends NonMandatoryIdentifier(9)
 
   val maxRegisters = 10
   val startingNonMandatoryIndex = 3

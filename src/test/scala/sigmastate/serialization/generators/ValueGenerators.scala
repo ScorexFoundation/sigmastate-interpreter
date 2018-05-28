@@ -98,7 +98,7 @@ trait ValueGenerators extends TypeGenerators {
     boxId <- arbShort.arbitrary
     regNum <- Gen.chooseNum[Byte](0, 7)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-  } yield ergoplatform.ErgoBox(l, b, ar.asScala.toMap, Digest32 @@ tId.toArray, boxId)
+  } yield ergoplatform.ErgoBox(l, b, ar.asScala.toMap, tId.toArray, boxId)
 
   val ergoBoxCandidateGen: Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
@@ -165,7 +165,7 @@ trait ValueGenerators extends TypeGenerators {
 
   def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
 
-  implicit def arrayGen[T: Gen: ClassTag]: Gen[Array[T]] = for {
+  implicit def arrayGen[T: Arbitrary: ClassTag]: Gen[Array[T]] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbitrary[T])
   } yield bytes.toArray

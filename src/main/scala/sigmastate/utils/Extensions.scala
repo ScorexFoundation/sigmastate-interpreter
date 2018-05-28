@@ -12,6 +12,45 @@ import scala.reflect.ClassTag
 
 object Extensions {
 
+  implicit class IntOps(i: Int) {
+    def toByteChecked: Byte = {
+      assert(i >= 0 && i <= 255, s"Cannot convert Int value $i to Byte")
+      i.toByte
+    }
+  }
+
+  implicit class ByteOps(b: Byte) {
+    @inline def toUByte: Int = b & 0xFF
+    def addExact(b2: Byte): Byte = {
+      val r = b + b2
+      if (r < Byte.MinValue || r > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      r.toByte
+    }
+
+    def subtractExact(b2: Byte): Byte = {
+      val r = b - b2
+      if (r < Byte.MinValue || r > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      r.toByte
+    }
+
+    def multiplyExact(b2: Byte): Byte = {
+      val r = b * b2
+      if (r < Byte.MinValue || r > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      r.toByte
+    }
+  }
+
+  implicit class LongOps(x: Long) {
+    def toByteExact: Byte = {
+      if (x < Byte.MinValue || x > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      x.toByte
+    }
+  }
+
   implicit class OptionOps[T](opt: Option[T]) {
     /** Elvis operator for Option. See https://en.wikipedia.org/wiki/Elvis_operator*/
     def ?:(whenNone: => T): T = if (opt.isDefined) opt.get else whenNone
@@ -93,3 +132,4 @@ object Extensions {
   }
 
 }
+

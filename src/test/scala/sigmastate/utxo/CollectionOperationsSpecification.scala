@@ -7,6 +7,7 @@ import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
+import sigmastate.serialization.OpCodes._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
 
@@ -178,7 +179,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val propTree = Exists(Outputs, 21,
       EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(IntConstant(0L))),
-        Plus(ExtractRegisterAs(Self, R3), IntConstant(1))))
+        Plus(ExtractRegisterAs[SInt.type](Self, R3), IntConstant(1))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
@@ -274,7 +275,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expectedPropTree = EQ(
       ExtractAmount(
         ByIndex(Outputs,
-          ArithmeticOperations(SizeOf(Outputs), IntConstant(1), 41))),
+          ArithOp(SizeOf(Outputs), IntConstant(1), MinusCode))),
       IntConstant(10))
     assertProof(code, expectedPropTree, outputBoxValues)
   }

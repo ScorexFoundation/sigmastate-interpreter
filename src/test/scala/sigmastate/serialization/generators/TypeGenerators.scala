@@ -12,8 +12,8 @@ trait TypeGenerators {
   implicit val boxTypeGen = Gen.const(SBox)
   implicit val avlTreeTypeGen = Gen.const(SAvlTree)
 
-  implicit val typeGen: Gen[SType] = Gen.oneOf[SType](SByte, SInt, SBoolean, SBigInt, SGroupElement, SBox, SAvlTree)
-  implicit val arbType = Arbitrary(typeGen)
+  implicit val primTypeGen: Gen[SPrimType] = Gen.oneOf[SPrimType](SByte, SInt, SBoolean, SBigInt, SGroupElement, SBox, SAvlTree)
+  implicit val arbPrimType = Arbitrary(primTypeGen)
 
   implicit def getToArbitrary[T: Gen]: Arbitrary[T] = Arbitrary(implicitly[Gen[T]])
 }

@@ -18,7 +18,7 @@ object DeserializeContextSerializer extends ValueSerializer[DeserializeContext[S
     val tpeByte = bytes(pos)
     val tpe = SType.allPredefTypes.filter(_.typeCode == tpeByte).head
     val id = bytes(pos + 1)
-    (DeserializeContext(id)(tpe), 2)
+    (DeserializeContext(id, tpe), 2)
   }
 
 }

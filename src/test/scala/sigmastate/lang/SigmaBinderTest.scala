@@ -31,8 +31,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       MethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         "++", IndexedSeq(ConcreteCollection(IntConstant(10), IntConstant(20))))
-    bind(env, "g1 ^ n") shouldBe Exponentiate(g1, n)
-    bind(env, "g1 * g2") shouldBe MultiplyGroup(g1, g2)
+    bind(env, "g1 ^ n1") shouldBe Exponentiate(g1, n1)
+    bind(env, "g1 * g2") shouldBe MethodCall(g1, "*", IndexedSeq(g2))
   }
 
   property("predefined functions") {
@@ -124,24 +124,24 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("lambdas") {
     bind(env, "fun (a: Int) = a + 1") shouldBe
-      Lambda(IndexedSeq("a" -> SInt), SInt, Plus(IntIdent("a"), 1))
+      Lambda(IndexedSeq("a" -> SInt), NoType, Plus(IntIdent("a"), 1))
     bind(env, "fun (a: Int, box: Box): Int = a + box.value") shouldBe
         Lambda(IndexedSeq("a" -> SInt, "box" -> SBox), SInt,
                Plus(IntIdent("a"), Select(Ident("box"), "value").asValue[SInt.type]))
     bind(env, "fun (a) = a + 1") shouldBe
-        Lambda(IndexedSeq("a" -> NoType), SInt, Plus(IntIdent("a"), IntConstant(1)))
+        Lambda(IndexedSeq("a" -> NoType), NoType, Plus(IntIdent("a"), IntConstant(1)))
     bind(env, "fun (a) = a + x") shouldBe
-        Lambda(IndexedSeq("a" -> NoType), SInt, Plus(IntIdent("a"), 10))
+        Lambda(IndexedSeq("a" -> NoType), NoType, Plus(IntIdent("a"), 10))
     bind(env, "fun (a: Int) = { let Y = a + 1; Y + x }") shouldBe
-        Lambda(IndexedSeq("a" -> SInt), SInt,
-          Block(Let("Y", SInt, Plus(IntIdent("a"), 1)), Plus(IntIdent("Y"), 10)))
+        Lambda(IndexedSeq("a" -> SInt), NoType,
+          Block(Let("Y", NoType, Plus(IntIdent("a"), 1)), Plus(IntIdent("Y"), 10)))
   }
 
   property("function definitions") {
     bind(env, "{let f = fun (a: Int) = a + 1; f}") shouldBe
-        Block(Let("f", SFunc(IndexedSeq(SInt), SInt), Lambda(IndexedSeq("a" -> SInt), SInt, Plus(IntIdent("a"), 1))), Ident("f"))
+        Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, Plus(IntIdent("a"), 1))), Ident("f"))
     bind(env, "{fun f(a: Int) = a + x; f}") shouldBe
-        Block(Let("f", SFunc(IndexedSeq(SInt), SInt), Lambda(IndexedSeq("a" -> SInt), SInt, Plus(IntIdent("a"), 10))), Ident("f"))
+        Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, Plus(IntIdent("a"), 10))), Ident("f"))
   }
 
   property("predefined primitives") {
