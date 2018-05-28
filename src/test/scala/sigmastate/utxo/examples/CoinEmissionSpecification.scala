@@ -10,6 +10,11 @@ import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState
 import sigmastate.utxo._
 import sigmastate.{SInt, _}
 
+/**
+  * Coin emission specification.
+  * Instead of having implicit emission via coinbase transaction, we implement 1 output in a state with script,
+  * that controls emission rules
+  */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging {
 
   // Some constants
@@ -34,11 +39,6 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
-  /**
-    * Coin emission specification.
-    * Instead of having implicit emission via coinbase transaction, it is possible to have 1 output in a state,
-    * that controls emission rules
-    */
   property("emission specification") {
     val prover = new ErgoLikeProvingInterpreter()
 
@@ -89,6 +89,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     }
 
 
+    // TODO check for non-first epoch
     def chainGen(state: ValidationState,
                  emissionBox: ErgoBox,
                  height: Int,
