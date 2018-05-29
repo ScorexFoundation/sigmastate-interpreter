@@ -2,6 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
+import scorex.utils.ScryptoLogging
 import sigmastate.Values.IntConstant
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -14,7 +15,7 @@ import sigmastate.{SInt, _}
   * Instead of having implicit emission via coinbase transaction, we implement 1 output in a state with script,
   * that controls emission rules
   */
-class CoinEmissionSpecification extends SigmaTestingCommons {
+class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging {
 
   // Some constants
   private val coinsInOneErgo: Long = 100000000
@@ -71,15 +72,23 @@ class CoinEmissionSpecification extends SigmaTestingCommons {
                                    emissionBox: ErgoBox,
                                    height: Int): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
-      val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Map())
-      val newEmissionBox: Option[ErgoBoxCandidate] = if (height != blocksTotal) {
-        Some(new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> IntConstant(height))))
-      } else None
+      val ut = if (height != blocksTotal) {
+        val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Map())
+        val newEmissionBox: ErgoBoxCandidate =
+          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> IntConstant(height)))
 
-      val ut = UnsignedErgoLikeTransaction(
-        IndexedSeq(new UnsignedInput(emissionBox.id)),
-        newEmissionBox.toIndexedSeq ++ IndexedSeq(minerBox)
-      )
+        UnsignedErgoLikeTransaction(
+          IndexedSeq(new UnsignedInput(emissionBox.id)),
+          IndexedSeq(newEmissionBox, minerBox)
+        )
+      } else {
+        val minerBox = new ErgoBoxCandidate(emissionBox.value, minerProp, Map(register -> IntConstant(height)))
+        UnsignedErgoLikeTransaction(
+          IndexedSeq(new UnsignedInput(emissionBox.id)),
+          IndexedSeq(minerBox)
+        )
+      }
+
       val context = ErgoLikeContext(height,
         state.state.lastBlockUtxoRoot,
         IndexedSeq(emissionBox),
@@ -90,11 +99,14 @@ class CoinEmissionSpecification extends SigmaTestingCommons {
       ut.toSigned(IndexedSeq(proverResult))
     }
 
+    val st = System.currentTimeMillis()
+
     def chainGen(state: ValidationState,
                  emissionBox: ErgoBox,
                  height: Int,
                  hLimit: Int): Unit = if (height < hLimit) {
-      if (height % 10000 == 0) println(s"block $height from $blocksTotal")
+      if (height % 10000 == 0) log.debug(s"block $height from $blocksTotal." +
+        s" ${height.toDouble / blocksTotal}% in ${System.currentTimeMillis() - st} ms")
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
       val block = Block(IndexedSeq(tx))
       val newState = state.applyBlock(block).get
@@ -102,7 +114,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons {
         val newEmissionBox = newState.boxesReader.byId(tx.outputs.head.id).get
         chainGen(newState, newEmissionBox, height + 1, hLimit)
       } else {
-        println(s"Emission box is consumed at height $height by transaction $tx")
+        log.debug(s"Emission box is consumed at height $height")
       }
     }
 
