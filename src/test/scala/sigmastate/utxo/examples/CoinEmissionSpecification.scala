@@ -2,7 +2,6 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
-import scorex.utils.ScryptoLogging
 import sigmastate.Values.IntConstant
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -15,7 +14,7 @@ import sigmastate.{SInt, _}
   * Instead of having implicit emission via coinbase transaction, we implement 1 output in a state with script,
   * that controls emission rules
   */
-class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging {
+class CoinEmissionSpecification extends SigmaTestingCommons {
 
   // Some constants
   private val coinsInOneErgo: Long = 100000000
@@ -38,20 +37,19 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     }
   }.ensuring(_ >= 0, s"Negative at $h")
 
-
   property("emission specification") {
     val register = R3
     val prover = new ErgoLikeProvingInterpreter()
 
-    val red = Multiply(fixedRate, Modulo(Modulo(Minus(Height, fixedRatePeriod), rewardReductionPeriod), decreasingEpochs))
+    val red = Modulo(Multiply(fixedRate, Modulo(Minus(Height, fixedRatePeriod), rewardReductionPeriod)), decreasingEpochs)
     val coinsToIssue = If(LE(Height, fixedRatePeriod), fixedRate, Minus(fixedRate, red))
     val out = ByIndex(Outputs, 0)
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(out))
     val heightCorrect = EQ(ExtractRegisterAs[SInt.type](out, register), Height)
     val heightIncreased = GT(ExtractRegisterAs[SInt.type](out, register), ExtractRegisterAs[SInt.type](Self, register))
-    val correctCoinsConsumed = EQ(ExtractAmount(out), Minus(ExtractAmount(Self), coinsToIssue))
+    val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(out)))
 
-    val prop = AND(sameScriptRule, correctCoinsConsumed, heightIncreased, heightCorrect)
+    val prop = OR(AND(sameScriptRule, correctCoinsConsumed, heightIncreased, heightCorrect), EQ(Height, blocksTotal))
     val minerProp = prover.dlogSecrets.head.publicImage
 
     val initialBoxCandidate: ErgoBox = ErgoBox(9773992500000000L, prop, Map(register -> IntConstant(-1)))
@@ -72,13 +70,15 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     def genCoinbaseLikeTransaction(state: ValidationState,
                                    emissionBox: ErgoBox,
                                    height: Int): ErgoLikeTransaction = {
+      assert(state.state.currentHeight == height - 1)
       val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Map())
-      val newEmissionBox = new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop,
-        Map(register -> IntConstant(height)))
+      val newEmissionBox: Option[ErgoBoxCandidate] = if (height != blocksTotal) {
+        Some(new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> IntConstant(height))))
+      } else None
 
       val ut = UnsignedErgoLikeTransaction(
         IndexedSeq(new UnsignedInput(emissionBox.id)),
-        IndexedSeq(newEmissionBox, minerBox)
+        newEmissionBox.toIndexedSeq ++ IndexedSeq(minerBox)
       )
       val context = ErgoLikeContext(height,
         state.state.lastBlockUtxoRoot,
@@ -90,17 +90,20 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
       ut.toSigned(IndexedSeq(proverResult))
     }
 
-
-    // TODO check for non-first epoch
     def chainGen(state: ValidationState,
                  emissionBox: ErgoBox,
                  height: Int,
                  hLimit: Int): Unit = if (height < hLimit) {
+      if (height % 10000 == 0) println(s"block $height from $blocksTotal")
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
       val block = Block(IndexedSeq(tx))
       val newState = state.applyBlock(block).get
-      val newEmissionBox = newState.boxesReader.byId(tx.outputs.head.id).get
-      chainGen(newState, newEmissionBox, height + 1, hLimit)
+      if (tx.outputs.length == 2) {
+        val newEmissionBox = newState.boxesReader.byId(tx.outputs.head.id).get
+        chainGen(newState, newEmissionBox, height + 1, hLimit)
+      } else {
+        println(s"Emission box is consumed at height $height by transaction $tx")
+      }
     }
 
     chainGen(genesisState, initialBox, 2, 100000000)
