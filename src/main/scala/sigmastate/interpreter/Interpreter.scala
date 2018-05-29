@@ -7,6 +7,7 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
+import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
@@ -33,7 +34,7 @@ object CryptoConstants {
   val groupSize: Int = 384 / 8 //48 bytes
 
   //size of challenge in Sigma protocols, in bits
-  implicit val soundnessBits: Int = 184
+  implicit val soundnessBits: Int = 256
 }
 
 object CryptoFunctions {
