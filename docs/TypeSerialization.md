@@ -111,8 +111,14 @@ If R = 0 then range type is not primitive and recursive descent is necessary to 
 
 When argument of the type constructor is not primitive type we fallback to simple encoding schema.
 In such a case we emit special code for the type constructor according to the table above and descend recursively 
-to every child node.
+to every child node of the type tree.
 We do this descend only for those children whose code cannot be embedded in parent code.
+For example, serialization of `Array[(Int,Boolean)]` proceeds as the following:
+1) emit 0x0C because element of array is not primitive 
+2) recursively serialize `(Int, Boolean)`
+3) emit 0x3D because first item in the pair is primitive
+4) recursivley serialize `Boolean`
+5) emit 0x02 - the code for primitive type `Boolean`
  
 ### Examples
 
@@ -125,10 +131,24 @@ Type                 | D   | R   | Bytes             | #Bytes  | Comments
 `Option[Array[Byte]]`|     |     |  48 + 1 = 49      |  1     | register
 `(Int,Int)`          |     |     |  84 + 3 = 87      |  1     | fold
 `Box=>Boolean`       | 7   | 2   |  198 = 7*12+2+112 |  1     | exist, forall
-`(Int,Int)=>Int`     | 0   | 3   |  115=0*12+3+112, 87 |  2     |  fold
-`(Int,Boolean)`      |     |     |  60 + 3, 2        |  2     |  
-`(Int,Box) => Boolean` | 0    | 2    |  0*12+2+112, 60+3, 7 |  3     | 
+`(Int,Int)=>Int`     | 0   | 3   |  115=0*12+3+112, 87  |  2     |  fold
+`(Int,Boolean)`      |     |     |  60 + 3, 2           |  2     |  
+`(Int,Box)=>Boolean` | 0   | 2   |  0*12+2+112, 60+3, 7 |  3     | 
 
-# Data and Constant serialization
+## Data and Constant serialization
 
- 
+The contents of a typed data structure can be fully described by a type tree.
+For example having a type `d: (Int, Array[Int], Boolean)` we can tell that `d` has 3 items, 
+the first item contain 64-bit integer, the second - array of 64-bit integers, and the third - logical true/false value. 
+
+To serialize/deserialize typed data we need to know its type descriptor (type tree).
+
+Object        | Type             | Format
+--------------|------------------|-------
+x = 0xXX      | `Byte`           |  `[x & 0xFF]` - one byte storing value x 
+b = false/true| `Boolean`        |  `[0x01 or 0x00]` - one byte storing 0 or 1
+n = 0xXXXXXXXXXXXXXXXX  |  `Int`              |  `[XX,XX,XX,XX,XX,XX,XX,XX]` - big endian 8 bytes
+xs = Array(x1, .., xN)  |  `Array[Byte]`      |  `[xs.length & 0xXXXX, x1, ..., xN]` - 2 bytes of length and elements
+N = new BigInteger()    |  `BigInt`           |  xs = N.toByteArray, `[serialize(xs)]` - serialize as `Array[Byte]`, see also BigInteger.toByteArray
+e = new EcPoint()       |  `GroupElement`     |  `[e.getEncoded(true)]` see also org.bouncycastle.math.ec.EcPoint.getEncoded(true)
+box = new ErgoBox()     |  `Box`              |  `[putLong(box.value), putValue(box.proposition), putArray[Any](box.registers), 32, putBytes(box.transactionId), putShort(box.boxId)]`
