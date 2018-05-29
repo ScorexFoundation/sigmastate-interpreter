@@ -1,6 +1,5 @@
 package sigmastate.serialization
 
-import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import sigmastate.Values.GroupElementConstant
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.OpCodes._
@@ -30,12 +29,12 @@ object GroupElementSerializer extends ValueSerializer[GroupElementConstant] {
   override def parseBody(bytesIn: Array[Byte], pos: Int): (GroupElementConstant, Int) = bytesIn(pos) match {
     case 0 =>
       // infinity point is always compressed as 1 byte (X9.62 s 4.3.6)
-      val point = curve.curve.decodePoint(Array(bytesIn(pos))).asInstanceOf[SecP384R1Point]
+      val point = curve.curve.decodePoint(Array(bytesIn(pos))).asInstanceOf[ElemType]
       (GroupElementConstant(point), 1)
     case m if m == 2 || m == 3 =>
       val consumed = 1 + (curve.curve.getFieldSize + 7) / 8
       val encoded = bytesIn.slice(pos, pos + consumed)
-      val point = curve.curve.decodePoint(encoded).asInstanceOf[SecP384R1Point]
+      val point = curve.curve.decodePoint(encoded).asInstanceOf[ElemType]
       (GroupElementConstant(point), consumed)
     case m =>
       throw new Error(s"Only compressed encoding is supported, $m given")
