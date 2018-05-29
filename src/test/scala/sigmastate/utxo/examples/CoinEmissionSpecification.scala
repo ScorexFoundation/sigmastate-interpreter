@@ -103,6 +103,6 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
       chainGen(newState, newEmissionBox, height + 1, hLimit)
     }
 
-    chainGen(genesisState, initialBox, 2, 100)
+    chainGen(genesisState, initialBox, 2, 100000000)
   }
 }
