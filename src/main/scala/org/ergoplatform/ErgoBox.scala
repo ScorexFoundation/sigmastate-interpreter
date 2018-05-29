@@ -5,7 +5,8 @@ import java.util.Arrays
 import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.NonMandatoryIdentifier
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.encode.Base16
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.{DataSerializer, Serializer}
@@ -74,6 +75,9 @@ class ErgoBox private(
   override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalRegisters, boxId))
 
   def toCandidate: ErgoBoxCandidate = new ErgoBoxCandidate(value, proposition, additionalRegisters)
+
+  override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$proposition,${Base16.encode(transactionId)}," +
+    s"$boxId,$additionalRegisters)"
 }
 
 object ErgoBox {
