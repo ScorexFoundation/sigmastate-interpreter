@@ -1,7 +1,7 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import sigmastate.Values.{ByteArrayConstant, IntConstant, TaggedBox}
+import sigmastate.Values.{ByteArrayConstant, LongConstant, TaggedBox}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo._
@@ -30,8 +30,8 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val backerPubKey = backerProver.dlogSecrets.head.publicImage
     val projectPubKey = projectProver.dlogSecrets.head.publicImage
 
-    val timeout = IntConstant(100)
-    val minToRaise = IntConstant(1000)
+    val timeout = LongConstant(100)
+    val minToRaise = LongConstant(1000)
 
     val env = Map(
       "timeout" -> 100,

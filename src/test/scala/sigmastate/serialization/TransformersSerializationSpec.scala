@@ -6,49 +6,49 @@ import sigmastate.utxo._
 class TransformersSerializationSpec extends SerializationSpecification {
 
   property("MapCollection: Serializer round trip") {
-    forAll { mc: MapCollection[SInt.type, SInt.type] =>
+    forAll { mc: MapCollection[SLong.type, SLong.type] =>
       roundTripTest(mc)
     }
   }
 
   property("Exists: Serializer round trip") {
-    forAll { e: Exists[SInt.type] =>
+    forAll { e: Exists[SLong.type] =>
       roundTripTest(e)
     }
   }
 
   property("ForAll: Serializer round trip") {
-    forAll { e: ForAll[SInt.type] =>
+    forAll { e: ForAll[SLong.type] =>
       roundTripTest(e)
     }
   }
 
   property("Fold: Serializer round trip") {
-    forAll { f: Fold[SInt.type] =>
+    forAll { f: Fold[SLong.type] =>
       roundTripTest(f)
     }
   }
 
   property("Slice: Serializer round trip") {
-    forAll { f: Slice[SInt.type] =>
+    forAll { f: Slice[SLong.type] =>
       roundTripTest(f)
     }
   }
 
   property("Append: Serializer round trip") {
-    forAll { f: Append[SInt.type] =>
+    forAll { f: Append[SLong.type] =>
       roundTripTest(f)
     }
   }
 
   property("Where: Serializer round trip") {
-    forAll { f: Where[SInt.type] =>
+    forAll { f: Where[SLong.type] =>
       roundTripTest(f)
     }
   }
 
   property("SizeOf: Serializer round trip") {
-    forAll { s: SizeOf[SInt.type] =>
+    forAll { s: SizeOf[SLong.type] =>
       roundTripTest(s)
     }
   }
@@ -84,7 +84,7 @@ class TransformersSerializationSpec extends SerializationSpecification {
   }
 
   property("ExtractRegisterAs: Serializer round trip") {
-    forAll { e: ExtractRegisterAs[SInt.type ] =>
+    forAll { e: ExtractRegisterAs[SLong.type ] =>
       roundTripTest(e)
     }
   }
@@ -126,7 +126,7 @@ class TransformersSerializationSpec extends SerializationSpecification {
   }
 
   property("ByIndex: Serializer round trip") {
-    forAll { bi: ByIndex[SInt.type ] =>
+    forAll { bi: ByIndex[SLong.type ] =>
       roundTripTest(bi)
     }
   }

@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, FalseLeaf, IntConstant, TaggedInt, TrueLeaf, Value}
+import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, FalseLeaf, LongConstant, TaggedInt, TrueLeaf, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -113,37 +113,37 @@ class Rule110Specification extends SigmaTestingCommons {
     val bitsInString = 31
     val lastBitIndex = bitsInString - 1
 
-    val midBitColumn = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg),
-      ExtractRegisterAs[SInt.type](ByIndex(Inputs, 1), ColumnReg))
+    val midBitColumn = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg),
+      ExtractRegisterAs[SLong.type](ByIndex(Inputs, 1), ColumnReg))
 
     val leftBitColumn =
       OR(
         AND(
-          EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg), IntConstant(0)),
-          EQ(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), ColumnReg), IntConstant(lastBitIndex))
+          EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg), LongConstant(0)),
+          EQ(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), ColumnReg), LongConstant(lastBitIndex))
         ),
-        EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg),
-          Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), ColumnReg), IntConstant(1)))
+        EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg),
+          Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), ColumnReg), LongConstant(1)))
       )
 
     val rightBitColumn =
       OR(
         AND(
-          EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg), IntConstant(lastBitIndex)),
-          EQ(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 2), ColumnReg), IntConstant(0))
+          EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg), LongConstant(lastBitIndex)),
+          EQ(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 2), ColumnReg), LongConstant(0))
         ),
-        EQ(Plus(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), ColumnReg), IntConstant(1)),
-          ExtractRegisterAs[SInt.type](ByIndex(Inputs, 2), ColumnReg))
+        EQ(Plus(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg), LongConstant(1)),
+          ExtractRegisterAs[SLong.type](ByIndex(Inputs, 2), ColumnReg))
       )
 
-    val row0 = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), RowReg),
-      Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), RowReg), IntConstant(1)))
+    val row0 = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), RowReg),
+      Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), RowReg), LongConstant(1)))
 
-    val row1 = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), RowReg),
-      Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 1), RowReg), IntConstant(1)))
+    val row1 = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), RowReg),
+      Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 1), RowReg), LongConstant(1)))
 
-    val row2 = EQ(ExtractRegisterAs[SInt.type](ByIndex(Outputs, 0), RowReg),
-      Plus(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 2), RowReg), IntConstant(1)))
+    val row2 = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), RowReg),
+      Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 2), RowReg), LongConstant(1)))
 
     val input0 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 0), ValueReg)
     val input1 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 1), ValueReg)
@@ -166,8 +166,8 @@ class Rule110Specification extends SigmaTestingCommons {
     ))
 
     val prop = AND(Seq(
-      EQ(SizeOf(Inputs), IntConstant(3)),
-      EQ(SizeOf(Outputs), IntConstant(4)),
+      EQ(SizeOf(Inputs), LongConstant(3)),
+      EQ(SizeOf(Outputs), LongConstant(4)),
 
       //We're checking that the outputs are indeed contain the same script
       EQ(ExtractScriptBytes(Self), ExtractScriptBytes(ByIndex(Outputs, 0))),
@@ -196,8 +196,8 @@ class Rule110Specification extends SigmaTestingCommons {
     // and check that the first row (after the genesis one) is satisfying the example
 
     val coins = (0 until bitsInString).map { col =>
-      val row = RowReg -> IntConstant(0)
-      val column = ColumnReg -> IntConstant(col)
+      val row = RowReg -> LongConstant(0)
+      val column = ColumnReg -> LongConstant(col)
       val value = if (col == 15) ValueReg -> TrueLeaf else ValueReg -> FalseLeaf
       ErgoBox(0L, prop, Map(row, column, value), txId, col.toShort)
     }
@@ -229,7 +229,7 @@ class Rule110Specification extends SigmaTestingCommons {
 
         val value = ValueReg -> BooleanConstant.fromBoolean(calcRule110(lv, cv, rv))
 
-        val c = new ErgoBoxCandidate(0L, prop, Map(RowReg -> IntConstant(row), ColumnReg -> IntConstant(col), value))
+        val c = new ErgoBoxCandidate(0L, prop, Map(RowReg -> LongConstant(row), ColumnReg -> LongConstant(col), value))
 
         val ut = UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(left.id), new UnsignedInput(center.id), new UnsignedInput(right.id)),

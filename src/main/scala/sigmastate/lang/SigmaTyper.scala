@@ -148,11 +148,11 @@ class SigmaTyper {
         case _: SCollection[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
-            case Seq(IntConstant(i)) =>
+            case Seq(LongConstant(i)) =>
               ByIndex[SType](new_f.asCollection, i.toInt)
             case Seq(arg) =>
               val newArg = assignType(env, arg)
-              if (newArg.tpe == SInt)
+              if (newArg.tpe == SLong)
                 ByIndex[SType](new_f.asCollection, newArg.asIntValue)
               else
                 error(s"Invalid argument type of array application $app: expected integer; actual: $newArg")
@@ -185,7 +185,7 @@ class SigmaTyper {
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
-        case SInt | SByte | SBigInt => (m, newArgs) match {
+        case SLong | SByte | SBigInt => (m, newArgs) match {
           case ("*", Seq(r)) =>
             if (r.tpe == newObj.tpe)
               Multiply(newObj, r)
@@ -277,7 +277,7 @@ class SigmaTyper {
     case Inputs => Inputs
     case Outputs => Outputs
     case LastBlockUtxoRootHash => LastBlockUtxoRootHash
-    case IntConstant(i) if expected.isDefined && expected.get == SByte =>
+    case LongConstant(i) if expected.isDefined && expected.get == SByte =>
       if (i >= 0 && i <= Byte.MaxValue) ByteConstant(i.toByte)
       else error(s"Value $i of type Long cannot be converted to Byte.")
     case v: ContextVariable[_] => v

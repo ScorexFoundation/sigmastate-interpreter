@@ -155,10 +155,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
            }""".stripMargin).asBoolValue
 
       val prop = OR(
-        AND(LE(Height, IntConstant(timeout)),
+        AND(LE(Height, LongConstant(timeout)),
           EQ(CalcBlake2b256(Fold.concat(MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))))),
             ByteArrayConstant(properHash))),
-        AND(GT(Height, IntConstant(timeout)), sender)
+        AND(GT(Height, LongConstant(timeout)), sender)
       )
       compiledProp shouldBe prop
       compiledProp
@@ -196,7 +196,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  pubkey && outValues.fold(0, fun (x: Int, y: Int) = y + x) > 20
          }""".stripMargin).asBoolValue
 
-    val propExp = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), IntConstant(20)))
+    val propExp = AND(pubkey, GT(Fold.sum(MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), LongConstant(20)))
     prop shouldBe propExp
 
     val newBox1 = ErgoBox(11, pubkey)
@@ -225,7 +225,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val env = Map("pubkey" -> pubkey)
     val compiledProp = compile(env, """pubkey && OUTPUTS(0).value > 10""")
 
-    val prop = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntConstant(10)))
+    val prop = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(10)))
     compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(11, pubkey)
@@ -245,10 +245,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, pr, fakeMessage)
 
 
-    val fProp1 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), IntConstant(11)))
+    val fProp1 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(11)))
     prover.prove(fProp1, ctx, fakeMessage).isSuccess shouldBe false
 
-    val fProp2 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 1)), IntConstant(11)))
+    val fProp2 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 1)), LongConstant(11)))
     prover.prove(fProp2, ctx, fakeMessage).isSuccess shouldBe false
   }
 
@@ -358,7 +358,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
          }""".stripMargin).asBoolValue
 
     val propExpected = AND(
-      EQ(SizeOf(Inputs), IntConstant(2)),
+      EQ(SizeOf(Inputs), LongConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ExtractId(BoxConstant(brother))))
     prop shouldBe propExpected
 
@@ -419,7 +419,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val propExpected = EQ(ByteArrayConstant(helloHash),
       CalcBlake2b256(
-        If(GT(ExtractAmount(ByIndex(Inputs, 0)), IntConstant(10)),
+        If(GT(ExtractAmount(ByIndex(Inputs, 0)), LongConstant(10)),
           ExtractRegisterAs[SByteArray](ByIndex(Inputs, 2), R3),
           ExtractRegisterAs[SByteArray](ByIndex(Inputs, 1), R3))))
     prop shouldBe propExpected

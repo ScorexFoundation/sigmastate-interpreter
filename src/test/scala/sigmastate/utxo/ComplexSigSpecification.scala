@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
-import sigmastate.Values.IntConstant
+import sigmastate.Values.LongConstant
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 
@@ -318,7 +318,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
     val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, HEIGHT > 500))""")
 
-    val prop = OR(pubkeyA, pubkeyB, GT(Height, IntConstant(500)))
+    val prop = OR(pubkeyA, pubkeyB, GT(Height, LongConstant(500)))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
@@ -357,7 +357,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compile(env, """anyOf(Array(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
 
-    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntConstant(500))))
+    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, LongConstant(500))))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(

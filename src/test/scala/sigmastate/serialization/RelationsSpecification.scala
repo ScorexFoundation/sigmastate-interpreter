@@ -10,10 +10,10 @@ class RelationsSpecification extends TableSerializationSpecification {
   override val objects =
     Table(
       ("object", "bytes"),
-      (LT(IntConstant(2), IntConstant(3)), Array[Byte](LtCode, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 2, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (LE(IntConstant(2), IntConstant(3)), Array[Byte](LeCode, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 2, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (GT(IntConstant(6), IntConstant(5)), Array[Byte](GtCode, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 6, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 5)),
-      (GE(IntConstant(6), IntConstant(5)), Array[Byte](GeCode, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 6, SInt.typeCode, 0, 0, 0, 0, 0, 0, 0, 5)),
+      (LT(LongConstant(2), LongConstant(3)), Array[Byte](LtCode, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 2, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (LE(LongConstant(2), LongConstant(3)), Array[Byte](LeCode, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 2, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 3)),
+      (GT(LongConstant(6), LongConstant(5)), Array[Byte](GtCode, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 6, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 5)),
+      (GE(LongConstant(6), LongConstant(5)), Array[Byte](GeCode, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 6, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 5)),
       (EQ(TrueLeaf, FalseLeaf), Array[Byte](EqCode, TrueCode, FalseCode)),
       (NEQ(TrueLeaf, FalseLeaf), Array[Byte](NeqCode, TrueCode, FalseCode))
     )
@@ -34,7 +34,7 @@ class RelationsSpecification extends TableSerializationSpecification {
   }
 
   property("If: Serializer round trip") {
-    forAll { i: If[SInt.type] =>
+    forAll { i: If[SLong.type] =>
       roundTripTest(i)
     }
   }

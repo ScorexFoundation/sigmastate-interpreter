@@ -7,6 +7,7 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.NonMandatoryIdentifier
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values.EvaluatedValue
 import sigmastate.utils.{ByteWriter, ByteReader}
 import sigmastate._
@@ -22,9 +23,11 @@ object DataSerializer {
   private val LengthSize: Int = 2
 
   def serialize[T <: SType](v: T#WrappedType, tpe: T, w: ByteWriter): Unit = tpe match {
-    case SByte => w.put(v.asInstanceOf[Byte])
     case SBoolean => w.putBoolean(v.asInstanceOf[Boolean])
-    case SInt => w.putLong(v.asInstanceOf[Long])
+    case SByte => w.put(v.asInstanceOf[Byte])
+    case SShort => w.putShort(v.asInstanceOf[Short])
+    case SInt => w.putInt(v.asInstanceOf[Int])
+    case SLong => w.putLong(v.asInstanceOf[Long])
     case SBigInt =>
       val data = v.asInstanceOf[BigInteger].toByteArray
       val length = data.length
@@ -63,8 +66,7 @@ object DataSerializer {
 
     case SAvlTree =>
       val data = v.asInstanceOf[AvlTreeData]
-      w.putInt(data.startingDigest.length)
-      w.putBytes(data.startingDigest)
+      serialize[SByteArray](data.startingDigest, SByteArray, w)
       w.putInt(data.keyLength)
       w.putOption(data.valueLengthOpt)(_.putInt(_))
       w.putOption(data.maxNumOperations)(_.putInt(_))
@@ -82,9 +84,11 @@ object DataSerializer {
   }
 
   def deserialize[T <: SType](tpe: T, r: ByteReader): (T#WrappedType) = (tpe match {
-    case SByte => r.getByte()
     case SBoolean => r.getUByte() != 0
-    case SInt => r.getLong()
+    case SByte => r.getByte()
+    case SShort => r.getShort()
+    case SInt => r.getInt()
+    case SLong => r.getLong()
     case SBigInt =>
       val size: Short = r.getShort()
       val valueBytes = r.getBytes(size)
@@ -120,13 +124,12 @@ object DataSerializer {
       box
 
     case SAvlTree =>
-      val digestLength = r.getInt()
-      val digestBytes = r.getBytes(digestLength)
+      val startingDigest = deserialize[SByteArray](SByteArray, r)
       val keyLength = r.getInt()
-      val vlOpt = r.getOption(r.getInt())
-      val mnoOpt = r.getOption(r.getInt())
-      val mdOpt = r.getOption(r.getInt())
-      val data = AvlTreeData(ADDigest @@ digestBytes, keyLength, vlOpt, mnoOpt, mdOpt)
+      val valueLengthOpt = r.getOption(r.getInt())
+      val maxNumOperations = r.getOption(r.getInt())
+      val maxDeletes = r.getOption(r.getInt())
+      val data = AvlTreeData(ADDigest @@ startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
       data
     case tCol: SCollection[a] =>
       val len = r.getShort()

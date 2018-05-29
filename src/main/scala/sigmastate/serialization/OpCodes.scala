@@ -42,21 +42,21 @@ object OpCodes extends ValueCodes {
   val TaggedVariableCode: OpCode = (LastConstantCode + 1).toByte
 
   // EvaluatedValue descendants
-  val ByteConstantCode:         OpCode = (LastConstantCode + 10).toByte
-  val IntConstantCode:          OpCode = (LastConstantCode + 11).toByte
+//  val ByteConstantCode:         OpCode = (LastConstantCode + 10).toByte
+//  val IntConstantCode:          OpCode = (LastConstantCode + 11).toByte
   val TrueCode:                 OpCode = (LastConstantCode + 12).toByte
   val FalseCode:                OpCode = (LastConstantCode + 13).toByte
   val UnitConstantCode:         OpCode = (LastConstantCode + 14).toByte
-  val BigIntConstantCode:       OpCode = (LastConstantCode + 15).toByte
-  val CollectionConstantCode:   OpCode = (LastConstantCode + 16).toByte
-  val GroupElementConstantCode: OpCode = (LastConstantCode + 17).toByte
+//  val BigIntConstantCode:       OpCode = (LastConstantCode + 15).toByte
+//  val CollectionConstantCode:   OpCode = (LastConstantCode + 16).toByte
+//  val GroupElementConstantCode: OpCode = (LastConstantCode + 17).toByte
   val GroupGeneratorCode      : OpCode = (LastConstantCode + 18).toByte
-  val BoxConstantCode         : OpCode = (LastConstantCode + 19).toByte
+//  val BoxConstantCode         : OpCode = (LastConstantCode + 19).toByte
   val ConcreteCollectionCode  : OpCode = (LastConstantCode + 20).toByte
   val TupleCode               : OpCode = (LastConstantCode + 21).toByte
   val SomeValueCode           : OpCode = (LastConstantCode + 22).toByte
   val NoneValueCode           : OpCode = (LastConstantCode + 23).toByte
-  val AvlTreeConstantCode     : OpCode = (LastConstantCode + 24).toByte
+//  val AvlTreeConstantCode     : OpCode = (LastConstantCode + 24).toByte
 
   // Relation descendants
   val LtCode : OpCode = (LastConstantCode + 31).toByte
@@ -94,10 +94,9 @@ object OpCodes extends ValueCodes {
   val SizeOfCode       : OpCode = (LastConstantCode + 65).toByte
   val ByIndexCode      : OpCode = (LastConstantCode + 66).toByte
   val AppendCode       : OpCode = (LastConstantCode + 67).toByte
-//  val AppendBytesCode  : OpCode = (LastConstantCode + 68).toByte  // TODO remove
-  val SliceCode        : OpCode = (LastConstantCode + 69).toByte
-  val WhereCode        : OpCode = (LastConstantCode + 70).toByte
-  val IsMemberCode     : OpCode = (LastConstantCode + 71).toByte
+  val SliceCode        : OpCode = (LastConstantCode + 68).toByte
+  val WhereCode        : OpCode = (LastConstantCode + 69).toByte
+  val IsMemberCode     : OpCode = (LastConstantCode + 70).toByte
 
   // Type casts codes
   val ExtractAmountCode        : OpCode = (LastConstantCode + 81).toByte

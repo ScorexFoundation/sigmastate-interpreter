@@ -31,13 +31,13 @@ class TestingInterpreterSpecification extends PropSpec
         val dk1 = DLogProverInput.random().publicImage
 
         val ctx = TestingContext(h)
-        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1.isInstanceOf[FalseLeaf.type])
+        assert(reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, AND(GE(Height, LongConstant(h)), dk1)).get._1.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1.isInstanceOf[FalseLeaf.type])
 
-        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1.isInstanceOf[ProveDlog])
+        assert(reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
+        assert(reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1.isInstanceOf[ProveDlog])
       }
     }
   }
@@ -53,26 +53,26 @@ class TestingInterpreterSpecification extends PropSpec
         val ctx = TestingContext(h)
 
         assert(reduceToCrypto(ctx, OR(
-                  AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
-                  AND(GT(Height, IntConstant(h + 1)), dk1)
+                  AND(LE(Height, LongConstant(h + 1)), AND(dk1, dk2)),
+                  AND(GT(Height, LongConstant(h + 1)), dk1)
                 )).get._1.isInstanceOf[CAND])
 
 
         assert(reduceToCrypto(ctx, OR(
-                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, IntConstant(h - 1)), dk1)
+                  AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, LongConstant(h - 1)), dk1)
                 )).get._1.isInstanceOf[ProveDlog])
 
 
         assert(reduceToCrypto(ctx, OR(
-                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, IntConstant(h + 1)), dk1)
+                  AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, LongConstant(h + 1)), dk1)
                 )).get._1.isInstanceOf[FalseLeaf.type])
 
         assert(reduceToCrypto(ctx, OR(OR(
-                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, IntConstant(h + 1)), dk1)
-                ), AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1))))).get._1.isInstanceOf[TrueLeaf.type])
+                  AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, LongConstant(h + 1)), dk1)
+                ), AND(GT(Height, LongConstant(h - 1)), LE(Height, LongConstant(h + 1))))).get._1.isInstanceOf[TrueLeaf.type])
 
       }
     }
@@ -91,7 +91,7 @@ class TestingInterpreterSpecification extends PropSpec
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
       "box1" -> ErgoBox(10, TrueLeaf, Map(
-          R3 -> IntArrayConstant(Array[Long](1, 2, 3)),
+          R3 -> LongArrayConstant(Array[Long](1, 2, 3)),
           R4 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -146,8 +146,8 @@ class TestingInterpreterSpecification extends PropSpec
     val env2 = TestingContext(101)
 
     val prop = OR(
-      AND(LE(Height, IntConstant(100)), AND(dk1, dk2)),
-      AND(GT(Height, IntConstant(100)), dk1)
+      AND(LE(Height, LongConstant(100)), AND(dk1, dk2)),
+      AND(GT(Height, LongConstant(100)), dk1)
     )
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -174,7 +174,7 @@ class TestingInterpreterSpecification extends PropSpec
     val prop3 = AND(TrueLeaf, TrueLeaf)
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop4 = GT(Height, IntConstant(90))
+    val prop4 = GT(Height, LongConstant(90))
     verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 
@@ -193,7 +193,7 @@ class TestingInterpreterSpecification extends PropSpec
     val prop3 = AND(FalseLeaf, TrueLeaf)
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
-    val prop4 = GT(Height, IntConstant(100))
+    val prop4 = GT(Height, LongConstant(100))
     verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
@@ -238,7 +238,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
   override val contextExtenders: Map[Byte, CollectionConstant[SByte.type]] = Map[Byte, CollectionConstant[SByte.type]]()
 
   override def evaluateNode(context: TestingContext, tree: SValue): SValue = tree match {
-    case Height => IntConstant(context.height)
+    case Height => LongConstant(context.height)
     case _ => super.evaluateNode(context, tree)
   }
 }

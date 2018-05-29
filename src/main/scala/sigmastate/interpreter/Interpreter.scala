@@ -88,20 +88,20 @@ trait Interpreter {
       GroupElementConstant(GroupGenerator.value)
 
     //Int Arith operations
-    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.PlusCode) =>
-      IntConstant(Math.addExact(l, r))
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.PlusCode) =>
+      LongConstant(Math.addExact(l, r))
 
-    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MinusCode) =>
-      IntConstant(Math.subtractExact(l, r))
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.MinusCode) =>
+      LongConstant(Math.subtractExact(l, r))
 
-    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MultiplyCode) =>
-      IntConstant(Math.multiplyExact(l, r))
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.MultiplyCode) =>
+      LongConstant(Math.multiplyExact(l, r))
 
-    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.ModuloCode) =>
-      IntConstant(l % r)
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.ModuloCode) =>
+      LongConstant(l % r)
 
-    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.DivisionCode) =>
-      IntConstant(l / r)
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.DivisionCode) =>
+      LongConstant(l / r)
       
     //BigInt Arith operations
     case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.PlusCode) =>
@@ -152,13 +152,13 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l == r)
     case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
       BooleanConstant.fromBoolean(l != r)
-    case GT(IntConstant(l), IntConstant(r)) =>
+    case GT(LongConstant(l), LongConstant(r)) =>
       BooleanConstant.fromBoolean(l > r)
-    case GE(IntConstant(l), IntConstant(r)) =>
+    case GE(LongConstant(l), LongConstant(r)) =>
       BooleanConstant.fromBoolean(l >= r)
-    case LT(IntConstant(l), IntConstant(r)) =>
+    case LT(LongConstant(l), LongConstant(r)) =>
       BooleanConstant.fromBoolean(l < r)
-    case LE(IntConstant(l), IntConstant(r)) =>
+    case LE(LongConstant(l), LongConstant(r)) =>
       BooleanConstant.fromBoolean(l <= r)
     case GT(ByteConstant(l), ByteConstant(r)) =>
       BooleanConstant.fromBoolean(l > r)

@@ -40,7 +40,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("simple expressions") {
-    parse("10") shouldBe IntConstant(10)
+    parse("10") shouldBe LongConstant(10)
     parse("10+11") shouldBe Plus(10, 11)
     parse("(10+11)") shouldBe Plus(10, 11)
     parse("(10+11) + 12") shouldBe Plus(Plus(10, 11), 12)
@@ -81,20 +81,20 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("tuple constructor") {
     parse("()") shouldBe UnitConstant
-    parse("(1)") shouldBe IntConstant(1)
-    parse("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
-    parse("(1, X + 1)") shouldBe Tuple(IntConstant(1), Plus(IntIdent("X"), 1))
-    parse("(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
-    parse("(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
+    parse("(1)") shouldBe LongConstant(1)
+    parse("(1, 2)") shouldBe Tuple(LongConstant(1), LongConstant(2))
+    parse("(1, X + 1)") shouldBe Tuple(LongConstant(1), Plus(IntIdent("X"), 1))
+    parse("(1, 2, 3)") shouldBe Tuple(LongConstant(1), LongConstant(2), LongConstant(3))
+    parse("(1, 2 + 3, 4)") shouldBe Tuple(LongConstant(1), Plus(2, 3), LongConstant(4))
   }
 
   property("let constructs") {
     parse(
       """{let X = 10
         |3 > 2}
-      """.stripMargin) shouldBe Block(Let("X", IntConstant(10)), GT(3, 2))
+      """.stripMargin) shouldBe Block(Let("X", LongConstant(10)), GT(3, 2))
 
-    parse("{let X = 10; 3 > 2}") shouldBe Block(Let("X", IntConstant(10)), GT(3, 2))
+    parse("{let X = 10; 3 > 2}") shouldBe Block(Let("X", LongConstant(10)), GT(3, 2))
     parse("{let X = 3 + 2; 3 > 2}") shouldBe Block(Let("X", Plus(3, 2)), GT(3, 2))
     parse("{let X = if (true) true else false; false}") shouldBe Block(Let("X", If(TrueLeaf, TrueLeaf, FalseLeaf)), FalseLeaf)
 
@@ -104,19 +104,19 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         |X > Y}
       """.stripMargin)
 
-    expr shouldBe Block(Seq(Let("X", IntConstant(10)),Let("Y", IntConstant(11))), GT(IntIdent("X"), IntIdent("Y")))
+    expr shouldBe Block(Seq(Let("X", LongConstant(10)),Let("Y", LongConstant(11))), GT(IntIdent("X"), IntIdent("Y")))
   }
 
   property("types") {
-    parse("{let X: Byte = 10; 3 > 2}") shouldBe Block(Seq(Let("X", SByte, IntConstant(10))), GT(3, 2))
-    parse("{let X: Int = 10; 3 > 2}") shouldBe Block(Seq(Let("X", SInt, IntConstant(10))), GT(3, 2))
+    parse("{let X: Byte = 10; 3 > 2}") shouldBe Block(Seq(Let("X", SByte, LongConstant(10))), GT(3, 2))
+    parse("{let X: Int = 10; 3 > 2}") shouldBe Block(Seq(Let("X", SLong, LongConstant(10))), GT(3, 2))
     parse("""{let X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe
-      Block(Seq(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
+      Block(Seq(Let("X", STuple(SLong, SBoolean), Tuple(LongConstant(10), TrueLeaf))), GT(3, 2))
     parse("""{let X: Array[Int] = Array(1,2,3); X.size}""") shouldBe
-      Block(Seq(Let("X", SCollection(SInt), Apply(Ident("Array"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
+      Block(Seq(Let("X", SCollection(SLong), Apply(Ident("Array"), IndexedSeq(LongConstant(1), LongConstant(2), LongConstant(3))))),
             Select(Ident("X"), "size"))
     parse("""{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}""") shouldBe
-        Block(Seq(Let("X", STuple(SCollection(SInt), SBox), Tuple(Apply(Ident("Array"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
+        Block(Seq(Let("X", STuple(SCollection(SLong), SBox), Tuple(Apply(Ident("Array"), IndexedSeq(LongConstant(1), LongConstant(2), LongConstant(3))), Ident("INPUT")))),
           Select(Ident("X"), "_1"))
   }
 
@@ -133,11 +133,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       """{let X = 10;
         |
         |true}
-      """.stripMargin) shouldBe Block(Seq(Let("X", IntConstant(10))), TrueLeaf)
+      """.stripMargin) shouldBe Block(Seq(Let("X", LongConstant(10))), TrueLeaf)
     parse(
       """{let X = 11
         |true}
-      """.stripMargin) shouldBe Block(Seq(Let("X", IntConstant(11))), TrueLeaf)
+      """.stripMargin) shouldBe Block(Seq(Let("X", LongConstant(11))), TrueLeaf)
   }
 
   property("comments") {
@@ -150,18 +150,18 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
        |3 + // end line comment
        |  2
        |}
-      """.stripMargin) shouldBe Block(Seq(Let("X", IntConstant(12))), Plus(3, 2))
+      """.stripMargin) shouldBe Block(Seq(Let("X", LongConstant(12))), Plus(3, 2))
   }
 
   property("if") {
-    parse("if(true) 1 else 2") shouldBe If(TrueLeaf, IntConstant(1), IntConstant(2))
-    parse("if(true) 1 else if(X==Y) 2 else 3") shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
+    parse("if(true) 1 else 2") shouldBe If(TrueLeaf, LongConstant(1), LongConstant(2))
+    parse("if(true) 1 else if(X==Y) 2 else 3") shouldBe If(TrueLeaf, LongConstant(1), If(EQ(Ident("X"), Ident("Y")), LongConstant(2), LongConstant(3)))
     parse(
       """if ( true )
         |1
         |else if(X== Y)
         |     2
-        |     else 3""".stripMargin) shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
+        |     else 3""".stripMargin) shouldBe If(TrueLeaf, LongConstant(1), If(EQ(Ident("X"), Ident("Y")), LongConstant(2), LongConstant(3)))
 
     parse("if (true) false else false==false") shouldBe If(TrueLeaf, FalseLeaf, EQ(FalseLeaf, FalseLeaf))
 
@@ -173,8 +173,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         |  1 }
         |else if ( X == Y) 2 else 3""".stripMargin) shouldBe
         If(TrueLeaf,
-          Block(Seq(Let("A", IntConstant(10))), IntConstant(1)),
-          If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3))
+          Block(Seq(Let("A", LongConstant(10))), LongConstant(1)),
+          If(EQ(Ident("X"), Ident("Y")), LongConstant(2), LongConstant(3))
     )
 
   }
@@ -186,33 +186,33 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("Array(Array())") shouldBe emptyCol2
     parse("Array(Array(Array()))") shouldBe Apply(Ident("Array"), IndexedSeq(emptyCol2))
 
-    parse("Array(1)") shouldBe Apply(Ident("Array"), IndexedSeq(IntConstant(1)))
-    parse("Array(1, X)") shouldBe Apply(Ident("Array"), IndexedSeq(IntConstant(1), Ident("X")))
+    parse("Array(1)") shouldBe Apply(Ident("Array"), IndexedSeq(LongConstant(1)))
+    parse("Array(1, X)") shouldBe Apply(Ident("Array"), IndexedSeq(LongConstant(1), Ident("X")))
     parse("Array(1, X + 1, Array())") shouldBe
     Apply(Ident("Array"),
       IndexedSeq(
-        IntConstant(1),
-        Plus(Ident("X").asValue[SInt.type], IntConstant(1)),
+        LongConstant(1),
+        Plus(Ident("X").asValue[SLong.type], LongConstant(1)),
         Apply(Ident("Array"), IndexedSeq.empty)))
     parse("Array(Array(X + 1))") shouldBe Apply(Ident("Array"),
       IndexedSeq(Apply(Ident("Array"), IndexedSeq(
-                  Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
+                  Plus(Ident("X").asValue[SLong.type], LongConstant(1))))))
   }
 
   property("Option constructors") {
     parse("None") shouldBe Ident("None")
     parse("Some(None)") shouldBe Apply(Ident("Some"), IndexedSeq(Ident("None")))
-    parse("Some(10)") shouldBe Apply(Ident("Some"), IndexedSeq(IntConstant(10)))
+    parse("Some(10)") shouldBe Apply(Ident("Some"), IndexedSeq(LongConstant(10)))
     parse("Some(X)") shouldBe Apply(Ident("Some"), IndexedSeq(Ident("X")))
     parse("Some(Some(X + 1))") shouldBe Apply(Ident("Some"),
       IndexedSeq(Apply(Ident("Some"), IndexedSeq(
-                  Plus(Ident("X").asValue[SInt.type], IntConstant(1))))))
+                  Plus(Ident("X").asValue[SLong.type], LongConstant(1))))))
   }
 
   property("array indexed access") {
     parse("Array()") shouldBe Apply(Ident("Array"), IndexedSeq.empty)
-    parse("Array()(0)") shouldBe Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0)))
-    parse("Array()(0)(0)") shouldBe Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
+    parse("Array()(0)") shouldBe Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(LongConstant(0)))
+    parse("Array()(0)(0)") shouldBe Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(LongConstant(0))), IndexedSeq(LongConstant(0)))
   }
 
   property("generic methods of arrays") {
@@ -227,11 +227,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
             Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
     parse("Array(1,2).fold(0, fun (n1: Int, n2: Int) = n1 + n2)") shouldBe
       Apply(
-        Select(Apply(Ident("Array"), Vector(IntConstant(1), IntConstant(2))), "fold"),
-        Vector(IntConstant(0), Lambda(Vector(("n1",SInt), ("n2",SInt)), Plus(IntIdent("n1"), IntIdent("n2"))))
+        Select(Apply(Ident("Array"), Vector(LongConstant(1), LongConstant(2))), "fold"),
+        Vector(LongConstant(0), Lambda(Vector(("n1",SLong), ("n2",SLong)), Plus(IntIdent("n1"), IntIdent("n2"))))
       )
     parse("OUTPUTS.slice(0, 10)") shouldBe
-        Apply(Select(Ident("OUTPUTS"), "slice"), Vector(IntConstant(0), IntConstant(10)))
+        Apply(Select(Ident("OUTPUTS"), "slice"), Vector(LongConstant(0), LongConstant(10)))
     parse("OUTPUTS.where(fun (out: Box) = out.value > 0)") shouldBe
         Apply(Select(Ident("OUTPUTS"), "where"),
           Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
@@ -242,33 +242,33 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("f((x, y))") shouldBe Apply(Ident("f"), IndexedSeq(Tuple(IndexedSeq(Ident("x"), Ident("y")))))
     parse("f(x, y)") shouldBe Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y")))
     parse("f(x, y).size") shouldBe Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "size")
-    parse("f(x, y).get(1)") shouldBe Apply(Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "get"), IndexedSeq(IntConstant(1)))
+    parse("f(x, y).get(1)") shouldBe Apply(Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "get"), IndexedSeq(LongConstant(1)))
     parse("{let y = f(x); y}") shouldBe Block(Seq(Let("y", Apply(Ident("f"), IndexedSeq(Ident("x"))))), Ident("y"))
-    parse("getVar[Array[Byte]](10)") shouldBe Apply(ApplyTypes(Ident("getVar"), Seq(SByteArray)), IndexedSeq(IntConstant(10)))
+    parse("getVar[Array[Byte]](10)") shouldBe Apply(ApplyTypes(Ident("getVar"), Seq(SByteArray)), IndexedSeq(LongConstant(10)))
   }
 
   property("lambdas") {
     parse("fun (x: Int) = x + 1") shouldBe
-      Lambda(IndexedSeq("x" -> SInt), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+      Lambda(IndexedSeq("x" -> SLong), Plus(Ident("x").asValue[SLong.type], LongConstant(1)))
     parse("fun (x: Int): Int = x + 1") shouldBe
-      Lambda(IndexedSeq("x" -> SInt), SInt, Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+      Lambda(IndexedSeq("x" -> SLong), SLong, Plus(Ident("x").asValue[SLong.type], LongConstant(1)))
     parse("fun (x: Int, box: Box): Int = x + box.value") shouldBe
-        Lambda(IndexedSeq("x" -> SInt, "box" -> SBox), SInt,
-               Plus(Ident("x").asValue[SInt.type], Select(Ident("box"), "value").asValue[SInt.type]))
+        Lambda(IndexedSeq("x" -> SLong, "box" -> SBox), SLong,
+               Plus(Ident("x").asValue[SLong.type], Select(Ident("box"), "value").asValue[SLong.type]))
     parse("fun (p: (Int, GroupElement), box: Box): Int = p._1 > box.value && p._2.isIdentity") shouldBe
-        Lambda(IndexedSeq("p" -> STuple(SInt, SGroupElement), "box" -> SBox), SInt,
+        Lambda(IndexedSeq("p" -> STuple(SLong, SGroupElement), "box" -> SBox), SLong,
           AND(
-            GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SInt.type]),
+            GT(Select(Ident("p"), "_1").asValue[SLong.type], Select(Ident("box"), "value").asValue[SLong.type]),
             Select(Select(Ident("p"), "_2"), "isIdentity").asValue[SBoolean.type]
             )
         )
 
     parse("fun (x) = x + 1") shouldBe
-        Lambda(IndexedSeq("x" -> NoType), Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+        Lambda(IndexedSeq("x" -> NoType), Plus(Ident("x").asValue[SLong.type], LongConstant(1)))
     parse("fun (x: Int) = { x + 1 }") shouldBe
-        Lambda(IndexedSeq("x" -> SInt), Block(Seq(), Plus(Ident("x").asValue[SInt.type], IntConstant(1))))
+        Lambda(IndexedSeq("x" -> SLong), Block(Seq(), Plus(Ident("x").asValue[SLong.type], LongConstant(1))))
     parse("fun (x: Int) = { let y = x + 1; y }") shouldBe
-        Lambda(IndexedSeq("x" -> SInt),
+        Lambda(IndexedSeq("x" -> SLong),
           Block(Let("y", Plus(IntIdent("x"), 1)), Ident("y")))
   }
 
@@ -278,7 +278,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         IndexedSeq(
           Lambda(IndexedSeq("out" -> SBox),
             Block(IndexedSeq(),
-              GE(Select(Ident("out"), "amount").asValue[SInt.type], IntIdent("minToRaise"))))))
+              GE(Select(Ident("out"), "amount").asValue[SLong.type], IntIdent("minToRaise"))))))
   }
 
   property("function definitions") {
@@ -286,12 +286,12 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       """{let f = fun (x: Int) = x + 1
        |f}
       """.stripMargin) shouldBe
-        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
+        Block(Let("f", Lambda(IndexedSeq("x" -> SLong), Plus(IntIdent("x"), 1))), Ident("f"))
     parse(
       """{fun f(x: Int) = x + 1
        |f}
       """.stripMargin) shouldBe
-        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), Plus(IntIdent("x"), 1))), Ident("f"))
+        Block(Let("f", Lambda(IndexedSeq("x" -> SLong), Plus(IntIdent("x"), 1))), Ident("f"))
   }
 
   property("get field of ref") {
@@ -304,7 +304,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("Box properties") {
-    parse("fun (box: Box): Int = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SInt, Select(Ident("box"), "value"))
+    parse("fun (box: Box): Int = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SLong, Select(Ident("box"), "value"))
     parse("fun (box: Box): Array[Byte] = box.propositionBytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), SBox.PropositionBytes))
     parse("fun (box: Box): Array[Byte] = box.bytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "bytes"))
     parse("fun (box: Box): Array[Byte] = box.id") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "id"))
@@ -312,16 +312,16 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("type parameters") {
     parse("X[Byte]") shouldBe ApplyTypes(Ident("X"), Seq(SByte))
-    parse("X[Int]") shouldBe ApplyTypes(Ident("X"), Seq(SInt))
-    parse("X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Seq(SInt)), "isDefined")
-    parse("X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Seq(STuple(SInt, SBoolean)))
-    parse("X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Seq(SInt, SBoolean))
-    parse("SELF.R1[Int]") shouldBe ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SInt))
-    parse("SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SInt)),"isDefined")
-    parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
-    parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt))
-    parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
-    parse("Array[Int]()") shouldBe Apply(ApplyTypes(Ident("Array"), Seq(SInt)), IndexedSeq.empty)
+    parse("X[Int]") shouldBe ApplyTypes(Ident("X"), Seq(SLong))
+    parse("X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Seq(SLong)), "isDefined")
+    parse("X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Seq(STuple(SLong, SBoolean)))
+    parse("X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Seq(SLong, SBoolean))
+    parse("SELF.R1[Int]") shouldBe ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SLong))
+    parse("SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SLong)),"isDefined")
+    parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SLong)), IndexedSeq(LongConstant(10)))
+    parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SLong))
+    parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SLong)), IndexedSeq(LongConstant(10)))
+    parse("Array[Int]()") shouldBe Apply(ApplyTypes(Ident("Array"), Seq(SLong)), IndexedSeq.empty)
   }
 
   property("negative tests") {
