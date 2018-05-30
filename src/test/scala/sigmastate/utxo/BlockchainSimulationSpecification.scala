@@ -59,6 +59,14 @@ class BlockchainSimulationSpecification extends PropSpec
     updStateTry.isSuccess shouldBe true
   }
 
+  property("too costly block") {
+    val state = ValidationState.initialState()
+    val miner = new ErgoLikeProvingInterpreter()
+    val block = generateBlock(state, miner, 1)
+    val updStateTry = state.applyBlock(block, maxCost = 1)
+    updStateTry.isSuccess shouldBe false
+  }
+
   property("apply many blocks") {
     val state = ValidationState.initialState()
     val miner = new ErgoLikeProvingInterpreter()
