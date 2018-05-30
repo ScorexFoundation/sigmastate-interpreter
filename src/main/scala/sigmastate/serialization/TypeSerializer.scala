@@ -24,11 +24,11 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     case SAvlTree => w.put(SAvlTree.typeCode)
     case c: SCollection[a] => c.elemType match {
       case p: SEmbeddable =>
-        val code = (SCollection.CollectionTypeCode + p.typeCode).toByte
+        val code = p.embedIn(SCollection.CollectionTypeCode)
         w.put(code)
       case cn: SCollection[a] => cn.elemType match {
         case p: SEmbeddable =>
-          val code = (SCollection.NestedCollectionTypeCode + p.typeCode).toByte
+          val code = p.embedIn(SCollection.NestedCollectionTypeCode)
           w.put(code)
         case t =>
           w.put(SCollection.CollectionTypeCode)
@@ -40,11 +40,11 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     }
     case o: SOption[a] => o.elemType match {
       case p: SEmbeddable =>
-        val code = (SOption.OptionTypeCode + p.typeCode).toByte
+        val code = p.embedIn(SOption.OptionTypeCode)
         w.put(code)
       case c: SCollection[a] => c.elemType match {
         case p: SEmbeddable =>
-          val code = (SOption.OptionCollectionTypeCode + p.typeCode).toByte
+          val code = p.embedIn(SOption.OptionCollectionTypeCode)
           w.put(code)
         case t =>
           w.put(SOption.OptionTypeCode)
@@ -58,17 +58,17 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
       case (p: SEmbeddable, _) =>
         if (p == t2) {
           // Symmetric pair of primitive types (`(Int, Int)`, `(Byte,Byte)`, etc.)
-          val code = (STuple.PairSymmetricTypeCode + p.typeCode).toByte
+          val code = p.embedIn(STuple.PairSymmetricTypeCode)
           w.put(code)
         } else {
           // Pair of types where first is primitive (`(_, Int)`)
-          val code = (STuple.Pair1TypeCode + p.typeCode).toByte
+          val code = p.embedIn(STuple.Pair1TypeCode)
           w.put(code)
           serialize(t2, w)
         }
       case (_, p: SEmbeddable) =>
         // Pair of types where second is primitive (`(Int, _)`)
-        val code = (STuple.Pair2TypeCode + p.typeCode).toByte
+        val code = p.embedIn(STuple.Pair2TypeCode)
         w.put(code)
         serialize(t1, w)
       case _ =>

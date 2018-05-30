@@ -10,11 +10,11 @@ import sigmastate._
 
 class TypeSerializerSpecification extends SerializationSpecification {
 
-  def roundtrip[T <: SType](tpe: T, size: Int) = {
+  def roundtrip[T <: SType](tpe: T, expected: Array[Byte]) = {
     val w = Serializer.startWriter()
         .putType(tpe)
     val bytes = w.toBytes
-    bytes.length shouldBe size
+    bytes shouldBe expected
     val r = Serializer.startReader(bytes, 0)
     val res = r.getType()
     res shouldBe tpe
@@ -29,20 +29,24 @@ class TypeSerializerSpecification extends SerializationSpecification {
       i shouldBe TypeSerializer.embeddableIdToType(i).typeCode
   }
 
+  import SCollection._; import SOption._; import STuple._
+
   property("Embeddable type serialization roundtrip") {
     forAll { t: SPredefType =>
       whenever(t.isInstanceOf[SEmbeddable]) {
-        roundtrip(t, 1)
-        roundtrip(SCollection(t), 1)
-        roundtrip(SCollection(SCollection(t)), 1)
-        roundtrip(SOption(t), 1)
-        roundtrip(SOption(SCollection(t)), 1)
-        roundtrip(STuple(t, t), 1)
+        val e = t.asInstanceOf[SEmbeddable]
+        val tCode = t.typeCode
+        roundtrip(t, Array[Byte](tCode))
+        roundtrip(SCollection(t), Array[Byte](e.embedIn(CollectionTypeCode)))
+        roundtrip(SCollection(SCollection(t)), Array[Byte](e.embedIn(NestedCollectionTypeCode)))
+        roundtrip(SOption(t), Array[Byte](e.embedIn(OptionTypeCode)))
+        roundtrip(SOption(SCollection(t)), Array[Byte](e.embedIn(OptionCollectionTypeCode)))
+        roundtrip(STuple(t, t), Array[Byte](e.embedIn(PairSymmetricTypeCode)))
         if (t != SLong) {
-          roundtrip(STuple(t, SLong), 2)
-          roundtrip(STuple(SLong, t), 2)
+          roundtrip(STuple(t, SBox), Array[Byte](e.embedIn(Pair1TypeCode), SBox.typeCode))
+          roundtrip(STuple(SBox, t), Array[Byte](e.embedIn(Pair2TypeCode), SBox.typeCode))
         }
-        roundtrip(STuple(SCollection(SLong), t), 2)
+        roundtrip(STuple(SCollection(SLong), t), Array[Byte](e.embedIn(Pair2TypeCode), SLong.embedIn(CollectionTypeCode)))
       }
     }
   }
@@ -50,23 +54,38 @@ class TypeSerializerSpecification extends SerializationSpecification {
   property("Complex type serialization roundtrip") {
     forAll { t: SPredefType =>
       whenever(t.isInstanceOf[SEmbeddable]) {
-        roundtrip(SCollection(STuple(t, t)), 2)
-        roundtrip(SCollection(SOption(t)), 2)
-        roundtrip(SCollection(SCollection(STuple(t, t))), 3)
-        roundtrip(SCollection(SOption(STuple(t, t))), 3)
-        roundtrip(SOption(STuple(t, t)), 2)
-        roundtrip(SOption(SCollection(STuple(t, t))), 3)
+        val e = t.asInstanceOf[SEmbeddable]
+        val tCode = e.typeCode
+        val tupCode = e.embedIn(PairSymmetricTypeCode)
+        roundtrip(SCollection(STuple(e, e)), Array[Byte](CollectionTypeCode, tupCode))
+        roundtrip(SCollection(SOption(e)), Array[Byte](CollectionTypeCode, e.embedIn(OptionTypeCode)))
+        roundtrip(SCollection(SCollection(STuple(e, e))), Array[Byte](CollectionTypeCode, CollectionTypeCode, tupCode))
+        roundtrip(SCollection(SOption(STuple(e, e))), Array[Byte](CollectionTypeCode, OptionTypeCode, tupCode))
+        roundtrip(SOption(STuple(e, e)), Array[Byte](OptionTypeCode, tupCode))
+        roundtrip(SOption(SCollection(STuple(e, e))), Array[Byte](OptionTypeCode, CollectionTypeCode, tupCode))
       }
     }
   }
 
   property("Specific types serialization roundtrip") {
-    roundtrip(STuple(SLong, SLong, SByte), 4)
-    roundtrip(STuple(SCollection(SLong), SLong, SByte), 4)
-    roundtrip(STuple(SCollection(SLong), SOption(SLong), SByte), 4)
-    roundtrip(STuple(SCollection(SCollection(SLong)), SOption(SCollection(SLong)), SByte), 4)
+    roundtrip(STuple(SCollection(SLong), SCollection(SLong)),
+      Array[Byte](Pair1TypeCode, SLong.embedIn(CollectionTypeCode), SLong.embedIn(CollectionTypeCode)))
+    roundtrip(STuple(SCollection(SLong), SOption(SLong)),
+      Array[Byte](Pair1TypeCode, SLong.embedIn(CollectionTypeCode), SLong.embedIn(OptionTypeCode)))
 
-    roundtrip(STuple(SCollection(SLong), SCollection(SLong)), 3)
-    roundtrip(STuple(SCollection(SLong), SOption(SLong)), 3)
+    roundtrip(STuple(SLong, SLong, SByte),
+      Array[Byte](Pair2TypeCode, SLong.typeCode, SLong.typeCode, SByte.typeCode))
+    roundtrip(STuple(SCollection(SLong), SLong, SByte),
+      Array[Byte](Pair2TypeCode, SLong.embedIn(CollectionTypeCode), SLong.typeCode, SByte.typeCode))
+    roundtrip(STuple(SCollection(SLong), SOption(SLong), SByte),
+      Array[Byte](Pair2TypeCode, SLong.embedIn(CollectionTypeCode), SLong.embedIn(OptionTypeCode), SByte.typeCode))
+    roundtrip(STuple(SCollection(SCollection(SLong)), SOption(SCollection(SLong)), SByte),
+      Array[Byte](Pair2TypeCode, SLong.embedIn(NestedCollectionTypeCode), SLong.embedIn(OptionCollectionTypeCode), SByte.typeCode))
+
+    roundtrip(STuple(SLong, SLong, SByte, SBoolean),
+      Array[Byte](PairSymmetricTypeCode, SLong.typeCode, SLong.typeCode, SByte.typeCode, SBoolean.typeCode))
+
+    roundtrip(STuple(SLong, SLong, SByte, SBoolean, SInt),
+      Array[Byte](TupleTypeCode, 5, SLong.typeCode, SLong.typeCode, SByte.typeCode, SBoolean.typeCode, SInt.typeCode))
   }
 }
