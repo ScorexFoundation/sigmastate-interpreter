@@ -4,7 +4,7 @@ name := "sigma-state"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  version := "0.9.1",
+  version := "0.9.2",
   scalaVersion := "2.12.6",
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
