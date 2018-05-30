@@ -3,12 +3,12 @@ package sigmastate.utxo.examples
 import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
 import scorex.utils.ScryptoLogging
-import sigmastate.Values.IntConstant
+import sigmastate.Values.LongConstant
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
-import sigmastate.{SInt, _}
+import sigmastate.{SLong, _}
 
 /**
   * Coin emission specification.
@@ -46,14 +46,14 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val coinsToIssue = If(LE(Height, fixedRatePeriod), fixedRate, Minus(fixedRate, red))
     val out = ByIndex(Outputs, 0)
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(out))
-    val heightCorrect = EQ(ExtractRegisterAs[SInt.type](out, register), Height)
-    val heightIncreased = GT(ExtractRegisterAs[SInt.type](out, register), ExtractRegisterAs[SInt.type](Self, register))
+    val heightCorrect = EQ(ExtractRegisterAs[SLong.type](out, register), Height)
+    val heightIncreased = GT(ExtractRegisterAs[SLong.type](out, register), ExtractRegisterAs[SLong.type](Self, register))
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(out)))
 
     val prop = OR(AND(sameScriptRule, correctCoinsConsumed, heightIncreased, heightCorrect), EQ(Height, blocksTotal))
     val minerProp = prover.dlogSecrets.head.publicImage
 
-    val initialBoxCandidate: ErgoBox = ErgoBox(9773992500000000L, prop, Map(register -> IntConstant(-1)))
+    val initialBoxCandidate: ErgoBox = ErgoBox(9773992500000000L, prop, Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block {
       IndexedSeq(
         ErgoLikeTransaction(
@@ -70,19 +70,19 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
 
     def genCoinbaseLikeTransaction(state: ValidationState,
                                    emissionBox: ErgoBox,
-                                   height: Int): ErgoLikeTransaction = {
+                                   height: Long): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
       val ut = if (height != blocksTotal) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Map())
         val newEmissionBox: ErgoBoxCandidate =
-          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> IntConstant(height)))
+          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> LongConstant(height)))
 
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(newEmissionBox, minerBox)
         )
       } else {
-        val minerBox = new ErgoBoxCandidate(emissionBox.value, minerProp, Map(register -> IntConstant(height)))
+        val minerBox = new ErgoBoxCandidate(emissionBox.value, minerProp, Map(register -> LongConstant(height)))
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(minerBox)

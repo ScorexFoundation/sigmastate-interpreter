@@ -2,23 +2,21 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 
-import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.NonMandatoryIdentifier
 import scorex.crypto.authds.ADDigest
-import scorex.crypto.hash.Digest32
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.EvaluatedValue
 import sigmastate.utils.{ByteWriter, ByteReader}
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.utils.Extensions._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
-
 import scala.collection.mutable
 
 object DataSerializer {
+  type ElemType = CryptoConstants.EcPointType
+
   private val curve = CryptoConstants.dlogGroup
   private val LengthSize: Int = 2
 
@@ -97,13 +95,13 @@ object DataSerializer {
       r.getByte() match {
         case 0 =>
           // infinity point is always compressed as 1 byte (X9.62 s 4.3.6)
-          val point = curve.curve.decodePoint(Array(0)).asInstanceOf[SecP384R1Point]
+          val point = curve.curve.decodePoint(Array(0)).asInstanceOf[ElemType]
           point
         case m if m == 2 || m == 3 =>
           val consumed = 1 + (curve.curve.getFieldSize + 7) / 8
           r.position = r.position - 1
           val encoded = r.getBytes(consumed)
-          val point = curve.curve.decodePoint(encoded).asInstanceOf[SecP384R1Point]
+          val point = curve.curve.decodePoint(encoded).asInstanceOf[ElemType]
           point
         case m =>
           throw new Error(s"Only compressed encoding is supported, $m given")
