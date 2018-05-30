@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -14,7 +13,6 @@ import sigmastate.utxo.BooleanTransformer.ResultConstructor
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.RegisterIdentifier
 
-import scala.collection.immutable
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
