@@ -57,12 +57,12 @@ class TypeSerializerSpecification extends SerializationSpecification {
   }
 
   property("Specific types serialization roundtrip") {
-    roundtrip(STuple(SLong, SLong, SByte), 5)
-    roundtrip(STuple(SCollection(SLong), SLong, SByte), 5)
-    roundtrip(STuple(SCollection(SLong), SOption(SLong), SByte), 5)
-    roundtrip(STuple(SCollection(SCollection(SLong)), SOption(SCollection(SLong)), SByte), 5)
+    roundtrip(STuple(SLong, SLong, SByte), 4)
+    roundtrip(STuple(SCollection(SLong), SLong, SByte), 4)
+    roundtrip(STuple(SCollection(SLong), SOption(SLong), SByte), 4)
+    roundtrip(STuple(SCollection(SCollection(SLong)), SOption(SCollection(SLong)), SByte), 4)
 
-    roundtrip(STuple(SCollection(SLong), SCollection(SLong)), 4)
-    roundtrip(STuple(SCollection(SLong), SOption(SLong)), 4)
+    roundtrip(STuple(SCollection(SLong), SCollection(SLong)), 3)
+    roundtrip(STuple(SCollection(SLong), SOption(SLong)), 3)
   }
 }

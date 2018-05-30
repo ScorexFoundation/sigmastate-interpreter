@@ -397,12 +397,16 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
 }
 
 object STuple {
-val Pair1TypeConstrId = 5
+  val Pair1TypeConstrId = 5
   val Pair1TypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * Pair1TypeConstrId).toByte
+
   val Pair2TypeConstrId = 6
   val Pair2TypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * Pair2TypeConstrId).toByte
+  val TripleTypeCode: TypeCode = Pair2TypeCode
+
   val PairSymmetricTypeConstrId = 7
   val PairSymmetricTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * PairSymmetricTypeConstrId).toByte
+  val QuadrupleTypeCode: TypeCode = PairSymmetricTypeCode
 
   val TupleTypeCode = ((SPrimType.MaxPrimTypeCode + 1) * 8).toByte
 
