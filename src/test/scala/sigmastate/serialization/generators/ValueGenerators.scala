@@ -177,8 +177,10 @@ trait ValueGenerators extends TypeGenerators {
     case SInt => arbInt
     case SLong => arbLong
     case SBigInt => arbBigInteger
-    case SAvlTree => arbAvlTreeData
     case SGroupElement => arbGroupElement
     case SBox => arbBox
+    case SAvlTree => arbAvlTreeData
+    case SAny => arbAnyVal
+    case SUnit => arbUnit
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
 }

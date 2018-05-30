@@ -24,35 +24,39 @@ class TypeSerializerSpecification extends SerializationSpecification {
     res2 shouldBe tpe
   }
 
-  property("Codes of primitive types have correct order") {
+  property("Codes of embeddable types have correct order") {
     for (i <- TypeSerializer.embeddableIdToType.indices.drop(1))
       i shouldBe TypeSerializer.embeddableIdToType(i).typeCode
   }
 
-  property("Primitive type serialization roundtrip") {
-    forAll { t: SPrimType =>
-      roundtrip(t, 1)
-      roundtrip(SCollection(t), 1)
-      roundtrip(SCollection(SCollection(t)), 1)
-      roundtrip(SOption(t), 1)
-      roundtrip(SOption(SCollection(t)), 1)
-      roundtrip(STuple(t, t), 1)
-      if (t != SLong) {
-        roundtrip(STuple(t, SLong), 2)
-        roundtrip(STuple(SLong, t), 2)
+  property("Embeddable type serialization roundtrip") {
+    forAll { t: SPredefType =>
+      whenever(t.isInstanceOf[SEmbeddable]) {
+        roundtrip(t, 1)
+        roundtrip(SCollection(t), 1)
+        roundtrip(SCollection(SCollection(t)), 1)
+        roundtrip(SOption(t), 1)
+        roundtrip(SOption(SCollection(t)), 1)
+        roundtrip(STuple(t, t), 1)
+        if (t != SLong) {
+          roundtrip(STuple(t, SLong), 2)
+          roundtrip(STuple(SLong, t), 2)
+        }
+        roundtrip(STuple(SCollection(SLong), t), 2)
       }
-      roundtrip(STuple(SCollection(SLong), t), 2)
     }
   }
 
   property("Complex type serialization roundtrip") {
-    forAll { t: SPrimType =>
-      roundtrip(SCollection(STuple(t, t)), 2)
-      roundtrip(SCollection(SOption(t)), 2)
-      roundtrip(SCollection(SCollection(STuple(t, t))), 3)
-      roundtrip(SCollection(SOption(STuple(t, t))), 3)
-      roundtrip(SOption(STuple(t, t)), 2)
-      roundtrip(SOption(SCollection(STuple(t, t))), 3)
+    forAll { t: SPredefType =>
+      whenever(t.isInstanceOf[SEmbeddable]) {
+        roundtrip(SCollection(STuple(t, t)), 2)
+        roundtrip(SCollection(SOption(t)), 2)
+        roundtrip(SCollection(SCollection(STuple(t, t))), 3)
+        roundtrip(SCollection(SOption(STuple(t, t))), 3)
+        roundtrip(SOption(STuple(t, t)), 2)
+        roundtrip(SOption(SCollection(STuple(t, t))), 3)
+      }
     }
   }
 

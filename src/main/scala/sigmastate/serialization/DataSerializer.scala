@@ -21,6 +21,7 @@ object DataSerializer {
   private val LengthSize: Int = 2
 
   def serialize[T <: SType](v: T#WrappedType, tpe: T, w: ByteWriter): Unit = tpe match {
+    case SUnit => // don't need to save anything
     case SBoolean => w.putBoolean(v.asInstanceOf[Boolean])
     case SByte => w.put(v.asInstanceOf[Byte])
     case SShort => w.putShort(v.asInstanceOf[Short])
@@ -82,6 +83,7 @@ object DataSerializer {
   }
 
   def deserialize[T <: SType](tpe: T, r: ByteReader): (T#WrappedType) = (tpe match {
+    case SUnit => ()
     case SBoolean => r.getUByte() != 0
     case SByte => r.getByte()
     case SShort => r.getShort()

@@ -41,7 +41,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { x: ErgoBox => roundtrip(Constant[SBox.type](x, SBox)) }
     forAll { x: AvlTreeData => roundtrip(Constant[SAvlTree.type](x, SAvlTree)) }
     forAll { x: Array[Byte] => roundtrip(Constant[SByteArray](x, SByteArray)) }
-    forAll { t: SPrimType => testCollection(t) }
+    forAll { t: SPredefType => testCollection(t) }
   }
 
   def caseObjectValue(v: SValue) = (v, Array[Byte](v.opCode))
