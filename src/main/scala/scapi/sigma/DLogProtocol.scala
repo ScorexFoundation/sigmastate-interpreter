@@ -18,7 +18,7 @@ import scala.util.Try
 
 object DLogProtocol {
 
-  trait DLogSigmaProtocol extends SigmaProtocol[DLogSigmaProtocol]{
+  trait DLogSigmaProtocol extends SigmaProtocol[DLogSigmaProtocol] {
     override type A = FirstDLogProverMessage
     override type Z = SecondDLogProverMessage
   }
@@ -35,6 +35,7 @@ object DLogProtocol {
   }
 
   object ProveDlog {
+
     import CryptoConstants.dlogGroup
 
     def apply(h: CryptoConstants.EcPointType): ProveDlog = ProveDlog(GroupElementConstant(h))
@@ -77,7 +78,6 @@ object DLogProtocol {
     override def bytes: Array[Byte] = {
       val bytes = ecData.getEncoded(true)
 
-      //todo: is byte enough for any group?
       Array(bytes.length.toByte) ++ bytes
     }
   }
