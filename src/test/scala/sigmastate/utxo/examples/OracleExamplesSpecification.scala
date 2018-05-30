@@ -89,10 +89,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       value = 1L,
       proposition = oraclePubKey,
       additionalRegisters = Map(
-        R3 -> IntConstant(temperature),
+        R3 -> LongConstant(temperature),
         R4 -> GroupElementConstant(a),
         R5 -> BigIntConstant(z),
-        R6 -> IntConstant(ts)),
+        R6 -> LongConstant(ts)),
       boxId = 1
     )
 
@@ -110,11 +110,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
                         fallback: Value[SBoolean.type])(script: Value[SBoolean.type]) =
-      OR(AND(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
-        AND(GE(Height, IntConstant(timeoutHeight)), fallback))
+      OR(AND(GE(Height, LongConstant(sinceHeight)), LT(Height, LongConstant(timeoutHeight)), script),
+        AND(GE(Height, LongConstant(timeoutHeight)), fallback))
 
-    val contractLogic = OR(AND(GT(extract[SInt.type](R3), IntConstant(15)), alicePubKey),
-      AND(LE(extract[SInt.type](R3), IntConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(extract[SLong.type](R3), LongConstant(15)), alicePubKey),
+      AND(LE(extract[SLong.type](R3), LongConstant(15)), bobPubKey))
 
     val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
       EQ(extract[SByteArray](R1), ByteArrayConstant(oraclePubKey.bytes)),
@@ -122,7 +122,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
         MultiplyGroup(extract[SGroupElement.type](R4),
           Exponentiate(oraclePubKey.value,
             ByteArrayToBigInt(CalcBlake2b256(
-              Append(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
+              Append(IntToByteArray(extract[SLong.type](R3)), IntToByteArray(extract[SLong.type](R6)))))))
       ),
       contractLogic)
 
@@ -142,7 +142,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     //"along with a brother" script
     val propAlong = AND(
-      EQ(SizeOf(Inputs), IntConstant(2)),
+      EQ(SizeOf(Inputs), LongConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = ErgoBox(10, propBob, Map(), boxId = 4)
@@ -200,13 +200,13 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val oracleBox = ErgoBox(
       value = 1L,
       proposition = oraclePubKey,
-      additionalRegisters = Map(R3 -> IntConstant(temperature))
+      additionalRegisters = Map(R3 -> LongConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), R3), IntConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs[SInt.type](ByIndex(Inputs, 0), R3), IntConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), R3), LongConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), R3), LongConstant(15)), bobPubKey))
 
-    val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
+    val prop = AND(EQ(SizeOf(Inputs), LongConstant(3)),
       EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),
       contractLogic
     )

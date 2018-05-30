@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import OpCodes._
+import sigmastate.SBox
 
 class TaggedVariableSerializerSpecification extends SerializationSpecification {
 
@@ -18,6 +19,6 @@ class TaggedVariableSerializerSpecification extends SerializationSpecification {
   }
 
   property("TaggedVariable deserialize from predefined bytes") {
-    predefinedBytesTest(TaggedBox(10), Array(TaggedVariableCode, 10, 7))
+    predefinedBytesTest(TaggedBox(10), Array(TaggedVariableCode, 10, SBox.typeCode))
   }
 }

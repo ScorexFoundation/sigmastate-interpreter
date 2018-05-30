@@ -69,7 +69,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val elementId = 1: Byte
 
     val prop: Value[SBoolean.type] = AND(
-      GE(TaggedInt(elementId), IntConstant(120)),
+      GE(TaggedInt(elementId), LongConstant(120)),
       IsMember(ExtractRegisterAs(Self, R3), CalcBlake2b256(IntToByteArray(TaggedInt(elementId))), TaggedByteArray(proofId))
     )
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
@@ -96,7 +96,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val bigLeafProof = avlProver.generateProof()
     val prover = new ErgoLikeProvingInterpreter()
       .withContextExtender(proofId, ByteArrayConstant(bigLeafProof))
-      .withContextExtender(elementId, IntConstant(elements.head))
+      .withContextExtender(elementId, LongConstant(elements.head))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
     (new ErgoLikeInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
@@ -105,7 +105,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val smallLeafTreeProof = avlProver.generateProof()
     val smallProver = new ErgoLikeProvingInterpreter()
       .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
-      .withContextExtender(elementId, IntConstant(elements.head))
+      .withContextExtender(elementId, LongConstant(elements.head))
     smallProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
     // TODO check that verifier return false for incorrect proofs?
   }

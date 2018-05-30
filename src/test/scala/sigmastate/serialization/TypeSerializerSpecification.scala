@@ -25,8 +25,8 @@ class TypeSerializerSpecification extends SerializationSpecification {
   }
 
   property("Codes of primitive types have correct order") {
-    for (i <- TypeSerializer.primIdToType.indices)
-      i shouldBe TypeSerializer.primIdToType(i).typeCode
+    for (i <- TypeSerializer.embeddableIdToType.indices.drop(1))
+      i shouldBe TypeSerializer.embeddableIdToType(i).typeCode
   }
 
   property("Primitive type serialization roundtrip") {
@@ -37,11 +37,11 @@ class TypeSerializerSpecification extends SerializationSpecification {
       roundtrip(SOption(t), 1)
       roundtrip(SOption(SCollection(t)), 1)
       roundtrip(STuple(t, t), 1)
-      if (t != SInt) {
-        roundtrip(STuple(t, SInt), 2)
-        roundtrip(STuple(SInt, t), 2)
+      if (t != SLong) {
+        roundtrip(STuple(t, SLong), 2)
+        roundtrip(STuple(SLong, t), 2)
       }
-      roundtrip(STuple(SCollection(SInt), t), 2)
+      roundtrip(STuple(SCollection(SLong), t), 2)
     }
   }
 
@@ -57,12 +57,12 @@ class TypeSerializerSpecification extends SerializationSpecification {
   }
 
   property("Specific types serialization roundtrip") {
-    roundtrip(STuple(SInt, SInt, SByte), 5)
-    roundtrip(STuple(SCollection(SInt), SInt, SByte), 5)
-    roundtrip(STuple(SCollection(SInt), SOption(SInt), SByte), 5)
-    roundtrip(STuple(SCollection(SCollection(SInt)), SOption(SCollection(SInt)), SByte), 5)
+    roundtrip(STuple(SLong, SLong, SByte), 5)
+    roundtrip(STuple(SCollection(SLong), SLong, SByte), 5)
+    roundtrip(STuple(SCollection(SLong), SOption(SLong), SByte), 5)
+    roundtrip(STuple(SCollection(SCollection(SLong)), SOption(SCollection(SLong)), SByte), 5)
 
-    roundtrip(STuple(SCollection(SInt), SCollection(SInt)), 4)
-    roundtrip(STuple(SCollection(SInt), SOption(SInt)), 4)
+    roundtrip(STuple(SCollection(SLong), SCollection(SLong)), 4)
+    roundtrip(STuple(SCollection(SLong), SOption(SLong)), 4)
   }
 }

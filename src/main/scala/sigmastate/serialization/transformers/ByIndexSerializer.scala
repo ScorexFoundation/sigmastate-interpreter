@@ -5,7 +5,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.Serializer.{Position, Consumed}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.ByIndex
-import sigmastate.{SCollection, SInt, SType}
+import sigmastate.{SCollection, SLong, SType}
 
 object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
 
@@ -15,7 +15,7 @@ object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
     val (input, c1) = ValueSerializer.deserialize(bytes, pos)
     val (index, c2) = ValueSerializer.deserialize(bytes, pos + c1)
     ByIndex(input.asInstanceOf[Value[SCollection[SType]]],
-      index.asInstanceOf[Value[SInt.type]]) -> (c1 + c2)
+      index.asInstanceOf[Value[SLong.type]]) -> (c1 + c2)
   }
 
   override def serializeBody(obj: ByIndex[SType]): Array[Byte] = {

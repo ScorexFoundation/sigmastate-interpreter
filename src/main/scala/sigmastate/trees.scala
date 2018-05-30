@@ -158,11 +158,11 @@ object AND {
 /**
   * Cast SInt to SByteArray
   */
-case class IntToByteArray(input: Value[SInt.type])
-  extends Transformer[SInt.type, SByteArray] with NotReadyValueByteArray {
+case class IntToByteArray(input: Value[SLong.type])
+  extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.IntToByteArrayCode
 
-  override def function(bal: EvaluatedValue[SInt.type]): Value[SByteArray] =
+  override def function(bal: EvaluatedValue[SLong.type]): Value[SByteArray] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
@@ -171,11 +171,11 @@ case class IntToByteArray(input: Value[SInt.type])
 /**
   * Cast SInt to SBigInt
   */
-case class IntToBigInt(input: Value[SInt.type])
-  extends Transformer[SInt.type, SBigInt.type] with NotReadyValueBigInt {
+case class IntToBigInt(input: Value[SLong.type])
+  extends Transformer[SLong.type, SBigInt.type] with NotReadyValueBigInt {
   override val opCode: OpCode = OpCodes.IntToBigIntCode
 
-  override def function(bal: EvaluatedValue[SInt.type]): Value[SBigInt.type] =
+  override def function(bal: EvaluatedValue[SLong.type]): Value[SBigInt.type] =
     BigIntConstant(BigInt(bal.value).underlying())
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
@@ -184,11 +184,11 @@ case class IntToBigInt(input: Value[SInt.type])
 /**
   * Cast SInt to SByte
   */
-case class IntToByte(input: Value[SInt.type])
-  extends Transformer[SInt.type, SByte.type] with NotReadyValueByte {
+case class IntToByte(input: Value[SLong.type])
+  extends Transformer[SLong.type, SByte.type] with NotReadyValueByte {
   override val opCode: OpCode = OpCodes.IntToByteCode
 
-  override def function(bal: EvaluatedValue[SInt.type]): Value[SByte.type] =
+  override def function(bal: EvaluatedValue[SLong.type]): Value[SByte.type] =
     ByteConstant(bal.value.toByteExact)
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1

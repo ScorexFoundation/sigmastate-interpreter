@@ -42,7 +42,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(EqCode, EQ.apply[SType], Seq(Constraints.sameType2)),
     Relation2Serializer(NeqCode, NEQ.apply[SType], Seq(Constraints.sameType2)),
     Relation3Serializer(IsMemberCode, IsMember.apply),
-    QuadrupelSerializer[SBoolean.type, SInt.type, SInt.type, SInt.type](IfCode, If.apply),
+    QuadrupelSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
 
     TwoArgumentsSerializer(XorCode, Xor.apply),
 //    TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
@@ -78,13 +78,13 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
     FoldSerializer,
-    SimpleTransformerSerializer[SCollection[SType], SInt.type](SizeOfCode, SizeOf.apply),
-    SimpleTransformerSerializer[SBox.type, SInt.type](ExtractAmountCode, ExtractAmount.apply),
+    SimpleTransformerSerializer[SCollection[SType], SLong.type](SizeOfCode, SizeOf.apply),
+    SimpleTransformerSerializer[SBox.type, SLong.type](ExtractAmountCode, ExtractAmount.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractScriptBytesCode, ExtractScriptBytes.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesCode, ExtractBytes.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, ExtractId.apply),
-    SimpleTransformerSerializer[SInt.type, SByteArray](IntToByteArrayCode, IntToByteArray.apply),
+    SimpleTransformerSerializer[SLong.type, SByteArray](IntToByteArrayCode, IntToByteArray.apply),
     SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, CalcSha256.apply),
@@ -131,7 +131,7 @@ object Constraints {
   type ConstraintN = Seq[SType.TypeCode] => Boolean
 
   def onlyInt2: Constraint2 = {
-    case (tc1, tc2) => tc1 == SInt.typeCode && tc2 == SInt.typeCode
+    case (tc1, tc2) => tc1 == SLong.typeCode && tc2 == SLong.typeCode
   }
 
   def sameType2: Constraint2 = {

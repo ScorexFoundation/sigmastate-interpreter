@@ -2,7 +2,7 @@ package sigmastate.utxo.serialization
 
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks, TableDrivenPropertyChecks}
-import sigmastate.Values.{IntConstant, TrueLeaf}
+import sigmastate.Values.{LongConstant, TrueLeaf}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.generators._
 
@@ -19,8 +19,8 @@ class ContextExtensionSerializationSpecification extends PropSpec
   property("two extension roundtrip") {
     val serializer = ContextExtension.serializer
 
-    val ext1 = ContextExtension(Map((21: Byte) -> IntConstant(2000), (22: Byte) -> TrueLeaf))
-    val ext2 = ContextExtension(Map((22: Byte) -> IntConstant(10000)))
+    val ext1 = ContextExtension(Map((21: Byte) -> LongConstant(2000), (22: Byte) -> TrueLeaf))
+    val ext2 = ContextExtension(Map((22: Byte) -> LongConstant(10000)))
     val ext3 = ContextExtension(Map())
 
     val bs = serializer.toBytes(ext1) ++ serializer.toBytes(ext2) ++ serializer.toBytes(ext3)

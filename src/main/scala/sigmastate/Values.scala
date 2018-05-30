@@ -48,9 +48,10 @@ object Values {
   object Value {
     type PropositionCode = Byte
 
-    implicit def liftInt(n: Int): Value[SInt.type] = IntConstant(n)
-
-    implicit def liftLong(n: Long): Value[SInt.type] = IntConstant(n)
+    implicit def liftByte (n: Byte) : Value[SByte.type]  = ByteConstant(n)
+    implicit def liftShort(n: Short): Value[SShort.type] = ShortConstant(n)
+//    implicit def liftInt  (n: Int)  : Value[SInt.type]   = IntConstant(n)
+    implicit def liftLong (n: Long) : Value[SLong.type]  = LongConstant(n)
 
     implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray] = ByteArrayConstant(arr)
 
@@ -107,7 +108,9 @@ object Values {
   }
 
   type ByteConstant = Constant[SByte.type]
-  type IntConstant = Constant[SInt.type]
+  type ShortConstant = Constant[SShort.type]
+//  type IntConstant = Constant[SInt.type]
+  type LongConstant = Constant[SLong.type]
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
   type GroupElementConstant = Constant[SGroupElement.type]
@@ -120,10 +123,24 @@ object Values {
       case _ => None
     }
   }
+  object ShortConstant {
+    def apply(value: Short): Constant[SShort.type]  = Constant[SShort.type](value, SShort)
+    def unapply(v: SValue): Option[Short] = v match {
+      case Constant(value: Short, SShort) => Some(value)
+      case _ => None
+    }
+  }
   object IntConstant {
-    def apply(value: Long): Constant[SInt.type]  = Constant[SInt.type](value, SInt)
+    def apply(value: Int): Constant[SInt.type]  = Constant[SInt.type](value, SInt)
+    def unapply(v: SValue): Option[Int] = v match {
+      case Constant(value: Int, SInt) => Some(value)
+      case _ => None
+    }
+  }
+  object LongConstant {
+    def apply(value: Long): Constant[SLong.type]  = Constant[SLong.type](value, SLong)
     def unapply(v: SValue): Option[Long] = v match {
-      case Constant(value: Long, SInt) => Some(value)
+      case Constant(value: Long, SLong) => Some(value)
       case _ => None
     }
   }
@@ -171,8 +188,8 @@ object Values {
         c.value.maxDeletes)
   }
 
-  trait NotReadyValueInt extends NotReadyValue[SInt.type] {
-    override def tpe = SInt
+  trait NotReadyValueInt extends NotReadyValue[SLong.type] {
+    override def tpe = SLong
   }
 
   trait NotReadyValueBigInt extends NotReadyValue[SBigInt.type] {
@@ -185,7 +202,7 @@ object Values {
 
   type TaggedByte = TaggedVariable[SByte.type]
   type TaggedBoolean = TaggedVariable[SBoolean.type]
-  type TaggedInt = TaggedVariable[SInt.type]
+  type TaggedInt = TaggedVariable[SLong.type]
   type TaggedBigInt = TaggedVariable[SBigInt.type]
   type TaggedBox = TaggedVariable[SBox.type]
   type TaggedGroupElement = TaggedVariable[SGroupElement.type]
@@ -194,7 +211,7 @@ object Values {
 
   def TaggedByte   (id: Byte): TaggedByte = TaggedVariable(id, SByte)
   def TaggedBoolean(id: Byte): TaggedBoolean = TaggedVariable(id, SBoolean)
-  def TaggedInt    (id: Byte): TaggedInt = TaggedVariable(id, SInt)
+  def TaggedInt    (id: Byte): TaggedInt = TaggedVariable(id, SLong)
   def TaggedBigInt (id: Byte): TaggedBigInt = TaggedVariable(id, SBigInt)
   def TaggedBox    (id: Byte): TaggedBox = TaggedVariable(id, SBox)
   def TaggedGroupElement(id: Byte): TaggedGroupElement = TaggedVariable(id, SGroupElement)
@@ -232,11 +249,33 @@ object Values {
     }
   }
 
-  object IntArrayConstant {
-    def apply(value: Array[Long]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value, SInt)
+  object ShortArrayConstant {
+    def apply(value: Array[Short]): CollectionConstant[SShort.type] = CollectionConstant[SShort.type](value, SShort)
+    def unapply(node: SValue): Option[Array[Short]] = node match {
+      case coll: CollectionConstant[SShort.type] @unchecked => coll match {
+        case CollectionConstant(arr, SShort) => Some(arr)
+        case _ => None
+      }
+      case _ => None
+    }
+  }
+  
+//  object IntArrayConstant {
+//    def apply(value: Array[Int]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value, SLong)
+//    def unapply(node: SValue): Option[Array[Int]] = node match {
+//      case coll: CollectionConstant[SLong.type] @unchecked => coll match {
+//        case CollectionConstant(arr, SLong) => Some(arr)
+//        case _ => None
+//      }
+//      case _ => None
+//    }
+//  }
+//
+  object LongArrayConstant {
+    def apply(value: Array[Long]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value, SLong)
     def unapply(node: SValue): Option[Array[Long]] = node match {
-      case coll: CollectionConstant[SInt.type] @unchecked => coll match {
-        case CollectionConstant(arr, SInt) => Some(arr)
+      case coll: CollectionConstant[SLong.type] @unchecked => coll match {
+        case CollectionConstant(arr, SLong) => Some(arr)
         case _ => None
       }
       case _ => None
