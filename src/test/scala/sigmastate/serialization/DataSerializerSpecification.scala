@@ -32,7 +32,7 @@ class DataSerializerSpecification extends SerializationSpecification {
   property("Data serialization round trip") {
     forAll { x: Byte => roundtrip[SByte.type](x, SByte) }
     forAll { x: Boolean => roundtrip[SBoolean.type](x, SBoolean) }
-    forAll { x: Long => roundtrip[SInt.type](x, SInt) }
+    forAll { x: Long => roundtrip[SLong.type](x, SLong) }
     forAll { x: BigInteger => roundtrip[SBigInt.type](x, SBigInt) }
     forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
     forAll { x: ErgoBox => roundtrip[SBox.type](x, SBox) }

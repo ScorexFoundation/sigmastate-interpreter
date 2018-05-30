@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import sigmastate.lang.Terms.Ident
-import sigmastate.Values.{ConcreteCollection, Value, IntConstant}
+import sigmastate.Values.{ConcreteCollection, Value, LongConstant}
 import sigmastate._
 import java.math.BigInteger
 
@@ -11,7 +11,7 @@ import sigmastate.interpreter.CryptoConstants
 trait LangTests {
 
   def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
-  def IntIdent(name: String): Value[SInt.type] = Ident(name).asValue[SInt.type]
+  def IntIdent(name: String): Value[SLong.type] = Ident(name).asValue[SLong.type]
   def ByteIdent(name: String): Value[SByte.type] = Ident(name).asValue[SByte.type]
   def ByteArrayIdent(name: String): Value[SByteArray] = Ident(name).asValue[SByteArray]
   def GEIdent(name: String): Value[SGroupElement.type] = Ident(name).asValue[SGroupElement.type]
@@ -32,8 +32,8 @@ trait LangTests {
     "b2" -> 2.toByte,
     "arr1" -> Array[Byte](1, 2),
     "arr2" -> Array[Byte](10, 20),
-    "col1" -> ConcreteCollection(IntConstant(1), IntConstant(2)),
-    "col2" -> ConcreteCollection(IntConstant(10), IntConstant(20)),
+    "col1" -> ConcreteCollection(LongConstant(1), LongConstant(2)),
+    "col2" -> ConcreteCollection(LongConstant(10), LongConstant(20)),
     "g1" -> g1,
     "g2" -> g2,
     "n1" -> n1,

@@ -47,10 +47,10 @@ class SigmaSpecializer {
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(ProveDlog(g))
 
-    case Apply(IntToBigSym, Seq(arg: Value[SInt.type]@unchecked)) =>
+    case Apply(IntToBigSym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(IntToBigInt(arg))
 
-    case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
+    case Apply(IntToByteSym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(IntToByte(arg))
 
     // Rule: col.size --> SizeOf(col)
@@ -88,7 +88,7 @@ class SigmaSpecializer {
         case SigmaBoolean.IsValid => Some(obj)
       }
 
-    case Select(obj, "value", Some(SInt)) if obj.tpe == SBox =>
+    case Select(obj, "value", Some(SLong)) if obj.tpe == SBox =>
       Some(ExtractAmount(obj.asValue[SBox.type]))
 
     case Apply(Select(col, "slice", _), Seq(from, until)) =>

@@ -42,7 +42,7 @@ sealed trait SType extends SigmaNode {
 
   def dataCost(v: SType#WrappedType): Long = sys.error(s"Don't know how to compute dataCost($v) with T = $this")
 
-  def isPrimitive: Boolean = SType.allPredefTypes.contains(this)
+  def isEmbeddable: Boolean = false
 
   /** Elvis operator for types. See https://en.wikipedia.org/wiki/Elvis_operator*/
   def ?:(whenNoType: => SType): SType = if (this == NoType) whenNoType else this
@@ -57,7 +57,7 @@ object SType {
   type TypeCode = Byte
 
   implicit val typeByte = SByte
-  implicit val typeInt = SInt
+  implicit val typeInt = SLong
   implicit val typeBigInt = SBigInt
   implicit val typeBoolean = SBoolean
   implicit val typeAvlTree = SAvlTree
@@ -66,8 +66,8 @@ object SType {
 
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
-  /** All primitive types should be listed here. Note, NoType is not primitive type. */
-  val allPredefTypes = Seq(SByte, SInt, SBigInt, SBoolean, SAvlTree, SGroupElement, SBox, SUnit, SAny)
+  /** All pre-defined types should be listed here. Note, NoType is not listed. */
+  val allPredefTypes = Seq(SByte, SLong, SBigInt, SBoolean, SAvlTree, SGroupElement, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   implicit class STypeOps(val tpe: SType) {
@@ -83,9 +83,11 @@ object SType {
     }
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
     def classTag[T <: SType#WrappedType]: ClassTag[T] = (tpe match {
-      case SByte => reflect.classTag[Byte]
-      case SInt => reflect.classTag[Long]
       case SBoolean => reflect.classTag[Boolean]
+      case SByte => reflect.classTag[Byte]
+      case SShort => reflect.classTag[Short]
+      case SInt => reflect.classTag[Int]
+      case SLong => reflect.classTag[Long]
       case SBigInt => reflect.classTag[BigInteger]
       case SAvlTree => reflect.classTag[AvlTreeData]
       case SGroupElement => reflect.classTag[EcPointType]
@@ -97,17 +99,21 @@ object SType {
   }
 
   def typeOfData(x: Any): SType = x match {
-    case _: Byte => SByte
-    case _: Long => SInt
     case _: Boolean => SBoolean
+    case _: Byte => SByte
+    case _: Short => SShort
+    case _: Int => SInt
+    case _: Long => SLong
     case _: BigInteger => SBigInt
     case _: CryptoConstants.EcPointType => SGroupElement
     case _: ErgoBox => SBox
     case _: AvlTreeData => SAvlTree
     case _: Unit => SUnit
-    case _: Array[Byte] => SByteArray
-    case _: Array[Long] => SIntArray
     case _: Array[Boolean] => SBooleanArray
+    case _: Array[Byte] => SByteArray
+    case _: Array[Short] => SShortArray
+    case _: Array[Int] => SIntArray
+    case _: Array[Long] => SLongArray
     case _: Array[BigInteger] => SBigIntArray
     case _: Array[EcPointType] => SGroupElementArray
     case _: Array[ErgoBox] => SBoxArray
@@ -150,9 +156,20 @@ case object NoType extends SType {
   val typeCode = 0: Byte
 }
 
+/** Base trait for all pre-defined types which are not necessary primitive (e.g. Box, AvlTree).
+  */
+trait SPredefType extends SType {
+}
+
+/** Base trait for all embeddable types.
+  */
+trait SEmbeddable extends SType {
+  override def isEmbeddable: Boolean = true
+}
+
 /** Base trait for all primitive types which don't have internal type items (aka atoms).
   * All primitive types can occupy a reserved interval of codes from 1 to MaxPrimTypeCode. */
-trait SPrimType extends SType {
+trait SPrimType extends SType with SPredefType {
 }
 
 /** Primitive type recognizer to pattern match on TypeCode */
@@ -168,39 +185,55 @@ object SPrimType {
   final val PrimRange: Byte = (MaxPrimTypeCode + 1).toByte
 }
 
-case object SByte extends SPrimType {
-  override type WrappedType = Byte
-  override val typeCode: TypeCode = 1: Byte //TODO change to 4 after SByteArray is removed
-  override def mkConstant(v: Byte): Value[SByte.type] = ByteConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.ByteConstantDeclaration
-}
-
-case object SBoolean extends SPrimType {
+case object SBoolean extends SPrimType with SEmbeddable {
   override type WrappedType = Boolean
-  override val typeCode: TypeCode = 2: Byte
+  override val typeCode: TypeCode = 1: Byte
   override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant.fromBoolean(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.BooleanConstantDeclaration
 }
 
+case object SByte extends SPrimType with SEmbeddable {
+  override type WrappedType = Byte
+  override val typeCode: TypeCode = 2: Byte //TODO change to 4 after SByteArray is removed
+  override def mkConstant(v: Byte): Value[SByte.type] = ByteConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.ByteConstantDeclaration
+}
+
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SInt extends SPrimType {
-  override type WrappedType = Long
+case object SShort extends SPrimType with SEmbeddable {
+  override type WrappedType = Short
   override val typeCode: TypeCode = 3: Byte
-  override def mkConstant(v: Long): Value[SInt.type] = IntConstant(v)
+  override def mkConstant(v: Short): Value[SShort.type] = ShortConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.ShortConstantDeclaration
+}
+
+//todo: make PreservingNonNegativeInt type for registers which value should be preserved?
+case object SInt extends SPrimType with SEmbeddable {
+  override type WrappedType = Int
+  override val typeCode: TypeCode = 4: Byte
+  override def mkConstant(v: Int): Value[SInt.type] = IntConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.IntConstantDeclaration
 }
 
-case object SBigInt extends SPrimType {
+//todo: make PreservingNonNegativeInt type for registers which value should be preserved?
+case object SLong extends SPrimType with SEmbeddable {
+  override type WrappedType = Long
+  override val typeCode: TypeCode = 5: Byte
+  override def mkConstant(v: Long): Value[SLong.type] = LongConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.LongConstantDeclaration
+}
+
+case object SBigInt extends SPrimType with SEmbeddable {
   override type WrappedType = BigInteger
-  override val typeCode: TypeCode = 4: Byte
+  override val typeCode: TypeCode = 6: Byte
   override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.BigIntConstantDeclaration
   val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
 }
 
-case object SGroupElement extends SProduct with SPrimType {
+case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
   override type WrappedType = EcPointType
-  override val typeCode: TypeCode = 5: Byte
+  override val typeCode: TypeCode = 7: Byte
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.GroupElementConstantDeclaration
   def ancestors = Nil
@@ -210,18 +243,18 @@ case object SGroupElement extends SProduct with SPrimType {
   )
 }
 
-case object SAvlTree extends SProduct with SPrimType {
+case object SAvlTree extends SProduct with SPredefType {
   override type WrappedType = AvlTreeData
-  override val typeCode: TypeCode = 6: Byte
+  override val typeCode: TypeCode = 100: Byte
   override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.AvlTreeConstantDeclaration
   def ancestors = Nil
   val fields = Nil
 }
 
-case object SBox extends SProduct with SPrimType {
+case object SBox extends SProduct with SPredefType {
   override type WrappedType = ErgoBox
-  override val typeCode: TypeCode = 7: Byte
+  override val typeCode: TypeCode = 99: Byte
   override def mkConstant(v: ErgoBox): Value[SBox.type] = BoxConstant(v)
   override def dataCost(v: SType#WrappedType): Long = v.asInstanceOf[this.WrappedType].cost
 
@@ -237,7 +270,7 @@ case object SBox extends SProduct with SPrimType {
   val Bytes = "bytes"
   val BytesWithNoRef = "bytesWithNoRef"
   val fields = Vector(
-    Value            -> SInt,        // see ExtractAmount
+    Value            -> SLong,        // see ExtractAmount
     PropositionBytes -> SByteArray,  // see ExtractScriptBytes
     Bytes            -> SByteArray,  // see ExtractBytes
     BytesWithNoRef   -> SByteArray,  // see ExtractBytesWithNoRef
@@ -248,13 +281,13 @@ case object SBox extends SProduct with SPrimType {
 /** The type with single inhabitant value `()` */
 case object SUnit extends SPrimType {
   override type WrappedType = Unit
-  override val typeCode: Byte = 8: Byte
+  override val typeCode: Byte = 98: Byte
 }
 
 /** Any other type is implicitly subtype of this type. */
 case object SAny extends SPrimType {
   override type WrappedType = Any
-  override val typeCode: Byte = 9: Byte
+  override val typeCode: Byte = 97: Byte
 }
 
 case class SCollection[T <: SType](elemType: T) extends SProduct {
@@ -281,28 +314,32 @@ object SCollection {
   private val tIV = STypeIdent("IV")
   private val tOV = STypeIdent("OV")
   val fields = Seq(
-    "size" -> SInt,
+    "size" -> SLong,
     "map" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV)),
     "exists" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
     "fold" -> SFunc(IndexedSeq(SCollection(tIV), tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV, Seq(tIV)),
     "forall" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
-    "slice" -> SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV)),
+    "slice" -> SFunc(IndexedSeq(SCollection(tIV), SLong, SLong), SCollection(tIV), Seq(tIV)),
     "where" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV))
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 
-  type SByteArray         = SCollection[SByte.type]
-  type SIntArray          = SCollection[SInt.type]
   type SBooleanArray      = SCollection[SBoolean.type]
+  type SByteArray         = SCollection[SByte.type]
+  type SShortArray          = SCollection[SShort.type]
+  type SIntArray          = SCollection[SInt.type]
+  type SLongArray          = SCollection[SLong.type]
   type SBigIntArray       = SCollection[SBigInt.type]
   type SGroupElementArray = SCollection[SGroupElement.type]
   type SBoxArray          = SCollection[SBox.type]
   type SAvlTreeArray      = SCollection[SAvlTree.type]
 
-  val SByteArray         = SCollection(SByte)
-  val SIntArray          = SCollection(SInt)
   val SBooleanArray      = SCollection(SBoolean)
+  val SByteArray         = SCollection(SByte)
+  val SShortArray        = SCollection(SShort)
+  val SIntArray          = SCollection(SInt)
+  val SLongArray          = SCollection(SLong)
   val SBigIntArray       = SCollection(SBigInt)
   val SGroupElementArray = SCollection(SGroupElement)
   val SBoxArray          = SCollection(SBox)
@@ -367,10 +404,7 @@ val Pair1TypeConstrId = 5
   val PairSymmetricTypeConstrId = 7
   val PairSymmetricTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * PairSymmetricTypeConstrId).toByte
 
-  val ReservedConstrId = 8
-  val ReservedConstrTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * ReservedConstrId).toByte
-   
-  val TupleTypeCode = ((SPrimType.MaxPrimTypeCode + 1) * 9).toByte
+  val TupleTypeCode = ((SPrimType.MaxPrimTypeCode + 1) * 8).toByte
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
   val componentNames = Range(1, 31).map(i => s"_$i")

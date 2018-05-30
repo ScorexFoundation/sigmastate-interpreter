@@ -6,23 +6,36 @@ import sigmastate.utils.{ByteWriter, ByteReader}
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer extends ByteBufferSerializer[SType] {
 
-  val primIdToType = Array[SType](NoType, SByte, SBoolean, SInt, SBigInt, SGroupElement, SAvlTree, SBox)
+  /** The list of embeddable types, i.e. types that can be combined with type constructor for optimized encoding.
+    * For each embeddable type `T`, and type constructor `C`, the type `C[T]` can be represented by single byte. */
+  val embeddableIdToType = Array[SType](null, SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement)
 
-  def getPrimType(code: Int): SType =
-    if (code <= 0 || code >= primIdToType.length)
+  def getEmbeddableType(code: Int): SType =
+    if (code <= 0 || code >= embeddableIdToType.length)
       sys.error(s"Cannot deserialize primitive type with code $code")
     else
-      primIdToType(code)
+      embeddableIdToType(code)
+
+  def isEmbeddable(t: SType): Boolean = {
+    for (emb <- embeddableIdToType) {
+      if (t == emb) return true
+    }
+    return false
+  }
 
   override def serialize(tpe: SType, w: ByteWriter) = tpe match {
-    case p: SPrimType =>
+    case p if isEmbeddable(p) =>
       w.put(p.typeCode)
+    case SAny => w.put(SAny.typeCode)
+    case SUnit => w.put(SUnit.typeCode)
+    case SBox => w.put(SBox.typeCode)
+    case SAvlTree => w.put(SAvlTree.typeCode)
     case c: SCollection[a] => c.elemType match {
-      case p: SPrimType =>
+      case p if isEmbeddable(p) =>
         val code = (SCollection.CollectionTypeCode + p.typeCode).toByte
         w.put(code)
       case cn: SCollection[a] => cn.elemType match {
-        case p: SPrimType =>
+        case p if isEmbeddable(p) =>
           val code = (SCollection.NestedCollectionTypeCode + p.typeCode).toByte
           w.put(code)
         case t =>
@@ -34,11 +47,11 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         serialize(t, w)
     }
     case o: SOption[a] => o.elemType match {
-      case p: SPrimType =>
+      case p if isEmbeddable(p) =>
         val code = (SOption.OptionTypeCode + p.typeCode).toByte
         w.put(code)
       case c: SCollection[a] => c.elemType match {
-        case p: SPrimType =>
+        case p if isEmbeddable(p) =>
           val code = (SOption.OptionCollectionTypeCode + p.typeCode).toByte
           w.put(code)
         case t =>
@@ -50,7 +63,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         serialize(t, w)
     }
     case tup @ STuple(Seq(t1, t2)) => (t1, t2) match {
-      case (p: SPrimType, _) =>
+      case (p, _) if isEmbeddable(p) =>
         if (p == t2) {
           val code = (STuple.PairSymmetricTypeCode + p.typeCode).toByte
           w.put(code)
@@ -59,7 +72,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
           w.put(code)
           serialize(t2, w)
         }
-      case (_, p: SPrimType) =>
+      case (_, p) if isEmbeddable(p) =>
         val code = (STuple.Pair2TypeCode + p.typeCode).toByte
         w.put(code)
         serialize(t1, w)
@@ -79,7 +92,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
       val primId   = c % SPrimType.PrimRange
       constrId match {
         case 0 => // primitive
-          getPrimType(c)
+          getEmbeddableType(c)
         case 1 => // Array[_]
           val tElem = getArgType(r, primId)
           SCollection(tElem)
@@ -105,12 +118,20 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
           STuple(t, t)
       }
     }
-    else if (c == STuple.TupleTypeCode) {
-      val len = r.getUByte()
-      val items = (0 until len).map(_ => deserialize(r))
-      STuple(items)
-    } else {
-      sys.error(s"Cannot deserialize type starting from code $c")
+    else {
+      c match {
+        case STuple.TupleTypeCode => {
+          val len = r.getUByte()
+          val items = (0 until len).map(_ => deserialize(r))
+          STuple(items)
+        }
+        case SAny.typeCode => SAny
+        case SUnit.typeCode => SUnit
+        case SBox.typeCode => SBox
+        case SAvlTree.typeCode => SAvlTree
+        case _ =>
+          sys.error(s"Cannot deserialize type starting from code $c")
+      }
     }
     tpe
   }
@@ -119,7 +140,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     if (primId == 0)
       deserialize(r)
     else
-      getPrimType(primId)
+      getEmbeddableType(primId)
 
   private def serializeTuple(t: STuple, w: ByteWriter) = {
     assert(t.items.length <= 255)

@@ -80,8 +80,8 @@ trait Literals { l =>
       //noinspection TypeAnnotation
       val Literal = P(
         ("-".!.? ~ /*Float |*/ Int.!).map {
-            case (Some(_), i) => IntConstant(-i.toLong)
-            case (None, i) => IntConstant(i.toLong)
+            case (Some(_), i) => LongConstant(-i.toLong)
+            case (None, i) => LongConstant(i.toLong)
           }
         | Bool
         /*| String | "'" ~/ (Char | Symbol) | Null*/ )

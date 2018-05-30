@@ -4,7 +4,7 @@ import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox._
 import scorex.crypto.hash.Digest32
 import sigmastate.{SBoolean, SType}
-import sigmastate.Values.{ByteArrayConstant, Value, EvaluatedValue, IntConstant}
+import sigmastate.Values.{ByteArrayConstant, Value, EvaluatedValue, LongConstant}
 import sigmastate.serialization.Serializer.{Position, Consumed}
 import sigmastate.serialization.{ValueSerializer, Serializer}
 import sigmastate.utxo.CostTable.Cost
@@ -26,7 +26,7 @@ class ErgoBoxCandidate(val value: Long,
 
   def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {
-      case R0 => Some(IntConstant(value))
+      case R0 => Some(LongConstant(value))
       case R1 => Some(ByteArrayConstant(propositionBytes))
       case R2 => None
       case n: NonMandatoryIdentifier => additionalRegisters.get(n)

@@ -117,15 +117,15 @@ class SpamSpecification extends SigmaTestingCommons {
       whenever(orCnt > 10 && outCnt > 200) {
         val prover = new ErgoLikeProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
 
-        val propToCompare = OR((1 to orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))))
+        val propToCompare = OR((1 to orCnt).map(_ => EQ(LongConstant(6), LongConstant(5))))
 
-        val spamProp = OR((1 until orCnt).map(_ => EQ(IntConstant(6), IntConstant(5))) :+
-          EQ(IntConstant(6), IntConstant(6)))
+        val spamProp = OR((1 until orCnt).map(_ => EQ(LongConstant(6), LongConstant(5))) :+
+          EQ(LongConstant(6), LongConstant(6)))
 
         val spamScript =
           Exists(Outputs, 21,
             AND(
-              GE(ExtractAmount(TaggedBox(21)), IntConstant(10)),
+              GE(ExtractAmount(TaggedBox(21)), LongConstant(10)),
               EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(propToCompare.bytes))
             )
           )
@@ -153,8 +153,8 @@ class SpamSpecification extends SigmaTestingCommons {
     val prop = Exists(Inputs, 21, Exists(Outputs, 22,
       EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
 
-    val inputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(5))))
-    val outputScript = OR((1 to 200).map(_ => EQ(IntConstant(6), IntConstant(6))))
+    val inputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(5))))
+    val outputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(6))))
 
     val inputs = ((1 to 999) map (_ => ErgoBox(11, inputScript))) :+ ErgoBox(11, outputScript)
     val outputs = (1 to 1000) map (_ => ErgoBox(11, outputScript))

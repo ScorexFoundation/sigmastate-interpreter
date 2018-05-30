@@ -9,7 +9,7 @@ import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.IntConstant
+import sigmastate.Values.LongConstant
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import org.ergoplatform.ErgoBox.R3
@@ -34,7 +34,7 @@ class BlockchainSimulationSpecification extends PropSpec
     val boxesToSpend = state.boxesReader.byR3Value(height)
 
     val txs = boxesToSpend.map { box =>
-      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey, Map(R3 -> IntConstant(height + windowSize)))
+      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey, Map(R3 -> LongConstant(height + windowSize)))
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContext(height + 1,
@@ -143,13 +143,13 @@ object BlockchainSimulationSpecification {
     def byId(boxId: KeyType): Try[ErgoBox] = Try(boxes(boxId))
 
     def byR3Value(i: Int): Iterable[ErgoBox] =
-      boxes.values.filter(_.get(R3).getOrElse(IntConstant(i + 1)) == IntConstant(i))
+      boxes.values.filter(_.get(R3).getOrElse(LongConstant(i + 1)) == LongConstant(i))
 
     def byTwoInts(r1Id: ErgoBox.RegisterIdentifier, int1: Int,
                   r2Id: ErgoBox.RegisterIdentifier, int2: Int): Option[ErgoBox] =
       boxes.values.find { box =>
-        box.get(r1Id).getOrElse(IntConstant(int1 + 1)) == IntConstant(int1) &&
-          box.get(r2Id).getOrElse(IntConstant(int2 + 1)) == IntConstant(int2)
+        box.get(r1Id).getOrElse(LongConstant(int1 + 1)) == LongConstant(int1) &&
+          box.get(r2Id).getOrElse(LongConstant(int2 + 1)) == LongConstant(int2)
       }
 
     def allIds: Iterable[KeyType] = boxes.keys
@@ -195,7 +195,7 @@ object BlockchainSimulationSpecification {
     val initBlock = Block {
       (1 to windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Map(R3 -> LongConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       }
     }

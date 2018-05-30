@@ -5,7 +5,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.Serializer._
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.Slice
-import sigmastate.{SCollection, SInt, SType}
+import sigmastate.{SCollection, SLong, SType}
 
 object SliceSerializer extends ValueSerializer[Slice[SType]] {
 
@@ -19,7 +19,7 @@ object SliceSerializer extends ValueSerializer[Slice[SType]] {
     val (input, consumed) = ValueSerializer.deserialize(bytes, pos)
     val (from, consumed2) = ValueSerializer.deserialize(bytes, pos + consumed)
     val (until, consumed3) = ValueSerializer.deserialize(bytes, pos + consumed + consumed2)
-    (Slice(input.asInstanceOf[Value[SCollection[SType]]], from.asInstanceOf[Value[SInt.type]],
-      until.asInstanceOf[Value[SInt.type]]), consumed + consumed2 + consumed3)
+    (Slice(input.asInstanceOf[Value[SCollection[SType]]], from.asInstanceOf[Value[SLong.type]],
+      until.asInstanceOf[Value[SLong.type]]), consumed + consumed2 + consumed3)
   }
 }
