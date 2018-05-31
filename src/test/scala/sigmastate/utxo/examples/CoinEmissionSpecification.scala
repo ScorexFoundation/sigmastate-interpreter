@@ -21,12 +21,12 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
   private val coinsInOneErgo: Long = 100000000
   private val blocksPerHour: Int = 30
 
-  // 2 weeks of fixed rate
-  private val fixedRatePeriod =  blocksPerHour * 2 * 24 * 14
-  // 75 coins per block
-  private val fixedRate = 2250 * coinsInOneErgo / blocksPerHour
-  // 3 days epoch
-  private val epochLength: Int = 3 * 24 * blocksPerHour
+  // 1 weeks of fixed rate
+  private val fixedRatePeriod =  blocksPerHour * 24 * 7
+  // 15 coins per block
+  private val fixedRate = 15 * coinsInOneErgo
+  // 1 days epoch
+  private val epochLength: Int = 24 * blocksPerHour
   // 3 coins reduction every epoch
   private val oneEpochReduction = 3 * coinsInOneErgo
 
@@ -92,7 +92,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
                                    emissionBox: ErgoBox,
                                    height: Long): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
-      val ut = if (emissionBox.value > emissionAtHeight(height)) {
+      val ut = if (emissionBox.value > oneEpochReduction) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Map())
         val newEmissionBox: ErgoBoxCandidate =
           new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> LongConstant(height)))
@@ -139,6 +139,6 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
       }
     }
 
-    chainGen(genesisState, initialBox, 2, 100000000)
+    chainGen(genesisState, initialBox, 0, 100000000)
   }
 }

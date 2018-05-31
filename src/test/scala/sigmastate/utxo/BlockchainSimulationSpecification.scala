@@ -215,7 +215,7 @@ object BlockchainSimulationSpecification {
       val digest = prover.digest
       val utxoRoot = AvlTreeData(digest, keySize)
 
-      val bs = BlockchainState(currentHeight = 0, utxoRoot)
+      val bs = BlockchainState(currentHeight = -2, utxoRoot)
 
       val boxReader = new InMemoryErgoBoxReader(prover)
 
