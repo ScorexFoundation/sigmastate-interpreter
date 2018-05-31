@@ -29,12 +29,13 @@ trait UncheckedConjecture[ST <: SigmaBoolean] extends UncheckedSigmaTree[ST] {
   }
 }
 
-trait UncheckedLeaf[ST <: SigmaBoolean] extends UncheckedSigmaTree[ST]{
+trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree[SP] {
   val challenge: Array[Byte]
+  val commitmentOpt: Option[FirstProverMessage[_]]
 }
 
 case class UncheckedSchnorr(override val proposition: ProveDlog,
-                            firstMessageOpt: Option[FirstDLogProverMessage],
+                            override val commitmentOpt: Option[FirstDLogProverMessage],
                             override val challenge: Array[Byte],
                             secondMessage: SecondDLogProverMessage)
   extends UncheckedLeaf[ProveDlog] {
@@ -42,7 +43,7 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedSchnorr =>
         util.Arrays.equals(challenge, x.challenge) &&
-        firstMessageOpt == x.firstMessageOpt &&
+        commitmentOpt == x.commitmentOpt &&
         secondMessage == x.secondMessage
     case _ => false
   }
@@ -50,7 +51,7 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
 
 case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
-                                       firstMessageOpt: Option[FirstDiffieHellmanTupleProverMessage],
+                                       override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                        override val challenge: Array[Byte],
                                        secondMessage: SecondDiffieHellmanTupleProverMessage)
   extends UncheckedLeaf[ProveDiffieHellmanTuple] {
@@ -58,7 +59,7 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHell
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedDiffieHellmanTuple =>
       proposition == x.proposition &&
-      firstMessageOpt == x.firstMessageOpt &&
+      commitmentOpt == x.commitmentOpt &&
       util.Arrays.equals(challenge, x.challenge) &&
       secondMessage == x.secondMessage
   }

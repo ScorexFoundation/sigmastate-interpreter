@@ -284,13 +284,13 @@ trait Interpreter {
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
             val (challenge, rootCommitments) = newRoot match {
               case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
-              case sn: UncheckedSchnorr => (sn.challenge, sn.firstMessageOpt.toSeq)
-              case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.firstMessageOpt.toSeq)
+              case sn: UncheckedSchnorr => (sn.challenge, sn.commitmentOpt.toSeq)
+              case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.commitmentOpt.toSeq)
               case _ =>
                 Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
             }
 
-            val expectedChallenge = CryptoFunctions.hashFn(Helpers.concatBytes(rootCommitments.map(_.bytes)) ++ message)
+            val expectedChallenge = CryptoFunctions.hashFn(UnprovenTreeSerializer.toBytes(newRoot) ++ message)
             util.Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false
@@ -319,9 +319,9 @@ trait Interpreter {
         case u: UncheckedConjecture[_] => u.commitments
 
         //todo: reduce boilerplate below, replace additive notation w. multiplicative
-        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
 
-        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.commitmentOpt.toSeq
       }
 
       val challenge = challenges.head
@@ -340,8 +340,8 @@ trait Interpreter {
 
       val commitments = or.leafs flatMap {
         case u: UncheckedConjecture[_] => u.commitments
-        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.commitmentOpt.toSeq
         case _ => ???
       }
 
@@ -357,7 +357,7 @@ trait Interpreter {
         dlog.exponentiate(g, sn.secondMessage.z.underlying()),
         dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
 
-      sn.copy(firstMessageOpt = Some(FirstDLogProverMessage(a)))
+      sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
 
     //todo: check that g,h belong to the group
     //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
@@ -381,7 +381,7 @@ trait Interpreter {
 
       val a = dlog.multiplyGroupElements(gToZ, dlog.getInverse(uToE))
       val b = dlog.multiplyGroupElements(hToZ, dlog.getInverse(vToE))
-      dh.copy(firstMessageOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
+      dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
 
     case _ => ???
   })
