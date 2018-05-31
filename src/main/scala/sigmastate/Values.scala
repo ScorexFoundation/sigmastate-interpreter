@@ -50,7 +50,7 @@ object Values {
 
     implicit def liftByte (n: Byte) : Value[SByte.type]  = ByteConstant(n)
     implicit def liftShort(n: Short): Value[SShort.type] = ShortConstant(n)
-//    implicit def liftInt  (n: Int)  : Value[SInt.type]   = IntConstant(n)
+    implicit def liftInt  (n: Int)  : Value[SInt.type]   = IntConstant(n)
     implicit def liftLong (n: Long) : Value[SLong.type]  = LongConstant(n)
 
     implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray] = ByteArrayConstant(arr)
