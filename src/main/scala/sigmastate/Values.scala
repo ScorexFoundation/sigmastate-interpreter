@@ -402,7 +402,7 @@ object Values {
     lazy val value = None
   }
 
-  case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]])(implicit val elementType: V)
+  case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
     extends EvaluatedCollection[V] with Rewritable {
     override val opCode: OpCode = ConcreteCollectionCode
 
@@ -420,13 +420,17 @@ object Values {
     def deconstruct = immutable.Seq[Any](elementType) ++ items
 
     def reconstruct(cs: immutable.Seq[Any]) = cs match {
-      case Seq(t: SType, vs@_*) => ConcreteCollection[SType](vs.asInstanceOf[Seq[Value[V]]].toIndexedSeq)(t)
+      case Seq(t: SType, vs@_*) => new ConcreteCollection[SType](vs.asInstanceOf[Seq[Value[V]]].toIndexedSeq, t)
       case _ =>
         illegalArgs("ConcreteCollection", "(IndexedSeq, SType)", cs)
     }
   }
   object ConcreteCollection {
-    def apply[V <: SType](items: Value[V]*)(implicit tV: V) = new ConcreteCollection(items.toIndexedSeq)
+    def apply[V <: SType](items: Value[V]*)(implicit tV: V) =
+      new ConcreteCollection(items.toIndexedSeq, tV)
+
+    def apply[V <: SType](items: => Seq[Value[V]])(implicit tV: V) =
+      new ConcreteCollection(items.toIndexedSeq, tV)
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]

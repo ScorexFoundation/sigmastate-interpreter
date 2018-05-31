@@ -309,7 +309,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  indexCollection.forall(elementRule)
          }""".stripMargin
 
-    val indexCollection = new ConcreteCollection((0 until 6).map(i => LongConstant(i)))
+    val indexCollection = ConcreteCollection((0 until 6).map(i => LongConstant(i)))
     val indexId = 21.toByte
     val index = TaggedInt(indexId)
     val boundaryIndex = If(EQ(index, 0), 5, Minus(index, 1))
@@ -333,8 +333,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  indexCollection.forall(elementRule)
          }""".stripMargin
 
-    val indexCollection = new ConcreteCollection((0 until 6).map(i => LongConstant(i)))
-    val string = new ConcreteCollection(Array(1, 1, 0, 0, 0, 1).map(i => LongConstant(i)))
+    val indexCollection = ConcreteCollection((0 until 6).map(i => LongConstant(i)))
+    val string = ConcreteCollection(Array(1, 1, 0, 0, 0, 1).map(i => LongConstant(i)))
     val indexId = 21.toByte
     val index = TaggedInt(indexId)
     val element = ByIndex(string, If(LE(index, 0), 5, Minus(index, 1)))

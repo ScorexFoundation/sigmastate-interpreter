@@ -77,11 +77,11 @@ class SigmaBinder(env: Map[String, Any]) {
       Some(ByIndex(obj.asValue[SCollection[SType]], i.toInt))
 
     // Rule: allOf(Array(...)) --> AND(...)
-    case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
+    case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked, _))) =>
       Some(AND(args))
 
     // Rule: anyOf(Array(...)) --> OR(...)
-    case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
+    case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked, _))) =>
       Some(OR(args))
 
     // Rule: allOf(arr) --> AND(arr)
