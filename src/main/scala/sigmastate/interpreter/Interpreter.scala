@@ -7,6 +7,7 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
+import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
@@ -26,14 +27,14 @@ import scala.util.Try
 
 
 object CryptoConstants {
-  type EcPointType = SecP384R1Point
+  type EcPointType = Curve25519Point
 
-  val dlogGroup: BcDlogFp[EcPointType] = SecP384R1
-  val groupSizeBits: Int = 384
-  val groupSize: Int = 384 / 8 //48 bytes
+  val dlogGroup: BcDlogFp[EcPointType] = Curve25519
+  val groupSizeBits: Int = 256
+  val groupSize: Int = 256 / 8 //32 bytes
 
   //size of challenge in Sigma protocols, in bits
-  implicit val soundnessBits: Int = 256.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
+  implicit val soundnessBits: Int = 224.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
 }
 
 object CryptoFunctions {
