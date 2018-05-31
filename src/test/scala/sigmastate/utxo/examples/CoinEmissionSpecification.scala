@@ -21,14 +21,26 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
   private val coinsInOneErgo: Long = 100000000
   private val blocksPerHour: Int = 30
 
-  // 2 years of fixed rate
-  private val fixedRatePeriod = 525600
+  // 2 weeks of fixed rate
+  private val fixedRatePeriod =  blocksPerHour * 2 * 24 * 14
   // 75 coins per block
   private val fixedRate = 2250 * coinsInOneErgo / blocksPerHour
-  // 3 months of epoch
-  private val epochLength: Int = 90 * 24 * blocksPerHour
+  // 3 days epoch
+  private val epochLength: Int = 3 * 24 * blocksPerHour
   // 3 coins reduction every epoch
   private val oneEpochReduction = 3 * coinsInOneErgo
+
+  val (coinsTotal, blocksTotal) = {
+    def loop(height: Int, acc: Long): (Long, Int) = {
+      val currentRate = emissionAtHeight(height)
+      if(currentRate > 0) {
+        loop(height + 1, acc + currentRate)
+      } else {
+        (acc, height - 1)
+      }
+    }
+    loop(0, 0)
+  }
 
 
   def emissionAtHeight(h: Long): Long = {
@@ -61,7 +73,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val prop = AND(heightIncreased, OR(AND(sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins))
     val minerProp = prover.dlogSecrets.head.publicImage
 
-    val initialBoxCandidate: ErgoBox = ErgoBox(9773992500000000L, prop, Map(register -> LongConstant(-1)))
+    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block {
       IndexedSeq(
         ErgoLikeTransaction(
@@ -113,7 +125,9 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
                  emissionBox: ErgoBox,
                  height: Int,
                  hLimit: Int): Unit = if (height < hLimit) {
-      println(s"block $height in ${System.currentTimeMillis() - st} ms")
+      if(height % 1000 == 0) {
+        println(s"block $height in ${System.currentTimeMillis() - st} ms, ${emissionBox.value} coins remain")
+      }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
       val block = Block(IndexedSeq(tx))
       val newState = state.applyBlock(block).get
@@ -125,7 +139,6 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
       }
     }
 
-//    chainGen(genesisState, initialBox, 2, 100000000)
-    chainGen(genesisState, initialBox, 2, 100)
+    chainGen(genesisState, initialBox, 2, 100000000)
   }
 }
