@@ -7,7 +7,6 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
@@ -290,7 +289,7 @@ trait Interpreter {
                 Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
             }
 
-            val expectedChallenge = CryptoFunctions.hashFn(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))
+            val expectedChallenge = CryptoFunctions.hashFn(Helpers.concatBytes(rootCommitments.map(_.bytes)) ++ message)
             util.Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false
