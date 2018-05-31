@@ -20,37 +20,45 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
   // Some constants
   private val coinsInOneErgo: Long = 100000000
   private val blocksPerHour: Int = 30
-  private val blocksPerYear: Int = 365 * 24 * blocksPerHour
-  private val blocksTotal: Int = blocksPerYear * 8
-  private val rewardReductionPeriod: Int = 90 * 24 * blocksPerHour
-  private val fixedRatePeriod = 2 * blocksPerYear - rewardReductionPeriod
+
+  // 2 years of fixed rate
+  private val fixedRatePeriod = 525600
+  // 75 coins per block
   private val fixedRate = 2250 * coinsInOneErgo / blocksPerHour
-  private val decreasingEpochs = (blocksTotal - fixedRatePeriod) / rewardReductionPeriod
+  // 3 months of epoch
+  private val epochLength: Int = 90 * 24 * blocksPerHour
+  // 3 coins reduction every epoch
+  private val oneEpochReduction = 3 * coinsInOneErgo
 
 
   def emissionAtHeight(h: Long): Long = {
-    if (h <= fixedRatePeriod) {
+    if (h < fixedRatePeriod) {
       fixedRate
-    } else if (h > blocksTotal) {
-      0
     } else {
-      fixedRate - fixedRate * ((h - fixedRatePeriod) / rewardReductionPeriod) / decreasingEpochs
+      val epoch = 1 + (h - fixedRatePeriod) / epochLength
+      Math.max(fixedRate - oneEpochReduction * epoch, 0)
     }
   }.ensuring(_ >= 0, s"Negative at $h")
+
 
   property("emission specification") {
     val register = R3
     val prover = new ErgoLikeProvingInterpreter()
 
-    val red = Modulo(Multiply(fixedRate, Modulo(Minus(Height, fixedRatePeriod), rewardReductionPeriod)), decreasingEpochs)
-    val coinsToIssue = If(LE(Height, fixedRatePeriod), fixedRate, Minus(fixedRate, red))
+    val epoch = Plus(1, Divide(Minus(Height, LongConstant(fixedRatePeriod)), epochLength))
+    val coinsToIssue = If(LT(Height, LongConstant(fixedRatePeriod)),
+      fixedRate,
+      Minus(fixedRate, Multiply(oneEpochReduction, epoch))
+    )
+
     val out = ByIndex(Outputs, 0)
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(out))
     val heightCorrect = EQ(ExtractRegisterAs[SLong.type](out, register), Height)
-    val heightIncreased = GT(ExtractRegisterAs[SLong.type](out, register), ExtractRegisterAs[SLong.type](Self, register))
+    val heightIncreased = GT(Height, ExtractRegisterAs[SLong.type](Self, register))
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(out)))
+    val lastCoins = LE(ExtractAmount(Self), oneEpochReduction)
 
-    val prop = OR(AND(sameScriptRule, correctCoinsConsumed, heightIncreased, heightCorrect), EQ(Height, blocksTotal))
+    val prop = AND(heightIncreased, OR(AND(sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins))
     val minerProp = prover.dlogSecrets.head.publicImage
 
     val initialBoxCandidate: ErgoBox = ErgoBox(9773992500000000L, prop, Map(register -> LongConstant(-1)))
@@ -72,7 +80,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
                                    emissionBox: ErgoBox,
                                    height: Long): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
-      val ut = if (height != blocksTotal) {
+      val ut = if (emissionBox.value > emissionAtHeight(height)) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Map())
         val newEmissionBox: ErgoBoxCandidate =
           new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> LongConstant(height)))
@@ -105,8 +113,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
                  emissionBox: ErgoBox,
                  height: Int,
                  hLimit: Int): Unit = if (height < hLimit) {
-      if (height % 10000 == 0) log.debug(s"block $height from $blocksTotal." +
-        s" ${height.toDouble / blocksTotal}% in ${System.currentTimeMillis() - st} ms")
+      println(s"block $height in ${System.currentTimeMillis() - st} ms")
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
       val block = Block(IndexedSeq(tx))
       val newState = state.applyBlock(block).get
