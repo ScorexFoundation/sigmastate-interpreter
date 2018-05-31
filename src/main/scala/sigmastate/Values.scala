@@ -260,17 +260,17 @@ object Values {
     }
   }
   
-//  object IntArrayConstant {
-//    def apply(value: Array[Int]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value, SLong)
-//    def unapply(node: SValue): Option[Array[Int]] = node match {
-//      case coll: CollectionConstant[SLong.type] @unchecked => coll match {
-//        case CollectionConstant(arr, SLong) => Some(arr)
-//        case _ => None
-//      }
-//      case _ => None
-//    }
-//  }
-//
+  object IntArrayConstant {
+    def apply(value: Array[Int]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value, SInt)
+    def unapply(node: SValue): Option[Array[Int]] = node match {
+      case coll: CollectionConstant[SInt.type] @unchecked => coll match {
+        case CollectionConstant(arr, SInt) => Some(arr)
+        case _ => None
+      }
+      case _ => None
+    }
+  }
+
   object LongArrayConstant {
     def apply(value: Array[Long]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value, SLong)
     def unapply(node: SValue): Option[Array[Long]] = node match {

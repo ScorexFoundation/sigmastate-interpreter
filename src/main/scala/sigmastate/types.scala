@@ -57,7 +57,9 @@ object SType {
   type TypeCode = Byte
 
   implicit val typeByte = SByte
-  implicit val typeInt = SLong
+  implicit val typeShort = SShort
+  implicit val typeInt = SInt
+  implicit val typeLong = SLong
   implicit val typeBigInt = SBigInt
   implicit val typeBoolean = SBoolean
   implicit val typeAvlTree = SAvlTree
@@ -67,7 +69,7 @@ object SType {
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
   /** All pre-defined types should be listed here. Note, NoType is not listed. */
-  val allPredefTypes = Seq(SByte, SLong, SBigInt, SBoolean, SAvlTree, SGroupElement, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SAvlTree, SGroupElement, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   implicit class STypeOps(val tpe: SType) {
@@ -176,6 +178,11 @@ trait SEmbeddable extends SType {
 trait SPrimType extends SType with SPredefType {
 }
 
+/** Market trait for all numeric types. */
+trait SNumericType extends SType {
+  def toLong(i: WrappedType): Long
+}
+
 /** Primitive type recognizer to pattern match on TypeCode */
 object SPrimType {
   def unapply(tc: TypeCode): Option[SType] = SType.typeCodeToType.get(tc)
@@ -196,35 +203,39 @@ case object SBoolean extends SPrimType with SEmbeddable {
   override def dataCost(v: SType#WrappedType): Long = Cost.BooleanConstantDeclaration
 }
 
-case object SByte extends SPrimType with SEmbeddable {
+case object SByte extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Byte
   override val typeCode: TypeCode = 2: Byte //TODO change to 4 after SByteArray is removed
   override def mkConstant(v: Byte): Value[SByte.type] = ByteConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.ByteConstantDeclaration
+  override def toLong(i: Byte): Long = i
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SShort extends SPrimType with SEmbeddable {
+case object SShort extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Short
   override val typeCode: TypeCode = 3: Byte
   override def mkConstant(v: Short): Value[SShort.type] = ShortConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.ShortConstantDeclaration
+  override def toLong(i: Short): Long = i
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SInt extends SPrimType with SEmbeddable {
+case object SInt extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Int
   override val typeCode: TypeCode = 4: Byte
   override def mkConstant(v: Int): Value[SInt.type] = IntConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.IntConstantDeclaration
+  override def toLong(i: Int): Long = i
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SLong extends SPrimType with SEmbeddable {
+case object SLong extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 5: Byte
   override def mkConstant(v: Long): Value[SLong.type] = LongConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.LongConstantDeclaration
+  override def toLong(i: Long): Long = i
 }
 
 case object SBigInt extends SPrimType with SEmbeddable {

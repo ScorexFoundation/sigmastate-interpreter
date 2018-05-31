@@ -12,10 +12,11 @@ import scala.reflect.ClassTag
 
 object Extensions {
 
-  implicit class IntOps(i: Int) {
-    def toByteChecked: Byte = {
-      assert(i >= 0 && i <= 255, s"Cannot convert Int value $i to Byte")
-      i.toByte
+  implicit class IntOps(x: Int) {
+    def toByteExact: Byte = {
+      if (x < Byte.MinValue || x > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      x.toByte
     }
   }
 
