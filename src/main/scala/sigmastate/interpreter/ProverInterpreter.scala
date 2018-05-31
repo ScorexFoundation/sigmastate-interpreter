@@ -133,7 +133,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       case uc: UnprovenConjecture => uc.childrenCommitments
     }*/
 
-    val rootChallenge = CryptoFunctions.hashFn(UnprovenTreeSerializer.toBytes(step4) ++ message)
+    val rootChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(step4) ++ message)
 
     val step5 = step4.withChallenge(rootChallenge)
 

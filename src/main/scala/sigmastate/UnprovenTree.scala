@@ -5,15 +5,29 @@ import java.math.BigInteger
 import com.google.common.primitives.Shorts
 import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple}
-import sigmastate.Values.SigmaBoolean
-import sigmastate.serialization.{Serializer, ValueSerializer}
-import sigmastate.serialization.Serializer.{Consumed, Position}
+import sigmastate.Values.{SigmaBoolean, Value}
+import sigmastate.serialization.ValueSerializer
 
 
+object ConjectureType extends Enumeration {
+  val AndConjecture = Value(0)
+  val OrConjecture = Value(1)
+}
 
 //Proof tree
 
 trait ProofTree extends Product
+
+trait ProofTreeLeaf extends ProofTree {
+  val proposition: SigmaBoolean
+  val commitmentOpt: Option[FirstProverMessage[_]]
+}
+
+trait ProofTreeConjecture extends ProofTree {
+  val conjectureType: ConjectureType.Value
+  val children: Seq[ProofTree]
+}
+
 
 sealed trait UnprovenTree extends ProofTree {
   val proposition: SigmaBoolean
@@ -29,11 +43,9 @@ sealed trait UnprovenTree extends ProofTree {
   def withSimulated(newSimulated: Boolean): UnprovenTree
 }
 
-sealed trait UnprovenLeaf extends UnprovenTree {
-  val commitmentOpt: Option[FirstProverMessage[_]]
-}
+sealed trait UnprovenLeaf extends UnprovenTree with ProofTreeLeaf
 
-sealed trait UnprovenConjecture extends UnprovenTree {
+sealed trait UnprovenConjecture extends UnprovenTree with ProofTreeConjecture {
   val childrenCommitments: Seq[FirstProverMessage[_]]
 }
 
@@ -42,6 +54,9 @@ case class CAndUnproven(override val proposition: CAND,
                         override val challengeOpt: Option[Array[Byte]] = None,
                         override val simulated: Boolean,
                         children: Seq[ProofTree]) extends UnprovenConjecture {
+
+  override val conjectureType = ConjectureType.AndConjecture
+
   override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
@@ -52,6 +67,9 @@ case class COrUnproven(override val proposition: COR,
                        override val challengeOpt: Option[Array[Byte]] = None,
                        override val simulated: Boolean,
                        children: Seq[ProofTree]) extends UnprovenConjecture {
+
+  override val conjectureType = ConjectureType.OrConjecture
+
   override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
@@ -80,60 +98,29 @@ case class UnprovenDiffieHellmanTuple(override val proposition: ProveDiffieHellm
 }
 
 
-
-object UnprovenTreeSerializer extends Serializer[ProofTree, ProofTree] with App {
+object FiatShamirTree {
   val internalNodePrefix = 0: Byte
   val leafPrefix = 1: Byte
-  val andCode = 0: Byte
-  val orCode = 1: Byte
 
-  override def toBytes(tree: ProofTree): Array[Byte] = {
+  def toBytes(tree: ProofTree): Array[Byte] = {
 
     def traverseNode(node: ProofTree): Array[Byte] = node match {
-      case l: UnprovenLeaf =>
-        val propBytes = ValueSerializer.serialize(l.proposition)
-        val commitmentBytes = l.commitmentOpt.get.bytes
-        leafPrefix +:
-          ((Shorts.toByteArray(propBytes.length.toShort) ++ propBytes) ++
-                  (Shorts.toByteArray(commitmentBytes.length.toShort) ++ commitmentBytes))
-
-      case l: UncheckedLeaf[_] =>
+      case l: ProofTreeLeaf =>
         val propBytes = ValueSerializer.serialize(l.proposition)
         val commitmentBytes = l.commitmentOpt.get.bytes
         leafPrefix +:
           ((Shorts.toByteArray(propBytes.length.toShort) ++ propBytes) ++
             (Shorts.toByteArray(commitmentBytes.length.toShort) ++ commitmentBytes))
 
-      case c: CAndUnproven =>
+      case c: ProofTreeConjecture =>
         val childrenCountBytes = Shorts.toByteArray(c.children.length.toShort)
-         c.children.foldLeft(Array(internalNodePrefix, andCode) ++ childrenCountBytes){case (acc, ch) =>
-           acc ++ traverseNode(ch)
-         }
+        val conjBytes = Array(internalNodePrefix, c.conjectureType.id.toByte) ++ childrenCountBytes
 
-      case c: COrUnproven =>
-        val childrenCountBytes = Shorts.toByteArray(c.children.length.toShort)
-        c.children.foldLeft(Array(internalNodePrefix, orCode) ++ childrenCountBytes){case (acc, ch) =>
-          acc ++ traverseNode(ch)
-        }
-
-
-      case c: CAndUncheckedNode =>
-        val childrenCountBytes = Shorts.toByteArray(c.leafs.length.toShort)
-        c.leafs.foldLeft(Array(internalNodePrefix, andCode) ++ childrenCountBytes){case (acc, ch) =>
-          acc ++ traverseNode(ch)
-        }
-
-      case c: COrUncheckedNode =>
-        val childrenCountBytes = Shorts.toByteArray(c.leafs.length.toShort)
-        c.leafs.foldLeft(Array(internalNodePrefix, orCode) ++ childrenCountBytes){case (acc, ch) =>
+        c.children.foldLeft(conjBytes) { case (acc, ch) =>
           acc ++ traverseNode(ch)
         }
     }
 
     traverseNode(tree)
   }
-
-  //not implemented, and should not be called
-  override def parseBody(bytes: Array[Byte], pos: Position): (UnprovenTree, Consumed) = ???
-
 }

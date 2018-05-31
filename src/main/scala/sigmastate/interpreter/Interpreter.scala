@@ -278,19 +278,19 @@ trait Interpreter {
       case b: Value[SBoolean.type] if b.evaluated =>
         SigSerializer.parse(cProp, proof) match {
           case NoProof => false
-          case sp: UncheckedSigmaTree[_] =>
+          case sp: UncheckedSigmaTree =>
             assert(sp.proposition == cProp)
 
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
             val (challenge, rootCommitments) = newRoot match {
-              case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
+              case u: UncheckedConjecture => (u.challengeOpt.get, u.commitments)
               case sn: UncheckedSchnorr => (sn.challenge, sn.commitmentOpt.toSeq)
               case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.commitmentOpt.toSeq)
               case _ =>
                 Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
             }
 
-            val expectedChallenge = CryptoFunctions.hashFn(UnprovenTreeSerializer.toBytes(newRoot) ++ message)
+            val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
             util.Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false
@@ -309,14 +309,14 @@ trait Interpreter {
     case and: CAndUncheckedNode =>
       //todo: reduce boilerplate below
 
-      val challenges: Seq[Array[Byte]] = and.leafs.map {
-        case u: UncheckedConjecture[_] => u.challengeOpt.get
+      val challenges: Seq[Array[Byte]] = and.children.map {
+        case u: UncheckedConjecture => u.challengeOpt.get
         case sn: UncheckedSchnorr => sn.challenge
         case dh: UncheckedDiffieHellmanTuple => dh.challenge
       }
 
-      val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
-        case u: UncheckedConjecture[_] => u.commitments
+      val commitments: Seq[FirstProverMessage[_]] = and.children.flatMap {
+        case u: UncheckedConjecture => u.commitments
 
         //todo: reduce boilerplate below, replace additive notation w. multiplicative
         case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
@@ -331,15 +331,15 @@ trait Interpreter {
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 
     case or: COrUncheckedNode =>
-      val challenges = or.leafs map {
-        case u: UncheckedConjecture[_] => u.challengeOpt.get
+      val challenges = or.children map {
+        case u: UncheckedConjecture => u.challengeOpt.get
         case sn: UncheckedSchnorr => sn.challenge
         case dh: UncheckedDiffieHellmanTuple => dh.challenge
         case a: Any => println(a); ???
       }
 
-      val commitments = or.leafs flatMap {
-        case u: UncheckedConjecture[_] => u.commitments
+      val commitments = or.children flatMap {
+        case u: UncheckedConjecture => u.commitments
         case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
         case dh: UncheckedDiffieHellmanTuple => dh.commitmentOpt.toSeq
         case _ => ???

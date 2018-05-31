@@ -11,27 +11,25 @@ sealed trait UncheckedTree extends ProofTree
 
 case object NoProof extends UncheckedTree
 
-sealed trait UncheckedSigmaTree[ST <: SigmaBoolean] extends UncheckedTree {
-  val proposition: ST
+sealed trait UncheckedSigmaTree extends UncheckedTree {
+  val proposition: SigmaBoolean
 }
 
-trait UncheckedConjecture[ST <: SigmaBoolean] extends UncheckedSigmaTree[ST] {
+trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
   val challengeOpt: Option[Array[Byte]]
   val commitments: Seq[FirstProverMessage[_]]
-  val leafs: Seq[ProofTree]
 
   override def equals(obj: Any): Boolean = obj match {
-    case x: UncheckedConjecture[_] =>
+    case x: UncheckedConjecture =>
       proposition == x.proposition &&
         Helpers.optionArrayEquals(challengeOpt, x.challengeOpt) &&
         commitments == x.commitments &&
-        leafs == x.leafs
+        children == x.children
   }
 }
 
-trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree[SP] {
+trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree with ProofTreeLeaf {
   val challenge: Array[Byte]
-  val commitmentOpt: Option[FirstProverMessage[_]]
 }
 
 case class UncheckedSchnorr(override val proposition: ProveDlog,
@@ -68,11 +66,17 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHell
 case class CAndUncheckedNode(override val proposition: CAND,
                              override val challengeOpt: Option[Array[Byte]],
                              override val commitments: Seq[FirstProverMessage[_]],
-                             override val leafs: Seq[ProofTree])
-  extends UncheckedConjecture[CAND]
+                             override val children: Seq[ProofTree])
+  extends UncheckedConjecture {
+
+  override val conjectureType = ConjectureType.AndConjecture
+}
 
 
 case class COrUncheckedNode(override val proposition: COR,
                             override val challengeOpt: Option[Array[Byte]],
                             override val commitments: Seq[FirstProverMessage[_]],
-                            override val leafs: Seq[ProofTree]) extends UncheckedConjecture[COR]
+                            override val children: Seq[ProofTree]) extends UncheckedConjecture {
+
+  override val conjectureType = ConjectureType.OrConjecture
+}
