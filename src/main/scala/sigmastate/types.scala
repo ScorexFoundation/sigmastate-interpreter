@@ -165,6 +165,10 @@ trait SPredefType extends SType {
   */
 trait SEmbeddable extends SType {
   override def isEmbeddable: Boolean = true
+  /** Type code of embeddable type can be combined with code of type constructor.
+    * Resulting code can be serialized. This simple convention allows to save space for most frequently used types.
+    * See TypeSerializer */
+  @inline final def embedIn(typeConstrId: Byte): Byte = (typeConstrId + this.typeCode).toByte
 }
 
 /** Base trait for all primitive types which don't have internal type items (aka atoms).
@@ -397,12 +401,16 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
 }
 
 object STuple {
-val Pair1TypeConstrId = 5
+  val Pair1TypeConstrId = 5
   val Pair1TypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * Pair1TypeConstrId).toByte
+
   val Pair2TypeConstrId = 6
   val Pair2TypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * Pair2TypeConstrId).toByte
+  val TripleTypeCode: TypeCode = Pair2TypeCode
+
   val PairSymmetricTypeConstrId = 7
   val PairSymmetricTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * PairSymmetricTypeConstrId).toByte
+  val QuadrupleTypeCode: TypeCode = PairSymmetricTypeCode
 
   val TupleTypeCode = ((SPrimType.MaxPrimTypeCode + 1) * 8).toByte
 
