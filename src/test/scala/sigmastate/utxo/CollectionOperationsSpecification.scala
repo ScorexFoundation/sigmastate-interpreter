@@ -140,7 +140,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """OUTPUTS.exists(fun (box: Box) = {
-        |  box.R3[Int].value == SELF.R3[Int].value + 1
+        |  box.R3[Long].value == SELF.R3[Long].value + 1
          })""".stripMargin).asBoolValue
 
     val propTree = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3)(SLong),
@@ -174,7 +174,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """OUTPUTS.exists(fun (box: Box) = {
-        |  box.R3[Int].valueOrElse(0) == SELF.R3[Int].value + 1
+        |  box.R3[Long].valueOrElse(0L) == SELF.R3[Long].value + 1
          })""".stripMargin).asBoolValue
 
     val propTree = Exists(Outputs, 21,
@@ -209,7 +209,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val env = Map("pubkey" -> pubkey)
     val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asBoolValue
-    val propTree = AND(pubkey, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), LongConstant(1))))
+    val propTree = AND(pubkey, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(11, pubkey)
@@ -241,7 +241,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expectedPropTree = ForAll(
       Slice(Outputs, IntConstant(1), SizeOf(Outputs)),
       21,
-      EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
+      EQ(ExtractAmount(TaggedBox(21)), LongConstant(10)))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
@@ -258,7 +258,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   property("append") {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code = "(OUTPUTS ++ OUTPUTS).size == 4"
-    val expectedPropTree = EQ(SizeOf(Append(Outputs, Outputs)), LongConstant(4))
+    val expectedPropTree = EQ(SizeOf(Append(Outputs, Outputs)), IntConstant(4))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
@@ -285,14 +285,14 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val code =
       """OUTPUTS
         |.map(fun (box: Box) = box.value)
-        |.fold(0, fun (acc: Int, val: Int) = acc + val) == 20""".stripMargin
+        |.fold(0L, fun (acc: Long, val: Long) = acc + val) == 20""".stripMargin
     val expectedPropTree = EQ(
       Fold(
         MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21))),
         21,
         LongConstant(0),
         22,
-        Plus(TaggedInt(21), TaggedInt(22))),
+        Plus(TaggedLong(21), TaggedLong(22))),
       LongConstant(20))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
@@ -309,7 +309,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  indexCollection.forall(elementRule)
          }""".stripMargin
 
-    val indexCollection = ConcreteCollection((0 until 6).map(i => LongConstant(i)))
+    val indexCollection = ConcreteCollection((0 until 6).map(i => IntConstant(i)))
     val indexId = 21.toByte
     val index = TaggedInt(indexId)
     val boundaryIndex = If(EQ(index, 0), 5, Minus(index, 1))
@@ -333,8 +333,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  indexCollection.forall(elementRule)
          }""".stripMargin
 
-    val indexCollection = ConcreteCollection((0 until 6).map(i => LongConstant(i)))
-    val string = ConcreteCollection(Array(1, 1, 0, 0, 0, 1).map(i => LongConstant(i)))
+    val indexCollection = ConcreteCollection((0 until 6).map(i => IntConstant(i)))
+    val string = ConcreteCollection(Array(1, 1, 0, 0, 0, 1).map(i => IntConstant(i)))
     val indexId = 21.toByte
     val index = TaggedInt(indexId)
     val element = ByIndex(string, If(LE(index, 0), 5, Minus(index, 1)))

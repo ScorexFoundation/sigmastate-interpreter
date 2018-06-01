@@ -245,8 +245,8 @@ class SigmaTyper {
     case LE(l, r) => bimap(env, "<=", l, r)(LE[SType])(tT, SBoolean)
     case GT(l, r) => bimap(env, ">", l, r) (GT[SType])(tT, SBoolean)
     case LT(l, r) => bimap(env, "<", l, r) (LT[SType])(tT, SBoolean)
-    case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])((l,r) => l == r)
-    case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ[SType])((l,r) => l == r)
+    case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])
+    case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ[SType])
 
     case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(Minus)(tT, tT)
     case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(Plus)(tT, tT)
@@ -314,14 +314,21 @@ class SigmaTyper {
 
   def bimap2[T <: SType]
       (env: Map[String, SType], op: String, l: Value[T], r: Value[T])
-          (newNode: (Value[T], Value[T]) => SValue)
-          (check: (SType, SType) => Boolean): SValue = {
+          (newNode: (Value[T], Value[T]) => SValue): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
-    if (check(l1.tpe, r1.tpe))
-      newNode(l1, r1)
-    else
-      error(s"Invalid binary operation $op ($l1, $r1)")
+    (l1.tpe, r1.tpe) match {
+      case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
+        val tmax = t1 max t2
+        val l = l1.upcastTo(tmax)
+        val r = r1.upcastTo(tmax)
+        newNode(l.asValue[T], r.asValue[T])
+      case (t1, t2) =>
+        if (t1 == t2)
+          newNode(l1, r1)
+        else
+          error(s"Invalid binary operation $op ($l1, $r1): type mismatch $t1 != $t2")
+    }
   }
 
   def typecheck(bound: SValue): SValue = {

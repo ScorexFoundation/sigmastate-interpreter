@@ -193,10 +193,15 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         |  let outValues = OUTPUTS.map(fun (box: Box) = box.value)
-        |  pubkey && outValues.fold(0, fun (x: Int, y: Int) = y + x) > 20
+        |  pubkey && outValues.fold(0L, fun (x: Long, y: Long) = y + x) > 20
          }""".stripMargin).asBoolValue
 
-    val propExp = AND(pubkey, GT(Fold.sum[SLong.type](MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))), LongConstant(20)))
+    val propExp = AND(
+      pubkey,
+      GT(
+        Fold.sum[SLong.type](MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))),
+        LongConstant(20))
+    )
     prop shouldBe propExp
 
     val newBox1 = ErgoBox(11, pubkey)
@@ -358,7 +363,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
          }""".stripMargin).asBoolValue
 
     val propExpected = AND(
-      EQ(SizeOf(Inputs), LongConstant(2)),
+      EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ExtractId(BoxConstant(brother))))
     prop shouldBe propExpected
 
