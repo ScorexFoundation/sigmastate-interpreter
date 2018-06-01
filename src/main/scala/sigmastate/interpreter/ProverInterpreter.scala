@@ -16,7 +16,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywher
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma._
 import scorex.utils.Random
-import sigmastate.serialization.{Serializer, ValueSerializer}
+import sigmastate.serialization.Serializer
 import sigmastate.serialization.Serializer.{Consumed, Position}
 
 /**
@@ -127,14 +127,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     val step4 = simulations(step3).get.asInstanceOf[UnprovenTree]
 
     //step 5 - compute root challenge
-    /*
-    val commitments = step4 match {
-      case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
-      case uc: UnprovenConjecture => uc.childrenCommitments
-    }*/
-
     val rootChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(step4) ++ message)
-
     val step5 = step4.withChallenge(rootChallenge)
 
     val step6 = proving(step5).get.asInstanceOf[ProofTree]

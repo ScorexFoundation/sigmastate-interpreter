@@ -8,7 +8,6 @@ import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
@@ -282,10 +281,9 @@ trait Interpreter {
             assert(sp.proposition == cProp)
 
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
-            val (challenge, rootCommitments) = newRoot match {
-              case u: UncheckedConjecture => (u.challengeOpt.get, u.commitments)
-              case sn: UncheckedSchnorr => (sn.challenge, sn.commitmentOpt.toSeq)
-              case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.commitmentOpt.toSeq)
+            val challenge = newRoot match {
+              case uc: UncheckedConjecture => uc.challengeOpt.get
+              case ul: UncheckedLeaf[_] => ul.challenge
               case _ =>
                 Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
             }
@@ -307,21 +305,15 @@ trait Interpreter {
     */
   val checks: Strategy = everywherebu(rule[UncheckedTree] {
     case and: CAndUncheckedNode =>
-      //todo: reduce boilerplate below
 
       val challenges: Seq[Array[Byte]] = and.children.map {
-        case u: UncheckedConjecture => u.challengeOpt.get
-        case sn: UncheckedSchnorr => sn.challenge
-        case dh: UncheckedDiffieHellmanTuple => dh.challenge
+        case uc: UncheckedConjecture => uc.challengeOpt.get
+        case ul: UncheckedLeaf[_] => ul.challenge
       }
 
       val commitments: Seq[FirstProverMessage[_]] = and.children.flatMap {
-        case u: UncheckedConjecture => u.commitments
-
-        //todo: reduce boilerplate below, replace additive notation w. multiplicative
-        case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
-
-        case dh: UncheckedDiffieHellmanTuple => dh.commitmentOpt.toSeq
+        case uc: UncheckedConjecture => uc.commitments
+        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
       }
 
       val challenge = challenges.head
@@ -332,16 +324,14 @@ trait Interpreter {
 
     case or: COrUncheckedNode =>
       val challenges = or.children map {
-        case u: UncheckedConjecture => u.challengeOpt.get
-        case sn: UncheckedSchnorr => sn.challenge
-        case dh: UncheckedDiffieHellmanTuple => dh.challenge
+        case uc: UncheckedConjecture => uc.challengeOpt.get
+        case ul: UncheckedLeaf[_] => ul.challenge
         case a: Any => println(a); ???
       }
 
       val commitments = or.children flatMap {
-        case u: UncheckedConjecture => u.commitments
-        case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.commitmentOpt.toSeq
+        case uc: UncheckedConjecture => uc.commitments
+        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
         case _ => ???
       }
 
