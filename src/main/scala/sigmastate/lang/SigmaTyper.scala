@@ -187,12 +187,14 @@ class SigmaTyper {
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
-        case SLong | SByte | SBigInt => (m, newArgs) match {
-          case ("*", Seq(r)) =>
-            if (r.tpe == newObj.tpe)
-              Multiply(newObj, r)
-            else
+        case nl: SNumericType => (m, newArgs) match {
+          case ("*", Seq(r)) => r.tpe match {
+            case nr: SNumericType =>
+              bimap(env, "*", newObj.asNumValue, r.asNumValue)(Multiply)(tT, tT)
+            case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
+          }
+
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
@@ -246,11 +248,11 @@ class SigmaTyper {
     case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])((l,r) => l == r)
     case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ[SType])((l,r) => l == r)
 
-    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l, r)(Minus)(tT, tT)
-    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l, r)(Plus)(tT, tT)
-    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l, r)(Multiply)(tT, tT)
-    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l, r)(Modulo)(tT, tT)
-    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l, r)(Divide)(tT, tT)
+    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(Minus)(tT, tT)
+    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(Plus)(tT, tT)
+    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(Multiply)(tT, tT)
+    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(Modulo)(tT, tT)
+    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(Divide)(tT, tT)
     
     case Xor(l, r) => bimap(env, "|", l, r)(Xor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(MultiplyGroup)(SGroupElement, SGroupElement)

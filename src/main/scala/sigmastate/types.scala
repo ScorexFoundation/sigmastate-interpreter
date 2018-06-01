@@ -185,13 +185,13 @@ trait SNumericType extends SType {
 
   /** Returns a type which is larger. */
   @inline def max(that: SNumericType): SNumericType =
-    if (this.byteSize > that.byteSize) this else that
+    if (this.typeIndex > that.typeIndex) this else that
 
   /** Number of bytes to store values of this type. */
-  @inline def byteSize: Int = 1 << allNumericTypes.indexOf(this)
+  @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
 }
 object SNumericType {
-  final val allNumericTypes = Array(SByte, SShort, SInt, SLong)
+  final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
 }
 
 /** Primitive type recognizer to pattern match on TypeCode */
@@ -267,12 +267,19 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType {
   }
 }
 
-case object SBigInt extends SPrimType with SEmbeddable {
+case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
   override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.BigIntConstantDeclaration
   val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
+  override def upcast(v: AnyVal): BigInteger = v match {
+    case x: Byte => BigInteger.valueOf(x.toLong)
+    case x: Short => BigInteger.valueOf(x.toLong)
+    case x: Int => BigInteger.valueOf(x.toLong)
+    case x: Long => BigInteger.valueOf(x)
+    case _ => sys.error(s"Cannot upcast value $v to the type $this")
+  }
 }
 
 case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
