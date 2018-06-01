@@ -42,16 +42,16 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
     spec(Map("X" -> LongConstant(10)),
          Ident("X", SLong)) shouldBe LongConstant(10)
     spec(Map("X" -> LongConstant(10)),
-         Plus(Ident("X", SLong).asValue[SLong.type], LongConstant(1))) shouldBe Plus(10, 1)
+         Plus(Ident("X", SLong).asValue[SLong.type], LongConstant(1))) shouldBe Plus(10L, 1L)
   }
 
   property("substitute all let expressions in block result") {
-    spec("{ let X = 10; X }") shouldBe LongConstant(10)
+    spec("{ let X = 10; X }") shouldBe IntConstant(10)
     spec("{ let X = 10; let Y = 20; X + Y }") shouldBe Plus(10, 20)
     spec("{ let X = 10; let Y = 20; X + Y + X }") shouldBe Plus(Plus(10, 20), 10)
     spec("{ let X = 10 + 1; X + X}") shouldBe Plus(Plus(10, 1), Plus(10, 1))
-    spec("{ let X = 10; let Y = X; Y}") shouldBe LongConstant(10)
-    spec("{ let X = 10; let Y = X; let Z = Y; Z }") shouldBe LongConstant(10)
+    spec("{ let X = 10; let Y = X; Y}") shouldBe IntConstant(10)
+    spec("{ let X = 10; let Y = X; let Z = Y; Z }") shouldBe IntConstant(10)
     spec("{ let X = 10; let Y = X + 1; let Z = Y + X; Z + Y + X }") shouldBe
       Plus(Plus(/*Z=*/Plus(/*Y=*/Plus(10, 1), 10), /*Y=*/Plus(10, 1)), 10)
   }
@@ -63,18 +63,18 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
 
   property("generic methods of arrays") {
     spec("OUTPUTS.map(fun (out: Box) = { out.value >= 10 })") shouldBe
-      MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), Upcast(IntConstant(10), SLong)))
     spec("OUTPUTS.exists(fun (out: Box) = { out.value >= 10 })") shouldBe
-        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), Upcast(IntConstant(10),SLong)))
     spec("OUTPUTS.forall(fun (out: Box) = { out.value >= 10 })") shouldBe
-        ForAll(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+        ForAll(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), Upcast(IntConstant(10), SLong)))
     spec("{ let arr = Array(1,2); arr.fold(0, fun (n1: Int, n2: Int) = n1 + n2)}") shouldBe
-        Fold(ConcreteCollection(LongConstant(1), LongConstant(2)),
-             21, LongConstant(0), 22, Plus(TaggedInt(21), TaggedInt(22)))
+        Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
+             21, IntConstant(0), 22, Plus(TaggedInt(21), TaggedInt(22)))
     spec("OUTPUTS.slice(0, 10)") shouldBe
-        Slice(Outputs, LongConstant(0), LongConstant(10))
+        Slice(Outputs, IntConstant(0), IntConstant(10))
     spec("OUTPUTS.where(fun (out: Box) = { out.value >= 10 })") shouldBe
-        Where(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+        Where(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), Upcast(IntConstant(10), SLong)))
   }
 
 }

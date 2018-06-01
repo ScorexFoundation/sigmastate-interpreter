@@ -6,49 +6,49 @@ import sigmastate.utxo._
 class TransformersSerializationSpec extends SerializationSpecification {
 
   property("MapCollection: Serializer round trip") {
-    forAll { mc: MapCollection[SLong.type, SLong.type] =>
+    forAll { mc: MapCollection[SInt.type, SInt.type] =>
       roundTripTest(mc)
     }
   }
 
   property("Exists: Serializer round trip") {
-    forAll { e: Exists[SLong.type] =>
+    forAll { e: Exists[SInt.type] =>
       roundTripTest(e)
     }
   }
 
   property("ForAll: Serializer round trip") {
-    forAll { e: ForAll[SLong.type] =>
+    forAll { e: ForAll[SInt.type] =>
       roundTripTest(e)
     }
   }
 
   property("Fold: Serializer round trip") {
-    forAll { f: Fold[SLong.type] =>
+    forAll { f: Fold[SInt.type] =>
       roundTripTest(f)
     }
   }
 
   property("Slice: Serializer round trip") {
-    forAll { f: Slice[SLong.type] =>
+    forAll { f: Slice[SInt.type] =>
       roundTripTest(f)
     }
   }
 
   property("Append: Serializer round trip") {
-    forAll { f: Append[SLong.type] =>
+    forAll { f: Append[SInt.type] =>
       roundTripTest(f)
     }
   }
 
   property("Where: Serializer round trip") {
-    forAll { f: Where[SLong.type] =>
+    forAll { f: Where[SInt.type] =>
       roundTripTest(f)
     }
   }
 
   property("SizeOf: Serializer round trip") {
-    forAll { s: SizeOf[SLong.type] =>
+    forAll { s: SizeOf[SInt.type] =>
       roundTripTest(s)
     }
   }
@@ -84,13 +84,13 @@ class TransformersSerializationSpec extends SerializationSpecification {
   }
 
   property("ExtractRegisterAs: Serializer round trip") {
-    forAll { e: ExtractRegisterAs[SLong.type ] =>
+    forAll { e: ExtractRegisterAs[SInt.type ] =>
       roundTripTest(e)
     }
   }
 
   property("IntToByteArray: Serializer round trip") {
-    forAll { itba: IntToByteArray =>
+    forAll { itba: LongToByteArray =>
       roundTripTest(itba)
     }
   }
@@ -126,7 +126,7 @@ class TransformersSerializationSpec extends SerializationSpecification {
   }
 
   property("ByIndex: Serializer round trip") {
-    forAll { bi: ByIndex[SLong.type ] =>
+    forAll { bi: ByIndex[SInt.type ] =>
       roundTripTest(bi)
     }
   }

@@ -109,7 +109,7 @@ object Values {
 
   type ByteConstant = Constant[SByte.type]
   type ShortConstant = Constant[SShort.type]
-//  type IntConstant = Constant[SInt.type]
+  type IntConstant = Constant[SInt.type]
   type LongConstant = Constant[SLong.type]
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
@@ -188,7 +188,19 @@ object Values {
         c.value.maxDeletes)
   }
 
-  trait NotReadyValueInt extends NotReadyValue[SLong.type] {
+  trait NotReadyValueByte extends NotReadyValue[SByte.type] {
+    override def tpe = SByte
+  }
+
+  trait NotReadyValueShort extends NotReadyValue[SShort.type] {
+    override def tpe = SShort
+  }
+
+  trait NotReadyValueInt extends NotReadyValue[SInt.type] {
+    override def tpe = SInt
+  }
+
+  trait NotReadyValueLong extends NotReadyValue[SLong.type] {
     override def tpe = SLong
   }
 
@@ -196,22 +208,22 @@ object Values {
     override def tpe = SBigInt
   }
 
-  trait NotReadyValueByte extends NotReadyValue[SByte.type] {
-    override def tpe = SByte
-  }
-
-  type TaggedByte = TaggedVariable[SByte.type]
   type TaggedBoolean = TaggedVariable[SBoolean.type]
-  type TaggedInt = TaggedVariable[SLong.type]
+  type TaggedByte = TaggedVariable[SByte.type]
+  type TaggedShort = TaggedVariable[SShort.type]
+  type TaggedInt = TaggedVariable[SInt.type]
+  type TaggedLong = TaggedVariable[SLong.type]
   type TaggedBigInt = TaggedVariable[SBigInt.type]
   type TaggedBox = TaggedVariable[SBox.type]
   type TaggedGroupElement = TaggedVariable[SGroupElement.type]
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
-  def TaggedByte   (id: Byte): TaggedByte = TaggedVariable(id, SByte)
   def TaggedBoolean(id: Byte): TaggedBoolean = TaggedVariable(id, SBoolean)
-  def TaggedInt    (id: Byte): TaggedInt = TaggedVariable(id, SLong)
+  def TaggedByte   (id: Byte): TaggedByte = TaggedVariable(id, SByte)
+  def TaggedShort  (id: Byte): TaggedShort = TaggedVariable(id, SShort)
+  def TaggedInt    (id: Byte): TaggedInt = TaggedVariable(id, SInt)
+  def TaggedLong   (id: Byte): TaggedLong = TaggedVariable(id, SLong)
   def TaggedBigInt (id: Byte): TaggedBigInt = TaggedVariable(id, SBigInt)
   def TaggedBox    (id: Byte): TaggedBox = TaggedVariable(id, SBox)
   def TaggedGroupElement(id: Byte): TaggedGroupElement = TaggedVariable(id, SGroupElement)
@@ -414,8 +426,6 @@ object Values {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
       xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]])
     }
-
-    def arity = 1 + items.size
   }
   object ConcreteCollection {
     def apply[V <: SType](items: Value[V]*)(implicit tV: V) =

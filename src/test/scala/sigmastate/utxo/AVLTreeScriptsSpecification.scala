@@ -70,7 +70,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val prop: Value[SBoolean.type] = AND(
       GE(TaggedInt(elementId), LongConstant(120)),
-      IsMember(ExtractRegisterAs(Self, R3), CalcBlake2b256(IntToByteArray(TaggedInt(elementId))), TaggedByteArray(proofId))
+      IsMember(ExtractRegisterAs(Self, R3), CalcBlake2b256(LongToByteArray(TaggedLong(elementId))), TaggedByteArray(proofId))
     )
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
     val propCompiled = compile(env,

@@ -41,6 +41,12 @@ object OpCodes extends ValueCodes {
   // variable
   val TaggedVariableCode: OpCode = (LastConstantCode + 1).toByte
 
+  val LongToByteArrayCode       : OpCode = (LastConstantCode + 10).toByte
+  val ByteArrayToBigIntCode    : OpCode = (LastConstantCode + 11).toByte
+  val IntToBigIntCode          : OpCode = (LastConstantCode + 15).toByte
+  val IntToByteCode            : OpCode = (LastConstantCode + 16).toByte
+  val Upcast                   : OpCode = (LastConstantCode + 17).toByte
+  
   // EvaluatedValue descendants
 //  val ByteConstantCode:         OpCode = (LastConstantCode + 10).toByte
 //  val IntConstantCode:          OpCode = (LastConstantCode + 11).toByte
@@ -105,10 +111,6 @@ object OpCodes extends ValueCodes {
   val ExtractBytesWithNoRefCode: OpCode = (LastConstantCode + 84).toByte
   val ExtractIdCode            : OpCode = (LastConstantCode + 85).toByte
   val ExtractRegisterAs        : OpCode = (LastConstantCode + 86).toByte
-  val IntToByteArrayCode       : OpCode = (LastConstantCode + 87).toByte
-  val ByteArrayToBigIntCode    : OpCode = (LastConstantCode + 88).toByte
-  val IntToBigIntCode          : OpCode = (LastConstantCode + 89).toByte
-  val IntToByteCode            : OpCode = (LastConstantCode + 90).toByte
 
   // Cryptographic operations codes
   val CalcBlake2b256Code         : OpCode = (LastConstantCode + 91).toByte

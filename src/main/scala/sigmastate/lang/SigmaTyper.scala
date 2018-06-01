@@ -148,14 +148,16 @@ class SigmaTyper {
         case _: SCollection[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
-            case Seq(LongConstant(i)) =>
-              ByIndex[SType](new_f.asCollection, i.toInt)
+            case Seq(Constant(i, tpe: SNumericType)) =>
+              ByIndex[SType](new_f.asCollection, SInt.upcast(i.asInstanceOf[AnyVal]))
             case Seq(arg) =>
               val newArg = assignType(env, arg)
-              if (newArg.tpe == SLong)
-                ByIndex[SType](new_f.asCollection, newArg.asIntValue)
-              else
-                error(s"Invalid argument type of array application $app: expected integer; actual: $newArg")
+              newArg.tpe match {
+                case targ: SNumericType =>
+                  ByIndex[SType](new_f.asCollection, newArg.upcastTo(SInt))
+                case _ =>
+                  error(s"Invalid argument type of array application $app: expected numeric type; actual: ${newArg.tpe}")
+              }
             case _ =>
               error(s"Invalid argument of array application $app: expected integer value; actual: $args")
           }
@@ -288,25 +290,34 @@ class SigmaTyper {
 
   def bimap[T <: SType]
       (env: Map[String, SType], op: String, l: Value[T], r: Value[T])
-      (f: (Value[T], Value[T]) => SValue)
+      (mkNode: (Value[T], Value[T]) => SValue)
       (tArg: SType, tRes: SType): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
-    val substOpt = unifyTypes(SFunc(Vector(tArg, tArg), tRes), SFunc(Vector(l1.tpe, r1.tpe), tRes))
-    if (substOpt.isDefined)
-      f(l1, r1)
-    else
-      error(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })")
+    (l1.tpe, r1.tpe) match {
+      case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
+        val tmax = t1 max t2
+        val l = l1.upcastTo(tmax)
+        val r = r1.upcastTo(tmax)
+        mkNode(l.asValue[T], r.asValue[T])
+      case (t1, t2) =>
+        val substOpt = unifyTypes(SFunc(Vector(tArg, tArg), tRes), SFunc(Vector(t1, t2), tRes))
+        if (substOpt.isDefined)
+          mkNode(l1, r1)
+        else
+          error(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })")
+    }
+
   }
 
   def bimap2[T <: SType]
       (env: Map[String, SType], op: String, l: Value[T], r: Value[T])
-          (f: (Value[T], Value[T]) => SValue)
+          (newNode: (Value[T], Value[T]) => SValue)
           (check: (SType, SType) => Boolean): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
     if (check(l1.tpe, r1.tpe))
-      f(l1, r1)
+      newNode(l1, r1)
     else
       error(s"Invalid binary operation $op ($l1, $r1)")
   }

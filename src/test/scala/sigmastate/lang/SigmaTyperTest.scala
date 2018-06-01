@@ -52,7 +52,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "HEIGHT") shouldBe SLong
     typecheck(env, "HEIGHT + 1") shouldBe SLong
     typecheck(env, "INPUTS") shouldBe SCollection(SBox)
-    typecheck(env, "INPUTS.size") shouldBe SLong
+    typecheck(env, "INPUTS.size") shouldBe SInt
     typecheck(env, "INPUTS.size > 1") shouldBe SBoolean
     typecheck(env, "arr1 | arr2") shouldBe SByteArray
     typecheck(env, "arr1 ++ arr2") shouldBe SByteArray
@@ -86,7 +86,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
        |X < Y}
       """.stripMargin) shouldBe SBoolean
     typecheck(env, "{let X = (10, true); X._1 > 2 && X._2}") shouldBe SBoolean
-    typecheck(env, "{let X = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SLong), SLong)
+    typecheck(env, "{let X = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
   }
 
   property("generic methods of arrays") {
@@ -97,37 +97,37 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "OUTPUTS.map(fun (out: Box) = { out.value >= minToRaise })") shouldBe ty("Array[Boolean]")
     typecheck(env, "OUTPUTS.exists(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
     typecheck(env, "OUTPUTS.forall(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
-    typecheck(env, "{ let arr = Array(1,2,3); arr.fold(0, fun (i1: Int, i2: Int) = i1 + i2)}") shouldBe SLong
+    typecheck(env, "{ let arr = Array(1,2,3); arr.fold(0, fun (i1: Int, i2: Int) = i1 + i2)}") shouldBe SInt
     typecheck(env, "OUTPUTS.slice(0, 10)") shouldBe ty("Array[Box]")
     typecheck(env, "OUTPUTS.where(fun (out: Box) = { out.value >= minToRaise })") shouldBe ty("Array[Box]")
   }
 
   property("tuple constructor") {
     typecheck(env, "()") shouldBe SUnit
-    typecheck(env, "(1)") shouldBe SLong
-    typecheck(env, "(1, 2)") shouldBe STuple(SLong, SLong)
-    typecheck(env, "(1, x + 1)") shouldBe STuple(SLong, SLong)
-    typecheck(env, "(1, 2, 3)") shouldBe STuple(SLong, SLong, SLong)
-    typecheck(env, "(1, 2 + 3, 4)") shouldBe STuple(SLong, SLong, SLong)
+    typecheck(env, "(1)") shouldBe SInt
+    typecheck(env, "(1, 2)") shouldBe STuple(SInt, SInt)
+    typecheck(env, "(1, x + 1)") shouldBe STuple(SInt, SInt)
+    typecheck(env, "(1, 2, 3)") shouldBe STuple(SInt, SInt, SInt)
+    typecheck(env, "(1, 2 + 3, 4)") shouldBe STuple(SInt, SInt, SInt)
   }
 
   property("types") {
     typecheck(env, "{let X: Int = 10; 3 > 2}") shouldBe SBoolean
     typecheck(env, "{let X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe SBoolean
-    typecheck(env, "{let X: Array[Int] = Array(1,2,3); X.size}") shouldBe SLong
-    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SLong), SLong)
-    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SLong)
+    typecheck(env, "{let X: Array[Int] = Array(1,2,3); X.size}") shouldBe SInt
+    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
+    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
   }
 
   property("if") {
-    typecheck(env, "if(true) 1 else 2") shouldBe SLong
-    typecheck(env, "if(c1) 1 else 2") shouldBe SLong
-    typecheck(env, "if(c1) x else y") shouldBe SLong
+    typecheck(env, "if(true) 1 else 2") shouldBe SInt
+    typecheck(env, "if(c1) 1 else 2") shouldBe SInt
+    typecheck(env, "if(c1) x else y") shouldBe SInt
     typecheck(env,
       """if (true) {
         |  let A = 10; A
         |} else
-        |  if ( x == y) 2 else 3""".stripMargin) shouldBe SLong
+        |  if ( x == y) 2 else 3""".stripMargin) shouldBe SInt
   }
 
   property("array literals") {
@@ -135,69 +135,69 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "Array(Array())", "Undefined type of empty collection")
     typefail(env, "Array(Array(Array()))", "Undefined type of empty collection")
 
-    typecheck(env, "Array(1)") shouldBe SCollection(SLong)
-    typecheck(env, "Array(1, x)") shouldBe SCollection(SLong)
-    typecheck(env, "Array(Array(x + 1))") shouldBe SCollection(SCollection(SLong))
+    typecheck(env, "Array(1)") shouldBe SCollection(SInt)
+    typecheck(env, "Array(1, x)") shouldBe SCollection(SInt)
+    typecheck(env, "Array(Array(x + 1))") shouldBe SCollection(SCollection(SInt))
 
     typefail(env, "Array(1, x + 1, Array())")
     typefail(env, "Array(1, false)")
   }
 
   property("Option constructors") {
-    typecheck(env, "Some(10)") shouldBe SOption(SLong)
-    typecheck(env, "Some(x)") shouldBe SOption(SLong)
-    typecheck(env, "Some(x + 1)") shouldBe SOption(SLong)
-    typecheck(env, "Some(Some(10))") shouldBe SOption(SOption(SLong))
+    typecheck(env, "Some(10)") shouldBe SOption(SInt)
+    typecheck(env, "Some(x)") shouldBe SOption(SInt)
+    typecheck(env, "Some(x + 1)") shouldBe SOption(SInt)
+    typecheck(env, "Some(Some(10))") shouldBe SOption(SOption(SInt))
   }
 
   property("array indexed access") {
     typefail(env, "Array()(0)", "Undefined type of empty collection")
-    typecheck(env, "Array(0)(0)") shouldBe SLong
+    typecheck(env, "Array(0)(0)") shouldBe SInt
     typefail(env, "Array(0)(0)(0)", "array type is expected")
   }
 
   property("array indexed access with evaluation") {
-    typecheck(env, "Array(0)(1 - 1)") shouldBe SLong
-    typecheck(env, "Array(0)((1 - 1) + 0)") shouldBe SLong
+    typecheck(env, "Array(0)(1 - 1)") shouldBe SInt
+    typecheck(env, "Array(0)((1 - 1) + 0)") shouldBe SInt
     typefail(env, "Array(0)(0 == 0)", "Invalid argument type")
     typefail(env, "Array(0)(1,1,1)", "Invalid argument of array application")
   }
 
   property("lambdas") {
-    typecheck(env, "fun (a: Int) = a + 1") shouldBe SFunc(IndexedSeq(SLong), SLong)
-    typecheck(env, "fun (a: Int): Int = a + 1") shouldBe SFunc(IndexedSeq(SLong), SLong)
-    typecheck(env, "fun (a: Int) = { a + 1 }") shouldBe SFunc(IndexedSeq(SLong), SLong)
-    typecheck(env, "fun (a: Int) = { let b = a + 1; b }") shouldBe SFunc(IndexedSeq(SLong), SLong)
-    typecheck(env, "fun (a: Int, box: Box): Int = a + box.value") shouldBe
-      SFunc(IndexedSeq(SLong, SBox), SLong)
+    typecheck(env, "fun (a: Int) = a + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "fun (a: Int): Int = a + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "fun (a: Int) = { a + 1 }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "fun (a: Int) = { let b = a + 1; b }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "fun (a: Int, box: Box): Long = a + box.value") shouldBe
+      SFunc(IndexedSeq(SInt, SBox), SLong)
     typecheck(env, "fun (p: (Int, GroupElement), box: Box): Boolean = p._1 > box.value && p._2.isIdentity") shouldBe
-      SFunc(IndexedSeq(STuple(SLong, SGroupElement), SBox), SBoolean)
+      SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
 
     typefail(env, "fun (a) = a + 1", "undefined type of argument")
   }
 
   property("function definitions") {
-    typecheck(env, "{ let f = fun (x: Int) = x + 1; f }") shouldBe SFunc(IndexedSeq(SLong), SLong)
-    typecheck(env, "{ fun f(x: Int) = x + 1; f } ") shouldBe SFunc(IndexedSeq(SLong), SLong)
+    typecheck(env, "{ let f = fun (x: Int) = x + 1; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "{ fun f(x: Int) = x + 1; f } ") shouldBe SFunc(IndexedSeq(SInt), SInt)
   }
 
   property("predefined primitives") {
-    typecheck(env, "fun (box: Box): Int = box.value") shouldBe SFunc(IndexedSeq(SBox), SLong)
+    typecheck(env, "fun (box: Box): Long = box.value") shouldBe SFunc(IndexedSeq(SBox), SLong)
     typecheck(env, "fun (box: Box): Array[Byte] = box.propositionBytes") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
     typecheck(env, "fun (box: Box): Array[Byte] = box.bytes") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
     typecheck(env, "fun (box: Box): Array[Byte] = box.id") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
   }
 
   property("type parameters") {
-    typecheck(env, "SELF.R1[Int]") shouldBe SOption(SLong)
+    typecheck(env, "SELF.R1[Int]") shouldBe SOption(SInt)
     typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
-    typecheck(env, "SELF.R1[Int].value") shouldBe SLong
+    typecheck(env, "SELF.R1[Int].value") shouldBe SInt
     typefail(env, "X[Int]", "expression doesn't have type parameters")
     typefail(env, "arr1[Int]", "expression doesn't have type parameters")
-    typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SLong, SBoolean))
-    typecheck(env, "SELF.R1[(Int,Boolean)].value") shouldBe STuple(SLong, SBoolean)
+    typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))
+    typecheck(env, "SELF.R1[(Int,Boolean)].value") shouldBe STuple(SInt, SBoolean)
     typefail(env, "SELF.R1[Int,Boolean].value", "Wrong number of type arguments")
-    typecheck(env, "Array[Int]()") shouldBe SCollection(SLong)
+    typecheck(env, "Array[Int]()") shouldBe SCollection(SInt)
   }
   
   property("compute unifying type substitution") {
@@ -251,32 +251,32 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
     check("(Int, A)", "Int", None)
     unify("(Int, A)", "(Int, A)")
-    unify("(Int, A)", "(Int, Int)", ("A", SLong))
+    unify("(Int, A)", "(Int, Int)", ("A", SInt))
     unify("(A, B)", "(A, B)")
-    unify("(A, B)", "(Int, Boolean)", ("A", SLong), ("B", SBoolean))
+    unify("(A, B)", "(Int, Boolean)", ("A", SInt), ("B", SBoolean))
     check("(A, B)", "(Int, Boolean, Box)", None)
     check("(A, Boolean)", "(Int, B)", None)
     check("(A, Int)", "(B, Int)", None)
 
     unify("A", "Array[Boolean]", ("A", ty("Array[Boolean]")))
-    unify("Array[A]", "Array[Int]", ("A", SLong))
+    unify("Array[A]", "Array[Int]", ("A", SInt))
     unify("Array[A]", "Array[(Int, Box)]", ("A", ty("(Int, Box)")))
     unify("Array[(Int, A)]", "Array[(Int, Box)]", ("A", SBox))
-    unify("Array[Array[A]]", "Array[Array[Int]]", ("A", SLong))
+    unify("Array[Array[A]]", "Array[Array[Int]]", ("A", SInt))
     unify("Array[Array[A]]", "Array[Array[A]]")
     check("Array[Array[A]]", "Array[Array[B]]", None)
 
     unify("A", "Option[Boolean]", ("A", ty("Option[Boolean]")))
-    unify("Option[A]", "Option[Int]", ("A", SLong))
+    unify("Option[A]", "Option[Int]", ("A", SInt))
     unify("Option[A]", "Option[(Int, Box)]", ("A", ty("(Int, Box)")))
     unify("Option[(Int, A)]", "Option[(Int, Box)]", ("A", SBox))
-    unify("Option[Option[A]]", "Option[Option[Int]]", ("A", SLong))
+    unify("Option[Option[A]]", "Option[Option[Int]]", ("A", SInt))
     unify("Option[Option[A]]", "Option[Option[A]]")
     check("Option[Option[A]]", "Option[Option[B]]", None)
 
-    unify("A => Int", "Int => Int", ("A", SLong))
+    unify("A => Int", "Int => Int", ("A", SInt))
     check("A => Int", "Int => Boolean", None)
-    unify("Int => A", "Int => Int", ("A", SLong))
+    unify("Int => A", "Int => Int", ("A", SInt))
     check("Int => A", "Boolean => Int", None)
     unify("(Int, A) => B", "(Int, Boolean) => Box", ("A", SBoolean), ("B", SBox))
     check("(Int, A) => A", "(Int, Boolean) => Box", None)
@@ -285,6 +285,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     unify(
       "((A,Int), Array[B] => Array[(Array[C], B)]) => A",
       "((Int,Int), Array[Boolean] => Array[(Array[C], Boolean)]) => Int",
-      ("A", SLong), ("B", SBoolean))
+      ("A", SInt), ("B", SBoolean))
   }
 }

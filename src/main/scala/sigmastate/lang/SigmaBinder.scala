@@ -78,7 +78,7 @@ class SigmaBinder(env: Map[String, Any]) {
 
     // Rule: col(i) --> ByIndex(col, i)
     case Apply(Typed(obj, tCol: SCollection[_]), Seq(Constant(i, tpe: SNumericType))) =>
-      Some(ByIndex(obj.asValue[SCollection[SType]], tpe.toLong(i.asInstanceOf[tpe.WrappedType])))
+      Some(ByIndex(obj.asValue[SCollection[SType]], SInt.upcast(i.asInstanceOf[AnyVal])))
 
     // Rule: allOf(Array(...)) --> AND(...)
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked, _))) =>

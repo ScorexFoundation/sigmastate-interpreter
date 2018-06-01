@@ -239,9 +239,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code = "OUTPUTS.slice(1, OUTPUTS.size).forall(fun (box: Box) = box.value == 10)"
     val expectedPropTree = ForAll(
-      Slice(Outputs, LongConstant(1), SizeOf(Outputs)),
+      Slice(Outputs, IntConstant(1), SizeOf(Outputs)),
       21,
-      EQ(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      EQ(ExtractAmount(TaggedBox(21)), IntConstant(10)))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
@@ -250,8 +250,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     // starting index out of bounds
     val code = "OUTPUTS.slice(3, OUTPUTS.size).size == 1"
     val expectedPropTree = EQ(
-      SizeOf(Slice(Outputs, LongConstant(3), SizeOf(Outputs))),
-      LongConstant(1))
+      SizeOf(Slice(Outputs, IntConstant(3), SizeOf(Outputs))),
+      IntConstant(1))
     assertProverFail(code, expectedPropTree, outputBoxValues)
   }
 
@@ -275,7 +275,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expectedPropTree = EQ(
       ExtractAmount(
         ByIndex(Outputs,
-          ArithOp(SizeOf(Outputs), LongConstant(1), MinusCode))),
+          ArithOp(SizeOf(Outputs), IntConstant(1), MinusCode))),
       LongConstant(10))
     assertProof(code, expectedPropTree, outputBoxValues)
   }
