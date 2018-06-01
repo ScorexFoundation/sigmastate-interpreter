@@ -1,6 +1,6 @@
 package sigmastate.utxo.examples
 
-import sigmastate.Values.{LongConstant, TaggedBox}
+import sigmastate.Values.{LongConstant, TaggedBox, IntConstant}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform.ErgoBox.R3
@@ -26,7 +26,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     * (height > (self.R3 + demurrage_period ) ∧ has_output(value >= self.value − demurrage_cost, script = self.script))
     */
   property("Evaluation - Demurrage Example") {
-    val demurragePeriod = 100
+    val demurragePeriod = 100L
     val demurrageCost = 2
 
     //a blockchain node veryfing a block containing a spending transaction
@@ -45,7 +45,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         | let c2 = allOf(Array(
-        |   HEIGHT >= SELF.R3[Int].value + demurragePeriod,
+        |   HEIGHT >= SELF.R3[Long].value + demurragePeriod,
         |   OUTPUTS.exists(fun (out: Box) = {
         |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
         |   })
@@ -59,7 +59,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         GE(Height, Plus(ExtractRegisterAs[SLong.type](Self, R3), LongConstant(demurragePeriod))),
         Exists(Outputs, 21,
           AND(
-            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),
+            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), Upcast(IntConstant(demurrageCost), SLong))),
             EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self))
           )
         )

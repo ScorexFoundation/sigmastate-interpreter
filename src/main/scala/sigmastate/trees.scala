@@ -160,12 +160,12 @@ object AND {
   * Up cast for Numeric types
   */
 case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
-  extends Transformer[T, R] with NotReadyValue[R] {
+  extends Transformer[T, R] {
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.Upcast
 
-  override def function(bal: EvaluatedValue[T]): Value[R] =
-    Constant(this.tpe.upcast(bal.value.asInstanceOf[AnyVal]), this.tpe)
+  override def function(input: EvaluatedValue[T]): Value[R] =
+    Constant(this.tpe.upcast(input.value.asInstanceOf[AnyVal]), this.tpe)
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
 }
