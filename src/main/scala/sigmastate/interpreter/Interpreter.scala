@@ -7,7 +7,7 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
-import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
+import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
@@ -26,14 +26,14 @@ import scala.util.Try
 
 
 object CryptoConstants {
-  type EcPointType = SecP384R1Point
+  type EcPointType = Curve25519Point
 
-  val dlogGroup: BcDlogFp[EcPointType] = SecP384R1
-  val groupSizeBits: Int = 384
-  val groupSize: Int = 384 / 8 //48 bytes
+  val dlogGroup: BcDlogFp[EcPointType] = Curve25519
+  val groupSizeBits: Int = 256
+  val groupSize: Int = 256 / 8 //32 bytes
 
   //size of challenge in Sigma protocols, in bits
-  implicit val soundnessBits: Int = 256.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
+  implicit val soundnessBits: Int = 224.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
 }
 
 object CryptoFunctions {
@@ -277,19 +277,18 @@ trait Interpreter {
       case b: Value[SBoolean.type] if b.evaluated =>
         SigSerializer.parse(cProp, proof) match {
           case NoProof => false
-          case sp: UncheckedSigmaTree[_] =>
+          case sp: UncheckedSigmaTree =>
             assert(sp.proposition == cProp)
 
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
-            val (challenge, rootCommitments) = newRoot match {
-              case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
-              case sn: UncheckedSchnorr => (sn.challenge, sn.firstMessageOpt.toSeq)
-              case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.firstMessageOpt.toSeq)
+            val challenge = newRoot match {
+              case uc: UncheckedConjecture => uc.challengeOpt.get
+              case ul: UncheckedLeaf[_] => ul.challenge
               case _ =>
                 Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
             }
 
-            val expectedChallenge = CryptoFunctions.hashFn(Helpers.concatBytes(rootCommitments.map(_.bytes)) ++ message)
+            val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
             util.Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false
@@ -306,21 +305,15 @@ trait Interpreter {
     */
   val checks: Strategy = everywherebu(rule[UncheckedTree] {
     case and: CAndUncheckedNode =>
-      //todo: reduce boilerplate below
 
-      val challenges: Seq[Array[Byte]] = and.leafs.map {
-        case u: UncheckedConjecture[_] => u.challengeOpt.get
-        case sn: UncheckedSchnorr => sn.challenge
-        case dh: UncheckedDiffieHellmanTuple => dh.challenge
+      val challenges: Seq[Array[Byte]] = and.children.map {
+        case uc: UncheckedConjecture => uc.challengeOpt.get
+        case ul: UncheckedLeaf[_] => ul.challenge
       }
 
-      val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
-        case u: UncheckedConjecture[_] => u.commitments
-
-        //todo: reduce boilerplate below, replace additive notation w. multiplicative
-        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
-
-        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
+      val commitments: Seq[FirstProverMessage[_]] = and.children.flatMap {
+        case uc: UncheckedConjecture => uc.commitments
+        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
       }
 
       val challenge = challenges.head
@@ -330,17 +323,15 @@ trait Interpreter {
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 
     case or: COrUncheckedNode =>
-      val challenges = or.leafs map {
-        case u: UncheckedConjecture[_] => u.challengeOpt.get
-        case sn: UncheckedSchnorr => sn.challenge
-        case dh: UncheckedDiffieHellmanTuple => dh.challenge
+      val challenges = or.children map {
+        case uc: UncheckedConjecture => uc.challengeOpt.get
+        case ul: UncheckedLeaf[_] => ul.challenge
         case a: Any => println(a); ???
       }
 
-      val commitments = or.leafs flatMap {
-        case u: UncheckedConjecture[_] => u.commitments
-        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
+      val commitments = or.children flatMap {
+        case uc: UncheckedConjecture => uc.commitments
+        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
         case _ => ???
       }
 
@@ -356,7 +347,7 @@ trait Interpreter {
         dlog.exponentiate(g, sn.secondMessage.z.underlying()),
         dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
 
-      sn.copy(firstMessageOpt = Some(FirstDLogProverMessage(a)))
+      sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
 
     //todo: check that g,h belong to the group
     //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
@@ -380,7 +371,7 @@ trait Interpreter {
 
       val a = dlog.multiplyGroupElements(gToZ, dlog.getInverse(uToE))
       val b = dlog.multiplyGroupElements(hToZ, dlog.getInverse(vToE))
-      dh.copy(firstMessageOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
+      dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
 
     case _ => ???
   })

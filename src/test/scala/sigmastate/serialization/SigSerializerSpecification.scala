@@ -52,15 +52,15 @@ class SigSerializerSpecification extends PropSpec
     case (NoProof, NoProof) => true
     case (dht1: UncheckedDiffieHellmanTuple, dht2: UncheckedDiffieHellmanTuple) =>
       // `firstMessageOpt` is not serialized
-      dht1.copy(firstMessageOpt = None) == dht2
+      dht1.copy(commitmentOpt = None) == dht2
     case (sch1: UncheckedSchnorr, sch2: UncheckedSchnorr) =>
       // `firstMessageOpt` is not serialized
-      sch1.copy(firstMessageOpt = None) == sch2
-    case (conj1: UncheckedConjecture[_], conj2: UncheckedConjecture[_]) =>
+      sch1.copy(commitmentOpt = None) == sch2
+    case (conj1: UncheckedConjecture, conj2: UncheckedConjecture) =>
       conj1.proposition == conj2.proposition &&
         Helpers.optionArrayEquals(conj1.challengeOpt, conj2.challengeOpt) &&
         conj1.commitments == conj2.commitments &&
-        conj1.leafs.zip(conj2.leafs).forall(t => isEquivalent(t._1, t._2))
+        conj1.children.zip(conj2.children).forall(t => isEquivalent(t._1, t._2))
     case _ => false
   }
 
