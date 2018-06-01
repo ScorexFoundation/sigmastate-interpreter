@@ -77,7 +77,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   override def transformationReady: Boolean = input.isEvaluated && col2.isEvaluated
 
   override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = (cl, col2) match {
-    case (ConcreteCollection(items), ConcreteCollection(items2)) =>
+    case (ConcreteCollection(items, _), ConcreteCollection(items2, _)) =>
       ConcreteCollection(items ++ items2)(tpe.elemType)
 
     case (CollectionConstant(arr, t1), CollectionConstant(arr2, t2)) =>
@@ -86,11 +86,11 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
       val newArr = Helpers.concatArrays(Seq(arr, arr2))(t1.classTag)
       CollectionConstant(newArr, t1)
 
-    case (CollectionConstant(arr, t1), arr2 @ ConcreteCollection(_)) =>
+    case (CollectionConstant(arr, t1), arr2 @ ConcreteCollection(_, _)) =>
       val newArr = Helpers.concatArrays(Seq(arr, arr2.value))(t1.classTag)
       CollectionConstant(newArr, t1)
 
-    case (arr @ ConcreteCollection(_), CollectionConstant(arr2, t2)) =>
+    case (arr @ ConcreteCollection(_, _), CollectionConstant(arr2, t2)) =>
       val newArr = Helpers.concatArrays(Seq(arr.value, arr2))(t2.classTag)
       CollectionConstant(newArr, t2)
 

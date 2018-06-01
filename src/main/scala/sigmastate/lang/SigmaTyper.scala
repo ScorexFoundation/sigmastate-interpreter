@@ -54,7 +54,7 @@ class SigmaTyper {
 
     case Tuple(items) => Tuple(items.map(assignType(env, _)))
 
-    case c @ ConcreteCollection(items) =>
+    case c @ ConcreteCollection(items, _) =>
       val newItems = items.map(assignType(env, _))
       val types = newItems.map(_.tpe).distinct
       val tItem = if (items.isEmpty) {
