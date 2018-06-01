@@ -77,8 +77,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       """{
         |  let tree = SELF.R3[AvlTree].value
         |  let proof = getVar[Array[Byte]](proofId)
-        |  let element = getVar[Int](elementId)
-        |  let elementKey = blake2b256(intToByteArray(element))
+        |  let element = getVar[Long](elementId)
+        |  let elementKey = blake2b256(longToByteArray(element))
         |  element >= 120 && isMember(tree, elementKey, proof)
         |}""".stripMargin).asBoolValue
 

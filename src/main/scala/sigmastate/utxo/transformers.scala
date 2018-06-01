@@ -14,7 +14,6 @@ import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.RegisterIdentifier
 
 
-
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
   val input: Value[IV]
@@ -32,8 +31,14 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
     case ev: EvaluatedValue[IV] => function(ev)
     case _: NotReadyValue[OV] => this
   }
+  protected def substituteTaggedVar(varId: Byte, arg: Value[IV]) =
+    everywherebu(rule[Value[IV]] {
+      case t: TaggedVariable[IV] if t.varId == varId =>
+        if (t.tpe != arg.tpe)
+          Interpreter.error(s"Types mismatch when substituting $t with value of type ${arg.tpe}")
+        arg
+    })
 }
-
 
 case class MapCollection[IV <: SType, OV <: SType](
     input: Value[SCollection[IV]],
@@ -52,7 +57,10 @@ case class MapCollection[IV <: SType, OV <: SType](
       case t: TaggedVariable[IV] if t.varId == id => arg
     })
 
-    ConcreteCollection(cl.items.map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
+    val resItems = cl.items
+      .map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]])
+      .map(_.function())
+    ConcreteCollection(resItems)
   }
 
   /**

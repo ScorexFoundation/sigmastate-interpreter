@@ -86,7 +86,55 @@ trait Interpreter {
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
 
+    //Byte Arith operations
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.PlusCode) =>
+      ByteConstant(l.addExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MinusCode) =>
+      ByteConstant(l.subtractExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MultiplyCode) =>
+      ByteConstant(l.multiplyExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.ModuloCode) =>
+      ByteConstant((l % r).toByte)
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.DivisionCode) =>
+      ByteConstant((l / r).toByte)
+
+    //Short Arith operations
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.PlusCode) =>
+      ShortConstant(l.addExact(r))
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.MinusCode) =>
+      ShortConstant(l.subtractExact(r))
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.MultiplyCode) =>
+      ShortConstant(l.multiplyExact(r))
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.ModuloCode) =>
+      ShortConstant((l % r).toShort)
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.DivisionCode) =>
+      ShortConstant((l / r).toShort)
+
     //Int Arith operations
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.PlusCode) =>
+      IntConstant(Math.addExact(l, r))
+
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MinusCode) =>
+      IntConstant(Math.subtractExact(l, r))
+
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MultiplyCode) =>
+      IntConstant(Math.multiplyExact(l, r))
+
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.ModuloCode) =>
+      IntConstant(l % r)
+
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.DivisionCode) =>
+      IntConstant(l / r)
+
+    //Long Arith operations
     case ArithOp(LongConstant(l), LongConstant(r), OpCodes.PlusCode) =>
       LongConstant(Math.addExact(l, r))
 
@@ -118,21 +166,6 @@ trait Interpreter {
     case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.DivisionCode) =>
       BigIntConstant(l.divide(r))
       
-    //Byte Arith operations
-    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.PlusCode) =>
-      ByteConstant(l.addExact(r))
-
-    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MinusCode) =>
-      ByteConstant(l.subtractExact(r))
-
-    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MultiplyCode) =>
-      ByteConstant(l.multiplyExact(r))
-
-    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.ModuloCode) =>
-      ByteConstant((l % r).toByte)
-
-    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.DivisionCode) =>
-      ByteConstant((l / r).toByte)
 
     case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       assert(l.length == r.length)
@@ -151,14 +184,7 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l == r)
     case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
       BooleanConstant.fromBoolean(l != r)
-    case GT(LongConstant(l), LongConstant(r)) =>
-      BooleanConstant.fromBoolean(l > r)
-    case GE(LongConstant(l), LongConstant(r)) =>
-      BooleanConstant.fromBoolean(l >= r)
-    case LT(LongConstant(l), LongConstant(r)) =>
-      BooleanConstant.fromBoolean(l < r)
-    case LE(LongConstant(l), LongConstant(r)) =>
-      BooleanConstant.fromBoolean(l <= r)
+
     case GT(ByteConstant(l), ByteConstant(r)) =>
       BooleanConstant.fromBoolean(l > r)
     case GE(ByteConstant(l), ByteConstant(r)) =>
@@ -167,6 +193,34 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l < r)
     case LE(ByteConstant(l), ByteConstant(r)) =>
       BooleanConstant.fromBoolean(l <= r)
+
+    case GT(ShortConstant(l), ShortConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(ShortConstant(l), ShortConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(ShortConstant(l), ShortConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(ShortConstant(l), ShortConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+
+    case GT(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+      
+    case GT(LongConstant(l), LongConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(LongConstant(l), LongConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(LongConstant(l), LongConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(LongConstant(l), LongConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+    
     case GT(BigIntConstant(l), BigIntConstant(r)) =>
       BooleanConstant.fromBoolean(l.compareTo(r) > 0)
     case GE(BigIntConstant(l), BigIntConstant(r)) =>
@@ -175,6 +229,7 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l.compareTo(r) < 0)
     case LE(BigIntConstant(l), BigIntConstant(r)) =>
       BooleanConstant.fromBoolean(l.compareTo(r) <= 0)
+      
     case IsMember(tree: AvlTreeConstant, ByteArrayConstant(key), ByteArrayConstant(proof)) =>
       val bv = tree.createVerifier(SerializedAdProof @@ proof)
       val res = bv.performOneOperation(Lookup(ADKey @@ key))

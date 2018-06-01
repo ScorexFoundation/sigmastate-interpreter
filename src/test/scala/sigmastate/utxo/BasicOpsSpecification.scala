@@ -35,7 +35,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   val bigIntVar3 = 7.toByte
   val byteVar3 = 8.toByte
   val ext = Seq(
-    (intVar1, LongConstant(1)), (intVar2, LongConstant(2)),
+    (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
     (byteVar1, ByteConstant(1)), (byteVar2, ByteConstant(2)),
     (bigIntVar1, BigIntConstant(BigInt(10).underlying())), (bigIntVar2, BigIntConstant(BigInt(20).underlying())))
   val env = Map(
@@ -73,15 +73,15 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   property("Arith operations") {
     test(env, ext,
       "{ getVar[Int](intVar2) * 2 + getVar[Int](intVar1) == 5 }",
-      EQ(Plus(Multiply(TaggedInt(intVar2), LongConstant(2)), TaggedInt(intVar1)), LongConstant(5))
+      EQ(Plus(Multiply(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(5))
     )
     test(env, ext :+ (bigIntVar3 -> BigIntConstant(50)),
-      "{ getVar[BigInt](bigIntVar2) * intToBigInt(2) + getVar[BigInt](bigIntVar1) == getVar[BigInt](bigIntVar3) }",
-      EQ(Plus(Multiply(TaggedBigInt(bigIntVar2), IntToBigInt(LongConstant(2))), TaggedBigInt(bigIntVar1)), TaggedBigInt(bigIntVar3))
+      "{ getVar[BigInt](bigIntVar2) * 2 + getVar[BigInt](bigIntVar1) == getVar[BigInt](bigIntVar3) }",
+      EQ(Plus(Multiply(TaggedBigInt(bigIntVar2), BigIntConstant(2)), TaggedBigInt(bigIntVar1)), TaggedBigInt(bigIntVar3))
     )
     test(env, ext :+ (byteVar3 -> ByteConstant(5)),
       "{ getVar[Byte](byteVar2) * intToByte(2) + getVar[Byte](byteVar1) == intToByte(5) }",
-      EQ(Plus(Multiply(TaggedByte(byteVar2), IntToByte(LongConstant(2))), TaggedByte(byteVar1)), IntToByte(LongConstant(5)))
+      EQ(Plus(Multiply(TaggedByte(byteVar2), IntToByte(IntConstant(2))), TaggedByte(byteVar1)), IntToByte(IntConstant(5)))
     )
     test(env, ext,
       "{ getVar[Int](intVar2) / 2 + getVar[Int](intVar1) == 2 }",

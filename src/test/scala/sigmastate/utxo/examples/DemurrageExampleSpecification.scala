@@ -59,7 +59,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         GE(Height, Plus(ExtractRegisterAs[SLong.type](Self, R3), LongConstant(demurragePeriod))),
         Exists(Outputs, 21,
           AND(
-            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), Upcast(IntConstant(demurrageCost), SLong))),
+            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),
             EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self))
           )
         )
