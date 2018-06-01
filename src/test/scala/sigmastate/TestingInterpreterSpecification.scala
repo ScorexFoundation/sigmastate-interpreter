@@ -138,6 +138,14 @@ class TestingInterpreterSpecification extends PropSpec
 //              |}""".stripMargin)
   }
 
+  property("Evaluate arithmetic ops") {
+    testeval("1 + 2 == 3")
+    testeval("5 - 1 == 4")
+    testeval("5 * 2 == 10")
+    testeval("5 / 2 == 2")
+    testeval("5 % 2 == 1")
+  }
+
   property("Evaluation example #1") {
     val dk1 = ProveDlog(secrets(0).publicImage.h)
     val dk2 = ProveDlog(secrets(1).publicImage.h)
