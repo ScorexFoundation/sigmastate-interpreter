@@ -43,7 +43,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("simple expressions") {
     typecheck(env, "x") shouldBe SLong
-    typecheck(env, "x+y") shouldBe SLong
+    typecheck(env, "x + y") shouldBe SLong
+    typecheck(env, "x - y") shouldBe SLong
+    typecheck(env, "x / y") shouldBe SLong
+    typecheck(env, "x % y") shouldBe SLong
     typecheck(env, "c1 && c2") shouldBe SBoolean
     typecheck(env, "arr1") shouldBe SByteArray
     typecheck(env, "HEIGHT") shouldBe SLong
