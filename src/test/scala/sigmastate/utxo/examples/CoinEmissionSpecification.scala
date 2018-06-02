@@ -1,11 +1,12 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.R3
-import org.ergoplatform._
+import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.utils.ScryptoLogging
 import sigmastate.Values.LongConstant
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
+import sigmastate.lang.Terms._
 import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
@@ -19,6 +20,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
 
   private val coinsInOneErgo: Long = 100000000
   private val blocksPerHour: Int = 30
+
   case class MonetarySettings(fixedRatePeriod: Long,
                               epochLength: Int,
                               fixedRate: Long,
@@ -67,6 +69,27 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
     val prop = AND(heightIncreased, OR(AND(sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins))
+
+    val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
+      "epochLength" -> s.epochLength,
+      "fixedRate" -> s.fixedRate,
+      "oneEpochReduction" -> s.oneEpochReduction)
+    val prop1 = compile(env,
+      """{
+        |  let epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
+        |  let out = OUTPUTS(0)
+        |  let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
+        |  let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
+        |  let sameScriptRule = SELF.propositionBytes == out.propositionBytes
+        |  let lastCoins = SELF.value < oneEpochReduction
+        |  let heightIncreased = HEIGHT > self.R3[Int].value
+        |  let heightCorrect = HEIGHT == out.R3[Int].value
+        |  heightIncreased && (lastCoins || (sameScriptRule, correctCoinsConsumed, heightCorrect))
+        |
+        |}""".stripMargin).asBoolValue
+
+    prop shouldEqual prop1
+
     val minerProp = prover.dlogSecrets.head.publicImage
 
     val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Map(register -> LongConstant(-1)))
