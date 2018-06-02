@@ -17,38 +17,35 @@ import sigmastate.{SLong, _}
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging {
 
-  // Some constants
   private val coinsInOneErgo: Long = 100000000
   private val blocksPerHour: Int = 30
+  case class MonetarySettings(fixedRatePeriod: Long,
+                              epochLength: Int,
+                              fixedRate: Long,
+                              oneEpochReduction: Long)
 
-  // 1 weeks of fixed rate
-  private val fixedRatePeriod =  blocksPerHour * 24 * 7
-  // 15 coins per block
-  private val fixedRate = 15 * coinsInOneErgo
-  // 1 days epoch
-  private val epochLength: Int = 24 * blocksPerHour
-  // 3 coins reduction every epoch
-  private val oneEpochReduction = 3 * coinsInOneErgo
+  val s = MonetarySettings(blocksPerHour * 24 * 7, 24 * blocksPerHour, 15 * coinsInOneErgo, 3 * coinsInOneErgo)
 
   val (coinsTotal, blocksTotal) = {
     def loop(height: Int, acc: Long): (Long, Int) = {
       val currentRate = emissionAtHeight(height)
-      if(currentRate > 0) {
+      if (currentRate > 0) {
         loop(height + 1, acc + currentRate)
       } else {
         (acc, height - 1)
       }
     }
+
     loop(0, 0)
   }
 
 
   def emissionAtHeight(h: Long): Long = {
-    if (h < fixedRatePeriod) {
-      fixedRate
+    if (h < s.fixedRatePeriod) {
+      s.fixedRate
     } else {
-      val epoch = 1 + (h - fixedRatePeriod) / epochLength
-      Math.max(fixedRate - oneEpochReduction * epoch, 0)
+      val epoch = 1 + (h - s.fixedRatePeriod) / s.epochLength
+      Math.max(s.fixedRate - s.oneEpochReduction * epoch, 0)
     }
   }.ensuring(_ >= 0, s"Negative at $h")
 
@@ -57,18 +54,17 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val register = R3
     val prover = new ErgoLikeProvingInterpreter()
 
-    val epoch = Plus(1, Divide(Minus(Height, LongConstant(fixedRatePeriod)), epochLength))
-    val coinsToIssue = If(LT(Height, LongConstant(fixedRatePeriod)),
-      fixedRate,
-      Minus(fixedRate, Multiply(oneEpochReduction, epoch))
+    val out = ByIndex(Outputs, LongConstant(0))
+    val epoch = Plus(LongConstant(1), Divide(Minus(Height, LongConstant(s.fixedRatePeriod)), LongConstant(s.epochLength)))
+    val coinsToIssue = If(LT(Height, LongConstant(s.fixedRatePeriod)),
+      s.fixedRate,
+      Minus(s.fixedRate, Multiply(s.oneEpochReduction, epoch))
     )
-
-    val out = ByIndex(Outputs, 0)
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(out))
     val heightCorrect = EQ(ExtractRegisterAs[SLong.type](out, register), Height)
     val heightIncreased = GT(Height, ExtractRegisterAs[SLong.type](Self, register))
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(out)))
-    val lastCoins = LE(ExtractAmount(Self), oneEpochReduction)
+    val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
     val prop = AND(heightIncreased, OR(AND(sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins))
     val minerProp = prover.dlogSecrets.head.publicImage
@@ -92,7 +88,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
                                    emissionBox: ErgoBox,
                                    height: Long): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
-      val ut = if (emissionBox.value > oneEpochReduction) {
+      val ut = if (emissionBox.value > s.oneEpochReduction) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Map())
         val newEmissionBox: ErgoBoxCandidate =
           new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> LongConstant(height)))
@@ -125,7 +121,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
                  emissionBox: ErgoBox,
                  height: Int,
                  hLimit: Int): Unit = if (height < hLimit) {
-      if(height % 1000 == 0) {
+      if (height % 1000 == 0) {
         println(s"block $height in ${System.currentTimeMillis() - st} ms, ${emissionBox.value} coins remain")
       }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
