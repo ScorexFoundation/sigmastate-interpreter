@@ -2,9 +2,9 @@ package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
 import sigmastate.Values._
-import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.lang.Terms._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
 
@@ -15,7 +15,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val prop = compile(env, script).asBoolValue
     prop shouldBe propExp
-//    val prop = propExp
+    //    val prop = propExp
     val ctx = ErgoLikeContext.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
@@ -44,6 +44,14 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2, "bigIntVar3" -> bigIntVar3)
 
   property("Relation operations") {
+    test(env, ext,
+      "{ true && true && true }",
+      AND(TrueLeaf, TrueLeaf, TrueLeaf)
+    )
+    test(env, ext,
+      "{ true || true || false }",
+      OR(TrueLeaf, TrueLeaf, FalseLeaf)
+    )
     test(env, ext,
       "{ getVar[Int](intVar2) > getVar[Int](intVar1) && getVar[Int](intVar1) < getVar[Int](intVar2) }",
       AND(GT(TaggedInt(intVar2), TaggedInt(intVar1)), LT(TaggedInt(intVar1), TaggedInt(intVar2)))
