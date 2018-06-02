@@ -155,43 +155,58 @@ object AND {
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
 
+
 /**
-  * Cast SInt to SByteArray
+  * Up cast for Numeric types
   */
-case class IntToByteArray(input: Value[SLong.type])
-  extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
-  override val opCode: OpCode = OpCodes.IntToByteArrayCode
+case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
+  extends Transformer[T, R] {
+  require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
+  override val opCode: OpCode = OpCodes.Upcast
+
+  override def function(input: EvaluatedValue[T]): Value[R] =
+    Constant(this.tpe.upcast(input.value.asInstanceOf[AnyVal]), this.tpe)
+
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+}
+
+///**
+//  * Up cast SInt to SBigInt
+//  */
+//case class IntToBigInt(input: Value[SLong.type])
+//  extends Transformer[SLong.type, SBigInt.type] with NotReadyValueBigInt {
+//  override val opCode: OpCode = OpCodes.IntToBigIntCode
+//
+//  override def function(bal: EvaluatedValue[SLong.type]): Value[SBigInt.type] =
+//    BigIntConstant(BigInt(bal.value).underlying())
+//
+//  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+//}
+
+/**
+  * Downcast SInt to SByte
+  */
+case class IntToByte(input: Value[SInt.type])
+  extends Transformer[SInt.type, SByte.type] with NotReadyValueByte {
+  override val opCode: OpCode = OpCodes.IntToByteCode
+
+  override def function(bal: EvaluatedValue[SInt.type]): Value[SByte.type] =
+    ByteConstant(bal.value.toByteExact)
+
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+}
+
+/**
+  * Cast SLong to SByteArray
+  */
+case class LongToByteArray(input: Value[SLong.type])
+    extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.LongToByteArrayCode
 
   override def function(bal: EvaluatedValue[SLong.type]): Value[SByteArray] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
-}
-
-/**
-  * Cast SInt to SBigInt
-  */
-case class IntToBigInt(input: Value[SLong.type])
-  extends Transformer[SLong.type, SBigInt.type] with NotReadyValueBigInt {
-  override val opCode: OpCode = OpCodes.IntToBigIntCode
-
-  override def function(bal: EvaluatedValue[SLong.type]): Value[SBigInt.type] =
-    BigIntConstant(BigInt(bal.value).underlying())
-
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
-}
-
-/**
-  * Cast SInt to SByte
-  */
-case class IntToByte(input: Value[SLong.type])
-  extends Transformer[SLong.type, SByte.type] with NotReadyValueByte {
-  override val opCode: OpCode = OpCodes.IntToByteCode
-
-  override def function(bal: EvaluatedValue[SLong.type]): Value[SByte.type] =
-    ByteConstant(bal.value.toByteExact)
-
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
 }
 
 /**
@@ -390,73 +405,3 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val second = trueBranch
   override lazy val third  = falseBranch
 }
-
-
-//Proof tree
-
-trait ProofTree extends Product
-
-sealed trait UnprovenTree extends ProofTree {
-  val proposition: SigmaBoolean
-
-  val simulated: Boolean
-
-  def real: Boolean = !simulated
-
-  val challengeOpt: Option[Array[Byte]]
-
-  def withChallenge(challenge: Array[Byte]): UnprovenTree
-
-  def withSimulated(newSimulated: Boolean): UnprovenTree
-}
-
-sealed trait UnprovenLeaf extends UnprovenTree {
-  val commitmentOpt: Option[FirstProverMessage[_]]
-}
-
-sealed trait UnprovenConjecture extends UnprovenTree {
-  val childrenCommitments: Seq[FirstProverMessage[_]]
-}
-
-case class CAndUnproven(override val proposition: CAND,
-                        override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
-                        override val challengeOpt: Option[Array[Byte]] = None,
-                        override val simulated: Boolean,
-                        children: Seq[ProofTree]) extends UnprovenConjecture {
-  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
-
-  override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
-}
-
-case class COrUnproven(override val proposition: COR,
-                       override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
-                       override val challengeOpt: Option[Array[Byte]] = None,
-                       override val simulated: Boolean,
-                       children: Seq[ProofTree]) extends UnprovenConjecture {
-  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
-
-  override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
-}
-
-case class UnprovenSchnorr(override val proposition: ProveDlog,
-                           override val commitmentOpt: Option[FirstDLogProverMessage],
-                           randomnessOpt: Option[BigInteger],
-                           override val challengeOpt: Option[Array[Byte]] = None,
-                           override val simulated: Boolean) extends UnprovenLeaf {
-
-  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
-
-  override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
-}
-
-case class UnprovenDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
-                                      override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
-                                      randomnessOpt: Option[BigInteger],
-                                      override val challengeOpt: Option[Array[Byte]] = None,
-                                      override val simulated: Boolean
-                                     ) extends UnprovenLeaf {
-  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
-
-  override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
-}
-

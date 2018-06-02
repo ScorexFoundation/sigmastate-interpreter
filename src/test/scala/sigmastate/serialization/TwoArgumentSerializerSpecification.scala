@@ -25,7 +25,7 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
   tablePredefinedBytesTest("TwoArguments: deserialize from predefined bytes")
 
   property("ArithmeticOperations: Serializer round trip") {
-    forAll(intConstGen, intConstGen, aritmeticCodeGen) { (x1: LongConstant, x2: LongConstant, opCode: OpCode) =>
+    forAll(longConstGen, longConstGen, aritmeticCodeGen) { (x1: LongConstant, x2: LongConstant, opCode: OpCode) =>
       roundTripTest(ArithOp(x1, x2, opCode))
     }
   }

@@ -19,14 +19,16 @@ import scala.reflect.ClassTag
 trait ValueGenerators extends TypeGenerators {
 
   implicit val arbByteConstants: Arbitrary[ByteConstant] = Arbitrary(byteConstGen)
-  implicit val arbIntConstants: Arbitrary[LongConstant] = Arbitrary(intConstGen)
+  implicit val arbIntConstants: Arbitrary[IntConstant] = Arbitrary(intConstGen)
+  implicit val arbLongConstants: Arbitrary[LongConstant] = Arbitrary(longConstGen)
   implicit val arbByteArrayConstant: Arbitrary[CollectionConstant[SByte.type]] = Arbitrary(byteArrayConstGen)
   implicit val arbGroupElementConstant: Arbitrary[GroupElementConstant] = Arbitrary(groupElementConstGen)
   implicit val arbBoxConstant: Arbitrary[BoxConstant] = Arbitrary(boxConstantGen)
   implicit val arbAvlTreeConstant: Arbitrary[AvlTreeConstant] = Arbitrary(avlTreeConstantGen)
   implicit val arbBigIntConstant: Arbitrary[BigIntConstant] = Arbitrary(bigIntConstGen)
 
-  implicit val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedVar[SLong.type])
+  implicit val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedVar[SInt.type])
+  implicit val arbTaggedLong: Arbitrary[TaggedLong] = Arbitrary(taggedVar[SLong.type])
   implicit val arbTaggedBox: Arbitrary[TaggedBox] = Arbitrary(taggedVar[SBox.type])
   implicit val arbTaggedAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedAvlTreeGen)
 
@@ -48,7 +50,8 @@ trait ValueGenerators extends TypeGenerators {
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
-  val intConstGen: Gen[LongConstant] = arbLong.arbitrary.map { v => LongConstant(v) }
+  val intConstGen: Gen[IntConstant] = arbInt.arbitrary.map { v => IntConstant(v) }
+  val longConstGen: Gen[LongConstant] = arbLong.arbitrary.map { v => LongConstant(v) }
   val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map { v => BigIntConstant(v.bigInteger) }
   val byteArrayConstGen: Gen[CollectionConstant[SByte.type]] = for {
     length <- Gen.chooseNum(1, 100)
@@ -177,8 +180,10 @@ trait ValueGenerators extends TypeGenerators {
     case SInt => arbInt
     case SLong => arbLong
     case SBigInt => arbBigInteger
-    case SAvlTree => arbAvlTreeData
     case SGroupElement => arbGroupElement
     case SBox => arbBox
+    case SAvlTree => arbAvlTreeData
+    case SAny => arbAnyVal
+    case SUnit => arbUnit
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
 }

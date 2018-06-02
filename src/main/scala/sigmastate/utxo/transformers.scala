@@ -14,7 +14,6 @@ import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.RegisterIdentifier
 
 
-
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
   val input: Value[IV]
@@ -32,8 +31,14 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
     case ev: EvaluatedValue[IV] => function(ev)
     case _: NotReadyValue[OV] => this
   }
+  protected def substituteTaggedVar(varId: Byte, arg: Value[IV]) =
+    everywherebu(rule[Value[IV]] {
+      case t: TaggedVariable[IV] if t.varId == varId =>
+        if (t.tpe != arg.tpe)
+          Interpreter.error(s"Types mismatch when substituting $t with value of type ${arg.tpe}")
+        arg
+    })
 }
-
 
 case class MapCollection[IV <: SType, OV <: SType](
     input: Value[SCollection[IV]],
@@ -52,7 +57,10 @@ case class MapCollection[IV <: SType, OV <: SType](
       case t: TaggedVariable[IV] if t.varId == id => arg
     })
 
-    ConcreteCollection(cl.items.map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
+    val resItems = cl.items
+      .map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]])
+      .map(_.function())
+    ConcreteCollection(resItems)
   }
 
   /**
@@ -77,7 +85,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   override def transformationReady: Boolean = input.isEvaluated && col2.isEvaluated
 
   override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = (cl, col2) match {
-    case (ConcreteCollection(items), ConcreteCollection(items2)) =>
+    case (ConcreteCollection(items, _), ConcreteCollection(items2, _)) =>
       ConcreteCollection(items ++ items2)(tpe.elemType)
 
     case (CollectionConstant(arr, t1), CollectionConstant(arr2, t2)) =>
@@ -86,11 +94,11 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
       val newArr = Helpers.concatArrays(Seq(arr, arr2))(t1.classTag)
       CollectionConstant(newArr, t1)
 
-    case (CollectionConstant(arr, t1), arr2 @ ConcreteCollection(_)) =>
+    case (CollectionConstant(arr, t1), arr2 @ ConcreteCollection(_, _)) =>
       val newArr = Helpers.concatArrays(Seq(arr, arr2.value))(t1.classTag)
       CollectionConstant(newArr, t1)
 
-    case (arr @ ConcreteCollection(_), CollectionConstant(arr2, t2)) =>
+    case (arr @ ConcreteCollection(_, _), CollectionConstant(arr2, t2)) =>
       val newArr = Helpers.concatArrays(Seq(arr.value, arr2))(t2.classTag)
       CollectionConstant(newArr, t2)
 
@@ -101,7 +109,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + col2.cost(context)
 }
 
-case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SLong.type], until: Value[SLong.type])
+case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override val opCode: OpCode = OpCodes.SliceCode
 
@@ -111,9 +119,9 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SLong.t
     input.isEvaluated && from.evaluated && until.evaluated
 
   override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
-    val fromValue = from.asInstanceOf[EvaluatedValue[SLong.type]].value
-    val untilValue = until.asInstanceOf[EvaluatedValue[SLong.type]].value
-    ConcreteCollection(cl.items.slice(fromValue.toInt, untilValue.toInt))(tpe.elemType)
+    val fromValue = from.asInstanceOf[EvaluatedValue[SInt.type]].value
+    val untilValue = until.asInstanceOf[EvaluatedValue[SInt.type]].value
+    ConcreteCollection(cl.items.slice(fromValue, untilValue))(tpe.elemType)
   }
 
   override def cost[C <: Context[C]](context: C): Long =
@@ -227,8 +235,8 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
 }
 
 object Fold {
-  def sum(input: Value[SCollection[SLong.type]]) =
-    Fold(input, 21, LongConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
+  def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
+    Fold(input, 21, Constant(tT.upcast(0.toByte), tT), 22, Plus(TaggedVariable(22, tT), TaggedVariable(21, tT)))
 
   def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T) = {
     val tCol = SCollection(tT)
@@ -238,14 +246,14 @@ object Fold {
   }
 }
 
-case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SLong.type])
+case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.type])
   extends Transformer[SCollection[V], V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.ByIndexCode
   override val tpe = input.tpe.elemType
   override def transformationReady: Boolean = input.isEvaluated && index.evaluated
 
   override def function(input: EvaluatedValue[SCollection[V]]): Value[V] = {
-    val i = index.asInstanceOf[EvaluatedValue[SLong.type]].value.toInt
+    val i = index.asInstanceOf[EvaluatedValue[SInt.type]].value
     input.matchCase(
       cc => cc.items(i),
       const => Value.apply(tpe)(const.value(i).asInstanceOf[tpe.WrappedType])
@@ -255,11 +263,11 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SLong.
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
-  extends Transformer[SCollection[V], SLong.type] with NotReadyValueInt {
+  extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
 
   override val opCode: OpCode = OpCodes.SizeOfCode
 
-  override def function(input: EvaluatedValue[SCollection[V]]) = LongConstant(input.length)
+  override def function(input: EvaluatedValue[SCollection[V]]) = IntConstant(input.length)
 
   //todo: isn't this cost too high? we can get size of a collection without touching it
   override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.SizeOfDeclaration
@@ -270,7 +278,7 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
   override def function(box: EvaluatedValue[SBox.type]): Value[V]
 }
 
-case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] with NotReadyValueInt {
+case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] with NotReadyValueLong {
   override val opCode: OpCode = OpCodes.ExtractAmountCode
 
   override def cost[C <: Context[C]](context: C) = 10
@@ -319,11 +327,15 @@ case class ExtractRegisterAs[V <: SType](
     registerId: RegisterIdentifier,
     tpe: V,
     default: Option[Value[V]])
-  extends Extract[V] with NotReadyValue[V] {
+    extends Extract[V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
   override def cost[C <: Context[C]](context: C) = 1000 //todo: the same as ExtractBytes.cost
-  override def function(box: EvaluatedValue[SBox.type]): Value[V] =
-    box.value.get(registerId).orElse(default).get.asInstanceOf[Value[V]]
+  override def function(box: EvaluatedValue[SBox.type]): Value[V] = {
+    val res = box.value.get(registerId).orElse(default).get
+    if (res.tpe != this.tpe)
+      Interpreter.error(s"Invalid value type ${res.tpe} in register R${registerId.number}, expected $tpe")
+    res.asInstanceOf[Value[V]]
+  }
 }
 
 object ExtractRegisterAs {

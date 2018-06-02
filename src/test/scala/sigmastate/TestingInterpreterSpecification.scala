@@ -91,7 +91,7 @@ class TestingInterpreterSpecification extends PropSpec
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
       "box1" -> ErgoBox(10, TrueLeaf, Map(
-          R3 -> LongArrayConstant(Array[Long](1, 2, 3)),
+          R3 -> IntArrayConstant(Array[Int](1, 2, 3)),
           R4 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -136,6 +136,14 @@ class TestingInterpreterSpecification extends PropSpec
 //              |  let arr = Array(1, 2, 3)
 //              |  arr.where(fun (i: Int) = i < 3) == Array(1, 2)
 //              |}""".stripMargin)
+  }
+
+  property("Evaluate arithmetic ops") {
+    testeval("1 + 2 == 3")
+    testeval("5 - 1 == 4")
+    testeval("5 * 2 == 10")
+    testeval("5 / 2 == 2")
+    testeval("5 % 2 == 1")
   }
 
   property("Evaluation example #1") {

@@ -47,11 +47,17 @@ class SigmaSpecializer {
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(ProveDlog(g))
 
-    case Apply(IntToBigSym, Seq(arg: Value[SLong.type]@unchecked)) =>
-      Some(IntToBigInt(arg))
+//    case Apply(IntToBigSym, Seq(arg: Value[SLong.type]@unchecked)) =>
+//      Some(IntToBigInt(arg))
 
-    case Apply(IntToByteSym, Seq(arg: Value[SLong.type]@unchecked)) =>
+    case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
       Some(IntToByte(arg))
+
+    case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
+      Some(LongToByteArray(arg))
+
+    case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
+      Some(Constant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>

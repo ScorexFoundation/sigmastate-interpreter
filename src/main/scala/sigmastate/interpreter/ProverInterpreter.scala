@@ -127,13 +127,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     val step4 = simulations(step3).get.asInstanceOf[UnprovenTree]
 
     //step 5 - compute root challenge
-    val commitments = step4 match {
-      case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
-      case uc: UnprovenConjecture => uc.childrenCommitments
-    }
-
-    val rootChallenge = CryptoFunctions.hashFn(commitments.map(_.bytes).reduce(_ ++ _) ++ message)
-
+    val rootChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(step4) ++ message)
     val step5 = step4.withChallenge(rootChallenge)
 
     val step6 = proving(step5).get.asInstanceOf[ProofTree]
@@ -264,8 +258,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val commitments = and.children.flatMap {
         case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
         case uc: UnprovenConjecture => uc.childrenCommitments
-        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.commitmentOpt.toSeq
         case _ => ???
       }
       and.copy(childrenCommitments = commitments)
@@ -274,8 +268,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val commitments = or.children.flatMap {
         case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
         case uc: UnprovenConjecture => uc.childrenCommitments
-        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
+        case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
+        case dh: UncheckedDiffieHellmanTuple => dh.commitmentOpt.toSeq
         case a: Any => ???
       }
       or.copy(childrenCommitments = commitments)

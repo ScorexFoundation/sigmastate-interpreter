@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.utils.ScryptoLogging
-import sigmastate.Values.LongConstant
+import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
@@ -41,7 +41,6 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     loop(0, 0)
   }
 
-
   def emissionAtHeight(h: Long): Long = {
     if (h < s.fixedRatePeriod) {
       s.fixedRate
@@ -56,7 +55,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val register = R3
     val prover = new ErgoLikeProvingInterpreter()
 
-    val out = ByIndex(Outputs, LongConstant(0))
+    val out = ByIndex(Outputs, IntConstant(0))
     val epoch = Plus(LongConstant(1), Divide(Minus(Height, LongConstant(s.fixedRatePeriod)), LongConstant(s.epochLength)))
     val coinsToIssue = If(LT(Height, LongConstant(s.fixedRatePeriod)),
       s.fixedRate,
@@ -82,7 +81,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
         |  let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
         |  let sameScriptRule = SELF.propositionBytes == out.propositionBytes
         |  let lastCoins = SELF.value < oneEpochReduction
-        |  let heightIncreased = HEIGHT > self.R3[Int].value
+        |  let heightIncreased = HEIGHT > SELF.R3[Int].value
         |  let heightCorrect = HEIGHT == out.R3[Int].value
         |  heightIncreased && (lastCoins || (sameScriptRule, correctCoinsConsumed, heightCorrect))
         |

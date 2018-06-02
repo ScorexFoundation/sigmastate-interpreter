@@ -25,7 +25,7 @@ object SigSerializer {
           (if (writingChallenge) dh.challenge else Array.emptyByteArray) ++
           BigIntegers.asUnsignedByteArray(order, dh.secondMessage.z)
       case and: CAndUncheckedNode =>
-        val leafs = and.leafs
+        val leafs = and.children
         val challenge = leafs.find(pt => pt match{
           case _: UncheckedLeaf[_] => true
           case _ => false
@@ -35,7 +35,7 @@ object SigSerializer {
           traverseNode(leaf.asInstanceOf[UncheckedTree], ba, writingChallenge = false)
         }
       case or: COrUncheckedNode =>
-        or.leafs.foldLeft(acc) { case (ba, leaf) =>
+        or.children.foldLeft(acc) { case (ba, leaf) =>
           traverseNode(leaf.asInstanceOf[UncheckedTree], ba)
         }
     }

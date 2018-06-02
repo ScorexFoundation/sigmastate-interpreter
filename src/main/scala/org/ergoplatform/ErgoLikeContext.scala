@@ -62,7 +62,7 @@ object ErgoLikeContext {
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
-case object Height extends NotReadyValueInt {
+case object Height extends NotReadyValueLong {
   override val opCode: OpCode = OpCodes.HeightCode
 
   override def cost[C <: Context[C]](context: C): Long = 2 * Cost.IntConstantDeclaration

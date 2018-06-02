@@ -50,7 +50,7 @@ object Values {
 
     implicit def liftByte (n: Byte) : Value[SByte.type]  = ByteConstant(n)
     implicit def liftShort(n: Short): Value[SShort.type] = ShortConstant(n)
-//    implicit def liftInt  (n: Int)  : Value[SInt.type]   = IntConstant(n)
+    implicit def liftInt  (n: Int)  : Value[SInt.type]   = IntConstant(n)
     implicit def liftLong (n: Long) : Value[SLong.type]  = LongConstant(n)
 
     implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray] = ByteArrayConstant(arr)
@@ -109,7 +109,7 @@ object Values {
 
   type ByteConstant = Constant[SByte.type]
   type ShortConstant = Constant[SShort.type]
-//  type IntConstant = Constant[SInt.type]
+  type IntConstant = Constant[SInt.type]
   type LongConstant = Constant[SLong.type]
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
@@ -188,7 +188,19 @@ object Values {
         c.value.maxDeletes)
   }
 
-  trait NotReadyValueInt extends NotReadyValue[SLong.type] {
+  trait NotReadyValueByte extends NotReadyValue[SByte.type] {
+    override def tpe = SByte
+  }
+
+  trait NotReadyValueShort extends NotReadyValue[SShort.type] {
+    override def tpe = SShort
+  }
+
+  trait NotReadyValueInt extends NotReadyValue[SInt.type] {
+    override def tpe = SInt
+  }
+
+  trait NotReadyValueLong extends NotReadyValue[SLong.type] {
     override def tpe = SLong
   }
 
@@ -196,22 +208,22 @@ object Values {
     override def tpe = SBigInt
   }
 
-  trait NotReadyValueByte extends NotReadyValue[SByte.type] {
-    override def tpe = SByte
-  }
-
-  type TaggedByte = TaggedVariable[SByte.type]
   type TaggedBoolean = TaggedVariable[SBoolean.type]
-  type TaggedInt = TaggedVariable[SLong.type]
+  type TaggedByte = TaggedVariable[SByte.type]
+  type TaggedShort = TaggedVariable[SShort.type]
+  type TaggedInt = TaggedVariable[SInt.type]
+  type TaggedLong = TaggedVariable[SLong.type]
   type TaggedBigInt = TaggedVariable[SBigInt.type]
   type TaggedBox = TaggedVariable[SBox.type]
   type TaggedGroupElement = TaggedVariable[SGroupElement.type]
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
-  def TaggedByte   (id: Byte): TaggedByte = TaggedVariable(id, SByte)
   def TaggedBoolean(id: Byte): TaggedBoolean = TaggedVariable(id, SBoolean)
-  def TaggedInt    (id: Byte): TaggedInt = TaggedVariable(id, SLong)
+  def TaggedByte   (id: Byte): TaggedByte = TaggedVariable(id, SByte)
+  def TaggedShort  (id: Byte): TaggedShort = TaggedVariable(id, SShort)
+  def TaggedInt    (id: Byte): TaggedInt = TaggedVariable(id, SInt)
+  def TaggedLong   (id: Byte): TaggedLong = TaggedVariable(id, SLong)
   def TaggedBigInt (id: Byte): TaggedBigInt = TaggedVariable(id, SBigInt)
   def TaggedBox    (id: Byte): TaggedBox = TaggedVariable(id, SBox)
   def TaggedGroupElement(id: Byte): TaggedGroupElement = TaggedVariable(id, SGroupElement)
@@ -260,17 +272,17 @@ object Values {
     }
   }
   
-//  object IntArrayConstant {
-//    def apply(value: Array[Int]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value, SLong)
-//    def unapply(node: SValue): Option[Array[Int]] = node match {
-//      case coll: CollectionConstant[SLong.type] @unchecked => coll match {
-//        case CollectionConstant(arr, SLong) => Some(arr)
-//        case _ => None
-//      }
-//      case _ => None
-//    }
-//  }
-//
+  object IntArrayConstant {
+    def apply(value: Array[Int]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value, SInt)
+    def unapply(node: SValue): Option[Array[Int]] = node match {
+      case coll: CollectionConstant[SInt.type] @unchecked => coll match {
+        case CollectionConstant(arr, SInt) => Some(arr)
+        case _ => None
+      }
+      case _ => None
+    }
+  }
+
   object LongArrayConstant {
     def apply(value: Array[Long]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value, SLong)
     def unapply(node: SValue): Option[Array[Long]] = node match {
@@ -402,8 +414,8 @@ object Values {
     lazy val value = None
   }
 
-  case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]])(implicit val elementType: V)
-    extends EvaluatedCollection[V] with Rewritable {
+  case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
+    extends EvaluatedCollection[V] {
     override val opCode: OpCode = ConcreteCollectionCode
 
     def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollection + items.map(_.cost(context)).sum
@@ -414,19 +426,13 @@ object Values {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
       xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]])
     }
-
-    def arity = 1 + items.size
-
-    def deconstruct = immutable.Seq[Any](elementType) ++ items
-
-    def reconstruct(cs: immutable.Seq[Any]) = cs match {
-      case Seq(t: SType, vs@_*) => ConcreteCollection[SType](vs.asInstanceOf[Seq[Value[V]]].toIndexedSeq)(t)
-      case _ =>
-        illegalArgs("ConcreteCollection", "(IndexedSeq, SType)", cs)
-    }
   }
   object ConcreteCollection {
-    def apply[V <: SType](items: Value[V]*)(implicit tV: V) = new ConcreteCollection(items.toIndexedSeq)
+    def apply[V <: SType](items: Value[V]*)(implicit tV: V) =
+      new ConcreteCollection(items.toIndexedSeq, tV)
+
+    def apply[V <: SType](items: => Seq[Value[V]])(implicit tV: V) =
+      new ConcreteCollection(items.toIndexedSeq, tV)
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]

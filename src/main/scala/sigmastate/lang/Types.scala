@@ -21,7 +21,7 @@ trait Types extends Core {
 
   /** This map should be in sync with SType.allPredefTypes*/
   val predefTypes = Map(
-    "Byte" -> SByte, "Int" -> SLong, "BigInt" -> SBigInt, "Boolean" -> SBoolean, "ByteArray" -> SByteArray,
+    "Boolean" -> SBoolean, "Byte" -> SByte, "Short" -> SShort, "Int" -> SInt,"Long" -> SLong, "BigInt" -> SBigInt,  "ByteArray" -> SByteArray,
     "AvlTree" -> SAvlTree, "GroupElement" -> SGroupElement, "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
   )
 
