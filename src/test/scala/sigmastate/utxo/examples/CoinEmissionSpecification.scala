@@ -22,10 +22,10 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
   private val blocksPerHour: Int = 30
   private val blocksPerYear: Int = 365 * 24 * blocksPerHour
   private val blocksTotal: Int = blocksPerYear * 8
-  private val rewardReductionPeriod: Int = 90 * 24 * blocksPerHour
-  private val fixedRatePeriod = 2 * blocksPerYear - rewardReductionPeriod
-  private val fixedRate = 2250 * coinsInOneErgo / blocksPerHour
-  private val decreasingEpochs = (blocksTotal - fixedRatePeriod) / rewardReductionPeriod
+  private val rewardReductionPeriod: Long = 90 * 24 * blocksPerHour
+  private val fixedRatePeriod: Long = 2 * blocksPerYear - rewardReductionPeriod
+  private val fixedRate: Long = 2250 * coinsInOneErgo / blocksPerHour
+  private val decreasingEpochs: Long = (blocksTotal - fixedRatePeriod) / rewardReductionPeriod
 
 
   def emissionAtHeight(h: Long): Long = {

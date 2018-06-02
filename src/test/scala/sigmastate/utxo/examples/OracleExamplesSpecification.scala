@@ -142,7 +142,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     //"along with a brother" script
     val propAlong = AND(
-      EQ(SizeOf(Inputs), LongConstant(2)),
+      EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = ErgoBox(10, propBob, Map(), boxId = 4)
@@ -206,7 +206,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), R3), LongConstant(15)), alicePubKey),
       AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), R3), LongConstant(15)), bobPubKey))
 
-    val prop = AND(EQ(SizeOf(Inputs), LongConstant(3)),
+    val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
       EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),
       contractLogic
     )

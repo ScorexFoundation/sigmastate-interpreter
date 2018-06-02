@@ -85,11 +85,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env, ext,
       "{ getVar[Int](intVar2) / 2 + getVar[Int](intVar1) == 2 }",
-      EQ(Plus(Divide(TaggedInt(intVar2), LongConstant(2)), TaggedInt(intVar1)), LongConstant(2))
+      EQ(Plus(Divide(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(2))
     )
     test(env, ext,
       "{ getVar[Int](intVar2) % 2 + getVar[Int](intVar1) == 1 }",
-      EQ(Plus(Modulo(TaggedInt(intVar2), LongConstant(2)), TaggedInt(intVar1)), LongConstant(1))
+      EQ(Plus(Modulo(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(1))
     )
   }
 
