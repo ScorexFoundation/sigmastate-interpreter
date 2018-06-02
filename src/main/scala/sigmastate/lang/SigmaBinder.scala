@@ -7,9 +7,10 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import Values._
 import org.ergoplatform._
-import sigmastate.utxo._
+import sigmastate.utils.Extensions._
 import sigmastate.Values.Value.Typed
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.utxo.ByIndex
 
 class SigmaBinder(env: Map[String, Any]) {
   import SigmaBinder._
@@ -20,11 +21,14 @@ class SigmaBinder(env: Map[String, Any]) {
   private def eval(e: SValue, env: Map[String, Any]): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
-        case arr: Array[Byte] => Some(ByteArrayConstant(arr))
-        case arr: Array[Long] => Some(LongArrayConstant(arr))
         case arr: Array[Boolean] => Some(BoolArrayConstant(arr))
+        case arr: Array[Byte] => Some(ByteArrayConstant(arr))
+        case arr: Array[Short] => Some(ShortArrayConstant(arr))
+        case arr: Array[Int] => Some(IntArrayConstant(arr))
+        case arr: Array[Long] => Some(LongArrayConstant(arr))
         case v: Byte => Some(ByteConstant(v))
-        case v: Int => Some(LongConstant(v))
+        case v: Short => Some(ShortConstant(v))
+        case v: Int => Some(IntConstant(v))
         case v: Long => Some(LongConstant(v))
         case v: BigInteger => Some(BigIntConstant(v))
         case v: CryptoConstants.EcPointType => Some(GroupElementConstant(v))
@@ -73,8 +77,8 @@ class SigmaBinder(env: Map[String, Any]) {
       Some(SomeValue(arg))
 
     // Rule: col(i) --> ByIndex(col, i)
-    case Apply(Typed(obj, tCol: SCollection[_]), Seq(LongConstant(i))) =>
-      Some(ByIndex(obj.asValue[SCollection[SType]], i.toInt))
+    case Apply(Typed(obj, tCol: SCollection[_]), Seq(Constant(i, tpe: SNumericType))) =>
+      Some(ByIndex(obj.asValue[SCollection[SType]], SInt.upcast(i.asInstanceOf[AnyVal])))
 
     // Rule: allOf(Array(...)) --> AND(...)
     case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked, _))) =>
@@ -96,7 +100,8 @@ class SigmaBinder(env: Map[String, Any]) {
       if (targs.length != 1 || args.length != 1)
         error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
       val id = args.head match {
-        case LongConstant(i) => i.toByte
+        case LongConstant(i) => i.toByteExact
+        case IntConstant(i) => i.toByteExact
         case ByteConstant(i) => i
       }
       Some(TaggedVariable(id, targs.head))

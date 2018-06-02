@@ -116,8 +116,10 @@ object Terms {
 
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
+    def asNumValue: Value[SNumericType] = v.asInstanceOf[Value[SNumericType]]
     def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
-    def asIntValue: Value[SLong.type] = v.asInstanceOf[Value[SLong.type]]
+    def asIntValue: Value[SInt.type] = v.asInstanceOf[Value[SInt.type]]
+    def asLongValue: Value[SLong.type] = v.asInstanceOf[Value[SLong.type]]
     def asSigmaValue: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
     def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
@@ -125,5 +127,15 @@ object Terms {
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
     def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]
     def asConcreteCollection[T <: SType]: ConcreteCollection[T] = v.asInstanceOf[ConcreteCollection[T]]
+    def upcastTo[T <: SNumericType](targetType: T): Value[T] = {
+      assert(v.tpe.isInstanceOf[SNumericType],
+        s"Cannot upcast value of type ${v.tpe} to $targetType: only numeric types can be upcasted.")
+      val tV = v.asValue[SNumericType]
+      assert(targetType.max(tV.tpe) == targetType,
+        s"Invalid upcast from $tV to $targetType: target type should be larger than source type.")
+      if (targetType == tV.tpe) v.asValue[T]
+      else
+        Upcast(tV, targetType)
+    }
   }
 }

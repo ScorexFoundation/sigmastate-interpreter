@@ -148,14 +148,16 @@ class SigmaTyper {
         case _: SCollection[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
-            case Seq(LongConstant(i)) =>
-              ByIndex[SType](new_f.asCollection, i.toInt)
+            case Seq(Constant(i, tpe: SNumericType)) =>
+              ByIndex[SType](new_f.asCollection, SInt.upcast(i.asInstanceOf[AnyVal]))
             case Seq(arg) =>
               val newArg = assignType(env, arg)
-              if (newArg.tpe == SLong)
-                ByIndex[SType](new_f.asCollection, newArg.asIntValue)
-              else
-                error(s"Invalid argument type of array application $app: expected integer; actual: $newArg")
+              newArg.tpe match {
+                case targ: SNumericType =>
+                  ByIndex[SType](new_f.asCollection, newArg.upcastTo(SInt))
+                case _ =>
+                  error(s"Invalid argument type of array application $app: expected numeric type; actual: ${newArg.tpe}")
+              }
             case _ =>
               error(s"Invalid argument of array application $app: expected integer value; actual: $args")
           }
@@ -185,12 +187,14 @@ class SigmaTyper {
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
-        case SLong | SByte | SBigInt => (m, newArgs) match {
-          case ("*", Seq(r)) =>
-            if (r.tpe == newObj.tpe)
-              Multiply(newObj, r)
-            else
+        case nl: SNumericType => (m, newArgs) match {
+          case ("*", Seq(r)) => r.tpe match {
+            case nr: SNumericType =>
+              bimap(env, "*", newObj.asNumValue, r.asNumValue)(Multiply)(tT, tT)
+            case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
+          }
+
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
@@ -241,14 +245,14 @@ class SigmaTyper {
     case LE(l, r) => bimap(env, "<=", l, r)(LE[SType])(tT, SBoolean)
     case GT(l, r) => bimap(env, ">", l, r) (GT[SType])(tT, SBoolean)
     case LT(l, r) => bimap(env, "<", l, r) (LT[SType])(tT, SBoolean)
-    case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])((l,r) => l == r)
-    case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ[SType])((l,r) => l == r)
+    case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])
+    case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ[SType])
 
-    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l, r)(Minus)(tT, tT)
-    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l, r)(Plus)(tT, tT)
-    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l, r)(Multiply)(tT, tT)
-    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l, r)(Modulo)(tT, tT)
-    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l, r)(Divide)(tT, tT)
+    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(Minus)(tT, tT)
+    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(Plus)(tT, tT)
+    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(Multiply)(tT, tT)
+    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(Modulo)(tT, tT)
+    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(Divide)(tT, tT)
     
     case Xor(l, r) => bimap(env, "|", l, r)(Xor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(MultiplyGroup)(SGroupElement, SGroupElement)
@@ -288,27 +292,43 @@ class SigmaTyper {
 
   def bimap[T <: SType]
       (env: Map[String, SType], op: String, l: Value[T], r: Value[T])
-      (f: (Value[T], Value[T]) => SValue)
+      (mkNode: (Value[T], Value[T]) => SValue)
       (tArg: SType, tRes: SType): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
-    val substOpt = unifyTypes(SFunc(Vector(tArg, tArg), tRes), SFunc(Vector(l1.tpe, r1.tpe), tRes))
-    if (substOpt.isDefined)
-      f(l1, r1)
-    else
-      error(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })")
+    (l1.tpe, r1.tpe) match {
+      case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
+        val tmax = t1 max t2
+        val l = l1.upcastTo(tmax)
+        val r = r1.upcastTo(tmax)
+        mkNode(l.asValue[T], r.asValue[T])
+      case (t1, t2) =>
+        val substOpt = unifyTypes(SFunc(Vector(tArg, tArg), tRes), SFunc(Vector(t1, t2), tRes))
+        if (substOpt.isDefined)
+          mkNode(l1, r1)
+        else
+          error(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })")
+    }
+
   }
 
   def bimap2[T <: SType]
       (env: Map[String, SType], op: String, l: Value[T], r: Value[T])
-          (f: (Value[T], Value[T]) => SValue)
-          (check: (SType, SType) => Boolean): SValue = {
+          (newNode: (Value[T], Value[T]) => SValue): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
-    if (check(l1.tpe, r1.tpe))
-      f(l1, r1)
-    else
-      error(s"Invalid binary operation $op ($l1, $r1)")
+    (l1.tpe, r1.tpe) match {
+      case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
+        val tmax = t1 max t2
+        val l = l1.upcastTo(tmax)
+        val r = r1.upcastTo(tmax)
+        newNode(l.asValue[T], r.asValue[T])
+      case (t1, t2) =>
+        if (t1 == t2)
+          newNode(l1, r1)
+        else
+          error(s"Invalid binary operation $op ($l1, $r1): type mismatch $t1 != $t2")
+    }
   }
 
   def typecheck(bound: SValue): SValue = {

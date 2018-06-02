@@ -155,43 +155,58 @@ object AND {
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
 
+
 /**
-  * Cast SInt to SByteArray
+  * Up cast for Numeric types
   */
-case class IntToByteArray(input: Value[SLong.type])
-  extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
-  override val opCode: OpCode = OpCodes.IntToByteArrayCode
+case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
+  extends Transformer[T, R] {
+  require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
+  override val opCode: OpCode = OpCodes.Upcast
+
+  override def function(input: EvaluatedValue[T]): Value[R] =
+    Constant(this.tpe.upcast(input.value.asInstanceOf[AnyVal]), this.tpe)
+
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+}
+
+///**
+//  * Up cast SInt to SBigInt
+//  */
+//case class IntToBigInt(input: Value[SLong.type])
+//  extends Transformer[SLong.type, SBigInt.type] with NotReadyValueBigInt {
+//  override val opCode: OpCode = OpCodes.IntToBigIntCode
+//
+//  override def function(bal: EvaluatedValue[SLong.type]): Value[SBigInt.type] =
+//    BigIntConstant(BigInt(bal.value).underlying())
+//
+//  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+//}
+
+/**
+  * Downcast SInt to SByte
+  */
+case class IntToByte(input: Value[SInt.type])
+  extends Transformer[SInt.type, SByte.type] with NotReadyValueByte {
+  override val opCode: OpCode = OpCodes.IntToByteCode
+
+  override def function(bal: EvaluatedValue[SInt.type]): Value[SByte.type] =
+    ByteConstant(bal.value.toByteExact)
+
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+}
+
+/**
+  * Cast SLong to SByteArray
+  */
+case class LongToByteArray(input: Value[SLong.type])
+    extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.LongToByteArrayCode
 
   override def function(bal: EvaluatedValue[SLong.type]): Value[SByteArray] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
-}
-
-/**
-  * Cast SInt to SBigInt
-  */
-case class IntToBigInt(input: Value[SLong.type])
-  extends Transformer[SLong.type, SBigInt.type] with NotReadyValueBigInt {
-  override val opCode: OpCode = OpCodes.IntToBigIntCode
-
-  override def function(bal: EvaluatedValue[SLong.type]): Value[SBigInt.type] =
-    BigIntConstant(BigInt(bal.value).underlying())
-
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
-}
-
-/**
-  * Cast SInt to SByte
-  */
-case class IntToByte(input: Value[SLong.type])
-  extends Transformer[SLong.type, SByte.type] with NotReadyValueByte {
-  override val opCode: OpCode = OpCodes.IntToByteCode
-
-  override def function(bal: EvaluatedValue[SLong.type]): Value[SByte.type] =
-    ByteConstant(bal.value.toByteExact)
-
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
 }
 
 /**

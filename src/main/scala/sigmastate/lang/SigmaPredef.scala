@@ -26,9 +26,9 @@ object SigmaPredef {
     "blake2b256" -> Lambda(Vector("input" -> SByteArray), SByteArray, None),
     "sha256" -> Lambda(Vector("input" -> SByteArray), SByteArray, None),
     "byteArrayToBigInt" -> Lambda(Vector("input" -> SByteArray), SBigInt, None),
-    "intToByteArray" -> Lambda(Vector("input" -> SLong), SByteArray, None),
-    "intToBigInt" -> Lambda(Vector("input" -> SLong), SBigInt, None),
-    "intToByte" -> Lambda(Vector("input" -> SLong), SByte, None),
+    "longToByteArray" -> Lambda(Vector("input" -> SLong), SByteArray, None),
+//    "intToBigInt" -> Lambda(Vector("input" -> SLong), SBigInt, None),
+    "intToByte" -> Lambda(Vector("input" -> SInt), SByte, None),
 
     "getVar" -> Lambda(Vector("varId" -> SByte), tT, None),
 
@@ -55,6 +55,7 @@ object SigmaPredef {
   val ProveDlogSym = PredefIdent("proveDlog")
   val ProveDHTupleSym = PredefIdent("proveDHTuple")
 
-  val IntToBigSym = PredefIdent("intToBigInt")
+//  val IntToBigSym = PredefIdent("intToBigInt")
   val IntToByteSym = PredefIdent("intToByte")
+  val LongToByteArraySym = PredefIdent("longToByteArray")
 }

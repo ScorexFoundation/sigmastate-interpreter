@@ -6,27 +6,27 @@ package object sigmastate {
   /**
     * SInt addition
     */
-  def Plus[T <: SType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, PlusCode)
+  def Plus[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, PlusCode)
 
   /**
     * SInt subtraction
     */
-  def Minus[T <: SType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, MinusCode)
+  def Minus[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, MinusCode)
 
   /**
     * SInt multiplication
     */
-  def Multiply[T <: SType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, MultiplyCode)
+  def Multiply[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, MultiplyCode)
 
   /**
     * SInt division
     */
-  def Divide[T <: SType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, DivisionCode)
+  def Divide[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, DivisionCode)
 
   /**
     * SInt modulo
     */
-  def Modulo[T <: SType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, ModuloCode)
+  def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, ModuloCode)
 
 
 }

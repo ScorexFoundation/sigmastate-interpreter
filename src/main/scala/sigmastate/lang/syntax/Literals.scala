@@ -5,6 +5,8 @@ import Identifiers._
 import sigmastate._
 import Values._
 import fastparse.{all, core}
+import java.lang.Long.parseLong
+import java.lang.Integer.parseInt
 
 trait Literals { l =>
   def Block: P[Value[SType]]
@@ -80,8 +82,14 @@ trait Literals { l =>
       //noinspection TypeAnnotation
       val Literal = P(
         ("-".!.? ~ /*Float |*/ Int.!).map {
-            case (Some(_), i) => LongConstant(-i.toLong)
-            case (None, i) => LongConstant(i.toLong)
+            case (signOpt, lit) =>
+              val sign = if (signOpt.isDefined) -1 else 1
+              val suffix = lit.charAt(lit.length - 1)
+              val (digits, radix) = if (lit.startsWith("0x")) (lit.substring(2), 16) else (lit, 10)
+              if (suffix == 'L' || suffix == 'l')
+                LongConstant(sign * parseLong(digits.substring(0, digits.length - 1), radix))
+              else
+                IntConstant(sign * parseInt(digits, radix))
           }
         | Bool
         /*| String | "'" ~/ (Char | Symbol) | Null*/ )

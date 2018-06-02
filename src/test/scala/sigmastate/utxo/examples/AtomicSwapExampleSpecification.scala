@@ -28,11 +28,11 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val x = proverA.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val hx = ByteArrayConstant(Blake2b256(x))
 
-    val height1 = 100000
-    val height2 = 50000
+    val height1 = 100000L
+    val height2 = 50000L
 
-    val deadlineA = 1000
-    val deadlineB = 500
+    val deadlineA = 1000L
+    val deadlineB = 500L
 
     val env = Map(
       "height1" -> height1, "height2" -> height2,

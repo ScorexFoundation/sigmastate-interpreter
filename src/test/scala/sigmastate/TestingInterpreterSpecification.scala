@@ -91,7 +91,7 @@ class TestingInterpreterSpecification extends PropSpec
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
       "box1" -> ErgoBox(10, TrueLeaf, Map(
-          R3 -> LongArrayConstant(Array[Long](1, 2, 3)),
+          R3 -> IntArrayConstant(Array[Int](1, 2, 3)),
           R4 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)

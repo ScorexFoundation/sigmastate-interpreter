@@ -18,7 +18,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("simple expressions") {
-    bind(env, "x") shouldBe LongConstant(10)
+    bind(env, "x") shouldBe IntConstant(10)
     bind(env, "b1") shouldBe ByteConstant(1)
     bind(env, "x+y") shouldBe Plus(10, 11)
     bind(env, "c1 && c2") shouldBe AND(TrueLeaf, FalseLeaf)
@@ -44,26 +44,26 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("let constructs") {
     bind(env, "{let X = 10; X > 2}") shouldBe
-      Block(Let("X", SLong, LongConstant(10)), GT(IntIdent("X"), 2))
+      Block(Let("X", SInt, IntConstant(10)), GT(IntIdent("X"), 2))
     bind(env, "{let X = 10; X >= X}") shouldBe
-      Block(Let("X", SLong, LongConstant(10)), GE(IntIdent("X"), IntIdent("X")))
+      Block(Let("X", SInt, IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
     bind(env, "{let X = 10 + 1; X >= X}") shouldBe
-        Block(Let("X", SLong, Plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
+        Block(Let("X", SInt, Plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
     bind(env,
       """{let X = 10
        |let Y = 11
        |X > Y}
       """.stripMargin) shouldBe Block(
-      Seq(Let("X", SLong, LongConstant(10)), Let("Y", SLong, LongConstant(11))),
+      Seq(Let("X", SInt, IntConstant(10)), Let("Y", SInt, IntConstant(11))),
       GT(IntIdent("X"), IntIdent("Y")))
     bind(env, "{let X = (10, true); X._1 > 2 && X._2}") shouldBe
         Block(
-          Let("X", STuple(SLong, SBoolean), Tuple(LongConstant(10), TrueLeaf)),
-          AND(GT(Select(IntIdent("X"), "_1").asValue[SLong.type], 2), Select(IntIdent("X"), "_2").asValue[SBoolean.type]))
+          Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)),
+          AND(GT(Select(IntIdent("X"), "_1").asValue[SInt.type], 2), Select(IntIdent("X"), "_2").asValue[SBoolean.type]))
   }
 
   property("predefined Exists with lambda argument") {
-    val minToRaise = LongConstant(1000)
+    val minToRaise = IntConstant(1000)
     val env = this.env ++ Map(
       "minToRaise" -> minToRaise,
     )
@@ -71,97 +71,97 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       Apply(Select(Outputs, "exists"),
       IndexedSeq(
         Lambda(IndexedSeq("out" -> SBox), SBoolean,
-            GE(Select(Ident("out"), "amount").asValue[SLong.type], minToRaise))))
+            GE(Select(Ident("out"), "amount").asValue[SInt.type], minToRaise))))
   }
 
   property("tuple constructor") {
     bind(env, "()") shouldBe UnitConstant
-    bind(env, "(1)") shouldBe LongConstant(1)
-    bind(env, "(1, 2)") shouldBe Tuple(LongConstant(1), LongConstant(2))
-    bind(env, "(1, x + 1)") shouldBe Tuple(LongConstant(1), Plus(10, 1))
-    bind(env, "(1, 2, 3)") shouldBe Tuple(LongConstant(1), LongConstant(2), LongConstant(3))
-    bind(env, "(1, 2 + 3, 4)") shouldBe Tuple(LongConstant(1), Plus(2, 3), LongConstant(4))
+    bind(env, "(1)") shouldBe IntConstant(1)
+    bind(env, "(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
+    bind(env, "(1, x + 1)") shouldBe Tuple(IntConstant(1), Plus(10, 1))
+    bind(env, "(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
+    bind(env, "(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
   }
 
   property("types") {
-    bind(env, "{let X: Int = 10; 3 > 2}") shouldBe Block(Let("X", SLong, LongConstant(10)), GT(3, 2))
+    bind(env, "{let X: Int = 10; 3 > 2}") shouldBe Block(Let("X", SInt, IntConstant(10)), GT(3, 2))
     bind(env, "{let X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe
-      Block(Let("X", STuple(SLong, SBoolean), Tuple(LongConstant(10), TrueLeaf)), GT(3, 2))
+      Block(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)), GT(3, 2))
     bind(env, "{let X: Array[Int] = Array(1,2,3); X.size}") shouldBe
-      Block(Let("X", SCollection(SLong), ConcreteCollection(IndexedSeq(LongConstant(1), LongConstant(2), LongConstant(3)))),
+      Block(Let("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3)))),
             Select(Ident("X"), "size"))
     bind(env, "{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}") shouldBe
-      Block(Let("X", STuple(SCollection(SLong), SBox), Tuple(ConcreteCollection(IndexedSeq(LongConstant(1), LongConstant(2), LongConstant(3))), Ident("INPUT"))),
+      Block(Let("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT"))),
             Select(Ident("X"), "_1"))
   }
 
   property("if") {
-    bind(env, "if (true) x else y") shouldBe If(TrueLeaf, LongConstant(10), LongConstant(11))
+    bind(env, "if (true) x else y") shouldBe If(TrueLeaf, IntConstant(10), IntConstant(11))
     bind(env, "if(c1) 1 else if(x==y) 2 else 3") shouldBe
-      If(TrueLeaf, LongConstant(1), If(EQ(LongConstant(10), LongConstant(11)), LongConstant(2), LongConstant(3)))
+      If(TrueLeaf, IntConstant(1), If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
     bind(env,
       """if (true) { let A = x; 1 }
         |else if (x == y) 2 else 3""".stripMargin) shouldBe
         If(TrueLeaf,
-          Block(Let("A", SLong, LongConstant(10)), LongConstant(1)),
-          If(EQ(LongConstant(10), LongConstant(11)), LongConstant(2), LongConstant(3)))
+          Block(Let("A", SInt, IntConstant(10)), IntConstant(1)),
+          If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
   }
 
   property("Option constructors") {
     bind(env, "None") shouldBe NoneValue(NoType)
     bind(env, "Some(None)") shouldBe SomeValue(NoneValue(NoType))
-    bind(env, "Some(10)") shouldBe SomeValue(LongConstant(10))
+    bind(env, "Some(10)") shouldBe SomeValue(IntConstant(10))
     bind(env, "Some(X)") shouldBe SomeValue(Ident("X"))
     bind(env, "Some(Some(X + 1))") shouldBe
-      SomeValue(SomeValue(Plus(Ident("X").asValue[SLong.type], LongConstant(1))))
+      SomeValue(SomeValue(Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
   }
 
   property("array indexed access") {
-    bind(env, "Array(1)(0)") shouldBe ByIndex(ConcreteCollection(IndexedSeq(LongConstant(1)))(SLong), 0)
+    bind(env, "Array(1)(0)") shouldBe ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0)
     bind(env, "Array(Array(1))(0)(0)") shouldBe
-      ByIndex(ByIndex(ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(LongConstant(1)))))(SCollection(SLong)), 0), 0)
+      ByIndex(ByIndex(ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)), 0), 0)
   }
 
   property("lambdas") {
     bind(env, "fun (a: Int) = a + 1") shouldBe
-      Lambda(IndexedSeq("a" -> SLong), NoType, Plus(IntIdent("a"), 1))
-    bind(env, "fun (a: Int, box: Box): Int = a + box.value") shouldBe
-        Lambda(IndexedSeq("a" -> SLong, "box" -> SBox), SLong,
+      Lambda(IndexedSeq("a" -> SInt), NoType, Plus(IntIdent("a"), 1))
+    bind(env, "fun (a: Int, box: Box): Long = a + box.value") shouldBe
+        Lambda(IndexedSeq("a" -> SInt, "box" -> SBox), SLong,
                Plus(IntIdent("a"), Select(Ident("box"), "value").asValue[SLong.type]))
     bind(env, "fun (a) = a + 1") shouldBe
-        Lambda(IndexedSeq("a" -> NoType), NoType, Plus(IntIdent("a"), LongConstant(1)))
+        Lambda(IndexedSeq("a" -> NoType), NoType, Plus(IntIdent("a"), IntConstant(1)))
     bind(env, "fun (a) = a + x") shouldBe
         Lambda(IndexedSeq("a" -> NoType), NoType, Plus(IntIdent("a"), 10))
     bind(env, "fun (a: Int) = { let Y = a + 1; Y + x }") shouldBe
-        Lambda(IndexedSeq("a" -> SLong), NoType,
+        Lambda(IndexedSeq("a" -> SInt), NoType,
           Block(Let("Y", NoType, Plus(IntIdent("a"), 1)), Plus(IntIdent("Y"), 10)))
   }
 
   property("function definitions") {
     bind(env, "{let f = fun (a: Int) = a + 1; f}") shouldBe
-        Block(Let("f", SFunc(IndexedSeq(SLong), NoType), Lambda(IndexedSeq("a" -> SLong), NoType, Plus(IntIdent("a"), 1))), Ident("f"))
+        Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, Plus(IntIdent("a"), 1))), Ident("f"))
     bind(env, "{fun f(a: Int) = a + x; f}") shouldBe
-        Block(Let("f", SFunc(IndexedSeq(SLong), NoType), Lambda(IndexedSeq("a" -> SLong), NoType, Plus(IntIdent("a"), 10))), Ident("f"))
+        Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, Plus(IntIdent("a"), 10))), Ident("f"))
   }
 
   property("predefined primitives") {
-    bind(env, "fun (box: Box): Int = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SLong, Select(Ident("box"), "value"))
+    bind(env, "fun (box: Box): Long = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SLong, Select(Ident("box"), "value"))
     bind(env, "fun (box: Box): Array[Byte] = box.propositionBytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), SBox.PropositionBytes))
     bind(env, "fun (box: Box): Array[Byte] = box.bytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "bytes"))
     bind(env, "fun (box: Box): Array[Byte] = box.id") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "id"))
   }
 
   property("type parameters") {
-    bind(env, "X[Int]") shouldBe ApplyTypes(Ident("X"), Seq(SLong))
-    bind(env, "X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Seq(SLong)), "isDefined")
-    bind(env, "X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Seq(STuple(SLong, SBoolean)))
-    bind(env, "X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Seq(SLong, SBoolean))
-    bind(env, "SELF.R1[Int]") shouldBe ApplyTypes(Select(Self, "R1"), Seq(SLong))
-    bind(env, "SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Self, "R1"), Seq(SLong)),"isDefined")
-    bind(env, "f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SLong)), IndexedSeq(LongConstant(10)))
-    bind(env, "INPUTS.map[Int]") shouldBe ApplyTypes(Select(Inputs, "map"), Seq(SLong))
-    bind(env, "INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Inputs, "map"), Seq(SLong)), IndexedSeq(LongConstant(10)))
-    bind(env, "Array[Int]()") shouldBe ConcreteCollection()(SLong)
+    bind(env, "X[Int]") shouldBe ApplyTypes(Ident("X"), Seq(SInt))
+    bind(env, "X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Seq(SInt)), "isDefined")
+    bind(env, "X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Seq(STuple(SInt, SBoolean)))
+    bind(env, "X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Seq(SInt, SBoolean))
+    bind(env, "SELF.R1[Int]") shouldBe ApplyTypes(Select(Self, "R1"), Seq(SInt))
+    bind(env, "SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Self, "R1"), Seq(SInt)),"isDefined")
+    bind(env, "f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
+    bind(env, "INPUTS.map[Int]") shouldBe ApplyTypes(Select(Inputs, "map"), Seq(SInt))
+    bind(env, "INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Inputs, "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
+    bind(env, "Array[Int]()") shouldBe ConcreteCollection()(SInt)
   }
 
 }

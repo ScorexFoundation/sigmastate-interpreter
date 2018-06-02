@@ -12,13 +12,6 @@ import scala.reflect.ClassTag
 
 object Extensions {
 
-  implicit class IntOps(i: Int) {
-    def toByteChecked: Byte = {
-      assert(i >= 0 && i <= 255, s"Cannot convert Int value $i to Byte")
-      i.toByte
-    }
-  }
-
   implicit class ByteOps(b: Byte) {
     @inline def toUByte: Int = b & 0xFF
     def addExact(b2: Byte): Byte = {
@@ -40,6 +33,37 @@ object Extensions {
       if (r < Byte.MinValue || r > Byte.MaxValue)
         throw new ArithmeticException("Byte overflow")
       r.toByte
+    }
+  }
+
+  implicit class ShortOps(x: Short) {
+    def addExact(y: Short): Short = {
+      val r = x + y
+      if (r < Short.MinValue || r > Short.MaxValue)
+        throw new ArithmeticException("Short overflow")
+      r.toShort
+    }
+
+    def subtractExact(y: Short): Short = {
+      val r = x - y
+      if (r < Short.MinValue || r > Short.MaxValue)
+        throw new ArithmeticException("Short overflow")
+      r.toShort
+    }
+
+    def multiplyExact(y: Short): Short = {
+      val r = x * y
+      if (r < Short.MinValue || r > Short.MaxValue)
+        throw new ArithmeticException("Short overflow")
+      r.toShort
+    }
+  }
+
+  implicit class IntOps(x: Int) {
+    def toByteExact: Byte = {
+      if (x < Byte.MinValue || x > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      x.toByte
     }
   }
 

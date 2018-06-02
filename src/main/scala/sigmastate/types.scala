@@ -57,7 +57,9 @@ object SType {
   type TypeCode = Byte
 
   implicit val typeByte = SByte
-  implicit val typeInt = SLong
+  implicit val typeShort = SShort
+  implicit val typeInt = SInt
+  implicit val typeLong = SLong
   implicit val typeBigInt = SBigInt
   implicit val typeBoolean = SBoolean
   implicit val typeAvlTree = SAvlTree
@@ -67,7 +69,7 @@ object SType {
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
   /** All pre-defined types should be listed here. Note, NoType is not listed. */
-  val allPredefTypes = Seq(SByte, SLong, SBigInt, SBoolean, SAvlTree, SGroupElement, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SAvlTree, SGroupElement, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   implicit class STypeOps(val tpe: SType) {
@@ -81,6 +83,7 @@ object SType {
         val okRange = f1.tRange.canBeTypedAs(f2.tRange)
         okDom && okRange
     }
+    def asNumType: SNumericType = tpe.asInstanceOf[SNumericType]
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
     def classTag[T <: SType#WrappedType]: ClassTag[T] = (tpe match {
       case SBoolean => reflect.classTag[Boolean]
@@ -176,6 +179,22 @@ trait SEmbeddable extends SType {
 trait SPrimType extends SType with SPredefType {
 }
 
+/** Marker trait for all numeric types. */
+trait SNumericType extends SType {
+  import SNumericType._
+  def upcast(i: AnyVal): WrappedType
+
+  /** Returns a type which is larger. */
+  @inline def max(that: SNumericType): SNumericType =
+    if (this.typeIndex > that.typeIndex) this else that
+
+  /** Number of bytes to store values of this type. */
+  @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
+}
+object SNumericType {
+  final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
+}
+
 /** Primitive type recognizer to pattern match on TypeCode */
 object SPrimType {
   def unapply(tc: TypeCode): Option[SType] = SType.typeCodeToType.get(tc)
@@ -196,43 +215,72 @@ case object SBoolean extends SPrimType with SEmbeddable {
   override def dataCost(v: SType#WrappedType): Long = Cost.BooleanConstantDeclaration
 }
 
-case object SByte extends SPrimType with SEmbeddable {
+case object SByte extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Byte
   override val typeCode: TypeCode = 2: Byte //TODO change to 4 after SByteArray is removed
   override def mkConstant(v: Byte): Value[SByte.type] = ByteConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.ByteConstantDeclaration
+  override def upcast(v: AnyVal): Byte = v match {
+    case b: Byte => b
+    case _ => sys.error(s"Cannot upcast value $v to the type $this")
+  }
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SShort extends SPrimType with SEmbeddable {
+case object SShort extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Short
   override val typeCode: TypeCode = 3: Byte
   override def mkConstant(v: Short): Value[SShort.type] = ShortConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.ShortConstantDeclaration
+  override def upcast(v: AnyVal): Short = v match {
+    case x: Byte => x.toShort
+    case x: Short => x
+    case _ => sys.error(s"Cannot upcast value $v to the type $this")
+  }
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SInt extends SPrimType with SEmbeddable {
+case object SInt extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Int
   override val typeCode: TypeCode = 4: Byte
   override def mkConstant(v: Int): Value[SInt.type] = IntConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.IntConstantDeclaration
+  override def upcast(v: AnyVal): Int = v match {
+    case x: Byte => x.toInt
+    case x: Short => x.toInt
+    case x: Int => x
+    case _ => sys.error(s"Cannot upcast value $v to the type $this")
+  }
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SLong extends SPrimType with SEmbeddable {
+case object SLong extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 5: Byte
   override def mkConstant(v: Long): Value[SLong.type] = LongConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.LongConstantDeclaration
+  override def upcast(v: AnyVal): Long = v match {
+    case x: Byte => x.toLong
+    case x: Short => x.toLong
+    case x: Int => x.toLong
+    case x: Long => x
+    case _ => sys.error(s"Cannot upcast value $v to the type $this")
+  }
 }
 
-case object SBigInt extends SPrimType with SEmbeddable {
+case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
   override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.BigIntConstantDeclaration
   val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
+  override def upcast(v: AnyVal): BigInteger = v match {
+    case x: Byte => BigInteger.valueOf(x.toLong)
+    case x: Short => BigInteger.valueOf(x.toLong)
+    case x: Int => BigInteger.valueOf(x.toLong)
+    case x: Long => BigInteger.valueOf(x)
+    case _ => sys.error(s"Cannot upcast value $v to the type $this")
+  }
 }
 
 case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
@@ -318,12 +366,12 @@ object SCollection {
   private val tIV = STypeIdent("IV")
   private val tOV = STypeIdent("OV")
   val fields = Seq(
-    "size" -> SLong,
+    "size" -> SInt,
     "map" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV)),
     "exists" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
     "fold" -> SFunc(IndexedSeq(SCollection(tIV), tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV, Seq(tIV)),
     "forall" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
-    "slice" -> SFunc(IndexedSeq(SCollection(tIV), SLong, SLong), SCollection(tIV), Seq(tIV)),
+    "slice" -> SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV)),
     "where" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV))
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)

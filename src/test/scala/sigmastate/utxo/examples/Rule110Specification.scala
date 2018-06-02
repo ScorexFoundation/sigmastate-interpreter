@@ -2,12 +2,12 @@ package sigmastate.utxo.examples
 
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, FalseLeaf, LongConstant, TaggedInt, TrueLeaf, Value}
+import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, Value, ByteArrayConstant, IntConstant, BooleanConstant, ByteConstant, TaggedInt, ConcreteCollection}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
-import org.ergoplatform.ErgoBox.{R3, R4, R5, R6}
+import org.ergoplatform.ErgoBox.{R6, R3, R4, R5}
 import org.ergoplatform._
 import sigmastate.utxo._
 
@@ -166,8 +166,8 @@ class Rule110Specification extends SigmaTestingCommons {
     ))
 
     val prop = AND(Seq(
-      EQ(SizeOf(Inputs), LongConstant(3)),
-      EQ(SizeOf(Outputs), LongConstant(4)),
+      EQ(SizeOf(Inputs), IntConstant(3)),
+      EQ(SizeOf(Outputs), IntConstant(4)),
 
       //We're checking that the outputs are indeed contain the same script
       EQ(ExtractScriptBytes(Self), ExtractScriptBytes(ByIndex(Outputs, 0))),
