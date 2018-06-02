@@ -67,7 +67,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(out)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
-    val prop = AND(heightIncreased, OR(AND(sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins))
+    val prop = OR(AND(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect), AND(heightIncreased, lastCoins))
 
     val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
       "epochLength" -> s.epochLength,
@@ -81,13 +81,13 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
         |  let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
         |  let sameScriptRule = SELF.propositionBytes == out.propositionBytes
         |  let lastCoins = SELF.value < oneEpochReduction
-        |  let heightIncreased = HEIGHT > SELF.R3[Int].value
-        |  let heightCorrect = HEIGHT == out.R3[Int].value
-        |  heightIncreased && (lastCoins || (sameScriptRule, correctCoinsConsumed, heightCorrect))
+        |  let heightIncreased = HEIGHT > SELF.R3[Long].value
+        |  let heightCorrect = HEIGHT == out.R3[Long].value
+        |  (heightIncreased && sameScriptRule && correctCoinsConsumed && heightCorrect) || (heightIncreased && lastCoins)
         |
         |}""".stripMargin).asBoolValue
 
-    prop shouldEqual prop1
+    prop1 shouldEqual prop
 
     val minerProp = prover.dlogSecrets.head.publicImage
 
