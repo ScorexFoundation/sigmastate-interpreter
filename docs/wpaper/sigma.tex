@@ -149,18 +149,21 @@ The interpreter is also checking that the expression is not exceeding by number 
 \subsection{Types}
 \label{sec:types}
 
-All the operations as well as operands have types. For example, addition operation ``+'' takes two integers and returns an integer. Comparison operation ``$>$'' takes two integers and returns a boolean value. We consider statements provable via $\Sigma$-protocols, like $dlog(x)$ as instances of the boolean type. The interpreter checks that all the nodes in the tree have children of appropriate types, and the whole guarding expression~(the root node of the tree) has a boolean type and rejects the expression if the conditions are not met. 
+All the operations as well as operands have types. For example, addition operation ``+'' may take two Int and returns an Int value. Comparison operation ``$>$'' takes two Int and returns a boolean value. Some operations may be overloaded so that the same symbol is reused for operations acting on different types, e.g. $+: (Int,Int) \to Int$, $+: (Long, Long) \to Long$ etc.
+We consider statements provable via $\Sigma$-protocols, like $dlog(x)$ as instances of the boolean type. The interpreter checks that all the nodes in the tree have children of appropriate types, and the whole guarding expression~(the root node of the tree) has a boolean type and rejects the expression if the conditions are not met.
 
-We have following types in the language: 
+We have following types in the language:
 
 \begin{itemize}
-    \item{signed 64-bits integer}
+    \item{signed integer types of 8, 16, 32 and 64-bits size}
+    \item{big integer type of arbitrary size}
     \item{boolean}
-    \item{byte array}
-    \item{collection}
     \item{avl+ tree verification data}
-    \item{group element}
+    \item{cryptography group element}
     \item{box}
+    \item{tuple of values of different types}
+    \item{array of values of the same type}
+    \item{optional value}
 \end{itemize}
 
 \knote{todo: improve description, also, add unsigned integer?}
@@ -209,11 +212,11 @@ If the transformations are finishing with abortion, the result is considered as 
 \section{Sigma prrotocols for an arbitrary And/Or/Threshold composition}
 \newcommand{\andnode}{\ensuremath{\mathsf{AND}}}
 \newcommand{\ornode}{\ensuremath{\mathsf{OR}}}
-\newcommand{\tnode}{\ensuremath{\mathsf{TRESHOLD}}}
+\newcommand{\tnode}{\ensuremath{\mathsf{THRESHOLD}}}
 \newcommand{\GF}{\ensuremath{\mathrm{GF}}}
 \lnote{Somewhere we should introduce basic notation/terminology for $\Sigma$ protocols. In particular, we should say that we mean ``non-interactive'' $\Sigma$-protocol throughout, where the second message is computed as hash of the first. Somewhere we should define ``commitment'', ``challenge'', and ``response''; moreover, we shoild be clear that  restrict ourselves to $\Sigma$-protocols that require the sending of only ``challenge'' and ``response'' (we can handle protocols that require ``commitment'' and ``response'' instead, but we will be less communication-efficient than optimal, probably --- this require more thinking) }
 
-In this section, we consider the following setting. Let a $\Sigma$-protocol be described by a tree, as follows. The leaves of the tree are atomic $\Sigma$-protocols, for which prover, verifier, and simulator code is available. They do not have to be the same, but must all have the same challenge bit-length $t$. Each nonleaf node is one of three types: $\andnode$, $\ornode$, or $\tnode(k)$, where $k\ge 1$ is an integer parameter that is no greater than the number of the node's children (and the number of children is less than $2^t$). The meaning of the proof corresponding $\tnode(k)$ is ``the prover knows witnesses for at least $k$ children of this node''. Semantically, $\andnode$ and $\ornode$ are simply special cases of \tnode: the meaning  of the proof corresponding $\andnode$ (respectively, $\ornode)$ is ``the prover knows witnesses for all children (respectively, at least one child) of this node''. However, $\andnode$ and $\ornode$ are implemented differently from $\tnode$ for efficiency.
+In this section, we consider the following setting. Let a $\Sigma$-protocol be described by a tree, as follows. The leaves of the tree are atomic $\Sigma$-protocols, for which prover, verifier, and simulator code is available. They do not have to be the same, but must all have the same challenge bit-length $t$. Each non-leaf node is one of three types: $\andnode$, $\ornode$, or $\tnode(k)$, where $k\ge 1$ is an integer parameter that is no greater than the number of the node's children (and the number of children is less than $2^t$). The meaning of the proof corresponding $\tnode(k)$ is ``the prover knows witnesses for at least $k$ children of this node''. Semantically, $\andnode$ and $\ornode$ are simply special cases of \tnode: the meaning  of the proof corresponding $\andnode$ (respectively, $\ornode)$ is ``the prover knows witnesses for all children (respectively, at least one child) of this node''. However, $\andnode$ and $\ornode$ are implemented differently from $\tnode$ for efficiency.
 
 We show the steps of the prover and verifier given such a tree. While $\andnode$, $\ornode$, and $\tnode$ composition of $\Sigma$-protocols has been addressed in the literature before \lnote{need citations}, prover and verifier algorithms have been described only for a single node, in terms of prover, verifier, and simulator algorithms for its children. Recursively constructing code for an entire tree by dynamically constructing prover, verifier, and simulator code for each node is inefficient. Here we take a different approach by explicitly describing how and in what order the protocol messages for each node need to be computed and verified.
 
@@ -222,27 +225,35 @@ Our description uses two kinds of tree traversal: bottom-up (also known as post-
 \subsection{Proving}
 \label{sec:proving}
 
-For each node in the tree, the prover will maintain a flag indicating whether it is real or simulated. Each node will also have a $t$-bit challenge. The leaves will additionally have two protocol values: a challenge and a response. The pseudocode below explains how these values are computed. \lnote{we should probably mention what that  below ``random'' means pseudorandom, too}
+For each node in the tree, the prover will maintain a flag indicating whether it is real or simulated. Each node will also have a $t$-bit challenge. The leaves will additionally have two protocol values: a challenge and a response. The pseudocode below explains how these values are computed. \lnote{we should probably mention that ``random'' below means pseudo-random, too}
 
 The prover first has to decide which nodes will have real proofs (for which witnesses are required) and which will be simulated. For example, in an $\ornode$ proof, only one of the children will be real. The prover will do so based on witnesses that are available, in three steps:
 
 \begin{enumerate}
     \item This step will mark as ``real'' every node for which the prover can produce a real proof. This step may mark as ``real'' more nodes than necessary if the prover has more than the minimal necessary number of witnesses (for example, more than one child of an $\ornode$).   In a bottom-up traversal of the tree, do the following: 
-    \begin{itemize}
-        \item If the node is a leaf, mark it ``real'' if the witness for it is available; else mark it ``simulated''
-        \item If the node is $\ornode$, mark it ``real'' if at least one child is marked real; else mark it ``simulated''
-        \item If the node is $\andnode$, mark it ``real'' if all of its children are marked real; else mark it ``simulated''
-        \item If the node is $\tnode(k)$, mark it ``real'' if at least $k$ of its children are marked real; else mark it ``simulated''
-    \end{itemize}
+        \begin{itemize}
+            \item If the node is a leaf, mark it ``real'' if the witness for it is available; else mark it ``simulated''
+            \item If the node is $\ornode$, mark it ``real'' if at least one child is marked real; else mark it ``simulated''
+            \item If the node is $\andnode$, mark it ``real'' if all of its children are marked real; else mark it ``simulated''
+            \item If the node is $\tnode(k)$, mark it ``real'' if at least $k$ of its children are marked real; else mark it ``simulated''
+        \end{itemize}
     
     \item If the root of the tree is marked ``simulated'' then the prover does not have enough witnesses to perform the proof. Abort.
     
-    \item This step will change some ``real'' nodes to ``simulated'' to make sure each each node has the right number of simulated children. In a top-down traversal of the tree, do the following:
-    \begin{itemize}
-        \item If the node is $\ornode$ marked ``real,'' mark all but one of its children ``simulated'' (the node is guaranteed, by the previous step, to have at least one ``real'' child; which particular one is left ``real'' is not important)
-        \item If the node is $\tnode(k)$ marked ``real,'' mark all but $k$ of its children ``simulated'' (the node is guaranteed, by the previous step, to have at least $k$ ``real'' children; which particular ones are left ``real'' is not important )
-        \item If the node is marked ``simulated'', mark all of its children ``simulated'' 
-    \end{itemize}
+    \item This step will change some ``real'' nodes to ``simulated'' to make sure each node has the right number of simulated children.
+          In a top-down traversal of the tree, do the following:
+        \begin{itemize}
+            \item
+            If the $\ornode$ node is marked ``real,'' mark all but one of its children ``simulated''
+            (the node is guaranteed, by the previous step, to have at least one ``real'' child).
+            Which particular node is left ``real'' is not important and is subject to optimized choice.
+            \item
+            If the node is $\tnode(k)$ marked ``real,'' mark all but $k$ of its children ``simulated''
+            (the node is guaranteed, by the previous step, to have at least $k$ ``real'' children).
+            Which particular ones are left ``real'' is not important.
+            \item
+            If the node is marked ``simulated'', mark all of its children ``simulated''
+        \end{itemize}
 \end{enumerate}
 
 \noindent
@@ -256,8 +267,8 @@ Now the prover will compute protocol values for every node, as follows:
         \item If the node is marked ``simulated'', let $e_0$ be the challenge computed for it.  All of its children are simulated, and thus we compute challenges for all of them, as follows:
         \begin{itemize}
             \item If the node is $\andnode$,  then all of its children get $e_0$ as the challenge
-            \item If the node is $\ornode$, then each of its children except one gets the a fresh uniformly random challenge in $\{0,1\}^t$. The remaining child gets a challenge computed as an XOR of the challenges of all the other children and $e_0$.
-            \item If the node is $\tnode(k)$, let the number of its children be $n$. Assume the children are numbered from $1$ to $n$. Pick  $n-k$ fresh uniformly random values $a_1, \dots, a_{n-k}$ from $\{0,1\}^t$ and let $a_0=e_0$. Viewing $1, 2, \dots, n$ and $a_0, \dots, a_{n-k}$ as elements of $\GF(2^t)$, evaluate the polynomial $Q(x) = \sum {a_i x^i}$ over $\GF(2^t)$ at points $1, 2, \dots, n$ to get challenges for child $1, 2, \dots, n$, respectively. 
+            \item If the node is $\ornode$, then each of its children except one gets a fresh uniformly random challenge in $\{0,1\}^t$. The remaining child gets a challenge computed as an XOR of the challenges of all the other children and $e_0$.
+            \item If the node is $\tnode(k)$, assume the children are numbered from $1$ to $n$. Pick  $n-k$ fresh uniformly random values $a_1, \dots, a_{n-k}$ from $\{0,1\}^t$ and let $a_0=e_0$. Viewing $1, 2, \dots, n$ and $a_0, \dots, a_{n-k}$ as elements of $\GF(2^t)$, evaluate the polynomial $Q(x) = \sum {a_i x^i}$ over $\GF(2^t)$ at points $1, 2, \dots, n$ to get challenges for child $1, 2, \dots, n$, respectively.
         \end{itemize}
     \end{itemize}
     
@@ -265,11 +276,11 @@ Now the prover will compute protocol values for every node, as follows:
     
     \item For every leaf marked ``real'', use the first prover step of the $\Sigma$-protocol for that leaf to compute the commitment
     
-    \item Convert the tree to a string $s$ for input to the Fiat-Shamir hash function. The conversion should be such that the tree can be unambiguously parsed restored given the string. For each non-leaf node, the string should contain its type ($\andnode$, $\ornode$, or $\tnode(k)$). For each leaf node, the string should contain the $\Sigma$-protocol statement being proven and the commitment. The string should not contain information on whether a node is marked ``real'' or ``simulated'', and should not contain challenges, responses, or the real/simulated flag for any node. 
+    \item Convert the tree to a string $s$ for input to the Fiat-Shamir hash function. The conversion should be such that the tree can be unambiguously parsed and restored given the string. For each non-leaf node, the string should contain its type ($\andnode$, $\ornode$, or $\tnode(k)$). For each leaf node, the string should contain the $\Sigma$-protocol statement being proven and the commitment. The string should not contain information on whether a node is marked ``real'' or ``simulated'', and should not contain challenges, responses, or the real/simulated flag for any node.
     
     \item Compute the challenge for the root of the tree as the Fiat-Shamir hash of $s$ (and, if applicable,  the associated data, such as the message being signed). 
     
-    \item Perform a top-down traversal of only the portion of the tree marked ``real'' in order compute the challenge for every node marked ``real'' and, additionally, the response for every leaf marked ``real'' (note that nodes marked ``simulated'' have all their descendants marked ``simulated'' and all the challenges for these descendants already computed, so there is no need to recurse down ``simulated'' nodes). 
+    \item Perform a top-down traversal of only the portion of the tree marked ``real'' in order to compute the challenge for every node marked ``real'' and, additionally, the response for every leaf marked ``real'' (note that nodes marked ``simulated'' have all their descendants marked ``simulated'' and all the challenges for these descendants already computed, so there is no need to recurse down ``simulated'' nodes).
     
     \begin{itemize}
         \item If the node is a non-leaf marked ``real'' whose challenge is $e_0$, proceed as follows:
@@ -296,8 +307,8 @@ Now the prover will compute protocol values for every node, as follows:
 \subsection{Verifying}
 \label{sec:verifying}
 
-For each node in the three, the verifier will compute a $t$-bit challenge given the information the proof. The leaves will additionally have a response, which the verifier obtains directly the proof, and a commitment, computed by the prover.
-Note that, unlike the prover, the verifier has no way of knowing which nodes are real and which are simulated (that is, in fact, one of the security goals of the protocol).
+For each node in the tree, the verifier will compute a $t$-bit challenge given the information in the proof. The leaves will additionally have a response, which the verifier obtains directly from the proof, and a commitment, computed by the prover. \mnote{It is not clear how commitment computed by the prover is available to the verifier, because it is not stored in the proof}
+Note that, unlike the prover, the verifier has no way of knowing which nodes are real and which are simulated (that is, in fact, one of the security guarantees of the protocol).
 The pseudocode below details the verifier's steps.
 
 \begin{enumerate}
@@ -466,13 +477,17 @@ We show in this paper...
 \[\begin{tabular}{@{}l c l l}
 
       $\mathcal{T} \ni \tau$			& ::= 	    &\
-         \lst{Unit} $\mid$
-         \lst{Int} $\mid$ \lst{BigInt} $\mid$ \lst{Boolean} $\mid$ \lst{ByteArray} & base types     \\
-      &	$\mid$	& \lst{GroupElement} 				& element of the Group  \\
-      &	$\mid$	& \lst{Box} 				    & value in a box protected by proposition  \\
-      &	$\mid$	& \lst{AvlTree} 				&  \mnote{give description} \\
-      &	$\mid$	& $(\tau_1 \times \tau_2) $		& binary product type  \\
-      & $\mid$  & $\text{\lst{Collection}}[\tau]$	    & collection type       \\
+         \lst{Byte} $\mid$ \lst{Short} $\mid$
+         \lst{Int} $\mid$ \lst{Long} $\mid$ \lst{BigInt}  & numeric types     \\
+      &	$\mid$	& \lst{Boolean} 			& type of logical values true/false   \\
+      &	$\mid$	& \lst{Unit} 				& type with single element   \\
+      &	$\mid$	& \lst{GroupElement} 		& element of the cryptographic group  \\
+      &	$\mid$	& \lst{Box} 				& value in a box protected by proposition  \\
+      &	$\mid$	& \lst{AvlTree} 			&  Authenticated Dynamic Dictionary \\
+      &	$\mid$	& $(\tau_1, \dots, \tau_n) $	& binary product type  \\
+      & $\mid$  & $\text{\lst{Array}}[\tau]$	& array type       \\
+      & $\mid$  & $\text{\lst{Option}}[\tau]$	& optional value (either $Some(\tau)$ or $None$)      \\
+      & $\mid$  & \lst{Any}                     & type of any value (common supertype of all the types) \\
 %      &   $\mid$  & $(\tau_1 + \tau_2) $					& sum type       \\
 %      &   $\mid$  & $(\tau_1 \to \tau_2) $				& function type       \\
       %				& 	     	&										&				\\
