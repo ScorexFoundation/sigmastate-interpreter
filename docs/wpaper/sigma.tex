@@ -149,18 +149,21 @@ The interpreter is also checking that the expression is not exceeding by number 
 \subsection{Types}
 \label{sec:types}
 
-All the operations as well as operands have types. For example, addition operation ``+'' takes two integers and returns an integer. Comparison operation ``$>$'' takes two integers and returns a boolean value. We consider statements provable via $\Sigma$-protocols, like $dlog(x)$ as instances of the boolean type. The interpreter checks that all the nodes in the tree have children of appropriate types, and the whole guarding expression~(the root node of the tree) has a boolean type and rejects the expression if the conditions are not met. 
+All the operations as well as operands have types. For example, addition operation ``+'' may take two Int and returns an Int value. Comparison operation ``$>$'' takes two Int and returns a boolean value. Some operations may be overloaded so that the same symbol is reused for operations acting on different types, e.g. +: (Int,Int) -> Int, +: (Long, Long) -> Long etc.
+We consider statements provable via $\Sigma$-protocols, like $dlog(x)$ as instances of the boolean type. The interpreter checks that all the nodes in the tree have children of appropriate types, and the whole guarding expression~(the root node of the tree) has a boolean type and rejects the expression if the conditions are not met.
 
-We have following types in the language: 
+We have following types in the language:
 
 \begin{itemize}
-    \item{signed 64-bits integer}
+    \item{signed numeric types of 8, 16, 32 and 64-bits integer}
+    \item{big integer type of arbitrary size}
     \item{boolean}
-    \item{byte array}
-    \item{collection}
     \item{avl+ tree verification data}
-    \item{group element}
+    \item{cryptography group element}
     \item{box}
+    \item{tuple of values of different types}
+    \item{array of values of the same type}
+    \item{optional value}
 \end{itemize}
 
 \knote{todo: improve description, also, add unsigned integer?}
@@ -466,13 +469,17 @@ We show in this paper...
 \[\begin{tabular}{@{}l c l l}
 
       $\mathcal{T} \ni \tau$			& ::= 	    &\
-         \lst{Unit} $\mid$
-         \lst{Int} $\mid$ \lst{BigInt} $\mid$ \lst{Boolean} $\mid$ \lst{ByteArray} & base types     \\
-      &	$\mid$	& \lst{GroupElement} 				& element of the Group  \\
-      &	$\mid$	& \lst{Box} 				    & value in a box protected by proposition  \\
-      &	$\mid$	& \lst{AvlTree} 				&  \mnote{give description} \\
-      &	$\mid$	& $(\tau_1 \times \tau_2) $		& binary product type  \\
-      & $\mid$  & $\text{\lst{Collection}}[\tau]$	    & collection type       \\
+         \lst{Byte} $\mid$ \lst{Short} $\mid$
+         \lst{Int} $\mid$ \lst{Long} $\mid$ \lst{BigInt}  & numeric types     \\
+      &	$\mid$	& \lst{Boolean} 			& type of logical values true/false   \\
+      &	$\mid$	& \lst{Unit} 				& type with single element   \\
+      &	$\mid$	& \lst{GroupElement} 		& element of the cryptographic group  \\
+      &	$\mid$	& \lst{Box} 				& value in a box protected by proposition  \\
+      &	$\mid$	& \lst{AvlTree} 			&  Authenticated Dynamic Dictionary \\
+      &	$\mid$	& $(\tau_1, \dots, \tau_n) $	& binary product type  \\
+      & $\mid$  & $\text{\lst{Array}}[\tau]$	& array type       \\
+      & $\mid$  & $\text{\lst{Option}}[\tau]$	& optional value (either $Some(\tau)$ or $None$)      \\
+      & $\mid$  & \lst{Any}                     & type of any value (common supertype of all the types) \\
 %      &   $\mid$  & $(\tau_1 + \tau_2) $					& sum type       \\
 %      &   $\mid$  & $(\tau_1 \to \tau_2) $				& function type       \\
       %				& 	     	&										&				\\
