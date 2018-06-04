@@ -60,7 +60,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   override def transformationReady: Boolean =
     input.evaluated && input.matchCase(_.items.forall(_.evaluated), _ => true)
 
-  override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
     def iterChildren(children: Seq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
@@ -112,7 +112,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   override def transformationReady: Boolean =
     input.evaluated && input.matchCase(_.items.forall(_.evaluated), _ => true)
 
-  override def function(input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
     def iterChildren(children: IndexedSeq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
@@ -164,7 +164,7 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.Upcast
 
-  override def function(input: EvaluatedValue[T]): Value[R] =
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[T]): Value[R] =
     Constant(this.tpe.upcast(input.value.asInstanceOf[AnyVal]), this.tpe)
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
@@ -190,7 +190,7 @@ case class IntToByte(input: Value[SInt.type])
   extends Transformer[SInt.type, SByte.type] with NotReadyValueByte {
   override val opCode: OpCode = OpCodes.IntToByteCode
 
-  override def function(bal: EvaluatedValue[SInt.type]): Value[SByte.type] =
+  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SInt.type]): Value[SByte.type] =
     ByteConstant(bal.value.toByteExact)
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
@@ -203,7 +203,7 @@ case class LongToByteArray(input: Value[SLong.type])
     extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.LongToByteArrayCode
 
-  override def function(bal: EvaluatedValue[SLong.type]): Value[SByteArray] =
+  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SLong.type]): Value[SByteArray] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
@@ -217,7 +217,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
 
   override val opCode: OpCode = OpCodes.ByteArrayToBigIntCode
 
-  override def function(bal: EvaluatedValue[SByteArray]): Value[SBigInt.type] =
+  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SByteArray]): Value[SBigInt.type] =
     BigIntConstant(new BigInteger(1, bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
@@ -228,7 +228,7 @@ trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByt
 
   val hashFn: CryptographicHash32
 
-  override def function(bal: EvaluatedValue[SByteArray]): Value[SByteArray] =
+  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SByteArray]): Value[SByteArray] =
     ByteArrayConstant(hashFn.apply(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.Blake256bDeclaration
