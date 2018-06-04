@@ -83,6 +83,12 @@ trait Interpreter {
     * @return a new rewritten tree or `null` if `tree` cannot be rewritten.
     */
   def evaluateNode(context: CTX, tree: SValue): SValue = tree match {
+    case t: TaggedVariable[_] =>
+      if (context.extension.values.contains(t.varId))
+        context.extension.values(t.varId)
+      else
+        null
+
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
 

@@ -138,20 +138,19 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
 
   override def transformationReady: Boolean = input.isEvaluated
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context[C]](context: C): Long = {
+    val elemType = input.tpe.elemType
+    val data = Constant(null.asInstanceOf[elemType.WrappedType], elemType)
+    val localCtx = context.withBindings(id -> data)
     Cost.WhereDeclaration + input.cost(context) * condition.cost(context) + input.cost(context)
+  }
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {
-    def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.varId == id => arg
-    })
-
-    def p(x: Value[IV]): Boolean = {
-      val res = rl(x)(condition).get
-      res.asInstanceOf[EvaluatedValue[SBoolean.type]].value
+    val filtered = input.items.filter { case v: EvaluatedValue[IV] =>
+      val localCtx = ctx.withBindings(id -> v)
+      val reduced = intr.reduceUntilConverged(localCtx.asInstanceOf[intr.CTX], condition)
+      reduced.asInstanceOf[EvaluatedValue[SBoolean.type]].value
     }
-
-    val filtered = input.items.filter(p)
     ConcreteCollection(filtered)(tpe.elemType)
   }
 }

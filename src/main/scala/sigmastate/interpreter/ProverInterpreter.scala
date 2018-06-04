@@ -76,7 +76,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   val secrets: Seq[SigmaProtocolPrivateInput[_, _]]
 
-  val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]]
+  def contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = Map()
 
   val knownExtensions = ContextExtension(contextExtenders)
 

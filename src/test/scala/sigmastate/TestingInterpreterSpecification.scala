@@ -132,10 +132,10 @@ class TestingInterpreterSpecification extends PropSpec
               |  let arr = box1.R4[Array[Boolean]].value
               |  allOf(arr) == false
               |}""".stripMargin)
-//    testeval("""{
-//              |  let arr = Array(1, 2, 3)
-//              |  arr.where(fun (i: Int) = i < 3) == Array(1, 2)
-//              |}""".stripMargin)
+    testeval("""{
+              |  let arr = Array(1, 2, 3)
+              |  arr.where(fun (i: Int) = i < 3) == Array(1, 2)
+              |}""".stripMargin)
   }
 
   property("Evaluate arithmetic ops") {
@@ -243,7 +243,7 @@ object TestingInterpreter extends Interpreter with ProverInterpreter {
   override lazy val secrets: Seq[DLogProverInput] =
     Seq(DLogProverInput.random(), DLogProverInput.random())
 
-  override val contextExtenders: Map[Byte, CollectionConstant[SByte.type]] = Map[Byte, CollectionConstant[SByte.type]]()
+//  override val contextExtenders: Map[Byte, CollectionConstant[SByte.type]] = Map[Byte, CollectionConstant[SByte.type]]()
 
   override def evaluateNode(context: TestingContext, tree: SValue): SValue = tree match {
     case Height => LongConstant(context.height)
