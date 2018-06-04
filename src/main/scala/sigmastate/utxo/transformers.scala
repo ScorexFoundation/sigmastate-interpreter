@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywherebu}
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection.{SByteArray, SBooleanArray}
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
@@ -9,7 +9,6 @@ import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
-import sigmastate.utxo.BooleanTransformer.ResultConstructor
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.RegisterIdentifier
 
@@ -31,13 +30,6 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
     case ev: EvaluatedValue[IV] => function(interp, ctx, ev)
     case _: NotReadyValue[OV] => this
   }
-  protected def substituteTaggedVar(varId: Byte, arg: Value[IV]) =
-    everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.varId == varId =>
-        if (t.tpe != arg.tpe)
-          Interpreter.error(s"Types mismatch when substituting $t with value of type ${arg.tpe}")
-        arg
-    })
 }
 
 case class MapCollection[IV <: SType, OV <: SType](
@@ -52,14 +44,12 @@ case class MapCollection[IV <: SType, OV <: SType](
 
   override def transformationReady: Boolean = input.isEvaluated
 
-  override def function(interp: Interpreter, ctx: Context[_], cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
-    def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.varId == id => arg
-    })
-
-    val resItems = cl.items
-      .map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]])
-      .map(_.function(interp, ctx))
+  override def function(I: Interpreter, ctx: Context[_], cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
+    val resItems = cl.items.map { case v: EvaluatedValue[IV] =>
+      val localCtx = ctx.withBindings(id -> v)
+      val reduced = I.eval(localCtx, mapper.asValue[OV])
+      reduced
+    }
     ConcreteCollection(resItems)
   }
 
@@ -148,8 +138,8 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {
     val filtered = input.items.filter { case v: EvaluatedValue[IV] =>
       val localCtx = ctx.withBindings(id -> v)
-      val reduced = intr.reduceUntilConverged(localCtx.asInstanceOf[intr.CTX], condition)
-      reduced.asInstanceOf[EvaluatedValue[SBoolean.type]].value
+      val reduced = intr.eval(localCtx, condition)
+      reduced.value
     }
     ConcreteCollection(filtered)(tpe.elemType)
   }
@@ -159,23 +149,20 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
   override val input: Value[SCollection[IV]]
   val id: Byte
   val condition: Value[SBoolean.type]
-  val f: ResultConstructor
+  def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type]
 
   override def tpe = SBoolean
 
   override def transformationReady: Boolean = input.isEvaluated
 
-  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
-    def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.varId == id => arg
-    })
-
-    f(input.items.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
+  override def function(I: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
+    val resItems = input.items.map { case v: EvaluatedValue[IV] =>
+      val localCtx = ctx.withBindings(id -> v)
+      val reduced = I.eval(localCtx, condition)
+      reduced
+    }
+    constructResult(resItems)
   }
-}
-
-object BooleanTransformer {
-  type ResultConstructor = (Seq[Value[SBoolean.type]]) => Transformer[SCollection[SBoolean.type], SBoolean.type]
 }
 
 case class Exists[IV <: SType](input: Value[SCollection[IV]],
@@ -187,7 +174,7 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
   override def cost[C <: Context[C]](context: C): Long =
     Cost.ExistsDeclaration + input.cost(context) * condition.cost(context) + Cost.OrDeclaration
 
-  override val f: ResultConstructor = OR.apply
+  override def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type] = OR(items)
 }
 
 case class ForAll[IV <: SType](input: Value[SCollection[IV]],
@@ -200,7 +187,7 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
   override def cost[C <: Context[C]](context: C) =
     Cost.ForAllDeclaration + input.cost(context) * condition.cost(context) + Cost.AndDeclaration
 
-  override val f: ResultConstructor = AND.apply
+  override def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type] = AND(items)
 }
 
 
@@ -221,14 +208,12 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
   override def cost[C <: Context[C]](context: C): Long =
     Cost.FoldDeclaration + zero.cost(context) + input.cost(context) * foldOp.cost(context)
 
-  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): Value[IV] = {
-    def rl(arg: Value[IV], acc: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.varId == id => arg
-      case t: TaggedVariable[IV] if t.varId == accId => acc
-    })
-
-    input.items.foldLeft(zero) { case (acc: Value[IV], elem: Value[IV]) =>
-      rl(elem, acc)(foldOp).get.asInstanceOf[Value[IV]]
+  override def function(I: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): Value[IV] = {
+    input.items.foldLeft(zero) { case (x, y) =>
+      val (acc: EvaluatedValue[IV], elem: EvaluatedValue[IV]) = (x, y)
+      val localCtx = ctx.withBindings(id -> elem, accId -> acc)
+      val res = I.eval(localCtx, foldOp.asValue[IV])
+      res
     }
   }
 }

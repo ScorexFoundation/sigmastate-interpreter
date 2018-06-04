@@ -453,8 +453,14 @@ trait Interpreter {
 
 object Interpreter {
   type VerificationResult = (Boolean, Long)
-
   type ReductionResult = (Value[SBoolean.type], Long)
+
+  implicit class InterpreterOps(I: Interpreter) {
+    def eval[T <: SType](ctx: Context[_], ev: Value[T]): EvaluatedValue[T] = {
+      val reduced = I.reduceUntilConverged(ctx.asInstanceOf[I.CTX], ev)
+      reduced.asInstanceOf[EvaluatedValue[T]]
+    }
+  }
 
   def error(msg: String) = throw new InterpreterException(msg)
 }
