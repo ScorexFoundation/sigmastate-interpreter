@@ -30,6 +30,24 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   @inline override def getInt(): Int = buf.getInt()
   @inline override def getLong(): Long = buf.getLong()
 
+  /**
+    * Decode signed Long previously encoded with [[ByteArrayWriter.putSLong]] using VLQ.
+    *
+    * @note Uses ZigZag encoding. Should be used to decode '''only''' value that was previously
+    *       encoded with [[ByteArrayWriter.putSLong].
+    *
+    * @return signed Long
+    */
+  @inline def getSLong(): Long = {
+    getULong()
+    // todo decode with ZigZag
+  }
+
+  /**
+    * Decode Long previously encoded with [[ByteArrayWriter.putULong]] using VLQ.
+    *
+    * @return Long
+    */
   @inline def getULong(): Long = {
     // should be fast if java -> scala conversion did not botched it
     // Borrowed from http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedInputStream.java#L2653

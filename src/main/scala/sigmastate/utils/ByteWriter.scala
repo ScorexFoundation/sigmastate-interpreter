@@ -27,6 +27,29 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline def putInt(x: Int): ByteWriter = { b.append(x); this }
   @inline def putLong(x: Long): ByteWriter = { b.append(x); this }
 
+  /**
+    * Encode signed Long using VLQ.
+    *
+    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
+    * @note The resulting varint uses ZigZag encoding, which is much more efficient.
+    *       Have to be decoded '''only''' with [[ByteBufferReader.getSLong]]
+    * @param x signed Long
+    */
+  @inline def putSLong(x: Long): ByteWriter = {
+    // todo encode with ZigZag
+    putULong(x)
+  }
+
+  /**
+    * Encode unsigned Long using VLQ.
+    *
+    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
+    * @note Don't use it as the type for a negative number, the resulting varint is always ten
+    *       bytes long – it is, effectively, treated like a very large unsigned integer.
+    *       If you use [[putSLong]], the resulting varint uses ZigZag encoding,
+    *       which is much more efficient.
+    * @param x unsigned Long
+    */
   @inline def putULong(x: Long): ByteWriter = {
     val buffer = new Array[Byte](10)
     var position = 0

@@ -5,7 +5,6 @@ import java.nio.ByteBuffer
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Assertion, Matchers, PropSpec}
-import sigmastate.serialization.Serializer
 import sigmastate.serialization.generators.ValueGenerators
 
 class ByteReaderWriterImpSpecification extends PropSpec
@@ -78,23 +77,25 @@ class ByteReaderWriterImpSpecification extends PropSpec
 
   property("round trip serialization/deserialization of arbitrary value list") {
     forAll { values: Seq[Any] =>
-      // todo test VLQ code path
-      val writer = Serializer.startWriter()
+      val writer = byteArrayWriter()
       for(any <- values) {
         any match {
           case v: Byte => writer.put(v)
           case v: Short => writer.putShort(v)
           case v: Int => writer.putInt(v)
-          case v: Long => writer.putLong(v)
+          case v: Long if v < 0 => writer.putSLong(v)
+          case v: Long if v >= 0 => writer.putULong(v)
           case v: Array[Byte] => writer.putInt(v.length).putBytes(v)
           case _ => fail(s"writer: unsupported value type: ${any.getClass}");
         }
       }
-      val reader = Serializer.startReader(writer.toBytes, 0)
+      val reader = byteBufReader(writer.toBytes)
       values.foreach {
         case v: Byte => reader.getByte() shouldEqual v
         case v: Short => reader.getShort() shouldEqual v
         case v: Int => reader.getInt() shouldEqual v
+        case v: Long if v < 0 => reader.getSLong() shouldEqual v
+        case v: Long if v >= 0 => reader.getULong() shouldEqual v
         case v: Long => reader.getLong() shouldEqual v
         case v: Array[Byte] =>
           val size = reader.getInt()
@@ -104,7 +105,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
     }
   }
 
-  private def check(low: Long, high: Long, size: Int): Assertion = {
+  private def checkSize(low: Long, high: Long, size: Int): Assertion = {
     forAll(Gen.choose(low, high)) { v: Long =>
       val writer = new ByteArrayWriter(new ByteArrayBuilder())
       writer.putULong(v)
@@ -115,15 +116,15 @@ class ByteReaderWriterImpSpecification extends PropSpec
 
   property("size of serialized data") {
     // Borrowed from http://github.com/scodec/scodec/blob/055eed8386aa85ff27dba3f72b104a8aa3d6012d/unitTests/src/test/scala/scodec/codecs/VarLongCodecTest.scala#L16
-    check(0L, 127L, 1)
-    check(128L, 16383L, 2)
-    check(16384L, 2097151L, 3)
-    check(2097152L, 268435455L, 4)
-    check(268435456L, 34359738367L, 5)
-    check(34359738368L, 4398046511103L, 6)
-    check(4398046511104L, 562949953421311L, 7)
-    check(562949953421312L, 72057594037927935L, 8)
-    check(72057594037927936L, Long.MaxValue, 9)
+    checkSize(0L, 127L, 1)
+    checkSize(128L, 16383L, 2)
+    checkSize(16384L, 2097151L, 3)
+    checkSize(2097152L, 268435455L, 4)
+    checkSize(268435456L, 34359738367L, 5)
+    checkSize(34359738368L, 4398046511103L, 6)
+    checkSize(4398046511104L, 562949953421311L, 7)
+    checkSize(562949953421312L, 72057594037927935L, 8)
+    checkSize(72057594037927936L, Long.MaxValue, 9)
   }
 
   property("malformed input for deserialization") {
