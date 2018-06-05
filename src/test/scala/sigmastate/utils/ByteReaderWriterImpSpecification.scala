@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{Assertion, Matchers, PropSpec}
 import sigmastate.serialization.Serializer
 import sigmastate.serialization.generators.ValueGenerators
 
@@ -50,7 +50,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
     // 41256202580718336
     (bytes(0x80, 0xe6, 0xeb, 0x9c, 0xc3, 0xc9, 0xa4, 0x49),
       (0x00 << 0) | (0x66 << 7) | (0x6b << 14) | (0x1c << 21) | (0x43L << 28) | (0x49L << 35) | (0x24L << 42) | (0x49L << 49)),
-    // 11964378330978735131
+    // 11964378330978735131 (-6482365742730816485)
     (bytes(0x9b, 0xa8, 0xf9, 0xc2, 0xbb, 0xd6, 0x80, 0x85, 0xa6, 0x01),
       (0x1b << 0) | (0x28 << 7) | (0x79 << 14) | (0x42 << 21) | (0x3bL << 28) | (0x56L << 35) | (0x00L << 42) | (0x05L << 49) | (0x26L << 56) | (0x01L << 63))
   )
@@ -95,5 +95,27 @@ class ByteReaderWriterImpSpecification extends PropSpec
         case ref@_ => fail(s"reader: unsupported value type: ${ref.getClass}");
       }
     }
+  }
+
+  private def check(low: Long, high: Long, size: Int): Assertion = {
+    forAll(Gen.choose(low, high)) { v: Long =>
+      val writer = new ByteArrayWriter(new ByteArrayBuilder())
+      writer.putULong(v)
+      val encodedBytes = writer.toBytes
+      encodedBytes.length shouldEqual size
+    }
+  }
+
+  property("size of serialized data") {
+    // Borrowed from http://github.com/scodec/scodec/blob/055eed8386aa85ff27dba3f72b104a8aa3d6012d/unitTests/src/test/scala/scodec/codecs/VarLongCodecTest.scala#L16
+    check(0L, 127L, 1)
+    check(128L, 16383L, 2)
+    check(16384L, 2097151L, 3)
+    check(2097152L, 268435455L, 4)
+    check(268435456L, 34359738367L, 5)
+    check(34359738368L, 4398046511103L, 6)
+    check(4398046511104L, 562949953421311L, 7)
+    check(562949953421312L, 72057594037927935L, 8)
+    check(72057594037927936L, Long.MaxValue, 9)
   }
 }
