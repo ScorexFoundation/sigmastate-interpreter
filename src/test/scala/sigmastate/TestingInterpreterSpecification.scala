@@ -85,9 +85,11 @@ class TestingInterpreterSpecification extends PropSpec
 
   def testeval(code: String) = {
     val dk1 = ProveDlog(secrets(0).publicImage.h)
+    val dk2 = ProveDlog(secrets(1).publicImage.h)
     val ctx = TestingContext(99)
     val env = Map(
       "dk1" -> dk1,
+      "dk2" -> dk2,
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
       "box1" -> ErgoBox(10, TrueLeaf, Map(
@@ -137,6 +139,13 @@ class TestingInterpreterSpecification extends PropSpec
               |  arr.where(fun (i: Int) = i < 3) == Array(1, 2)
               |}""".stripMargin)
   }
+
+//  property("Evaluate sigma in lambdas") {
+//    testeval("""{
+//              |  let arr = Array(dk1, dk2)
+//              |  allOf(arr.map(fun (d: Boolean) = d && true))
+//              |}""".stripMargin)
+//  }
 
   property("Evaluate arithmetic ops") {
     testeval("1 + 2 == 3")

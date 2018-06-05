@@ -45,10 +45,13 @@ case class MapCollection[IV <: SType, OV <: SType](
   override def transformationReady: Boolean = input.isEvaluated
 
   override def function(I: Interpreter, ctx: Context[_], cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
-    val resItems = cl.items.map { case v: EvaluatedValue[IV] =>
-      val localCtx = ctx.withBindings(id -> v)
-      val reduced = I.eval(localCtx, mapper.asValue[OV])
-      reduced
+    val resItems = cl.items.map {
+      case v: EvaluatedValue[IV] =>
+        val localCtx = ctx.withBindings(id -> v)
+        val reduced = I.eval(localCtx, mapper.asValue[OV])
+        reduced
+      case v =>
+        Interpreter.error(s"Error evaluating $this: value $v is not EvaluatedValue")
     }
     ConcreteCollection(resItems)
   }
