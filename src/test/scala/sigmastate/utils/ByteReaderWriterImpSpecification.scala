@@ -1,5 +1,7 @@
 package sigmastate.utils
 
+import java.nio.ByteBuffer
+
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
@@ -25,9 +27,9 @@ class ByteReaderWriterImpSpecification extends PropSpec
   private implicit val arbSeqPrimVal: Arbitrary[Seq[Any]] = Arbitrary(seqPrimValGen)
 
   /**
+    * Borrowed from http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java#L133
     * Helper to construct a byte array from a bunch of bytes. The inputs are actually ints so that I
     * can use hex notation and not get stupid errors about precision.
-    * Borrowed from http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java#L133
     */
   private def bytes(bytesAsInts: Int*): Array[Byte] = bytesAsInts.map(_.toByte).toArray
 
@@ -80,14 +82,17 @@ class ByteReaderWriterImpSpecification extends PropSpec
     }
   }
 
-  property("predefined bytes with serialized values round trip") {
+  property("predefined values and serialized data round trip") {
     expectedValues.foreach { case (bytes, v) =>
-      val writer = Serializer.startWriter()
-      writer.putLong(v)
+      val writer = new ByteArrayWriter(new ByteArrayBuilder())
+      writer.putULong(v)
       val encodedBytes = writer.toBytes
       encodedBytes shouldEqual bytes
-      val reader = Serializer.startReader(encodedBytes, 0)
-      reader.getLong() shouldEqual v
+
+      val buf = ByteBuffer.wrap(encodedBytes)
+      buf.position(0)
+      val reader = new ByteBufferReader(buf)
+      reader.getULong() shouldEqual v
       reader.remaining shouldBe 0
     }
   }

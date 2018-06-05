@@ -29,6 +29,21 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   @inline override def getShort(): Short = buf.getShort()
   @inline override def getInt(): Int = buf.getInt()
   @inline override def getLong(): Long = buf.getLong()
+
+  @inline def getULong(): Long = {
+    // should be fast if java -> scala conversion did not botched it
+    // Borrowed from http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedInputStream.java#L2653
+    var result: Long = 0
+    var shift = 0
+    while (shift < 64) {
+      val b = buf.get()
+      result = result | ((b & 0x7F).toLong << shift)
+      if ((b & 0x80) == 0) return result
+      shift += 7
+    }
+    sys.error(s"Cannot deserialize Long value. Unexpected buffer $buf with bytes remaining ${buf.getBytes(buf.remaining)}")
+  }
+
   @inline override def getBytes(size: Int): Array[Byte] = buf.getBytes(size)
   @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
   @inline override def getType(): SType = TypeSerializer.deserialize(this)
