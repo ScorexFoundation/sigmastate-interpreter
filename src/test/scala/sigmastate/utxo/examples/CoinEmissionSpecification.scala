@@ -67,7 +67,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(out)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
-    val prop = OR(AND(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect), AND(heightIncreased, lastCoins))
+    val prop = OR(AND(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule), AND(heightIncreased, lastCoins))
 
     val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
       "epochLength" -> s.epochLength,
@@ -75,16 +75,15 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
       "oneEpochReduction" -> s.oneEpochReduction)
     val prop1 = compile(env,
       """{
-        |  let epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
-        |  let out = OUTPUTS(0)
-        |  let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
-        |  let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
-        |  let sameScriptRule = SELF.propositionBytes == out.propositionBytes
-        |  let lastCoins = SELF.value < oneEpochReduction
-        |  let heightIncreased = HEIGHT > SELF.R3[Long].value
-        |  let heightCorrect = HEIGHT == out.R3[Long].value
-        |  allOf(Array(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect)) || (heightIncreased && lastCoins)
-        |
+        |    let epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
+        |    let out = OUTPUTS(0)
+        |    let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
+        |    let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
+        |    let sameScriptRule = SELF.propositionBytes == out.propositionBytes
+        |    let heightIncreased = HEIGHT > SELF.R3[Long].value
+        |    let heightCorrect = out.R3[Long].value == HEIGHT
+        |    let lastCoins = SELF.value <= oneEpochReduction
+        |    allOf(Array(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule)) || (heightIncreased && lastCoins)
         |}""".stripMargin).asBoolValue
 
     prop1 shouldEqual prop
