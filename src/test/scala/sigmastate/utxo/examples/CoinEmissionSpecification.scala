@@ -83,7 +83,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
         |  let lastCoins = SELF.value < oneEpochReduction
         |  let heightIncreased = HEIGHT > SELF.R3[Long].value
         |  let heightCorrect = HEIGHT == out.R3[Long].value
-        |  (heightIncreased && sameScriptRule && correctCoinsConsumed && heightCorrect) || (heightIncreased && lastCoins)
+        |  allOf(Array(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect)) || (heightIncreased && lastCoins)
         |
         |}""".stripMargin).asBoolValue
 
