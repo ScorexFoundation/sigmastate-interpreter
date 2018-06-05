@@ -55,6 +55,21 @@ class ByteReaderWriterImpSpecification extends PropSpec
       (0x1b << 0) | (0x28 << 7) | (0x79 << 14) | (0x42 << 21) | (0x3bL << 28) | (0x56L << 35) | (0x00L << 42) | (0x05L << 49) | (0x26L << 56) | (0x01L << 63))
   )
 
+  property("predefined values and serialized data round trip") {
+    expectedValues.foreach { case (bytes, v) =>
+      val writer = new ByteArrayWriter(new ByteArrayBuilder())
+      writer.putULong(v)
+      val encodedBytes = writer.toBytes
+      encodedBytes shouldEqual bytes
+
+      val buf = ByteBuffer.wrap(encodedBytes)
+      buf.position(0)
+      val reader = new ByteBufferReader(buf)
+      reader.getULong() shouldEqual v
+      reader.remaining shouldBe 0
+    }
+  }
+
   property("round trip serialization/deserialization of arbitrary value list") {
     forAll { values: Seq[Any] =>
       val writer = Serializer.startWriter()
@@ -79,21 +94,6 @@ class ByteReaderWriterImpSpecification extends PropSpec
           reader.getBytes(size) shouldEqual v
         case ref@_ => fail(s"reader: unsupported value type: ${ref.getClass}");
       }
-    }
-  }
-
-  property("predefined values and serialized data round trip") {
-    expectedValues.foreach { case (bytes, v) =>
-      val writer = new ByteArrayWriter(new ByteArrayBuilder())
-      writer.putULong(v)
-      val encodedBytes = writer.toBytes
-      encodedBytes shouldEqual bytes
-
-      val buf = ByteBuffer.wrap(encodedBytes)
-      buf.position(0)
-      val reader = new ByteBufferReader(buf)
-      reader.getULong() shouldEqual v
-      reader.remaining shouldBe 0
     }
   }
 }

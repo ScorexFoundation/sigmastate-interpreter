@@ -1,9 +1,11 @@
 package sigmastate.utils
 
+import java.util._
+
 import sigmastate.SType
 import sigmastate.Values.Value
-import Extensions._
 import sigmastate.serialization.TypeSerializer
+import sigmastate.utils.Extensions._
 
 trait ByteWriter {
   def put(x: Byte): ByteWriter
@@ -26,10 +28,8 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline def putLong(x: Long): ByteWriter = { b.append(x); this }
 
   @inline def putULong(x: Long): ByteWriter = {
-    // todo: ensure capacity in ByteArrayBuilder
-    // todo: is it too ugly already?
-    val buffer = b.array()
-    var position = b.length()
+    val buffer = new Array[Byte](10)
+    var position = 0
     var value = x
     // should be fast if java -> scala conversion did not botched it
     // borrowed from http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L1387
@@ -37,10 +37,9 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
       if ((value & ~0x7FL) == 0) {
         buffer(position) = value.asInstanceOf[Byte]
         position += 1
-        b.setLength(position)
+        b.append(Arrays.copyOf(buffer, position))
         return this
-      }
-      else {
+      } else {
         buffer(position) = ((value.asInstanceOf[Int] & 0x7F) | 0x80).toByte
         position += 1
         value >>>= 7
