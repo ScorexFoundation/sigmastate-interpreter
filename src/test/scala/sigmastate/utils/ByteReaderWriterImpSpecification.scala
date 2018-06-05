@@ -55,23 +55,30 @@ class ByteReaderWriterImpSpecification extends PropSpec
       (0x1b << 0) | (0x28 << 7) | (0x79 << 14) | (0x42 << 21) | (0x3bL << 28) | (0x56L << 35) | (0x00L << 42) | (0x05L << 49) | (0x26L << 56) | (0x01L << 63))
   )
 
+  private def byteBufReader(bytes: Array[Byte]): ByteBufferReader = {
+    val buf = ByteBuffer.wrap(bytes)
+    buf.position(0)
+    new ByteBufferReader(buf)
+  }
+
+  private def byteArrayWriter(): ByteArrayWriter = new ByteArrayWriter(new ByteArrayBuilder())
+
   property("predefined values and serialized data round trip") {
     expectedValues.foreach { case (bytes, v) =>
-      val writer = new ByteArrayWriter(new ByteArrayBuilder())
+      val writer = byteArrayWriter()
       writer.putULong(v)
       val encodedBytes = writer.toBytes
       encodedBytes shouldEqual bytes
 
-      val buf = ByteBuffer.wrap(encodedBytes)
-      buf.position(0)
-      val reader = new ByteBufferReader(buf)
-      reader.getULong() shouldEqual v
-      reader.remaining shouldBe 0
+      val r = byteBufReader(encodedBytes)
+      r.getULong() shouldEqual v
+      r.remaining shouldBe 0
     }
   }
 
   property("round trip serialization/deserialization of arbitrary value list") {
     forAll { values: Seq[Any] =>
+      // todo test VLQ code path
       val writer = Serializer.startWriter()
       for(any <- values) {
         any match {
@@ -117,5 +124,11 @@ class ByteReaderWriterImpSpecification extends PropSpec
     check(4398046511104L, 562949953421311L, 7)
     check(562949953421312L, 72057594037927935L, 8)
     check(72057594037927936L, Long.MaxValue, 9)
+  }
+
+  property("malformed input for deserialization") {
+    // Borrowed from http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java#L281
+    assertThrows[RuntimeException](byteBufReader(bytes(0x80)).getULong())
+    assertThrows[RuntimeException](byteBufReader(bytes(0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00)).getULong())
   }
 }
