@@ -5,7 +5,7 @@ import java.util._
 import sigmastate.SType
 import sigmastate.Values.Value
 import sigmastate.serialization.TypeSerializer
-import sigmastate.utils.ByteArrayWriter.encodeZigZagLong
+import sigmastate.utils.ByteArrayWriter.{encodeZigZagInt, encodeZigZagLong}
 import sigmastate.utils.Extensions._
 
 trait ByteWriter {
@@ -26,9 +26,12 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline def putBoolean(x: Boolean): ByteWriter = { b.append(x); this }
   @inline def putShort(x: Short): ByteWriter = { b.append(x); this }
   @inline def putInt(x: Int): ByteWriter = { b.append(x); this }
-  @inline def putLong(x: Long): ByteWriter = { b.append(x); this }
 
-  // todo add Int variants
+  // todo scaladoc
+  @inline def putSInt(x: Int): ByteWriter = putULong(encodeZigZagInt(x))
+  @inline def putUInt(x: Int): ByteWriter = putULong(x.toLong)
+
+  @inline def putLong(x: Long): ByteWriter = { b.append(x); this }
 
   /**
     * Encode signed Long using VLQ.

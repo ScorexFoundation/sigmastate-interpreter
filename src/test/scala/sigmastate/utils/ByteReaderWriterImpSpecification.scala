@@ -84,7 +84,11 @@ class ByteReaderWriterImpSpecification extends PropSpec
         any match {
           case v: Byte => writer.put(v)
           case v: Short => writer.putShort(v)
-          case v: Int => writer.putInt(v)
+          case v: Int =>
+            // test all paths
+            writer.putInt(v)
+            writer.putSInt(v)
+            writer.putUInt(v)
           case v: Long =>
             // test all paths
             writer.putLong(v)
@@ -98,7 +102,11 @@ class ByteReaderWriterImpSpecification extends PropSpec
       values.foreach {
         case v: Byte => reader.getByte() shouldEqual v
         case v: Short => reader.getShort() shouldEqual v
-        case v: Int => reader.getInt() shouldEqual v
+        case v: Int =>
+          // test all paths
+          reader.getInt() shouldEqual v
+          reader.getSInt() shouldEqual v
+          reader.getUInt() shouldEqual v
         case v: Long =>
           // test all paths
           reader.getLong() shouldEqual v

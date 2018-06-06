@@ -30,9 +30,13 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   @inline override def getUByte(): Int = buf.get & 0xFF
   @inline override def getShort(): Short = buf.getShort()
   @inline override def getInt(): Int = buf.getInt()
-  @inline override def getLong(): Long = buf.getLong()
 
-  // todo add Int variants
+  // todo scaladoc
+
+  @inline def getSInt(): Int = ByteBufferReader.decodeZigZagInt(getULong().toInt)
+  @inline def getUInt(): Int = getULong().toInt
+
+  @inline override def getLong(): Long = buf.getLong()
 
   /**
     * Decode signed Long previously encoded with [[ByteArrayWriter.putSLong]] using VLQ.
