@@ -84,6 +84,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesCode, ExtractBytes.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, ExtractId.apply),
+    SimpleTransformerSerializer[SInt.type, SByte.type](IntToByteCode, IntToByte.apply),
     SimpleTransformerSerializer[SLong.type, SByteArray](LongToByteArrayCode, LongToByteArray.apply),
     SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
@@ -105,8 +106,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       w.toBytes
     case _ =>
       val opCode = v.opCode
-      val serFn = table(opCode).asInstanceOf[SigmaSerializer[Value[SType], v.type]]
-      opCode +: serFn.serializeBody(v)
+      table.get(opCode) match {
+        case Some(serFn: SigmaSerializer[Value[SType], v.type]@unchecked) =>
+          opCode +: serFn.serializeBody(v)
+        case None =>
+          sys.error(s"Cannot find serializer for Value with opCode=$opCode: $v")
+      }
   }
 
   def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {

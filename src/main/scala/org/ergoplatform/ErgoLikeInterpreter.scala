@@ -21,13 +21,6 @@ class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit) ex
 
     case LastBlockUtxoRootHash => AvlTreeConstant(context.lastBlockUtxoRoot)
 
-    case t: TaggedVariable[_] =>
-      if (context.extension.values.contains(t.varId))
-        context.extension.values(t.varId)
-      else
-        null
-//        Interpreter.error(s"Tagged variable with id=${t.id} not found in context ${context.extension.values}")
-
     case _ =>
       super.evaluateNode(context, tree)
   }
