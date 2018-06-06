@@ -50,10 +50,10 @@ class Rule110Specification extends SigmaTestingCommons {
         |  let outLayer:Array[Byte] = OUTPUTS(0).R3[Array[Byte]].value
         |  let indexes: Array[Int] = Array(0, 1, 2, 3, 4, 5)
         |  fun procCell(i: Int): Byte = {
-        |    let l = inLayer((i - 1) % 6)
+        |    let l = inLayer(if (i == 0) 5 else (i - 1))
         |    let c = inLayer(i)
         |    let r = inLayer((i + 1) % 6)
-        |    (l * c * r + c * r + c + r) % 2
+        |    intToByte((l * c * r + c * r + c + r) % 2)
         |  }
         |  (outLayer == indexes.map(procCell)) && (SELF.propositionBytes == OUTPUTS(0).propositionBytes)
          }""".stripMargin).asBoolValue
