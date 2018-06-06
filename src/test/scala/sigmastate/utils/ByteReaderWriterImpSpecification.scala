@@ -140,6 +140,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
     checkSize(4398046511104L, 562949953421311L, 7)
     checkSize(562949953421312L, 72057594037927935L, 8)
     checkSize(72057594037927936L, Long.MaxValue, 9)
+    checkSize(Long.MinValue, 0, 10)
   }
 
   property("fail deserialization by deliberately messing with different methods") {

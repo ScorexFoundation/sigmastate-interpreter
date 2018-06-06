@@ -27,8 +27,27 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline def putShort(x: Short): ByteWriter = { b.append(x); this }
   @inline def putInt(x: Int): ByteWriter = { b.append(x); this }
 
-  // todo scaladoc
+  /**
+    * Encode signed Int using VLQ.
+    *
+    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
+    * @note The resulting varint uses ZigZag encoding, which is much more efficient.
+    *       Have to be decoded '''only''' with [[ByteBufferReader.getSInt]]
+    * @param x signed Int
+    */
   @inline def putSInt(x: Int): ByteWriter = putULong(encodeZigZagInt(x))
+
+  /**
+    * Encode unsigned Int using VLQ.
+    *
+    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
+    * @note Don't use it as the type for a negative number, the resulting varint is always six
+    *       bytes long – it is, effectively, treated like a very large unsigned integer.
+    *       If you use [[putSInt]], the resulting varint uses ZigZag encoding,
+    *       which is much more efficient.
+    * @param x preferably unsigned Int (signed value will produce a significant overhead,
+    *          see note above)
+    */
   @inline def putUInt(x: Int): ByteWriter = putULong(x.toLong)
 
   @inline def putLong(x: Long): ByteWriter = { b.append(x); this }
