@@ -134,13 +134,24 @@ class ByteReaderWriterImpSpecification extends PropSpec
     checkSize(72057594037927936L, Long.MaxValue, 9)
   }
 
+  property("fail deserialization by deliberately messing with different methods") {
+    forAll(Gen.chooseNum(1, Long.MaxValue)) { v: Long =>
+      val writer = byteArrayWriter()
+      writer.putULong(v)
+      writer.putSLong(v)
+      val reader = byteBufReader(writer.toBytes)
+      reader.getSLong() should not be v
+      reader.getULong() should not be v
+    }
+  }
+
   property("malformed input for deserialization") {
     // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java#L281
     assertThrows[RuntimeException](byteBufReader(bytes(0x80)).getULong())
     assertThrows[RuntimeException](byteBufReader(bytes(0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00)).getULong())
   }
 
-  property("ZigZag round trip") {
+  property("ZigZag encoding format") {
     // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/test/java/com/google/protobuf/CodedOutputStreamTest.java#L281
     assert(0 == encodeZigZagInt(0))
     assert(1 == encodeZigZagInt(-1))
@@ -161,26 +172,17 @@ class ByteReaderWriterImpSpecification extends PropSpec
     assert(0x00000000FFFFFFFFL == encodeZigZagLong(0xFFFFFFFF80000000L))
     assert(0xFFFFFFFFFFFFFFFEL == encodeZigZagLong(0x7FFFFFFFFFFFFFFFL))
     assert(0xFFFFFFFFFFFFFFFFL == encodeZigZagLong(0x8000000000000000L))
+  }
 
+  property("ZigZag Long round trip") {
+    forAll(Gen.chooseNum(Long.MinValue, Long.MaxValue)) { v: Long =>
+      decodeZigZagLong(encodeZigZagLong(v)) shouldBe v
+    }
+  }
 
-
-    // Some easier-to-verify round-trip tests.  The inputs (other than 0, 1, -1)
-    // were chosen semi-randomly via keyboard bashing.
-    assert(0 == encodeZigZagInt(decodeZigZagInt(0)))
-    assert(1 == encodeZigZagInt(decodeZigZagInt(1)))
-    assert(-1 == encodeZigZagInt(decodeZigZagInt(-1)))
-    assert(14927 == encodeZigZagInt(decodeZigZagInt(14927)))
-    assert(-3612 == encodeZigZagInt(decodeZigZagInt(-3612)))
-
-    assert(0 == encodeZigZagLong(decodeZigZagLong(0)))
-    assert(1 == encodeZigZagLong(decodeZigZagLong(1)))
-    assert(-1 == encodeZigZagLong(decodeZigZagLong(-1)))
-    assert(14927 == encodeZigZagLong(decodeZigZagLong(14927)))
-    assert(-3612 == encodeZigZagLong(decodeZigZagLong(-3612)))
-
-    assert(856912304801416L ==
-      encodeZigZagLong(decodeZigZagLong(856912304801416L)))
-    assert(-75123905439571256L ==
-      encodeZigZagLong(decodeZigZagLong(-75123905439571256L)))
+  property("ZigZag Int round trip") {
+    forAll(Gen.chooseNum(Int.MinValue, Int.MaxValue)) { v: Int =>
+      decodeZigZagInt(encodeZigZagInt(v)) shouldBe v
+    }
   }
 }
