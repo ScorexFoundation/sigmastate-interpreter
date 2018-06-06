@@ -22,10 +22,10 @@ trait ByteWriter {
 }
 
 class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
-  @inline def put(x: Byte): ByteWriter = { b.append(x); this }
-  @inline def putBoolean(x: Boolean): ByteWriter = { b.append(x); this }
-  @inline def putShort(x: Short): ByteWriter = { b.append(x); this }
-  @inline def putInt(x: Int): ByteWriter = { b.append(x); this }
+  @inline override def put(x: Byte): ByteWriter = { b.append(x); this }
+  @inline override def putBoolean(x: Boolean): ByteWriter = { b.append(x); this }
+  @inline override def putShort(x: Short): ByteWriter = { b.append(x); this }
+  @inline override def putInt(x: Int): ByteWriter = { b.append(x); this }
 
   /**
     * Encode signed Int using VLQ.
@@ -50,7 +50,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     */
   @inline def putUInt(x: Int): ByteWriter = putULong(x.toLong)
 
-  @inline def putLong(x: Long): ByteWriter = { b.append(x); this }
+  @inline override def putLong(x: Long): ByteWriter = { b.append(x); this }
 
   /**
     * Encode signed Long using VLQ.
@@ -95,11 +95,11 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     // see https://rosettacode.org/wiki/Variable-length_quantity for implementations in other languages
   }
 
-  @inline def putBytes(xs: Array[Byte]): ByteWriter = { b.append(xs); this }
-  @inline def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
-  @inline def putType[T <: SType](x: T): ByteWriter = { TypeSerializer.serialize(x, this); this }
-  @inline def putValue[T <: SType](x: Value[T]): ByteWriter = { b.appendValue(x); this }
-  @inline def toBytes: Array[Byte] = b.toBytes
+  @inline override def putBytes(xs: Array[Byte]): ByteWriter = { b.append(xs); this }
+  @inline override def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
+  @inline override def putType[T <: SType](x: T): ByteWriter = { TypeSerializer.serialize(x, this); this }
+  @inline override def putValue[T <: SType](x: Value[T]): ByteWriter = { b.appendValue(x); this }
+  @inline override def toBytes: Array[Byte] = b.toBytes
 }
 
 object ByteArrayWriter {
