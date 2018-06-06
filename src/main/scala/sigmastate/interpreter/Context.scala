@@ -12,7 +12,8 @@ import scala.util.Try
   * Variables to be put into context
   */
 case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]]) {
-
+  def add(bindings: (Byte, EvaluatedValue[_ <: SType])*): ContextExtension =
+    ContextExtension(values ++ bindings)
   //context values should not use context to determine their cost
   //todo: getOrElse(0L) branch triggers for local variables in Where/ForAll/Exists/Fold etc.
   //todo: Should the cost be 0 in this case?
@@ -54,4 +55,9 @@ trait Context[C <: Context[C]] {
   val extension: ContextExtension
 
   def withExtension(newExtension: ContextExtension): C
+
+  def withBindings(bindings: (Byte, EvaluatedValue[_ <: SType])*): Context[_] = {
+    val ext = extension.add(bindings:_*)
+    withExtension(ext)
+  }
 }
