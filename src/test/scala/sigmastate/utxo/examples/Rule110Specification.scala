@@ -43,51 +43,23 @@ class Rule110Specification extends SigmaTestingCommons {
     val verifier = new ErgoLikeInterpreter
 
     val indexId = 21.toByte
-    val f = ByteConstant(0)
-    val t = ByteConstant(1)
-    val env = Map("indexId" -> indexId, "f" -> f, "t" -> t)
-    val compiled = compile(env,
+    val env = Map("indexId" -> indexId)
+    val prop = compile(env,
       """{
-        |  let string = SELF.R3[Array[Byte]].value
-        |  let resultString = OUTPUTS(0).R3[Array[Byte]].value
-        |  fun r110(index: Int) = {
-        |    let output0 = resultString(index)
-        |    let input0 = string(if (index == 0) 5 else (index - 1))
-        |    let input1 = string(index)
-        |    let input2 = string(if (index == 5) 0 else (index + 1))
-        |    (input0 == t && input1 == t && input2 == t && output0 == f) ||
-        |    (input0 == t && input1 == t && input2 == f && output0 == t) ||
-        |    (input0 == t && input1 == f && input2 == t && output0 == t) ||
-        |    (input0 == t && input1 == f && input2 == f && output0 == f) ||
-        |    (input0 == f && input1 == t && input2 == t && output0 == t) ||
-        |    (input0 == f && input1 == t && input2 == f && output0 == t) ||
-        |    (input0 == f && input1 == f && input2 == t && output0 == t) ||
-        |    (input0 == f && input1 == f && input2 == f && output0 == f)
+        |  let inLayer:Array[Byte] = SELF.R3[Array[Byte]].value
+        |  let outLayer:Array[Byte] = OUTPUTS(0).R3[Array[Byte]].value
+        |  let indexes: Array[Int] = Array(0, 1, 2, 3, 4, 5)
+        |  fun isRule110(inLayer:Array[Byte], outLayer:Array[Byte]):Boolean = {
+        |    fun procCell(i: Int): Byte = {
+        |      let l = inLayer((i - 1) % 6)
+        |      let c = inLayer(i)
+        |      let r = inLayer((i + 1) % 6)
+        |      (l * c * r + c * r + c + r) % 2
+        |    }
+        |    (outLayer == indexes.map(procCell)) && (SELF.propositionBytes == OUTPUTS(0).propositionBytes)
         |  }
-        |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
-        |  let isSameScript = SELF.propositionBytes == OUTPUTS(0).propositionBytes
-        |  isSameScript && indexCollection.forall(r110)
+        |  isRule110(inLayer, outLayer)
          }""".stripMargin).asBoolValue
-    val string = ExtractRegisterAs[SByteArray](Self, R3)
-    val resultString = ExtractRegisterAs[SByteArray](ByIndex(Outputs, 0), R3)
-    val index = TaggedInt(indexId)
-    val output0: Value[SByte.type] = ByIndex(resultString, index)
-    val input0: Value[SByte.type] = ByIndex(string, If(EQ(index, 0), 5, Minus(index, 1)))
-    val input1: Value[SByte.type] = ByIndex(string, index)
-    val input2: Value[SByte.type] = ByIndex(string, If(EQ(index, 5), 0, Plus(index, 1)))
-    val elementRule = OR(Seq(
-      AND(EQ(input0, t), EQ(input1, t), EQ(input2, t), EQ(output0, f)),
-      AND(EQ(input0, t), EQ(input1, t), EQ(input2, f), EQ(output0, t)),
-      AND(EQ(input0, t), EQ(input1, f), EQ(input2, t), EQ(output0, t)),
-      AND(EQ(input0, t), EQ(input1, f), EQ(input2, f), EQ(output0, f)),
-      AND(EQ(input0, f), EQ(input1, t), EQ(input2, t), EQ(output0, t)),
-      AND(EQ(input0, f), EQ(input1, t), EQ(input2, f), EQ(output0, t)),
-      AND(EQ(input0, f), EQ(input1, f), EQ(input2, t), EQ(output0, t)),
-      AND(EQ(input0, f), EQ(input1, f), EQ(input2, f), EQ(output0, f))
-    ))
-    val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(ByIndex(Outputs, 0)))
-    //    val prop = AND(sameScriptRule, ForAll(indexCollection, indexId, elementRule))
-    val prop = compiled
 
     val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 0, 1, 0))))
     val output = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 1, 1, 0))))
