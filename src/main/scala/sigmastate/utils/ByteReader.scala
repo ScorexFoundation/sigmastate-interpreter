@@ -12,8 +12,34 @@ trait ByteReader {
   def getByte(): Byte
   def getUByte(): Int
   def getShort(): Short
+
+  /**
+    * Decode signed Int.
+    * Use '''only''' for values previously encoded with [[ByteArrayWriter.putInt]]
+    * @return signed Int
+    */
   def getInt(): Int
+  /**
+    * Decode positive Int.
+    * Use '''only''' for values previously encoded with [[ByteArrayWriter.putUInt]]
+    * @return signed Int
+    */
+  def getUInt(): Int
+
+  /**
+    * Decode signed Long.
+    * Use '''only''' for values previously encoded with [[ByteArrayWriter.putLong]]
+    * @return signed Long
+    */
   def getLong(): Long
+
+  /**
+    * Decode positive Long.
+    * Use '''only''' for values previously encoded with [[ByteArrayWriter.putULong]]
+    * @return signed Long
+    */
+  def getULong(): Long
+
   def getBytes(size: Int): Array[Byte]
   def getOption[T](getValue: => T): Option[T]
   def getType(): SType
@@ -29,10 +55,21 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   @inline override def getByte(): Byte = buf.get
   @inline override def getUByte(): Int = buf.get & 0xFF
   @inline override def getShort(): Short = buf.getShort()
-  @inline override def getInt(): Int = buf.getInt()
 
   /**
-    * Decode signed Int previously encoded with [[ByteArrayWriter.putSInt]] using VLQ.
+    * Decode signed Int previously encoded with [[ByteArrayWriter.putInt]] using VLQ with ZigZag.
+    *
+    * @note Uses ZigZag encoding. Should be used to decode '''only''' a value that was previously
+    *       encoded with [[ByteArrayWriter.putInt]].
+    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
+    * @return signed Int
+    */
+  @inline override def getInt(): Int =
+  // should only be changed simultaneously with `putInt`
+    getSInt()
+
+  /**
+    * Decode signed Int previously encoded with [[ByteArrayWriter.putSInt]] using VLQ with ZigZag.
     *
     * @note Uses ZigZag encoding. Should be used to decode '''only''' a value that was previously
     *       encoded with [[ByteArrayWriter.putSInt]].
@@ -46,23 +83,30 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
     * @return Int
     */
-  @inline def getUInt(): Int = getULong().toInt
-
-  @inline override def getLong(): Long = buf.getLong()
+  @inline override def getUInt(): Int = getULong().toInt
 
   /**
-    * Decode signed Long previously encoded with [[ByteArrayWriter.putSLong]] using VLQ.
+    * Decode signed Long previously encoded with [[ByteArrayWriter.putLong]] using VLQ with ZigZag.
     *
+    * @note Uses ZigZag encoding. Should be used to decode '''only''' a value that was previously
+    *       encoded with [[ByteArrayWriter.putLong]].
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
+    * @return signed Long
+    */
+  @inline override def getLong(): Long = getSLong()
+
+  /**
+    * Decode signed Long previously encoded with [[ByteArrayWriter.putSLong]] using VLQ with ZigZag.
+    *
     * @note Uses ZigZag encoding. Should be used to decode '''only''' a value that was previously
     *       encoded with [[ByteArrayWriter.putSLong]].
+    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
     * @return signed Long
     */
   @inline def getSLong(): Long = decodeZigZagLong(getULong())
 
   /**
     * Decode Long previously encoded with [[ByteArrayWriter.putULong]] using VLQ.
-    *
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
     * @return Long
     */

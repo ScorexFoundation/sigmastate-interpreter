@@ -94,7 +94,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
             writer.putLong(v)
             writer.putULong(v)
             writer.putSLong(v)
-          case v: Array[Byte] => writer.putInt(v.length).putBytes(v)
+          case v: Array[Byte] => writer.putUInt(v.length).putBytes(v)
           case _ => fail(s"writer: unsupported value type: ${any.getClass}");
         }
       }
@@ -113,7 +113,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
           reader.getULong() shouldEqual v
           reader.getSLong() shouldEqual v
         case v: Array[Byte] =>
-          val size = reader.getInt()
+          val size = reader.getUInt()
           reader.getBytes(size) shouldEqual v
         case ref@_ => fail(s"reader: unsupported value type: ${ref.getClass}");
       }

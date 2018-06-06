@@ -12,8 +12,39 @@ trait ByteWriter {
   def put(x: Byte): ByteWriter
   def putBoolean(x: Boolean): ByteWriter
   def putShort(x: Short): ByteWriter
+
+  /**
+    * Encode signed Int.
+    * Use [[putUInt]] to encode values that are positive.
+    *
+    * @param x Int
+    */
   def putInt(x: Int): ByteWriter
+
+  /**
+    * Encode Int that are positive.
+    * Use [[putInt]] to encode values that might be negative.
+    *
+    * @param x Int
+    */
+  def putUInt(x: Int): ByteWriter
+
+  /**
+    * Encode signed Long.
+    * Use [[putULong]] to encode values that are positive.
+    *
+    * @param x Long
+    */
   def putLong(x: Long): ByteWriter
+
+  /**
+    * Encode Long that are positive.
+    * Use [[putLong]] to encode values that might be negative.
+    *
+    * @param x Long
+    */
+  def putULong(x: Long): ByteWriter
+
   def putBytes(xs: Array[Byte]): ByteWriter
   def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter
   def putType[T <: SType](x: T): ByteWriter
@@ -25,55 +56,89 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def put(x: Byte): ByteWriter = { b.append(x); this }
   @inline override def putBoolean(x: Boolean): ByteWriter = { b.append(x); this }
   @inline override def putShort(x: Short): ByteWriter = { b.append(x); this }
-  @inline override def putInt(x: Int): ByteWriter = { b.append(x); this }
 
   /**
-    * Encode signed Int using VLQ.
+    * Encode signed Int using VLQ with ZigZag.
+    * Both negative and positive values are supported, but due to ZigZag encoding positive
+    * values is done less efficiently than by [[putUInt]].
+    * Use [[putUInt]] to encode values that are positive.
     *
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @note The resulting varint uses ZigZag encoding, which is much more efficient.
-    *       Have to be decoded '''only''' with [[ByteBufferReader.getSInt]]
-    * @param x signed Int
+    * @note The resulting varint uses ZigZag encoding, which is much more efficient at
+    *       encoding negative values than pure VLQ.
+    * @param x prefer signed Int
+    */
+  @inline override def putInt(x: Int): ByteWriter =
+    putSInt(x)
+
+  /**
+    * Encode signed Int using VLQ with ZigZag.
+    * Both negative and positive values are supported, but due to ZigZag encoding positive
+    * values is done less efficiently than by [[putUInt]].
+    * Use [[putUInt]] to encode values that are positive.
+    *
+    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
+    * @note Have to be decoded '''only''' with [[ByteBufferReader.getSInt]]
+    * @param x prefer signed Int
     */
   @inline def putSInt(x: Int): ByteWriter = putULong(encodeZigZagInt(x))
 
   /**
-    * Encode unsigned Int using VLQ.
+    * Encode signed Int value using VLQ.
+    * Both negative and positive values are supported, but only positive values are encoded
+    * efficiently, negative values are taking a toll and use six bytes. Use [[putSInt]]
+    * to encode negative and positive values.
     *
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @note Don't use it as the type for a negative number, the resulting varint is always six
+    * @note Don't use it for negative values, the resulting varint is always six
     *       bytes long – it is, effectively, treated like a very large unsigned integer.
     *       If you use [[putSInt]], the resulting varint uses ZigZag encoding,
     *       which is much more efficient.
-    * @param x preferably unsigned Int (signed value will produce a significant overhead,
+    * @param x prefer unsigned Int (signed value will produce a significant overhead,
     *          see note above)
     */
-  @inline def putUInt(x: Int): ByteWriter = putULong(x.toLong)
-
-  @inline override def putLong(x: Long): ByteWriter = { b.append(x); this }
+  @inline override def putUInt(x: Int): ByteWriter = putULong(x.toLong)
 
   /**
-    * Encode signed Long using VLQ.
+    * Encode signed Long using VLQ with ZigZag.
+    * Both negative and positive values are supported, but due to ZigZag encoding positive
+    * values is done less efficiently than by [[putULong]].
+    * Use [[putULong]] to encode values that are positive.
     *
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @note The resulting varint uses ZigZag encoding, which is much more efficient.
-    *       Have to be decoded '''only''' with [[ByteBufferReader.getSLong]]
-    * @param x signed Long
+    * @note The resulting varint uses ZigZag encoding, which is much more efficient at
+    *       encoding negative values than pure VLQ.
+    * @param x prefer signed Long
+    */
+  @inline override def putLong(x: Long): ByteWriter = putSLong(x)
+
+  /**
+    * Encode signed Long using VLQ with ZigZag.
+    * Both negative and positive values are supported, but due to ZigZag encoding positive
+    * values is done less efficiently than by [[putULong]].
+    * Use [[putULong]] to encode values that are positive.
+    *
+    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
+    * @note Have to be decoded '''only''' with [[ByteBufferReader.getSLong]]
+    * @param x prefer signed Long
     */
   @inline def putSLong(x: Long): ByteWriter = putULong(encodeZigZagLong(x))
 
   /**
-    * Encode unsigned Long using VLQ.
+    * Encode signed Long value using VLQ.
+    * Both negative and positive values are supported, but only positive values are encoded
+    * efficiently, negative values are taking a toll and use six bytes. Use [[putSLong]]
+    * to encode negative and positive values.
     *
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @note Don't use it as the type for a negative number, the resulting varint is always ten
+    * @note Don't use it for negative values, the resulting varint is always ten
     *       bytes long – it is, effectively, treated like a very large unsigned integer.
     *       If you use [[putSLong]], the resulting varint uses ZigZag encoding,
     *       which is much more efficient.
-    * @param x preferably unsigned Long (signed value will produce a significant overhead,
+    * @param x prefer unsigned Long (signed value will produce a significant overhead,
     *          see note above)
     */
-  @inline def putULong(x: Long): ByteWriter = {
+  @inline override def putULong(x: Long): ByteWriter = {
     val buffer = new Array[Byte](10)
     var position = 0
     var value = x
