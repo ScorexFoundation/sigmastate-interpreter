@@ -92,6 +92,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
       }
     }
     this
+    // see https://rosettacode.org/wiki/Variable-length_quantity for implementations in other languages
   }
 
   @inline def putBytes(xs: Array[Byte]): ByteWriter = { b.append(xs); this }

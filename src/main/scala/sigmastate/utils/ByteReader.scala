@@ -79,6 +79,7 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
       shift += 7
     }
     sys.error(s"Cannot deserialize Long value. Unexpected buffer $buf with bytes remaining ${buf.getBytes(buf.remaining)}")
+    // see https://rosettacode.org/wiki/Variable-length_quantity for implementations in other languages
   }
 
   @inline override def getBytes(size: Int): Array[Byte] = buf.getBytes(size)
