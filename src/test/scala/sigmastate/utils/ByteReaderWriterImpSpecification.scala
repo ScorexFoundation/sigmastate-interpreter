@@ -87,7 +87,6 @@ class ByteReaderWriterImpSpecification extends PropSpec
           case v: Int =>
             // test all paths
             writer.putInt(v)
-            writer.putSInt(v)
             writer.putUInt(v)
           case v: Long =>
             // test all paths
@@ -105,7 +104,6 @@ class ByteReaderWriterImpSpecification extends PropSpec
         case v: Int =>
           // test all paths
           reader.getInt() shouldEqual v
-          reader.getSInt() shouldEqual v
           reader.getUInt() shouldEqual v
         case v: Long =>
           // test all paths

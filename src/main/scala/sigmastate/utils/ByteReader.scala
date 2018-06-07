@@ -66,17 +66,7 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
     */
   @inline override def getInt(): Int =
   // should only be changed simultaneously with `putInt`
-    getSInt()
-
-  /**
-    * Decode signed Int previously encoded with [[ByteArrayWriter.putSInt]] using VLQ with ZigZag.
-    *
-    * @note Uses ZigZag encoding. Should be used to decode '''only''' a value that was previously
-    *       encoded with [[ByteArrayWriter.putSInt]].
-    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @return signed Int
-    */
-  @inline def getSInt(): Int = ByteBufferReader.decodeZigZagInt(getULong().toInt)
+    ByteBufferReader.decodeZigZagInt(getULong().toInt)
 
   /**
     * Decode Int previously encoded with [[ByteArrayWriter.putUInt]] using VLQ.

@@ -64,35 +64,23 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     * Use [[putUInt]] to encode values that are positive.
     *
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @note The resulting varint uses ZigZag encoding, which is much more efficient at
+    * @note Have to be decoded '''only''' with [[ByteBufferReader.getInt]]
+    *       The resulting varint uses ZigZag encoding, which is much more efficient at
     *       encoding negative values than pure VLQ.
     * @param x prefer signed Int
     */
-  @inline override def putInt(x: Int): ByteWriter =
-    putSInt(x)
-
-  /**
-    * Encode signed Int using VLQ with ZigZag.
-    * Both negative and positive values are supported, but due to ZigZag encoding positive
-    * values is done less efficiently than by [[putUInt]].
-    * Use [[putUInt]] to encode values that are positive.
-    *
-    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @note Have to be decoded '''only''' with [[ByteBufferReader.getSInt]]
-    * @param x prefer signed Int
-    */
-  @inline def putSInt(x: Int): ByteWriter = putULong(encodeZigZagInt(x))
+  @inline override def putInt(x: Int): ByteWriter = putULong(encodeZigZagInt(x))
 
   /**
     * Encode signed Int value using VLQ.
     * Both negative and positive values are supported, but only positive values are encoded
-    * efficiently, negative values are taking a toll and use six bytes. Use [[putSInt]]
+    * efficiently, negative values are taking a toll and use six bytes. Use [[putInt]]
     * to encode negative and positive values.
     *
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
     * @note Don't use it for negative values, the resulting varint is always six
     *       bytes long – it is, effectively, treated like a very large unsigned integer.
-    *       If you use [[putSInt]], the resulting varint uses ZigZag encoding,
+    *       If you use [[putInt]], the resulting varint uses ZigZag encoding,
     *       which is much more efficient.
     * @param x prefer unsigned Int (signed value will produce a significant overhead,
     *          see note above)
