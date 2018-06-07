@@ -1,41 +1,31 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.ErgoBox.{R3, R4, R5}
+import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, Value, ByteArrayConstant, IntConstant, BooleanConstant, ByteConstant, TaggedInt, ConcreteCollection}
+import sigmastate.Values.{BooleanConstant, ByteArrayConstant, FalseLeaf, IntConstant, LongConstant, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
-import org.ergoplatform.ErgoBox.{R6, R3, R4, R5}
-import org.ergoplatform._
 import sigmastate.utxo._
 
 /**
-  * Wolfram's Rule110 implementation
+  * Wolfram's Rule110 implementations
   *
-  * A coin holds following data:
-  *
-  * R4 - index of row
-  * R5 - index of column
-  * R6 - bit value (represented as a boolean)
   */
 class Rule110Specification extends SigmaTestingCommons {
 
   import BlockchainSimulationSpecification.{Block, ValidationState}
 
-  def calcRule110(left: Boolean, center: Boolean, right: Boolean): Boolean =
-    (left, center, right) match {
-      case (true, true, true) => false
-      case (true, true, false) => true
-      case (true, false, true) => true
-      case (true, false, false) => false
-      case (false, true, true) => true
-      case (false, true, false) => true
-      case (false, false, true) => true
-      case (false, false, false) => false
-    }
-
+  /**
+    * Rule 110 example implementation.
+    * Current rule 110 layer of fixed size (6 in this example), is kept in register R3 as an array of bytes
+    * (one byte represents 1 bit in rule 110).
+    * Script checks, that
+    * - register R3 first output contains correct updated layer based on rule 110 with boundary conditions
+    * - first output contains the same protecting script, allowing to calculate further layers
+    */
   property("rule110 - one layer in register") {
     val prover = new ErgoLikeProvingInterpreter {
       override val maxCost: Long = 2000000
@@ -58,8 +48,8 @@ class Rule110Specification extends SigmaTestingCommons {
         |  (outLayer == indexes.map(procCell)) && (SELF.propositionBytes == OUTPUTS(0).propositionBytes)
          }""".stripMargin).asBoolValue
 
-    val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 0, 1, 0))))
-    val output = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 1, 1, 0))))
+    val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 1, 1, 0, 1, 0))))
+    val output = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(1, 1, 1, 1, 1, 0))))
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.id)), IndexedSeq(output))
 
     val ctx = ErgoLikeContext(
@@ -73,7 +63,17 @@ class Rule110Specification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
-  property("rule110") {
+  /**
+    * A coin holds following data:
+    *
+    * R4 - index of row
+    * R5 - index of column
+    * R6 - bit value (represented as a boolean)
+    *
+    * Each transaction have 3 inputs and 4 outputs. 3 outputs are just copies of inputs, 1 output is a bit on
+    * new layer of rule 110
+    */
+  property("rule110 - one bit per output (old version)") {
     val prover = new ErgoLikeProvingInterpreter()
 
     val RowReg = R3
@@ -245,4 +245,17 @@ class Rule110Specification extends SigmaTestingCommons {
     firstRowState.boxesReader.byTwoInts(RowReg, 1, ColumnReg, 15).get.get(ValueReg).get.asInstanceOf[BooleanConstant].value shouldBe true
     firstRowState.boxesReader.byTwoInts(RowReg, 1, ColumnReg, 16).get.get(ValueReg).get.asInstanceOf[BooleanConstant].value shouldBe false
   }
+
+
+  def calcRule110(left: Boolean, center: Boolean, right: Boolean): Boolean =
+    (left, center, right) match {
+      case (true, true, true) => false
+      case (true, true, false) => true
+      case (true, false, true) => true
+      case (true, false, false) => false
+      case (false, true, true) => true
+      case (false, true, false) => true
+      case (false, false, true) => true
+      case (false, false, false) => false
+    }
 }
