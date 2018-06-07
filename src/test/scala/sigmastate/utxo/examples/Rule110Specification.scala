@@ -1,9 +1,9 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R3, R4, R5}
+import org.ergoplatform.ErgoBox.{R3, R4, R5, R6}
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, FalseLeaf, IntConstant, LongConstant, TrueLeaf}
+import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -34,16 +34,16 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """{
-        |  let inLayer:Array[Byte] = SELF.R3[Array[Byte]].value
-        |  let outLayer:Array[Byte] = OUTPUTS(0).R3[Array[Byte]].value
-        |  let indexes: Array[Int] = Array(0, 1, 2, 3, 4, 5)
+        |  let inLayer: Array[Byte] = SELF.R3[Array[Byte]].value
+        |  let outLayer: Array[Byte] = OUTPUTS(0).R3[Array[Byte]].value
+        |  let indices: Array[Int] = Array(0, 1, 2, 3, 4, 5)
         |  fun procCell(i: Int): Byte = {
         |    let l = inLayer((if (i == 0) 5 else (i - 1)))
         |    let c = inLayer(i)
         |    let r = inLayer((i + 1) % 6)
         |    intToByte((l * c * r + c * r + c + r) % 2)
         |  }
-        |  (outLayer == indexes.map(procCell)) && (SELF.propositionBytes == OUTPUTS(0).propositionBytes)
+        |  (outLayer == indices.map(procCell)) && (SELF.propositionBytes == OUTPUTS(0).propositionBytes)
          }""".stripMargin).asBoolValue
 
     val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 1, 1, 0, 1, 0))))
@@ -60,6 +60,97 @@ class Rule110Specification extends SigmaTestingCommons {
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
+
+  property("rule110 - one bit in register") {
+    val prover = new ErgoLikeProvingInterpreter {
+      override val maxCost: Long = 2000000
+    }
+    val verifier = new ErgoLikeInterpreter
+
+    val MidReg = R3
+    val XReg = R4
+    val YReg = R5
+    val ValReg = R6
+    val t = ByteConstant(1)
+    val f = ByteConstant(0)
+
+    // extract required values of for all outputs
+    val in0Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), MidReg)
+    val in1Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), MidReg)
+    val in2Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), MidReg)
+    val out0Mid = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), MidReg)
+    val out1Mid = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 1), MidReg)
+    val out2Mid = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 2), MidReg)
+
+    val in0X = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), XReg)
+    val in1X = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), XReg)
+    val in2X = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), XReg)
+    val out0X = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), XReg)
+    val out1X = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 1), XReg)
+    val out2X = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 2), XReg)
+
+    val in0Y = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), YReg)
+    val in1Y = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), YReg)
+    val in2Y = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), YReg)
+    val out0Y = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), YReg)
+    val out1Y = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 1), YReg)
+    val out2Y = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 2), YReg)
+
+    val l = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), ValReg)
+    val c = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), ValReg)
+    val r = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), ValReg)
+    val out0V = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), ValReg)
+    val out1V = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), ValReg)
+    val out2V = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), ValReg)
+
+    val in0Script = ExtractScriptBytes(ByIndex(Inputs, 0))
+    val out0Script = ExtractScriptBytes(ByIndex(Outputs, 0))
+    val out1Script = ExtractScriptBytes(ByIndex(Outputs, 1))
+    val out2Script = ExtractScriptBytes(ByIndex(Outputs, 2))
+
+    // function correctPayload(in, out) from the paper
+    val inMidCorrect = AND(EQ(in0Mid, f), EQ(in1Mid, t), EQ(in2Mid, f))
+    val inYCorrect = AND(EQ(in0Y, in1Y), EQ(in0Y, in2Y))
+    val inXCorrect = AND(EQ(in1X, Plus(in0X, 1)), EQ(in1X, Minus(in2X, 1)))
+    val calculatedBit = Modulo(Plus(Plus(Plus(Multiply(Multiply(l, c), r), Multiply(c, r)), c), r), ByteConstant(2))
+    val inValCorrect = EQ(calculatedBit, out0V)
+    val outPosCorrect = AND(EQ(out0X, in1X), EQ(out0Y, Minus(in0Y, 1)))
+    val sizesCorrect = EQ(SizeOf(Inputs), SizeOf(Outputs))
+    val payloadCorrect = AND(inValCorrect, inYCorrect, inXCorrect, inMidCorrect, outPosCorrect, sizesCorrect)
+
+    // function outCorrect(out, script) from the paper
+    val scriptsCorrect = AND(EQ(in0Script, out0Script), EQ(in0Script, out1Script), EQ(in0Script, out2Script))
+    val outXCorrect = AND(EQ(out0X, out1X), EQ(out1X, out2X))
+    val outYCorrect = AND(EQ(out0Y, out1Y), EQ(out1Y, out2Y))
+    val outValCorrect = AND(EQ(out0V, out1V), EQ(out1V, out2V))
+    val outMidCorrect = AND(EQ(out0Mid, f), EQ(out1Mid, t), EQ(out2Mid, f))
+    val outputsCorrect = AND(scriptsCorrect, outXCorrect, outYCorrect, outValCorrect, outMidCorrect)
+
+
+    val prop = AND(payloadCorrect, outputsCorrect)
+
+    val in0 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> ByteConstant(1)))
+    val in1 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(1), XReg -> ByteConstant(1), YReg -> ByteConstant(0), ValReg -> ByteConstant(0)))
+    val in2 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(2), YReg -> ByteConstant(0), ValReg -> ByteConstant(1)))
+    val out0 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(1), YReg -> ByteConstant(1), ValReg -> ByteConstant(1)))
+    val out1 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(1), XReg -> ByteConstant(1), YReg -> ByteConstant(1), ValReg -> ByteConstant(1)))
+    val out2 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(1), YReg -> ByteConstant(1), ValReg -> ByteConstant(1)))
+
+    val tx = UnsignedErgoLikeTransaction(IndexedSeq(in0, in1, in2).map(i => new UnsignedInput(i.id)), IndexedSeq(out0, out1, out2))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(in0, in1, in2),
+      tx,
+      self = in0)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+
+
+  }
+
 
   /**
     * A coin holds following data:
