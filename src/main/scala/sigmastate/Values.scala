@@ -248,6 +248,14 @@ object Values {
     }
   }
 
+  implicit class CollectionConstantOps[T <: SType](c: CollectionConstant[T]) {
+    def toConcreteCollection: ConcreteCollection[T] = {
+      implicit val tElem = c.tpe.elemType
+      val items = c.value.map(v => tElem.mkConstant(v.asInstanceOf[tElem.WrappedType]))
+      ConcreteCollection(items)
+    }
+  }
+
   val ByteArrayTypeCode = (SCollection.CollectionTypeCode + SByte.typeCode).toByte
 
   object ByteArrayConstant {

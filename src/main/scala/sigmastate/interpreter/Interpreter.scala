@@ -2,11 +2,12 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 import java.util
+import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
@@ -16,10 +17,10 @@ import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.utxo.{DeserializeContext, CostTable, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -183,10 +184,19 @@ trait Interpreter {
       GroupElementConstant(dlogGroup.multiplyGroupElements(l.value, r.value))
 
     //relations
-    case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-      BooleanConstant.fromBoolean(l == r)
-    case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-      BooleanConstant.fromBoolean(l != r)
+    case EQ(Constant(l, tl), Constant(r, tr)) =>
+      BooleanConstant.fromBoolean(tl == tr && Objects.deepEquals(l,r))
+
+    case NEQ(Constant(l, tl), Constant(r, tr)) =>
+      BooleanConstant.fromBoolean(tl != tr || !Objects.deepEquals(l,r))
+
+//    case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
+//      BooleanConstant.fromBoolean(l != r)
+
+//    case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
+//      BooleanConstant.fromBoolean(l == r)
+//    case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
+//      BooleanConstant.fromBoolean(l != r)
 
     case GT(ByteConstant(l), ByteConstant(r)) =>
       BooleanConstant.fromBoolean(l > r)
@@ -241,6 +251,11 @@ trait Interpreter {
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
 
+    case cc @ ConcreteCollection(items, _) =>
+      if (items.forall(_.isInstanceOf[EvaluatedValue[_]]))
+        Constant[SCollection[SType]](cc.value, cc.tpe)
+      else
+        null
     case t: Transformer[_, _] if t.transformationReady => t.function(this, context)
 
     case _ => null
