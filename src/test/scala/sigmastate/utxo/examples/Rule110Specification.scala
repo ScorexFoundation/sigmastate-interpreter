@@ -55,7 +55,7 @@ class Rule110Specification extends SigmaTestingCommons {
         |    let r = inLayer((i + 1) % 6)
         |    intToByte((l * c * r + c * r + c + r) % 2)
         |  }
-        |  (outLayer == indexes.map(procCell)) //&& (SELF.propositionBytes == OUTPUTS(0).propositionBytes)
+        |  (outLayer == indexes.map(procCell)) && (SELF.propositionBytes == OUTPUTS(0).propositionBytes)
          }""".stripMargin).asBoolValue
 
     val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 0, 0, 0, 1, 0))))

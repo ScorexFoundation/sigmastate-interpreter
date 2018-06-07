@@ -242,11 +242,6 @@ trait Interpreter {
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
 
-    case cc @ ConcreteCollection(items, _) =>
-      if (items.forall(_.isInstanceOf[EvaluatedValue[_]]))
-        Constant[SCollection[SType]](cc.value, cc.tpe)
-      else
-        null
     case t: Transformer[_, _] if t.transformationReady => t.function(this, context)
 
     case _ => null
