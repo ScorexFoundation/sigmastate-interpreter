@@ -1,11 +1,12 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.R3
-import org.ergoplatform._
+import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.utils.ScryptoLogging
-import sigmastate.Values.LongConstant
+import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
+import sigmastate.lang.Terms._
 import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
@@ -17,43 +18,79 @@ import sigmastate.{SLong, _}
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging {
 
-  // Some constants
   private val coinsInOneErgo: Long = 100000000
   private val blocksPerHour: Int = 30
-  private val blocksPerYear: Int = 365 * 24 * blocksPerHour
-  private val blocksTotal: Int = blocksPerYear * 8
-  private val rewardReductionPeriod: Long = 90 * 24 * blocksPerHour
-  private val fixedRatePeriod: Long = 2 * blocksPerYear - rewardReductionPeriod
-  private val fixedRate: Long = 2250 * coinsInOneErgo / blocksPerHour
-  private val decreasingEpochs: Long = (blocksTotal - fixedRatePeriod) / rewardReductionPeriod
 
+  case class MonetarySettings(fixedRatePeriod: Long,
+                              epochLength: Int,
+                              fixedRate: Long,
+                              oneEpochReduction: Long)
+
+  val s = MonetarySettings(blocksPerHour * 24 * 7, 24 * blocksPerHour, 15 * coinsInOneErgo, 3 * coinsInOneErgo)
+
+  val (coinsTotal, blocksTotal) = {
+    def loop(height: Int, acc: Long): (Long, Int) = {
+      val currentRate = emissionAtHeight(height)
+      if (currentRate > 0) {
+        loop(height + 1, acc + currentRate)
+      } else {
+        (acc, height - 1)
+      }
+    }
+
+    loop(0, 0)
+  }
 
   def emissionAtHeight(h: Long): Long = {
-    if (h <= fixedRatePeriod) {
-      fixedRate
-    } else if (h > blocksTotal) {
-      0
+    if (h < s.fixedRatePeriod) {
+      s.fixedRate
     } else {
-      fixedRate - fixedRate * ((h - fixedRatePeriod) / rewardReductionPeriod) / decreasingEpochs
+      val epoch = 1 + (h - s.fixedRatePeriod) / s.epochLength
+      Math.max(s.fixedRate - s.oneEpochReduction * epoch, 0)
     }
   }.ensuring(_ >= 0, s"Negative at $h")
+
 
   property("emission specification") {
     val register = R3
     val prover = new ErgoLikeProvingInterpreter()
 
-    val red = Modulo(Multiply(fixedRate, Modulo(Minus(Height, fixedRatePeriod), rewardReductionPeriod)), decreasingEpochs)
-    val coinsToIssue = If(LE(Height, fixedRatePeriod), fixedRate, Minus(fixedRate, red))
-    val out = ByIndex(Outputs, 0)
+    val out = ByIndex(Outputs, IntConstant(0))
+    val epoch = Plus(LongConstant(1), Divide(Minus(Height, LongConstant(s.fixedRatePeriod)), LongConstant(s.epochLength)))
+    val coinsToIssue = If(LT(Height, LongConstant(s.fixedRatePeriod)),
+      s.fixedRate,
+      Minus(s.fixedRate, Multiply(s.oneEpochReduction, epoch))
+    )
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(out))
     val heightCorrect = EQ(ExtractRegisterAs[SLong.type](out, register), Height)
-    val heightIncreased = GT(ExtractRegisterAs[SLong.type](out, register), ExtractRegisterAs[SLong.type](Self, register))
+    val heightIncreased = GT(Height, ExtractRegisterAs[SLong.type](Self, register))
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(out)))
+    val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
-    val prop = OR(AND(sameScriptRule, correctCoinsConsumed, heightIncreased, heightCorrect), EQ(Height, blocksTotal))
+    val prop = OR(AND(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule), AND(heightIncreased, lastCoins))
+
+    val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
+      "epochLength" -> s.epochLength,
+      "fixedRate" -> s.fixedRate,
+      "oneEpochReduction" -> s.oneEpochReduction)
+    val prop1 = compile(env,
+      """{
+        |    let epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
+        |    let out = OUTPUTS(0)
+        |    let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
+        |    let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
+        |    let sameScriptRule = SELF.propositionBytes == out.propositionBytes
+        |    let heightIncreased = HEIGHT > SELF.R3[Long].value
+        |    let heightCorrect = out.R3[Long].value == HEIGHT
+        |    let lastCoins = SELF.value <= oneEpochReduction
+        |    allOf(Array(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule)) || (heightIncreased && lastCoins)
+        |}""".stripMargin).asBoolValue
+
+    prop1 shouldEqual prop
+
     val minerProp = prover.dlogSecrets.head.publicImage
 
-    val initialBoxCandidate: ErgoBox = ErgoBox(9773992500000000L, prop, Map(register -> LongConstant(-1)))
+    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block {
       IndexedSeq(
         ErgoLikeTransaction(
@@ -72,7 +109,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
                                    emissionBox: ErgoBox,
                                    height: Long): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
-      val ut = if (height != blocksTotal) {
+      val ut = if (emissionBox.value > s.oneEpochReduction) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Map())
         val newEmissionBox: ErgoBoxCandidate =
           new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> LongConstant(height)))
@@ -105,8 +142,9 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
                  emissionBox: ErgoBox,
                  height: Int,
                  hLimit: Int): Unit = if (height < hLimit) {
-      if (height % 10000 == 0) log.debug(s"block $height from $blocksTotal." +
-        s" ${height.toDouble / blocksTotal}% in ${System.currentTimeMillis() - st} ms")
+      if (height % 1000 == 0) {
+        println(s"block $height in ${System.currentTimeMillis() - st} ms, ${emissionBox.value} coins remain")
+      }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
       val block = Block(IndexedSeq(tx))
       val newState = state.applyBlock(block).get
@@ -118,7 +156,6 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
       }
     }
 
-//    chainGen(genesisState, initialBox, 2, 100000000)
-    chainGen(genesisState, initialBox, 2, 100)
+    chainGen(genesisState, initialBox, 0, 100000000)
   }
 }

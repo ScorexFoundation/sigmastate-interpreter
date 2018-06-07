@@ -2,9 +2,9 @@ package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
 import sigmastate.Values._
-import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.lang.Terms._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
 
@@ -15,7 +15,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val prop = compile(env, script).asBoolValue
     prop shouldBe propExp
-//    val prop = propExp
+    //    val prop = propExp
     val ctx = ErgoLikeContext.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
@@ -34,16 +34,26 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   val bigIntVar2 = 6.toByte
   val bigIntVar3 = 7.toByte
   val byteVar3 = 8.toByte
+  val booleanVar = 9.toByte
   val ext = Seq(
     (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
     (byteVar1, ByteConstant(1)), (byteVar2, ByteConstant(2)),
-    (bigIntVar1, BigIntConstant(BigInt(10).underlying())), (bigIntVar2, BigIntConstant(BigInt(20).underlying())))
+    (bigIntVar1, BigIntConstant(BigInt(10).underlying())), (bigIntVar2, BigIntConstant(BigInt(20).underlying())),
+    (booleanVar, TrueLeaf))
   val env = Map(
     "intVar1" -> intVar1, "intVar2" -> intVar2,
     "byteVar1" -> byteVar1, "byteVar2" -> byteVar2, "byteVar3" -> byteVar3,
-    "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2, "bigIntVar3" -> bigIntVar3)
+    "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2, "bigIntVar3" -> bigIntVar3, "trueVar" -> booleanVar)
 
   property("Relation operations") {
+    test(env, ext,
+      "{ allOf(Array(getVar[Boolean](trueVar), true, true)) }",
+      AND(TaggedBoolean(booleanVar), TrueLeaf, TrueLeaf)
+    )
+    test(env, ext,
+      "{ anyOf(Array(getVar[Boolean](trueVar), true, false)) }",
+      OR(TaggedBoolean(booleanVar), TrueLeaf, FalseLeaf)
+    )
     test(env, ext,
       "{ getVar[Int](intVar2) > getVar[Int](intVar1) && getVar[Int](intVar1) < getVar[Int](intVar2) }",
       AND(GT(TaggedInt(intVar2), TaggedInt(intVar1)), LT(TaggedInt(intVar1), TaggedInt(intVar2)))
