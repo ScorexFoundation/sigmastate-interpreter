@@ -66,10 +66,10 @@ object DataSerializer {
     case SAvlTree =>
       val data = v.asInstanceOf[AvlTreeData]
       serialize[SByteArray](data.startingDigest, SByteArray, w)
-      w.putInt(data.keyLength)
-      w.putOption(data.valueLengthOpt)(_.putInt(_))
-      w.putOption(data.maxNumOperations)(_.putInt(_))
-      w.putOption(data.maxDeletes)(_.putInt(_))
+      w.putUInt(data.keyLength)
+      w.putOption(data.valueLengthOpt)(_.putUInt(_))
+      w.putOption(data.maxNumOperations)(_.putUInt(_))
+      w.putOption(data.maxDeletes)(_.putUInt(_))
 
     case tCol: SCollection[a] =>
       val arr = v.asInstanceOf[tCol.WrappedType]
@@ -125,10 +125,10 @@ object DataSerializer {
 
     case SAvlTree =>
       val startingDigest = deserialize[SByteArray](SByteArray, r)
-      val keyLength = r.getInt()
-      val valueLengthOpt = r.getOption(r.getInt())
-      val maxNumOperations = r.getOption(r.getInt())
-      val maxDeletes = r.getOption(r.getInt())
+      val keyLength = r.getUInt()
+      val valueLengthOpt = r.getOption(r.getUInt())
+      val maxNumOperations = r.getOption(r.getUInt())
+      val maxDeletes = r.getOption(r.getUInt())
       val data = AvlTreeData(ADDigest @@ startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
       data
     case tCol: SCollection[a] =>
