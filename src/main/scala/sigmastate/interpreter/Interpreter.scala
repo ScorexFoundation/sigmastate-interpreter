@@ -184,19 +184,10 @@ trait Interpreter {
       GroupElementConstant(dlogGroup.multiplyGroupElements(l.value, r.value))
 
     //relations
-    case EQ(Constant(l, tl), Constant(r, tr)) =>
-      BooleanConstant.fromBoolean(tl == tr && Objects.deepEquals(l,r))
-
-    case NEQ(Constant(l, tl), Constant(r, tr)) =>
-      BooleanConstant.fromBoolean(tl != tr || !Objects.deepEquals(l,r))
-
-//    case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-//      BooleanConstant.fromBoolean(l != r)
-
-//    case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-//      BooleanConstant.fromBoolean(l == r)
-//    case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-//      BooleanConstant.fromBoolean(l != r)
+    case EQ(l: EvaluatedValue[_], r: EvaluatedValue[_]) =>
+      BooleanConstant.fromBoolean(Objects.deepEquals(l.value, r.value))
+    case NEQ(l: EvaluatedValue[_], r: EvaluatedValue[_]) =>
+      BooleanConstant.fromBoolean(!Objects.deepEquals(l.value, r.value))
 
     case GT(ByteConstant(l), ByteConstant(r)) =>
       BooleanConstant.fromBoolean(l > r)
