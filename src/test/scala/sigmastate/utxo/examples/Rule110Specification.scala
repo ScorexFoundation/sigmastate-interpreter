@@ -32,9 +32,7 @@ class Rule110Specification extends SigmaTestingCommons {
     }
     val verifier = new ErgoLikeInterpreter
 
-    val indexId = 21.toByte
-    val env = Map("indexId" -> indexId)
-    val prop = compile(env,
+    val prop = compile(Map(),
       """{
         |  let inLayer:Array[Byte] = SELF.R3[Array[Byte]].value
         |  let outLayer:Array[Byte] = OUTPUTS(0).R3[Array[Byte]].value
