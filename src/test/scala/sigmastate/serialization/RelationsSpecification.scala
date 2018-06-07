@@ -10,10 +10,10 @@ class RelationsSpecification extends TableSerializationSpecification {
   override val objects =
     Table(
       ("object", "bytes"),
-      (LT(LongConstant(2), LongConstant(3)), Array[Byte](LtCode, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 2, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (LE(LongConstant(2), LongConstant(3)), Array[Byte](LeCode, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 2, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (GT(LongConstant(6), LongConstant(5)), Array[Byte](GtCode, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 6, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 5)),
-      (GE(LongConstant(6), LongConstant(5)), Array[Byte](GeCode, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 6, SLong.typeCode, 0, 0, 0, 0, 0, 0, 0, 5)),
+      (LT(LongConstant(2), LongConstant(3)), Array[Byte](LtCode, SLong.typeCode, 4, SLong.typeCode, 6)),
+      (LE(LongConstant(2), LongConstant(3)), Array[Byte](LeCode, SLong.typeCode, 4, SLong.typeCode, 6)),
+      (GT(LongConstant(6), LongConstant(5)), Array[Byte](GtCode, SLong.typeCode, 12, SLong.typeCode, 10)),
+      (GE(LongConstant(6), LongConstant(5)), Array[Byte](GeCode, SLong.typeCode, 12, SLong.typeCode, 10)),
       (EQ(TrueLeaf, FalseLeaf), Array[Byte](EqCode, TrueCode, FalseCode)),
       (NEQ(TrueLeaf, FalseLeaf), Array[Byte](NeqCode, TrueCode, FalseCode))
     )
