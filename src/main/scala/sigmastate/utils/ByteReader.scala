@@ -83,24 +83,14 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
     * @return signed Long
     */
-  @inline override def getLong(): Long = getSLong()
-
-  /**
-    * Decode signed Long previously encoded with [[ByteArrayWriter.putSLong]] using VLQ with ZigZag.
-    *
-    * @note Uses ZigZag encoding. Should be used to decode '''only''' a value that was previously
-    *       encoded with [[ByteArrayWriter.putSLong]].
-    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @return signed Long
-    */
-  @inline def getSLong(): Long = decodeZigZagLong(getULong())
+  @inline override def getLong(): Long = decodeZigZagLong(getULong())
 
   /**
     * Decode Long previously encoded with [[ByteArrayWriter.putULong]] using VLQ.
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
     * @return Long
     */
-  @inline def getULong(): Long = {
+  @inline override def getULong(): Long = {
     // should be fast if java -> scala conversion did not botched it
     // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedInputStream.java#L2653
     // for faster version see: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedInputStream.java#L1085

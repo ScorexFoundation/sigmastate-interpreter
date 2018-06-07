@@ -92,7 +92,6 @@ class ByteReaderWriterImpSpecification extends PropSpec
             // test all paths
             writer.putLong(v)
             writer.putULong(v)
-            writer.putSLong(v)
           case v: Array[Byte] => writer.putUInt(v.length).putBytes(v)
           case _ => fail(s"writer: unsupported value type: ${any.getClass}");
         }
@@ -109,7 +108,6 @@ class ByteReaderWriterImpSpecification extends PropSpec
           // test all paths
           reader.getLong() shouldEqual v
           reader.getULong() shouldEqual v
-          reader.getSLong() shouldEqual v
         case v: Array[Byte] =>
           val size = reader.getUInt()
           reader.getBytes(size) shouldEqual v
@@ -145,9 +143,9 @@ class ByteReaderWriterImpSpecification extends PropSpec
     forAll(Gen.chooseNum(1, Long.MaxValue)) { v: Long =>
       val writer = byteArrayWriter()
       writer.putULong(v)
-      writer.putSLong(v)
+      writer.putLong(v)
       val reader = byteBufReader(writer.toBytes)
-      reader.getSLong() should not be v
+      reader.getLong() should not be v
       reader.getULong() should not be v
     }
   }
