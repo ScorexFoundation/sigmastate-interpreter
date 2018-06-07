@@ -64,7 +64,8 @@ trait Interpreter {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
-          case eba: EvaluatedValue[SByteArray] @unchecked if eba.tpe == SByteArray => Some(ValueSerializer.deserialize(eba.value))
+          case eba: EvaluatedValue[SByteArray] @unchecked if eba.tpe == SByteArray =>
+            Some(ValueSerializer.deserialize(eba.value))
           case _ => None
         }
       else
@@ -72,8 +73,7 @@ trait Interpreter {
     case _ => None
   }
 
-  /** First, both the prover and the verifier are making context-dependent tree transformations
-    * (usually, context variables substitutions).
+  /** Implements single reduction step by matching given tree against rewriting rules.
     * Context-specific transformations should be defined in descendants.
     *
     * This is the only function to define all the tree rewrites, except of deserializations.
@@ -83,6 +83,12 @@ trait Interpreter {
     * @return a new rewritten tree or `null` if `tree` cannot be rewritten.
     */
   def evaluateNode(context: CTX, tree: SValue): SValue = tree match {
+    case t: TaggedVariable[_] =>
+      if (context.extension.values.contains(t.varId))
+        context.extension.values(t.varId)
+      else
+        null
+
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
 
@@ -166,12 +172,9 @@ trait Interpreter {
     case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.DivisionCode) =>
       BigIntConstant(l.divide(r))
       
-
     case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       assert(l.length == r.length)
       ByteArrayConstant(Helpers.xor(l, r))
-
-    case c: CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray]])
 
     case Exponentiate(GroupElementConstant(l), BigIntConstant(r)) =>
       GroupElementConstant(dlogGroup.exponentiate(l, r))
@@ -234,27 +237,34 @@ trait Interpreter {
       val bv = tree.createVerifier(SerializedAdProof @@ proof)
       val res = bv.performOneOperation(Lookup(ADKey @@ key))
       BooleanConstant.fromBoolean(res.isSuccess) // TODO should we also check res.get.isDefined
+
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
 
-    //conjectures
-    case a@AND(children) if a.transformationReady =>
-      a.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
-
-    case o@OR(children) if o.transformationReady =>
-      o.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
-
-    case t: Transformer[_, _] if t.transformationReady => t.function()
+    case t: Transformer[_, _] if t.transformationReady => t.function(this, context)
 
     case _ => null
   }
 
-  // new reducer: 1 phase only which is constantly being repeated until non-reducible,
-  // reduction state carried between reductions is number of transformations done.
-  // when it becomes zero, it means that it is time to stop (tree becomes irreducible)
-  //todo: should we limit number of steps?
-  case class ReductionState(numberOfTransformations: Int) {
-    def recordTransformation(): ReductionState = ReductionState(numberOfTransformations + 1)
+  def reduceUntilConverged[T <: SType](context: CTX, tree: Value[T]): Value[T] = {
+    // The interpreter checks whether any nodes were rewritten during last rewriting, and aborts if no rewritings.
+    // Because each rewriting reduces size of the tree the process terminates with number of steps <= substTree.cost.
+    var wasRewritten = false
+    val rules: Strategy = strategy[Value[_ <: SType]] { case node =>
+      val rewritten = evaluateNode(context, node)
+      if (rewritten != null) {
+        wasRewritten = true
+        Some(rewritten)
+      }
+      else
+        None
+    }
+    var currTree = tree
+    do {
+      wasRewritten = false
+      currTree = everywherebu(rules)(currTree).get.asInstanceOf[Value[T]]
+    } while (wasRewritten)
+    currTree
   }
 
   /**
@@ -281,32 +291,15 @@ trait Interpreter {
     }
 
     val cost = substTree.cost(context)
-
     if (cost > maxCost) {
       throw new Error(s"Estimated expression complexity $cost exceeds the limit $maxCost in $substTree")
     }
 
     // After performing deserializations and checking cost of the resulting tree, both the prover
     // and the verifier are evaluating the tree by applying rewriting rules, until no rules trigger during tree
-    // traversal (so interpreter checks whether any nodes were rewritten during last rewriting, and aborts if so).
-    // Because each rewriting reduces size of the tree the process terminates with number of steps <= substTree.cost.
-    var wasRewritten = false
-    val rules: Strategy = strategy[Value[_ <: SType]] { case node =>
-      val rewritten = evaluateNode(context, node)
-      if (rewritten != null) {
-        wasRewritten = true
-        Some(rewritten)
-      }
-      else
-        None
-    }
-    var currTree = substTree
-    do {
-      wasRewritten = false
-      currTree = everywherebu(rules)(currTree).get.asInstanceOf[Value[SBoolean.type]]
-    } while (wasRewritten)
-
-    currTree -> cost
+    // traversal.
+    val res = reduceUntilConverged(context, substTree)
+    res -> cost
   }
 
   /**
@@ -436,7 +429,7 @@ trait Interpreter {
              proverResult: SerializedProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
-    verify(exp, ctxv, proverResult.proofBytes.toArray, message)
+    verify(exp, ctxv, proverResult.proofBytes, message)
   }
 
 
@@ -460,8 +453,14 @@ trait Interpreter {
 
 object Interpreter {
   type VerificationResult = (Boolean, Long)
-
   type ReductionResult = (Value[SBoolean.type], Long)
+
+  implicit class InterpreterOps(I: Interpreter) {
+    def eval[T <: SType](ctx: Context[_], ev: Value[T]): EvaluatedValue[T] = {
+      val reduced = I.reduceUntilConverged(ctx.asInstanceOf[I.CTX], ev)
+      reduced.asInstanceOf[EvaluatedValue[T]]
+    }
+  }
 
   def error(msg: String) = throw new InterpreterException(msg)
 }
