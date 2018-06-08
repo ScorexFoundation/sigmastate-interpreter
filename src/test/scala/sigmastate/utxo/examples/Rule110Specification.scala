@@ -3,11 +3,12 @@ package sigmastate.utxo.examples
 import org.ergoplatform.ErgoBox.{R3, R4, R5, R6}
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, TrueLeaf}
+import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, TaggedByteArray, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 /**
@@ -62,9 +63,6 @@ class Rule110Specification extends SigmaTestingCommons {
   }
 
   property("rule110 - one bit in register") {
-    val prover = new ErgoLikeProvingInterpreter {
-      override val maxCost: Long = 2000000
-    }
     val verifier = new ErgoLikeInterpreter
 
     val MidReg = R3
@@ -73,6 +71,8 @@ class Rule110Specification extends SigmaTestingCommons {
     val ValReg = R6
     val t = ByteConstant(1)
     val f = ByteConstant(0)
+    val scriptId = 21.toByte
+    val scriptHash = CalcBlake2b256(TaggedByteArray(scriptId))
 
     // extract required values of for all outputs
     val in0Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), MidReg)
@@ -126,8 +126,12 @@ class Rule110Specification extends SigmaTestingCommons {
     val outMidCorrect = AND(EQ(out0Mid, f), EQ(out1Mid, t), EQ(out2Mid, f))
     val outputsCorrect = AND(scriptsCorrect, outXCorrect, outYCorrect, outValCorrect, outMidCorrect)
 
+    val normalCaseProp = AND(payloadCorrect, outputsCorrect)
+    val normalCaseBytes = ValueSerializer.serialize(normalCaseProp)
+    val normalCaseHash = Blake2b256(normalCaseBytes)
 
-    val prop = AND(payloadCorrect, outputsCorrect)
+    val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
+    val prop = AND(scriptIsCorrect, If(EQ(SizeOf(Inputs), 3), EQ(scriptHash, normalCaseHash), FalseLeaf))
 
     val in0 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> ByteConstant(1)))
     val in1 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(1), XReg -> ByteConstant(1), YReg -> ByteConstant(0), ValReg -> ByteConstant(0)))
@@ -137,6 +141,8 @@ class Rule110Specification extends SigmaTestingCommons {
     val out2 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(1), YReg -> ByteConstant(-1), ValReg -> ByteConstant(1)))
 
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(in0, in1, in2).map(i => new UnsignedInput(i.id)), IndexedSeq(out0, out1, out2))
+    val prover = new ErgoLikeProvingInterpreter()
+      .withContextExtender(scriptId, ByteArrayConstant(normalCaseBytes))
 
     val ctx = ErgoLikeContext(
       currentHeight = 1,
