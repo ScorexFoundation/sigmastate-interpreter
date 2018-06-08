@@ -239,7 +239,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""")
 
-    val prop = AND(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    val prop = AND(pubkeyA, pubkeyB, OR(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
