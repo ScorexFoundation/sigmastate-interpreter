@@ -166,6 +166,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val normalPayloadCorrect = checkPayloadCorrect(in0Mid, in1Mid, in2Mid, in0X, in1X, in2X, in0Y, in1Y, in2Y, in0Val, in1Val, in2Val, out0X, out0Y, out0V, IntConstant(3))
     val rightmostPayloadCorrect = checkPayloadCorrect(in0Mid, in1Mid, f, in0X, in1X, ByteConstant(1), in0Y, in1Y, in0Y, in0Val, in1Val, f, out0X, out0Y, out0V, IntConstant(2))
     val nLeftmostPayloadCorrect = checkPayloadCorrect(f, in0Mid, in1Mid, Minus(in0X, ByteConstant(1)), in0X, in1X, in0Y, in0Y, in1Y, f, in0Val, in1Val, out0X, out0Y, out0V, IntConstant(2))
+    val leftmostPayloadCorrect = checkPayloadCorrect(f, t, in0Mid, Minus(in0X, ByteConstant(2)), Minus(in0X, ByteConstant(1)), in0X, in0Y, in0Y, in0Y, f, f, in0Val, out0X, out0Y, out0V, IntConstant(1))
 
     // function outCorrect(out, script) from the paper
     val scriptsCorrect = AND(EQ(in0Script, out0Script), EQ(in0Script, out1Script), EQ(in0Script, out2Script))
@@ -191,9 +192,13 @@ class Rule110Specification extends SigmaTestingCommons {
     val nLeftmostHash = Blake2b256(nLeftmostBytes)
     val nLeftmostConditions = AND(EQ(SizeOf(Inputs), 2), EQ(in0X, in0Y), EQ(scriptHash, nLeftmostHash))
 
+    val leftmostProp = AND(leftmostPayloadCorrect, outputsCorrect)
+    val leftmostBytes = ValueSerializer.serialize(leftmostProp)
+    val leftmostHash = Blake2b256(leftmostBytes)
+    val leftmostConditions = AND(EQ(SizeOf(Inputs), 1), EQ(in0X, in0Y), EQ(scriptHash, leftmostHash))
 
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
-    val prop = AND(scriptIsCorrect, OR(normalCaseConditions, rightmostConditions, nLeftmostConditions))
+    val prop = AND(scriptIsCorrect, OR(normalCaseConditions, rightmostConditions, nLeftmostConditions, leftmostConditions))
 
     // test normal case
     val nIn0 = ErgoBox(1, prop, Map(MidReg -> f, XReg -> ByteConstant(-2), YReg -> ByteConstant(0), ValReg -> t))
@@ -259,6 +264,25 @@ class Rule110Specification extends SigmaTestingCommons {
     val lnProof = lnProver.prove(prop, lnCtx, fakeMessage).get
     verifier.verify(prop, lnCtx, lnProof, fakeMessage).get._1 shouldBe true
 
+    // test  leftmost case
+    val lIn0 = ErgoBox(1, prop, Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-6), ValReg -> t))
+    val lOut0 = ErgoBox(1, prop, Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
+    val lOut1 = ErgoBox(1, prop, Map(MidReg -> t, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
+    val lOut2 = ErgoBox(1, prop, Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
+
+    val lTx = UnsignedErgoLikeTransaction(IndexedSeq(lIn0).map(i => new UnsignedInput(i.id)), IndexedSeq(lOut0, lOut1, lOut2))
+    val lProver = new ErgoLikeProvingInterpreter()
+      .withContextExtender(scriptId, ByteArrayConstant(leftmostBytes))
+
+    val lCtx = ErgoLikeContext(
+      currentHeight = 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(lIn0),
+      lTx,
+      self = lIn0)
+
+    val lProof = lProver.prove(prop, lCtx, fakeMessage).get
+    verifier.verify(prop, lCtx, lProof, fakeMessage).get._1 shouldBe true
   }
 
 
