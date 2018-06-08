@@ -34,16 +34,16 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """{
-        |  let inLayer: Array[Byte] = SELF.R3[Array[Byte]].value
-        |  let outLayer: Array[Byte] = OUTPUTS(0).R3[Array[Byte]].value
         |  let indices: Array[Int] = Array(0, 1, 2, 3, 4, 5)
+        |  let inLayer: Array[Byte] = SELF.R3[Array[Byte]].value
         |  fun procCell(i: Int): Byte = {
         |    let l = inLayer((if (i == 0) 5 else (i - 1)))
         |    let c = inLayer(i)
         |    let r = inLayer((i + 1) % 6)
         |    intToByte((l * c * r + c * r + c + r) % 2)
         |  }
-        |  (outLayer == indices.map(procCell)) && (SELF.propositionBytes == OUTPUTS(0).propositionBytes)
+        |  (OUTPUTS(0).R3[Array[Byte]].value == indices.map(procCell)) &&
+        |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
          }""".stripMargin).asBoolValue
 
     val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 1, 1, 0, 1, 0))))
