@@ -76,31 +76,11 @@ class SigmaBinder(env: Map[String, Any]) {
         else error(s"Invalid arguments of Some: expected one argument but found $args")
       Some(SomeValue(arg))
 
-    // Rule: col(i) --> ByIndex(col, i)
-    case Apply(Typed(obj, tCol: SCollection[_]), Seq(Constant(i, tpe: SNumericType))) =>
-      Some(ByIndex(obj.asValue[SCollection[SType]], SInt.upcast(i.asInstanceOf[AnyVal])))
-
-    // Rule: allOf(Array(...)) --> AND(...)
-    case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked, _))) =>
-      Some(AND(args))
-
-    // Rule: anyOf(Array(...)) --> OR(...)
-    case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked, _))) =>
-      Some(OR(args))
-
-    // Rule: allOf(arr) --> AND(arr)
-    case Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-      Some(AND(arr))
-
-    // Rule: anyOf(arr) --> OR(arr)
-    case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-      Some(OR(arr))
-
     case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
       if (targs.length != 1 || args.length != 1)
         error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
       val id = args.head match {
-        case LongConstant(i) => i.toByteExact
+        case LongConstant(i) => i.toByteExact  //TODO use SByte.downcast once it is implemented
         case IntConstant(i) => i.toByteExact
         case ByteConstant(i) => i
       }

@@ -170,19 +170,6 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
 }
 
-///**
-//  * Up cast SInt to SBigInt
-//  */
-//case class IntToBigInt(input: Value[SLong.type])
-//  extends Transformer[SLong.type, SBigInt.type] with NotReadyValueBigInt {
-//  override val opCode: OpCode = OpCodes.IntToBigIntCode
-//
-//  override def function(bal: EvaluatedValue[SLong.type]): Value[SBigInt.type] =
-//    BigIntConstant(BigInt(bal.value).underlying())
-//
-//  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
-//}
-
 /**
   * Downcast SInt to SByte
   */

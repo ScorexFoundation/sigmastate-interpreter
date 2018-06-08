@@ -2,11 +2,12 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 import java.util
+import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
@@ -16,10 +17,10 @@ import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.utxo.{DeserializeContext, CostTable, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -183,10 +184,10 @@ trait Interpreter {
       GroupElementConstant(dlogGroup.multiplyGroupElements(l.value, r.value))
 
     //relations
-    case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-      BooleanConstant.fromBoolean(l == r)
-    case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-      BooleanConstant.fromBoolean(l != r)
+    case EQ(l: EvaluatedValue[_], r: EvaluatedValue[_]) =>
+      BooleanConstant.fromBoolean(Objects.deepEquals(l.value, r.value))
+    case NEQ(l: EvaluatedValue[_], r: EvaluatedValue[_]) =>
+      BooleanConstant.fromBoolean(!Objects.deepEquals(l.value, r.value))
 
     case GT(ByteConstant(l), ByteConstant(r)) =>
       BooleanConstant.fromBoolean(l > r)

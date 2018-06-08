@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import org.ergoplatform.Outputs
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._

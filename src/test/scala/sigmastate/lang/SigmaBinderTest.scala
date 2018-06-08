@@ -36,10 +36,6 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("predefined functions") {
-    bind(env, "anyOf(Array(c1, c2))") shouldBe OR(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
-//    bind(env, "blake2b256(getVar[Array[Byte]](10))") shouldBe CalcBlake2b256(TaggedVariable(10, SByteArray))
-//    bind(env, "intToByte(10)") shouldBe IntToByte(IntConstant(10))
-    bind(env, "allOf(Array(c1, c2))") shouldBe AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
     bind(env, "getVar[Byte](10)") shouldBe TaggedVariable(10, SByte)
     bind(env, "getVar[Array[Byte]](10)") shouldBe TaggedVariable(10, SByteArray)
   }
@@ -116,12 +112,6 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Some(X)") shouldBe SomeValue(Ident("X"))
     bind(env, "Some(Some(X + 1))") shouldBe
       SomeValue(SomeValue(Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
-  }
-
-  property("array indexed access") {
-    bind(env, "Array(1)(0)") shouldBe ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0)
-    bind(env, "Array(Array(1))(0)(0)") shouldBe
-      ByIndex(ByIndex(ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)), 0), 0)
   }
 
   property("lambdas") {
