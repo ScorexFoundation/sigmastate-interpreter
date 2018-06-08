@@ -141,6 +141,13 @@ class SigmaSpecializer {
           case v => IndexedSeq(v)
         }))
 
+    case OR(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[OR]) =>
+      Some(OR(
+        items.flatMap {
+          case OR(ConcreteCollection(innerItems, SBoolean)) => innerItems
+          case v => IndexedSeq(v)
+        }))
+
   })))(e)
 
   def specialize(typed: SValue): SValue = {

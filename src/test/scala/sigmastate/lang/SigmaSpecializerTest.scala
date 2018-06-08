@@ -85,5 +85,7 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
 
   property("OR flattening") {
     spec("true || true || true") shouldBe OR(TrueLeaf, TrueLeaf, TrueLeaf)
+    spec("true || (true || true) || true") shouldBe
+      OR(TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf)
   }
 }
