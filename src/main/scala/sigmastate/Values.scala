@@ -455,9 +455,7 @@ object Values {
       case const: CollectionConstant[T]@unchecked => whenConstant(const)
       case _ => sys.error(s"Unexpected node $coll")
     }
-    def toConcreteCollection: ConcreteCollection[T] = {
-      val cc = matchCase(cc => cc, _.toConcreteCollection)
-      cc
-    }
+    def toConcreteCollection: ConcreteCollection[T] =
+      matchCase(cc => cc, _.toConcreteCollection)
   }
 }
