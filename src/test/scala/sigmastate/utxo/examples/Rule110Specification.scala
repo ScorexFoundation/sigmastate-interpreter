@@ -100,14 +100,14 @@ class Rule110Specification extends SigmaTestingCommons {
                             in0X: Value[SByte.type],
                             in1X: Value[SByte.type],
                             in2X: Value[SByte.type],
-                            out0X: Value[SByte.type],
                             in0Y: Value[SByte.type],
                             in1Y: Value[SByte.type],
                             in2Y: Value[SByte.type],
-                            out0Y: Value[SByte.type],
                             l: Value[SByte.type],
                             c: Value[SByte.type],
                             r: Value[SByte.type],
+                            out0X: Value[SByte.type],
+                            out0Y: Value[SByte.type],
                             out0V: Value[SByte.type],
                             outsSize: Value[SInt.type]) = {
       val inMidCorrect = AND(EQ(in0Mid, f), EQ(in1Mid, t), EQ(in2Mid, f))
@@ -163,8 +163,8 @@ class Rule110Specification extends SigmaTestingCommons {
     val out1Script = ExtractScriptBytes(ByIndex(Outputs, 1))
     val out2Script = ExtractScriptBytes(ByIndex(Outputs, 2))
 
-    val normalPayloadCorrect = checkPayloadCorrect(in0Mid, in1Mid, in2Mid, in0X, in1X, in2X, out0X, in0Y, in1Y, in2Y, out0Y, in0Val, in1Val, in2Val, out0V, IntConstant(3))
-    val rightmostPayloadCorrect = checkPayloadCorrect(in0Mid, in1Mid, f, in0X, in1X, ByteConstant(1), out0X, in0Y, in1Y, in0Y, out0Y, in0Val, in1Val, f, out0V, IntConstant(2))
+    val normalPayloadCorrect = checkPayloadCorrect(in0Mid, in1Mid, in2Mid, in0X, in1X, in2X, in0Y, in1Y, in2Y, in0Val, in1Val, in2Val, out0X, out0Y, out0V, IntConstant(3))
+    val rightmostPayloadCorrect = checkPayloadCorrect(in0Mid, in1Mid, f, in0X, in1X, ByteConstant(1), in0Y, in1Y, in0Y, in0Val, in1Val, f, out0X, out0Y, out0V, IntConstant(2))
 
 
     // function outCorrect(out, script) from the paper
