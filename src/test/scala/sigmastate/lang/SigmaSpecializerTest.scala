@@ -77,4 +77,11 @@ class SigmaSpecializerTest extends PropSpec with PropertyChecks with Matchers wi
         Where(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
   }
 
+  property("AND flattening") {
+    spec("true && true && true") shouldBe AND(TrueLeaf, TrueLeaf, TrueLeaf)
+  }
+
+  property("OR flattening") {
+    spec("true || true || true") shouldBe OR(TrueLeaf, TrueLeaf, TrueLeaf)
+  }
 }
