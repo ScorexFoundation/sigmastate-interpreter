@@ -35,6 +35,14 @@ class SigmaSpecializer {
       val res1 = eval(curEnv, res)
       Some(res1)
 
+    // Rule: allOf(arr) --> AND(arr)
+    case Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
+      Some(AND(arr))
+
+    // Rule: anyOf(arr) --> OR(arr)
+    case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
+      Some(OR(arr))
+
     case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(CalcBlake2b256(arg))
 
@@ -46,9 +54,6 @@ class SigmaSpecializer {
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(ProveDlog(g))
-
-//    case Apply(IntToBigSym, Seq(arg: Value[SLong.type]@unchecked)) =>
-//      Some(IntToBigInt(arg))
 
     case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
       Some(IntToByte(arg))
