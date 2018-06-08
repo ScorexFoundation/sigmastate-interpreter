@@ -111,10 +111,10 @@ class Rule110Specification extends SigmaTestingCommons {
     // function correctPayload(in, out) from the paper
     val inMidCorrect = AND(EQ(in0Mid, f), EQ(in1Mid, t), EQ(in2Mid, f))
     val inYCorrect = AND(EQ(in0Y, in1Y), EQ(in0Y, in2Y))
-    val inXCorrect = AND(EQ(in1X, Plus(in0X, 1)), EQ(in1X, Minus(in2X, 1)))
+    val inXCorrect = AND(EQ(in1X, Plus(in0X, ByteConstant(1))), EQ(in1X, Minus(in2X, ByteConstant(1))))
     val calculatedBit = Modulo(Plus(Plus(Plus(Multiply(Multiply(l, c), r), Multiply(c, r)), c), r), ByteConstant(2))
     val inValCorrect = EQ(calculatedBit, out0V)
-    val outPosCorrect = AND(EQ(out0X, in1X), EQ(out0Y, Minus(in0Y, 1)))
+    val outPosCorrect = AND(EQ(out0X, in1X), EQ(out0Y, Minus(in0Y, ByteConstant(1))))
     val sizesCorrect = EQ(SizeOf(Inputs), SizeOf(Outputs))
     val payloadCorrect = AND(inValCorrect, inYCorrect, inXCorrect, inMidCorrect, outPosCorrect, sizesCorrect)
 
@@ -132,9 +132,9 @@ class Rule110Specification extends SigmaTestingCommons {
     val in0 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> ByteConstant(1)))
     val in1 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(1), XReg -> ByteConstant(1), YReg -> ByteConstant(0), ValReg -> ByteConstant(0)))
     val in2 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(2), YReg -> ByteConstant(0), ValReg -> ByteConstant(1)))
-    val out0 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(1), YReg -> ByteConstant(1), ValReg -> ByteConstant(1)))
-    val out1 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(1), XReg -> ByteConstant(1), YReg -> ByteConstant(1), ValReg -> ByteConstant(1)))
-    val out2 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(1), YReg -> ByteConstant(1), ValReg -> ByteConstant(1)))
+    val out0 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(1), YReg -> ByteConstant(-1), ValReg -> ByteConstant(1)))
+    val out1 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(1), XReg -> ByteConstant(1), YReg -> ByteConstant(-1), ValReg -> ByteConstant(1)))
+    val out2 = ErgoBox(1, prop, Map(MidReg -> ByteConstant(0), XReg -> ByteConstant(1), YReg -> ByteConstant(-1), ValReg -> ByteConstant(1)))
 
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(in0, in1, in2).map(i => new UnsignedInput(i.id)), IndexedSeq(out0, out1, out2))
 
