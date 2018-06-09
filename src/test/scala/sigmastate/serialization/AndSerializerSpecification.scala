@@ -1,8 +1,8 @@
 package sigmastate.serialization
 
-import sigmastate.{AND, SBoolean}
+import sigmastate.AND
 import sigmastate.Values.BooleanConstant
-import OpCodes._
+import sigmastate.serialization.OpCodes._
 
 class AndSerializerSpecification extends TableSerializationSpecification {
 
@@ -10,10 +10,10 @@ class AndSerializerSpecification extends TableSerializationSpecification {
 
   override def objects = Table(
     ("object", "bytes"),
-    (AND(boolConst(true), boolConst(true)),  Array[Byte](AndCode, ConcreteCollectionCode, 0, 2, SBoolean.typeCode, TrueCode, TrueCode)),
-    (AND(boolConst(true), boolConst(false)), Array[Byte](AndCode, ConcreteCollectionCode, 0, 2, SBoolean.typeCode, TrueCode, FalseCode)),
-    (AND(boolConst(false),boolConst(true)),  Array[Byte](AndCode, ConcreteCollectionCode, 0, 2, SBoolean.typeCode, FalseCode, TrueCode)),
-    (AND(boolConst(false),boolConst(false)), Array[Byte](AndCode, ConcreteCollectionCode, 0, 2, SBoolean.typeCode, FalseCode, FalseCode))
+    (AND(boolConst(true), boolConst(true)),  Array[Byte](AndCode, 0, 2, TrueCode, TrueCode)),
+    (AND(boolConst(true), boolConst(false)), Array[Byte](AndCode, 0, 2, TrueCode, FalseCode)),
+    (AND(boolConst(false),boolConst(true)),  Array[Byte](AndCode, 0, 2, FalseCode, TrueCode)),
+    (AND(boolConst(false),boolConst(false)), Array[Byte](AndCode, 0, 2, FalseCode, FalseCode))
   )
 
   tableRoundTripTest("And: Serializer round trip")
