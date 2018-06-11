@@ -97,7 +97,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val fsmBox1 = ErgoBox(100, fsmScript, Map(fsmDescRegister -> AvlTreeConstant(treeData),
                                              currentStateRegister -> ByteConstant(state1Id)))
 
-    //transition from state1 to state2
+    //successful transition from state1 to state2
     val fsmBox2 = ErgoBox(100, fsmScript, Map(fsmDescRegister -> AvlTreeConstant(treeData),
                                              currentStateRegister -> ByteConstant(state2Id)))
 
@@ -117,5 +117,26 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       .prove(fsmScript, ctx, fakeMessage).get
 
     (new ErgoLikeInterpreter).verify(fsmScript, ctx, spendingProof, fakeMessage).get._1 shouldBe true
+
+    //successful transition back from state2 to state1
+
+    avlProver.performOneOperation(Lookup(ADKey @@ (transition21 ++ script2Hash)))
+    val transition21Proof = avlProver.generateProof()
+
+    val ctx2 = ErgoLikeContext(
+      currentHeight = 51,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(fsmBox2),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox1)),
+      self = fsmBox2)
+
+    val spendingProof2 = prover
+      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script2)))
+      .withContextExtender(transitionProofId, ByteArrayConstant(transition21Proof))
+      .prove(fsmScript, ctx2, fakeMessage).get
+
+    (new ErgoLikeInterpreter).verify(fsmScript, ctx2, spendingProof2, fakeMessage).get._1 shouldBe true
+
+
   }
 }
