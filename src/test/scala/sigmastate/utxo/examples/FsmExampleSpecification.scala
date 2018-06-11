@@ -6,7 +6,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, IntConstant, TaggedByteArray, TrueLeaf}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
@@ -26,13 +26,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     * state2 | script_hash2 | state1
     * state3 | script_hash4 | -
     *
-    * where state3 is a final state, which denotes end of a contract execution
+    * where state3 is a final state, which denotes end of a contract execution (and by executing a script with the hash
+    * script_hash4 it is possible to create any box as a result).
     */
   property("simple FSM example"){
-
-    //a blockchain node verifying a block containing a spending transaction
-    val verifier = new ErgoLikeInterpreter
-
     //backer's prover with his private key
     val prover = new ErgoLikeProvingInterpreter
 
