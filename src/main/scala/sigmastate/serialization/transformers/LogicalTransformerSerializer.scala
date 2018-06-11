@@ -1,6 +1,6 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.{ConcreteCollection, Value}
+import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.serialization.{Serializer, ValueSerializer}
@@ -21,18 +21,21 @@ case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SB
     cons(values) -> r.consumed
   }
 
-  override def serializeBody(obj: Transformer[I, O]): Array[Byte] = {
-    obj.input.asInstanceOf[Value[SCollection[SBoolean.type]]] match {
-      case ConcreteCollection(items, SBoolean) =>
-        val ccSize = items.size
-        require(ccSize <= Short.MaxValue, s"max collection size is Short.MaxValue = ${Short.MaxValue}")
-        val size = ccSize.toShort
-        val w = Serializer.startWriter()
-          .putShort(size)
-        for (item <- items) {
-          w.putValue(item)
-        }
-        w.toBytes
-    }
-  }
+  override def serializeBody(obj: Transformer[I, O]): Array[Byte] =
+    obj.input.matchCase(concreteCollection => {
+      val ccSize = concreteCollection.items.size
+      require(ccSize <= Short.MaxValue, s"max collection size is Short.MaxValue = ${Short.MaxValue}")
+      val size = ccSize.toShort
+      val w = Serializer.startWriter()
+        .putShort(size)
+      for (item <- concreteCollection.items) {
+        w.putValue(item)
+      }
+      w.toBytes
+    },
+      _ => {
+        // to be implemented as part of #166
+        ???
+      }
+    )
 }
