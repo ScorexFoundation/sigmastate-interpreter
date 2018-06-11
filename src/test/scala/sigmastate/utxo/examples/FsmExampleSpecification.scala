@@ -6,10 +6,9 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, IntConstant, TaggedByte, TaggedByteArray, TrueLeaf}
+import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, IntConstant, TaggedByteArray}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -23,11 +22,11 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     * Let's consider that a input in a finite state machine is its script, or its hash. Then assume a machine is
     * described as a table of transitions, an example is below:
     * state1 | script_hash1 | state2
-    * state2 | script_hash2 | state3
-    * state2 | script_hash3 | state1
-    * state3 | script_hash4 | F
+    * state2 | script_hash3 | state3
+    * state2 | script_hash2 | state1
+    * state3 | script_hash4 | -
     *
-    * where F is a final state, which denotes end of a contract execution
+    * where state3 is a final state, which denotes end of a contract execution
     */
   property("simple FSM example"){
 
@@ -138,5 +137,56 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     (new ErgoLikeInterpreter).verify(fsmScript, ctx2, spendingProof2, fakeMessage).get._1 shouldBe true
 
 
+    //Box for state3
+
+    val fsmBox3 = ErgoBox(100, fsmScript, Map(fsmDescRegister -> AvlTreeConstant(treeData),
+      currentStateRegister -> ByteConstant(state3Id)))
+
+    //transition from state1 to state3 is impossible
+
+    val transition13 = Array(state1Id, state3Id)
+
+    avlProver.performOneOperation(Lookup(ADKey @@ (transition13 ++ script1Hash)))
+    val transition13Proof = avlProver.generateProof()
+
+    val ctx3 = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(fsmBox1),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
+      self = fsmBox1)
+
+    //honest prover fails
+    prover
+      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script1)))
+      .withContextExtender(transitionProofId, ByteArrayConstant(transition13Proof))
+      .prove(fsmScript, ctx3, fakeMessage)
+      .isSuccess shouldBe false
+
+    //prover tries to transit to state3 from state2 by presenting proof for state1 -> state2
+    //honest prover fails
+    prover
+      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script1)))
+      .withContextExtender(transitionProofId, ByteArrayConstant(transition12Proof))
+      .prove(fsmScript, ctx3, fakeMessage)
+      .isSuccess shouldBe false
+
+    //successful transition from state to state3
+    avlProver.performOneOperation(Lookup(ADKey @@ (transition23 ++ script3Hash)))
+    val transition23Proof = avlProver.generateProof()
+
+    val ctx23 = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(fsmBox2),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
+      self = fsmBox2)
+
+    val spendingProof23 = prover
+      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script3)))
+      .withContextExtender(transitionProofId, ByteArrayConstant(transition23Proof))
+      .prove(fsmScript, ctx23, fakeMessage).get
+
+    (new ErgoLikeInterpreter).verify(fsmScript, ctx23, spendingProof23, fakeMessage).get._1 shouldBe true
   }
 }

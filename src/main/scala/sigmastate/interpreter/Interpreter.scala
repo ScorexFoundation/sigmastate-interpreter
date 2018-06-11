@@ -65,7 +65,7 @@ trait Interpreter {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
-          case eba: EvaluatedValue[SByteArray] @unchecked if eba.tpe == SByteArray =>
+          case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
             Some(ValueSerializer.deserialize(eba.value))
           case _ => None
         }
@@ -156,7 +156,7 @@ trait Interpreter {
 
     case ArithOp(LongConstant(l), LongConstant(r), OpCodes.DivisionCode) =>
       LongConstant(l / r)
-      
+
     //BigInt Arith operations
     case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.PlusCode) =>
       BigIntConstant(l.add(r))
@@ -172,7 +172,7 @@ trait Interpreter {
 
     case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.DivisionCode) =>
       BigIntConstant(l.divide(r))
-      
+
     case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       assert(l.length == r.length)
       ByteArrayConstant(Helpers.xor(l, r))
@@ -215,7 +215,7 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l < r)
     case LE(IntConstant(l), IntConstant(r)) =>
       BooleanConstant.fromBoolean(l <= r)
-      
+
     case GT(LongConstant(l), LongConstant(r)) =>
       BooleanConstant.fromBoolean(l > r)
     case GE(LongConstant(l), LongConstant(r)) =>
@@ -224,7 +224,7 @@ trait Interpreter {
       BooleanConstant.fromBoolean(l < r)
     case LE(LongConstant(l), LongConstant(r)) =>
       BooleanConstant.fromBoolean(l <= r)
-    
+
     case GT(BigIntConstant(l), BigIntConstant(r)) =>
       BooleanConstant.fromBoolean(l.compareTo(r) > 0)
     case GE(BigIntConstant(l), BigIntConstant(r)) =>
@@ -234,21 +234,21 @@ trait Interpreter {
     case LE(BigIntConstant(l), BigIntConstant(r)) =>
       BooleanConstant.fromBoolean(l.compareTo(r) <= 0)
 
-/*
-    case IsMember(tree: AvlTreeConstant, ByteArrayConstant(key), ByteArrayConstant(proof)) =>
-      val bv = tree.createVerifier(SerializedAdProof @@ proof)
-      val res = bv.performOneOperation(Lookup(ADKey @@ key))
-      BooleanConstant.fromBoolean(res.isSuccess) // TODO should we also check res.get.isDefined
-*/
+    /*
+        case IsMember(tree: AvlTreeConstant, ByteArrayConstant(key), ByteArrayConstant(proof)) =>
+          val bv = tree.createVerifier(SerializedAdProof @@ proof)
+          val res = bv.performOneOperation(Lookup(ADKey @@ key))
+          BooleanConstant.fromBoolean(res.isSuccess  && res.get.isDefined)
+    */
 
     //TODO: simplify logic below
     case i: IsMember
-            if i.tree.evaluated && i.key.isEvaluated && i.proof.isEvaluated =>
+      if i.tree.evaluated && i.key.isEvaluated && i.proof.isEvaluated =>
 
       val keyBytes = i.key match {
-      case constant: Constant[SCollection[SByte.type]] => constant.value
-      case _ => i.key.items.map(_.asInstanceOf[EvaluatedValue[SByte.type]]).map(_.value.asInstanceOf[Byte]).toArray
-    }
+        case constant: Constant[SCollection[SByte.type]] => constant.value
+        case _ => i.key.items.map(_.asInstanceOf[EvaluatedValue[SByte.type]]).map(_.value.asInstanceOf[Byte]).toArray
+      }
 
       val proofBytes = i.proof match {
         case constant: Constant[SCollection[SByte.type]] => constant.value
@@ -257,7 +257,7 @@ trait Interpreter {
 
       val bv = i.tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
       val res = bv.performOneOperation(Lookup(ADKey @@ keyBytes))
-      BooleanConstant.fromBoolean(res.isSuccess) // TODO should we also check res.get.isDefined
+      BooleanConstant.fromBoolean(res.isSuccess && res.get.isDefined)
 
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
