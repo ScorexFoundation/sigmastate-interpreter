@@ -1,14 +1,15 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R3, R4}
-import org.ergoplatform.{ErgoBox, ErgoLikeInterpreter, Outputs, Self}
+import org.ergoplatform._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, IntConstant, TaggedByte, TaggedByteArray}
+import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, ByteConstant, ConcreteCollection, IntConstant, TaggedByte, TaggedByteArray, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -70,13 +71,13 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val fsmDescRegister = R3
     val currentStateRegister = R4
 
-    val newStateVarId = 1: Byte
     val scriptVarId = 2: Byte
     val transitionProofId = 3: Byte
 
     val isMember = IsMember(ExtractRegisterAs(Self, fsmDescRegister),
         Append(
-          ConcreteCollection(ExtractRegisterAs[SByte.type](Self, currentStateRegister), TaggedByte(newStateVarId)),
+          ConcreteCollection[SByte.type](ExtractRegisterAs[SByte.type](Self, currentStateRegister),
+                              ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.zero), currentStateRegister)),
           CalcBlake2b256(TaggedByteArray(scriptVarId))
         ),
         TaggedByteArray(transitionProofId))
@@ -86,21 +87,35 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val treePreservation = EQ(ExtractRegisterAs[SAvlTree.type](ByIndex(Outputs, IntConstant.zero), fsmDescRegister),
                               ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister))
 
-    val statePreservation = EQ(ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.zero), currentStateRegister),
-                               TaggedByte(newStateVarId))
-
-    val preservation = AND(scriptPreservation, statePreservation, treePreservation)
+    val preservation = AND(scriptPreservation, treePreservation)
 
     val fsmScript = AND(isMember, DeserializeContext(scriptVarId, SBoolean), preservation)
 
 
     //creating a box in an initial state
 
-    val box = ErgoBox(100, fsmScript, Map(fsmDescRegister -> AvlTreeConstant(treeData),
-                                          currentStateRegister -> ByteConstant(state1Id)))
+    val fsmBox1 = ErgoBox(100, fsmScript, Map(fsmDescRegister -> AvlTreeConstant(treeData),
+                                             currentStateRegister -> ByteConstant(state1Id)))
 
-    
+    //transition from state1 to state2
+    val fsmBox2 = ErgoBox(100, fsmScript, Map(fsmDescRegister -> AvlTreeConstant(treeData),
+                                             currentStateRegister -> ByteConstant(state2Id)))
 
+    avlProver.performOneOperation(Lookup(ADKey @@ (transition12 ++ script1Hash)))
+    val transition12Proof = avlProver.generateProof()
 
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(fsmBox1),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox2)),
+      self = fsmBox1)
+
+    val spendingProof = prover
+      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script1)))
+      .withContextExtender(transitionProofId, ByteArrayConstant(transition12Proof))
+      .prove(fsmScript, ctx, fakeMessage).get
+
+    (new ErgoLikeInterpreter).verify(fsmScript, ctx, spendingProof, fakeMessage).get._1 shouldBe true
   }
 }
