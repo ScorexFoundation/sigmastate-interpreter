@@ -15,12 +15,14 @@ import sigmastate.utxo._
 
 class FsmExampleSpecification extends SigmaTestingCommons {
 
-
   /**
-    * Similarly to MAST example, we can do more complex contracts, e.g. ones with cycles. For example, we can do a
-    * contract described as a finite state machine.
-    * Let's consider that a input in a finite state machine is its script, or its hash. Then assume a machine is
-    * described as a table of transitions, an example is below:
+    * Similarly to the MAST-like example (in the MASTExampleSpecification class), we can do more complex contracts,
+    * e.g. ones with cycles. For example, we can do a contract described as a finite state machine.
+    *
+    * Let's consider that a input in a finite state machine is a script associated with a transition (so the transition
+    * could happen only if the script is satisfied by a spending proof in a spending transaction), or a hash of the
+    * script. Then we assume that a machine is described via a table of transitions, for example, as below:
+    *
     * state1 | script_hash1 | state2
     * state2 | script_hash3 | state3
     * state2 | script_hash2 | state1
@@ -28,9 +30,16 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     *
     * where state3 is a final state, which denotes end of a contract execution (and by executing a script with the hash
     * script_hash4 it is possible to create any box as a result).
+    *
+    * We put the table description into an authenticated data structure (such as the Merkle tree, we're using
+    * authenticated AVL+ trees though). We require root digest of the tree to be preserved. We require FSM framework
+    * script to be preserved as well. So to trigger a transition from one state a coin remembers to another one,
+    * a spending transaction should create a coin with preserved root digest, and some (valid) new state, show
+    * a proof for a corresponding transition description in the tree, and show a proof for transition script (e.g. a
+    * signature). Thus the FSM is being revealed on the run, and the states not visited yet are not visible (on chain).
     */
   property("simple FSM example"){
-    //backer's prover with his private key
+
     val prover = new ErgoLikeProvingInterpreter
 
     val script1 = prover.dlogSecrets.head.publicImage
