@@ -112,8 +112,8 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
 
     val fsmScript = OR(
-      AND(isMember, DeserializeContext(scriptVarId, SBoolean), preservation),
-      AND(finalStateCheck, finalScriptCorrect, DeserializeContext(scriptVarId, SBoolean))
+      AND(isMember, DeserializeContext(scriptVarId, SBoolean), preservation),             //going through FSM
+      AND(finalStateCheck, finalScriptCorrect, DeserializeContext(scriptVarId, SBoolean)) //leaving FSM
     )
 
 
