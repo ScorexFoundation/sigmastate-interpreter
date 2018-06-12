@@ -16,7 +16,7 @@ case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SB
 
   override def parseBody(bytes: Array[Byte], pos: Position): (Transformer[I, O], Consumed) = {
     val r = Serializer.startReader(bytes, pos)
-    val size = r.getShort()
+    val size = r.getUShort()
     val values =  (1 to size).map(_ => r.getValue().asInstanceOf[Value[SBoolean.type]])
     cons(values) -> r.consumed
   }
@@ -27,7 +27,7 @@ case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SB
       require(ccSize <= Short.MaxValue, s"max collection size is Short.MaxValue = ${Short.MaxValue}")
       val size = ccSize.toShort
       val w = Serializer.startWriter()
-        .putShort(size)
+        .putUShort(size)
       for (item <- concreteCollection.items) {
         w.putValue(item)
       }

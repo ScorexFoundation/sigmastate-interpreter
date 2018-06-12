@@ -31,7 +31,7 @@ object DataSerializer {
       val data = v.asInstanceOf[BigInteger].toByteArray
       val length = data.length
       require(length <= Short.MaxValue, "max collection size is Short.MaxValue")
-      w.putShort(length.toShort)
+      w.putUShort(length.toShort)
       w.putBytes(data)
     case SGroupElement =>
       val bytes = v.asInstanceOf[EcPointType].getEncoded(true)
@@ -61,7 +61,7 @@ object DataSerializer {
         }
       }
       w.putBytes(obj.transactionId)
-      w.putShort(obj.boxId)
+      w.putUShort(obj.boxId)
 
     case SAvlTree =>
       val data = v.asInstanceOf[AvlTreeData]
@@ -76,7 +76,7 @@ object DataSerializer {
       val len = arr.length
       if (len > 0xFFFF)
         sys.error(s"Length of array $arr exceeds ${0xFFFF} limit.")
-      w.putShort(len.toShort)
+      w.putUShort(len.toShort)
       for (x <- arr)
         DataSerializer.serialize(x, tCol.elemType, w)
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
@@ -90,7 +90,7 @@ object DataSerializer {
     case SInt => r.getInt()
     case SLong => r.getLong()
     case SBigInt =>
-      val size: Short = r.getShort()
+      val size: Short = r.getUShort().toShort
       val valueBytes = r.getBytes(size)
       new BigInteger(valueBytes)
     case SGroupElement =>
@@ -119,7 +119,7 @@ object DataSerializer {
         (reg, v)
       }.toMap
       val transId = r.getBytes(32)
-      val boxId = r.getShort()
+      val boxId = r.getUShort().toShort
       val box = ErgoBox(value, proposition, regs, transId, boxId)
       box
 
@@ -132,7 +132,7 @@ object DataSerializer {
       val data = AvlTreeData(ADDigest @@ startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
       data
     case tCol: SCollection[a] =>
-      val len = r.getShort()
+      val len = r.getUShort()
       val arr = deserializeArray(len, tCol.elemType, r)
       arr
     case _ => sys.error(s"Don't know how to deserialize $tpe")
