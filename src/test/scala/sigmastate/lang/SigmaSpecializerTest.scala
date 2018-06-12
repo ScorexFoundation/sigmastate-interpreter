@@ -103,7 +103,7 @@ class SigmaSpecializerTest extends PropSpec
       AND(TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf)
   }
 
-  property("AND flattening, SigmaBooleans untouched") {
+  property("AND flattening, CAND/COR untouched") {
     val sigmaBooleans1 = AND(Seq(TrueLeaf, CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get))))
     spec(Map(), sigmaBooleans1) shouldBe sigmaBooleans1
     val sigmaBooleans2 = AND(Seq(TrueLeaf, COR(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get))))
@@ -124,7 +124,7 @@ class SigmaSpecializerTest extends PropSpec
       OR(TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf)
   }
 
-  property("OR flattening, SigmaBooleans untouched") {
+  property("OR flattening, CAND/COR untouched") {
     val sigmaBooleans1 = OR(Seq(TrueLeaf, CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get))))
     spec(Map(), sigmaBooleans1) shouldBe sigmaBooleans1
     val sigmaBooleans2 = OR(Seq(TrueLeaf, COR(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get))))

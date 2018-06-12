@@ -108,8 +108,12 @@ trait TransformerGenerators {
 
   val booleanExprGen: Gen[Value[SBoolean.type]] =
     Gen.oneOf(
-      EQ(IntConstant(1), IntConstant(1)), // true
-      EQ(IntConstant(1), IntConstant(2))  // false
+      Gen.oneOf(
+        EQ(IntConstant(1), IntConstant(1)), // true
+        EQ(IntConstant(1), IntConstant(2))  // false
+      ),
+      proveDlogGen,
+      proveDHTGen
     )
 
   private type LogicalTransformerCons =
