@@ -15,12 +15,14 @@ sealed trait UncheckedSigmaTree extends UncheckedTree {
   val proposition: SigmaBoolean
 }
 
+// todo: why do ANDs and ORs have challenges that are optional, while leaves have challenges that are required? This causes messy code elsewhere
 trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
   val challengeOpt: Option[Array[Byte]]
   val commitments: Seq[FirstProverMessage[_]]
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedConjecture =>
+      // todo: why does the code below mix .equals and == ?
       proposition == x.proposition &&
         Helpers.optionArrayEquals(challengeOpt, x.challengeOpt) &&
         commitments == x.commitments &&
@@ -40,7 +42,8 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedSchnorr =>
-        util.Arrays.equals(challenge, x.challenge) &&
+      // todo: why does the code below mix .equals and == ?
+      util.Arrays.equals(challenge, x.challenge) &&
         commitmentOpt == x.commitmentOpt &&
         secondMessage == x.secondMessage
     case _ => false
@@ -56,10 +59,11 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHell
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedDiffieHellmanTuple =>
+      // todo: why does the code below mix .equals and == ?
       proposition == x.proposition &&
-      commitmentOpt == x.commitmentOpt &&
-      util.Arrays.equals(challenge, x.challenge) &&
-      secondMessage == x.secondMessage
+        commitmentOpt == x.commitmentOpt &&
+        util.Arrays.equals(challenge, x.challenge) &&
+        secondMessage == x.secondMessage
   }
 }
 

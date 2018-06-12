@@ -77,7 +77,7 @@ trait Interpreter {
   /** Implements single reduction step by matching given tree against rewriting rules.
     * Context-specific transformations should be defined in descendants.
     *
-    * This is the only function to define all the tree rewrites, except of deserializations.
+    * This is the only function to define all the tree rewrites, except for deserializations.
     *
     * @param context a context instance
     * @param tree    to be rewritten
@@ -327,10 +327,11 @@ trait Interpreter {
         SigSerializer.parse(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree =>
-            assert(sp.proposition == cProp)
+            assert(sp.proposition == cProp) // todo: is this required for security? If so, don't use assert, because it can be elided at compile time Invocations of assert can be elided at compile time https://www.scala-lang.org/api/2.12.x/scala/Predef$.html
 
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
             val challenge = newRoot match {
+            // todo: this ugliness would go away if we UncheckedTrees were consistent in how they treated challenges
               case uc: UncheckedConjecture => uc.challengeOpt.get
               case ul: UncheckedLeaf[_] => ul.challenge
               case _ =>

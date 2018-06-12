@@ -133,6 +133,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     val step6 = proving(step5).get.asInstanceOf[ProofTree]
 
+    // todo: why is this step needed? Why not just write a serializer for the result of step6?
     convertToUnchecked(step6)
   }
 
@@ -370,6 +371,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   }
 
   //converts ProofTree => UncheckedTree
+  // todo: why do ANDs and ORs lose their challenges but leaves don't? The type system is confusing
   val convertToUnchecked: ProofTree => UncheckedTree = attr {
     case and: CAndUnproven =>
       CAndUncheckedNode(and.proposition, None, Seq(), and.children.map(convertToUnchecked))
