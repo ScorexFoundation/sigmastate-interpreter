@@ -2,9 +2,8 @@ package sigmastate.serialization.generators
 
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import sigmastate.Values.{FalseLeaf, TrueLeaf}
+import sigmastate.Values.{FalseLeaf, IntConstant, TrueLeaf, Value}
 import sigmastate._
-import org.ergoplatform.ErgoBox.RegisterIdentifier
 import sigmastate.utxo._
 
 trait TransformerGenerators {
@@ -107,4 +106,25 @@ trait TransformerGenerators {
     index <- arbInt.arbitrary
   } yield ByIndex(input, index)
 
+  val booleanExprGen: Gen[Value[SBoolean.type]] =
+    Gen.oneOf(
+      Gen.oneOf(
+        EQ(IntConstant(1), IntConstant(1)), // true
+        EQ(IntConstant(1), IntConstant(2))  // false
+      ),
+      proveDlogGen,
+      proveDHTGen
+    )
+
+  private type LogicalTransformerCons =
+    Seq[Value[SBoolean.type]] => Transformer[SCollection[SBoolean.type], SBoolean.type]
+
+  def logicalExprTreeNodeGen(nodeCons: Seq[LogicalTransformerCons]): Gen[Transformer[SCollection[SBoolean.type], SBoolean.type]] = for {
+    left <- logicalExprTreeGen(nodeCons)
+    right <- logicalExprTreeGen(nodeCons)
+    node <- Gen.oneOf(nodeCons.map(cons => cons(Seq(left, right))))
+  } yield node
+
+  def logicalExprTreeGen(nodeCons: Seq[LogicalTransformerCons]): Gen[Value[SBoolean.type]] =
+    Gen.oneOf(booleanExprGen, booleanConstGen, Gen.delay(logicalExprTreeNodeGen(nodeCons)))
 }
