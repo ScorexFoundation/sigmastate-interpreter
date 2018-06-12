@@ -125,10 +125,10 @@ object DataSerializer {
 
     case SAvlTree =>
       val startingDigest = deserialize[SByteArray](SByteArray, r)
-      val keyLength = r.getUInt()
-      val valueLengthOpt = r.getOption(r.getUInt())
-      val maxNumOperations = r.getOption(r.getUInt())
-      val maxDeletes = r.getOption(r.getUInt())
+      val keyLength = r.getUInt().toInt
+      val valueLengthOpt = r.getOption(r.getUInt().toInt)
+      val maxNumOperations = r.getOption(r.getUInt().toInt)
+      val maxDeletes = r.getOption(r.getUInt().toInt)
       val data = AvlTreeData(ADDigest @@ startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
       data
     case tCol: SCollection[a] =>

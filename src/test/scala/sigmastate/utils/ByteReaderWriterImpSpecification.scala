@@ -109,7 +109,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
           reader.getLong() shouldEqual v
           reader.getULong() shouldEqual v
         case v: Array[Byte] =>
-          val size = reader.getUInt()
+          val size = reader.getUInt().toInt
           reader.getBytes(size) shouldEqual v
         case ref@_ => fail(s"reader: unsupported value type: ${ref.getClass}");
       }

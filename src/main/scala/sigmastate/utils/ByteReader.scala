@@ -22,9 +22,9 @@ trait ByteReader {
   /**
     * Decode positive Int.
     * Use '''only''' for values previously encoded with [[ByteArrayWriter.putUInt]]
-    * @return signed Int
+    * @return signed Long
     */
-  def getUInt(): Int
+  def getUInt(): Long
 
   /**
     * Decode signed Long.
@@ -71,9 +71,9 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   /**
     * Decode Int previously encoded with [[ByteArrayWriter.putUInt]] using VLQ.
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @return Int
+    * @return Long
     */
-  @inline override def getUInt(): Int = getULong().toInt
+  @inline override def getUInt(): Long = getULong().toInt
 
   /**
     * Decode signed Long previously encoded with [[ByteArrayWriter.putLong]] using VLQ with ZigZag.
