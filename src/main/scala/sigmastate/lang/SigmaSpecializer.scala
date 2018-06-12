@@ -133,6 +133,21 @@ class SigmaSpecializer {
 
     case opt: OptionValue[_] =>
       error(s"Option values are not supported: $opt")
+
+    case AND(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[AND]) =>
+      Some(AND(
+        items.flatMap {
+          case AND(ConcreteCollection(innerItems, SBoolean)) => innerItems
+          case v => IndexedSeq(v)
+        }))
+
+    case OR(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[OR]) =>
+      Some(OR(
+        items.flatMap {
+          case OR(ConcreteCollection(innerItems, SBoolean)) => innerItems
+          case v => IndexedSeq(v)
+        }))
+
   })))(e)
 
   def specialize(typed: SValue): SValue = {
