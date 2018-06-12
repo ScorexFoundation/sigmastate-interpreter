@@ -445,10 +445,89 @@ The Bob can create a box with the same guarding conditions. However, if Alice's 
 We need to be sure that an adversary can not produce such a statement for which the Verifier spends more time than it is safe to spend.
 \knote{links to verifier dilemma, orphan rates etc} 
 
+In order to filter out malicious statements, Verifier needs to perform a series of safety checks in particular consistency checks and cost estimations.
+This safety checks by itself require Verifier to spend some time.
+However, the idea is to strictly limit the check complexity to be linear in the size of the statement tree and input data, which are strictly limited in size.
+
+Verification and safety checks are performed in stages.
+
+\subsection{Verification and Safety Checks}
+\label{sec:safety-checks}
+
+Verifier performs the following safety checks:
+
+\begin{enumerate}
+\item \textbf{Stage1: Deserialization of Statement.}
+Verifier receives the statement as an array of bytes and checks that the size of array is less than predefined constant $C_1$.
+Deserializer parses the array of bytes and checks if it is according to the format.
+Deserializer also controls the size of the constructed statement tree. It should be less than predefined constant $C_2$.
+The tree being constricted is also checked to satisfy typing rules.
+After deserialization stage we have valid tree of known limited size $TreeSize$.
+We want the complexity of all subsequent checks to be $O(TreeSize)$.
+
+\item \textbf{Stage2: Instantiation of the Cost Function.}
+Cost Function is the function of the same input (Context, variables, registers, etc.) as Statement function,
+but it computes Long value of the computation cost of the Statement function, so it answer the question
+"How many operations it is required to compute the statement?".
+The statement tree can be used to generate Cost Function, which is another tree built from Statement tree.
+
+We consider two implementations which are functionally equivalent:
+    \begin{enumerate}
+      \item generate Cost Function tree and then apply standard interpreter to evaluate it (Section \ref{sec:gen-cost-function})
+      \item implement Cost Interpreter and use is to evaluate Statement tree (Section \ref{sec:cost-interpreter})
+    \end{enumerate}
+
+Using any of the two implementations we can instantiate a Cost Function to obtain an estimation of the computation cost.
+The idea is that the complexity of the Cost Function is linear in the size of the Statement tree in most of the cases.
+In the worst case it is linear in the size of the input data of the Statement which is strictly limited in size.
+
+\item \textbf{Stage3: Evaluating the Statement cost.}
+This is performed by constructing the same context data as it is required for Statement evaluation
+and supplying this context to the Cost Function which implementation is further described in
+sections~\ref{sec:gen-cost-functions}, \ref{sec:cost-interpreter}.
+Upon computing the cost of Statement using Cost Function the Verifier check that it is less than the predefined constant $C_3$.
+\end{enumerate}
+
+Passing all three stages of safety checks above, the Verifier is safe to evaluate the Statement tree in a current data context.
+This Statement evaluation is guaranteed to terminate in the estimated amount of time.
+
+\subsection{Generation of Cost Function}
+\label{sec:gen-cost-function}
+
+Here we briefly describe an algorithm $cost$ to construct a Cost Function
+tree. The basic idea is that we perform single traversal of the Statement
+tree, visiting all the nodes from leaves up to the root. 
+During traversal foreach Statement node $t$ with children ${c_1 \dots c_k}$
+we construct$cost(t)$ using ${cost(c_1) \dots cost(c_n)}$. Algorithm $cost$
+is defined recursively over the tree structure as shown in Figure~\ref{}. 
+In the figure $dataCost(v)$ is a function to compute a cost of the evaluated
+value $v$ represented either by $ContextVar$ of $Constant$ tree nodes.
+
+\[\begin{tabular}{@{}l c l} 
+    \multicolumn{3}{@{}l}{\textbf{def} $cost(t: Value[T]): Value[Long]$}  \\
+    $v~@~ContextVar(\_)$ & $\to$ & $dataCost(v)$ \\
+    $c~@~Constant(\_)$ & $\to$ & $dataCost(c)$ \\
+    \(t_1 + t_2\) & $\to$ & $cost(t_1)$ + $cost(+)$ + $cost(t_2)$ \\
+     & $\to$ & \mnote{arg} \\
+    $v @ Constant(_)$ & $\to$ & 
+        \begin{tabular}[t]{l}
+            $v :=$ variable with $varId$ from data environment \\
+            return $dataCost(v)$ \\
+        \end{tabular} \\
+\end{tabular}\]
+
+\subsection{Cost Interpreter}
+\label{sec:cost-interpreter}
+
+
+
 \subsection{Cost Model}
 \label{sec:cost-model}
 
+
+
 \subsection{Denial-of-Service Attacks}
+
 
 \section{Extensibility}
 
@@ -475,7 +554,6 @@ We show in this paper...
 \section{Types}
 
 \[\begin{tabular}{@{}l c l l}
-
       $\mathcal{T} \ni \tau$			& ::= 	    &\
          \lst{Byte} $\mid$ \lst{Short} $\mid$
          \lst{Int} $\mid$ \lst{Long} $\mid$ \lst{BigInt}  & numeric types     \\
@@ -488,26 +566,6 @@ We show in this paper...
       & $\mid$  & $\text{\lst{Array}}[\tau]$	& array type       \\
       & $\mid$  & $\text{\lst{Option}}[\tau]$	& optional value (either $Some(\tau)$ or $None$)      \\
       & $\mid$  & \lst{Any}                     & type of any value (common supertype of all the types) \\
-%      &   $\mid$  & $(\tau_1 + \tau_2) $					& sum type       \\
-%      &   $\mid$  & $(\tau_1 \to \tau_2) $				& function type       \\
-      %				& 	     	&										&				\\
-%      $Term \ni e$	& ::= 		&   $l \mid x : \tau $							& integer literals and vars     \\
-%      & 	$\mid$ 	& 	$\TyLam{x}{\tau}{e} \mid e_1 e_2$ 	& functions  \\
-%      & 	$\mid$ 	& 	$k~\Ov{e}$ 							& constructors  \\
-%      & 	$\mid$ 	& 	$\delta~\Ov{e}$ 					& primitives  \\
-%      & 	$\mid$ 	& 	\lst{case} $e$ \lst{of} \{ $p_i$ $\rightarrow$ $e_i$  \}  & case analysis \\
-      %				& 	$\mid$ 	& 	\lst{let} $x = e$ \lst{in} $e'$  	& let binding \\
-      %				& 	     	&										&				\\
-%      $k$				& ::= 		&   $\Tup{} \mid \Tup{\_, \_}$ 			& unit and pair     	\\
-%      & 	$\mid$ 	&	$\Left{\tau_1}{\tau_2}{\text{\lst{\_}}} \mid \Right{\tau_1}{\tau_2}{\text{\lst{\_}}}$			& injections		\\
-      %				& 	     	&										&				\\
-%      $\delta$		& ::= 		&   \Fst{\_} $\mid$ \Snd{\_}			& projections     	\\
-%      & 	$\mid$ 	&	$\_ \oplus \_$						& binary operations	\\
-      %				& 	     	&										&				\\
-%      $p$				& ::= 		&   $l \mid k~\Ov{x}$ 			& patterns     	\\
-      %				& 	     	&										&				\\
-%      $v$				& ::= 		&   $l \mid k~\Ov{v} \mid \TyLam{x}{\tau}{e}$ 		& values     	\\
-%      & & & \\
 \end{tabular}\]
 
 \section{Tree Nodes and Transformation Rules}
