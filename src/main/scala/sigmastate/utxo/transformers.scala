@@ -221,7 +221,9 @@ object Fold {
   }
 }
 
-case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Value[SInt.type])
+case class ByIndex[V <: SType](input: Value[SCollection[V]],
+                               index: Value[SInt.type],
+                               default: Option[Value[V]] = None)
   extends Transformer[SCollection[V], V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.ByIndexCode
   override val tpe = input.tpe.elemType

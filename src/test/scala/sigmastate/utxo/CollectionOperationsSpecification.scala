@@ -287,7 +287,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |.map(fun (box: Box) = box.value)(3, 0)== 0""".stripMargin
     val expectedPropTree = EQ(
       ByIndex(
-        MapCollection(Outputs,21,ExtractAmount(TaggedBox(21)))(SInt),
+        MapCollection(Outputs,21,ExtractAmount(TaggedBox(21))),
         IntConstant(3),
         Some(IntConstant(0))),
       IntConstant(0))

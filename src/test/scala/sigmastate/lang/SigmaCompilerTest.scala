@@ -36,6 +36,19 @@ class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with 
         ByIndex(ByIndex(ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)), 0), 0)
   }
 
+  property("array indexed access with default value") {
+    comp(env, "Array(1)(0, 1)") shouldBe
+      ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0, Some(IntConstant(1)))
+
+    comp(env, "Array(Array(1))(0, Array(2))(0)") shouldBe
+      ByIndex(
+        ByIndex(
+          ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)),
+          0,
+          Some(ConcreteCollection(Vector(IntConstant(2))))),
+        0)
+  }
+
   property("predefined functions") {
     comp(env, "anyOf(Array(c1, c2))") shouldBe OR(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
     comp(env, "blake2b256(getVar[Array[Byte]](10))") shouldBe CalcBlake2b256(TaggedVariable(10, SByteArray))
