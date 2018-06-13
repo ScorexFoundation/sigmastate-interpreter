@@ -227,20 +227,20 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
   extends Transformer[SCollection[V], V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.ByIndexCode
   override val tpe = input.tpe.elemType
-  // todo account for default value
-  override def transformationReady: Boolean = input.isEvaluated && index.evaluated
+  override def transformationReady: Boolean =
+    input.isEvaluated && index.evaluated && default.forall(_.evaluated)
 
-  // todo restore default value application
-  // input.items.lift(index.asInstanceOf[EvaluatedValue[SInt.type]].value.toInt)
-  //      .orElse(default).get
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[V]]): Value[V] = {
     val i = index.asInstanceOf[EvaluatedValue[SInt.type]].value
     input.matchCase(
-      cc => cc.items(i),
-      const => Value.apply(tpe)(const.value(i).asInstanceOf[tpe.WrappedType])
+      cc =>
+        cc.items.lift(i).orElse(default).get,
+      const =>
+        Value.apply(tpe)(const.value.lift(i).orElse(default).get.asInstanceOf[tpe.WrappedType])
     )
   }
-  override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.ByIndexDeclaration
+  override def cost[C <: Context[C]](context: C): Long =
+    input.cost(context) + Cost.ByIndexDeclaration + default.map(_.cost(context)).getOrElse(0L)
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
