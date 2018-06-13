@@ -5,7 +5,7 @@
 
 \usepackage{fullpage}
 
-\usepackage{amsmath,color,xcolor,hyperref,graphicx,wrapfig,listings}
+\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array}
 
 
 \ifnum\shownotes=1
@@ -442,12 +442,16 @@ The Bob can create a box with the same guarding conditions. However, if Alice's 
 \section{Safety Guarantees}
 \label{sec:safety}
 
-We need to be sure that an adversary can not produce such a statement for which the Verifier spends more time than it is safe to spend.
-\knote{links to verifier dilemma, orphan rates etc} 
+We need to be sure that an adversary can not produce such a statement for
+which the Verifier spends more time than it is safe to spend. \knote{links to
+verifier dilemma, orphan rates etc}
 
-In order to filter out malicious statements, Verifier needs to perform a series of safety checks in particular consistency checks and cost estimations.
-This safety checks by itself require Verifier to spend some time.
-However, the idea is to strictly limit the check complexity to be linear in the size of the statement tree and input data, which are strictly limited in size.
+In order to filter out malicious statements, Verifier needs to perform a
+series of safety checks in particular consistency checks and cost
+estimations. This safety checks by itself require Verifier to spend some
+time. However, the idea is to strictly limit the check complexity to be
+linear in the size of the statement tree and input data, which are strictly
+limited in size.
 
 Verification and safety checks are performed in stages.
 
@@ -457,64 +461,103 @@ Verification and safety checks are performed in stages.
 Verifier performs the following safety checks:
 
 \begin{enumerate}
-\item \textbf{Stage1: Deserialization of Statement.}
-Verifier receives the statement as an array of bytes and checks that the size of array is less than predefined constant $C_1$.
-Deserializer parses the array of bytes and checks if it is according to the format.
-Deserializer also controls the size of the constructed statement tree. It should be less than predefined constant $C_2$.
-The tree being constricted is also checked to satisfy typing rules.
-After deserialization stage we have valid tree of known limited size $TreeSize$.
-We want the complexity of all subsequent checks to be $O(TreeSize)$.
+\item \textbf{Deserialization of Statement.}
+Verifier receives the statement as an array of bytes and checks that the size
+of array is less than predefined constant $C_1$. Deserializer parses the
+array of bytes and checks if it is according to the format. Deserializer also
+controls the size of the constructed statement tree. It should be less than
+predefined constant $C_2$. The tree being constricted is also checked to
+satisfy typing rules. After deserialization stage we have valid tree of known
+limited size $TreeSize$. We want the complexity of all subsequent checks to
+be $O(TreeSize)$.
 
-\item \textbf{Stage2: Instantiation of the Cost Function.}
-Cost Function is the function of the same input (Context, variables, registers, etc.) as Statement function,
-but it computes Long value of the computation cost of the Statement function, so it answer the question
-"How many operations it is required to compute the statement?".
-The statement tree can be used to generate Cost Function, which is another tree built from Statement tree.
+\item \textbf{Instantiation of the Cost Function.}
+Cost Function is the function of the same input (Context, variables,
+registers, etc.) as Statement function, but it computes Long value of the
+computation cost of the Statement function, so it answer the question "How
+many operations it is required to compute the statement?". 
 
-We consider two implementations which are functionally equivalent:
+The Cost Function is instantiated by the following steps:
     \begin{enumerate}
-      \item generate Cost Function tree and then apply standard interpreter to evaluate it (Section \ref{sec:gen-cost-function})
-      \item implement Cost Interpreter and use is to evaluate Statement tree (Section \ref{sec:cost-interpreter})
+        \item Cost Function Tree, CFT, is obtained by:
+        \begin{itemize}
+            \item reading from the bytes stream immediately after Statement
+            Tree. In this case the CFT is integral part of the Statement.
+            \item generating from Statement Tree using algorithm $genCFT$
+        \end{itemize}
+        Both of these cases provide equivalent guarantees and only differ by
+        the time of CFT generatation
+        \item After the CFT is obtained the standard interpreter is used to
+        evaluate it and calculate an estimation of the computation cost of
+        the Statement. (Section \ref{sec:gen-cost-function})
     \end{enumerate}
 
-Using any of the two implementations we can instantiate a Cost Function to obtain an estimation of the computation cost.
-The idea is that the complexity of the Cost Function is linear in the size of the Statement tree in most of the cases.
-In the worst case it is linear in the size of the input data of the Statement which is strictly limited in size.
+ The idea is that the complexity of the Cost Function is linear in the size
+ of the Statement tree in most of the cases. In the worst case it is linear
+ in the size of the input data of the Statement which is strictly limited in
+ size.
+ We also rely on the fact that the complexity of $genCFT$ is linear in the
+ size of the Statement Tree.
 
-\item \textbf{Stage3: Evaluating the Statement cost.}
-This is performed by constructing the same context data as it is required for Statement evaluation
-and supplying this context to the Cost Function which implementation is further described in
-sections~\ref{sec:gen-cost-functions}, \ref{sec:cost-interpreter}.
-Upon computing the cost of Statement using Cost Function the Verifier check that it is less than the predefined constant $C_3$.
+\item \textbf{Evaluating the Statement cost.}
+The Cost Function is applied immediately before evaluation of the Statement
+by the following steps: 
+    \begin{enumerate}
+        \item construct the context as it is required for Statement evaluation 
+        \item invoke the interpreter to evaluate the Cost Function Tree in the
+        given context
+    \end{enumerate}
+
+The generation of the CFT is further described in
+section~\ref{sec:gen-cost-function}. Upon computing the cost of Statement
+using Cost Function the Verifier check that it is less than the predefined
+constant $C_3$.
 \end{enumerate}
 
-Passing all three stages of safety checks above, the Verifier is safe to evaluate the Statement tree in a current data context.
-This Statement evaluation is guaranteed to terminate in the estimated amount of time.
+Passing all three stages of safety checks above, the Verifier is safe to
+evaluate the Statement tree in a current data context. This Statement
+evaluation is guaranteed to terminate in the estimated amount of time.
 
-\subsection{Generation of Cost Function}
+\subsection{Generation of Cost Function Tree}
 \label{sec:gen-cost-function}
 
-Here we briefly describe an algorithm $cost$ to construct a Cost Function
+Here we briefly describe an algorithm $genCF$ to construct a Cost Function
 tree. The basic idea is that we perform single traversal of the Statement
-tree, visiting all the nodes from leaves up to the root. 
-During traversal foreach Statement node $t$ with children ${c_1 \dots c_k}$
-we construct$cost(t)$ using ${cost(c_1) \dots cost(c_n)}$. Algorithm $cost$
-is defined recursively over the tree structure as shown in Figure~\ref{}. 
-In the figure $dataCost(v)$ is a function to compute a cost of the evaluated
-value $v$ represented either by $ContextVar$ of $Constant$ tree nodes.
+tree, visiting all the nodes from leaves up to the root. During traversal
+foreach Statement node $t$ with children ${c_1 \dots c_k}$ we
+construct$genCF(t)$ using ${genCF(c_1) \dots genCF(c_n)}$. Algorithm $genCF$
+is defined recursively over the tree structure as shown in
+Figure~\ref{fig:genCFT}. In the figure $dataCost(v)$ is a function to compute
+a cost of the evaluated value $v$ represented either by $ContextVar$ of
+$Constant$ tree nodes.
 
-\[\begin{tabular}{@{}l c l} 
-    \multicolumn{3}{@{}l}{\textbf{def} $cost(t: Value[T]): Value[Long]$}  \\
-    $v~@~ContextVar(\_)$ & $\to$ & $dataCost(v)$ \\
-    $c~@~Constant(\_)$ & $\to$ & $dataCost(c)$ \\
-    \(t_1 + t_2\) & $\to$ & $cost(t_1)$ + $cost(+)$ + $cost(t_2)$ \\
-     & $\to$ & \mnote{arg} \\
-    $v @ Constant(_)$ & $\to$ & 
+\begin{figure}
+\begin{center}
+\begin{tabular}{>{$}l<{$} >{$}c<{$} >{$}l<{$}} 
+    \multicolumn{3}{@{}l}{\textbf{def} $genCF(D: Context, t: Value[T]): Value[Long]$}  \\
+    D, v~@~ContextVar(\_) & \to & dataCost(v) \\
+    D, c~@~Constant(\_) & \to & dataCost(c) \\
+    D, t_1 \otimes t_2 & \to & genCF(D, t_1) + Cost_\otimes + genCF(D, t_2) \\
+    arr.map(f) & \to & 
         \begin{tabular}[t]{l}
-            $v :=$ variable with $varId$ from data environment \\
-            return $dataCost(v)$ \\
+            let $f_{cost}$ = $genCF(D, f)$ \\
+            $sum(arr.map(\lambda x \to f_{cost}(x)))$ \\
         \end{tabular} \\
-\end{tabular}\]
+     & \to & $\mnote{arg}$ \\
+    % v @ Constant(_) & \to & 
+    %     \begin{tabular}[t]{l}
+    %         $v :=$ variable with $varId$ from data environment \\
+    %         return $dataCost(v)$ \\
+    %     \end{tabular} \\
+\end{tabular}
+\caption{Algorithm $genCFT$}
+\label{fig:genCFT}
+\end{center}
+\end{figure}
+
+\subsection{Storing Cost Function}
+\label{sec:store-cost-function}
+
 
 \subsection{Cost Interpreter}
 \label{sec:cost-interpreter}
