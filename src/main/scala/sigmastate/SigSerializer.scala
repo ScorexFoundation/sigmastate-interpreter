@@ -77,13 +77,13 @@ object SigSerializer {
           val (rewrittenLeaf, consumed) = traverseNode(leaf, bytes, p, challenge)
           (s :+ rewrittenLeaf, p + consumed)
         }
-        CAndUncheckedNode(and, None, Seq(), seq) -> (finalPos - pos)
+        CAndUncheckedNode(None, Seq(), seq) -> (finalPos - pos)
       case or: COR =>
         val (seq, finalPos) = or.sigmaBooleans.foldLeft(Seq[UncheckedTree]() -> pos) { case ((s, p), leaf) =>
           val (rewrittenLeaf, consumed) = traverseNode(leaf, bytes, p)
           (s :+ rewrittenLeaf, p + consumed)
         }
-        COrUncheckedNode(or, None, Seq(), seq) -> (finalPos - pos)
+        COrUncheckedNode(None, Seq(), seq) -> (finalPos - pos)
     }
 
     if (bytes.isEmpty) NoProof else traverseNode(exp, bytes, 0)._1

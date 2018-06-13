@@ -57,7 +57,6 @@ class SigSerializerSpecification extends PropSpec
       // `firstMessageOpt` is not serialized
       sch1.copy(commitmentOpt = None) == sch2
     case (conj1: UncheckedConjecture, conj2: UncheckedConjecture) =>
-      conj1.proposition == conj2.proposition &&
         Helpers.optionArrayEquals(conj1.challengeOpt, conj2.challengeOpt) &&
         conj1.commitments == conj2.commitments &&
         conj1.children.zip(conj2.children).forall(t => isEquivalent(t._1, t._2))

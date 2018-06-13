@@ -327,7 +327,6 @@ trait Interpreter {
         SigSerializer.parse(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree =>
-            assert(sp.proposition == cProp)
 
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
             val challenge = newRoot match {
