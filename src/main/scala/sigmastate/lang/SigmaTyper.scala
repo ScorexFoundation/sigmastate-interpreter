@@ -148,36 +148,32 @@ class SigmaTyper {
         case SCollection(elemType) =>
           // If it's a collection then the application has type of that collection's element.
           args match {
-              // todo cover all paths with tests
-            case Seq(Constant(i, _: SNumericType)) =>
-              ByIndex[SType](new_f.asCollection, SInt.upcast(i.asInstanceOf[AnyVal]), None)
-            case Seq(Constant(i, _: SNumericType), dvConst@Constant(_, dvtpe)) =>
-              if (dvtpe != elemType)
-                error(s"Invalid default value type of array application $app: expected collection element type; actual: $dvtpe")
+            case Seq(Constant(index, _: SNumericType)) =>
+              ByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), None)
+            case Seq(Constant(index, _: SNumericType), dvConst@Constant(_, dvtpe)) =>
+              if (dvtpe == elemType)
+                ByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), Some(dvConst))
               else
-                ByIndex[SType](new_f.asCollection,
-                  SInt.upcast(i.asInstanceOf[AnyVal]),
-                  Some(dvConst))
-            case Seq(arg) =>
-              val newArg = assignType(env, arg)
-              newArg.tpe match {
+                error(s"Invalid default value(const) type in array application $app: expected collection element type; actual: $dvtpe")
+            case Seq(index) =>
+              val typedIndex = assignType(env, index)
+              typedIndex.tpe match {
                 case _: SNumericType =>
-                  ByIndex[SType](new_f.asCollection, newArg.upcastTo(SInt), None)
+                  ByIndex[SType](new_f.asCollection, typedIndex.upcastTo(SInt), None)
                 case _ =>
-                  error(s"Invalid argument type of array application $app: expected numeric type; actual: ${newArg.tpe}")
+                  error(s"Invalid argument type of array application(w/o default value) $app: expected numeric type; actual: ${typedIndex.tpe}")
               }
-            case Seq(i, defaultValue) =>
-              val newArg = assignType(env, i)
-              val typedDefValue = assignType(env, defaultValue)
-              (newArg.tpe, typedDefValue.tpe) match {
-                  // fixme ugly
-                case (_: SNumericType, dvtpe) if dvtpe == elemType =>
-                  ByIndex[SType](new_f.asCollection, newArg.upcastTo(SInt), Some(typedDefValue))
-                case (_: SNumericType, _) =>
-                  error(s"Invalid argument type of default value in array application $app: expected array element type; actual: ${typedDefValue.tpe}")
-                  ByIndex[SType](new_f.asCollection, newArg.upcastTo(SInt), Some(typedDefValue))
+            case Seq(index, defVal) =>
+              val typedIndex = assignType(env, index)
+              val typedDefVal = assignType(env, defVal)
+              (typedIndex.tpe, typedDefVal.tpe) match {
+                case (_: SNumericType, dvtpe) =>
+                  if (dvtpe == elemType)
+                    ByIndex[SType](new_f.asCollection, typedIndex.upcastTo(SInt), Some(typedDefVal))
+                  else
+                    error(s"Invalid default value(expr) type in array application $app: expected array element type; actual: ${typedDefVal.tpe}")
                 case _ =>
-                  error(s"Invalid argument type of array application $app: expected numeric type; actual: ${newArg.tpe}")
+                  error(s"Invalid argument type of array application(with default value) $app: expected numeric type; actual: ${typedIndex.tpe}")
               }
             case _ =>
               error(s"Invalid argument of array application $app: expected integer value; actual: $args")

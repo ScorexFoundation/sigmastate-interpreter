@@ -159,13 +159,15 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("array indexed access with evaluation") {
     typecheck(env, "Array(0)(1 - 1)") shouldBe SInt
     typecheck(env, "Array(0)((1 - 1) + 0)") shouldBe SInt
-    typefail(env, "Array(0)(0 == 0)", "Invalid argument type")
+    typefail(env, "Array(0)(0 == 0)", "Invalid argument type of array application(w/o default value) ")
     typefail(env, "Array(0)(1,1,1)", "Invalid argument of array application")
   }
 
   property("array indexed access with default value") {
     typecheck(env, "Array(0)(0, 1)") shouldBe SInt
-    typefail(env, "Array(0)(0, Array(1))", "expected default value type")
+    typefail(env, "Array(0)(true, 1)", "Invalid argument type of array application(with default value)")
+    typefail(env, "Array(true)(0, 1)", "Invalid default value(const) type")
+    typefail(env, "Array(0)(0, Array(1))", "Invalid default value(expr) type")
   }
 
   property("array indexed access with default value with evaluation") {
