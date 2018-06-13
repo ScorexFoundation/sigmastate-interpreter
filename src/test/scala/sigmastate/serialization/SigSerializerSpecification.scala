@@ -89,7 +89,8 @@ class SigSerializerSpecification extends PropSpec
       val prop = prover.reduceToCrypto(ctx, expr).get._1
 
       val proof = prover.prove(expr, ctx, challenge).get.proof
-      roundTrip(proof, prop)
+      val proofTree = SigSerializer.parse(prop, proof)
+      roundTrip(proofTree, prop)
     }
   }
 }

@@ -426,23 +426,14 @@ trait Interpreter {
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
-             proverResult: SerializedProverResult,
-             message: Array[Byte]): Try[VerificationResult] = {
-    val ctxv = context.withExtension(proverResult.extension)
-    verify(exp, ctxv, proverResult.proofBytes, message)
-  }
-
-
-  //below are two sugaric methods for tests
-
-  def verify(exp: Value[SBoolean.type],
-             context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
     verify(exp, ctxv, proverResult.proof, message)
   }
 
+
+  //todo: do we need the method below?
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proof: ProofT,

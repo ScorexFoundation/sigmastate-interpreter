@@ -51,7 +51,7 @@ class CrowdFundingKernelContract(
     UncheckedSchnorr(su.proposition, None, rootChallenge, z)
   }
 
-  def prove(ctx: ErgoLikeContext, message: Array[Byte]): projectProver.ProofT = {
+  def prove(ctx: ErgoLikeContext, message: Array[Byte]): Array[Byte] = {
     val c1 = ctx.currentHeight >= timeout //&& isValid(backerPubKey, fakeMessage)
     val c2 = Array(
       ctx.currentHeight < timeout,
@@ -61,10 +61,10 @@ class CrowdFundingKernelContract(
     ).forall(identity)
     var proof: projectProver.ProofT = null
     c1 || (c2 && { proof = isValid(projectPubKey, message); true})
-    proof
+    SigSerializer.toBytes(proof)
   }
 
-  def verify(proof: projectProver.ProofT,
+  def verify(proof: Array[Byte],
              ctx: ErgoLikeContext,
              message: Array[Byte]): Try[Interpreter.VerificationResult] = Try {
     var sn = proof.asInstanceOf[UncheckedSchnorr]
