@@ -87,11 +87,11 @@ class SigmaTyper {
       val newObj = assignType(env, obj)
       newObj.tpe match {
         case s: SProduct =>
-          val iField = s.fieldIndex(n)
+          val iField = s.methodIndex(n)
           val tRes = if (iField != -1) {
-            s.fields(iField)._2
+            s.methods(iField).stype
           } else
-            error(s"Cannot find field '$n' in in the object $obj of Product type with fields ${s.fields}")
+            error(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}")
           Select(newObj, n, Some(tRes))
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t")
@@ -398,8 +398,8 @@ object SigmaTyper {
       unifyTypeLists(args1, args2)
     case (SPrimType(e1), SPrimType(e2)) if e1 == e2 =>
       Some(Map())
-    case (e1: SProduct, e2: SProduct) if e1.sameFields(e2) =>
-      unifyTypeLists(e1.fields.map(_._2), e2.fields.map(_._2))
+    case (e1: SProduct, e2: SProduct) if e1.sameMethods(e2) =>
+      unifyTypeLists(e1.methods.map(_.stype), e2.methods.map(_.stype))
     case _ => None
   }
 

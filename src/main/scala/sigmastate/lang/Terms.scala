@@ -42,9 +42,9 @@ object Terms {
     override def evaluated: Boolean = ???
     val tpe: SType = resType.getOrElse(obj.tpe match {
       case p: SProduct =>
-        val i = p.fieldIndex(field)
+        val i = p.methodIndex(field)
         if (i == -1) NoType
-        else p.fields(i)._2
+        else p.methods(i).stype
       case _ => NoType
     })
   }

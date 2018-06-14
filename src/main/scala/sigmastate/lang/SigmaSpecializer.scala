@@ -88,7 +88,7 @@ class SigmaSpecializer {
         case (box, SBox.Id) => Some(ExtractId(box))
         case (box, SBox.Bytes) => Some(ExtractBytes(box))
         case (box, SBox.BytesWithNoRef) => Some(ExtractBytesWithNoRef(box))
-        case (box, _) if box.tpe.hasField(field) =>
+        case (box, _) if box.tpe.hasMethod(field) =>
           None  // leave it as it is and handle on a level of parent node
         case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
       }

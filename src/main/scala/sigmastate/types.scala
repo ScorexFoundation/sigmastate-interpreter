@@ -127,26 +127,28 @@ object SType {
 
 }
 
-/** Base trait for all types which have fields (aka properties) */
+/** Base trait for all types which have methods (aka properties) */
 trait SProduct extends SType {
   def ancestors: Seq[SType]
-  /** Returns -1 if `field` is not found. */
-  def fieldIndex(field: String): Int = fields.indexWhere(_._1 == field)
-  def hasField(field: String) = fieldIndex(field) != -1
+  /** Returns -1 if `method` is not found. */
+  def methodIndex(name: String): Int = methods.indexWhere(_.name == name)
+  def hasMethod(name: String): Boolean = methodIndex(name) != -1
 
-  /** Returns all the fields of this product type. */
-  def fields: Seq[(String, SType)]
+  /** Returns all the methods of this product type. */
+  def methods: Seq[SMethod]
 
-  /** Checks if `this` product has exactly the same fields as `that`. */
-  def sameFields(that: SProduct): Boolean = {
-    if (fields.lengthCompare(that.fields.length) != 0) return false
+  /** Checks if `this` product has exactly the same methods as `that`. */
+  def sameMethods(that: SProduct): Boolean = {
+    if (methods.lengthCompare(that.methods.length) != 0) return false
     // imperative to avoid allocation as it is supposed to be used frequently
-    for (i <- fields.indices) {
-      if (fields(i)._1 != that.fields(i)._1) return false
+    for (i <- methods.indices) {
+      if (methods(i).name != that.methods(i).name) return false
     }
     true
   }
 }
+
+case class SMethod(name: String, stype: SType)
 
 /** Special type to represent untyped values.
   * Interpreter raises an error when encounter a Value with this type.
@@ -289,9 +291,9 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.GroupElementConstantDeclaration
   def ancestors = Nil
-  val fields = Seq(
-    "isIdentity" -> SBoolean,
-    "nonce" -> SByteArray
+  val methods = Seq(
+    SMethod("isIdentity", SBoolean),
+    SMethod("nonce", SByteArray)
   )
 }
 
@@ -301,7 +303,7 @@ case object SAvlTree extends SProduct with SPredefType {
   override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.AvlTreeConstantDeclaration
   def ancestors = Nil
-  val fields = Nil
+  val methods = Nil
 }
 
 case object SBox extends SProduct with SPredefType {
@@ -313,20 +315,20 @@ case object SBox extends SProduct with SPredefType {
   def ancestors = Nil
 
   private val tT = STypeIdent("T")
-  def registers(): Seq[(String, SType)] = {
-    (1 to 10).map(i => s"R$i" -> SFunc(IndexedSeq(), SOption(tT), Seq(tT)))
+  def registers(): Seq[SMethod] = {
+    (1 to 10).map(i => SMethod(s"R$i", SFunc(IndexedSeq(), SOption(tT), Seq(tT))))
   }
   val PropositionBytes = "propositionBytes"
   val Value = "value"
   val Id = "id"
   val Bytes = "bytes"
   val BytesWithNoRef = "bytesWithNoRef"
-  val fields = Vector(
-    Value            -> SLong,        // see ExtractAmount
-    PropositionBytes -> SByteArray,  // see ExtractScriptBytes
-    Bytes            -> SByteArray,  // see ExtractBytes
-    BytesWithNoRef   -> SByteArray,  // see ExtractBytesWithNoRef
-    Id               -> SByteArray   // see ExtractId
+  val methods = Vector(
+    SMethod(Value, SLong), // see ExtractAmount
+    SMethod(PropositionBytes, SByteArray), // see ExtractScriptBytes
+    SMethod(Bytes, SByteArray), // see ExtractBytes
+    SMethod(BytesWithNoRef, SByteArray), // see ExtractBytesWithNoRef
+    SMethod(Id, SByteArray) // see ExtractId
   ) ++ registers()
 }
 
@@ -353,7 +355,7 @@ case class SCollection[T <: SType](elemType: T) extends SProduct {
     ((v.asInstanceOf[Array[T#WrappedType]].length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
   def ancestors = Nil
-  override def fields = SCollection.fields
+  override def methods = SCollection.methods
   override def toString = s"Array[$elemType]"
 }
 
@@ -365,15 +367,15 @@ object SCollection {
 
   private val tIV = STypeIdent("IV")
   private val tOV = STypeIdent("OV")
-  val fields = Seq(
-    "size" -> SInt,
-    "getOrElse" -> SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(tIV)),
-    "map" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV)),
-    "exists" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
-    "fold" -> SFunc(IndexedSeq(SCollection(tIV), tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV, Seq(tIV)),
-    "forall" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
-    "slice" -> SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV)),
-    "where" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV))
+  val methods = Seq(
+    SMethod("size", SInt),
+    SMethod("getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(tIV))),
+    SMethod("map", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV))),
+    SMethod("exists", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV))),
+    SMethod("fold", SFunc(IndexedSeq(SCollection(tIV), tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV, Seq(tIV))),
+    SMethod("forall", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV))),
+    SMethod("slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV))),
+    SMethod("where", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV)))
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
@@ -405,9 +407,11 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
   override type WrappedType = Option[Value[ElemType]]
   override val typeCode: TypeCode = SOption.OptionTypeCode
   def ancestors = Nil
-  override lazy val fields = {
+  override lazy val methods: Seq[SMethod] = {
     val subst = Map(SOption.tT -> elemType)
-    SOption.fields.map { case (n, t) => (n, SigmaTyper.applySubst(t, subst)) }
+    SOption.methods.map { method =>
+      SMethod(method.name, SigmaTyper.applySubst(method.stype, subst))
+    }
   }
   override def toString = s"Option[$elemType]"
 }
@@ -418,14 +422,14 @@ object SOption {
   val OptionCollectionTypeConstrId = 4
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
-  private[sigmastate] def createFields(tArg: STypeIdent) =
+  private[sigmastate] def createMethods(tArg: STypeIdent): Seq[SMethod] =
     Seq(
-      "isDefined" -> SBoolean,
-      "value" -> tArg,
-      "valueOrElse" -> SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(tT))
+      SMethod("isDefined", SBoolean),
+      SMethod("value", tArg),
+      SMethod("valueOrElse", SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(tT)))
     )
   private val tT = STypeIdent("T")
-  val fields: Seq[(String, SType)] = createFields(tT)
+  val methods: Seq[SMethod] = createMethods(tT)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
@@ -437,11 +441,11 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
 
   def ancestors = Nil
 
-  override val fields = {
-    val b = new mutable.ArrayBuffer[(String, SType)](items.size)
+  override val methods: Seq[SMethod] = {
+    val b = new mutable.ArrayBuffer[SMethod](items.size)
     var i = 0
     while (i < items.size) {
-      b += (componentNames(i) -> items(i))
+      b += SMethod(componentNames(i), items(i))
       i += 1
     }
     b.result
