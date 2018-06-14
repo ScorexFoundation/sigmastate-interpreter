@@ -102,9 +102,10 @@ trait TransformerGenerators {
   val calcSha256Gen: Gen[CalcSha256] = arbByteArrayConstant.arbitrary.map { v => CalcSha256(v) }
 
   val byIndexGen: Gen[ByIndex[SInt.type]] = for {
-    input <- arbCCOfIntConstant.arbitrary
+    input <- Gen.oneOf(intConstCollectionGen, intArrayConstGen)
     index <- arbInt.arbitrary
-  } yield ByIndex(input, index)
+    defaultValue <- arbOption(arbIntConstants).arbitrary
+  } yield ByIndex(input, index, defaultValue)
 
   val booleanExprGen: Gen[Value[SBoolean.type]] =
     Gen.oneOf(

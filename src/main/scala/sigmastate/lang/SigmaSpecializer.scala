@@ -88,7 +88,7 @@ class SigmaSpecializer {
         case (box, SBox.Id) => Some(ExtractId(box))
         case (box, SBox.Bytes) => Some(ExtractBytes(box))
         case (box, SBox.BytesWithNoRef) => Some(ExtractBytesWithNoRef(box))
-        case (box, _) if box.tpe.hasField(field) =>
+        case (box, _) if box.tpe.hasMethod(field) =>
           None  // leave it as it is and handle on a level of parent node
         case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
       }
@@ -130,6 +130,11 @@ class SigmaSpecializer {
       val taggedOp = mkTagged(opArg, tOp, 22)
       val body1 = eval(env ++ Seq(zeroArg -> taggedZero, opArg -> taggedOp), body)
       Some(Fold(col.asValue[SCollection[SType]], taggedZero.varId, zero, taggedOp.varId, body1))
+
+    case Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
+      val index1 = eval(env, index).asValue[SInt.type]
+      val defaultValue1 = eval(env, defaultValue).asValue[SType]
+      Some(ByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
     case opt: OptionValue[_] =>
       error(s"Option values are not supported: $opt")
