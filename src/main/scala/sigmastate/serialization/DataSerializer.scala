@@ -61,7 +61,7 @@ object DataSerializer {
         }
       }
       w.putBytes(obj.transactionId)
-      w.putUShort(obj.boxId)
+      w.putUShort(obj.index)
 
     case SAvlTree =>
       val data = v.asInstanceOf[AvlTreeData]
