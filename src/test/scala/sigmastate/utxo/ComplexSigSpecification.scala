@@ -158,7 +158,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""")
 
-    val prop = OR(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    val prop = OR(AND(pubkeyA, pubkeyB), pubkeyC, pubkeyD)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -215,7 +215,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val proverAC = proverA.withSecrets(Seq(proverC.dlogSecrets.head))
     val pr = proverAC.prove(prop, ctx, fakeMessage).get
-    println("proof size: " + SigSerializer.toBytes(pr.proof).length)
+    println("proof size: " + pr.proof.length)
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val proverBD = proverB.withSecrets(Seq(proverD.dlogSecrets.head))
@@ -239,7 +239,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""")
 
-    val prop = AND(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    val prop = AND(pubkeyA, pubkeyB, OR(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -282,7 +282,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""")
 
-    val prop = OR(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    val prop = OR(pubkeyA, pubkeyB, pubkeyC, pubkeyD)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -357,7 +357,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compile(env, """anyOf(Array(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
 
-    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, LongConstant(500))))
+    val prop = OR(pubkeyA, pubkeyB, AND(pubkeyC, GT(Height, LongConstant(500))))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(

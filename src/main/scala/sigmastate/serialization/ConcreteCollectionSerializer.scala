@@ -11,7 +11,7 @@ object ConcreteCollectionSerializer extends ValueSerializer[ConcreteCollection[_
 
   override def parseBody(bytes: Array[Byte], pos: Position): (ConcreteCollection[SType], Position) = {
     val r = Serializer.startReader(bytes, pos)
-    val size = r.getShort()
+    val size = r.getUShort()
     val tItem = r.getType()
     val values =  (1 to size).map(_ => r.getValue())
     assert(values.forall(_.tpe == tItem), s"Invalid type of collection value")
@@ -23,7 +23,7 @@ object ConcreteCollectionSerializer extends ValueSerializer[ConcreteCollection[_
     require(ccSize <= Short.MaxValue, s"max collection size is Short.MaxValue = ${Short.MaxValue}")
     val size = ccSize.toShort
     val w = Serializer.startWriter()
-        .putShort(size)
+        .putUShort(size)
         .putType(cc.tpe.elemType)
     for (item <- cc.items) {
       w.putValue(item)

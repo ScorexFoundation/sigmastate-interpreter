@@ -82,7 +82,7 @@ object SigSerializer {
           val (rewrittenChild, consumed) = traverseNode(child, bytes, p, Some(e))
           (s :+ rewrittenChild, p + consumed)
         }
-        CAndUncheckedNode(and, Some(e), Seq(), seq) -> (finalPos - pos)
+        CAndUncheckedNode(Some(e), Seq(), seq) -> (finalPos - pos)
       case or: COR =>
         val (e, numChalBytes) = if (challengeOpt.isEmpty) {
           bytes.slice(pos, pos + hashSize) -> hashSize
@@ -100,7 +100,7 @@ object SigSerializer {
               }))
         }
         val (lastChild, numRightChildBytes) = traverseNode(or.sigmaBooleans.head, bytes, lastPos, Some(lastChallenge))
-        COrUncheckedNode(or, Some(e), Seq(), seq :+ lastChild) -> (lastPos + numRightChildBytes - pos)
+        COrUncheckedNode(Some(e), Seq(), seq :+ lastChild) -> (lastPos + numRightChildBytes - pos)
     }
 
     if (bytes.isEmpty) NoProof else traverseNode(exp, bytes, 0)._1
