@@ -34,7 +34,7 @@ import scala.runtime.ScalaRunTime
   * @param value         - amount of money associated with the box
   * @param proposition   guarding script, which should be evaluated to true in order to open this box
   * @param transactionId - id of transaction which created the box
-  * @param boxId         - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
+  * @param index         - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
   * @param additionalRegisters
   */
 class ErgoBox private(
@@ -42,7 +42,7 @@ class ErgoBox private(
     override val proposition: Value[SBoolean.type],
     override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
     val transactionId: Array[Byte],
-    val boxId: Short
+    val index: Short
 ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
 
   import ErgoBox._
@@ -53,7 +53,7 @@ class ErgoBox private(
 
   override def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
     identifier match {
-      case R2 => Some(ByteArrayConstant(transactionId ++ Shorts.toByteArray(boxId)))
+      case R2 => Some(ByteArrayConstant(transactionId ++ Shorts.toByteArray(index)))
       case _ => super.get(identifier)
     }
   }
@@ -68,16 +68,16 @@ class ErgoBox private(
     case x: ErgoBox =>
       super.equals(x) &&
         Arrays.equals(transactionId, x.transactionId) &&
-        boxId == x.boxId
+        index == x.index
     case _ => false
   }
 
-  override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalRegisters, boxId))
+  override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalRegisters, index))
 
   def toCandidate: ErgoBoxCandidate = new ErgoBoxCandidate(value, proposition, additionalRegisters)
 
   override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$proposition,${Base16.encode(transactionId)}," +
-    s"$boxId,$additionalRegisters)"
+    s"$index,$additionalRegisters)"
 }
 
 object ErgoBox {
