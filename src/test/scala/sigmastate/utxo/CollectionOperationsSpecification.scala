@@ -280,6 +280,32 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
+  property("by index with default value") {
+    val outputBoxValues = IndexedSeq(10L, 10L)
+    val code =
+      """OUTPUTS
+        |.map(fun (box: Box): Long = box.value).getOrElse(3, 0L)== 0""".stripMargin
+    val expectedPropTree = EQ(
+      ByIndex(
+        MapCollection(Outputs,21,ExtractAmount(TaggedBox(21))),
+        IntConstant(3),
+        Some(LongConstant(0))),
+      LongConstant(0))
+    assertProof(code, expectedPropTree, outputBoxValues)
+  }
+
+  property("by index with evaluated default value") {
+    val outputBoxValues = IndexedSeq(20L, 0L)
+    val code = "OUTPUTS.getOrElse(3, OUTPUTS(0)).value == 20"
+    val expectedPropTree = EQ(
+      ExtractAmount(
+        ByIndex(Outputs,
+          IntConstant(3),
+          Some(ByIndex(Outputs, IntConstant(0))))),
+      LongConstant(20))
+    assertProof(code, expectedPropTree, outputBoxValues)
+  }
+
   property("map fold") {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =

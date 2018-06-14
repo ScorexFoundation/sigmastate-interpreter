@@ -57,12 +57,12 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     caseObjectValue(Self),
     caseObjectValue(GroupGenerator),
     (LongConstant(1), Array[Byte](SLong.typeCode, 2)),
-    (BigIntConstant(BigInteger.valueOf(0)), Array[Byte](SBigInt.typeCode, 0, 1, 0)),
-    (BigIntConstant(new BigInteger(Array[Byte](3,4,5))), Array[Byte](SBigInt.typeCode, 0, 3, 3, 4, 5)),
-    (ByteArrayConstant(Array[Byte](1, 3, 5, 9, 10, 100)), Array[Byte](ByteArrayTypeCode, 0, 6, 1, 3, 5, 9, 10, 100)),
-    (ByteArrayConstant(Array[Byte]()), Array[Byte](ByteArrayTypeCode, 0, 0)),
-    (ByteArrayConstant(Array[Byte](1)), Array[Byte](ByteArrayTypeCode, 0, 1, 1)),
-    (ByteArrayConstant(Array[Byte](1, 2, 3, 4, 5)), Array[Byte](ByteArrayTypeCode, 0, 5, 1, 2, 3, 4, 5))
+    (BigIntConstant(BigInteger.valueOf(0)), Array[Byte](SBigInt.typeCode, 1, 0)),
+    (BigIntConstant(new BigInteger(Array[Byte](3,4,5))), Array[Byte](SBigInt.typeCode, 3, 3, 4, 5)),
+    (ByteArrayConstant(Array[Byte](1, 3, 5, 9, 10, 100)), Array[Byte](ByteArrayTypeCode, 6, 1, 3, 5, 9, 10, 100)),
+    (ByteArrayConstant(Array[Byte]()), Array[Byte](ByteArrayTypeCode, 0)),
+    (ByteArrayConstant(Array[Byte](1)), Array[Byte](ByteArrayTypeCode, 1, 1)),
+    (ByteArrayConstant(Array[Byte](1, 2, 3, 4, 5)), Array[Byte](ByteArrayTypeCode, 5, 1, 2, 3, 4, 5))
   )
 
   tableRoundTripTest("Specific objects serializer round trip")

@@ -83,7 +83,10 @@ class ByteReaderWriterImpSpecification extends PropSpec
       for(any <- values) {
         any match {
           case v: Byte => writer.put(v)
-          case v: Short => writer.putShort(v)
+          case v: Short =>
+            // test all paths
+            writer.putShort(v)
+            writer.putUShort(v)
           case v: Int =>
             // test all paths
             writer.putInt(v)
@@ -99,7 +102,10 @@ class ByteReaderWriterImpSpecification extends PropSpec
       val reader = byteBufReader(writer.toBytes)
       values.foreach {
         case v: Byte => reader.getByte() shouldEqual v
-        case v: Short => reader.getShort() shouldEqual v
+        case v: Short =>
+          // test all paths
+          reader.getShort() shouldEqual v
+          reader.getUShort().toShort shouldEqual v
         case v: Int =>
           // test all paths
           reader.getInt() shouldEqual v
@@ -109,7 +115,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
           reader.getLong() shouldEqual v
           reader.getULong() shouldEqual v
         case v: Array[Byte] =>
-          val size = reader.getUInt()
+          val size = reader.getUInt().toInt
           reader.getBytes(size) shouldEqual v
         case ref@_ => fail(s"reader: unsupported value type: ${ref.getClass}");
       }

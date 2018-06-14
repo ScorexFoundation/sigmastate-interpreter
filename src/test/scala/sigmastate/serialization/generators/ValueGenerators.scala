@@ -56,6 +56,10 @@ trait ValueGenerators extends TypeGenerators {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
   } yield ByteArrayConstant(bytes.toArray)
+  val intArrayConstGen: Gen[CollectionConstant[SInt.type]] = for {
+    length <- Gen.chooseNum(1, 100)
+    ints <- Gen.listOfN(length, arbInt.arbitrary)
+  } yield IntArrayConstant(ints.toArray)
   val groupElementConstGen: Gen[GroupElementConstant] = for {
     _ <- Gen.const(1)
     el = CryptoConstants.dlogGroup.createRandomGenerator()
