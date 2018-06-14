@@ -372,9 +372,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   //converts ProofTree => UncheckedTree
   val convertToUnchecked: ProofTree => UncheckedTree = attr {
     case and: CAndUnproven =>
-      CAndUncheckedNode(None, Seq(), and.children.map(convertToUnchecked))
+      CAndUncheckedNode(and.challengeOpt, and.childrenCommitments, and.children.map(convertToUnchecked))
     case or: COrUnproven =>
-      COrUncheckedNode(None, Seq(), or.children.map(convertToUnchecked))
+      COrUncheckedNode(or.challengeOpt, or.childrenCommitments, or.children.map(convertToUnchecked))
     case s: UncheckedSchnorr => s
     case d: UncheckedDiffieHellmanTuple => d
     case _ => ???
