@@ -4,7 +4,7 @@ import java.util
 
 import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
-import sigmastate.interpreter.SerializedProverResult
+import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
 import sigmastate.serialization.Serializer.{Consumed, Position}
 
@@ -38,19 +38,19 @@ object UnsignedInput {
   }
 }
 
-case class Input(override val boxId: BoxId, spendingProof: SerializedProverResult)
+case class Input(override val boxId: BoxId, spendingProof: ProverResult)
   extends UnsignedInput(boxId) {
 }
 
 object Input {
   object serializer extends Serializer[Input, Input] {
     override def toBytes(input: Input): Array[Byte] = {
-      input.boxId ++ SerializedProverResult.serializer.toBytes(input.spendingProof)
+      input.boxId ++ ProverResult.serializer.toBytes(input.spendingProof)
     }
 
     override def parseBody(bytes: Array[Byte], pos: Position): (Input, Consumed) = {
       val boxId = bytes.slice(pos, pos + BoxId.size)
-      val (spendingProof, consumed) = SerializedProverResult.serializer.parseBody(bytes, pos + BoxId.size)
+      val (spendingProof, consumed) = ProverResult.serializer.parseBody(bytes, pos + BoxId.size)
       Input(ADKey @@ boxId, spendingProof) -> (consumed + BoxId.size)
     }
   }

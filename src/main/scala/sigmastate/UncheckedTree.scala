@@ -11,17 +11,16 @@ sealed trait UncheckedTree extends ProofTree
 
 case object NoProof extends UncheckedTree
 
-sealed trait UncheckedSigmaTree extends UncheckedTree {
-  val proposition: SigmaBoolean
-}
+sealed trait UncheckedSigmaTree extends UncheckedTree
 
+// todo: why do ANDs and ORs have challenges that are optional, while leaves have challenges that are required? This causes messy code elsewhere
 trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
   val challengeOpt: Option[Array[Byte]]
   val commitments: Seq[FirstProverMessage[_]]
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedConjecture =>
-      proposition == x.proposition &&
+      // todo: why does the code below mix .equals and == ?
         Helpers.optionArrayEquals(challengeOpt, x.challengeOpt) &&
         commitments == x.commitments &&
         children == x.children
@@ -29,6 +28,7 @@ trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
 }
 
 trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree with ProofTreeLeaf {
+  val proposition: SigmaBoolean
   val challenge: Array[Byte]
 }
 
@@ -40,7 +40,8 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedSchnorr =>
-        util.Arrays.equals(challenge, x.challenge) &&
+      // todo: why does the code below mix .equals and == ?
+      util.Arrays.equals(challenge, x.challenge) &&
         commitmentOpt == x.commitmentOpt &&
         secondMessage == x.secondMessage
     case _ => false
@@ -56,15 +57,15 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHell
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedDiffieHellmanTuple =>
+      // todo: why does the code below mix .equals and == ?
       proposition == x.proposition &&
-      commitmentOpt == x.commitmentOpt &&
-      util.Arrays.equals(challenge, x.challenge) &&
-      secondMessage == x.secondMessage
+        commitmentOpt == x.commitmentOpt &&
+        util.Arrays.equals(challenge, x.challenge) &&
+        secondMessage == x.secondMessage
   }
 }
 
-case class CAndUncheckedNode(override val proposition: CAND,
-                             override val challengeOpt: Option[Array[Byte]],
+case class CAndUncheckedNode(override val challengeOpt: Option[Array[Byte]],
                              override val commitments: Seq[FirstProverMessage[_]],
                              override val children: Seq[ProofTree])
   extends UncheckedConjecture {
@@ -73,8 +74,7 @@ case class CAndUncheckedNode(override val proposition: CAND,
 }
 
 
-case class COrUncheckedNode(override val proposition: COR,
-                            override val challengeOpt: Option[Array[Byte]],
+case class COrUncheckedNode(override val challengeOpt: Option[Array[Byte]],
                             override val commitments: Seq[FirstProverMessage[_]],
                             override val children: Seq[ProofTree]) extends UncheckedConjecture {
 
