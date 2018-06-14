@@ -131,6 +131,11 @@ class SigmaSpecializer {
       val body1 = eval(env ++ Seq(zeroArg -> taggedZero, opArg -> taggedOp), body)
       Some(Fold(col.asValue[SCollection[SType]], taggedZero.varId, zero, taggedOp.varId, body1))
 
+    case Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
+      val index1 = eval(env, index).asValue[SInt.type]
+      val defaultValue1 = eval(env, defaultValue).asValue[SType]
+      Some(ByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
+
     case opt: OptionValue[_] =>
       error(s"Option values are not supported: $opt")
 

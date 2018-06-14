@@ -150,30 +150,13 @@ class SigmaTyper {
           args match {
             case Seq(Constant(index, _: SNumericType)) =>
               ByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), None)
-            case Seq(Constant(index, _: SNumericType), dvConst@Constant(_, dvtpe)) =>
-              if (dvtpe == elemType)
-                ByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), Some(dvConst))
-              else
-                error(s"Invalid default value(const) type in array application $app: expected collection element type; actual: $dvtpe")
             case Seq(index) =>
               val typedIndex = assignType(env, index)
               typedIndex.tpe match {
                 case _: SNumericType =>
                   ByIndex[SType](new_f.asCollection, typedIndex.upcastTo(SInt), None)
                 case _ =>
-                  error(s"Invalid argument type of array application(w/o default value) $app: expected numeric type; actual: ${typedIndex.tpe}")
-              }
-            case Seq(index, defVal) =>
-              val typedIndex = assignType(env, index)
-              val typedDefVal = assignType(env, defVal)
-              (typedIndex.tpe, typedDefVal.tpe) match {
-                case (_: SNumericType, dvtpe) =>
-                  if (dvtpe == elemType)
-                    ByIndex[SType](new_f.asCollection, typedIndex.upcastTo(SInt), Some(typedDefVal))
-                  else
-                    error(s"Invalid default value(expr) type in array application $app: expected array element type; actual: ${typedDefVal.tpe}")
-                case _ =>
-                  error(s"Invalid argument type of array application(with default value) $app: expected numeric type; actual: ${typedIndex.tpe}")
+                  error(s"Invalid argument type of array application $app: expected numeric type; actual: ${typedIndex.tpe}")
               }
             case _ =>
               error(s"Invalid argument of array application $app: expected integer value; actual: $args")

@@ -284,7 +284,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """OUTPUTS
-        |.map(fun (box: Box): Long = box.value)(3, 0L)== 0""".stripMargin
+        |.map(fun (box: Box): Long = box.value).getOrElse(3, 0L)== 0""".stripMargin
     val expectedPropTree = EQ(
       ByIndex(
         MapCollection(Outputs,21,ExtractAmount(TaggedBox(21))),
@@ -296,7 +296,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   property("by index with evaluated default value") {
     val outputBoxValues = IndexedSeq(20L, 0L)
-    val code = "OUTPUTS(3, OUTPUTS(0)).value == 20"
+    val code = "OUTPUTS.getOrElse(3, OUTPUTS(0)).value == 20"
     val expectedPropTree = EQ(
       ExtractAmount(
         ByIndex(Outputs,

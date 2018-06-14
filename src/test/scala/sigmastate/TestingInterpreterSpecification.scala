@@ -160,11 +160,11 @@ class TestingInterpreterSpecification extends PropSpec
   }
 
   property("Array indexing (out of bounds with const default value)") {
-    testeval("Array(1, 2)(3, 0) == 0")
+    testeval("Array(1, 2).getOrElse(3, 0) == 0")
   }
 
   property("Array indexing (out of bounds with evaluated default value)") {
-    testeval("Array(1, 1)(3, 1 + 1) == 2")
+    testeval("Array(1, 1).getOrElse(3, 1 + 1) == 2")
   }
 
   property("Evaluation example #1") {

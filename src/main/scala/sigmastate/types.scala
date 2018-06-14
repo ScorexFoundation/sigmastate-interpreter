@@ -367,6 +367,7 @@ object SCollection {
   private val tOV = STypeIdent("OV")
   val fields = Seq(
     "size" -> SInt,
+    "getOrElse" -> SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(tIV)),
     "map" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV)),
     "exists" -> SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)),
     "fold" -> SFunc(IndexedSeq(SCollection(tIV), tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV, Seq(tIV)),
