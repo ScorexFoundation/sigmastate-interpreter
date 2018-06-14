@@ -3,8 +3,8 @@ package sigmastate.lang
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
-import sigmastate._
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
@@ -87,11 +87,11 @@ class SigmaTyper {
       val newObj = assignType(env, obj)
       newObj.tpe match {
         case s: SProduct =>
-          val iField = s.fieldIndex(n)
+          val iField = s.methodIndex(n)
           val tRes = if (iField != -1) {
-            s.fields(iField)._2
+            s.methods(iField).stype
           } else
-            error(s"Cannot find field '$n' in in the object $obj of Product type with fields ${s.fields}")
+            error(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}")
           Select(newObj, n, Some(tRes))
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t")
@@ -145,18 +145,18 @@ class SigmaTyper {
           if (actualTypes != argTypes)
             error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
           Apply(new_f, newArgs)
-        case _: SCollection[_] =>
+        case SCollection(elemType) =>
           // If it's a collection then the application has type of that collection's element.
           args match {
-            case Seq(Constant(i, tpe: SNumericType)) =>
-              ByIndex[SType](new_f.asCollection, SInt.upcast(i.asInstanceOf[AnyVal]))
-            case Seq(arg) =>
-              val newArg = assignType(env, arg)
-              newArg.tpe match {
-                case targ: SNumericType =>
-                  ByIndex[SType](new_f.asCollection, newArg.upcastTo(SInt))
+            case Seq(Constant(index, _: SNumericType)) =>
+              ByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), None)
+            case Seq(index) =>
+              val typedIndex = assignType(env, index)
+              typedIndex.tpe match {
+                case _: SNumericType =>
+                  ByIndex[SType](new_f.asCollection, typedIndex.upcastTo(SInt), None)
                 case _ =>
-                  error(s"Invalid argument type of array application $app: expected numeric type; actual: ${newArg.tpe}")
+                  error(s"Invalid argument type of array application $app: expected numeric type; actual: ${typedIndex.tpe}")
               }
             case _ =>
               error(s"Invalid argument of array application $app: expected integer value; actual: $args")
@@ -264,11 +264,15 @@ class SigmaTyper {
         error(s"Invalid binary operation Exponentiate: expected argument types ($SGroupElement, $SBigInt); actual: (${l.tpe}, ${r.tpe})")
       Exponentiate(l1, r1)
 
-    case ByIndex(col, i) =>
+    case ByIndex(col, i, defaultValue) =>
       val c1 = assignType(env, col).asCollection[SType]
       if (!c1.tpe.isCollection)
         error(s"Invalid operation ByIndex: expected argument types ($SCollection); actual: (${col.tpe})")
-      ByIndex(c1, i)
+      defaultValue match {
+        case Some(v) if v.tpe.typeCode != c1.tpe.elemType.typeCode =>
+            error(s"Invalid operation ByIndex: expected default value type (${c1.tpe.elemType}); actual: (${v.tpe})")
+        case ref @ _ => ByIndex(c1, i, ref)
+      }
 
     case SizeOf(col) =>
       val c1 = assignType(env, col).asCollection[SType]
@@ -394,8 +398,8 @@ object SigmaTyper {
       unifyTypeLists(args1, args2)
     case (SPrimType(e1), SPrimType(e2)) if e1 == e2 =>
       Some(Map())
-    case (e1: SProduct, e2: SProduct) if e1.sameFields(e2) =>
-      unifyTypeLists(e1.fields.map(_._2), e2.fields.map(_._2))
+    case (e1: SProduct, e2: SProduct) if e1.sameMethods(e2) =>
+      unifyTypeLists(e1.methods.map(_.stype), e2.methods.map(_.stype))
     case _ => None
   }
 
