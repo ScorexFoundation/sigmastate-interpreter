@@ -302,6 +302,8 @@ object Values {
     }
   }
 
+  val BoolArrayTypeCode = (SCollection.CollectionTypeCode + SBoolean.typeCode).toByte
+
   object BoolArrayConstant {
     def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
     def unapply(node: SValue): Option[Array[Boolean]] = node match {
