@@ -1,32 +1,33 @@
 package sigmastate.serialization.transformers
 
+import org.ergoplatform.ErgoBox
 import sigmastate.{SBox, SType}
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
-import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utxo.{ErgoBox, ExtractRegisterAs}
+import sigmastate.serialization.Serializer.{Position, Consumed}
+import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer}
+import sigmastate.utxo.ExtractRegisterAs
 
 object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[SType]] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
 
-  override def parseBody(bytes: Array[Byte], pos: Position): (ExtractRegisterAs[SType], Consumed) = {
-    val (input, c1 ) = ValueSerializer.deserialize(bytes, pos)
-    val registedId = ErgoBox.findRegisterByIndex(bytes(pos + c1)).get
-    val (defaultValue, c2) = if (bytes(pos + c1 + 1) == 0) { None -> 1 } else {
-      val (dv, consumed) = ValueSerializer.deserialize(bytes, pos + c1 + 1)
-      Some(dv) -> consumed
-    }
-    val tpeByte = bytes(pos + c1 + 1 + c2)
-    val tpe= SType.allPredefTypes.filter(_.typeCode == tpeByte).head
-    ExtractRegisterAs(input.asInstanceOf[Value[SBox.type]], registedId, defaultValue)(tpe) -> (pos + c1 + 1 + c2 + 1)
+  override def serializeBody(obj: ExtractRegisterAs[SType]): Array[Byte] = {
+    val w = Serializer.startWriter()
+        .putValue(obj.input)
+        .put(obj.registerId.number)
+        .putOption(obj.default)((w, v) => w.putValue(v))
+        .putType(obj.tpe)
+    w.toBytes
   }
 
-  override def serializeBody(obj: ExtractRegisterAs[SType]): Array[Byte] = {
-    val inputBytes = ValueSerializer.serialize(obj.input)
-    val registerIdByte = obj.registerId.number
-    val defaultValue = obj.default.fold(Array(0: Byte)) { ValueSerializer.serialize }
-    val tpeByte = obj.tpe.typeCode
-    inputBytes ++ Array(registerIdByte) ++ defaultValue ++ Array(tpeByte)
+  override def parseBody(bytes: Array[Byte], pos: Position): (ExtractRegisterAs[SType], Consumed) = {
+    val r = Serializer.startReader(bytes, pos)
+    val input = r.getValue()
+    val regId = r.getByte()
+    val register = ErgoBox.findRegisterByIndex(regId).get
+    val defaultValue = r.getOption(r.getValue())
+    val tpe = r.getType()
+    val parsed = ExtractRegisterAs(input.asInstanceOf[Value[SBox.type]], register, defaultValue)(tpe)
+    parsed -> r.consumed
   }
 }

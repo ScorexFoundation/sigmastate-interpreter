@@ -1,16 +1,16 @@
 package sigmastate.serialization.generators
 
 import org.scalacheck.{Arbitrary, Gen}
-import sigmastate.Values.{FalseLeaf, TrueLeaf}
-import sigmastate.{If, IsMember, SInt}
+import sigmastate.Values.{TrueLeaf, FalseLeaf}
+import sigmastate.{SInt, IsMember, If}
 
-trait RelationGenerators { this: ValueGeneratots with ConcreteCollectionGenerators =>
+trait RelationGenerators { this: ValueGenerators with ConcreteCollectionGenerators =>
 
   implicit val arbIsMember: Arbitrary[IsMember] = Arbitrary(isMemberGen)
   implicit val arbIf: Arbitrary[If[SInt.type]] = Arbitrary(ifGen)
 
   val isMemberGen: Gen[IsMember] = for {
-    t <- arbAvlTree.arbitrary
+    t <- arbTaggedAvlTree.arbitrary
     b1 <- arbByteArrayConstant.arbitrary
     b2 <- arbByteArrayConstant.arbitrary
   } yield IsMember(t, b1, b2)

@@ -3,26 +3,27 @@ package sigmastate.serialization
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.ValueSerializer._
+import OpCodes._
 
 class RelationsSpecification extends TableSerializationSpecification {
 
   override val objects =
     Table(
       ("object", "bytes"),
-      (LT(IntConstant(2), IntConstant(3)), Array[Byte](21, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (LE(IntConstant(2), IntConstant(3)), Array[Byte](22, 11, 0, 0, 0, 0, 0, 0, 0, 2, 11, 0, 0, 0, 0, 0, 0, 0, 3)),
-      (GT(IntConstant(6), IntConstant(5)), Array[Byte](23, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
-      (GE(IntConstant(6), IntConstant(5)), Array[Byte](24, 11, 0, 0, 0, 0, 0, 0, 0, 6, 11, 0, 0, 0, 0, 0, 0, 0, 5)),
-      (EQ(TrueLeaf, FalseLeaf), Array[Byte](25, 12, 13)),
-      (NEQ(TrueLeaf, FalseLeaf), Array[Byte](26, 12, 13))
+      (LT(LongConstant(2), LongConstant(3)), Array[Byte](LtCode, SLong.typeCode, 4, SLong.typeCode, 6)),
+      (LE(LongConstant(2), LongConstant(3)), Array[Byte](LeCode, SLong.typeCode, 4, SLong.typeCode, 6)),
+      (GT(LongConstant(6), LongConstant(5)), Array[Byte](GtCode, SLong.typeCode, 12, SLong.typeCode, 10)),
+      (GE(LongConstant(6), LongConstant(5)), Array[Byte](GeCode, SLong.typeCode, 12, SLong.typeCode, 10)),
+      (EQ(TrueLeaf, FalseLeaf), Array[Byte](EqCode, TrueCode, FalseCode)),
+      (NEQ(TrueLeaf, FalseLeaf), Array[Byte](NeqCode, TrueCode, FalseCode))
     )
 
   tableRoundTripTest("Relations: serializer round trip")
   tablePredefinedBytesTest("Relations: deserialize from predefined bytes")
 
   property("Relations: serialization LT(bool, bool) must fail") {
-    assertThrows[Error] {
-      deserialize(Array[Byte](21, 12, 13))
+    assertThrows[Exception] {
+      deserialize(Array[Byte](LtCode, 12, 13))
     }
   }
 

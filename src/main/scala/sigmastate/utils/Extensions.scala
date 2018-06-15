@@ -1,10 +1,79 @@
 package sigmastate.utils
 
+import java.nio.ByteBuffer
+
+import sigmastate.SType
+import sigmastate.Values.Value
+import sigmastate.serialization.ValueSerializer
+import sigmastate.lang.Terms._
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
 object Extensions {
+
+  implicit class ByteOps(b: Byte) {
+    @inline def toUByte: Int = b & 0xFF
+    def addExact(b2: Byte): Byte = {
+      val r = b + b2
+      if (r < Byte.MinValue || r > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      r.toByte
+    }
+
+    def subtractExact(b2: Byte): Byte = {
+      val r = b - b2
+      if (r < Byte.MinValue || r > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      r.toByte
+    }
+
+    def multiplyExact(b2: Byte): Byte = {
+      val r = b * b2
+      if (r < Byte.MinValue || r > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      r.toByte
+    }
+  }
+
+  implicit class ShortOps(x: Short) {
+    def addExact(y: Short): Short = {
+      val r = x + y
+      if (r < Short.MinValue || r > Short.MaxValue)
+        throw new ArithmeticException("Short overflow")
+      r.toShort
+    }
+
+    def subtractExact(y: Short): Short = {
+      val r = x - y
+      if (r < Short.MinValue || r > Short.MaxValue)
+        throw new ArithmeticException("Short overflow")
+      r.toShort
+    }
+
+    def multiplyExact(y: Short): Short = {
+      val r = x * y
+      if (r < Short.MinValue || r > Short.MaxValue)
+        throw new ArithmeticException("Short overflow")
+      r.toShort
+    }
+  }
+
+  implicit class IntOps(x: Int) {
+    def toByteExact: Byte = {
+      if (x < Byte.MinValue || x > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      x.toByte
+    }
+  }
+
+  implicit class LongOps(x: Long) {
+    def toByteExact: Byte = {
+      if (x < Byte.MinValue || x > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      x.toByte
+    }
+  }
 
   implicit class OptionOps[T](opt: Option[T]) {
     /** Elvis operator for Option. See https://en.wikipedia.org/wiki/Elvis_operator*/
@@ -43,4 +112,48 @@ object Extensions {
       b.result()
     }
   }
+
+  implicit class ByteArrayBuilderOps(b: ByteArrayBuilder) {
+    def appendOption[T](opt: Option[T])(putValue: T => Unit): ByteArrayBuilder = {
+      opt match {
+        case Some(v) =>
+          b.append(1.toByte)
+          putValue(v)
+          b
+        case None =>
+          b.append(0.toByte)
+      }
+    }
+    def appendValue[T <: SType](v: Value[T]): ByteArrayBuilder = {
+      val bytes = ValueSerializer.serialize(v)
+      b.append(bytes)
+    }
+  }
+
+  implicit class ByteBufferOps(buf: ByteBuffer) {
+    def toBytes: Array[Byte] = {
+      val res = new Array[Byte](buf.position())
+      buf.array().copyToArray(res, 0, res.length)
+      res
+    }
+    def getBytes(size: Int): Array[Byte] = {
+      val res = new Array[Byte](size)
+      buf.get(res)
+      res
+    }
+    def getOption[T](getValue: => T): Option[T] = {
+      val tag = buf.get()
+      if (tag != 0)
+        Some(getValue)
+      else
+        None
+    }
+    def getValue[T <: SType]: Value[T] = {
+      val (obj, consumed) = ValueSerializer.deserialize(buf.array(), buf.position())
+      buf.position(buf.position() + consumed)
+      obj.asValue[T]
+    }
+  }
+
 }
+

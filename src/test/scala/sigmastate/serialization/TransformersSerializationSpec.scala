@@ -29,6 +29,24 @@ class TransformersSerializationSpec extends SerializationSpecification {
     }
   }
 
+  property("Slice: Serializer round trip") {
+    forAll { f: Slice[SInt.type] =>
+      roundTripTest(f)
+    }
+  }
+
+  property("Append: Serializer round trip") {
+    forAll { f: Append[SInt.type] =>
+      roundTripTest(f)
+    }
+  }
+
+  property("Where: Serializer round trip") {
+    forAll { f: Where[SInt.type] =>
+      roundTripTest(f)
+    }
+  }
+
   property("SizeOf: Serializer round trip") {
     forAll { s: SizeOf[SInt.type] =>
       roundTripTest(s)
@@ -72,7 +90,19 @@ class TransformersSerializationSpec extends SerializationSpecification {
   }
 
   property("IntToByteArray: Serializer round trip") {
-    forAll { itba: IntToByteArray =>
+    forAll { itba: LongToByteArray =>
+      roundTripTest(itba)
+    }
+  }
+
+  property("DeserializeContext: Serializer round trip") {
+    forAll { itba: DeserializeContext[SBoolean.type ] =>
+      roundTripTest(itba)
+    }
+  }
+
+  property("DeserializeRegister: Serializer round trip") {
+    forAll { itba: DeserializeRegister[SBoolean.type ] =>
       roundTripTest(itba)
     }
   }

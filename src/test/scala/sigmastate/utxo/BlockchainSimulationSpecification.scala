@@ -2,16 +2,18 @@ package sigmastate.utxo
 
 import java.io.{File, FileWriter}
 
+import org.ergoplatform
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.IntConstant
-import sigmastate.helpers.ErgoProvingInterpreter
+import sigmastate.Values.LongConstant
+import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
-import sigmastate.utxo.ErgoBox.R3
+import org.ergoplatform.ErgoBox.R3
+import org.ergoplatform._
 import sigmastate.{AvlTreeData, GE}
 
 import scala.annotation.tailrec
@@ -27,15 +29,15 @@ class BlockchainSimulationSpecification extends PropSpec
 
   import BlockchainSimulationSpecification._
 
-  def generateBlock(state: ValidationState, miner: ErgoProvingInterpreter, height: Int): Block = {
+  def generateBlock(state: ValidationState, miner: ErgoLikeProvingInterpreter, height: Int): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
     val boxesToSpend = state.boxesReader.byR3Value(height)
 
     val txs = boxesToSpend.map { box =>
-      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey, Map(R3 -> IntConstant(height + windowSize)))
-      val unsignedInput = UnsignedInput(box.id)
-      val tx = UnsignedErgoTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
-      val context = ErgoContext(height + 1,
+      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey, Map(R3 -> LongConstant(height + windowSize)))
+      val unsignedInput = new UnsignedInput(box.id)
+      val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
+      val context = ErgoLikeContext(height + 1,
         state.state.lastBlockUtxoRoot,
         IndexedSeq(box),
         tx,
@@ -44,31 +46,39 @@ class BlockchainSimulationSpecification extends PropSpec
       val proverResult = miner.prove(box.proposition, context, tx.messageToSign).get
 
       tx.toSigned(IndexedSeq(proverResult))
-    }.toIndexedSeq
+    }.toIndexedSeq.ensuring(_.nonEmpty, s"Failed to create txs from boxes $boxesToSpend at height $height")
 
     Block(txs)
   }
 
   property("apply one valid block") {
     val state = ValidationState.initialState()
-    val miner = new ErgoProvingInterpreter()
-    val block = generateBlock(state, miner, 1)
+    val miner = new ErgoLikeProvingInterpreter()
+    val block = generateBlock(state, miner, 0)
     val updStateTry = state.applyBlock(block)
     updStateTry.isSuccess shouldBe true
   }
 
+  property("too costly block") {
+    val state = ValidationState.initialState()
+    val miner = new ErgoLikeProvingInterpreter()
+    val block = generateBlock(state, miner, 0)
+    val updStateTry = state.applyBlock(block, maxCost = 1)
+    updStateTry.isSuccess shouldBe false
+  }
+
   property("apply many blocks") {
     val state = ValidationState.initialState()
-    val miner = new ErgoProvingInterpreter()
+    val miner = new ErgoLikeProvingInterpreter()
 
     @tailrec
     def checkState(state: ValidationState,
-                   miner: ErgoProvingInterpreter,
+                   miner: ErgoLikeProvingInterpreter,
                    currentLevel: Int,
                    limit: Int): Unit = currentLevel match {
       case i if i >= limit => ()
       case _ =>
-        val block = generateBlock(state, miner, currentLevel + 1)
+        val block = generateBlock(state, miner, currentLevel)
         val updStateTry = state.applyBlock(block)
         updStateTry.isSuccess shouldBe true
         checkState(updStateTry.get, miner, currentLevel + 1, limit)
@@ -84,7 +94,7 @@ class BlockchainSimulationSpecification extends PropSpec
     def bench(numberOfBlocks: Int): Unit = {
 
       val state = ValidationState.initialState()
-      val miner = new ErgoProvingInterpreter()
+      val miner = new ErgoLikeProvingInterpreter()
 
       val (_, time) = (0 until numberOfBlocks).foldLeft(state -> 0L) { case ((s, timeAcc), h) =>
         val b = generateBlock(state, miner, h)
@@ -130,33 +140,36 @@ object BlockchainSimulationSpecification {
 
   val MaxBlockCost = 700000
 
-  case class Block(txs: IndexedSeq[ErgoTransaction])
+  case class Block(txs: IndexedSeq[ErgoLikeTransaction])
 
   class InMemoryErgoBoxReader(prover: ValidationState.BatchProver) extends ErgoBoxReader {
-    private val boxes = mutable.Map[ErgoBox.BoxId, ErgoBox]()
+    private type KeyType = mutable.WrappedArray.ofByte
+    private def getKey(id: Array[Byte]): KeyType = new mutable.WrappedArray.ofByte(id)
+    private val boxes = mutable.Map[KeyType, ErgoBox]()
 
-    override def byId(boxId: ADKey): Try[ErgoBox] = Try(boxes(boxId))
+    override def byId(boxId: ADKey): Try[ErgoBox] = byId(getKey(boxId))
+    def byId(boxId: KeyType): Try[ErgoBox] = Try(boxes(boxId))
 
     def byR3Value(i: Int): Iterable[ErgoBox] =
-      boxes.values.filter(_.get(R3).getOrElse(IntConstant(i + 1)) == IntConstant(i))
+      boxes.values.filter(_.get(R3).getOrElse(LongConstant(i + 1)) == LongConstant(i))
 
     def byTwoInts(r1Id: ErgoBox.RegisterIdentifier, int1: Int,
                   r2Id: ErgoBox.RegisterIdentifier, int2: Int): Option[ErgoBox] =
       boxes.values.find { box =>
-        box.get(r1Id).getOrElse(IntConstant(int1 + 1)) == IntConstant(int1) &&
-          box.get(r2Id).getOrElse(IntConstant(int2 + 1)) == IntConstant(int2)
+        box.get(r1Id).getOrElse(LongConstant(int1 + 1)) == LongConstant(int1) &&
+          box.get(r2Id).getOrElse(LongConstant(int2 + 1)) == LongConstant(int2)
       }
 
-    def allIds: Iterable[ErgoBox.BoxId] = boxes.keys
+    def allIds: Iterable[KeyType] = boxes.keys
 
     def applyBlock(block: Block): Unit = {
       val toRemove = block.txs.flatMap(_.inputs).map(_.boxId)
       toRemove.foreach(k => prover.performOneOperation(Remove(k)))
-      toRemove.foreach(k => boxes.remove(k))
+      toRemove.foreach(k => boxes.remove(getKey(k)))
 
       val toAdd = block.txs.flatMap(_.outputs)
       toAdd.foreach(b => prover.performOneOperation(Insert(b.id, ADValue @@ b.bytes)))
-      toAdd.foreach(b => boxes.put(b.id, b))
+      toAdd.foreach(b => boxes.put(getKey(b.id), b))
 
       prover.generateProof()
     }
@@ -188,10 +201,10 @@ object BlockchainSimulationSpecification {
     type BatchProver = BatchAVLProver[Digest32, Blake2b256.type]
 
     val initBlock = Block {
-      (1 to windowSize).map { i =>
+      (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)), Map(R3 -> IntConstant(i)), txId))
-        ErgoTransaction(IndexedSeq(), boxes)
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Map(R3 -> LongConstant(i)), txId))
+        ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       }
     }
 
@@ -202,7 +215,7 @@ object BlockchainSimulationSpecification {
       val digest = prover.digest
       val utxoRoot = AvlTreeData(digest, keySize)
 
-      val bs = BlockchainState(currentHeight = 0, utxoRoot)
+      val bs = BlockchainState(currentHeight = -2, utxoRoot)
 
       val boxReader = new InMemoryErgoBoxReader(prover)
 

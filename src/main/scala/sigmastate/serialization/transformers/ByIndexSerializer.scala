@@ -1,26 +1,30 @@
 package sigmastate.serialization.transformers
 
-import com.google.common.primitives.Ints
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.ValueSerializer._
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.Serializer.{Consumed, Position}
+import sigmastate.serialization.{OpCodes, Serializer, ValueSerializer}
 import sigmastate.utxo.ByIndex
-import sigmastate.{SCollection, SType}
+import sigmastate.{SCollection, SInt, SType}
 
 object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
-
-  val intLength = Ints.BYTES
 
   override val opCode: OpCode = OpCodes.ByIndexCode
 
   override def parseBody(bytes: Array[Byte], pos: Position): (ByIndex[SType], Consumed) = {
-    val (input, consumed) = ValueSerializer.deserialize(bytes, pos)
-    val index = Ints.fromByteArray(bytes.slice(pos + consumed, pos + consumed + intLength))
-    ByIndex(input.asInstanceOf[Value[SCollection[SType]]], index) -> (consumed + intLength)
+    val r = Serializer.startReader(bytes, pos)
+    val input = r.getValue().asInstanceOf[Value[SCollection[SType]]]
+    val index = r.getValue().asInstanceOf[Value[SInt.type ]]
+    val default = r.getOption(r.getValue())
+    val res = ByIndex(input, index, default)
+    res -> r.consumed
   }
 
-  override def serializeBody(obj: ByIndex[SType]): Array[Byte] = {
-    ValueSerializer.serialize(obj.input) ++ Ints.toByteArray(obj.index)
-  }
+  override def serializeBody(obj: ByIndex[SType]): Array[Byte] =
+    Serializer.startWriter()
+      .putValue(obj.input)
+      .putValue(obj.index)
+      .putOption(obj.default)(_.putValue(_))
+      .toBytes
+
 }

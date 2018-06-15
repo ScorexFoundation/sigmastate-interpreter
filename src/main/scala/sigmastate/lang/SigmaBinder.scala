@@ -6,9 +6,11 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import sigmastate.lang.Terms._
 import sigmastate._
 import Values._
-import sigmastate.utxo._
+import org.ergoplatform._
+import sigmastate.utils.Extensions._
 import sigmastate.Values.Value.Typed
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.utxo.ByIndex
 
 class SigmaBinder(env: Map[String, Any]) {
   import SigmaBinder._
@@ -19,12 +21,17 @@ class SigmaBinder(env: Map[String, Any]) {
   private def eval(e: SValue, env: Map[String, Any]): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
+        case arr: Array[Boolean] => Some(BoolArrayConstant(arr))
         case arr: Array[Byte] => Some(ByteArrayConstant(arr))
-        case v: Byte => Some(IntConstant(v))
+        case arr: Array[Short] => Some(ShortArrayConstant(arr))
+        case arr: Array[Int] => Some(IntArrayConstant(arr))
+        case arr: Array[Long] => Some(LongArrayConstant(arr))
+        case v: Byte => Some(ByteConstant(v))
+        case v: Short => Some(ShortConstant(v))
         case v: Int => Some(IntConstant(v))
-        case v: Long => Some(IntConstant(v))
+        case v: Long => Some(LongConstant(v))
         case v: BigInteger => Some(BigIntConstant(v))
-        case v: GroupSettings.EcPointType => Some(GroupElementConstant(v))
+        case v: CryptoConstants.EcPointType => Some(GroupElementConstant(v))
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
         case b: ErgoBox => Some(BoxConstant(b))
         case avl: AvlTreeData => Some(AvlTreeConstant(avl))
@@ -46,6 +53,17 @@ class SigmaBinder(env: Map[String, Any]) {
       }
     }
 
+    // Rule: Array[Int](...) -->
+    case e @ Apply(ApplyTypes(Ident("Array", _), Seq(tpe)), args) =>
+      val resTpe = if (args.isEmpty) tpe
+      else {
+        val elemType = args(0).tpe
+        if (elemType != tpe)
+          error(s"Invalid construction of array $e: expected type $tpe, actual type $elemType")
+        elemType
+      }
+      Some(ConcreteCollection(args)(resTpe))
+
     // Rule: Array(...) -->
     case Apply(Ident("Array", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
@@ -58,17 +76,15 @@ class SigmaBinder(env: Map[String, Any]) {
         else error(s"Invalid arguments of Some: expected one argument but found $args")
       Some(SomeValue(arg))
 
-    // Rule: col(i) --> ByIndex(col, i)
-    case Apply(Typed(obj, tCol: SCollection[_]), Seq(IntConstant(i))) =>
-      Some(ByIndex(obj.asValue[SCollection[SType]], i.toInt))
-
-    // Rule: allOf(Array(...)) --> AND(...)
-    case Apply(AllSym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
-      Some(AND(args))
-
-    // Rule: anyOf(Array(...)) --> AND(...)
-    case Apply(AnySym, Seq(ConcreteCollection(args: Seq[Value[SBoolean.type]]@unchecked))) =>
-      Some(OR(args))
+    case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
+      if (targs.length != 1 || args.length != 1)
+        error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
+      val id = args.head match {
+        case LongConstant(i) => i.toByteExact  //TODO use SByte.downcast once it is implemented
+        case IntConstant(i) => i.toByteExact
+        case ByteConstant(i) => i
+      }
+      Some(TaggedVariable(id, targs.head))
 
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>

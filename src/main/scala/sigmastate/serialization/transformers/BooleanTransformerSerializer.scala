@@ -3,13 +3,12 @@ package sigmastate.serialization.transformers
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.ValueSerializer._
+import sigmastate.serialization.Serializer.{Position, Consumed}
 import sigmastate.utxo.BooleanTransformer
 import sigmastate.{SBoolean, SCollection, SType}
 
 case class BooleanTransformerSerializer[T <: SType, R <: BooleanTransformer[T]]
-(code: OpCode,
- f: (Value[SCollection[T]], Byte, Value[SBoolean.type]) => R) extends ValueSerializer[R] {
+(code: OpCode, f: (Value[SCollection[T]], Byte, Value[SBoolean.type]) => R) extends ValueSerializer[R] {
 
   override val opCode: OpCode = code
 

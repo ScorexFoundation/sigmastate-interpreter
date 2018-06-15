@@ -28,9 +28,15 @@ object CostTable {
 
     val QuadrupleDeclaration = 4
 
+    val BooleanConstantDeclaration = 1
+    val ByteConstantDeclaration = 1
+    val ShortConstantDeclaration = 1
     val IntConstantDeclaration = 1
-    val BoxConstant = 10
-    val AvlTreeConstant = 50
+    val LongConstantDeclaration = 1
+    val BigIntConstantDeclaration = 1
+    val GroupElementConstantDeclaration = 10
+    val BoxConstantDeclaration = 10
+    val AvlTreeConstantDeclaration = 50
 
     val AndDeclaration = 10
     val AndPerChild = 1
@@ -72,5 +78,9 @@ object CostTable {
     val SizeOfDeclaration = 50
 
     val ConcreteCollection = 20
+
+    val Exponentiate = 5000
+
+    val MultiplyGroup = 50
   }
 }

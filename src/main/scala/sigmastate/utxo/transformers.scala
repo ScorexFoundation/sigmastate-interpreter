@@ -1,17 +1,15 @@
 package sigmastate.utxo
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule}
+import sigmastate.SCollection.{SByteArray, SBooleanArray}
 import sigmastate.Values._
+import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.BooleanTransformer.ResultConstructor
+import sigmastate.utils.Helpers
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.ErgoBox.RegisterIdentifier
-
-import scala.collection.immutable
+import org.ergoplatform.ErgoBox.RegisterIdentifier
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -20,51 +18,42 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
   def transformationReady: Boolean = input.evaluated
 
-  def function(input: EvaluatedValue[IV]): Value[OV]
+  def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[IV]): Value[OV]
 
-  def function(): Value[OV] = input match {
-    case ev: EvaluatedValue[IV] => function(ev)
+  def function(int: Interpreter, ctx: Context[_]): Value[OV] = input match {
+    case ev: EvaluatedValue[IV] => function(int, ctx, ev)
     case _ => Interpreter.error(s"Transformer function can be called only after input value is evaluated: $input")
   }
 
-  def evaluate(): Value[OV] = input match {
-    case ev: EvaluatedValue[IV] => function(ev)
+  def evaluate(interp: Interpreter, ctx: Context[_]): Value[OV] = input match {
+    case ev: EvaluatedValue[IV] => function(interp, ctx, ev)
     case _: NotReadyValue[OV] => this
   }
 }
 
-
-case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                                                   id: Byte,
-                                                   mapper: SValue)(implicit val tOV: OV)
-  extends Transformer[SCollection[IV], SCollection[OV]] with Rewritable {
+case class MapCollection[IV <: SType, OV <: SType](
+    input: Value[SCollection[IV]],
+    id: Byte,
+    mapper: SValue)
+  extends Transformer[SCollection[IV], SCollection[OV]] {
 
   override val opCode: OpCode = OpCodes.MapCollectionCode
+  implicit def tOV = mapper.asValue[OV].tpe
+  val tpe = SCollection[OV](tOV)
 
-  val tpe = SCollection[OV]
+  override def transformationReady: Boolean = input.isEvaluated
 
-  def arity = 4
-
-  def deconstruct = immutable.Seq[Any](input, id, mapper, tOV)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[IV]]@unchecked,
-    id: Byte,
-    mapper: Transformer[IV, OV],
-    t: OV@unchecked) => MapCollection[IV, OV](input, id, mapper)(t)
-    case _ =>
-      illegalArgs("MapCollection", "(Value[SCollection[IV]], Byte, Transformer[IV, OV], SType)", cs)
-  }
-
-  override def transformationReady: Boolean =
-    input.evaluated && input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated)
-
-  override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
-    def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
-    })
-
-    ConcreteCollection(cl.value.map(el => rl(el)(mapper).get.asInstanceOf[Transformer[IV, OV]]).map(_.function()))
+  override def function(I: Interpreter, ctx: Context[_], cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
+    val cc = cl.toConcreteCollection
+    val resItems = cc.items.map {
+      case v: EvaluatedValue[IV] =>
+        val localCtx = ctx.withBindings(id -> v)
+        val reduced = I.eval(localCtx, mapper.asValue[OV])
+        reduced
+      case v =>
+        Interpreter.error(s"Error evaluating $this: value $v is not EvaluatedValue")
+    }
+    ConcreteCollection(resItems)
   }
 
   /**
@@ -82,13 +71,16 @@ case class MapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]]
 
 case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SCollection[IV]])
   extends Transformer[SCollection[IV], SCollection[IV]] {
+  override val opCode: OpCode = OpCodes.AppendCode
+
   val tpe = input.tpe
 
-  override def transformationReady: Boolean =
-    ConcreteCollection.isEvaluated(input) && ConcreteCollection.isEvaluated(col2)
+  override def transformationReady: Boolean = input.isEvaluated && col2.isEvaluated
 
-  override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
-    ConcreteCollection(cl.value ++ col2.asInstanceOf[EvaluatedValue[SCollection[IV]]].value)(tpe.elemType)
+  override def function(intr: Interpreter, ctx: Context[_], cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
+    val c1 = cl.toConcreteCollection
+    val c2 = col2.toConcreteCollection
+    ConcreteCollection(c1.items ++ c2.items)(tpe.elemType)
   }
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + col2.cost(context)
@@ -96,15 +88,18 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 
 case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
+  override val opCode: OpCode = OpCodes.SliceCode
+
   val tpe = input.tpe
 
   override def transformationReady: Boolean =
-    ConcreteCollection.isEvaluated(input) && from.evaluated && until.evaluated
+    input.isEvaluated && from.evaluated && until.evaluated
 
-  override def function(cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
+  override def function(intr: Interpreter, ctx: Context[_], cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
     val fromValue = from.asInstanceOf[EvaluatedValue[SInt.type]].value
     val untilValue = until.asInstanceOf[EvaluatedValue[SInt.type]].value
-    ConcreteCollection(cl.value.slice(fromValue.toInt, untilValue.toInt))(tpe.elemType)
+    val cc = cl.toConcreteCollection
+    ConcreteCollection(cc.items.slice(fromValue, untilValue))(tpe.elemType)
   }
 
   override def cost[C <: Context[C]](context: C): Long =
@@ -115,24 +110,26 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
                               id: Byte,
                               condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
+  override val opCode: OpCode = OpCodes.WhereCode
+
   override def tpe: SCollection[IV] = input.tpe
 
-  override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
+  override def transformationReady: Boolean = input.isEvaluated
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context[C]](context: C): Long = {
+    val elemType = input.tpe.elemType
+    val data = Constant(null.asInstanceOf[elemType.WrappedType], elemType)
+    val localCtx = context.withBindings(id -> data)
     Cost.WhereDeclaration + input.cost(context) * condition.cost(context) + input.cost(context)
+  }
 
-  override def function(input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {
-    def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
-    })
-
-    def p(x: Value[IV]): Boolean = {
-      val res = rl(x)(condition).get
-      res.asInstanceOf[EvaluatedValue[SBoolean.type]].value
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {
+    val cc = input.toConcreteCollection
+    val filtered = cc.items.filter { case v: EvaluatedValue[IV] =>
+      val localCtx = ctx.withBindings(id -> v)
+      val reduced = intr.eval(localCtx, condition)
+      reduced.value
     }
-
-    val filtered = input.value.filter(p)
     ConcreteCollection(filtered)(tpe.elemType)
   }
 }
@@ -141,23 +138,21 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
   override val input: Value[SCollection[IV]]
   val id: Byte
   val condition: Value[SBoolean.type]
-  val f: ResultConstructor
+  def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type]
 
   override def tpe = SBoolean
 
-  override def transformationReady: Boolean = ConcreteCollection.isEvaluated(input)
+  override def transformationReady: Boolean = input.isEvaluated
 
-  override def function(input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
-    def rl(arg: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
-    })
-
-    f(input.value.map(el => rl(el)(condition).get.asInstanceOf[Value[SBoolean.type]]))
+  override def function(I: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
+    val cc = input.toConcreteCollection
+    val resItems = cc.items.map { case v: EvaluatedValue[IV] =>
+      val localCtx = ctx.withBindings(id -> v)
+      val reduced = I.eval(localCtx, condition)
+      reduced
+    }
+    constructResult(resItems)
   }
-}
-
-object BooleanTransformer {
-  type ResultConstructor = (Seq[Value[SBoolean.type]]) => Transformer[SCollection[SBoolean.type], SBoolean.type]
 }
 
 case class Exists[IV <: SType](input: Value[SCollection[IV]],
@@ -169,7 +164,7 @@ case class Exists[IV <: SType](input: Value[SCollection[IV]],
   override def cost[C <: Context[C]](context: C): Long =
     Cost.ExistsDeclaration + input.cost(context) * condition.cost(context) + Cost.OrDeclaration
 
-  override val f: ResultConstructor = OR.apply
+  override def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type] = OR(items)
 }
 
 case class ForAll[IV <: SType](input: Value[SCollection[IV]],
@@ -182,7 +177,7 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
   override def cost[C <: Context[C]](context: C) =
     Cost.ForAllDeclaration + input.cost(context) * condition.cost(context) + Cost.AndDeclaration
 
-  override val f: ResultConstructor = AND.apply
+  override def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type] = AND(items)
 }
 
 
@@ -190,72 +185,62 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
                              id: Byte,
                              zero: Value[IV],
                              accId: Byte,
-                             foldOp: SValue)(implicit val tpe: IV)
-  extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] with Rewritable {
+                             foldOp: SValue)
+  extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] {
   override val opCode: OpCode = OpCodes.FoldCode
-
-  def arity = 6
-
-  def deconstruct = immutable.Seq[Any](input, id, zero, accId, foldOp, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[IV]]@unchecked,
-    id: Byte,
-    zero: Value[IV],
-    accId: Byte,
-    foldOp: TwoArgumentsOperation[IV, IV, IV],
-    t: IV@unchecked) => Fold[IV](input, id, zero, accId, foldOp)(t)
-    case _ =>
-      illegalArgs("Fold",
-        "(Value[SCollection[IV]], id: Byte, zero: Value[IV], accId: Byte, foldOp: TwoArgumentsOperation[IV, IV, IV])(tpe: IV)", cs)
-  }
+  implicit def tpe = input.tpe.elemType
 
   override def transformationReady: Boolean =
     input.evaluated &&
-      input.asInstanceOf[ConcreteCollection[IV]].value.forall(_.evaluated) &&
+      input.items.forall(_.evaluated) &&
       zero.isInstanceOf[EvaluatedValue[IV]]
 
   override def cost[C <: Context[C]](context: C): Long =
     Cost.FoldDeclaration + zero.cost(context) + input.cost(context) * foldOp.cost(context)
 
-  override def function(input: EvaluatedValue[SCollection[IV]]): Value[IV] = {
-    def rl(arg: Value[IV], acc: Value[IV]) = everywherebu(rule[Value[IV]] {
-      case t: TaggedVariable[IV] if t.id == id => arg
-      case t: TaggedVariable[IV] if t.id == accId => acc
-    })
-
-    input.value.foldLeft(zero) { case (acc: Value[IV], elem: Value[IV]) =>
-      rl(elem, acc)(foldOp).get.asInstanceOf[Value[IV]]
+  override def function(I: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): Value[IV] = {
+    val cc = input.toConcreteCollection
+    cc.items.foldLeft(zero) { case (x, y) =>
+      val (acc: EvaluatedValue[IV], elem: EvaluatedValue[IV]) = (x, y)
+      val localCtx = ctx.withBindings(id -> elem, accId -> acc)
+      val res = I.eval(localCtx, foldOp.asValue[IV])
+      res
     }
   }
 }
 
 object Fold {
-  def sum(input: Value[SCollection[SInt.type]]) =
-    Fold(input, 21, IntConstant(0), 22, Plus(TaggedInt(22), TaggedInt(21)))
+  def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
+    Fold(input, 21, Constant(tT.upcast(0.toByte), tT), 22, Plus(TaggedVariable(22, tT), TaggedVariable(21, tT)))
 
-  def sumBytes(input: Value[SCollection[SByteArray.type]]) =
-    Fold[SByteArray.type](input, 21, ByteArrayConstant(Array.emptyByteArray), 22, AppendBytes(TaggedByteArray(22), TaggedByteArray(21)))
+  def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T) = {
+    val tCol = SCollection(tT)
+    Fold[SCollection[T]](
+      input, 21, ConcreteCollection()(tT), 22,
+      Append(TaggedVariable(22, tCol), TaggedVariable(21, tCol)))
+  }
 }
 
-case class ByIndex[V <: SType](input: Value[SCollection[V]], index: Int)
-  extends Transformer[SCollection[V], V] with NotReadyValue[V] with Rewritable {
+case class ByIndex[V <: SType](input: Value[SCollection[V]],
+                               index: Value[SInt.type],
+                               default: Option[Value[V]] = None)
+  extends Transformer[SCollection[V], V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.ByIndexCode
+  override val tpe = input.tpe.elemType
+  override def transformationReady: Boolean =
+    input.isEvaluated && index.evaluated && default.forall(_.evaluated)
 
-  def tpe = input.tpe.elemType
-
-  def arity = 3
-
-  def deconstruct = immutable.Seq[Any](input, index, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SCollection[V]]@unchecked, index: Int, _) => ByIndex[V](input, index)
-    case _ => illegalArgs("ByIndex", "(Value[SCollection[V]], index: Int)(tpe: V)", cs)
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[V]]): Value[V] = {
+    val i = index.asInstanceOf[EvaluatedValue[SInt.type]].value
+    input.matchCase(
+      cc =>
+        cc.items.lift(i).orElse(default).get,
+      const =>
+        Value.apply(tpe)(const.value.lift(i).orElse(default).get.asInstanceOf[tpe.WrappedType])
+    )
   }
-
-  override def function(input: EvaluatedValue[SCollection[V]]) = input.value.apply(index)
-
-  override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.ByIndexDeclaration
+  override def cost[C <: Context[C]](context: C): Long =
+    input.cost(context) + Cost.ByIndexDeclaration + default.map(_.cost(context)).getOrElse(0L)
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
@@ -263,7 +248,8 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
 
   override val opCode: OpCode = OpCodes.SizeOfCode
 
-  override def function(input: EvaluatedValue[SCollection[V]]) = IntConstant(input.value.length)
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[V]]) =
+    IntConstant(input.length)
 
   //todo: isn't this cost too high? we can get size of a collection without touching it
   override def cost[C <: Context[C]](context: C) = input.cost(context) + Cost.SizeOfDeclaration
@@ -271,114 +257,92 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
 
 
 sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
-  override def function(box: EvaluatedValue[SBox.type]): Value[V]
+  override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[V]
 }
 
-case class ExtractAmount(input: Value[SBox.type]) extends Extract[SInt.type] with NotReadyValueInt {
+case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] with NotReadyValueLong {
   override val opCode: OpCode = OpCodes.ExtractAmountCode
 
   override def cost[C <: Context[C]](context: C) = 10
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SInt.type] = IntConstant(box.value.value)
+  override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SLong.type] =
+    LongConstant(box.value.value)
 }
 
 
-case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.ExtractScriptBytesCode
 
   override def cost[C <: Context[C]](context: C) = 1000
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = {
+  override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SByteArray] =
     ByteArrayConstant(box.value.propositionBytes)
-  }
 }
 
 
-case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.ExtractBytesCode
 
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: make it PerKb * max box size in kbs
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytes)
+  override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SByteArray] =
+    ByteArrayConstant(box.value.bytes)
 }
 
-case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.ExtractBytesWithNoRefCode
 
   override def cost[C <: Context[C]](context: C) = 1000 //todo: make it PerKb * max box size in kbs
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.bytesWithNoRef)
+  override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SByteArray] =
+    ByteArrayConstant(box.value.bytesWithNoRef)
 }
 
-case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray.type] with NotReadyValueByteArray {
+case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.ExtractIdCode
 
   override def cost[C <: Context[C]](context: C) = 10
 
-  override def function(box: EvaluatedValue[SBox.type]): Value[SByteArray.type] = ByteArrayConstant(box.value.id)
+  override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SByteArray] =
+    ByteArrayConstant(box.value.id)
 }
 
-case class ExtractRegisterAs[V <: SType](input: Value[SBox.type],
-                                         registerId: RegisterIdentifier,
-                                         default: Option[Value[V]] = None)(implicit val tpe: V)
-  extends Extract[V] with NotReadyValue[V] with Rewritable {
-  override val opCode: OpCode = OpCodes.ExtractRegisterAs
-
-  def arity = 4
-
-  def deconstruct = immutable.Seq[Any](input, registerId, default, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(input: Value[SBox.type]@unchecked,
+case class ExtractRegisterAs[V <: SType](
+    input: Value[SBox.type],
     registerId: RegisterIdentifier,
-    default: Option[Value[V]]@unchecked,
-    t: V@unchecked) => ExtractRegisterAs[V](input, registerId, default)(t)
-    case _ =>
-      illegalArgs("ExtractRegisterAs", "(Value[SBox.type], registerId: RegisterIdentifier, default: Option[Value[V]])(tpe: V)", cs)
-  }
-
+    tpe: V,
+    default: Option[Value[V]])
+    extends Extract[V] with NotReadyValue[V] {
+  override val opCode: OpCode = OpCodes.ExtractRegisterAs
   override def cost[C <: Context[C]](context: C) = 1000 //todo: the same as ExtractBytes.cost
-
-  override def function(box: EvaluatedValue[SBox.type]): Value[V] =
-    box.value.get(registerId).orElse(default).get.asInstanceOf[Value[V]]
+  override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[V] = {
+    val res = box.value.get(registerId).orElse(default).get
+    if (res.tpe != this.tpe)
+      Interpreter.error(s"Invalid value type ${res.tpe} in register R${registerId.number}, expected $tpe")
+    res.asInstanceOf[Value[V]]
+  }
 }
 
-trait Deserialize[V <: SType] extends NotReadyValue[V] with Rewritable
+object ExtractRegisterAs {
+  def apply[V <: SType](input: Value[SBox.type],
+      registerId: RegisterIdentifier,
+      default: Option[Value[V]] = None)(implicit tpe: V): ExtractRegisterAs[V] =
+    ExtractRegisterAs(input, registerId, tpe, default)
+}
+
+trait Deserialize[V <: SType] extends NotReadyValue[V]
 
 
-case class DeserializeContext[V <: SType](id: Byte)(implicit val tpe: V)
-  extends Deserialize[V] {
-
-  def arity = 2
-
-  def deconstruct = immutable.Seq[Any](id, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(id: Byte@unchecked, t: V@unchecked) =>
-      DeserializeContext[V](id)(t)
-    case _ =>
-      illegalArgs("DeserializeContext", "(Byte)(tpe: V)", cs)
-  }
-
+case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[V] {
+  override val opCode: OpCode = OpCodes.DeserializeContextCode
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }
 
 
 //todo: write test for this class
-case class DeserializeRegister[V <: SType](reg: RegisterIdentifier,
-                                           default: Option[Value[V]] = None)(implicit val tpe: V)
-  extends Deserialize[V] {
+case class DeserializeRegister[V <: SType](
+    reg: RegisterIdentifier, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
 
-  def arity = 3
-
-  def deconstruct = immutable.Seq[Any](reg, default, tpe)
-
-  def reconstruct(cs: immutable.Seq[Any]) = cs match {
-    case Seq(reg: RegisterIdentifier@unchecked, default: Option[Value[V]]@unchecked, t: V@unchecked) =>
-      DeserializeRegister[V](reg, default)(t)
-    case _ =>
-      illegalArgs("DeserializeRegister", "(RegisterIdentifier, Option[Value[V]])(tpe: V)", cs)
-  }
-
+  override val opCode: OpCode = OpCodes.DeserializeRegisterCode
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }

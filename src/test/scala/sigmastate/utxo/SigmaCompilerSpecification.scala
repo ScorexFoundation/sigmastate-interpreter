@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.Values.{IntConstant, TaggedInt}
+import sigmastate.Values.{TaggedInt, IntConstant}
 import sigmastate.lang.Terms._
 import sigmastate.GE
 import sigmastate.helpers.SigmaTestingCommons
@@ -16,7 +16,7 @@ class SigmaCompilerSpecification extends SigmaTestingCommons {
     val propTree = GE(TaggedInt(elementId), IntConstant(120))
     val propComp = compile(env,
       """{
-        |  taggedInt(elementId) >= 120
+        |  getVar[Int](elementId) >= 120
         |}""".stripMargin).asBoolValue
     propComp shouldBe propTree
   }

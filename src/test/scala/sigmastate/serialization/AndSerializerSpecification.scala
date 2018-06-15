@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.AND
 import sigmastate.Values.BooleanConstant
+import sigmastate.serialization.OpCodes._
 
 class AndSerializerSpecification extends TableSerializationSpecification {
 
@@ -9,10 +10,10 @@ class AndSerializerSpecification extends TableSerializationSpecification {
 
   override def objects = Table(
     ("object", "bytes"),
-    (AND(boolConst(true),boolConst(true)), Array[Byte](37, 35, 0, 2, 3, 12, 12)),
-    (AND(boolConst(true),boolConst(false)), Array[Byte](37, 35, 0, 2, 3, 12, 13)),
-    (AND(boolConst(false),boolConst(true)), Array[Byte](37, 35, 0, 2, 3, 13, 12)),
-    (AND(boolConst(false),boolConst(false)), Array[Byte](37, 35, 0, 2, 3, 13, 13))
+    (AND(boolConst(true), boolConst(true)),  Array[Byte](AndCode, 2, TrueCode, TrueCode)),
+    (AND(boolConst(true), boolConst(false)), Array[Byte](AndCode, 2, TrueCode, FalseCode)),
+    (AND(boolConst(false),boolConst(true)),  Array[Byte](AndCode, 2, FalseCode, TrueCode)),
+    (AND(boolConst(false),boolConst(false)), Array[Byte](AndCode, 2, FalseCode, FalseCode))
   )
 
   tableRoundTripTest("And: Serializer round trip")

@@ -1,13 +1,14 @@
 package sigmastate.helpers
 
+import org.ergoplatform
+import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox.NonMandatoryIdentifier
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{EvaluatedValue, GroupElementConstant, TrueLeaf, Value}
-import sigmastate.interpreter.GroupSettings
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.SigmaCompiler
-import sigmastate.utxo.ErgoBox
-import sigmastate.utxo.ErgoBox.NonMandatoryIdentifier
 import sigmastate.{SBoolean, SGroupElement, SType}
 
 import scala.language.implicitConversions
@@ -23,9 +24,9 @@ trait SigmaTestingCommons extends PropSpec
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
 
-  implicit def grElemConvert(leafConstant: GroupElementConstant): GroupSettings.EcPointType = leafConstant.value
+  implicit def grElemConvert(leafConstant: GroupElementConstant): CryptoConstants.EcPointType = leafConstant.value
 
-  implicit def grLeafConvert(elem: GroupSettings.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
+  implicit def grLeafConvert(elem: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 
   val compiler = new SigmaCompiler
 
@@ -36,6 +37,6 @@ trait SigmaTestingCommons extends PropSpec
   def createBox(value: Int,
                 proposition: Value[SBoolean.type],
                 additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map())
-  = ErgoBox(value, proposition, additionalRegisters)
+  = ergoplatform.ErgoBox(value, proposition, additionalRegisters)
 
 }

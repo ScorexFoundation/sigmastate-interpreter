@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import fastparse.noApi._
 import sigmastate._
+import sigmastate.SCollection.SByteArray
 import Values._
 import sigmastate.lang.Terms.Ident
 import sigmastate.lang.syntax.Core
@@ -20,7 +21,7 @@ trait Types extends Core {
 
   /** This map should be in sync with SType.allPredefTypes*/
   val predefTypes = Map(
-    "Int" -> SInt, "BigInt" -> SBigInt, "Boolean" -> SBoolean, "ByteArray" -> SByteArray,
+    "Boolean" -> SBoolean, "Byte" -> SByte, "Short" -> SShort, "Int" -> SInt,"Long" -> SLong, "BigInt" -> SBigInt,  "ByteArray" -> SByteArray,
     "AvlTree" -> SAvlTree, "GroupElement" -> SGroupElement, "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
   )
 

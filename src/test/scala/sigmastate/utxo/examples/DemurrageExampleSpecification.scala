@@ -1,9 +1,10 @@
 package sigmastate.utxo.examples
 
-import sigmastate.Values.{IntConstant, TaggedBox}
+import sigmastate.Values.{LongConstant, TaggedBox, IntConstant}
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo.ErgoBox.R3
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import org.ergoplatform.ErgoBox.R3
+import org.ergoplatform._
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -25,14 +26,14 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     * (height > (self.R3 + demurrage_period ) ∧ has_output(value >= self.value − demurrage_cost, script = self.script))
     */
   property("Evaluation - Demurrage Example") {
-    val demurragePeriod = 100
+    val demurragePeriod = 100L
     val demurrageCost = 2
 
     //a blockchain node veryfing a block containing a spending transaction
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     //backer's prover with his private key
-    val userProver = new ErgoProvingInterpreter
+    val userProver = new ErgoLikeProvingInterpreter
 
     val regScript = userProver.dlogSecrets.head.publicImage
 
@@ -44,7 +45,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         | let c2 = allOf(Array(
-        |   HEIGHT >= SELF.R3[Int].value + demurragePeriod,
+        |   HEIGHT >= SELF.R3[Long].value + demurragePeriod,
         |   OUTPUTS.exists(fun (out: Box) = {
         |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
         |   })
@@ -55,10 +56,10 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val propTree = OR(
       regScript,
       AND(
-        GE(Height, Plus(ExtractRegisterAs[SInt.type](Self, R3), IntConstant(demurragePeriod))),
+        GE(Height, Plus(ExtractRegisterAs[SLong.type](Self, R3), LongConstant(demurragePeriod))),
         Exists(Outputs, 21,
           AND(
-            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), IntConstant(demurrageCost))),
+            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),
             EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self))
           )
         )
@@ -71,16 +72,16 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val curHeight = outHeight + demurragePeriod
 
     //case 1: demurrage time hasn't come yet
-    val tx1 = ErgoTransaction(
+    val tx1 = ErgoLikeTransaction(
       IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+      IndexedSeq(ErgoBox(outValue, prop, additionalRegisters = Map(R3 -> LongConstant(curHeight)))))
 
-    val ctx1 = ErgoContext(
+    val ctx1 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> LongConstant(outHeight))))
 
     //user can spend all the money
     val uProof1 = userProver.prove(prop, ctx1, fakeMessage).get.proof
@@ -90,26 +91,26 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx1, NoProof, fakeMessage).get._1 shouldBe false
 
     //case 2: demurrage time has come
-    val ctx2 = ErgoContext(
+    val ctx2 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> LongConstant(outHeight))))
 
     //user can spend all the money
     val uProof2 = userProver.prove(prop, ctx1, fakeMessage).get.proof
     verifier.verify(prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
 
     //miner can spend "demurrageCost" tokens
-    val tx3 = ErgoTransaction(IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue - demurrageCost, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
-    val ctx3 = ErgoContext(
+    val tx3 = ErgoLikeTransaction(IndexedSeq(),
+      IndexedSeq(ErgoBox(outValue - demurrageCost, prop, additionalRegisters = Map(R3 -> LongConstant(curHeight)))))
+    val ctx3 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx3,
-      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> LongConstant(outHeight))))
 
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
@@ -117,27 +118,27 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx3, NoProof, fakeMessage).get._1 shouldBe true
 
     //miner can't spend more
-    val tx4 = ErgoTransaction(IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue - demurrageCost - 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
-    val ctx4 = ErgoContext(
+    val tx4 = ErgoLikeTransaction(IndexedSeq(),
+      IndexedSeq(ErgoBox(outValue - demurrageCost - 1, prop, additionalRegisters = Map(R3 -> LongConstant(curHeight)))))
+    val ctx4 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx4,
-      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> LongConstant(outHeight))))
 
     verifier.verify(prop, ctx4, NoProof, fakeMessage).get._1 shouldBe false
 
     //miner can spend less
-    val tx5 = ErgoTransaction(IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue - demurrageCost + 1, prop, additionalRegisters = Map(R3 -> IntConstant(curHeight)))))
+    val tx5 = ErgoLikeTransaction(IndexedSeq(),
+      IndexedSeq(ErgoBox(outValue - demurrageCost + 1, prop, additionalRegisters = Map(R3 -> LongConstant(curHeight)))))
 
-    val ctx5 = ErgoContext(
+    val ctx5 = ErgoLikeContext(
       currentHeight = outHeight + demurragePeriod,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx5,
-      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> IntConstant(outHeight))))
+      self = createBox(outValue, prop, additionalRegisters = Map(R3 -> LongConstant(outHeight))))
 
     verifier.verify(prop, ctx5, NoProof, fakeMessage).get._1 shouldBe true
   }

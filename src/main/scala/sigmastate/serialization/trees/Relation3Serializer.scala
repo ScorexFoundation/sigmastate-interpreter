@@ -4,11 +4,11 @@ import sigmastate.SType.TypeCode
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.ValueSerializer.Position
+import sigmastate.serialization.Serializer.Position
 
 case class Relation3Serializer[S1 <: SType, S2 <: SType, S3 <: SType, R <: Relation3[S1, S2, S3]]
-  (override val opCode: Byte,
-   cons: (Value[S1], Value[S2], Value[S3]) => R) extends ValueSerializer[R] {
+(override val opCode: Byte,
+ cons: (Value[S1], Value[S2], Value[S3]) => R) extends ValueSerializer[R] {
 
   import ValueSerializer.{deserialize, serialize}
 

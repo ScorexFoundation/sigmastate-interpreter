@@ -6,33 +6,37 @@ import org.scalatest.{Assertion, Matchers, PropSpec}
 import org.scalacheck.Arbitrary._
 import sigmastate.Values._
 import sigmastate.SType
-import sigmastate.serialization.generators.{ConcreteCollectionGenerators, RelationGenerators, TransformerGenerators, ValueGeneratots}
+import sigmastate.serialization.generators._
 
 trait SerializationSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with TableDrivenPropertyChecks
   with Matchers
-  with ValueGeneratots
+  with ValueGenerators
   with ConcreteCollectionGenerators
+  with OpcodesGen
   with TransformerGenerators
   with RelationGenerators {
 
   protected def roundTripTest[V <: Value[_ <: SType]](v: V): Assertion = {
     val bytes = ValueSerializer.serialize(v)
-    predefinedBytesTest(bytes, v)
+    predefinedBytesTest(v, bytes)
     predefinedBytesTestNotFomZeroElement(bytes, v)
   }
 
-  protected def predefinedBytesTest[V <: Value[_ <: SType]](bytes: Array[Byte], v: V): Assertion = {
-    ValueSerializer.deserialize(bytes) shouldBe v
+  protected def predefinedBytesTest[V <: Value[_ <: SType]](v: V, bytes: Array[Byte]): Assertion = {
+    ValueSerializer.serialize(v) shouldEqual bytes
+    v shouldBe ValueSerializer.deserialize(bytes)
   }
 
   //check that pos and consumed are being implented correctly
   protected def predefinedBytesTestNotFomZeroElement[V <: Value[_ <: SType]](bytes: Array[Byte], v: V): Assertion = {
     val randomInt = Gen.chooseNum(1, 20).sample.get
     val randomBytes = Gen.listOfN(randomInt, arbByte.arbitrary).sample.get.toArray
-    ValueSerializer.deserialize(randomBytes ++ bytes, randomInt)._1 shouldBe v
+    val (parsedVal, consumed) = ValueSerializer.deserialize(randomBytes ++ bytes, randomInt)
+    parsedVal shouldEqual v
+    consumed shouldBe bytes.length
   }
 
 }

@@ -1,39 +1,53 @@
 package sigmastate.interpreter
 
 import java.math.BigInteger
-import java.util.Arrays
+import java.util
+import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import scorex.crypto.hash.Blake2b256
-import sigmastate.{SType, _}
-import sigmastate.utils.Helpers
-import sigmastate.Values._
-
-import scala.util.Try
+import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import org.bouncycastle.math.ec.custom.sec.SecP384R1Point
 import scapi.sigma.DLogProtocol.FirstDLogProverMessage
 import scapi.sigma._
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.Lookup
+import sigmastate.SCollection.SByteArray
+import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import scorex.crypto.hash.Blake2b256
+import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.utils.Helpers
+import sigmastate.utils.Extensions._
+import sigmastate.utxo.{DeserializeContext, CostTable, Transformer}
+import sigmastate.{SType, _}
+
+import scala.util.Try
 
 
-object GroupSettings {
-  type EcPointType = SecP384R1Point
-  val dlogGroup: BcDlogFp[EcPointType] = SecP384R1
+object CryptoConstants {
+  type EcPointType = Curve25519Point
 
-  implicit val soundness: Int = 256
+  val dlogGroup: BcDlogFp[EcPointType] = Curve25519
+  val groupSizeBits: Int = 256
+  val groupSize: Int = 256 / 8 //32 bytes
+
+  //size of challenge in Sigma protocols, in bits
+  implicit val soundnessBits: Int = 224.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
+}
+
+object CryptoFunctions {
+  lazy val soundnessBytes = CryptoConstants.soundnessBits / 8
+
+  def hashFn(input: Array[Byte]): Array[Byte] = {
+    Blake2b256.hash(input).take(soundnessBytes)
+  }
 }
 
 trait Interpreter {
 
-  import GroupSettings._
-
+  import CryptoConstants._
   import Interpreter.ReductionResult
 
   type CTX <: Context[CTX]
@@ -51,7 +65,8 @@ trait Interpreter {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
-          case eba: EvaluatedValue[SByteArray.type] => Some(ValueSerializer.deserialize(eba.value))
+          case eba: EvaluatedValue[SByteArray] @unchecked if eba.tpe == SByteArray =>
+            Some(ValueSerializer.deserialize(eba.value))
           case _ => None
         }
       else
@@ -59,8 +74,7 @@ trait Interpreter {
     case _ => None
   }
 
-  /** First, both the prover and the verifier are making context-dependent tree transformations
-    * (usually, context variables substitutions).
+  /** Implements single reduction step by matching given tree against rewriting rules.
     * Context-specific transformations should be defined in descendants.
     *
     * This is the only function to define all the tree rewrites, except of deserializations.
@@ -70,21 +84,98 @@ trait Interpreter {
     * @return a new rewritten tree or `null` if `tree` cannot be rewritten.
     */
   def evaluateNode(context: CTX, tree: SValue): SValue = tree match {
+    case t: TaggedVariable[_] =>
+      if (context.extension.values.contains(t.varId))
+        context.extension.values(t.varId)
+      else
+        null
+
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
 
-    //operations
-    case Plus(l: IntConstant, r: IntConstant) => IntConstant(l.value + r.value)
-    case Minus(l: IntConstant, r: IntConstant) => IntConstant(l.value - r.value)
-    case Xor(l: ByteArrayConstant, r: ByteArrayConstant) =>
-      assert(l.value.length == r.value.length)
-      ByteArrayConstant(Helpers.xor(l.value, r.value))
+    //Byte Arith operations
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.PlusCode) =>
+      ByteConstant(l.addExact(r))
 
-    case AppendBytes(ByteArrayConstant(l), ByteArrayConstant(r)) =>
-      require(l.length + r.length < MaxByteArrayLength)
-      ByteArrayConstant(l ++ r)
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MinusCode) =>
+      ByteConstant(l.subtractExact(r))
 
-    case c: CalcHash if c.input.evaluated => c.function(c.input.asInstanceOf[EvaluatedValue[SByteArray.type]])
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MultiplyCode) =>
+      ByteConstant(l.multiplyExact(r))
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.ModuloCode) =>
+      ByteConstant((l % r).toByte)
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.DivisionCode) =>
+      ByteConstant((l / r).toByte)
+
+    //Short Arith operations
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.PlusCode) =>
+      ShortConstant(l.addExact(r))
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.MinusCode) =>
+      ShortConstant(l.subtractExact(r))
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.MultiplyCode) =>
+      ShortConstant(l.multiplyExact(r))
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.ModuloCode) =>
+      ShortConstant((l % r).toShort)
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.DivisionCode) =>
+      ShortConstant((l / r).toShort)
+
+    //Int Arith operations
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.PlusCode) =>
+      IntConstant(Math.addExact(l, r))
+
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MinusCode) =>
+      IntConstant(Math.subtractExact(l, r))
+
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MultiplyCode) =>
+      IntConstant(Math.multiplyExact(l, r))
+
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.ModuloCode) =>
+      IntConstant(l % r)
+
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.DivisionCode) =>
+      IntConstant(l / r)
+
+    //Long Arith operations
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.PlusCode) =>
+      LongConstant(Math.addExact(l, r))
+
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.MinusCode) =>
+      LongConstant(Math.subtractExact(l, r))
+
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.MultiplyCode) =>
+      LongConstant(Math.multiplyExact(l, r))
+
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.ModuloCode) =>
+      LongConstant(l % r)
+
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.DivisionCode) =>
+      LongConstant(l / r)
+      
+    //BigInt Arith operations
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.PlusCode) =>
+      BigIntConstant(l.add(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.MinusCode) =>
+      BigIntConstant(l.subtract(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.MultiplyCode) =>
+      BigIntConstant(l.multiply(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.ModuloCode) =>
+      BigIntConstant(l.mod(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.DivisionCode) =>
+      BigIntConstant(l.divide(r))
+      
+    case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
+      assert(l.length == r.length)
+      ByteArrayConstant(Helpers.xor(l, r))
 
     case Exponentiate(GroupElementConstant(l), BigIntConstant(r)) =>
       GroupElementConstant(dlogGroup.exponentiate(l, r))
@@ -93,43 +184,88 @@ trait Interpreter {
       GroupElementConstant(dlogGroup.multiplyGroupElements(l.value, r.value))
 
     //relations
-    case EQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-      BooleanConstant.fromBoolean(l == r)
-    case NEQ(l: Value[_], r: Value[_]) if l.evaluated && r.evaluated =>
-      BooleanConstant.fromBoolean(l != r)
-    case GT(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value > r.value)
-    case GE(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value >= r.value)
-    case LT(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value < r.value)
-    case LE(l: IntConstant, r: IntConstant) =>
-      BooleanConstant.fromBoolean(l.value <= r.value)
-    case IsMember(tree: AvlTreeConstant, key: ByteArrayConstant, proof: ByteArrayConstant) =>
-      val bv = tree.createVerifier(SerializedAdProof @@ proof.value)
-      val res = bv.performOneOperation(Lookup(ADKey @@ key.value))
+    case EQ(l: EvaluatedValue[_], r: EvaluatedValue[_]) =>
+      BooleanConstant.fromBoolean(Objects.deepEquals(l.value, r.value))
+    case NEQ(l: EvaluatedValue[_], r: EvaluatedValue[_]) =>
+      BooleanConstant.fromBoolean(!Objects.deepEquals(l.value, r.value))
+
+    case GT(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(ByteConstant(l), ByteConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+
+    case GT(ShortConstant(l), ShortConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(ShortConstant(l), ShortConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(ShortConstant(l), ShortConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(ShortConstant(l), ShortConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+
+    case GT(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(IntConstant(l), IntConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+      
+    case GT(LongConstant(l), LongConstant(r)) =>
+      BooleanConstant.fromBoolean(l > r)
+    case GE(LongConstant(l), LongConstant(r)) =>
+      BooleanConstant.fromBoolean(l >= r)
+    case LT(LongConstant(l), LongConstant(r)) =>
+      BooleanConstant.fromBoolean(l < r)
+    case LE(LongConstant(l), LongConstant(r)) =>
+      BooleanConstant.fromBoolean(l <= r)
+    
+    case GT(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) > 0)
+    case GE(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) >= 0)
+    case LT(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) < 0)
+    case LE(BigIntConstant(l), BigIntConstant(r)) =>
+      BooleanConstant.fromBoolean(l.compareTo(r) <= 0)
+      
+    case IsMember(tree: AvlTreeConstant, ByteArrayConstant(key), ByteArrayConstant(proof)) =>
+      val bv = tree.createVerifier(SerializedAdProof @@ proof)
+      val res = bv.performOneOperation(Lookup(ADKey @@ key))
       BooleanConstant.fromBoolean(res.isSuccess) // TODO should we also check res.get.isDefined
+
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
 
-    //conjectures
-    case a@AND(children) if a.transformationReady =>
-      a.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
-
-    case o@OR(children) if o.transformationReady =>
-      o.function(children.asInstanceOf[EvaluatedValue[SCollection[SBoolean.type]]])
-
-    case t: Transformer[_, _] if t.transformationReady => t.function()
+    case t: Transformer[_, _] if t.transformationReady => t.function(this, context)
 
     case _ => null
   }
 
-  // new reducer: 1 phase only which is constantly being repeated until non-reducible,
-  // reduction state carried between reductions is number of transformations done.
-  // when it becomes zero, it means that it is time to stop (tree becomes irreducible)
-  //todo: should we limit number of steps?
-  case class ReductionState(numberOfTransformations: Int) {
-    def recordTransformation(): ReductionState = ReductionState(numberOfTransformations + 1)
+  def reduceUntilConverged[T <: SType](context: CTX, tree: Value[T]): Value[T] = {
+    // The interpreter checks whether any nodes were rewritten during last rewriting, and aborts if no rewritings.
+    // Because each rewriting reduces size of the tree the process terminates with number of steps <= substTree.cost.
+    var wasRewritten = false
+    val rules: Strategy = strategy[Value[_ <: SType]] { case node =>
+      val rewritten = evaluateNode(context, node)
+      if (rewritten != null) {
+        wasRewritten = true
+        Some(rewritten)
+      }
+      else
+        None
+    }
+    var currTree = tree
+    do {
+      wasRewritten = false
+      currTree = everywherebu(rules)(currTree).get.asInstanceOf[Value[T]]
+    } while (wasRewritten)
+    currTree
   }
 
   /**
@@ -156,32 +292,15 @@ trait Interpreter {
     }
 
     val cost = substTree.cost(context)
-
     if (cost > maxCost) {
-      throw new Error(s"Estimated expression complexity $substTree exceeds the limit ($maxCost)")
+      throw new Error(s"Estimated expression complexity $cost exceeds the limit $maxCost in $substTree")
     }
 
     // After performing deserializations and checking cost of the resulting tree, both the prover
     // and the verifier are evaluating the tree by applying rewriting rules, until no rules trigger during tree
-    // traversal (so interpreter checks whether any nodes were rewritten during last rewriting, and aborts if so).
-    // Because each rewriting reduces size of the tree the process terminates with number of steps <= substTree.cost.
-    var wasRewritten = false
-    val rules: Strategy = strategy[Value[_ <: SType]] { case node =>
-      val rewritten = evaluateNode(context, node)
-      if (rewritten != null) {
-        wasRewritten = true
-        Some(rewritten)
-      }
-      else
-        None
-    }
-    var currTree = substTree
-    do {
-      wasRewritten = false
-      currTree = everywherebu(rules)(currTree).get.asInstanceOf[Value[SBoolean.type]]
-    } while (wasRewritten)
-
-    currTree -> cost
+    // traversal.
+    val res = reduceUntilConverged(context, substTree)
+    res -> cost
   }
 
   /**
@@ -197,7 +316,7 @@ trait Interpreter {
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
-             proof: UncheckedTree,
+             proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
     val (cProp, cost) = reduceToCrypto(context, exp).get
 
@@ -205,20 +324,21 @@ trait Interpreter {
       case TrueLeaf => true
       case FalseLeaf => false
       case b: Value[SBoolean.type] if b.evaluated =>
-        proof match {
+        SigSerializer.parse(cProp, proof) match {
           case NoProof => false
-          case sp: UncheckedSigmaTree[_] =>
+          case sp: UncheckedSigmaTree =>
             assert(sp.proposition == cProp)
 
             val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
-            val (challenge, rootCommitments) = newRoot match {
-              case u: UncheckedConjecture[_] => (u.challengeOpt.get, u.commitments)
-              case sn: UncheckedSchnorr => (sn.challenge, sn.firstMessageOpt.toSeq)
-              case dh: UncheckedDiffieHellmanTuple => (dh.challenge, dh.firstMessageOpt.toSeq)
+            val challenge = newRoot match {
+              case uc: UncheckedConjecture => uc.challengeOpt.get
+              case ul: UncheckedLeaf[_] => ul.challenge
+              case _ =>
+                Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
             }
 
-            val expectedChallenge = Blake2b256(Helpers.concatBytes(rootCommitments.map(_.bytes) :+ message))
-            Arrays.equals(challenge, expectedChallenge)
+            val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
+            util.Arrays.equals(challenge, expectedChallenge)
         }
       case _: Value[_] => false
     }
@@ -234,38 +354,33 @@ trait Interpreter {
     */
   val checks: Strategy = everywherebu(rule[UncheckedTree] {
     case and: CAndUncheckedNode =>
-      //todo: reduce boilerplate below
 
-      val challenges: Seq[Array[Byte]] = and.leafs.map {
-        case u: UncheckedConjecture[_] => u.challengeOpt.get
-        case sn: UncheckedSchnorr => sn.challenge
-        case dh: UncheckedDiffieHellmanTuple => dh.challenge
+      val challenges: Seq[Array[Byte]] = and.children.map {
+        case uc: UncheckedConjecture => uc.challengeOpt.get
+        case ul: UncheckedLeaf[_] => ul.challenge
       }
 
-      val commitments: Seq[FirstProverMessage[_]] = and.leafs.flatMap {
-        case u: UncheckedConjecture[_] => u.commitments
-        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
+      val commitments: Seq[FirstProverMessage[_]] = and.children.flatMap {
+        case uc: UncheckedConjecture => uc.commitments
+        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
       }
 
       val challenge = challenges.head
 
-      assert(challenges.tail.forall(Arrays.equals(_, challenge)))
+      assert(challenges.tail.forall(util.Arrays.equals(_, challenge)))
 
       and.copy(challengeOpt = Some(challenge), commitments = commitments)
 
     case or: COrUncheckedNode =>
       val challenges = or.children map {
-        case u: UncheckedConjecture[_] => u.challengeOpt.get
-        case sn: UncheckedSchnorr => sn.challenge
-        case dh: UncheckedDiffieHellmanTuple => dh.challenge
+        case uc: UncheckedConjecture => uc.challengeOpt.get
+        case ul: UncheckedLeaf[_] => ul.challenge
         case a: Any => println(a); ???
       }
 
       val commitments = or.children flatMap {
-        case u: UncheckedConjecture[_] => u.commitments
-        case sn: UncheckedSchnorr => sn.firstMessageOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.firstMessageOpt.toSeq
+        case uc: UncheckedConjecture => uc.commitments
+        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
         case _ => ???
       }
 
@@ -273,7 +388,7 @@ trait Interpreter {
 
     case sn: UncheckedSchnorr =>
 
-      val dlog = GroupSettings.dlogGroup
+      val dlog = CryptoConstants.dlogGroup
       val g = dlog.generator
       val h = sn.proposition.h
 
@@ -281,12 +396,12 @@ trait Interpreter {
         dlog.exponentiate(g, sn.secondMessage.z.underlying()),
         dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
 
-      sn.copy(firstMessageOpt = Some(FirstDLogProverMessage(a)))
+      sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
 
     //todo: check that g,h belong to the group
     //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
     case dh: UncheckedDiffieHellmanTuple =>
-      val dlog = GroupSettings.dlogGroup
+      val dlog = CryptoConstants.dlogGroup
 
       val g = dh.proposition.g
       val h = dh.proposition.h
@@ -305,24 +420,48 @@ trait Interpreter {
 
       val a = dlog.multiplyGroupElements(gToZ, dlog.getInverse(uToE))
       val b = dlog.multiplyGroupElements(hToZ, dlog.getInverse(vToE))
-      dh.copy(firstMessageOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
+      dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
 
     case _ => ???
   })
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
-             proverResult: ProverResult[ProofT],
+             proverResult: SerializedProverResult,
+             message: Array[Byte]): Try[VerificationResult] = {
+    val ctxv = context.withExtension(proverResult.extension)
+    verify(exp, ctxv, proverResult.proofBytes, message)
+  }
+
+
+  //below are two sugaric methods for tests
+
+  def verify(exp: Value[SBoolean.type],
+             context: CTX,
+             proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
     verify(exp, ctxv, proverResult.proof, message)
+  }
+
+  def verify(exp: Value[SBoolean.type],
+             context: CTX,
+             proof: ProofT,
+             message: Array[Byte]): Try[VerificationResult] = {
+    verify(exp, context, SigSerializer.toBytes(proof), message)
   }
 }
 
 object Interpreter {
   type VerificationResult = (Boolean, Long)
-
   type ReductionResult = (Value[SBoolean.type], Long)
+
+  implicit class InterpreterOps(I: Interpreter) {
+    def eval[T <: SType](ctx: Context[_], ev: Value[T]): EvaluatedValue[T] = {
+      val reduced = I.reduceUntilConverged(ctx.asInstanceOf[I.CTX], ev)
+      reduced.asInstanceOf[EvaluatedValue[T]]
+    }
+  }
 
   def error(msg: String) = throw new InterpreterException(msg)
 }

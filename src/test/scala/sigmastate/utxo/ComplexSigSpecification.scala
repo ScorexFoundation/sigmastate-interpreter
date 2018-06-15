@@ -1,8 +1,9 @@
 package sigmastate.utxo
 
-import sigmastate.Values.IntConstant
-import sigmastate.{AND, AvlTreeData, GT, OR}
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
+import sigmastate.Values.LongConstant
+import sigmastate._
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 
 class ComplexSigSpecification extends SigmaTestingCommons {
 
@@ -10,10 +11,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     * Whether A or B, or both are able to sign a transaction
     */
   property("simplest linear-sized ring signature (1-out-of-2 OR)") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
-    val proverC = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -24,7 +25,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = OR(pubkeyA, pubkeyB)
     compiledProp shouldBe prop
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -41,10 +42,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("simplest linear-sized ring signature (1-out-of-3 OR)") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
-    val proverC = new ErgoProvingInterpreter
-    val verifier = new ErgoInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -56,7 +57,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = OR(pubkeyA, pubkeyB, pubkeyC)
     compiledProp shouldBe prop
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -75,9 +76,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
   //two secrets are known, nevertheless, one will be simulated
   property("simplest linear-sized ring signature (1-out-of-4 OR), all secrets are known") {
-    val proverA = new ErgoProvingInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA1 = proverA.dlogSecrets(0).publicImage
     val pubkeyA2 = proverA.dlogSecrets(1).publicImage
@@ -90,7 +91,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = OR(Seq(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))
     compiledProp shouldBe prop
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -102,12 +103,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of two ANDs") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
-    val proverC = new ErgoProvingInterpreter
-    val proverD = new ErgoProvingInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
+    val proverD = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -120,7 +121,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -142,12 +143,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of AND and OR") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
-    val proverC = new ErgoProvingInterpreter
-    val proverD = new ErgoProvingInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
+    val proverD = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -157,10 +158,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""")
 
-    val prop = OR(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    val prop = OR(AND(pubkeyA, pubkeyB), pubkeyC, pubkeyD)
     compiledProp shouldBe prop
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -182,12 +183,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - AND of two ORs") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
-    val proverC = new ErgoProvingInterpreter
-    val proverD = new ErgoProvingInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
+    val proverD = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -200,7 +201,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = AND(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -214,6 +215,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val proverAC = proverA.withSecrets(Seq(proverC.dlogSecrets.head))
     val pr = proverAC.prove(prop, ctx, fakeMessage).get
+    println("proof size: " + SigSerializer.toBytes(pr.proof).length)
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val proverBD = proverB.withSecrets(Seq(proverD.dlogSecrets.head))
@@ -222,12 +224,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - AND of AND and OR") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
-    val proverC = new ErgoProvingInterpreter
-    val proverD = new ErgoProvingInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
+    val proverD = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -237,10 +239,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""")
 
-    val prop = AND(AND(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    val prop = AND(pubkeyA, pubkeyB, OR(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -265,12 +267,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of two ORs") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
-    val proverC = new ErgoProvingInterpreter
-    val proverD = new ErgoProvingInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
+    val proverD = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -280,10 +282,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""")
 
-    val prop = OR(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    val prop = OR(pubkeyA, pubkeyB, pubkeyC, pubkeyD)
     compiledProp shouldBe prop
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -304,11 +306,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR w. predicate") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
-    val proverC = new ErgoProvingInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -316,10 +318,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
     val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, HEIGHT > 500))""")
 
-    val prop = OR(pubkeyA, pubkeyB, GT(Height, IntConstant(500)))
+    val prop = OR(pubkeyA, pubkeyB, GT(Height, LongConstant(500)))
     compiledProp shouldBe prop
 
-    val ctx1 = ErgoContext(
+    val ctx1 = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -331,7 +333,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx1, prB, fakeMessage).get._1 shouldBe true
     proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
-    val ctx2 = ErgoContext(
+    val ctx2 = ErgoLikeContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -342,11 +344,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate") {
-    val proverA = new ErgoProvingInterpreter
-    val proverB = new ErgoProvingInterpreter
-    val proverC = new ErgoProvingInterpreter
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -355,10 +357,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compile(env, """anyOf(Array(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
 
-    val prop = OR(OR(pubkeyA, pubkeyB), AND(pubkeyC, GT(Height, IntConstant(500))))
+    val prop = OR(pubkeyA, pubkeyB, AND(pubkeyC, GT(Height, LongConstant(500))))
     compiledProp shouldBe prop
 
-    val ctx1 = ErgoContext(
+    val ctx1 = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
@@ -372,7 +374,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
 
 
-    val ctx2 = ErgoContext(
+    val ctx2 = ErgoLikeContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),

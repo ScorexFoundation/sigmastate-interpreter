@@ -6,6 +6,7 @@ import sigmastate._
 import Values._
 import sigmastate.lang.Terms._
 import scorex.crypto.encode.Base58
+import sigmastate.SCollection.SByteArray
 import sigmastate.lang.syntax.Basic._
 import sigmastate.lang.syntax.{Core, Exprs}
 
@@ -46,7 +47,7 @@ object SigmaParser extends Exprs with Types with Core {
 
   private val Base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
-  private def byteVectorP: P[ByteArrayConstant] =
+  private def byteVectorP: P[Value[SByteArray]] =
     P("base58'" ~ CharsWhileIn(Base58Chars).! ~ "'")
         .map(x => ByteArrayConstant(Base58.decode(x).get))
 
@@ -58,16 +59,18 @@ object SigmaParser extends Exprs with Types with Core {
     case "||" => OR(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
     case "&&" => AND(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
     case "==" => EQ(l, r)
-    case ">=" => GE(l.asValue[SInt.type], r.asValue[SInt.type])
-    case ">"  => GT(l.asValue[SInt.type], r.asValue[SInt.type])
-    case "<=" => LE(l.asValue[SInt.type], r.asValue[SInt.type])
-    case "<"  => LT(l.asValue[SInt.type], r.asValue[SInt.type])
-    case "+"  => Plus(l.asValue[SInt.type], r.asValue[SInt.type])
-    case "-"  => Minus(l.asValue[SInt.type], r.asValue[SInt.type])
-    case "|"  => Xor(l.asValue[SByteArray.type], r.asValue[SByteArray.type])
+    case ">=" => GE(l, r)
+    case ">"  => GT(l, r)
+    case "<=" => LE(l, r)
+    case "<"  => LT(l, r)
+    case "+"  => Plus(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "-"  => Minus(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "|"  => Xor(l.asValue[SByteArray], r.asValue[SByteArray])
     case "++" => MethodCall(l, "++", IndexedSeq(r))
     case "^"  => Exponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
-    case "*"  => MultiplyGroup(l.asValue[SGroupElement.type], r.asValue[SGroupElement.type])
+    case "*"  => MethodCall(l, "*", IndexedSeq(r))
+    case "/"  => Divide(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "%"  => Modulo(l.asValue[SLong.type], r.asValue[SLong.type])
     case _ => error(s"Unknown binary operation $opName")
   }
 

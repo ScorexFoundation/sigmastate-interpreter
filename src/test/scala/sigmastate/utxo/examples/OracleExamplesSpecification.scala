@@ -6,11 +6,13 @@ import com.google.common.primitives.Longs
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.GroupSettings
-import sigmastate.utxo.ErgoBox._
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.CryptoConstants
+import org.ergoplatform.ErgoBox._
+import org.ergoplatform._
 import sigmastate.utxo._
 
 
@@ -58,11 +60,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("oracle example") {
-    val oracle = new ErgoProvingInterpreter
-    val aliceTemplate = new ErgoProvingInterpreter
-    val bob = new ErgoProvingInterpreter
+    val oracle = new ErgoLikeProvingInterpreter
+    val aliceTemplate = new ErgoLikeProvingInterpreter
+    val bob = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
@@ -70,7 +72,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val group = GroupSettings.dlogGroup
+    val group = CryptoConstants.dlogGroup
 
     val temperature: Long = 18
 
@@ -87,10 +89,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       value = 1L,
       proposition = oraclePubKey,
       additionalRegisters = Map(
-        R3 -> IntConstant(temperature),
+        R3 -> LongConstant(temperature),
         R4 -> GroupElementConstant(a),
         R5 -> BigIntConstant(z),
-        R6 -> IntConstant(ts)),
+        R6 -> LongConstant(ts)),
       boxId = 1
     )
 
@@ -108,19 +110,19 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
                         fallback: Value[SBoolean.type])(script: Value[SBoolean.type]) =
-      OR(AND(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
-        AND(GE(Height, IntConstant(timeoutHeight)), fallback))
+      OR(AND(GE(Height, LongConstant(sinceHeight)), LT(Height, LongConstant(timeoutHeight)), script),
+        AND(GE(Height, LongConstant(timeoutHeight)), fallback))
 
-    val contractLogic = OR(AND(GT(extract(R3), IntConstant(15)), alicePubKey),
-      AND(LE(extract(R3), IntConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(extract[SLong.type](R3), LongConstant(15)), alicePubKey),
+      AND(LE(extract[SLong.type](R3), LongConstant(15)), bobPubKey))
 
     val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
-      EQ(extract[SByteArray.type](R1), ByteArrayConstant(oraclePubKey.bytes)),
+      EQ(extract[SByteArray](R1), ByteArrayConstant(oraclePubKey.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
         MultiplyGroup(extract[SGroupElement.type](R4),
           Exponentiate(oraclePubKey.value,
             ByteArrayToBigInt(CalcBlake2b256(
-              AppendBytes(IntToByteArray(extract[SInt.type](R3)), IntToByteArray(extract[SInt.type](R6)))))))
+              Append(LongToByteArray(extract[SLong.type](R3)), LongToByteArray(extract[SLong.type](R6)))))))
       ),
       contractLogic)
 
@@ -129,7 +131,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val newBox1 = ErgoBox(20, alicePubKey, boxId = 2)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val sinceHeight = 40
     val timeout = 60
@@ -145,7 +147,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = ErgoBox(10, propBob, Map(), boxId = 4)
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
       boxesToSpend = IndexedSeq(sAlice, sBob),
@@ -181,11 +183,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("lightweight oracle example") {
-    val oracle = new ErgoProvingInterpreter
-    val alice = new ErgoProvingInterpreter
-    val bob = new ErgoProvingInterpreter
+    val oracle = new ErgoLikeProvingInterpreter
+    val alice = new ErgoLikeProvingInterpreter
+    val bob = new ErgoLikeProvingInterpreter
 
-    val verifier = new ErgoInterpreter
+    val verifier = new ErgoLikeInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
@@ -198,11 +200,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val oracleBox = ErgoBox(
       value = 1L,
       proposition = oraclePubKey,
-      additionalRegisters = Map(R3 -> IntConstant(temperature))
+      additionalRegisters = Map(R3 -> LongConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs(ByIndex(Inputs, 0), R3), IntConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs(ByIndex(Inputs, 0), R3), IntConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), R3), LongConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), R3), LongConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
       EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),
@@ -215,9 +217,9 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val newBox1 = ErgoBox(20, alicePubKey)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val ctx = ErgoContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),

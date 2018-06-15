@@ -5,9 +5,11 @@ import java.security.SecureRandom
 
 import org.bouncycastle.util.BigIntegers
 import sigmastate._
-import sigmastate.interpreter.{Context, GroupSettings}
+import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.Values._
 import Value.PropositionCode
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
@@ -16,16 +18,15 @@ trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtoco
 }
 
 case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDiffieHellmanTuple)
-                                        (implicit soundness: Int)
   extends SigmaProtocolPrivateInput[DiffieHellmanTupleProtocol, ProveDiffieHellmanTuple] {
 
   override lazy val publicImage: ProveDiffieHellmanTuple = commonInput
 }
 
 object DiffieHellmanTupleProverInput {
-  import sigmastate.interpreter.GroupSettings.dlogGroup
+  import sigmastate.interpreter.CryptoConstants.dlogGroup
 
-  def random()(implicit soundness: Int): DiffieHellmanTupleProverInput = {
+  def random(): DiffieHellmanTupleProverInput = {
     val g = dlogGroup.generator
     val h = dlogGroup.createRandomGenerator()
 
@@ -41,14 +42,13 @@ object DiffieHellmanTupleProverInput {
 }
 
 //a = g^r, b = h^r
-case class FirstDiffieHellmanTupleProverMessage(a: GroupSettings.EcPointType, b: GroupSettings.EcPointType)
+case class FirstDiffieHellmanTupleProverMessage(a: CryptoConstants.EcPointType, b: CryptoConstants.EcPointType)
   extends FirstProverMessage[DiffieHellmanTupleProtocol] {
   override def bytes: Array[Byte] = {
     val ba = a.getEncoded(true)
 
     val bb = b.getEncoded(true)
 
-    //todo: is toByte enough? check for a concrete group used!
     Array(ba.length.toByte, bb.length.toByte) ++ ba ++ bb
   }
 }
@@ -67,10 +67,9 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
 
+  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+
   override def cost[C <: Context[C]](context: C): Long = Cost.Dlog * 2
-
-  override val soundness: Int = GroupSettings.soundness
-
 
   //todo: fix code below , we should consider that class parameters could be not evaluated
   lazy val g = gv.asInstanceOf[GroupElementConstant].value
@@ -88,7 +87,7 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieH
                                           override val privateInputOpt: Option[DiffieHellmanTupleProverInput])
   extends InteractiveProver[DiffieHellmanTupleProtocol, ProveDiffieHellmanTuple, DiffieHellmanTupleProverInput] {
 
-  import sigmastate.interpreter.GroupSettings.dlogGroup
+  import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   var rOpt: Option[BigInteger] = None
 
@@ -136,7 +135,7 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieH
 }
 
 object DiffieHellmanTupleInteractiveProver {
-  import sigmastate.interpreter.GroupSettings.dlogGroup
+  import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   def firstMessage(publicInput: ProveDiffieHellmanTuple): (BigInteger, FirstDiffieHellmanTupleProverMessage) = {
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)

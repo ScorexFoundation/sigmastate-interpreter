@@ -11,7 +11,7 @@ class SigmaCompiler {
     SigmaParser(x) match {
       case Success(v, i) => v
       case f: Parsed.Failure[_,_] =>
-        throw new ParserException("Syntax error: ", Some(f))
+        throw new ParserException(s"Syntax error: $f", Some(f))
     }
   }
 

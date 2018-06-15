@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
 import sigmastate.SInt
-import sigmastate.Values.{ConcreteCollection, IntConstant, TaggedInt}
+import sigmastate.Values.{ConcreteCollection, TaggedInt, IntConstant}
+import sigmastate.lang.Terms._
 
 import scala.util.Random
 
@@ -15,7 +16,7 @@ class ConcreteCollectionSerializerSpecification extends SerializationSpecificati
 
   property("ConcreteCollection: Serializer round trip with different types seq") {
     forAll { (i: IntConstant, ti: TaggedInt) =>
-      val seq = Random.shuffle(IndexedSeq(i, ti))
+      val seq = Random.shuffle(IndexedSeq(i.asIntValue, ti.asIntValue))
       roundTripTest(ConcreteCollection(seq))
     }
   }
