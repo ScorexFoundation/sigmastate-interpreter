@@ -31,6 +31,19 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { t: SPredefType => testCollection(t) }
   }
 
+  property("CollectionConstant serialization round trip") {
+    testCollection(SBoolean)
+    testCollection(SByte)
+    testCollection(SShort)
+    testCollection(SInt)
+    testCollection(SLong)
+    testCollection(SBigInt)
+    testCollection(SGroupElement)
+    testCollection(SUnit)
+    testCollection(SBox)
+    testCollection(SAvlTree)
+  }
+
   private def caseObjectValue(v: SValue) = (v, Array[Byte](v.opCode))
 
   override def objects = Table(
