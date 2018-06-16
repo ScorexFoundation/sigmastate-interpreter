@@ -324,16 +324,16 @@ trait Interpreter {
       case TrueLeaf => true
       case FalseLeaf => false
       case b: Value[SBoolean.type] if b.evaluated =>
-        SigSerializer.parse(cProp, proof) match {
+        SigSerializer.parseAndComputeChallenges(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree =>
 
-            val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
+            val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedTree]
             val challenge = newRoot match {
               case uc: UncheckedConjecture => uc.challengeOpt.get
               case ul: UncheckedLeaf[_] => ul.challenge
               case _ =>
-                Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
+                Interpreter.error(s"Unknown type of root after 'computeCommitments' $newRoot")
             }
 
             val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
@@ -351,39 +351,12 @@ trait Interpreter {
     * there is an opportunity for small savings here, because we don't need to send all the challenges for a CAND --
     * but let's save that optimization for later.)
     */
-  val checks: Strategy = everywherebu(rule[UncheckedTree] {
+  val computeCommitments: Strategy = everywherebu(rule[UncheckedTree] {
     case and: CAndUncheckedNode =>
-
-      val challenges: Seq[Array[Byte]] = and.children.map {
-        case uc: UncheckedConjecture => uc.challengeOpt.get
-        case ul: UncheckedLeaf[_] => ul.challenge
-      }
-
-      val commitments: Seq[FirstProverMessage[_]] = and.children.flatMap {
-        case uc: UncheckedConjecture => uc.commitments
-        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
-      }
-
-      val challenge = challenges.head
-
-      assert(challenges.tail.forall(util.Arrays.equals(_, challenge)))
-
-      and.copy(challengeOpt = Some(challenge), commitments = commitments)
+      and
 
     case or: COrUncheckedNode =>
-      val challenges = or.children map {
-        case uc: UncheckedConjecture => uc.challengeOpt.get
-        case ul: UncheckedLeaf[_] => ul.challenge
-        case a: Any => println(a); ???
-      }
-
-      val commitments = or.children flatMap {
-        case uc: UncheckedConjecture => uc.commitments
-        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
-        case _ => ???
-      }
-
-      or.copy(challengeOpt = Some(Helpers.xor(challenges: _*)), commitments = commitments)
+      or
 
     case sn: UncheckedSchnorr =>
 

@@ -66,7 +66,7 @@ class SigSerializerSpecification extends PropSpec
 
   private def roundTrip(uncheckedTree: UncheckedTree, exp: Value[SBoolean.type]): Assertion = {
     val bytes = SigSerializer.toBytes(uncheckedTree)
-    val parsedUncheckedTree = SigSerializer.parse(exp, bytes)
+    val parsedUncheckedTree = SigSerializer.parseAndComputeChallenges(exp, bytes)
     isEquivalent(uncheckedTree, parsedUncheckedTree) shouldBe true
   }
 
@@ -89,8 +89,9 @@ class SigSerializerSpecification extends PropSpec
       val prop = prover.reduceToCrypto(ctx, expr).get._1
 
       val proof = prover.prove(expr, ctx, challenge).get.proof
-      val proofTree = SigSerializer.parse(prop, proof)
+      val proofTree = SigSerializer.parseAndComputeChallenges(prop, proof)
       roundTrip(proofTree, prop)
     }
   }
+
 }

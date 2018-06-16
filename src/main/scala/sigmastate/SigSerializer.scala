@@ -5,9 +5,11 @@ import scapi.sigma.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import scapi.sigma.{ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.Values.Value
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.utils.Helpers
 
 
 object SigSerializer {
+
   val hashSize = CryptoConstants.soundnessBits / 8
   val order = CryptoConstants.groupSize
 
@@ -15,39 +17,40 @@ object SigSerializer {
 
     def traverseNode(node: UncheckedTree,
                      acc: Array[Byte],
-                     writingChallenge: Boolean = true): Array[Byte] = node match {
+                     writeChallenge: Boolean = true): Array[Byte] = node match {
       case dl: UncheckedSchnorr =>
         acc ++
-          (if (writingChallenge) dl.challenge else Array.emptyByteArray) ++
+          (if (writeChallenge) dl.challenge else Array.emptyByteArray) ++
           BigIntegers.asUnsignedByteArray(order, dl.secondMessage.z.bigInteger)
       case dh: UncheckedDiffieHellmanTuple =>
         acc ++
-          (if (writingChallenge) dh.challenge else Array.emptyByteArray) ++
+          (if (writeChallenge) dh.challenge else Array.emptyByteArray) ++
           BigIntegers.asUnsignedByteArray(order, dh.secondMessage.z)
       case and: CAndUncheckedNode =>
-        val leafs = and.children
-        val challenge = leafs.find(pt => pt match{
-          case _: UncheckedLeaf[_] => true
-          case _ => false
-        }).map(_.asInstanceOf[UncheckedLeaf[_]].challenge).getOrElse(Array.emptyByteArray)
-
-        leafs.foldLeft(acc ++ challenge) { case (ba, leaf) =>
-          traverseNode(leaf.asInstanceOf[UncheckedTree], ba, writingChallenge = false)
+        val challenge = and.asInstanceOf[UncheckedConjecture].challengeOpt.get  // todo: what if challengeOpt is empty?
+        and.children.foldLeft(acc ++ (if(writeChallenge) challenge else Array.emptyByteArray)) { case (ba, child) =>
+          traverseNode(child.asInstanceOf[UncheckedTree], ba, writeChallenge = false)
         }
       case or: COrUncheckedNode =>
-        or.children.foldLeft(acc) { case (ba, leaf) =>
-          traverseNode(leaf.asInstanceOf[UncheckedTree], ba)
+        val parentChal = if (writeChallenge) or.challengeOpt.get else Array.emptyByteArray // todo: what if challengeOpt is empty?
+
+        val res = or.children.init.foldLeft(acc ++ parentChal) { case (ba, child) =>
+          traverseNode(child.asInstanceOf[UncheckedTree], ba, writeChallenge = true)
         }
+        traverseNode(or.children.last.asInstanceOf[UncheckedTree], res, writeChallenge = false)
+
+      // todo: there is a warning that this case list may not be exhaustive because of possibility of UncheckedConjecture
+
     }
 
     tree match {
       case NoProof => Array.emptyByteArray
-      case _ => traverseNode(tree, Array[Byte]())
+      case _ => traverseNode(tree, Array[Byte](), writeChallenge = true) // always write the root challenge
     }
   }
 
 
-  def parse(exp: Value[SBoolean.type], bytes: Array[Byte]): UncheckedTree = {
+  def parseAndComputeChallenges(exp: Value[SBoolean.type], bytes: Array[Byte]): UncheckedTree = {
 
     def traverseNode(exp: Value[SBoolean.type],
                      bytes: Array[Byte],
@@ -70,22 +73,40 @@ object SigSerializer {
         val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + hp, pos + hp + order))
         UncheckedDiffieHellmanTuple(dh, None, e, SecondDiffieHellmanTupleProverMessage(z)) -> (hp + order)
       case and: CAND =>
-        val (challenge, cc) = if(and.sigmaBooleans.exists(!_.isInstanceOf[COR]))
-          Some(bytes.slice(pos, pos + hashSize)) -> hashSize else None -> 0
-
-        val (seq, finalPos) = and.sigmaBooleans.foldLeft(Seq[UncheckedTree]() -> (pos + cc)) { case ((s, p), leaf) =>
-          val (rewrittenLeaf, consumed) = traverseNode(leaf, bytes, p, challenge)
-          (s :+ rewrittenLeaf, p + consumed)
+        val (e, hp) = if (challengeOpt.isEmpty) {
+          bytes.slice(pos, pos + hashSize) -> hashSize
+        } else {
+          challengeOpt.get -> 0
         }
-        CAndUncheckedNode(None, Seq(), seq) -> (finalPos - pos)
+        val (seq, finalPos) = and.sigmaBooleans.foldLeft(Seq[UncheckedTree]() -> (pos + hp)) { case ((s, p), child) =>
+          val (rewrittenChild, consumed) = traverseNode(child, bytes, p, Some(e))
+          (s :+ rewrittenChild, p + consumed)
+        }
+        CAndUncheckedNode(Some(e), Seq(), seq) -> (finalPos - pos)
       case or: COR =>
-        val (seq, finalPos) = or.sigmaBooleans.foldLeft(Seq[UncheckedTree]() -> pos) { case ((s, p), leaf) =>
-          val (rewrittenLeaf, consumed) = traverseNode(leaf, bytes, p)
-          (s :+ rewrittenLeaf, p + consumed)
+        val (e, numChalBytes) = if (challengeOpt.isEmpty) {
+          bytes.slice(pos, pos + hashSize) -> hashSize
+        } else {
+          challengeOpt.get -> 0
         }
-        COrUncheckedNode(None, Seq(), seq) -> (finalPos - pos)
+        val (seq, lastPos, lastChallenge) = or.sigmaBooleans.init.foldLeft((Seq[UncheckedTree](), pos + numChalBytes, e)) {
+          case ((s, p, challengeXOR), child) =>
+            val (rewrittenChild, consumed) = traverseNode(child, bytes, p, challengeOpt = None)
+            (s :+ rewrittenChild, p + consumed,
+              Helpers.xor(challengeXOR, rewrittenChild match {
+                // todo: this ugliness would go away if we had uniformity of how challenges are treated in uncheckedProof
+                  // todo: compilers complains this list may not be exhaustive
+                case uc: UncheckedConjecture => uc.challengeOpt.get
+                case ul: UncheckedLeaf[_] => ul.challenge
+              }))
+        }
+        val (lastChild, numRightChildBytes) = traverseNode(or.sigmaBooleans.last, bytes, lastPos, Some(lastChallenge))
+        COrUncheckedNode(Option(e), Seq(), seq :+ lastChild) -> (lastPos + numRightChildBytes - pos)
     }
 
-    if (bytes.isEmpty) NoProof else traverseNode(exp, bytes, 0)._1
+    if (bytes.isEmpty)
+      NoProof
+    else
+      traverseNode(exp, bytes, hashSize, Some(bytes.slice(0, hashSize)) )._1 // get the root hash, then call
   }
 }
