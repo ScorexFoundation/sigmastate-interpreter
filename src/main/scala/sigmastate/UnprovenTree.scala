@@ -46,11 +46,9 @@ sealed trait UnprovenTree extends ProofTree {
 sealed trait UnprovenLeaf extends UnprovenTree with ProofTreeLeaf
 
 sealed trait UnprovenConjecture extends UnprovenTree with ProofTreeConjecture {
-  val childrenCommitments: Seq[FirstProverMessage[_]]
 }
 
 case class CAndUnproven(override val proposition: CAND,
-                        override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
                         override val challengeOpt: Option[Array[Byte]] = None,
                         override val simulated: Boolean,
                         children: Seq[ProofTree]) extends UnprovenConjecture {
@@ -63,7 +61,6 @@ case class CAndUnproven(override val proposition: CAND,
 }
 
 case class COrUnproven(override val proposition: COR,
-                       override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
                        override val challengeOpt: Option[Array[Byte]] = None,
                        override val simulated: Boolean,
                        children: Seq[ProofTree]) extends UnprovenConjecture {

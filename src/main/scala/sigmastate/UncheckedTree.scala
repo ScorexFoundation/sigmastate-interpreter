@@ -11,23 +11,21 @@ sealed trait UncheckedTree extends ProofTree
 
 case object NoProof extends UncheckedTree
 
-sealed trait UncheckedSigmaTree extends UncheckedTree
+sealed trait UncheckedSigmaTree extends UncheckedTree {
+  val challenge: Array[Byte]
+}
 
 trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
-  val challengeOpt: Option[Array[Byte]]
-  val commitments: Seq[FirstProverMessage[_]]
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedConjecture =>
-        Helpers.optionArrayEquals(challengeOpt, x.challengeOpt) &&
-        commitments == x.commitments &&
+        util.Arrays.equals(challenge, x.challenge) &&
         children == x.children
   }
 }
 
 trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree with ProofTreeLeaf {
   val proposition: SigmaBoolean
-  val challenge: Array[Byte]
 }
 
 case class UncheckedSchnorr(override val proposition: ProveDlog,
@@ -61,18 +59,16 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHell
   }
 }
 
-case class CAndUncheckedNode(override val challengeOpt: Option[Array[Byte]],
-                             override val commitments: Seq[FirstProverMessage[_]],
-                             override val children: Seq[ProofTree])
+case class CAndUncheckedNode(override val challenge: Array[Byte],
+                             override val children: Seq[UncheckedSigmaTree])
   extends UncheckedConjecture {
 
   override val conjectureType = ConjectureType.AndConjecture
 }
 
 
-case class COrUncheckedNode(override val challengeOpt: Option[Array[Byte]],
-                            override val commitments: Seq[FirstProverMessage[_]],
-                            override val children: Seq[ProofTree]) extends UncheckedConjecture {
+case class COrUncheckedNode(override val challenge: Array[Byte],
+                            override val children: Seq[UncheckedSigmaTree]) extends UncheckedConjecture {
 
   override val conjectureType = ConjectureType.OrConjecture
 }

@@ -40,7 +40,8 @@ class CrowdFundingKernelContract(
 
     val commitments = step4 match {
       case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
-      case uc: UnprovenConjecture => uc.childrenCommitments
+      case _ => ???
+      /*case uc: UnprovenConjecture => uc.childrenCommitments*/ // can't do this anymore because internal nodes no longer have commitments
     }
 
     val rootChallenge = Blake2b256(Helpers.concatBytes(commitments.map(_.bytes) :+ message))

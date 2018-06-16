@@ -328,16 +328,9 @@ trait Interpreter {
           case NoProof => false
           case sp: UncheckedSigmaTree =>
 
-            val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedTree]
-            val challenge = newRoot match {
-              case uc: UncheckedConjecture => uc.challengeOpt.get
-              case ul: UncheckedLeaf[_] => ul.challenge
-              case _ =>
-                Interpreter.error(s"Unknown type of root after 'computeCommitments' $newRoot")
-            }
-
+            val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
             val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
-            util.Arrays.equals(challenge, expectedChallenge)
+            util.Arrays.equals(newRoot.challenge, expectedChallenge)
         }
       case _: Value[_] => false
     }
@@ -351,12 +344,8 @@ trait Interpreter {
     * there is an opportunity for small savings here, because we don't need to send all the challenges for a CAND --
     * but let's save that optimization for later.)
     */
-  val computeCommitments: Strategy = everywherebu(rule[UncheckedTree] {
-    case and: CAndUncheckedNode =>
-      and
-
-    case or: COrUncheckedNode =>
-      or
+  val computeCommitments: Strategy = everywherebu(rule[UncheckedSigmaTree] {
+    case c: UncheckedConjecture => c
 
     case sn: UncheckedSchnorr =>
 

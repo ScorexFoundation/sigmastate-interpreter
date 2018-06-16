@@ -1,5 +1,7 @@
 package sigmastate.serialization
 
+import java.util
+
 import org.ergoplatform.ErgoLikeContext
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
@@ -57,8 +59,7 @@ class SigSerializerSpecification extends PropSpec
       // `firstMessageOpt` is not serialized
       sch1.copy(commitmentOpt = None) == sch2
     case (conj1: UncheckedConjecture, conj2: UncheckedConjecture) =>
-        Helpers.optionArrayEquals(conj1.challengeOpt, conj2.challengeOpt) &&
-        conj1.commitments == conj2.commitments &&
+      util.Arrays.equals(conj1.challenge, conj2.challenge) &&
         conj1.children.zip(conj2.children).forall(t => isEquivalent(t._1, t._2))
     case _ => false
   }

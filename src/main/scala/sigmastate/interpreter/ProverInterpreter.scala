@@ -255,25 +255,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * of commitments below it.
     */
   val simulations: Strategy = everywherebu(rule[ProofTree] {
-    case and: CAndUnproven =>
-      val commitments = and.children.flatMap {
-        case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
-        case uc: UnprovenConjecture => uc.childrenCommitments
-        case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.commitmentOpt.toSeq
-        case _ => ???
-      }
-      and.copy(childrenCommitments = commitments)
-
-    case or: COrUnproven =>
-      val commitments = or.children.flatMap {
-        case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
-        case uc: UnprovenConjecture => uc.childrenCommitments
-        case sn: UncheckedSchnorr => sn.commitmentOpt.toSeq
-        case dh: UncheckedDiffieHellmanTuple => dh.commitmentOpt.toSeq
-        case a: Any => ???
-      }
-      or.copy(childrenCommitments = commitments)
+    case c: UnprovenConjecture => c
 
     case su: UnprovenSchnorr =>
       if (su.simulated) {
@@ -360,9 +342,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   //converts SigmaTree => UnprovenTree
   val convertToUnproven: SigmaBoolean => UnprovenTree = attr {
     case CAND(sigmaTrees) =>
-      CAndUnproven(CAND(sigmaTrees), Seq(), None, simulated = false, sigmaTrees.map(convertToUnproven))
+      CAndUnproven(CAND(sigmaTrees), None, simulated = false, sigmaTrees.map(convertToUnproven))
     case COR(children) =>
-      COrUnproven(COR(children), Seq(), None, simulated = false, children.map(convertToUnproven))
+      COrUnproven(COR(children), None, simulated = false, children.map(convertToUnproven))
     case ci: ProveDlog =>
       UnprovenSchnorr(ci, None, None, None, simulated = false)
     case dh: ProveDiffieHellmanTuple =>
@@ -370,11 +352,11 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   }
 
   //converts ProofTree => UncheckedTree
-  val convertToUnchecked: ProofTree => UncheckedTree = attr {
+  val convertToUnchecked: ProofTree => UncheckedSigmaTree = attr {
     case and: CAndUnproven =>
-      CAndUncheckedNode(and.challengeOpt, and.childrenCommitments, and.children.map(convertToUnchecked))
+      CAndUncheckedNode(and.challengeOpt.get,  and.children.map(convertToUnchecked))
     case or: COrUnproven =>
-      COrUncheckedNode(or.challengeOpt, or.childrenCommitments, or.children.map(convertToUnchecked))
+      COrUncheckedNode(or.challengeOpt.get,  or.children.map(convertToUnchecked))
     case s: UncheckedSchnorr => s
     case d: UncheckedDiffieHellmanTuple => d
     case _ => ???
