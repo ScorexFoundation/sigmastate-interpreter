@@ -5,7 +5,6 @@ import java.util
 import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.Values.SigmaBoolean
-import sigmastate.utils.Helpers
 
 sealed trait UncheckedTree extends ProofTree
 
@@ -19,7 +18,7 @@ trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedConjecture =>
-        util.Arrays.equals(challenge, x.challenge) &&
+        util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
         children == x.children
   }
 }
@@ -36,7 +35,7 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedSchnorr =>
-        util.Arrays.equals(challenge, x.challenge) &&
+        util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
         commitmentOpt == x.commitmentOpt &&
         secondMessage == x.secondMessage
     case _ => false
@@ -54,7 +53,7 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHell
     case x: UncheckedDiffieHellmanTuple =>
       proposition == x.proposition &&
       commitmentOpt == x.commitmentOpt &&
-      util.Arrays.equals(challenge, x.challenge) &&
+      util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
       secondMessage == x.secondMessage
   }
 }

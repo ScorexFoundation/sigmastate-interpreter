@@ -53,10 +53,22 @@ object SigSerializer {
 
   def parseAndComputeChallenges(exp: Value[SBoolean.type], bytes: Array[Byte]): UncheckedTree = {
 
+    /**
+      * Verifier Step 2: In a top-down traversal of the tree, obtain the challenges for the children of every
+      * non-leaf node by reading them from the proof or computing them.
+      * Verifier Step 3: For every leaf node, read the response z provided in the proof.
+      * @param exp
+      * @param bytes
+      * @param pos
+      * @param challengeOpt if non-empty, then the challenge has been computed for this node by its parent;
+      *                     else it needs to be read from the proof
+      * @return
+      */
     def traverseNode(exp: Value[SBoolean.type],
                      bytes: Array[Byte],
                      pos: Int,
                      challengeOpt: Option[Array[Byte]] = None): (UncheckedSigmaTree, Int) = {
+      // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
       val (challenge, chalLen) = if (challengeOpt.isEmpty) {
         bytes.slice(pos, pos + hashSize) -> hashSize
       } else {
@@ -64,21 +76,29 @@ object SigSerializer {
       }
       exp match {
         case dl: ProveDlog =>
+          // Verifier Step 3: For every leaf node, read the response z provided in the proof.
           val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + chalLen, pos + chalLen + order))
           UncheckedSchnorr(dl, None, challenge, SecondDLogProverMessage(z)) -> (chalLen + order)
+
         case dh: ProveDiffieHellmanTuple =>
+          // Verifier Step 3: For every leaf node, read the response z provided in the proof.
           val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + chalLen, pos + chalLen + order))
           UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z)) -> (chalLen + order)
+
         case and: CAND =>
-          // child challenges are equal to this node's challenge
+          // Verifier Step 2: If the node is AND, then all of its children get e_$ as the challenge
           val (seq, finalPos) = and.sigmaBooleans.foldLeft(Seq[UncheckedSigmaTree]() -> (pos + chalLen)) { case ((s, p), child) =>
             val (rewrittenChild, consumed) = traverseNode(child, bytes, p, Some(challenge))
             (s :+ rewrittenChild, p + consumed)
           }
           CAndUncheckedNode(challenge, seq) -> (finalPos - pos)
+
         case or: COR =>
-          // read all the challenges except the last node's and XOR them all together with the current
-          // node's challenge
+          // Verifier Step 2: If the node is OR, then each of its children except rightmost
+          // one gets the challenge given in the proof for that node.
+          // The rightmost child gets a challenge computed as an XOR of the challenges of all the other children and e_0.
+
+          // Read all the children but the last and compute the XOR of all the challenges including e_0
           val (seq, lastPos, lastChallenge) = or.sigmaBooleans.init.foldLeft((Seq[UncheckedSigmaTree](), pos + chalLen, challenge)) {
             case ((s, p, challengeXOR), child) =>
               val (rewrittenChild, consumed) = traverseNode(child, bytes, p, challengeOpt = None)
@@ -94,6 +114,7 @@ object SigSerializer {
     if (bytes.isEmpty)
       NoProof
     else
-      traverseNode(exp, bytes, hashSize, Some(bytes.slice(0, hashSize)))._1 // get the root hash, then call
+      // Verifier step 1: Read the root challenge from the proof.
+      traverseNode(exp, bytes, 0, challengeOpt = None)._1 // get the root hash, then call
   }
 }

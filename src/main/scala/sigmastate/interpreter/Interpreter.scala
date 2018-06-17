@@ -303,16 +303,6 @@ trait Interpreter {
     res -> cost
   }
 
-  /**
-    * Verifier steps:
-    * 1. Place received challenges "e" and responses "z" into every leaf.
-    * 2. Bottom-up: compute commitments at every leaf according to a = g^z/h^e. At every COR and CAND node, compute
-    * the commitment as the union of the children's commitments. At every COR node, compute the challenge as the XOR of
-    * the children's challenges. At every CAND node, verify that the children's challenges are all equal. (Note that
-    * there is an opportunity for small savings here, because we don't need to send all the challenges for a CAND --
-    * but let's save that optimization for later.)
-    * 3. Check that the root challenge is equal to the hash of the root commitment and other inputs.
-    */
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
@@ -324,11 +314,21 @@ trait Interpreter {
       case TrueLeaf => true
       case FalseLeaf => false
       case b: Value[SBoolean.type] if b.evaluated =>
+        // Perform Verifier Steps 1-3
         SigSerializer.parseAndComputeChallenges(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree =>
 
+            // Perform Verifier Steps 4
             val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
+
+            /**
+              * Verifier Steps 5-6: Convert the tree to a string s for input to the Fiat-Shamir hash function,
+              * using the same conversion as the prover in 7
+              * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
+              * (and, if applicable,  the associated data). Reject otherwise.
+              */
+
             val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
             util.Arrays.equals(newRoot.challenge, expectedChallenge)
         }
@@ -338,14 +338,12 @@ trait Interpreter {
   }
 
   /**
-    * 2. Bottom-up: compute commitments at every leaf according to a = g^z/h^e. At every COR and CAND node, compute
-    * the commitment as the union of the children's commitments. At every COR node, compute the challenge as the XOR of
-    * the children's challenges. At every CAND node, verify that the children's challenges are all equal. (Note that
-    * there is an opportunity for small savings here, because we don't need to send all the challenges for a CAND --
-    * but let's save that optimization for later.)
+    * Verifier Step 4: For every leaf node, compute the commitment a from the challenge e and response $z$,
+    * per the verifier algorithm of the leaf's Sigma-protocol.
+    * If the verifier algorithm of the Sigma-protocol for any of the leaves rejects, then reject the entire proof.
     */
   val computeCommitments: Strategy = everywherebu(rule[UncheckedSigmaTree] {
-    case c: UncheckedConjecture => c
+    case c: UncheckedConjecture => c // Do nothing for internal nodes
 
     case sn: UncheckedSchnorr =>
 
