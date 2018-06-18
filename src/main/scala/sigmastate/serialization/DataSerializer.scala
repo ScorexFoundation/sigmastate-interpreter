@@ -77,8 +77,11 @@ object DataSerializer {
       if (len > 0xFFFF)
         sys.error(s"Length of array $arr exceeds ${0xFFFF} limit.")
       w.putUShort(len.toShort)
-      for (x <- arr)
-        DataSerializer.serialize(x, tCol.elemType, w)
+      if (arr.isInstanceOf[Array[Boolean]])
+        w.putBits(arr.asInstanceOf[Array[Boolean]])
+      else
+        arr.foreach(x => DataSerializer.serialize(x, tCol.elemType, w))
+
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
 
@@ -138,11 +141,15 @@ object DataSerializer {
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
 
-  def deserializeArray[T <: SType](len: Int, tpe: T, r: ByteReader): Array[T#WrappedType] = {
-    val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
-    for (i <- 0 until len) {
-      b += deserialize(tpe, r)
+  def deserializeArray[T <: SType](len: Int, tpe: T, r: ByteReader): Array[T#WrappedType] =
+    tpe match {
+      case SBoolean =>
+        r.getBits(len).asInstanceOf[Array[T#WrappedType]]
+      case _ =>
+        val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
+        for (i <- 0 until len) {
+          b += deserialize(tpe, r)
+        }
+        b.result()
     }
-    b.result()
-  }
 }

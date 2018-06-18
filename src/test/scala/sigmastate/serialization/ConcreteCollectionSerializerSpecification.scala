@@ -1,15 +1,15 @@
 package sigmastate.serialization
 
 import sigmastate.Values.{ConcreteCollection, Constant, FalseLeaf, IntConstant, TaggedInt, TrueLeaf}
+import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.ConcreteCollectionCode
-import sigmastate._
 
 import scala.util.Random
 
 class ConcreteCollectionSerializerSpecification extends TableSerializationSpecification {
 
-    private def testCollection[T <: SType](tpe: T) = {
+  private def testCollectionWithConstant[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tag = tpe.classTag[T#WrappedType]
     forAll { x: Array[T#WrappedType] =>
@@ -18,17 +18,25 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
     }
   }
 
-  property("ConcreteCollection: Serializer round trip ") {
-    testCollection(SBoolean)
-    testCollection(SByte)
-    testCollection(SShort)
-    testCollection(SInt)
-    testCollection(SLong)
-    testCollection(SBigInt)
-    testCollection(SGroupElement)
-    testCollection(SUnit)
-    testCollection(SBox)
-    testCollection(SAvlTree)
+  property("ConcreteCollection (boolean constants): Serializer round trip ") {
+    // both BooleanConstant and Constant[SBoolean.type]
+    roundTripTest(ConcreteCollection[SBoolean.type](TrueLeaf,
+      FalseLeaf,
+      Constant[SBoolean.type](true, SBoolean),
+      Constant[SBoolean.type](false, SBoolean)))
+    testCollectionWithConstant(SBoolean)
+  }
+
+  property("ConcreteCollection (Constant): Serializer round trip ") {
+    testCollectionWithConstant(SByte)
+    testCollectionWithConstant(SShort)
+    testCollectionWithConstant(SInt)
+    testCollectionWithConstant(SLong)
+    testCollectionWithConstant(SBigInt)
+    testCollectionWithConstant(SGroupElement)
+    testCollectionWithConstant(SUnit)
+    testCollectionWithConstant(SBox)
+    testCollectionWithConstant(SAvlTree)
   }
 
   property("ConcreteCollection: Serializer round trip with different types seq") {

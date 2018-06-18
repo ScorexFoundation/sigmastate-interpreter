@@ -49,6 +49,8 @@ trait ByteReader {
   def getULong(): Long
 
   def getBytes(size: Int): Array[Byte]
+  // todo scaladoc
+  def getBits(size: Int): Array[Boolean]
   def getOption[T](getValue: => T): Option[T]
   def getType(): SType
   def getValue(): SValue
@@ -122,6 +124,9 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   }
 
   @inline override def getBytes(size: Int): Array[Byte] = buf.getBytes(size)
+
+  @inline override def getBits(size: Int): Array[Boolean] = ???
+
   @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
   @inline override def getType(): SType = TypeSerializer.deserialize(this)
   @inline override def getValue(): SValue = buf.getValue

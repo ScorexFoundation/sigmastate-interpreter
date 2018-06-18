@@ -426,7 +426,12 @@ object Values {
 
   case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
     extends EvaluatedCollection[V] {
-    override val opCode: OpCode = ConcreteCollectionCode
+    override val opCode: OpCode =
+      if (elementType == SBoolean
+        && items.forall(i => i.isInstanceOf[Constant[_]] || i.isInstanceOf[BooleanConstant]))
+        ConcreteCollectionBooleanConstantCode
+      else
+        ConcreteCollectionCode
 
     def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollection + items.map(_.cost(context)).sum
 

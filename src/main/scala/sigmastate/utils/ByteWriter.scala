@@ -54,6 +54,8 @@ trait ByteWriter {
   def putULong(x: Long): ByteWriter
 
   def putBytes(xs: Array[Byte]): ByteWriter
+  // todo scaladoc
+  def putBits(x: Array[Boolean]): ByteWriter
   def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter
   def putType[T <: SType](x: T): ByteWriter
   def putValue[T <: SType](x: Value[T]): ByteWriter
@@ -160,6 +162,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   }
 
   @inline override def putBytes(xs: Array[Byte]): ByteWriter = { b.append(xs); this }
+  @inline override def putBits(x: Array[Boolean]): ByteWriter = ???
   @inline override def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
   @inline override def putType[T <: SType](x: T): ByteWriter = { TypeSerializer.serialize(x, this); this }
   @inline override def putValue[T <: SType](x: Value[T]): ByteWriter = { b.appendValue(x); this }
