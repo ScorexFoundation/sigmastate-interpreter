@@ -54,8 +54,13 @@ trait ByteWriter {
   def putULong(x: Long): ByteWriter
 
   def putBytes(xs: Array[Byte]): ByteWriter
-  // todo scaladoc
-  def putBits(x: Array[Boolean]): ByteWriter
+
+  /**
+    * Encode an array of boolean values as a bit array
+    *
+    * @param xs array of boolean values
+    */
+  def putBits(xs: Array[Boolean]): ByteWriter
   def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter
   def putType[T <: SType](x: T): ByteWriter
   def putValue[T <: SType](x: Value[T]): ByteWriter
@@ -162,7 +167,18 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   }
 
   @inline override def putBytes(xs: Array[Byte]): ByteWriter = { b.append(xs); this }
-  @inline override def putBits(x: Array[Boolean]): ByteWriter = ???
+
+  @inline override def putBits(xs: Array[Boolean]): ByteWriter = {
+    if (xs.isEmpty) return this
+    val bitSet = new BitSet(xs.length)
+    xs.zipWithIndex.foreach{ case (bool, i) => bitSet.set(i, bool)}
+    // pad the byte array to fix the "no bit was set" behaviour
+    // see https://stackoverflow.com/questions/11209600/how-do-i-convert-a-bitset-initialized-with-false-in-a-byte-containing-0-in-java
+    val bytes = Arrays.copyOf(bitSet.toByteArray, (xs.length + 7) / 8)
+    b.append(bytes)
+    this
+  }
+
   @inline override def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
   @inline override def putType[T <: SType](x: T): ByteWriter = { TypeSerializer.serialize(x, this); this }
   @inline override def putValue[T <: SType](x: Value[T]): ByteWriter = { b.appendValue(x); this }

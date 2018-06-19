@@ -13,7 +13,7 @@ object ConcreteCollectionBooleanConstantSerializer
   override def parseBody(bytes: Array[Byte], pos: Position): (ConcreteCollection[SBoolean.type], Position) = {
     val r = Serializer.startReader(bytes, pos)
     val size = r.getUShort()
-    val values = ConcreteCollection(r.getBits(size).map(v => BooleanConstant.fromBoolean(v)), SBoolean)
+    val values = ConcreteCollection(r.getBits(size).map(v => Constant[SBoolean.type](v, SBoolean)), SBoolean)
     (values, r.consumed)
   }
 
@@ -22,9 +22,13 @@ object ConcreteCollectionBooleanConstantSerializer
     require(ccSize <= Short.MaxValue, s"max collection size is Short.MaxValue = ${Short.MaxValue}")
     val size = ccSize.toShort
     val w = Serializer.startWriter()
-        .putUShort(size)
+      .putUShort(size)
       // todo what's the difference between BooleanConstant and Constant[SBoolean.type]? Both might be in ConcreteCollection.
-        .putBits(cc.items.map(_.asInstanceOf[BooleanConstant].value).toArray)
+      .putBits(
+      cc.items.map {
+        case v: Constant[SBoolean.type] => v.value
+        case v: BooleanConstant => v.value
+      }.toArray)
     w.toBytes
   }
 }

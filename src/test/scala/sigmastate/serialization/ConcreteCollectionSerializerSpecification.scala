@@ -3,7 +3,6 @@ package sigmastate.serialization
 import sigmastate.Values.{ConcreteCollection, Constant, FalseLeaf, IntConstant, TaggedInt, TrueLeaf}
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes.ConcreteCollectionCode
 
 import scala.util.Random
 
@@ -18,13 +17,19 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
     }
   }
 
-  property("ConcreteCollection (boolean constants): Serializer round trip ") {
-    // both BooleanConstant and Constant[SBoolean.type]
+  property("ConcreteCollection (Constant[SBoolean.type]): Serializer round trip ") {
+    testCollectionWithConstant(SBoolean)
+  }
+
+  property("ConcreteCollection (BooleanConstant): Serializer round trip ") {
+    roundTripTest(ConcreteCollection[SBoolean.type](TrueLeaf, FalseLeaf))
+  }
+
+  property("ConcreteCollection (BooleanConstant and Constant): Serializer round trip ") {
     roundTripTest(ConcreteCollection[SBoolean.type](TrueLeaf,
       FalseLeaf,
       Constant[SBoolean.type](true, SBoolean),
       Constant[SBoolean.type](false, SBoolean)))
-    testCollectionWithConstant(SBoolean)
   }
 
   property("ConcreteCollection (Constant): Serializer round trip ") {
@@ -48,7 +53,8 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
 
   override def objects = Table(
     ("object", "bytes"),
-    (ConcreteCollection(TrueLeaf, FalseLeaf, TrueLeaf), Array[Byte](ConcreteCollectionCode, 3, SBoolean.typeCode, 5)) // bits: 00000101
+    (ConcreteCollection(Constant[SBoolean.type](true, SBoolean), Constant[SBoolean.type](false, SBoolean), Constant[SBoolean.type](true, SBoolean)),
+      Array[Byte](OpCodes.ConcreteCollectionBooleanConstantCode, 3, 5)) // bits: 00000101
   )
 
   tableRoundTripTest("Specific objects serializer round trip")
