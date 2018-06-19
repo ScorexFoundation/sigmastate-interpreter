@@ -338,25 +338,14 @@ object Values {
     override def tpe = SGroupElement
   }
 
-  sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type] {
-    override def tpe = SBoolean
-  }
+  type BooleanConstant = Constant[SBoolean.type]
 
   object BooleanConstant {
     def fromBoolean(v: Boolean): BooleanConstant = if (v) TrueLeaf else FalseLeaf
   }
 
-  case object TrueLeaf extends BooleanConstant(true) {
-    override val opCode: OpCode = TrueCode
-
-    override def cost[C <: Context[C]](context: C): Long = Cost.ConstantNode
-  }
-
-  case object FalseLeaf extends BooleanConstant(false) {
-    override val opCode: OpCode = FalseCode
-
-    override def cost[C <: Context[C]](context: C): Long = Cost.ConstantNode
-  }
+  val TrueLeaf = Constant[SBoolean.type](true, SBoolean)
+  val FalseLeaf = Constant[SBoolean.type](false, SBoolean)
 
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
     override def tpe = SBoolean
