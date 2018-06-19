@@ -20,8 +20,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
 
   property("Constant serialization round trip") {
     forAll { x: Byte => roundTripTest(Constant[SByte.type](x, SByte)) }
-    //TODO unify representation of Boolean constants using Constant case class
-//    forAll { x: Boolean => roundtrip(Constant[SBoolean.type](x, SBoolean)) }
+    forAll { x: Boolean => roundTripTest(BooleanConstant.fromBoolean(x)) }
     forAll { x: Long => roundTripTest(Constant[SLong.type](x, SLong)) }
     forAll { x: BigInteger => roundTripTest(Constant[SBigInt.type](x, SBigInt)) }
     forAll { x: EcPointType => roundTripTest(Constant[SGroupElement.type](x, SGroupElement)) }

@@ -416,8 +416,7 @@ object Values {
   case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
     extends EvaluatedCollection[V] {
     override val opCode: OpCode =
-      if (elementType == SBoolean
-        && items.forall(i => i.isInstanceOf[Constant[_]] || i.isInstanceOf[BooleanConstant]))
+      if (elementType == SBoolean && items.forall(_.isInstanceOf[BooleanConstant]))
         ConcreteCollectionBooleanConstantCode
       else
         ConcreteCollectionCode

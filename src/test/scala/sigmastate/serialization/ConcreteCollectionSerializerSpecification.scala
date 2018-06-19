@@ -21,17 +21,6 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
     testCollectionWithConstant(SBoolean)
   }
 
-  property("ConcreteCollection (BooleanConstant): Serializer round trip ") {
-    roundTripTest(ConcreteCollection[SBoolean.type](TrueLeaf, FalseLeaf))
-  }
-
-  property("ConcreteCollection (BooleanConstant and Constant): Serializer round trip ") {
-    roundTripTest(ConcreteCollection[SBoolean.type](TrueLeaf,
-      FalseLeaf,
-      Constant[SBoolean.type](true, SBoolean),
-      Constant[SBoolean.type](false, SBoolean)))
-  }
-
   property("ConcreteCollection (Constant): Serializer round trip ") {
     testCollectionWithConstant(SByte)
     testCollectionWithConstant(SShort)
@@ -53,7 +42,7 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
 
   override def objects = Table(
     ("object", "bytes"),
-    (ConcreteCollection(Constant[SBoolean.type](true, SBoolean), Constant[SBoolean.type](false, SBoolean), Constant[SBoolean.type](true, SBoolean)),
+    (ConcreteCollection(TrueLeaf, FalseLeaf, TrueLeaf),
       Array[Byte](OpCodes.ConcreteCollectionBooleanConstantCode, 3, 5)) // bits: 00000101
   )
 
