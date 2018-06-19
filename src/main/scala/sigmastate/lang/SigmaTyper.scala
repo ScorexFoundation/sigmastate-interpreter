@@ -15,11 +15,7 @@ import sigmastate.utxo._
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * Analyses for typed lambda calculus expressions.  A simple free variable
-  * analysis plus name and type analysis.  There are two versions of the
-  * latter here: one (tipe) that constructs an explicit environment separate
-  * from the AST, and one (tipe2) that represents names by references to the
-  * nodes of their binding lambda expressions.
+  * Type inference and analysis for Sigma expressions.
   */
 class SigmaTyper(val builder: SigmaBuilder) {
   import SigmaTyper._
