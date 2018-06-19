@@ -47,8 +47,8 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
 
   override def objects = Table(
     ("object", "bytes"),
-    caseObjectValue(FalseLeaf),
-    caseObjectValue(TrueLeaf),
+    (FalseLeaf, Array[Byte](1, 0)),
+    (TrueLeaf, Array[Byte](1, 1)),
     caseObjectValue(Height),
     caseObjectValue(Inputs),
     caseObjectValue(Outputs),

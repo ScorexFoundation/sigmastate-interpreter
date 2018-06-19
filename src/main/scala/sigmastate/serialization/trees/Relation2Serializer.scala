@@ -1,6 +1,5 @@
 package sigmastate.serialization.trees
 
-import sigmastate.SType.TypeCode
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.Serializer.Position
@@ -12,8 +11,6 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
  constraints: Seq[Constraints.Constraint2]) extends ValueSerializer[R] {
 
   import ValueSerializer.{deserialize, serialize}
-
-  val typeCode: TypeCode = SBoolean.typeCode
 
   override def parseBody(bytes: Array[Byte], pos: Position) = {
     val (firstArg, consumed) = deserialize(bytes, pos)
