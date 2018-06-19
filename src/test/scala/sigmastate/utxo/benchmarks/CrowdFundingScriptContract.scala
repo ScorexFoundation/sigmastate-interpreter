@@ -39,12 +39,12 @@ class CrowdFundingScriptContract(
     compiledScript
   }
 
-  def prove(ctx: ErgoLikeContext, fakeMessage: Array[Byte]): this.projectProver.ProofT = {
+  def prove(ctx: ErgoLikeContext, fakeMessage: Array[Byte]): Array[Byte] = {
     val proofP = projectProver.prove(compiledProposition, ctx, fakeMessage).get.proof
     proofP
   }
 
-  def verify(proof: projectProver.ProofT,
+  def verify(proof: Array[Byte],
              ctx: ErgoLikeContext,
              fakeMessage: Array[Byte]): Try[Interpreter.VerificationResult] = {
     val res = verifier.verify(compiledProposition, ctx, proof, fakeMessage)
