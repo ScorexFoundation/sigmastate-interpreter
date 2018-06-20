@@ -26,8 +26,7 @@ object ConcreteCollectionBooleanConstantSerializer
       .putBits(
       cc.items.map {
         case v: BooleanConstant => v.value
-        case _ =>
-          ??? // fail with error (this should never happen, see guard in ConcreteCollection.opcode
+        case v => error(s"Expected collection of BooleanConstant values, got: $v")
       }.toArray)
     w.toBytes
   }

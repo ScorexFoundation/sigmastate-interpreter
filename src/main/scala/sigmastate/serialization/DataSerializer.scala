@@ -77,7 +77,7 @@ object DataSerializer {
       if (len > 0xFFFF)
         sys.error(s"Length of array $arr exceeds ${0xFFFF} limit.")
       w.putUShort(len.toShort)
-      if (arr.isInstanceOf[Array[Boolean]])
+      if (tCol.elemType == SBoolean)
         w.putBits(arr.asInstanceOf[Array[Boolean]])
       else
         arr.foreach(x => DataSerializer.serialize(x, tCol.elemType, w))

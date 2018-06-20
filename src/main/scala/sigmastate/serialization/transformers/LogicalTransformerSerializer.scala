@@ -6,6 +6,7 @@ import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.serialization.{Serializer, ValueSerializer}
 import sigmastate.utxo.Transformer
 import sigmastate.{SBoolean, SCollection}
+import sigmastate.lang.Terms._
 
 case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SBoolean.type]
 (code: OpCode,
@@ -16,14 +17,13 @@ case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SB
 
   override def parseBody(bytes: Array[Byte], pos: Position): (Transformer[I, O], Consumed) = {
     val (input, c1) = ValueSerializer.deserialize(bytes, pos)
-    val i = input.asInstanceOf[Value[SCollection[SBoolean.type]]]
+    val i = input.asCollection[SBoolean.type]
     cons(i) -> c1
   }
 
   override def serializeBody(obj: Transformer[I, O]): Array[Byte] = {
     val w = Serializer.startWriter()
-    val coll = obj.input.matchCase(cc => cc, collConst => collConst)
-    w.putBytes(ValueSerializer.serialize(coll))
+    w.putBytes(ValueSerializer.serialize(obj.input))
     w.toBytes
   }
 }
