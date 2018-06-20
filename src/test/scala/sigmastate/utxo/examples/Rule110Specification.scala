@@ -1,6 +1,5 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R3, R4, R5, R6}
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, TaggedByteArray, TrueLeaf, Value}
@@ -18,6 +17,11 @@ import sigmastate.utxo._
 class Rule110Specification extends SigmaTestingCommons {
 
   import BlockchainSimulationSpecification.{Block, ValidationState}
+
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
+  private val reg2 = ErgoBox.nonMandatoryRegisters(1)
+  private val reg3 = ErgoBox.nonMandatoryRegisters(2)
+  private val reg4 = ErgoBox.nonMandatoryRegisters(3)
 
   /**
     * Rule 110 example implementation.
@@ -47,8 +51,8 @@ class Rule110Specification extends SigmaTestingCommons {
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
          }""".stripMargin).asBoolValue
 
-    val input = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(0, 1, 1, 0, 1, 0))))
-    val output = ErgoBox(1, prop, Map(R3 -> ByteArrayConstant(Array(1, 1, 1, 1, 1, 0))))
+    val input = ErgoBox(1, prop, Map(reg1 -> ByteArrayConstant(Array(0, 1, 1, 0, 1, 0))))
+    val output = ErgoBox(1, prop, Map(reg1 -> ByteArrayConstant(Array(1, 1, 1, 1, 1, 0))))
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.id)), IndexedSeq(output))
 
     val ctx = ErgoLikeContext(
@@ -122,10 +126,10 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeInterpreter
 
-    val MidReg = R3
-    val XReg = R4
-    val YReg = R5
-    val ValReg = R6
+    val MidReg = reg1
+    val XReg = reg2
+    val YReg = reg3
+    val ValReg = reg4
     val scriptId = 21.toByte
     val scriptHash = CalcBlake2b256(TaggedByteArray(scriptId))
 
@@ -299,9 +303,9 @@ class Rule110Specification extends SigmaTestingCommons {
   property("rule110 - one bit per output (old version)") {
     val prover = new ErgoLikeProvingInterpreter()
 
-    val RowReg = R3
-    val ColumnReg = R4
-    val ValueReg = R5
+    val RowReg = reg1
+    val ColumnReg = reg2
+    val ValueReg = reg3
     val bitsInString = 31
     val lastBitIndex = bitsInString - 1
 

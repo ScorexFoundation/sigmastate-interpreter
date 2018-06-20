@@ -7,11 +7,13 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
-import org.ergoplatform.ErgoBox.{R3, R4}
 import org.ergoplatform._
 import sigmastate.lang.Terms._
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons {
+
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
+  private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
   property("avl tree - simplest case") {
     val prover = new ErgoLikeProvingInterpreter
@@ -35,7 +37,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val env = Map("key" -> key, "proof" -> proof)
     val prop = compile(env, """isMember(SELF.R3[AvlTree].value, key, proof)""").asBoolValue
 
-    val propTree = IsMember(ExtractRegisterAs(Self, R3),
+    val propTree = IsMember(ExtractRegisterAs(Self, reg1),
       ByteArrayConstant(key),
       ByteArrayConstant(proof))
     prop shouldBe propTree
@@ -45,7 +47,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueLeaf, Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -70,7 +72,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val prop: Value[SBoolean.type] = AND(
       GE(TaggedInt(elementId), LongConstant(120)),
-      IsMember(ExtractRegisterAs(Self, R3), CalcBlake2b256(LongToByteArray(TaggedLong(elementId))), TaggedByteArray(proofId))
+      IsMember(ExtractRegisterAs(Self, reg1), CalcBlake2b256(LongToByteArray(TaggedLong(elementId))), TaggedByteArray(proofId))
     )
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
     val propCompiled = compile(env,
@@ -90,7 +92,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData))))
+      self = ErgoBox(20, TrueLeaf, Map(reg1 -> AvlTreeConstant(treeData))))
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
     val bigLeafProof = avlProver.generateProof()
@@ -140,7 +142,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
         |  isMember(tree, key, proof)
         |}""".stripMargin).asBoolValue
 
-    val propTree = IsMember(ExtractRegisterAs(Self, R3), ExtractRegisterAs(Self, R4), TaggedByteArray(proofId))
+    val propTree = IsMember(ExtractRegisterAs(Self, reg1), ExtractRegisterAs(Self, reg2), TaggedByteArray(proofId))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
@@ -148,7 +150,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData), R4 -> ByteArrayConstant(key)))
+    val s = ErgoBox(20, TrueLeaf, Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -160,6 +162,4 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
     verifier.verify(prop, ctxv, pr, fakeMessage).get._1 shouldBe true
   }
-
-
 }

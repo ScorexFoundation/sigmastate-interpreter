@@ -111,9 +111,10 @@ object ErgoBox {
 
   val maxRegisters = 10
   val startingNonMandatoryIndex = 3
+  val mandatoryRegisters = Vector(R0, R1, R2).ensuring(_.last.number == startingNonMandatoryIndex - 1)
   val nonMandatoryRegisters = Vector(R3, R4, R5, R6, R7, R8, R9).ensuring(_.head.number == startingNonMandatoryIndex)
 
-  val allRegisters = (Vector(R0, R1, R2) ++ nonMandatoryRegisters).ensuring(_.size == maxRegisters)
+  val allRegisters = (mandatoryRegisters ++ nonMandatoryRegisters).ensuring(_.size == maxRegisters)
   val registerByName: Map[String, RegisterIdentifier] = allRegisters.map(r => s"R${r.number}" -> r).toMap
   val registerByIndex: Map[Byte, RegisterIdentifier] = allRegisters.map(r => r.number -> r).toMap
 

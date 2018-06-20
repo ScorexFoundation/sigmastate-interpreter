@@ -9,7 +9,6 @@ import sigmastate.interpreter._
 import sigmastate.lang.SigmaCompiler
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
-import org.ergoplatform.ErgoBox.{R3, R4}
 import org.ergoplatform.{ErgoBox, Height}
 
 import scala.util.Random
@@ -83,7 +82,10 @@ class TestingInterpreterSpecification extends PropSpec
     compiler.compile(env, code)
   }
 
-  def testeval(code: String) = {
+  def testEval(code: String) = {
+    val reg1 = ErgoBox.nonMandatoryRegisters.head
+    val reg2 = ErgoBox.nonMandatoryRegisters(1)
+
     val dk1 = ProveDlog(secrets(0).publicImage.h)
     val dk2 = ProveDlog(secrets(1).publicImage.h)
     val ctx = TestingContext(99)
@@ -93,8 +95,8 @@ class TestingInterpreterSpecification extends PropSpec
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
       "box1" -> ErgoBox(10, TrueLeaf, Map(
-          R3 -> IntArrayConstant(Array[Int](1, 2, 3)),
-          R4 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
+          reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
+          reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
@@ -102,43 +104,43 @@ class TestingInterpreterSpecification extends PropSpec
   }
 
   property("Evaluate array ops") {
-    testeval("""{
+    testEval("""{
               |  let arr = Array(1, 2) ++ Array(3, 4)
               |  arr.size == 4
               |}""".stripMargin)
-    testeval("""{
+    testEval("""{
               |  let arr = Array(1, 2, 3)
               |  arr.slice(1, 3) == Array(2, 3)
               |}""".stripMargin)
-    testeval("""{
+    testEval("""{
               |  let arr = bytes1 ++ bytes2
               |  arr.size == 6
               |}""".stripMargin)
-    testeval("""{
+    testEval("""{
               |  let arr = bytes1 ++ Array[Byte]()
               |  arr.size == 3
               |}""".stripMargin)
-    testeval("""{
+    testEval("""{
               |  let arr = Array[Byte]() ++ bytes1
               |  arr.size == 3
               |}""".stripMargin)
-    testeval("""{
+    testEval("""{
               |  let arr = box1.R3[Array[Int]].value
               |  arr.size == 3
               |}""".stripMargin)
-    testeval("""{
+    testEval("""{
               |  let arr = box1.R4[Array[Boolean]].value
               |  anyOf(arr)
               |}""".stripMargin)
-    testeval("""{
+    testEval("""{
               |  let arr = box1.R4[Array[Boolean]].value
               |  allOf(arr) == false
               |}""".stripMargin)
-    testeval("""{
+    testEval("""{
               |  let arr = Array(1, 2, 3)
               |  arr.map(fun (i: Int) = i + 1) == Array(2, 3, 4)
               |}""".stripMargin)
-    testeval("""{
+    testEval("""{
               |  let arr = Array(1, 2, 3)
               |  arr.where(fun (i: Int) = i < 3) == Array(1, 2)
               |}""".stripMargin)
@@ -152,19 +154,19 @@ class TestingInterpreterSpecification extends PropSpec
 //  }
 
   property("Evaluate arithmetic ops") {
-    testeval("1 + 2 == 3")
-    testeval("5 - 1 == 4")
-    testeval("5 * 2 == 10")
-    testeval("5 / 2 == 2")
-    testeval("5 % 2 == 1")
+    testEval("1 + 2 == 3")
+    testEval("5 - 1 == 4")
+    testEval("5 * 2 == 10")
+    testEval("5 / 2 == 2")
+    testEval("5 % 2 == 1")
   }
 
   property("Array indexing (out of bounds with const default value)") {
-    testeval("Array(1, 2).getOrElse(3, 0) == 0")
+    testEval("Array(1, 2).getOrElse(3, 0) == 0")
   }
 
   property("Array indexing (out of bounds with evaluated default value)") {
-    testeval("Array(1, 1).getOrElse(3, 1 + 1) == 2")
+    testEval("Array(1, 1).getOrElse(3, 1 + 1) == 2")
   }
 
   property("Evaluation example #1") {

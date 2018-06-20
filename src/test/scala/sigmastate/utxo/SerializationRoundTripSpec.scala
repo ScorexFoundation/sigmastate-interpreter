@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoBoxCandidate, ErgoLikeTransaction}
 import org.ergoplatform._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen

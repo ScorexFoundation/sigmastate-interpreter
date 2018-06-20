@@ -1,6 +1,5 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.utils.ScryptoLogging
 import sigmastate.Values.{IntConstant, LongConstant}
@@ -17,6 +16,8 @@ import sigmastate.{SLong, _}
   * that controls emission rules
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging {
+
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   private val coinsInOneErgo: Long = 100000000
   private val blocksPerHour: Int = 30
@@ -52,7 +53,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
 
 
   property("emission specification") {
-    val register = R3
+    val register = reg1
     val prover = new ErgoLikeProvingInterpreter()
 
     val out = ByIndex(Outputs, IntConstant(0))
