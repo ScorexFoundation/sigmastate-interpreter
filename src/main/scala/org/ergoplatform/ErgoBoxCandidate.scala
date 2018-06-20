@@ -2,7 +2,6 @@ package org.ergoplatform
 
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox._
-import scorex.crypto.hash.Digest32
 import sigmastate.{SBoolean, SType}
 import sigmastate.Values.{ByteArrayConstant, Value, EvaluatedValue, LongConstant}
 import sigmastate.serialization.Serializer.{Position, Consumed}
