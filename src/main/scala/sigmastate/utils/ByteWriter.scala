@@ -171,7 +171,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def putBits(xs: Array[Boolean]): ByteWriter = {
     if (xs.isEmpty) return this
     val bitSet = new BitSet(xs.length)
-    xs.zipWithIndex.foreach{ case (bool, i) => bitSet.set(i, bool)}
+    xs.zipWithIndex.foreach { case (bool, i) => bitSet.set(i, bool)}
     // pad the byte array to fix the "no bit was set" behaviour
     // see https://stackoverflow.com/questions/11209600/how-do-i-convert-a-bitset-initialized-with-false-in-a-byte-containing-0-in-java
     val bytes = Arrays.copyOf(bitSet.toByteArray, (xs.length + 7) / 8)

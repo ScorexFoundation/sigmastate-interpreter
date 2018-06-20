@@ -134,9 +134,13 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   @inline override def getBits(size: Int): Array[Boolean] = {
     if (size == 0) return Array[Boolean]()
     val bitSet = BitSet.valueOf(buf.getBytes((size + 7) / 8))
-    (0 until size)
-      .map(i => bitSet.get(i))
-      .toArray
+    val boolArray = new Array[Boolean](size)
+    var i = 0
+    while (i < size) {
+      boolArray(i) = bitSet.get(i)
+      i += 1
+    }
+    boolArray
   }
 
   @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
