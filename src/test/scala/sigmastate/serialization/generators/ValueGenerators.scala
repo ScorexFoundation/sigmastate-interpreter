@@ -103,7 +103,7 @@ trait ValueGenerators extends TypeGenerators {
     b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
     tId <- Gen.listOfN(32, arbByte.arbitrary)
     boxId <- arbShort.arbitrary
-    regNum <- Gen.chooseNum[Byte](0, 7)
+    regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
   } yield ergoplatform.ErgoBox(l, b, ar.asScala.toMap, tId.toArray, boxId)
 
@@ -111,7 +111,7 @@ trait ValueGenerators extends TypeGenerators {
     l <- arbLong.arbitrary
     p <- proveDlogGen
     b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
-    regNum <- Gen.chooseNum[Byte](0, 7)
+    regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
   } yield new ErgoBoxCandidate(l, b, ar.asScala.toMap)
 
