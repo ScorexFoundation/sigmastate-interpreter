@@ -234,28 +234,11 @@ trait Interpreter {
     case LE(BigIntConstant(l), BigIntConstant(r)) =>
       BooleanConstant.fromBoolean(l.compareTo(r) <= 0)
 
-    /*
-        case IsMember(tree: AvlTreeConstant, ByteArrayConstant(key), ByteArrayConstant(proof)) =>
-          val bv = tree.createVerifier(SerializedAdProof @@ proof)
-          val res = bv.performOneOperation(Lookup(ADKey @@ key))
-          BooleanConstant.fromBoolean(res.isSuccess  && res.get.isDefined)
-    */
 
-    //TODO: simplify logic below
-    case i: IsMember
-      if i.tree.evaluated && i.key.isEvaluated && i.proof.isEvaluated =>
-
-      val keyBytes = i.key match {
-        case constant: Constant[SCollection[SByte.type]] => constant.value
-        case _ => i.key.items.map(_.asInstanceOf[EvaluatedValue[SByte.type]]).map(_.value.asInstanceOf[Byte]).toArray
-      }
-
-      val proofBytes = i.proof match {
-        case constant: Constant[SCollection[SByte.type]] => constant.value
-        case _ => i.proof.items.map(_.asInstanceOf[EvaluatedValue[SByte.type]]).map(_.value.asInstanceOf[Byte]).toArray
-      }
-
-      val bv = i.tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
+    case IsMember(tree: EvaluatedValue[AvlTreeData], key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
+      val keyBytes = key.matchCase(cc => cc.value, c => c.value)
+      val proofBytes = proof.matchCase(cc => cc.value, c => c.value)
+      val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
       val res = bv.performOneOperation(Lookup(ADKey @@ keyBytes))
       BooleanConstant.fromBoolean(res.isSuccess && res.get.isDefined)
 
