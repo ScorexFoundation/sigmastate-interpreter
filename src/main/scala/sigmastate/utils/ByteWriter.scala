@@ -14,6 +14,14 @@ trait ByteWriter {
   def putShort(x: Short): ByteWriter
 
   /**
+    * Encode Short that are positive
+    *
+    * Use [[putShort]] to encode values that might be negative.
+    * @param x Short
+    */
+  def putUShort(x: Short): ByteWriter
+
+  /**
     * Encode signed Int.
     * Use [[putUInt]] to encode values that are positive.
     *
@@ -56,6 +64,20 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def put(x: Byte): ByteWriter = { b.append(x); this }
   @inline override def putBoolean(x: Boolean): ByteWriter = { b.append(x); this }
   @inline override def putShort(x: Short): ByteWriter = { b.append(x); this }
+
+  /**
+    * Encode signed Short value using VLQ.
+    * Both negative and positive values are supported, but only positive values are encoded
+    * efficiently, negative values are taking a toll and use three bytes. Use [[putShort]]
+    * to encode negative and positive values.
+    *
+    * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
+    * @note Don't use it for negative values, the resulting varint is always three
+    *       bytes long – it is, effectively, treated like a very large unsigned short.
+    * @param x prefer unsigned Short (signed value will produce a significant overhead,
+    *          see note above)
+    */
+  @inline override def putUShort(x: Short): ByteWriter = putUInt(x.toInt)
 
   /**
     * Encode signed Int using VLQ with ZigZag.
