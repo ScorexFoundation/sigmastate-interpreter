@@ -12,32 +12,33 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
  constructor: (Value[S1], Value[S2]) => R,
  constraints: Seq[Constraints.Constraint2]) extends ValueSerializer[R] {
 
-  import ValueSerializer.{deserialize, serialize}
-
   override def parseBody(bytes: Array[Byte], pos: Position): (R, Position) = {
+    val r = Serializer.startReader(bytes, pos)
     if (bytes(pos) == ConcreteCollectionBooleanConstantCode) {
-      val r = Serializer.startReader(bytes, pos)
       val _ = r.getByte() // skip collection op code
       val booleans = r.getBits(2)
       val firstArg = BooleanConstant.fromBoolean(booleans(0)).asValue[S1]
       val secondArg = BooleanConstant.fromBoolean(booleans(1)).asValue[S2]
       (constructor(firstArg, secondArg), r.consumed)
     } else {
-      val (firstArg, consumed) = deserialize(bytes, pos)
-      val (secondArg, consumed2) = deserialize(bytes, pos + consumed)
+      val firstArg = r.getValue().asValue[S1]
+      val secondArg = r.getValue().asValue[S2]
       assert(constraints.forall(c => c(firstArg.tpe.typeCode, secondArg.tpe.typeCode)))
-      (constructor(firstArg.asInstanceOf[Value[S1]], secondArg.asInstanceOf[Value[S2]]),
-        consumed + consumed2)
+      (constructor(firstArg, secondArg), r.consumed)
     }
   }
 
-  override def serializeBody(rel: R): Array[Byte] = (rel.left, rel.right) match {
-    case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
-      val w = Serializer.startWriter()
-        .put(ConcreteCollectionBooleanConstantCode)
-        .putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
-      w.toBytes
-    case _ => serialize(rel.left) ++ serialize(rel.right)
+  override def serializeBody(rel: R): Array[Byte] = {
+    val w = Serializer.startWriter()
+    (rel.left, rel.right) match {
+      case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
+        w.put(ConcreteCollectionBooleanConstantCode)
+        w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
+      case _ =>
+        w.putValue(rel.left)
+        w.putValue(rel.right)
+    }
+    w.toBytes
   }
 
 }
