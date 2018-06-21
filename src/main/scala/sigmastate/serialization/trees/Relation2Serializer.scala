@@ -29,6 +29,7 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
   }
 
   override def serializeBody(rel: R): Array[Byte] = {
+    assert(constraints.forall(c => c(rel.left.tpe.typeCode, rel.right.tpe.typeCode)), s"constraints failed for $rel")
     val w = Serializer.startWriter()
     (rel.left, rel.right) match {
       case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
