@@ -137,8 +137,8 @@ object Values {
       case _ => None
     }
 
-    def zero = IntConstant(0)
-    def one = IntConstant(1)
+    def Zero = IntConstant(0)
+    def One = IntConstant(1)
   }
   object LongConstant {
     def apply(value: Long): Constant[SLong.type]  = Constant[SLong.type](value, SLong)
