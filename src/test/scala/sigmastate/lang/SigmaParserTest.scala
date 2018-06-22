@@ -17,13 +17,13 @@ import sigmastate.utxo.{SizeOf, Exists}
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
   def parse(x: String): SValue = {
-    try {
-      val res = SigmaParser(x).get.value
-      res
-    } catch {
-      case e: Exception =>
-        throw e
-    }
+    val res = SigmaParser(x).get.value
+    res
+  }
+
+  def parseType(x: String): SType = {
+    val res = SigmaParser.parseType(x).get.value
+    res
   }
 
   def fail(x: String, index: Int): Unit = {
@@ -87,13 +87,17 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
           Plus(IntIdent("x3"), IntIdent("x4"))))
   }
 
-  property("tuple constructor") {
+  property("tuple operations") {
     parse("()") shouldBe UnitConstant
     parse("(1)") shouldBe IntConstant(1)
     parse("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
     parse("(1, X + 1)") shouldBe Tuple(IntConstant(1), Plus(IntIdent("X"), 1))
     parse("(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
     parse("(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
+
+    parse("(1, 2L)._1") shouldBe Select(Tuple(IntConstant(1), LongConstant(2)), "_1")
+    parse("(1, 2L)._2") shouldBe Select(Tuple(IntConstant(1), LongConstant(2)), "_2")
+    parse("(1, 2L, 3)._3") shouldBe Select(Tuple(IntConstant(1), LongConstant(2), IntConstant(3)), "_3")
   }
 
   property("let constructs") {
@@ -339,6 +343,15 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt))
     parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
     parse("Array[Int]()") shouldBe Apply(ApplyTypes(Ident("Array"), Seq(SInt)), IndexedSeq.empty)
+  }
+
+  property("type tests") {
+    parseType("Int") shouldBe SInt
+    parseType("(Int, Long)") shouldBe STuple(SInt, SLong)
+    parseType("Array[(Int, Long)]") shouldBe SCollection(STuple(SInt, SLong))
+    parseType("Array[(Array[Byte], Long)]") shouldBe SCollection(STuple(SCollection(SByte), SLong))
+    parseType("Array[(Array[Byte], Array[Long])]") shouldBe SCollection(STuple(SCollection(SByte), SCollection(SLong)))
+    parseType("Array[(Array[Byte], (Array[Long], Long))]") shouldBe SCollection(STuple(SCollection(SByte), STuple(SCollection(SLong), SLong)))
   }
 
   property("negative tests") {

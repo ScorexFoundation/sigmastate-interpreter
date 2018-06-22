@@ -6,6 +6,7 @@ import sigmastate._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
+import sigmastate.lang.Terms.Select
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests {
 
@@ -109,6 +110,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "(1, x + 1)") shouldBe STuple(SInt, SInt)
     typecheck(env, "(1, 2, 3)") shouldBe STuple(SInt, SInt, SInt)
     typecheck(env, "(1, 2 + 3, 4)") shouldBe STuple(SInt, SInt, SInt)
+
+    typecheck(env, "(1, 2L)._1") shouldBe SInt
+    typecheck(env, "(1, 2L)._2") shouldBe SLong
+    typecheck(env, "(1, 2L, 3)._3") shouldBe SInt
   }
 
   property("types") {

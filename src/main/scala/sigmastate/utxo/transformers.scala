@@ -243,6 +243,28 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
     input.cost(context) + Cost.ByIndexDeclaration + default.map(_.cost(context)).getOrElse(0L)
 }
 
+//case class TupleField(input: Value[STuple],
+//                               index: Value[SInt.type],
+//                               default: Option[SValue] = None)
+//  extends Transformer[STuple, SType] with NotReadyValue[SType] {
+//  override val opCode: OpCode = OpCodes.ByIndexCode
+//  override val tpe = input.tpe.elemType
+//  override def transformationReady: Boolean =
+//    input.isEvaluated && index.evaluated && default.forall(_.evaluated)
+//
+//  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[V]]): Value[V] = {
+//    val i = index.asInstanceOf[EvaluatedValue[SInt.type]].value
+//    input.matchCase(
+//      cc =>
+//        cc.items.lift(i).orElse(default).get,
+//      const =>
+//        Value.apply(tpe)(const.value.lift(i).orElse(default).get.asInstanceOf[tpe.WrappedType])
+//    )
+//  }
+//  override def cost[C <: Context[C]](context: C): Long =
+//    input.cost(context) + Cost.ByIndexDeclaration + default.map(_.cost(context)).getOrElse(0L)
+//}
+
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
 

@@ -95,7 +95,7 @@ object Extensions {
 
     def cast[B:ClassTag](implicit cbf: CanBuildFrom[Source[A], B, Source[B]]): Source[B] = {
       for (x <- xs) {
-        assert(x match { case _: B => true case _ => false})
+        assert(x match { case _: B => true case _ => false}, s"Value $x doesn't conform to type ${reflect.classTag[B]}")
       }
       xs.asInstanceOf[Source[B]]
     }

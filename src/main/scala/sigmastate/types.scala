@@ -344,8 +344,13 @@ case object SAny extends SPrimType {
   override val typeCode: Byte = 97: Byte
 }
 
-case class SCollection[T <: SType](elemType: T) extends SProduct {
+trait SCollectionType[T <: SType] extends SProduct {
+  def elemType: T
   override type WrappedType = Array[T#WrappedType]
+  def ancestors = Nil
+}
+
+case class SCollection[T <: SType](elemType: T) extends SCollectionType[T] {
   override val typeCode: TypeCode = SCollection.CollectionTypeCode
 
   override def mkConstant(v: Array[T#WrappedType]): Value[this.type] =
@@ -354,7 +359,6 @@ case class SCollection[T <: SType](elemType: T) extends SProduct {
   override def dataCost(v: SType#WrappedType): Long =
     ((v.asInstanceOf[Array[T#WrappedType]].length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
-  def ancestors = Nil
   override def methods = SCollection.methods
   override def toString = s"Array[$elemType]"
 }
@@ -434,12 +438,11 @@ object SOption {
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
 
-case class STuple(items: IndexedSeq[SType]) extends SProduct {
+case class STuple(items: IndexedSeq[SType]) extends SCollectionType[SAny.type] {
   import STuple._
-  override type WrappedType = Seq[Any]
   override val typeCode = STuple.TupleTypeCode
 
-  def ancestors = Nil
+  override def elemType: SAny.type = SAny
 
   override val methods: Seq[SMethod] = {
     val b = new mutable.ArrayBuffer[SMethod](items.size)
@@ -448,7 +451,8 @@ case class STuple(items: IndexedSeq[SType]) extends SProduct {
       b += SMethod(componentNames(i), items(i))
       i += 1
     }
-    b.result
+    val tupleMethods = b.result
+    SCollection.methods ++ tupleMethods
   }
   override def toString = s"(${items.mkString(",")})"
 }
