@@ -1,9 +1,12 @@
 package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
+import org.scalacheck.Gen
 import sigmastate.Values.LongConstant
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+
+import scala.util.Random
 
 class ComplexSigSpecification extends SigmaTestingCommons {
 
@@ -387,5 +390,60 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx2, prB2, fakeMessage).get._1 shouldBe true
     val prC2 = proverC.prove(prop, ctx2, fakeMessage).get
     verifier.verify(prop, ctx2, prC2, fakeMessage).get._1 shouldBe true
+  }
+
+  private def proverGen: Gen[ErgoLikeProvingInterpreter] = for {
+    _ <- Gen.const(1)
+  } yield new ErgoLikeProvingInterpreter()
+
+  private def proversGen(min: Int, max: Int): Gen[Seq[ErgoLikeProvingInterpreter]] =
+    Gen.listOfN(Gen.chooseNum(min, max).sample.get, proverGen)
+
+  property("complex sig scheme - k-out-of-n threshold") {
+
+    // disable scalacheck shrinking otherwise other constraints start to fail
+    import org.scalacheck.Shrink
+    implicit val noShrink: Shrink[Seq[ErgoLikeProvingInterpreter]] = Shrink.shrinkAny
+
+    forAll(proversGen(3, 6), minSuccessful(10 /*test is heavy*/)) { allProvers =>
+      val verifier = new ErgoLikeInterpreter
+      val k = Gen.chooseNum(2, allProvers.length - 1).sample.get
+      val kNumKeysCombinations = allProvers.map(_.dlogSecrets.head).toSet
+        .subsets
+        .map(_.toSeq)
+        .toSeq
+        .filter(_.length == k)
+
+      val prop = OR(
+        kNumKeysCombinations.map(combs => AND(combs.map(_.publicImage)))
+      )
+
+      val ctx = ErgoLikeContext(
+        currentHeight = 1,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        boxesToSpend = IndexedSeq(),
+        spendingTransaction = null,
+        self = fakeSelf)
+
+      // any prover alone (no added secrets) should fail
+      allProvers.foreach(_.prove(prop, ctx, fakeMessage).isFailure shouldBe true)
+
+      for (_ <- 1 to 3) {
+        val shuffledProvers = Random.shuffle(allProvers)
+        val prover = shuffledProvers.head
+        val neededExtraSecrets = k - 1 // prover already has one
+        for (i <- 1 until neededExtraSecrets) {
+          // provers with less than k secrets should fail
+          prover.withSecrets(shuffledProvers.takeRight(i).map(_.dlogSecrets.head))
+            .prove(prop, ctx, fakeMessage).isFailure shouldBe true
+        }
+        // prover with exactly k secrets should succeed
+        val proverWithKSecrets = prover.withSecrets(
+          shuffledProvers.takeRight(neededExtraSecrets).map(_.dlogSecrets.head))
+        val prTry = proverWithKSecrets.prove(prop, ctx, fakeMessage)
+        prTry.isSuccess shouldBe true
+        verifier.verify(prop, ctx, prTry.get, fakeMessage).get._1 shouldBe true
+      }
+    }
   }
 }
