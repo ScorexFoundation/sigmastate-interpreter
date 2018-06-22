@@ -118,8 +118,16 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     *  simulated children of COR. If CAND, then the challenge for every real child of CAND is equal to the the challenge of
     *  the CAND. Note that simulated CAND and COR have only simulated descendants, so no need to recurse down from them."
     */
+  // todo: if we are concerned about timing attacks against the proover, we should make sure that this code
+  // todo: takes the same amount of time regardless of which nodes are real and which nodes are simulated
+  // todo: In particular, we should avoid the use of exists and forall, because they short-circuit the evaluation
+  // todo: once the right value is (or is not) found. We should also make all loops look similar, the same
+  // todo: amount of copying is done regardless of what's real or simulated,
+  // todo: real vs. simulated computations take the same time, etc.
   protected def prove(unprovenTree: UnprovenTree, message: Array[Byte]): ProofT = {
     val step1 = markSimulated(unprovenTree).get.asInstanceOf[UnprovenTree]
+    // Prover step 2: If the root of the tree is marked "simulated" then the prover does not have enough witnesses
+    // to perform the proof. Abort.
     assert(step1.real, s"Tree root should be real but was $step1")
 
     val step2 = polishSimulated(step1).get.asInstanceOf[UnprovenTree]
@@ -152,29 +160,29 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   }
 
   /**
-    * 1. bottom-up: mark every node real or simulated, according to the following rule.
-    * DLogNode: if you know the DL, then real, else simulated.
-    * DHTuple: if you know the DHT, then real, else simulated.
-    * COR: if at least one child real, then real; else simulated.
-    * CAND: if at least one child simulated, then simulated; else real.
-    *
-    * Note that all descendants of a simulated node will be later simulated, even
-    * if they were marked as real. This is what the next step will do.
+    * Prover Step 1: This step will mark as "real" every node for which the prover can produce a real proof.
+    * This step may mark as "real" more nodes than necessary if the prover has more than the minimal
+    * necessary number of witnesses (for example, more than one child of an OR).
+    * This will be corrected in the next step. In a bottom-up traversal of the tree, do the following for each node:
     */
   val markSimulated: Strategy = everywherebu(rule[UnprovenTree] {
     case and: CAndUnproven =>
+      // If the node is AND, mark it "real" if all of its children are marked real; else mark it "simulated"
       val simulated = and.children.exists(_.asInstanceOf[UnprovenTree].simulated)
       and.copy(simulated = simulated)
     case or: COrUnproven =>
+      // If the node is OR, mark it "real" if at least one child is marked real; else mark it "simulated"
       val simulated = or.children.forall(_.asInstanceOf[UnprovenTree].simulated)
       or.copy(simulated = simulated)
     case su: UnprovenSchnorr =>
+      // If the node is a leaf, mark it "real'' if the witness for it is available; else mark it "simulated"
       val secretKnown = secrets.exists {
         case in: DLogProverInput => in.publicImage == su.proposition
         case _ => false
       }
       su.copy(simulated = !secretKnown)
     case dhu: UnprovenDiffieHellmanTuple =>
+      // If the node is a leaf, mark it "real" if the witness for it is available; else mark it "simulated"
       val secretKnown = secrets.exists {
         case in: DiffieHellmanTupleProverInput => in.publicImage == dhu.proposition
         case _ => false
@@ -185,17 +193,24 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   })
 
   /**
-    * 2. top-down: mark every child of a simulated node "simulated."
-    * If two or more children of a real COR are real, mark all but one simulated.
+    * Prover step 3: This step will change some "real" nodes to "simulated" to make sure each node has
+    * the right number of simulated children.
+    * In a top-down traversal of the tree, do the following for each node:
     */
   val polishSimulated: Strategy = everywheretd(rule[UnprovenTree] {
     case and: CAndUnproven =>
+      // If the node is marked "simulated", mark all of its children "simulated"
       if (and.simulated) and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
       else and
     case or: COrUnproven =>
+      // If the node is marked "simulated", mark all of its children ``simulated''
       if (or.simulated) {
         or.copy(children = or.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
       } else {
+        // If the node is OR marked "real",  mark all but one of its children "simulated"
+        // (the node is guaranteed by step 1 to have at least one "real" child).
+        // Which particular child is left "real" is not important for security;
+        // the choice can be guided by efficiency or convenience considerations.
         val newChildren = or.children.foldLeft((Seq[UnprovenTree](), false)) { case ((children, realFound), child) =>
           val cut = child.asInstanceOf[UnprovenTree]
           (realFound, cut.real) match {
