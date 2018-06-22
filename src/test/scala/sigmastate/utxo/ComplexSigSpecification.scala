@@ -10,6 +10,13 @@ import scala.util.Random
 
 class ComplexSigSpecification extends SigmaTestingCommons {
 
+  private def proverGen: Gen[ErgoLikeProvingInterpreter] = for {
+    _ <- Gen.const(1)
+  } yield new ErgoLikeProvingInterpreter()
+
+  private def proversGen(min: Int, max: Int): Gen[Seq[ErgoLikeProvingInterpreter]] =
+    Gen.listOfN(Gen.chooseNum(min, max).sample.get, proverGen)
+
   /**
     * Whether A or B, or both are able to sign a transaction
     */
@@ -391,13 +398,6 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prC2 = proverC.prove(prop, ctx2, fakeMessage).get
     verifier.verify(prop, ctx2, prC2, fakeMessage).get._1 shouldBe true
   }
-
-  private def proverGen: Gen[ErgoLikeProvingInterpreter] = for {
-    _ <- Gen.const(1)
-  } yield new ErgoLikeProvingInterpreter()
-
-  private def proversGen(min: Int, max: Int): Gen[Seq[ErgoLikeProvingInterpreter]] =
-    Gen.listOfN(Gen.chooseNum(min, max).sample.get, proverGen)
 
   property("complex sig scheme - k-out-of-n threshold") {
 
