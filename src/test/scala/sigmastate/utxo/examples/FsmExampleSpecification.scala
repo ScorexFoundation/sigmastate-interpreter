@@ -33,8 +33,8 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     *
     * We put the table description into an authenticated data structure (such as the Merkle tree, we're using
     * authenticated AVL+ trees though). We require root digest of the tree to be preserved. We require FSM framework
-    * script to be preserved as well. So to trigger a transition from one state a coin remembers to another one,
-    * a spending transaction should create a coin with preserved root digest, and some (valid) new state, show
+    * script to be preserved as well. So to trigger a transition from one state a box remembers to another one,
+    * a spending transaction should create a box with preserved root digest, and some (valid) new state, show
     * a proof for a corresponding transition description in the tree, and show a proof for transition script (e.g. a
     * signature). Thus the FSM is being revealed on the run, and the states not visited yet are not visible (on chain).
     */
