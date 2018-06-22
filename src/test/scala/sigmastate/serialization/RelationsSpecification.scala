@@ -14,8 +14,12 @@ class RelationsSpecification extends TableSerializationSpecification {
       (LE(LongConstant(2), LongConstant(3)), Array[Byte](LeCode, SLong.typeCode, 4, SLong.typeCode, 6)),
       (GT(LongConstant(6), LongConstant(5)), Array[Byte](GtCode, SLong.typeCode, 12, SLong.typeCode, 10)),
       (GE(LongConstant(6), LongConstant(5)), Array[Byte](GeCode, SLong.typeCode, 12, SLong.typeCode, 10)),
-      (EQ(TrueLeaf, FalseLeaf), Array[Byte](EqCode, TrueCode, FalseCode)),
-      (NEQ(TrueLeaf, FalseLeaf), Array[Byte](NeqCode, TrueCode, FalseCode))
+      (EQ(TrueLeaf, TrueLeaf), Array[Byte](EqCode, ConcreteCollectionBooleanConstantCode, 3)),
+      (NEQ(TrueLeaf, FalseLeaf), Array[Byte](NeqCode, ConcreteCollectionBooleanConstantCode, 1)),
+      (EQ(EQ(LongConstant(1), LongConstant(1)), EQ(LongConstant(1), LongConstant(1))),
+        Array[Byte](EqCode, EqCode, SLong.typeCode, 2, SLong.typeCode, 2, EqCode, SLong.typeCode, 2, SLong.typeCode, 2)),
+      (EQ(LongConstant(1), LongConstant(0)), Array[Byte](EqCode, SLong.typeCode, 2, SLong.typeCode, 0)),
+      (NEQ(LongConstant(1), LongConstant(0)), Array[Byte](NeqCode, SLong.typeCode, 2, SLong.typeCode, 0))
     )
 
   tableRoundTripTest("Relations: serializer round trip")

@@ -62,6 +62,7 @@ object OpCodes extends ValueCodes {
   val SomeValueCode           : OpCode = (LastConstantCode + 22).toByte
   val NoneValueCode           : OpCode = (LastConstantCode + 23).toByte
 //  val AvlTreeConstantCode     : OpCode = (LastConstantCode + 24).toByte
+  val ConcreteCollectionBooleanConstantCode  : OpCode = (LastConstantCode + 25).toByte
 
   // Relation descendants
   val LtCode : OpCode = (LastConstantCode + 31).toByte

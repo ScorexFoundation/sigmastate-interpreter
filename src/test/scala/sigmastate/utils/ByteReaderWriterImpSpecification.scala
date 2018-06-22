@@ -22,10 +22,9 @@ class ByteReaderWriterImpSpecification extends PropSpec
         Arbitrary.arbShort.arbitrary,
         Arbitrary.arbInt.arbitrary,
         Arbitrary.arbLong.arbitrary,
-        arrayGen[Byte]))
+        arrayGen[Byte],
+        arrayGen[Boolean]))
   } yield anyValSeq
-
-  private implicit val arbSeqPrimVal: Arbitrary[Seq[Any]] = Arbitrary(seqPrimValGen)
 
   /**
     * source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java#L133
@@ -64,7 +63,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
 
   private def byteArrayWriter(): ByteArrayWriter = new ByteArrayWriter(new ByteArrayBuilder())
 
-  property("predefined values and serialized data round trip") {
+  property("predefined long values and serialized data round trip") {
     expectedValues.foreach { case (bytes, v) =>
       val writer = byteArrayWriter()
       writer.putULong(v)
@@ -78,7 +77,9 @@ class ByteReaderWriterImpSpecification extends PropSpec
   }
 
   property("round trip serialization/deserialization of arbitrary value list") {
-    forAll { values: Seq[Any] =>
+    // increase threshold to make sure we cover a lot of types combination
+    // and a good diversity withing a values of the each type
+    forAll(seqPrimValGen, minSuccessful(500)) { values: Seq[Any] =>
       val writer = byteArrayWriter()
       for(any <- values) {
         any match {
@@ -95,7 +96,8 @@ class ByteReaderWriterImpSpecification extends PropSpec
             // test all paths
             writer.putLong(v)
             writer.putULong(v)
-          case v: Array[Byte] => writer.putUInt(v.length).putBytes(v)
+          case v: Array[Byte] => writer.putUShort(v.length.toShort).putBytes(v)
+          case v: Array[Boolean] => writer.putUShort(v.length.toShort).putBits(v)
           case _ => fail(s"writer: unsupported value type: ${any.getClass}");
         }
       }
@@ -115,8 +117,11 @@ class ByteReaderWriterImpSpecification extends PropSpec
           reader.getLong() shouldEqual v
           reader.getULong() shouldEqual v
         case v: Array[Byte] =>
-          val size = reader.getUInt().toInt
+          val size = reader.getUShort()
           reader.getBytes(size) shouldEqual v
+        case v: Array[Boolean] =>
+          val size = reader.getUShort()
+          reader.getBits(size) shouldEqual v
         case ref@_ => fail(s"reader: unsupported value type: ${ref.getClass}");
       }
     }
@@ -194,6 +199,24 @@ class ByteReaderWriterImpSpecification extends PropSpec
   property("ZigZag Int round trip") {
     forAll(Gen.chooseNum(Int.MinValue, Int.MaxValue)) { v: Int =>
       decodeZigZagInt(encodeZigZagInt(v)) shouldBe v
+    }
+  }
+
+  property("Array[Boolean] bit encoding format") {
+    val expectations = Seq[(Array[Boolean], Array[Byte])](
+      Array[Boolean]() -> Array[Byte](),
+      Array(false) -> Array(0),
+      Array(true) -> Array(1),
+      Array(false, false, true) -> Array(4), // 00000100
+      Array(true, true, false) -> Array(3), // 00000011
+      Array(true, false, true) -> Array(5), // 00000101
+      (Array.fill(8)(false) :+ true) -> Array(0, 1), // 00000000 00000001
+      (Array.fill(9)(false) :+ true) -> Array(0, 2), // 00000000 00000010
+      (Array.fill(10)(false) :+ true) -> Array(0, 4) // 00000000 00000100
+    )
+    expectations.foreach { case (bools, bytes) =>
+        byteArrayWriter().putBits(bools).toBytes shouldEqual bytes
+        byteBufReader(bytes).getBits(bools.length) shouldEqual bools
     }
   }
 }
