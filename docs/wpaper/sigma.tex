@@ -230,7 +230,7 @@ For each node in the tree, the prover will maintain a flag indicating whether it
 The prover first has to decide which nodes will have real proofs (for which witnesses are required) and which will be simulated. For example, in an $\ornode$ proof, only one of the children will be real. The prover will do so based on witnesses that are available, in three steps:
 
 \begin{enumerate}
-    \item This step will mark as ``real'' every node for which the prover can produce a real proof. This step may mark as ``real'' more nodes than necessary if the prover has more than the minimal necessary number of witnesses (for example, more than one child of an $\ornode$).   In a bottom-up traversal of the tree, do the following for each node:
+    \item \label{step:initial-simulated} This step will mark as ``real'' every node for which the prover can produce a real proof. This step may mark as ``real'' more nodes than necessary if the prover has more than the minimal necessary number of witnesses (for example, more than one child of an $\ornode$).  This will be corrected in the next step. In a bottom-up traversal of the tree, do the following for each node:
         \begin{itemize}
             \item If the node is a leaf, mark it ``real'' if the witness for it is available; else mark it ``simulated''
             \item If the node is $\ornode$, mark it ``real'' if at least one child is marked real; else mark it ``simulated''
@@ -245,7 +245,7 @@ The prover first has to decide which nodes will have real proofs (for which witn
         \begin{itemize}
             \item
             If the node is $\ornode$ marked ``real'',  mark all but one of its children ``simulated''
-            (the node is guaranteed, by the previous step, to have at least one ``real'' child).
+            (the node is guaranteed by step~\ref{step:initial-simulated} to have at least one ``real'' child).
             Which particular child is left ``real'' is not important for security; the choice can be guided by efficiency or convenience considerations.
             \item
             If  the node is $\tnode(k)$ marked ``real'', mark all but $k$ of its children ``simulated''
@@ -268,7 +268,19 @@ Now the prover will compute protocol values for every node, as follows:
         \begin{itemize}
             \item If the node is $\andnode$,  then all of its children get $e_0$ as the challenge
             \item If the node is $\ornode$, then each of its children except one gets a fresh uniformly random challenge in $\{0,1\}^t$. The remaining child gets a challenge computed as an XOR of the challenges of all the other children and $e_0$.
-            \item If the node is $\tnode(k)$, assume it has $n$ children numbered from $1$ to $n$. Pick  $n-k$ fresh uniformly random values $q_1, \dots, q_{n-k}$ from $\{0,1\}^t$ and let $q_0=e_0$. Viewing $1, 2, \dots, n$ and $q_0, \dots, q_{n-k}$ as elements of $\GF(2^t)$, evaluate the polynomial $Q(x) = \sum {q_i x^i}$ over $\GF(2^t)$ at points $1, 2, \dots, n$ to get challenges for child $1, 2, \dots, n$, respectively.
+            \item If the node is $\tnode(k)$, assume it has $n$ children numbered from $1$ to $n$. There are two possible algorithms. The first algorithm is faster than the second. However, it is also faster than the algorithm for a ``real'' $\tnode$ node; therefore, if a timing attack on the prover is a possibility, then it should not be used, because the timing attack may be able to distinguish a ``real'' $\tnode$ node from a ``simulated'' one.
+            \begin{enumerate} 
+            	\item The faster algorithm is as follows. Pick  $n-k$ fresh uniformly random values $q_1, \dots, q_{n-k}$ from $\{0,1\}^t$ and let
+	         $q_0=e_0$. Viewing $1, 2, \dots, n$ and $q_0, \dots, q_{n-k}$ as elements of $\GF(2^t)$, 
+	         evaluate the polynomial $Q(x) = \sum {q_i x^i}$ over $\GF(2^t)$ at points $1, 2, \dots, n$
+	         to get challenges for child $1, 2, \dots, n$, respectively.
+	         \item The algorithm with better resistance to timing attacks is as follows. Pick $n-k$ fresh uniformly random values $e_1, \dots, e_{n-k}$
+	         as challenges for the children number $1, \dots, n-k$.
+	         Let $i_0 = 0$. Viewing $0, 1, 2, \dots, n$ and $e_0, \dots, e_{n-k}$ as elexments of $\GF(2^t)$, find (via polynomial interpolation) the
+	          lowest-degree polynomial $Q(x)=\sum_{i=0}^{n-k} a_i x^i $ over $\GF(2^t)$ that is equal to $e_j$ at $j$ for each $j$ from
+	          $0$ to $n-k$ (this polynomial will have $n-k+1$ coefficients, and the lowest coefficient will be $e_0$). Set the challenge at child
+	          $j$ for $n-k<j\le n$ to equal $Q(j)$.
+ 	   \end{enumerate} 
         \end{itemize}
     \end{itemize}
     
