@@ -305,6 +305,8 @@ object Values {
     }
   }
 
+  val BoolArrayTypeCode = (SCollection.CollectionTypeCode + SBoolean.typeCode).toByte
+
   object BoolArrayConstant {
     def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
     def unapply(node: SValue): Option[Array[Boolean]] = node match {
@@ -341,25 +343,14 @@ object Values {
     override def tpe = SGroupElement
   }
 
-  sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type] {
-    override def tpe = SBoolean
-  }
+  type BooleanConstant = Constant[SBoolean.type]
 
   object BooleanConstant {
     def fromBoolean(v: Boolean): BooleanConstant = if (v) TrueLeaf else FalseLeaf
   }
 
-  case object TrueLeaf extends BooleanConstant(true) {
-    override val opCode: OpCode = TrueCode
-
-    override def cost[C <: Context[C]](context: C): Long = Cost.ConstantNode
-  }
-
-  case object FalseLeaf extends BooleanConstant(false) {
-    override val opCode: OpCode = FalseCode
-
-    override def cost[C <: Context[C]](context: C): Long = Cost.ConstantNode
-  }
+  val TrueLeaf: Constant[SBoolean.type] = Constant[SBoolean.type](true, SBoolean)
+  val FalseLeaf: Constant[SBoolean.type] = Constant[SBoolean.type](false, SBoolean)
 
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
     override def tpe = SBoolean
@@ -427,7 +418,11 @@ object Values {
 
   case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
     extends EvaluatedCollection[V] {
-    override val opCode: OpCode = ConcreteCollectionCode
+    override val opCode: OpCode =
+      if (elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]]))
+        ConcreteCollectionBooleanConstantCode
+      else
+        ConcreteCollectionCode
 
     def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollection + items.map(_.cost(context)).sum
 

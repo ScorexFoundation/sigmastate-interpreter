@@ -14,3 +14,5 @@ class TyperException(message: String, source: Option[SourceContext])
 class SpecializerException(message: String, source: Option[SourceContext])
     extends SigmaException(message, source)
 
+class SerializerException(message: String, source: Option[SourceContext])
+  extends SigmaException(message, source)
