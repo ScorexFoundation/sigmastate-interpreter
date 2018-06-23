@@ -66,7 +66,7 @@ class SigmaSpecializer {
 
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>
-      if (obj.tpe.isCollection)
+      if (obj.tpe.isCollectionLike)
         Some(SizeOf(obj.asValue[SCollection[SType]]))
       else
         error(s"The type of $obj is expected to be Collection to select 'size' property")
@@ -101,6 +101,10 @@ class SigmaSpecializer {
 
     case Select(obj, "value", Some(SLong)) if obj.tpe == SBox =>
       Some(ExtractAmount(obj.asValue[SBox.type]))
+
+    case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
+      val index = fn.substring(1).toByte
+      Some(SelectField(tuple.asTuple, index))
 
     case Apply(Select(col, "slice", _), Seq(from, until)) =>
       Some(Slice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
@@ -137,7 +141,7 @@ class SigmaSpecializer {
       Some(ByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
     case opt: OptionValue[_] =>
-      error(s"Option values are not supported: $opt")
+      error(s"Option constructors are not supported: $opt")
 
     case AND(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[AND]) =>
       Some(AND(

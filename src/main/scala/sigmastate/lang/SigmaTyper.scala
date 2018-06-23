@@ -165,7 +165,8 @@ class SigmaTyper {
           // If it's a tuple then the type of the application depend on the index.
           args match {
             case Seq(Constant(index, _: SNumericType)) =>
-              SelectField(new_f.asTuple, SByte.downcast(index.asInstanceOf[AnyVal]))
+              val fieldIndex = SByte.downcast(index.asInstanceOf[AnyVal]) + 1
+              SelectField(new_f.asTuple, fieldIndex.toByte)
             case Seq(index) =>
               val typedIndex = assignType(env, index)
               typedIndex.tpe match {
@@ -282,8 +283,8 @@ class SigmaTyper {
 
     case ByIndex(col, i, defaultValue) =>
       val c1 = assignType(env, col).asCollection[SType]
-      if (!c1.tpe.isCollection)
-        error(s"Invalid operation ByIndex: expected argument types ($SCollection); actual: (${col.tpe})")
+      if (!c1.tpe.isCollectionLike)
+        error(s"Invalid operation ByIndex: expected Collection argument type; actual: (${col.tpe})")
       defaultValue match {
         case Some(v) if v.tpe.typeCode != c1.tpe.elemType.typeCode =>
             error(s"Invalid operation ByIndex: expected default value type (${c1.tpe.elemType}); actual: (${v.tpe})")
@@ -292,7 +293,7 @@ class SigmaTyper {
 
     case SizeOf(col) =>
       val c1 = assignType(env, col).asCollection[SType]
-      if (!c1.tpe.isCollection)
+      if (!c1.tpe.isCollectionLike)
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})")
       SizeOf(c1)
     

@@ -247,11 +247,11 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
 case class SelectField(input: Value[STuple], fieldIndex: Byte)
   extends Transformer[STuple, SType] with NotReadyValue[SType] {
   override val opCode: OpCode = OpCodes.SelectFieldCode
-  override val tpe = input.tpe.items(fieldIndex)
+  override val tpe = input.tpe.items(fieldIndex - 1)
   override def transformationReady: Boolean = input.isEvaluated
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[STuple]): Value[SType] = {
-    val item = input.value(fieldIndex)
+    val item = input.value(fieldIndex - 1)
     Value.apply(tpe)(item.asInstanceOf[tpe.WrappedType])
   }
   override def cost[C <: Context[C]](context: C): Long =

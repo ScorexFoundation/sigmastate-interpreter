@@ -72,9 +72,23 @@ class SigmaSpecializerTest extends PropSpec
       Plus(Plus(/*Z=*/Plus(/*Y=*/Plus(10, 1), 10), /*Y=*/Plus(10, 1)), 10)
   }
 
+  property("Tuple operations") {
+    spec("(1, 2L)._1") shouldBe SelectField(Tuple(IntConstant(1), LongConstant(2L)), 1)
+    spec("(1, 2L)._2") shouldBe SelectField(Tuple(IntConstant(1), LongConstant(2L)), 2)
+    spec("(1, 2L, 3)._3") shouldBe SelectField(Tuple(IntConstant(1), LongConstant(2L), IntConstant(3)), 3)
+
+    // tuple as collection
+    spec("(1, 2L).size") shouldBe SizeOf(Tuple(IntConstant(1), LongConstant(2L)))
+//    spec(env, "(1, 2L)(0)") shouldBe SInt
+//    spec(env, "(1, 2L)(1)") shouldBe SLong
+//    spec(env, "(1, 2L).getOrElse(2, 3)") shouldBe SAny
+//    spec(env, "(1, 2L).slice(0, 2)") shouldBe SCollection(SAny)
+//    spec(env, "fun (a: Int) = (1, 2L)(a)") shouldBe SFunc(IndexedSeq(SInt), SAny)
+  }
+  
   property("Option constructors") {
-    fail(Map(), "None", "Option values are not supported")
-    fail(Map(), "Some(10)", "Option values are not supported")
+    fail(Map(), "None", "Option constructors are not supported")
+    fail(Map(), "Some(10)", "Option constructors are not supported")
   }
 
   property("generic methods of arrays") {

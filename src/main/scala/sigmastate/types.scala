@@ -74,7 +74,9 @@ object SType {
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   implicit class STypeOps(val tpe: SType) {
+    def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
+    def isTuple: Boolean = tpe.isInstanceOf[STuple]
     def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
       case (NoType, _) => true
       case (t1, t2) if t1 == t2 => true
