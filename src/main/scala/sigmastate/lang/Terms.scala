@@ -68,7 +68,7 @@ object Terms {
     override def evaluated: Boolean = false
     lazy val tpe: SType = func.tpe match {
       case SFunc(_, r, _) => r
-      case tCol: SCollection[_] => tCol.elemType
+      case tCol: SCollectionType[_] => tCol.elemType
       case _ => NoType
     }
   }
@@ -126,6 +126,7 @@ object Terms {
     def asByteArray: Value[SByteArray] = v.asInstanceOf[Value[SByteArray]]
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
     def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]
+    def asTuple: Value[STuple] = v.asInstanceOf[Value[STuple]]
     def asConcreteCollection[T <: SType]: ConcreteCollection[T] = v.asInstanceOf[ConcreteCollection[T]]
     def upcastTo[T <: SNumericType](targetType: T): Value[T] = {
       assert(v.tpe.isInstanceOf[SNumericType],
@@ -137,5 +138,6 @@ object Terms {
       else
         Upcast(tV, targetType)
     }
+    def isEvaluated: Boolean = v.isInstanceOf[EvaluatedValue[_]]
   }
 }

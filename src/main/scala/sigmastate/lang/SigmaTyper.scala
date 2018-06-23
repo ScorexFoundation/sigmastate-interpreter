@@ -145,7 +145,7 @@ class SigmaTyper {
           if (actualTypes != argTypes)
             error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
           Apply(new_f, newArgs)
-        case SCollection(elemType) =>
+        case _: SCollectionType[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
             case Seq(Constant(index, _: SNumericType)) =>
@@ -161,6 +161,22 @@ class SigmaTyper {
             case _ =>
               error(s"Invalid argument of array application $app: expected integer value; actual: $args")
           }
+        case STuple(_) =>
+          // If it's a tuple then the type of the application depend on the index.
+          args match {
+            case Seq(Constant(index, _: SNumericType)) =>
+              SelectField(new_f.asTuple, SByte.downcast(index.asInstanceOf[AnyVal]))
+            case Seq(index) =>
+              val typedIndex = assignType(env, index)
+              typedIndex.tpe match {
+                case _: SNumericType =>
+                  ByIndex(new_f.asCollection[SAny.type], typedIndex.upcastTo(SInt), None)
+                case _ =>
+                  error(s"Invalid argument type of tuple application $app: expected numeric type; actual: ${typedIndex.tpe}")
+              }
+            case _ =>
+              error(s"Invalid argument of tuple application $app: expected integer value; actual: $args")
+          }
         case t =>
           error(s"Invalid array application $app: array type is expected but was $t")
       }
@@ -169,7 +185,7 @@ class SigmaTyper {
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       newObj.tpe match {
-        case tCol: SCollection[a] => (m, newArgs) match {
+        case tCol: SCollectionType[a] => (m, newArgs) match {
           case ("++", Seq(r)) =>
             if (r.tpe == tCol)
               Append(newObj.asCollection[a], r.asCollection[a])
@@ -385,8 +401,10 @@ object SigmaTyper {
       if (n1 == n2) Some(emptySubst) else None
     case (id1 @ STypeIdent(n), _) =>
       Some(Map(id1 -> t2))
-    case (e1: SCollection[_], e2: SCollection[_]) =>
+    case (e1: SCollectionType[_], e2: SCollectionType[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
+    case (e1: SCollectionType[_], e2: STuple) =>
+      unifyTypes(e1.elemType, SAny)
     case (e1: SOption[_], e2: SOption[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
     case (e1: STuple, e2: STuple) if e1.items.length == e2.items.length =>
@@ -400,6 +418,8 @@ object SigmaTyper {
       Some(Map())
     case (e1: SProduct, e2: SProduct) if e1.sameMethods(e2) =>
       unifyTypeLists(e1.methods.map(_.stype), e2.methods.map(_.stype))
+    case (SAny, _) =>
+      Some(Map())
     case _ => None
   }
 

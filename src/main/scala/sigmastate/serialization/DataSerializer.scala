@@ -71,7 +71,7 @@ object DataSerializer {
       w.putOption(data.maxNumOperations)(_.putUInt(_))
       w.putOption(data.maxDeletes)(_.putUInt(_))
 
-    case tCol: SCollection[a] =>
+    case tCol: SCollectionType[a] =>
       val arr = v.asInstanceOf[tCol.WrappedType]
       val len = arr.length
       if (len > 0xFFFF)
@@ -134,7 +134,7 @@ object DataSerializer {
       val maxDeletes = r.getOption(r.getUInt().toInt)
       val data = AvlTreeData(ADDigest @@ startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
       data
-    case tCol: SCollection[a] =>
+    case tCol: SCollectionType[a] =>
       val len = r.getUShort()
       val arr = deserializeArray(len, tCol.elemType, r)
       arr

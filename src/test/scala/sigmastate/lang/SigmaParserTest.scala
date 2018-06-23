@@ -98,6 +98,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("(1, 2L)._1") shouldBe Select(Tuple(IntConstant(1), LongConstant(2)), "_1")
     parse("(1, 2L)._2") shouldBe Select(Tuple(IntConstant(1), LongConstant(2)), "_2")
     parse("(1, 2L, 3)._3") shouldBe Select(Tuple(IntConstant(1), LongConstant(2), IntConstant(3)), "_3")
+
+    // tuple as collection
+    parse("(1, 2L).size") shouldBe Select(Tuple(IntConstant(1), LongConstant(2)), "size")
+    parse("(1, 2L)(0)") shouldBe Apply(Tuple(IntConstant(1), LongConstant(2)), IndexedSeq(IntConstant(0)))
+    parse("(1, 2L).getOrElse(2, 3)") shouldBe Apply(Select(Tuple(IntConstant(1), LongConstant(2)), "getOrElse"), IndexedSeq(IntConstant(2), IntConstant(3)))
   }
 
   property("let constructs") {

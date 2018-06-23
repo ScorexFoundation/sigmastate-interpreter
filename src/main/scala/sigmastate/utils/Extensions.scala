@@ -37,6 +37,12 @@ object Extensions {
   }
 
   implicit class ShortOps(x: Short) {
+    def toByteExact: Byte = {
+      if (x < Byte.MinValue || x > Byte.MaxValue)
+        throw new ArithmeticException("Byte overflow")
+      x.toByte
+    }
+
     def addExact(y: Short): Short = {
       val r = x + y
       if (r < Short.MinValue || r > Short.MaxValue)
