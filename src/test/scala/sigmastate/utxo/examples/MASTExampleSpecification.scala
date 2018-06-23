@@ -10,6 +10,7 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
 import scala.util.Random
 
@@ -35,7 +36,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val scriptHash = CalcBlake2b256(TaggedByteArray(scriptId))
     val script1Bytes = ValueSerializer.serialize(TrueLeaf)
     val script1Hash = Blake2b256(script1Bytes)
-    val script2Hash = Blake2b256(ValueSerializer.serialize(GT(SizeOf(Inputs), 1)))
+    val script2Hash = Blake2b256(ValueSerializer.serialize(GT(SizeOf(Inputs).upcastTo(SLong), LongConstant(1))))
 
     val prop = AND(scriptIsCorrect, If(EQ(SizeOf(Inputs), 1), EQ(scriptHash, script1Hash), EQ(scriptHash, script2Hash)))
 

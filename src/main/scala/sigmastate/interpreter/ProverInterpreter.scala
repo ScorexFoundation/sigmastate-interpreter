@@ -124,7 +124,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       case bool: BooleanConstant =>
         bool match {
           case TrueLeaf => NoProof
-          case FalseLeaf => ???
+          case _ => ???
         }
       case _ =>
         val ct = convertToUnproven(reducedProp.asInstanceOf[SigmaBoolean])
