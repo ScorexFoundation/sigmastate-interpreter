@@ -225,6 +225,8 @@ Our description uses two kinds of tree traversal: bottom-up (also known as post-
 \subsection{Proving}
 \label{sec:proving}
 
+\lnote{should say something about timing attacks, perhaps.}
+
 For each node in the tree, the prover will maintain a flag indicating whether it is real or simulated. Each node will also have a $t$-bit challenge. The leaves will additionally have two protocol values: a challenge and a response. The pseudocode below explains how these values are computed. \lnote{we should probably mention that ``random'' below means pseudorandom, too}
 
 The prover first has to decide which nodes will have real proofs (for which witnesses are required) and which will be simulated. For example, in an $\ornode$ proof, only one of the children will be real. The prover will do so based on witnesses that are available, in three steps:
@@ -263,7 +265,7 @@ Now the prover will compute protocol values for every node, as follows:
 \setcounter{enumi}{3}
     \item In a top-down traversal of the tree, compute the challenges $e$ for simulated children of every node, as follows:
     \begin{itemize}
-        \item If the node is marked ``real'', then each of its simulated children gets  a fresh uniformly random challenge. (Note that a real $\andnode$ node has no simulated children, so this step applies only to real $\ornode$ and $\tnode$ nodes.)
+        \item If the node is marked ``real'', then each of its simulated children gets  a fresh uniformly random challenge in $\{0,1\}^t$. (Note that a real $\andnode$ node has no simulated children, so this step applies only to real $\ornode$ and $\tnode$ nodes.)
         \item If the node is marked ``simulated'', let $e_0$ be the challenge computed for it.  All of its children are simulated, and thus we compute challenges for all of them, as follows:
         \begin{itemize}
             \item If the node is $\andnode$,  then all of its children get $e_0$ as the challenge
@@ -286,7 +288,7 @@ Now the prover will compute protocol values for every node, as follows:
     
     \item For every leaf marked ``simulated'', use the simulator of the $\Sigma$-protocol for that leaf to compute the commitment $a$ and the response $z$, given the challenge $e$ that is already stored in the leaf.
     
-    \item For every leaf marked ``real'', use the first prover step of the $\Sigma$-protocol for that leaf to compute the commitment $a$.
+    \item For every leaf marked ``real'', use the first prover step of the $\Sigma$-protocol for that leaf to compute the necessary randomness and the commitment $a$.
     
     \item \label{step:fs}  Convert the tree to a string $s$ for input to the Fiat-Shamir hash function. The conversion should be such that the tree can be unambiguously parsed and restored given the string. For each non-leaf node, the string should contain its type ($\andnode$, $\ornode$, or $\tnode(k)$). For each leaf node, the string should contain the $\Sigma$-protocol statement being proven and the commitment. The string should not contain information on whether a node is marked ``real'' or ``simulated'', and should not contain challenges, responses, or the real/simulated flag for any node.
     

@@ -80,67 +80,42 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   val knownExtensions = ContextExtension(contextExtenders)
 
   /**
-    * "Prover steps:
-    * *
-    * (markSimulated)
-    *1. bottom-up: mark every node real or simulated, according to the following rule.
-    *  DLogNode: if you know the DL, then real, else simulated.
-    *  DHTuple: if you know the DHT, then real, else simulated.
-    *  COR: if at least one child real, then real; else simulated.
-    *  CAND: if at least one child simulated, then simulated; else real.
+    * The comments in this section are taken from the algorithm for the
+    * Sigma-protocol prover as described in the white paper
     *
-    *  Note that all descendants of a simulated node will be later simulated, even
-    *  if they were marked as real. This is what the next step will do.
-    *
-    *  Root should end up real according to this rule -- else you won't be able to carry out the proof in the end.
-    *
-    * (polishSimulated)
-    *2. top-down: mark every child of a simulated node "simulated." If two or more children of a real COR are real,
-    *  mark all but one simulated.
-    *
-    * (challengeSimulated)
-    *3. top-down: compute a challenge for every simulated child of every COR and CAND, according to the following rules.
-    *  If COR, then every simulated child gets a fresh random challenge.
-    *  If CAND (which means CAND itself is simulated, and all its children are),
-    *  then every child gets the same challenge as the CAND.
-    *
-    * (simulations)
-    *4. bottom-up: For every simulated leaf, simulate a response and a commitment (i.e., first and second prover message)
-    *  according to the Schnorr simulator. For every real leaf, compute the commitment (i.e., first prover message) according
-    *  to the Schnorr protocol. For every COR/CAND node, let the commitment be the union (as a set) of commitments below it.
-    *
-    *5. Compute the Schnorr challenge as the hash of the commitment of the root (plus other inputs -- probably the tree
-    *  being proven and the message).
-    *
-    * (challengesReal, proving)
-    *6. top-down: compute the challenge for every real child of every real COR and CAND, as follows. If COR, then the
-    *  challenge for the one real child of COR is equal to the XOR of the challenge of COR and the challenges for all the
-    *  simulated children of COR. If CAND, then the challenge for every real child of CAND is equal to the the challenge of
-    *  the CAND. Note that simulated CAND and COR have only simulated descendants, so no need to recurse down from them."
     */
-  // todo: if we are concerned about timing attacks against the proover, we should make sure that this code
+  // todo: if we are concerned about timing attacks against the prover, we should make sure that this code
   // todo: takes the same amount of time regardless of which nodes are real and which nodes are simulated
   // todo: In particular, we should avoid the use of exists and forall, because they short-circuit the evaluation
   // todo: once the right value is (or is not) found. We should also make all loops look similar, the same
   // todo: amount of copying is done regardless of what's real or simulated,
   // todo: real vs. simulated computations take the same time, etc.
   protected def prove(unprovenTree: UnprovenTree, message: Array[Byte]): ProofT = {
-    val step1 = markSimulated(unprovenTree).get.asInstanceOf[UnprovenTree]
-    // Prover step 2: If the root of the tree is marked "simulated" then the prover does not have enough witnesses
+
+    // Prover Step 1: Mark as real everything the prover can prove
+    val step1 = markReal(unprovenTree).get.asInstanceOf[UnprovenTree]
+
+    // Prover Step 2: If the root of the tree is marked "simulated" then the prover does not have enough witnesses
     // to perform the proof. Abort.
     assert(step1.real, s"Tree root should be real but was $step1")
 
-    val step2 = polishSimulated(step1).get.asInstanceOf[UnprovenTree]
-    val step3 = challengeSimulated(step2).get.asInstanceOf[UnprovenTree]
-    val step4 = simulations(step3).get.asInstanceOf[UnprovenTree]
+    // Prover Step 3: Change some "real" nodes to "simulated" to make sure each node
+    // has the right number of simulated children.
+    val step3 = polishSimulated(step1).get.asInstanceOf[UnprovenTree]
 
-    //step 5 - compute root challenge
-    val rootChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(step4) ++ message)
-    val step5 = step4.withChallenge(rootChallenge)
+    // Prover Steps 4, 5, and 6 together: find challenges for simulated nodes; simulate simulated leaves;
+    // compute commitments for real leaves
+    val step6 = simulateAndCommit(step3).get.asInstanceOf[UnprovenTree]
 
-    val step6 = proving(step5).get.asInstanceOf[ProofTree]
+    // Prover Steps 7 and 8: compute root challenge
+    val rootChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(step6) ++ message)
+    val step8 = step6.withChallenge(rootChallenge)
 
-    convertToUnchecked(step6)
+    // Prover Step 9: complete the proof by computing challenges at real nodes and additionally responses at real leaves
+    val step9 = proving(step8).get.asInstanceOf[ProofTree]
+
+    // Syntactic step that removes some extration information
+    convertToUnchecked(step9)
   }
 
   def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[ProverResult] = Try {
@@ -155,6 +130,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         val ct = convertToUnproven(reducedProp.asInstanceOf[SigmaBoolean])
         prove(ct, message)
     }
+    // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
     CostedProverResult(proof, knownExtensions, cost)
   }
@@ -165,7 +141,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * necessary number of witnesses (for example, more than one child of an OR).
     * This will be corrected in the next step. In a bottom-up traversal of the tree, do the following for each node:
     */
-  val markSimulated: Strategy = everywherebu(rule[UnprovenTree] {
+  val markReal: Strategy = everywherebu(rule[UnprovenTree] {
     case and: CAndUnproven =>
       // If the node is AND, mark it "real" if all of its children are marked real; else mark it "simulated"
       val simulated = and.children.exists(_.asInstanceOf[UnprovenTree].simulated)
@@ -193,7 +169,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   })
 
   /**
-    * Prover step 3: This step will change some "real" nodes to "simulated" to make sure each node has
+    * Prover Step 3: This step will change some "real" nodes to "simulated" to make sure each node has
     * the right number of simulated children.
     * In a top-down traversal of the tree, do the following for each node:
     */
@@ -228,18 +204,16 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   })
 
   /**
-    * 3. top-down: compute a challenge for every simulated child of every COR and CAND, according to the following rules.
-    * If COR, then every simulated child gets a fresh random challenge. If CAND (which means CAND itself is simulated, and
-    * all its children are), then every child gets the same challenge as the CAND.
+    * Prover Step 4: In a top-down traversal of the tree, compute the challenges e for simulated children of every node
+    * Prover Step 5: For every leaf marked "simulated", use the simulator of the Sigma-protocol for that leaf
+    * to compute the commitment $a$ and the response z, given the challenge e that is already stored in the leaf.
+    * Prover Step 6: For every leaf marked "real", use the first prover step of the Sigma-protocol for that leaf to
+    * compute the commitment a.
     */
-  val challengeSimulated: Strategy = everywheretd(rule[UnprovenTree] {
-    case and: CAndUnproven if and.simulated =>
-      assert(and.challengeOpt.isDefined)
-      val challenge = and.challengeOpt.get
-      val newChildren = and.children.cast[UnprovenTree].map(_.withChallenge(challenge))
-      and.copy(children = newChildren)
-
-    case and: CAndUnproven if and.real => and
+  val simulateAndCommit: Strategy = everywheretd(rule[ProofTree] {
+    // Step 4 part 1: If the node is marked "real", then each of its simulated children gets  a fresh uniformly random challenge
+    // in {0,1}^t.
+    case and: CAndUnproven if and.real => and // A real AND node has no simulated children
 
     case or: COrUnproven if or.real =>
       val newChildren = or.children.cast[UnprovenTree].map(c =>
@@ -248,7 +222,20 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       )
       or.copy(children = newChildren)
 
+    // Step 4 part 2: If the node is marked "simulated", let e_0 be the challenge computed for it.
+    // All of its children are simulated, and thus we compute challenges for all
+    // of them, as follows:
+    case and: CAndUnproven if and.simulated =>
+      // If the node is AND, then all of its children get e_0 as the challenge
+      assert(and.challengeOpt.isDefined)
+      val challenge = and.challengeOpt.get
+      val newChildren = and.children.cast[UnprovenTree].map(_.withChallenge(challenge))
+      and.copy(children = newChildren)
+
     case or: COrUnproven if or.simulated =>
+      // If the node is OR, then each of its children except one gets a fresh uniformly random
+      // challenge in {0,1}^t. The remaining child gets a challenge computed as an XOR of the challenges of all
+      // the other children and e_0.
       assert(or.challengeOpt.isDefined)
       val unprovenChildren = or.children.cast[UnprovenTree]
       val t = unprovenChildren.tail.map(_.withChallenge(Random.randomBytes(CryptoFunctions.soundnessBytes)))
@@ -257,42 +244,33 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val h = unprovenChildren.head.withChallenge(xoredChallenge)
       or.copy(children = h +: t)
 
-    case su: UnprovenSchnorr => su
-    case dhu: UnprovenDiffieHellmanTuple => dhu
-
-    case a: Any => error(s"Don't know how to challengeSimulated($a)")
-  })
-
-  /**
-    * 4. bottom-up: For every simulated leaf, simulate a response and a commitment (i.e., second and first prover
-    * message) according to the Schnorr simulator. For every real leaf, compute the commitment (i.e., first prover
-    * message) according to the Schnorr protocol. For every COR/CAND node, let the commitment be the union (as a set)
-    * of commitments below it.
-    */
-  val simulations: Strategy = everywherebu(rule[ProofTree] {
-    case c: UnprovenConjecture => c
-
     case su: UnprovenSchnorr =>
       if (su.simulated) {
+        // Step 5
         assert(su.challengeOpt.isDefined)
-        SchnorrSigner(su.proposition, None).prove(su.challengeOpt.get)
+        val prover = new DLogInteractiveProver(su.proposition, None)
+        val (fm, sm) = prover.simulate(Challenge(su.challengeOpt.get))
+        UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
       } else {
+        // Step 6
         val (r, commitment) = DLogInteractiveProver.firstMessage(su.proposition)
         su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
       }
 
     case dhu: UnprovenDiffieHellmanTuple =>
       if (dhu.simulated) {
+        // Step 5
         assert(dhu.challengeOpt.isDefined)
         val prover = new DiffieHellmanTupleInteractiveProver(dhu.proposition, None)
         val (fm, sm) = prover.simulate(Challenge(dhu.challengeOpt.get))
         UncheckedDiffieHellmanTuple(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
       } else {
+        // Step 6
         val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(dhu.proposition)
         dhu.copy(commitmentOpt = Some(fm), randomnessOpt = Some(r))
       }
 
-    case _ => ???
+    case a: Any => error(s"Don't know how to challengeSimulated($a)")
   })
 
   def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
