@@ -95,6 +95,17 @@ case class UnprovenDiffieHellmanTuple(override val proposition: ProveDiffieHellm
 }
 
 
+/**
+  *  Prover Step 7: Convert the tree to a string s for input to the Fiat-Shamir hash function.
+  *  The conversion should be such that the tree can be unambiguously parsed and restored given the string.
+  *  For each non-leaf node, the string should contain its type (OR or AND).
+  *  For each leaf node, the string should contain the Sigma-protocol statement being proven and the commitment.
+  *  The string should not contain information on whether a node is marked "real" or "simulated",
+  *  and should not contain challenges, responses, or the real/simulated flag for any node.
+  *
+  */
+// todo: write a test that restores the tree from this string and check that the result is equal,
+// todo: in order to make sure this conversion is unambiguous
 object FiatShamirTree {
   val internalNodePrefix = 0: Byte
   val leafPrefix = 1: Byte

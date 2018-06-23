@@ -121,7 +121,7 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieH
     //SAMPLE a random z <- Zq
     val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
 
-    //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
+    // COMPUTE a = g^z*u^(-e) and b = h^z*v^{-e}  (where -e here means -e mod q)
     val e: BigInteger = new BigInteger(1, challenge.bytes)
     val minusE = dlogGroup.order.subtract(e)
     val hToZ = dlogGroup.exponentiate(publicInput.h, z)

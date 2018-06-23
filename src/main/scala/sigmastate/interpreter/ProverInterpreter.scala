@@ -107,14 +107,20 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     // compute commitments for real leaves
     val step6 = simulateAndCommit(step3).get.asInstanceOf[UnprovenTree]
 
-    // Prover Steps 7 and 8: compute root challenge
-    val rootChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(step6) ++ message)
+    // Prover Steps 7: convert the relevant information in the tree (namely, tree structure, node types,
+    // the statements being proven and commitments at the leaves)
+    // to a string
+    val s = FiatShamirTree.toBytes(step6)
+
+    // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of s
+    // and the message being signed.
+    val rootChallenge = CryptoFunctions.hashFn(s ++ message)
     val step8 = step6.withChallenge(rootChallenge)
 
     // Prover Step 9: complete the proof by computing challenges at real nodes and additionally responses at real leaves
     val step9 = proving(step8).get.asInstanceOf[ProofTree]
 
-    // Syntactic step that removes some extration information
+    // Syntactic step that performs a type conversion only
     convertToUnchecked(step9)
   }
 
@@ -246,26 +252,26 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     case su: UnprovenSchnorr =>
       if (su.simulated) {
-        // Step 5
+        // Step 5 (simulated leaf -- complete the simulation)
         assert(su.challengeOpt.isDefined)
         val prover = new DLogInteractiveProver(su.proposition, None)
         val (fm, sm) = prover.simulate(Challenge(su.challengeOpt.get))
         UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
       } else {
-        // Step 6
+        // Step 6 (real leaf -- compute the commitment a)
         val (r, commitment) = DLogInteractiveProver.firstMessage(su.proposition)
         su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
       }
 
     case dhu: UnprovenDiffieHellmanTuple =>
       if (dhu.simulated) {
-        // Step 5
+        // Step 5 (simulated leaf -- complete the simulation)
         assert(dhu.challengeOpt.isDefined)
         val prover = new DiffieHellmanTupleInteractiveProver(dhu.proposition, None)
         val (fm, sm) = prover.simulate(Challenge(dhu.challengeOpt.get))
         UncheckedDiffieHellmanTuple(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
       } else {
-        // Step 6
+        // Step 6 (real leaf -- compute the commitment a)
         val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(dhu.proposition)
         dhu.copy(commitmentOpt = Some(fm), randomnessOpt = Some(r))
       }
@@ -281,19 +287,21 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   }
 
   /**
-    * (proving)
-    * 6. top-down: compute the challenge for every real child of every real COR and CAND, as follows. If COR, then the
-    * challenge for the one real child of COR is equal to the XOR of the challenge of COR and the challenges for all the
-    * simulated children of COR. If CAND, then the challenge for every real child of CAND is equal to the the challenge of
-    * the CAND. Note that simulated CAND and COR have only simulated descendants, so no need to recurse down from them."
-    **/
+    * Prover Step 9: Perform a top-down traversal of only the portion of the tree marked "real" in order to compute
+    * the challenge e for every node marked "real" below the root and, additionally, the response z for every leaf
+    * marked "real"
+    */
   val proving: Strategy = everywheretd(rule[ProofTree] {
+    // If the node is a non-leaf marked real whose challenge is e_0, proceed as follows:
     case and: CAndUnproven if and.real =>
       assert(and.challengeOpt.isDefined)
+      // If the node is AND, let each of its children have the challenge e_0
       val andChallenge = and.challengeOpt.get
       and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withChallenge(andChallenge)))
 
     case or: COrUnproven if or.real =>
+      // If the node is OR, it has only one child marked "real".
+      // Let this child have the challenge equal to the XOR of the challenges of all the other children and e_0
       assert(or.challengeOpt.isDefined)
       val rootChallenge = or.challengeOpt.get
       val challenge = Helpers.xor(rootChallenge +: or.children.flatMap(extractChallenge): _*)
@@ -303,6 +311,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         case p: ProofTree => p
       })
 
+    // If the node is a leaf marked "real", compute its response according to the second prover step
+    // of the Sigma-protocol given the commitment, challenge, and witness
     case su: UnprovenSchnorr if su.real =>
       assert(su.challengeOpt.isDefined)
       val privKey = secrets
@@ -344,7 +354,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       UnprovenDiffieHellmanTuple(dh, None, None, None, simulated = false)
   }
 
-  //converts ProofTree => UncheckedTree
+  //converts ProofTree => UncheckedSigmaTree
   val convertToUnchecked: ProofTree => UncheckedSigmaTree = attr {
     case and: CAndUnproven =>
       CAndUncheckedNode(and.challengeOpt.get,  and.children.map(convertToUnchecked))

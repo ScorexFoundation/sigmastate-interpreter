@@ -340,7 +340,7 @@ Now the prover will compute protocol values for every node, as follows:
     
     \item Compute the challenge for the root of the tree as the Fiat-Shamir hash of $s$ (and, if applicable,  the associated data, such as the message being signed). 
     
-    \item Perform a top-down traversal of only the portion of the tree marked ``real'' in order to compute the challenge $e$ for every node marked ``real'' below the root and, additionally, the response $z$ for every leaf marked ``real'' (note that nodes marked ``simulated'' have all their descendants marked ``simulated'' and all the challenges for these descendants already computed, so there is no need to recurse down ``simulated'' nodes). For every node, do the following:
+    \item Perform a top-down traversal of only the portion of the tree marked ``real'' in order to compute the challenge $e$ for every node marked ``real'' below the root and, additionally, the response $z$ for every leaf marked ``real'' (note that nodes marked ``simulated'' have all their descendants marked ``simulated'' and all the challenges for these descendants already computed, so there is no need to recurse down ``simulated'' nodes, unless timing attacks are a concern). For every node, do the following:
     
     \begin{itemize}
         \item If the node is a non-leaf marked ``real'' whose challenge is $e_0$, proceed as follows:
