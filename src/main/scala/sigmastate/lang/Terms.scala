@@ -138,6 +138,5 @@ object Terms {
       else
         Upcast(tV, targetType)
     }
-    def isEvaluated: Boolean = v.isInstanceOf[EvaluatedValue[_]]
   }
 }

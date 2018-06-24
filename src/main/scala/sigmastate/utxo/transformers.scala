@@ -41,7 +41,7 @@ case class MapCollection[IV <: SType, OV <: SType](
   implicit def tOV = mapper.asValue[OV].tpe
   val tpe = SCollection[OV](tOV)
 
-  override def transformationReady: Boolean = input.isEvaluated
+  override def transformationReady: Boolean = input.isEvaluatedCollection
 
   override def function(I: Interpreter, ctx: Context[_], cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
     val cc = cl.toConcreteCollection
@@ -75,7 +75,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 
   val tpe = input.tpe
 
-  override def transformationReady: Boolean = input.isEvaluated && col2.isEvaluated
+  override def transformationReady: Boolean = input.isEvaluatedCollection && col2.isEvaluatedCollection
 
   override def function(intr: Interpreter, ctx: Context[_], cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
     val c1 = cl.toConcreteCollection
@@ -93,7 +93,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
   val tpe = input.tpe
 
   override def transformationReady: Boolean =
-    input.isEvaluated && from.evaluated && until.evaluated
+    input.isEvaluatedCollection && from.evaluated && until.evaluated
 
   override def function(intr: Interpreter, ctx: Context[_], cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[IV]] = {
     val fromValue = from.asInstanceOf[EvaluatedValue[SInt.type]].value
@@ -114,7 +114,7 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
 
   override def tpe: SCollection[IV] = input.tpe
 
-  override def transformationReady: Boolean = input.isEvaluated
+  override def transformationReady: Boolean = input.isEvaluatedCollection
 
   override def cost[C <: Context[C]](context: C): Long = {
     val elemType = input.tpe.elemType
@@ -142,7 +142,7 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
 
   override def tpe = SBoolean
 
-  override def transformationReady: Boolean = input.isEvaluated
+  override def transformationReady: Boolean = input.isEvaluatedCollection
 
   override def function(I: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
     val cc = input.toConcreteCollection
@@ -228,7 +228,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
   override val opCode: OpCode = OpCodes.ByIndexCode
   override val tpe = input.tpe.elemType
   override def transformationReady: Boolean =
-    input.isEvaluated && index.evaluated && default.forall(_.evaluated)
+    input.isEvaluatedCollection && index.evaluated && default.forall(_.evaluated)
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[V]]): Value[V] = {
     val i = index.asInstanceOf[EvaluatedValue[SInt.type]].value
@@ -236,7 +236,9 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
       cc =>
         cc.items.lift(i).orElse(default).get,
       const =>
-        Value.apply(tpe)(const.value.lift(i).orElse(default).get.asInstanceOf[tpe.WrappedType])
+        Value.apply(tpe)(const.value.lift(i).orElse(default).get.asInstanceOf[tpe.WrappedType]),
+      tuple =>
+        tuple.items.lift(i).orElse(default).get.asValue[V]
     )
   }
   override def cost[C <: Context[C]](context: C): Long =
@@ -248,7 +250,7 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
   extends Transformer[STuple, SType] with NotReadyValue[SType] {
   override val opCode: OpCode = OpCodes.SelectFieldCode
   override val tpe = input.tpe.items(fieldIndex - 1)
-  override def transformationReady: Boolean = input.isEvaluated
+  override def transformationReady: Boolean = input.isEvaluatedCollection
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[STuple]): Value[SType] = {
     val item = input.value(fieldIndex - 1)
@@ -259,10 +261,9 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
-  extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
-
+    extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override val opCode: OpCode = OpCodes.SizeOfCode
-
+  override def transformationReady: Boolean = input.isEvaluatedCollection
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[V]]) =
     IntConstant(input.length)
 

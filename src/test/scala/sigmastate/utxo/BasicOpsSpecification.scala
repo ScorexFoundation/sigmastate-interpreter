@@ -103,4 +103,32 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
+  property("Tuple operations") {
+    test(env, ext,
+      "{ (getVar[Int](intVar1), getVar[Int](intVar2))._1 == 1 }",
+      EQ(SelectField(Tuple(TaggedInt(intVar1), TaggedInt(intVar2)), 1), IntConstant(1))
+    )
+    test(env, ext,
+      "{ (getVar[Int](intVar1), getVar[Int](intVar2))._2 == 2 }",
+      EQ(SelectField(Tuple(TaggedInt(intVar1), TaggedInt(intVar2)), 2), IntConstant(2))
+    )
+    test(env, ext,
+      """{ let p = (getVar[Int](intVar1), getVar[Int](intVar2))
+        |  let res = p._1 + p._2
+        |  res == 3 }""".stripMargin,
+      {
+        val p = Tuple(TaggedInt(intVar1), TaggedInt(intVar2))
+        val res = Plus(SelectField(p, 1).asIntValue, SelectField(p, 2).asIntValue)
+        EQ(res, IntConstant(3))
+      }
+    )
+    test(env, ext,
+    """{ let p = (getVar[Int](intVar1), getVar[Int](intVar2))
+      |  p.size == 2 }""".stripMargin,
+    {
+      val p = Tuple(TaggedInt(intVar1), TaggedInt(intVar2))
+      EQ(SizeOf(p), IntConstant(2))
+    }
+    )
+  }
 }
