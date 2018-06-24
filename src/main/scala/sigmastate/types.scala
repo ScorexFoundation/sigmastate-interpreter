@@ -100,6 +100,11 @@ object SType {
       case SUnit => reflect.classTag[Unit]
       case SBox => reflect.classTag[ErgoBox]
       case SAny => reflect.classTag[Any]
+      case t: STuple => reflect.classTag[Array[Any]]
+      case tCol: SCollection[a] =>
+        val elemType = tCol.elemType
+        implicit val ca = elemType.classTag[elemType.WrappedType]
+        reflect.classTag[Array[elemType.WrappedType]]
       case _ => sys.error(s"Cannot get ClassTag for type $tpe")
     }).asInstanceOf[ClassTag[T]]
   }

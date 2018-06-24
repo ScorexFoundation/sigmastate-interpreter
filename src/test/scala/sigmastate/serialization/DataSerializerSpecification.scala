@@ -26,7 +26,28 @@ class DataSerializerSpecification extends SerializationSpecification {
   def testCollection[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tag = tpe.classTag[T#WrappedType]
-    forAll { x: Array[T#WrappedType] => roundtrip[SCollection[T]](x, SCollection(tpe)) }
+    forAll { xs: Array[T#WrappedType] =>
+      roundtrip[SCollection[T]](xs, SCollection(tpe))
+      roundtrip[SCollection[STuple]](xs.map(x => Array[Any](x, x)), SCollection(STuple(tpe, tpe)))
+      roundtrip[SCollection[SCollection[T]]](xs.map(x => Array[T#WrappedType](x, x)), SCollection(SCollection(tpe)))
+      roundtrip[SCollection[STuple]](
+        xs.map { x =>
+          val arr = Array[T#WrappedType](x, x)
+          Array[Any](arr, arr)
+        },
+        SCollection(STuple(SCollection(tpe), SCollection(tpe)))
+      )
+    }
+  }
+
+  def testTuples[T <: SType](tpe: T) = {
+    implicit val wWrapped = wrappedTypeGen(tpe)
+    implicit val tag = tpe.classTag[T#WrappedType]
+    forAll { in: (T#WrappedType, T#WrappedType) =>
+      val (x,y) = (in._1, in._2)
+      roundtrip[STuple](Array[Any](x, y), STuple(tpe, tpe))
+      roundtrip[STuple](Array[Any](x, y, Array[Any](x, y)), STuple(tpe, tpe, STuple(tpe, tpe)))
+    }
   }
 
   property("Data serialization round trip") {
@@ -39,6 +60,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: AvlTreeData => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x, SByteArray) }
     forAll { t: SPredefType => testCollection(t) }
+    forAll { t: SPredefType => testTuples(t) }
   }
 
 }

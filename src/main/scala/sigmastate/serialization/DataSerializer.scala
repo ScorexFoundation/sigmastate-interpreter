@@ -14,6 +14,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import scala.collection.mutable
 
+/** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer {
   type ElemType = CryptoConstants.EcPointType
 
@@ -80,7 +81,19 @@ object DataSerializer {
       if (tCol.elemType == SBoolean)
         w.putBits(arr.asInstanceOf[Array[Boolean]])
       else
-        arr.foreach(x => DataSerializer.serialize(x, tCol.elemType, w))
+        arr.foreach(x => serialize(x, tCol.elemType, w))
+
+    case t: STuple =>
+      val arr = v.asInstanceOf[t.WrappedType]
+      val len = arr.length
+      assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
+      if (len > 0xFFFF)
+        sys.error(s"Length of tuple $arr exceeds ${0xFF} limit.")
+      var i = 0
+      while (i < arr.length) {
+        serialize[SType](arr(i), t.items(i), w)
+        i += 1
+      }
 
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
@@ -137,6 +150,11 @@ object DataSerializer {
     case tCol: SCollectionType[a] =>
       val len = r.getUShort()
       val arr = deserializeArray(len, tCol.elemType, r)
+      arr
+    case tuple: STuple =>
+      val arr =  tuple.items.map { t =>
+        deserialize(t, r)
+      }.toArray[Any]
       arr
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
