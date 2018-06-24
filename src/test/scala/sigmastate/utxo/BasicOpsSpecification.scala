@@ -122,13 +122,31 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         EQ(res, IntConstant(3))
       }
     )
+  }
+
+  property("Tuple as Collection operations") {
     test(env, ext,
-    """{ let p = (getVar[Int](intVar1), getVar[Int](intVar2))
-      |  p.size == 2 }""".stripMargin,
+    """{ let p = (getVar[Int](intVar1), getVar[Byte](byteVar2))
+     |  p.size == 2 }""".stripMargin,
     {
-      val p = Tuple(TaggedInt(intVar1), TaggedInt(intVar2))
+      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
       EQ(SizeOf(p), IntConstant(2))
-    }
-    )
+    })
+    test(env, ext,
+    """{ let p = (getVar[Int](intVar1), getVar[Byte](byteVar2))
+     |  p(0) == 1 }""".stripMargin,
+    {
+      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
+      EQ(SelectField(p, 1), IntConstant(1))
+    })
+
+// TODO uncomment after operations over Any are implemented
+//    test(env, ext,
+//    """{ let p = (getVar[Int](intVar1), getVar[Byte](byteVar2))
+//     |  p.getOrElse(2, 3).isInstanceOf[Int] }""".stripMargin,
+//    {
+//      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
+//      EQ(ByIndex[SAny.type](p, IntConstant(2), Some(IntConstant(3).asValue[SAny.type])), IntConstant(3))
+//    })
   }
 }
