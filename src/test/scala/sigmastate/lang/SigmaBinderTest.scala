@@ -68,7 +68,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "OUTPUTS.exists(fun (out: Box) = { out.amount >= minToRaise })") shouldBe
       Apply(Select(Outputs, "exists"),
         IndexedSeq(
-          Lambda(IndexedSeq("out" -> SBox), SBoolean,
+          Lambda(IndexedSeq("out" -> SBox), NoType,
             GE(Select(Ident("out"), "amount").asValue[SInt.type], minToRaise))))
   }
 

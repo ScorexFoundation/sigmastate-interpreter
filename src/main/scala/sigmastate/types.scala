@@ -474,6 +474,11 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
     val tupleMethods = b.result
     colMethods ++ tupleMethods
   }
+
+  /** Construct tree node Constant for a given data object. */
+  override def mkConstant(v: Array[Any]): Value[this.type] =
+    Constant[STuple](v, this).asValue[this.type]
+
   override def toString = s"(${items.mkString(",")})"
 }
 
