@@ -15,21 +15,39 @@ class UpcastOnDeserializationSpecification extends PropSpec
   with Matchers {
 
   private def numExprTreeNodeGen: Gen[Value[SNumericType]] = for {
-    left <- exprTreeGen
-    right <- exprTreeGen
+    left <- numExprTreeGen
+    right <- numExprTreeGen
     node <- Gen.oneOf(
       Plus(left, right),
-      Minus(left, right)
+      Minus(left, right),
+      Multiply(left, right),
+      Divide(left, right),
+      Modulo(left, right)
     )
   } yield node
 
-  private def exprTreeGen: Gen[SValue] =
+  private def numExprTreeGen: Gen[Value[SNumericType]] =
     Gen.oneOf(arbByteConstants.arbitrary,
       arbIntConstants.arbitrary,
       arbLongConstants.arbitrary,
+      arbBigIntConstant.arbitrary,
       Gen.delay(numExprTreeNodeGen))
 
+  private def comparisonExprTreeNodeGen: Gen[Value[SBoolean.type]] = for {
+    left <- numExprTreeNodeGen
+    right <- numExprTreeNodeGen
+    node <- Gen.oneOf(
+      EQ(left, right),
+      NEQ(left, right),
+      LE(left, right),
+      GE(left, right),
+      LT(left, right),
+      GT(left, right)
+    )
+  } yield node
+
   private def roundTrip(tree: SValue): Assertion = {
+    // add Upcast nodes
     val typedTree = (new SigmaTyper).typecheck(tree)
     val bytes = ValueSerializer.serialize(typedTree)
     val parsedTree = ValueSerializer.deserialize(bytes)
@@ -37,7 +55,7 @@ class UpcastOnDeserializationSpecification extends PropSpec
   }
 
   property("Upcast deserialization round trip") {
-    forAll(exprTreeGen) { expr =>
+    forAll(comparisonExprTreeNodeGen, minSuccessful(500)) { expr =>
       roundTrip(expr)
     }
   }
