@@ -32,7 +32,7 @@ class CrowdFundingKernelContract(
     val simulated = !secretKnown
     val step4: UnprovenTree = if (simulated) {
       assert(su.challengeOpt.isDefined)
-      SchnorrSigner(su.proposition, None).prove(su.challengeOpt.get).asInstanceOf[UnprovenTree]
+      new DLogInteractiveProver(su.proposition, None).simulate(Challenge(su.challengeOpt.get)).asInstanceOf[UnprovenTree]
     } else {
       val (r, commitment) = DLogInteractiveProver.firstMessage(pubKey)
       UnprovenSchnorr(pubKey, Some(commitment), Some(r), None, simulated = false)
@@ -40,7 +40,8 @@ class CrowdFundingKernelContract(
 
     val commitments = step4 match {
       case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
-      case uc: UnprovenConjecture => uc.childrenCommitments
+      case _ => ???
+      /*case uc: UnprovenConjecture => uc.childrenCommitments*/ // can't do this anymore because internal nodes no longer have commitments
     }
 
     val rootChallenge = Blake2b256(Helpers.concatBytes(commitments.map(_.bytes) :+ message))
@@ -51,7 +52,7 @@ class CrowdFundingKernelContract(
     UncheckedSchnorr(su.proposition, None, rootChallenge, z)
   }
 
-  def prove(ctx: ErgoLikeContext, message: Array[Byte]): projectProver.ProofT = {
+  def prove(ctx: ErgoLikeContext, message: Array[Byte]): Array[Byte] = {
     val c1 = ctx.currentHeight >= timeout //&& isValid(backerPubKey, fakeMessage)
     val c2 = Array(
       ctx.currentHeight < timeout,
@@ -61,10 +62,10 @@ class CrowdFundingKernelContract(
     ).forall(identity)
     var proof: projectProver.ProofT = null
     c1 || (c2 && { proof = isValid(projectPubKey, message); true})
-    proof
+    SigSerializer.toBytes(proof)
   }
 
-  def verify(proof: projectProver.ProofT,
+  def verify(proof: Array[Byte],
              ctx: ErgoLikeContext,
              message: Array[Byte]): Try[Interpreter.VerificationResult] = Try {
     var sn = proof.asInstanceOf[UncheckedSchnorr]

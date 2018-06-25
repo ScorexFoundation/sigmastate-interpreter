@@ -1,10 +1,9 @@
 package org.ergoplatform
 
 import com.google.common.primitives.Shorts
-import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.interpreter.{ProverResult, SerializedProverResult}
+import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
 import sigmastate.serialization.Serializer.{Consumed, Position}
 
@@ -47,7 +46,7 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
 
   def toSigned(proofs: IndexedSeq[ProverResult]): ErgoLikeTransaction = {
     require(proofs.size == inputs.size)
-    val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof.toSerialized) }
+    val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof) }
     new ErgoLikeTransaction(ins, outputCandidates)
   }
 }
@@ -117,7 +116,7 @@ object ErgoLikeTransaction {
 
     override def toBytes(ftx: FlattenedTransaction): Array[Byte] = {
       ftx._1.map(_.spendingProof).foldLeft(bytesToSign(ftx._1.map(_.boxId), ftx._2)) { case (bytes, proof) =>
-        bytes ++ SerializedProverResult.serializer.toBytes(proof)
+        bytes ++ ProverResult.serializer.toBytes(proof)
       }
     }
 
@@ -137,8 +136,8 @@ object ErgoLikeTransaction {
         (outs :+ bc) -> (p + cs)
       }
 
-      val (proofs, finalPos) = (0 until inputsCount).foldLeft(Seq[SerializedProverResult]() -> posBeforeProofs) { case ((prs, p), _) =>
-        val (pr, cs) = SerializedProverResult.serializer.parseBody(bytes, p)
+      val (proofs, finalPos) = (0 until inputsCount).foldLeft(Seq[ProverResult]() -> posBeforeProofs) { case ((prs, p), _) =>
+        val (pr, cs) = ProverResult.serializer.parseBody(bytes, p)
         (prs :+ pr) -> (p + cs)
       }
 
