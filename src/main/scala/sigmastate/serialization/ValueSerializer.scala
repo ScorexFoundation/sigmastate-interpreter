@@ -128,12 +128,13 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     else {
       val handler = table(c)
       val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
-      (v, consumed + 1)
+      val vTyped = new SigmaTyper().typecheck(v)
+      (vTyped, consumed + 1)
     }
   }
 
   def deserialize(bytes: Array[Byte]): Value[_ <: SType] = {
-    new SigmaTyper().typecheck(deserialize(bytes, 0)._1)
+    deserialize(bytes, 0)._1
   }
 }
 

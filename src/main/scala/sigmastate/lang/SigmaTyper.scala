@@ -329,6 +329,7 @@ class SigmaTyper {
     case v: ByteArrayToBigInt => v
     case v: CalcBlake2b256 => v
     case v: CalcSha256 => v
+    case v: Upcast[_, _] => v
     case v => error(s"Don't know how to assignType($v)")
   }
 
