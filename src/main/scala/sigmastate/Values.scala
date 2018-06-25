@@ -381,14 +381,12 @@ object Values {
   case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
     override val opCode: OpCode = TupleCode
     override def elementType = SAny
-    lazy val cost: Int = value.size
     lazy val tpe = STuple(items.map(_.tpe))
     lazy val value = {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]])
     }
-
-    override def cost[C <: Context[C]](context: C) = Cost.ConcreteCollection + items.map(_.cost(context)).sum
+    override def cost[C <: Context[C]](context: C) = Cost.Tuple + items.map(_.cost(context)).sum
   }
 
   object Tuple {
