@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import sigmastate._
 import Values._
+
 import scala.util.Try
 import OpCodes._
 import sigmastate.SCollection.SByteArray
@@ -11,6 +12,7 @@ import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 import Serializer.Consumed
 import org.ergoplatform._
+import sigmastate.serialization.Constraints.{onlyNumeric2, sameType2}
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -35,12 +37,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
 
-    Relation2Serializer(GtCode, GT.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(GeCode, GE.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(LtCode, LT.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(LeCode, LE.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(EqCode, EQ.apply[SType], Seq(Constraints.sameType2)),
-    Relation2Serializer(NeqCode, NEQ.apply[SType], Seq(Constraints.sameType2)),
+    Relation2Serializer(GtCode, GT.apply[SType], Seq(onlyNumeric2, sameType2)),
+    Relation2Serializer(GeCode, GE.apply[SType], Seq(onlyNumeric2, sameType2)),
+    Relation2Serializer(LtCode, LT.apply[SType], Seq(onlyNumeric2, sameType2)),
+    Relation2Serializer(LeCode, LE.apply[SType], Seq(onlyNumeric2, sameType2)),
+    Relation2Serializer(EqCode, EQ.apply[SType], Seq(sameType2)),
+    Relation2Serializer(NeqCode, NEQ.apply[SType], Seq(sameType2)),
     Relation3Serializer(IsMemberCode, IsMember.apply),
     QuadrupelSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
 
@@ -137,14 +139,16 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
 object Constraints {
   type Constraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
+  type TypeConstraint2 = (SType, SType) => Boolean
   type ConstraintN = Seq[SType.TypeCode] => Boolean
 
-  def onlyInt2: Constraint2 = {
-    case (tc1, tc2) => tc1 == SLong.typeCode && tc2 == SLong.typeCode
+  def onlyNumeric2: TypeConstraint2 = {
+    case (_: SNumericType, _: SNumericType) => true
+    case _ => false
   }
 
-  def sameType2: Constraint2 = {
-    case (tc1, tc2) => tc1 == tc2
+  def sameType2: TypeConstraint2 = {
+    case (v1, v2) => v1.tpe == v2.tpe
   }
 
   def sameTypeN: ConstraintN = { tcs => tcs.tail.forall(_ == tcs.head) }
