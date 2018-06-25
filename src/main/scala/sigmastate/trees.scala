@@ -58,7 +58,11 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.matchCase(_.items.forall(_.evaluated), _ => true)
+    input.evaluated && input.matchCase(
+      _.items.forall(_.evaluated),
+      _ => true,
+      _.items.forall(_.evaluated)
+    )
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
@@ -81,7 +85,8 @@ case class OR(input: Value[SCollection[SBoolean.type]])
             else OR(reduced)
         }
       },
-      c => if (anyOf(c.value)) TrueLeaf else FalseLeaf
+      c => if (anyOf(c.value)) TrueLeaf else FalseLeaf,
+      _ => ???
     )
   }
 }
@@ -110,7 +115,11 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
-    input.evaluated && input.matchCase(_.items.forall(_.evaluated), _ => true)
+    input.evaluated && input.matchCase(
+      _.items.forall(_.evaluated),
+      _ => true,
+      _.items.forall(_.evaluated)
+    )
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
@@ -141,7 +150,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
                 s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: $reduced")
       }
       },
-      c => if (allOf(c.value)) TrueLeaf else FalseLeaf
+      c => if (allOf(c.value)) TrueLeaf else FalseLeaf,
+      _ => ???
     )
   }
 }

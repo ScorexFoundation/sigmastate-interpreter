@@ -22,11 +22,11 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     case SUnit => w.put(SUnit.typeCode)
     case SBox => w.put(SBox.typeCode)
     case SAvlTree => w.put(SAvlTree.typeCode)
-    case c: SCollection[a] => c.elemType match {
+    case c: SCollectionType[a] => c.elemType match {
       case p: SEmbeddable =>
         val code = p.embedIn(SCollection.CollectionTypeCode)
         w.put(code)
-      case cn: SCollection[a] => cn.elemType match {
+      case cn: SCollectionType[a] => cn.elemType match {
         case p: SEmbeddable =>
           val code = p.embedIn(SCollection.NestedCollectionTypeCode)
           w.put(code)
@@ -42,7 +42,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
       case p: SEmbeddable =>
         val code = p.embedIn(SOption.OptionTypeCode)
         w.put(code)
-      case c: SCollection[a] => c.elemType match {
+      case c: SCollectionType[a] => c.elemType match {
         case p: SEmbeddable =>
           val code = p.embedIn(SOption.OptionCollectionTypeCode)
           w.put(code)

@@ -15,7 +15,28 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
   private def testCollection[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tag = tpe.classTag[T#WrappedType]
-    forAll { x: Array[T#WrappedType] => roundTripTest(Constant[SCollection[T]](x, SCollection(tpe))) }
+    forAll { xs: Array[T#WrappedType] =>
+      roundTripTest(Constant[SCollection[T]](xs, SCollection(tpe)))
+      roundTripTest(Constant[SCollection[STuple]](xs.map(x => Array[Any](x, x)), SCollection(STuple(tpe, tpe))))
+      roundTripTest(Constant[SCollection[SCollection[T]]](xs.map(x => Array[T#WrappedType](x, x)), SCollection(SCollection(tpe))))
+      roundTripTest(Constant[SCollection[STuple]](
+        xs.map { x =>
+          val arr = Array[T#WrappedType](x, x)
+          Array[Any](arr, arr)
+        },
+        SCollection(STuple(SCollection(tpe), SCollection(tpe)))
+      ))
+    }
+  }
+
+  def testTuples[T <: SType](tpe: T) = {
+    implicit val wWrapped = wrappedTypeGen(tpe)
+    implicit val tag = tpe.classTag[T#WrappedType]
+    forAll { in: (T#WrappedType, T#WrappedType) =>
+      val (x,y) = (in._1, in._2)
+      roundTripTest(Constant[STuple](Array[Any](x, y), STuple(tpe, tpe)))
+      roundTripTest(Constant[STuple](Array[Any](x, y, Array[Any](x, y)), STuple(tpe, tpe, STuple(tpe, tpe))))
+    }
   }
 
   property("Constant serialization round trip") {
@@ -28,6 +49,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { x: AvlTreeData => roundTripTest(Constant[SAvlTree.type](x, SAvlTree)) }
     forAll { x: Array[Byte] => roundTripTest(Constant[SByteArray](x, SByteArray)) }
     forAll { t: SPredefType => testCollection(t) }
+    forAll { t: SPredefType => testTuples(t) }
   }
 
   property("CollectionConstant serialization round trip") {
