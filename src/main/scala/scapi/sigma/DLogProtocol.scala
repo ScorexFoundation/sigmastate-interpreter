@@ -9,7 +9,7 @@ import Value.PropositionCode
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
 import sigmastate.interpreter.{Context, CryptoConstants}
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 
@@ -89,8 +89,6 @@ object DLogProtocol {
   class DLogInteractiveProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
     extends InteractiveProver[DLogSigmaProtocol, ProveDlog, DLogProverInput] {
 
-    import CryptoConstants.dlogGroup
-
     var rOpt: Option[BigInteger] = None
 
     override def firstMessage: FirstDLogProverMessage = {
@@ -117,18 +115,7 @@ object DLogProtocol {
 
     override def simulate(challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
       assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-      val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
-
-      //SAMPLE a random z <- Zq
-      val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-
-      //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
-      val e: BigInteger = new BigInteger(1, challenge.bytes)
-      val minusE = dlogGroup.order.subtract(e)
-      val hToE = dlogGroup.exponentiate(publicInput.h, minusE)
-      val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
-      val a = dlogGroup.multiplyGroupElements(gToZ, hToE)
-      FirstDLogProverMessage(a) -> SecondDLogProverMessage(z)
+      DLogInteractiveProver.simulate(publicInput, challenge)
     }
   }
 
@@ -150,6 +137,21 @@ object DLogProtocol {
       val ew: BigInteger = e.multiply(privateInput.w).mod(q)
       val z: BigInteger = rnd.add(ew).mod(q)
       SecondDLogProverMessage(z)
+    }
+
+    def simulate(publicInput: ProveDlog, challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
+      val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
+
+      //SAMPLE a random z <- Zq
+      val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+
+      //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
+      val e: BigInteger = new BigInteger(1, challenge.bytes)
+      val minusE = dlogGroup.order.subtract(e)
+      val hToE = dlogGroup.exponentiate(publicInput.h, minusE)
+      val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
+      val a = dlogGroup.multiplyGroupElements(gToZ, hToE)
+      FirstDLogProverMessage(a) -> SecondDLogProverMessage(z)
     }
   }
 
