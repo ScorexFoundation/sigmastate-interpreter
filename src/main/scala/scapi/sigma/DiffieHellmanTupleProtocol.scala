@@ -116,21 +116,7 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieH
   override def simulate(challenge: Challenge):
   (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
     assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-    val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
-
-    //SAMPLE a random z <- Zq
-    val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-
-    // COMPUTE a = g^z*u^(-e) and b = h^z*v^{-e}  (where -e here means -e mod q)
-    val e: BigInteger = new BigInteger(1, challenge.bytes)
-    val minusE = dlogGroup.order.subtract(e)
-    val hToZ = dlogGroup.exponentiate(publicInput.h, z)
-    val gToZ = dlogGroup.exponentiate(publicInput.g, z)
-    val uToMinusE = dlogGroup.exponentiate(publicInput.u, minusE)
-    val vToMinusE = dlogGroup.exponentiate(publicInput.v, minusE)
-    val a = dlogGroup.multiplyGroupElements(gToZ, uToMinusE)
-    val b = dlogGroup.multiplyGroupElements(hToZ, vToMinusE)
-    FirstDiffieHellmanTupleProverMessage(a, b) -> SecondDiffieHellmanTupleProverMessage(z)
+    DiffieHellmanTupleInteractiveProver.simulate(publicInput, challenge)
   }
 }
 
@@ -153,5 +139,25 @@ object DiffieHellmanTupleInteractiveProver {
     val ew: BigInteger = e.multiply(privateInput.w).mod(q)
     val z: BigInteger = rnd.add(ew).mod(q)
     SecondDiffieHellmanTupleProverMessage(z)
+  }
+
+  def simulate(publicInput: ProveDiffieHellmanTuple, challenge: Challenge):
+    (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
+
+    val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
+
+    //SAMPLE a random z <- Zq
+    val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+
+    // COMPUTE a = g^z*u^(-e) and b = h^z*v^{-e}  (where -e here means -e mod q)
+    val e: BigInteger = new BigInteger(1, challenge.bytes)
+    val minusE = dlogGroup.order.subtract(e)
+    val hToZ = dlogGroup.exponentiate(publicInput.h, z)
+    val gToZ = dlogGroup.exponentiate(publicInput.g, z)
+    val uToMinusE = dlogGroup.exponentiate(publicInput.u, minusE)
+    val vToMinusE = dlogGroup.exponentiate(publicInput.v, minusE)
+    val a = dlogGroup.multiplyGroupElements(gToZ, uToMinusE)
+    val b = dlogGroup.multiplyGroupElements(hToZ, vToMinusE)
+    FirstDiffieHellmanTupleProverMessage(a, b) -> SecondDiffieHellmanTupleProverMessage(z)
   }
 }
