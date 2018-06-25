@@ -12,7 +12,7 @@ import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 import Serializer.Consumed
 import org.ergoplatform._
-import sigmastate.serialization.Constraints.{onlyNumeric2, sameType2}
+import sigmastate.lang.SigmaTyper
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -37,12 +37,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
 
-    Relation2Serializer(GtCode, GT.apply[SType], Seq(onlyNumeric2, sameType2)),
-    Relation2Serializer(GeCode, GE.apply[SType], Seq(onlyNumeric2, sameType2)),
-    Relation2Serializer(LtCode, LT.apply[SType], Seq(onlyNumeric2, sameType2)),
-    Relation2Serializer(LeCode, LE.apply[SType], Seq(onlyNumeric2, sameType2)),
-    Relation2Serializer(EqCode, EQ.apply[SType], Seq(sameType2)),
-    Relation2Serializer(NeqCode, NEQ.apply[SType], Seq(sameType2)),
+    Relation2Serializer(GtCode, GT.apply[SType], Seq()),
+    Relation2Serializer(GeCode, GE.apply[SType], Seq()),
+    Relation2Serializer(LtCode, LT.apply[SType], Seq()),
+    Relation2Serializer(LeCode, LE.apply[SType], Seq()),
+    Relation2Serializer(EqCode, EQ.apply[SType], Seq()),
+    Relation2Serializer(NeqCode, NEQ.apply[SType], Seq()),
     Relation3Serializer(IsMemberCode, IsMember.apply),
     QuadrupelSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
 
@@ -132,7 +132,9 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
   }
 
-  def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
+  def deserialize(bytes: Array[Byte]): Value[_ <: SType] = {
+    new SigmaTyper().typecheck(deserialize(bytes, 0)._1)
+  }
 }
 
 object Constraints {

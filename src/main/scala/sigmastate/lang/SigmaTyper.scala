@@ -309,6 +309,26 @@ class SigmaTyper {
     case v: ContextVariable[_] => v
     case v: EvaluatedValue[_] => v
     case v: SigmaBoolean => v
+    case v: ExtractRegisterAs[_] => v
+    case v: ExtractScriptBytes => v
+    case v: IsMember => v
+    case v: MapCollection[_, _] => v
+    case v: Exists[_] => v
+    case v: ForAll[_] => v
+    case v: Fold[_] => v
+    case v: Slice[_] => v
+    case v: Append[_] => v
+    case v: Where[_] => v
+    case v: ExtractAmount => v
+    case v: ExtractBytes => v
+    case v: ExtractBytesWithNoRef => v
+    case v: ExtractId => v
+    case v: LongToByteArray => v
+    case v: DeserializeContext[_] => v
+    case v: DeserializeRegister[_] => v
+    case v: ByteArrayToBigInt => v
+    case v: CalcBlake2b256 => v
+    case v: CalcSha256 => v
     case v => error(s"Don't know how to assignType($v)")
   }
 
