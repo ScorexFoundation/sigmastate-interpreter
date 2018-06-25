@@ -128,4 +128,36 @@ trait TransformerGenerators {
 
   def logicalExprTreeGen(nodeCons: Seq[LogicalTransformerCons]): Gen[Value[SBoolean.type]] =
     Gen.oneOf(booleanExprGen, booleanConstGen, Gen.delay(logicalExprTreeNodeGen(nodeCons)))
+
+  def numExprTreeNodeGen: Gen[Value[SNumericType]] = for {
+    left <- numExprTreeGen
+    right <- numExprTreeGen
+    node <- Gen.oneOf(
+      Plus(left, right),
+      Minus(left, right),
+      Multiply(left, right),
+      Divide(left, right),
+      Modulo(left, right)
+    )
+  } yield node
+
+  def numExprTreeGen: Gen[Value[SNumericType]] =
+    Gen.oneOf(arbByteConstants.arbitrary,
+      arbIntConstants.arbitrary,
+      arbLongConstants.arbitrary,
+      arbBigIntConstant.arbitrary,
+      Gen.delay(numExprTreeNodeGen))
+
+  def comparisonExprTreeNodeGen: Gen[Value[SBoolean.type]] = for {
+    left <- numExprTreeNodeGen
+    right <- numExprTreeNodeGen
+    node <- Gen.oneOf(
+      EQ(left, right),
+      NEQ(left, right),
+      LE(left, right),
+      GE(left, right),
+      LT(left, right),
+      GT(left, right)
+    )
+  } yield node
 }
