@@ -12,6 +12,7 @@ import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 import Serializer.Consumed
 import org.ergoplatform._
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.Constraints.{onlyNumeric2, sameType2}
 
 
@@ -41,7 +42,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(GeCode, GE.apply[SType], Seq(onlyNumeric2, sameType2)),
     Relation2Serializer(LtCode, LT.apply[SType], Seq(onlyNumeric2, sameType2)),
     Relation2Serializer(LeCode, LE.apply[SType], Seq(onlyNumeric2, sameType2)),
-    Relation2Serializer(EqCode, EQ.apply[SType], Seq(sameType2)),
+    Relation2Serializer(EqCode, DeserializationSigmaBuilder.EQ[SType], Seq()),
     Relation2Serializer(NeqCode, NEQ.apply[SType], Seq(sameType2)),
     Relation3Serializer(IsMemberCode, IsMember.apply),
     QuadrupelSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
@@ -94,7 +95,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, CalcSha256.apply),
-    UpcastSerializer,
     DeserializeContextSerializer,
     DeserializeRegisterSerializer,
     ExtractRegisterAsSerializer,
@@ -104,7 +104,13 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     AppendSerializer
   ).map(s => (s.opCode, s)).toMap
 
-  def serialize(v: Value[SType]): Array[Byte] = v match {
+  private def serializable(v: Value[SType]): Value[SType] = v match {
+    case upcast: Upcast[SType, _]@unchecked =>
+      upcast.input
+    case _ => v
+  }
+
+  def serialize(v: Value[SType]): Array[Byte] = serializable(v) match {
     case c: Constant[SType] =>
       val w = Serializer.startWriter()
       ConstantSerializer.serialize(c, w)

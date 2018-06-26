@@ -1,6 +1,8 @@
 package sigmastate.serialization
 
-import sigmastate.lang.SigmaTyper
+import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.lang.{DefaultSigmaBuilder, SigmaTyper}
+import sigmastate.{SLong, Upcast}
 
 class UpcastOnDeserializationSpecification extends SerializationSpecification {
 
@@ -9,5 +11,10 @@ class UpcastOnDeserializationSpecification extends SerializationSpecification {
       val typedTree = (new SigmaTyper).typecheck(tree)
       roundTripTest(typedTree)
     }
+  }
+
+  property("EQ: Upcast on deserialization") {
+    val expr = DefaultSigmaBuilder.EQ(Upcast(IntConstant(1), SLong), LongConstant(1))
+    roundTripTest(expr)
   }
 }

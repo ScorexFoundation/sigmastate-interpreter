@@ -16,3 +16,6 @@ class SpecializerException(message: String, source: Option[SourceContext])
 
 class SerializerException(message: String, source: Option[SourceContext])
   extends SigmaException(message, source)
+
+class BuilderException(message: String, source: Option[SourceContext])
+  extends SigmaException(message, source)
