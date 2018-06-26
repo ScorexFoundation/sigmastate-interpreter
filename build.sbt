@@ -36,7 +36,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
   "com.lihaoyi" %% "fastparse" % "1.0.0",
-  "com.huawei.scalan" %% "library" % "0.3.0-SNAPSHOT"
+  "special" %% "sigma-library" % "0.3.0-SNAPSHOT"
 ) ++ testingDependencies
 
 

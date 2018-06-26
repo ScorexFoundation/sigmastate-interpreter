@@ -2,11 +2,11 @@ package sigmastate.lang
 
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
-import scalan.Library
+import scalan.{SigmaLibrary}
 
 class SigmaCosterTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   val compiler = new SigmaCompiler
-  val ctx = new Library() {
+  val ctx = new SigmaLibrary() {
     override val currentPass = new DefaultPass("mypass",
       Pass.defaultPassConfig.copy(constantPropagation = false))
   }

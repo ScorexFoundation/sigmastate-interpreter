@@ -1,11 +1,11 @@
 package sigmastate.lang
 
-import scalan.Library
+import scalan.{SigmaLibrary}
 import sigmastate._
 import sigmastate.Values.{Value, Constant}
 import sigmastate.serialization.OpCodes
 
-class SigmaCoster[Ctx <: Library](val ctx: Ctx) {
+class SigmaCoster[Ctx <: SigmaLibrary](val ctx: Ctx) {
   import SigmaCoster._
   import ctx._
 
