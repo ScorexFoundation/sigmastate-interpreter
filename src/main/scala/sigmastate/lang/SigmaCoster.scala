@@ -32,7 +32,7 @@ class SigmaCoster[Ctx <: SigmaLibrary](val ctx: Ctx) {
     case _ => error(s"Cannot find BinOp for opcode $opCode")
   }
 
-  private def evalNode[T <: SType](ctx: Rep[Context], node: Value[T]): Rep[T#WrappedType] = {
+  private def evalNode[T <: SType](ctx: Rep[Context], node: Value[T]): Rep[Costed[T#WrappedType]] = {
     val res: Rep[Any] = node match {
       case Constant(v, tpe) => toRep(v)(stypeToElem(tpe))
       case Height => ctx.HEIGHT
@@ -51,10 +51,10 @@ class SigmaCoster[Ctx <: SigmaLibrary](val ctx: Ctx) {
       case _ =>
         error(s"Don't know how to evalNode($node)")
     }
-    res.asRep[T#WrappedType]
+    res.asRep[Costed[T#WrappedType]]
   }
 
-  def buildCostedGraph[T <: SType](tree: Value[T]): Rep[Context => T#WrappedType] = {
+  def buildCostedGraph[T <: SType](tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = {
     fun { ctx: Rep[Context] => evalNode(ctx, tree) }
   }
 }

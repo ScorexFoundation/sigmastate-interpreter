@@ -6,7 +6,7 @@ import scalan.{SigmaLibrary}
 
 class SigmaCosterTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   val compiler = new SigmaCompiler
-  val ctx = new SigmaLibrary() {
+  val ctx = new CosterCtx {
     override val currentPass = new DefaultPass("mypass",
       Pass.defaultPassConfig.copy(constantPropagation = false))
   }
@@ -19,12 +19,15 @@ class SigmaCosterTest extends PropSpec with PropertyChecks with Matchers with La
     cg
   }
 
-  def cfun[T](f: Rep[Context] => Rep[T]) = fun(f)
-
-  def test[T](script: String, expectedFun: Rep[Context] => Rep[T]) = {
-    val x = cost(env, script)
-    val y = cfun(expectedFun)
-    x shouldBe y
+  def test[T](script: String, expectedCalc: Rep[Context] => Rep[T], expectedCost: Rep[Context] => Rep[Long]) = {
+    val cf = cost(env, script)
+    val Pair(calcF, costF) = cf match { case cf: RFunc[Context, Costed[_]]@unchecked =>
+      split(cf)
+    }
+    val expCalc = fun(expectedCalc)
+    val expCost = fun(expectedCost)
+    calcF shouldBe expCalc
+    costF shouldBe expCost
   }
 
   property("costed constants") {
