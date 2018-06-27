@@ -65,13 +65,13 @@ object SigmaParser extends Exprs with Types with Core {
     case "<=" => LE(l, r)
     case "<"  => LT(l, r)
     case "+"  => StdSigmaBuilder.Plus(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "-"  => Minus(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "-"  => StdSigmaBuilder.Minus(l.asValue[SLong.type], r.asValue[SLong.type])
     case "|"  => Xor(l.asValue[SByteArray], r.asValue[SByteArray])
     case "++" => MethodCall(l, "++", IndexedSeq(r))
     case "^"  => Exponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
     case "*"  => MethodCall(l, "*", IndexedSeq(r))
-    case "/"  => Divide(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "%"  => Modulo(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "/"  => StdSigmaBuilder.Divide(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "%"  => StdSigmaBuilder.Modulo(l.asValue[SLong.type], r.asValue[SLong.type])
     case _ => error(s"Unknown binary operation $opName")
   }
 

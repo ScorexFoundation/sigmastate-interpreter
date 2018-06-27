@@ -6,7 +6,6 @@ import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.BuilderException
 import sigmastate.serialization.OpCodes
-import sigmastate.serialization.OpCodes.OpCode
 
 trait SigmaBuilder {
 
@@ -19,6 +18,10 @@ trait SigmaBuilder {
   def LE[S <: SType](left: Value[S], right: Value[S]): LE[S]
 
   def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
+  def Minus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
+  def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
+  def Divide[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
+  def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
@@ -34,6 +37,14 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
     sigmastate.ArithOp(left, right, OpCodes.PlusCode)
+  override def Minus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+    sigmastate.ArithOp(left, right, OpCodes.MinusCode)
+  override def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+    sigmastate.ArithOp(left, right, OpCodes.MultiplyCode)
+  override def Divide[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+    sigmastate.ArithOp(left, right, OpCodes.DivisionCode)
+  override def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+    sigmastate.ArithOp(left, right, OpCodes.ModuloCode)
 }
 
 trait TypeConstraintCheck{
@@ -106,6 +117,26 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
     val (l, r) = applyUpcast(left, right)
     super.Plus(l, r)
   }
+
+  override def Minus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
+    val (l, r) = applyUpcast(left, right)
+    super.Minus(l, r)
+  }
+
+  override def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
+    val (l, r) = applyUpcast(left, right)
+    super.Multiply(l, r)
+  }
+
+  override def Divide[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
+    val (l, r) = applyUpcast(left, right)
+    super.Divide(l, r)
+  }
+
+  override def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
+    val (l, r) = applyUpcast(left, right)
+    super.Modulo(l, r)
+  }
 }
 
 trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
@@ -145,6 +176,26 @@ trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
   override def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
     check2(left, right, Seq(sameType2))
     super.Plus(left, right)
+  }
+
+  override def Minus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] ={
+    check2(left, right, Seq(sameType2))
+    super.Minus(left, right)
+  }
+
+  override def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
+    check2(left, right, Seq(sameType2))
+    super.Multiply(left, right)
+  }
+
+  override def Divide[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
+    check2(left, right, Seq(sameType2))
+    super.Divide(left, right)
+  }
+
+  override def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
+    check2(left, right, Seq(sameType2))
+    super.Modulo(left, right)
   }
 }
 
