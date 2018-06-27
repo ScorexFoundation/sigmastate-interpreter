@@ -335,6 +335,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 >= false")
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 < false")
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 <= false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 + false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 - false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 / false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 % false")
+    an[TyperException] should be thrownBy typecheck(env, "1 * false")
   }
 
   property("upcast for binary operations with numeric types") {
@@ -343,5 +348,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "1 >= 1L") shouldBe SBoolean
     typecheck(env, "1 < 1L") shouldBe SBoolean
     typecheck(env, "1 <= 1L") shouldBe SBoolean
+    typecheck(env, "1 + 1L") shouldBe SLong
+    typecheck(env, "1 - 1L") shouldBe SLong
+    typecheck(env, "1 * 1L") shouldBe SLong
+    typecheck(env, "1 / 1L") shouldBe SLong
+    typecheck(env, "1 % 1L") shouldBe SLong
   }
 }

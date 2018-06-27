@@ -319,18 +319,23 @@ class SigmaTyper {
       (tArg: SType, tRes: SType): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
+    val safeMkNode = { (left: Value[T], right: Value[T]) =>
+      try {
+        mkNode(left, right)
+      } catch {
+        case e: Throwable =>
+          throw new InvalidBinaryOperationParameters(s"operation: $op: $e")
+      }
+    }
     (l1.tpe, r1.tpe) match {
       case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
-        val tmax = t1 max t2
-        val l = l1.upcastTo(tmax)
-        val r = r1.upcastTo(tmax)
-        mkNode(l.asValue[T], r.asValue[T])
+        safeMkNode(l1, r1)
       case (t1, t2) =>
         val substOpt = unifyTypes(SFunc(Vector(tArg, tArg), tRes), SFunc(Vector(t1, t2), tRes))
         if (substOpt.isDefined)
-          mkNode(l1, r1)
+          safeMkNode(l1, r1)
         else
-          error(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })")
+          throw new InvalidBinaryOperationParameters(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })")
     }
 
   }
