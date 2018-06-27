@@ -2,15 +2,18 @@ package sigmastate.lang
 
 import sigmastate.Values.Value
 import sigmastate._
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.BuilderException
-import sigmastate.serialization.Constraints
 
 trait SigmaBuilder {
 
   def EQ[S <: SType](left: Value[S], right: Value[S]): EQ[S]
   def NEQ[S <: SType](left: Value[S], right: Value[S]): NEQ[S]
   def GT[S <: SType](left: Value[S], right: Value[S]): GT[S]
+  def GE[S <: SType](left: Value[S], right: Value[S]): GE[S]
+  def LT[S <: SType](left: Value[S], right: Value[S]): LT[S]
+  def LE[S <: SType](left: Value[S], right: Value[S]): LE[S]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
@@ -20,13 +23,16 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def EQ[S <: SType](left: Value[S], right: Value[S]): EQ[S] = sigmastate.EQ(left, right)
   override def NEQ[S <: SType](left: Value[S], right: Value[S]): NEQ[S] = sigmastate.NEQ(left, right)
   override def GT[S <: SType](left: Value[S], right: Value[S]): GT[S] = sigmastate.GT(left, right)
+  override def GE[S <: SType](left: Value[S], right: Value[S]): GE[S] = sigmastate.GE(left, right)
+  override def LT[S <: SType](left: Value[S], right: Value[S]): LT[S] = sigmastate.LT(left, right)
+  override def LE[S <: SType](left: Value[S], right: Value[S]): LE[S] = sigmastate.LE(left, right)
 }
 
 trait TypeConstraintCheck{
 
   def check2[S <: SType](left: Value[S],
                                  right: Value[S],
-                                 constraints: Seq[Constraints.TypeConstraint2]): Unit =
+                                 constraints: Seq[TypeConstraint2]): Unit =
     constraints.foreach { c =>
       if (!c(left.tpe, right.tpe))
         throw new BuilderException(s"Failed constraint $c for binary operation parameters ($left, $right)")
@@ -46,41 +52,81 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
         (left, right)
     }
 
+  // fixme DRY
+
   override def EQ[S <: SType](left: Value[S], right: Value[S]): EQ[S] = {
     val (l, r) = applyUpcast(left, right)
-    check2(l, r, Seq(Constraints.sameType2))
+    check2(l, r, Seq(sameType2))
     super.EQ(l, r)
   }
 
   override def NEQ[S <: SType](left: Value[S], right: Value[S]): NEQ[S] = {
     val (l, r) = applyUpcast(left, right)
-    check2(l, r, Seq(Constraints.sameType2))
+    check2(l, r, Seq(sameType2))
     super.NEQ(l, r)
   }
 
   override def GT[S <: SType](left: Value[S], right: Value[S]): GT[S] = {
-    check2(left, right, Seq(Constraints.onlyNumeric2))
+    check2(left, right, Seq(onlyNumeric2))
     val (l, r) = applyUpcast(left, right)
-    check2(l, r, Seq(Constraints.sameType2))
+    check2(l, r, Seq(sameType2))
     super.GT(l, r)
+  }
+
+  override def GE[S <: SType](left: Value[S], right: Value[S]): GE[S] = {
+    check2(left, right, Seq(onlyNumeric2))
+    val (l, r) = applyUpcast(left, right)
+    check2(l, r, Seq(sameType2))
+    super.GE(l, r)
+  }
+
+  override def LT[S <: SType](left: Value[S], right: Value[S]): LT[S] = {
+    check2(left, right, Seq(onlyNumeric2))
+    val (l, r) = applyUpcast(left, right)
+    check2(l, r, Seq(sameType2))
+    super.LT(l, r)
+  }
+
+  override def LE[S <: SType](left: Value[S], right: Value[S]): LE[S] = {
+    check2(left, right, Seq(onlyNumeric2))
+    val (l, r) = applyUpcast(left, right)
+    check2(l, r, Seq(sameType2))
+    super.LE(l, r)
   }
 }
 
 trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 
+  // fixme DRY
+
   override def EQ[S <: SType](left: Value[S], right: Value[S]): EQ[S] = {
-    check2(left, right, Seq(Constraints.sameType2))
+    check2(left, right, Seq(sameType2))
     super.EQ(left, right)
   }
 
   override def NEQ[S <: SType](left: Value[S], right: Value[S]): NEQ[S] = {
-    check2(left, right, Seq(Constraints.sameType2))
+    check2(left, right, Seq(sameType2))
     super.NEQ(left, right)
   }
 
   override def GT[S <: SType](left: Value[S], right: Value[S]): GT[S] = {
-    check2(left, right, Seq(Constraints.onlyNumeric2, Constraints.sameType2))
+    check2(left, right, Seq(onlyNumeric2, sameType2))
     super.GT(left, right)
+  }
+
+  override def GE[S <: SType](left: Value[S], right: Value[S]): GE[S] = {
+    check2(left, right, Seq(onlyNumeric2, sameType2))
+    super.GE(left, right)
+  }
+
+  override def LT[S <: SType](left: Value[S], right: Value[S]): LT[S] = {
+    check2(left, right, Seq(onlyNumeric2, sameType2))
+    super.LT(left, right)
+  }
+
+  override def LE[S <: SType](left: Value[S], right: Value[S]): LE[S] = {
+    check2(left, right, Seq(onlyNumeric2, sameType2))
+    super.LE(left, right)
   }
 }
 
@@ -89,3 +135,20 @@ case object DefaultSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilde
 case object TransformingSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
 
 case object DeserializationSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
+
+object Constraints {
+  type Constraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
+  type TypeConstraint2 = (SType, SType) => Boolean
+  type ConstraintN = Seq[SType.TypeCode] => Boolean
+
+  def onlyNumeric2: TypeConstraint2 = {
+    case (_: SNumericType, _: SNumericType) => true
+    case _ => false
+  }
+
+  def sameType2: TypeConstraint2 = {
+    case (v1, v2) => v1.tpe == v2.tpe
+  }
+
+  def sameTypeN: ConstraintN = { tcs => tcs.tail.forall(_ == tcs.head) }
+}

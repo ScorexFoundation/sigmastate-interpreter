@@ -17,4 +17,9 @@ class UpcastOnDeserializationSpecification extends SerializationSpecification {
     val expr = DefaultSigmaBuilder.EQ(Upcast(IntConstant(1), SLong), LongConstant(1))
     roundTripTest(expr)
   }
+
+  property("GT: Upcast on deserialization") {
+    val expr = DefaultSigmaBuilder.GT(Upcast(IntConstant(1), SLong), LongConstant(1))
+    roundTripTest(expr)
+  }
 }

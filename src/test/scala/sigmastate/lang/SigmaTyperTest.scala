@@ -69,6 +69,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "n1 > n2") shouldBe SBoolean
     typecheck(env, "n1 <= n2") shouldBe SBoolean
     typecheck(env, "n1 >= n2") shouldBe SBoolean
+    typecheck(env, "n1 == n2") shouldBe SBoolean
+    typecheck(env, "n1 != n2") shouldBe SBoolean
   }
 
   property("predefined functions") {
@@ -326,12 +328,20 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       ("A", SInt), ("B", SBoolean))
   }
 
-  property("invalid binary operators type check") {
+  property("invalid binary operations type check") {
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 == false")
-    typecheck(env, "1 == 1L") shouldBe SBoolean
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 != false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 > false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 >= false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 < false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 <= false")
   }
 
   property("upcast for binary operations with numeric types") {
     typecheck(env, "1 == 1L") shouldBe SBoolean
+    typecheck(env, "1 > 1L") shouldBe SBoolean
+    typecheck(env, "1 >= 1L") shouldBe SBoolean
+    typecheck(env, "1 < 1L") shouldBe SBoolean
+    typecheck(env, "1 <= 1L") shouldBe SBoolean
   }
 }

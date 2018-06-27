@@ -59,6 +59,7 @@ object SigmaParser extends Exprs with Types with Core {
     case "||" => OR(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
     case "&&" => AND(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
     case "==" => EQ(l, r)
+    case "!=" => NEQ(l, r)
     case ">=" => GE(l, r)
     case ">"  => GT(l, r)
     case "<=" => LE(l, r)
