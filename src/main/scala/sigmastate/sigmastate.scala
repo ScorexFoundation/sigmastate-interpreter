@@ -1,4 +1,5 @@
 import sigmastate.Values.Value
+import sigmastate.lang.StdSigmaBuilder
 import sigmastate.serialization.OpCodes._
 
 package object sigmastate {
@@ -6,7 +7,8 @@ package object sigmastate {
   /**
     * SInt addition
     */
-  def Plus[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, PlusCode)
+  def Plus[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] =
+    StdSigmaBuilder.Plus(left, right)
 
   /**
     * SInt subtraction

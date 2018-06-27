@@ -64,7 +64,7 @@ object SigmaParser extends Exprs with Types with Core {
     case ">"  => GT(l, r)
     case "<=" => LE(l, r)
     case "<"  => LT(l, r)
-    case "+"  => Plus(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "+"  => StdSigmaBuilder.Plus(l.asValue[SLong.type], r.asValue[SLong.type])
     case "-"  => Minus(l.asValue[SLong.type], r.asValue[SLong.type])
     case "|"  => Xor(l.asValue[SByteArray], r.asValue[SByteArray])
     case "++" => MethodCall(l, "++", IndexedSeq(r))

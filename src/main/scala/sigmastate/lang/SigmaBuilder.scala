@@ -5,15 +5,20 @@ import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.BuilderException
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes.OpCode
 
 trait SigmaBuilder {
 
   def EQ[S <: SType](left: Value[S], right: Value[S]): EQ[S]
   def NEQ[S <: SType](left: Value[S], right: Value[S]): NEQ[S]
+
   def GT[S <: SType](left: Value[S], right: Value[S]): GT[S]
   def GE[S <: SType](left: Value[S], right: Value[S]): GE[S]
   def LT[S <: SType](left: Value[S], right: Value[S]): LT[S]
   def LE[S <: SType](left: Value[S], right: Value[S]): LE[S]
+
+  def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
@@ -26,6 +31,9 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def GE[S <: SType](left: Value[S], right: Value[S]): GE[S] = sigmastate.GE(left, right)
   override def LT[S <: SType](left: Value[S], right: Value[S]): LT[S] = sigmastate.LT(left, right)
   override def LE[S <: SType](left: Value[S], right: Value[S]): LE[S] = sigmastate.LE(left, right)
+
+  override def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+    sigmastate.ArithOp(left, right, OpCodes.PlusCode)
 }
 
 trait TypeConstraintCheck{
@@ -35,7 +43,7 @@ trait TypeConstraintCheck{
                                  constraints: Seq[TypeConstraint2]): Unit =
     constraints.foreach { c =>
       if (!c(left.tpe, right.tpe))
-        throw new BuilderException(s"Failed constraint $c for binary operation parameters ($left, $right)")
+        throw new BuilderException(s"Failed constraint $c for binary operation parameters ($left(tpe: ${left.tpe}), $right(tpe: ${right.tpe}))")
     }
 }
 
@@ -93,6 +101,11 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
     check2(l, r, Seq(sameType2))
     super.LE(l, r)
   }
+
+  override def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
+    val (l, r) = applyUpcast(left, right)
+    super.Plus(l, r)
+  }
 }
 
 trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
@@ -128,12 +141,16 @@ trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
     check2(left, right, Seq(onlyNumeric2, sameType2))
     super.LE(left, right)
   }
+
+  override def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] = {
+    check2(left, right, Seq(sameType2))
+    super.Plus(left, right)
+  }
 }
 
+case object StdSigmaBuilder extends StdSigmaBuilder
 case object DefaultSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
-
 case object TransformingSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
-
 case object DeserializationSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
 
 object Constraints {
