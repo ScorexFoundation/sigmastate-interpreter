@@ -6,6 +6,7 @@ import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.serialization.{OpCodes, Serializer, ValueSerializer}
 import sigmastate.utxo.ByIndex
 import sigmastate.{SCollection, SInt, SType}
+import sigmastate.lang.Terms._
 
 object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
 
@@ -14,7 +15,7 @@ object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
   override def parseBody(bytes: Array[Byte], pos: Position): (ByIndex[SType], Consumed) = {
     val r = Serializer.startReader(bytes, pos)
     val input = r.getValue().asInstanceOf[Value[SCollection[SType]]]
-    val index = r.getValue().asInstanceOf[Value[SInt.type ]]
+    val index = r.getValue().upcastTo(SInt)
     val default = r.getOption(r.getValue())
     val res = ByIndex(input, index, default)
     res -> r.consumed

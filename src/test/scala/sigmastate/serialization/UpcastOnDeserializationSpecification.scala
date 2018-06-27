@@ -1,8 +1,10 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{IntConstant, LongConstant}
+import org.ergoplatform.Outputs
+import sigmastate.Values.{ByteConstant, IntConstant, LongConstant}
 import sigmastate.lang.{DefaultSigmaBuilder, SigmaTyper}
-import sigmastate.{SLong, Upcast}
+import sigmastate.utxo.ByIndex
+import sigmastate.{SInt, SLong, Upcast}
 
 class UpcastOnDeserializationSpecification extends SerializationSpecification {
 
@@ -20,6 +22,11 @@ class UpcastOnDeserializationSpecification extends SerializationSpecification {
 
   property("GT: Upcast on deserialization") {
     val expr = DefaultSigmaBuilder.GT(Upcast(IntConstant(1), SLong), LongConstant(1))
+    roundTripTest(expr)
+  }
+
+  property("ByIndex: index upcast on deserialization") {
+    val expr = ByIndex(Outputs, Upcast(ByteConstant(1), SInt))
     roundTripTest(expr)
   }
 }
