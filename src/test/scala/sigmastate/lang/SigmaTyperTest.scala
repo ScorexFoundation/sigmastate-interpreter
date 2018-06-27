@@ -1,12 +1,12 @@
 package sigmastate.lang
 
-import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
-import sigmastate._
+import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Select, Apply}
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, TyperException}
 import sigmastate.serialization.generators.ValueGenerators
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
@@ -324,5 +324,14 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       "((A,Int), Array[B] => Array[(Array[C], B)]) => A",
       "((Int,Int), Array[Boolean] => Array[(Array[C], Boolean)]) => Int",
       ("A", SInt), ("B", SBoolean))
+  }
+
+  property("invalid binary operators type check") {
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 == false")
+    typecheck(env, "1 == 1L") shouldBe SBoolean
+  }
+
+  property("upcast for binary operations with numeric types") {
+    typecheck(env, "1 == 1L") shouldBe SBoolean
   }
 }

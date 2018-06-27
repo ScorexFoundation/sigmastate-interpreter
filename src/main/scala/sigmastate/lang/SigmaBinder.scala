@@ -10,6 +10,7 @@ import org.ergoplatform._
 import sigmastate.utils.Extensions._
 import sigmastate.Values.Value.Typed
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.lang.exceptions.BinderException
 import sigmastate.utxo.ByIndex
 
 class SigmaBinder(env: Map[String, Any]) {

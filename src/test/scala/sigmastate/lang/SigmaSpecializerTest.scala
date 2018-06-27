@@ -6,6 +6,7 @@ import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms.Ident
+import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ValueGenerators}
 import sigmastate.utxo._
 

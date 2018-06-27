@@ -1,4 +1,4 @@
-package sigmastate.lang
+package sigmastate.lang.exceptions
 
 case class SourceContext(index: Int)
 

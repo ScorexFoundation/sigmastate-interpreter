@@ -6,6 +6,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, TyperException}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
@@ -263,8 +264,8 @@ class SigmaTyper {
     case LE(l, r) => bimap(env, "<=", l, r)(LE[SType])(tT, SBoolean)
     case GT(l, r) => bimap(env, ">", l, r) (GT[SType])(tT, SBoolean)
     case LT(l, r) => bimap(env, "<", l, r) (LT[SType])(tT, SBoolean)
-    case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])
-    case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ[SType])
+    case EQ(l, r) => bimap2(env, "==", l, r)(TransformingSigmaBuilder.EQ[SType])
+    case NEQ(l, r) => bimap2(env, "!=", l, r)(TransformingSigmaBuilder.NEQ[SType])
 
     case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(Minus)(tT, tT)
     case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(Plus)(tT, tT)
@@ -339,17 +340,11 @@ class SigmaTyper {
           (newNode: (Value[T], Value[T]) => SValue): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
-    (l1.tpe, r1.tpe) match {
-      case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
-        val tmax = t1 max t2
-        val l = l1.upcastTo(tmax)
-        val r = r1.upcastTo(tmax)
-        newNode(l.asValue[T], r.asValue[T])
-      case (t1, t2) =>
-        if (t1 == t2)
-          newNode(l1, r1)
-        else
-          error(s"Invalid binary operation $op ($l1, $r1): type mismatch $t1 != $t2")
+    try {
+      newNode(l1, r1)
+    } catch {
+      case e: Throwable =>
+        throw new InvalidBinaryOperationParameters(s"operation $op: $e")
     }
   }
 
