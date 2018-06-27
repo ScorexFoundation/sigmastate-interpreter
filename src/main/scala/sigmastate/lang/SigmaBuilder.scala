@@ -47,13 +47,22 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder {
 
 trait CheckingSigmaBuilder extends StdSigmaBuilder {
 
-  override def EQ[S <: SType](left: Value[S], right: Value[S]): EQ[S] = {
-    val constraints = Seq(Constraints.sameType2)
+  private def check2[S <: SType](left: Value[S],
+                                 right: Value[S],
+                                 constraints: Seq[Constraints.TypeConstraint2]): Unit =
     constraints.foreach { c =>
       if (!c(left.tpe, right.tpe))
-        error(s"Failed constraint $c for binary operation EQ ($left, $right)")
+        error(s"Failed constraint $c for binary operation parameters ($left, $right)")
     }
+
+  override def EQ[S <: SType](left: Value[S], right: Value[S]): EQ[S] = {
+    check2(left, right, Seq(Constraints.sameType2))
     super.EQ(left, right)
+  }
+
+  override def NEQ[S <: SType](left: Value[S], right: Value[S]): NEQ[S] = {
+    check2(left, right, Seq(Constraints.sameType2))
+    super.NEQ(left, right)
   }
 }
 
