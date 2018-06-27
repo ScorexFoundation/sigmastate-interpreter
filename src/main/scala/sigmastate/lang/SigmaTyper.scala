@@ -260,10 +260,10 @@ class SigmaTyper {
         error(s"Invalid operation OR: $op")
       OR(input1)
 
-    case GE(l, r) => bimap(env, ">=", l, r)(GE[SType])(tT, SBoolean)
-    case LE(l, r) => bimap(env, "<=", l, r)(LE[SType])(tT, SBoolean)
+    case GE(l, r) => bimap(env, ">=", l, r)(TransformingSigmaBuilder.GE[SType])(tT, SBoolean)
+    case LE(l, r) => bimap(env, "<=", l, r)(TransformingSigmaBuilder.LE[SType])(tT, SBoolean)
     case GT(l, r) => bimap(env, ">", l, r) (TransformingSigmaBuilder.GT[SType])(tT, SBoolean)
-    case LT(l, r) => bimap(env, "<", l, r) (LT[SType])(tT, SBoolean)
+    case LT(l, r) => bimap(env, "<", l, r) (TransformingSigmaBuilder.LT[SType])(tT, SBoolean)
     case EQ(l, r) => bimap2(env, "==", l, r)(TransformingSigmaBuilder.EQ[SType])
     case NEQ(l, r) => bimap2(env, "!=", l, r)(TransformingSigmaBuilder.NEQ[SType])
 
