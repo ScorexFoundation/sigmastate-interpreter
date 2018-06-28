@@ -13,7 +13,7 @@ import scala.util.Try
 
 class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
-                       val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map()) {
+                       val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
   lazy val cost = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
 
@@ -23,12 +23,12 @@ class ErgoBoxCandidate(val value: Long,
 
   def toBox(txId: Array[Byte], boxId: Short) = ErgoBox(value, proposition, additionalRegisters, txId, boxId)
 
-  def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
+  def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case R0 => Some(LongConstant(value))
       case R1 => Some(ByteArrayConstant(propositionBytes))
       case R2 => None
-      case n: NonMandatoryIdentifier => additionalRegisters.get(n)
+      case n: NonMandatoryRegisterId => additionalRegisters.get(n)
     }
   }
 
@@ -75,8 +75,8 @@ object ErgoBoxCandidate {
       val posAfterProp = pos + 8 + consumed
       val regNum = bytes(posAfterProp)
       val posAfterRegNum = posAfterProp + 1
-      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryIdentifier, EvaluatedValue[SType]]() -> posAfterRegNum) { case ((m, p), regIdx) =>
-        val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryIdentifier]
+      val (regs, finalPos) = (0 until regNum).foldLeft(Map[NonMandatoryRegisterId, EvaluatedValue[SType]]() -> posAfterRegNum) { case ((m, p), regIdx) =>
+        val regId = registerByIndex((regIdx + startingNonMandatoryIndex).toByte).asInstanceOf[NonMandatoryRegisterId]
         val (reg, consumed) = ValueSerializer.deserialize(bytes, p)
         (m.updated(regId, reg.asInstanceOf[EvaluatedValue[SType]]), p + consumed)
       }

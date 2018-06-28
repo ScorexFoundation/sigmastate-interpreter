@@ -3,7 +3,7 @@ package org.ergoplatform
 import java.util.Arrays
 
 import com.google.common.primitives.Shorts
-import org.ergoplatform.ErgoBox.NonMandatoryIdentifier
+import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -38,11 +38,11 @@ import scala.runtime.ScalaRunTime
   * @param additionalRegisters
   */
 class ErgoBox private(
-    override val value: Long,
-    override val proposition: Value[SBoolean.type],
-    override val additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
-    val transactionId: Array[Byte],
-    val index: Short
+                       override val value: Long,
+                       override val proposition: Value[SBoolean.type],
+                       override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
+                       val transactionId: Array[Byte],
+                       val index: Short
 ) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
 
   import ErgoBox._
@@ -51,7 +51,7 @@ class ErgoBox private(
 
   override lazy val cost = (bytesWithNoRef.size / 1024 + 1) * Cost.BoxPerKilobyte
 
-  override def get(identifier: RegisterIdentifier): Option[Value[SType]] = {
+  override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case R2 => Some(ByteArrayConstant(transactionId ++ Shorts.toByteArray(index)))
       case _ => super.get(identifier)
@@ -90,24 +90,25 @@ object ErgoBox {
 
   def apply(value: Long,
             proposition: Value[SBoolean.type],
-            additionalRegisters: Map[NonMandatoryIdentifier, _ <: EvaluatedValue[_ <: SType]] = Map(),
+            additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: Array[Byte] = Array.fill(32)(0: Byte),
             boxId: Short = 0): ErgoBox =
     new ErgoBox(value, proposition, additionalRegisters, transactionId, boxId)
 
-  abstract class RegisterIdentifier(val number: Byte)
-  abstract class NonMandatoryIdentifier(override val number: Byte) extends RegisterIdentifier(number)
+  trait RegisterId {val number: Byte}
+  abstract class MandatoryRegisterId(override val number: Byte, purpose: String) extends RegisterId
+  abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
 
-  object R0 extends RegisterIdentifier(0)
-  object R1 extends RegisterIdentifier(1)
-  object R2 extends RegisterIdentifier(2)
-  object R3 extends NonMandatoryIdentifier(3)
-  object R4 extends NonMandatoryIdentifier(4)
-  object R5 extends NonMandatoryIdentifier(5)
-  object R6 extends NonMandatoryIdentifier(6)
-  object R7 extends NonMandatoryIdentifier(7)
-  object R8 extends NonMandatoryIdentifier(8)
-  object R9 extends NonMandatoryIdentifier(9)
+  object R0 extends MandatoryRegisterId(0, "Monetary value, in Ergo tokens")
+  object R1 extends MandatoryRegisterId(1, "Guarding script")
+  object R2 extends MandatoryRegisterId(2, "Reference to transaction and output id where the box was created")
+  object R3 extends NonMandatoryRegisterId(3)
+  object R4 extends NonMandatoryRegisterId(4)
+  object R5 extends NonMandatoryRegisterId(5)
+  object R6 extends NonMandatoryRegisterId(6)
+  object R7 extends NonMandatoryRegisterId(7)
+  object R8 extends NonMandatoryRegisterId(8)
+  object R9 extends NonMandatoryRegisterId(9)
 
   val maxRegisters = 10
   val mandatoryRegisters = Vector(R0, R1, R2)
@@ -119,8 +120,8 @@ object ErgoBox {
   val mandatoryRegistersCount = mandatoryRegisters.size.toByte
   val nonMandatoryRegistersCount = nonMandatoryRegisters.size.toByte
 
-  val registerByName: Map[String, RegisterIdentifier] = allRegisters.map(r => s"R${r.number}" -> r).toMap
-  val registerByIndex: Map[Byte, RegisterIdentifier] = allRegisters.map(r => r.number -> r).toMap
+  val registerByName: Map[String, RegisterId] = allRegisters.map(r => s"R${r.number}" -> r).toMap
+  val registerByIndex: Map[Byte, RegisterId] = allRegisters.map(r => r.number -> r).toMap
 
-  def findRegisterByIndex(i: Byte): Option[RegisterIdentifier] = registerByIndex.get(i)
+  def findRegisterByIndex(i: Byte): Option[RegisterId] = registerByIndex.get(i)
 }

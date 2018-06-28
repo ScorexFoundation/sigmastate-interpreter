@@ -154,8 +154,8 @@ object BlockchainSimulationSpecification {
     def byHeightRegValue(i: Int): Iterable[ErgoBox] =
       boxes.values.filter(_.get(heightReg).getOrElse(LongConstant(i + 1)) == LongConstant(i))
 
-    def byTwoInts(r1Id: ErgoBox.RegisterIdentifier, int1: Int,
-                  r2Id: ErgoBox.RegisterIdentifier, int2: Int): Option[ErgoBox] =
+    def byTwoInts(r1Id: ErgoBox.RegisterId, int1: Int,
+                  r2Id: ErgoBox.RegisterId, int2: Int): Option[ErgoBox] =
       boxes.values.find { box =>
         box.get(r1Id).getOrElse(LongConstant(int1 + 1)) == LongConstant(int1) &&
           box.get(r2Id).getOrElse(LongConstant(int2 + 1)) == LongConstant(int2)

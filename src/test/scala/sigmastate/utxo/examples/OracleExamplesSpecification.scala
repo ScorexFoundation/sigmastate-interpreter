@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
-import org.ergoplatform.ErgoBox.{R1, RegisterIdentifier}
+import org.ergoplatform.ErgoBox.{MandatoryRegisterId, R1, RegisterId}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -112,7 +112,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
-    def extract[T <: SType](Rn: RegisterIdentifier)(implicit tT: T) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
+    def extract[T <: SType](Rn: RegisterId)(implicit tT: T) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
 
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,

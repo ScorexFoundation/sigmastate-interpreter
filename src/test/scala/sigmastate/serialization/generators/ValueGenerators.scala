@@ -34,7 +34,7 @@ trait ValueGenerators extends TypeGenerators {
 
   implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
   implicit val arbProveDHT: Arbitrary[ProveDiffieHellmanTuple] = Arbitrary(proveDHTGen)
-  implicit val arbRegisterIdentifier: Arbitrary[RegisterIdentifier] = Arbitrary(registerIdentifierGen)
+  implicit val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
 
 
   implicit val arbBigInteger   = Arbitrary(arbBigInt.arbitrary.map(_.bigInteger))
@@ -80,14 +80,14 @@ trait ValueGenerators extends TypeGenerators {
     vv: Value[SGroupElement.type] <- groupElementConstGen
   } yield ProveDiffieHellmanTuple(gv, hv, uv, vv)
 
-  val registerIdentifierGen: Gen[RegisterIdentifier] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
+  val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
   val taggedAvlTreeGen: Gen[TaggedAvlTree] = arbByte.arbitrary.map { v => TaggedAvlTree(v) }
 
-  def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryIdentifier, EvaluatedValue[SType])]] = {
+  def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
     (0 until cnt)
       .map(_ + ErgoBox.startingNonMandatoryIndex)
-      .map(rI => ErgoBox.registerByIndex(rI.toByte).asInstanceOf[NonMandatoryIdentifier])
+      .map(rI => ErgoBox.registerByIndex(rI.toByte).asInstanceOf[NonMandatoryRegisterId])
       .map { r =>
         for {
           arr <- byteArrayConstGen

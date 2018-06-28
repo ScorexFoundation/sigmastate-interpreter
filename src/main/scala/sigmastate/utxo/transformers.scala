@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.SCollection.{SByteArray, SBooleanArray}
+import sigmastate.SCollection.{SBooleanArray, SByteArray}
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
@@ -9,7 +9,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
 import sigmastate.utxo.CostTable.Cost
-import org.ergoplatform.ErgoBox.RegisterIdentifier
+import org.ergoplatform.ErgoBox.{MandatoryRegisterId, RegisterId}
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -324,10 +324,10 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
 }
 
 case class ExtractRegisterAs[V <: SType](
-    input: Value[SBox.type],
-    registerId: RegisterIdentifier,
-    tpe: V,
-    default: Option[Value[V]])
+                                          input: Value[SBox.type],
+                                          registerId: RegisterId,
+                                          tpe: V,
+                                          default: Option[Value[V]])
     extends Extract[V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
   override def cost[C <: Context[C]](context: C) = 1000 //todo: the same as ExtractBytes.cost
@@ -341,8 +341,8 @@ case class ExtractRegisterAs[V <: SType](
 
 object ExtractRegisterAs {
   def apply[V <: SType](input: Value[SBox.type],
-      registerId: RegisterIdentifier,
-      default: Option[Value[V]] = None)(implicit tpe: V): ExtractRegisterAs[V] =
+                        registerId: RegisterId,
+                        default: Option[Value[V]] = None)(implicit tpe: V): ExtractRegisterAs[V] =
     ExtractRegisterAs(input, registerId, tpe, default)
 }
 
@@ -356,8 +356,7 @@ case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[
 
 
 //todo: write test for this class
-case class DeserializeRegister[V <: SType](
-    reg: RegisterIdentifier, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
+case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
 
   override val opCode: OpCode = OpCodes.DeserializeRegisterCode
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
