@@ -25,9 +25,9 @@ class ErgoBoxCandidate(val value: Long,
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
-      case R0 => Some(LongConstant(value))
-      case R1 => Some(ByteArrayConstant(propositionBytes))
-      case R2 => None
+      case ValueRegId => Some(LongConstant(value))
+      case ScriptRegId => Some(ByteArrayConstant(propositionBytes))
+      case ReferenceRegId => None
       case n: NonMandatoryRegisterId => additionalRegisters.get(n)
     }
   }

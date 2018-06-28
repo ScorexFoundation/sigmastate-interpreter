@@ -53,7 +53,7 @@ class ErgoBox private(
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
-      case R2 => Some(ByteArrayConstant(transactionId ++ Shorts.toByteArray(index)))
+      case ReferenceRegId => Some(ByteArrayConstant(transactionId ++ Shorts.toByteArray(index)))
       case _ => super.get(identifier)
     }
   }
@@ -109,6 +109,10 @@ object ErgoBox {
   object R7 extends NonMandatoryRegisterId(7)
   object R8 extends NonMandatoryRegisterId(8)
   object R9 extends NonMandatoryRegisterId(9)
+
+  val ValueRegId = R0
+  val ScriptRegId = R1
+  val ReferenceRegId = R2
 
   val maxRegisters = 10
   val mandatoryRegisters = Vector(R0, R1, R2)
