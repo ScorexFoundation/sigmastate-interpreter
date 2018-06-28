@@ -7,9 +7,9 @@ import java.util.Objects
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.FirstDLogProverMessage
+import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
@@ -17,10 +17,10 @@ import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{DeserializeContext, CostTable, Transformer}
+import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -349,39 +349,11 @@ trait Interpreter {
     case c: UncheckedConjecture => c // Do nothing for internal nodes
 
     case sn: UncheckedSchnorr =>
-
-      val dlog = CryptoConstants.dlogGroup
-      val g = dlog.generator
-      val h = sn.proposition.h
-
-      val a = dlog.multiplyGroupElements(
-        dlog.exponentiate(g, sn.secondMessage.z.underlying()),
-        dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
-
+      val a = DLogInteractiveProver.computeCommitment(sn.proposition, sn.challenge, sn.secondMessage)
       sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
 
-    //todo: check that g,h belong to the group
-    //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
     case dh: UncheckedDiffieHellmanTuple =>
-      val dlog = CryptoConstants.dlogGroup
-
-      val g = dh.proposition.g
-      val h = dh.proposition.h
-      val u = dh.proposition.u
-      val v = dh.proposition.v
-
-      val z = dh.secondMessage.z
-
-      val e = new BigInteger(1, dh.challenge)
-
-      val gToZ = dlog.exponentiate(g, z)
-      val hToZ = dlog.exponentiate(h, z)
-
-      val uToE = dlog.exponentiate(u, e)
-      val vToE = dlog.exponentiate(v, e)
-
-      val a = dlog.multiplyGroupElements(gToZ, dlog.getInverse(uToE))
-      val b = dlog.multiplyGroupElements(hToZ, dlog.getInverse(vToE))
+      val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
       dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
 
     case _ => ???

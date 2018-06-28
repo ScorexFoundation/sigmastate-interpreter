@@ -8,6 +8,7 @@ import sigmastate._
 import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.Values._
 import Value.PropositionCode
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
@@ -159,5 +160,42 @@ object DiffieHellmanTupleInteractiveProver {
     val a = dlogGroup.multiplyGroupElements(gToZ, uToMinusE)
     val b = dlogGroup.multiplyGroupElements(hToZ, vToMinusE)
     FirstDiffieHellmanTupleProverMessage(a, b) -> SecondDiffieHellmanTupleProverMessage(z)
+  }
+
+  //todo: check that g,h belong to the group?
+  /**
+    * The function computes initial prover's commitment to randomness
+    * ("a" message of the sigma-protocol) based on the verifier's challenge ("e")
+    * and prover's response ("z")
+    *
+    * g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
+    *
+    * @param proposition
+    * @param challenge
+    * @param secondMessage
+    * @return
+    */
+  def computeCommitment(proposition: ProveDiffieHellmanTuple,
+                        challenge: Array[Byte],
+                        secondMessage: SecondDiffieHellmanTupleProverMessage): (EcPointType, EcPointType) = {
+
+    val g = proposition.g
+    val h = proposition.h
+    val u = proposition.u
+    val v = proposition.v
+
+    val z = secondMessage.z
+
+    val e = new BigInteger(1, challenge)
+
+    val gToZ = dlogGroup.exponentiate(g, z)
+    val hToZ = dlogGroup.exponentiate(h, z)
+
+    val uToE = dlogGroup.exponentiate(u, e)
+    val vToE = dlogGroup.exponentiate(v, e)
+
+    val a = dlogGroup.multiplyGroupElements(gToZ, dlogGroup.getInverse(uToE))
+    val b = dlogGroup.multiplyGroupElements(hToZ, dlogGroup.getInverse(vToE))
+    a -> b
   }
 }

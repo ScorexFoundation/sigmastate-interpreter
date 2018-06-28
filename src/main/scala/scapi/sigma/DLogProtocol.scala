@@ -153,6 +153,30 @@ object DLogProtocol {
       val a = dlogGroup.multiplyGroupElements(gToZ, hToE)
       FirstDLogProverMessage(a) -> SecondDLogProverMessage(z)
     }
+
+    //todo: check that h belongs to the group?
+    /**
+      * The function computes initial prover's commitment to randomness
+      * ("a" message of the sigma-protocol) based on the verifier's challenge ("e")
+      * and prover's response ("z")
+      *
+      * g^z = a*h^e => a = g^z/h^e
+      *
+      * @param proposition
+      * @param challenge
+      * @param secondMessage
+      * @return
+      */
+    def computeCommitment(proposition: ProveDlog,
+                          challenge: Array[Byte],
+                          secondMessage: SecondDLogProverMessage): EcPointType = {
+      val g = dlogGroup.generator
+      val h = proposition.h
+
+      dlogGroup.multiplyGroupElements(
+        dlogGroup.exponentiate(g, secondMessage.z.underlying()),
+        dlogGroup.getInverse(dlogGroup.exponentiate(h, new BigInteger(1, challenge))))
+    }
   }
 
   case class DLogActorProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
