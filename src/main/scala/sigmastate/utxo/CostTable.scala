@@ -15,6 +15,10 @@ object CostTable {
     val ConstantNode = 1
 
     val HeightAccess = 1
+    val InputsAccess = 1
+    val OutputsAccess = 1
+    val SelfAccess = 1
+    val ExtractAmount = 10
 
     //cost for CustomByteArray declaration. Additional cost to be calculated when data is known
     //(and CustomByteArray being converted to ByteArrayLeaf)

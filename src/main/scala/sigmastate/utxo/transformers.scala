@@ -308,7 +308,7 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] with NotReadyValueLong {
   override val opCode: OpCode = OpCodes.ExtractAmountCode
 
-  override def cost[C <: Context[C]](context: C) = 10
+  override def cost[C <: Context[C]](context: C) = Cost.ExtractAmount
 
   override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SLong.type] =
     LongConstant(box.value.value)
