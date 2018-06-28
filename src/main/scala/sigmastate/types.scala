@@ -6,6 +6,7 @@ import org.ergoplatform.ErgoBox
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
+import sigmastate.utils.Extensions._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaTyper
@@ -73,7 +74,9 @@ object SType {
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   implicit class STypeOps(val tpe: SType) {
-    def isCollection: Boolean = tpe.isInstanceOf[SCollection[_]]
+    def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
+    def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
+    def isTuple: Boolean = tpe.isInstanceOf[STuple]
     def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
       case (NoType, _) => true
       case (t1, t2) if t1 == t2 => true
@@ -97,6 +100,11 @@ object SType {
       case SUnit => reflect.classTag[Unit]
       case SBox => reflect.classTag[ErgoBox]
       case SAny => reflect.classTag[Any]
+      case t: STuple => reflect.classTag[Array[Any]]
+      case tCol: SCollection[a] =>
+        val elemType = tCol.elemType
+        implicit val ca = elemType.classTag[elemType.WrappedType]
+        reflect.classTag[Array[elemType.WrappedType]]
       case _ => sys.error(s"Cannot get ClassTag for type $tpe")
     }).asInstanceOf[ClassTag[T]]
   }
@@ -226,6 +234,13 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType {
     case b: Byte => b
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
   }
+  def downcast(v: AnyVal): Byte = v match {
+    case b: Byte => b
+    case s: Short => s.toByteExact
+    case i: Int => i.toByteExact
+    case l: Long => l.toByteExact
+    case _ => sys.error(s"Cannot downcast value $v to the type $this")
+  }
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
@@ -344,8 +359,13 @@ case object SAny extends SPrimType {
   override val typeCode: Byte = 97: Byte
 }
 
-case class SCollection[T <: SType](elemType: T) extends SProduct {
+trait SCollection[T <: SType] extends SProduct {
+  def elemType: T
   override type WrappedType = Array[T#WrappedType]
+  def ancestors = Nil
+}
+
+case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
   override val typeCode: TypeCode = SCollection.CollectionTypeCode
 
   override def mkConstant(v: Array[T#WrappedType]): Value[this.type] =
@@ -354,7 +374,6 @@ case class SCollection[T <: SType](elemType: T) extends SProduct {
   override def dataCost(v: SType#WrappedType): Long =
     ((v.asInstanceOf[Array[T#WrappedType]].length / 1024) + 1) * Cost.ByteArrayPerKilobyte
 
-  def ancestors = Nil
   override def methods = SCollection.methods
   override def toString = s"Array[$elemType]"
 }
@@ -365,8 +384,8 @@ object SCollection {
   val NestedCollectionTypeConstrId = 2
   val NestedCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * NestedCollectionTypeConstrId).toByte
 
-  private val tIV = STypeIdent("IV")
-  private val tOV = STypeIdent("OV")
+  val tIV = STypeIdent("IV")
+  val tOV = STypeIdent("OV")
   val methods = Seq(
     SMethod("size", SInt),
     SMethod("getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(tIV))),
@@ -377,7 +396,8 @@ object SCollection {
     SMethod("slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV))),
     SMethod("where", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV)))
   )
-  def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollection(elemType)
+  def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
+  def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
   def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
 
   type SBooleanArray      = SCollection[SBoolean.type]
@@ -434,22 +454,31 @@ object SOption {
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
 
-case class STuple(items: IndexedSeq[SType]) extends SProduct {
+case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   import STuple._
-  override type WrappedType = Seq[Any]
   override val typeCode = STuple.TupleTypeCode
 
-  def ancestors = Nil
+  override def elemType: SAny.type = SAny
 
   override val methods: Seq[SMethod] = {
+    val subst = Map(SCollection.tIV -> SAny)
+    val colMethods = SCollection.methods.map { m =>
+      m.copy(stype = SigmaTyper.applySubst(m.stype, subst))
+    }
     val b = new mutable.ArrayBuffer[SMethod](items.size)
     var i = 0
     while (i < items.size) {
       b += SMethod(componentNames(i), items(i))
       i += 1
     }
-    b.result
+    val tupleMethods = b.result
+    colMethods ++ tupleMethods
   }
+
+  /** Construct tree node Constant for a given data object. */
+  override def mkConstant(v: Array[Any]): Value[this.type] =
+    Constant[STuple](v, this).asValue[this.type]
+
   override def toString = s"(${items.mkString(",")})"
 }
 

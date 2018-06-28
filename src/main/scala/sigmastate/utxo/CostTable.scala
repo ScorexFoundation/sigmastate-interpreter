@@ -66,6 +66,7 @@ object CostTable {
     val FoldDeclaration = 200
 
     val ByIndexDeclaration = 50
+    val SelectFieldDeclaration = 50
 
     val MapDeclaration = 100
 
@@ -78,6 +79,7 @@ object CostTable {
     val SizeOfDeclaration = 50
 
     val ConcreteCollection = 20
+    val Tuple = 20
 
     val Exponentiate = 5000
 

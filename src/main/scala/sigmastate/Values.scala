@@ -4,7 +4,6 @@ import java.math.BigInteger
 import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.bitbucket.inkytonik.kiama.rewriting.Rewritable
 import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
@@ -17,8 +16,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
-
-import scala.collection.immutable
+import sigmastate.lang.Terms._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -136,6 +134,9 @@ object Values {
       case Constant(value: Int, SInt) => Some(value)
       case _ => None
     }
+
+    def Zero = IntConstant(0)
+    def One = IntConstant(1)
   }
   object LongConstant {
     def apply(value: Long): Constant[SLong.type]  = Constant[SLong.type](value, SLong)
@@ -230,7 +231,7 @@ object Values {
   def TaggedAvlTree     (id: Byte): TaggedAvlTree = TaggedVariable(id, SAvlTree)
   def TaggedByteArray   (id: Byte): TaggedByteArray = TaggedVariable(id, SByteArray)
 
-  trait EvaluatedCollection[T <: SType] extends EvaluatedValue[SCollection[T]] {
+  trait EvaluatedCollection[T <: SType, C <: SCollection[T]] extends EvaluatedValue[C] {
     def elementType: T
   }
 
@@ -302,6 +303,8 @@ object Values {
     }
   }
 
+  val BoolArrayTypeCode = (SCollection.CollectionTypeCode + SBoolean.typeCode).toByte
+
   object BoolArrayConstant {
     def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
     def unapply(node: SValue): Option[Array[Boolean]] = node match {
@@ -338,25 +341,14 @@ object Values {
     override def tpe = SGroupElement
   }
 
-  sealed abstract class BooleanConstant(val value: Boolean) extends EvaluatedValue[SBoolean.type] {
-    override def tpe = SBoolean
-  }
+  type BooleanConstant = Constant[SBoolean.type]
 
   object BooleanConstant {
     def fromBoolean(v: Boolean): BooleanConstant = if (v) TrueLeaf else FalseLeaf
   }
 
-  case object TrueLeaf extends BooleanConstant(true) {
-    override val opCode: OpCode = TrueCode
-
-    override def cost[C <: Context[C]](context: C): Long = Cost.ConstantNode
-  }
-
-  case object FalseLeaf extends BooleanConstant(false) {
-    override val opCode: OpCode = FalseCode
-
-    override def cost[C <: Context[C]](context: C): Long = Cost.ConstantNode
-  }
+  val TrueLeaf: Constant[SBoolean.type] = Constant[SBoolean.type](true, SBoolean)
+  val FalseLeaf: Constant[SBoolean.type] = Constant[SBoolean.type](false, SBoolean)
 
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
     override def tpe = SBoolean
@@ -386,13 +378,15 @@ object Values {
     def tpe = SBox
   }
 
-  case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] {
+  case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
     override val opCode: OpCode = TupleCode
-    val cost: Int = value.size
-    val tpe = STuple(items.map(_.tpe))
-    lazy val value = items
-
-    override def cost[C <: Context[C]](context: C) = Cost.ConcreteCollection + items.map(_.cost(context)).sum
+    override def elementType = SAny
+    lazy val tpe = STuple(items.map(_.tpe))
+    lazy val value = {
+      val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
+      xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]])
+    }
+    override def cost[C <: Context[C]](context: C) = Cost.Tuple + items.map(_.cost(context)).sum
   }
 
   object Tuple {
@@ -423,8 +417,12 @@ object Values {
   }
 
   case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
-    extends EvaluatedCollection[V] {
-    override val opCode: OpCode = ConcreteCollectionCode
+    extends EvaluatedCollection[V, SCollection[V]] {
+    override val opCode: OpCode =
+      if (elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]]))
+        ConcreteCollectionBooleanConstantCode
+      else
+        ConcreteCollectionCode
 
     def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollection + items.map(_.cost(context)).sum
 
@@ -446,16 +444,25 @@ object Values {
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
   implicit class CollectionOps[T <: SType](coll: Value[SCollection[T]]) {
-    def length: Int = matchCase(_.items.length, _.value.length)
-    def items = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"))
-    def isEvaluated =
-      coll.evaluated && matchCase(_.items.forall(_.evaluated), _ => true)
-    def matchCase[R](whenConcrete: ConcreteCollection[T] => R, whenConstant: CollectionConstant[T] => R): R = coll match {
+    def length: Int = matchCase(_.items.length, _.value.length, _.items.length)
+    def items = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"), _.items)
+    def isEvaluatedCollection =
+      coll.evaluated && matchCase(_.items.forall(_.evaluated), _ => true, _.items.forall(_.evaluated))
+    def matchCase[R](
+        whenConcrete: ConcreteCollection[T] => R,
+        whenConstant: CollectionConstant[T] => R,
+        whenTuple: Tuple => R
+    ): R = coll match {
       case cc: ConcreteCollection[T]@unchecked => whenConcrete(cc)
       case const: CollectionConstant[T]@unchecked => whenConstant(const)
+      case tuple: Tuple => whenTuple(tuple)
       case _ => sys.error(s"Unexpected node $coll")
     }
     def toConcreteCollection: ConcreteCollection[T] =
-      matchCase(cc => cc, _.toConcreteCollection)
+      matchCase(
+        cc => cc,
+        _.toConcreteCollection,
+        t => ConcreteCollection(t.items.map(_.asValue[T]), SAny.asInstanceOf[T])
+      )
   }
 }

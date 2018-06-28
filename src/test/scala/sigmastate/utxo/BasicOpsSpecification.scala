@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
@@ -35,6 +36,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   val bigIntVar3 = 7.toByte
   val byteVar3 = 8.toByte
   val booleanVar = 9.toByte
+  val lastExtVar = booleanVar
+
   val ext = Seq(
     (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
     (byteVar1, ByteConstant(1)), (byteVar2, ByteConstant(2)),
@@ -103,4 +106,99 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
+  property("Tuple operations") {
+    test(env, ext,
+      "{ (getVar[Int](intVar1), getVar[Int](intVar2))._1 == 1 }",
+      EQ(SelectField(Tuple(TaggedInt(intVar1), TaggedInt(intVar2)), 1), IntConstant(1))
+    )
+    test(env, ext,
+      "{ (getVar[Int](intVar1), getVar[Int](intVar2))._2 == 2 }",
+      EQ(SelectField(Tuple(TaggedInt(intVar1), TaggedInt(intVar2)), 2), IntConstant(2))
+    )
+    test(env, ext,
+      """{ let p = (getVar[Int](intVar1), getVar[Int](intVar2))
+        |  let res = p._1 + p._2
+        |  res == 3 }""".stripMargin,
+      {
+        val p = Tuple(TaggedInt(intVar1), TaggedInt(intVar2))
+        val res = Plus(SelectField(p, 1).asIntValue, SelectField(p, 2).asIntValue)
+        EQ(res, IntConstant(3))
+      }
+    )
+  }
+
+  property("Tuple as Collection operations") {
+    test(env, ext,
+    """{ let p = (getVar[Int](intVar1), getVar[Byte](byteVar2))
+     |  p.size == 2 }""".stripMargin,
+    {
+      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
+      EQ(SizeOf(p), IntConstant(2))
+    })
+    test(env, ext,
+    """{ let p = (getVar[Int](intVar1), getVar[Byte](byteVar2))
+     |  p(0) == 1 }""".stripMargin,
+    {
+      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
+      EQ(SelectField(p, 1), IntConstant(1))
+    })
+
+    val dataVar = (lastExtVar + 1).toByte
+    val data = Array(Array[Any](Array[Byte](1,2,3), 10L))
+    val env1 = env + ("dataVar" -> dataVar)
+    val dataType = SCollection(STuple(SCollection(SByte), SLong))
+    val ext1 = ext :+ (dataVar, Constant[SCollection[STuple]](data, dataType))
+    test(env1, ext1,
+      """{
+        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar)
+        |  data.size == 1
+        |}""".stripMargin,
+      {
+        val data = TaggedVariable(dataVar, dataType)
+        EQ(SizeOf(data), IntConstant(1))
+      }
+    )
+    test(env1, ext1,
+      """{
+        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar)
+        |  data.exists(fun (p: (Array[Byte], Long)) = p._2 == 10L)
+        |}""".stripMargin,
+      {
+        val data = TaggedVariable(dataVar, dataType)
+        Exists(data, 21, EQ(SelectField(TaggedVariable(21, STuple(SCollection(SByte), SLong)), 2), LongConstant(10)))
+      }
+    )
+    test(env1, ext1,
+      """{
+        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar)
+        |  data.forall(fun (p: (Array[Byte], Long)) = p._1.size > 0)
+        |}""".stripMargin,
+      {
+        val data = TaggedVariable(dataVar, dataType)
+        val p = TaggedVariable(21, STuple(SCollection(SByte), SLong))
+        ForAll(data, 21, GT(SizeOf(SelectField(p, 1).asValue[SByteArray]), IntConstant(0)))
+      }
+    )
+    test(env1, ext1,
+      """{
+        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar)
+        |  data.map(fun (p: (Array[Byte], Long)) = (p._2, p._1)).size == 1
+        |}""".stripMargin,
+      {
+        val data = TaggedVariable(dataVar, dataType)
+        val p = TaggedVariable(21, STuple(SCollection(SByte), SLong))
+        val swapped = MapCollection(data, 21, Tuple(SelectField(p, 2), SelectField(p, 1))).asCollection[STuple]
+        EQ(SizeOf(swapped), IntConstant(1))
+      }
+    )
+
+// TODO uncomment after operations over Any are implemented
+//    test(env, ext,
+//    """{ let p = (getVar[Int](intVar1), getVar[Byte](byteVar2))
+//     |  p.getOrElse(2, 3).isInstanceOf[Int] }""".stripMargin,
+//    {
+//      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
+//      EQ(ByIndex[SAny.type](p, IntConstant(2), Some(IntConstant(3).asValue[SAny.type])), IntConstant(3))
+//    })
+  }
 }

@@ -6,8 +6,10 @@ import sigmastate._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
+import sigmastate.lang.Terms.{Select, Apply}
+import sigmastate.serialization.generators.ValueGenerators
 
-class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests {
+class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
   def typecheck(env: Map[String, Any], x: String): SType = {
     try {
@@ -109,6 +111,18 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "(1, x + 1)") shouldBe STuple(SInt, SInt)
     typecheck(env, "(1, 2, 3)") shouldBe STuple(SInt, SInt, SInt)
     typecheck(env, "(1, 2 + 3, 4)") shouldBe STuple(SInt, SInt, SInt)
+
+    typecheck(env, "(1, 2L)._1") shouldBe SInt
+    typecheck(env, "(1, 2L)._2") shouldBe SLong
+    typecheck(env, "(1, 2L, 3)._3") shouldBe SInt
+
+    // tuple as collection
+    typecheck(env, "(1, 2L).size") shouldBe SInt
+    typecheck(env, "(1, 2L)(0)") shouldBe SInt
+    typecheck(env, "(1, 2L)(1)") shouldBe SLong
+    typecheck(env, "(1, 2L).getOrElse(2, 3)") shouldBe SAny
+    typecheck(env, "(1, 2L).slice(0, 2)") shouldBe SCollection(SAny)
+    typecheck(env, "fun (a: Int) = (1, 2L)(a)") shouldBe SFunc(IndexedSeq(SInt), SAny)
   }
 
   property("types") {
@@ -116,6 +130,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "{let X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe SBoolean
     typecheck(env, "{let X: Array[Int] = Array(1,2,3); X.size}") shouldBe SInt
     typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
+    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
     typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
   }
 
@@ -210,7 +225,20 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "SELF.R1[Int,Boolean].value", "Wrong number of type arguments")
     typecheck(env, "Array[Int]()") shouldBe SCollection(SInt)
   }
-  
+
+
+  property("compute unifying type substitution: prim types") {
+    import SigmaTyper._
+    forAll { t: SPredefType =>
+      unifyTypes(t, t) shouldBe Some(emptySubst)
+      unifyTypes(SAny, t) shouldBe Some(emptySubst)
+      unifyTypes(SAny, SCollection(t)) shouldBe Some(emptySubst)
+      unifyTypes(SCollection(SAny), SCollection(t)) shouldBe Some(emptySubst)
+      unifyTypes(SCollection(SAny), STuple(t, t, t)) shouldBe Some(emptySubst)
+      unifyTypes(SCollection(SAny), STuple(t, STuple(t, t))) shouldBe Some(emptySubst)
+    }
+  }
+
   property("compute unifying type substitution") {
     import SigmaTyper._
     def checkTypes(t1: SType, t2: SType, exp: Option[STypeSubst]): Unit = {
@@ -229,9 +257,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       check(s1, s2, Some(subst.toMap))
 
     unifyTypes(NoType, NoType) shouldBe None
-    unifyTypes(SUnit, SUnit) shouldBe Some(emptySubst)
-    unifyTypes(SAny, SAny) shouldBe Some(emptySubst)
-    unifyTypes(SLong, SLong) shouldBe Some(emptySubst)
     unifyTypes(SLong, SBoolean) shouldBe None
 
     check("(Int, Boolean)", "Int", None)
@@ -239,6 +264,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     check("(Int, Boolean)", "(Int, Int)", None)
     check("(Int, Box)", "(Int, Box)")
     check("(Int, Box)", "(Int, Box, Boolean)", None)
+
+    check("Array[Any]", "(Int, Long)")
 
     check("Array[Int]", "Array[Boolean]", None)
     check("Array[Int]", "Array[Int]")

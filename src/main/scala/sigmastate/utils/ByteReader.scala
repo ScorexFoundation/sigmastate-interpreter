@@ -1,6 +1,7 @@
 package sigmastate.utils
 
 import java.nio.ByteBuffer
+import java.util._
 
 import sigmastate.Values.SValue
 import sigmastate.SType
@@ -49,6 +50,13 @@ trait ByteReader {
   def getULong(): Long
 
   def getBytes(size: Int): Array[Byte]
+
+  /**
+    * Decode array of boolean values previously encode with [[ByteArrayWriter.putBits]]
+    * @param size expected size of decoded array
+    * @return decoded array of boolean values
+    */
+  def getBits(size: Int): Array[Boolean]
   def getOption[T](getValue: => T): Option[T]
   def getType(): SType
   def getValue(): SValue
@@ -122,6 +130,19 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   }
 
   @inline override def getBytes(size: Int): Array[Byte] = buf.getBytes(size)
+
+  @inline override def getBits(size: Int): Array[Boolean] = {
+    if (size == 0) return Array[Boolean]()
+    val bitSet = BitSet.valueOf(buf.getBytes((size + 7) / 8))
+    val boolArray = new Array[Boolean](size)
+    var i = 0
+    while (i < size) {
+      boolArray(i) = bitSet.get(i)
+      i += 1
+    }
+    boolArray
+  }
+
   @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
   @inline override def getType(): SType = TypeSerializer.deserialize(this)
   @inline override def getValue(): SValue = buf.getValue

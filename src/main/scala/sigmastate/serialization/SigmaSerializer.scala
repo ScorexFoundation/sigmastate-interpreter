@@ -2,9 +2,11 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import scala.util.Try
-import Serializer.{Position, Consumed}
+import sigmastate.lang.SerializerException
+import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.utils._
+
+import scala.util.Try
 
 trait Serializer[TFamily, T <: TFamily] {
   def toBytes(obj: T): Array[Byte]
@@ -15,6 +17,8 @@ trait Serializer[TFamily, T <: TFamily] {
 
   def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
   def serializeBody(obj: T): Array[Byte] = toBytes(obj)
+
+  def error(msg: String) = throw new SerializerException(msg, None)
 }
 
 object Serializer {

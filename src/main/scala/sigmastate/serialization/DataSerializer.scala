@@ -14,6 +14,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import scala.collection.mutable
 
+/** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer {
   type ElemType = CryptoConstants.EcPointType
 
@@ -71,14 +72,29 @@ object DataSerializer {
       w.putOption(data.maxNumOperations)(_.putUInt(_))
       w.putOption(data.maxDeletes)(_.putUInt(_))
 
-    case tCol: SCollection[a] =>
+    case tCol: SCollectionType[a] =>
       val arr = v.asInstanceOf[tCol.WrappedType]
       val len = arr.length
       if (len > 0xFFFF)
         sys.error(s"Length of array $arr exceeds ${0xFFFF} limit.")
       w.putUShort(len.toShort)
-      for (x <- arr)
-        DataSerializer.serialize(x, tCol.elemType, w)
+      if (tCol.elemType == SBoolean)
+        w.putBits(arr.asInstanceOf[Array[Boolean]])
+      else
+        arr.foreach(x => serialize(x, tCol.elemType, w))
+
+    case t: STuple =>
+      val arr = v.asInstanceOf[t.WrappedType]
+      val len = arr.length
+      assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
+      if (len > 0xFFFF)
+        sys.error(s"Length of tuple $arr exceeds ${0xFF} limit.")
+      var i = 0
+      while (i < arr.length) {
+        serialize[SType](arr(i), t.items(i), w)
+        i += 1
+      }
+
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
 
@@ -131,18 +147,27 @@ object DataSerializer {
       val maxDeletes = r.getOption(r.getUInt().toInt)
       val data = AvlTreeData(ADDigest @@ startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
       data
-    case tCol: SCollection[a] =>
+    case tCol: SCollectionType[a] =>
       val len = r.getUShort()
       val arr = deserializeArray(len, tCol.elemType, r)
+      arr
+    case tuple: STuple =>
+      val arr =  tuple.items.map { t =>
+        deserialize(t, r)
+      }.toArray[Any]
       arr
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
 
-  def deserializeArray[T <: SType](len: Int, tpe: T, r: ByteReader): Array[T#WrappedType] = {
-    val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
-    for (i <- 0 until len) {
-      b += deserialize(tpe, r)
+  def deserializeArray[T <: SType](len: Int, tpe: T, r: ByteReader): Array[T#WrappedType] =
+    tpe match {
+      case SBoolean =>
+        r.getBits(len).asInstanceOf[Array[T#WrappedType]]
+      case _ =>
+        val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
+        for (i <- 0 until len) {
+          b += deserialize(tpe, r)
+        }
+        b.result()
     }
-    b.result()
-  }
 }

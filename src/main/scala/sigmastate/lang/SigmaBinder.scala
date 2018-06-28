@@ -89,8 +89,7 @@ class SigmaBinder(env: Map[String, Any]) {
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>
       val b1 = eval(body, env)
-      val t1 = if (t != NoType) t else b1.tpe
-      val newLam = Lambda(args, t1, Some(b1))
+      val newLam = Lambda(args, t, Some(b1))
       if (newLam != lam) Some(newLam) else None
 
     // Rule: { e } --> e

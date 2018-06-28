@@ -52,7 +52,8 @@ class SigmaTyper {
       val res1 = assignType(curEnv, res)
       Block(bs1, res1)
 
-    case Tuple(items) => Tuple(items.map(assignType(env, _)))
+    case Tuple(items) =>
+      Tuple(items.map(assignType(env, _)))
 
     case c @ ConcreteCollection(items, _) =>
       val newItems = items.map(assignType(env, _))
@@ -145,7 +146,7 @@ class SigmaTyper {
           if (actualTypes != argTypes)
             error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
           Apply(new_f, newArgs)
-        case SCollection(elemType) =>
+        case _: SCollectionType[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
             case Seq(Constant(index, _: SNumericType)) =>
@@ -161,6 +162,23 @@ class SigmaTyper {
             case _ =>
               error(s"Invalid argument of array application $app: expected integer value; actual: $args")
           }
+        case STuple(_) =>
+          // If it's a tuple then the type of the application depend on the index.
+          args match {
+            case Seq(Constant(index, _: SNumericType)) =>
+              val fieldIndex = SByte.downcast(index.asInstanceOf[AnyVal]) + 1
+              SelectField(new_f.asTuple, fieldIndex.toByte)
+            case Seq(index) =>
+              val typedIndex = assignType(env, index)
+              typedIndex.tpe match {
+                case _: SNumericType =>
+                  ByIndex(new_f.asCollection[SAny.type], typedIndex.upcastTo(SInt), None)
+                case _ =>
+                  error(s"Invalid argument type of tuple application $app: expected numeric type; actual: ${typedIndex.tpe}")
+              }
+            case _ =>
+              error(s"Invalid argument of tuple application $app: expected integer value; actual: $args")
+          }
         case t =>
           error(s"Invalid array application $app: array type is expected but was $t")
       }
@@ -169,7 +187,7 @@ class SigmaTyper {
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       newObj.tpe match {
-        case tCol: SCollection[a] => (m, newArgs) match {
+        case tCol: SCollectionType[a] => (m, newArgs) match {
           case ("++", Seq(r)) =>
             if (r.tpe == tCol)
               Append(newObj.asCollection[a], r.asCollection[a])
@@ -266,8 +284,8 @@ class SigmaTyper {
 
     case ByIndex(col, i, defaultValue) =>
       val c1 = assignType(env, col).asCollection[SType]
-      if (!c1.tpe.isCollection)
-        error(s"Invalid operation ByIndex: expected argument types ($SCollection); actual: (${col.tpe})")
+      if (!c1.tpe.isCollectionLike)
+        error(s"Invalid operation ByIndex: expected Collection argument type; actual: (${col.tpe})")
       defaultValue match {
         case Some(v) if v.tpe.typeCode != c1.tpe.elemType.typeCode =>
             error(s"Invalid operation ByIndex: expected default value type (${c1.tpe.elemType}); actual: (${v.tpe})")
@@ -276,7 +294,7 @@ class SigmaTyper {
 
     case SizeOf(col) =>
       val c1 = assignType(env, col).asCollection[SType]
-      if (!c1.tpe.isCollection)
+      if (!c1.tpe.isCollectionLike)
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})")
       SizeOf(c1)
     
@@ -385,8 +403,10 @@ object SigmaTyper {
       if (n1 == n2) Some(emptySubst) else None
     case (id1 @ STypeIdent(n), _) =>
       Some(Map(id1 -> t2))
-    case (e1: SCollection[_], e2: SCollection[_]) =>
+    case (e1: SCollectionType[_], e2: SCollectionType[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
+    case (e1: SCollectionType[_], e2: STuple) =>
+      unifyTypes(e1.elemType, SAny)
     case (e1: SOption[_], e2: SOption[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
     case (e1: STuple, e2: STuple) if e1.items.length == e2.items.length =>
@@ -400,6 +420,8 @@ object SigmaTyper {
       Some(Map())
     case (e1: SProduct, e2: SProduct) if e1.sameMethods(e2) =>
       unifyTypeLists(e1.methods.map(_.stype), e2.methods.map(_.stype))
+    case (SAny, _) =>
+      Some(Map())
     case _ => None
   }
 
