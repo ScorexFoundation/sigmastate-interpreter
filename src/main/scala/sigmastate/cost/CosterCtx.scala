@@ -6,7 +6,7 @@ import sigmastate._
 import sigmastate.Values.{Value, Constant, TaggedVariable}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{MapCollection, ExtractAmount, ForAll, Where, ByIndex, Exists, Fold, SizeOf}
+import sigmastate.utxo.{MapCollection, ExtractAmount, ForAll, Where, ByIndex, Exists, Fold, SizeOf, BooleanTransformer}
 
 trait CosterCtx extends SigmaLibrary {
   val WA = WArrayMethods
@@ -246,15 +246,32 @@ trait CosterCtx extends SigmaLibrary {
           )
         }
 
-      case Exists(input, id, cond) =>
-        val eItem = stypeToElem(input.tpe.elemType)
+      case MapCollection(input, id, mapper) =>
+        val eIn = stypeToElem(input.tpe.elemType)
         val inputC = evalNode(ctx, env, input).asRep[Costed[Col[Any]]]
+        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
+        val Pair(mapperCalc, mapperCost) = split(fun { x: Rep[Any] =>
+          evalNode(ctx, env + (id -> x), mapper)
+        })
+        val res = inputC.value.map(mapperCalc)
+        val cost = inputC.cost + inputC.value.map(mapperCost).sum(costedBuilder.monoidBuilder.longPlusMonoid)
+        CostedPrimRep(res, cost)
+
+      case trans: BooleanTransformer[_] =>
+        val eItem = stypeToElem(trans.input.tpe.elemType)
+        val inputC = evalNode(ctx, env, trans.input).asRep[Costed[Col[Any]]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eItem == eAny, s"Types should be equal: but $eItem != $eAny")
         val Pair(condCalc, condCost) = split(fun { x: Rep[Any] =>
-          evalNode(ctx, env + (id -> x), cond)
+          evalNode(ctx, env + (trans.id -> x), trans.condition)
         })
-        val value = inputC.value.exists(condCalc)
+        val value = trans.opCode match {
+          case OpCodes.ExistsCode =>
+            inputC.value.exists(condCalc)
+          case OpCodes.ForAllCode =>
+            inputC.value.forall(condCalc)
+        }
         val cost = inputC.cost + inputC.value.map(condCost).sum(costedBuilder.monoidBuilder.longPlusMonoid)
         CostedPrimRep(value, cost)
 

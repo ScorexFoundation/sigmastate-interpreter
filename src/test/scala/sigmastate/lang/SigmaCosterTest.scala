@@ -57,12 +57,15 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
   }
 
   test("costed collection ops") {
+    val cost = (ctx: Rep[Context]) => toRep(OutputsAccess.toLong) +
+        (toRep(VariableAccess.toLong) + ExtractAmount.toLong + ConstantNode.toLong + TripleDeclaration.toLong) *
+            ctx.OUTPUTS.length.toLong
     check("OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
-      ctx => ctx.OUTPUTS.exists(fun(out => { out.value >= 0L })),
-      ctx => toRep(OutputsAccess.toLong) +
-             (toRep(VariableAccess.toLong) + ExtractAmount.toLong + ConstantNode.toLong + TripleDeclaration.toLong) *
-             ctx.OUTPUTS.length.toLong
-    )
+      ctx => ctx.OUTPUTS.exists(fun(out => { out.value >= 0L })), cost)
+    check("OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
+      ctx => ctx.OUTPUTS.forall(fun(out => { out.value >= 0L })), cost)
+    check("OUTPUTS.map(fun (out: Box) = { out.value >= 0L })",
+      ctx => ctx.OUTPUTS.map(fun(out => { out.value >= 0L })), cost)
   }
 
   def measure[T](nIters: Int, okShow: Boolean = true)(action: Int => Unit): Unit = {
