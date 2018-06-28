@@ -7,6 +7,7 @@ import sigmastate.Values.{Value, Constant}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.SizeOf
+import sigmastate.utxo.ExtractAmount
 
 class CosterCtx extends SigmaLibrary {
   val WA = WArrayMethods
@@ -168,8 +169,11 @@ class CosterCtx extends SigmaLibrary {
       case Outputs => CostedPrimRep(ctx.OUTPUTS, OutputsAccess.toLong)
       case Self => CostedPrimRep(ctx.SELF, SelfAccess.toLong)
       case SizeOf(xs) =>
-        val xs1 = evalNode(ctx, xs).asRep[Costed[Col[Any]]]
-        CostedPrimRep(xs1.value.length, xs1.cost + SizeOfDeclaration.toLong)
+        val xsC = evalNode(ctx, xs).asRep[Costed[Col[Any]]]
+        CostedPrimRep(xsC.value.length, xsC.cost + SizeOfDeclaration.toLong)
+      case utxo.ExtractAmount(box) =>
+        val boxC = evalNode(ctx, box).asRep[Costed[Box]]
+        CostedPrimRep(boxC.value.value, boxC.cost + Cost.ExtractAmount.toLong)
       case op: ArithOp[t] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)

@@ -20,7 +20,7 @@ class SigmaCosterTest extends PropSpec with PropertyChecks with Matchers with La
     cg
   }
 
-  def test[T](script: String, expectedCalc: Rep[Context] => Rep[T], expectedCost: Rep[Context] => Rep[Long]) = {
+  def test[T](script: String, expectedCalc: Rep[Context] => Rep[T], expectedCost: Rep[Context] => Rep[Long]): Rep[(Context => T, Context => Long)] = {
     val cf = cost(env, script)
     val Pair(calcF, costF) = cf match { case cf: RFunc[Context, Costed[_]]@unchecked =>
       split(cf)
@@ -29,6 +29,7 @@ class SigmaCosterTest extends PropSpec with PropertyChecks with Matchers with La
     val expCost = fun(expectedCost)
     calcF shouldBe expCalc
     costF shouldBe expCost
+    Pair(calcF.asRep[Context => T], costF.asRep[Context => Long])
   }
 
   import Cost._
@@ -39,8 +40,8 @@ class SigmaCosterTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("costed operations") {
-    test("1 + 1", _ => toRep(1) + toRep(1), _ => toRep(ConstantNode.toLong) + toRep(ConstantNode.toLong) + toRep(TripleDeclaration.toLong))
-    test("1L + 1L", _ => toRep(1L) + toRep(1L), _ => toRep(ConstantNode.toLong) + toRep(ConstantNode.toLong) + toRep(TripleDeclaration.toLong))
+    test("1 + 1", _ => 1 + 1, _ => ConstantNode.toLong + ConstantNode.toLong + TripleDeclaration.toLong)
+    test("1L + 1L", _ => 1L + 1L, _ => ConstantNode.toLong + ConstantNode.toLong + TripleDeclaration.toLong)
   }
 
   property("costed context data") {
@@ -48,8 +49,29 @@ class SigmaCosterTest extends PropSpec with PropertyChecks with Matchers with La
     test("INPUTS.size + OUTPUTS.size",
       ctx => ctx.INPUTS.length + ctx.OUTPUTS.length,
       ctx => InputsAccess.toLong + SizeOfDeclaration.toLong + OutputsAccess.toLong + SizeOfDeclaration.toLong + TripleDeclaration.toLong)
-    //    test("SELF.value + 1L", ctx => ctx.SELF.value + 1L, ctx => ctx.SELF.cost + toRep(ConstantNode.toLong) + toRep(TripleDeclaration.toLong))
+    test("SELF.value + 1L", ctx => ctx.SELF.value + 1L, ctx => SelfAccess.toLong + ExtractAmount.toLong + ConstantNode.toLong + TripleDeclaration.toLong)
   }
 
+  def measure[T](nIters: Int, okShow: Boolean = true)(action: Int => Unit): Unit = {
+    for (i <- 0 until nIters) {
+      val start = System.currentTimeMillis()
+      val res = action(i)
+      val end = System.currentTimeMillis()
+      val iterTime = end - start
+      if (okShow)
+        println(s"Iter $i: $iterTime ms")
+    }
+  }
 
+  property("measure: costed context data") {
+    var res: Rep[Any] = null
+    measure(2) { j => // 10 warm up iterations when j == 0
+      measure(j*500 + 10, false) { i =>
+        res = test(s"INPUTS.size + OUTPUTS.size + $i",
+          ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i,
+          ctx => InputsAccess.toLong + SizeOfDeclaration.toLong + OutputsAccess.toLong + SizeOfDeclaration.toLong + 2 * TripleDeclaration.toLong + ConstantNode.toLong)
+      }
+    }
+    res.show
+  }
 }
