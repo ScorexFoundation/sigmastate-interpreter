@@ -18,6 +18,8 @@ object CostTable {
     val InputsAccess = 1
     val OutputsAccess = 1
     val SelfAccess = 1
+    val VariableAccess = 1
+
     val ExtractAmount = 10
 
     //cost for CustomByteArray declaration. Additional cost to be calculated when data is known

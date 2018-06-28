@@ -34,6 +34,7 @@ trait LangTests {
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
+    "height1" -> 100L, "height2" -> 200L,
     "b1" -> 1.toByte,
     "b2" -> 2.toByte,
     "arr1" -> Array[Byte](1, 2),

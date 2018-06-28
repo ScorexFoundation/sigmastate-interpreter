@@ -30,8 +30,8 @@ val testingDependencies = Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
   "junit" % "junit" % "4.12" % "test",
   "com.novocode" % "junit-interface" % "0.11" % "test",
-  "special" %% "library" % "0.3.0-SNAPSHOT" % "test",
-  "special.sigma" %% "sigma-library" % "0.3.0-SNAPSHOT" % "test"
+  "special" %% "library" % "0.3.0-SNAPSHOT" % allConfigDependency,
+  "special.sigma" %% "sigma-library" % "0.3.0-SNAPSHOT" % allConfigDependency
 )
 
 libraryDependencies ++= Seq(
@@ -40,8 +40,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
   "com.lihaoyi" %% "fastparse" % "1.0.0",
-  "special" %% "library" % "0.3.0-SNAPSHOT",
-  "special.sigma" %% "sigma-library" % "0.3.0-SNAPSHOT"
+  "special" %% "library" % "0.3.0-SNAPSHOT" % allConfigDependency,
+  "special.sigma" %% "sigma-library" % "0.3.0-SNAPSHOT" % allConfigDependency
 ) ++ testingDependencies
 
 
