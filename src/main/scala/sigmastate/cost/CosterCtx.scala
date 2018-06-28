@@ -67,20 +67,20 @@ trait CosterCtx extends SigmaLibrary {
 
   def dataCost[T](x: Rep[T]): Rep[Costed[T]] = {
     val res: Rep[Any] = x.elem match {
-      case be: BaseElem[_] => CostedPrimRep(x, byteSize(be).toLong)
+      case be: BaseElem[_] => CostedPrimRep(x, byteSize(be))
       case pe: PairElem[a,b] =>
         val l = dataCost(x.asRep[(a,b)]._1)
         val r = dataCost(x.asRep[(a,b)]._2)
         CostedPairRep(l, r)
       case boxE: BoxElem[_] =>
         val box = x.asRep[Box]
-        CostedPrimRep(box, BoxConstantDeclaration.toLong)
+        CostedPrimRep(box, BoxConstantDeclaration)
       case ae: WArrayElem[_,_] =>
         ae.eItem match {
           case be: BaseElem[a] =>
             val arr = x.asRep[WArray[a]]
             val values = b.fromArray(arr)
-            val costs = ReplColRep(byteSize(be).toLong, values.length)
+            val costs = ReplColRep(byteSize(be), values.length)
             CostedArrayRep(values, costs)
           case pe: PairElem[a,b] =>
             val arr = x.asRep[WArray[(a,b)]]
@@ -105,7 +105,7 @@ trait CosterCtx extends SigmaLibrary {
         ce.eA match {
           case be: BaseElem[a] =>
             val values = x.asRep[Col[a]]
-            val costs = ReplColRep(byteSize(be).toLong, values.length)
+            val costs = ReplColRep(byteSize(be), values.length)
             CostedColRep(values, costs)
           case pe: PairElem[a,b] =>
             val arr = x.asRep[Col[(a,b)]]
@@ -128,9 +128,9 @@ trait CosterCtx extends SigmaLibrary {
     res.asRep[Costed[T]]
   }
 
-  def result[T](dc: Rep[Costed[T]]): Rep[(T, Long)] = Pair(dc.value, dc.cost)
+  def result[T](dc: Rep[Costed[T]]): Rep[(T, Int)] = Pair(dc.value, dc.cost)
 
-  def split[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Long)] = {
+  def split[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Int)] = {
     implicit val eT = f.elem.eDom
     val calc = fun { x: Rep[T] =>
       val y = f(x);
@@ -192,38 +192,24 @@ trait CosterCtx extends SigmaLibrary {
 
   type RCosted[A] = Rep[Costed[A]]
 
-  def flatMap[A,B](source: RCosted[A], f: (Rep[A], Rep[Long]) => RCosted[B]): RCosted[B] = {
-    val v = source.value
-    val c = source.cost
-    f(v, c)
-  }
-
-//  def flatMap[A,B,C](ca: RCosted[A], cb: RCosted[A], f: (Rep[A], Rep[B], Rep[Long]) => RCosted[B]): RCosted[B] = {
-//    val v = source.value
-//    val c = source.cost
-//    f(v, c)
-//  }
-
-  implicit def colElementEx[T](colE: Elem[Col[T]]): ColElem[T, Col[T]] = colE.asInstanceOf[ColElem[T, Col[T]]]
-
   private def evalNode[T <: SType](ctx: Rep[Context], env: Map[Byte, Rep[_]], node: Value[T]): RCosted[T#WrappedType] = {
     val res: Rep[Any] = node match {
-      case Constant(v, tpe) => CostedPrimRep(toRep(v)(stypeToElem(tpe)), ConstantNode.toLong)
-      case Height => CostedPrimRep(ctx.HEIGHT, HeightAccess.toLong)
-      case Inputs => CostedPrimRep(ctx.INPUTS, InputsAccess.toLong)
-      case Outputs => CostedPrimRep(ctx.OUTPUTS, OutputsAccess.toLong)
-      case Self => CostedPrimRep(ctx.SELF, SelfAccess.toLong)
+      case Constant(v, tpe) => CostedPrimRep(toRep(v)(stypeToElem(tpe)), ConstantNode)
+      case Height => CostedPrimRep(ctx.HEIGHT, HeightAccess)
+      case Inputs => CostedPrimRep(ctx.INPUTS, InputsAccess)
+      case Outputs => CostedPrimRep(ctx.OUTPUTS, OutputsAccess)
+      case Self => CostedPrimRep(ctx.SELF, SelfAccess)
       case TaggedVariable(id, tpe) =>
         env.get(id) match {
-          case Some(x: Rep[a]) => CostedPrimRep(x, VariableAccess.toLong)
+          case Some(x: Rep[a]) => CostedPrimRep(x, VariableAccess)
           case _ => !!!(s"Variable $node not found in environment $env")
         }
       case SizeOf(xs) =>
         val xsC = evalNode(ctx, env, xs).asRep[Costed[Col[Any]]]
-        CostedPrimRep(xsC.value.length, xsC.cost + SizeOfDeclaration.toLong)
+        CostedPrimRep(xsC.value.length, xsC.cost + SizeOfDeclaration)
       case utxo.ExtractAmount(box) =>
         val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
-        CostedPrimRep(boxC.value.value, boxC.cost + Cost.ExtractAmount.toLong)
+        CostedPrimRep(boxC.value.value, boxC.cost + Cost.ExtractAmount)
       case op: ArithOp[t] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)
@@ -231,7 +217,7 @@ trait CosterCtx extends SigmaLibrary {
         val x = evalNode(ctx, env, op.left)
         val y = evalNode(ctx, env, op.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
-          CostedPrimRep(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + TripleDeclaration.toLong)
+          CostedPrimRep(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + TripleDeclaration)
         }
       case rel: Relation[t, _] =>
         val tpe = rel.left.tpe
@@ -242,7 +228,7 @@ trait CosterCtx extends SigmaLibrary {
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
           CostedPrimRep(
             binop.apply(x.value, y.value.asRep[t#WrappedType]),
-            x.cost + y.cost + TripleDeclaration.toLong
+            x.cost + y.cost + TripleDeclaration
           )
         }
 
@@ -255,7 +241,7 @@ trait CosterCtx extends SigmaLibrary {
           evalNode(ctx, env + (id -> x), mapper)
         })
         val res = inputC.value.map(mapperCalc)
-        val cost = inputC.cost + inputC.value.map(mapperCost).sum(costedBuilder.monoidBuilder.longPlusMonoid)
+        val cost = inputC.cost + inputC.value.map(mapperCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
         CostedPrimRep(res, cost)
 
       case trans: BooleanTransformer[_] =>
@@ -272,7 +258,7 @@ trait CosterCtx extends SigmaLibrary {
           case OpCodes.ForAllCode =>
             inputC.value.forall(condCalc)
         }
-        val cost = inputC.cost + inputC.value.map(condCost).sum(costedBuilder.monoidBuilder.longPlusMonoid)
+        val cost = inputC.cost + inputC.value.map(condCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
         CostedPrimRep(value, cost)
 
       case _ =>

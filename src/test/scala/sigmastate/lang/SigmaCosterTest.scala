@@ -21,14 +21,14 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
     cg
   }
 
-  def check[T](script: String, expectedCalc: Rep[Context] => Rep[T], expectedCost: Rep[Context] => Rep[Long]): Rep[(Context => T, Context => Long)] = {
+  def check[T](script: String, expectedCalc: Rep[Context] => Rep[T], expectedCost: Rep[Context] => Rep[Int]): Rep[(Context => T, Context => Int)] = {
     val cf = cost(env, script)
     val Pair(calcF, costF) = cf match { case cf: RFunc[Context, Costed[_]]@unchecked =>
       split(cf)
     }
     val expCalc = fun(expectedCalc)
     val expCost = fun(expectedCost)
-    val res = Pair(calcF.asRep[Context => T], costF.asRep[Context => Long])
+    val res = Pair(calcF.asRep[Context => T], costF.asRep[Context => Int])
     calcF shouldBe expCalc
     costF shouldBe expCost
     res
@@ -37,29 +37,29 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
   import Cost._
 
   test("costed constants") {
-    check("1", _ => 1, _ => ConstantNode.toLong)
-    check("1L", _ => 1L, _ => ConstantNode.toLong)
+    check("1", _ => 1, _ => ConstantNode)
+    check("1L", _ => 1L, _ => ConstantNode)
   }
 
   test("costed operations") {
-    check("1 + 1", _ => 1 + 1, _ => ConstantNode.toLong + ConstantNode.toLong + TripleDeclaration.toLong)
-    check("1L - 1L", _ => 1L - 1L, _ => ConstantNode.toLong + ConstantNode.toLong + TripleDeclaration.toLong)
-    check("1 > 1", _ => false, _ => ConstantNode.toLong + ConstantNode.toLong + TripleDeclaration.toLong)
+    check("1 + 1", _ => 1 + 1, _ => ConstantNode + ConstantNode + TripleDeclaration)
+    check("1L - 1L", _ => 1L - 1L, _ => ConstantNode + ConstantNode + TripleDeclaration)
+    check("1 > 1", _ => false, _ => ConstantNode + ConstantNode + TripleDeclaration)
   }
 
   test("costed context data") {
-    check("HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess.toLong + ConstantNode.toLong + TripleDeclaration.toLong)
-    check("HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess.toLong + ConstantNode.toLong + TripleDeclaration.toLong)
+    check("HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
+    check("HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
     check("INPUTS.size + OUTPUTS.size",
       ctx => ctx.INPUTS.length + ctx.OUTPUTS.length,
-      ctx => InputsAccess.toLong + SizeOfDeclaration.toLong + OutputsAccess.toLong + SizeOfDeclaration.toLong + TripleDeclaration.toLong)
-    check("SELF.value + 1L", ctx => ctx.SELF.value + 1L, ctx => SelfAccess.toLong + ExtractAmount.toLong + ConstantNode.toLong + TripleDeclaration.toLong)
+      ctx => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + TripleDeclaration)
+    check("SELF.value + 1L", ctx => ctx.SELF.value + 1L, ctx => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
   }
 
   test("costed collection ops") {
-    val cost = (ctx: Rep[Context]) => toRep(OutputsAccess.toLong) +
-        (toRep(VariableAccess.toLong) + ExtractAmount.toLong + ConstantNode.toLong + TripleDeclaration.toLong) *
-            ctx.OUTPUTS.length.toLong
+    val cost = (ctx: Rep[Context]) => toRep(OutputsAccess) +
+        (toRep(VariableAccess) + ExtractAmount + ConstantNode + TripleDeclaration) *
+            ctx.OUTPUTS.length
     check("OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
       ctx => ctx.OUTPUTS.exists(fun(out => { out.value >= 0L })), cost)
     check("OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
@@ -85,7 +85,7 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
       measure(j*500 + 10, false) { i =>
         res = check(s"INPUTS.size + OUTPUTS.size + $i",
           ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i,
-          ctx => InputsAccess.toLong + SizeOfDeclaration.toLong + OutputsAccess.toLong + SizeOfDeclaration.toLong + 2 * TripleDeclaration.toLong + ConstantNode.toLong)
+          ctx => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + 2 * TripleDeclaration + ConstantNode)
       }
     }
     res.show
