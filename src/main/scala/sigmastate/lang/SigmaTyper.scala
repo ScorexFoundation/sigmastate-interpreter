@@ -19,7 +19,7 @@ import scala.collection.mutable.ArrayBuffer
   * from the AST, and one (tipe2) that represents names by references to the
   * nodes of their binding lambda expressions.
   */
-class SigmaTyper {
+class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
   import SigmaTyper._
 
   /** Most Specific Generalized (MSG) type of ts.
@@ -209,7 +209,7 @@ class SigmaTyper {
         case nl: SNumericType => (m, newArgs) match {
           case ("*", Seq(r)) => r.tpe match {
             case nr: SNumericType =>
-              bimap(env, "*", newObj.asNumValue, r.asNumValue)(TransformingSigmaBuilder.Multiply)(tT, tT)
+              bimap(env, "*", newObj.asNumValue, r.asNumValue)(builder.Multiply)(tT, tT)
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }
@@ -260,18 +260,18 @@ class SigmaTyper {
         error(s"Invalid operation OR: $op")
       OR(input1)
 
-    case GE(l, r) => bimap(env, ">=", l, r)(TransformingSigmaBuilder.GE[SType])(tT, SBoolean)
-    case LE(l, r) => bimap(env, "<=", l, r)(TransformingSigmaBuilder.LE[SType])(tT, SBoolean)
-    case GT(l, r) => bimap(env, ">", l, r) (TransformingSigmaBuilder.GT[SType])(tT, SBoolean)
-    case LT(l, r) => bimap(env, "<", l, r) (TransformingSigmaBuilder.LT[SType])(tT, SBoolean)
-    case EQ(l, r) => bimap2(env, "==", l, r)(TransformingSigmaBuilder.EQ[SType])
-    case NEQ(l, r) => bimap2(env, "!=", l, r)(TransformingSigmaBuilder.NEQ[SType])
+    case GE(l, r) => bimap(env, ">=", l, r)(builder.GE[SType])(tT, SBoolean)
+    case LE(l, r) => bimap(env, "<=", l, r)(builder.LE[SType])(tT, SBoolean)
+    case GT(l, r) => bimap(env, ">", l, r) (builder.GT[SType])(tT, SBoolean)
+    case LT(l, r) => bimap(env, "<", l, r) (builder.LT[SType])(tT, SBoolean)
+    case EQ(l, r) => bimap2(env, "==", l, r)(builder.EQ[SType])
+    case NEQ(l, r) => bimap2(env, "!=", l, r)(builder.NEQ[SType])
 
-    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(TransformingSigmaBuilder.Minus)(tT, tT)
-    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(TransformingSigmaBuilder.Plus)(tT, tT)
-    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(TransformingSigmaBuilder.Multiply)(tT, tT)
-    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(TransformingSigmaBuilder.Modulo)(tT, tT)
-    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(TransformingSigmaBuilder.Divide)(tT, tT)
+    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(builder.Minus)(tT, tT)
+    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(builder.Plus)(tT, tT)
+    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(builder.Multiply)(tT, tT)
+    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(builder.Modulo)(tT, tT)
+    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(builder.Divide)(tT, tT)
     
     case Xor(l, r) => bimap(env, "|", l, r)(Xor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(MultiplyGroup)(SGroupElement, SGroupElement)
