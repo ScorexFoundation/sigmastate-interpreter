@@ -4,6 +4,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.Values.{FalseLeaf, IntConstant, TrueLeaf, Value}
 import sigmastate._
+import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
 
 trait TransformerGenerators {
@@ -133,11 +134,11 @@ trait TransformerGenerators {
     left <- numExprTreeGen
     right <- numExprTreeGen
     node <- Gen.oneOf(
-      Plus(left, right),
-      Minus(left, right),
-      Multiply(left, right),
-      Divide(left, right),
-      Modulo(left, right)
+      TransformingSigmaBuilder.Plus(left, right),
+      TransformingSigmaBuilder.Minus(left, right),
+      TransformingSigmaBuilder.Multiply(left, right),
+      TransformingSigmaBuilder.Divide(left, right),
+      TransformingSigmaBuilder.Modulo(left, right)
     )
   } yield node
 
@@ -152,12 +153,12 @@ trait TransformerGenerators {
     left <- numExprTreeNodeGen
     right <- numExprTreeNodeGen
     node <- Gen.oneOf(
-      EQ(left, right),
-      NEQ(left, right),
-      LE(left, right),
-      GE(left, right),
-      LT(left, right),
-      GT(left, right)
+      TransformingSigmaBuilder.EQ(left, right),
+      TransformingSigmaBuilder.NEQ(left, right),
+      TransformingSigmaBuilder.LE(left, right),
+      TransformingSigmaBuilder.GE(left, right),
+      TransformingSigmaBuilder.LT(left, right),
+      TransformingSigmaBuilder.GT(left, right)
     )
   } yield node
 }

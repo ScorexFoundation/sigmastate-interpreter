@@ -1,6 +1,5 @@
 import sigmastate.Values.Value
-import sigmastate.lang.StdSigmaBuilder
-import sigmastate.serialization.OpCodes._
+import sigmastate.lang.DefaultSigmaBuilder
 
 package object sigmastate {
 
@@ -8,27 +7,31 @@ package object sigmastate {
     * SInt addition
     */
   def Plus[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] =
-    StdSigmaBuilder.Plus(left, right)
+    DefaultSigmaBuilder.Plus(left, right)
 
   /**
     * SInt subtraction
     */
-  def Minus[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, MinusCode)
+  def Minus[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] =
+    DefaultSigmaBuilder.Minus(left, right)
 
   /**
     * SInt multiplication
     */
-  def Multiply[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, MultiplyCode)
+  def Multiply[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] =
+    DefaultSigmaBuilder.Multiply(left, right)
 
   /**
     * SInt division
     */
-  def Divide[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, DivisionCode)
+  def Divide[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] =
+    DefaultSigmaBuilder.Divide(left, right)
 
   /**
     * SInt modulo
     */
-  def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] = ArithOp(left, right, ModuloCode)
+  def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): ArithOp[T] =
+    DefaultSigmaBuilder.Modulo(left, right)
 
 
 }
