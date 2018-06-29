@@ -74,8 +74,8 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val digest = avlProver.digest
     val treeData = new AvlTreeData(digest, 34, Some(0))
 
-    val fsmDescRegister = R3
-    val currentStateRegister = R4
+    val fsmDescRegister = ErgoBox.nonMandatoryRegisters.head
+    val currentStateRegister = ErgoBox.nonMandatoryRegisters(1)
 
     val scriptVarId = 2: Byte
     val transitionProofId = 3: Byte
@@ -119,11 +119,11 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     //creating a box in an initial state
 
-    val fsmBox1 = ErgoBox(100, fsmScript, Map(fsmDescRegister -> AvlTreeConstant(treeData),
+    val fsmBox1 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
                                              currentStateRegister -> ByteConstant(state1Id)))
 
     //successful transition from state1 to state2
-    val fsmBox2 = ErgoBox(100, fsmScript, Map(fsmDescRegister -> AvlTreeConstant(treeData),
+    val fsmBox2 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
                                              currentStateRegister -> ByteConstant(state2Id)))
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition12 ++ script1Hash)))
@@ -165,7 +165,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     //Box for state3
 
-    val fsmBox3 = ErgoBox(100, fsmScript, Map(fsmDescRegister -> AvlTreeConstant(treeData),
+    val fsmBox3 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
       currentStateRegister -> ByteConstant(state3Id)))
 
     //transition from state1 to state3 is impossible

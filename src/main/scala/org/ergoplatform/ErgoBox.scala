@@ -40,10 +40,11 @@ import scala.runtime.ScalaRunTime
 class ErgoBox private(
                        override val value: Long,
                        override val proposition: Value[SBoolean.type],
+                       override val additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
                        override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
                        val transactionId: Array[Byte],
                        val index: Short
-) extends ErgoBoxCandidate(value, proposition, additionalRegisters) {
+) extends ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters) {
 
   import ErgoBox._
 
@@ -65,16 +66,13 @@ class ErgoBox private(
   }
 
   override def equals(arg: Any): Boolean = arg match {
-    case x: ErgoBox =>
-      super.equals(x) &&
-        Arrays.equals(transactionId, x.transactionId) &&
-        index == x.index
+    case x: ErgoBox => Arrays.equals(id, x.id)
     case _ => false
   }
 
   override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalRegisters, index))
 
-  def toCandidate: ErgoBoxCandidate = new ErgoBoxCandidate(value, proposition, additionalRegisters)
+  def toCandidate: ErgoBoxCandidate = new ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters)
 
   override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$proposition,${Base16.encode(transactionId)}," +
     s"$index,$additionalRegisters)"
@@ -90,10 +88,11 @@ object ErgoBox {
 
   def apply(value: Long,
             proposition: Value[SBoolean.type],
+            additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: Array[Byte] = Array.fill(32)(0: Byte),
             boxId: Short = 0): ErgoBox =
-    new ErgoBox(value, proposition, additionalRegisters, transactionId, boxId)
+    new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId)
 
   trait RegisterId {val number: Byte}
   abstract class MandatoryRegisterId(override val number: Byte, purpose: String) extends RegisterId
@@ -101,8 +100,8 @@ object ErgoBox {
 
   object R0 extends MandatoryRegisterId(0, "Monetary value, in Ergo tokens")
   object R1 extends MandatoryRegisterId(1, "Guarding script")
-  object R2 extends MandatoryRegisterId(2, "Reference to transaction and output id where the box was created")
-  object R3 extends NonMandatoryRegisterId(3)
+  object R2 extends MandatoryRegisterId(2, "Secondary tokens")
+  object R3 extends MandatoryRegisterId(3, "Reference to transaction and output id where the box was created")
   object R4 extends NonMandatoryRegisterId(4)
   object R5 extends NonMandatoryRegisterId(5)
   object R6 extends NonMandatoryRegisterId(6)
@@ -112,11 +111,12 @@ object ErgoBox {
 
   val ValueRegId = R0
   val ScriptRegId = R1
-  val ReferenceRegId = R2
+  val TokensRegId = R2
+  val ReferenceRegId = R3
 
   val maxRegisters = 10
-  val mandatoryRegisters = Vector(R0, R1, R2)
-  val nonMandatoryRegisters = Vector(R3, R4, R5, R6, R7, R8, R9)
+  val mandatoryRegisters: Vector[MandatoryRegisterId] = Vector(R0, R1, R2, R3)
+  val nonMandatoryRegisters: Vector[NonMandatoryRegisterId] = Vector(R4, R5, R6, R7, R8, R9)
   val startingNonMandatoryIndex = nonMandatoryRegisters.head.number
     .ensuring(_ == mandatoryRegisters.last.number + 1)
 

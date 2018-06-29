@@ -94,10 +94,12 @@ class TestingInterpreterSpecification extends PropSpec
       "dk2" -> dk2,
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
-      "box1" -> ErgoBox(10, TrueLeaf, Map(
+      "box1" -> ErgoBox(10, TrueLeaf, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue
+    println(code)
+    println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
     verify(prop, ctx, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
@@ -125,15 +127,15 @@ class TestingInterpreterSpecification extends PropSpec
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R3[Array[Int]].value
+              |  let arr = box1.R4[Array[Int]].value
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R4[Array[Boolean]].value
+              |  let arr = box1.R5[Array[Boolean]].value
               |  anyOf(arr)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R4[Array[Boolean]].value
+              |  let arr = box1.R5[Array[Boolean]].value
               |  allOf(arr) == false
               |}""".stripMargin)
     testEval("""{

@@ -95,7 +95,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = ErgoBox(20, TrueLeaf, Map(reg1 -> AvlTreeConstant(treeData))))
+      self = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))
 
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))
     val knownSecretPathProof = avlProver.generateProof()

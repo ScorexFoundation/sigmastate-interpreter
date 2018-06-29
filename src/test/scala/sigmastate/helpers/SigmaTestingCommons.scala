@@ -36,7 +36,8 @@ trait SigmaTestingCommons extends PropSpec
 
   def createBox(value: Int,
                 proposition: Value[SBoolean.type],
+                additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
-  = ergoplatform.ErgoBox(value, proposition, additionalRegisters)
+  = ergoplatform.ErgoBox(value, proposition, additionalTokens, additionalRegisters)
 
 }

@@ -136,7 +136,7 @@ object DataSerializer {
       }.toMap
       val transId = r.getBytes(32)
       val boxId = r.getUShort().toShort
-      val box = ErgoBox(value, proposition, regs, transId, boxId)
+      val box = ErgoBox(value, proposition, Seq(), regs, transId, boxId)
       box
 
     case SAvlTree =>

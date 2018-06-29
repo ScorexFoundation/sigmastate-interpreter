@@ -33,7 +33,7 @@ class BlockchainSimulationSpecification extends PropSpec
     val boxesToSpend = state.boxesReader.byHeightRegValue(height)
 
     val txs = boxesToSpend.map { box =>
-      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey, Map(heightReg -> LongConstant(height + windowSize)))
+      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey, Seq(), Map(heightReg -> LongConstant(height + windowSize)))
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContext(height + 1,
@@ -204,7 +204,7 @@ object BlockchainSimulationSpecification {
     val initBlock = Block {
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Map(heightReg -> LongConstant(i)), txId))
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Seq(), Map(heightReg -> LongConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       }
     }

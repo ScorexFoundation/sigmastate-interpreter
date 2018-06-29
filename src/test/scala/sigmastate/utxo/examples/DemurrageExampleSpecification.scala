@@ -45,7 +45,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         | let c2 = allOf(Array(
-        |   HEIGHT >= SELF.R3[Long].value + demurragePeriod,
+        |   HEIGHT >= SELF.R4[Long].value + demurragePeriod,
         |   OUTPUTS.exists(fun (out: Box) = {
         |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
         |   })

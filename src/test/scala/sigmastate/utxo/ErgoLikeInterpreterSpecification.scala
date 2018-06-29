@@ -280,7 +280,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = ErgoBox(20, TrueLeaf, Map()))
+      self = ErgoBox(20, TrueLeaf, Seq(), Map()))
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
@@ -300,8 +300,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """{
-        |  let pubkey1 = SELF.R3[GroupElement].value
-        |  let pubkey2 = SELF.R4[GroupElement].value
+        |  let pubkey1 = SELF.R4[GroupElement].value
+        |  let pubkey2 = SELF.R5[GroupElement].value
         |  proveDlog(pubkey1) && proveDlog(pubkey2)
         |}""".stripMargin).asBoolValue
 
@@ -312,8 +312,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s1 = ErgoBox(20, TrueLeaf, Map(reg1 -> pubkey1.value.asInstanceOf[GroupElementConstant],
-                                       reg2 -> pubkey2.value.asInstanceOf[GroupElementConstant]))
+    val s1 = ErgoBox(20, TrueLeaf, Seq(),
+      Map(reg1 -> pubkey1.value.asInstanceOf[GroupElementConstant],
+          reg2 -> pubkey2.value.asInstanceOf[GroupElementConstant]))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -330,8 +331,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val reg3 = ErgoBox.nonMandatoryRegisters(2)
     val reg4 = ErgoBox.nonMandatoryRegisters(3)
 
-    val s2 = ErgoBox(20, TrueLeaf, Map(reg3 -> pubkey2.value.asInstanceOf[GroupElementConstant],
-                                       reg4 -> pubkey1.value.asInstanceOf[GroupElementConstant]))
+    val s2 = ErgoBox(20, TrueLeaf, Seq(), Map(reg3 -> pubkey2.value.asInstanceOf[GroupElementConstant],
+                                              reg4 -> pubkey1.value.asInstanceOf[GroupElementConstant]))
     val wrongCtx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -375,7 +376,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       EQ(ExtractId(ByIndex(Inputs, 0)), ExtractId(BoxConstant(brother))))
     prop shouldBe propExpected
 
-    val s = ErgoBox(10, prop, Map())
+    val s = ErgoBox(10, prop, Seq(), Map())
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -424,9 +425,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       """{
         |  let cond = INPUTS(0).value > 10
         |  let preimage = if (cond)
-        |    INPUTS(2).R3[Array[Byte]].value
+        |    INPUTS(2).R4[Array[Byte]].value
         |  else
-        |    INPUTS(1).R3[Array[Byte]].value
+        |    INPUTS(1).R4[Array[Byte]].value
         |  helloHash == blake2b256(preimage)
          }""".stripMargin).asBoolValue
 
@@ -437,12 +438,12 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
           ExtractRegisterAs[SByteArray](ByIndex(Inputs, 1), reg1))))
     prop shouldBe propExpected
 
-    val input0 = ErgoBox(10, pubkey, Map())
-    val input1 = ErgoBox(1, pubkey, Map(reg1 -> ByteArrayConstant(preimageHello)))
-    val input2 = ErgoBox(1, pubkey, Map(reg1 -> ByteArrayConstant(preimageWrong)))
-    val input3 = ErgoBox(10, prop, Map())
+    val input0 = ErgoBox(10, pubkey, Seq(), Map())
+    val input1 = ErgoBox(1, pubkey, Seq(), Map(reg1 -> ByteArrayConstant(preimageHello)))
+    val input2 = ErgoBox(1, pubkey, Seq(), Map(reg1 -> ByteArrayConstant(preimageWrong)))
+    val input3 = ErgoBox(10, prop, Seq(), Map())
 
-    val output = ErgoBox(22, pubkey, Map())
+    val output = ErgoBox(22, pubkey, Seq(), Map())
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(output))
 

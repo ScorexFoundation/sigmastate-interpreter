@@ -35,7 +35,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val treeData = new AvlTreeData(digest, 32, None)
 
     val env = Map("key" -> key, "proof" -> proof)
-    val prop = compile(env, """isMember(SELF.R3[AvlTree].value, key, proof)""").asBoolValue
+    val prop = compile(env, """isMember(SELF.R4[AvlTree].value, key, proof)""").asBoolValue
 
     val propTree = IsMember(ExtractRegisterAs(Self, reg1),
       ByteArrayConstant(key),
@@ -47,7 +47,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -92,7 +92,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = ErgoBox(20, TrueLeaf, Map(reg1 -> AvlTreeConstant(treeData))))
+      self = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
     val bigLeafProof = avlProver.generateProof()
@@ -136,8 +136,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val env = Map("proofId" -> proofId.toLong)
     val prop = compile(env,
       """{
-        |  let tree = SELF.R3[AvlTree].value
-        |  let key = SELF.R4[Array[Byte]].value
+        |  let tree = SELF.R4[AvlTree].value
+        |  let key = SELF.R5[Array[Byte]].value
         |  let proof = getVar[Array[Byte]](proofId)
         |  isMember(tree, key, proof)
         |}""".stripMargin).asBoolValue
@@ -150,7 +150,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
+    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,

@@ -13,6 +13,7 @@ import scala.util.Try
 
 class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
+                       val additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
   lazy val cost = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
@@ -21,7 +22,8 @@ class ErgoBoxCandidate(val value: Long,
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
-  def toBox(txId: Array[Byte], boxId: Short) = ErgoBox(value, proposition, additionalRegisters, txId, boxId)
+  def toBox(txId: Array[Byte], boxId: Short) =
+    ErgoBox(value, proposition, additionalTokens, additionalRegisters, txId, boxId)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
@@ -81,7 +83,7 @@ object ErgoBoxCandidate {
         (m.updated(regId, reg.asInstanceOf[EvaluatedValue[SType]]), p + consumed)
       }
       val finalConsumed = finalPos - pos
-      new ErgoBoxCandidate(value, prop.asInstanceOf[Value[SBoolean.type]], regs) -> finalConsumed
+      new ErgoBoxCandidate(value, prop.asInstanceOf[Value[SBoolean.type]], Seq(), regs) -> finalConsumed
     }
 
     override def serializeBody(obj: ErgoBoxCandidate): Array[Byte] = toBytes(obj)
