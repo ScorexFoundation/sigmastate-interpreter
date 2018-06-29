@@ -2,10 +2,10 @@ package org.ergoplatform
 
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox._
-import sigmastate.{SBoolean, SType}
-import sigmastate.Values.{ByteArrayConstant, Value, EvaluatedValue, LongConstant}
-import sigmastate.serialization.Serializer.{Position, Consumed}
-import sigmastate.serialization.{ValueSerializer, Serializer}
+import sigmastate._
+import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, EvaluatedValue, LongConstant, Tuple, Value}
+import sigmastate.serialization.Serializer.{Consumed, Position}
+import sigmastate.serialization.{Serializer, ValueSerializer}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.annotation.tailrec
@@ -29,6 +29,11 @@ class ErgoBoxCandidate(val value: Long,
     identifier match {
       case ValueRegId => Some(LongConstant(value))
       case ScriptRegId => Some(ByteArrayConstant(propositionBytes))
+      case TokensRegId =>
+        val tokenTuples = additionalTokens.map{case (id, amount) =>
+          Tuple(ByteArrayConstant(id), LongConstant(amount))
+        }.toIndexedSeq
+        Some(ConcreteCollection(tokenTuples, STuple(SCollection[SByte.type], SLong)))
       case ReferenceRegId => None
       case n: NonMandatoryRegisterId => additionalRegisters.get(n)
     }
