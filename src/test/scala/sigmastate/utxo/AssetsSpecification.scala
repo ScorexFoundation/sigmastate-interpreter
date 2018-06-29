@@ -7,9 +7,9 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 
-class AssetsSpecification extends SigmaTestingCommons{
+class AssetsSpecification extends SigmaTestingCommons {
 
-  property("buy request"){
+  property("buy request") {
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 
@@ -21,6 +21,7 @@ class AssetsSpecification extends SigmaTestingCommons{
     val tokenTypeEv = SCollection(STuple(SCollection.SByteArray, SLong))
 
     def extractToken(box: Value[SBox.type]) = ByIndex(ExtractRegisterAs(box, ErgoBox.TokensRegId)(tokenTypeEv), 0)
+
     def extractTokenId(box: Value[SBox.type]) = SelectField(extractToken(box), 1).asInstanceOf[Value[SCollection.SByteArray]]
 
     val rightProtection = EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(pubKeyBytes))
