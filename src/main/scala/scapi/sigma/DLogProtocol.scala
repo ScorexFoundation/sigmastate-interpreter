@@ -6,6 +6,7 @@ import java.security.SecureRandom
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
+import scapi.sigma.VerifierMessage.Challenge
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
 import sigmastate.interpreter.{Context, CryptoConstants}
@@ -133,7 +134,7 @@ object DLogProtocol {
       import CryptoConstants.dlogGroup
 
       val q: BigInteger = dlogGroup.order
-      val e: BigInteger = new BigInteger(1, challenge.bytes)
+      val e: BigInteger = new BigInteger(1, challenge)
       val ew: BigInteger = e.multiply(privateInput.w).mod(q)
       val z: BigInteger = rnd.add(ew).mod(q)
       SecondDLogProverMessage(z)
@@ -146,7 +147,7 @@ object DLogProtocol {
       val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
 
       //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
-      val e: BigInteger = new BigInteger(1, challenge.bytes)
+      val e: BigInteger = new BigInteger(1, challenge)
       val minusE = dlogGroup.order.subtract(e)
       val hToE = dlogGroup.exponentiate(publicInput.h, minusE)
       val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
@@ -167,7 +168,7 @@ object DLogProtocol {
       * @return
       */
     def computeCommitment(proposition: ProveDlog,
-                          challenge: Array[Byte],
+                          challenge: Challenge,
                           secondMessage: SecondDLogProverMessage): EcPointType = {
       val g = dlogGroup.generator
       val h = proposition.h
@@ -193,7 +194,7 @@ object DLogProtocol {
     override lazy val accepted: Boolean = Try {
       assert(dlogGroup.isMember(x.h))
       val left = dlogGroup.exponentiate(dlogGroup.generator, z.z.bigInteger)
-      val hToe = dlogGroup.exponentiate(x.h, BigInt(1, e.bytes).bigInteger)
+      val hToe = dlogGroup.exponentiate(x.h, BigInt(1, e).bigInteger)
       val right = dlogGroup.multiplyGroupElements(a.ecData, hToe)
 
       left == right

@@ -8,6 +8,7 @@ import sigmastate._
 import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.Values._
 import Value.PropositionCode
+import scapi.sigma.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
@@ -136,7 +137,7 @@ object DiffieHellmanTupleInteractiveProver {
                     rnd: BigInteger,
                     challenge: Challenge): SecondDiffieHellmanTupleProverMessage = {
     val q: BigInteger = dlogGroup.order
-    val e: BigInteger = new BigInteger(1, challenge.bytes)
+    val e: BigInteger = new BigInteger(1, challenge)
     val ew: BigInteger = e.multiply(privateInput.w).mod(q)
     val z: BigInteger = rnd.add(ew).mod(q)
     SecondDiffieHellmanTupleProverMessage(z)
@@ -151,7 +152,7 @@ object DiffieHellmanTupleInteractiveProver {
     val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
 
     // COMPUTE a = g^z*u^(-e) and b = h^z*v^{-e}  (where -e here means -e mod q)
-    val e: BigInteger = new BigInteger(1, challenge.bytes)
+    val e: BigInteger = new BigInteger(1, challenge)
     val minusE = dlogGroup.order.subtract(e)
     val hToZ = dlogGroup.exponentiate(publicInput.h, z)
     val gToZ = dlogGroup.exponentiate(publicInput.g, z)
@@ -175,7 +176,7 @@ object DiffieHellmanTupleInteractiveProver {
     * @return
     */
   def computeCommitment(proposition: ProveDiffieHellmanTuple,
-                        challenge: Array[Byte],
+                        challenge: Challenge,
                         secondMessage: SecondDiffieHellmanTupleProverMessage): (EcPointType, EcPointType) = {
 
     val g = proposition.g

@@ -4,8 +4,8 @@ import java.math.BigInteger
 import java.util
 
 import org.ergoplatform.ErgoLikeContext
-import scapi.sigma.Challenge
 import scapi.sigma.DLogProtocol.{DLogInteractiveProver, DLogProverInput, FirstDLogProverMessage, ProveDlog}
+import scapi.sigma.VerifierMessage.Challenge
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.helpers.ErgoLikeProvingInterpreter
@@ -32,7 +32,7 @@ class CrowdFundingKernelContract(
     val simulated = !secretKnown
     val step4: UnprovenTree = if (simulated) {
       assert(su.challengeOpt.isDefined)
-      new DLogInteractiveProver(su.proposition, None).simulate(Challenge(su.challengeOpt.get)).asInstanceOf[UnprovenTree]
+      new DLogInteractiveProver(su.proposition, None).simulate(su.challengeOpt.get).asInstanceOf[UnprovenTree]
     } else {
       val (r, commitment) = DLogInteractiveProver.firstMessage(pubKey)
       UnprovenSchnorr(pubKey, Some(commitment), Some(r), None, simulated = false)
@@ -44,11 +44,11 @@ class CrowdFundingKernelContract(
       /*case uc: UnprovenConjecture => uc.childrenCommitments*/ // can't do this anymore because internal nodes no longer have commitments
     }
 
-    val rootChallenge = Blake2b256(Helpers.concatBytes(commitments.map(_.bytes) :+ message))
+    val rootChallenge = Challenge @@ Helpers.concatBytes(commitments.map(_.bytes) :+ message)
 
     su = step4.asInstanceOf[UnprovenSchnorr]
     val privKey = secret.get.asInstanceOf[DLogProverInput]
-    val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, Challenge(rootChallenge))
+    val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, rootChallenge)
     UncheckedSchnorr(su.proposition, None, rootChallenge, z)
   }
 

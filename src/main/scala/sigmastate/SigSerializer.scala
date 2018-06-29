@@ -2,10 +2,12 @@ package sigmastate
 
 import org.bouncycastle.util.BigIntegers
 import scapi.sigma.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
+import scapi.sigma.VerifierMessage.Challenge
 import scapi.sigma.{ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.Values.Value
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers
+import Helpers.xor
 
 
 object SigSerializer {
@@ -67,10 +69,10 @@ object SigSerializer {
     def traverseNode(exp: Value[SBoolean.type],
                      bytes: Array[Byte],
                      pos: Int,
-                     challengeOpt: Option[Array[Byte]] = None): (UncheckedSigmaTree, Int) = {
+                     challengeOpt: Option[Challenge] = None): (UncheckedSigmaTree, Int) = {
       // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
       val (challenge, chalLen) = if (challengeOpt.isEmpty) {
-        bytes.slice(pos, pos + hashSize) -> hashSize
+        (Challenge @@ bytes.slice(pos, pos + hashSize)) -> hashSize
       } else {
         challengeOpt.get -> 0
       }
@@ -102,8 +104,8 @@ object SigSerializer {
           val (seq, lastPos, lastChallenge) = or.sigmaBooleans.init.foldLeft((Seq[UncheckedSigmaTree](), pos + chalLen, challenge)) {
             case ((s, p, challengeXOR), child) =>
               val (rewrittenChild, consumed) = traverseNode(child, bytes, p, challengeOpt = None)
-              (s :+ rewrittenChild, p + consumed,
-                Helpers.xor(challengeXOR, rewrittenChild.challenge))
+              val ch = Challenge @@ xor(challengeXOR, rewrittenChild.challenge)
+              (s :+ rewrittenChild, p + consumed, ch)
           }
           // use the computed XOR for last child's challenge
           val (lastChild, numRightChildBytes) = traverseNode(or.sigmaBooleans.last, bytes, lastPos, Some(lastChallenge))

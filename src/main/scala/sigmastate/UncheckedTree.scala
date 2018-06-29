@@ -3,7 +3,8 @@ package sigmastate
 import java.util
 
 import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
-import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
+import scapi.sigma.VerifierMessage.Challenge
+import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.Values.SigmaBoolean
 
 sealed trait UncheckedTree extends ProofTree
@@ -29,7 +30,7 @@ trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree with ProofTre
 
 case class UncheckedSchnorr(override val proposition: ProveDlog,
                             override val commitmentOpt: Option[FirstDLogProverMessage],
-                            override val challenge: Array[Byte],
+                            override val challenge: Challenge,
                             secondMessage: SecondDLogProverMessage)
   extends UncheckedLeaf[ProveDlog] {
 
@@ -45,7 +46,7 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
 case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
                                        override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
-                                       override val challenge: Array[Byte],
+                                       override val challenge: Challenge,
                                        secondMessage: SecondDiffieHellmanTupleProverMessage)
   extends UncheckedLeaf[ProveDiffieHellmanTuple] {
 
@@ -58,7 +59,7 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHell
   }
 }
 
-case class CAndUncheckedNode(override val challenge: Array[Byte],
+case class CAndUncheckedNode(override val challenge: Challenge,
                              override val children: Seq[UncheckedSigmaTree])
   extends UncheckedConjecture {
 
@@ -66,7 +67,7 @@ case class CAndUncheckedNode(override val challenge: Array[Byte],
 }
 
 
-case class COrUncheckedNode(override val challenge: Array[Byte],
+case class COrUncheckedNode(override val challenge: Challenge,
                             override val children: Seq[UncheckedSigmaTree]) extends UncheckedConjecture {
 
   override val conjectureType = ConjectureType.OrConjecture
