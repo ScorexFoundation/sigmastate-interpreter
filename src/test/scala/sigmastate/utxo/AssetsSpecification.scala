@@ -22,17 +22,22 @@ class AssetsSpecification extends SigmaTestingCommons {
 
     def extractToken(box: Value[SBox.type]) = ByIndex(ExtractRegisterAs(box, ErgoBox.TokensRegId)(tokenTypeEv), 0)
 
-    def extractTokenId(box: Value[SBox.type]) = SelectField(extractToken(box), 1).asInstanceOf[Value[SCollection.SByteArray]]
+    def extractTokenId(box: Value[SBox.type]) =
+      SelectField(extractToken(box), 1).asInstanceOf[Value[SCollection.SByteArray]]
+
+    def extractTokenAmount(box: Value[SBox.type]) =
+      SelectField(extractToken(box), 2).asInstanceOf[Value[SLong.type]]
 
     val rightProtection = EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(pubKeyBytes))
 
     val prop = AND(
       EQ(extractTokenId(ByIndex(Outputs, 0)), ByteArrayConstant(tokenId)),
+      GE(extractTokenAmount(ByIndex(Outputs, 0)), LongConstant(60)),
       rightProtection,
       GE(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(1))
     )
 
-    val newBox1 = ErgoBox(1, pubkey, Seq(tokenId -> 50))
+    val newBox1 = ErgoBox(1, pubkey, Seq(tokenId -> 65))
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
@@ -50,5 +55,4 @@ class AssetsSpecification extends SigmaTestingCommons {
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
-
 }
