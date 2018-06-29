@@ -154,7 +154,6 @@ object DLogProtocol {
       FirstDLogProverMessage(a) -> SecondDLogProverMessage(z)
     }
 
-    //todo: check that h belongs to the group?
     /**
       * The function computes initial prover's commitment to randomness
       * ("a" message of the sigma-protocol) based on the verifier's challenge ("e")

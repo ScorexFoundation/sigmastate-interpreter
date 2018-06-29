@@ -162,7 +162,6 @@ object DiffieHellmanTupleInteractiveProver {
     FirstDiffieHellmanTupleProverMessage(a, b) -> SecondDiffieHellmanTupleProverMessage(z)
   }
 
-  //todo: check that g,h belong to the group?
   /**
     * The function computes initial prover's commitment to randomness
     * ("a" message of the sigma-protocol) based on the verifier's challenge ("e")
