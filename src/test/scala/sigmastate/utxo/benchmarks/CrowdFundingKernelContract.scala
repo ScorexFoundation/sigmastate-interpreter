@@ -32,7 +32,7 @@ class CrowdFundingKernelContract(
     val simulated = !secretKnown
     val step4: UnprovenTree = if (simulated) {
       assert(su.challengeOpt.isDefined)
-      new DLogInteractiveProver(su.proposition, None).simulate(su.challengeOpt.get).asInstanceOf[UnprovenTree]
+      DLogInteractiveProver.simulate(su.proposition,su.challengeOpt.get).asInstanceOf[UnprovenTree]
     } else {
       val (r, commitment) = DLogInteractiveProver.firstMessage(pubKey)
       UnprovenSchnorr(pubKey, Some(commitment), Some(r), None, simulated = false)

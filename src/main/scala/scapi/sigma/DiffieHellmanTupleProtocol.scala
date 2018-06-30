@@ -165,7 +165,8 @@ object DiffieHellmanTupleInteractiveProver {
 
   /**
     * The function computes initial prover's commitment to randomness
-    * ("a" message of the sigma-protocol) based on the verifier's challenge ("e")
+    * ("a" message of the sigma-protocol, which in this case has two parts "a" and "b")
+    * based on the verifier's challenge ("e")
     * and prover's response ("z")
     *
     * g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e

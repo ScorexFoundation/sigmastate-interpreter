@@ -252,8 +252,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       if (su.simulated) {
         // Step 5 (simulated leaf -- complete the simulation)
         assert(su.challengeOpt.isDefined)
-        val prover = new DLogInteractiveProver(su.proposition, None)
-        val (fm, sm) = prover.simulate(su.challengeOpt.get)
+        val (fm, sm) = DLogInteractiveProver.simulate(su.proposition, su.challengeOpt.get)
         UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
       } else {
         // Step 6 (real leaf -- compute the commitment a)
@@ -265,8 +264,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       if (dhu.simulated) {
         // Step 5 (simulated leaf -- complete the simulation)
         assert(dhu.challengeOpt.isDefined)
-        val prover = new DiffieHellmanTupleInteractiveProver(dhu.proposition, None)
-        val (fm, sm) = prover.simulate(dhu.challengeOpt.get)
+        val (fm, sm) = DiffieHellmanTupleInteractiveProver.simulate(dhu.proposition, dhu.challengeOpt.get)
         UncheckedDiffieHellmanTuple(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
       } else {
         // Step 6 (real leaf -- compute the commitment a)
