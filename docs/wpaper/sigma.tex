@@ -255,25 +255,63 @@ If the tree is well-formed according to the typing rules, and also has complexit
 
 If the transformations are finishing with abortion, the result is considered as $false$ (we recall that the interpreter is giving a single boolean result finally, whether an output could be spent or not). Otherwise, if the tree could not be transformed anymore the interpreter is looking into it. If the tree is about just a single node which contains boolean constant value~($true$ or $false$), the value is the result of the interpretation. If the tree contains statements not provable via $\Sigma$-protocols, the interpreter finishes with $false$. Otherwise, if the tree contains only statements provable via $\Sigma$-protocols, the interpreter is continuing to work, and here execution is different for the prover and the verifier. The prover is generating a proof for the statement by using its secrets, as described in Section~\ref{sec:proving}, and the verifier checks the statement against the proof~(provided in a spending transaction), as described in Section~\ref{sec:verifying}. The verifier outputs $true$ if the proof is valid for the statement, $false$ otherwise. We are skipping for now the question how Fiat-Shamir transformation works in our setting, and how a message, which is used in a non-interactive protocol is formed; details are given further in Appendix~\ref{apx:tx-format}. 
 
-\section{Sigma prrotocols for an arbitrary And/Or/Threshold composition}
+
+
+\section{Context}
+
+Shared context of a blockchain system could be expressed in different ways, based on desired expressiveness, efficiency, planned use cases and so on. In this paper we focus on context for Ergo blockchain. The main priority for this blockchain is maximum efficiency of transaction validation process, safety, and friendliness to light clients. Considering this, we require that context should contain only spending transaction along with outputs it spends, and limited number of last block headers. Thus even a client which does not have all the headers of the blockchain~(for example, the client could be working in a light-SPV mode, where the client is holding only sublinear part of the headers-chain) is able to validate a transaction, by being shown it~(as well as outputs the transaction spends along with Merkle proofs for them).
+
+\knote{brief context description, link to an appendix with details}
+
+
+
+\section{Details of $\Sigma$-protocols for an arbitrary And/Or/Threshold composition}
 \newcommand{\andnode}{\ensuremath{\mathsf{AND}}}
 \newcommand{\ornode}{\ensuremath{\mathsf{OR}}}
 \newcommand{\tnode}{\ensuremath{\mathsf{THRESHOLD}}}
 \newcommand{\GF}{\ensuremath{\mathrm{GF}}}
-\lnote{Somewhere we should introduce basic notation/terminology for $\Sigma$ protocols. In particular, we should say that we mean ``non-interactive'' $\Sigma$-protocol throughout, where the second message is computed as hash of the first. Somewhere we should define ``commitment $a$'', ``challenge $e$'', and ``response $z$''; moreover, we shoild be clear that  restrict ourselves to $\Sigma$-protocols that require the sending of only ``challenge'' and ``response'' (we can handle protocols that require ``commitment'' and ``response'' instead, but we will be less communication-efficient than optimal, probably --- this require more thinking) }
+\subsection{Background}
 
-In this section, we consider the following setting. Let a $\Sigma$-protocol be described by a tree, as follows. The leaves of the tree are atomic $\Sigma$-protocols, for which prover, verifier, and simulator code is available. They do not have to be the same, but must all have the same challenge bit-length $t$. Each non-leaf node is one of three types: $\andnode$, $\ornode$, or $\tnode(k)$, where $k\ge 1$ is an integer parameter that is no greater than the number of the node's children (and the number of children is less than $2^t$). The meaning of the proof corresponding to $\tnode(k)$ is ``the prover knows witnesses for at least $k$ children of this node''. Semantically, $\andnode$ and $\ornode$ are simply special cases of \tnode: the meaning  of the proof corresponding $\andnode$ (respectively, $\ornode)$ is ``the prover knows witnesses for all children (respectively, at least one child) of this node''. However, $\andnode$ and $\ornode$ are implemented differently from $\tnode$ for efficiency.
+\lnote{need to give some references that explain $\Sigma$-protocols well. Not sure what --- may need to dig through the literature}
 
-We show the steps of the prover and verifier given such a tree. While $\andnode$, $\ornode$, and $\tnode$ composition of $\Sigma$-protocols has been addressed in the literature before \lnote{need citations}, prover and verifier algorithms have been described only for a single node, in terms of prover, verifier, and simulator algorithms for its children. Recursively constructing code for an entire tree by dynamically constructing prover, verifier, and simulator code for each node is inefficient. Here we take a different approach by explicitly describing how and in what order the protocol messages for each node need to be computed and verified.
+In this section, we explain in detail how the $\Sigma$-protocol proving and verifying is implemented. Consider the tree after the rewriting process, as described in Section~\ref{sec:rewriting}, reduces to only $\Sigma$-protocol nodes. Then the leaves of the tree are atomic $\Sigma$-protocols, and non-leaves are of one of three types: $\andnode$, $\ornode$, or $\tnode(k)$. \lnote{connect these types to what's described above}
+
+The meaning of the proof corresponding to $\tnode(k)$ is ``the prover knows witnesses for at least $k$ children of this node''. Semantically, $\andnode$ and $\ornode$ are simply special cases of $\tnode$: the meaning  of the proof corresponding $\andnode$ (respectively, $\ornode)$ is ``the prover knows witnesses for all children (respectively, at least one child) of this node''. However, $\andnode$ and $\ornode$ are implemented differently from $\tnode$ for efficiency.
+
+For the purposes of this description, it does not matter what specific atomic $\Sigma$-protocols are used at the leaves. They can be, for example, $Dlog(x)$ for proving knowledge of the discrete logarithm $w$ of $x=g^w$, or $DH(g, x, h, y)$ for proving that $(g, x, h, y)$ form a Diffie-Hellman tuple, i.e., $(\exists w) \ x = g^w \, \wedge \, y = h^w$. In general, we will assume the prover has some secret $w$ and wants to prove some property of it. 
+
+A $\Sigma$-protocol consist of three messages: 
+
+\begin{itemize}
+\item a \emph{commitment} $a$ sent from the Prover to the Verifier (computed using $w$ and some freshly generated secret randomness $r$ by the Prover's first step algorithm);
+\item a uniformly random \emph{challenge} $e$ sent from the Verifier to the Prover;
+\item and a \emph{response} $z$ sent from the Prover to the Verifier (computed using $w$, $e$, and $r$ by the Prover's second step algorithm). 
+\end{itemize}
+The verifier then checks that the triple $(a, e, z)$ satisfies some formula and, if so, accepts the proof.
+
+In order to make an atomic $\Sigma$-protocol non-interactive using the so-called Fiat-Shamir heuristic, the Prover would compute $e$ by hashing $a$, and the Verifier would check that $e$ is indeed a hash of $a$. However, once atomic $\Sigma$-protocols are composed using $\andnode$, $\ornode$, and $\tnode$, the challenge computation becomes more involved, as we describe below.
+
+$\Sigma$-protocols have the property of \emph{special honest-verifier zero-knowledge}. For the purposes of this description, it means that given a random $e$, it is possible to compute $a$ and $z$ without knowing the secret $w$ that is normally needed by the prover. This computation is called ``simulation''. Moreover, the triple $(a, e, z)$  computed via simulation is distributed identically to the triple $(a, e, z)$ that results form a $\Sigma$ protocol that is run by the honest prover (who knows the secret $w$) and verifier (who generates a uniform $e$). The trick that makes simulation possible is that the response $z$ is chosen by the simulator before commitment $a$, in contrast to the prover, who is forced to choose $a$ before $z$.
+
+$\Sigma$-protocols used in this work must also satisfy a property of \emph{special soundness}, which means that given two triples $(a_1, e_1, z_1)$ and $(a_2, e_2, z_2)$ that are both accepted by the verifier, and $a_1=a_2$ while $e_1\neq e_2$, it is possible to compute the Prover's secret $w$ in polynomial time and thus directly verify that the statement claimed by the Prover is true.   Note that this computation is never performed, because the Prover will never actually answer two different challenges $e_1\neq e_2$ for the same commitment $a_1=a_2$. 
+
+In order for composition of $\Sigma$-protocols using $\andnode$, $\ornode$, and $\tnode$ to work, the challenge $e$ in all protocols must be a binary string of the same length, which we will call $t$.  (This implies that if the Verifier performs arithmetic modulo $q$ on $e$, then $2^t<q$; else it would be trivial to have $e_1\neq e_2$ by letting $e_2=e_1+q$, and the same $z$ would work for both $e_1$ and $e_2$, violating the special soundness property mentioned above, because such $a, e_1, z$ can be computed without knowledge of $w$ by using the simulator.)  Note that $t$ is the \emph{soundness parameter}: the chances that a malicious Prover can fool the Verifier in a single attempt is $2^{-t}$. 
+
+ For ease of description, we will also impose the following limitation on the $\Sigma$ protocols: in the interactive version, the verification code must proceed by computing $a'$ from $z$ and $e$, and then checking if $a'=a$. That means that in the noninteractive version, the Prover needs to transmit only $z$ and $e$ (omitting $a$) to the Verifier, who will compute $a'$ from $z$ and $e$ and then check that $e$ was computed correctly as a function of $a'$. If the hashing is collision-resistant, an incorrect $a'$ will lead to a mismatch of $e$, which will be detected by the Verifier. This limitation is satisfied by most common $\Sigma$-protocols; it is not essential and can be removed by having the Prover additionally send $a$.
+
+We show the steps of the prover and verifier given such a tree. While $\andnode$, $\ornode$, and $\tnode$ composition of $\Sigma$-protocols has been addressed in the literature before \cite{CDS94}, prover and verifier algorithms have been described only for a single node, in terms of prover, verifier, and simulator algorithms for its children. Recursively constructing code for an entire tree by dynamically constructing prover, verifier, and simulator code for each node is inefficient. Here we take a different approach by explicitly describing how and in what order the protocol messages for each node of the tree need to be computed and verified. We are not aware of any similar descriptions in the literature.
 
 Our description uses two kinds of tree traversal: bottom-up (also known as post-order) and top-down (also known as preorder). In a bottom-up traversal, for each node, operations are recursively applied to the children of the node before being applied to the node itself. In a top-down traversal, for each node, operations are applied to the node itself before being recursively applied to each of its children.
 
 \subsection{Proving}
 \label{sec:proving}
 
-\lnote{should say something about timing attacks, perhaps.}
+The Prover will know secrets $w$ for some of the leaves; for such leaves, it will choose whether to produce real or simulated proofs according to the algorithm described in this section. The Prover will simulate proofs for all other leaves. 
 
-For each node in the tree, the prover will maintain a flag indicating whether it is real or simulated. Each node will also have a $t$-bit challenge. The leaves will additionally have two protocol values: a challenge and a response. The pseudocode below explains how these values are computed. \lnote{we should probably mention that ``random'' below means pseudorandom, too}
+Note that the algorithm described below does not attempt to be secure against side channel attacks, such as, for example, timing attacks. It particular, it may take different amounts of time depending on which nodes are real and which are simulated; a timing attacker may therefore obtain information about the set of leaves for which the Prover knows the secrets. If timing attacks are a concern, it is not enough to make sure that simulation and proving take a similar amount of time for each atomic $\Sigma$-protocol used in the leaves; implementations should also make sure that tree traversals take the same amount of time regardless of where simulated and real $\Sigma$ protocols are located in the tree. In particular, implementations should avoid the use of lazy-evaluation constructs, such as ``forall'' and ``exists''.
+
+
+For each node in the tree, the prover will maintain a flag indicating whether it is real or simulated. Each node will also have a $t$-bit challenge. The leaves will additionally have two protocol values: a challenge and a response. The pseudocode below explains how these values are computed. In the psuedocode below, the word ``random'' should be read to also allow securely generated pseudorandom values.
 
 The prover first has to decide which nodes will have real proofs (for which witnesses are required) and which will be simulated. For example, in an $\ornode$ proof, only one of the children will be real. The prover will do so based on witnesses that are available, in three steps:
 
@@ -368,7 +406,7 @@ Now the prover will compute protocol values for every node, as follows:
 \label{sec:verifying}
 
 
-For each node in the tree, the verifier will obtain a $t$-bit challenge $e$ by either reading it directly from the proof or by using other information provided in the proof. For the leaves, the verifier will also read the response $z$ from the proof and will re-compute, using the challenge and the response, the commitment $a$. \mnote{It is not clear how commitment computed by the prover is available to the verifier, because it is not stored in the proof} \lnote{The previous phrasing was bad; hopefully now is clearer.} Finally, verifier will hash the whole tree and will check that the hash value matches the challenge of the root node.
+For each node in the tree, the verifier will obtain a $t$-bit challenge $e$ by either reading it directly from the proof or by using other information provided in the proof. For the leaves, the verifier will also read the response $z$ from the proof and will re-compute, using the challenge and the response, the commitment $a$.  Finally, verifier will hash the whole tree and will check that the hash value matches the challenge of the root node.
 
 Note that, unlike the prover, the verifier has no way of knowing which nodes are real and which are simulated. In fact, making sure that the verifier cannot tell the difference between real and simulated nodes is one of the security goals of the protocol.
 
@@ -392,14 +430,6 @@ The pseudocode below details the verifier's steps.
 
 \item Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of $s$ (and, if applicable,  the associated data). Reject otherwise.
 \end{enumerate}
-
-
-\subsection{Context}
-
-Shared context of a blockchain system could be expressed in different ways, based on desired expressiveness, efficiency, planned use cases and so on. In this paper we focus on context for Ergo blockchain. The main priority for this blockchain is maximum efficiency of transaction validation process, safety, and friendliness to light clients. Considering this, we require that context should contain only spending transaction along with outputs it spends, and limited number of last block headers. Thus even a client which does not have all the headers of the blockchain~(for example, the client could be working in a light-SPV mode, where the client is holding only sublinear part of the headers-chain) is able to validate a transaction, by being shown it~(as well as outputs the transaction spends along with Merkle proofs for them).
-
-\knote{brief context description, link to an appendix with details}
-
 
 \section{Examples}
 
