@@ -44,7 +44,7 @@ class CrowdFundingKernelContract(
       /*case uc: UnprovenConjecture => uc.childrenCommitments*/ // can't do this anymore because internal nodes no longer have commitments
     }
 
-    val rootChallenge = Challenge @@ Helpers.concatBytes(commitments.map(_.bytes) :+ message)
+    val rootChallenge = Challenge @@ Blake2b256(Helpers.concatBytes(commitments.map(_.bytes) :+ message))
 
     su = step4.asInstanceOf[UnprovenSchnorr]
     val privKey = secret.get.asInstanceOf[DLogProverInput]
@@ -68,7 +68,7 @@ class CrowdFundingKernelContract(
   def verify(proof: Array[Byte],
              ctx: ErgoLikeContext,
              message: Array[Byte]): Try[Interpreter.VerificationResult] = Try {
-    var sn = proof.asInstanceOf[UncheckedSchnorr]
+    val sn = proof.asInstanceOf[UncheckedSchnorr]
     val dlog = CryptoConstants.dlogGroup
     val g = dlog.generator
     val h = sn.proposition.h
