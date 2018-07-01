@@ -20,6 +20,8 @@ import sigmastate.utxo._
   * Similarly, Bob is creating a box protected by a script like "I demand a spending transaction to create a box
   * which is protected by my public ket pubkey_B and contains at least 100 ergo tokens".
   *
+  * (Please note that we are skipping some practically important details, for example, order cancellation conditions).
+  *
   * Please note that once both box are on the blockchain, a correct exchange transaction could be created and
   * posted by anyone.
   *
@@ -91,7 +93,6 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = input1)
 
-
     //Though we use separate provers below, both inputs do not contain any secrets, thus
     //a spending transaction could be created and posted by anyone.
     val pr = tokenBuyer.prove(buyerProp, buyerCtx, fakeMessage).get
@@ -106,5 +107,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
     val pr2 = tokenSeller.prove(sellerProp, sellerCtx, fakeMessage).get
     verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
+
+    println("total cost: " + (buyerProp.cost(buyerCtx)+sellerProp.cost(sellerCtx)))
   }
 }
