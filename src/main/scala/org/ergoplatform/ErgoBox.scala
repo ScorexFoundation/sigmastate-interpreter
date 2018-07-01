@@ -9,6 +9,7 @@ import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.serialization.{DataSerializer, Serializer}
 import sigmastate.utxo.CostTable.Cost
 
@@ -59,23 +60,20 @@ class ErgoBox private(
     }
   }
 
-  lazy val bytes: Array[Byte] = {
-    val w = Serializer.startWriter()
-    DataSerializer.serialize[SBox.type](this, SBox, w)
-    w.toBytes
-  }
+  lazy val bytes: Array[Byte] = ErgoBox.serializer.toBytes(this)
 
   override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox => Arrays.equals(id, x.id)
     case _ => false
   }
 
-  override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalRegisters, index))
+  override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters, index))
 
   def toCandidate: ErgoBoxCandidate = new ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters)
 
-  override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$proposition,${Base16.encode(transactionId)}," +
-    s"$index,$additionalRegisters)"
+  override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$proposition," +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2)}), ${Base16.encode(transactionId)}, " +
+    s"$index, $additionalRegisters)"
 }
 
 object ErgoBox {
@@ -85,14 +83,6 @@ object ErgoBox {
   }
 
   type Amount = Long
-
-  def apply(value: Long,
-            proposition: Value[SBoolean.type],
-            additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
-            additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
-            transactionId: Array[Byte] = Array.fill(32)(0: Byte),
-            boxId: Short = 0): ErgoBox =
-    new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId)
 
   trait RegisterId {val number: Byte}
   abstract class MandatoryRegisterId(override val number: Byte, purpose: String) extends RegisterId
@@ -114,6 +104,8 @@ object ErgoBox {
   val TokensRegId = R2
   val ReferenceRegId = R3
 
+  val MaxTokens: Byte = 4
+
   val maxRegisters = 10
   val mandatoryRegisters: Vector[MandatoryRegisterId] = Vector(R0, R1, R2, R3)
   val nonMandatoryRegisters: Vector[NonMandatoryRegisterId] = Vector(R4, R5, R6, R7, R8, R9)
@@ -128,4 +120,26 @@ object ErgoBox {
   val registerByIndex: Map[Byte, RegisterId] = allRegisters.map(r => r.number -> r).toMap
 
   def findRegisterByIndex(i: Byte): Option[RegisterId] = registerByIndex.get(i)
+
+  def apply(value: Long,
+            proposition: Value[SBoolean.type],
+            additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
+            additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
+            transactionId: Array[Byte] = Array.fill(32)(0: Byte),
+            boxId: Short = 0): ErgoBox =
+    new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId)
+
+  object serializer extends Serializer[ErgoBox, ErgoBox] {
+    override def toBytes(obj: ErgoBox): Array[Byte] = {
+      val w = Serializer.startWriter()
+      DataSerializer.serialize[SBox.type](obj, SBox, w)
+      w.toBytes
+    }
+
+    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoBox, Consumed) = {
+      val w = Serializer.startReader(bytes, pos)
+      val box = DataSerializer.deserialize[SBox.type](SBox, w)
+      box -> (w.position - pos)
+    }
+  }
 }

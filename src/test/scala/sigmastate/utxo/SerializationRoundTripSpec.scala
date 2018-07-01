@@ -33,7 +33,12 @@ class SerializationRoundTripSpec extends PropSpec
     forAll { t: ErgoBoxCandidate => roundTripTestWithPos(t)(ErgoBoxCandidate.serializer) }
   }
 
-  property("ErgoTransaction: Serializer round trip") {
+  property("ErgoBox: Serializer round trip") {
+    forAll { t: ErgoBox => roundTripTest(t)(ErgoBox.serializer) }
+    forAll { t: ErgoBox => roundTripTestWithPos(t)(ErgoBox.serializer) }
+  }
+
+  property("ErgoLikeTransaction: Serializer round trip") {
     forAll { t: ErgoLikeTransaction => roundTripTest(t)(ErgoLikeTransaction.serializer) }
     forAll { t: ErgoLikeTransaction => roundTripTestWithPos(t)(ErgoLikeTransaction.serializer) }
   }
