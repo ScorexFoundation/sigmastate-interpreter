@@ -204,7 +204,8 @@ trait ValueGenerators extends TypeGenerators {
       bigIntConstGen,
       groupElementConstGen,
       taggedVar[SInt.type],
-      taggedVar[SLong.type]
+      taggedVar[SLong.type],
+      taggedVar[SBox.type]
     ))
   } yield Tuple(values)
 }
