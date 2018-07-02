@@ -205,7 +205,8 @@ trait ValueGenerators extends TypeGenerators {
       groupElementConstGen,
       taggedVar[SInt.type],
       taggedVar[SLong.type],
-      taggedVar[SBox.type]
+      taggedVar[SBox.type],
+      taggedVar(Arbitrary(sTupleGen(2, 10)))
     ))
   } yield Tuple(values)
 }
