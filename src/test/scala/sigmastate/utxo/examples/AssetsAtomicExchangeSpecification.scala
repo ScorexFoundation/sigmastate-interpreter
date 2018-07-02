@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant, TrueLeaf, Value}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
@@ -78,11 +78,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(100, tokenSellerKey)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    //todo: put buyerProp instead of TrueLeaf here
-    val input1 = ErgoBox(100, TrueLeaf)
+    val input1 = ErgoBox(100, buyerProp)
 
-    //todo: put sellerProp instead of TrueLeaf here
-    val input2 = ErgoBox(1, TrueLeaf)
+    val input2 = ErgoBox(1, sellerProp, Seq(tokenId -> 60))
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
