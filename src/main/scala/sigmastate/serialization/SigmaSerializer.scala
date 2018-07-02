@@ -15,8 +15,13 @@ trait Serializer[TFamily, T <: TFamily] {
     parseBody(bytes, 0)._1
   }
 
-  def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
+  // todo remove after transition to new API is complete
+  def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = ???
   def serializeBody(obj: T): Array[Byte] = toBytes(obj)
+
+  // todo remove "not implemented" after implemented everywhere
+  def parseBody(r: ByteReader): TFamily = ???
+  def serializeBody(obj: T, w: ByteWriter): Unit = ???
 
   def error(msg: String) = throw new SerializerException(msg, None)
 }
@@ -59,7 +64,9 @@ trait SigmaSerializerCompanion[TFamily] {
   val table: Map[Tag, SigmaSerializer[TFamily, _]]
 
   def deserialize(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
+  def deserialize(r: ByteReader): TFamily
 
   def serialize(v: TFamily): Array[Byte]
+  def serialize(v: TFamily, w: ByteWriter): Unit
 }
 

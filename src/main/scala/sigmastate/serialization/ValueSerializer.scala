@@ -13,6 +13,7 @@ import sigmastate.utils.Extensions._
 import Serializer.Consumed
 import org.ergoplatform._
 import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.utils.{ByteReader, ByteWriter}
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -111,21 +112,52 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   def serialize(v: Value[SType]): Array[Byte] = serializable(v) match {
+  // todo rename to table when all serializers are here
+  val tableReaderSerializers: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
+    TupleSerializer
+  ).map(s => (s.opCode, s)).toMap
+
+  // todo should be used only as entry point (not by serializers)
+  // todo make into wrapper for serialize(v,w)
+  def serialize(v: Value[SType]): Array[Byte] = v match {
     case c: Constant[SType] =>
       val w = Serializer.startWriter()
       ConstantSerializer.serialize(c, w)
       w.toBytes
     case _ =>
       val opCode = v.opCode
+      tableReaderSerializers.get(opCode) match {
+        case Some(serFn: SigmaSerializer[Value[SType], v.type]@unchecked) =>
+          val w = Serializer.startWriter()
+          w.put(opCode)
+          serFn.serializeBody(v, w)
+          w.toBytes
+        case None =>
+          table.get(opCode) match {
+            case Some(serFn: SigmaSerializer[Value[SType], v.type]@unchecked) =>
+              opCode +: serFn.serializeBody(v)
+            case None =>
+              sys.error(s"Cannot find serializer for Value with opCode=$opCode: $v")
+          }
+      }
+  }
+
+  override def serialize(v: Value[SType], w: ByteWriter): Unit = v match {
+    case c: Constant[SType] =>
+      ConstantSerializer.serialize(c, w)
+    case _ =>
+      val opCode = v.opCode
       table.get(opCode) match {
         case Some(serFn: SigmaSerializer[Value[SType], v.type]@unchecked) =>
-          opCode +: serFn.serializeBody(v)
+          w.put(opCode)
+          serFn.serializeBody(v, w)
         case None =>
           sys.error(s"Cannot find serializer for Value with opCode=$opCode: $v")
       }
   }
 
-  def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
+  // todo remove when last call site is eliminated
+  override def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
     val c = bytes(pos)
     if (c.toUByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
@@ -134,11 +166,30 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       (c, r.consumed)
     }
     else {
-      val handler = table(c)
-      val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
-      (v, consumed + 1)
+      tableReaderSerializers.get(c).map { handler =>
+        val r = Serializer.startReader(bytes, pos + 1)
+        val v = handler.parseBody(r)
+        (v, r.consumed + 1)
+      }.getOrElse {
+        val handler = table(c)
+        val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
+        (v, consumed + 1)
+      }
     }
   }
 
+  override def deserialize(r: ByteReader): Value[SType] = {
+    val firstByte = r.peekByte()
+    if (firstByte.toUByte <= LastConstantCode) {
+      // look ahead byte tell us this is going to be a Constant
+      ConstantSerializer.deserialize(r)
+    }
+    else {
+      val opCode = r.getByte()
+      table(opCode).parseBody(r)
+    }
+  }
+
+  // todo switch to reader deserialize (make out of byte array) after all serializers are migrated
   def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
 }

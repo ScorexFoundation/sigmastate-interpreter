@@ -2,27 +2,23 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.Serializer.Position
+import sigmastate.utils.{ByteReader, ByteWriter}
 
 object TupleSerializer extends ValueSerializer[Tuple] {
 
   override val opCode: Byte = TupleCode
 
-  override def parseBody(bytes: Array[Byte], pos: Position): (Tuple, Position) = {
-    val r = Serializer.startReader(bytes, pos)
+  override def parseBody(r: ByteReader): Tuple = {
     val size = r.getByte()
     val values =  (1 to size).map(_ => r.getValue())
-    (Tuple(values), r.consumed)
+    Tuple(values)
   }
 
-  override def serializeBody(tuple: Tuple): Array[Byte] = {
-    val length = tuple.length
+  override def serializeBody(obj: Tuple, w: ByteWriter): Unit = {
+    val length = obj.length
     require(length <= Byte.MaxValue, s"max tuple size is Byte.MaxValue = ${Byte.MaxValue}")
-    val w = Serializer.startWriter()
-        .put(length.toByte)
-    for (item <- tuple.items) {
-      w.putValue(item)
-    }
-    w.toBytes
+    w.put(length.toByte)
+    obj.items.foreach(w.putValue)
   }
+
 }

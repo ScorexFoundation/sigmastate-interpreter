@@ -6,10 +6,16 @@ import java.util._
 import sigmastate.Values.SValue
 import sigmastate.SType
 import sigmastate.utils.Extensions._
-import sigmastate.serialization.TypeSerializer
+import sigmastate.serialization.{TypeSerializer, ValueSerializer}
 import sigmastate.utils.ByteBufferReader.decodeZigZagLong
 
 trait ByteReader {
+
+  /**
+    * Get a byte at current position without advancing the position.
+    * @return byte at current position
+    */
+  def peekByte(): Byte
   def getByte(): Byte
   def getUByte(): Int
   def getShort(): Short
@@ -68,6 +74,8 @@ trait ByteReader {
 }
 
 class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
+
+  @inline override def peekByte(): Byte = buf.array()(buf.position())
   @inline override def getByte(): Byte = buf.get
   @inline override def getUByte(): Int = buf.get & 0xFF
   @inline override def getShort(): Short = buf.getShort()
@@ -145,7 +153,11 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
 
   @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
   @inline override def getType(): SType = TypeSerializer.deserialize(this)
-  @inline override def getValue(): SValue = buf.getValue
+  @inline override def getValue(): SValue = {
+    val (obj, consumed) = ValueSerializer.deserialize(buf.array(), buf.position())
+    buf.position(buf.position() + consumed)
+    obj
+  }
 
   private var _mark: Int = _
   @inline override def mark(): ByteReader = {
