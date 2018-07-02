@@ -10,16 +10,16 @@ object TupleSerializer extends ValueSerializer[Tuple] {
 
   override def parseBody(bytes: Array[Byte], pos: Position): (Tuple, Position) = {
     val r = Serializer.startReader(bytes, pos)
-    val size = r.getUShort()
+    val size = r.getByte()
     val values =  (1 to size).map(_ => r.getValue())
     (Tuple(values), r.consumed)
   }
 
   override def serializeBody(tuple: Tuple): Array[Byte] = {
     val length = tuple.length
-    require(length <= Short.MaxValue, s"max tuple size is Short.MaxValue = ${Short.MaxValue}")
+    require(length <= Byte.MaxValue, s"max tuple size is Byte.MaxValue = ${Byte.MaxValue}")
     val w = Serializer.startWriter()
-        .putUShort(length.toShort)
+        .put(length.toByte)
     for (item <- tuple.items) {
       w.putValue(item)
     }

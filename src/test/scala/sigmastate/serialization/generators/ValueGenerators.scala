@@ -191,4 +191,20 @@ trait ValueGenerators extends TypeGenerators {
     case SAny => arbAnyVal
     case SUnit => arbUnit
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
+
+  def tupleGen(min: Int, max: Int): Gen[Tuple] = for {
+    length <- Gen.chooseNum(min, max)
+    values <- Gen.listOfN(length, Gen.oneOf(
+      byteArrayConstGen,
+      byteConstGen,
+      shortConstGen,
+      intConstGen,
+      longConstGen,
+      booleanConstGen,
+      bigIntConstGen,
+      groupElementConstGen,
+      taggedVar[SInt.type],
+      taggedVar[SLong.type]
+    ))
+  } yield Tuple(values)
 }

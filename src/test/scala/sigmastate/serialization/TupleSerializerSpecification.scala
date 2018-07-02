@@ -1,30 +1,11 @@
 package sigmastate.serialization
 
-import org.scalacheck.Gen
-import sigmastate.Values.{FalseLeaf, IntConstant, Tuple, Value}
-import sigmastate._
+import sigmastate.Values.{FalseLeaf, IntConstant, Tuple}
 
 class TupleSerializerSpecification extends TableSerializationSpecification {
 
-  private def arbTypeValueGen: Gen[Value[SType]] =
-    Gen.oneOf(
-      byteArrayConstGen,
-      byteConstGen,
-      shortConstGen,
-      intConstGen,
-      longConstGen,
-      booleanConstGen,
-      bigIntConstGen,
-      groupElementConstGen
-    )
-
-  private def arbTypeValueTupleGen(min: Int, max: Int): Gen[Tuple] = for {
-    length <- Gen.chooseNum(min, max)
-    values <- Gen.listOfN(length, arbTypeValueGen)
-  } yield Tuple(values)
-
   property("Tuple: Serializer round trip ") {
-    forAll(arbTypeValueTupleGen(1, 10)) { tuple: Tuple =>
+    forAll(tupleGen(1, 10)) { tuple: Tuple =>
       roundTripTest(tuple)
     }
   }
