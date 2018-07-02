@@ -50,6 +50,7 @@ trait ValueGenerators extends TypeGenerators {
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
+  val shortConstGen: Gen[ShortConstant] = arbShort.arbitrary.map { v => ShortConstant(v) }
   val intConstGen: Gen[IntConstant] = arbInt.arbitrary.map { v => IntConstant(v) }
   val longConstGen: Gen[LongConstant] = arbLong.arbitrary.map { v => LongConstant(v) }
   val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map { v => BigIntConstant(v.bigInteger) }

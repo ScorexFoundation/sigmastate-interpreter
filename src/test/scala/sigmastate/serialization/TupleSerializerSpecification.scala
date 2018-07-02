@@ -10,7 +10,7 @@ class TupleSerializerSpecification extends TableSerializationSpecification {
     Gen.oneOf(
       byteArrayConstGen,
       byteConstGen,
-      // todo add short
+      shortConstGen,
       intConstGen,
       longConstGen,
       booleanConstGen,
@@ -32,7 +32,7 @@ class TupleSerializerSpecification extends TableSerializationSpecification {
   override def objects = Table(
     ("object", "bytes"),
     (Tuple(IntConstant(1), FalseLeaf),
-      Array[Byte](OpCodes.TupleCode, 2, 1, 0))
+      Array[Byte](OpCodes.TupleCode, 2, 4, 2, 1, 0))
   )
 
   tableRoundTripTest("Specific objects serializer round trip")
