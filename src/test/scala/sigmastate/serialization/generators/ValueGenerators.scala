@@ -8,7 +8,6 @@ import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
-import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, SerializedProverResult}
@@ -50,6 +49,7 @@ trait ValueGenerators extends TypeGenerators {
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
+  val shortConstGen: Gen[ShortConstant] = arbShort.arbitrary.map { v => ShortConstant(v) }
   val intConstGen: Gen[IntConstant] = arbInt.arbitrary.map { v => IntConstant(v) }
   val longConstGen: Gen[LongConstant] = arbLong.arbitrary.map { v => LongConstant(v) }
   val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map { v => BigIntConstant(v.bigInteger) }
@@ -172,6 +172,24 @@ trait ValueGenerators extends TypeGenerators {
     case SAny => arbAnyVal
     case SUnit => arbUnit
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
+
+  def tupleGen(min: Int, max: Int): Gen[Tuple] = for {
+    length <- Gen.chooseNum(min, max)
+    values <- Gen.listOfN(length, Gen.oneOf(
+      byteArrayConstGen,
+      byteConstGen,
+      shortConstGen,
+      intConstGen,
+      longConstGen,
+      booleanConstGen,
+      bigIntConstGen,
+      groupElementConstGen,
+      taggedVar[SInt.type],
+      taggedVar[SLong.type],
+      taggedVar[SBox.type],
+      taggedVar(Arbitrary(sTupleGen(2, 10)))
+    ))
+  } yield Tuple(values)
 
   val ergoBoxGen: Gen[ErgoBox] = for {
     l <- arbLong.arbitrary
