@@ -17,11 +17,11 @@ trait SigmaBuilder {
   def LT[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
   def LE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
 
-  def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
-  def Minus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
-  def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
-  def Divide[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
-  def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
+  def Plus[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
+  def Minus[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
+  def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
+  def Divide[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
+  def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
@@ -58,19 +58,19 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def LE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
     comparisonOp(left, right, sigmastate.LE.apply[S])
 
-  override def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+  override def Plus[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
     arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.PlusCode) })
 
-  override def Minus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+  override def Minus[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
     arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.MinusCode) })
 
-  override def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+  override def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
     arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.MultiplyCode) })
 
-  override def Divide[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+  override def Divide[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
     arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.DivisionCode) })
 
-  override def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
+  override def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
     arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.ModuloCode) })
 }
 
