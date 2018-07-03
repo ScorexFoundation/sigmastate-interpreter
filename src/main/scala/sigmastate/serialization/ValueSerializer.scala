@@ -7,7 +7,7 @@ import scala.util.Try
 import OpCodes._
 import sigmastate.SCollection.SByteArray
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{QuadrupelSerializer, Relation2Serializer, Relation3Serializer}
+import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 import Serializer.Consumed
@@ -18,19 +18,12 @@ import sigmastate.utils.{ByteReader, ByteWriter}
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
 
-  import ValueSerializer._
-
   override val companion = ValueSerializer
 
   /** Code of the corresponding tree node (Value.opCode) which is used to lookup this serizalizer
     * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
   val opCode: OpCode
 
-  override def toBytes(obj: V): Array[Byte] = serialize(obj)
-
-  override def parseBytes(bytes: Array[Byte]): Try[V] = Try {
-    deserialize(bytes).asInstanceOf[V]
-  }
 }
 
 object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
@@ -57,29 +50,18 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(ModuloCode, DeserializationSigmaBuilder.Modulo[SNumericType]),
     TwoArgumentsSerializer(PlusCode, DeserializationSigmaBuilder.Plus[SNumericType]),
 
-    ProveDiffieHellmanTupleSerializer,
-    ProveDlogSerializer,
 //    ConstantSerializer(SByte),
 //    ConstantSerializer(SInt),
 //    ConstantSerializer(SBigInt),
 //    ConstantSerializer(SBox),
 //    ConstantSerializer(SAvlTree),
 //    ConstantSerializer(SGroupElement),
-    CaseObjectSerialization(SBoolean.typeCode, TrueLeaf),
-    CaseObjectSerialization(SBoolean.typeCode, FalseLeaf),
     ConcreteCollectionSerializer,
     TupleSerializer,
     SelectFieldSerializer,
-    ConcreteCollectionBooleanConstantSerializer,
     LogicalTransformerSerializer(AndCode, AND.apply),
     LogicalTransformerSerializer(OrCode, OR.apply),
     TaggedVariableSerializer,
-    CaseObjectSerialization(HeightCode, Height),
-    CaseObjectSerialization(InputsCode, Inputs),
-    CaseObjectSerialization(OutputsCode, Outputs),
-    CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),
-    CaseObjectSerialization(SelfCode, Self),
-    CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
     MapCollectionSerializer,
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
@@ -96,13 +78,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, CalcSha256.apply),
     UpcastSerializer,
-    DeserializeContextSerializer,
-    DeserializeRegisterSerializer,
-    ExtractRegisterAsSerializer,
-    WhereSerializer,
-    SliceSerializer,
-    ByIndexSerializer,
-    AppendSerializer
   ).map(s => (s.opCode, s)).toMap
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
@@ -114,7 +89,47 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   def serialize(v: Value[SType]): Array[Byte] = serializable(v) match {
   // todo rename to table when all serializers are here
   val tableReaderSerializers: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
-    TupleSerializer
+    TupleSerializer,
+    SelectFieldSerializer,
+    Relation3Serializer(IsMemberCode, IsMember.apply),
+    QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
+    ProveDiffieHellmanTupleSerializer,
+    ProveDlogSerializer,
+    CaseObjectSerialization(TrueCode, TrueLeaf),
+    CaseObjectSerialization(FalseCode, FalseLeaf),
+    CaseObjectSerialization(HeightCode, Height),
+    CaseObjectSerialization(InputsCode, Inputs),
+    CaseObjectSerialization(OutputsCode, Outputs),
+    CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),
+    CaseObjectSerialization(SelfCode, Self),
+    CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
+    ConcreteCollectionSerializer,
+    ConcreteCollectionBooleanConstantSerializer,
+    LogicalTransformerSerializer(AndCode, AND.apply),
+    LogicalTransformerSerializer(OrCode, OR.apply),
+    TaggedVariableSerializer,
+    MapCollectionSerializer,
+    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
+    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
+    FoldSerializer,
+    SimpleTransformerSerializer[SCollection[SType], SInt.type](SizeOfCode, SizeOf.apply),
+    SimpleTransformerSerializer[SBox.type, SLong.type](ExtractAmountCode, ExtractAmount.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractScriptBytesCode, ExtractScriptBytes.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesCode, ExtractBytes.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, ExtractId.apply),
+    SimpleTransformerSerializer[SInt.type, SByte.type](IntToByteCode, IntToByte.apply),
+    SimpleTransformerSerializer[SLong.type, SByteArray](LongToByteArrayCode, LongToByteArray.apply),
+    SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
+    SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
+    SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, CalcSha256.apply),
+    DeserializeContextSerializer,
+    DeserializeRegisterSerializer,
+    ExtractRegisterAsSerializer,
+    WhereSerializer,
+    SliceSerializer,
+    ByIndexSerializer,
+    AppendSerializer
   ).map(s => (s.opCode, s)).toMap
 
   // todo should be used only as entry point (not by serializers)

@@ -1,31 +1,26 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.Value
-import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.Serializer.{Consumed, Position}
-import sigmastate.serialization.{OpCodes, Serializer, ValueSerializer}
-import sigmastate.utxo.ByIndex
-import sigmastate.{SCollection, SInt, SType}
 import sigmastate.lang.Terms._
+import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utxo.ByIndex
+import sigmastate.{SInt, SType}
 
 object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
 
   override val opCode: OpCode = OpCodes.ByIndexCode
 
-  override def parseBody(bytes: Array[Byte], pos: Position): (ByIndex[SType], Consumed) = {
-    val r = Serializer.startReader(bytes, pos)
-    val input = r.getValue().asInstanceOf[Value[SCollection[SType]]]
-    val index = r.getValue().upcastTo(SInt)
+  override def parseBody(r: ByteReader): ByIndex[SType] = {
+    val input = r.getValue().asCollection[SType]
+    val index = r.getValue().asValue[SInt.type]
     val default = r.getOption(r.getValue())
-    val res = ByIndex(input, index, default)
-    res -> r.consumed
+    ByIndex(input, index, default)
   }
 
-  override def serializeBody(obj: ByIndex[SType]): Array[Byte] =
-    Serializer.startWriter()
-      .putValue(obj.input)
+  override def serializeBody(obj: ByIndex[SType], w: ByteWriter): Unit =
+    w.putValue(obj.input)
       .putValue(obj.index)
       .putOption(obj.default)(_.putValue(_))
-      .toBytes
 
 }

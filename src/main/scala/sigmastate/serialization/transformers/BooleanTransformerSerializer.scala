@@ -1,9 +1,10 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
+import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.Serializer.{Position, Consumed}
+import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.BooleanTransformer
 import sigmastate.{SBoolean, SCollection, SType}
 
@@ -12,19 +13,16 @@ case class BooleanTransformerSerializer[T <: SType, R <: BooleanTransformer[T]]
 
   override val opCode: OpCode = code
 
-  override def parseBody(bytes: Array[OpCode], pos: Position): (R, Consumed) = {
-    val (input, c1) = ValueSerializer.deserialize(bytes, pos)
-    val idByte = bytes(pos + c1)
-    val (condition, c2) = ValueSerializer.deserialize(bytes, pos + c1 + 1)
-    val i = input.asInstanceOf[Value[SCollection[T]]]
-    val c = condition.asInstanceOf[Value[SBoolean.type]]
-    f(i, idByte, c) -> (c1 + 1 + c2)
+  override def parseBody(r: ByteReader): R = {
+    val input = r.getValue().asCollection[T]
+    val idByte = r.getByte()
+    val condition = r.getValue().asValue[SBoolean.type]
+    f(input, idByte, condition)
   }
 
-  override def serializeBody(obj: R): Array[OpCode] = {
-    val inputBytes = ValueSerializer.serialize(obj.input)
-    val idByte = obj.id
-    val conditionBytes = ValueSerializer.serialize(obj.condition)
-    inputBytes ++ Array(idByte) ++ conditionBytes
-  }
+  override def serializeBody(obj: R, w: ByteWriter): Unit =
+    w.putValue(obj.input)
+      .put(obj.id)
+      .putValue(obj.condition)
+
 }

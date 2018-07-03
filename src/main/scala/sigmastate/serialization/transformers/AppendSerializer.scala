@@ -1,24 +1,23 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.Value
+import sigmastate.SType
+import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.Serializer._
 import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.Append
-import sigmastate.{SCollection, SType}
 
 object AppendSerializer extends ValueSerializer[Append[SType]] {
 
   override val opCode: OpCode = OpCodes.AppendCode
 
-  override def serializeBody(obj: Append[SType]): Array[Byte] = {
-    ValueSerializer.serialize(obj.input) ++ ValueSerializer.serialize(obj.col2)
+  override def parseBody(r: ByteReader): Append[SType] = {
+    val input = r.getValue().asCollection[SType]
+    val col2 = r.getValue().asCollection[SType]
+    Append(input, col2)
   }
 
-  override def parseBody(bytes: Array[Byte], pos: Position): (Append[SType], Consumed) = {
-    val (input, consumed) = ValueSerializer.deserialize(bytes, pos)
-    val (col2, consumed2) = ValueSerializer.deserialize(bytes, pos + consumed)
-    (Append(input.asInstanceOf[Value[SCollection[SType]]], col2.asInstanceOf[Value[SCollection[SType]]]), consumed + consumed2)
-  }
-
+  override def serializeBody(obj: Append[SType], w: ByteWriter): Unit =
+    w.putValue(obj.input)
+      .putValue(obj.col2)
 }

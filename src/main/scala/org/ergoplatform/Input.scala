@@ -6,9 +6,7 @@ import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
-import sigmastate.serialization.Serializer.{Consumed, Position}
-
-import scala.util.Try
+import sigmastate.utils.{ByteReader, ByteWriter}
 
 
 class UnsignedInput(val boxId: BoxId) {
@@ -24,17 +22,12 @@ object UnsignedInput {
   object serializer extends Serializer[UnsignedInput, UnsignedInput] {
 
     @inline
-    override def toBytes(input: UnsignedInput): Array[Byte] = serializeBody(input)
-
-    override def parseBytes(bytes: Array[Byte]): Try[UnsignedInput] =
-      Try(parseBody(bytes, 0)._1)
-
-    override def parseBody(bytes: Array[Byte], pos: Position): (UnsignedInput, Consumed) = {
-      new UnsignedInput(ADKey @@ bytes.slice(pos, pos + BoxId.size)) -> BoxId.size
-    }
+    override def parseBody(r: ByteReader): UnsignedInput =
+      new UnsignedInput(ADKey @@ r.getBytes(BoxId.size))
 
     @inline
-    override def serializeBody(input: UnsignedInput): Array[Byte] = input.boxId
+    override def serializeBody(obj: UnsignedInput, w: ByteWriter): Unit =
+      w.putBytes(obj.boxId)
   }
 }
 
@@ -44,14 +37,16 @@ case class Input(override val boxId: BoxId, spendingProof: ProverResult)
 
 object Input {
   object serializer extends Serializer[Input, Input] {
-    override def toBytes(input: Input): Array[Byte] = {
-      input.boxId ++ ProverResult.serializer.toBytes(input.spendingProof)
+
+    override def parseBody(r: ByteReader): Input = {
+      val boxId = r.getBytes(BoxId.size)
+      val spendingProof = SerializedProverResult.serializer.parseBody(r)
+      Input(ADKey @@ boxId, spendingProof)
     }
 
-    override def parseBody(bytes: Array[Byte], pos: Position): (Input, Consumed) = {
-      val boxId = bytes.slice(pos, pos + BoxId.size)
-      val (spendingProof, consumed) = ProverResult.serializer.parseBody(bytes, pos + BoxId.size)
-      Input(ADKey @@ boxId, spendingProof) -> (consumed + BoxId.size)
+    override def serializeBody(obj: Input, w: ByteWriter): Unit = {
+      w.putBytes(obj.boxId)
+      SerializedProverResult.serializer.serializeBody(obj.spendingProof, w)
     }
   }
 }

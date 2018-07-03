@@ -1,24 +1,18 @@
 package sigmastate.serialization
 
-import com.google.common.primitives.Ints
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.SGroupElement
-import sigmastate.Values.Value
+import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.Serializer.{Position, Consumed}
+import sigmastate.utils.{ByteReader, ByteWriter}
 
 object ProveDlogSerializer extends ValueSerializer[ProveDlog] {
 
-  val INT_LENGTH = Ints.BYTES
-
   override val opCode: OpCode = OpCodes.ProveDlogCode
 
-  override def parseBody(bytes: Array[Byte], pos: Position): (ProveDlog, Consumed) = {
-    val (ge, consumed) = ValueSerializer.deserialize(bytes, pos)
-    ProveDlog(ge.asInstanceOf[Value[SGroupElement.type]]) -> consumed
-  }
+  override def parseBody(r: ByteReader): ProveDlog =
+    ProveDlog(r.getValue().asValue[SGroupElement.type])
 
-  override def serializeBody(obj: ProveDlog): Array[Byte] = {
-    ValueSerializer.serialize(obj.value)
-  }
+  override def serializeBody(obj: ProveDlog, w: ByteWriter): Unit =
+    w.putValue(obj.value)
 }

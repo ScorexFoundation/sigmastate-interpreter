@@ -9,15 +9,25 @@ import sigmastate.utils._
 import scala.util.Try
 
 trait Serializer[TFamily, T <: TFamily] {
-  def toBytes(obj: T): Array[Byte]
 
-  def parseBytes(bytes: Array[Byte]): Try[TFamily] = Try {
+  final def toBytes(obj: T): Array[Byte] = serializeBody(obj)
+
+  final def parseBytes(bytes: Array[Byte]): Try[TFamily] = Try {
     parseBody(bytes, 0)._1
   }
 
-  // todo remove after transition to new API is complete
-  def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = ???
-  def serializeBody(obj: T): Array[Byte] = toBytes(obj)
+  // todo make final after transition to new API is complete
+  def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = {
+    val r = Serializer.startReader(bytes, pos)
+    parseBody(r) -> r.consumed
+  }
+
+  // todo make final after transition to new API is complete
+  def serializeBody(obj: T): Array[Byte] = {
+    val w = Serializer.startWriter()
+    serializeBody(obj, w)
+    w.toBytes
+  }
 
   // todo remove "not implemented" after implemented everywhere
   def parseBody(r: ByteReader): TFamily = ???

@@ -1,26 +1,25 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.Value
+import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.Serializer._
 import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.Where
-import sigmastate.{SBoolean, SCollection, SType}
+import sigmastate.{SBoolean, SType}
 
 object WhereSerializer extends ValueSerializer[Where[SType]] {
 
   override val opCode: OpCode = OpCodes.WhereCode
 
-  override def serializeBody(obj: Where[SType]): Array[Byte] = {
-    obj.id +: (ValueSerializer.serialize(obj.input) ++ ValueSerializer.serialize(obj.condition))
+  override def parseBody(r: ByteReader): Where[SType] = {
+    val id = r.getByte()
+    val input = r.getValue().asCollection[SType]
+    val condition = r.getValue().asValue[SBoolean.type]
+    Where(input, id, condition)
   }
 
-  override def parseBody(bytes: Array[Byte], pos: Position): (Where[SType], Consumed) = {
-    val id = bytes(pos)
-    val (input, consumed) = ValueSerializer.deserialize(bytes, pos + 1)
-    val (condition, consumed2) = ValueSerializer.deserialize(bytes, pos + consumed + 1)
-    (Where(input.asInstanceOf[Value[SCollection[SType]]], id, condition.asInstanceOf[Value[SBoolean.type]]),
-      1 + consumed + consumed2)
-  }
-
+  override def serializeBody(obj: Where[SType], w: ByteWriter): Unit =
+    w.put(obj.id)
+    .putValue(obj.input)
+    .putValue(obj.condition)
 }

@@ -1,28 +1,21 @@
 package sigmastate.serialization
 
-import sigmastate._
-import sigmastate.utils.Extensions._
 import sigmastate.Values._
-import sigmastate.serialization.Serializer.Position
-import OpCodes._
-import sigmastate.utils.ByteArrayBuilder
+import sigmastate._
+import sigmastate.serialization.OpCodes._
+import sigmastate.utils.{ByteReader, ByteWriter}
 
 object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: SType]] {
 
   override val opCode: OpCode = TaggedVariableCode
 
-  override def parseBody(bytes: Array[Byte], pos: Position) = {
-    val r = Serializer.startReader(bytes, pos)
+  override def parseBody(r: ByteReader): TaggedVariable[_ <: SType] = {
     val varId = r.getByte()
     val tpe = r.getType()
-    val node = TaggedVariable(varId, tpe)
-    (node, r.consumed)
+    TaggedVariable(varId, tpe)
   }
 
-  override def serializeBody(v: TaggedVariable[_ <: SType]) = {
-    val w = Serializer.startWriter()
-        .put(v.varId)
-        .putType(v.tpe)
-    w.toBytes
-  }
+  override def serializeBody(obj: TaggedVariable[_ <: SType], w: ByteWriter): Unit =
+    w.put(obj.varId)
+      .putType(obj.tpe)
 }
