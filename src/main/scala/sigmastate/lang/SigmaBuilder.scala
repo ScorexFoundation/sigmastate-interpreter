@@ -9,75 +9,75 @@ import sigmastate.serialization.OpCodes
 
 trait SigmaBuilder {
 
-  def EQ[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
-  def NEQ[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
+  def EQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
+  def NEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
 
-  def GT[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
-  def GE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
-  def LT[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
-  def LE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
+  def GT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
+  def GE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
+  def LT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
+  def LE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
 
-  def Plus[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
-  def Minus[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
-  def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
-  def Divide[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
-  def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S]
+  def Plus[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T]
+  def Minus[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T]
+  def Multiply[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T]
+  def Divide[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T]
+  def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
 
-  protected def equalityOp[S <: SType, R](left: Value[S],
-                                        right: Value[S],
-                                        cons: (Value[S], Value[S]) => R): R = cons(left, right)
+  protected def equalityOp[T <: SType, R](left: Value[T],
+                                        right: Value[T],
+                                        cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
-  protected def comparisonOp[S <: SType, R](left: Value[S],
-                                          right: Value[S],
-                                          cons: (Value[S], Value[S]) => R): R = cons(left, right)
+  protected def comparisonOp[T <: SType, R](left: Value[T],
+                                          right: Value[T],
+                                          cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
-  protected def arithOp[S <: SNumericType, R](left: Value[S],
-                                            right: Value[S],
-                                            cons: (Value[S], Value[S]) => R): R = cons(left, right)
+  protected def arithOp[T <: SNumericType, R](left: Value[T],
+                                            right: Value[T],
+                                            cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
-  override def EQ[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
-    equalityOp(left, right, sigmastate.EQ.apply[S])
+  override def EQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
+    equalityOp(left, right, sigmastate.EQ.apply[T])
 
-  override def NEQ[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
-    equalityOp(left, right, sigmastate.NEQ.apply[S])
+  override def NEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
+    equalityOp(left, right, sigmastate.NEQ.apply[T])
 
-  override def GT[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
-    comparisonOp(left, right, sigmastate.GT.apply[S])
+  override def GT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
+    comparisonOp(left, right, sigmastate.GT.apply[T])
 
-  override def GE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
-    comparisonOp(left, right, sigmastate.GE.apply[S])
+  override def GE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
+    comparisonOp(left, right, sigmastate.GE.apply[T])
 
-  override def LT[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
-    comparisonOp(left, right, sigmastate.LT.apply[S])
+  override def LT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
+    comparisonOp(left, right, sigmastate.LT.apply[T])
 
-  override def LE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
-    comparisonOp(left, right, sigmastate.LE.apply[S])
+  override def LE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
+    comparisonOp(left, right, sigmastate.LE.apply[T])
 
-  override def Plus[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
-    arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.PlusCode) })
+  override def Plus[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T] =
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.PlusCode) })
 
-  override def Minus[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
-    arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.MinusCode) })
+  override def Minus[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T] =
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.MinusCode) })
 
-  override def Multiply[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
-    arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.MultiplyCode) })
+  override def Multiply[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T] =
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.MultiplyCode) })
 
-  override def Divide[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
-    arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.DivisionCode) })
+  override def Divide[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T] =
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.DivisionCode) })
 
-  override def Modulo[S <: SNumericType](left: Value[S], right: Value[S]): TwoArgumentsOperation[S,S,S] =
-    arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.ModuloCode) })
+  override def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): TwoArgumentsOperation[T,T,T] =
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.ModuloCode) })
 }
 
 trait TypeConstraintCheck {
 
-  def check2[S <: SType](left: Value[S],
-                                 right: Value[S],
+  def check2[T <: SType](left: Value[T],
+                                 right: Value[T],
                                  constraints: Seq[TypeConstraint2]): Unit =
     constraints.foreach { c =>
       if (!c(left.tpe, right.tpe))
@@ -87,37 +87,37 @@ trait TypeConstraintCheck {
 
 trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 
-  private def applyUpcast[S <: SType](left: Value[S], right: Value[S]):(Value[S], Value[S]) =
+  private def applyUpcast[T <: SType](left: Value[T], right: Value[T]):(Value[T], Value[T]) =
     (left.tpe, right.tpe) match {
       case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
         val tmax = t1 max t2
         val l = left.upcastTo(tmax)
         val r = right.upcastTo(tmax)
-        (l.asValue[S], r.asValue[S])
+        (l.asValue[T], r.asValue[T])
       case _ =>
         (left, right)
     }
 
-  override protected def equalityOp[S <: SType, R](left: Value[S],
-                                        right: Value[S],
-                                        cons: (Value[S], Value[S]) => R): R = {
+  override protected def equalityOp[T <: SType, R](left: Value[T],
+                                        right: Value[T],
+                                        cons: (Value[T], Value[T]) => R): R = {
     val (l, r) = applyUpcast(left, right)
     check2(l, r, Seq(sameType2))
     cons(l, r)
   }
 
-  override protected def comparisonOp[S <: SType, R](left: Value[S],
-                                          right: Value[S],
-                                          cons: (Value[S], Value[S]) => R): R = {
+  override protected def comparisonOp[T <: SType, R](left: Value[T],
+                                          right: Value[T],
+                                          cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(onlyNumeric2))
     val (l, r) = applyUpcast(left, right)
     check2(l, r, Seq(sameType2))
     cons(l, r)
   }
 
-  override protected def arithOp[S <: SNumericType, R](left: Value[S],
-                                            right: Value[S],
-                                            cons: (Value[S], Value[S]) => R): R = {
+  override protected def arithOp[T <: SNumericType, R](left: Value[T],
+                                            right: Value[T],
+                                            cons: (Value[T], Value[T]) => R): R = {
     val (l, r) = applyUpcast(left, right)
     cons(l, r)
   }
@@ -125,23 +125,23 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
 
 trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 
-  override protected def equalityOp[S <: SType, R](left: Value[S],
-                                        right: Value[S],
-                                        cons: (Value[S], Value[S]) => R): R = {
+  override protected def equalityOp[T <: SType, R](left: Value[T],
+                                        right: Value[T],
+                                        cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(sameType2))
     cons(left, right)
   }
 
-  override protected def comparisonOp[S <: SType, R](left: Value[S],
-                                          right: Value[S],
-                                          cons: (Value[S], Value[S]) => R): R = {
+  override protected def comparisonOp[T <: SType, R](left: Value[T],
+                                          right: Value[T],
+                                          cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(onlyNumeric2, sameType2))
     cons(left, right)
   }
 
-  override protected def arithOp[S <: SNumericType, R](left: Value[S],
-                                            right: Value[S],
-                                            cons: (Value[S], Value[S]) => R): R = {
+  override protected def arithOp[T <: SNumericType, R](left: Value[T],
+                                            right: Value[T],
+                                            cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(sameType2))
     cons(left, right)
   }
