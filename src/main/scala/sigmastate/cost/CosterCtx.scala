@@ -11,40 +11,23 @@ import sigmastate.utxo.{MapCollection, ExtractAmount, ForAll, Where, ByIndex, Ex
 trait CosterCtx extends SigmaLibrary {
   val WA = WArrayMethods
   val CM = ColMethods
-  object IsProjectFirst {
-    def unapply[A,B](f: Rep[_]): Option[Rep[A=>B]] = f match {
-      case Def(Lambda(_,_,x, Def(First(p)))) if p == x => Some(f.asRep[A=>B])
-      case _ => None
-    }
-  }
-  object IsProjectSecond {
-    def unapply[A,B](f: Rep[_]): Option[Rep[A=>B]] = f match {
-      case Def(Lambda(_,_,x, Def(Second(p)))) if p == x => Some(f.asRep[A=>B])
-      case _ => None
-    }
-  }
+  val CBM = ColBuilderMethods
+  val SCM = SigmaContractMethods
+
   override def rewriteDef[T](d: Def[T]) = d match {
-    case WA.length(WA.map(xs, _)) => xs.length
-    case CM.length(CM.map(xs, _)) => xs.length
-
-    case WA.zip(WA.map(xs, IsProjectFirst(_)), WA.map(ys, IsProjectSecond(_))) if xs == ys => xs
-    case CM.zip(CM.map(xs, IsProjectFirst(_)), CM.map(ys, IsProjectSecond(_))) if xs == ys => xs
-
-    case WA.map(WA.map(_xs, f: RFunc[a, b]), _g: RFunc[_,c]) =>
-      implicit val ea = f.elem.eDom
-      val xs = _xs.asRep[WArray[a]]
-      val g  = _g.asRep[b => c]
-      xs.map(fun { x: Rep[a] => g(f(x)) })
-    case CM.map(CM.map(_xs, f: RFunc[a, b]), _g: RFunc[_,c]) =>
-      implicit val ea = f.elem.eDom
-      val xs = _xs.asRep[Col[a]]
-      val g  = _g.asRep[b => c]
-      xs.map(fun { x: Rep[a] => g(f(x)) })
-
-    case CM.map(xs, Def(IdentityLambda())) => xs
-    case CM.map(xs, Def(ConstantLambda(res))) => ReplCol(res, xs.length)
-
-    case _ => super.rewriteDef(d)
+    case _ =>
+      if (currentPass.config.constantPropagation) {
+        // additional constant propagation rules (see other similar cases)
+        d match {
+          case SCM.anyOf(c, CBM.apply_apply_items(b, items)) if (items.forall(_.isConst)) =>
+            val bs = items.map { case Def(Const(b: Boolean)) => b }
+            toRep(bs.exists(_ == true))
+          case _ =>
+            super.rewriteDef(d)
+        }
+      }
+      else
+        super.rewriteDef(d)
   }
 
   def plus(x: Rep[Int], n: Int) = {
@@ -192,7 +175,7 @@ trait CosterCtx extends SigmaLibrary {
 
   type RCosted[A] = Rep[Costed[A]]
 
-  private def evalNode[T <: SType](ctx: Rep[Context], env: Map[Byte, Rep[_]], node: Value[T]): RCosted[T#WrappedType] = {
+  private def evalNode[T <: SType](contr: Rep[SigmaContract], ctx: Rep[Context], env: Map[Byte, Rep[_]], node: Value[T]): RCosted[T#WrappedType] = {
     val res: Rep[Any] = node match {
       case Constant(v, tpe) => CostedPrimRep(toRep(v)(stypeToElem(tpe)), ConstantNode)
       case Height => CostedPrimRep(ctx.HEIGHT, HeightAccess)
@@ -205,26 +188,36 @@ trait CosterCtx extends SigmaLibrary {
           case _ => !!!(s"Variable $node not found in environment $env")
         }
       case SizeOf(xs) =>
-        val xsC = evalNode(ctx, env, xs).asRep[Costed[Col[Any]]]
+        val xsC = evalNode(contr, ctx, env, xs).asRep[Costed[Col[Any]]]
         CostedPrimRep(xsC.value.length, xsC.cost + SizeOfDeclaration)
       case utxo.ExtractAmount(box) =>
-        val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
+        val boxC = evalNode(contr, ctx, env, box).asRep[Costed[Box]]
         CostedPrimRep(boxC.value.value, boxC.cost + Cost.ExtractAmount)
       case op: ArithOp[t] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)
         val binop = opcodeToEndoBinOp(op.opCode, et)
-        val x = evalNode(ctx, env, op.left)
-        val y = evalNode(ctx, env, op.right)
+        val x = evalNode(contr, ctx, env, op.left)
+        val y = evalNode(contr, ctx, env, op.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
           CostedPrimRep(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + TripleDeclaration)
         }
+      case OR(input) => input.matchCase(
+        cc => {
+          val itemsC = cc.items.map(evalNode(contr, ctx, env, _))
+          val res = contr.anyOf(b.apply(itemsC.map(_.value): _*))
+          val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + OrDeclaration
+          CostedPrimRep(res, cost)
+        },
+        const => ???,
+        tup => ???
+      )
       case rel: Relation[t, _] =>
         val tpe = rel.left.tpe
         val et = stypeToElem(tpe)
         val binop = opcodeToBinOp(rel.opCode, et)
-        val x = evalNode(ctx, env, rel.left)
-        val y = evalNode(ctx, env, rel.right)
+        val x = evalNode(contr, ctx, env, rel.left)
+        val y = evalNode(contr, ctx, env, rel.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
           CostedPrimRep(
             binop.apply(x.value, y.value.asRep[t#WrappedType]),
@@ -234,23 +227,35 @@ trait CosterCtx extends SigmaLibrary {
 
       case MapCollection(input, id, mapper) =>
         val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(ctx, env, input).asRep[Costed[Col[Any]]]
+        val inputC = evalNode(contr, ctx, env, input).asRep[Costed[Col[Any]]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         val Pair(mapperCalc, mapperCost) = split(fun { x: Rep[Any] =>
-          evalNode(ctx, env + (id -> x), mapper)
+          evalNode(contr, ctx, env + (id -> x), mapper)
         })
         val res = inputC.value.map(mapperCalc)
         val cost = inputC.cost + inputC.value.map(mapperCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
         CostedPrimRep(res, cost)
 
+      case Where(input, id, cond) =>
+        val eIn = stypeToElem(input.tpe.elemType)
+        val inputC = evalNode(contr, ctx, env, input).asRep[Costed[Col[Any]]]
+        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
+        val Pair(condCalc, condCost) = split(fun { x: Rep[Any] =>
+          evalNode(contr, ctx, env + (id -> x), cond)
+        })
+        val res = inputC.value.filter(condCalc)
+        val cost = inputC.cost + inputC.value.map(condCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
+        CostedPrimRep(res, cost)
+
       case trans: BooleanTransformer[_] =>
         val eItem = stypeToElem(trans.input.tpe.elemType)
-        val inputC = evalNode(ctx, env, trans.input).asRep[Costed[Col[Any]]]
+        val inputC = evalNode(contr, ctx, env, trans.input).asRep[Costed[Col[Any]]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eItem == eAny, s"Types should be equal: but $eItem != $eAny")
         val Pair(condCalc, condCost) = split(fun { x: Rep[Any] =>
-          evalNode(ctx, env + (trans.id -> x), trans.condition)
+          evalNode(contr, ctx, env + (trans.id -> x), trans.condition)
         })
         val value = trans.opCode match {
           case OpCodes.ExistsCode =>
@@ -267,8 +272,11 @@ trait CosterCtx extends SigmaLibrary {
     res.asRep[Costed[T#WrappedType]]
   }
 
-  def buildCostedGraph[T <: SType](tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = {
-    fun { ctx: Rep[Context] => evalNode(ctx, Map(), tree) }
+  def buildCostedGraph[T <: SType](tree: Value[T]): Rep[((SigmaContract, Context)) => Costed[T#WrappedType]] = {
+    fun { in: Rep[(SigmaContract, Context)] =>
+      val Pair(contr, ctx) = in
+      evalNode(contr, ctx, Map(), tree)
+    }
   }
 
   def error(msg: String) = throw new CosterException(msg, None)

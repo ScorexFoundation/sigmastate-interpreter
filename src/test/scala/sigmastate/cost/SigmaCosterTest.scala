@@ -1,9 +1,7 @@
-package sigmastate.lang
+package sigmastate.cost
 
-import org.scalatest.{PropSpec, Matchers}
-import org.scalatest.prop.PropertyChecks
-
-import scalan.SigmaLibrary
+import com.google.common.base.Strings
+import sigmastate.lang.{CosterCtx, LangTests, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
 
 import scalanizer.collections.BaseCostedTests
@@ -21,14 +19,18 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
     cg
   }
 
-  def check[T](script: String, expectedCalc: Rep[Context] => Rep[T], expectedCost: Rep[Context] => Rep[Int]): Rep[(Context => T, Context => Int)] = {
+  def check[T](name: String, script: String,
+      expectedCalc: Rep[(SigmaContract, Context)] => Rep[T],
+      expectedCost: Rep[(SigmaContract, Context)] => Rep[Int]
+  ): Rep[(((SigmaContract, Context)) => T, ((SigmaContract, Context)) => Int)] = {
     val cf = cost(env, script)
-    val Pair(calcF, costF) = cf match { case cf: RFunc[Context, Costed[_]]@unchecked =>
+    val p @ Pair(calcF, costF) = cf match { case cf: RFunc[Context, Costed[_]]@unchecked =>
       split(cf)
     }
+    if (!Strings.isNullOrEmpty(name)) emit(name, p)
     val expCalc = fun(expectedCalc)
     val expCost = fun(expectedCost)
-    val res = Pair(calcF.asRep[Context => T], costF.asRep[Context => Int])
+    val res = Pair(calcF.asRep[((SigmaContract, Context)) => T], costF.asRep[((SigmaContract, Context)) => Int])
     calcF shouldBe expCalc
     costF shouldBe expCost
     res
@@ -37,35 +39,43 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
   import Cost._
 
   test("costed constants") {
-    check("1", _ => 1, _ => ConstantNode)
-    check("1L", _ => 1L, _ => ConstantNode)
+    check("one", "1", _ => 1, _ => ConstantNode)
+    check("oneL", "1L", _ => 1L, _ => ConstantNode)
   }
 
   test("costed operations") {
-    check("1 + 1", _ => 1 + 1, _ => ConstantNode + ConstantNode + TripleDeclaration)
-    check("1L - 1L", _ => 1L - 1L, _ => ConstantNode + ConstantNode + TripleDeclaration)
-    check("1 > 1", _ => false, _ => ConstantNode + ConstantNode + TripleDeclaration)
+    check("one+one", "1 + 1", _ => 1 + 1, _ => ConstantNode * 2 + TripleDeclaration)
+    check("oneL+oneL", "1L - 1L", _ => 1L - 1L, _ => ConstantNode * 2 + TripleDeclaration)
+    check("one_gt_one", "1 > 1", _ => false, _ => ConstantNode * 2 + TripleDeclaration)
+    check("or", "1 > 1 || 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + OrDeclaration)
   }
 
   test("costed context data") {
-    check("HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
-    check("HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
-    check("INPUTS.size + OUTPUTS.size",
-      ctx => ctx.INPUTS.length + ctx.OUTPUTS.length,
-      ctx => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + TripleDeclaration)
-    check("SELF.value + 1L", ctx => ctx.SELF.value + 1L, ctx => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
+    check("height1", "HEIGHT + 1L", in => in._2.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
+    check("height2", "HEIGHT > 1L", in => in._2.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
+    check("size", "INPUTS.size + OUTPUTS.size",
+      in => {val Pair(_, ctx) = in; ctx.INPUTS.length + ctx.OUTPUTS.length},
+      _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + TripleDeclaration)
+    check("value", "SELF.value + 1L",
+      in => in._2.SELF.value + 1L,
+      _ => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
   }
 
   test("costed collection ops") {
-    val cost = (ctx: Rep[Context]) => toRep(OutputsAccess) +
-        (toRep(VariableAccess) + ExtractAmount + ConstantNode + TripleDeclaration) *
-            ctx.OUTPUTS.length
-    check("OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
-      ctx => ctx.OUTPUTS.exists(fun(out => { out.value >= 0L })), cost)
-    check("OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
-      ctx => ctx.OUTPUTS.forall(fun(out => { out.value >= 0L })), cost)
-    check("OUTPUTS.map(fun (out: Box) = { out.value >= 0L })",
-      ctx => ctx.OUTPUTS.map(fun(out => { out.value >= 0L })), cost)
+    val cost = (in: Rep[(SigmaContract, Context)]) => {
+      val Pair(_, ctx) = in
+      toRep(OutputsAccess) +
+          (toRep(VariableAccess) + ExtractAmount + ConstantNode + TripleDeclaration) *
+              ctx.OUTPUTS.length
+    }
+    check("exists", "OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
+      in => in._2.OUTPUTS.exists(fun(out => { out.value >= 0L })), cost)
+    check("forall", "OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
+      in => in._2.OUTPUTS.forall(fun(out => { out.value >= 0L })), cost)
+    check("map", "OUTPUTS.map(fun (out: Box) = { out.value >= 0L })",
+      in => in._2.OUTPUTS.map(fun(out => { out.value >= 0L })), cost)
+    check("where", "OUTPUTS.where(fun (out: Box) = { out.value >= 0L })",
+      in => in._2.OUTPUTS.filter(fun(out => { out.value >= 0L })), cost)
   }
 
   def measure[T](nIters: Int, okShow: Boolean = true)(action: Int => Unit): Unit = {
@@ -83,9 +93,9 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
     var res: Rep[Any] = null
     measure(2) { j => // 10 warm up iterations when j == 0
       measure(j*500 + 10, false) { i =>
-        res = check(s"INPUTS.size + OUTPUTS.size + $i",
-          ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i,
-          ctx => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + 2 * TripleDeclaration + ConstantNode)
+        res = check("", s"INPUTS.size + OUTPUTS.size + $i",
+          in => in._2.INPUTS.length + in._2.OUTPUTS.length + i,
+          _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + 2 * TripleDeclaration + ConstantNode)
       }
     }
     res.show
