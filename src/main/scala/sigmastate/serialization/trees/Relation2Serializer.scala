@@ -9,7 +9,7 @@ import sigmastate.serialization.{Serializer, ValueSerializer}
 
 case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
 (override val opCode: Byte,
- constructor: (Value[S1], Value[S2]) => R) extends ValueSerializer[R] {
+ constructor: (Value[S1], Value[S2]) => Value[SBoolean.type]) extends ValueSerializer[R] {
 
   override def parseBody(bytes: Array[Byte], pos: Position): (R, Position) = {
     val r = Serializer.startReader(bytes, pos)
@@ -18,11 +18,11 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
       val booleans = r.getBits(2)
       val firstArg = BooleanConstant.fromBoolean(booleans(0)).asValue[S1]
       val secondArg = BooleanConstant.fromBoolean(booleans(1)).asValue[S2]
-      (constructor(firstArg, secondArg), r.consumed)
+      (constructor(firstArg, secondArg).asInstanceOf[R], r.consumed)
     } else {
       val firstArg = r.getValue().asValue[S1]
       val secondArg = r.getValue().asValue[S2]
-      (constructor(firstArg, secondArg), r.consumed)
+      (constructor(firstArg, secondArg).asInstanceOf[R], r.consumed)
     }
   }
 

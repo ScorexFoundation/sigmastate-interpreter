@@ -9,13 +9,13 @@ import sigmastate.serialization.OpCodes
 
 trait SigmaBuilder {
 
-  def EQ[S <: SType](left: Value[S], right: Value[S]): EQ[S]
-  def NEQ[S <: SType](left: Value[S], right: Value[S]): NEQ[S]
+  def EQ[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
+  def NEQ[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
 
-  def GT[S <: SType](left: Value[S], right: Value[S]): GT[S]
-  def GE[S <: SType](left: Value[S], right: Value[S]): GE[S]
-  def LT[S <: SType](left: Value[S], right: Value[S]): LT[S]
-  def LE[S <: SType](left: Value[S], right: Value[S]): LE[S]
+  def GT[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
+  def GE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
+  def LT[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
+  def LE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type]
 
   def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
   def Minus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S]
@@ -40,23 +40,23 @@ class StdSigmaBuilder extends SigmaBuilder {
                                             right: Value[S],
                                             cons: (Value[S], Value[S]) => R): R = cons(left, right)
 
-  override def EQ[S <: SType](left: Value[S], right: Value[S]): EQ[S] =
-    equalityOp(left, right, sigmastate.EQ.apply)
+  override def EQ[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
+    equalityOp(left, right, sigmastate.EQ.apply[S])
 
-  override def NEQ[S <: SType](left: Value[S], right: Value[S]): NEQ[S] =
-    equalityOp(left, right, sigmastate.NEQ.apply)
+  override def NEQ[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
+    equalityOp(left, right, sigmastate.NEQ.apply[S])
 
-  override def GT[S <: SType](left: Value[S], right: Value[S]): GT[S] =
-    comparisonOp(left, right, sigmastate.GT.apply)
+  override def GT[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
+    comparisonOp(left, right, sigmastate.GT.apply[S])
 
-  override def GE[S <: SType](left: Value[S], right: Value[S]): GE[S] =
-    comparisonOp(left, right, sigmastate.GE.apply)
+  override def GE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
+    comparisonOp(left, right, sigmastate.GE.apply[S])
 
-  override def LT[S <: SType](left: Value[S], right: Value[S]): LT[S] =
-    comparisonOp(left, right, sigmastate.LT.apply)
+  override def LT[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
+    comparisonOp(left, right, sigmastate.LT.apply[S])
 
-  override def LE[S <: SType](left: Value[S], right: Value[S]): LE[S] =
-    comparisonOp(left, right, sigmastate.LE.apply)
+  override def LE[S <: SType](left: Value[S], right: Value[S]): Value[SBoolean.type] =
+    comparisonOp(left, right, sigmastate.LE.apply[S])
 
   override def Plus[S <: SNumericType](left: Value[S], right: Value[S]): ArithOp[S] =
     arithOp(left, right, { (l: Value[S], r: Value[S]) => sigmastate.ArithOp[S](l, r, OpCodes.PlusCode) })
