@@ -2,7 +2,7 @@ package sigmastate.helpers
 
 import org.ergoplatform
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.hash.Blake2b256
@@ -36,7 +36,7 @@ trait SigmaTestingCommons extends PropSpec
 
   def createBox(value: Int,
                 proposition: Value[SBoolean.type],
-                additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
+                additionalTokens: Seq[(TokenId, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
   = ergoplatform.ErgoBox(value, proposition, additionalTokens, additionalRegisters)
 

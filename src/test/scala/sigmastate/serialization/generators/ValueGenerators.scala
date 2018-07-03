@@ -8,6 +8,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
+import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, SerializedProverResult}
@@ -96,10 +97,10 @@ trait ValueGenerators extends TypeGenerators {
       }
   }
 
-  def additionalTokensGen(cnt: Byte): Seq[Gen[(Array[Byte], Long)]] =
+  def additionalTokensGen(cnt: Byte): Seq[Gen[(TokenId, Long)]] =
     (0 until cnt).map { _ =>
       for {
-        id <- boxIdGen
+        id <- Digest32 @@ boxIdGen
         amt <- Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue)
       } yield id -> amt
     }

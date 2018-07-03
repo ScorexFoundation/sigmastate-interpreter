@@ -1,8 +1,10 @@
 package org.ergoplatform
 
 import com.google.common.primitives.Longs
+import org.bouncycastle.jcajce.provider.digest.SHA1.Digest
 import org.ergoplatform.ErgoBox._
 import scorex.crypto.encode.Base16
+import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, EvaluatedValue, Idn, LongConstant, Tuple, Value}
 import sigmastate.serialization.Serializer.{Consumed, Position}
@@ -15,7 +17,7 @@ import scala.util.Try
 
 class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
-                       val additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
+                       val additionalTokens: Seq[(TokenId, Long)] = Seq(),
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
   lazy val cost = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
@@ -104,7 +106,7 @@ object ErgoBoxCandidate {
       curPos += 1
 
       val additionalTokens = (1 to tokensNum).map{_ =>
-        val id = bytes.slice(curPos, curPos + 32)
+        val id = Digest32 @@ (bytes.slice(curPos, curPos + 32))
         val amount = Longs.fromByteArray(bytes.slice(curPos + 32, curPos + 40))
         curPos += 40
         id -> amount

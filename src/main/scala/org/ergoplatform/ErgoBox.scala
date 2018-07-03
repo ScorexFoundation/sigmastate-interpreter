@@ -3,7 +3,7 @@ package org.ergoplatform
 import java.util.Arrays
 
 import com.google.common.primitives.Shorts
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scorex.crypto.authds.ADKey
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -41,7 +41,7 @@ import scala.runtime.ScalaRunTime
 class ErgoBox private(
                        override val value: Long,
                        override val proposition: Value[SBoolean.type],
-                       override val additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
+                       override val additionalTokens: Seq[(TokenId, Long)] = Seq(),
                        override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
                        val transactionId: Array[Byte],
                        val index: Short
@@ -79,6 +79,11 @@ class ErgoBox private(
 object ErgoBox {
   type BoxId = ADKey
   object BoxId {
+    val size: Short = 32
+  }
+
+  type TokenId = Digest32
+  object TokenId {
     val size: Short = 32
   }
 
@@ -123,7 +128,7 @@ object ErgoBox {
 
   def apply(value: Long,
             proposition: Value[SBoolean.type],
-            additionalTokens: Seq[(Array[Byte], Long)] = Seq(),
+            additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: Array[Byte] = Array.fill(32)(0: Byte),
             boxId: Short = 0): ErgoBox =
