@@ -121,31 +121,31 @@ object ErgoLikeTransaction {
     }
 
     override def parseBody(bytes: Array[Byte], pos: Position): (FlattenedTransaction, Consumed) = {
-      val posBeforeInputs = pos + 2
-      val inputsCount = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
-      val inputs = (0 until inputsCount).foldLeft(Seq[ADKey]()) { case (ins, i) =>
-        val boxId = ADKey @@ bytes.slice(posBeforeInputs + i * BoxId.size, posBeforeInputs + (i + 1) * BoxId.size)
-        ins :+ boxId
+      val r = Serializer.startReader(bytes, pos)
+      val inputsCount = r.getShort()
+
+      val inputs = (0 until inputsCount).map { _ =>
+        ADKey @@ r.getBytes(BoxId.size)
       }
 
-      val posBeforeOuts = posBeforeInputs + inputsCount * BoxId.size
-
-      val outsCount = Shorts.fromByteArray(bytes.slice(posBeforeOuts, posBeforeOuts + 2))
-      val (outputs, posBeforeProofs) = (0 until outsCount).foldLeft(Seq[ErgoBoxCandidate]() -> (posBeforeOuts + 2)) { case ((outs, p), _) =>
-        val (bc, cs) = ErgoBoxCandidate.serializer.parseBody(bytes, p)
-        (outs :+ bc) -> (p + cs)
+      val outsCount = r.getShort()
+      val outputs = (0 until outsCount).map { _ =>
+        val (bc, cs) = ErgoBoxCandidate.serializer.parseBody(bytes, r.position)
+        r.position_=(r.position + cs)
+        bc
       }
 
-      val (proofs, finalPos) = (0 until inputsCount).foldLeft(Seq[ProverResult]() -> posBeforeProofs) { case ((prs, p), _) =>
-        val (pr, cs) = ProverResult.serializer.parseBody(bytes, p)
-        (prs :+ pr) -> (p + cs)
+      val proofs = (0 until inputsCount).map { _ =>
+        val (pr, cs) = ProverResult.serializer.parseBody(bytes, r.position)
+        r.position_=(r.position + cs)
+        pr
       }
 
       val signedInputs = inputs.zip(proofs).map { case (inp, pr) =>
         Input(inp, pr)
       }
 
-      (signedInputs.toIndexedSeq, outputs.toIndexedSeq) -> (finalPos - pos)
+      (signedInputs, outputs) -> r.consumed
     }
   }
 
