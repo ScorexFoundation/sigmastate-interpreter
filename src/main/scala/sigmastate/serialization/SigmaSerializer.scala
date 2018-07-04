@@ -16,22 +16,19 @@ trait Serializer[TFamily, T <: TFamily] {
     parseBody(bytes, 0)._1
   }
 
-  // todo make final after transition to new API is complete
-  def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = {
+  final def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = {
     val r = Serializer.startReader(bytes, pos)
     parseBody(r) -> r.consumed
   }
 
-  // todo make final after transition to new API is complete
-  def serializeBody(obj: T): Array[Byte] = {
+  final def serializeBody(obj: T): Array[Byte] = {
     val w = Serializer.startWriter()
     serializeBody(obj, w)
     w.toBytes
   }
 
-  // todo remove "not implemented" after implemented everywhere
-  def parseBody(r: ByteReader): TFamily = ???
-  def serializeBody(obj: T, w: ByteWriter): Unit = ???
+  def parseBody(r: ByteReader): TFamily
+  def serializeBody(obj: T, w: ByteWriter): Unit
 
   def error(msg: String) = throw new SerializerException(msg, None)
 }
