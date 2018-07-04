@@ -11,6 +11,7 @@ import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer,
 import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 import Serializer.Consumed
+import javax.swing.SpringLayout.Constraints
 import org.ergoplatform._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.{ByteReader, ByteWriter}
@@ -129,7 +130,22 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     WhereSerializer,
     SliceSerializer,
     ByIndexSerializer,
-    AppendSerializer
+    AppendSerializer,
+    UpcastSerializer,
+    Relation2Serializer(GtCode, GT.apply[SType], Seq(Constraints.onlyInt2)),
+    Relation2Serializer(GeCode, GE.apply[SType], Seq(Constraints.onlyInt2)),
+    Relation2Serializer(LtCode, LT.apply[SType], Seq(Constraints.onlyInt2)),
+    Relation2Serializer(LeCode, LE.apply[SType], Seq(Constraints.onlyInt2)),
+    Relation2Serializer(EqCode, EQ.apply[SType], Seq(Constraints.sameType2)),
+    Relation2Serializer(NeqCode, NEQ.apply[SType], Seq(Constraints.sameType2)),
+    TwoArgumentsSerializer(XorCode, Xor.apply),
+    TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
+    TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
+    TwoArgumentsSerializer(MinusCode, Minus[SNumericType]),
+    TwoArgumentsSerializer(MultiplyCode, Multiply[SNumericType]),
+    TwoArgumentsSerializer(DivisionCode, Divide[SNumericType]),
+    TwoArgumentsSerializer(ModuloCode, Modulo[SNumericType]),
+    TwoArgumentsSerializer(PlusCode, Plus[SNumericType]),
   ).map(s => (s.opCode, s)).toMap
 
   // todo should be used only as entry point (not by serializers)
