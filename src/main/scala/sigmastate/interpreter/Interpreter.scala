@@ -7,9 +7,9 @@ import java.util.Objects
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.FirstDLogProverMessage
+import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
@@ -17,10 +17,10 @@ import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{DeserializeContext, CostTable, Transformer}
+import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -306,16 +306,6 @@ trait Interpreter {
     res -> cost
   }
 
-  /**
-    * Verifier steps:
-    * 1. Place received challenges "e" and responses "z" into every leaf.
-    * 2. Bottom-up: compute commitments at every leaf according to a = g^z/h^e. At every COR and CAND node, compute
-    * the commitment as the union of the children's commitments. At every COR node, compute the challenge as the XOR of
-    * the children's challenges. At every CAND node, verify that the children's challenges are all equal. (Note that
-    * there is an opportunity for small savings here, because we don't need to send all the challenges for a CAND --
-    * but let's save that optimization for later.)
-    * 3. Check that the root challenge is equal to the hash of the root commitment and other inputs.
-    */
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
@@ -327,21 +317,23 @@ trait Interpreter {
       case TrueLeaf => true
       case FalseLeaf => false
       case b: Value[SBoolean.type] if b.evaluated =>
-        SigSerializer.parse(cProp, proof) match {
+        // Perform Verifier Steps 1-3
+        SigSerializer.parseAndComputeChallenges(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree =>
-            assert(sp.proposition == cProp)
 
-            val newRoot = checks(sp).get.asInstanceOf[UncheckedTree]
-            val challenge = newRoot match {
-              case uc: UncheckedConjecture => uc.challengeOpt.get
-              case ul: UncheckedLeaf[_] => ul.challenge
-              case _ =>
-                Interpreter.error(s"Unknown type of root after 'checks' $newRoot")
-            }
+            // Perform Verifier Steps 4
+            val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
+
+            /**
+              * Verifier Steps 5-6: Convert the tree to a string s for input to the Fiat-Shamir hash function,
+              * using the same conversion as the prover in 7
+              * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
+              * (and, if applicable,  the associated data). Reject otherwise.
+              */
 
             val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
-            util.Arrays.equals(challenge, expectedChallenge)
+            util.Arrays.equals(newRoot.challenge, expectedChallenge)
         }
       case _: Value[_] => false
     }
@@ -349,95 +341,23 @@ trait Interpreter {
   }
 
   /**
-    * 2. Bottom-up: compute commitments at every leaf according to a = g^z/h^e. At every COR and CAND node, compute
-    * the commitment as the union of the children's commitments. At every COR node, compute the challenge as the XOR of
-    * the children's challenges. At every CAND node, verify that the children's challenges are all equal. (Note that
-    * there is an opportunity for small savings here, because we don't need to send all the challenges for a CAND --
-    * but let's save that optimization for later.)
+    * Verifier Step 4: For every leaf node, compute the commitment a from the challenge e and response $z$,
+    * per the verifier algorithm of the leaf's Sigma-protocol.
+    * If the verifier algorithm of the Sigma-protocol for any of the leaves rejects, then reject the entire proof.
     */
-  val checks: Strategy = everywherebu(rule[UncheckedTree] {
-    case and: CAndUncheckedNode =>
-
-      val challenges: Seq[Array[Byte]] = and.children.map {
-        case uc: UncheckedConjecture => uc.challengeOpt.get
-        case ul: UncheckedLeaf[_] => ul.challenge
-      }
-
-      val commitments: Seq[FirstProverMessage[_]] = and.children.flatMap {
-        case uc: UncheckedConjecture => uc.commitments
-        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
-      }
-
-      val challenge = challenges.head
-
-      assert(challenges.tail.forall(util.Arrays.equals(_, challenge)))
-
-      and.copy(challengeOpt = Some(challenge), commitments = commitments)
-
-    case or: COrUncheckedNode =>
-      val challenges = or.children map {
-        case uc: UncheckedConjecture => uc.challengeOpt.get
-        case ul: UncheckedLeaf[_] => ul.challenge
-        case a: Any => println(a); ???
-      }
-
-      val commitments = or.children flatMap {
-        case uc: UncheckedConjecture => uc.commitments
-        case ul: UncheckedLeaf[_] => ul.commitmentOpt.toSeq
-        case _ => ???
-      }
-
-      or.copy(challengeOpt = Some(Helpers.xor(challenges: _*)), commitments = commitments)
+  val computeCommitments: Strategy = everywherebu(rule[UncheckedSigmaTree] {
+    case c: UncheckedConjecture => c // Do nothing for internal nodes
 
     case sn: UncheckedSchnorr =>
-
-      val dlog = CryptoConstants.dlogGroup
-      val g = dlog.generator
-      val h = sn.proposition.h
-
-      val a = dlog.multiplyGroupElements(
-        dlog.exponentiate(g, sn.secondMessage.z.underlying()),
-        dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
-
+      val a = DLogInteractiveProver.computeCommitment(sn.proposition, sn.challenge, sn.secondMessage)
       sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
 
-    //todo: check that g,h belong to the group
-    //g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
     case dh: UncheckedDiffieHellmanTuple =>
-      val dlog = CryptoConstants.dlogGroup
-
-      val g = dh.proposition.g
-      val h = dh.proposition.h
-      val u = dh.proposition.u
-      val v = dh.proposition.v
-
-      val z = dh.secondMessage.z
-
-      val e = new BigInteger(1, dh.challenge)
-
-      val gToZ = dlog.exponentiate(g, z)
-      val hToZ = dlog.exponentiate(h, z)
-
-      val uToE = dlog.exponentiate(u, e)
-      val vToE = dlog.exponentiate(v, e)
-
-      val a = dlog.multiplyGroupElements(gToZ, dlog.getInverse(uToE))
-      val b = dlog.multiplyGroupElements(hToZ, dlog.getInverse(vToE))
+      val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
       dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
 
     case _ => ???
   })
-
-  def verify(exp: Value[SBoolean.type],
-             context: CTX,
-             proverResult: SerializedProverResult,
-             message: Array[Byte]): Try[VerificationResult] = {
-    val ctxv = context.withExtension(proverResult.extension)
-    verify(exp, ctxv, proverResult.proofBytes, message)
-  }
-
-
-  //below are two sugaric methods for tests
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
@@ -447,6 +367,8 @@ trait Interpreter {
     verify(exp, ctxv, proverResult.proof, message)
   }
 
+
+  //todo: do we need the method below?
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proof: ProofT,
