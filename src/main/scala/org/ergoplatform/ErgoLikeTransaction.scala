@@ -89,22 +89,22 @@ object ErgoLikeTransaction {
 
     def bytesToSign(inputs: IndexedSeq[ADKey],
                     outputCandidates: IndexedSeq[ErgoBoxCandidate]): Array[Byte] = {
-      val inputsCount = inputs.size.toShort
-      val inputBytes = new Array[Byte](inputsCount * ErgoBox.BoxId.size)
-      (0 until inputsCount).foreach { i =>
-        System.arraycopy(inputs(i), 0, inputBytes, i * BoxId.size, BoxId.size)
-      }
+      //todo: set initial capacity
+      val w = Serializer.startWriter()
 
+      val inputsCount = inputs.size.toShort
       val outputsCount = outputCandidates.size.toShort
 
-      val outputBytes = outputCandidates.foldLeft(Array[Byte]()) { case (ba, c) =>
-        ba ++ ErgoBoxCandidate.serializer.toBytes(c)
+      w.putShort(inputsCount)
+      inputs.foreach { i =>
+        w.putBytes(i)
+      }
+      w.putShort(outputsCount)
+      outputCandidates.foreach{ c =>
+        w.putBytes(ErgoBoxCandidate.serializer.toBytes(c))
       }
 
-      Shorts.toByteArray(inputsCount) ++
-        inputBytes ++
-        Shorts.toByteArray(outputsCount) ++
-        outputBytes
+      w.toBytes
     }
 
     def bytesToSign(tx: UnsignedErgoLikeTransaction): Array[Byte] =
