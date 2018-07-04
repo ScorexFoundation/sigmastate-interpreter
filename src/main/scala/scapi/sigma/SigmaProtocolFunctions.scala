@@ -3,8 +3,10 @@ package scapi.sigma
 import java.security.SecureRandom
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
+import scapi.sigma.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
+import supertagged.TaggedType
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,11 +34,14 @@ trait ProverMessage extends TranscriptMessage
 /** The message sent by a verifier to its associated prover as part of a sigma protocol interaction. */
 trait VerifierMessage extends TranscriptMessage
 
+object VerifierMessage {
+  /** A challenge from the verifier (message `e` of `SigmaProtocol`)*/
+  object Challenge extends TaggedType[Array[Byte]]
+  type Challenge = Challenge.Type
+}
+
 /** First message from the prover (message `a` of `SigmaProtocol`)*/
 trait FirstProverMessage[SP <: SigmaProtocol[SP]] extends ProverMessage
-
-/** A challenge from the verifier (message `e` of `SigmaProtocol`)*/
-case class Challenge(override val bytes: Array[Byte]) extends VerifierMessage
 
 /** Second message from the prover (message `z` of `SigmaProtocol`)*/
 trait SecondProverMessage[SP <: SigmaProtocol[SP]] extends ProverMessage

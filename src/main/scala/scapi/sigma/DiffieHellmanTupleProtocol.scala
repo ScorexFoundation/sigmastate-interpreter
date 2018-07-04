@@ -8,6 +8,8 @@ import sigmastate._
 import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.Values._
 import Value.PropositionCode
+import scapi.sigma.VerifierMessage.Challenge
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
@@ -116,21 +118,7 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieH
   override def simulate(challenge: Challenge):
   (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
     assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-    val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
-
-    //SAMPLE a random z <- Zq
-    val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-
-    //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
-    val e: BigInteger = new BigInteger(1, challenge.bytes)
-    val minusE = dlogGroup.order.subtract(e)
-    val hToZ = dlogGroup.exponentiate(publicInput.h, z)
-    val gToZ = dlogGroup.exponentiate(publicInput.g, z)
-    val uToMinusE = dlogGroup.exponentiate(publicInput.u, minusE)
-    val vToMinusE = dlogGroup.exponentiate(publicInput.v, minusE)
-    val a = dlogGroup.multiplyGroupElements(gToZ, uToMinusE)
-    val b = dlogGroup.multiplyGroupElements(hToZ, vToMinusE)
-    FirstDiffieHellmanTupleProverMessage(a, b) -> SecondDiffieHellmanTupleProverMessage(z)
+    DiffieHellmanTupleInteractiveProver.simulate(publicInput, challenge)
   }
 }
 
@@ -149,9 +137,66 @@ object DiffieHellmanTupleInteractiveProver {
                     rnd: BigInteger,
                     challenge: Challenge): SecondDiffieHellmanTupleProverMessage = {
     val q: BigInteger = dlogGroup.order
-    val e: BigInteger = new BigInteger(1, challenge.bytes)
+    val e: BigInteger = new BigInteger(1, challenge)
     val ew: BigInteger = e.multiply(privateInput.w).mod(q)
     val z: BigInteger = rnd.add(ew).mod(q)
     SecondDiffieHellmanTupleProverMessage(z)
+  }
+
+  def simulate(publicInput: ProveDiffieHellmanTuple, challenge: Challenge):
+    (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
+
+    val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
+
+    //SAMPLE a random z <- Zq
+    val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+
+    // COMPUTE a = g^z*u^(-e) and b = h^z*v^{-e}  (where -e here means -e mod q)
+    val e: BigInteger = new BigInteger(1, challenge)
+    val minusE = dlogGroup.order.subtract(e)
+    val hToZ = dlogGroup.exponentiate(publicInput.h, z)
+    val gToZ = dlogGroup.exponentiate(publicInput.g, z)
+    val uToMinusE = dlogGroup.exponentiate(publicInput.u, minusE)
+    val vToMinusE = dlogGroup.exponentiate(publicInput.v, minusE)
+    val a = dlogGroup.multiplyGroupElements(gToZ, uToMinusE)
+    val b = dlogGroup.multiplyGroupElements(hToZ, vToMinusE)
+    FirstDiffieHellmanTupleProverMessage(a, b) -> SecondDiffieHellmanTupleProverMessage(z)
+  }
+
+  /**
+    * The function computes initial prover's commitment to randomness
+    * ("a" message of the sigma-protocol, which in this case has two parts "a" and "b")
+    * based on the verifier's challenge ("e")
+    * and prover's response ("z")
+    *
+    * g^z = a*u^e, h^z = b*v^e  => a = g^z/u^e, b = h^z/v^e
+    *
+    * @param proposition
+    * @param challenge
+    * @param secondMessage
+    * @return
+    */
+  def computeCommitment(proposition: ProveDiffieHellmanTuple,
+                        challenge: Challenge,
+                        secondMessage: SecondDiffieHellmanTupleProverMessage): (EcPointType, EcPointType) = {
+
+    val g = proposition.g
+    val h = proposition.h
+    val u = proposition.u
+    val v = proposition.v
+
+    val z = secondMessage.z
+
+    val e = new BigInteger(1, challenge)
+
+    val gToZ = dlogGroup.exponentiate(g, z)
+    val hToZ = dlogGroup.exponentiate(h, z)
+
+    val uToE = dlogGroup.exponentiate(u, e)
+    val vToE = dlogGroup.exponentiate(v, e)
+
+    val a = dlogGroup.multiplyGroupElements(gToZ, dlogGroup.getInverse(uToE))
+    val b = dlogGroup.multiplyGroupElements(hToZ, dlogGroup.getInverse(vToE))
+    a -> b
   }
 }

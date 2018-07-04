@@ -225,7 +225,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val proverAC = proverA.withSecrets(Seq(proverC.dlogSecrets.head))
     val pr = proverAC.prove(prop, ctx, fakeMessage).get
-    println("proof size: " + SigSerializer.toBytes(pr.proof).length)
+    println("proof size: " + pr.proof.length)
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val proverBD = proverB.withSecrets(Seq(proverD.dlogSecrets.head))

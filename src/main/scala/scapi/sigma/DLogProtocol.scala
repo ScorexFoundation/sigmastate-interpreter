@@ -6,10 +6,11 @@ import java.security.SecureRandom
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
+import scapi.sigma.VerifierMessage.Challenge
 import sigmastate.utxo.CostTable.Cost
 import sigmastate._
 import sigmastate.interpreter.{Context, CryptoConstants}
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 
@@ -89,8 +90,6 @@ object DLogProtocol {
   class DLogInteractiveProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
     extends InteractiveProver[DLogSigmaProtocol, ProveDlog, DLogProverInput] {
 
-    import CryptoConstants.dlogGroup
-
     var rOpt: Option[BigInteger] = None
 
     override def firstMessage: FirstDLogProverMessage = {
@@ -117,18 +116,7 @@ object DLogProtocol {
 
     override def simulate(challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
       assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-      val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
-
-      //SAMPLE a random z <- Zq
-      val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
-
-      //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
-      val e: BigInteger = new BigInteger(1, challenge.bytes)
-      val minusE = dlogGroup.order.subtract(e)
-      val hToE = dlogGroup.exponentiate(publicInput.h, minusE)
-      val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
-      val a = dlogGroup.multiplyGroupElements(gToZ, hToE)
-      FirstDLogProverMessage(a) -> SecondDLogProverMessage(z)
+      DLogInteractiveProver.simulate(publicInput, challenge)
     }
   }
 
@@ -146,10 +134,48 @@ object DLogProtocol {
       import CryptoConstants.dlogGroup
 
       val q: BigInteger = dlogGroup.order
-      val e: BigInteger = new BigInteger(1, challenge.bytes)
+      val e: BigInteger = new BigInteger(1, challenge)
       val ew: BigInteger = e.multiply(privateInput.w).mod(q)
       val z: BigInteger = rnd.add(ew).mod(q)
       SecondDLogProverMessage(z)
+    }
+
+    def simulate(publicInput: ProveDlog, challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
+      val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
+
+      //SAMPLE a random z <- Zq
+      val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+
+      //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
+      val e: BigInteger = new BigInteger(1, challenge)
+      val minusE = dlogGroup.order.subtract(e)
+      val hToE = dlogGroup.exponentiate(publicInput.h, minusE)
+      val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
+      val a = dlogGroup.multiplyGroupElements(gToZ, hToE)
+      FirstDLogProverMessage(a) -> SecondDLogProverMessage(z)
+    }
+
+    /**
+      * The function computes initial prover's commitment to randomness
+      * ("a" message of the sigma-protocol) based on the verifier's challenge ("e")
+      * and prover's response ("z")
+      *
+      * g^z = a*h^e => a = g^z/h^e
+      *
+      * @param proposition
+      * @param challenge
+      * @param secondMessage
+      * @return
+      */
+    def computeCommitment(proposition: ProveDlog,
+                          challenge: Challenge,
+                          secondMessage: SecondDLogProverMessage): EcPointType = {
+      val g = dlogGroup.generator
+      val h = proposition.h
+
+      dlogGroup.multiplyGroupElements(
+        dlogGroup.exponentiate(g, secondMessage.z.underlying()),
+        dlogGroup.getInverse(dlogGroup.exponentiate(h, new BigInteger(1, challenge))))
     }
   }
 
@@ -168,7 +194,7 @@ object DLogProtocol {
     override lazy val accepted: Boolean = Try {
       assert(dlogGroup.isMember(x.h))
       val left = dlogGroup.exponentiate(dlogGroup.generator, z.z.bigInteger)
-      val hToe = dlogGroup.exponentiate(x.h, BigInt(1, e.bytes).bigInteger)
+      val hToe = dlogGroup.exponentiate(x.h, BigInt(1, e).bigInteger)
       val right = dlogGroup.multiplyGroupElements(a.ecData, hToe)
 
       left == right

@@ -18,9 +18,9 @@ abstract class CrowdFundingContract(
   val backerPubKey = backerProver.dlogSecrets.head.publicImage
   val projectPubKey = projectProver.dlogSecrets.head.publicImage
 
-  def prove(ctx: ErgoLikeContext, fakeMessage: Array[Byte]): projectProver.ProofT
+  def prove(ctx: ErgoLikeContext, fakeMessage: Array[Byte]): Array[Byte]
 
-  def verify(proof: projectProver.ProofT,
+  def verify(proof: Array[Byte],
              ctx: ErgoLikeContext,
              fakeMessage: Array[Byte]): Try[Interpreter.VerificationResult]
 }

@@ -1,10 +1,9 @@
 package org.ergoplatform
 
 import com.google.common.primitives.Shorts
-import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.interpreter.{ProverResult, SerializedProverResult}
+import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
 import sigmastate.serialization.Serializer.{Consumed, Position}
 
@@ -47,7 +46,7 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
 
   def toSigned(proofs: IndexedSeq[ProverResult]): ErgoLikeTransaction = {
     require(proofs.size == inputs.size)
-    val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof.toSerialized) }
+    val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof) }
     new ErgoLikeTransaction(ins, outputCandidates)
   }
 }
@@ -90,22 +89,22 @@ object ErgoLikeTransaction {
 
     def bytesToSign(inputs: IndexedSeq[ADKey],
                     outputCandidates: IndexedSeq[ErgoBoxCandidate]): Array[Byte] = {
-      val inputsCount = inputs.size.toShort
-      val inputBytes = new Array[Byte](inputsCount * ErgoBox.BoxId.size)
-      (0 until inputsCount).foreach { i =>
-        System.arraycopy(inputs(i), 0, inputBytes, i * BoxId.size, BoxId.size)
-      }
+      //todo: set initial capacity
+      val w = Serializer.startWriter()
 
+      val inputsCount = inputs.size.toShort
       val outputsCount = outputCandidates.size.toShort
 
-      val outputBytes = outputCandidates.foldLeft(Array[Byte]()) { case (ba, c) =>
-        ba ++ ErgoBoxCandidate.serializer.toBytes(c)
+      w.putShort(inputsCount)
+      inputs.foreach { i =>
+        w.putBytes(i)
+      }
+      w.putShort(outputsCount)
+      outputCandidates.foreach{ c =>
+        w.putBytes(ErgoBoxCandidate.serializer.toBytes(c))
       }
 
-      Shorts.toByteArray(inputsCount) ++
-        inputBytes ++
-        Shorts.toByteArray(outputsCount) ++
-        outputBytes
+      w.toBytes
     }
 
     def bytesToSign(tx: UnsignedErgoLikeTransaction): Array[Byte] =
@@ -117,36 +116,36 @@ object ErgoLikeTransaction {
 
     override def toBytes(ftx: FlattenedTransaction): Array[Byte] = {
       ftx._1.map(_.spendingProof).foldLeft(bytesToSign(ftx._1.map(_.boxId), ftx._2)) { case (bytes, proof) =>
-        bytes ++ SerializedProverResult.serializer.toBytes(proof)
+        bytes ++ ProverResult.serializer.toBytes(proof)
       }
     }
 
     override def parseBody(bytes: Array[Byte], pos: Position): (FlattenedTransaction, Consumed) = {
-      val posBeforeInputs = pos + 2
-      val inputsCount = Shorts.fromByteArray(bytes.slice(pos, pos + 2))
-      val inputs = (0 until inputsCount).foldLeft(Seq[ADKey]()) { case (ins, i) =>
-        val boxId = ADKey @@ bytes.slice(posBeforeInputs + i * BoxId.size, posBeforeInputs + (i + 1) * BoxId.size)
-        ins :+ boxId
+      val r = Serializer.startReader(bytes, pos)
+      val inputsCount = r.getShort()
+
+      val inputs = (0 until inputsCount).map { _ =>
+        ADKey @@ r.getBytes(BoxId.size)
       }
 
-      val posBeforeOuts = posBeforeInputs + inputsCount * BoxId.size
-
-      val outsCount = Shorts.fromByteArray(bytes.slice(posBeforeOuts, posBeforeOuts + 2))
-      val (outputs, posBeforeProofs) = (0 until outsCount).foldLeft(Seq[ErgoBoxCandidate]() -> (posBeforeOuts + 2)) { case ((outs, p), _) =>
-        val (bc, cs) = ErgoBoxCandidate.serializer.parseBody(bytes, p)
-        (outs :+ bc) -> (p + cs)
+      val outsCount = r.getShort()
+      val outputs = (0 until outsCount).map { _ =>
+        val (bc, cs) = ErgoBoxCandidate.serializer.parseBody(bytes, r.position)
+        r.position_=(r.position + cs)
+        bc
       }
 
-      val (proofs, finalPos) = (0 until inputsCount).foldLeft(Seq[SerializedProverResult]() -> posBeforeProofs) { case ((prs, p), _) =>
-        val (pr, cs) = SerializedProverResult.serializer.parseBody(bytes, p)
-        (prs :+ pr) -> (p + cs)
+      val proofs = (0 until inputsCount).map { _ =>
+        val (pr, cs) = ProverResult.serializer.parseBody(bytes, r.position)
+        r.position_=(r.position + cs)
+        pr
       }
 
       val signedInputs = inputs.zip(proofs).map { case (inp, pr) =>
         Input(inp, pr)
       }
 
-      (signedInputs.toIndexedSeq, outputs.toIndexedSeq) -> (finalPos - pos)
+      (signedInputs, outputs) -> r.consumed
     }
   }
 

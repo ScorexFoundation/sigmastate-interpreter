@@ -4,8 +4,9 @@ import java.math.BigInteger
 
 import com.google.common.primitives.Shorts
 import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
+import scapi.sigma.VerifierMessage.Challenge
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple}
-import sigmastate.Values.{SigmaBoolean, Value}
+import sigmastate.Values.SigmaBoolean
 import sigmastate.serialization.ValueSerializer
 
 
@@ -38,7 +39,7 @@ sealed trait UnprovenTree extends ProofTree {
 
   val challengeOpt: Option[Array[Byte]]
 
-  def withChallenge(challenge: Array[Byte]): UnprovenTree
+  def withChallenge(challenge: Challenge): UnprovenTree
 
   def withSimulated(newSimulated: Boolean): UnprovenTree
 }
@@ -46,31 +47,28 @@ sealed trait UnprovenTree extends ProofTree {
 sealed trait UnprovenLeaf extends UnprovenTree with ProofTreeLeaf
 
 sealed trait UnprovenConjecture extends UnprovenTree with ProofTreeConjecture {
-  val childrenCommitments: Seq[FirstProverMessage[_]]
 }
 
 case class CAndUnproven(override val proposition: CAND,
-                        override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
-                        override val challengeOpt: Option[Array[Byte]] = None,
+                        override val challengeOpt: Option[Challenge] = None,
                         override val simulated: Boolean,
                         children: Seq[ProofTree]) extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.AndConjecture
 
-  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
+  override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
 case class COrUnproven(override val proposition: COR,
-                       override val childrenCommitments: Seq[FirstProverMessage[_]] = Seq(),
-                       override val challengeOpt: Option[Array[Byte]] = None,
+                       override val challengeOpt: Option[Challenge] = None,
                        override val simulated: Boolean,
                        children: Seq[ProofTree]) extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.OrConjecture
 
-  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
+  override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
@@ -78,10 +76,10 @@ case class COrUnproven(override val proposition: COR,
 case class UnprovenSchnorr(override val proposition: ProveDlog,
                            override val commitmentOpt: Option[FirstDLogProverMessage],
                            randomnessOpt: Option[BigInteger],
-                           override val challengeOpt: Option[Array[Byte]] = None,
+                           override val challengeOpt: Option[Challenge] = None,
                            override val simulated: Boolean) extends UnprovenLeaf {
 
-  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
+  override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
@@ -89,15 +87,26 @@ case class UnprovenSchnorr(override val proposition: ProveDlog,
 case class UnprovenDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
                                       override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
-                                      override val challengeOpt: Option[Array[Byte]] = None,
+                                      override val challengeOpt: Option[Challenge] = None,
                                       override val simulated: Boolean
                                      ) extends UnprovenLeaf {
-  override def withChallenge(challenge: Array[Byte]) = this.copy(challengeOpt = Some(challenge))
+  override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
 
+/**
+  *  Prover Step 7: Convert the tree to a string s for input to the Fiat-Shamir hash function.
+  *  The conversion should be such that the tree can be unambiguously parsed and restored given the string.
+  *  For each non-leaf node, the string should contain its type (OR or AND).
+  *  For each leaf node, the string should contain the Sigma-protocol statement being proven and the commitment.
+  *  The string should not contain information on whether a node is marked "real" or "simulated",
+  *  and should not contain challenges, responses, or the real/simulated flag for any node.
+  *
+  */
+// todo: write a test that restores the tree from this string and check that the result is equal,
+// todo: in order to make sure this conversion is unambiguous
 object FiatShamirTree {
   val internalNodePrefix = 0: Byte
   val leafPrefix = 1: Byte

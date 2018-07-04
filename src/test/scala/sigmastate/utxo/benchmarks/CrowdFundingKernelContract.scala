@@ -4,8 +4,8 @@ import java.math.BigInteger
 import java.util
 
 import org.ergoplatform.ErgoLikeContext
-import scapi.sigma.Challenge
 import scapi.sigma.DLogProtocol.{DLogInteractiveProver, DLogProverInput, FirstDLogProverMessage, ProveDlog}
+import scapi.sigma.VerifierMessage.Challenge
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.helpers.ErgoLikeProvingInterpreter
@@ -32,7 +32,7 @@ class CrowdFundingKernelContract(
     val simulated = !secretKnown
     val step4: UnprovenTree = if (simulated) {
       assert(su.challengeOpt.isDefined)
-      SchnorrSigner(su.proposition, None).prove(su.challengeOpt.get).asInstanceOf[UnprovenTree]
+      DLogInteractiveProver.simulate(su.proposition,su.challengeOpt.get).asInstanceOf[UnprovenTree]
     } else {
       val (r, commitment) = DLogInteractiveProver.firstMessage(pubKey)
       UnprovenSchnorr(pubKey, Some(commitment), Some(r), None, simulated = false)
@@ -40,18 +40,19 @@ class CrowdFundingKernelContract(
 
     val commitments = step4 match {
       case ul: UnprovenLeaf => ul.commitmentOpt.toSeq
-      case uc: UnprovenConjecture => uc.childrenCommitments
+      case _ => ???
+      /*case uc: UnprovenConjecture => uc.childrenCommitments*/ // can't do this anymore because internal nodes no longer have commitments
     }
 
-    val rootChallenge = Blake2b256(Helpers.concatBytes(commitments.map(_.bytes) :+ message))
+    val rootChallenge = Challenge @@ Blake2b256(Helpers.concatBytes(commitments.map(_.bytes) :+ message))
 
     su = step4.asInstanceOf[UnprovenSchnorr]
     val privKey = secret.get.asInstanceOf[DLogProverInput]
-    val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, Challenge(rootChallenge))
+    val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, rootChallenge)
     UncheckedSchnorr(su.proposition, None, rootChallenge, z)
   }
 
-  def prove(ctx: ErgoLikeContext, message: Array[Byte]): projectProver.ProofT = {
+  def prove(ctx: ErgoLikeContext, message: Array[Byte]): Array[Byte] = {
     val c1 = ctx.currentHeight >= timeout //&& isValid(backerPubKey, fakeMessage)
     val c2 = Array(
       ctx.currentHeight < timeout,
@@ -61,13 +62,13 @@ class CrowdFundingKernelContract(
     ).forall(identity)
     var proof: projectProver.ProofT = null
     c1 || (c2 && { proof = isValid(projectPubKey, message); true})
-    proof
+    SigSerializer.toBytes(proof)
   }
 
-  def verify(proof: projectProver.ProofT,
+  def verify(proof: Array[Byte],
              ctx: ErgoLikeContext,
              message: Array[Byte]): Try[Interpreter.VerificationResult] = Try {
-    var sn = proof.asInstanceOf[UncheckedSchnorr]
+    val sn = proof.asInstanceOf[UncheckedSchnorr]
     val dlog = CryptoConstants.dlogGroup
     val g = dlog.generator
     val h = sn.proposition.h

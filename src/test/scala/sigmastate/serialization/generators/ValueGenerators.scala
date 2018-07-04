@@ -8,10 +8,9 @@ import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
-import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, SerializedProverResult}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
@@ -115,11 +114,11 @@ trait ValueGenerators extends TypeGenerators {
     values <- Gen.sequence(contextExtensionValuesGen(0, 3))
   } yield ContextExtension(values.asScala.toMap)
 
-  val serializedProverResultGen: Gen[SerializedProverResult] = for {
+  val serializedProverResultGen: Gen[ProverResult] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
     contextExt <- contextExtensionGen
-  } yield SerializedProverResult(bytes.toArray, contextExt)
+  } yield ProverResult(bytes.toArray, contextExt)
 
   val boxIdGen: Gen[BoxId] = for {
     bytes <- Gen.listOfN(BoxId.size, arbByte.arbitrary)
