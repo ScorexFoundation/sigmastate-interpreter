@@ -73,9 +73,11 @@ trait SigmaSerializerCompanion[TFamily] {
   type Tag
   val table: Map[Tag, SigmaSerializer[TFamily, _]]
 
+  // todo make it final and wrap reader-based version
   def deserialize(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
   def deserialize(r: ByteReader): TFamily
 
+  // todo make it final and wrap writer-based version
   def serialize(v: TFamily): Array[Byte]
   def serialize(v: TFamily, w: ByteWriter): Unit
 }
