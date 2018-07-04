@@ -117,7 +117,7 @@ trait ValueGenerators extends TypeGenerators {
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
 
-  val smallIntGe n: Gen[Int] = Gen.chooseNum(2, 16)
+  val smallIntGen: Gen[Int] = Gen.chooseNum(2, 16)
   val smallIntOptGen: Gen[Option[Int]] = for {
     int <- smallIntGen
     opt <- Gen.oneOf(Some(int), None)
