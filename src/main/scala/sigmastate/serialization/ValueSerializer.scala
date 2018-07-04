@@ -148,31 +148,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(PlusCode, Plus[SNumericType]),
   ).map(s => (s.opCode, s)).toMap
 
-  // todo should be used only as entry point (not by serializers)
-  // todo make into wrapper for serialize(v,w)
-  def serialize(v: Value[SType]): Array[Byte] = v match {
-    case c: Constant[SType] =>
-      val w = Serializer.startWriter()
-      ConstantSerializer.serialize(c, w)
-      w.toBytes
-    case _ =>
-      val opCode = v.opCode
-      tableReaderSerializers.get(opCode) match {
-        case Some(serFn: SigmaSerializer[Value[SType], v.type]@unchecked) =>
-          val w = Serializer.startWriter()
-          w.put(opCode)
-          serFn.serializeBody(v, w)
-          w.toBytes
-        case None =>
-          table.get(opCode) match {
-            case Some(serFn: SigmaSerializer[Value[SType], v.type]@unchecked) =>
-              opCode +: serFn.serializeBody(v)
-            case None =>
-              sys.error(s"Cannot find serializer for Value with opCode=$opCode: $v")
-          }
-      }
-  }
-
   override def serialize(v: Value[SType], w: ByteWriter): Unit = v match {
     case c: Constant[SType] =>
       ConstantSerializer.serialize(c, w)
@@ -187,28 +162,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       }
   }
 
-  // todo remove when last call site is eliminated
-  override def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
-    val c = bytes(pos)
-    if (c.toUByte <= LastConstantCode) {
-      // look ahead byte tell us this is going to be a Constant
-      val r = Serializer.startReader(bytes, pos)
-      val c = ConstantSerializer.deserialize(r)
-      (c, r.consumed)
-    }
-    else {
-      tableReaderSerializers.get(c).map { handler =>
-        val r = Serializer.startReader(bytes, pos + 1)
-        val v = handler.parseBody(r)
-        (v, r.consumed + 1)
-      }.getOrElse {
-        val handler = table(c)
-        val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
-        (v, consumed + 1)
-      }
-    }
-  }
-
   override def deserialize(r: ByteReader): Value[SType] = {
     val firstByte = r.peekByte()
     if (firstByte.toUByte <= LastConstantCode) {
@@ -221,6 +174,5 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
   }
 
-  // todo switch to reader deserialize (make out of byte array) after all serializers are migrated
   def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
 }
