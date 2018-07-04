@@ -7,7 +7,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.Serializer.Position
 import sigmastate.serialization.{Serializer, ValueSerializer}
 
-case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
+case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.type]]
 (override val opCode: Byte,
  constructor: (Value[S1], Value[S2]) => Value[SBoolean.type]) extends ValueSerializer[R] {
 
@@ -26,7 +26,8 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Relation[S1, S2]]
     }
   }
 
-  override def serializeBody(rel: R): Array[Byte] = {
+  override def serializeBody(obj: R): Array[Byte] = {
+    val rel = obj.asInstanceOf[Relation[S1, S2]]
     val w = Serializer.startWriter()
     (rel.left, rel.right) match {
       case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
