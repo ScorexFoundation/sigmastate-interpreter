@@ -22,6 +22,9 @@ trait CosterCtx extends SigmaLibrary {
           case SCM.anyOf(c, CBM.apply_apply_items(b, items)) if (items.forall(_.isConst)) =>
             val bs = items.map { case Def(Const(b: Boolean)) => b }
             toRep(bs.exists(_ == true))
+          case SCM.allOf(c, CBM.apply_apply_items(b, items)) if (items.forall(_.isConst)) =>
+            val bs = items.map { case Def(Const(b: Boolean)) => b }
+            toRep(bs.forall(_ == true))
           case _ =>
             super.rewriteDef(d)
         }
@@ -34,7 +37,7 @@ trait CosterCtx extends SigmaLibrary {
     Range(0, n).foldLeft(x)((y, i) => y + i)
   }
 
-  val b = ColOverArrayBuilder()
+  val colBuilder = ColOverArrayBuilder()
   val costedBuilder = ConcreteCostedBuilder()
 
   import Cost._
@@ -62,7 +65,7 @@ trait CosterCtx extends SigmaLibrary {
         ae.eItem match {
           case be: BaseElem[a] =>
             val arr = x.asRep[WArray[a]]
-            val values = b.fromArray(arr)
+            val values = colBuilder.fromArray(arr)
             val costs = ReplColRep(byteSize(be), values.length)
             CostedArrayRep(values, costs)
           case pe: PairElem[a,b] =>
@@ -75,12 +78,12 @@ trait CosterCtx extends SigmaLibrary {
           case ae: WArrayElem[a,_] =>
             implicit val ea = ae.eItem
             val arr = x.asRep[WArray[WArray[a]]]
-            val col = b.fromArray(arr)
+            val col = colBuilder.fromArray(arr)
             val rows = col.map(fun((r: Rep[WArray[a]]) => dataCost(r)))
             CostedNestedArrayRep(rows)
           case entE: EntityElem[a] => // fallback case
             val arr = x.asRep[WArray[a]]
-            val col = b.fromArray(arr)
+            val col = colBuilder.fromArray(arr)
             val costs = col.map(fun((r: Rep[a]) => dataCost(r).cost)(Lazy(entE)))
             CostedArrayRep(col, costs)
         }
@@ -205,8 +208,18 @@ trait CosterCtx extends SigmaLibrary {
       case OR(input) => input.matchCase(
         cc => {
           val itemsC = cc.items.map(evalNode(contr, ctx, env, _))
-          val res = contr.anyOf(b.apply(itemsC.map(_.value): _*))
+          val res = contr.anyOf(colBuilder.apply(itemsC.map(_.value): _*))
           val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + OrDeclaration
+          CostedPrimRep(res, cost)
+        },
+        const => ???,
+        tup => ???
+      )
+      case AND(input) => input.matchCase(
+        cc => {
+          val itemsC = cc.items.map(evalNode(contr, ctx, env, _))
+          val res = contr.allOf(colBuilder.apply(itemsC.map(_.value): _*))
+          val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + AndDeclaration
           CostedPrimRep(res, cost)
         },
         const => ???,

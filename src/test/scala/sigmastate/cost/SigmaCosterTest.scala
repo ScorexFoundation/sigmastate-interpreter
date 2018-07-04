@@ -27,9 +27,12 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
     val p @ Pair(calcF, costF) = cf match { case cf: RFunc[Context, Costed[_]]@unchecked =>
       split(cf)
     }
-    if (!Strings.isNullOrEmpty(name)) emit(name, p)
     val expCalc = fun(expectedCalc)
     val expCost = fun(expectedCost)
+
+    if (!Strings.isNullOrEmpty(name))
+      emit(name, p, expCalc, expCost)
+
     val res = Pair(calcF.asRep[((SigmaContract, Context)) => T], costF.asRep[((SigmaContract, Context)) => Int])
     calcF shouldBe expCalc
     costF shouldBe expCost
@@ -48,6 +51,18 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
     check("oneL+oneL", "1L - 1L", _ => 1L - 1L, _ => ConstantNode * 2 + TripleDeclaration)
     check("one_gt_one", "1 > 1", _ => false, _ => ConstantNode * 2 + TripleDeclaration)
     check("or", "1 > 1 || 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + OrDeclaration)
+    check("or2", "1 > 1 || 2 < 1 || 2 > 1", _ => true,
+      _ => ConstantNode * 6 + TripleDeclaration * 3 + OrDeclaration)
+    check("or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
+      { case Pair(c, ctx) => c.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
+      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + OrDeclaration)
+
+    check("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + AndDeclaration)
+    check("and2", "1 > 1 && 2 < 1 && 2 > 1", _ => false,
+      _ => ConstantNode * 6 + TripleDeclaration * 3 + AndDeclaration)
+    check("and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1",
+    { case Pair(c, ctx) => c.allOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
+    _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + AndDeclaration)
   }
 
   test("costed context data") {
