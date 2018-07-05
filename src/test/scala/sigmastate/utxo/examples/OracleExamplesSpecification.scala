@@ -3,6 +3,7 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
+import org.ergoplatform.ErgoBox.{MandatoryRegisterId, R1, RegisterId}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -11,12 +12,18 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
-import org.ergoplatform.ErgoBox._
 import org.ergoplatform._
 import sigmastate.utxo._
 
 
 class OracleExamplesSpecification extends SigmaTestingCommons {
+
+
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
+  private val reg2 = ErgoBox.nonMandatoryRegisters(1)
+  private val reg3 = ErgoBox.nonMandatoryRegisters(2)
+  private val reg4 = ErgoBox.nonMandatoryRegisters(3)
+
 
   /**
     *
@@ -89,10 +96,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       value = 1L,
       proposition = oraclePubKey,
       additionalRegisters = Map(
-        R3 -> LongConstant(temperature),
-        R4 -> GroupElementConstant(a),
-        R5 -> BigIntConstant(z),
-        R6 -> LongConstant(ts)),
+        reg1 -> LongConstant(temperature),
+        reg2 -> GroupElementConstant(a),
+        reg3 -> BigIntConstant(z),
+        reg4 -> LongConstant(ts)),
       boxId = 1
     )
 
@@ -105,7 +112,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
-    def extract[T <: SType](Rn: RegisterIdentifier)(implicit tT: T) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
+    def extract[T <: SType](Rn: RegisterId)(implicit tT: T) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
 
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
@@ -113,16 +120,16 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       OR(AND(GE(Height, LongConstant(sinceHeight)), LT(Height, LongConstant(timeoutHeight)), script),
         AND(GE(Height, LongConstant(timeoutHeight)), fallback))
 
-    val contractLogic = OR(AND(GT(extract[SLong.type](R3), LongConstant(15)), alicePubKey),
-      AND(LE(extract[SLong.type](R3), LongConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey),
+      AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey))
 
     val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
-      EQ(extract[SByteArray](R1), ByteArrayConstant(oraclePubKey.bytes)),
-      EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](R5)),
-        MultiplyGroup(extract[SGroupElement.type](R4),
+      EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(oraclePubKey.bytes)),
+      EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
+        MultiplyGroup(extract[SGroupElement.type](reg2),
           Exponentiate(oraclePubKey.value,
             ByteArrayToBigInt(CalcBlake2b256(
-              Append(LongToByteArray(extract[SLong.type](R3)), LongToByteArray(extract[SLong.type](R6)))))))
+              Append(LongToByteArray(extract[SLong.type](reg1)), LongToByteArray(extract[SLong.type](reg4)))))))
       ),
       contractLogic)
 
@@ -138,14 +145,14 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp)
 
-    val sAlice = ErgoBox(10, propAlice, Map(), boxId = 3)
+    val sAlice = ErgoBox(10, propAlice, Seq(), Map(), boxId = 3)
 
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
-    val sBob = ErgoBox(10, propBob, Map(), boxId = 4)
+    val sBob = ErgoBox(10, propBob, Seq(), Map(), boxId = 4)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -200,11 +207,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val oracleBox = ErgoBox(
       value = 1L,
       proposition = oraclePubKey,
-      additionalRegisters = Map(R3 -> LongConstant(temperature))
+      additionalRegisters = Map(reg1 -> LongConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), R3), LongConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), R3), LongConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1), LongConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1), LongConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
       EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),
@@ -212,8 +219,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     )
 
     val sOracle = oracleBox
-    val sAlice = ErgoBox(10, prop, Map())
-    val sBob = ErgoBox(10, prop, Map())
+    val sAlice = ErgoBox(10, prop, Seq(), Map())
+    val sBob = ErgoBox(10, prop, Seq(), Map())
 
     val newBox1 = ErgoBox(20, alicePubKey)
     val newBoxes = IndexedSeq(newBox1)

@@ -8,6 +8,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
+import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
@@ -33,19 +34,19 @@ trait ValueGenerators extends TypeGenerators {
 
   implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
   implicit val arbProveDHT: Arbitrary[ProveDiffieHellmanTuple] = Arbitrary(proveDHTGen)
-  implicit val arbRegisterIdentifier: Arbitrary[RegisterIdentifier] = Arbitrary(registerIdentifierGen)
+  implicit val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
 
 
-  implicit val arbBigInteger   = Arbitrary(arbBigInt.arbitrary.map(_.bigInteger))
+  implicit val arbBigInteger = Arbitrary(arbBigInt.arbitrary.map(_.bigInteger))
   implicit val arbGroupElement = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
-  implicit val arbBox          = Arbitrary(ergoBoxGen)
-  implicit val arbAvlTreeData  = Arbitrary(avlTreeDataGen)
+  implicit val arbBox = Arbitrary(ergoBoxGen)
+  implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
-  implicit val arbTransaction  = Arbitrary(ergoTransactionGen)
+  implicit val arbTransaction = Arbitrary(ergoTransactionGen)
   implicit val arbContextExtension = Arbitrary(contextExtensionGen)
   implicit val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
   implicit val arbUnsignedInput = Arbitrary(unsignedInputGen)
-  implicit val arbInput         = Arbitrary(inputGen)
+  implicit val arbInput = Arbitrary(inputGen)
 
   val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -80,42 +81,29 @@ trait ValueGenerators extends TypeGenerators {
     vv: Value[SGroupElement.type] <- groupElementConstGen
   } yield ProveDiffieHellmanTuple(gv, hv, uv, vv)
 
-  val registerIdentifierGen: Gen[RegisterIdentifier] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
+  val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
   val taggedAvlTreeGen: Gen[TaggedAvlTree] = arbByte.arbitrary.map { v => TaggedAvlTree(v) }
 
-  def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryIdentifier, EvaluatedValue[SType])]] = {
+  def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
     (0 until cnt)
       .map(_ + ErgoBox.startingNonMandatoryIndex)
-      .map(rI => ErgoBox.registerByIndex(rI.toByte).asInstanceOf[NonMandatoryIdentifier])
+      .map(rI => ErgoBox.registerByIndex(rI.toByte).asInstanceOf[NonMandatoryRegisterId])
       .map { r =>
         for {
           arr <- byteArrayConstGen
           v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr)
-        }
-        yield r -> v.asInstanceOf[EvaluatedValue[SType]]
+        } yield r -> v.asInstanceOf[EvaluatedValue[SType]]
       }
   }
 
-  val ergoBoxGen: Gen[ErgoBox] = for {
-    l <- arbLong.arbitrary
-    p <- proveDlogGen
-    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
-    tId <- Gen.listOfN(32, arbByte.arbitrary)
-    boxId <- arbShort.arbitrary
-    regNum <- Gen.chooseNum[Byte](0, 7)
-    ar <- Gen.sequence(additionalRegistersGen(regNum))
-  } yield ergoplatform.ErgoBox(l, b, ar.asScala.toMap, tId.toArray, boxId)
-
-  val ergoBoxCandidateGen: Gen[ErgoBoxCandidate] = for {
-    l <- arbLong.arbitrary
-    p <- proveDlogGen
-    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
-    regNum <- Gen.chooseNum[Byte](0, 7)
-    ar <- Gen.sequence(additionalRegistersGen(regNum))
-  } yield new ErgoBoxCandidate(l, b, ar.asScala.toMap)
-
-  val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
+  def additionalTokensGen(cnt: Byte): Seq[Gen[(TokenId, Long)]] =
+    (0 until cnt).map { _ =>
+      for {
+        id <- Digest32 @@ boxIdGen
+        amt <- Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue)
+      } yield id -> amt
+    }
 
   val smallIntGen: Gen[Int] = Gen.chooseNum(2, 16)
   val smallIntOptGen: Gen[Option[Int]] = for {
@@ -146,11 +134,6 @@ trait ValueGenerators extends TypeGenerators {
     proof <- serializedProverResultGen
   } yield Input(boxId, proof)
 
-  val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
-    inputs <- Gen.listOf(inputGen)
-    outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
-  } yield ErgoLikeTransaction(inputs.toIndexedSeq, outputCandidates.toIndexedSeq)
-
   def contextExtensionValuesGen(min: Int, max: Int): Seq[Gen[(Byte, EvaluatedValue[SType])]] =
     (0 until Gen.chooseNum(min, max).sample.get)
       .map(_ + 1)
@@ -172,7 +155,7 @@ trait ValueGenerators extends TypeGenerators {
 
   def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
 
-  implicit def arrayGen[T: Arbitrary: ClassTag]: Gen[Array[T]] = for {
+  implicit def arrayGen[T: Arbitrary : ClassTag]: Gen[Array[T]] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbitrary[T])
   } yield bytes.toArray
@@ -208,4 +191,33 @@ trait ValueGenerators extends TypeGenerators {
       taggedVar(Arbitrary(sTupleGen(2, 10)))
     ))
   } yield Tuple(values)
+
+  val ergoBoxGen: Gen[ErgoBox] = for {
+    l <- arbLong.arbitrary
+    p <- proveDlogGen
+    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
+    tId <- Gen.listOfN(32, arbByte.arbitrary)
+    boxId <- arbShort.arbitrary
+    tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
+    tokens <- Gen.sequence(additionalTokensGen(tokensCount))
+    regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
+    ar <- Gen.sequence(additionalRegistersGen(regNum))
+  } yield ergoplatform.ErgoBox(l, b, tokens.asScala, ar.asScala.toMap, tId.toArray, boxId)
+
+  val ergoBoxCandidateGen: Gen[ErgoBoxCandidate] = for {
+    l <- arbLong.arbitrary
+    p <- proveDlogGen
+    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
+    regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
+    ar <- Gen.sequence(additionalRegistersGen(regNum))
+    tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
+    tokens <- Gen.sequence(additionalTokensGen(tokensCount))
+  } yield new ErgoBoxCandidate(l, b, tokens.asScala, ar.asScala.toMap)
+
+  val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
+
+  val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
+    inputs <- Gen.listOf(inputGen)
+    outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
+  } yield ErgoLikeTransaction(inputs.toIndexedSeq, outputCandidates.toIndexedSeq)
 }

@@ -1,6 +1,5 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -24,6 +23,8 @@ import scala.util.Random
   * See more at https://bitcointechtalk.com/what-is-a-bitcoin-merklized-abstract-syntax-tree-mast-33fdf2da5e2f
   */
 class MASTExampleSpecification extends SigmaTestingCommons {
+
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   /**
     *
@@ -82,7 +83,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     avlProver.generateProof()
     val treeData = new AvlTreeData(avlProver.digest, 32, None)
 
-    val merklePathToScript = IsMember(ExtractRegisterAs(Self, R3),
+    val merklePathToScript = IsMember(ExtractRegisterAs(Self, reg1),
       CalcBlake2b256(TaggedByteArray(scriptId)),
       TaggedByteArray(proofId))
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
@@ -94,7 +95,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = ErgoBox(20, TrueLeaf, Map(R3 -> AvlTreeConstant(treeData))))
+      self = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))
 
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))
     val knownSecretPathProof = avlProver.generateProof()

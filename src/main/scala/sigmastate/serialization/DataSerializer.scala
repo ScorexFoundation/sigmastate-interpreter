@@ -3,7 +3,7 @@ package sigmastate.serialization
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.ErgoBox.NonMandatoryIdentifier
+import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import scorex.crypto.authds.ADDigest
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.EvaluatedValue
@@ -130,13 +130,13 @@ object DataSerializer {
       val nRegs = r.getUByte()
       val regs = (0 until nRegs).map { iReg =>
         val regId = ErgoBox.startingNonMandatoryIndex + iReg
-        val reg = ErgoBox.findRegisterByIndex(regId.toByte).get.asInstanceOf[NonMandatoryIdentifier]
+        val reg = ErgoBox.findRegisterByIndex(regId.toByte).get.asInstanceOf[NonMandatoryRegisterId]
         val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
         (reg, v)
       }.toMap
       val transId = r.getBytes(32)
       val boxId = r.getUShort().toShort
-      val box = ErgoBox(value, proposition, regs, transId, boxId)
+      val box = ErgoBox(value, proposition, Seq(), regs, transId, boxId)
       box
 
     case SAvlTree =>

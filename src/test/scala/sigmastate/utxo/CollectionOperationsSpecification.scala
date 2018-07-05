@@ -5,11 +5,12 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
 import sigmastate.serialization.OpCodes._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
+
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
                       outputs: IndexedSeq[ErgoBox]): ErgoLikeContext =
@@ -140,20 +141,20 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """OUTPUTS.exists(fun (box: Box) = {
-        |  box.R3[Long].value == SELF.R3[Long].value + 1
+        |  box.R4[Long].value == SELF.R4[Long].value + 1
          })""".stripMargin).asBoolValue
 
-    val propTree = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), R3)(SLong),
-      Plus(ExtractRegisterAs(Self, R3)(SLong), LongConstant(1))))
+    val propTree = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), reg1)(SLong),
+      Plus(ExtractRegisterAs(Self, reg1)(SLong), LongConstant(1))))
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey, Map(R3 -> LongConstant(3)))
-    val newBox2 = ErgoBox(10, pubkey, Map(R3 -> LongConstant(6)))
+    val newBox1 = ErgoBox(10, pubkey, Seq(), Map(reg1 -> LongConstant(3)))
+    val newBox2 = ErgoBox(10, pubkey, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Map(R3 -> LongConstant(5)))
+    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -174,21 +175,21 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """OUTPUTS.exists(fun (box: Box) = {
-        |  box.R3[Long].valueOrElse(0L) == SELF.R3[Long].value + 1
+        |  box.R4[Long].valueOrElse(0L) == SELF.R4[Long].value + 1
          })""".stripMargin).asBoolValue
 
     val propTree = Exists(Outputs, 21,
-      EQ(ExtractRegisterAs(TaggedBox(21), R3, default = Some(LongConstant(0L))),
-        Plus(ExtractRegisterAs[SLong.type](Self, R3), LongConstant(1))))
+      EQ(ExtractRegisterAs(TaggedBox(21), reg1, default = Some(LongConstant(0L))),
+        Plus(ExtractRegisterAs[SLong.type](Self, reg1), LongConstant(1))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
-    val newBox2 = ErgoBox(10, pubkey, Map(R3 -> LongConstant(6)))
+    val newBox2 = ErgoBox(10, pubkey, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Map(R3 -> LongConstant(5)))
+    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -367,8 +368,5 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val elementRule = OR(EQ(element, 0), EQ(element, 1))
     val expectedPropTree = ForAll(indexCollection, indexId, elementRule)
     assertProof(code, expectedPropTree, outputBoxValues)
-
   }
-
-
 }

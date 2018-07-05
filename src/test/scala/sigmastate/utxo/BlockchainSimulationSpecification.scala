@@ -12,7 +12,6 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values.LongConstant
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
-import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform._
 import sigmastate.{AvlTreeData, GE}
 
@@ -31,10 +30,10 @@ class BlockchainSimulationSpecification extends PropSpec
 
   def generateBlock(state: ValidationState, miner: ErgoLikeProvingInterpreter, height: Int): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
-    val boxesToSpend = state.boxesReader.byR3Value(height)
+    val boxesToSpend = state.boxesReader.byHeightRegValue(height)
 
     val txs = boxesToSpend.map { box =>
-      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey, Map(R3 -> LongConstant(height + windowSize)))
+      val newBoxCandidate = new ErgoBoxCandidate(10, minerPubKey, Seq(), Map(heightReg -> LongConstant(height + windowSize)))
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContext(height + 1,
@@ -136,6 +135,8 @@ class BlockchainSimulationSpecification extends PropSpec
 object BlockchainSimulationSpecification {
   private lazy val hash = Blake2b256
 
+  val heightReg = ErgoBox.nonMandatoryRegisters.head
+
   val windowSize = 10
 
   val MaxBlockCost = 700000
@@ -150,11 +151,11 @@ object BlockchainSimulationSpecification {
     override def byId(boxId: ADKey): Try[ErgoBox] = byId(getKey(boxId))
     def byId(boxId: KeyType): Try[ErgoBox] = Try(boxes(boxId))
 
-    def byR3Value(i: Int): Iterable[ErgoBox] =
-      boxes.values.filter(_.get(R3).getOrElse(LongConstant(i + 1)) == LongConstant(i))
+    def byHeightRegValue(i: Int): Iterable[ErgoBox] =
+      boxes.values.filter(_.get(heightReg).getOrElse(LongConstant(i + 1)) == LongConstant(i))
 
-    def byTwoInts(r1Id: ErgoBox.RegisterIdentifier, int1: Int,
-                  r2Id: ErgoBox.RegisterIdentifier, int2: Int): Option[ErgoBox] =
+    def byTwoInts(r1Id: ErgoBox.RegisterId, int1: Int,
+                  r2Id: ErgoBox.RegisterId, int2: Int): Option[ErgoBox] =
       boxes.values.find { box =>
         box.get(r1Id).getOrElse(LongConstant(int1 + 1)) == LongConstant(int1) &&
           box.get(r2Id).getOrElse(LongConstant(int2 + 1)) == LongConstant(int2)
@@ -203,7 +204,7 @@ object BlockchainSimulationSpecification {
     val initBlock = Block {
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Map(R3 -> LongConstant(i)), txId))
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Seq(), Map(heightReg -> LongConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       }
     }

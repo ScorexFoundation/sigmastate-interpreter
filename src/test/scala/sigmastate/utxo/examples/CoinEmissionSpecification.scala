@@ -1,6 +1,5 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.R3
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.utils.ScryptoLogging
 import sigmastate.Values.{IntConstant, LongConstant}
@@ -17,6 +16,8 @@ import sigmastate.{SLong, _}
   * that controls emission rules
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging {
+
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   private val coinsInOneErgo: Long = 100000000
   private val blocksPerHour: Int = 30
@@ -52,7 +53,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
 
 
   property("emission specification") {
-    val register = R3
+    val register = reg1
     val prover = new ErgoLikeProvingInterpreter()
 
     val out = ByIndex(Outputs, IntConstant(0))
@@ -80,8 +81,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
         |    let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
         |    let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
         |    let sameScriptRule = SELF.propositionBytes == out.propositionBytes
-        |    let heightIncreased = HEIGHT > SELF.R3[Long].value
-        |    let heightCorrect = out.R3[Long].value == HEIGHT
+        |    let heightIncreased = HEIGHT > SELF.R4[Long].value
+        |    let heightCorrect = out.R4[Long].value == HEIGHT
         |    let lastCoins = SELF.value <= oneEpochReduction
         |    allOf(Array(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule)) || (heightIncreased && lastCoins)
         |}""".stripMargin).asBoolValue
@@ -90,7 +91,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
 
     val minerProp = prover.dlogSecrets.head.publicImage
 
-    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Map(register -> LongConstant(-1)))
+    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Seq(), Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block {
       IndexedSeq(
         ErgoLikeTransaction(
@@ -102,7 +103,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val genesisState = ValidationState.initialState(initBlock)
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get
     val initialBox = ErgoBox(initialBoxCandidate.value, initialBoxCandidate.proposition,
-      initialBoxCandidate.additionalRegisters, initBlock.txs.head.id, 0)
+      initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters, initBlock.txs.head.id, 0)
     initialBox shouldBe fromState
 
     def genCoinbaseLikeTransaction(state: ValidationState,
@@ -110,16 +111,16 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
                                    height: Long): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
       val ut = if (emissionBox.value > s.oneEpochReduction) {
-        val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Map())
+        val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Seq(), Map())
         val newEmissionBox: ErgoBoxCandidate =
-          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Map(register -> LongConstant(height)))
+          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Seq(), Map(register -> LongConstant(height)))
 
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(newEmissionBox, minerBox)
         )
       } else {
-        val minerBox = new ErgoBoxCandidate(emissionBox.value, minerProp, Map(register -> LongConstant(height)))
+        val minerBox = new ErgoBoxCandidate(emissionBox.value, minerProp, Seq(), Map(register -> LongConstant(height)))
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(minerBox)

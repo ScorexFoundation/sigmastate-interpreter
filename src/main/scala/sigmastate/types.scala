@@ -498,6 +498,8 @@ object STuple {
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
   val componentNames = Range(1, 31).map(i => s"_$i")
+
+  val STokenType = STuple(SByteArray, SLong)
 }
 
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil) extends SType {
