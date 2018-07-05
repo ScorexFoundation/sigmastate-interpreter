@@ -8,6 +8,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
+import scorex.crypto.hash.Digest32
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}

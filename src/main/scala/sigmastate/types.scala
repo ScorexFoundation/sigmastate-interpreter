@@ -483,6 +483,8 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
 }
 
 object STuple {
+  val STokenType = STuple(SByteArray, SLong)
+
   val Pair1TypeConstrId = 5
   val Pair1TypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * Pair1TypeConstrId).toByte
 

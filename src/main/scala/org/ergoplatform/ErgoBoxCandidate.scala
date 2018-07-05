@@ -1,15 +1,15 @@
 package org.ergoplatform
 
 import com.google.common.primitives.Longs
-import org.bouncycastle.jcajce.provider.digest.SHA1.Digest
 import org.ergoplatform.ErgoBox._
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Digest32
 import sigmastate._
-import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, EvaluatedValue, Idn, LongConstant, Tuple, Value}
+import sigmastate.Values._
 import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.serialization.{Serializer, ValueSerializer}
 import sigmastate.utxo.CostTable.Cost
+import STuple.STokenType
 
 import scala.annotation.tailrec
 import scala.runtime.ScalaRunTime
@@ -37,15 +37,14 @@ class ErgoBoxCandidate(val value: Long,
         val tokenTuples = additionalTokens.map { case (id, amount) =>
           Tuple(ByteArrayConstant(id), LongConstant(amount))
         }.toIndexedSeq
-        Some(ConcreteCollection(tokenTuples, STuple(SCollection[SByte.type], SLong)))
+        Some(ConcreteCollection(tokenTuples, STokenType))
       case ReferenceRegId => None
       case n: NonMandatoryRegisterId => additionalRegisters.get(n)
     }
   }
 
   override def equals(arg: Any): Boolean = arg match {
-    case x: ErgoBoxCandidate =>
-      bytesWithNoRef sameElements x.bytesWithNoRef
+    case x: ErgoBoxCandidate => Array.equals(bytesWithNoRef, x.bytesWithNoRef)
     case _ => false
   }
 
