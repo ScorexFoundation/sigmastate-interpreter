@@ -40,6 +40,6 @@ to use it in your project you first need to:
  3. In your own project add library dependency
  ```
 libraryDependencies ++= Seq(
-  "org.scorexplatform" %% "sigma-state" % "0.9.3"
+  "org.scorexplatform" %% "sigma-state" % "0.9.4"
 ) 
  ```
