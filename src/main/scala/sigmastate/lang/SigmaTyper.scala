@@ -208,11 +208,19 @@ class SigmaTyper(val builder: SigmaBuilder) {
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
         case SProof => (m, newArgs) match {
-          case ("||", Seq(r)) =>
-            if (r.tpe == SProof || r.tpe == SBoolean)
-              ???
-            else
+          case ("||" | "&&", Seq(r)) => r.tpe match {
+            case SBoolean =>
+              val (a,b) = (Select(r, SProof.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val res = if (m == "||") OR(a,b) else AND(a,b)
+              res
+            case SProof =>
+              val a = Select(newObj, SProof.IsValid, Some(SBoolean)).asBoolValue
+              val b = Select(r, SProof.IsValid, Some(SBoolean)).asBoolValue
+              val res = if (m == "||") OR(a,b) else AND(a,b)
+              res
+            case _ =>
               error(s"Invalid argument type for $m, expected $SProof but was ${r.tpe}")
+          }
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
@@ -220,6 +228,22 @@ class SigmaTyper(val builder: SigmaBuilder) {
           case ("*", Seq(r)) => r.tpe match {
             case nr: SNumericType =>
               bimap(env, "*", newObj.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
+            case _ =>
+              error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
+          }
+
+          case _ =>
+            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+        }
+        case SBoolean => (m, newArgs) match {
+          case ("||" | "&&", Seq(r)) => r.tpe match {
+            case SBoolean =>
+              val res = if (m == "||") OR(newObj.asBoolValue, r.asBoolValue) else AND(newObj.asBoolValue, r.asBoolValue)
+              res
+            case SProof =>
+              val (a,b) = (newObj.asBoolValue, Select(r, SProof.IsValid, Some(SBoolean)).asBoolValue)
+              val res = if (m == "||") OR(a,b) else AND(a,b)
+              res
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }

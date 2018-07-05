@@ -55,9 +55,11 @@ object SigmaParser extends Exprs with Types with Core {
     case _ => error(s"Unknown prefix operation $opName")
   }
 
+  val parseAsMethods = Set("*", "++", "||", "&&")
+
   def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType] = opName match {
-    case "||" => OR(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
-    case "&&" => AND(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
+//    case "||" => OR(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
+//    case "&&" => AND(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
     case "==" => EQ(l, r)
     case "!=" => NEQ(l, r)
     case ">=" => GE(l, r)
@@ -67,9 +69,9 @@ object SigmaParser extends Exprs with Types with Core {
     case "+"  => builder.mkPlus(l.asValue[SLong.type], r.asValue[SLong.type])
     case "-"  => builder.mkMinus(l.asValue[SLong.type], r.asValue[SLong.type])
     case "|"  => builder.mkXor(l.asValue[SByteArray], r.asValue[SByteArray])
-    case "++" => builder.mkMethodCall(l, "++", IndexedSeq(r))
     case "^"  => builder.mkExponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
-    case "*"  => builder.mkMethodCall(l, "*", IndexedSeq(r))
+    case _ if parseAsMethods.contains(opName) =>
+      MethodCall(l, opName, IndexedSeq(r))
     case "/"  => builder.mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])
     case "%"  => builder.mkModulo(l.asValue[SLong.type], r.asValue[SLong.type])
     case _ => error(s"Unknown binary operation $opName")

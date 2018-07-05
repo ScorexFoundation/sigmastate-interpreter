@@ -46,33 +46,33 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("simple expressions") {
-//    typecheck(env, "x") shouldBe SInt
-//    typecheck(env, "x + y") shouldBe SInt
-//    typecheck(env, "x - y") shouldBe SInt
-//    typecheck(env, "x / y") shouldBe SInt
-//    typecheck(env, "x % y") shouldBe SInt
-//    typecheck(env, "c1 && c2") shouldBe SBoolean
-//    typecheck(env, "arr1") shouldBe SByteArray
-//    typecheck(env, "HEIGHT") shouldBe SLong
-//    typecheck(env, "HEIGHT + 1") shouldBe SLong
-//    typecheck(env, "INPUTS") shouldBe SCollection(SBox)
-//    typecheck(env, "INPUTS.size") shouldBe SInt
-//    typecheck(env, "INPUTS.size > 1") shouldBe SBoolean
-//    typecheck(env, "arr1 | arr2") shouldBe SByteArray
-//    typecheck(env, "arr1 ++ arr2") shouldBe SByteArray
-//    typecheck(env, "col1 ++ col2") shouldBe SCollection(SLong)
-//    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
-//    typecheck(env, "g1 * g2") shouldBe SGroupElement
-    typecheck(env, "p1 || p2") shouldBe SProof
-    typecheck(env, "p1 && p2") shouldBe SProof
-//    typecheck(env, "b1 < b2") shouldBe SBoolean
-//    typecheck(env, "b1 > b2") shouldBe SBoolean
-//    typecheck(env, "b1 <= b2") shouldBe SBoolean
-//    typecheck(env, "b1 >= b2") shouldBe SBoolean
-//    typecheck(env, "n1 < n2") shouldBe SBoolean
-//    typecheck(env, "n1 > n2") shouldBe SBoolean
-//    typecheck(env, "n1 <= n2") shouldBe SBoolean
-//    typecheck(env, "n1 >= n2") shouldBe SBoolean
+    typecheck(env, "x") shouldBe SInt
+    typecheck(env, "x + y") shouldBe SInt
+    typecheck(env, "x - y") shouldBe SInt
+    typecheck(env, "x / y") shouldBe SInt
+    typecheck(env, "x % y") shouldBe SInt
+    typecheck(env, "c1 && c2") shouldBe SBoolean
+    typecheck(env, "arr1") shouldBe SByteArray
+    typecheck(env, "HEIGHT") shouldBe SLong
+    typecheck(env, "HEIGHT + 1") shouldBe SLong
+    typecheck(env, "INPUTS") shouldBe SCollection(SBox)
+    typecheck(env, "INPUTS.size") shouldBe SInt
+    typecheck(env, "INPUTS.size > 1") shouldBe SBoolean
+    typecheck(env, "arr1 | arr2") shouldBe SByteArray
+    typecheck(env, "arr1 ++ arr2") shouldBe SByteArray
+    typecheck(env, "col1 ++ col2") shouldBe SCollection(SLong)
+    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
+    typecheck(env, "g1 * g2") shouldBe SGroupElement
+    typecheck(env, "p1 || p2") shouldBe SBoolean
+    typecheck(env, "p1 && p2") shouldBe SBoolean
+    typecheck(env, "b1 < b2") shouldBe SBoolean
+    typecheck(env, "b1 > b2") shouldBe SBoolean
+    typecheck(env, "b1 <= b2") shouldBe SBoolean
+    typecheck(env, "b1 >= b2") shouldBe SBoolean
+    typecheck(env, "n1 < n2") shouldBe SBoolean
+    typecheck(env, "n1 > n2") shouldBe SBoolean
+    typecheck(env, "n1 <= n2") shouldBe SBoolean
+    typecheck(env, "n1 >= n2") shouldBe SBoolean
     typecheck(env, "n1 == n2") shouldBe SBoolean
     typecheck(env, "n1 != n2") shouldBe SBoolean
   }
@@ -82,6 +82,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "allOf(Array(c1, c2))") shouldBe SBoolean
     typecheck(env, "getVar[Byte](10)") shouldBe SByte
     typecheck(env, "getVar[Array[Byte]](10)") shouldBe SByteArray
+    typecheck(env, "getVar[Proof](10)") shouldBe SProof
+    typecheck(env, "p1 && getVar[Proof](10)") shouldBe SBoolean
+    typecheck(env, "getVar[Proof](10) || p2") shouldBe SBoolean
+    typecheck(env, "getVar[Proof](10) && getVar[Proof](11)") shouldBe SBoolean
   }
 
   property("let constructs") {
