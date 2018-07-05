@@ -284,6 +284,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
             Select(Select(Ident("p"), "_2"), "isIdentity").asValue[SBoolean.type]
             )
         )
+    parse("fun (p: (Int, Proof), box: Box): Boolean = p._1 > box.value && p._2.isValid") shouldBe
+        Lambda(IndexedSeq("p" -> STuple(SInt, SProof), "box" -> SBox), SBoolean,
+          AND(
+            GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]),
+            Select(Select(Ident("p"), "_2"), "isValid").asValue[SBoolean.type]
+            )
+        )
 
     parse("fun (x) = x + 1") shouldBe
         Lambda(IndexedSeq("x" -> NoType), mkPlus(Ident("x").asValue[SInt.type], IntConstant(1)))

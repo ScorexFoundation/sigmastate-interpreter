@@ -3,9 +3,14 @@ package sigmastate.serialization
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import scorex.crypto.authds.ADDigest
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{EvaluatedValue, SigmaBoolean}
 import sigmastate.utils.{ByteWriter, ByteReader}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+
 import scala.collection.mutable
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
@@ -24,6 +29,9 @@ object DataSerializer {
       w.putBytes(data)
     case SGroupElement =>
       GroupElementSerializer.serializeBody(v.asInstanceOf[EcPointType], w)
+    case SProof =>
+      val p = v.asInstanceOf[SigmaBoolean]
+      w.putValue(p)
     case SBox =>
       ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
@@ -67,7 +75,23 @@ object DataSerializer {
       val valueBytes = r.getBytes(size)
       new BigInteger(valueBytes)
     case SGroupElement =>
-      GroupElementSerializer.parseBody(r)
+      r.getByte() match {
+        case 0 =>
+          // infinity point is always compressed as 1 byte (X9.62 s 4.3.6)
+          val point = curve.curve.decodePoint(Array(0)).asInstanceOf[ElemType]
+          point
+        case m if m == 2 || m == 3 =>
+          val consumed = 1 + (curve.curve.getFieldSize + 7) / 8
+          r.position = r.position - 1
+          val encoded = r.getBytes(consumed)
+          val point = curve.curve.decodePoint(encoded).asInstanceOf[ElemType]
+          point
+        case m =>
+          throw new Error(s"Only compressed encoding is supported, $m given")
+      }
+    case SProof =>
+      val p = r.getValue().asInstanceOf[SigmaBoolean]
+      p
     case SBox =>
       ErgoBox.serializer.parseBody(r)
     case SAvlTree =>

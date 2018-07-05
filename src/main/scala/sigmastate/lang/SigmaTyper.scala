@@ -207,6 +207,15 @@ class SigmaTyper(val builder: SigmaBuilder) {
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
+        case SProof => (m, newArgs) match {
+          case ("||", Seq(r)) =>
+            if (r.tpe == SProof || r.tpe == SBoolean)
+              ???
+            else
+              error(s"Invalid argument type for $m, expected $SProof but was ${r.tpe}")
+          case _ =>
+            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+        }
         case nl: SNumericType => (m, newArgs) match {
           case ("*", Seq(r)) => r.tpe match {
             case nr: SNumericType =>

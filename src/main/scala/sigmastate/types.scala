@@ -65,12 +65,13 @@ object SType {
   implicit val typeBoolean = SBoolean
   implicit val typeAvlTree = SAvlTree
   implicit val typeGroupElement = SGroupElement
+  implicit val typeProof = SProof
   implicit val typeBox = SBox
 
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
   /** All pre-defined types should be listed here. Note, NoType is not listed. */
-  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SAvlTree, SGroupElement, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SAvlTree, SGroupElement, SProof, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   implicit class STypeOps(val tpe: SType) {
@@ -97,6 +98,7 @@ object SType {
       case SBigInt => reflect.classTag[BigInteger]
       case SAvlTree => reflect.classTag[AvlTreeData]
       case SGroupElement => reflect.classTag[EcPointType]
+      case SProof => reflect.classTag[SigmaBoolean]
       case SUnit => reflect.classTag[Unit]
       case SBox => reflect.classTag[ErgoBox]
       case SAny => reflect.classTag[Any]
@@ -117,6 +119,7 @@ object SType {
     case _: Long => SLong
     case _: BigInteger => SBigInt
     case _: CryptoConstants.EcPointType => SGroupElement
+    case _: SigmaBoolean => SProof
     case _: ErgoBox => SBox
     case _: AvlTreeData => SAvlTree
     case _: Unit => SUnit
@@ -312,6 +315,20 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
   )
 }
 
+case object SProof extends SProduct with SPrimType with SEmbeddable {
+  override type WrappedType = SigmaBoolean
+  override val typeCode: TypeCode = 8: Byte
+  override def mkConstant(v: SigmaBoolean): Value[SProof.type] = ProofConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.ProofConstantDeclaration
+  def ancestors = Nil
+  val PropBytes = "propBytes"
+  val IsValid = "isValid"
+  val methods = Seq(
+    SMethod(PropBytes, SByteArray),
+    SMethod(IsValid, SBoolean)
+  )
+}
+
 case object SAvlTree extends SProduct with SPredefType {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 100: Byte
@@ -416,9 +433,10 @@ object SCollection {
   val SByteArray         = SCollection(SByte)
   val SShortArray        = SCollection(SShort)
   val SIntArray          = SCollection(SInt)
-  val SLongArray          = SCollection(SLong)
+  val SLongArray         = SCollection(SLong)
   val SBigIntArray       = SCollection(SBigInt)
   val SGroupElementArray = SCollection(SGroupElement)
+  val SProofArray        = SCollection(SProof)
   val SBoxArray          = SCollection(SBox)
   val SAvlTreeArray      = SCollection(SAvlTree)
 }

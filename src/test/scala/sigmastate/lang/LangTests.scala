@@ -1,10 +1,11 @@
 package sigmastate.lang
 
 import sigmastate.lang.Terms.Ident
-import sigmastate.Values.{ConcreteCollection, Value, LongConstant}
+import sigmastate.Values.{ConcreteCollection, Value, LongConstant, SigmaBoolean}
 import sigmastate._
 import java.math.BigInteger
 
+import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants
 
@@ -15,6 +16,7 @@ trait LangTests {
   def ByteIdent(name: String): Value[SByte.type] = Ident(name).asValue[SByte.type]
   def ByteArrayIdent(name: String): Value[SByteArray] = Ident(name).asValue[SByteArray]
   def GEIdent(name: String): Value[SGroupElement.type] = Ident(name).asValue[SGroupElement.type]
+  def ProofIdent(name: String): Value[SProof.type] = Ident(name).asValue[SProof.type]
   def BigIntIdent(name: String): Value[SBigInt.type] = Ident(name).asValue[SBigInt.type]
 
 
@@ -25,6 +27,8 @@ trait LangTests {
   val g2 = dlog.multiplyGroupElements(g1, g1)
   protected val n1: BigInteger = BigInt(10).underlying()
   protected val n2: BigInteger = BigInt(20).underlying()
+  protected val p1: SigmaBoolean = ProveDlog(g1)
+  protected val p2: SigmaBoolean = ProveDlog(g2)
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
@@ -36,6 +40,8 @@ trait LangTests {
     "col2" -> ConcreteCollection(LongConstant(10), LongConstant(20)),
     "g1" -> g1,
     "g2" -> g2,
+    "p1" -> p1,
+    "p2" -> p2,
     "n1" -> n1,
     "n2" -> n2
   )

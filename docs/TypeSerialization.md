@@ -56,9 +56,9 @@ Id    |   Type
 5     |   Long (64 bit)
 6     |   BigInt (java.math.BigInteger)
 7     |   GroupElement (org.bouncycastle.math.ec.ECPoint)
-8     |   reserved for Char 
-9     |   reserved for String
-10    |   reserved for Float 
+8     |   Proof 
+9     |   reserved for Char
+10    |   reserved for String 
 11    |   reserved for Double
 
 For each type constructor like Array or Option we use the encoding schema defined below.

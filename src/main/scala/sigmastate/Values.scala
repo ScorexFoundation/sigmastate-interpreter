@@ -58,6 +58,8 @@ object Values {
 
     implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
+    implicit def liftProof(g: SigmaBoolean): Value[SProof.type] = ProofConstant(g)
+
     def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.mkConstant(const)
 
     object Typed {
@@ -133,6 +135,7 @@ object Values {
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
   type GroupElementConstant = Constant[SGroupElement.type]
+  type ProofConstant = Constant[SGroupElement.type]
   type AvlTreeConstant = Constant[SAvlTree.type]
 
   object ByteConstant {
@@ -191,6 +194,14 @@ object Values {
     }
   }
 
+  object ProofConstant {
+    def apply(value: SigmaBoolean): Constant[SProof.type]  = Constant[SProof.type](value, SProof)
+    def unapply(v: SValue): Option[SigmaBoolean] = v match {
+      case Constant(value: SigmaBoolean, SProof) => Some(value)
+      case _ => None
+    }
+  }
+
   object AvlTreeConstant {
     def apply(value: AvlTreeData): Constant[SAvlTree.type]  = Constant[SAvlTree.type](value, SAvlTree)
     def unapply(v: SValue): Option[AvlTreeData] = v match {
@@ -238,6 +249,7 @@ object Values {
   type TaggedBigInt = TaggedVariable[SBigInt.type]
   type TaggedBox = TaggedVariable[SBox.type]
   type TaggedGroupElement = TaggedVariable[SGroupElement.type]
+  type TaggedProof = TaggedVariable[SProof.type]
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
@@ -250,6 +262,7 @@ object Values {
   def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
   def TaggedGroupElement(id: Byte): Value[SGroupElement.type] =
     mkTaggedVariable(id, SGroupElement)
+  def TaggedProof(id: Byte): TaggedProof = TaggedVariable(id, SProof)
   def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
   def TaggedByteArray (id: Byte): Value[SCollection[SByte.type]] =
     mkTaggedVariable(id, SByteArray)
