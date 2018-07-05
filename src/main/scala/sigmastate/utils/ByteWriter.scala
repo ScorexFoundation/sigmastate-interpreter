@@ -183,7 +183,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def putType[T <: SType](x: T): ByteWriter = { TypeSerializer.serialize(x, this); this }
 
   @inline override def putValue[T <: SType](x: Value[T]): ByteWriter = {
-    b.append(ValueSerializer.serialize(x))
+    ValueSerializer.serialize(x, this)
     this
   }
 
