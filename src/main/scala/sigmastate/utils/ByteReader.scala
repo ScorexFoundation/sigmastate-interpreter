@@ -153,11 +153,7 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
 
   @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
   @inline override def getType(): SType = TypeSerializer.deserialize(this)
-  @inline override def getValue(): SValue = {
-    val (obj, consumed) = ValueSerializer.deserialize(buf.array(), buf.position())
-    buf.position(buf.position() + consumed)
-    obj
-  }
+  @inline override def getValue(): SValue = ValueSerializer.deserialize(this)
 
   private var _mark: Int = _
   @inline override def mark(): ByteReader = {
