@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import sigmastate._
 import Values._
+
 import scala.util.Try
 import OpCodes._
 import sigmastate.SCollection.SByteArray
@@ -11,6 +12,7 @@ import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 import Serializer.Consumed
 import org.ergoplatform._
+import sigmastate.lang.DeserializationSigmaBuilder
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -35,12 +37,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
 
-    Relation2Serializer(GtCode, GT.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(GeCode, GE.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(LtCode, LT.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(LeCode, LE.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(EqCode, EQ.apply[SType], Seq(Constraints.sameType2)),
-    Relation2Serializer(NeqCode, NEQ.apply[SType], Seq(Constraints.sameType2)),
+    Relation2Serializer(GtCode, DeserializationSigmaBuilder.GT[SType]),
+    Relation2Serializer(GeCode, DeserializationSigmaBuilder.GE[SType]),
+    Relation2Serializer(LtCode, DeserializationSigmaBuilder.LT[SType]),
+    Relation2Serializer(LeCode, DeserializationSigmaBuilder.LE[SType]),
+    Relation2Serializer(EqCode, DeserializationSigmaBuilder.EQ[SType]),
+    Relation2Serializer(NeqCode, DeserializationSigmaBuilder.NEQ[SType]),
     Relation3Serializer(IsMemberCode, IsMember.apply),
     QuadrupelSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
 
@@ -48,11 +50,11 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 //    TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
     TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
     TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
-    TwoArgumentsSerializer(MinusCode, Minus[SNumericType]),
-    TwoArgumentsSerializer(MultiplyCode, Multiply[SNumericType]),
-    TwoArgumentsSerializer(DivisionCode, Divide[SNumericType]),
-    TwoArgumentsSerializer(ModuloCode, Modulo[SNumericType]),
-    TwoArgumentsSerializer(PlusCode, Plus[SNumericType]),
+    TwoArgumentsSerializer(MinusCode, DeserializationSigmaBuilder.Minus[SNumericType]),
+    TwoArgumentsSerializer(MultiplyCode, DeserializationSigmaBuilder.Multiply[SNumericType]),
+    TwoArgumentsSerializer(DivisionCode, DeserializationSigmaBuilder.Divide[SNumericType]),
+    TwoArgumentsSerializer(ModuloCode, DeserializationSigmaBuilder.Modulo[SNumericType]),
+    TwoArgumentsSerializer(PlusCode, DeserializationSigmaBuilder.Plus[SNumericType]),
 
     ProveDiffieHellmanTupleSerializer,
     ProveDlogSerializer,
@@ -102,7 +104,13 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     AppendSerializer
   ).map(s => (s.opCode, s)).toMap
 
-  def serialize(v: Value[SType]): Array[Byte] = v match {
+  private def serializable(v: Value[SType]): Value[SType] = v match {
+    case upcast: Upcast[SType, _]@unchecked =>
+      upcast.input
+    case _ => v
+  }
+
+  def serialize(v: Value[SType]): Array[Byte] = serializable(v) match {
     case c: Constant[SType] =>
       val w = Serializer.startWriter()
       ConstantSerializer.serialize(c, w)
@@ -133,19 +141,4 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
-}
-
-object Constraints {
-  type Constraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
-  type ConstraintN = Seq[SType.TypeCode] => Boolean
-
-  def onlyInt2: Constraint2 = {
-    case (tc1, tc2) => tc1 == SLong.typeCode && tc2 == SLong.typeCode
-  }
-
-  def sameType2: Constraint2 = {
-    case (tc1, tc2) => tc1 == tc2
-  }
-
-  def sameTypeN: ConstraintN = { tcs => tcs.tail.forall(_ == tcs.head) }
 }

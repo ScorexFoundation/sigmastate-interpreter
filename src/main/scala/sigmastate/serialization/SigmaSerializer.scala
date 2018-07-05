@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import sigmastate.lang.SerializerException
+import sigmastate.lang.exceptions.SerializerException
 import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.utils._
 

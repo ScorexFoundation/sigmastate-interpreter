@@ -4,7 +4,7 @@ import fastparse.all._
 import fastparse.CharPredicates._
 import fastparse.all
 import fastparse.core.Parsed.Failure
-import sigmastate.lang.{SigmaException, SourceContext}
+import sigmastate.lang.exceptions.{SigmaException, SourceContext}
 
 object Basic {
   val digits = "0123456789"

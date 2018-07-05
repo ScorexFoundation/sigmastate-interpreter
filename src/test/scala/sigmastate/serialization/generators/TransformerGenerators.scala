@@ -4,6 +4,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.Values.{FalseLeaf, IntConstant, TrueLeaf, Value}
 import sigmastate._
+import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
 
 trait TransformerGenerators {
@@ -128,4 +129,36 @@ trait TransformerGenerators {
 
   def logicalExprTreeGen(nodeCons: Seq[LogicalTransformerCons]): Gen[Value[SBoolean.type]] =
     Gen.oneOf(booleanExprGen, booleanConstGen, Gen.delay(logicalExprTreeNodeGen(nodeCons)))
+
+  def numExprTreeNodeGen: Gen[Value[SNumericType]] = for {
+    left <- numExprTreeGen
+    right <- numExprTreeGen
+    node <- Gen.oneOf(
+      TransformingSigmaBuilder.Plus(left, right),
+      TransformingSigmaBuilder.Minus(left, right),
+      TransformingSigmaBuilder.Multiply(left, right),
+      TransformingSigmaBuilder.Divide(left, right),
+      TransformingSigmaBuilder.Modulo(left, right)
+    )
+  } yield node
+
+  def numExprTreeGen: Gen[Value[SNumericType]] =
+    Gen.oneOf(arbByteConstants.arbitrary,
+      arbIntConstants.arbitrary,
+      arbLongConstants.arbitrary,
+      arbBigIntConstant.arbitrary,
+      Gen.delay(numExprTreeNodeGen))
+
+  def comparisonExprTreeNodeGen: Gen[Value[SBoolean.type]] = for {
+    left <- numExprTreeNodeGen
+    right <- numExprTreeNodeGen
+    node <- Gen.oneOf(
+      TransformingSigmaBuilder.EQ(left, right),
+      TransformingSigmaBuilder.NEQ(left, right),
+      TransformingSigmaBuilder.LE(left, right),
+      TransformingSigmaBuilder.GE(left, right),
+      TransformingSigmaBuilder.LT(left, right),
+      TransformingSigmaBuilder.GT(left, right)
+    )
+  } yield node
 }

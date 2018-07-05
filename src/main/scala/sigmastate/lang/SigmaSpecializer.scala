@@ -9,6 +9,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Let, Select, ValueOps}
+import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 
 class SigmaSpecializer {

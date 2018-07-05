@@ -6,6 +6,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, TyperException}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
@@ -18,7 +19,7 @@ import scala.collection.mutable.ArrayBuffer
   * from the AST, and one (tipe2) that represents names by references to the
   * nodes of their binding lambda expressions.
   */
-class SigmaTyper {
+class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
   import SigmaTyper._
 
   /** Most Specific Generalized (MSG) type of ts.
@@ -208,7 +209,7 @@ class SigmaTyper {
         case nl: SNumericType => (m, newArgs) match {
           case ("*", Seq(r)) => r.tpe match {
             case nr: SNumericType =>
-              bimap(env, "*", newObj.asNumValue, r.asNumValue)(Multiply)(tT, tT)
+              bimap(env, "*", newObj.asNumValue, r.asNumValue)(builder.Multiply)(tT, tT)
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }
@@ -259,18 +260,18 @@ class SigmaTyper {
         error(s"Invalid operation OR: $op")
       OR(input1)
 
-    case GE(l, r) => bimap(env, ">=", l, r)(GE[SType])(tT, SBoolean)
-    case LE(l, r) => bimap(env, "<=", l, r)(LE[SType])(tT, SBoolean)
-    case GT(l, r) => bimap(env, ">", l, r) (GT[SType])(tT, SBoolean)
-    case LT(l, r) => bimap(env, "<", l, r) (LT[SType])(tT, SBoolean)
-    case EQ(l, r) => bimap2(env, "==", l, r)(EQ[SType])
-    case NEQ(l, r) => bimap2(env, "!=", l, r)(NEQ[SType])
+    case GE(l, r) => bimap(env, ">=", l, r)(builder.GE[SType])(tT, SBoolean)
+    case LE(l, r) => bimap(env, "<=", l, r)(builder.LE[SType])(tT, SBoolean)
+    case GT(l, r) => bimap(env, ">", l, r) (builder.GT[SType])(tT, SBoolean)
+    case LT(l, r) => bimap(env, "<", l, r) (builder.LT[SType])(tT, SBoolean)
+    case EQ(l, r) => bimap2(env, "==", l, r)(builder.EQ[SType])
+    case NEQ(l, r) => bimap2(env, "!=", l, r)(builder.NEQ[SType])
 
-    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(Minus)(tT, tT)
-    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(Plus)(tT, tT)
-    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(Multiply)(tT, tT)
-    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(Modulo)(tT, tT)
-    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(Divide)(tT, tT)
+    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(builder.Minus)(tT, tT)
+    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(builder.Plus)(tT, tT)
+    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(builder.Multiply)(tT, tT)
+    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(builder.Modulo)(tT, tT)
+    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(builder.Divide)(tT, tT)
     
     case Xor(l, r) => bimap(env, "|", l, r)(Xor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(MultiplyGroup)(SGroupElement, SGroupElement)
@@ -318,18 +319,23 @@ class SigmaTyper {
       (tArg: SType, tRes: SType): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
+    val safeMkNode = { (left: Value[T], right: Value[T]) =>
+      try {
+        mkNode(left, right)
+      } catch {
+        case e: Throwable =>
+          throw new InvalidBinaryOperationParameters(s"operation: $op: $e")
+      }
+    }
     (l1.tpe, r1.tpe) match {
       case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
-        val tmax = t1 max t2
-        val l = l1.upcastTo(tmax)
-        val r = r1.upcastTo(tmax)
-        mkNode(l.asValue[T], r.asValue[T])
+        safeMkNode(l1, r1)
       case (t1, t2) =>
         val substOpt = unifyTypes(SFunc(Vector(tArg, tArg), tRes), SFunc(Vector(t1, t2), tRes))
         if (substOpt.isDefined)
-          mkNode(l1, r1)
+          safeMkNode(l1, r1)
         else
-          error(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })")
+          throw new InvalidBinaryOperationParameters(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })")
     }
 
   }
@@ -339,17 +345,11 @@ class SigmaTyper {
           (newNode: (Value[T], Value[T]) => SValue): SValue = {
     val l1 = assignType(env, l).asValue[T]
     val r1 = assignType(env, r).asValue[T]
-    (l1.tpe, r1.tpe) match {
-      case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
-        val tmax = t1 max t2
-        val l = l1.upcastTo(tmax)
-        val r = r1.upcastTo(tmax)
-        newNode(l.asValue[T], r.asValue[T])
-      case (t1, t2) =>
-        if (t1 == t2)
-          newNode(l1, r1)
-        else
-          error(s"Invalid binary operation $op ($l1, $r1): type mismatch $t1 != $t2")
+    try {
+      newNode(l1, r1)
+    } catch {
+      case e: Throwable =>
+        throw new InvalidBinaryOperationParameters(s"operation $op: $e")
     }
   }
 

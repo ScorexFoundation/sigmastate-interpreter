@@ -59,22 +59,28 @@ object SigmaParser extends Exprs with Types with Core {
     case "||" => OR(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
     case "&&" => AND(l.asValue[SBoolean.type], r.asValue[SBoolean.type])
     case "==" => EQ(l, r)
+    case "!=" => NEQ(l, r)
     case ">=" => GE(l, r)
     case ">"  => GT(l, r)
     case "<=" => LE(l, r)
     case "<"  => LT(l, r)
-    case "+"  => Plus(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "-"  => Minus(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "+"  => builder.Plus(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "-"  => builder.Minus(l.asValue[SLong.type], r.asValue[SLong.type])
     case "|"  => Xor(l.asValue[SByteArray], r.asValue[SByteArray])
     case "++" => MethodCall(l, "++", IndexedSeq(r))
     case "^"  => Exponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
     case "*"  => MethodCall(l, "*", IndexedSeq(r))
-    case "/"  => Divide(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "%"  => Modulo(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "/"  => builder.Divide(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "%"  => builder.Modulo(l.asValue[SLong.type], r.asValue[SLong.type])
     case _ => error(s"Unknown binary operation $opName")
   }
 
-  def apply(str: String): core.Parsed[Value[_ <: SType], Char, String] = (StatCtx.Expr ~ End).parse(str)
+  private var builder: SigmaBuilder = StdSigmaBuilder
+
+  def apply(str: String, sigmaBuilder: SigmaBuilder = StdSigmaBuilder): core.Parsed[Value[_ <: SType], Char, String] = {
+    builder = sigmaBuilder
+    (StatCtx.Expr ~ End).parse(str)
+  }
 
   def parseType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
 }

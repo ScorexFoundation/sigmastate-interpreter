@@ -23,7 +23,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "x+y") shouldBe Plus(10, 11)
     bind(env, "c1 && c2") shouldBe AND(TrueLeaf, FalseLeaf)
     bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
-    bind(env, "HEIGHT + 1") shouldBe Plus(Height, 1)
+    bind(env, "HEIGHT + 1") shouldBe StdSigmaBuilder.Plus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
     bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10, 20))
     bind(env, "arr1 ++ arr2") shouldBe MethodCall(Array[Byte](1, 2), "++", IndexedSeq(Array[Byte](10, 20))) // AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
@@ -111,29 +111,29 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Some(10)") shouldBe SomeValue(IntConstant(10))
     bind(env, "Some(X)") shouldBe SomeValue(Ident("X"))
     bind(env, "Some(Some(X + 1))") shouldBe
-      SomeValue(SomeValue(Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
+      SomeValue(SomeValue(StdSigmaBuilder.Plus(Ident("X").asValue[SInt.type], IntConstant(1))))
   }
 
   property("lambdas") {
     bind(env, "fun (a: Int) = a + 1") shouldBe
-      Lambda(IndexedSeq("a" -> SInt), NoType, Plus(IntIdent("a"), 1))
+      Lambda(IndexedSeq("a" -> SInt), NoType, StdSigmaBuilder.Plus(IntIdent("a"), 1))
     bind(env, "fun (a: Int, box: Box): Long = a + box.value") shouldBe
       Lambda(IndexedSeq("a" -> SInt, "box" -> SBox), SLong,
-        Plus(IntIdent("a"), Select(Ident("box"), "value").asValue[SLong.type]))
+        StdSigmaBuilder.Plus(IntIdent("a"), Select(Ident("box"), "value").asValue[SLong.type]))
     bind(env, "fun (a) = a + 1") shouldBe
-      Lambda(IndexedSeq("a" -> NoType), NoType, Plus(IntIdent("a"), IntConstant(1)))
+      Lambda(IndexedSeq("a" -> NoType), NoType, StdSigmaBuilder.Plus(IntIdent("a"), IntConstant(1)))
     bind(env, "fun (a) = a + x") shouldBe
-      Lambda(IndexedSeq("a" -> NoType), NoType, Plus(IntIdent("a"), 10))
+      Lambda(IndexedSeq("a" -> NoType), NoType, StdSigmaBuilder.Plus(IntIdent("a"), 10))
     bind(env, "fun (a: Int) = { let Y = a + 1; Y + x }") shouldBe
       Lambda(IndexedSeq("a" -> SInt), NoType,
-        Block(Let("Y", NoType, Plus(IntIdent("a"), 1)), Plus(IntIdent("Y"), 10)))
+        Block(Let("Y", NoType, StdSigmaBuilder.Plus(IntIdent("a"), 1)), StdSigmaBuilder.Plus(IntIdent("Y"), 10)))
   }
 
   property("function definitions") {
     bind(env, "{let f = fun (a: Int) = a + 1; f}") shouldBe
-      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, Plus(IntIdent("a"), 1))), Ident("f"))
+      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, StdSigmaBuilder.Plus(IntIdent("a"), 1))), Ident("f"))
     bind(env, "{fun f(a: Int) = a + x; f}") shouldBe
-      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, Plus(IntIdent("a"), 10))), Ident("f"))
+      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, StdSigmaBuilder.Plus(IntIdent("a"), 10))), Ident("f"))
   }
 
   property("predefined primitives") {
