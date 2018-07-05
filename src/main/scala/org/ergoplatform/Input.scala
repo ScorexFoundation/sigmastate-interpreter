@@ -40,13 +40,13 @@ object Input {
 
     override def parseBody(r: ByteReader): Input = {
       val boxId = r.getBytes(BoxId.size)
-      val spendingProof = SerializedProverResult.serializer.parseBody(r)
+      val spendingProof = ProverResult.serializer.parseBody(r)
       Input(ADKey @@ boxId, spendingProof)
     }
 
     override def serializeBody(obj: Input, w: ByteWriter): Unit = {
       w.putBytes(obj.boxId)
-      SerializedProverResult.serializer.serializeBody(obj.spendingProof, w)
+      ProverResult.serializer.serializeBody(obj.spendingProof, w)
     }
   }
 }

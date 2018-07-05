@@ -31,7 +31,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   type Tag = OpCode
 
   val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
-
+    TupleSerializer,
+    SelectFieldSerializer,
     Relation2Serializer(GtCode, DeserializationSigmaBuilder.GT[SType]),
     Relation2Serializer(GeCode, DeserializationSigmaBuilder.GE[SType]),
     Relation2Serializer(LtCode, DeserializationSigmaBuilder.LT[SType]),
@@ -39,10 +40,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(EqCode, DeserializationSigmaBuilder.EQ[SType]),
     Relation2Serializer(NeqCode, DeserializationSigmaBuilder.NEQ[SType]),
     Relation3Serializer(IsMemberCode, IsMember.apply),
-    QuadrupelSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
-
+    QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
     TwoArgumentsSerializer(XorCode, Xor.apply),
-//    TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
     TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
     TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
     TwoArgumentsSerializer(MinusCode, DeserializationSigmaBuilder.Minus[SNumericType]),
@@ -50,50 +49,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(DivisionCode, DeserializationSigmaBuilder.Divide[SNumericType]),
     TwoArgumentsSerializer(ModuloCode, DeserializationSigmaBuilder.Modulo[SNumericType]),
     TwoArgumentsSerializer(PlusCode, DeserializationSigmaBuilder.Plus[SNumericType]),
-
-//    ConstantSerializer(SByte),
-//    ConstantSerializer(SInt),
-//    ConstantSerializer(SBigInt),
-//    ConstantSerializer(SBox),
-//    ConstantSerializer(SAvlTree),
-//    ConstantSerializer(SGroupElement),
-    ConcreteCollectionSerializer,
-    TupleSerializer,
-    SelectFieldSerializer,
-    LogicalTransformerSerializer(AndCode, AND.apply),
-    LogicalTransformerSerializer(OrCode, OR.apply),
-    TaggedVariableSerializer,
-    MapCollectionSerializer,
-    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
-    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
-    FoldSerializer,
-    SimpleTransformerSerializer[SCollection[SType], SInt.type](SizeOfCode, SizeOf.apply),
-    SimpleTransformerSerializer[SBox.type, SLong.type](ExtractAmountCode, ExtractAmount.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractScriptBytesCode, ExtractScriptBytes.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesCode, ExtractBytes.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, ExtractId.apply),
-    SimpleTransformerSerializer[SInt.type, SByte.type](IntToByteCode, IntToByte.apply),
-    SimpleTransformerSerializer[SLong.type, SByteArray](LongToByteArrayCode, LongToByteArray.apply),
-    SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
-    SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
-    SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, CalcSha256.apply),
-    UpcastSerializer,
-  ).map(s => (s.opCode, s)).toMap
-
-  private def serializable(v: Value[SType]): Value[SType] = v match {
-    case upcast: Upcast[SType, _]@unchecked =>
-      upcast.input
-    case _ => v
-  }
-
-  def serialize(v: Value[SType]): Array[Byte] = serializable(v) match {
-  // todo rename to table when all serializers are here
-  val tableReaderSerializers: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
-    TupleSerializer,
-    SelectFieldSerializer,
-    Relation3Serializer(IsMemberCode, IsMember.apply),
-    QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
     ProveDiffieHellmanTupleSerializer,
     ProveDlogSerializer,
     CaseObjectSerialization(TrueCode, TrueLeaf),
@@ -132,23 +87,15 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ByIndexSerializer,
     AppendSerializer,
     UpcastSerializer,
-    Relation2Serializer(GtCode, GT.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(GeCode, GE.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(LtCode, LT.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(LeCode, LE.apply[SType], Seq(Constraints.onlyInt2)),
-    Relation2Serializer(EqCode, EQ.apply[SType], Seq(Constraints.sameType2)),
-    Relation2Serializer(NeqCode, NEQ.apply[SType], Seq(Constraints.sameType2)),
-    TwoArgumentsSerializer(XorCode, Xor.apply),
-    TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
-    TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
-    TwoArgumentsSerializer(MinusCode, Minus[SNumericType]),
-    TwoArgumentsSerializer(MultiplyCode, Multiply[SNumericType]),
-    TwoArgumentsSerializer(DivisionCode, Divide[SNumericType]),
-    TwoArgumentsSerializer(ModuloCode, Modulo[SNumericType]),
-    TwoArgumentsSerializer(PlusCode, Plus[SNumericType]),
   ).map(s => (s.opCode, s)).toMap
 
-  override def serialize(v: Value[SType], w: ByteWriter): Unit = v match {
+  private def serializable(v: Value[SType]): Value[SType] = v match {
+    case upcast: Upcast[SType, _]@unchecked =>
+      upcast.input
+    case _ => v
+  }
+
+  override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
       ConstantSerializer.serialize(c, w)
     case _ =>

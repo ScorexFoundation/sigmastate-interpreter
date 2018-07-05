@@ -11,16 +11,14 @@ case class TwoArgumentsSerializer[LIV <: SType, RIV <: SType, OV <: Value[SType]
   extends ValueSerializer[OV] {
 
   override def parseBody(r: ByteReader): Value[SType] = {
-    val arg1 = r.getValue().asValue[ArgType1]
-    val arg2 = r.getValue().asValue[ArgType2]
+    val arg1 = r.getValue().asValue[LIV]
+    val arg2 = r.getValue().asValue[RIV]
     constructor(arg1, arg2)
   }
 
-  override def serializeBody(obj: Operation, w: ByteWriter): Unit =
-    w.putValue(obj.left)
-      .putValue(obj.right)
-  override def serializeBody(operation: OV): Array[TypeCode] = {
-    val typedOp = operation.asInstanceOf[TwoArgumentsOperation[LIV, RIV, LIV]]
-    serialize(typedOp.left) ++ serialize(typedOp.right)
+  override def serializeBody(obj: OV, w: ByteWriter): Unit = {
+    val typedOp = obj.asInstanceOf[TwoArgumentsOperation[LIV, RIV, LIV]]
+    w.putValue(typedOp.left)
+      .putValue(typedOp.right)
   }
 }
