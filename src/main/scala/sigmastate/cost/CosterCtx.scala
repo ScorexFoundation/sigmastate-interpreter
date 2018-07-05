@@ -178,7 +178,7 @@ trait CosterCtx extends SigmaLibrary {
 
   type RCosted[A] = Rep[Costed[A]]
 
-  private def evalNode[T <: SType](contr: Rep[SigmaContract], ctx: Rep[Context], env: Map[Byte, Rep[_]], node: Value[T]): RCosted[T#WrappedType] = {
+  private def evalNode[SC <: SigmaContract, T <: SType](contr: Rep[SC], ctx: Rep[Context], env: Map[Byte, Rep[_]], node: Value[T]): RCosted[T#WrappedType] = {
     val res: Rep[Any] = node match {
       case Constant(v, tpe) => CostedPrimRep(toRep(v)(stypeToElem(tpe)), ConstantNode)
       case Height => CostedPrimRep(ctx.HEIGHT, HeightAccess)
@@ -285,8 +285,8 @@ trait CosterCtx extends SigmaLibrary {
     res.asRep[Costed[T#WrappedType]]
   }
 
-  def buildCostedGraph[T <: SType](tree: Value[T]): Rep[((SigmaContract, Context)) => Costed[T#WrappedType]] = {
-    fun { in: Rep[(SigmaContract, Context)] =>
+  def buildCostedGraph[SC <: SigmaContract: Elem, T <: SType](tree: Value[T]): Rep[((SC, Context)) => Costed[T#WrappedType]] = {
+    fun { in: Rep[(SC, Context)] =>
       val Pair(contr, ctx) = in
       evalNode(contr, ctx, Map(), tree)
     }
