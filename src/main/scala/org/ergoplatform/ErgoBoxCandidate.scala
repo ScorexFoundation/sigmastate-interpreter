@@ -1,5 +1,7 @@
 package org.ergoplatform
 
+import java.util
+
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox._
 import scorex.crypto.encode.Base16
@@ -43,9 +45,11 @@ class ErgoBoxCandidate(val value: Long,
     }
   }
 
-  override def equals(arg: Any): Boolean = arg match {
-    case x: ErgoBoxCandidate => Array.equals(bytesWithNoRef, x.bytesWithNoRef)
-    case _ => false
+  override def equals(arg: Any): Boolean = {
+    arg match {
+      case x: ErgoBoxCandidate => util.Arrays.equals(bytesWithNoRef, x.bytesWithNoRef)
+      case _ => false
+    }
   }
 
   override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters))
