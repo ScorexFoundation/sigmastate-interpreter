@@ -23,6 +23,8 @@ trait SigmaBuilder {
   def Divide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
 
+  def OR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
+
   def error(msg: String) = throw new BuilderException(msg, None)
 }
 
@@ -72,6 +74,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.ModuloCode) })
+
+  override def OR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
+    sigmastate.OR(input)
 }
 
 trait TypeConstraintCheck {
