@@ -9,9 +9,40 @@ import sigmastate.lang.Terms._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
 
+  val intVar1 = 1.toByte
+  val intVar2 = 2.toByte
+  val byteVar1 = 3.toByte
+  val byteVar2 = 4.toByte
+  val bigIntVar1 = 5.toByte
+  val bigIntVar2 = 6.toByte
+  val bigIntVar3 = 7.toByte
+  val byteVar3 = 8.toByte
+  val booleanVar = 9.toByte
+  val proofVar1 = 10.toByte
+  val proofVar2 = 11.toByte
+  val lastExtVar = proofVar2
+
+  val ext = Seq(
+    (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
+    (byteVar1, ByteConstant(1)), (byteVar2, ByteConstant(2)),
+    (bigIntVar1, BigIntConstant(BigInt(10).underlying())), (bigIntVar2, BigIntConstant(BigInt(20).underlying())),
+    (booleanVar, TrueLeaf))
+  val env = Map(
+    "intVar1" -> intVar1, "intVar2" -> intVar2,
+    "byteVar1" -> byteVar1, "byteVar2" -> byteVar2, "byteVar3" -> byteVar3,
+    "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2, "bigIntVar3" -> bigIntVar3,
+    "trueVar" -> booleanVar,
+    "proofVar1" -> proofVar1,
+    "proofVar2" -> proofVar2
+    )
+
   def test(env: Map[String, Any], ext: Seq[(Byte, EvaluatedValue[_ <: SType])], script: String, propExp: Value[SBoolean.type]) = {
     val prover = new ErgoLikeProvingInterpreter() {
-      override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ext.toMap
+      override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
+        val p1 = dlogSecrets(0).publicImage
+        val p2 = dlogSecrets(1).publicImage
+        (ext ++ Seq(proofVar1 -> ProofConstant(p1), proofVar2 -> ProofConstant(p2))).toMap
+      }
     }
 
     val prop = compile(env, script).asBoolValue
@@ -26,27 +57,6 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
     verifier.verify(prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
   }
-
-  val intVar1 = 1.toByte
-  val intVar2 = 2.toByte
-  val byteVar1 = 3.toByte
-  val byteVar2 = 4.toByte
-  val bigIntVar1 = 5.toByte
-  val bigIntVar2 = 6.toByte
-  val bigIntVar3 = 7.toByte
-  val byteVar3 = 8.toByte
-  val booleanVar = 9.toByte
-  val lastExtVar = booleanVar
-
-  val ext = Seq(
-    (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
-    (byteVar1, ByteConstant(1)), (byteVar2, ByteConstant(2)),
-    (bigIntVar1, BigIntConstant(BigInt(10).underlying())), (bigIntVar2, BigIntConstant(BigInt(20).underlying())),
-    (booleanVar, TrueLeaf))
-  val env = Map(
-    "intVar1" -> intVar1, "intVar2" -> intVar2,
-    "byteVar1" -> byteVar1, "byteVar2" -> byteVar2, "byteVar3" -> byteVar3,
-    "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2, "bigIntVar3" -> bigIntVar3, "trueVar" -> booleanVar)
 
   property("Relation operations") {
     test(env, ext,
@@ -80,6 +90,33 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test(env, ext,
       "{ getVar[BigInt](bigIntVar2) >= getVar[BigInt](bigIntVar1) && getVar[BigInt](bigIntVar1) <= getVar[BigInt](bigIntVar2) }",
       AND(GE(TaggedBigInt(bigIntVar2), TaggedBigInt(bigIntVar1)), LE(TaggedBigInt(bigIntVar1), TaggedBigInt(bigIntVar2)))
+    )
+  }
+
+  property("Proof operations") {
+    test(env, ext,
+      "{ getVar[Proof](proofVar1).isValid }",
+      TaggedProof(proofVar1).isValid
+    )
+    test(env, ext,
+      "{ getVar[Proof](proofVar1) || getVar[Proof](proofVar2) }",
+      OR(TaggedProof(proofVar1).isValid, TaggedProof(proofVar2).isValid)
+    )
+    test(env, ext,
+      "{ getVar[Proof](proofVar1) && getVar[Proof](proofVar2) }",
+      AND(TaggedProof(proofVar1).isValid, TaggedProof(proofVar2).isValid)
+    )
+    test(env, ext,
+      "{ getVar[Proof](proofVar1).isValid && getVar[Proof](proofVar2) }",
+      AND(TaggedProof(proofVar1).isValid, TaggedProof(proofVar2).isValid)
+    )
+    test(env, ext,
+      "{ getVar[Proof](proofVar1) && getVar[Int](intVar1) == 1 }",
+      AND(TaggedProof(proofVar1).isValid, EQ(TaggedInt(intVar1), 1))
+    )
+    test(env, ext,
+      "{ getVar[Int](intVar1) == 1 || getVar[Proof](proofVar1) }",
+      OR(EQ(TaggedInt(intVar1), 1), TaggedProof(proofVar1).isValid)
     )
   }
 

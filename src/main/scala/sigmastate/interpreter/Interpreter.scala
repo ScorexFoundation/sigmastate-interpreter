@@ -17,6 +17,7 @@ import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
+import sigmastate.lang.Terms.Select
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
@@ -244,6 +245,8 @@ trait Interpreter {
 
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
+
+    case Select(ProofConstant(v), SProof.IsValid, _) => v
 
     case t: Transformer[_, _] if t.transformationReady => t.function(this, context)
 

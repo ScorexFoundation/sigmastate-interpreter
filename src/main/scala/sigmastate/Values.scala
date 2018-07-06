@@ -499,4 +499,8 @@ object Values {
         t => ConcreteCollection(t.items.map(_.asValue[T]), SAny.asInstanceOf[T])
       )
   }
+
+  implicit class ProofValueOps(p: Value[SProof.type]) {
+    def isValid: Value[SBoolean.type] = Select(p, SProof.IsValid, Some(SBoolean)).asBoolValue
+  }
 }

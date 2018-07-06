@@ -210,7 +210,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
         case SProof => (m, newArgs) match {
           case ("||" | "&&", Seq(r)) => r.tpe match {
             case SBoolean =>
-              val (a,b) = (Select(r, SProof.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val (a,b) = (Select(newObj, SProof.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
               val res = if (m == "||") OR(a,b) else AND(a,b)
               res
             case SProof =>
