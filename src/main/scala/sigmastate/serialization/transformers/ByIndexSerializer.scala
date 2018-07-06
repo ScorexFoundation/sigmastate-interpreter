@@ -13,7 +13,7 @@ object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
 
   override def parseBody(r: ByteReader): ByIndex[SType] = {
     val input = r.getValue().asCollection[SType]
-    val index = r.getValue().asValue[SInt.type]
+    val index = r.getValue().upcastTo(SInt)
     val default = r.getOption(r.getValue())
     ByIndex(input, index, default)
   }
