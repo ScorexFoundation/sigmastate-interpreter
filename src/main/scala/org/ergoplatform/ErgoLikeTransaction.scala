@@ -1,14 +1,13 @@
 package org.ergoplatform
 
-import com.google.common.primitives.Shorts
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
-import sigmastate.serialization.Serializer.{Consumed, Position}
 
 import scala.util.Try
 import org.ergoplatform.ErgoBox.BoxId
+import sigmastate.utils.{ByteReader, ByteWriter}
 
 
 trait ErgoBoxReader {
@@ -80,10 +79,22 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
 
 
 object ErgoLikeTransaction {
+
+  val TransactionIdSize: Short = 32
+
   def apply(inputs: IndexedSeq[Input], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
     new ErgoLikeTransaction(inputs, outputCandidates)
 
-  type FlattenedTransaction = (IndexedSeq[Input], IndexedSeq[ErgoBoxCandidate])
+  def apply(ftx: FlattenedTransaction): ErgoLikeTransaction =
+    new ErgoLikeTransaction(ftx.inputs, ftx.outputCandidates)
+
+  case class FlattenedTransaction(inputs: IndexedSeq[Input],
+                                  outputCandidates: IndexedSeq[ErgoBoxCandidate])
+
+  object FlattenedTransaction {
+    def apply(tx: ErgoLikeTransaction): FlattenedTransaction =
+      FlattenedTransaction(tx.inputs, tx.outputCandidates)
+  }
 
   object flattenedTxSerializer extends Serializer[FlattenedTransaction, FlattenedTransaction] {
 
@@ -95,13 +106,13 @@ object ErgoLikeTransaction {
       val inputsCount = inputs.size.toShort
       val outputsCount = outputCandidates.size.toShort
 
-      w.putShort(inputsCount)
+      w.putUShort(inputsCount)
       inputs.foreach { i =>
         w.putBytes(i)
       }
-      w.putShort(outputsCount)
+      w.putUShort(outputsCount)
       outputCandidates.foreach{ c =>
-        w.putBytes(ErgoBoxCandidate.serializer.toBytes(c))
+        ErgoBoxCandidate.serializer.serializeBody(c, w)
       }
 
       w.toBytes
@@ -113,49 +124,40 @@ object ErgoLikeTransaction {
     def bytesToSign(tx: ErgoLikeTransaction): Array[Byte] =
       bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
-
-    override def toBytes(ftx: FlattenedTransaction): Array[Byte] = {
-      ftx._1.map(_.spendingProof).foldLeft(bytesToSign(ftx._1.map(_.boxId), ftx._2)) { case (bytes, proof) =>
-        bytes ++ ProverResult.serializer.toBytes(proof)
+    override def serializeBody(ftx: FlattenedTransaction, w: ByteWriter): Unit = {
+      w.putBytes(bytesToSign(ftx.inputs.map(_.boxId), ftx.outputCandidates))
+      ftx.inputs.map(_.spendingProof).foreach { proof =>
+        ProverResult.serializer.serializeBody(proof, w)
       }
     }
 
-    override def parseBody(bytes: Array[Byte], pos: Position): (FlattenedTransaction, Consumed) = {
-      val r = Serializer.startReader(bytes, pos)
-      val inputsCount = r.getShort()
-
+    override def parseBody(r: ByteReader): FlattenedTransaction = {
+      val inputsCount = r.getUShort()
       val inputs = (0 until inputsCount).map { _ =>
         ADKey @@ r.getBytes(BoxId.size)
       }
-
-      val outsCount = r.getShort()
+      val outsCount = r.getUShort()
       val outputs = (0 until outsCount).map { _ =>
-        val (bc, cs) = ErgoBoxCandidate.serializer.parseBody(bytes, r.position)
-        r.position_=(r.position + cs)
-        bc
+        ErgoBoxCandidate.serializer.parseBody(r)
       }
 
       val proofs = (0 until inputsCount).map { _ =>
-        val (pr, cs) = ProverResult.serializer.parseBody(bytes, r.position)
-        r.position_=(r.position + cs)
-        pr
+        ProverResult.serializer.parseBody(r)
       }
 
       val signedInputs = inputs.zip(proofs).map { case (inp, pr) =>
         Input(inp, pr)
       }
-
-      (signedInputs, outputs) -> r.consumed
+      FlattenedTransaction(signedInputs, outputs)
     }
   }
 
   object serializer extends Serializer[ErgoLikeTransaction, ErgoLikeTransaction] {
-    override def toBytes(tx: ErgoLikeTransaction): Array[Byte] =
-      flattenedTxSerializer.toBytes(tx.inputs, tx.outputCandidates)
 
-    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoLikeTransaction, Consumed) = {
-      val ((inputs, outputCandidates), consumed) = flattenedTxSerializer.parseBody(bytes, pos)
-      ErgoLikeTransaction(inputs, outputCandidates) -> consumed
-    }
+    override def serializeBody(tx: ErgoLikeTransaction, w: ByteWriter): Unit =
+      flattenedTxSerializer.serializeBody(FlattenedTransaction(tx), w)
+
+    override def parseBody(r: ByteReader): ErgoLikeTransaction =
+      ErgoLikeTransaction(flattenedTxSerializer.parseBody(r))
   }
 }

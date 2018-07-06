@@ -3,15 +3,12 @@ package sigmastate.serialization
 import sigmastate._
 import Values._
 
-import scala.util.Try
 import OpCodes._
 import sigmastate.SCollection.SByteArray
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utxo._
 import sigmastate.utils.Extensions._
-import Serializer.Consumed
-import javax.swing.SpringLayout.Constraints
 import org.ergoplatform._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.{ByteReader, ByteWriter}

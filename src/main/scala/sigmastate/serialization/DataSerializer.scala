@@ -38,31 +38,7 @@ object DataSerializer {
       val bytes = v.asInstanceOf[EcPointType].getEncoded(true)
       w.putBytes(bytes)
     case SBox =>
-      val obj = v.asInstanceOf[ErgoBox]
-      w.putLong(obj.value)
-      w.putBytes(obj.propositionBytes)
-
-      val nRegs = obj.additionalRegisters.keys.size
-      if (nRegs + ErgoBox.startingNonMandatoryIndex > 255)
-        sys.error(s"The number of non-mandatory indexes $nRegs exceeds ${255 - ErgoBox.startingNonMandatoryIndex} limit.")
-      w.put(nRegs.toByte)
-
-      // we assume non-mandatory indexes are densely packed from startingNonManadatoryIndex
-      // this convention allows to save 1 bite for each register
-      val startReg = ErgoBox.startingNonMandatoryIndex
-      val endReg = ErgoBox.startingNonMandatoryIndex + nRegs - 1
-      for (regId <- startReg to endReg) {
-        val reg = ErgoBox.findRegisterByIndex(regId.toByte).get
-        obj.get(reg) match {
-          case Some(v) =>
-            w.putValue(v)
-          case None =>
-            sys.error(s"Set of non-mandatory indexes is not densely packed: " +
-                      s"register R$regId is missing in the range [$startReg .. $endReg]")
-        }
-      }
-      w.putBytes(obj.transactionId)
-      w.putUShort(obj.index)
+      ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
 
     case SAvlTree =>
       val data = v.asInstanceOf[AvlTreeData]
@@ -125,20 +101,7 @@ object DataSerializer {
           throw new Error(s"Only compressed encoding is supported, $m given")
       }
     case SBox =>
-      val value = r.getLong()
-      val proposition = r.getValue().asBoolValue
-      val nRegs = r.getUByte()
-      val regs = (0 until nRegs).map { iReg =>
-        val regId = ErgoBox.startingNonMandatoryIndex + iReg
-        val reg = ErgoBox.findRegisterByIndex(regId.toByte).get.asInstanceOf[NonMandatoryRegisterId]
-        val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
-        (reg, v)
-      }.toMap
-      val transId = r.getBytes(32)
-      val boxId = r.getUShort().toShort
-      val box = ErgoBox(value, proposition, Seq(), regs, transId, boxId)
-      box
-
+      ErgoBox.serializer.parseBody(r)
     case SAvlTree =>
       val startingDigest = deserialize[SByteArray](SByteArray, r)
       val keyLength = r.getUInt().toInt
