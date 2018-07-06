@@ -259,6 +259,19 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
     input.cost(context) + Cost.SelectFieldDeclaration
 }
 
+/** Select tuple field by its 1-based index. E.g. input._1 is transformed to SelectField(input, 1)*/
+case class IsValid(input: Value[SProof.type])
+    extends Transformer[SProof.type, SBoolean.type] with NotReadyValueBoolean {
+  override val opCode: OpCode = OpCodes.ProofIsValidCode
+  override def transformationReady: Boolean = input.isInstanceOf[EvaluatedValue[_]]
+
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SProof.type]): Value[SBoolean.type] = {
+    input.value
+  }
+  override def cost[C <: Context[C]](context: C): Long =
+    input.cost(context) + Cost.ProofIsValidDeclaration
+}
+
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
     extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override val opCode: OpCode = OpCodes.SizeOfCode

@@ -16,6 +16,8 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
+import sigmastate.utxo.IsValid
+
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -501,6 +503,6 @@ object Values {
   }
 
   implicit class ProofValueOps(p: Value[SProof.type]) {
-    def isValid: Value[SBoolean.type] = Select(p, SProof.IsValid, Some(SBoolean)).asBoolValue
+    def isValid: Value[SBoolean.type] = IsValid(p)
   }
 }

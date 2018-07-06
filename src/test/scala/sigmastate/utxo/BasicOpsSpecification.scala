@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox, ErgoLikeInterpreter, Self}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
@@ -8,7 +8,7 @@ import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
-
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
   val intVar1 = 1.toByte
   val intVar2 = 2.toByte
   val byteVar1 = 3.toByte
@@ -36,7 +36,10 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     "proofVar2" -> proofVar2
     )
 
-  def test(env: Map[String, Any], ext: Seq[(Byte, EvaluatedValue[_ <: SType])], script: String, propExp: Value[SBoolean.type]) = {
+  def test(env: Map[String, Any],
+           ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
+           script: String, propExp: Value[SBoolean.type],
+      onlyPositive: Boolean = false) = {
     val prover = new ErgoLikeProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
@@ -47,14 +50,19 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val prop = compile(env, script).asBoolValue
     prop shouldBe propExp
-    //    val prop = propExp
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
+
+    val p3 = prover.dlogSecrets(2).publicImage
+    val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(reg1 -> ProofConstant(p3)))
+
+    val ctx = ErgoLikeContext.dummy(outputToSpend)
+
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxExt = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
+    if (!onlyPositive)
+      verifier.verify(prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
     verifier.verify(prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
@@ -117,6 +125,16 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test(env, ext,
       "{ getVar[Int](intVar1) == 1 || getVar[Proof](proofVar1) }",
       OR(EQ(TaggedInt(intVar1), 1), TaggedProof(proofVar1).isValid)
+    )
+    test(env, ext,
+      "{ SELF.R4[Proof].value.isValid }",
+      ExtractRegisterAs[SProof.type](Self, reg1).isValid,
+      true
+    )
+    test(env, ext,
+      "{ SELF.R4[Proof].value && getVar[Proof](proofVar1)}",
+      AND(ExtractRegisterAs[SProof.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
+      true
     )
   }
 

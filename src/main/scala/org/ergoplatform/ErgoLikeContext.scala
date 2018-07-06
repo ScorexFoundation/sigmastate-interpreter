@@ -25,6 +25,9 @@ class ErgoLikeContext(val currentHeight: Height,
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, newSpendingTransaction, self, extension)
+
+  def withSelf(newSelf: ErgoBox): ErgoLikeContext =
+    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, newSelf, extension)
 }
 
 object ErgoLikeContext {

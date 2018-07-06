@@ -114,7 +114,8 @@ object OpCodes extends ValueCodes {
   val CalcBlake2b256Code         : OpCode = (LastConstantCode + 91).toByte
   val CalcSha256Code             : OpCode = (LastConstantCode + 92).toByte
   val ProveDlogCode              : OpCode = (LastConstantCode + 93).toByte
-  val ProveDiffieHellmanTupleCode: OpCode = (LastConstantCode + 94).toByte  // reserved 95 - 99
+  val ProveDiffieHellmanTupleCode: OpCode = (LastConstantCode + 94).toByte
+  val ProofIsValidCode           : OpCode = (LastConstantCode + 95).toByte  // reserved 96 - 99
 
   // Deserialization codes
   val DeserializeContextCode : OpCode = (LastConstantCode + 100).toByte

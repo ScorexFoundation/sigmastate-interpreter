@@ -77,6 +77,7 @@ object SType {
   implicit class STypeOps(val tpe: SType) {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
+    def isProof: Boolean = tpe.isInstanceOf[SProof.type]
     def isTuple: Boolean = tpe.isInstanceOf[STuple]
     def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
       case (NoType, _) => true

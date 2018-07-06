@@ -1,15 +1,14 @@
 package sigmastate.interpreter
 
-import java.math.BigInteger
 import java.util
 import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
@@ -17,11 +16,10 @@ import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.lang.Terms.Select
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.utxo.{DeserializeContext, CostTable, Transformer, IsValid}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -246,7 +244,7 @@ trait Interpreter {
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
 
-    case Select(ProofConstant(v), SProof.IsValid, _) => v
+    case IsValid(ProofConstant(v)) => v
 
     case t: Transformer[_, _] if t.transformationReady => t.function(this, context)
 
