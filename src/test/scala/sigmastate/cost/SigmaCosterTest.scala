@@ -102,8 +102,8 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
     )
     checkInEnv[CrowdFunding, Boolean](env, "CrowdFunding",
     """{
-     | let backerPubKey = getVar[Boolean](backerPubKeyId)
-     | let projectPubKey = getVar[Boolean](projectPubKeyId)
+     | let backerPubKey = getVar[Proof](backerPubKeyId)
+     | let projectPubKey = getVar[Proof](projectPubKeyId)
      | let c1 = HEIGHT >= timeout && backerPubKey
      | let c2 = allOf(Array(
      |   HEIGHT < timeout,

@@ -3,10 +3,11 @@ package sigmastate.lang
 import scalan.{Lazy, SigmaLibrary}
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
-import sigmastate.Values.{Value, Constant, TaggedVariable}
+import sigmastate.Values.{TaggedVariable, Value, Constant}
+import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{MapCollection, ExtractAmount, ForAll, Where, ByIndex, Exists, Fold, SizeOf, BooleanTransformer}
+import sigmastate.utxo.{MapCollection, ExtractAmount, ForAll, Where, ByIndex, Exists, BooleanTransformer, Fold, SizeOf}
 
 trait CosterCtx extends SigmaLibrary {
   val WA = WArrayMethods
