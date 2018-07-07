@@ -23,16 +23,6 @@ class SigmaTyper(val builder: SigmaBuilder) {
   import SigmaTyper._
   import builder._
 
-  /** Most Specific Generalized (MSG) type of ts.
-    * Currently just the type of the first element as long as all the elements have the same type. */
-  def msgTypeOf(ts: Seq[SType]): Option[SType] = {
-    val types = ts.distinct
-    if (types.isEmpty) None
-    else
-    if (types.lengthCompare(1) == 0) Some(types.head)
-    else None
-  }
-
   private val tT = STypeIdent("T") // to be used in typing rules
 
   /**
@@ -432,10 +422,12 @@ object SigmaTyper {
       None
   }
 
+  private val unifiedWithoutSubst = Some(emptySubst)
+
   /** Finds a substitution `subst` of type variables such that unifyTypes(applySubst(t1, subst), t2) shouldBe Some(emptySubst) */
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
     case (id1 @ STypeIdent(n1), id2 @ STypeIdent(n2)) =>
-      if (n1 == n2) Some(emptySubst) else None
+      if (n1 == n2) unifiedWithoutSubst else None
     case (id1 @ STypeIdent(n), _) =>
       Some(Map(id1 -> t2))
     case (e1: SCollectionType[_], e2: SCollectionType[_]) =>
@@ -451,12 +443,14 @@ object SigmaTyper {
     case (STypeApply(name1, args1), STypeApply(name2, args2))
       if name1 == name2 && args1.length == args2.length =>
       unifyTypeLists(args1, args2)
+    case (SBoolean, SProof) =>
+      unifiedWithoutSubst
     case (SPrimType(e1), SPrimType(e2)) if e1 == e2 =>
-      Some(Map())
+      unifiedWithoutSubst
     case (e1: SProduct, e2: SProduct) if e1.sameMethods(e2) =>
       unifyTypeLists(e1.methods.map(_.stype), e2.methods.map(_.stype))
     case (SAny, _) =>
-      Some(Map())
+      unifiedWithoutSubst
     case _ => None
   }
 
@@ -469,6 +463,27 @@ object SigmaTyper {
         case id: STypeIdent if subst.contains(id) => subst(id)
       }
       rewrite(everywherebu(substRule))(tpe)
+  }
+
+  def msgType(t1: SType, t2: SType): Option[SType] = unifyTypes(t1, t2) match {
+    case Some(_) => Some(t1)
+    case None => unifyTypes(t2, t1).map(_ => t2)
+  }
+
+  /** Most Specific Generalized (MSG) type of ts.
+    * Currently just the type of the first element as long as all the elements have the same type. */
+  def msgTypeOf(ts: Seq[SType]): Option[SType] = {
+    if (ts.isEmpty) None
+    else {
+      var res: SType = ts.head
+      for (t <- ts.iterator.drop(1)) {
+        msgType(t, res) match {
+          case Some(msg) => res = msg //assign new
+          case None => return None
+        }
+      }
+      Some(res)
+    }
   }
 
   def error(msg: String) = throw new TyperException(msg, None)

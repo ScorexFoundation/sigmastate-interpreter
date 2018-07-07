@@ -86,6 +86,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "p1 && getVar[Proof](10)") shouldBe SBoolean
     typecheck(env, "getVar[Proof](10) || p2") shouldBe SBoolean
     typecheck(env, "getVar[Proof](10) && getVar[Proof](11)") shouldBe SBoolean
+    typecheck(env, "Array(true, getVar[Proof](11))") shouldBe SCollection(SBoolean)
   }
 
   property("let constructs") {
@@ -279,7 +280,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     check("(Int, Box)", "(Int, Box)")
     check("(Int, Box)", "(Int, Box, Boolean)", None)
 
-    check("Array[Any]", "(Int, Long)")
+    check("Array[Any]", "(Int, Long)")  // tuple as array
+    check("Array[Array[Any]]", "Array[(Int, Long)]")
 
     check("Array[Int]", "Array[Boolean]", None)
     check("Array[Int]", "Array[Int]")
@@ -338,6 +340,64 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       "((A,Int), Array[B] => Array[(Array[C], B)]) => A",
       "((Int,Int), Array[Boolean] => Array[(Array[C], Boolean)]) => Int",
       ("A", SInt), ("B", SBoolean))
+
+    unifyTypes(SBoolean, SProof) shouldBe Some(emptySubst)
+    unifyTypes(SProof, SBoolean) shouldBe None
+    check("(Int, Boolean)", "(Int, Proof)")
+    check("(Int, Boolean, Boolean)", "(Int, Proof, Proof)")
+    check("Array[Boolean]", "Array[Proof]")
+    check("Array[(Int,Boolean)]", "Array[(Int,Proof)]")
+    check("Array[Array[Boolean]]", "Array[Array[Proof]]")
+    check("Option[Boolean]", "Option[Proof]")
+    check("Option[(Int,Boolean)]", "Option[(Int,Proof)]")
+    check("Option[Option[Boolean]]", "Option[Option[Proof]]")
+    check("Int => Boolean", "Int => Proof")
+    check("(Int, Boolean) => Int", "(Int, Proof) => Int")
+  }
+
+  property("most specific general (MSG) type") {
+    import SigmaTyper._
+    def checkTypes(t1: SType, t2: SType, exp: Option[SType]): Unit = {
+      msgType(t1, t2) shouldBe exp
+    }
+    def checkAllTypes(ts: Seq[SType], exp: Option[SType]): Unit = {
+      msgTypeOf(ts) shouldBe exp
+    }
+    def check(s1: String, s2: String, exp: Option[SType]): Unit = {
+      val t1 = ty(s1); val t2 = ty(s2)
+      checkTypes(t1, t2, exp)
+    }
+    def checkAll(ts: Seq[String], exp: Option[SType]): Unit = {
+      val types = ts.map(ty(_));
+      checkAllTypes(types, exp)
+    }
+
+    checkTypes(NoType, NoType, None)
+    checkTypes(NoType, SInt, None)
+    checkTypes(SInt, SInt, Some(SInt))
+    checkTypes(SBoolean, SProof, Some(SBoolean))
+    checkTypes(SProof, SBoolean, Some(SBoolean))
+
+    check("(Int, Boolean)", "(Int, Proof)", Some(ty("(Int, Boolean)")))
+    check("(Int, Proof)", "(Int, Boolean)", Some(ty("(Int, Boolean)")))
+    check("Array[Boolean]", "Array[Proof]", Some(ty("Array[Boolean]")))
+    check("Array[Proof]", "Array[Boolean]", Some(ty("Array[Boolean]")))
+    check("Array[(Int,Boolean)]", "Array[(Int,Proof)]", Some(ty("Array[(Int,Boolean)]")))
+    check("Array[(Int,Proof)]", "Array[(Int,Boolean)]", Some(ty("Array[(Int,Boolean)]")))
+    check("Array[Array[Boolean]]", "Array[Array[Proof]]", Some(ty("Array[Array[Boolean]]")))
+    check("Array[Array[Proof]]", "Array[Array[Boolean]]", Some(ty("Array[Array[Boolean]]")))
+    check("Option[(Int,Boolean)]", "Option[(Int,Proof)]", Some(ty("Option[(Int,Boolean)]")))
+    check("Option[(Int,Proof)]", "Option[(Int,Boolean)]", Some(ty("Option[(Int,Boolean)]")))
+    check("Option[Option[Boolean]]", "Option[Option[Proof]]", Some(ty("Option[Option[Boolean]]")))
+    check("Option[Option[Proof]]", "Option[Option[Boolean]]", Some(ty("Option[Option[Boolean]]")))
+    check("Int => Boolean", "Int => Proof", Some(ty("Int => Boolean")))
+    check("Int => Proof", "Int => Boolean", Some(ty("Int => Boolean")))
+
+    checkAll(Seq("Boolean", "Proof"), Some(SBoolean))
+    checkAll(Seq("Boolean", "Proof", "Boolean"), Some(SBoolean))
+    checkAll(Seq("Boolean", "Proof", "Int"), None)
+    checkAll(Seq("Int", "Int", "Int"), Some(SInt))
+    checkAll(Seq("(Int, Boolean)", "(Int,Proof)", "(Int,Boolean)"), Some(ty("(Int,Boolean)")))
   }
 
   property("invalid binary operations type check") {
