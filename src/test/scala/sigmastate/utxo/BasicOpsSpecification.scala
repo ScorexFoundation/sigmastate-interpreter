@@ -136,6 +136,22 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       AND(ExtractRegisterAs[SProof.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
       true
     )
+    test(env, ext,
+      "{ allOf(Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)))}",
+      AND(ExtractRegisterAs[SProof.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
+      true
+    )
+    test(env, ext,
+      "{ anyOf(Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)))}",
+      OR(ExtractRegisterAs[SProof.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
+      true
+    )
+    test(env, ext,
+      "{ Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)).forall(fun (p: Proof) = p.isValid) }",
+      ForAll(ConcreteCollection(ExtractRegisterAs[SProof.type](Self, reg1), TaggedProof(proofVar1)),
+        21, IsValid(TaggedProof(21))),
+      true
+    )
   }
 
   property("Arith operations") {

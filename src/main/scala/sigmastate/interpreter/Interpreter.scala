@@ -383,9 +383,9 @@ object Interpreter {
   type ReductionResult = (Value[SBoolean.type], Long)
 
   implicit class InterpreterOps(I: Interpreter) {
-    def eval[T <: SType](ctx: Context[_], ev: Value[T]): EvaluatedValue[T] = {
+    def eval[T <: SType](ctx: Context[_], ev: Value[T]): Value[T] = {
       val reduced = I.reduceUntilConverged(ctx.asInstanceOf[I.CTX], ev)
-      reduced.asInstanceOf[EvaluatedValue[T]]
+      reduced
     }
   }
 

@@ -127,7 +127,10 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
     val filtered = cc.items.filter { case v: EvaluatedValue[IV] =>
       val localCtx = ctx.withBindings(id -> v)
       val reduced = intr.eval(localCtx, condition)
-      reduced.value
+      reduced match {
+        case ev: EvaluatedValue[SBoolean.type] => ev.value
+        case _ => Interpreter.error(s"Expected EvaluatedValue during execution of where but found $reduced")
+      }
     }
     ConcreteCollection(filtered)(tpe.elemType)
   }

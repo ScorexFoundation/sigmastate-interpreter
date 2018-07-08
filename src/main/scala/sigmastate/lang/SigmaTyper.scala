@@ -5,8 +5,11 @@ import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import SCollection.SBooleanArray
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException}
+import sigmastate.lang.SigmaPredef._
+import sigmastate.lang.exceptions.{TyperException, InvalidBinaryOperationParameters}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
@@ -49,16 +52,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
     case c @ ConcreteCollection(items, _) =>
       val newItems = items.map(assignType(env, _))
-      val types = newItems.map(_.tpe).distinct
-      val tItem = if (items.isEmpty) {
-        if (c.elementType == NoType)
-          error(s"Undefined type of empty collection $c")
-        c.elementType
-      } else {
-        msgTypeOf(types).getOrElse(
-          error(s"All element of array $c should have the same type but found $types"))
-      }
-      mkConcreteCollection(newItems, tItem)
+      assignConcreteCollection(c, newItems)
 
     case Ident(n, _) =>
       env.get(n) match {
@@ -125,19 +119,23 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
     case app @ Apply(f, args) =>
       val new_f = assignType(env, f)
-
       new_f.tpe match {
         case SFunc(argTypes, tRes, _) =>
           // If it's a pre-defined function application
           if (args.length != argTypes.length)
             error(s"Invalid argument type of application $app: invalid number of arguments")
-          val newArgs = args.zip(argTypes).map {
+          val new_args = args.zip(argTypes).map {
             case (arg, expectedType) => assignType(env, arg, Some(expectedType))
+          }
+          val newArgs = new_f match {
+            case AllSym | AnySym =>
+              adaptProofToBoolean(new_args, argTypes)
+            case _ => new_args
           }
           val actualTypes = newArgs.map(_.tpe)
           if (actualTypes != argTypes)
-            error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
-          mkApply(new_f, newArgs)
+            error(s"Invalid argument type of application $app: expected $argTypes; actual after typing: $actualTypes")
+          mkApply(new_f, newArgs.toIndexedSeq)
         case _: SCollectionType[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
@@ -296,7 +294,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
     case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
     case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(mkModulo)(tT, tT)
     case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(mkDivide)(tT, tT)
-    
+
     case Xor(l, r) => bimap(env, "|", l, r)(mkXor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(mkMultiplyGroup)(SGroupElement, SGroupElement)
 
@@ -322,7 +320,12 @@ class SigmaTyper(val builder: SigmaBuilder) {
       if (!c1.tpe.isCollectionLike)
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})")
       mkSizeOf(c1)
-    
+
+    case IsValid(p) =>
+      val p1 = assignType(env, p)
+      if (!p1.tpe.isProof)
+        error(s"Invalid operation IsValid: expected argument types ($SProof); actual: (${p.tpe})")
+      IsValid(p1.asProof)
     case Height => Height
     case Self => Self
     case Inputs => Inputs
@@ -335,7 +338,32 @@ class SigmaTyper(val builder: SigmaBuilder) {
     case v: EvaluatedValue[_] => v
     case v: SigmaBoolean => v
     case v: Upcast[_, _] => v
-    case v => error(s"Don't know how to assignType($v)")
+    case v =>
+      error(s"Don't know how to assignType($v)")
+  }
+
+  def assignConcreteCollection(cc: ConcreteCollection[SType], newItems: IndexedSeq[Value[SType]]) = {
+    val types = newItems.map(_.tpe).distinct
+    val tItem = if (cc.items.isEmpty) {
+      if (cc.elementType == NoType)
+        error(s"Undefined type of empty collection $cc")
+      cc.elementType
+    } else {
+      msgTypeOf(types).getOrElse(
+        error(s"All element of array $cc should have the same type but found $types"))
+    }
+    ConcreteCollection(newItems)(tItem)
+  }
+
+  def adaptProofToBoolean(items: Seq[Value[SType]], expectedTypes: Seq[SType]): Seq[Value[SType]] = {
+    val res = items.zip(expectedTypes).map {
+      case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
+        val items = adaptProofToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
+        assignConcreteCollection(cc, items.toIndexedSeq)
+      case (it, SBoolean) if it.tpe == SProof => IsValid(it.asProof)
+      case (it,_) => it
+    }
+    res
   }
 
   def bimap[T <: SType]
@@ -392,7 +420,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
     if (untyped != null)
       error(s"Errors found in $bound while assigning types to expression: $untyped assigned NoType")
-      
+
     assigned
   }
 }
