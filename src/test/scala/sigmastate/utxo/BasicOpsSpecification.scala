@@ -152,6 +152,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         21, IsValid(TaggedProof(21))),
       true
     )
+    test(env, ext,
+      "{ SELF.R4[Proof].value.propBytes != getVar[Proof](proofVar1).propBytes }",
+      NEQ(ExtractRegisterAs[SProof.type](Self, reg1).propBytes, TaggedProof(proofVar1).propBytes),
+      true
+    )
   }
 
   property("Arith operations") {

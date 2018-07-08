@@ -262,7 +262,7 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
     input.cost(context) + Cost.SelectFieldDeclaration
 }
 
-/** Select tuple field by its 1-based index. E.g. input._1 is transformed to SelectField(input, 1)*/
+/** Represents execution of Sigma protocol that validates the given input Proof. */
 case class IsValid(input: Value[SProof.type])
     extends Transformer[SProof.type, SBoolean.type] with NotReadyValueBoolean {
   override val opCode: OpCode = OpCodes.ProofIsValidCode
@@ -273,6 +273,20 @@ case class IsValid(input: Value[SProof.type])
   }
   override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.ProofIsValidDeclaration
+}
+
+/** Extract serialized bytes of a Proof value */
+case class ProofBytes(input: Value[SProof.type])
+    extends Transformer[SProof.type, SByteArray] with NotReadyValue[SByteArray] {
+  override val opCode: OpCode = OpCodes.ProofBytesCode
+  def tpe = SByteArray
+  override def transformationReady: Boolean = input.isInstanceOf[EvaluatedValue[_]]
+
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SProof.type]): Value[SByteArray] = {
+    ByteArrayConstant(input.value.bytes)
+  }
+  override def cost[C <: Context[C]](context: C): Long =
+    input.cost(context) + Cost.ProofBytes
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])

@@ -76,6 +76,10 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Select(p, SProof.IsValid, _) if p.tpe == SProof =>
       Some(IsValid(p.asProof))
 
+    // Rule: proof.propBytes --> ProofBytes(proof)
+    case Select(p, SProof.PropBytes, _) if p.tpe == SProof =>
+      Some(ProofBytes(p.asProof))
+
     case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(_)), Seq(arg)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))

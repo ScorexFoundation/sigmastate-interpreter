@@ -244,8 +244,6 @@ trait Interpreter {
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
 
-    case IsValid(ProofConstant(v)) => v
-
     case t: Transformer[_, _] if t.transformationReady => t.function(this, context)
 
     case _ => null

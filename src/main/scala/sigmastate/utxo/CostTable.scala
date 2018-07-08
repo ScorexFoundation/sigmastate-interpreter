@@ -69,6 +69,7 @@ object CostTable {
     val ByIndexDeclaration = 50
     val SelectFieldDeclaration = 50
     val ProofIsValidDeclaration = 50
+    val ProofBytes = 50
 
     val MapDeclaration = 100
 

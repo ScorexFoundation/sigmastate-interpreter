@@ -16,7 +16,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.IsValid
+import sigmastate.utxo.{IsValid, ProofBytes}
 
 
 import scala.language.implicitConversions
@@ -504,5 +504,6 @@ object Values {
 
   implicit class ProofValueOps(p: Value[SProof.type]) {
     def isValid: Value[SBoolean.type] = IsValid(p)
+    def propBytes: Value[SByteArray] = ProofBytes(p)
   }
 }

@@ -78,6 +78,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TupleSerializer,
     SelectFieldSerializer,
     IsValidSerializer,
+    ProofBytesSerializer,
     ConcreteCollectionBooleanConstantSerializer,
     LogicalTransformerSerializer(AndCode, AND.apply),
     LogicalTransformerSerializer(OrCode, OR.apply),
