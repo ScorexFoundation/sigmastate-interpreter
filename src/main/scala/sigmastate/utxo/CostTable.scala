@@ -21,6 +21,7 @@ object CostTable {
     val VariableAccess = 1
 
     val ExtractAmount = 10
+    val ExtractScriptBytes = 10
 
     //cost for CustomByteArray declaration. Additional cost to be calculated when data is known
     //(and CustomByteArray being converted to ByteArrayLeaf)

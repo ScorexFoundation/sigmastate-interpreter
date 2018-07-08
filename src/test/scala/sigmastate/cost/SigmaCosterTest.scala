@@ -2,6 +2,7 @@ package sigmastate.cost
 
 import com.google.common.base.Strings
 import sigmastate.SType
+import sigmastate.Values.{EvaluatedValue, ProofConstant, SValue}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.lang.{CosterCtx, LangTests, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
@@ -14,29 +15,17 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
   }
   import ctx._
 
-  def cost[SC <: SigmaContract:Elem](env: Map[String, Any], x: String) = {
+  def cost[SC <: SigmaContract:Elem](env: Map[String, Any], ctxVars: Map[Byte, SValue], x: String) = {
     val compiled = compiler.compile(env, x)
-    val cg = ctx.buildCostedGraph[SC, SType](compiled)
+    val cg = ctx.buildCostedGraph[SC, SType](ctxVars, compiled)
     cg
   }
 
-  def checkSC[T](name: String, script: String,
-      expectedCalc: Rep[(SigmaContract, Context)] => Rep[T],
-      expectedCost: Rep[(SigmaContract, Context)] => Rep[Int]
-  ): Rep[(((SigmaContract, Context)) => T, ((SigmaContract, Context)) => Int)] =
-    checkInEnv(env, name, script, expectedCalc, expectedCost)
-
-  def check[SC <: SigmaContract:Elem, T](name: String, script: String,
-      expectedCalc: Rep[(SC, Context)] => Rep[T],
-      expectedCost: Rep[(SC, Context)] => Rep[Int]
-  ): Rep[(((SC, Context)) => T, ((SC, Context)) => Int)] =
-    checkInEnv(env, name, script, expectedCalc, expectedCost)
-
-  def checkInEnv[SC <: SigmaContract:Elem, T](env: Map[String, Any], name: String, script: String,
+  def checkInEnv[SC <: SigmaContract:Elem, T](env: Map[String, Any], ctxVars: Map[Byte, SValue], name: String, script: String,
       expectedCalc: Rep[(SC, Context)] => Rep[T],
       expectedCost: Rep[(SC, Context)] => Rep[Int]
   ): Rep[(((SC, Context)) => T, ((SC, Context)) => Int)] = {
-    val cf = cost[SC](env, script)
+    val cf = cost[SC](env, ctxVars, script)
     val p @ Pair(calcF, costF) = cf match { case cf: RFunc[(SC, Context), Costed[_]]@unchecked =>
       split(cf)
     }
@@ -51,6 +40,18 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
     costF shouldBe expCost
     res
   }
+
+  def checkSC[T](name: String, script: String,
+      expectedCalc: Rep[(SigmaContract, Context)] => Rep[T],
+      expectedCost: Rep[(SigmaContract, Context)] => Rep[Int]
+  ): Rep[(((SigmaContract, Context)) => T, ((SigmaContract, Context)) => Int)] =
+    checkInEnv(env, Map(), name, script, expectedCalc, expectedCost)
+
+  def check[SC <: SigmaContract:Elem, T](name: String, script: String,
+      expectedCalc: Rep[(SC, Context)] => Rep[T],
+      expectedCost: Rep[(SC, Context)] => Rep[Int]
+  ): Rep[(((SC, Context)) => T, ((SC, Context)) => Int)] =
+    checkInEnv(env, Map(), name, script, expectedCalc, expectedCost)
 
   import Cost._
 
@@ -100,7 +101,12 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
       "backerPubKeyId" -> backerPubKeyId,
       "projectPubKeyId" -> projectPubKeyId
     )
-    checkInEnv[CrowdFunding, Boolean](env, "CrowdFunding",
+    val prover = new ErgoLikeProvingInterpreter()
+    val backer = prover.dlogSecrets(0).publicImage
+    val project = prover.dlogSecrets(1).publicImage
+    val vars = Seq(backerPubKeyId -> ProofConstant(backer), projectPubKeyId -> ProofConstant(project)).toMap
+
+    checkInEnv[CrowdFunding, Boolean](env, vars, "CrowdFunding",
     """{
      | let backerPubKey = getVar[Proof](backerPubKeyId)
      | let projectPubKey = getVar[Proof](projectPubKeyId)
