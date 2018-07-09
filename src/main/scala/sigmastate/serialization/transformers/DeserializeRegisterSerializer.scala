@@ -13,15 +13,14 @@ object DeserializeRegisterSerializer extends ValueSerializer[DeserializeRegister
 
   override def parseBody(r: ByteReader): DeserializeRegister[SType] = {
     val registerId = ErgoBox.findRegisterByIndex(r.getByte()).get
-    val tpeByte = r.getByte()
-    val tpe = SType.allPredefTypes.filter(_.typeCode == tpeByte).head
+    val tpe = r.getType()
     val dv = r.getOption(r.getValue())
     DeserializeRegister(registerId, tpe, dv)
   }
 
   override def serializeBody(obj: DeserializeRegister[SType], w: ByteWriter): Unit =
     w.put(obj.reg.number)
-      .put(obj.tpe.typeCode)
+      .putType(obj.tpe)
       .putOption(obj.default)(_.putValue(_))
 
 }

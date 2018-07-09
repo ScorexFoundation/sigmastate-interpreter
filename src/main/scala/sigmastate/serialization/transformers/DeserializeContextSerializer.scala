@@ -11,13 +11,12 @@ object DeserializeContextSerializer extends ValueSerializer[DeserializeContext[S
   override val opCode: OpCode = OpCodes.DeserializeContextCode
 
   override def parseBody(r: ByteReader): DeserializeContext[SType] = {
-    val tpeByte = r.getByte()
-    val tpe = SType.allPredefTypes.filter(_.typeCode == tpeByte).head
+    val tpe = r.getType()
     val id = r.getByte()
     DeserializeContext(id, tpe)
   }
 
   override def serializeBody(obj: DeserializeContext[SType], w: ByteWriter): Unit =
-    w.put(obj.tpe.typeCode)
+    w.putType(obj.tpe)
       .put(obj.id)
 }
