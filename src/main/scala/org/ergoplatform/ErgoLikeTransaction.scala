@@ -9,6 +9,8 @@ import scala.util.Try
 import org.ergoplatform.ErgoBox.BoxId
 import sigmastate.utils.{ByteReader, ByteWriter}
 
+import scala.collection.mutable
+
 
 trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
@@ -29,7 +31,7 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
     outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
 
   lazy val messageToSign: Array[Byte] =
-    ErgoLikeTransaction.flattenedTxSerializer.bytesToSign(inputs.map(_.boxId), outputCandidates)
+    ErgoLikeTransaction.flattenedTxSerializer.bytesToSign(this)
 
   lazy val inputIds: IndexedSeq[ADKey] = inputs.map(_.boxId)
 }
@@ -88,12 +90,12 @@ object ErgoLikeTransaction {
   def apply(ftx: FlattenedTransaction): ErgoLikeTransaction =
     new ErgoLikeTransaction(ftx.inputs, ftx.outputCandidates)
 
-  case class FlattenedTransaction(inputs: IndexedSeq[Input],
-                                  outputCandidates: IndexedSeq[ErgoBoxCandidate])
+  case class FlattenedTransaction(inputs: Array[Input],
+                                  outputCandidates: Array[ErgoBoxCandidate])
 
   object FlattenedTransaction {
     def apply(tx: ErgoLikeTransaction): FlattenedTransaction =
-      FlattenedTransaction(tx.inputs, tx.outputCandidates)
+      FlattenedTransaction(tx.inputs.toArray, tx.outputCandidates.toArray)
   }
 
   object flattenedTxSerializer extends Serializer[FlattenedTransaction, FlattenedTransaction] {
@@ -111,44 +113,43 @@ object ErgoLikeTransaction {
         w.putBytes(i)
       }
       w.putUShort(outputsCount)
-      outputCandidates.foreach{ c =>
+      outputCandidates.foreach { c =>
         ErgoBoxCandidate.serializer.serializeBody(c, w)
       }
 
       w.toBytes
     }
 
-    def bytesToSign(tx: UnsignedErgoLikeTransaction): Array[Byte] =
-      bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
-
-    def bytesToSign(tx: ErgoLikeTransaction): Array[Byte] =
+    def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] =
       bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
     override def serializeBody(ftx: FlattenedTransaction, w: ByteWriter): Unit = {
-      w.putBytes(bytesToSign(ftx.inputs.map(_.boxId), ftx.outputCandidates))
-      ftx.inputs.map(_.spendingProof).foreach { proof =>
-        ProverResult.serializer.serializeBody(proof, w)
+      val inputsLength = ftx.inputs.length
+      require(inputsLength <= Short.MaxValue, s"max inputs size is Short.MaxValue = ${Short.MaxValue}")
+      w.putUShort(inputsLength.toShort)
+      for (input <- ftx.inputs) {
+        Input.serializer.serializeBody(input, w)
+      }
+      val outputCandidatesLength = ftx.outputCandidates.length
+      require(outputCandidatesLength <= Short.MaxValue, s"max outputCandidates size is Short.MaxValue = ${Short.MaxValue}")
+      w.putUShort(outputCandidatesLength.toShort)
+      for (out <- ftx.outputCandidates) {
+        ErgoBoxCandidate.serializer.serializeBody(out, w)
       }
     }
 
     override def parseBody(r: ByteReader): FlattenedTransaction = {
       val inputsCount = r.getUShort()
-      val inputs = (0 until inputsCount).map { _ =>
-        ADKey @@ r.getBytes(BoxId.size)
+      val inputsBuilder = mutable.ArrayBuilder.make[Input]()
+      for (_ <- 0 until inputsCount) {
+        inputsBuilder += Input.serializer.parseBody(r)
       }
       val outsCount = r.getUShort()
-      val outputs = (0 until outsCount).map { _ =>
-        ErgoBoxCandidate.serializer.parseBody(r)
+      val outputCandidatesBuilder = mutable.ArrayBuilder.make[ErgoBoxCandidate]()
+      for (_ <- 0 until outsCount) {
+        outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBody(r)
       }
-
-      val proofs = (0 until inputsCount).map { _ =>
-        ProverResult.serializer.parseBody(r)
-      }
-
-      val signedInputs = inputs.zip(proofs).map { case (inp, pr) =>
-        Input(inp, pr)
-      }
-      FlattenedTransaction(signedInputs, outputs)
+      FlattenedTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
     }
   }
 
