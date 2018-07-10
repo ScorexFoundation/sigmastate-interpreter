@@ -14,9 +14,9 @@ case class SimpleTransformerSerializer[I <: SType, O <: SType]
 
   override val opCode: OpCode = code
 
-  override def parseBody(r: ByteReader): Transformer[I, O] =
-    cons(r.getValue().asValue[I])
-
   override def serializeBody(obj: Transformer[I, O], w: ByteWriter): Unit =
     w.putValue(obj.input)
+
+  override def parseBody(r: ByteReader): Transformer[I, O] =
+    cons(r.getValue().asValue[I])
 }

@@ -12,6 +12,18 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
 (override val opCode: Byte,
  constructor: (Value[S1], Value[S2]) => Value[SBoolean.type]) extends ValueSerializer[R] {
 
+  override def serializeBody(obj: R, w: ByteWriter): Unit = {
+    val typedRel = obj.asInstanceOf[Relation[S1, S2]]
+    (typedRel.left, typedRel.right) match {
+      case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
+        w.put(ConcreteCollectionBooleanConstantCode)
+        w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
+      case _ =>
+        w.putValue(typedRel.left)
+        w.putValue(typedRel.right)
+    }
+  }
+
   override def parseBody(r: ByteReader): R = {
     if (r.peekByte() == ConcreteCollectionBooleanConstantCode) {
       val _ = r.getByte() // skip collection op code
@@ -23,18 +35,6 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
       val firstArg = r.getValue().asValue[S1]
       val secondArg = r.getValue().asValue[S2]
       constructor(firstArg, secondArg).asInstanceOf[R]
-    }
-  }
-
-  override def serializeBody(obj: R, w: ByteWriter): Unit = {
-    val typedRel = obj.asInstanceOf[Relation[S1, S2]]
-    (typedRel.left, typedRel.right) match {
-      case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
-        w.put(ConcreteCollectionBooleanConstantCode)
-        w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
-      case _ =>
-        w.putValue(typedRel.left)
-        w.putValue(typedRel.right)
     }
   }
 }

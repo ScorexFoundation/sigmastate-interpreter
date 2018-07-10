@@ -10,9 +10,9 @@ object ProveDlogSerializer extends ValueSerializer[ProveDlog] {
 
   override val opCode: OpCode = OpCodes.ProveDlogCode
 
-  override def parseBody(r: ByteReader): ProveDlog =
-    ProveDlog(r.getValue().asValue[SGroupElement.type])
-
   override def serializeBody(obj: ProveDlog, w: ByteWriter): Unit =
     w.putValue(obj.value)
+
+  override def parseBody(r: ByteReader): ProveDlog =
+    ProveDlog(r.getValue().asValue[SGroupElement.type])
 }

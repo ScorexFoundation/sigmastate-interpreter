@@ -22,17 +22,17 @@ object ContextExtension {
 
   object serializer extends Serializer[ContextExtension, ContextExtension] {
 
+    override def serializeBody(obj: ContextExtension, w: ByteWriter): Unit = {
+      w.put(obj.values.size.toByte)
+      obj.values.foreach{ case (id, v) => w.put(id).putValue(v) }
+    }
+
     override def parseBody(r: ByteReader): ContextExtension = {
       val extSize = r.getByte()
       val ext = (0 until extSize)
         .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
         .toMap[Byte, EvaluatedValue[_ <: SType]]
       ContextExtension(ext)
-    }
-
-    override def serializeBody(obj: ContextExtension, w: ByteWriter): Unit = {
-      w.put(obj.values.size.toByte)
-      obj.values.foreach{ case (id, v) => w.put(id).putValue(v) }
     }
   }
 }

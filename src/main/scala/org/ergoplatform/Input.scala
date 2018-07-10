@@ -22,12 +22,12 @@ object UnsignedInput {
   object serializer extends Serializer[UnsignedInput, UnsignedInput] {
 
     @inline
-    override def parseBody(r: ByteReader): UnsignedInput =
-      new UnsignedInput(ADKey @@ r.getBytes(BoxId.size))
-
-    @inline
     override def serializeBody(obj: UnsignedInput, w: ByteWriter): Unit =
       w.putBytes(obj.boxId)
+
+    @inline
+    override def parseBody(r: ByteReader): UnsignedInput =
+      new UnsignedInput(ADKey @@ r.getBytes(BoxId.size))
   }
 }
 
@@ -38,15 +38,15 @@ case class Input(override val boxId: BoxId, spendingProof: ProverResult)
 object Input {
   object serializer extends Serializer[Input, Input] {
 
+    override def serializeBody(obj: Input, w: ByteWriter): Unit = {
+      w.putBytes(obj.boxId)
+      ProverResult.serializer.serializeBody(obj.spendingProof, w)
+    }
+
     override def parseBody(r: ByteReader): Input = {
       val boxId = r.getBytes(BoxId.size)
       val spendingProof = ProverResult.serializer.parseBody(r)
       Input(ADKey @@ boxId, spendingProof)
-    }
-
-    override def serializeBody(obj: Input, w: ByteWriter): Unit = {
-      w.putBytes(obj.boxId)
-      ProverResult.serializer.serializeBody(obj.spendingProof, w)
     }
   }
 }

@@ -11,6 +11,12 @@ import sigmastate.{SBox, SType}
 object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[SType]] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
 
+  override def serializeBody(obj: ExtractRegisterAs[SType], w: ByteWriter): Unit =
+    w.putValue(obj.input)
+      .put(obj.registerId.number)
+      .putOption(obj.default)((w, v) => w.putValue(v))
+      .putType(obj.tpe)
+
   override def parseBody(r: ByteReader): ExtractRegisterAs[SType] = {
     val input = r.getValue()
     val regId = r.getByte()
@@ -19,11 +25,5 @@ object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[STy
     val tpe = r.getType()
     ExtractRegisterAs(input.asInstanceOf[Value[SBox.type]], register, defaultValue)(tpe)
   }
-
-  override def serializeBody(obj: ExtractRegisterAs[SType], w: ByteWriter): Unit =
-    w.putValue(obj.input)
-      .put(obj.registerId.number)
-      .putOption(obj.default)((w, v) => w.putValue(v))
-      .putType(obj.tpe)
 
 }

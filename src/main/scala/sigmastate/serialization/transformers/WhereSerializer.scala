@@ -11,15 +11,15 @@ object WhereSerializer extends ValueSerializer[Where[SType]] {
 
   override val opCode: OpCode = OpCodes.WhereCode
 
+  override def serializeBody(obj: Where[SType], w: ByteWriter): Unit =
+    w.put(obj.id)
+    .putValue(obj.input)
+    .putValue(obj.condition)
+
   override def parseBody(r: ByteReader): Where[SType] = {
     val id = r.getByte()
     val input = r.getValue().asCollection[SType]
     val condition = r.getValue().asValue[SBoolean.type]
     Where(input, id, condition)
   }
-
-  override def serializeBody(obj: Where[SType], w: ByteWriter): Unit =
-    w.put(obj.id)
-    .putValue(obj.input)
-    .putValue(obj.condition)
 }

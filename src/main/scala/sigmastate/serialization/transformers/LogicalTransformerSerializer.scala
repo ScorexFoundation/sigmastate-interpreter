@@ -15,9 +15,9 @@ case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SB
 
   override val opCode: OpCode = code
 
-  override def parseBody(r: ByteReader): Transformer[I, O] =
-    cons(r.getValue().asCollection[SBoolean.type])
-
   override def serializeBody(obj: Transformer[I, O], w: ByteWriter): Unit =
     w.putValue(obj.input)
+
+  override def parseBody(r: ByteReader): Transformer[I, O] =
+    cons(r.getValue().asCollection[SBoolean.type])
 }

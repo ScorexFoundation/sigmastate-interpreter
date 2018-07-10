@@ -11,18 +11,18 @@ object ProveDiffieHellmanTupleSerializer extends ValueSerializer[ProveDiffieHell
 
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 
+  override def serializeBody(obj: ProveDiffieHellmanTuple, w: ByteWriter): Unit = {
+    w.putValue(obj.gv)
+    w.putValue(obj.hv)
+    w.putValue(obj.uv)
+    w.putValue(obj.vv)
+  }
+
   override def parseBody(r: ByteReader): ProveDiffieHellmanTuple = {
     val gv = r.getValue().asValue[SGroupElement.type]
     val hv = r.getValue().asValue[SGroupElement.type]
     val uv = r.getValue().asValue[SGroupElement.type]
     val vv = r.getValue().asValue[SGroupElement.type]
     ProveDiffieHellmanTuple(gv, hv, uv, vv)
-  }
-
-  override def serializeBody(obj: ProveDiffieHellmanTuple, w: ByteWriter): Unit = {
-    w.putValue(obj.gv)
-    w.putValue(obj.hv)
-    w.putValue(obj.uv)
-    w.putValue(obj.vv)
   }
 }

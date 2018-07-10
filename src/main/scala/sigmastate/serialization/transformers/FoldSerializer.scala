@@ -10,6 +10,13 @@ import sigmastate.utxo.Fold
 object FoldSerializer extends ValueSerializer[Fold[SType]] {
   override val opCode: OpCode = OpCodes.FoldCode
 
+  override def serializeBody(obj: Fold[SType], w: ByteWriter): Unit =
+    w.putValue(obj.input)
+      .put     (obj.id)
+      .putValue(obj.zero)
+      .put     (obj.accId)
+      .putValue(obj.foldOp)
+
   override def parseBody(r: ByteReader): Fold[SType] = {
     val input  = r.getValue()
     val id     = r.getByte()
@@ -18,11 +25,4 @@ object FoldSerializer extends ValueSerializer[Fold[SType]] {
     val foldOp = r.getValue()
     Fold(input.asCollection[SType], id, zero, accId, foldOp)
   }
-
-  override def serializeBody(obj: Fold[SType], w: ByteWriter): Unit =
-    w.putValue(obj.input)
-      .put     (obj.id)
-      .putValue(obj.zero)
-      .put     (obj.accId)
-      .putValue(obj.foldOp)
 }

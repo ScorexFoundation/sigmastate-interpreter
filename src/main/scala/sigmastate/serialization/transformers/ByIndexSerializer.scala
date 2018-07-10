@@ -11,16 +11,16 @@ object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
 
   override val opCode: OpCode = OpCodes.ByIndexCode
 
+  override def serializeBody(obj: ByIndex[SType], w: ByteWriter): Unit =
+    w.putValue(obj.input)
+      .putValue(obj.index)
+      .putOption(obj.default)(_.putValue(_))
+
   override def parseBody(r: ByteReader): ByIndex[SType] = {
     val input = r.getValue().asCollection[SType]
     val index = r.getValue().upcastTo(SInt)
     val default = r.getOption(r.getValue())
     ByIndex(input, index, default)
   }
-
-  override def serializeBody(obj: ByIndex[SType], w: ByteWriter): Unit =
-    w.putValue(obj.input)
-      .putValue(obj.index)
-      .putOption(obj.default)(_.putValue(_))
 
 }

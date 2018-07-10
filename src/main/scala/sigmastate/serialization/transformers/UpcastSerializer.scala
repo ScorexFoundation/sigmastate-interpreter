@@ -9,13 +9,13 @@ import sigmastate.utils.{ByteReader, ByteWriter}
 object UpcastSerializer extends ValueSerializer[Upcast[SNumericType, SNumericType]] {
   override val opCode: OpCode = OpCodes.Upcast
 
+  override def serializeBody(obj: Upcast[SNumericType, SNumericType], w: ByteWriter): Unit =
+    w.putValue(obj.input)
+      .putType(obj.tpe)
+
   override def parseBody(r: ByteReader): Upcast[SNumericType, SNumericType] = {
     val input = r.getValue().asNumValue
     val tpe = r.getType().asNumType
     Upcast(input, tpe)
   }
-
-  override def serializeBody(obj: Upcast[SNumericType, SNumericType], w: ByteWriter): Unit =
-    w.putValue(obj.input)
-      .putType(obj.tpe)
 }

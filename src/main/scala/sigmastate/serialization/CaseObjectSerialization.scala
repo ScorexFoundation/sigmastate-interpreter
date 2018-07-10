@@ -8,7 +8,7 @@ import sigmastate.utils.{ByteReader, ByteWriter}
 case class CaseObjectSerialization[V <: Value[SType]](override val opCode: OpCode, obj: V)
   extends ValueSerializer[V] {
 
-  override def parseBody(r: ByteReader): V = obj
-
   override def serializeBody(obj: V, w: ByteWriter): Unit = ()
+
+  override def parseBody(r: ByteReader): V = obj
 }

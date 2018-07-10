@@ -38,18 +38,18 @@ object ProverResult {
 
   object serializer extends Serializer[ProverResult, ProverResult] {
 
-    override def parseBody(r: ByteReader): ProverResult = {
-      val sigBytesCount = r.getUShort()
-      val proofBytes = r.getBytes(sigBytesCount)
-      val ce = ContextExtension.serializer.parseBody(r)
-      ProverResult(proofBytes, ce)
-    }
-
     override def serializeBody(obj: ProverResult, w: ByteWriter): Unit = {
       w.putUShort(obj.proof.length.toShort)
       w.putBytes(obj.proof)
       ContextExtension.serializer.serializeBody(obj.extension, w)
 
+    }
+
+    override def parseBody(r: ByteReader): ProverResult = {
+      val sigBytesCount = r.getUShort()
+      val proofBytes = r.getBytes(sigBytesCount)
+      val ce = ContextExtension.serializer.parseBody(r)
+      ProverResult(proofBytes, ce)
     }
   }
 }

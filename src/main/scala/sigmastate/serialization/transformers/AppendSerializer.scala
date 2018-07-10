@@ -11,13 +11,13 @@ object AppendSerializer extends ValueSerializer[Append[SType]] {
 
   override val opCode: OpCode = OpCodes.AppendCode
 
+  override def serializeBody(obj: Append[SType], w: ByteWriter): Unit =
+    w.putValue(obj.input)
+      .putValue(obj.col2)
+
   override def parseBody(r: ByteReader): Append[SType] = {
     val input = r.getValue().asCollection[SType]
     val col2 = r.getValue().asCollection[SType]
     Append(input, col2)
   }
-
-  override def serializeBody(obj: Append[SType], w: ByteWriter): Unit =
-    w.putValue(obj.input)
-      .putValue(obj.col2)
 }

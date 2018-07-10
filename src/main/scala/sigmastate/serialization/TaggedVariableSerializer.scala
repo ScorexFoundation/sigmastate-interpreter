@@ -9,13 +9,13 @@ object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: STyp
 
   override val opCode: OpCode = TaggedVariableCode
 
+  override def serializeBody(obj: TaggedVariable[_ <: SType], w: ByteWriter): Unit =
+    w.put(obj.varId)
+      .putType(obj.tpe)
+
   override def parseBody(r: ByteReader): TaggedVariable[_ <: SType] = {
     val varId = r.getByte()
     val tpe = r.getType()
     TaggedVariable(varId, tpe)
   }
-
-  override def serializeBody(obj: TaggedVariable[_ <: SType], w: ByteWriter): Unit =
-    w.put(obj.varId)
-      .putType(obj.tpe)
 }

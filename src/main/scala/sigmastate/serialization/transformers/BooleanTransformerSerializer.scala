@@ -13,16 +13,16 @@ case class BooleanTransformerSerializer[T <: SType, R <: BooleanTransformer[T]]
 
   override val opCode: OpCode = code
 
+  override def serializeBody(obj: R, w: ByteWriter): Unit =
+    w.putValue(obj.input)
+      .put(obj.id)
+      .putValue(obj.condition)
+
   override def parseBody(r: ByteReader): R = {
     val input = r.getValue().asCollection[T]
     val idByte = r.getByte()
     val condition = r.getValue().asValue[SBoolean.type]
     f(input, idByte, condition)
   }
-
-  override def serializeBody(obj: R, w: ByteWriter): Unit =
-    w.putValue(obj.input)
-      .put(obj.id)
-      .putValue(obj.condition)
 
 }

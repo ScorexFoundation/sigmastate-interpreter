@@ -136,19 +136,19 @@ object ErgoBox {
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
 
-    override def parseBody(r: ByteReader): ErgoBox = {
-      val ergoBoxCandidate = ErgoBoxCandidate.serializer.parseBody(r)
-      val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdSize)
-      val index = r.getUShort()
-      ergoBoxCandidate.toBox(transactionId, index.toShort)
-    }
-
     override def serializeBody(obj: ErgoBox, w: ByteWriter): Unit = {
       ErgoBoxCandidate.serializer.serializeBody(obj, w)
       val txIdSize = obj.transactionId.length
       assert(txIdSize == ErgoLikeTransaction.TransactionIdSize, s"Invalid transaction id size: $txIdSize (expected ${ErgoLikeTransaction.TransactionIdSize})")
       w.putBytes(obj.transactionId)
       w.putUShort(obj.index)
+    }
+
+    override def parseBody(r: ByteReader): ErgoBox = {
+      val ergoBoxCandidate = ErgoBoxCandidate.serializer.parseBody(r)
+      val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdSize)
+      val index = r.getUShort()
+      ergoBoxCandidate.toBox(transactionId, index.toShort)
     }
 
   }
