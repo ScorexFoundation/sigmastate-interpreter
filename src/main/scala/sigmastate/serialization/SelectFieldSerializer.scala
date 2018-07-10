@@ -1,26 +1,23 @@
 package sigmastate.serialization
 
 import sigmastate.STuple
-import sigmastate.Values._
+import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.Serializer.Position
+import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.SelectField
 
 object SelectFieldSerializer extends ValueSerializer[SelectField] {
 
   override val opCode: Byte = SelectFieldCode
 
-  override def parseBody(bytes: Array[Byte], pos: Position): (SelectField, Position) = {
-    val r = Serializer.startReader(bytes, pos)
-    val tuple = r.getValue().asInstanceOf[Value[STuple]]
+  override def serializeBody(obj: SelectField, w: ByteWriter): Unit =
+    w.putValue(obj.input)
+      .put(obj.fieldIndex)
+
+  override def parseBody(r: ByteReader): SelectField = {
+    val tuple = r.getValue().asValue[STuple]
     val fieldIndex = r.getByte()
-    (SelectField(tuple, fieldIndex), r.consumed)
+    SelectField(tuple, fieldIndex)
   }
 
-  override def serializeBody(sf: SelectField): Array[Byte] = {
-    val w = Serializer.startWriter()
-      .putValue(sf.input)
-      .put(sf.fieldIndex)
-    w.toBytes
-  }
 }

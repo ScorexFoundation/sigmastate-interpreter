@@ -130,10 +130,6 @@ object Extensions {
           b.append(0.toByte)
       }
     }
-    def appendValue[T <: SType](v: Value[T]): ByteArrayBuilder = {
-      val bytes = ValueSerializer.serialize(v)
-      b.append(bytes)
-    }
   }
 
   implicit class ByteBufferOps(buf: ByteBuffer) {
@@ -153,11 +149,6 @@ object Extensions {
         Some(getValue)
       else
         None
-    }
-    def getValue[T <: SType]: Value[T] = {
-      val (obj, consumed) = ValueSerializer.deserialize(buf.array(), buf.position())
-      buf.position(buf.position() + consumed)
-      obj.asValue[T]
     }
   }
 

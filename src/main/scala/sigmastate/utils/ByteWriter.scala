@@ -4,7 +4,7 @@ import java.util._
 
 import sigmastate.SType
 import sigmastate.Values.Value
-import sigmastate.serialization.TypeSerializer
+import sigmastate.serialization.{TypeSerializer, ValueSerializer}
 import sigmastate.utils.ByteArrayWriter.{encodeZigZagInt, encodeZigZagLong}
 import sigmastate.utils.Extensions._
 
@@ -181,7 +181,12 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
 
   @inline override def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
   @inline override def putType[T <: SType](x: T): ByteWriter = { TypeSerializer.serialize(x, this); this }
-  @inline override def putValue[T <: SType](x: Value[T]): ByteWriter = { b.appendValue(x); this }
+
+  @inline override def putValue[T <: SType](x: Value[T]): ByteWriter = {
+    ValueSerializer.serialize(x, this)
+    this
+  }
+
   @inline override def toBytes: Array[Byte] = b.toBytes
 }
 

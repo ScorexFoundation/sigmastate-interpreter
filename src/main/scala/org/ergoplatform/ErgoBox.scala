@@ -9,8 +9,8 @@ import scorex.crypto.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.serialization.Serializer.{Consumed, Position}
-import sigmastate.serialization.{DataSerializer, Serializer}
+import sigmastate.serialization.Serializer
+import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -135,16 +135,21 @@ object ErgoBox {
     new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId)
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
-    override def toBytes(obj: ErgoBox): Array[Byte] = {
-      val w = Serializer.startWriter()
-      DataSerializer.serialize[SBox.type](obj, SBox, w)
-      w.toBytes
+
+    override def serializeBody(obj: ErgoBox, w: ByteWriter): Unit = {
+      ErgoBoxCandidate.serializer.serializeBody(obj, w)
+      val txIdSize = obj.transactionId.length
+      assert(txIdSize == ErgoLikeTransaction.TransactionIdSize, s"Invalid transaction id size: $txIdSize (expected ${ErgoLikeTransaction.TransactionIdSize})")
+      w.putBytes(obj.transactionId)
+      w.putUShort(obj.index)
     }
 
-    override def parseBody(bytes: Array[Byte], pos: Position): (ErgoBox, Consumed) = {
-      val w = Serializer.startReader(bytes, pos)
-      val box = DataSerializer.deserialize[SBox.type](SBox, w)
-      box -> (w.position - pos)
+    override def parseBody(r: ByteReader): ErgoBox = {
+      val ergoBoxCandidate = ErgoBoxCandidate.serializer.parseBody(r)
+      val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdSize)
+      val index = r.getUShort()
+      ergoBoxCandidate.toBox(transactionId, index.toShort)
     }
+
   }
 }

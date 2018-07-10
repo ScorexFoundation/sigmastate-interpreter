@@ -9,14 +9,26 @@ import sigmastate.utils._
 import scala.util.Try
 
 trait Serializer[TFamily, T <: TFamily] {
-  def toBytes(obj: T): Array[Byte]
 
-  def parseBytes(bytes: Array[Byte]): Try[TFamily] = Try {
+  final def toBytes(obj: T): Array[Byte] = serializeBody(obj)
+
+  final def parseBytes(bytes: Array[Byte]): Try[TFamily] = Try {
     parseBody(bytes, 0)._1
   }
 
-  def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
-  def serializeBody(obj: T): Array[Byte] = toBytes(obj)
+  final def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = {
+    val r = Serializer.startReader(bytes, pos)
+    parseBody(r) -> r.consumed
+  }
+
+  final def serializeBody(obj: T): Array[Byte] = {
+    val w = Serializer.startWriter()
+    serializeBody(obj, w)
+    w.toBytes
+  }
+
+  def parseBody(r: ByteReader): TFamily
+  def serializeBody(obj: T, w: ByteWriter): Unit
 
   def error(msg: String) = throw new SerializerException(msg, None)
 }
@@ -56,10 +68,22 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T] {
 
 trait SigmaSerializerCompanion[TFamily] {
   type Tag
-  val table: Map[Tag, SigmaSerializer[TFamily, _]]
 
-  def deserialize(bytes: Array[Byte], pos: Position): (TFamily, Consumed)
+  def getSerializer(opCode: Tag): SigmaSerializer[TFamily, _ <: TFamily]
 
-  def serialize(v: TFamily): Array[Byte]
+  final def deserialize(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = {
+    val r = Serializer.startReader(bytes, pos)
+    deserialize(r) -> r.consumed
+  }
+
+  def deserialize(r: ByteReader): TFamily
+
+  final def serialize(v: TFamily): Array[Byte] = {
+    val w = Serializer.startWriter()
+    serialize(v, w)
+    w.toBytes
+  }
+
+  def serialize(v: TFamily, w: ByteWriter): Unit
 }
 

@@ -1,25 +1,24 @@
 package sigmastate.serialization
 
-import sigmastate.SType.TypeCode
-import sigmastate.{SType, TwoArgumentsOperation}
 import sigmastate.Values.Value
-import sigmastate.serialization.ValueSerializer.{deserialize, serialize}
-import sigmastate.serialization.Serializer.{Position, Consumed}
+import sigmastate.lang.Terms._
+import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.{SType, TwoArgumentsOperation}
 
 
 case class TwoArgumentsSerializer[LIV <: SType, RIV <: SType, OV <: Value[SType]]
 (override val opCode: Byte, constructor: (Value[LIV], Value[RIV]) => Value[SType])
   extends ValueSerializer[OV] {
 
-  override def parseBody(bytes: Array[TypeCode], pos: Position): (Value[SType], Consumed) = {
-    val (firstArg, consumed) = deserialize(bytes, pos)
-    val (secondArg, consumed2) = deserialize(bytes, pos + consumed)
-
-    (constructor(firstArg.asInstanceOf[Value[LIV]], secondArg.asInstanceOf[Value[RIV]]), consumed + consumed2)
+  override def serializeBody(obj: OV, w: ByteWriter): Unit = {
+    val typedOp = obj.asInstanceOf[TwoArgumentsOperation[LIV, RIV, LIV]]
+    w.putValue(typedOp.left)
+      .putValue(typedOp.right)
   }
 
-  override def serializeBody(operation: OV): Array[TypeCode] = {
-    val typedOp = operation.asInstanceOf[TwoArgumentsOperation[LIV, RIV, LIV]]
-    serialize(typedOp.left) ++ serialize(typedOp.right)
+  override def parseBody(r: ByteReader): Value[SType] = {
+    val arg1 = r.getValue().asValue[LIV]
+    val arg2 = r.getValue().asValue[RIV]
+    constructor(arg1, arg2)
   }
 }

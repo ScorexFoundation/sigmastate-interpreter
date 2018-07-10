@@ -4,40 +4,37 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.Serializer.Position
-import sigmastate.serialization.{Serializer, ValueSerializer}
+import sigmastate.serialization.ValueSerializer
+import sigmastate.utils.{ByteReader, ByteWriter}
+
 
 case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.type]]
 (override val opCode: Byte,
  constructor: (Value[S1], Value[S2]) => Value[SBoolean.type]) extends ValueSerializer[R] {
 
-  override def parseBody(bytes: Array[Byte], pos: Position): (R, Position) = {
-    val r = Serializer.startReader(bytes, pos)
-    if (bytes(pos) == ConcreteCollectionBooleanConstantCode) {
-      val _ = r.getByte() // skip collection op code
-      val booleans = r.getBits(2)
-      val firstArg = BooleanConstant.fromBoolean(booleans(0)).asValue[S1]
-      val secondArg = BooleanConstant.fromBoolean(booleans(1)).asValue[S2]
-      (constructor(firstArg, secondArg).asInstanceOf[R], r.consumed)
-    } else {
-      val firstArg = r.getValue().asValue[S1]
-      val secondArg = r.getValue().asValue[S2]
-      (constructor(firstArg, secondArg).asInstanceOf[R], r.consumed)
-    }
-  }
-
-  override def serializeBody(obj: R): Array[Byte] = {
-    val rel = obj.asInstanceOf[Relation[S1, S2]]
-    val w = Serializer.startWriter()
-    (rel.left, rel.right) match {
+  override def serializeBody(obj: R, w: ByteWriter): Unit = {
+    val typedRel = obj.asInstanceOf[Relation[S1, S2]]
+    (typedRel.left, typedRel.right) match {
       case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
         w.put(ConcreteCollectionBooleanConstantCode)
         w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
       case _ =>
-        w.putValue(rel.left)
-        w.putValue(rel.right)
+        w.putValue(typedRel.left)
+        w.putValue(typedRel.right)
     }
-    w.toBytes
   }
 
+  override def parseBody(r: ByteReader): R = {
+    if (r.peekByte() == ConcreteCollectionBooleanConstantCode) {
+      val _ = r.getByte() // skip collection op code
+      val booleans = r.getBits(2)
+      val firstArg = BooleanConstant.fromBoolean(booleans(0)).asValue[S1]
+      val secondArg = BooleanConstant.fromBoolean(booleans(1)).asValue[S2]
+      constructor(firstArg, secondArg).asInstanceOf[R]
+    } else {
+      val firstArg = r.getValue().asValue[S1]
+      val secondArg = r.getValue().asValue[S2]
+      constructor(firstArg, secondArg).asInstanceOf[R]
+    }
+  }
 }

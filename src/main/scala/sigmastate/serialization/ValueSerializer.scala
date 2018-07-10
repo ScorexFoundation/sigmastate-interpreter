@@ -2,22 +2,18 @@ package sigmastate.serialization
 
 import sigmastate._
 import Values._
-
-import scala.util.Try
 import OpCodes._
 import sigmastate.SCollection.SByteArray
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{QuadrupelSerializer, Relation2Serializer, Relation3Serializer}
+import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utxo._
 import sigmastate.utils.Extensions._
-import Serializer.Consumed
 import org.ergoplatform._
 import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
-
-  import ValueSerializer._
 
   override val companion = ValueSerializer
 
@@ -25,18 +21,14 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
     * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
   val opCode: OpCode
 
-  override def toBytes(obj: V): Array[Byte] = serialize(obj)
-
-  override def parseBytes(bytes: Array[Byte]): Try[V] = Try {
-    deserialize(bytes).asInstanceOf[V]
-  }
 }
 
 object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   type Tag = OpCode
 
-  val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
-
+  private val serializers = SparseArrayContainer.buildFrom(Seq[ValueSerializer[_ <: Value[SType]]](
+    TupleSerializer,
+    SelectFieldSerializer,
     Relation2Serializer(GtCode, DeserializationSigmaBuilder.GT[SType]),
     Relation2Serializer(GeCode, DeserializationSigmaBuilder.GE[SType]),
     Relation2Serializer(LtCode, DeserializationSigmaBuilder.LT[SType]),
@@ -44,10 +36,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(EqCode, DeserializationSigmaBuilder.EQ[SType]),
     Relation2Serializer(NeqCode, DeserializationSigmaBuilder.NEQ[SType]),
     Relation3Serializer(IsMemberCode, IsMember.apply),
-    QuadrupelSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
-
+    QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
     TwoArgumentsSerializer(XorCode, Xor.apply),
-//    TwoArgumentsSerializer(AppendBytesCode, AppendBytes.apply),
     TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
     TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
     TwoArgumentsSerializer(MinusCode, DeserializationSigmaBuilder.Minus[SNumericType]),
@@ -55,30 +45,21 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(DivisionCode, DeserializationSigmaBuilder.Divide[SNumericType]),
     TwoArgumentsSerializer(ModuloCode, DeserializationSigmaBuilder.Modulo[SNumericType]),
     TwoArgumentsSerializer(PlusCode, DeserializationSigmaBuilder.Plus[SNumericType]),
-
     ProveDiffieHellmanTupleSerializer,
     ProveDlogSerializer,
-//    ConstantSerializer(SByte),
-//    ConstantSerializer(SInt),
-//    ConstantSerializer(SBigInt),
-//    ConstantSerializer(SBox),
-//    ConstantSerializer(SAvlTree),
-//    ConstantSerializer(SGroupElement),
-    CaseObjectSerialization(SBoolean.typeCode, TrueLeaf),
-    CaseObjectSerialization(SBoolean.typeCode, FalseLeaf),
-    ConcreteCollectionSerializer,
-    TupleSerializer,
-    SelectFieldSerializer,
-    ConcreteCollectionBooleanConstantSerializer,
-    LogicalTransformerSerializer(AndCode, AND.apply),
-    LogicalTransformerSerializer(OrCode, OR.apply),
-    TaggedVariableSerializer,
+    CaseObjectSerialization(TrueCode, TrueLeaf),
+    CaseObjectSerialization(FalseCode, FalseLeaf),
     CaseObjectSerialization(HeightCode, Height),
     CaseObjectSerialization(InputsCode, Inputs),
     CaseObjectSerialization(OutputsCode, Outputs),
     CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),
     CaseObjectSerialization(SelfCode, Self),
     CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
+    ConcreteCollectionSerializer,
+    ConcreteCollectionBooleanConstantSerializer,
+    LogicalTransformerSerializer(AndCode, AND.apply),
+    LogicalTransformerSerializer(OrCode, OR.apply),
+    TaggedVariableSerializer,
     MapCollectionSerializer,
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
     BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
@@ -94,15 +75,15 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, CalcSha256.apply),
-    UpcastSerializer,
     DeserializeContextSerializer,
     DeserializeRegisterSerializer,
     ExtractRegisterAsSerializer,
     WhereSerializer,
     SliceSerializer,
     ByIndexSerializer,
-    AppendSerializer
-  ).map(s => (s.opCode, s)).toMap
+    AppendSerializer,
+    UpcastSerializer,
+  ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
     case upcast: Upcast[SType, _]@unchecked =>
@@ -110,33 +91,31 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     case _ => v
   }
 
-  def serialize(v: Value[SType]): Array[Byte] = serializable(v) match {
-    case c: Constant[SType] =>
-      val w = Serializer.startWriter()
-      ConstantSerializer.serialize(c, w)
-      w.toBytes
-    case _ =>
-      val opCode = v.opCode
-      table.get(opCode) match {
-        case Some(serFn: SigmaSerializer[Value[SType], v.type]@unchecked) =>
-          opCode +: serFn.serializeBody(v)
-        case None =>
-          sys.error(s"Cannot find serializer for Value with opCode=$opCode: $v")
-      }
+  override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
+    val serializer = serializers.get(opCode)
+    if (serializer == null) sys.error(s"Cannot find serializer for Value with opCode=$opCode")
+    serializer
   }
 
-  def deserialize(bytes: Array[Byte], pos: Int): (Value[_ <: SType], Consumed) = {
-    val c = bytes(pos)
-    if (c.toUByte <= LastConstantCode) {
+  override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
+    case c: Constant[SType] =>
+      ConstantSerializer.serialize(c, w)
+    case _ =>
+      val opCode = v.opCode
+      w.put(opCode)
+      // help compiler recognize the type
+      getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serializeBody(v, w)
+  }
+
+  override def deserialize(r: ByteReader): Value[SType] = {
+    val firstByte = r.peekByte()
+    if (firstByte.toUByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
-      val r = Serializer.startReader(bytes, pos)
-      val c = ConstantSerializer.deserialize(r)
-      (c, r.consumed)
+      ConstantSerializer.deserialize(r)
     }
     else {
-      val handler = table(c)
-      val (v: Value[SType], consumed) = handler.parseBody(bytes, pos + 1)
-      (v, consumed + 1)
+      val opCode = r.getByte()
+      getSerializer(opCode).parseBody(r)
     }
   }
 
