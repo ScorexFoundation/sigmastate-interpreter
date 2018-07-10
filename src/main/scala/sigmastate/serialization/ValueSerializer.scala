@@ -2,7 +2,6 @@ package sigmastate.serialization
 
 import sigmastate._
 import Values._
-
 import OpCodes._
 import sigmastate.SCollection.SByteArray
 import sigmastate.serialization.transformers._
@@ -11,7 +10,7 @@ import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 import org.ergoplatform._
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -27,7 +26,7 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
 object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   type Tag = OpCode
 
-  val table: Map[OpCode, ValueSerializer[_ <: Value[SType]]] = Seq[ValueSerializer[_ <: Value[SType]]](
+  private val serializers = SparseArrayContainer.buildFrom(Seq[ValueSerializer[_ <: Value[SType]]](
     TupleSerializer,
     SelectFieldSerializer,
     Relation2Serializer(GtCode, DeserializationSigmaBuilder.GT[SType]),
@@ -84,7 +83,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ByIndexSerializer,
     AppendSerializer,
     UpcastSerializer,
-  ).map(s => (s.opCode, s)).toMap
+  ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
     case upcast: Upcast[SType, _]@unchecked =>
@@ -92,18 +91,20 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     case _ => v
   }
 
+  override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
+    val serializer = serializers.get(opCode)
+    if (serializer == null) sys.error(s"Cannot find serializer for Value with opCode=$opCode")
+    serializer
+  }
+
   override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
       ConstantSerializer.serialize(c, w)
     case _ =>
       val opCode = v.opCode
-      table.get(opCode) match {
-        case Some(serFn: SigmaSerializer[Value[SType], v.type]@unchecked) =>
-          w.put(opCode)
-          serFn.serializeBody(v, w)
-        case None =>
-          sys.error(s"Cannot find serializer for Value with opCode=$opCode: $v")
-      }
+      w.put(opCode)
+      // help compiler recognize the type
+      getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serializeBody(v, w)
   }
 
   override def deserialize(r: ByteReader): Value[SType] = {
@@ -114,7 +115,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
     else {
       val opCode = r.getByte()
-      table(opCode).parseBody(r)
+      getSerializer(opCode).parseBody(r)
     }
   }
 

@@ -14,6 +14,7 @@ import sigmastate.Values._
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
 trait ValueGenerators extends TypeGenerators {
@@ -220,4 +221,25 @@ trait ValueGenerators extends TypeGenerators {
     inputs <- Gen.listOf(inputGen)
     outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
   } yield ErgoLikeTransaction(inputs.toIndexedSeq, outputCandidates.toIndexedSeq)
+
+  // distinct list of elements from a given generator
+  // with a maximum number of elements to discard
+  // source https://gist.github.com/etorreborre/d0616e704ed85d7276eb12b025df8ab0
+  def distinctListOfGen[T](gen: Gen[T], maxDiscarded: Int = 1000): Gen[List[T]] = {
+    val seen: ListBuffer[T] = new ListBuffer[T]
+    var discarded = 0
+
+    Gen.sized { size =>
+      if (size == seen.size) seen.toList
+      else {
+        while (seen.size <= size && discarded < maxDiscarded)
+          gen.sample match {
+            case Some(t) if !seen.contains(t) =>
+              seen.+=:(t)
+            case _ => discarded += 1
+          }
+        seen.toList
+      }
+    }
+  }
 }

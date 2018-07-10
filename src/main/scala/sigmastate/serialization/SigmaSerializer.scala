@@ -68,7 +68,8 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T] {
 
 trait SigmaSerializerCompanion[TFamily] {
   type Tag
-  val table: Map[Tag, SigmaSerializer[TFamily, _]]
+
+  def getSerializer(opCode: Tag): SigmaSerializer[TFamily, _ <: TFamily]
 
   final def deserialize(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = {
     val r = Serializer.startReader(bytes, pos)
