@@ -4,20 +4,20 @@ import sigmastate.SType
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 import sigmastate.utxo.Fold
 
 object FoldSerializer extends ValueSerializer[Fold[SType]] {
   override val opCode: OpCode = OpCodes.FoldCode
 
-  override def serializeBody(obj: Fold[SType], w: ByteWriter): Unit =
+  override def serializeBody(obj: Fold[SType], w: ByteWriterSigmaValues): Unit =
     w.putValue(obj.input)
       .put     (obj.id)
       .putValue(obj.zero)
       .put     (obj.accId)
       .putValue(obj.foldOp)
 
-  override def parseBody(r: ByteReader): Fold[SType] = {
+  override def parseBody(r: ByteReaderSigmaValues): Fold[SType] = {
     val input  = r.getValue()
     val id     = r.getByte()
     val zero   = r.getValue()

@@ -10,7 +10,7 @@ import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 import org.ergoplatform._
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues, SparseArrayContainer}
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -97,7 +97,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     serializer
   }
 
-  override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
+  override def serialize(v: Value[SType], w: ByteWriterSigmaValues): Unit = serializable(v) match {
     case c: Constant[SType] =>
       ConstantSerializer.serialize(c, w)
     case _ =>
@@ -107,7 +107,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serializeBody(v, w)
   }
 
-  override def deserialize(r: ByteReader): Value[SType] = {
+  override def deserialize(r: ByteReaderSigmaValues): Value[SType] = {
     val firstByte = r.peekByte()
     if (firstByte.toUByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant

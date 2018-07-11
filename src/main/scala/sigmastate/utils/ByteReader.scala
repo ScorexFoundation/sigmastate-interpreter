@@ -3,11 +3,8 @@ package sigmastate.utils
 import java.nio.ByteBuffer
 import java.util._
 
-import sigmastate.Values.SValue
-import sigmastate.SType
-import sigmastate.utils.Extensions._
-import sigmastate.serialization.{TypeSerializer, ValueSerializer}
 import sigmastate.utils.ByteBufferReader.decodeZigZagLong
+import sigmastate.utils.Extensions._
 
 trait ByteReader {
 
@@ -64,9 +61,7 @@ trait ByteReader {
     */
   def getBits(size: Int): Array[Boolean]
   def getOption[T](getValue: => T): Option[T]
-  def getType(): SType
-  def getValue(): SValue
-  def mark(): ByteReader
+  def mark(): this.type
   def consumed: Int
   def position: Int
   def position_=(p: Int)
@@ -152,11 +147,9 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   }
 
   @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
-  @inline override def getType(): SType = TypeSerializer.deserialize(this)
-  @inline override def getValue(): SValue = ValueSerializer.deserialize(this)
 
   private var _mark: Int = _
-  @inline override def mark(): ByteReader = {
+  @inline override def mark(): this.type  = {
     _mark = buf.position()
     this
   }

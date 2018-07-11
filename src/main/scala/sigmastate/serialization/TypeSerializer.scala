@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate._
-import sigmastate.utils.{ByteWriter, ByteReader}
+import sigmastate.utils.{ByteWriterSigmaValues, ByteReaderSigmaValues}
 
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer extends ByteBufferSerializer[SType] {
@@ -16,7 +16,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     else
       embeddableIdToType(code)
 
-  override def serialize(tpe: SType, w: ByteWriter) = tpe match {
+  override def serialize(tpe: SType, w: ByteWriterSigmaValues) = tpe match {
     case p: SEmbeddable => w.put(p.typeCode)
     case SAny => w.put(SAny.typeCode)
     case SUnit => w.put(SUnit.typeCode)
@@ -96,7 +96,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     }
   }
 
-  override def deserialize(r: ByteReader): SType = {
+  override def deserialize(r: ByteReaderSigmaValues): SType = {
     val c = r.getUByte()
     if (c <= 0)
       sys.error(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
@@ -168,13 +168,13 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     tpe
   }
 
-  private def getArgType(r: ByteReader, primId: Int) =
+  private def getArgType(r: ByteReaderSigmaValues, primId: Int) =
     if (primId == 0)
       deserialize(r)
     else
       getEmbeddableType(primId)
 
-  private def serializeTuple(t: STuple, w: ByteWriter) = {
+  private def serializeTuple(t: STuple, w: ByteWriterSigmaValues) = {
     assert(t.items.length <= 255)
     w.put(STuple.TupleTypeCode)
     w.put(t.items.length.toByte)

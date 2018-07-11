@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 
 class UnsignedInput(val boxId: BoxId) {
@@ -22,11 +22,11 @@ object UnsignedInput {
   object serializer extends Serializer[UnsignedInput, UnsignedInput] {
 
     @inline
-    override def serializeBody(obj: UnsignedInput, w: ByteWriter): Unit =
+    override def serializeBody(obj: UnsignedInput, w: ByteWriterSigmaValues): Unit =
       w.putBytes(obj.boxId)
 
     @inline
-    override def parseBody(r: ByteReader): UnsignedInput =
+    override def parseBody(r: ByteReaderSigmaValues): UnsignedInput =
       new UnsignedInput(ADKey @@ r.getBytes(BoxId.size))
   }
 }
@@ -38,12 +38,12 @@ case class Input(override val boxId: BoxId, spendingProof: ProverResult)
 object Input {
   object serializer extends Serializer[Input, Input] {
 
-    override def serializeBody(obj: Input, w: ByteWriter): Unit = {
+    override def serializeBody(obj: Input, w: ByteWriterSigmaValues): Unit = {
       w.putBytes(obj.boxId)
       ProverResult.serializer.serializeBody(obj.spendingProof, w)
     }
 
-    override def parseBody(r: ByteReader): Input = {
+    override def parseBody(r: ByteReaderSigmaValues): Input = {
       val boxId = r.getBytes(BoxId.size)
       val spendingProof = ProverResult.serializer.parseBody(r)
       Input(ADKey @@ boxId, spendingProof)
