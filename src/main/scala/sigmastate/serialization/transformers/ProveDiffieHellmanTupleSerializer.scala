@@ -5,13 +5,13 @@ import sigmastate.SGroupElement
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
 
 object ProveDiffieHellmanTupleSerializer extends ValueSerializer[ProveDiffieHellmanTuple] {
 
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 
-  override def serializeBody(obj: ProveDiffieHellmanTuple, w: ByteWriter): Unit = {
+  override def serializeBody(obj: ProveDiffieHellmanTuple, w: ByteWriterSigmaValues): Unit = {
     w.putValue(obj.gv)
     w.putValue(obj.hv)
     w.putValue(obj.uv)

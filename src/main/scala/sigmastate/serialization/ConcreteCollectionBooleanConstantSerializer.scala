@@ -3,14 +3,14 @@ package sigmastate.serialization
 import sigmastate.SBoolean
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
 
 object ConcreteCollectionBooleanConstantSerializer
   extends ValueSerializer[ConcreteCollection[SBoolean.type]] {
 
   override val opCode: Byte = ConcreteCollectionBooleanConstantCode
 
-  override def serializeBody(cc: ConcreteCollection[SBoolean.type], w: ByteWriter): Unit = {
+  override def serializeBody(cc: ConcreteCollection[SBoolean.type], w: ByteWriterSigmaValues): Unit = {
     val ccSize = cc.items.size
     require(ccSize <= Short.MaxValue, s"max collection size is Short.MaxValue = ${Short.MaxValue}")
     val size = ccSize.toShort

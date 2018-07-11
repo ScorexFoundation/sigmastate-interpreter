@@ -3,7 +3,7 @@ package sigmastate.interpreter
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
 
 /**
   * Variables to be put into context
@@ -22,7 +22,7 @@ object ContextExtension {
 
   object serializer extends Serializer[ContextExtension, ContextExtension] {
 
-    override def serializeBody(obj: ContextExtension, w: ByteWriter): Unit = {
+    override def serializeBody(obj: ContextExtension, w: ByteWriterSigmaValues): Unit = {
       w.put(obj.values.size.toByte)
       obj.values.foreach{ case (id, v) => w.put(id).putValue(v) }
     }

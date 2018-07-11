@@ -28,7 +28,7 @@ trait Serializer[TFamily, T <: TFamily] {
   }
 
   def parseBody(r: ByteReader): TFamily
-  def serializeBody(obj: T, w: ByteWriter): Unit
+  def serializeBody(obj: T, w: ByteWriterSigmaValues): Unit
 
   def error(msg: String) = throw new SerializerException(msg, None)
 }
@@ -55,9 +55,9 @@ object Serializer {
     * w.putLong(l)
     * val res = w.toBytes
     * res */
-  def startWriter(): ByteWriter = {
+  def startWriter(): ByteWriterSigmaValues = {
     val b = new ByteArrayBuilder()
-    val w = new ByteArrayWriter(b)
+    val w = new ByteArrayWriterSigmaValues(b)
     w
   }
 }
@@ -84,6 +84,6 @@ trait SigmaSerializerCompanion[TFamily] {
     w.toBytes
   }
 
-  def serialize(v: TFamily, w: ByteWriter): Unit
+  def serialize(v: TFamily, w: ByteWriterSigmaValues): Unit
 }
 

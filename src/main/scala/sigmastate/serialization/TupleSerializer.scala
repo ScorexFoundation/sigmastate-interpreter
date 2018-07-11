@@ -2,13 +2,13 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
 
 object TupleSerializer extends ValueSerializer[Tuple] {
 
   override val opCode: Byte = TupleCode
 
-  override def serializeBody(obj: Tuple, w: ByteWriter): Unit = {
+  override def serializeBody(obj: Tuple, w: ByteWriterSigmaValues): Unit = {
     val length = obj.length
     require(length <= Byte.MaxValue, s"max tuple size is Byte.MaxValue = ${Byte.MaxValue}")
     w.put(length.toByte)

@@ -10,7 +10,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -61,7 +61,7 @@ object ErgoBoxCandidate {
 
   object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
-    override def serializeBody(obj: ErgoBoxCandidate, w: ByteWriter): Unit = {
+    override def serializeBody(obj: ErgoBoxCandidate, w: ByteWriterSigmaValues): Unit = {
       w.putULong(obj.value)
       w.putValue(obj.proposition)
       w.put(obj.additionalTokens.size.toByte)

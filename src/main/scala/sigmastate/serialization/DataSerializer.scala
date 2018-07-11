@@ -7,7 +7,7 @@ import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import scorex.crypto.authds.ADDigest
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.EvaluatedValue
-import sigmastate.utils.{ByteWriter, ByteReader}
+import sigmastate.utils.{ByteWriterSigmaValues, ByteReader}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.interpreter.CryptoConstants
@@ -21,7 +21,7 @@ object DataSerializer {
   private val curve = CryptoConstants.dlogGroup
   private val LengthSize: Int = 2
 
-  def serialize[T <: SType](v: T#WrappedType, tpe: T, w: ByteWriter): Unit = tpe match {
+  def serialize[T <: SType](v: T#WrappedType, tpe: T, w: ByteWriterSigmaValues): Unit = tpe match {
     case SUnit => // don't need to save anything
     case SBoolean => w.putBoolean(v.asInstanceOf[Boolean])
     case SByte => w.put(v.asInstanceOf[Byte])

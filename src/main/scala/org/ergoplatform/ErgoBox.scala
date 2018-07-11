@@ -10,7 +10,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -136,7 +136,7 @@ object ErgoBox {
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
 
-    override def serializeBody(obj: ErgoBox, w: ByteWriter): Unit = {
+    override def serializeBody(obj: ErgoBox, w: ByteWriterSigmaValues): Unit = {
       ErgoBoxCandidate.serializer.serializeBody(obj, w)
       val txIdSize = obj.transactionId.length
       assert(txIdSize == ErgoLikeTransaction.TransactionIdSize, s"Invalid transaction id size: $txIdSize (expected ${ErgoLikeTransaction.TransactionIdSize})")

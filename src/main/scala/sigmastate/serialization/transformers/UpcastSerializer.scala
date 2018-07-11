@@ -4,12 +4,12 @@ import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
 
 object UpcastSerializer extends ValueSerializer[Upcast[SNumericType, SNumericType]] {
   override val opCode: OpCode = OpCodes.Upcast
 
-  override def serializeBody(obj: Upcast[SNumericType, SNumericType], w: ByteWriter): Unit =
+  override def serializeBody(obj: Upcast[SNumericType, SNumericType], w: ByteWriterSigmaValues): Unit =
     w.putValue(obj.input)
       .putType(obj.tpe)
 

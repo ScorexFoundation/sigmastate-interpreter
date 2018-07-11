@@ -6,7 +6,7 @@ import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import scapi.sigma.SigmaProtocolPrivateInput
 import scapi.sigma.DLogProtocol._
 import sigmastate._
-import sigmastate.utils.{ByteReader, ByteWriter, Helpers}
+import sigmastate.utils.{ByteReader, ByteWriterSigmaValues, Helpers}
 import sigmastate.utils.Extensions._
 import Values._
 
@@ -38,7 +38,7 @@ object ProverResult {
 
   object serializer extends Serializer[ProverResult, ProverResult] {
 
-    override def serializeBody(obj: ProverResult, w: ByteWriter): Unit = {
+    override def serializeBody(obj: ProverResult, w: ByteWriterSigmaValues): Unit = {
       w.putUShort(obj.proof.length.toShort)
       w.putBytes(obj.proof)
       ContextExtension.serializer.serializeBody(obj.extension, w)

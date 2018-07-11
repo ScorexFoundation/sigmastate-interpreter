@@ -3,7 +3,7 @@ package sigmastate.serialization.trees
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
 import sigmastate.{Quadruple, _}
 
 case class QuadrupleSerializer[S1 <: SType, S2 <: SType, S3 <: SType, S4 <: SType]
@@ -11,7 +11,7 @@ case class QuadrupleSerializer[S1 <: SType, S2 <: SType, S3 <: SType, S4 <: STyp
  cons: (Value[S1], Value[S2], Value[S3]) => Quadruple[S1, S2, S3, S4])
   extends ValueSerializer[Quadruple[S1, S2, S3, S4]] {
 
-  override def serializeBody(obj: Quadruple[S1, S2, S3, S4], w: ByteWriter): Unit = {
+  override def serializeBody(obj: Quadruple[S1, S2, S3, S4], w: ByteWriterSigmaValues): Unit = {
     w.putValue(obj.first)
     w.putValue(obj.second)
     w.putValue(obj.third)
