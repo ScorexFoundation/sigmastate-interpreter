@@ -7,6 +7,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.BooleanTransformer
 import sigmastate.{SBoolean, SCollection, SType}
+import sigmastate.utils.Extensions._
 
 case class BooleanTransformerSerializer[T <: SType, R <: BooleanTransformer[T]]
 (code: OpCode, f: (Value[SCollection[T]], Byte, Value[SBoolean.type]) => R) extends ValueSerializer[R] {

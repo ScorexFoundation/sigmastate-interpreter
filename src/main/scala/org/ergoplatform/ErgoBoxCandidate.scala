@@ -12,6 +12,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utils.Extensions._
 
 import scala.runtime.ScalaRunTime
 

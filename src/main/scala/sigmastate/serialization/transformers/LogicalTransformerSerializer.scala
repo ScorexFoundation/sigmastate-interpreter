@@ -7,6 +7,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.Transformer
 import sigmastate.{SBoolean, SCollection}
+import sigmastate.utils.Extensions._
 
 case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SBoolean.type]
 (code: OpCode,

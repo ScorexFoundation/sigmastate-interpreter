@@ -5,6 +5,7 @@ import sigmastate.SGroupElement
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.Extensions._
 
 object ProveDlogSerializer extends ValueSerializer[ProveDlog] {
 

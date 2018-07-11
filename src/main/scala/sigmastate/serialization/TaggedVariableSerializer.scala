@@ -4,6 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.Extensions._
 
 object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: SType]] {
 

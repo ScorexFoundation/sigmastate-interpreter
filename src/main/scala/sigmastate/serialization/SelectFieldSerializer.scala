@@ -5,6 +5,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.SelectField
+import sigmastate.utils.Extensions._
 
 object SelectFieldSerializer extends ValueSerializer[SelectField] {
 

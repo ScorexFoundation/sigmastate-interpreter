@@ -4,6 +4,7 @@ import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.Extensions._
 
 /**
   * Variables to be put into context

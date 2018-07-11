@@ -6,6 +6,7 @@ import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.ByIndex
 import sigmastate.{SInt, SType}
+import sigmastate.utils.Extensions._
 
 object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
 

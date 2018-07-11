@@ -7,6 +7,7 @@ import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.MapCollection
 import sigmastate.{SCollection, SType}
+import sigmastate.utils.Extensions._
 
 object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, SType]] {
 

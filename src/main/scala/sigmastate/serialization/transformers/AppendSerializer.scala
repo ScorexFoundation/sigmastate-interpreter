@@ -6,6 +6,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.Append
+import sigmastate.utils.Extensions._
 
 object AppendSerializer extends ValueSerializer[Append[SType]] {
 

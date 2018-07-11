@@ -5,6 +5,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.Extensions._
 
 object UpcastSerializer extends ValueSerializer[Upcast[SNumericType, SNumericType]] {
   override val opCode: OpCode = OpCodes.Upcast

@@ -64,8 +64,6 @@ trait ByteReader {
     */
   def getBits(size: Int): Array[Boolean]
   def getOption[T](getValue: => T): Option[T]
-  def getType(): SType
-  def getValue(): SValue
   def mark(): ByteReader
   def consumed: Int
   def position: Int
@@ -152,8 +150,6 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   }
 
   @inline override def getOption[T](getValue: => T): Option[T] = buf.getOption(getValue)
-  @inline override def getType(): SType = TypeSerializer.deserialize(this)
-  @inline override def getValue(): SValue = ValueSerializer.deserialize(this)
 
   private var _mark: Int = _
   @inline override def mark(): ByteReader = {
