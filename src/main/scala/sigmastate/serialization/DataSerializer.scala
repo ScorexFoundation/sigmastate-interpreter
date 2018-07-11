@@ -3,13 +3,10 @@ package sigmastate.serialization
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import scorex.crypto.authds.ADDigest
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.EvaluatedValue
 import sigmastate.utils.{ByteWriter, ByteReader}
 import sigmastate._
-import sigmastate.lang.Terms._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import scala.collection.mutable
@@ -41,12 +38,7 @@ object DataSerializer {
       ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
 
     case SAvlTree =>
-      val data = v.asInstanceOf[AvlTreeData]
-      serialize[SByteArray](data.startingDigest, SByteArray, w)
-      w.putUInt(data.keyLength)
-      w.putOption(data.valueLengthOpt)(_.putUInt(_))
-      w.putOption(data.maxNumOperations)(_.putUInt(_))
-      w.putOption(data.maxDeletes)(_.putUInt(_))
+      AvlTreeData.serializer.serializeBody(v.asInstanceOf[AvlTreeData], w)
 
     case tCol: SCollectionType[a] =>
       val arr = v.asInstanceOf[tCol.WrappedType]
@@ -103,13 +95,7 @@ object DataSerializer {
     case SBox =>
       ErgoBox.serializer.parseBody(r)
     case SAvlTree =>
-      val startingDigest = deserialize[SByteArray](SByteArray, r)
-      val keyLength = r.getUInt().toInt
-      val valueLengthOpt = r.getOption(r.getUInt().toInt)
-      val maxNumOperations = r.getOption(r.getUInt().toInt)
-      val maxDeletes = r.getOption(r.getUInt().toInt)
-      val data = AvlTreeData(ADDigest @@ startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
-      data
+      AvlTreeData.serializer.parseBody(r)
     case tCol: SCollectionType[a] =>
       val len = r.getUShort()
       val arr = deserializeArray(len, tCol.elemType, r)
