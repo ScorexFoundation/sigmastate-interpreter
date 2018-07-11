@@ -5,7 +5,7 @@ import sigmastate.SGroupElement
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 object ProveDiffieHellmanTupleSerializer extends ValueSerializer[ProveDiffieHellmanTuple] {
 
@@ -18,7 +18,7 @@ object ProveDiffieHellmanTupleSerializer extends ValueSerializer[ProveDiffieHell
     w.putValue(obj.vv)
   }
 
-  override def parseBody(r: ByteReader): ProveDiffieHellmanTuple = {
+  override def parseBody(r: ByteReaderSigmaValues): ProveDiffieHellmanTuple = {
     val gv = r.getValue().asValue[SGroupElement.type]
     val hv = r.getValue().asValue[SGroupElement.type]
     val uv = r.getValue().asValue[SGroupElement.type]

@@ -4,7 +4,7 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.SGroupElement
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 object ProveDlogSerializer extends ValueSerializer[ProveDlog] {
 
@@ -13,6 +13,6 @@ object ProveDlogSerializer extends ValueSerializer[ProveDlog] {
   override def serializeBody(obj: ProveDlog, w: ByteWriterSigmaValues): Unit =
     w.putValue(obj.value)
 
-  override def parseBody(r: ByteReader): ProveDlog =
+  override def parseBody(r: ByteReaderSigmaValues): ProveDlog =
     ProveDlog(r.getValue().asValue[SGroupElement.type])
 }

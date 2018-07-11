@@ -4,7 +4,7 @@ import sigmastate.SType
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 import sigmastate.utxo.Fold
 
 object FoldSerializer extends ValueSerializer[Fold[SType]] {
@@ -17,7 +17,7 @@ object FoldSerializer extends ValueSerializer[Fold[SType]] {
       .put     (obj.accId)
       .putValue(obj.foldOp)
 
-  override def parseBody(r: ByteReader): Fold[SType] = {
+  override def parseBody(r: ByteReaderSigmaValues): Fold[SType] = {
     val input  = r.getValue()
     val id     = r.getByte()
     val zero   = r.getValue()

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 import sigmastate.utxo.ExtractRegisterAs
 import sigmastate.{SBox, SType}
 
@@ -17,7 +17,7 @@ object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[STy
       .putOption(obj.default)((w, v) => w.putValue(v))
       .putType(obj.tpe)
 
-  override def parseBody(r: ByteReader): ExtractRegisterAs[SType] = {
+  override def parseBody(r: ByteReaderSigmaValues): ExtractRegisterAs[SType] = {
     val input = r.getValue()
     val regId = r.getByte()
     val register = ErgoBox.findRegisterByIndex(regId).get

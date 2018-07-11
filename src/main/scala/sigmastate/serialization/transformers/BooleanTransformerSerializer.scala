@@ -4,7 +4,7 @@ import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 import sigmastate.utxo.BooleanTransformer
 import sigmastate.{SBoolean, SCollection, SType}
 
@@ -18,7 +18,7 @@ case class BooleanTransformerSerializer[T <: SType, R <: BooleanTransformer[T]]
       .put(obj.id)
       .putValue(obj.condition)
 
-  override def parseBody(r: ByteReader): R = {
+  override def parseBody(r: ByteReaderSigmaValues): R = {
     val input = r.getValue().asCollection[T]
     val idByte = r.getByte()
     val condition = r.getValue().asValue[SBoolean.type]

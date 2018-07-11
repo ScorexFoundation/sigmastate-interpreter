@@ -7,7 +7,7 @@ import sigmastate.serialization.Serializer
 
 import scala.util.Try
 import org.ergoplatform.ErgoBox.BoxId
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 import scala.collection.mutable
 
@@ -138,7 +138,7 @@ object ErgoLikeTransaction {
       }
     }
 
-    override def parseBody(r: ByteReader): FlattenedTransaction = {
+    override def parseBody(r: ByteReaderSigmaValues): FlattenedTransaction = {
       val inputsCount = r.getUShort()
       val inputsBuilder = mutable.ArrayBuilder.make[Input]()
       for (_ <- 0 until inputsCount) {
@@ -158,7 +158,7 @@ object ErgoLikeTransaction {
     override def serializeBody(tx: ErgoLikeTransaction, w: ByteWriterSigmaValues): Unit =
       flattenedTxSerializer.serializeBody(FlattenedTransaction(tx), w)
 
-    override def parseBody(r: ByteReader): ErgoLikeTransaction =
+    override def parseBody(r: ByteReaderSigmaValues): ErgoLikeTransaction =
       ErgoLikeTransaction(flattenedTxSerializer.parseBody(r))
   }
 }

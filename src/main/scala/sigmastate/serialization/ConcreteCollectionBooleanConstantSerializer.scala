@@ -3,7 +3,7 @@ package sigmastate.serialization
 import sigmastate.SBoolean
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 object ConcreteCollectionBooleanConstantSerializer
   extends ValueSerializer[ConcreteCollection[SBoolean.type]] {
@@ -22,7 +22,7 @@ object ConcreteCollectionBooleanConstantSerializer
       }.toArray)
   }
 
-  override def parseBody(r: ByteReader): ConcreteCollection[SBoolean.type] = {
+  override def parseBody(r: ByteReaderSigmaValues): ConcreteCollection[SBoolean.type] = {
     val size = r.getUShort()
     val booleanConstants = r.getBits(size).map(v => BooleanConstant.fromBoolean(v))
     ConcreteCollection(booleanConstants, SBoolean)

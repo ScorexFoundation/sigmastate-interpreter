@@ -4,7 +4,7 @@ import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 object UpcastSerializer extends ValueSerializer[Upcast[SNumericType, SNumericType]] {
   override val opCode: OpCode = OpCodes.Upcast
@@ -13,7 +13,7 @@ object UpcastSerializer extends ValueSerializer[Upcast[SNumericType, SNumericTyp
     w.putValue(obj.input)
       .putType(obj.tpe)
 
-  override def parseBody(r: ByteReader): Upcast[SNumericType, SNumericType] = {
+  override def parseBody(r: ByteReaderSigmaValues): Upcast[SNumericType, SNumericType] = {
     val input = r.getValue().asNumValue
     val tpe = r.getType().asNumType
     Upcast(input, tpe)

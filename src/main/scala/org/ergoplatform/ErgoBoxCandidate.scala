@@ -10,7 +10,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -89,7 +89,7 @@ object ErgoBoxCandidate {
       }
     }
 
-    override def parseBody(r: ByteReader): ErgoBoxCandidate = {
+    override def parseBody(r: ByteReaderSigmaValues): ErgoBoxCandidate = {
       val value = r.getULong()
       val prop = r.getValue().asBoolValue
       val addTokensCount = r.getByte()

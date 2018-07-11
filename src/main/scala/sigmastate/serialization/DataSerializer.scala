@@ -7,7 +7,7 @@ import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import scorex.crypto.authds.ADDigest
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.EvaluatedValue
-import sigmastate.utils.{ByteWriterSigmaValues, ByteReader}
+import sigmastate.utils.{ByteWriterSigmaValues, ByteReaderSigmaValues}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.interpreter.CryptoConstants
@@ -74,7 +74,7 @@ object DataSerializer {
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
 
-  def deserialize[T <: SType](tpe: T, r: ByteReader): (T#WrappedType) = (tpe match {
+  def deserialize[T <: SType](tpe: T, r: ByteReaderSigmaValues): (T#WrappedType) = (tpe match {
     case SUnit => ()
     case SBoolean => r.getUByte() != 0
     case SByte => r.getByte()
@@ -122,7 +122,7 @@ object DataSerializer {
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
 
-  def deserializeArray[T <: SType](len: Int, tpe: T, r: ByteReader): Array[T#WrappedType] =
+  def deserializeArray[T <: SType](len: Int, tpe: T, r: ByteReaderSigmaValues): Array[T#WrappedType] =
     tpe match {
       case SBoolean =>
         r.getBits(len).asInstanceOf[Array[T#WrappedType]]

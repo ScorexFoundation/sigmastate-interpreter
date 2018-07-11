@@ -3,7 +3,7 @@ package sigmastate.interpreter
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 /**
   * Variables to be put into context
@@ -27,7 +27,7 @@ object ContextExtension {
       obj.values.foreach{ case (id, v) => w.put(id).putValue(v) }
     }
 
-    override def parseBody(r: ByteReader): ContextExtension = {
+    override def parseBody(r: ByteReaderSigmaValues): ContextExtension = {
       val extSize = r.getByte()
       val ext = (0 until extSize)
         .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))

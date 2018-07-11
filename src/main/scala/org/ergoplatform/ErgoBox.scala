@@ -10,7 +10,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -144,7 +144,7 @@ object ErgoBox {
       w.putUShort(obj.index)
     }
 
-    override def parseBody(r: ByteReader): ErgoBox = {
+    override def parseBody(r: ByteReaderSigmaValues): ErgoBox = {
       val ergoBoxCandidate = ErgoBoxCandidate.serializer.parseBody(r)
       val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdSize)
       val index = r.getUShort()

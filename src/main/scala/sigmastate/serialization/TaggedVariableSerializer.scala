@@ -3,7 +3,7 @@ package sigmastate.serialization
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: SType]] {
 
@@ -13,7 +13,7 @@ object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: STyp
     w.put(obj.varId)
       .putType(obj.tpe)
 
-  override def parseBody(r: ByteReader): TaggedVariable[_ <: SType] = {
+  override def parseBody(r: ByteReaderSigmaValues): TaggedVariable[_ <: SType] = {
     val varId = r.getByte()
     val tpe = r.getType()
     TaggedVariable(varId, tpe)

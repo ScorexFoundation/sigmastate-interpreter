@@ -6,7 +6,7 @@ import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import scapi.sigma.SigmaProtocolPrivateInput
 import scapi.sigma.DLogProtocol._
 import sigmastate._
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues, Helpers}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues, Helpers}
 import sigmastate.utils.Extensions._
 import Values._
 
@@ -45,7 +45,7 @@ object ProverResult {
 
     }
 
-    override def parseBody(r: ByteReader): ProverResult = {
+    override def parseBody(r: ByteReaderSigmaValues): ProverResult = {
       val sigBytesCount = r.getUShort()
       val proofBytes = r.getBytes(sigBytesCount)
       val ce = ContextExtension.serializer.parseBody(r)

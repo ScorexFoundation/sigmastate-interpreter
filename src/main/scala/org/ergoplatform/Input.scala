@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 
 class UnsignedInput(val boxId: BoxId) {
@@ -26,7 +26,7 @@ object UnsignedInput {
       w.putBytes(obj.boxId)
 
     @inline
-    override def parseBody(r: ByteReader): UnsignedInput =
+    override def parseBody(r: ByteReaderSigmaValues): UnsignedInput =
       new UnsignedInput(ADKey @@ r.getBytes(BoxId.size))
   }
 }
@@ -43,7 +43,7 @@ object Input {
       ProverResult.serializer.serializeBody(obj.spendingProof, w)
     }
 
-    override def parseBody(r: ByteReader): Input = {
+    override def parseBody(r: ByteReaderSigmaValues): Input = {
       val boxId = r.getBytes(BoxId.size)
       val spendingProof = ProverResult.serializer.parseBody(r)
       Input(ADKey @@ boxId, spendingProof)

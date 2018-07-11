@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{ByteReader, ByteWriterSigmaValues}
+import sigmastate.utils.{ByteReaderSigmaValues, ByteWriterSigmaValues}
 
 object TupleSerializer extends ValueSerializer[Tuple] {
 
@@ -15,7 +15,7 @@ object TupleSerializer extends ValueSerializer[Tuple] {
     obj.items.foreach(w.putValue)
   }
 
-  override def parseBody(r: ByteReader): Tuple = {
+  override def parseBody(r: ByteReaderSigmaValues): Tuple = {
     val size = r.getByte()
     val values =  (1 to size).map(_ => r.getValue())
     Tuple(values)
