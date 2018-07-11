@@ -5,6 +5,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.DeserializeContext
+import sigmastate.utils.Extensions._
 
 object DeserializeContextSerializer extends ValueSerializer[DeserializeContext[SType]] {
 

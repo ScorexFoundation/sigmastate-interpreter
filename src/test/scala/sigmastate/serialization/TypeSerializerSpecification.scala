@@ -1,12 +1,8 @@
 package sigmastate.serialization
 
-import java.math.BigInteger
-
-import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
-import sigmastate.SCollection.SByteArray
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate._
+import sigmastate.utils.Extensions._
 
 class TypeSerializerSpecification extends SerializationSpecification {
 

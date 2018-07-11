@@ -4,6 +4,7 @@ import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.Extensions._
 
 object ConcreteCollectionSerializer extends ValueSerializer[ConcreteCollection[_ <: SType]] {
 

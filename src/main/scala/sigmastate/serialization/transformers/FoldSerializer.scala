@@ -6,6 +6,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.Fold
+import sigmastate.utils.Extensions._
 
 object FoldSerializer extends ValueSerializer[Fold[SType]] {
   override val opCode: OpCode = OpCodes.FoldCode

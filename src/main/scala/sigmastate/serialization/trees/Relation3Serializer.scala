@@ -5,6 +5,7 @@ import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.Extensions._
 
 case class Relation3Serializer[S1 <: SType, S2 <: SType, S3 <: SType, R <: Relation3[S1, S2, S3]]
 (override val opCode: Byte,

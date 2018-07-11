@@ -6,6 +6,7 @@ import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.Slice
 import sigmastate.{SInt, SType}
+import sigmastate.utils.Extensions._
 
 object SliceSerializer extends ValueSerializer[Slice[SType]] {
 

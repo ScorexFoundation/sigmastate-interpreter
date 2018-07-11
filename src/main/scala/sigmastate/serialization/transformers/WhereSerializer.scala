@@ -6,6 +6,7 @@ import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.Where
 import sigmastate.{SBoolean, SType}
+import sigmastate.utils.Extensions._
 
 object WhereSerializer extends ValueSerializer[Where[SType]] {
 

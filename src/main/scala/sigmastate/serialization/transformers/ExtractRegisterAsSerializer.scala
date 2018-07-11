@@ -7,6 +7,7 @@ import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.ExtractRegisterAs
 import sigmastate.{SBox, SType}
+import sigmastate.utils.Extensions._
 
 object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[SType]] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
