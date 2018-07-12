@@ -41,7 +41,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
     TwoArgumentsSerializer(XorCode, Xor.apply),
     TwoArgumentsSerializer(ExponentiateCode, builder.Exponentiate),
-    TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
+    TwoArgumentsSerializer(MultiplyGroupCode, builder.MultiplyGroup),
     TwoArgumentsSerializer(MinusCode, builder.Minus[SNumericType]),
     TwoArgumentsSerializer(MultiplyCode, builder.Multiply[SNumericType]),
     TwoArgumentsSerializer(DivisionCode, builder.Divide[SNumericType]),

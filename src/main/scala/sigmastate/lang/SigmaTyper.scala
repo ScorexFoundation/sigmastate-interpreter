@@ -200,7 +200,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         case SGroupElement => (m, newArgs) match {
           case ("*", Seq(r)) =>
             if (r.tpe == SGroupElement)
-              MultiplyGroup(newObj.asGroupElement, r.asGroupElement)
+              builder.MultiplyGroup(newObj.asGroupElement, r.asGroupElement)
             else
               error(s"Invalid argument type for $m, expected $SGroupElement but was ${r.tpe}")
           case _ =>

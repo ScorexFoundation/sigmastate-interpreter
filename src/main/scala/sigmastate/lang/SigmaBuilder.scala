@@ -28,6 +28,8 @@ trait SigmaBuilder {
 
   def Exponentiate(left: Value[SGroupElement.type],
                    right: Value[SBigInt.type]): Value[SGroupElement.type]
+  def MultiplyGroup(left: Value[SGroupElement.type],
+                    right: Value[SGroupElement.type]): Value[SGroupElement.type]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
@@ -87,6 +89,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def Exponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =
     sigmastate.Exponentiate(left, right)
+
+  override def MultiplyGroup(left: Value[SGroupElement.type], right: Value[SGroupElement.type]): Value[SGroupElement.type] =
+    sigmastate.MultiplyGroup(left, right)
 }
 
 trait TypeConstraintCheck {
