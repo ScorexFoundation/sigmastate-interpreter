@@ -33,6 +33,10 @@ trait SigmaBuilder {
                     right: Value[SGroupElement.type]): Value[SGroupElement.type]
   def Xor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
 
+  def IsMember(tree: Value[SAvlTree.type],
+               key: Value[SByteArray],
+               proof: Value[SByteArray]): Value[SBoolean.type]
+
   def error(msg: String) = throw new BuilderException(msg, None)
 }
 
@@ -97,6 +101,11 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def Xor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray] =
     sigmastate.Xor(left, right)
+
+  override def IsMember(tree: Value[SAvlTree.type],
+                        key: Value[SByteArray],
+                        proof: Value[SByteArray]): Value[SBoolean.type] =
+    sigmastate.IsMember(tree, key, proof)
 }
 
 trait TypeConstraintCheck {

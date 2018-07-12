@@ -37,7 +37,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(LeCode, builder.LE[SType]),
     Relation2Serializer(EqCode, builder.EQ[SType]),
     Relation2Serializer(NeqCode, builder.NEQ[SType]),
-    Relation3Serializer(IsMemberCode, IsMember.apply),
+    Relation3Serializer(IsMemberCode, builder.IsMember),
     QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
     TwoArgumentsSerializer(XorCode, builder.Xor),
     TwoArgumentsSerializer(ExponentiateCode, builder.Exponentiate),

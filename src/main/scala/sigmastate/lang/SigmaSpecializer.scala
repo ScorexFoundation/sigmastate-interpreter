@@ -51,7 +51,7 @@ class SigmaSpecializer(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       Some(CalcSha256(arg))
 
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-      Some(IsMember(tree, key, proof))
+      Some(builder.IsMember(tree, key, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(ProveDlog(g))
