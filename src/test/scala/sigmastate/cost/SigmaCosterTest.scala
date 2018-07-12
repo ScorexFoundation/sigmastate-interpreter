@@ -93,23 +93,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
       _ => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
   }
 
-  test("Crowd Funding") {
-    val timeout = 100L
-    val minToRaise = 1000
-    val backerPubKeyId = 1.toByte
-    val projectPubKeyId = 2.toByte
-    val env = Map(
-      "timeout" -> timeout,
-      "minToRaise" -> minToRaise,
-      "backerPubKeyId" -> backerPubKeyId,
-      "projectPubKeyId" -> projectPubKeyId
-    )
-    val prover = new ErgoLikeProvingInterpreter()
-    val backer = prover.dlogSecrets(0).publicImage
-    val project = prover.dlogSecrets(1).publicImage
-    val vars = Seq(backerPubKeyId -> ProofConstant(backer), projectPubKeyId -> ProofConstant(project)).toMap
-
-    checkInEnv[CrowdFunding, Boolean](env, vars, "CrowdFunding",
+  val crowdFundingScript =
     """{
      | let backerPubKey = getVar[Proof](backerPubKeyId)
      | let projectPubKey = getVar[Proof](projectPubKeyId)
@@ -123,23 +107,52 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
      | ))
      | c1 || c2
      | }
-    """.stripMargin,
-    { in: Rep[(CrowdFunding, Context)] =>
-      val Pair(cntr, ctx) = in
-      val backerPubKey = ctx.getVar[Sigma](backerPubKeyId)
-      val projectPubKey = ctx.getVar[Sigma](projectPubKeyId)
-      val c1 = cntr.allOf(colBuilder(ctx.HEIGHT >= cntr.timeout, backerPubKey.isValid))
-      val c2 = cntr.allOf(colBuilder(
-        ctx.HEIGHT < cntr.timeout,
-        projectPubKey.isValid,
-        ctx.OUTPUTS.exists(fun { out =>
-          out.value >= cntr.minToRaise && out.propositionBytes == projectPubKey.propBytes
-        })
-      ))
-      c1 || c2
-    },
-    { in: Rep[(CrowdFunding, Context)] => HeightAccess + ConstantNode + TripleDeclaration}
-    , false)
+    """.stripMargin
+
+  val timeout = 100L
+  val minToRaise = 1000L
+  val backerPubKeyId = 1.toByte
+  val projectPubKeyId = 2.toByte
+  val envCF = Map(
+    "timeout" -> timeout,
+    "minToRaise" -> minToRaise,
+    "backerPubKeyId" -> backerPubKeyId,
+    "projectPubKeyId" -> projectPubKeyId
+  )
+
+  test("Crowd Funding") {
+    val prover = new ErgoLikeProvingInterpreter()
+    val backer = prover.dlogSecrets(0).publicImage
+    val project = prover.dlogSecrets(1).publicImage
+    val vars = Seq(backerPubKeyId -> ProofConstant(backer), projectPubKeyId -> ProofConstant(project)).toMap
+
+    checkInEnv[CrowdFunding, Boolean](envCF, vars, "CrowdFunding", crowdFundingScript,
+      { in: Rep[(CrowdFunding, Context)] =>
+        val Pair(cntr, ctx) = in
+        val backerPubKey = ctx.getVar[Sigma](backerPubKeyId)
+        val projectPubKey = ctx.getVar[Sigma](projectPubKeyId)
+        val c1 = cntr.allOf(colBuilder(ctx.HEIGHT >= toRep(timeout), backerPubKey.isValid))
+        val c2 = cntr.allOf(colBuilder(
+          ctx.HEIGHT < toRep(timeout),
+          projectPubKey.isValid,
+          ctx.OUTPUTS.exists(fun { out =>
+            cntr.allOf(colBuilder(out.value >= toRep(minToRaise), out.propositionBytes === projectPubKey.propBytes))
+          })
+        ))
+        cntr.anyOf(colBuilder(c1, c2))
+      },
+      { in: Rep[(CrowdFunding, Context)] => HeightAccess + ConstantNode + TripleDeclaration}
+      , false)
+  }
+
+  test("Crowd Funding: measure") {
+    var res: Rep[Any] = null
+    measure(2) { j => // 10 warm up iterations when j == 0
+      measure(j*500 + 10, false) { i =>
+        res = cost[CrowdFunding](envCF, Map(), crowdFundingScript)
+      }
+    }
+    res.show
   }
 
   test("costed collection ops") {
