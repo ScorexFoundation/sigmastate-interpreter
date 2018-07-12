@@ -1,9 +1,12 @@
 package sigmastate.lang
 
+import org.bouncycastle.math.ec.ECPoint
+
 import scalan.{Lazy, SigmaLibrary}
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
 import sigmastate.Values.{TaggedVariable, Value, Constant, SValue}
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
@@ -32,6 +35,14 @@ trait CosterCtx extends SigmaLibrary {
       }
       else
         super.rewriteDef(d)
+  }
+  override def toRep[A](x: A)(implicit eA: Elem[A]):Rep[A] = eA match {
+    case EcPointElement => Const(x)
+    case _ => super.toRep(x)
+  }
+
+  case class WEcPointNew(p: Rep[ECPoint]) extends Def[WECPoint] {
+    def selfType: Elem[WECPoint] = wECPointElement
   }
 
   def plus(x: Rep[Int], n: Int) = {
@@ -133,6 +144,7 @@ trait CosterCtx extends SigmaLibrary {
     case SInt => IntElement
     case SLong => LongElement
     case SBox => boxElement
+    case SGroupElement => EcPointElement
     case SProof => sigmaElement
     case c: SCollection[a] => colElement(stypeToElem(c.elemType))
     case _ => error(s"Don't know how to convert SType $t to Elem")
@@ -185,7 +197,12 @@ trait CosterCtx extends SigmaLibrary {
     val res: Rep[Any] = node match {
       case Constant(v, tpe) => v match {
         case p: scapi.sigma.DLogProtocol.ProveDlog =>
-          CostedPrimRep(ProveDlogEvidence(1, true), Dlog)
+          val ge = evalNode(contr, ctx, vars, p.value).asRep[Costed[WECPoint]]
+          CostedPrimRep(ProveDlogEvidence(ge.value), ge.cost + Dlog)
+        case ge: CryptoConstants.EcPointType =>
+          assert(tpe == SGroupElement)
+          val ge1 = toRep(ge)(stypeToElem(SGroupElement)).asRep[ECPoint]
+          CostedPrimRep(WEcPointNew(ge1), ConstantNode)
         case _ =>
           CostedPrimRep(toRep(v)(stypeToElem(tpe)), ConstantNode)
       }
@@ -194,9 +211,13 @@ trait CosterCtx extends SigmaLibrary {
       case Outputs => CostedPrimRep(ctx.OUTPUTS, OutputsAccess)
       case Self => CostedPrimRep(ctx.SELF, SelfAccess)
       case TaggedVariable(id, tpe) =>
-        vars.get(id) match {
-          case Some(x: RCosted[a]) => CostedPrimRep(x.value, x.cost + VariableAccess)
-          case _ => !!!(s"Variable $node not found in environment $vars")
+        if (id >= 21) {
+          vars.get(id) match {
+            case Some(x: RCosted[a]@unchecked) => CostedPrimRep(x.value, x.cost + VariableAccess)
+            case _ => !!!(s"Variable $node not found in environment $vars")
+          }
+        } else {
+          CostedPrimRep(ctx.getVar(id)(stypeToElem(tpe)), VariableAccess)
         }
       case SizeOf(xs) =>
         val xsC = evalNode(contr, ctx, vars, xs).asRep[Costed[Col[Any]]]
@@ -204,6 +225,9 @@ trait CosterCtx extends SigmaLibrary {
       case IsValid(p) =>
         val pC = evalNode(contr, ctx, vars, p).asRep[Costed[Sigma]]
         CostedPrim(pC.value.isValid, pC.cost + ProofIsValidDeclaration)
+      case ProofBytes(p) =>
+        val pC = evalNode(contr, ctx, vars, p).asRep[Costed[Sigma]]
+        CostedPrim(pC.value.propBytes, pC.cost + ProofBytesDeclaration)
       case utxo.ExtractAmount(box) =>
         val boxC = evalNode(contr, ctx, vars, box).asRep[Costed[Box]]
         CostedPrimRep(boxC.value.value, boxC.cost + Cost.ExtractAmount)

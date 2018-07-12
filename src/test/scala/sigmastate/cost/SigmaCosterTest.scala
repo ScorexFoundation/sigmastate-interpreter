@@ -2,14 +2,13 @@ package sigmastate.cost
 
 import com.google.common.base.Strings
 import sigmastate.SType
-import sigmastate.Values.{EvaluatedValue, ProofConstant, SValue}
+import sigmastate.Values.{SValue, EvaluatedValue, ProofConstant}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.lang.{CosterCtx, LangTests, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
+import scalan.BaseCtxTests
 
-import scalanizer.collections.BaseCostedTests
-
-class SigmaCosterTest extends BaseCostedTests with LangTests {
+class SigmaCosterTest extends BaseCtxTests with LangTests {
   val compiler = new SigmaCompiler
   lazy val ctx = new TestContext with CosterCtx {
   }
@@ -23,7 +22,8 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
 
   def checkInEnv[SC <: SigmaContract:Elem, T](env: Map[String, Any], ctxVars: Map[Byte, SValue], name: String, script: String,
       expectedCalc: Rep[(SC, Context)] => Rep[T],
-      expectedCost: Rep[(SC, Context)] => Rep[Int]
+      expectedCost: Rep[(SC, Context)] => Rep[Int],
+      doChecks: Boolean = true
   ): Rep[(((SC, Context)) => T, ((SC, Context)) => Int)] = {
     val cf = cost[SC](env, ctxVars, script)
     val p @ Pair(calcF, costF) = cf match { case cf: RFunc[(SC, Context), Costed[_]]@unchecked =>
@@ -32,12 +32,15 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
     val expCalc = fun(expectedCalc)
     val expCost = fun(expectedCost)
 
-    if (!Strings.isNullOrEmpty(name))
+    if (!Strings.isNullOrEmpty(name)) {
       emit(name, p, expCalc, expCost)
+    }
 
     val res = Pair(calcF.asRep[((SC, Context)) => T], costF.asRep[((SC, Context)) => Int])
-    calcF shouldBe expCalc
-    costF shouldBe expCost
+    if (doChecks) {
+      calcF shouldBe expCalc
+      costF shouldBe expCost
+    }
     res
   }
 
@@ -123,17 +126,20 @@ class SigmaCosterTest extends BaseCostedTests with LangTests {
     """.stripMargin,
     { in: Rep[(CrowdFunding, Context)] =>
       val Pair(cntr, ctx) = in
-      val c1 = ctx.HEIGHT >= cntr.timeout && cntr.backerPubKey.isValid
+      val backerPubKey = ctx.getVar[Sigma](backerPubKeyId)
+      val projectPubKey = ctx.getVar[Sigma](projectPubKeyId)
+      val c1 = cntr.allOf(colBuilder(ctx.HEIGHT >= cntr.timeout, backerPubKey.isValid))
       val c2 = cntr.allOf(colBuilder(
         ctx.HEIGHT < cntr.timeout,
-        cntr.projectPubKey.isValid,
+        projectPubKey.isValid,
         ctx.OUTPUTS.exists(fun { out =>
-          out.value >= cntr.minToRaise && out.propositionBytes == cntr.projectPubKey.propBytes
+          out.value >= cntr.minToRaise && out.propositionBytes == projectPubKey.propBytes
         })
       ))
       c1 || c2
     },
-    { in: Rep[(CrowdFunding, Context)] => HeightAccess + ConstantNode + TripleDeclaration})
+    { in: Rep[(CrowdFunding, Context)] => HeightAccess + ConstantNode + TripleDeclaration}
+    , false)
   }
 
   test("costed collection ops") {
