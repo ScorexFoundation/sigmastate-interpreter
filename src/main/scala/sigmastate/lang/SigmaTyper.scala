@@ -273,8 +273,8 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
     case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(builder.Modulo)(tT, tT)
     case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(builder.Divide)(tT, tT)
     
-    case Xor(l, r) => bimap(env, "|", l, r)(Xor)(SByteArray, SByteArray)
-    case MultiplyGroup(l, r) => bimap(env, "*", l, r)(MultiplyGroup)(SGroupElement, SGroupElement)
+    case Xor(l, r) => bimap(env, "|", l, r)(builder.Xor)(SByteArray, SByteArray)
+    case MultiplyGroup(l, r) => bimap(env, "*", l, r)(builder.MultiplyGroup)(SGroupElement, SGroupElement)
 
     case Exponentiate(l, r) =>
       val l1 = assignType(env, l).asGroupElement

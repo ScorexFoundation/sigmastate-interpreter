@@ -39,7 +39,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(NeqCode, builder.NEQ[SType]),
     Relation3Serializer(IsMemberCode, IsMember.apply),
     QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
-    TwoArgumentsSerializer(XorCode, Xor.apply),
+    TwoArgumentsSerializer(XorCode, builder.Xor),
     TwoArgumentsSerializer(ExponentiateCode, builder.Exponentiate),
     TwoArgumentsSerializer(MultiplyGroupCode, builder.MultiplyGroup),
     TwoArgumentsSerializer(MinusCode, builder.Minus[SNumericType]),

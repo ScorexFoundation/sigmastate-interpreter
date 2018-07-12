@@ -1,5 +1,6 @@
 package sigmastate.lang
 
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
@@ -30,6 +31,7 @@ trait SigmaBuilder {
                    right: Value[SBigInt.type]): Value[SGroupElement.type]
   def MultiplyGroup(left: Value[SGroupElement.type],
                     right: Value[SGroupElement.type]): Value[SGroupElement.type]
+  def Xor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
@@ -92,6 +94,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def MultiplyGroup(left: Value[SGroupElement.type], right: Value[SGroupElement.type]): Value[SGroupElement.type] =
     sigmastate.MultiplyGroup(left, right)
+
+  override def Xor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray] =
+    sigmastate.Xor(left, right)
 }
 
 trait TypeConstraintCheck {
