@@ -26,6 +26,9 @@ trait SigmaBuilder {
   def OR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
   def AND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
 
+  def Exponentiate(left: Value[SGroupElement.type],
+                   right: Value[SBigInt.type]): Value[SGroupElement.type]
+
   def error(msg: String) = throw new BuilderException(msg, None)
 }
 
@@ -81,6 +84,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def AND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     sigmastate.AND(input)
+
+  override def Exponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =
+    sigmastate.Exponentiate(left, right)
 }
 
 trait TypeConstraintCheck {

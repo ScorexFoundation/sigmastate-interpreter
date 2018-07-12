@@ -68,7 +68,7 @@ object SigmaParser extends Exprs with Types with Core {
     case "-"  => builder.Minus(l.asValue[SLong.type], r.asValue[SLong.type])
     case "|"  => Xor(l.asValue[SByteArray], r.asValue[SByteArray])
     case "++" => MethodCall(l, "++", IndexedSeq(r))
-    case "^"  => Exponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
+    case "^"  => builder.Exponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
     case "*"  => MethodCall(l, "*", IndexedSeq(r))
     case "/"  => builder.Divide(l.asValue[SLong.type], r.asValue[SLong.type])
     case "%"  => builder.Modulo(l.asValue[SLong.type], r.asValue[SLong.type])

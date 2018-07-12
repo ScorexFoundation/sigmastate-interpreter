@@ -281,7 +281,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val r1 = assignType(env, r).asBigInt
       if (l1.tpe != SGroupElement || r1.tpe != SBigInt)
         error(s"Invalid binary operation Exponentiate: expected argument types ($SGroupElement, $SBigInt); actual: (${l.tpe}, ${r.tpe})")
-      Exponentiate(l1, r1)
+      builder.Exponentiate(l1, r1)
 
     case ByIndex(col, i, defaultValue) =>
       val c1 = assignType(env, col).asCollection[SType]
