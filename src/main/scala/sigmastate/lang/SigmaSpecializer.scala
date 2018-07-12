@@ -12,7 +12,7 @@ import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Let, Select, ValueOps
 import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 
-class SigmaSpecializer {
+class SigmaSpecializer(val builder: SigmaBuilder = TransformingSigmaBuilder) {
   import SigmaSpecializer._
 
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
@@ -42,7 +42,7 @@ class SigmaSpecializer {
 
     // Rule: anyOf(arr) --> OR(arr)
     case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-      Some(OR(arr))
+      Some(builder.OR(arr))
 
     case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(CalcBlake2b256(arg))
@@ -152,11 +152,12 @@ class SigmaSpecializer {
         }))
 
     case OR(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[OR]) =>
-      Some(OR(
-        items.flatMap {
-          case OR(ConcreteCollection(innerItems, SBoolean)) => innerItems
-          case v => IndexedSeq(v)
-        }))
+      Some(builder.OR(
+        ConcreteCollection(
+          items.flatMap {
+            case OR(ConcreteCollection(innerItems, SBoolean)) => innerItems
+            case v => IndexedSeq(v)
+          })))
 
   })))(e)
 

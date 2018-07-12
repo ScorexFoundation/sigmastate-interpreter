@@ -4,11 +4,12 @@ import java.math.BigInteger
 
 import com.google.common.primitives.Longs
 import scapi.sigma.DLogProtocol._
-import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
-import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
+import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.{Context, Interpreter}
+import sigmastate.lang.DefaultSigmaBuilder
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
@@ -96,7 +97,8 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   * OR logical conjunction
   */
 object OR {
-  def apply(children: Seq[Value[SBoolean.type]]): OR = OR(ConcreteCollection(children.toIndexedSeq))
+  def apply(children: Seq[Value[SBoolean.type]]): OR =
+    DefaultSigmaBuilder.OR(ConcreteCollection(children.toIndexedSeq)).asInstanceOf[OR]
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): OR = apply(head +: tail)
 }

@@ -258,7 +258,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val input1 = assignType(env, input).asValue[SCollection[SBoolean.type]]
       if (!(input1.tpe.isCollection && input1.tpe.elemType == SBoolean))
         error(s"Invalid operation OR: $op")
-      OR(input1)
+      builder.OR(input1)
 
     case GE(l, r) => bimap(env, ">=", l, r)(builder.GE[SType])(tT, SBoolean)
     case LE(l, r) => bimap(env, "<=", l, r)(builder.LE[SType])(tT, SBoolean)
