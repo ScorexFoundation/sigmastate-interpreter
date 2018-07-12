@@ -24,6 +24,7 @@ trait SigmaBuilder {
   def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
 
   def OR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
+  def AND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
@@ -77,6 +78,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def OR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     sigmastate.OR(input)
+
+  override def AND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
+    sigmastate.AND(input)
 }
 
 trait TypeConstraintCheck {

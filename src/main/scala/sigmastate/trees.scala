@@ -162,7 +162,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   * AND logical conjunction
   */
 object AND {
-  def apply(children: Seq[Value[SBoolean.type]]): AND = new AND(ConcreteCollection(children.toIndexedSeq))
+  def apply(children: Seq[Value[SBoolean.type]]): AND =
+    DefaultSigmaBuilder.AND(ConcreteCollection(children.toIndexedSeq)).asInstanceOf[AND]
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }

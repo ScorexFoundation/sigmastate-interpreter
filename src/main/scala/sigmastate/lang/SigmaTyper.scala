@@ -252,7 +252,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val input1 = assignType(env, input).asValue[SCollection[SBoolean.type]]
       if (!(input1.tpe.isCollection && input1.tpe.elemType == SBoolean))
         error(s"Invalid operation AND: $op")
-      AND(input1)
+      builder.AND(input1)
 
     case op @ OR(input) =>
       val input1 = assignType(env, input).asValue[SCollection[SBoolean.type]]

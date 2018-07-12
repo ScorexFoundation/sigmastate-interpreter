@@ -38,7 +38,7 @@ class SigmaSpecializer(val builder: SigmaBuilder = TransformingSigmaBuilder) {
 
     // Rule: allOf(arr) --> AND(arr)
     case Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-      Some(AND(arr))
+      Some(builder.AND(arr))
 
     // Rule: anyOf(arr) --> OR(arr)
     case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
@@ -145,11 +145,12 @@ class SigmaSpecializer(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       error(s"Option constructors are not supported: $opt")
 
     case AND(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[AND]) =>
-      Some(AND(
-        items.flatMap {
-          case AND(ConcreteCollection(innerItems, SBoolean)) => innerItems
-          case v => IndexedSeq(v)
-        }))
+      Some(builder.AND(
+        ConcreteCollection(
+          items.flatMap {
+            case AND(ConcreteCollection(innerItems, SBoolean)) => innerItems
+            case v => IndexedSeq(v)
+          })))
 
     case OR(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[OR]) =>
       Some(builder.OR(
