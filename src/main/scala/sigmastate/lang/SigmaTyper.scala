@@ -241,7 +241,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val c1 = assignType(env, c).asValue[SBoolean.type]
       val t1 = assignType(env, t)
       val e1 = assignType(env, e)
-      val ite = If(c1, t1, e1)
+      val ite = builder.If(c1, t1, e1)
       if (c1.tpe != SBoolean)
         error(s"Invalid type of condition in $ite: expected Boolean; actual: ${c1.tpe}")
       if (t1.tpe != e1.tpe)

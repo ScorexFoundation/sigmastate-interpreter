@@ -36,6 +36,9 @@ trait SigmaBuilder {
   def IsMember(tree: Value[SAvlTree.type],
                key: Value[SByteArray],
                proof: Value[SByteArray]): Value[SBoolean.type]
+  def If[T <: SType](condition: Value[SBoolean.type],
+                     trueBranch: Value[T],
+                     falseBranch: Value[T]): Value[T]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
@@ -106,6 +109,11 @@ class StdSigmaBuilder extends SigmaBuilder {
                         key: Value[SByteArray],
                         proof: Value[SByteArray]): Value[SBoolean.type] =
     sigmastate.IsMember(tree, key, proof)
+
+  override def If[T <: SType](condition: Value[SBoolean.type],
+                              trueBranch: Value[T],
+                              falseBranch: Value[T]): Value[T] =
+    sigmastate.If(condition, trueBranch, falseBranch)
 }
 
 trait TypeConstraintCheck {

@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.syntax
+import sigmastate.lang.{SigmaBuilder, StdSigmaBuilder, syntax}
 
 trait Core extends syntax.Literals {
   import fastparse.noApi._
@@ -23,6 +23,7 @@ trait Core extends syntax.Literals {
       rep[R](min, ",", max, exactly) ~ TrailingComma
   }
 
+  protected var builder: SigmaBuilder = StdSigmaBuilder
   def mkUnaryOp(opName: String, arg: Value[SType]): Value[SType]
   def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType]
 

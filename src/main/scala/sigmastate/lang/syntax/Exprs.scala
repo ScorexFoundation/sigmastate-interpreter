@@ -3,8 +3,8 @@ package sigmastate.lang.syntax
 import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Lambda, ApplyTypes, Let, MethodCall, Apply, ValueOps, Select, Ident}
-import sigmastate.lang.{Terms, syntax, Types}
+import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, Let, MethodCall, Select, ValueOps}
+import sigmastate.lang._
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec
@@ -39,7 +39,7 @@ trait Exprs extends Core with Types {
       val If = {
         val Else = P( Semi.? ~ `else` ~/ Expr )
         P( `if` ~/ "(" ~ ExprCtx.Expr ~ ")" ~ Expr ~ Else ).map {
-          case (c, t, e) => sigmastate.If(c.asValue[SBoolean.type], t, e)
+          case (c, t, e) => builder.If(c.asValue[SBoolean.type], t, e)
         }
       }
       val Fun = P( `fun` ~/ LambdaDef)

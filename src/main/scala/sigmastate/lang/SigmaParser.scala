@@ -75,8 +75,6 @@ object SigmaParser extends Exprs with Types with Core {
     case _ => error(s"Unknown binary operation $opName")
   }
 
-  private var builder: SigmaBuilder = StdSigmaBuilder
-
   def apply(str: String, sigmaBuilder: SigmaBuilder = StdSigmaBuilder): core.Parsed[Value[_ <: SType], Char, String] = {
     builder = sigmaBuilder
     (StatCtx.Expr ~ End).parse(str)
