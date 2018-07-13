@@ -43,6 +43,9 @@ trait SigmaBuilder {
   def IntToByte(input: Value[SInt.type]): Value[SByte.type]
   def LongToByteArray(input: Value[SLong.type]): Value[SByteArray]
 
+  def CalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
+  def CalcSha256(input: Value[SByteArray]): Value[SByteArray]
+
   def error(msg: String) = throw new BuilderException(msg, None)
 }
 
@@ -123,6 +126,12 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def LongToByteArray(input: Value[SLong.type]): Value[SByteArray] =
     sigmastate.LongToByteArray(input)
+
+  override def CalcBlake2b256(input: Value[SByteArray]): Value[SByteArray] =
+    sigmastate.CalcBlake2b256(input)
+
+  override def CalcSha256(input: Value[SByteArray]): Value[SByteArray] =
+    sigmastate.CalcSha256(input)
 }
 
 trait TypeConstraintCheck {

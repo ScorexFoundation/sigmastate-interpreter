@@ -45,10 +45,10 @@ class SigmaSpecializer(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       Some(builder.OR(arr))
 
     case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(CalcBlake2b256(arg))
+      Some(builder.CalcBlake2b256(arg))
 
     case Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(CalcSha256(arg))
+      Some(builder.CalcSha256(arg))
 
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
       Some(builder.IsMember(tree, key, proof))
