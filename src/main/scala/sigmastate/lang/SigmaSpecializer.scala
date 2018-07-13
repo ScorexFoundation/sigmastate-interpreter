@@ -109,7 +109,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       Some(SelectField(tuple.asTuple, index))
 
     case Apply(Select(col, "slice", _), Seq(from, until)) =>
-      Some(Slice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
+      Some(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
 
     case Apply(Select(col, "where", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)

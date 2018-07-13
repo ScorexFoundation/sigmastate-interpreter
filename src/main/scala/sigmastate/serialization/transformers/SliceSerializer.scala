@@ -1,5 +1,6 @@
 package sigmastate.serialization.transformers
 
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -21,6 +22,6 @@ object SliceSerializer extends ValueSerializer[Slice[SType]] {
     val input = r.getValue().asCollection[SType]
     val from = r.getValue().asValue[SInt.type]
     val until = r.getValue().asValue[SInt.type]
-    Slice(input, from, until)
+    DeserializationSigmaBuilder.mkSlice(input, from, until).asInstanceOf[Slice[SType]]
   }
 }

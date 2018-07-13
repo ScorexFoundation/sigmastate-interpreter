@@ -7,7 +7,7 @@ import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{ArithException, BuilderException, ConstraintFailed}
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.{Append, MapCollection}
+import sigmastate.utxo.{Append, MapCollection, Slice}
 
 trait SigmaBuilder {
 
@@ -52,6 +52,8 @@ trait SigmaBuilder {
                                                 mapper: SValue): Value[SCollection[OV]]
   def mkAppend[IV <: SType](input: Value[SCollection[IV]],
                             col2: Value[SCollection[IV]]): Value[SCollection[IV]]
+
+  def mkSlice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type]): Value[SCollection[IV]]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -144,6 +146,11 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkAppend[IV <: SType](input: Value[SCollection[IV]],
                                      col2: Value[SCollection[IV]]): Value[SCollection[IV]] =
     Append(input, col2)
+
+  override def mkSlice[IV <: SType](input: Value[SCollection[IV]],
+                                    from: Value[SInt.type],
+                                    until: Value[SInt.type]): Value[SCollection[IV]] =
+    Slice(input, from, until)
 }
 
 trait TypeConstraintCheck {
