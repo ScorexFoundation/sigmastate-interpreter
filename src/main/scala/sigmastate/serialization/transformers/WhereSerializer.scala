@@ -1,5 +1,6 @@
 package sigmastate.serialization.transformers
 
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -21,6 +22,6 @@ object WhereSerializer extends ValueSerializer[Where[SType]] {
     val id = r.getByte()
     val input = r.getValue().asCollection[SType]
     val condition = r.getValue().asValue[SBoolean.type]
-    Where(input, id, condition)
+    DeserializationSigmaBuilder.mkWhere(input, id, condition).asInstanceOf[Where[SType]]
   }
 }
