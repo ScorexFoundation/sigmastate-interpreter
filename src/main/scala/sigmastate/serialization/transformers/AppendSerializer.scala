@@ -1,6 +1,7 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.SType
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -19,6 +20,6 @@ object AppendSerializer extends ValueSerializer[Append[SType]] {
   override def parseBody(r: ByteReader): Append[SType] = {
     val input = r.getValue().asCollection[SType]
     val col2 = r.getValue().asCollection[SType]
-    Append(input, col2)
+    DeserializationSigmaBuilder.mkAppend(input, col2).asInstanceOf[Append[SType]]
   }
 }

@@ -2,12 +2,12 @@ package sigmastate.lang
 
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{Constant, SValue, Value}
-import sigmastate._
+import sigmastate.{utxo, _}
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{ArithException, BuilderException, ConstraintFailed}
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.MapCollection
+import sigmastate.utxo.{Append, MapCollection}
 
 trait SigmaBuilder {
 
@@ -50,6 +50,8 @@ trait SigmaBuilder {
   def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                                 id: Byte,
                                                 mapper: SValue): Value[SCollection[OV]]
+  def mkAppend[IV <: SType](input: Value[SCollection[IV]],
+                            col2: Value[SCollection[IV]]): Value[SCollection[IV]]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -138,6 +140,10 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]], id: Byte, mapper: SValue): Value[SCollection[OV]] =
     MapCollection(input, id, mapper)
+
+  override def mkAppend[IV <: SType](input: Value[SCollection[IV]],
+                                     col2: Value[SCollection[IV]]): Value[SCollection[IV]] =
+    Append(input, col2)
 }
 
 trait TypeConstraintCheck {

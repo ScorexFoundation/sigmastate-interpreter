@@ -192,7 +192,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         case tCol: SCollectionType[a] => (m, newArgs) match {
           case ("++", Seq(r)) =>
             if (r.tpe == tCol)
-              Append(newObj.asCollection[a], r.asCollection[a])
+              mkAppend(newObj.asCollection[a], r.asCollection[a])
             else
               error(s"Invalid argument type for $m, expected $tCol but was ${r.tpe}")
           case _ =>
