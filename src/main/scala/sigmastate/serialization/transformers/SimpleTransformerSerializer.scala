@@ -11,13 +11,13 @@ import sigmastate.utils.Extensions._
 
 case class SimpleTransformerSerializer[I <: SType, O <: SType]
 (code: OpCode,
- cons: Value[I] => Transformer[I, O]) extends ValueSerializer[Transformer[I, O]] {
+ cons: Value[I] => Value[O]) extends ValueSerializer[Transformer[I, O]] {
 
   override val opCode: OpCode = code
 
   override def serializeBody(obj: Transformer[I, O], w: ByteWriter): Unit =
     w.putValue(obj.input)
 
-  override def parseBody(r: ByteReader): Transformer[I, O] =
+  override def parseBody(r: ByteReader): Value[O] =
     cons(r.getValue().asValue[I])
 }

@@ -57,7 +57,7 @@ class SigmaSpecializer(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       Some(ProveDlog(g))
 
     case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
-      Some(IntToByte(arg))
+      Some(builder.IntToByte(arg))
 
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(LongToByteArray(arg))

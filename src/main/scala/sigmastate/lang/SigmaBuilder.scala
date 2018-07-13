@@ -40,6 +40,8 @@ trait SigmaBuilder {
                      trueBranch: Value[T],
                      falseBranch: Value[T]): Value[T]
 
+  def IntToByte(input: Value[SInt.type]): Value[SByte.type]
+
   def error(msg: String) = throw new BuilderException(msg, None)
 }
 
@@ -114,6 +116,9 @@ class StdSigmaBuilder extends SigmaBuilder {
                               trueBranch: Value[T],
                               falseBranch: Value[T]): Value[T] =
     sigmastate.If(condition, trueBranch, falseBranch)
+
+  override def IntToByte(input: Value[SInt.type]): Value[SByte.type] =
+    sigmastate.IntToByte(input)
 }
 
 trait TypeConstraintCheck {
