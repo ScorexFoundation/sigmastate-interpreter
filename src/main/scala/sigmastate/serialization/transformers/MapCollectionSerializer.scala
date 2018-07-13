@@ -1,6 +1,7 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -22,7 +23,7 @@ object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, STyp
     val input = r.getValue().asValue[SCollection[SType]]
     val idByte = r.getByte()
     val mapper = r.getValue()
-    MapCollection(input, idByte, mapper)
+    DeserializationSigmaBuilder.mkMapCollection(input, idByte, mapper)
   }
 
 }

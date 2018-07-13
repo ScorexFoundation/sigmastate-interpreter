@@ -38,7 +38,7 @@ trait TransformerGenerators {
     input <- arbCCOfIntConstant.arbitrary
     idByte <- arbByte.arbitrary
     mapper <- arbIntConstants.arbitrary
-  } yield MapCollection(input, idByte, mapper)
+  } yield mkMapCollection(input, idByte, mapper).asInstanceOf[MapCollection[SInt.type, SInt.type]]
 
   val existsGen: Gen[Exists[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary

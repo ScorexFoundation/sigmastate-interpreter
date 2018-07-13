@@ -1,12 +1,13 @@
 package sigmastate.lang
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{Constant, Value}
+import sigmastate.Values.{Constant, SValue, Value}
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{BuilderException, ConstraintFailed, ArithException}
+import sigmastate.lang.exceptions.{ArithException, BuilderException, ConstraintFailed}
 import sigmastate.serialization.OpCodes
+import sigmastate.utxo.MapCollection
 
 trait SigmaBuilder {
 
@@ -45,6 +46,10 @@ trait SigmaBuilder {
 
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
+
+  def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
+                                                id: Byte,
+                                                mapper: SValue): Value[SCollection[OV]]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -62,74 +67,77 @@ class StdSigmaBuilder extends SigmaBuilder {
                                             cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
   override def mkEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
-    equalityOp(left, right, sigmastate.EQ.apply[T])
+    equalityOp(left, right, EQ.apply[T])
 
   override def mkNEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
-    equalityOp(left, right, sigmastate.NEQ.apply[T])
+    equalityOp(left, right, NEQ.apply[T])
 
   override def mkGT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
-    comparisonOp(left, right, sigmastate.GT.apply[T])
+    comparisonOp(left, right, GT.apply[T])
 
   override def mkGE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
-    comparisonOp(left, right, sigmastate.GE.apply[T])
+    comparisonOp(left, right, GE.apply[T])
 
   override def mkLT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
-    comparisonOp(left, right, sigmastate.LT.apply[T])
+    comparisonOp(left, right, LT.apply[T])
 
   override def mkLE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
-    comparisonOp(left, right, sigmastate.LE.apply[T])
+    comparisonOp(left, right, LE.apply[T])
 
   override def mkPlus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.PlusCode) })
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.PlusCode) })
 
   override def mkMinus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.MinusCode) })
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MinusCode) })
 
   override def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.MultiplyCode) })
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MultiplyCode) })
 
   override def mkDivide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.DivisionCode) })
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.DivisionCode) })
 
   override def mkModulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => sigmastate.ArithOp[T](l, r, OpCodes.ModuloCode) })
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.ModuloCode) })
 
   override def mkOR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
-    sigmastate.OR(input)
+    OR(input)
 
   override def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
-    sigmastate.AND(input)
+    AND(input)
 
   override def mkExponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =
-    sigmastate.Exponentiate(left, right)
+    Exponentiate(left, right)
 
   override def mkMultiplyGroup(left: Value[SGroupElement.type], right: Value[SGroupElement.type]): Value[SGroupElement.type] =
-    sigmastate.MultiplyGroup(left, right)
+    MultiplyGroup(left, right)
 
   override def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray] =
-    sigmastate.Xor(left, right)
+    Xor(left, right)
 
   override def mkIsMember(tree: Value[SAvlTree.type],
                           key: Value[SByteArray],
                           proof: Value[SByteArray]): Value[SBoolean.type] =
-    sigmastate.IsMember(tree, key, proof)
+    IsMember(tree, key, proof)
 
   override def mkIf[T <: SType](condition: Value[SBoolean.type],
                                 trueBranch: Value[T],
                                 falseBranch: Value[T]): Value[T] =
-    sigmastate.If(condition, trueBranch, falseBranch)
+    If(condition, trueBranch, falseBranch)
 
   override def mkIntToByte(input: Value[SInt.type]): Value[SByte.type] =
-    sigmastate.IntToByte(input)
+    IntToByte(input)
 
   override def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray] =
-    sigmastate.LongToByteArray(input)
+    LongToByteArray(input)
 
   override def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray] =
-    sigmastate.CalcBlake2b256(input)
+    CalcBlake2b256(input)
 
   override def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray] =
-    sigmastate.CalcSha256(input)
+    CalcSha256(input)
+
+  override def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]], id: Byte, mapper: SValue): Value[SCollection[OV]] =
+    MapCollection(input, id, mapper)
 }
 
 trait TypeConstraintCheck {
