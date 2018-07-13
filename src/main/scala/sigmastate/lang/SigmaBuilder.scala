@@ -1,11 +1,11 @@
 package sigmastate.lang
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.Value
+import sigmastate.Values.{Constant, Value}
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{BuilderException, ConstraintFailed}
+import sigmastate.lang.exceptions.{BuilderException, ConstraintFailed, ArithException}
 import sigmastate.serialization.OpCodes
 
 trait SigmaBuilder {
@@ -199,7 +199,15 @@ trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 }
 
 case object StdSigmaBuilder extends StdSigmaBuilder
-case object CheckingSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
+
+case object CheckingSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder {
+  override def IntToByte(input: Value[SInt.type]): Value[SByte.type] = input match {
+    case Constant(value: Int, SInt) if value > Byte.MaxValue =>
+      throw new ArithException(s"Byte overflow in IntToByte($value)")
+    case _ => super.IntToByte(input)
+  }
+}
+
 case object DefaultSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
 case object TransformingSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
 case object DeserializationSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder

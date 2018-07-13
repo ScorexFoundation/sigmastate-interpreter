@@ -4,7 +4,7 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.exceptions.ConstraintFailed
+import sigmastate.lang.exceptions.{ArithException, ConstraintFailed}
 import sigmastate.serialization.OpCodes
 
 class SigmaBuilderTest extends PropSpec with PropertyChecks with Matchers with LangTests {
@@ -71,5 +71,7 @@ class SigmaBuilderTest extends PropSpec with PropertyChecks with Matchers with L
     an[ConstraintFailed] should be thrownBy CheckingSigmaBuilder.Multiply(LongConstant(1), IntConstant(1))
     an[ConstraintFailed] should be thrownBy CheckingSigmaBuilder.Divide(LongConstant(1), IntConstant(1))
     an[ConstraintFailed] should be thrownBy CheckingSigmaBuilder.Modulo(LongConstant(1), IntConstant(1))
+
+    an[ArithException] should be thrownBy CheckingSigmaBuilder.IntToByte(IntConstant(129))
   }
 }
