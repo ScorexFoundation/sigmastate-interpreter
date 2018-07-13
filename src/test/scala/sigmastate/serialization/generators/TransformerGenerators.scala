@@ -50,7 +50,7 @@ trait TransformerGenerators {
     input <- arbCCOfIntConstant.arbitrary
     idByte <- arbByte.arbitrary
     condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield ForAll(input, idByte, condition)
+  } yield mkForAll(input, idByte, condition).asInstanceOf[ForAll[SInt.type]]
 
   val foldGen: Gen[Fold[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary

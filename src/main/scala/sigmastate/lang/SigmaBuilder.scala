@@ -65,6 +65,10 @@ trait SigmaBuilder {
                             id: Byte,
                             condition: Value[SBoolean.type]): Value[SBoolean.type]
 
+  def mkForAll[IV <: SType](input: Value[SCollection[IV]],
+                               id: Byte,
+                               condition: Value[SBoolean.type]): Value[SBoolean.type]
+
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -172,6 +176,11 @@ class StdSigmaBuilder extends SigmaBuilder {
                                      id: Byte,
                                      condition: Value[SBoolean.type]): Value[SBoolean.type] =
     Exists(input, id, condition)
+
+  override def mkForAll[IV <: SType](input: Value[SCollection[IV]],
+                                     id: Byte,
+                                     condition: Value[SBoolean.type]): Value[SBoolean.type] =
+    ForAll(input, id, condition)
 }
 
 trait TypeConstraintCheck {

@@ -65,7 +65,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TaggedVariableSerializer,
     MapCollectionSerializer,
     BooleanTransformerSerializer[SType](ExistsCode, mkExists),
-    BooleanTransformerSerializer[SType](ForAllCode, ForAll.apply),
+    BooleanTransformerSerializer[SType](ForAllCode, mkForAll),
     FoldSerializer,
     SimpleTransformerSerializer[SCollection[SType], SInt.type](SizeOfCode, SizeOf.apply),
     SimpleTransformerSerializer[SBox.type, SLong.type](ExtractAmountCode, ExtractAmount.apply),
