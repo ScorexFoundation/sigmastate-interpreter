@@ -44,7 +44,7 @@ trait TransformerGenerators {
     input <- arbCCOfIntConstant.arbitrary
     idByte <- arbByte.arbitrary
     condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield Exists(input, idByte, condition)
+  } yield mkExists(input, idByte, condition).asInstanceOf[Exists[SInt.type]]
 
   val forAllGen: Gen[ForAll[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary

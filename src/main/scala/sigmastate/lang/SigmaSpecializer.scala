@@ -119,7 +119,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(Select(col,"exists", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(Exists(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
+      Some(mkExists(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
     case Apply(Select(col,"forall", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)

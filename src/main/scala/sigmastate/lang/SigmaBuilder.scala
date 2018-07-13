@@ -7,7 +7,7 @@ import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{ArithException, ConstraintFailed}
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.{Append, MapCollection, Slice, Where}
+import sigmastate.utxo._
 
 trait SigmaBuilder {
 
@@ -60,6 +60,10 @@ trait SigmaBuilder {
   def mkWhere[IV <: SType](input: Value[SCollection[IV]],
                            id: Byte,
                            condition: Value[SBoolean.type]): Value[SCollection[IV]]
+
+  def mkExists[IV <: SType](input: Value[SCollection[IV]],
+                            id: Byte,
+                            condition: Value[SBoolean.type]): Value[SBoolean.type]
 
 }
 
@@ -163,6 +167,11 @@ class StdSigmaBuilder extends SigmaBuilder {
                                     id: Byte,
                                     condition: Value[SBoolean.type]): Value[SCollection[IV]] =
     Where(input, id, condition)
+
+  override def mkExists[IV <: SType](input: Value[SCollection[IV]],
+                                     id: Byte,
+                                     condition: Value[SBoolean.type]): Value[SBoolean.type] =
+    Exists(input, id, condition)
 }
 
 trait TypeConstraintCheck {
