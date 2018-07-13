@@ -14,6 +14,7 @@ import sigmastate.utxo._
 
 class SigmaSpecializer(val builder: SigmaBuilder) {
   import SigmaSpecializer._
+  import builder._
 
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
   def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
@@ -38,29 +39,29 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     // Rule: allOf(arr) --> AND(arr)
     case Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-      Some(builder.AND(arr))
+      Some(mkAND(arr))
 
     // Rule: anyOf(arr) --> OR(arr)
     case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-      Some(builder.OR(arr))
+      Some(mkOR(arr))
 
     case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(builder.CalcBlake2b256(arg))
+      Some(mkCalcBlake2b256(arg))
 
     case Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(builder.CalcSha256(arg))
+      Some(mkCalcSha256(arg))
 
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-      Some(builder.IsMember(tree, key, proof))
+      Some(mkIsMember(tree, key, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(ProveDlog(g))
 
     case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
-      Some(builder.IntToByte(arg))
+      Some(mkIntToByte(arg))
 
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
-      Some(builder.LongToByteArray(arg))
+      Some(mkLongToByteArray(arg))
 
     case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
       Some(Constant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
@@ -145,7 +146,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       error(s"Option constructors are not supported: $opt")
 
     case AND(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[AND]) =>
-      Some(builder.AND(
+      Some(mkAND(
         ConcreteCollection(
           items.flatMap {
             case AND(ConcreteCollection(innerItems, SBoolean)) => innerItems
@@ -153,7 +154,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
           })))
 
     case OR(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[OR]) =>
-      Some(builder.OR(
+      Some(mkOR(
         ConcreteCollection(
           items.flatMap {
             case OR(ConcreteCollection(innerItems, SBoolean)) => innerItems

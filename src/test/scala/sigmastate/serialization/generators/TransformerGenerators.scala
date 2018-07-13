@@ -10,6 +10,8 @@ import sigmastate.utxo._
 trait TransformerGenerators {
   self: ValueGenerators with ConcreteCollectionGenerators =>
 
+  import TransformingSigmaBuilder._
+
   implicit val arbMapCollection: Arbitrary[MapCollection[SInt.type, SInt.type]] = Arbitrary(mapCollectionGen)
   implicit val arbExists: Arbitrary[Exists[SInt.type]] = Arbitrary(existsGen)
   implicit val arbForAll: Arbitrary[ForAll[SInt.type]] = Arbitrary(forAllGen)
@@ -134,11 +136,11 @@ trait TransformerGenerators {
     left <- numExprTreeGen
     right <- numExprTreeGen
     node <- Gen.oneOf(
-      TransformingSigmaBuilder.Plus(left, right),
-      TransformingSigmaBuilder.Minus(left, right),
-      TransformingSigmaBuilder.Multiply(left, right),
-      TransformingSigmaBuilder.Divide(left, right),
-      TransformingSigmaBuilder.Modulo(left, right)
+      mkPlus(left, right),
+      mkMinus(left, right),
+      mkMultiply(left, right),
+      mkDivide(left, right),
+      mkModulo(left, right)
     )
   } yield node
 
@@ -153,12 +155,12 @@ trait TransformerGenerators {
     left <- numExprTreeNodeGen
     right <- numExprTreeNodeGen
     node <- Gen.oneOf(
-      TransformingSigmaBuilder.EQ(left, right),
-      TransformingSigmaBuilder.NEQ(left, right),
-      TransformingSigmaBuilder.LE(left, right),
-      TransformingSigmaBuilder.GE(left, right),
-      TransformingSigmaBuilder.LT(left, right),
-      TransformingSigmaBuilder.GT(left, right)
+      mkEQ(left, right),
+      mkNEQ(left, right),
+      mkLE(left, right),
+      mkGE(left, right),
+      mkLT(left, right),
+      mkGT(left, right)
     )
   } yield node
 }

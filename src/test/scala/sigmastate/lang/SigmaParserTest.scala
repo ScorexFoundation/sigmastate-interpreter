@@ -1,20 +1,16 @@
 package sigmastate.lang
 
-import java.beans.IndexedPropertyDescriptor
-
 import fastparse.core.ParseError
-import fastparse.core.Parsed.Failure
-import org.scalactic.source.Position
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
-import sigmastate._
+import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{SizeOf, Exists}
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
+  import StdSigmaBuilder._
 
   def parse(x: String): SValue = {
     val res = SigmaParser(x).get.value
@@ -91,7 +87,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("()") shouldBe UnitConstant
     parse("(1)") shouldBe IntConstant(1)
     parse("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
-    parse("(1, X + 1)") shouldBe Tuple(IntConstant(1), StdSigmaBuilder.Plus(IntIdent("X"), 1))
+    parse("(1, X + 1)") shouldBe Tuple(IntConstant(1), mkPlus(IntIdent("X"), 1))
     parse("(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
     parse("(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
 
@@ -209,11 +205,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     Apply(Ident("Array"),
       IndexedSeq(
         IntConstant(1),
-        StdSigmaBuilder.Plus(Ident("X").asValue[SLong.type], IntConstant(1)),
+        mkPlus(Ident("X").asValue[SLong.type], IntConstant(1)),
         Apply(Ident("Array"), IndexedSeq.empty)))
     parse("Array(Array(X + 1))") shouldBe Apply(Ident("Array"),
       IndexedSeq(Apply(Ident("Array"), IndexedSeq(
-                  StdSigmaBuilder.Plus(Ident("X").asValue[SLong.type], IntConstant(1))))))
+                  mkPlus(Ident("X").asValue[SLong.type], IntConstant(1))))))
   }
 
   property("Option constructors") {
@@ -223,7 +219,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("Some(X)") shouldBe Apply(Ident("Some"), IndexedSeq(Ident("X")))
     parse("Some(Some(X + 1))") shouldBe Apply(Ident("Some"),
       IndexedSeq(Apply(Ident("Some"), IndexedSeq(
-                  StdSigmaBuilder.Plus(Ident("X").asValue[SLong.type], IntConstant(1))))))
+                  mkPlus(Ident("X").asValue[SLong.type], IntConstant(1))))))
   }
 
   property("array indexed access") {
@@ -275,9 +271,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("lambdas") {
     parse("fun (x: Int) = x + 1") shouldBe
-      Lambda(IndexedSeq("x" -> SInt), StdSigmaBuilder.Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+      Lambda(IndexedSeq("x" -> SInt), mkPlus(Ident("x").asValue[SInt.type], IntConstant(1)))
     parse("fun (x: Int): Int = x + 1") shouldBe
-      Lambda(IndexedSeq("x" -> SInt), SInt, StdSigmaBuilder.Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+      Lambda(IndexedSeq("x" -> SInt), SInt, mkPlus(Ident("x").asValue[SInt.type], IntConstant(1)))
     parse("fun (x: Int, box: Box): Long = x + box.value") shouldBe
         Lambda(IndexedSeq("x" -> SInt, "box" -> SBox), SLong,
                Plus(Ident("x").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]))
@@ -290,12 +286,12 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         )
 
     parse("fun (x) = x + 1") shouldBe
-        Lambda(IndexedSeq("x" -> NoType), StdSigmaBuilder.Plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+        Lambda(IndexedSeq("x" -> NoType), mkPlus(Ident("x").asValue[SInt.type], IntConstant(1)))
     parse("fun (x: Int) = { x + 1 }") shouldBe
-        Lambda(IndexedSeq("x" -> SInt), Block(Seq(), StdSigmaBuilder.Plus(Ident("x").asValue[SInt.type], IntConstant(1))))
+        Lambda(IndexedSeq("x" -> SInt), Block(Seq(), mkPlus(Ident("x").asValue[SInt.type], IntConstant(1))))
     parse("fun (x: Int) = { let y = x + 1; y }") shouldBe
         Lambda(IndexedSeq("x" -> SInt),
-          Block(Let("y", StdSigmaBuilder.Plus(IntIdent("x"), 1)), Ident("y")))
+          Block(Let("y", mkPlus(IntIdent("x"), 1)), Ident("y")))
   }
 
   property("predefined Exists with lambda argument") {
@@ -312,12 +308,12 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       """{let f = fun (x: Int) = x + 1
        |f}
       """.stripMargin) shouldBe
-        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), StdSigmaBuilder.Plus(IntIdent("x"), 1))), Ident("f"))
+        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), mkPlus(IntIdent("x"), 1))), Ident("f"))
     parse(
       """{fun f(x: Int) = x + 1
        |f}
       """.stripMargin) shouldBe
-        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), StdSigmaBuilder.Plus(IntIdent("x"), 1))), Ident("f"))
+        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), mkPlus(IntIdent("x"), 1))), Ident("f"))
   }
 
   property("get field of ref") {

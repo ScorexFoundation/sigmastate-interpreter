@@ -21,6 +21,7 @@ import scala.collection.mutable.ArrayBuffer
   */
 class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
   import SigmaTyper._
+  import builder._
 
   /** Most Specific Generalized (MSG) type of ts.
     * Currently just the type of the first element as long as all the elements have the same type. */
@@ -200,7 +201,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         case SGroupElement => (m, newArgs) match {
           case ("*", Seq(r)) =>
             if (r.tpe == SGroupElement)
-              builder.MultiplyGroup(newObj.asGroupElement, r.asGroupElement)
+              mkMultiplyGroup(newObj.asGroupElement, r.asGroupElement)
             else
               error(s"Invalid argument type for $m, expected $SGroupElement but was ${r.tpe}")
           case _ =>
@@ -209,7 +210,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         case nl: SNumericType => (m, newArgs) match {
           case ("*", Seq(r)) => r.tpe match {
             case nr: SNumericType =>
-              bimap(env, "*", newObj.asNumValue, r.asNumValue)(builder.Multiply)(tT, tT)
+              bimap(env, "*", newObj.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }
@@ -241,7 +242,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val c1 = assignType(env, c).asValue[SBoolean.type]
       val t1 = assignType(env, t)
       val e1 = assignType(env, e)
-      val ite = builder.If(c1, t1, e1)
+      val ite = mkIf(c1, t1, e1)
       if (c1.tpe != SBoolean)
         error(s"Invalid type of condition in $ite: expected Boolean; actual: ${c1.tpe}")
       if (t1.tpe != e1.tpe)
@@ -252,36 +253,36 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val input1 = assignType(env, input).asValue[SCollection[SBoolean.type]]
       if (!(input1.tpe.isCollection && input1.tpe.elemType == SBoolean))
         error(s"Invalid operation AND: $op")
-      builder.AND(input1)
+      mkAND(input1)
 
     case op @ OR(input) =>
       val input1 = assignType(env, input).asValue[SCollection[SBoolean.type]]
       if (!(input1.tpe.isCollection && input1.tpe.elemType == SBoolean))
         error(s"Invalid operation OR: $op")
-      builder.OR(input1)
+      mkOR(input1)
 
-    case GE(l, r) => bimap(env, ">=", l, r)(builder.GE[SType])(tT, SBoolean)
-    case LE(l, r) => bimap(env, "<=", l, r)(builder.LE[SType])(tT, SBoolean)
-    case GT(l, r) => bimap(env, ">", l, r) (builder.GT[SType])(tT, SBoolean)
-    case LT(l, r) => bimap(env, "<", l, r) (builder.LT[SType])(tT, SBoolean)
-    case EQ(l, r) => bimap2(env, "==", l, r)(builder.EQ[SType])
-    case NEQ(l, r) => bimap2(env, "!=", l, r)(builder.NEQ[SType])
+    case GE(l, r) => bimap(env, ">=", l, r)(mkGE[SType])(tT, SBoolean)
+    case LE(l, r) => bimap(env, "<=", l, r)(mkLE[SType])(tT, SBoolean)
+    case GT(l, r) => bimap(env, ">", l, r) (mkGT[SType])(tT, SBoolean)
+    case LT(l, r) => bimap(env, "<", l, r) (mkLT[SType])(tT, SBoolean)
+    case EQ(l, r) => bimap2(env, "==", l, r)(mkEQ[SType])
+    case NEQ(l, r) => bimap2(env, "!=", l, r)(mkNEQ[SType])
 
-    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(builder.Minus)(tT, tT)
-    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(builder.Plus)(tT, tT)
-    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(builder.Multiply)(tT, tT)
-    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(builder.Modulo)(tT, tT)
-    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(builder.Divide)(tT, tT)
+    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(mkMinus)(tT, tT)
+    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(mkPlus)(tT, tT)
+    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
+    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(mkModulo)(tT, tT)
+    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(mkDivide)(tT, tT)
     
-    case Xor(l, r) => bimap(env, "|", l, r)(builder.Xor)(SByteArray, SByteArray)
-    case MultiplyGroup(l, r) => bimap(env, "*", l, r)(builder.MultiplyGroup)(SGroupElement, SGroupElement)
+    case Xor(l, r) => bimap(env, "|", l, r)(mkXor)(SByteArray, SByteArray)
+    case MultiplyGroup(l, r) => bimap(env, "*", l, r)(mkMultiplyGroup)(SGroupElement, SGroupElement)
 
     case Exponentiate(l, r) =>
       val l1 = assignType(env, l).asGroupElement
       val r1 = assignType(env, r).asBigInt
       if (l1.tpe != SGroupElement || r1.tpe != SBigInt)
         error(s"Invalid binary operation Exponentiate: expected argument types ($SGroupElement, $SBigInt); actual: (${l.tpe}, ${r.tpe})")
-      builder.Exponentiate(l1, r1)
+      mkExponentiate(l1, r1)
 
     case ByIndex(col, i, defaultValue) =>
       val c1 = assignType(env, col).asCollection[SType]

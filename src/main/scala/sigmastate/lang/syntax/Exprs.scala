@@ -39,7 +39,7 @@ trait Exprs extends Core with Types {
       val If = {
         val Else = P( Semi.? ~ `else` ~/ Expr )
         P( `if` ~/ "(" ~ ExprCtx.Expr ~ ")" ~ Expr ~ Else ).map {
-          case (c, t, e) => builder.If(c.asValue[SBoolean.type], t, e)
+          case (c, t, e) => builder.mkIf(c.asValue[SBoolean.type], t, e)
         }
       }
       val Fun = P( `fun` ~/ LambdaDef)

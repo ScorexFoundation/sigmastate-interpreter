@@ -98,7 +98,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   */
 object OR {
   def apply(children: Seq[Value[SBoolean.type]]): OR =
-    DefaultSigmaBuilder.OR(ConcreteCollection(children.toIndexedSeq)).asInstanceOf[OR]
+    DefaultSigmaBuilder.mkOR(ConcreteCollection(children.toIndexedSeq)).asInstanceOf[OR]
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): OR = apply(head +: tail)
 }
@@ -163,7 +163,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   */
 object AND {
   def apply(children: Seq[Value[SBoolean.type]]): AND =
-    DefaultSigmaBuilder.AND(ConcreteCollection(children.toIndexedSeq)).asInstanceOf[AND]
+    DefaultSigmaBuilder.mkAND(ConcreteCollection(children.toIndexedSeq)).asInstanceOf[AND]
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
