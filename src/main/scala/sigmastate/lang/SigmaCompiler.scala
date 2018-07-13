@@ -21,7 +21,7 @@ class SigmaCompiler {
     val bound = binder.bind(parsed)
     val typer = new SigmaTyper
     val typed = typer.typecheck(bound)
-    val spec = new SigmaSpecializer
+    val spec = new SigmaSpecializer(TransformingSigmaBuilder)
     val ir = spec.specialize(typed)
     ir
   }

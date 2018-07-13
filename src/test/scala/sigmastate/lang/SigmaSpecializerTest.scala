@@ -36,7 +36,7 @@ class SigmaSpecializerTest extends PropSpec
     typed
   }
   def spec(env: Map[String, SValue], typed: SValue): SValue = {
-    val spec = new SigmaSpecializer()
+    val spec = new SigmaSpecializer(TransformingSigmaBuilder)
     spec.specialize(env, typed)
   }
   def spec(code: String): SValue = {

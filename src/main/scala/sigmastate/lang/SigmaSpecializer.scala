@@ -12,7 +12,7 @@ import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Let, Select, ValueOps
 import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 
-class SigmaSpecializer(val builder: SigmaBuilder = TransformingSigmaBuilder) {
+class SigmaSpecializer(val builder: SigmaBuilder) {
   import SigmaSpecializer._
 
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
