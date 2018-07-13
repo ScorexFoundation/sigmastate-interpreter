@@ -60,7 +60,7 @@ class SigmaSpecializer(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       Some(builder.IntToByte(arg))
 
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
-      Some(LongToByteArray(arg))
+      Some(builder.LongToByteArray(arg))
 
     case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
       Some(Constant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))

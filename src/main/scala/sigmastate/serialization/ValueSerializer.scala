@@ -73,7 +73,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, ExtractId.apply),
     SimpleTransformerSerializer[SInt.type, SByte.type](IntToByteCode, builder.IntToByte),
-    SimpleTransformerSerializer[SLong.type, SByteArray](LongToByteArrayCode, LongToByteArray.apply),
+    SimpleTransformerSerializer[SLong.type, SByteArray](LongToByteArrayCode, builder.LongToByteArray),
     SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, CalcSha256.apply),

@@ -41,6 +41,7 @@ trait SigmaBuilder {
                      falseBranch: Value[T]): Value[T]
 
   def IntToByte(input: Value[SInt.type]): Value[SByte.type]
+  def LongToByteArray(input: Value[SLong.type]): Value[SByteArray]
 
   def error(msg: String) = throw new BuilderException(msg, None)
 }
@@ -119,6 +120,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def IntToByte(input: Value[SInt.type]): Value[SByte.type] =
     sigmastate.IntToByte(input)
+
+  override def LongToByteArray(input: Value[SLong.type]): Value[SByteArray] =
+    sigmastate.LongToByteArray(input)
 }
 
 trait TypeConstraintCheck {
