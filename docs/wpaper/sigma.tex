@@ -1,4 +1,4 @@
-\documentclass[11pt]{llncs}
+\documentclass[11pt]{article}
 
 \def\shownotes{1}
 \def\notesinmargins{0}
@@ -51,6 +51,12 @@
 \newcommand{\langname}{$\Sigma$-State}
 \newcommand{\lst}[1]{\text{\lstinline[basicstyle={\ttfamily}]$#1$}}
 
+\newcommand{\andnode}{\ensuremath{\mathsf{AND}}}
+\newcommand{\ornode}{\ensuremath{\mathsf{OR}}}
+\newcommand{\tnode}{\ensuremath{\mathsf{THRESHOLD}}}
+\newcommand{\GF}{\ensuremath{\mathrm{GF}}}
+
+
 \begin{document}
 
 \title{\langname, an Alternative to Bitcoin Script}
@@ -71,12 +77,38 @@ We report on design and implementation of \langname, a more powerful, protocol-f
 
 
 \section{Introduction}
+\paragraph{Background}
+Since its early days, Bitcoin~\cite{Nak08} has allowed more than simple money transfers between two public keys: its Bitcoin Script scripting language has allowed participants to specify conditions for how money could be spent. A program written in Bitcoin Script is attached to every transaction output (i.e., amount received); this program protects the transaction by determining how the transaction output can be used as an input to (i.e., spent in) a future transaction. The simplest condition is specified by a program that contains the recipient's public key and states that the money can be spent by creating a signature that verifies under this key.  However, more general conditions are allowed by more sophisticated programs. 
 
-Since very early days, Bitcoin~\cite{Nak08} is not just about simple money transfers: it has a scripting language named Bitcoin Script. The language is a primitive stack-based language without loops. A program in this language is protecting a transaction output~(usually, from a party who does not know some secret information). To spend the output, a spending transaction must provide a script in the same language, such as concatenation of both scripts is to be interpreted in {\em true} value on top of the stack. Combined with a maximum size of a 10 kilobytes, the absence of loops provides a guarantee of strictly finite validation time. However, some denial-of-service attacks were found against script validation time. \knote{links}
+The Bitcoin Script language is a primitive stack-based language without loops. To spend an output protected by a program, a spending transaction must provide a program in the same language, and the concatenation of the two programs must evaluate to \emph{true}. The creator of the spending transaction can be viewed as a prover (for example, proving knowledge of the secret key by producing a signature), where the statement that needs to be proven is specified by the output that is being spent. Transaction validity is verified by executing programs. Bounded validation time is ensured by the absence of loops in the programming language and a maximum program size of 10 kilobytes. Even so, some denial-of-service attacks exploiting script validation time have appeared. \knote{links} On the other hand, the deliberate simplicity of the programming language limits the kinds of contracts that can be created on the Bitcoin platform.
 
-Smart contracts platform Ethereum is allowing arbitrary program to be run on top of blockchain. \knote{continue}
+To allow for more sophisticated ``smart'' contracts, Ethereum allows for arbitrary Turing-complete programs. This approach requires charging for computation in order to prevent denial-of-service attacks, because the running time of a Turing-complete program cannot, in general, be estimated without actually running the program.
 
-Our paper is introducing a new language, which is more powerful than Bitcoin Script, and more friendly to cryptographic protocols and applications. It is also providing better guarantees for validation to be finished within target timeout. \knote{continue}
+
+\paragraph{Our Contribution}
+In this paper we introduce a new language that is specifically designed to be friendly to cryptographic protocols and applications. The language is considerably more powerful than Bitcoin Script, but it is not Turing-complete. Given a program in our language, it is easy to obtain a bound on its running time. \knote{continue}
+
+\lnote{it would be good to name the language --- named designs are easier for people to remember and will get more recognition eventually}
+
+Our new language incorporates proving and verifying as first-class primitives, giving developers to a subclass of cryptographic proof systems known as non-interactive $\Sigma$-protocols (pronounced ``sigma-protocols'').   Thus, the output of a transaction contains a statement that needs to be proven in order to spend this output. 
+
+Conceptually, $\Sigma$-protocols protocols are generalizations~\cite{CL06} of signature schemes.
+In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is the canonical example of a non-interactive $\Sigma$-protocol: it proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-protocols described here can be attached to specific messages). $\Sigma$-protocols exist for proving a variety of properties and, importantly for our language, elementary $\Sigma$-protocols can be combined into more sophisticated ones.
+ See \lnote{damgard's notes \url{http://www.cs.au.dk/~ivan/Sigma.pdf}? anything better?} for an introduction to $\Sigma$-protocols. \lnote{should we also point to Cramer's thesis or anything else?}
+
+Specifically for our language, we provide two elementary $\Sigma$-protocols:
+\begin{itemize}
+\item A proof of knowledge of discrete logarithm (i.e., a Schnorr signature): given the group generator $g$ and a group element $h$, the proof convinces a verifier that the prover knows $w$ such that $h=g^w$, without revealing $w$
+\item A proof that of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g, h, u, v$, the proof convinces a verifier that the prover knows $w$ such that $u=g^w$ and $v=h^w$, without revealing $w$
+\end{itemize}
+We also provide the ability to build more sophisticated $\Sigma$-protocols by using $\andnode$ and $\ornode$ connectives \lnote{add $\tnode$ when we implement it}. Crucially, the proof for an $\ornode$ connective does not reveal which of the relevant values the prover knows: for example, in our language a ring signature by public keys $h_1, \dots, h_k$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_k$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
+
+In addition to $\Sigma$-protocols, our language allows for predicates over the state of the blockchain. These predicates can be combined, via Boolean connectives, with $\Sigma$-protocol proofs, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. Also unlike Bitcoin, we allow outputs to contain fields in addition to the amount and protecting script \lnote{how can these be accessed? it's not clear to me.} The language is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
+
+
+\lnote{Old intro text below this line. Not sure if any needs to be kept -- I think I got most of its points above}
+
+Much like digital signatures prove that the signer knows the secret key, $\Sigma$-protocols can be used to prove knowledge of a discrete logarithm. 
 
 
 The idea behind the language is that a subset of zero-knowledge protocols known as $\Sigma$-protocols (sigma protocols) could be combined via $\sqcap$ and $\sqcup$ connectives forming complex statements like ``prove me a knowledge of discrete logarithm of (publicly known) $x_1$ or knowledge of Pedersen commitment $x_2$ preimage''. We make an observation that sigma protocol statements and their conjectures are naturally correspond to propositional logic, and we can add arbitrary boolean predicates to statements provable via a $\Sigma$-protocol, if both prover and verifier are able to evaluate the predicates in exactly the same way. This is the case if predicates are evaluated deterministically in the same way by both the prover and the verifier, and inputs for the predicates are the same on both sides.
@@ -266,10 +298,6 @@ Shared context of a blockchain system could be expressed in different ways, base
 
 
 \section{Details of $\Sigma$-protocols for an arbitrary And/Or/Threshold composition}
-\newcommand{\andnode}{\ensuremath{\mathsf{AND}}}
-\newcommand{\ornode}{\ensuremath{\mathsf{OR}}}
-\newcommand{\tnode}{\ensuremath{\mathsf{THRESHOLD}}}
-\newcommand{\GF}{\ensuremath{\mathrm{GF}}}
 \subsection{Background}
 
 \lnote{need to give some references that explain $\Sigma$-protocols well. Not sure what --- may need to dig through the literature}
@@ -683,7 +711,7 @@ We show in this paper...
 
 
 
-\bibliographystyle{splncs03}
+\bibliographystyle{alpha}
 \bibliography{sigma.bib}
 
 
