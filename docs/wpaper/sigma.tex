@@ -96,17 +96,23 @@ Conceptually, $\Sigma$-protocols protocols are generalizations~\cite{CL06} of si
 In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is the canonical example of a non-interactive $\Sigma$-protocol: it proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-protocols described here can be attached to specific messages). $\Sigma$-protocols exist for proving a variety of properties and, importantly for our language, elementary $\Sigma$-protocols can be combined into more sophisticated ones.
  See \lnote{damgard's notes \url{http://www.cs.au.dk/~ivan/Sigma.pdf}? anything better?} for an introduction to $\Sigma$-protocols. \lnote{should we also point to Cramer's thesis or anything else?}
 
-Specifically for our language, we provide two elementary $\Sigma$-protocols:
+Specifically for our language, we provide two elementary $\Sigma$-protocols over a group of prime order (such as an elliptic curve), written here in multiplicative notation:
 \begin{itemize}
 \item A proof of knowledge of discrete logarithm (i.e., a Schnorr signature): given the group generator $g$ and a group element $h$, the proof convinces a verifier that the prover knows $w$ such that $h=g^w$, without revealing $w$
 \item A proof that of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g, h, u, v$, the proof convinces a verifier that the prover knows $w$ such that $u=g^w$ and $v=h^w$, without revealing $w$
 \end{itemize}
+\lnote{I don't like the notation above -- $g$ is overloaded because it's the base point in item 1 and an arbitrary point in item 2; $h$ is also overloaded. However, this is the notation used in the code. I would like to think of better notation and have the white paper match the code.}
+
+
 We also provide the ability to build more sophisticated $\Sigma$-protocols by using $\andnode$ and $\ornode$ connectives \lnote{add $\tnode$ when we implement it}. Crucially, the proof for an $\ornode$ connective does not reveal which of the relevant values the prover knows: for example, in our language a ring signature by public keys $h_1, \dots, h_k$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_k$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
 
 In addition to $\Sigma$-protocols, our language allows for predicates over the state of the blockchain. These predicates can be combined, via Boolean connectives, with $\Sigma$-protocol proofs, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. Also unlike Bitcoin, we allow outputs to contain fields in addition to the amount and protecting script \lnote{how can these be accessed? it's not clear to me.} The language is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
 
 
+
 \lnote{Old intro text below this line. Not sure if any needs to be kept -- I think I got most of its points above}
+
+------------------------------------------------------
 
 Much like digital signatures prove that the signer knows the secret key, $\Sigma$-protocols can be used to prove knowledge of a discrete logarithm. 
 
@@ -117,10 +123,10 @@ We use predicates over state of blockchain system during script validation~(whic
 
 In blockchain systems, there is a strict need to tackle the problem of denial-of-service attack carrying by crafting scripts which are too costly to validate. For example, if it is needed for more time to validate a script than average delay between blocks on commodity hardware, network could be obviously attacked, with nodes stuck in processing, and also increased number of forks as result. 
 
+------------------------------------------------------
 
 
-\subsection{Organization of the Paper}
-
+\lnote{I think here we should put a few examples to help the reader get an idea, and then point fo more examples below in the paper}
 
 \section{Related Work}
 
