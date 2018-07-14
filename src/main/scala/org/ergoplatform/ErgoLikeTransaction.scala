@@ -22,12 +22,10 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
 
   require(outputCandidates.size <= Short.MaxValue)
 
-  type IdType <: Array[Byte]
-
-  val id: IdType
+  def serializedId: Array[Byte]
 
   lazy val outputs: IndexedSeq[ErgoBox] =
-    outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
+    outputCandidates.indices.map(idx => outputCandidates(idx).toBox(serializedId, idx.toShort))
 
   lazy val messageToSign: Array[Byte] =
     ErgoLikeTransaction.flattenedTxSerializer.bytesToSign(inputs.map(_.boxId), outputCandidates)
@@ -40,9 +38,7 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
                                   override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoLikeTransactionTemplate[UnsignedInput] {
 
-  override type IdType = Digest32
-
-  override lazy val id: IdType = Blake2b256.hash(messageToSign)
+  override lazy val serializedId: Array[Byte] = Blake2b256.hash(messageToSign)
 
   def toSigned(proofs: IndexedSeq[ProverResult]): ErgoLikeTransaction = {
     require(proofs.size == inputs.size)
@@ -68,12 +64,10 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
 
   require(outputCandidates.length <= Short.MaxValue, s"${Short.MaxValue} is the maximum number of outputs")
 
-  override type IdType = Digest32
-
-  override lazy val id: IdType = Blake2b256.hash(messageToSign)
+  override lazy val serializedId: Array[Byte] = Blake2b256.hash(messageToSign)
 
   override def equals(obj: Any): Boolean = obj match {
-    case tx: ErgoLikeTransaction => this.id sameElements tx.id  //we're ignoring spending proofs here
+    case tx: ErgoLikeTransaction => this.serializedId sameElements tx.serializedId  //we're ignoring spending proofs here
     case _ => false
   }
 }
