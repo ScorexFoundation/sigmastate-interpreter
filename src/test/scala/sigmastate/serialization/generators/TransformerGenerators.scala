@@ -60,24 +60,25 @@ trait TransformerGenerators {
     col1 <- arbCCOfIntConstant.arbitrary
     from <- intConstGen
     until <- intConstGen
-  } yield Slice(col1, from, until)
+  } yield mkSlice(col1, from, until).asInstanceOf[Slice[SInt.type]]
 
   val whereGen: Gen[Where[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
     id <- Arbitrary.arbitrary[Byte]
     condition <- booleanConstGen
-  } yield Where(col1, id, condition)
+  } yield mkWhere(col1, id, condition).asInstanceOf[Where[SInt.type]]
 
   val appendGen: Gen[Append[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
     col2 <- arbCCOfIntConstant.arbitrary
-  } yield Append(col1, col2)
+  } yield mkAppend(col1, col2).asInstanceOf[Append[SInt.type]]
 
   val sizeOfGen: Gen[SizeOf[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-  } yield SizeOf(input)
+  } yield mkSizeOf(input).asInstanceOf[SizeOf[SInt.type]]
 
-  val extractAmountGen: Gen[ExtractAmount] = arbTaggedBox.arbitrary.map { b => ExtractAmount(b) }
+  val extractAmountGen: Gen[ExtractAmount] =
+    arbTaggedBox.arbitrary.map { b => mkExtractAmount(b).asInstanceOf[ExtractAmount] }
   val extractScriptBytesGen: Gen[ExtractScriptBytes] = arbTaggedBox.arbitrary.map { b => ExtractScriptBytes(b) }
   val extractBytesGen: Gen[ExtractBytes] = arbTaggedBox.arbitrary.map { b => ExtractBytes(b) }
   val extractBytesWithNoRefGen: Gen[ExtractBytesWithNoRef] = arbTaggedBox.arbitrary.map { b => ExtractBytesWithNoRef(b) }

@@ -85,7 +85,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {
-        case (box, SBox.Value) => Some(ExtractAmount(box))
+        case (box, SBox.Value) => Some(mkExtractAmount(box))
         case (box, SBox.PropositionBytes) => Some(ExtractScriptBytes(box))
         case (box, SBox.Id) => Some(ExtractId(box))
         case (box, SBox.Bytes) => Some(ExtractBytes(box))
@@ -102,7 +102,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       }
 
     case Select(obj, "value", Some(SLong)) if obj.tpe == SBox =>
-      Some(ExtractAmount(obj.asValue[SBox.type]))
+      Some(mkExtractAmount(obj.asValue[SBox.type]))
 
     case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
       val index = fn.substring(1).toByte
