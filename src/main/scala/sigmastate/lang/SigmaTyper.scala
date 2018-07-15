@@ -298,7 +298,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val c1 = assignType(env, col).asCollection[SType]
       if (!c1.tpe.isCollectionLike)
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})")
-      SizeOf(c1)
+      mkSizeOf(c1)
     
     case Height => Height
     case Self => Self

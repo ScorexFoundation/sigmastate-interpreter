@@ -69,7 +69,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>
       if (obj.tpe.isCollectionLike)
-        Some(SizeOf(obj.asValue[SCollection[SType]]))
+        Some(mkSizeOf(obj.asValue[SCollection[SType]]))
       else
         error(s"The type of $obj is expected to be Collection to select 'size' property")
 
