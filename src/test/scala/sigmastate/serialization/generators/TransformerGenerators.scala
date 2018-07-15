@@ -87,7 +87,8 @@ trait TransformerGenerators {
     arbTaggedBox.arbitrary.map { b =>
       mkExtractBytesWithNoRef(b).asInstanceOf[ExtractBytesWithNoRef]
     }
-  val extractIdGen: Gen[ExtractId] = arbTaggedBox.arbitrary.map { b => ExtractId(b) }
+  val extractIdGen: Gen[ExtractId] =
+    arbTaggedBox.arbitrary.map { b => mkExtractId(b).asInstanceOf[ExtractId] }
   val extractRegisterAsGen: Gen[ExtractRegisterAs[SInt.type]] = for {
     input <- arbTaggedBox.arbitrary
     r <- arbRegisterIdentifier.arbitrary

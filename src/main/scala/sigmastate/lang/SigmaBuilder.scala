@@ -85,6 +85,7 @@ trait SigmaBuilder {
   def mkExtractScriptBytes(input: Value[SBox.type]): Value[SByteArray]
   def mkExtractBytes(input: Value[SBox.type]): Value[SByteArray]
   def mkExtractBytesWithNoRef(input: Value[SBox.type]): Value[SByteArray]
+  def mkExtractId(input: Value[SBox.type]): Value[SByteArray]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -227,6 +228,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkExtractBytesWithNoRef(input: Value[SBox.type]): Value[SByteArray] =
     ExtractBytesWithNoRef(input)
+
+  override def mkExtractId(input: Value[SBox.type]): Value[SByteArray] =
+    ExtractId(input)
 }
 
 trait TypeConstraintCheck {

@@ -87,7 +87,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       (obj.asValue[SBox.type], field) match {
         case (box, SBox.Value) => Some(mkExtractAmount(box))
         case (box, SBox.PropositionBytes) => Some(mkExtractScriptBytes(box))
-        case (box, SBox.Id) => Some(ExtractId(box))
+        case (box, SBox.Id) => Some(mkExtractId(box))
         case (box, SBox.Bytes) => Some(mkExtractBytes(box))
         case (box, SBox.BytesWithNoRef) => Some(mkExtractBytesWithNoRef(box))
         case (box, _) if box.tpe.hasMethod(field) =>
