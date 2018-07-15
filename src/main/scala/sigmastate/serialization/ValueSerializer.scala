@@ -69,7 +69,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     FoldSerializer,
     SimpleTransformerSerializer[SCollection[SType], SInt.type](SizeOfCode, mkSizeOf),
     SimpleTransformerSerializer[SBox.type, SLong.type](ExtractAmountCode, mkExtractAmount),
-    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractScriptBytesCode, ExtractScriptBytes.apply),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractScriptBytesCode, mkExtractScriptBytes),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesCode, ExtractBytes.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, ExtractId.apply),
