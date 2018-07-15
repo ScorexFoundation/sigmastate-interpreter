@@ -83,6 +83,7 @@ trait SigmaBuilder {
   def mkSizeOf[V <: SType](input: Value[SCollection[V]]): Value[SInt.type]
   def mkExtractAmount(input: Value[SBox.type]): Value[SLong.type]
   def mkExtractScriptBytes(input: Value[SBox.type]): Value[SByteArray]
+  def mkExtractBytes(input: Value[SBox.type]): Value[SByteArray]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -219,6 +220,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkExtractScriptBytes(input: Value[SBox.type]): Value[SByteArray] =
     ExtractScriptBytes(input)
+
+  override def mkExtractBytes(input: Value[SBox.type]): Value[SByteArray] =
+    ExtractBytes(input)
 }
 
 trait TypeConstraintCheck {

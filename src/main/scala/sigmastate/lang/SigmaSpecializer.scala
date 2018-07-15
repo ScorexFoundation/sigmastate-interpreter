@@ -88,7 +88,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         case (box, SBox.Value) => Some(mkExtractAmount(box))
         case (box, SBox.PropositionBytes) => Some(mkExtractScriptBytes(box))
         case (box, SBox.Id) => Some(ExtractId(box))
-        case (box, SBox.Bytes) => Some(ExtractBytes(box))
+        case (box, SBox.Bytes) => Some(mkExtractBytes(box))
         case (box, SBox.BytesWithNoRef) => Some(ExtractBytesWithNoRef(box))
         case (box, _) if box.tpe.hasMethod(field) =>
           None  // leave it as it is and handle on a level of parent node
