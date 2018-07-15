@@ -105,10 +105,13 @@ trait TransformerGenerators {
     default <- booleanConstGen
     isDefined <- Arbitrary.arbitrary[Boolean]
     defaultOpt = if (isDefined) Some(default) else None
-  } yield DeserializeRegister(r, SBoolean, defaultOpt)
+  } yield mkDeserializeRegister(r, SBoolean, defaultOpt)
+    .asInstanceOf[DeserializeRegister[SBoolean.type]]
 
   val longToByteArrayGen: Gen[LongToByteArray] = arbLongConstants.arbitrary.map { v => LongToByteArray(v) }
-  val byteArrayToBigIntGen: Gen[ByteArrayToBigInt] = arbByteArrayConstant.arbitrary.map { v => ByteArrayToBigInt(v) }
+  val byteArrayToBigIntGen: Gen[ByteArrayToBigInt] =
+    arbByteArrayConstant.arbitrary.map { v =>
+      mkByteArrayToBigInt(v).asInstanceOf[ByteArrayToBigInt] }
   val calcBlake2b256Gen: Gen[CalcBlake2b256] = arbByteArrayConstant.arbitrary.map { v => CalcBlake2b256(v) }
   val calcSha256Gen: Gen[CalcSha256] = arbByteArrayConstant.arbitrary.map { v => CalcSha256(v) }
 

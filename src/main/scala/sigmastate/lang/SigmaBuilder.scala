@@ -44,6 +44,7 @@ trait SigmaBuilder {
 
   def mkIntToByte(input: Value[SInt.type]): Value[SByte.type]
   def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray]
+  def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type]
 
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
@@ -94,6 +95,9 @@ trait SigmaBuilder {
                                       default: Option[Value[IV]]): Value[IV]
 
   def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T]
+  def mkDeserializeRegister[T <: SType](reg: RegisterId,
+                                        tpe: T,
+                                        default: Option[Value[T]] = None): Value[T]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -174,6 +178,9 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray] =
     LongToByteArray(input)
 
+  override def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type] =
+    ByteArrayToBigInt(input)
+
   override def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray] =
     CalcBlake2b256(input)
 
@@ -248,6 +255,11 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T] =
     DeserializeContext(id, tpe)
+
+  override def mkDeserializeRegister[T <: SType](reg: RegisterId,
+                                                 tpe: T,
+                                                 default: Option[Value[T]] = None): Value[T] =
+    DeserializeRegister(reg, tpe, default)
 }
 
 trait TypeConstraintCheck {
