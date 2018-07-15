@@ -76,12 +76,12 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(_)), Seq(arg)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
-      Some(ExtractRegisterAs(box.asBox, reg, Some(arg))(arg.tpe))
+      Some(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
 
     case sel @ Select(Select(Typed(box, SBox), regName, _), "value", Some(regType)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
-      Some(ExtractRegisterAs(box.asBox, reg)(regType))
+      Some(mkExtractRegisterAs(box.asBox, reg, regType, None))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {

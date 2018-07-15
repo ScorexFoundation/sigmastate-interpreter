@@ -344,7 +344,7 @@ object ExtractRegisterAs {
   def apply[V <: SType](input: Value[SBox.type],
                         registerId: RegisterId,
                         default: Option[Value[V]] = None)(implicit tpe: V): ExtractRegisterAs[V] =
-    ExtractRegisterAs(input, registerId, tpe, default)
+    mkExtractRegisterAs(input, registerId, tpe, default).asInstanceOf[ExtractRegisterAs[V]]
 }
 
 trait Deserialize[V <: SType] extends NotReadyValue[V]

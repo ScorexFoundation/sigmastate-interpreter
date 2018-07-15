@@ -2,6 +2,7 @@ package sigmastate.serialization.transformers
 
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.Value
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
@@ -24,7 +25,8 @@ object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[STy
     val register = ErgoBox.findRegisterByIndex(regId).get
     val defaultValue = r.getOption(r.getValue())
     val tpe = r.getType()
-    ExtractRegisterAs(input.asInstanceOf[Value[SBox.type]], register, defaultValue)(tpe)
+    DeserializationSigmaBuilder.mkExtractRegisterAs(input.asInstanceOf[Value[SBox.type]],
+      register, tpe, defaultValue).asInstanceOf[ExtractRegisterAs[SType]]
   }
 
 }

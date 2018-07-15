@@ -1,5 +1,6 @@
 package sigmastate.lang
 
+import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{Constant, SValue, Value}
 import sigmastate._
@@ -80,12 +81,17 @@ trait SigmaBuilder {
                                default: Option[Value[IV]] = None): Value[IV]
 
   def mkSelectField(input: Value[STuple], fieldIndex: Byte): Value[SType]
-  def mkSizeOf[V <: SType](input: Value[SCollection[V]]): Value[SInt.type]
+  def mkSizeOf[IV <: SType](input: Value[SCollection[IV]]): Value[SInt.type]
   def mkExtractAmount(input: Value[SBox.type]): Value[SLong.type]
   def mkExtractScriptBytes(input: Value[SBox.type]): Value[SByteArray]
   def mkExtractBytes(input: Value[SBox.type]): Value[SByteArray]
   def mkExtractBytesWithNoRef(input: Value[SBox.type]): Value[SByteArray]
   def mkExtractId(input: Value[SBox.type]): Value[SByteArray]
+
+  def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
+                                      registerId: RegisterId,
+                                      tpe: IV,
+                                      default: Option[Value[IV]]): Value[IV]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -231,6 +237,12 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkExtractId(input: Value[SBox.type]): Value[SByteArray] =
     ExtractId(input)
+
+  override def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
+                                                registerId: RegisterId,
+                                                tpe: IV,
+                                                default: Option[Value[IV]] = None): Value[IV] =
+    ExtractRegisterAs(input, registerId, tpe, default)
 }
 
 trait TypeConstraintCheck {
