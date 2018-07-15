@@ -6,7 +6,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, TyperException}
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
@@ -94,7 +94,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
           val tRes = if (iField != -1) {
             s.methods(iField).stype
           } else
-            error(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}")
+            throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}")
           Select(newObj, n, Some(tRes))
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t")

@@ -6,7 +6,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, TyperException}
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException}
 import sigmastate.serialization.generators.ValueGenerators
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
@@ -117,6 +117,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "(1, 2L)._1") shouldBe SInt
     typecheck(env, "(1, 2L)._2") shouldBe SLong
     typecheck(env, "(1, 2L, 3)._3") shouldBe SInt
+
+    an[MethodNotFound] should be thrownBy typecheck(env, "(1, 2L)._3")
 
     // tuple as collection
     typecheck(env, "(1, 2L).size") shouldBe SInt

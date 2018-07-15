@@ -78,6 +78,8 @@ trait SigmaBuilder {
   def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
                                index: Value[SInt.type],
                                default: Option[Value[IV]] = None): Value[IV]
+
+  def mkSelectField(input: Value[STuple], fieldIndex: Byte): Value[SType]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -202,6 +204,9 @@ class StdSigmaBuilder extends SigmaBuilder {
                                       index: Value[SInt.type],
                                       default: Option[Value[IV]] = None): Value[IV] =
     ByIndex(input, index, default)
+
+  override def mkSelectField(input: Value[STuple], fieldIndex: Byte): Value[SType] =
+    SelectField(input, fieldIndex)
 }
 
 trait TypeConstraintCheck {
