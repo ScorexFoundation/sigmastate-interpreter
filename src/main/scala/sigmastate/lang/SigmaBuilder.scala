@@ -74,6 +74,10 @@ trait SigmaBuilder {
                           zero: Value[IV],
                           accId: Byte,
                           foldOp: SValue): Value[IV]
+
+  def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
+                               index: Value[SInt.type],
+                               default: Option[Value[IV]] = None): Value[IV]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -193,6 +197,11 @@ class StdSigmaBuilder extends SigmaBuilder {
                                    accId: Byte,
                                    foldOp: SValue): Value[IV] =
     Fold(input, id, zero, accId, foldOp)
+
+  override def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
+                                      index: Value[SInt.type],
+                                      default: Option[Value[IV]] = None): Value[IV] =
+    ByIndex(input, index, default)
 }
 
 trait TypeConstraintCheck {

@@ -1,5 +1,6 @@
 package sigmastate.serialization.transformers
 
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -21,7 +22,7 @@ object ByIndexSerializer extends ValueSerializer[ByIndex[SType]] {
     val input = r.getValue().asCollection[SType]
     val index = r.getValue().upcastTo(SInt)
     val default = r.getOption(r.getValue())
-    ByIndex(input, index, default)
+    DeserializationSigmaBuilder.mkByIndex(input, index, default).asInstanceOf[ByIndex[SType]]
   }
 
 }

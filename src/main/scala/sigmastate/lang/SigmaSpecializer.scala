@@ -140,7 +140,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
       val index1 = eval(env, index).asValue[SInt.type]
       val defaultValue1 = eval(env, defaultValue).asValue[SType]
-      Some(ByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
+      Some(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
     case opt: OptionValue[_] =>
       error(s"Option constructors are not supported: $opt")

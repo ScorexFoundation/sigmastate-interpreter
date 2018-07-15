@@ -152,12 +152,12 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
           // If it's a collection then the application has type of that collection's element.
           args match {
             case Seq(Constant(index, _: SNumericType)) =>
-              ByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), None)
+              mkByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), None)
             case Seq(index) =>
               val typedIndex = assignType(env, index)
               typedIndex.tpe match {
                 case _: SNumericType =>
-                  ByIndex[SType](new_f.asCollection, typedIndex.upcastTo(SInt), None)
+                  mkByIndex[SType](new_f.asCollection, typedIndex.upcastTo(SInt), None)
                 case _ =>
                   error(s"Invalid argument type of array application $app: expected numeric type; actual: ${typedIndex.tpe}")
               }
@@ -174,7 +174,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
               val typedIndex = assignType(env, index)
               typedIndex.tpe match {
                 case _: SNumericType =>
-                  ByIndex(new_f.asCollection[SAny.type], typedIndex.upcastTo(SInt), None)
+                  mkByIndex(new_f.asCollection[SAny.type], typedIndex.upcastTo(SInt), None)
                 case _ =>
                   error(s"Invalid argument type of tuple application $app: expected numeric type; actual: ${typedIndex.tpe}")
               }
