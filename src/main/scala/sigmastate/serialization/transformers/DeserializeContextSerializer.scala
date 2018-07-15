@@ -1,6 +1,7 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.SType
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.{ByteReader, ByteWriter}
@@ -18,6 +19,7 @@ object DeserializeContextSerializer extends ValueSerializer[DeserializeContext[S
   override def parseBody(r: ByteReader): DeserializeContext[SType] = {
     val tpe = r.getType()
     val id = r.getByte()
-    DeserializeContext(id, tpe)
+    DeserializationSigmaBuilder.mkDeserializeContext(id, tpe)
+      .asInstanceOf[DeserializeContext[SType]]
   }
 }

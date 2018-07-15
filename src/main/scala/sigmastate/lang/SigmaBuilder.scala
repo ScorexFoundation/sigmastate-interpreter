@@ -92,6 +92,8 @@ trait SigmaBuilder {
                                       registerId: RegisterId,
                                       tpe: IV,
                                       default: Option[Value[IV]]): Value[IV]
+
+  def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -243,6 +245,9 @@ class StdSigmaBuilder extends SigmaBuilder {
                                                 tpe: IV,
                                                 default: Option[Value[IV]] = None): Value[IV] =
     ExtractRegisterAs(input, registerId, tpe, default)
+
+  override def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T] =
+    DeserializeContext(id, tpe)
 }
 
 trait TypeConstraintCheck {
