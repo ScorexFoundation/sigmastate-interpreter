@@ -69,6 +69,11 @@ trait SigmaBuilder {
                                id: Byte,
                                condition: Value[SBoolean.type]): Value[SBoolean.type]
 
+  def mkFold[IV <: SType](input: Value[SCollection[IV]],
+                          id: Byte,
+                          zero: Value[IV],
+                          accId: Byte,
+                          foldOp: SValue): Value[IV]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -181,6 +186,13 @@ class StdSigmaBuilder extends SigmaBuilder {
                                      id: Byte,
                                      condition: Value[SBoolean.type]): Value[SBoolean.type] =
     ForAll(input, id, condition)
+
+  override def mkFold[IV <: SType](input: Value[SCollection[IV]],
+                                   id: Byte,
+                                   zero: Value[IV],
+                                   accId: Byte,
+                                   foldOp: SValue): Value[IV] =
+    Fold(input, id, zero, accId, foldOp)
 }
 
 trait TypeConstraintCheck {

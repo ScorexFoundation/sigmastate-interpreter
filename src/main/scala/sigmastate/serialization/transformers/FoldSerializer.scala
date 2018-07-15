@@ -1,6 +1,7 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.SType
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -24,6 +25,6 @@ object FoldSerializer extends ValueSerializer[Fold[SType]] {
     val zero   = r.getValue()
     val accId  = r.getByte()
     val foldOp = r.getValue()
-    Fold(input.asCollection[SType], id, zero, accId, foldOp)
+    DeserializationSigmaBuilder.mkFold(input.asCollection[SType], id, zero, accId, foldOp).asInstanceOf[Fold[SType]]
   }
 }

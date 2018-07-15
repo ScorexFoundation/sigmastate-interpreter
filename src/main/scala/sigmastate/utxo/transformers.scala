@@ -10,6 +10,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.{MandatoryRegisterId, RegisterId}
+import sigmastate.lang.DefaultSigmaBuilder._
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -211,11 +212,11 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
 
 object Fold {
   def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
-    Fold(input, 21, Constant(tT.upcast(0.toByte), tT), 22, Plus(TaggedVariable(22, tT), TaggedVariable(21, tT)))
+    mkFold(input, 21, Constant(tT.upcast(0.toByte), tT), 22, Plus(TaggedVariable(22, tT), TaggedVariable(21, tT))).asInstanceOf[Fold[T]]
 
   def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T) = {
     val tCol = SCollection(tT)
-    Fold[SCollection[T]](
+    mkFold[SCollection[T]](
       input, 21, ConcreteCollection()(tT), 22,
       Append(TaggedVariable(22, tCol), TaggedVariable(21, tCol)))
   }
