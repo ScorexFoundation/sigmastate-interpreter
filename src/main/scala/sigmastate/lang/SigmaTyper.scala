@@ -19,7 +19,7 @@ import scala.collection.mutable.ArrayBuffer
   * from the AST, and one (tipe2) that represents names by references to the
   * nodes of their binding lambda expressions.
   */
-class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
+class SigmaTyper(val builder: SigmaBuilder) {
   import SigmaTyper._
   import builder._
 
@@ -68,7 +68,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         msgTypeOf(types).getOrElse(
           error(s"All element of array $c should have the same type but found $types"))
       }
-      ConcreteCollection(newItems)(tItem)
+      mkConcreteCollection(newItems, tItem)
 
     case Ident(n, _) =>
       env.get(n) match {
@@ -311,6 +311,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
     case v: ContextVariable[_] => v
     case v: EvaluatedValue[_] => v
     case v: SigmaBoolean => v
+    case v: Upcast[_, _] => v
     case v => error(s"Don't know how to assignType($v)")
   }
 

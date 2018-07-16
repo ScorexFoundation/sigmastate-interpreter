@@ -58,7 +58,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),
     CaseObjectSerialization(SelfCode, Self),
     CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
-    ConcreteCollectionSerializer,
+    ConcreteCollectionSerializer(mkConcreteCollection),
     ConcreteCollectionBooleanConstantSerializer,
     LogicalTransformerSerializer(AndCode, mkAND),
     LogicalTransformerSerializer(OrCode, mkOR),

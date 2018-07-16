@@ -13,11 +13,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   def typecheck(env: Map[String, Any], x: String): SType = {
     try {
-      val parsed = SigmaParser(x).get.value
-      val binder = new SigmaBinder(env)
+      val builder = TransformingSigmaBuilder
+      val parsed = SigmaParser(x, builder).get.value
+      val binder = new SigmaBinder(env, builder)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper
+      val typer = new SigmaTyper(builder)
       val typed = typer.typecheck(bound)
      typed.tpe
     } catch {
@@ -27,11 +28,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   def typefail(env: Map[String, Any], x: String, messageSubstr: String = ""): Unit = {
     try {
-      val parsed = SigmaParser(x).get.value
-      val binder = new SigmaBinder(env)
+      val builder = TransformingSigmaBuilder
+      val parsed = SigmaParser(x, builder).get.value
+      val binder = new SigmaBinder(env, builder)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper
+      val typer = new SigmaTyper(builder)
       val typed = typer.typecheck(bound)
       assert(false, s"Should not typecheck: $x")
     } catch {

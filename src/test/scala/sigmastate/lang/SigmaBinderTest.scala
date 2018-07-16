@@ -13,8 +13,9 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   import StdSigmaBuilder._
 
   def bind(env: Map[String, Any], x: String): SValue = {
-    val ast = SigmaParser(x).get.value
-    val binder = new SigmaBinder(env)
+    val builder = TransformingSigmaBuilder
+    val ast = SigmaParser(x, builder).get.value
+    val binder = new SigmaBinder(env, builder)
     binder.bind(ast)
   }
 

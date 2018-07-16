@@ -252,9 +252,9 @@ object Values {
 
   implicit class CollectionConstantOps[T <: SType](c: CollectionConstant[T]) {
     def toConcreteCollection: ConcreteCollection[T] = {
-      implicit val tElem = c.tpe.elemType
+      val tElem = c.tpe.elemType
       val items = c.value.map(v => tElem.mkConstant(v.asInstanceOf[tElem.WrappedType]))
-      ConcreteCollection(items)
+      mkConcreteCollection(items, tElem).asInstanceOf[ConcreteCollection[T]]
     }
   }
 
@@ -433,11 +433,11 @@ object Values {
     }
   }
   object ConcreteCollection {
-    def apply[V <: SType](items: Value[V]*)(implicit tV: V) =
-      new ConcreteCollection(items.toIndexedSeq, tV)
+    def apply[V <: SType](items: Value[V]*)(implicit tV: V): ConcreteCollection[V] =
+      mkConcreteCollection(items.toIndexedSeq, tV).asInstanceOf[ConcreteCollection[V]]
 
-    def apply[V <: SType](items: => Seq[Value[V]])(implicit tV: V) =
-      new ConcreteCollection(items.toIndexedSeq, tV)
+    def apply[V <: SType](items: => Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
+      mkConcreteCollection(items.toIndexedSeq, tV).asInstanceOf[ConcreteCollection[V]]
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
@@ -461,7 +461,8 @@ object Values {
       matchCase(
         cc => cc,
         _.toConcreteCollection,
-        t => ConcreteCollection(t.items.map(_.asValue[T]), SAny.asInstanceOf[T])
+        t => mkConcreteCollection(t.items.map(_.asValue[T]), SAny.asInstanceOf[T])
+          .asInstanceOf[ConcreteCollection[T]]
       )
   }
 }

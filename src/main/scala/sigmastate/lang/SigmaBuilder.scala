@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{Constant, SValue, SigmaBoolean, Tuple, Value}
+import sigmastate.Values.{ConcreteCollection, Constant, SValue, SigmaBoolean, Tuple, Value}
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
@@ -108,6 +108,9 @@ trait SigmaBuilder {
                                 uv: Value[SGroupElement.type],
                                 vv: Value[SGroupElement.type]): SigmaBoolean
   def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
+
+  def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
+                                       elementType: T): Value[SCollection[T]]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -282,6 +285,10 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean =
     ProveDlog(value)
+
+  override def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
+                                                elementType: T): Value[SCollection[T]] =
+    ConcreteCollection(items, elementType)
 }
 
 trait TypeConstraintCheck {

@@ -146,19 +146,19 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case AND(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[AND]) =>
       Some(mkAND(
-        ConcreteCollection(
+        mkConcreteCollection(
           items.flatMap {
             case AND(ConcreteCollection(innerItems, SBoolean)) => innerItems
             case v => IndexedSeq(v)
-          })))
+          }, SBoolean)))
 
     case OR(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[OR]) =>
       Some(mkOR(
-        ConcreteCollection(
+        mkConcreteCollection(
           items.flatMap {
             case OR(ConcreteCollection(innerItems, SBoolean)) => innerItems
             case v => IndexedSeq(v)
-          })))
+          }, SBoolean)))
 
   })))(e)
 

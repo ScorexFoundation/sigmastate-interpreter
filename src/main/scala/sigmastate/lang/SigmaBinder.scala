@@ -12,9 +12,10 @@ import sigmastate.Values.Value.Typed
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.exceptions.BinderException
 
-class SigmaBinder(env: Map[String, Any]) {
+class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
   import SigmaBinder._
   import SigmaPredef._
+  import builder._
 
   /** Rewriting of AST with respect to environment to resolve all references to global names
     * and infer their types. */
@@ -62,12 +63,12 @@ class SigmaBinder(env: Map[String, Any]) {
           error(s"Invalid construction of array $e: expected type $tpe, actual type $elemType")
         elemType
       }
-      Some(ConcreteCollection(args)(resTpe))
+      Some(mkConcreteCollection(args, resTpe))
 
     // Rule: Array(...) -->
     case Apply(Ident("Array", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
-      Some(ConcreteCollection(args)(tpe))
+      Some(mkConcreteCollection(args, tpe))
 
     // Rule: Some(x) -->
     case Apply(Ident("Some", _), args) =>
