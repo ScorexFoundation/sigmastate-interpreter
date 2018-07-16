@@ -1,16 +1,16 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
-import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.MapCollection
 import sigmastate.{SCollection, SType}
-import sigmastate.utils.Extensions._
 
-object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, SType]] {
+case class MapCollectionSerializer(cons: (Value[SCollection[SType]], Byte, Value[SType]) => Value[SType])
+  extends ValueSerializer[MapCollection[SType, SType]] {
 
   override val opCode: OpCode = OpCodes.MapCollectionCode
 
@@ -23,7 +23,7 @@ object MapCollectionSerializer extends ValueSerializer[MapCollection[SType, STyp
     val input = r.getValue().asValue[SCollection[SType]]
     val idByte = r.getByte()
     val mapper = r.getValue()
-    DeserializationSigmaBuilder.mkMapCollection(input, idByte, mapper)
+    cons(input, idByte, mapper)
   }
 
 }

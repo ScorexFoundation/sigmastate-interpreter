@@ -1,15 +1,16 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.SType
-import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.Fold
-import sigmastate.utils.Extensions._
+import sigmastate.{SCollection, SType}
 
-object FoldSerializer extends ValueSerializer[Fold[SType]] {
+case class FoldSerializer(cons: (Value[SCollection[SType]], Byte, Value[SType], Byte, Value[SType]) => Value[SType])
+  extends ValueSerializer[Fold[SType]] {
   override val opCode: OpCode = OpCodes.FoldCode
 
   override def serializeBody(obj: Fold[SType], w: ByteWriter): Unit =
@@ -19,12 +20,12 @@ object FoldSerializer extends ValueSerializer[Fold[SType]] {
       .put     (obj.accId)
       .putValue(obj.foldOp)
 
-  override def parseBody(r: ByteReader): Fold[SType] = {
+  override def parseBody(r: ByteReader): Value[SType] = {
     val input  = r.getValue()
     val id     = r.getByte()
     val zero   = r.getValue()
     val accId  = r.getByte()
     val foldOp = r.getValue()
-    DeserializationSigmaBuilder.mkFold(input.asCollection[SType], id, zero, accId, foldOp).asInstanceOf[Fold[SType]]
+    cons(input.asCollection[SType], id, zero, accId, foldOp)
   }
 }

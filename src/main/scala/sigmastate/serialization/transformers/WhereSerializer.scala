@@ -1,15 +1,15 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.Where
-import sigmastate.{SBoolean, SType}
-import sigmastate.utils.Extensions._
+import sigmastate.{SBoolean, SCollection, SType}
 
-object WhereSerializer extends ValueSerializer[Where[SType]] {
+case class WhereSerializer(cons: (Value[SCollection[SType]], Byte, Value[SBoolean.type]) => Value[SCollection[SType]]) extends ValueSerializer[Where[SType]] {
 
   override val opCode: OpCode = OpCodes.WhereCode
 
@@ -18,10 +18,10 @@ object WhereSerializer extends ValueSerializer[Where[SType]] {
     .putValue(obj.input)
     .putValue(obj.condition)
 
-  override def parseBody(r: ByteReader): Where[SType] = {
+  override def parseBody(r: ByteReader): Value[SCollection[SType]] = {
     val id = r.getByte()
     val input = r.getValue().asCollection[SType]
     val condition = r.getValue().asValue[SBoolean.type]
-    DeserializationSigmaBuilder.mkWhere(input, id, condition).asInstanceOf[Where[SType]]
+    cons(input, id, condition)
   }
 }

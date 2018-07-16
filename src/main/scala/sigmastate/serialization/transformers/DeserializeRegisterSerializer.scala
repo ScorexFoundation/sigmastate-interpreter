@@ -1,15 +1,17 @@
 package sigmastate.serialization.transformers
 
 import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SType
-import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.DeserializeRegister
-import sigmastate.utils.Extensions._
 
-object DeserializeRegisterSerializer extends ValueSerializer[DeserializeRegister[SType]] {
+case class DeserializeRegisterSerializer(cons: (RegisterId, SType, Option[Value[SType]]) => Value[SType])
+  extends ValueSerializer[DeserializeRegister[SType]] {
 
   override val opCode: OpCode = OpCodes.DeserializeRegisterCode
 
@@ -18,12 +20,11 @@ object DeserializeRegisterSerializer extends ValueSerializer[DeserializeRegister
       .putType(obj.tpe)
       .putOption(obj.default)(_.putValue(_))
 
-  override def parseBody(r: ByteReader): DeserializeRegister[SType] = {
+  override def parseBody(r: ByteReader): Value[SType] = {
     val registerId = ErgoBox.findRegisterByIndex(r.getByte()).get
     val tpe = r.getType()
     val dv = r.getOption(r.getValue())
-    DeserializationSigmaBuilder.mkDeserializeRegister(registerId, tpe, dv)
-      .asInstanceOf[DeserializeRegister[SType]]
+    cons(registerId, tpe, dv)
   }
 
 }
