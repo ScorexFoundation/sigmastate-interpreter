@@ -59,7 +59,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     CaseObjectSerialization(SelfCode, Self),
     CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
     ConcreteCollectionSerializer(mkConcreteCollection),
-    ConcreteCollectionBooleanConstantSerializer,
+    ConcreteCollectionBooleanConstantSerializer(mkConcreteCollection),
     LogicalTransformerSerializer(AndCode, mkAND),
     LogicalTransformerSerializer(OrCode, mkOR),
     TaggedVariableSerializer(mkTaggedVariable),
