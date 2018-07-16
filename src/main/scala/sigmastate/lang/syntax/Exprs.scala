@@ -107,7 +107,7 @@ trait Exprs extends Core with Types {
         | Parened.map(items =>
             if (items.isEmpty) UnitConstant
             else if (items.lengthCompare(1) == 0) items.head
-            else Tuple(items)) )
+            else builder.mkTuple(items)) )
     }
     val Guard : P0 = P( `if` ~/ PostfixExpr ).ignore
   }
@@ -254,7 +254,7 @@ trait Exprs extends Core with Types {
 
   val TypePat = P( CompoundType )
   val ParenArgList = P( "(" ~/ Exprs /*~ (`:` ~/ `_*`).?*/.? ~ TrailingComma ~ ")" ).map {
-    case Some(exprs) => Tuple(exprs)
+    case Some(exprs) => builder.mkTuple(exprs)
     case None => UnitConstant
   }
   val ArgList = P( ParenArgList | OneNLMax ~ BlockExpr )

@@ -19,6 +19,8 @@ import scala.reflect.ClassTag
 
 trait ValueGenerators extends TypeGenerators {
 
+  import sigmastate.lang.TransformingSigmaBuilder._
+
   implicit val arbByteConstants: Arbitrary[ByteConstant] = Arbitrary(byteConstGen)
   implicit val arbIntConstants: Arbitrary[IntConstant] = Arbitrary(intConstGen)
   implicit val arbLongConstants: Arbitrary[LongConstant] = Arbitrary(longConstGen)
@@ -193,7 +195,7 @@ trait ValueGenerators extends TypeGenerators {
       taggedVar[SBox.type],
       taggedVar(Arbitrary(sTupleGen(2, 10)))
     ))
-  } yield Tuple(values)
+  } yield mkTuple(values).asInstanceOf[Tuple]
 
   val ergoBoxGen: Gen[ErgoBox] = for {
     l <- arbLong.arbitrary

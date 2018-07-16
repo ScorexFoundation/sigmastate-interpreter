@@ -19,6 +19,7 @@ import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+import sigmastate.lang.DefaultSigmaBuilder._
 
 
 object Values {
@@ -390,9 +391,7 @@ object Values {
   }
 
   object Tuple {
-    def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
-
-    def apply(items: Seq[Value[SType]])(implicit o: Overload1): Tuple = Tuple(items.toIndexedSeq)
+    def apply(items: Value[SType]*): Tuple = mkTuple(items).asInstanceOf[Tuple]
   }
 
   trait OptionValue[T <: SType] extends EvaluatedValue[SOption[T]] {

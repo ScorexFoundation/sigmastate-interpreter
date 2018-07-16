@@ -2,7 +2,7 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{Constant, SValue, Value}
+import sigmastate.Values.{Constant, SValue, Tuple, Value}
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
@@ -98,6 +98,8 @@ trait SigmaBuilder {
   def mkDeserializeRegister[T <: SType](reg: RegisterId,
                                         tpe: T,
                                         default: Option[Value[T]] = None): Value[T]
+
+  def mkTuple(items: Seq[Value[SType]]): Value[SType]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -260,6 +262,9 @@ class StdSigmaBuilder extends SigmaBuilder {
                                                  tpe: T,
                                                  default: Option[Value[T]] = None): Value[T] =
     DeserializeRegister(reg, tpe, default)
+
+  override def mkTuple(items: Seq[Value[SType]]): Value[SType] =
+    Tuple(items.toIndexedSeq)
 }
 
 trait TypeConstraintCheck {

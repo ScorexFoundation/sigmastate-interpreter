@@ -55,7 +55,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       Block(bs1, res1)
 
     case Tuple(items) =>
-      Tuple(items.map(assignType(env, _)))
+      mkTuple(items.map(assignType(env, _)))
 
     case c @ ConcreteCollection(items, _) =>
       val newItems = items.map(assignType(env, _))
