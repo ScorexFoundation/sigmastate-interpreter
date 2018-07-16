@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoBox.RegisterId
+import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{Constant, SValue, SigmaBoolean, Tuple, Value}
@@ -106,6 +107,7 @@ trait SigmaBuilder {
                                 hv: Value[SGroupElement.type],
                                 uv: Value[SGroupElement.type],
                                 vv: Value[SGroupElement.type]): SigmaBoolean
+  def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -277,6 +279,9 @@ class StdSigmaBuilder extends SigmaBuilder {
                                          uv: Value[SGroupElement.type],
                                          vv: Value[SGroupElement.type]): SigmaBoolean =
     ProveDiffieHellmanTuple(gv, hv, uv, vv)
+
+  override def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean =
+    ProveDlog(value)
 }
 
 trait TypeConstraintCheck {

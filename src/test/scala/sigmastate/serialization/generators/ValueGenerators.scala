@@ -76,7 +76,8 @@ trait ValueGenerators extends TypeGenerators {
   } yield TaggedVariable(id, t)
 
 
-  val proveDlogGen: Gen[ProveDlog] = arbGroupElementConstant.arbitrary.map(v => ProveDlog(v))
+  val proveDlogGen: Gen[ProveDlog] =
+    arbGroupElementConstant.arbitrary.map(v => mkProveDlog(v).asInstanceOf[ProveDlog])
   val proveDHTGen: Gen[ProveDiffieHellmanTuple] = for {
     gv: Value[SGroupElement.type] <- groupElementConstGen
     hv: Value[SGroupElement.type] <- groupElementConstGen

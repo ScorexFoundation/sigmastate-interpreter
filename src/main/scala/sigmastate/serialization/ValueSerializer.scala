@@ -49,7 +49,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(ModuloCode, mkModulo[SNumericType]),
     TwoArgumentsSerializer(PlusCode, mkPlus[SNumericType]),
     ProveDiffieHellmanTupleSerializer(mkProveDiffieHellmanTuple),
-    ProveDlogSerializer,
+    ProveDlogSerializer(mkProveDlog),
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
     CaseObjectSerialization(HeightCode, Height),

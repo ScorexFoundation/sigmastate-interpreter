@@ -2,7 +2,6 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
 import org.ergoplatform.ErgoBox
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
@@ -55,7 +54,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       Some(mkIsMember(tree, key, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
-      Some(ProveDlog(g))
+      Some(mkProveDlog(g))
 
     case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
       Some(mkIntToByte(arg))
