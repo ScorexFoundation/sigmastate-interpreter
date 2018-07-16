@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ConcreteCollection, Constant, SValue, SigmaBoolean, Tuple, Value}
+import sigmastate.Values.{ConcreteCollection, Constant, SValue, SigmaBoolean, TaggedVariable, Tuple, Value}
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
@@ -111,6 +111,8 @@ trait SigmaBuilder {
 
   def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                        elementType: T): Value[SCollection[T]]
+
+  def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): Value[T]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -289,6 +291,9 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                                 elementType: T): Value[SCollection[T]] =
     ConcreteCollection(items, elementType)
+
+  override def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): Value[T] =
+    TaggedVariable(varId, tpe)
 }
 
 trait TypeConstraintCheck {

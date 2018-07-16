@@ -212,13 +212,13 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
 
 object Fold {
   def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
-    mkFold(input, 21, Constant(tT.upcast(0.toByte), tT), 22, Plus(TaggedVariable(22, tT), TaggedVariable(21, tT))).asInstanceOf[Fold[T]]
+    mkFold(input, 21, Constant(tT.upcast(0.toByte), tT), 22, Plus(mkTaggedVariable(22, tT), mkTaggedVariable(21, tT))).asInstanceOf[Fold[T]]
 
   def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T) = {
     val tCol = SCollection(tT)
     mkFold[SCollection[T]](
       input, 21, ConcreteCollection()(tT), 22,
-      Append(TaggedVariable(22, tCol), TaggedVariable(21, tCol)))
+      Append(mkTaggedVariable(22, tCol), mkTaggedVariable(21, tCol)))
   }
 }
 

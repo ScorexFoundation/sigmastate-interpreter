@@ -62,7 +62,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ConcreteCollectionBooleanConstantSerializer,
     LogicalTransformerSerializer(AndCode, mkAND),
     LogicalTransformerSerializer(OrCode, mkOR),
-    TaggedVariableSerializer,
+    TaggedVariableSerializer(mkTaggedVariable),
     MapCollectionSerializer(mkMapCollection),
     BooleanTransformerSerializer[SType](ExistsCode, mkExists),
     BooleanTransformerSerializer[SType](ForAllCode, mkForAll),

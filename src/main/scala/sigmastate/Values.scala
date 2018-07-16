@@ -1,22 +1,24 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Objects, Arrays}
+import java.util.{Arrays, Objects}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{EvaluatedValue, NotReadyValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants}
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
+
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import sigmastate.lang.DefaultSigmaBuilder._
@@ -221,16 +223,35 @@ object Values {
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
-  def TaggedBoolean(id: Byte): TaggedBoolean = TaggedVariable(id, SBoolean)
-  def TaggedByte   (id: Byte): TaggedByte = TaggedVariable(id, SByte)
-  def TaggedShort  (id: Byte): TaggedShort = TaggedVariable(id, SShort)
-  def TaggedInt    (id: Byte): TaggedInt = TaggedVariable(id, SInt)
-  def TaggedLong   (id: Byte): TaggedLong = TaggedVariable(id, SLong)
-  def TaggedBigInt (id: Byte): TaggedBigInt = TaggedVariable(id, SBigInt)
-  def TaggedBox    (id: Byte): TaggedBox = TaggedVariable(id, SBox)
-  def TaggedGroupElement(id: Byte): TaggedGroupElement = TaggedVariable(id, SGroupElement)
-  def TaggedAvlTree     (id: Byte): TaggedAvlTree = TaggedVariable(id, SAvlTree)
-  def TaggedByteArray   (id: Byte): TaggedByteArray = TaggedVariable(id, SByteArray)
+  def TaggedBoolean(id: Byte): TaggedBoolean =
+    mkTaggedVariable(id, SBoolean).asInstanceOf[TaggedBoolean]
+
+  def TaggedByte (id: Byte): TaggedByte =
+    mkTaggedVariable(id, SByte).asInstanceOf[TaggedByte]
+
+  def TaggedShort (id: Byte): TaggedShort =
+    mkTaggedVariable(id, SShort).asInstanceOf[TaggedShort]
+
+  def TaggedInt (id: Byte): TaggedInt =
+    mkTaggedVariable(id, SInt).asInstanceOf[TaggedInt]
+
+  def TaggedLong (id: Byte): TaggedLong =
+    mkTaggedVariable(id, SLong).asInstanceOf[TaggedLong]
+
+  def TaggedBigInt (id: Byte): TaggedBigInt =
+    mkTaggedVariable(id, SBigInt).asInstanceOf[TaggedBigInt]
+
+  def TaggedBox (id: Byte): TaggedBox =
+    mkTaggedVariable(id, SBox).asInstanceOf[TaggedBox]
+
+  def TaggedGroupElement(id: Byte): TaggedGroupElement =
+    mkTaggedVariable(id, SGroupElement).asInstanceOf[TaggedGroupElement]
+
+  def TaggedAvlTree (id: Byte): TaggedAvlTree =
+    mkTaggedVariable(id, SAvlTree).asInstanceOf[TaggedAvlTree]
+
+  def TaggedByteArray (id: Byte): TaggedByteArray =
+    mkTaggedVariable(id, SByteArray).asInstanceOf[TaggedByteArray]
 
   trait EvaluatedCollection[T <: SType, C <: SCollection[T]] extends EvaluatedValue[C] {
     def elementType: T

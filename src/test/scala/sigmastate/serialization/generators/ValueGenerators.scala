@@ -73,7 +73,7 @@ trait ValueGenerators extends TypeGenerators {
   def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {
     t <- aT.arbitrary
     id <- arbByte.arbitrary
-  } yield TaggedVariable(id, t)
+  } yield mkTaggedVariable(id, t).asInstanceOf[TaggedVariable[T]]
 
 
   val proveDlogGen: Gen[ProveDlog] =

@@ -85,7 +85,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         case IntConstant(i) => i.toByteExact
         case ByteConstant(i) => i
       }
-      Some(TaggedVariable(id, targs.head))
+      Some(mkTaggedVariable(id, targs.head))
 
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>
