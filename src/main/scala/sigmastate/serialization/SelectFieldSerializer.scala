@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.STuple
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{ByteReader, ByteWriter}
@@ -18,7 +19,7 @@ object SelectFieldSerializer extends ValueSerializer[SelectField] {
   override def parseBody(r: ByteReader): SelectField = {
     val tuple = r.getValue().asValue[STuple]
     val fieldIndex = r.getByte()
-    SelectField(tuple, fieldIndex)
+    DeserializationSigmaBuilder.mkSelectField(tuple, fieldIndex).asInstanceOf[SelectField]
   }
 
 }

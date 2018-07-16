@@ -169,7 +169,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
           args match {
             case Seq(Constant(index, _: SNumericType)) =>
               val fieldIndex = SByte.downcast(index.asInstanceOf[AnyVal]) + 1
-              SelectField(new_f.asTuple, fieldIndex.toByte)
+              mkSelectField(new_f.asTuple, fieldIndex.toByte)
             case Seq(index) =>
               val typedIndex = assignType(env, index)
               typedIndex.tpe match {

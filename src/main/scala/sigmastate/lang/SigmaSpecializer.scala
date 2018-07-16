@@ -106,7 +106,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
       val index = fn.substring(1).toByte
-      Some(SelectField(tuple.asTuple, index))
+      Some(mkSelectField(tuple.asTuple, index))
 
     case Apply(Select(col, "slice", _), Seq(from, until)) =>
       Some(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
