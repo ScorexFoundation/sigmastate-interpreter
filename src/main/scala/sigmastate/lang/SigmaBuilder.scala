@@ -1,8 +1,9 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoBox.RegisterId
+import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{Constant, SValue, Tuple, Value}
+import sigmastate.Values.{Constant, SValue, SigmaBoolean, Tuple, Value}
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
@@ -100,6 +101,11 @@ trait SigmaBuilder {
                                         default: Option[Value[T]] = None): Value[T]
 
   def mkTuple(items: Seq[Value[SType]]): Value[SType]
+
+  def mkProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
+                                hv: Value[SGroupElement.type],
+                                uv: Value[SGroupElement.type],
+                                vv: Value[SGroupElement.type]): SigmaBoolean
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -265,6 +271,12 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkTuple(items: Seq[Value[SType]]): Value[SType] =
     Tuple(items.toIndexedSeq)
+
+  override def mkProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
+                                         hv: Value[SGroupElement.type],
+                                         uv: Value[SGroupElement.type],
+                                         vv: Value[SGroupElement.type]): SigmaBoolean =
+    ProveDiffieHellmanTuple(gv, hv, uv, vv)
 }
 
 trait TypeConstraintCheck {

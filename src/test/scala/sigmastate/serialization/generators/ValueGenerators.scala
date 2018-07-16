@@ -82,7 +82,7 @@ trait ValueGenerators extends TypeGenerators {
     hv: Value[SGroupElement.type] <- groupElementConstGen
     uv: Value[SGroupElement.type] <- groupElementConstGen
     vv: Value[SGroupElement.type] <- groupElementConstGen
-  } yield ProveDiffieHellmanTuple(gv, hv, uv, vv)
+  } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDiffieHellmanTuple]
 
   val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
