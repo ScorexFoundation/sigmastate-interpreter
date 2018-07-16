@@ -47,6 +47,7 @@ trait SigmaBuilder {
   def mkIntToByte(input: Value[SInt.type]): Value[SByte.type]
   def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray]
   def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type]
+  def mkUpcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
 
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
@@ -195,6 +196,11 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type] =
     ByteArrayToBigInt(input)
+
+
+  override def mkUpcast[T <: SNumericType, R <: SNumericType](input: Value[T],
+                                                              tpe: R): Value[R] =
+    Upcast(input, tpe)
 
   override def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray] =
     CalcBlake2b256(input)

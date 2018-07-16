@@ -7,6 +7,7 @@ import sigmastate._
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
+import sigmastate.lang.TransformingSigmaBuilder._
 
 object Terms {
 
@@ -136,7 +137,7 @@ object Terms {
         s"Invalid upcast from $tV to $targetType: target type should be larger than source type.")
       if (targetType == tV.tpe) v.asValue[T]
       else
-        Upcast(tV, targetType)
+        mkUpcast(tV, targetType)
     }
   }
 }
