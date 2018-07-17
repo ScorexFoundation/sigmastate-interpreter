@@ -20,7 +20,8 @@ object Terms {
     def tpe: SType = result.tpe
   }
   object Block {
-    def apply(let: Let, result: SValue)(implicit o1: Overload1): Block = Block(Seq(let), result)
+    def apply(let: Let, result: SValue)(implicit o1: Overload1): Block =
+      mkBlock(Seq(let), result).asInstanceOf[Block]
   }
 
   case class Let(name: String, givenType: SType, body: SValue) extends Value[SType] {

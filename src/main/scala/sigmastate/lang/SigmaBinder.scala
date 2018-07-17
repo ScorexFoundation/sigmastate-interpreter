@@ -103,7 +103,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         Let(n, if (t != NoType) t else b1.tpe, b1)
       }
       val t1 = eval(t, env)
-      val newBlock = Block(newBinds, t1)
+      val newBlock = mkBlock(newBinds, t1)
       if (newBlock != block)
         Some(newBlock)
       else

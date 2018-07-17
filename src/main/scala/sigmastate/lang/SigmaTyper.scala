@@ -52,7 +52,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
         bs1 += Let(n, b1.tpe, b1)
       }
       val res1 = assignType(curEnv, res)
-      Block(bs1, res1)
+      mkBlock(bs1, res1)
 
     case Tuple(items) =>
       mkTuple(items.map(assignType(env, _)))

@@ -231,7 +231,7 @@ trait Exprs extends Core with Types {
 
   protected def mkBlock(stats: Seq[SValue]): SValue = {
     val (lets, body) = extractBlockStats(stats)
-    Terms.Block(lets, body)
+    builder.mkBlock(lets, body)
   }
 
   def BaseBlock(end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
