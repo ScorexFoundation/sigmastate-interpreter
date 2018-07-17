@@ -181,7 +181,7 @@ trait Exprs extends Core with Types {
 
   protected def applySuffix(f: Value[SType], args: Seq[SigmaNode]): Value[SType] = {
     val rhs = args.foldLeft(f)((acc, arg) => arg match {
-      case Ident(name, _) => Select(acc, name)
+      case Ident(name, _) => builder.mkSelect(acc, name)
       case UnitConstant => mkApply(acc, IndexedSeq.empty)
       case Tuple(xs) => mkApply(acc, xs)
       case STypeApply("", targs) => mkApplyTypes(acc, targs)

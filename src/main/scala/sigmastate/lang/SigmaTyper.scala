@@ -84,7 +84,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       }
       else
         error(s"Cannot find field '$n' in the object $obj of Sigma type with fields ${obj.fields}")
-      Select(newObj, n, Some(tRes))
+      mkSelect(newObj, n, Some(tRes))
 
     case sel @ Select(obj, n, None) =>
       val newObj = assignType(env, obj)
@@ -95,7 +95,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
             s.methods(iField).stype
           } else
             throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}")
-          Select(newObj, n, Some(tRes))
+          mkSelect(newObj, n, Some(tRes))
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t")
       }
@@ -124,7 +124,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
-              val newApply = Apply(Select(newObj, n, Some(concrFunTpe)), newArgs)
+              val newApply = Apply(mkSelect(newObj, n, Some(concrFunTpe)), newArgs)
               newApply
             case None =>
               error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
@@ -230,7 +230,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
             error(s"Wrong number of type arguments $app: expected $tyVars but provided $targs")
           val subst = tyVars.zip(targs).toMap
           val concrFunTpe = applySubst(genFunTpe, subst).asFunc
-          Select(obj, n, Some(concrFunTpe.tRange))
+          mkSelect(obj, n, Some(concrFunTpe.tRange))
         case _ =>
           error(s"Invalid application of type arguments $app: function $sel doesn't have type parameters")
       }
