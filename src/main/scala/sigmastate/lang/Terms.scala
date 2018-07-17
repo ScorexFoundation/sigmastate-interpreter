@@ -33,7 +33,7 @@ object Terms {
     def tpe: SType = givenType ?: body.tpe
   }
   object Let {
-    def apply(name: String, value: SValue): Let = Let(name, NoType, value)
+    def apply(name: String, value: SValue): Let = mkLet(name, NoType, value).asInstanceOf[Let]
   }
 
   case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {

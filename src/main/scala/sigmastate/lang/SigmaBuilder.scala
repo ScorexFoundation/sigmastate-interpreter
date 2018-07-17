@@ -119,6 +119,7 @@ trait SigmaBuilder {
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
 
   def mkBlock(bindings: Seq[Let], result: Value[SType]): Value[SType]
+  def mkLet(name: String, givenType: SType, body: Value[SType]): Value[SType]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -311,6 +312,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBlock(bindings: Seq[Let], result: Value[SType]): Value[SType] =
     Block(bindings, result)
+
+  override def mkLet(name: String, givenType: SType, body: Value[SType]): Value[SType] =
+    Let(name, givenType, body)
 }
 
 trait TypeConstraintCheck {
