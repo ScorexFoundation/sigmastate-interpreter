@@ -122,7 +122,7 @@ trait Exprs extends Core with Types {
   }
 
   protected def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType] = (func, args) match {
-    case _ => Apply(func, args)
+    case _ => builder.mkApply(func, args)
   }
 
   def mkApplyTypes(input: Value[SType], targs: IndexedSeq[SType]): Value[SType] = {

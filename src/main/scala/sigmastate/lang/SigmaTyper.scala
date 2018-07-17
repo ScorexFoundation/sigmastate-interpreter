@@ -124,13 +124,13 @@ class SigmaTyper(val builder: SigmaBuilder) {
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
-              val newApply = Apply(mkSelect(newObj, n, Some(concrFunTpe)), newArgs)
+              val newApply = mkApply(mkSelect(newObj, n, Some(concrFunTpe)), newArgs)
               newApply
             case None =>
               error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
           }
         case _ =>
-          Apply(newSel, args.map(assignType(env, _)))
+          mkApply(newSel, args.map(assignType(env, _)))
       }
 
     case app @ Apply(f, args) =>
@@ -147,7 +147,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
           val actualTypes = newArgs.map(_.tpe)
           if (actualTypes != argTypes)
             error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
-          Apply(new_f, newArgs)
+          mkApply(new_f, newArgs)
         case _: SCollectionType[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
