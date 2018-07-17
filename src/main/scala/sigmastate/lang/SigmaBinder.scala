@@ -48,7 +48,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
           case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
           case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
           case "SELF" => Some(Self)
-          case "None" => Some(NoneValue(NoType))
+          case "None" => Some(mkNoneValue(NoType))
           case _ => None
         }
       }
@@ -75,7 +75,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
       val arg =
         if (args.length == 1) args(0)
         else error(s"Invalid arguments of Some: expected one argument but found $args")
-      Some(SomeValue(arg))
+      Some(mkSomeValue(arg))
 
     case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
       if (targs.length != 1 || args.length != 1)
