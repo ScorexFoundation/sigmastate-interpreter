@@ -72,7 +72,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
     case Ident(n, _) =>
       env.get(n) match {
-        case Some(t) => Ident(n, t)
+        case Some(t) => mkIdent(n, t)
         case None => error(s"Cannot assign type for variable '$n' because it is not found in env $env")
       }
 

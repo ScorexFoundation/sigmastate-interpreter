@@ -121,6 +121,7 @@ trait SigmaBuilder {
   def mkBlock(bindings: Seq[Let], result: Value[SType]): Value[SType]
   def mkLet(name: String, givenType: SType, body: Value[SType]): Value[SType]
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
+  def mkIdent(name: String, tpe: SType): Value[SType]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -321,6 +322,8 @@ class StdSigmaBuilder extends SigmaBuilder {
                         field: String,
                         resType: Option[SType] = None): Value[SType] =
     Select(obj, field, resType)
+
+  override def mkIdent(name: String, tpe: SType): Value[SType] = Ident(name, tpe)
 }
 
 trait TypeConstraintCheck {

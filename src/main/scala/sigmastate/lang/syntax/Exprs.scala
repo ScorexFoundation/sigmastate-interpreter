@@ -113,7 +113,7 @@ trait Exprs extends Core with Types {
   }
 
   protected def mkIdent(nameParts: String, tpe: SType = NoType): SValue = {
-    Ident(nameParts, tpe)
+    builder.mkIdent(nameParts, tpe)
   }
 
   protected def mkLambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
