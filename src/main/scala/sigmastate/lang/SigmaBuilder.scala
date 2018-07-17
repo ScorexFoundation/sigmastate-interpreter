@@ -123,6 +123,7 @@ trait SigmaBuilder {
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
   def mkIdent(name: String, tpe: SType): Value[SType]
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
+  def mkApplyTypes(input: Value[SType], tpeArgs: Seq[SType]): Value[SType]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -328,6 +329,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType] =
     Apply(func, args)
+
+  override def mkApplyTypes(input: Value[SType], tpeArgs: Seq[SType]): Value[SType] =
+    ApplyTypes(input, tpeArgs)
 }
 
 trait TypeConstraintCheck {

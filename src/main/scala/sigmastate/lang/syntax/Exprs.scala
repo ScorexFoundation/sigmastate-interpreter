@@ -127,7 +127,7 @@ trait Exprs extends Core with Types {
 
   def mkApplyTypes(input: Value[SType], targs: IndexedSeq[SType]): Value[SType] = {
 //    val subst = targs.zipWithIndex.map { case (t, i) => (STypeIdent(s"_${i + 1}") -> t) }.toMap
-    ApplyTypes(input, targs)
+    builder.mkApplyTypes(input, targs)
   }
 
   /** The precedence of an infix operator is determined by the operator's first character.
