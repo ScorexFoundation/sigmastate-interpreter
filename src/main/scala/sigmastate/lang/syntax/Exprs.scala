@@ -92,7 +92,7 @@ trait Exprs extends Core with Types {
         val obj = mkInfixTree(lhs, infixOps)
         postfix.fold(obj) {
           case Ident(name, _) =>
-            MethodCall(obj, name, IndexedSeq.empty)
+            builder.mkMethodCall(obj, name, IndexedSeq.empty)
         }
     }
 
