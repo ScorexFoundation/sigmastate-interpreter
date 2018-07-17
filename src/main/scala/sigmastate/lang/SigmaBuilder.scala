@@ -131,6 +131,10 @@ trait SigmaBuilder {
   def mkLambda(args: IndexedSeq[(String,SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
+
+  def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Value[T]
+  def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
+                                       elementType: T): Value[SCollection[T]]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -350,6 +354,13 @@ class StdSigmaBuilder extends SigmaBuilder {
                         givenResType: SType,
                         body: Option[Value[SType]]): Value[SFunc] =
     Lambda(args, givenResType, body)
+
+  override def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Value[T] =
+    Constant[T](value, tpe)
+
+  override def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
+                                                elementType: T): Value[SCollection[T]] =
+    Constant[SCollection[T]](values, SCollection(elementType))
 }
 
 trait TypeConstraintCheck {

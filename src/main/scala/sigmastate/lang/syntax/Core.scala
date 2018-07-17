@@ -23,7 +23,6 @@ trait Core extends syntax.Literals {
       rep[R](min, ",", max, exactly) ~ TrailingComma
   }
 
-  protected var builder: SigmaBuilder = StdSigmaBuilder
   def mkUnaryOp(opName: String, arg: Value[SType]): Value[SType]
   def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType]
 

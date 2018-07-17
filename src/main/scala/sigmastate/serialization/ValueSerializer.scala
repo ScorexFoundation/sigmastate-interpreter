@@ -1,15 +1,14 @@
 package sigmastate.serialization
 
-import sigmastate._
-import Values._
-import OpCodes._
+import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
+import sigmastate.Values._
+import sigmastate._
+import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
-import sigmastate.utxo._
 import sigmastate.utils.Extensions._
-import org.ergoplatform._
-import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
 
 
@@ -102,7 +101,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
-      ConstantSerializer.serialize(c, w)
+      ConstantSerializer(builder).serialize(c, w)
     case _ =>
       val opCode = v.opCode
       w.put(opCode)
@@ -114,7 +113,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     val firstByte = r.peekByte()
     if (firstByte.toUByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
-      ConstantSerializer.deserialize(r)
+      ConstantSerializer(builder).deserialize(r)
     }
     else {
       val opCode = r.getByte()

@@ -63,7 +63,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       Some(mkLongToByteArray(arg))
 
     case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
-      Some(Constant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
+      Some(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>

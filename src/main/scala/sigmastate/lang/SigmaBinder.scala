@@ -8,7 +8,6 @@ import sigmastate._
 import Values._
 import org.ergoplatform._
 import sigmastate.utils.Extensions._
-import sigmastate.Values.Value.Typed
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.exceptions.BinderException
 
@@ -22,20 +21,20 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
   private def eval(e: SValue, env: Map[String, Any]): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => v match {
-        case arr: Array[Boolean] => Some(BoolArrayConstant(arr))
-        case arr: Array[Byte] => Some(ByteArrayConstant(arr))
-        case arr: Array[Short] => Some(ShortArrayConstant(arr))
-        case arr: Array[Int] => Some(IntArrayConstant(arr))
-        case arr: Array[Long] => Some(LongArrayConstant(arr))
-        case v: Byte => Some(ByteConstant(v))
-        case v: Short => Some(ShortConstant(v))
-        case v: Int => Some(IntConstant(v))
-        case v: Long => Some(LongConstant(v))
-        case v: BigInteger => Some(BigIntConstant(v))
-        case v: CryptoConstants.EcPointType => Some(GroupElementConstant(v))
+        case arr: Array[Boolean] => Some(mkCollectionConstant[SBoolean.type](arr, SBoolean))
+        case arr: Array[Byte] => Some(mkCollectionConstant[SByte.type](arr, SByte))
+        case arr: Array[Short] => Some(mkCollectionConstant[SShort.type](arr, SShort))
+        case arr: Array[Int] => Some(mkCollectionConstant[SInt.type](arr, SInt))
+        case arr: Array[Long] => Some(mkCollectionConstant[SLong.type](arr, SLong))
+        case v: Byte => Some(mkConstant[SByte.type](v, SByte))
+        case v: Short => Some(mkConstant[SShort.type](v, SShort))
+        case v: Int => Some(mkConstant[SInt.type](v, SInt))
+        case v: Long => Some(mkConstant[SLong.type](v, SLong))
+        case v: BigInteger => Some(mkConstant[SBigInt.type](v, SBigInt))
+        case v: CryptoConstants.EcPointType => Some(mkConstant[SGroupElement.type](v, SGroupElement))
         case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
-        case b: ErgoBox => Some(BoxConstant(b))
-        case avl: AvlTreeData => Some(AvlTreeConstant(avl))
+        case b: ErgoBox => Some(mkConstant[SBox.type](b, SBox))
+        case avl: AvlTreeData => Some(mkConstant[SAvlTree.type](avl, SAvlTree))
         case v: SValue => Some(v)
         case _ => None
       }
