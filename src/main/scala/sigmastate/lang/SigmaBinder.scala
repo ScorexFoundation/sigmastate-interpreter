@@ -90,7 +90,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>
       val b1 = eval(body, env)
-      val newLam = Lambda(args, t, Some(b1))
+      val newLam = mkLambda(args, t, Some(b1))
       if (newLam != lam) Some(newLam) else None
 
     // Rule: { e } --> e

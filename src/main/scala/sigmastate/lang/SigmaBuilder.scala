@@ -128,6 +128,9 @@ trait SigmaBuilder {
                    name: String,
                    args: IndexedSeq[Value[SType]],
                    tpe: SType = NoType): Value[SType]
+  def mkLambda(args: IndexedSeq[(String,SType)],
+               givenResType: SType,
+               body: Option[Value[SType]]): Value[SFunc]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -342,6 +345,11 @@ class StdSigmaBuilder extends SigmaBuilder {
                             args: IndexedSeq[Value[SType]],
                             tpe: SType): Value[SType] =
     MethodCall(obj, name, args, tpe)
+
+  override def mkLambda(args: IndexedSeq[(String, SType)],
+                        givenResType: SType,
+                        body: Option[Value[SType]]): Value[SFunc] =
+    Lambda(args, givenResType, body)
 }
 
 trait TypeConstraintCheck {

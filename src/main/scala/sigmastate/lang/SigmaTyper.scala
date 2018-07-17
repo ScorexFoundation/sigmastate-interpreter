@@ -110,7 +110,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
         if (newBody.isDefined && t != newBody.get.tpe)
           error(s"Invalid function $lam: resulting expression type ${newBody.get.tpe} doesn't equal declared type $t")
       }
-      val res = Lambda(args, newBody.fold(t)(_.tpe), newBody)
+      val res = mkLambda(args, newBody.fold(t)(_.tpe), newBody)
       res
 
     case app @ Apply(sel @ Select(obj, n, _), args) =>

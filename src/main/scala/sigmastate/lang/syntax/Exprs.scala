@@ -118,7 +118,7 @@ trait Exprs extends Core with Types {
 
   protected def mkLambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
     val names = args.map { case Ident(n, t) => (n, t) }
-    Lambda(names.toIndexedSeq, NoType, body)
+    builder.mkLambda(names.toIndexedSeq, NoType, Some(body))
   }
 
   protected def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType] = (func, args) match {
@@ -194,7 +194,7 @@ trait Exprs extends Core with Types {
   val LambdaDef = {
     val Body = P( WL ~ `=` ~ StatCtx.Expr )
     P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-      case (_ @ Seq(args), resType, body) => Lambda(args.toIndexedSeq, resType.getOrElse(NoType), body)
+      case (_ @ Seq(args), resType, body) => builder.mkLambda(args.toIndexedSeq, resType.getOrElse(NoType), Some(body))
       case (secs, resType, body) => error(s"Function can only have single argument list: fun ($secs): $resType = $body")
     }
   }
