@@ -36,10 +36,14 @@ object DataSerializer {
       if (len > 0xFFFF)
         sys.error(s"Length of array $arr exceeds ${0xFFFF} limit.")
       w.putUShort(len.toShort)
-      if (tCol.elemType == SBoolean)
-        w.putBits(arr.asInstanceOf[Array[Boolean]])
-      else
-        arr.foreach(x => serialize(x, tCol.elemType, w))
+      tCol.elemType match {
+        case SBoolean =>
+          w.putBits(arr.asInstanceOf[Array[Boolean]])
+        case SByte =>
+          w.putBytes(arr.asInstanceOf[Array[Byte]])
+        case _ =>
+          arr.foreach(x => serialize(x, tCol.elemType, w))
+      }
 
     case t: STuple =>
       val arr = v.asInstanceOf[t.WrappedType]
@@ -75,8 +79,10 @@ object DataSerializer {
       AvlTreeData.serializer.parseBody(r)
     case tCol: SCollectionType[a] =>
       val len = r.getUShort()
-      val arr = deserializeArray(len, tCol.elemType, r)
-      arr
+      if (tCol.elemType == SByte)
+        r.getBytes(len)
+      else
+        deserializeArray(len, tCol.elemType, r)
     case tuple: STuple =>
       val arr =  tuple.items.map { t =>
         deserialize(t, r)

@@ -219,7 +219,8 @@ trait ValueGenerators extends TypeGenerators {
 
   val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
     inputs <- Gen.listOf(inputGen)
-    outputCandidates <- Gen.listOf(ergoBoxCandidateGen)
+    outputsCount <- Gen.chooseNum(50, 200)
+    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen)
   } yield ErgoLikeTransaction(inputs.toIndexedSeq, outputCandidates.toIndexedSeq)
 
   // distinct list of elements from a given generator
