@@ -15,7 +15,14 @@ import sigmastate.utxo._
 import scala.collection.mutable.ArrayBuffer
 
 trait CosterCtx extends SigmaLibrary {
-  import Context._
+  import Context._; import WArray._; import Col._; import ReplCol._; import ColBuilder._;
+  import Sigma._; import SigmaContract._; import Box._
+  import WECPoint._; import ColOverArrayBuilder._; import ConcreteCostedBuilder._
+  import Costed._; import CostedPrim._; import CostedPair._;
+  import CostedArray._; import CostedNestedArray._; import CostedPairArray._
+  import CostedCol._; import CostedNestedCol._; import CostedPairCol._
+  import ProveDlogEvidence._
+
   val WA = WArrayMethods
   val CM = ColMethods
   val CBM = ColBuilderMethods
@@ -116,8 +123,8 @@ trait CosterCtx extends SigmaLibrary {
     Range(0, n).foldLeft(x)((y, i) => y + i)
   }
 
-  val colBuilder: Rep[ColBuilder] = ColOverArrayBuilder()
-  val costedBuilder = ConcreteCostedBuilder()
+  val colBuilder: Rep[ColBuilder] = RColOverArrayBuilder()
+  val costedBuilder = RConcreteCostedBuilder()
 
   import Cost._
 
@@ -261,11 +268,12 @@ trait CosterCtx extends SigmaLibrary {
   type RCosted[A] = Rep[Costed[A]]
 
   private def evalNode[SC <: SigmaContract, T <: SType](contr: Rep[SC], ctx: Rep[Context], vars: Map[Byte, Rep[_]], node: Value[T]): RCosted[T#WrappedType] = {
+    import MonoidBuilderInst._
     val res: Rep[Any] = node match {
       case Constant(v, tpe) => v match {
         case p: scapi.sigma.DLogProtocol.ProveDlog =>
           val ge = evalNode(contr, ctx, vars, p.value).asRep[Costed[WECPoint]]
-          CostedPrimRep(ProveDlogEvidence(ge.value), ge.cost + Dlog)
+          CostedPrimRep(RProveDlogEvidence(ge.value), ge.cost + Dlog)
         case ge: CryptoConstants.EcPointType =>
           assert(tpe == SGroupElement)
           val ge1 = toRep(ge)(stypeToElem(SGroupElement)).asRep[ECPoint]
@@ -291,10 +299,10 @@ trait CosterCtx extends SigmaLibrary {
         CostedPrimRep(xsC.value.length, xsC.cost + SizeOfDeclaration)
       case IsValid(p) =>
         val pC = evalNode(contr, ctx, vars, p).asRep[Costed[Sigma]]
-        CostedPrim(pC.value.isValid, pC.cost + ProofIsValidDeclaration)
+        CostedPrimRep(pC.value.isValid, pC.cost + ProofIsValidDeclaration)
       case ProofBytes(p) =>
         val pC = evalNode(contr, ctx, vars, p).asRep[Costed[Sigma]]
-        CostedPrim(pC.value.propBytes, pC.cost + ProofBytesDeclaration + pC.value.propBytes.length)
+        CostedPrimRep(pC.value.propBytes, pC.cost + ProofBytesDeclaration + pC.value.propBytes.length)
       case utxo.ExtractAmount(box) =>
         val boxC = evalNode(contr, ctx, vars, box).asRep[Costed[Box]]
         CostedPrimRep(boxC.value.value, boxC.cost + Cost.ExtractAmount)

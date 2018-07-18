@@ -2,7 +2,7 @@ package sigmastate.cost
 
 import com.google.common.base.Strings
 import sigmastate.SType
-import sigmastate.Values.{SValue, EvaluatedValue, ProofConstant}
+import sigmastate.Values.{SValue, ProofConstant}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.lang.{CosterCtx, LangTests, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
@@ -13,7 +13,8 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   lazy val ctx = new TestContext with CosterCtx {
   }
   import ctx._
-  import Context._
+  import Context._; import SigmaContract._
+  import Cost._; import ColBuilder._; import Col._; import Box._; import Sigma._; import CrowdFunding._
 
   def cost[SC <: SigmaContract:Elem](env: Map[String, Any], ctxVars: Map[Byte, SValue], x: String) = {
     val compiled = compiler.compile(env, x)
@@ -56,8 +57,6 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
       expectedCost: Rep[(SC, Context)] => Rep[Int]
   ): Rep[(((SC, Context)) => T, ((SC, Context)) => Int)] =
     checkInEnv(env, Map(), name, script, expectedCalc, expectedCost)
-
-  import Cost._
 
   test("costed constants") {
     checkSC("one", "1", _ => 1, _ => ConstantNode)
