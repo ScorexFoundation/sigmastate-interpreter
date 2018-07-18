@@ -13,6 +13,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   lazy val ctx = new TestContext with CosterCtx {
   }
   import ctx._
+  import Context._
 
   def cost[SC <: SigmaContract:Elem](env: Map[String, Any], ctxVars: Map[Byte, SValue], x: String) = {
     val compiled = compiler.compile(env, x)
@@ -146,13 +147,17 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   }
 
   test("Crowd Funding: measure") {
-    var res: Rep[Any] = null
-    measure(2) { j => // 10 warm up iterations when j == 0
-      measure(j*500 + 10, false) { i =>
-        res = cost[CrowdFunding](envCF, Map(), crowdFundingScript)
-      }
+    def eval(i: Int) = {
+      val cf = cost[CrowdFunding](envCF ++ Seq("timeout" -> (timeout + i)), Map(), crowdFundingScript)
+      split(cf)
     }
-    res.show
+    var res: Rep[Any] = eval(0)
+//    measure(2) { j => // 10 warm up iterations when j == 0
+//      measure(j*500 + 10, false) { i =>
+//        res = eval(i)
+//      }
+//    }
+    emit("Crowd_Funding_measure", res)
   }
 
   test("costed collection ops") {

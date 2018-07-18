@@ -12,21 +12,88 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 
+import scala.collection.mutable.ArrayBuffer
+
 trait CosterCtx extends SigmaLibrary {
+  import Context._
   val WA = WArrayMethods
   val CM = ColMethods
   val CBM = ColBuilderMethods
+  val SM = SigmaMethods
   val SCM = SigmaContractMethods
 
+  object AnyOf {
+    def unapply(d: Def[_]): Option[(Rep[SigmaContract], Rep[ColBuilder], Seq[Rep[A]]) forSome {type A}] = d match {
+      case SCM.anyOf(c, CBM.apply_apply_items(b, items)) =>
+        Some((c, b, items))
+      case _ => None
+    }
+  }
+  object AllOf {
+    def unapply(d: Def[_]): Option[(Rep[SigmaContract], Rep[ColBuilder], Seq[Rep[A]]) forSome {type A}] = d match {
+      case SCM.allOf(c, CBM.apply_apply_items(b, items)) =>
+        Some((c, b, items))
+      case _ => None
+    }
+  }
+  object AnyZk {
+    def unapply(d: Def[_]): Option[(Rep[SigmaContract], Rep[ColBuilder], Seq[Rep[Sigma]])] = d match {
+      case SCM.anyZK(c, CBM.apply_apply_items(b, items)) =>
+        Some((c, b, items.asInstanceOf[Seq[Rep[Sigma]]]))
+      case _ => None
+    }
+  }
+  object AllZk {
+    def unapply(d: Def[_]): Option[(Rep[SigmaContract], Rep[ColBuilder], Seq[Rep[Sigma]])] = d match {
+      case SCM.allZK(c, CBM.apply_apply_items(b, items)) =>
+        Some((c, b, items.asInstanceOf[Seq[Rep[Sigma]]]))
+      case _ => None
+    }
+  }
+  object HasSigmas {
+    def unapply(items: Seq[Sym]): Option[(Seq[Rep[Boolean]], Seq[Rep[Sigma]])] = {
+      val bs = ArrayBuffer.empty[BoolRep]
+      val ss = ArrayBuffer.empty[Rep[Sigma]]
+      for (i <- items) {
+        i match {
+          case SM.isValid(s) => ss += s
+          case b => bs += b.asRep[Boolean]
+        }
+      }
+      assert(items.length == bs.length + ss.length)
+      if (ss.isEmpty) None
+      else Some((bs,ss))
+    }
+  }
+
+
   override def rewriteDef[T](d: Def[T]) = d match {
+    case AllOf(c, b, HasSigmas(bools, sigmas)) =>
+      val zkAll = c.allZK(b.apply(sigmas:_*))
+      if (bools.isEmpty)
+        zkAll.isValid
+      else
+        (zkAll && c.allOf(b.apply(bools:_*))).isValid
+    case AnyOf(c, b, HasSigmas(bs, ss)) =>
+      val zkAny = c.anyZK(b.apply(ss:_*))
+      if (bs.isEmpty)
+        zkAny.isValid
+      else
+        (zkAny || c.anyOf(b.apply(bs:_*))).isValid
+    case AllOf(_,_,items) if items.length == 1 => items(0)
+    case AnyOf(_,_,items) if items.length == 1 => items(0)
+    case AllZk(_,_,items) if items.length == 1 => items(0)
+    case AnyZk(_,_,items) if items.length == 1 => items(0)
+
+//    case SM.and_bool_&&(SCM.allZK(sigmas), b) =>
     case _ =>
       if (currentPass.config.constantPropagation) {
         // additional constant propagation rules (see other similar cases)
         d match {
-          case SCM.anyOf(c, CBM.apply_apply_items(b, items)) if (items.forall(_.isConst)) =>
+          case AnyOf(_,_,items) if (items.forall(_.isConst)) =>
             val bs = items.map { case Def(Const(b: Boolean)) => b }
             toRep(bs.exists(_ == true))
-          case SCM.allOf(c, CBM.apply_apply_items(b, items)) if (items.forall(_.isConst)) =>
+          case AllOf(_,_,items) if (items.forall(_.isConst)) =>
             val bs = items.map { case Def(Const(b: Boolean)) => b }
             toRep(bs.forall(_ == true))
           case _ =>
@@ -49,7 +116,7 @@ trait CosterCtx extends SigmaLibrary {
     Range(0, n).foldLeft(x)((y, i) => y + i)
   }
 
-  val colBuilder = ColOverArrayBuilder()
+  val colBuilder: Rep[ColBuilder] = ColOverArrayBuilder()
   val costedBuilder = ConcreteCostedBuilder()
 
   import Cost._
@@ -227,13 +294,14 @@ trait CosterCtx extends SigmaLibrary {
         CostedPrim(pC.value.isValid, pC.cost + ProofIsValidDeclaration)
       case ProofBytes(p) =>
         val pC = evalNode(contr, ctx, vars, p).asRep[Costed[Sigma]]
-        CostedPrim(pC.value.propBytes, pC.cost + ProofBytesDeclaration)
+        CostedPrim(pC.value.propBytes, pC.cost + ProofBytesDeclaration + pC.value.propBytes.length)
       case utxo.ExtractAmount(box) =>
         val boxC = evalNode(contr, ctx, vars, box).asRep[Costed[Box]]
         CostedPrimRep(boxC.value.value, boxC.cost + Cost.ExtractAmount)
       case utxo.ExtractScriptBytes(box) =>
         val boxC = evalNode(contr, ctx, vars, box).asRep[Costed[Box]]
-        CostedPrimRep(boxC.value.propositionBytes, boxC.cost + Cost.ExtractScriptBytes)
+        val bytes = boxC.value.propositionBytes
+        CostedPrimRep(bytes, boxC.cost + Cost.ExtractScriptBytes + bytes.length)
       case op: ArithOp[t] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)
