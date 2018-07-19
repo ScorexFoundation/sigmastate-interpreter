@@ -42,7 +42,7 @@ trait ByteWriter {
     *
     * @param x Int
     */
-  def putUInt(x: Int): ByteWriter
+  def putUInt(x: Long): ByteWriter
 
   /**
     * Encode signed Long.
@@ -78,16 +78,13 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def putShort(x: Short): ByteWriter = { b.append(x); this }
 
   /**
-    * Encode signed Short value using VLQ.
-    * Both negative and positive values are supported, but only positive values are encoded
-    * efficiently, negative values are taking a toll and use three bytes. Use [[putShort]]
+    * Encode unsigned Short value using VLQ.
+    * Only positive values are supported, Use [[putShort]]
     * to encode negative and positive values.
     *
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @note Don't use it for negative values, the resulting varint is always three
-    *       bytes long – it is, effectively, treated like a very large unsigned short.
-    * @param x prefer unsigned Short (signed value will produce a significant overhead,
-    *          see note above)
+    * @param x unsigned Short
+    * @throws AssertionError for values not in unsigned Short range
     */
   @inline override def putUShort(x: Int): ByteWriter = {
     assert(x >= 0 && x <= 0xFFFF, s"$x is out of unsigned short range")
@@ -110,20 +107,18 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def putInt(x: Int): ByteWriter = putULong(encodeZigZagInt(x))
 
   /**
-    * Encode signed Int value using VLQ.
-    * Both negative and positive values are supported, but only positive values are encoded
-    * efficiently, negative values are taking a toll and use six bytes. Use [[putInt]]
+    * Encode unsigned Int value using VLQ.
+    * Only positive values are supported. Use [[putInt]]
     * to encode negative and positive values.
     *
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
-    * @note Don't use it for negative values, the resulting varint is always six
-    *       bytes long – it is, effectively, treated like a very large unsigned integer.
-    *       If you use [[putInt]], the resulting varint uses ZigZag encoding,
-    *       which is much more efficient.
-    * @param x prefer unsigned Int (signed value will produce a significant overhead,
-    *          see note above)
+    * @param x unsigned Int
+    * @throws AssertionError for values not in unsigned Int range
     */
-  @inline override def putUInt(x: Int): ByteWriter = putULong(x.toLong)
+  @inline override def putUInt(x: Long): ByteWriter = {
+    assert(x >= 0 && x <= 0xFFFFFFFFL, s"$x is out of unsigned int range")
+    putULong(x)
+  }
 
   /**
     * Encode signed Long using VLQ with ZigZag.

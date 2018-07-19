@@ -111,6 +111,8 @@ trait ValueGenerators extends TypeGenerators {
     int <- smallIntGen
     opt <- Gen.oneOf(Some(int), None)
   } yield opt
+  val unsignedIntGen: Gen[Int] = Gen.chooseNum(0, Int.MaxValue)
+  val unsignedShortGen: Gen[Short] = Gen.chooseNum(0, Short.MaxValue).map(_.toShort)
 
   val contextExtensionGen: Gen[ContextExtension] = for {
     values <- Gen.sequence(contextExtensionValuesGen(0, 3))
@@ -148,10 +150,10 @@ trait ValueGenerators extends TypeGenerators {
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
-    keyLength <- smallIntGen
-    vl <- smallIntOptGen
-    mn <- arbOption[Int].arbitrary
-    md <- arbOption[Int].arbitrary
+    keyLength <- unsignedIntGen
+    vl <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
+    mn <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
+    md <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
   } yield AvlTreeData(ADDigest @@ digest, keyLength, vl, mn, md)
 
   def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
@@ -198,7 +200,7 @@ trait ValueGenerators extends TypeGenerators {
     p <- proveDlogGen
     b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
     tId <- Gen.listOfN(32, arbByte.arbitrary)
-    boxId <- Gen.chooseNum(0, Short.MaxValue).map(_.toShort)
+    boxId <- unsignedShortGen
     tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
     tokens <- Gen.sequence(additionalTokensGen(tokensCount))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
