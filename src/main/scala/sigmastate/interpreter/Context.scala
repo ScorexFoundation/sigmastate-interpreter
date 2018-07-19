@@ -24,7 +24,7 @@ object ContextExtension {
   object serializer extends Serializer[ContextExtension, ContextExtension] {
 
     override def serializeBody(obj: ContextExtension, w: ByteWriter): Unit = {
-      w.put(obj.values.size.toByte)
+      w.putUByte(obj.values.size)
       obj.values.foreach{ case (id, v) => w.put(id).putValue(v) }
     }
 

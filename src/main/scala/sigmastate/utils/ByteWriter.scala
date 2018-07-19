@@ -7,6 +7,17 @@ import sigmastate.utils.Extensions._
 
 trait ByteWriter {
   def put(x: Byte): ByteWriter
+
+  /** Encode integer as an unsigned byte asserting the range check
+    * @param x integer value to encode
+    * @return
+    * @throws AssertionError if x is outside of the unsigned byte range
+    */
+  def putUByte(x: Int): ByteWriter = {
+    assert(x >= 0 && x <= 0xFF, s"$x is out of unsigned byte range")
+    put(x.toByte)
+    this
+  }
   def putBoolean(x: Boolean): ByteWriter
   def putShort(x: Short): ByteWriter
 

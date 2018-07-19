@@ -219,4 +219,12 @@ class ByteReaderWriterImpSpecification extends PropSpec
         byteBufReader(bytes).getBits(bools.length) shouldEqual bools
     }
   }
+
+  property("putUByte range check assertion") {
+    val w = byteArrayWriter()
+    w.putUByte(0)
+    w.putUByte(255)
+    an[AssertionError] should be thrownBy w.putUByte(-1)
+    an[AssertionError] should be thrownBy w.putUByte(256)
+  }
 }

@@ -65,7 +65,7 @@ object ErgoBoxCandidate {
     override def serializeBody(obj: ErgoBoxCandidate, w: ByteWriter): Unit = {
       w.putULong(obj.value)
       w.putValue(obj.proposition)
-      w.put(obj.additionalTokens.size.toByte)
+      w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
         w.putBytes(id)
         w.putULong(amount)
@@ -73,7 +73,7 @@ object ErgoBoxCandidate {
       val nRegs = obj.additionalRegisters.keys.size
       if (nRegs + ErgoBox.startingNonMandatoryIndex > 255)
         sys.error(s"The number of non-mandatory indexes $nRegs exceeds ${255 - ErgoBox.startingNonMandatoryIndex} limit.")
-      w.put(nRegs.toByte)
+      w.putUByte(nRegs)
       // we assume non-mandatory indexes are densely packed from startingNonManadatoryIndex
       // this convention allows to save 1 bite for each register
       val startReg = ErgoBox.startingNonMandatoryIndex

@@ -32,7 +32,7 @@ object AvlTreeData {
   object serializer extends Serializer[AvlTreeData, AvlTreeData] {
 
     override def serializeBody(data: AvlTreeData, w: ByteWriter): Unit = {
-      w.put(data.startingDigest.length.toByte)
+      w.putUByte(data.startingDigest.length)
         .putBytes(data.startingDigest)
         .putUInt(data.keyLength)
         .putOption(data.valueLengthOpt)(_.putUInt(_))
