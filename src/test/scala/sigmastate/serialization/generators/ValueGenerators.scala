@@ -198,7 +198,7 @@ trait ValueGenerators extends TypeGenerators {
     p <- proveDlogGen
     b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
     tId <- Gen.listOfN(32, arbByte.arbitrary)
-    boxId <- arbShort.arbitrary
+    boxId <- Gen.chooseNum(0, Short.MaxValue).map(_.toShort)
     tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
     tokens <- Gen.sequence(additionalTokensGen(tokensCount))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)

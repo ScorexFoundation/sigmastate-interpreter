@@ -11,9 +11,7 @@ object ConcreteCollectionSerializer extends ValueSerializer[ConcreteCollection[_
   override val opCode: Byte = ConcreteCollectionCode
 
   override def serializeBody(cc: ConcreteCollection[_ <: SType], w: ByteWriter): Unit = {
-    val ccSize = cc.items.size
-    require(ccSize <= Short.MaxValue, s"max collection size is Short.MaxValue = ${Short.MaxValue}")
-    w.putUShort(ccSize.toShort)
+    w.putUShort(cc.items.size)
     w.putType(cc.tpe.elemType)
     cc.items.foreach(w.putValue)
   }

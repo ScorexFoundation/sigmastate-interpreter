@@ -39,7 +39,7 @@ object ProverResult {
   object serializer extends Serializer[ProverResult, ProverResult] {
 
     override def serializeBody(obj: ProverResult, w: ByteWriter): Unit = {
-      w.putUShort(obj.proof.length.toShort)
+      w.putUShort(obj.proof.length)
       w.putBytes(obj.proof)
       ContextExtension.serializer.serializeBody(obj.extension, w)
 

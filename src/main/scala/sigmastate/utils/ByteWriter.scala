@@ -16,7 +16,6 @@ trait ByteWriter {
   def putUByte(x: Int): ByteWriter = {
     assert(x >= 0 && x <= 0xFF, s"$x is out of unsigned byte range")
     put(x.toByte)
-    this
   }
   def putBoolean(x: Boolean): ByteWriter
   def putShort(x: Short): ByteWriter
@@ -27,7 +26,7 @@ trait ByteWriter {
     * Use [[putShort]] to encode values that might be negative.
     * @param x Short
     */
-  def putUShort(x: Short): ByteWriter
+  def putUShort(x: Int): ByteWriter
 
   /**
     * Encode signed Int.
@@ -90,7 +89,11 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     * @param x prefer unsigned Short (signed value will produce a significant overhead,
     *          see note above)
     */
-  @inline override def putUShort(x: Short): ByteWriter = putUInt(x.toInt)
+  @inline override def putUShort(x: Int): ByteWriter = {
+    assert(x >= 0 && x <= 0xFFFF, s"$x is out of unsigned short range")
+    putUInt(x)
+  }
+
 
   /**
     * Encode signed Int using VLQ with ZigZag.

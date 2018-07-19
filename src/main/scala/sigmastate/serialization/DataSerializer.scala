@@ -20,9 +20,7 @@ object DataSerializer {
     case SLong => w.putLong(v.asInstanceOf[Long])
     case SBigInt =>
       val data = v.asInstanceOf[BigInteger].toByteArray
-      val length = data.length
-      require(length <= Short.MaxValue, "max collection size is Short.MaxValue")
-      w.putUShort(length.toShort)
+      w.putUShort(data.length)
       w.putBytes(data)
     case SGroupElement =>
       GroupElementSerializer.serializeBody(v.asInstanceOf[EcPointType], w)
@@ -32,10 +30,7 @@ object DataSerializer {
       AvlTreeData.serializer.serializeBody(v.asInstanceOf[AvlTreeData], w)
     case tCol: SCollectionType[a] =>
       val arr = v.asInstanceOf[tCol.WrappedType]
-      val len = arr.length
-      if (len > 0xFFFF)
-        sys.error(s"Length of array $arr exceeds ${0xFFFF} limit.")
-      w.putUShort(len.toShort)
+      w.putUShort(arr.length)
       tCol.elemType match {
         case SBoolean =>
           w.putBits(arr.asInstanceOf[Array[Boolean]])
@@ -50,7 +45,7 @@ object DataSerializer {
       val len = arr.length
       assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
       if (len > 0xFFFF)
-        sys.error(s"Length of tuple $arr exceeds ${0xFF} limit.")
+        sys.error(s"Length of tuple $arr exceeds ${0xFFFF} limit.")
       var i = 0
       while (i < arr.length) {
         serialize[SType](arr(i), t.items(i), w)

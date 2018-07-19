@@ -85,9 +85,8 @@ class ByteReaderWriterImpSpecification extends PropSpec
         any match {
           case v: Byte => writer.put(v)
           case v: Short =>
-            // test all paths
             writer.putShort(v)
-            writer.putUShort(v)
+            if (v >= 0) writer.putUShort(v)
           case v: Int =>
             // test all paths
             writer.putInt(v)
@@ -107,7 +106,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
         case v: Short =>
           // test all paths
           reader.getShort() shouldEqual v
-          reader.getUShort().toShort shouldEqual v
+          if (v >= 0) reader.getUShort().toShort shouldEqual v
         case v: Int =>
           // test all paths
           reader.getInt() shouldEqual v
@@ -226,5 +225,13 @@ class ByteReaderWriterImpSpecification extends PropSpec
     w.putUByte(255)
     an[AssertionError] should be thrownBy w.putUByte(-1)
     an[AssertionError] should be thrownBy w.putUByte(256)
+  }
+
+  property("putUShort range check assertion") {
+    val w = byteArrayWriter()
+    w.putUShort(0)
+    w.putUShort(0xFFFF)
+    an[AssertionError] should be thrownBy w.putUShort(-1)
+    an[AssertionError] should be thrownBy w.putUShort(0xFFFF + 1)
   }
 }
