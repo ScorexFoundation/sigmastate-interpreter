@@ -11,10 +11,7 @@ object ConcreteCollectionBooleanConstantSerializer
   override val opCode: Byte = ConcreteCollectionBooleanConstantCode
 
   override def serializeBody(cc: ConcreteCollection[SBoolean.type], w: ByteWriter): Unit = {
-    val ccSize = cc.items.size
-    require(ccSize <= Short.MaxValue, s"max collection size is Short.MaxValue = ${Short.MaxValue}")
-    val size = ccSize.toShort
-    w.putUShort(size)
+    w.putUShort(cc.items.size)
     w.putBits(
       cc.items.map {
         case v: BooleanConstant => v.value

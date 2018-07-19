@@ -85,13 +85,11 @@ class ByteReaderWriterImpSpecification extends PropSpec
         any match {
           case v: Byte => writer.put(v)
           case v: Short =>
-            // test all paths
             writer.putShort(v)
-            writer.putUShort(v)
+            if (v >= 0) writer.putUShort(v)
           case v: Int =>
-            // test all paths
             writer.putInt(v)
-            writer.putUInt(v)
+            if (v >= 0) writer.putUInt(v)
           case v: Long =>
             // test all paths
             writer.putLong(v)
@@ -107,11 +105,10 @@ class ByteReaderWriterImpSpecification extends PropSpec
         case v: Short =>
           // test all paths
           reader.getShort() shouldEqual v
-          reader.getUShort().toShort shouldEqual v
+          if (v >= 0) reader.getUShort().toShort shouldEqual v
         case v: Int =>
-          // test all paths
           reader.getInt() shouldEqual v
-          reader.getUInt() shouldEqual v
+          if (v >= 0) reader.getUInt() shouldEqual v
         case v: Long =>
           // test all paths
           reader.getLong() shouldEqual v
@@ -218,5 +215,29 @@ class ByteReaderWriterImpSpecification extends PropSpec
         byteArrayWriter().putBits(bools).toBytes shouldEqual bytes
         byteBufReader(bytes).getBits(bools.length) shouldEqual bools
     }
+  }
+
+  property("putUByte range check assertion") {
+    val w = byteArrayWriter()
+    w.putUByte(0)
+    w.putUByte(255)
+    an[AssertionError] should be thrownBy w.putUByte(-1)
+    an[AssertionError] should be thrownBy w.putUByte(256)
+  }
+
+  property("putUShort range check assertion") {
+    val w = byteArrayWriter()
+    w.putUShort(0)
+    w.putUShort(0xFFFF)
+    an[AssertionError] should be thrownBy w.putUShort(-1)
+    an[AssertionError] should be thrownBy w.putUShort(0xFFFF + 1)
+  }
+
+  property("putUInt range check assertion") {
+    val w = byteArrayWriter()
+    w.putUInt(0)
+    w.putUInt(0xFFFFFFFFL)
+    an[AssertionError] should be thrownBy w.putUInt(-1)
+    an[AssertionError] should be thrownBy w.putUInt(0xFFFFFFFFL + 1)
   }
 }

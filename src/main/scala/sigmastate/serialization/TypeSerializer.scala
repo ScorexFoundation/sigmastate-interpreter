@@ -179,7 +179,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
   private def serializeTuple(t: STuple, w: ByteWriter) = {
     assert(t.items.length <= 255)
     w.put(STuple.TupleTypeCode)
-    w.put(t.items.length.toByte)
+    w.putUByte(t.items.length)
     for (i <- t.items)
       serialize(i, w)
   }

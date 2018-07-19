@@ -11,8 +11,7 @@ object TupleSerializer extends ValueSerializer[Tuple] {
 
   override def serializeBody(obj: Tuple, w: ByteWriter): Unit = {
     val length = obj.length
-    require(length <= Byte.MaxValue, s"max tuple size is Byte.MaxValue = ${Byte.MaxValue}")
-    w.put(length.toByte)
+    w.putUByte(length)
     obj.items.foreach(w.putValue)
   }
 
