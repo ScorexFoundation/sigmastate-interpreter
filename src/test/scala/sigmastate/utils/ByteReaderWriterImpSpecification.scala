@@ -106,7 +106,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
           // test all paths
           reader.getShort() shouldEqual v
           if (v >= 0) reader.getUShort().toShort shouldEqual v
-        case v: Int =
+        case v: Int =>
           reader.getInt() shouldEqual v
           if (v >= 0) reader.getUInt() shouldEqual v
         case v: Long =>
