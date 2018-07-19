@@ -25,7 +25,7 @@ class TypeSerializerSpecification extends SerializationSpecification {
       i shouldBe TypeSerializer.embeddableIdToType(i).typeCode
   }
 
-  import SCollection._; import SOption._; import STuple._
+  import SCollectionType._; import SOption._; import STuple._
 
   property("Embeddable type serialization roundtrip") {
     forAll { t: SPredefType =>

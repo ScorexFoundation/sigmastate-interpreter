@@ -6,6 +6,8 @@ import sigmastate.utils.{ByteWriter, ByteReader}
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer extends ByteBufferSerializer[SType] {
 
+  import sigmastate.SCollectionType._
+
   /** The list of embeddable types, i.e. types that can be combined with type constructor for optimized encoding.
     * For each embeddable type `T`, and type constructor `C`, the type `C[T]` can be represented by single byte. */
   val embeddableIdToType = Array[SType](null, SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement)
@@ -24,18 +26,18 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     case SAvlTree => w.put(SAvlTree.typeCode)
     case c: SCollectionType[a] => c.elemType match {
       case p: SEmbeddable =>
-        val code = p.embedIn(SCollection.CollectionTypeCode)
+        val code = p.embedIn(CollectionTypeCode)
         w.put(code)
       case cn: SCollectionType[a] => cn.elemType match {
         case p: SEmbeddable =>
-          val code = p.embedIn(SCollection.NestedCollectionTypeCode)
+          val code = p.embedIn(NestedCollectionTypeCode)
           w.put(code)
         case t =>
-          w.put(SCollection.CollectionTypeCode)
+          w.put(CollectionTypeCode)
           serialize(cn, w)
       }
       case t =>
-        w.put(SCollection.CollectionTypeCode)
+        w.put(CollectionTypeCode)
         serialize(t, w)
     }
     case o: SOption[a] => o.elemType match {

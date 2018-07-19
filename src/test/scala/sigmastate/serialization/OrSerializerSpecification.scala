@@ -13,7 +13,7 @@ class OrSerializerSpecification extends TableSerializationSpecification {
     (OR(boolConst(true), boolConst(false)),
       Array[Byte](OrCode, ConcreteCollectionBooleanConstantCode, 2, 1)),
     (OR(Constant[SCollection[SBoolean.type]](Array[Boolean](false, true), SCollection(SBoolean))),
-      Array[Byte](OrCode, SBoolean.embedIn(SCollection.CollectionTypeCode), 2, 2)),
+      Array[Byte](OrCode, SBoolean.embedIn(SCollectionType.CollectionTypeCode), 2, 2)),
     (OR(boolConst(true), EQ(IntConstant(1), IntConstant(1))),
       Array[Byte](OrCode, ConcreteCollectionCode, 2, SBoolean.typeCode, // collection type
         SBoolean.typeCode, 1,

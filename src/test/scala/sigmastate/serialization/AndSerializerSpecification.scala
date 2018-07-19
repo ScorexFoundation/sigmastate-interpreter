@@ -13,7 +13,7 @@ class AndSerializerSpecification extends TableSerializationSpecification {
     (AND(boolConst(true), boolConst(false)),
       Array[Byte](AndCode, ConcreteCollectionBooleanConstantCode, 2, 1)),
     (AND(Constant[SCollection[SBoolean.type]](Array[Boolean](false, true), SCollection(SBoolean))),
-      Array[Byte](AndCode, SBoolean.embedIn(SCollection.CollectionTypeCode), 2, 2)),
+      Array[Byte](AndCode, SBoolean.embedIn(SCollectionType.CollectionTypeCode), 2, 2)),
     (AND(boolConst(true), EQ(IntConstant(1), IntConstant(1))),
       Array[Byte](AndCode, ConcreteCollectionCode, 2, SBoolean.typeCode, // collection type
         SBoolean.typeCode, 1,
