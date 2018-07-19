@@ -257,7 +257,7 @@ object Values {
     }
   }
 
-  val ByteArrayTypeCode = (SCollection.CollectionTypeCode + SByte.typeCode).toByte
+  val ByteArrayTypeCode = (SCollectionType.CollectionTypeCode + SByte.typeCode).toByte
 
   object ByteArrayConstant {
     def apply(value: Array[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value, SByte)
@@ -303,7 +303,7 @@ object Values {
     }
   }
 
-  val BoolArrayTypeCode = (SCollection.CollectionTypeCode + SBoolean.typeCode).toByte
+  val BoolArrayTypeCode = (SCollectionType.CollectionTypeCode + SBoolean.typeCode).toByte
 
   object BoolArrayConstant {
     def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
