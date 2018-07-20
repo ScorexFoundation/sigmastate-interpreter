@@ -13,8 +13,11 @@ class DeserializationResilience extends PropSpec
   }
 
   property("max size limit") {
-    val size = 1024 * 1024 * 10
-    an[SerializerException] should be thrownBy ValueSerializer.deserialize(Array.fill[Byte](size)(1))
+    val bytes = Array.fill[Byte](ValueSerializer.MaxInputSize + 1)(1)
+    an[AssertionError] should be thrownBy ValueSerializer.deserialize(bytes)
+    an[AssertionError] should be thrownBy ValueSerializer.deserialize(bytes, 0)
+    // deliberately omitted assertion (hot path)
+    ValueSerializer.deserialize(Serializer.startReader(bytes, 0))
   }
 
   property("zeroes") {
