@@ -13,7 +13,7 @@ class DeserializationResilience extends PropSpec
   }
 
   property("max size limit") {
-    val bytes = Array.fill[Byte](ValueSerializer.MaxInputSize + 1)(1)
+    val bytes = Array.fill[Byte](Serializer.MaxInputSize + 1)(1)
     an[AssertionError] should be thrownBy ValueSerializer.deserialize(bytes)
     an[AssertionError] should be thrownBy ValueSerializer.deserialize(bytes, 0)
     // deliberately omitted assertion (hot path)

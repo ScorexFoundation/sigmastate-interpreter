@@ -99,7 +99,11 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     }
   }
 
-  override def deserialize(r: ByteReader): SType = {
+  override def deserialize(r: ByteReader): SType = deserialize(r, 0)
+
+  private def deserialize(r: ByteReader, depth: Int): SType = {
+    assert(depth < Serializer.MaxTreeDepth,
+      s"deserialize call depth exceeds ${Serializer.MaxTreeDepth}")
     val c = r.getUByte()
     if (c <= 0)
       throw new InvalidTypePrefix(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
@@ -110,41 +114,41 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case 0 => // primitive
           getEmbeddableType(c)
         case 1 => // Array[_]
-          val tElem = getArgType(r, primId)
+          val tElem = getArgType(r, primId, depth)
           SCollection(tElem)
         case 2 => // Array[Array[_]]
-          val tElem = getArgType(r, primId)
+          val tElem = getArgType(r, primId, depth)
           SCollection(SCollection(tElem))
         case 3 => // Option[_]
-          val tElem = getArgType(r, primId)
+          val tElem = getArgType(r, primId, depth)
           SOption(tElem)
         case 4 => // Option[Collection[_]]
-          val tElem = getArgType(r, primId)
+          val tElem = getArgType(r, primId, depth)
           SOption(SCollection(tElem))
         case STuple.Pair1TypeConstrId => // (_, t2)
           val (t1, t2) = if (primId == 0) {
             // Pair of non-primitive types (`((Int, Byte), (Boolean,Box))`, etc.)
-            (deserialize(r), deserialize(r))
+            (deserialize(r, depth + 1), deserialize(r, depth + 1))
           } else {
             // Pair of types where first is primitive (`(_, Int)`)
-            (getEmbeddableType(primId), deserialize(r))
+            (getEmbeddableType(primId), deserialize(r, depth + 1))
           }
           STuple(t1, t2)
         case STuple.Pair2TypeConstrId => // (t1, _)
           if (primId == 0) {
             // Triple of types
-            val (t1, t2, t3) = (deserialize(r), deserialize(r), deserialize(r))
+            val (t1, t2, t3) = (deserialize(r, depth + 1), deserialize(r, depth + 1), deserialize(r, depth + 1))
             STuple(t1, t2, t3)
           } else {
             // Pair of types where second is primitive (`(Int, _)`)
             val t2 = getEmbeddableType(primId)
-            val t1 = deserialize(r)
+            val t1 = deserialize(r, depth + 1)
             STuple(t1, t2)
           }
         case STuple.PairSymmetricTypeConstrId => // (_, _)
           if (primId == 0) {
             // Quadruple of types
-            val (t1, t2, t3, t4) = (deserialize(r), deserialize(r), deserialize(r), deserialize(r))
+            val (t1, t2, t3, t4) = (deserialize(r, depth + 1), deserialize(r, depth + 1), deserialize(r, depth + 1), deserialize(r, depth + 1))
             STuple(t1, t2, t3, t4)
           } else {
             // Symmetric pair of primitive types (`(Int, Int)`, `(Byte,Byte)`, etc.)
@@ -157,7 +161,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
       c match {
         case STuple.TupleTypeCode => {
           val len = r.getUByte()
-          val items = (0 until len).map(_ => deserialize(r))
+          val items = (0 until len).map(_ => deserialize(r, depth + 1))
           STuple(items)
         }
         case SAny.typeCode => SAny
@@ -171,9 +175,9 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     tpe
   }
 
-  private def getArgType(r: ByteReader, primId: Int) =
+  private def getArgType(r: ByteReader, primId: Int, depth: Int) =
     if (primId == 0)
-      deserialize(r)
+      deserialize(r, depth + 1)
     else
       getEmbeddableType(primId)
 
