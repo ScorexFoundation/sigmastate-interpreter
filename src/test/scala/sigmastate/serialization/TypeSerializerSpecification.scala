@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import org.scalacheck.Arbitrary._
 import sigmastate._
+import sigmastate.lang.exceptions.{InvalidTypePrefix, SerializerException}
 import sigmastate.utils.Extensions._
 
 class TypeSerializerSpecification extends SerializationSpecification {
@@ -83,5 +84,10 @@ class TypeSerializerSpecification extends SerializationSpecification {
 
     roundtrip(STuple(SLong, SLong, SByte, SBoolean, SInt),
       Array[Byte](TupleTypeCode, 5, SLong.typeCode, SLong.typeCode, SByte.typeCode, SBoolean.typeCode, SInt.typeCode))
+  }
+
+  property("tuple of tuples crazy deep") {
+    val bytes = List.tabulate(1000)(_ => Array[Byte](TupleTypeCode, 2)).toArray.flatten
+    an[SerializerException] should be thrownBy Serializer.startReader(bytes, 0).getType()
   }
 }

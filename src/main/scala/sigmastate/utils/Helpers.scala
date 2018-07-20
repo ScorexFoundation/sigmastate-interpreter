@@ -53,6 +53,12 @@ object Helpers {
       case (Some(a1), Some(a2)) => deepHashCode(a1) == deepHashCode(a2)
       case _ => false
     }
+
+  /**
+    * Helper to construct a byte array from a bunch of bytes. The inputs are actually ints so that I
+    * can use hex notation and not get stupid errors about precision.
+  */
+  def bytesFromInts(bytesAsInts: Int*): Array[Byte] = bytesAsInts.map(_.toByte).toArray
 }
 
 object Overloading {

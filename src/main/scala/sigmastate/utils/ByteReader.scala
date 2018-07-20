@@ -82,8 +82,13 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
     * Decode Short previously encoded with [[ByteArrayWriter.putUShort]] using VLQ.
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
     * @return Int
+    * @throws AssertionError for deserialized values not in unsigned Short range
     */
-  @inline override def getUShort(): Int = getUInt().toInt
+  @inline override def getUShort(): Int = {
+    val x = getUInt().toInt
+    assert(x >= 0 && x <= 0xFFFF, s"$x is out of unsigned short range")
+    x
+  }
 
   /**
     * Decode signed Int previously encoded with [[ByteArrayWriter.putInt]] using VLQ with ZigZag.

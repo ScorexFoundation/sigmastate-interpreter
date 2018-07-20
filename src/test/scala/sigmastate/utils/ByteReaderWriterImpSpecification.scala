@@ -8,6 +8,7 @@ import org.scalatest.{Assertion, Matchers, PropSpec}
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utils.ByteArrayWriter.{encodeZigZagInt, encodeZigZagLong}
 import sigmastate.utils.ByteBufferReader.{decodeZigZagInt, decodeZigZagLong}
+import sigmastate.utils.Helpers.bytesFromInts
 
 class ByteReaderWriterImpSpecification extends PropSpec
   with ValueGenerators
@@ -26,32 +27,25 @@ class ByteReaderWriterImpSpecification extends PropSpec
         arrayGen[Boolean]))
   } yield anyValSeq
 
-  /**
-    * source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java#L133
-    * Helper to construct a byte array from a bunch of bytes. The inputs are actually ints so that I
-    * can use hex notation and not get stupid errors about precision.
-    */
-  private def bytes(bytesAsInts: Int*): Array[Byte] = bytesAsInts.map(_.toByte).toArray
-
   // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java#L239
   private val expectedValues: Seq[(Array[Byte], Long)] = Seq(
-    (bytes(0x00), 0),
-    (bytes(0x01), 1),
-    (bytes(0x7f), 127),
+    (bytesFromInts(0x00), 0),
+    (bytesFromInts(0x01), 1),
+    (bytesFromInts(0x7f), 127),
     // 14882
-    (bytes(0xa2, 0x74), (0x22 << 0) | (0x74 << 7)),
+    (bytesFromInts(0xa2, 0x74), (0x22 << 0) | (0x74 << 7)),
     // 2961488830
-    (bytes(0xbe, 0xf7, 0x92, 0x84, 0x0b),
+    (bytesFromInts(0xbe, 0xf7, 0x92, 0x84, 0x0b),
       (0x3e << 0) | (0x77 << 7) | (0x12 << 14) | (0x04 << 21) | (0x0bL << 28)),
     // 64-bit
     // 7256456126
-    (bytes(0xbe, 0xf7, 0x92, 0x84, 0x1b),
+    (bytesFromInts(0xbe, 0xf7, 0x92, 0x84, 0x1b),
       (0x3e << 0) | (0x77 << 7) | (0x12 << 14) | (0x04 << 21) | (0x1bL << 28)),
     // 41256202580718336
-    (bytes(0x80, 0xe6, 0xeb, 0x9c, 0xc3, 0xc9, 0xa4, 0x49),
+    (bytesFromInts(0x80, 0xe6, 0xeb, 0x9c, 0xc3, 0xc9, 0xa4, 0x49),
       (0x00 << 0) | (0x66 << 7) | (0x6b << 14) | (0x1c << 21) | (0x43L << 28) | (0x49L << 35) | (0x24L << 42) | (0x49L << 49)),
     // 11964378330978735131 (-6482365742730816485)
-    (bytes(0x9b, 0xa8, 0xf9, 0xc2, 0xbb, 0xd6, 0x80, 0x85, 0xa6, 0x01),
+    (bytesFromInts(0x9b, 0xa8, 0xf9, 0xc2, 0xbb, 0xd6, 0x80, 0x85, 0xa6, 0x01),
       (0x1b << 0) | (0x28 << 7) | (0x79 << 14) | (0x42 << 21) | (0x3bL << 28) | (0x56L << 35) | (0x00L << 42) | (0x05L << 49) | (0x26L << 56) | (0x01L << 63))
   )
 
@@ -160,8 +154,8 @@ class ByteReaderWriterImpSpecification extends PropSpec
 
   property("malformed input for deserialization") {
     // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java#L281
-    assertThrows[RuntimeException](byteBufReader(bytes(0x80)).getULong())
-    assertThrows[RuntimeException](byteBufReader(bytes(0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00)).getULong())
+    assertThrows[RuntimeException](byteBufReader(bytesFromInts(0x80)).getULong())
+    assertThrows[RuntimeException](byteBufReader(bytesFromInts(0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00)).getULong())
   }
 
   property("ZigZag encoding format") {
@@ -240,4 +234,20 @@ class ByteReaderWriterImpSpecification extends PropSpec
     an[AssertionError] should be thrownBy w.putUInt(-1)
     an[AssertionError] should be thrownBy w.putUInt(0xFFFFFFFFL + 1)
   }
+
+  property("getUShort range check assertion") {
+    def check(in: Int): Unit =
+      byteBufReader(byteArrayWriter().putUInt(in).toBytes).getUShort() shouldBe in
+
+    def checkFail(in: Int): Unit =
+      an[AssertionError] should be thrownBy
+        byteBufReader(byteArrayWriter().putUInt(in).toBytes).getUShort()
+
+    check(0)
+    check(0xFFFF)
+    checkFail(-1)
+    checkFail(0xFFFF + 1)
+    checkFail(Int.MaxValue)
+  }
+
 }

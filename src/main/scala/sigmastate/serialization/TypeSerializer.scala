@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
 import sigmastate._
-import sigmastate.utils.{ByteWriter, ByteReader}
+import sigmastate.lang.exceptions.InvalidTypePrefix
+import sigmastate.utils.{ByteReader, ByteWriter}
 
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer extends ByteBufferSerializer[SType] {
@@ -101,7 +102,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
   override def deserialize(r: ByteReader): SType = {
     val c = r.getUByte()
     if (c <= 0)
-      sys.error(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
+      throw new InvalidTypePrefix(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
     val tpe: SType = if (c < STuple.TupleTypeCode) {
       val constrId = c / SPrimType.PrimRange
       val primId   = c % SPrimType.PrimRange
