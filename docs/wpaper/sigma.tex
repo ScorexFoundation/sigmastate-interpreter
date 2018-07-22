@@ -5,7 +5,7 @@
 
 \usepackage{fullpage}
 
-\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array}
+\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace}
 
 
 \ifnum\shownotes=1
@@ -48,7 +48,7 @@
 \newcommand{\mypar}[1]{\smallskip\noindent\textbf{#1.}\ \ \ }
 \newcommand{\ignore}[1]{}
 
-\newcommand{\langname}{$\Sigma$-State}
+\newcommand{\langname}{ErgoScript\xspace}
 \newcommand{\lst}[1]{\text{\lstinline[basicstyle={\ttfamily}]$#1$}}
 
 \newcommand{\andnode}{\ensuremath{\mathsf{AND}}}
@@ -86,17 +86,15 @@ To allow for more sophisticated ``smart'' contracts, Ethereum allows for arbitra
 
 
 \paragraph{Our Contribution}
-In this paper we introduce a new language that is specifically designed to be friendly to cryptographic protocols and applications. The language is considerably more powerful than Bitcoin Script, but it is not Turing-complete. Given a program in our language, it is easy to obtain a bound on its running time. \knote{continue}
+In this paper we introduce a new language called \langname that is specifically designed to be friendly to cryptographic protocols and applications. \langname is considerably more powerful than Bitcoin Script, but it is not Turing-complete. Given a program in \langname, it is easy to obtain a bound on its running time. \knote{continue}
 
-\lnote{it would be good to name the language --- named designs are easier for people to remember and will get more recognition eventually}
 
 Our new language incorporates proving and verifying as first-class primitives, giving developers to a subclass of cryptographic proof systems known as non-interactive $\Sigma$-protocols (pronounced ``sigma-protocols'').   Thus, the output of a transaction contains a statement that needs to be proven in order to spend this output. 
 
-Conceptually, $\Sigma$-protocols protocols are generalizations~\cite{CL06} of signature schemes.
-In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is the canonical example of a non-interactive $\Sigma$-protocol: it proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-protocols described here can be attached to specific messages). $\Sigma$-protocols exist for proving a variety of properties and, importantly for our language, elementary $\Sigma$-protocols can be combined into more sophisticated ones.
- See \lnote{damgard's notes \url{http://www.cs.au.dk/~ivan/Sigma.pdf}? anything better?} for an introduction to $\Sigma$-protocols. \lnote{should we also point to Cramer's thesis or anything else?}
+Conceptually, $\Sigma$-protocols \cite{Cra96} are generalizations~\cite{CL06} of signature schemes.
+In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is the canonical example of a non-interactive $\Sigma$-protocol: it proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific message, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-protocols described here can be attached to specific messages). $\Sigma$-protocols exist for proving a variety of properties and, importantly for ErgoScript, elementary $\Sigma$-protocols can be combined into more sophisticated ones using the techniques of \cite{CDS94}. For an introduction to $\Sigma$-protocols, we refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10}.
 
-Specifically for our language, we provide two elementary $\Sigma$-protocols over a group of prime order (such as an elliptic curve), written here in multiplicative notation:
+\langname provides two elementary $\Sigma$-protocols over a group of prime order (such as an elliptic curve), written here in multiplicative notation:
 \begin{itemize}
 \item A proof of knowledge of discrete logarithm with respect to a fixed group generator: given a group element $h$, the proof convinces a verifier that the prover knows $w$ such that $h=g^w$, where $g$ is the group generator (also known as base point), without revealing $w$. This is the same as a Schnorr signature with public key $h$.
 \item A proof that of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g, h, u, v$, the proof convinces a verifier that the prover knows $w$ such that $u=g^w$ and $v=h^w$, without revealing $w$
@@ -104,9 +102,9 @@ Specifically for our language, we provide two elementary $\Sigma$-protocols over
 \lnote{I don't like the notation above -- $g$ is overloaded because it's the base point in item 1 and an arbitrary point in item 2; $h$ is also overloaded. However, this is the notation used in the code. I would like to think of better notation and have the white paper match the code.}
 
 
-We also provide the ability to build more sophisticated $\Sigma$-protocols by using $\andnode$ and $\ornode$ connectives \lnote{add $\tnode$ when we implement it}. Crucially, the proof for an $\ornode$ connective does not reveal which of the relevant values the prover knows: for example, in our language a ring signature by public keys $h_1, \dots, h_k$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_k$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
+We also provide the ability to build more sophisticated $\Sigma$-protocols by using $\andnode$ and $\ornode$ connectives \lnote{add $\tnode$ when we implement it}. Crucially, the proof for an $\ornode$ connective does not reveal which of the relevant values the prover knows: for example, in \langname a ring signature by public keys $h_1, \dots, h_k$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_k$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
 
-In addition to $\Sigma$-protocols, our language allows for predicates over the state of the blockchain. These predicates can be combined, via Boolean connectives, with $\Sigma$-protocol proofs, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. Also unlike Bitcoin, we allow outputs to contain fields in addition to the amount and protecting script \lnote{how can these be accessed? it's not clear to me.} The language is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
+In addition to $\Sigma$-protocols, \langname allows for predicates over the state of the blockchain. These predicates can be combined, via Boolean connectives, with $\Sigma$-protocol proofs, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. Also unlike Bitcoin, we allow outputs to contain fields in addition to the amount and protecting script \lnote{how can these be accessed? it's not clear to me.} The language is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
 
 
 
@@ -141,24 +139,26 @@ In blockchain systems, there is a strict need to tackle the problem of denial-of
 
 
 \section{ErgoScript Language Description}
-The simplest script allows the owner of a public key to spend the transaction output. If the variable \texttt{pk} refers to the public key, then the script is specified simply as a string
+Before we describe the language, let us fix some terminology. A \emph{transaction} spends \emph{inputs} (which are outputs of some earlier transaction) and produces \emph{outputs}. Inputs and outputs are protected by scripts.  In order for a transaction to spend an input, the transaction must contain a \emph{proof} that satisfies its protecting script. The script has access to \emph{context}, which contains information about the transaction, such as its inputs and outputs and the scripts protecting them, and the current state of the blockchain, such as the current number of blocks (height) and the root of the Merkle tree that contains all the unspent outputs. \lnote{someone please check this?}
+
+\paragraph{Simple Scripts}
+The simplest script allows the owner of a public key to spend an output in a future transaction by issuing a signature with the corresponding secret key. If the variable \texttt{pk} holds the public key, then this script is specified simply as a string
 \begin{verbatim}
         pk
 \end{verbatim}
 
-In order for the compiler to know what \texttt{pk} is referring to, the compiler needs to supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key. \lnote{it is unclear to me how to create environments outside of Scala code, so I am not exactly sure what to write here, because typed objects live inside Scala.}
+In order for the compiler to know what \texttt{pk} is referring to, the compiler needs to supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key. Thus, the constant public key is hardwired into the script at compile time.\lnote{it is unclear to me how to create environments outside of Scala code, so I am not exactly sure what to write here, because typed objects live inside Scala.}
 
-A slightly more complex script may allow either one of two people to spend the transaction output. If Alice owns public key \texttt{pkA}  and Bob owns public key \texttt{pkB} (with corresponding secret key \texttt{skA} and \texttt{skB}), then the script that would allow either one of them to spend the output is
+A slightly more complex script may allow either one of two people to spend an output. If Alice owns public key \texttt{pkA}  and Bob owns public key \texttt{pkB} (with corresponding secret key \texttt{skA} and \texttt{skB}), then the script that would allow either one of them to spend the output is
 \begin{verbatim}
         pkA || pkB
 \end{verbatim}
-Again, \texttt{pkA} and \texttt{pkB} need to mapped to public key objects by an \emph{environment} map \lnote{fix}. Note Alice and Bob individually can construct the proof necessary to spend this transaction using just one of the two corresponding secret keys, and, by the zero-knowledge property of $\Sigma$-protocols, the proof will not reveal whether \texttt{skA} or \texttt{skB} was used. This construct is known as a \emph{ring} signature.
+Again, \texttt{pkA} and \texttt{pkB} need to mapped to public key objects by an \emph{environment} map \lnote{fix}. Note Alice and Bob individually can construct the proof necessary to spend this ouput using just one of the two corresponding secret keys, and, by the zero-knowledge property of $\Sigma$-protocols, the proof will not reveal whether \texttt{skA} or \texttt{skB} was used. This construct is known as a \emph{ring} signature.
 
-Naturally, this approach can be extended to more than two keys. If Carol's public and secret key are \texttt{pkC} and \texttt{skC}, then a three-key ring signature can be similarly constructed as
+Naturally, this approach can be extended to more than two keys. If Carol's public and secret keys are \texttt{pkC} and \texttt{skC}, then a three-key ring signature can be similarly constructed as
 \begin{verbatim}
         pkA || pkB || pkC
 \end{verbatim}
-\lnote{I tried this and it didn't seem to work --- it is really not okay without parentheses?}
 	
 For syntactic convenience, multiple keys can be placed into an array, and \texttt{anyOf} operator can be used instead of \texttt{||}, as follows:
 \begin{verbatim}
@@ -170,25 +170,29 @@ A conjunction is also possible: the script
 \begin{verbatim}
         pkA && pkB
 \end{verbatim}
-requires Alice and Bob to use secret keys corresponding to \texttt{pkA} and \texttt{pkB} in order to spend the transaction output. Note that Alice and Bob will have to communicate to produce the proof required to spend the transaction: separate signatures by Alice and Bob will not be sufficient (but Alice and Bob will not have to reveal their secret keys to each other). Similarly to \texttt{||}, multiple \texttt{\&\&} can be used in sequence, and the operator \texttt{allOf} can be used for arrays.
+requires Alice and Bob to use secret keys corresponding to \texttt{pkA} and \texttt{pkB} in order to spend the output. Note that Alice and Bob will have to communicate to produce the proof: separate signatures by Alice and Bob will not be sufficient (but Alice and Bob will not have to reveal their secret keys to each other). Similarly to \texttt{||}, multiple \texttt{\&\&} can be used in sequence, and the operator \texttt{allOf} can be used for arrays.
 
-Using these operators, it is possible to produce a transaction that can be spent, for example, either by Carol or by a collaboration between Alice and Bob:
+Using these operators, it is possible to produce more sophisticated scripts. For example, here is a script stating that the output can be spent either by Carol or by a collaboration between Alice and Bob:
 
 \begin{verbatim}
         (pkA && pkB) || pkC
 \end{verbatim}
 
-A valid proof for the spending transaction will not reveal which of two possibilities was used.
+A valid proof (contained in the spending transaction) will not reveal which of two possibilities was used.
 
 \paragraph{Mixing $\Sigma$-statements with other statements}
-ErgoScript allows combining statements that require proofs with other boolean for statements. For example, the script
+ErgoScript allows combining statements that require proofs with other boolean  statements. These statements can refer to the context, which contains information about the transaction and has predefined variables. For example, the script
 \begin{verbatim}
-   (pkA || pkB) || (pkC && HEIGHT > 500)
+   pkA || pkB || (pkC && HEIGHT > 500)
 \end{verbatim}
-\lnote{are parentheses around \texttt{pkA || pkB} needed?}
-allows Alice or Bob to spend the output before HEIGHT reaches 501, and Alice, Bob, or Carol to spend the output after that. If the height has not reached 501 and the transaction is spent, then the proof of course reveals that the proof used \texttt{skA}or \texttt{skB}, but not which one of the two. If HEIGHT is greater than 500, then the proof does not reveal which of the three secret keys was used. Thus, depending on the value of HEIGHT, the script becomes either equivalent to \texttt{pkA || pkB} or equivalent to \texttt{pkA || pkB || pkC} \lnote{someone define HEIGHT}
+uses the predefined variable HEIGHT, which is the sequential block number (since the beginning of the blockchain) of the future block in which the script will be executed in order to spend the output it is protecting. 
 
-ErgoScript allows references to the information contained in the output transaction. \lnote{simple example here}
+
+transaction will resides. Thus, when the
+
+allows Alice or Bob to spend the output before HEIGHT reaches 501, and Alice, Bob, or Carol to spend the output after that. If the height has not reached 501 and the ouput is spent, then the proof of course reveals that the proof used \texttt{skA}or \texttt{skB}, but not which one of the two. If HEIGHT is greater than 500, then the proof does not reveal which of the three secret keys was used. Thus, depending on the value of HEIGHT, the script becomes either equivalent to \texttt{pkA || pkB} or equivalent to \texttt{pkA || pkB || pkC} \lnote{someone define HEIGHT}
+
+ErgoScript allows references to the information contained in the transaction. \lnote{simple example here}
 
 ErgoScript also allows for a context \lnote{can someone give a rough description of what context is and where it lives and then I can take it from there?}. A context contains typed variables that can be retrieved by id using the operator \texttt{getVar}. This can be useful, for example, for requiring a spending transaction to produce hash preimages (the BLAKE2b-256 hash function is built into ErgoScript) \lnote{any other hashe functions built in?} For example,
 \begin{verbatim}
