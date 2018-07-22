@@ -105,14 +105,11 @@ object ErgoLikeTransaction {
       //todo: set initial capacity
       val w = Serializer.startWriter()
 
-      val inputsCount = inputs.size.toShort
-      val outputsCount = outputCandidates.size.toShort
-
-      w.putUShort(inputsCount)
+      w.putUShort(inputs.length)
       inputs.foreach { i =>
         w.putBytes(i)
       }
-      w.putUShort(outputsCount)
+      w.putUShort(outputCandidates.length)
       outputCandidates.foreach { c =>
         ErgoBoxCandidate.serializer.serializeBody(c, w)
       }
@@ -124,15 +121,11 @@ object ErgoLikeTransaction {
       bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
     override def serializeBody(ftx: FlattenedTransaction, w: ByteWriter): Unit = {
-      val inputsLength = ftx.inputs.length
-      require(inputsLength <= Short.MaxValue, s"max inputs size is Short.MaxValue = ${Short.MaxValue}")
-      w.putUShort(inputsLength.toShort)
+      w.putUShort(ftx.inputs.length)
       for (input <- ftx.inputs) {
         Input.serializer.serializeBody(input, w)
       }
-      val outputCandidatesLength = ftx.outputCandidates.length
-      require(outputCandidatesLength <= Short.MaxValue, s"max outputCandidates size is Short.MaxValue = ${Short.MaxValue}")
-      w.putUShort(outputCandidatesLength.toShort)
+      w.putUShort(ftx.outputCandidates.length)
       for (out <- ftx.outputCandidates) {
         ErgoBoxCandidate.serializer.serializeBody(out, w)
       }

@@ -308,7 +308,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
   def ancestors = Nil
   val methods = Seq(
     SMethod("isIdentity", SBoolean),
-    SMethod("nonce", SByteArray)
+    SMethod("nonce", SCollectionType(SByte))
   )
 }
 
@@ -340,10 +340,10 @@ case object SBox extends SProduct with SPredefType {
   val BytesWithNoRef = "bytesWithNoRef"
   val methods = Vector(
     SMethod(Value, SLong), // see ExtractAmount
-    SMethod(PropositionBytes, SByteArray), // see ExtractScriptBytes
-    SMethod(Bytes, SByteArray), // see ExtractBytes
-    SMethod(BytesWithNoRef, SByteArray), // see ExtractBytesWithNoRef
-    SMethod(Id, SByteArray) // see ExtractId
+    SMethod(PropositionBytes, SCollectionType(SByte)), // see ExtractScriptBytes
+    SMethod(Bytes, SCollectionType(SByte)), // see ExtractBytes
+    SMethod(BytesWithNoRef, SCollectionType(SByte)), // see ExtractBytesWithNoRef
+    SMethod(Id, SCollectionType(SByte)) // see ExtractId
   ) ++ registers()
 }
 
@@ -366,7 +366,7 @@ trait SCollection[T <: SType] extends SProduct {
 }
 
 case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
-  override val typeCode: TypeCode = SCollection.CollectionTypeCode
+  override val typeCode: TypeCode = SCollectionType.CollectionTypeCode
 
   override def mkConstant(v: Array[T#WrappedType]): Value[this.type] =
     CollectionConstant(v, elemType).asValue[this.type]
@@ -378,12 +378,14 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
   override def toString = s"Array[$elemType]"
 }
 
-object SCollection {
+object SCollectionType {
   val CollectionTypeConstrId = 1
   val CollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * CollectionTypeConstrId).toByte
   val NestedCollectionTypeConstrId = 2
   val NestedCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * NestedCollectionTypeConstrId).toByte
+}
 
+object SCollection {
   val tIV = STypeIdent("IV")
   val tOV = STypeIdent("OV")
   val methods = Seq(
