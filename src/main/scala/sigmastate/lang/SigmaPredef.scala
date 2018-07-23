@@ -1,9 +1,9 @@
 package sigmastate.lang
 
-import sigmastate.Values.SValue
-import sigmastate._
 import sigmastate.SCollection.SByteArray
-import sigmastate.lang.Terms.{Lambda, Ident}
+import sigmastate.Values.{SValue, Value}
+import sigmastate._
+import sigmastate.lang.Terms.Lambda
 import sigmastate.lang.TransformingSigmaBuilder._
 
 object SigmaPredef {
@@ -40,9 +40,9 @@ object SigmaPredef {
        "tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
   ).toMap
 
-  def PredefIdent(name: String): Ident = {
+  def PredefIdent(name: String): Value[SType] = {
     val v = predefinedEnv(name)
-    mkIdent(name, v.tpe).asInstanceOf[Ident]
+    mkIdent(name, v.tpe)
   }
 
   val AllSym = PredefIdent("allOf")
