@@ -11,6 +11,8 @@ import scalan.BaseCtxTests
 class SigmaCosterTest extends BaseCtxTests with LangTests {
   val compiler = new SigmaCompiler
   lazy val ctx = new TestContext with CosterCtx {
+    import TestSigmaDslBuilder._
+    val sigmaDslBuilder = RTestSigmaDslBuilder()
   }
   import ctx._
   import Context._; import SigmaContract._
