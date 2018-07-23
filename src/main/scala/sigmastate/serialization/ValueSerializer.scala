@@ -9,6 +9,9 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utils.Extensions._
+import org.ergoplatform._
+import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.lang.exceptions.ValueDeserializeCallDepthExceeded
 import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
 
 import scala.collection.concurrent.TrieMap
@@ -116,8 +119,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   override def deserialize(r: ByteReader): Value[SType] = {
     val depthKey = r.hashCode()
     val depth = nestedValuesDepthPerReader.getOrElseUpdate(depthKey, 0)
-    assert(depth <= Serializer.MaxTreeDepth,
-      s"nested value deserialization call depth($depth) exceeds allowed maximum ${Serializer.MaxTreeDepth}")
+    if (depth > Serializer.MaxTreeDepth)
+      throw new ValueDeserializeCallDepthExceeded(s"nested value deserialization call depth($depth) exceeds allowed maximum ${Serializer.MaxTreeDepth}")
     nestedValuesDepthPerReader.update(depthKey, depth + 1)
     val firstByte = r.peekByte()
     val v = if (firstByte.toUByte <= LastConstantCode) {

@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.lang.exceptions.InvalidTypePrefix
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidTypePrefix, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Extensions._
 import sigmastate.{AND, SBoolean}
@@ -13,8 +13,8 @@ class DeserializationResilience extends SerializationSpecification {
 
   property("max size limit") {
     val bytes = Array.fill[Byte](Serializer.MaxInputSize + 1)(1)
-    an[AssertionError] should be thrownBy ValueSerializer.deserialize(bytes)
-    an[AssertionError] should be thrownBy ValueSerializer.deserialize(bytes, 0)
+    an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(bytes)
+    an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(bytes, 0)
     // deliberately omitted assertion (hot path)
     ValueSerializer.deserialize(Serializer.startReader(bytes, 0))
   }
@@ -27,10 +27,12 @@ class DeserializationResilience extends SerializationSpecification {
   property("AND/OR nested crazy deep") {
     val evilBytes = List.tabulate(Serializer.MaxTreeDepth + 1)(_ => Array[Byte](AndCode, ConcreteCollectionCode, 2, SBoolean.typeCode))
       .toArray.flatten
-    an[AssertionError] should be thrownBy Serializer.startReader(evilBytes, 0).getValue()
+    an[ValueDeserializeCallDepthExceeded] should be thrownBy
+      Serializer.startReader(evilBytes, 0).getValue()
     // test other API endpoints
-    an[AssertionError] should be thrownBy ValueSerializer.deserialize(evilBytes, 0)
-    an[AssertionError] should be thrownBy
+    an[ValueDeserializeCallDepthExceeded] should be thrownBy
+      ValueSerializer.deserialize(evilBytes, 0)
+    an[ValueDeserializeCallDepthExceeded] should be thrownBy
       ValueSerializer.deserialize(Serializer.startReader(evilBytes, 0))
 
     // guard should not be tripped up by a huge collection
