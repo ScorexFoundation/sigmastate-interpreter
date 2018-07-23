@@ -11,6 +11,8 @@ import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer,
 import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
 
+import scala.collection.concurrent.TrieMap
+
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
 
@@ -109,9 +111,16 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serializeBody(v, w)
   }
 
+  private val nestedValuesDepthPerReader = TrieMap[Int, Int]()
+
   override def deserialize(r: ByteReader): Value[SType] = {
+    val depthKey = r.hashCode()
+    val depth = nestedValuesDepthPerReader.getOrElseUpdate(depthKey, 0)
+    assert(depth <= Serializer.MaxTreeDepth,
+      s"nested value deserialization call depth($depth) exceeds allowed maximum ${Serializer.MaxTreeDepth}")
+    nestedValuesDepthPerReader.update(depthKey, depth + 1)
     val firstByte = r.peekByte()
-    if (firstByte.toUByte <= LastConstantCode) {
+    val v = if (firstByte.toUByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
       ConstantSerializer(builder).deserialize(r)
     }
@@ -119,6 +128,11 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       val opCode = r.getByte()
       getSerializer(opCode).parseBody(r)
     }
+    if (depth == 1)
+      nestedValuesDepthPerReader.remove(depthKey)
+    else
+      nestedValuesDepthPerReader.update(depthKey, depth - 1)
+    v
   }
 
   def serialize(v: Value[SType]): Array[Byte] = {

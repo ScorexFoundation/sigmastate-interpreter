@@ -1,12 +1,11 @@
 package sigmastate.serialization
 
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
-import sigmastate.lang.exceptions.{InvalidTypePrefix, SerializerException}
+import sigmastate.lang.exceptions.InvalidTypePrefix
+import sigmastate.serialization.OpCodes._
+import sigmastate.utils.Extensions._
+import sigmastate.{AND, SBoolean}
 
-class DeserializationResilience extends PropSpec
-  with PropertyChecks
-  with Matchers {
+class DeserializationResilience extends SerializationSpecification {
 
   property("empty") {
     an[ArrayIndexOutOfBoundsException] should be thrownBy ValueSerializer.deserialize(Array[Byte]())
@@ -23,5 +22,24 @@ class DeserializationResilience extends PropSpec
   property("zeroes") {
     an[InvalidTypePrefix] should be thrownBy ValueSerializer.deserialize(Array.fill[Byte](1)(0))
     an[InvalidTypePrefix] should be thrownBy ValueSerializer.deserialize(Array.fill[Byte](2)(0))
+  }
+
+  property("AND/OR nested crazy deep") {
+    val evilBytes = List.tabulate(Serializer.MaxTreeDepth + 1)(_ => Array[Byte](AndCode, ConcreteCollectionCode, 2, SBoolean.typeCode))
+      .toArray.flatten
+    an[AssertionError] should be thrownBy Serializer.startReader(evilBytes, 0).getValue()
+    // test other API endpoints
+    an[AssertionError] should be thrownBy ValueSerializer.deserialize(evilBytes, 0)
+    an[AssertionError] should be thrownBy
+      ValueSerializer.deserialize(Serializer.startReader(evilBytes, 0))
+
+    // guard should not be tripped up by a huge collection
+    val goodBytes = Serializer.startWriter()
+      .putValue(AND(List.tabulate(Serializer.MaxTreeDepth + 1)(_ => booleanExprGen.sample.get)))
+      .toBytes
+    ValueSerializer.deserialize(goodBytes, 0)
+    // test other API endpoints
+    ValueSerializer.deserialize(Serializer.startReader(goodBytes, 0))
+    Serializer.startReader(goodBytes, 0).getValue()
   }
 }
