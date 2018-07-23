@@ -250,4 +250,18 @@ class ByteReaderWriterImpSpecification extends PropSpec
     checkFail(Int.MaxValue)
   }
 
+  property("getUInt range check assertion") {
+    def check(in: Long): Unit =
+      byteBufReader(byteArrayWriter().putULong(in).toBytes).getUInt() shouldBe in
+
+    def checkFail(in: Long): Unit =
+      an[AssertionError] should be thrownBy
+        byteBufReader(byteArrayWriter().putULong(in).toBytes).getUInt()
+
+    check(0)
+    check(0xFFFFFFFFL)
+    checkFail(-1)
+    checkFail(0xFFFFFFFFL + 1L)
+    checkFail(Long.MaxValue)
+  }
 }
