@@ -17,20 +17,23 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   import ctx._
   import Context._; import SigmaContract._
   import Cost._; import ColBuilder._; import Col._; import Box._; import Sigma._; import CrowdFunding._
+  import SigmaDslBuilder._
 
-  def cost[SC <: SigmaContract:Elem](env: Map[String, Any], ctxVars: Map[Byte, SValue], x: String) = {
+  lazy val dsl = sigmaDslBuilder
+
+  def cost(env: Map[String, Any], ctxVars: Map[Byte, SValue], x: String) = {
     val compiled = compiler.compile(env, x)
-    val cg = ctx.buildCostedGraph[SC, SType](ctxVars, compiled)
+    val cg = ctx.buildCostedGraph[SType](ctxVars, compiled)
     cg
   }
 
-  def checkInEnv[SC <: SigmaContract:Elem, T](env: Map[String, Any], ctxVars: Map[Byte, SValue], name: String, script: String,
-      expectedCalc: Rep[(SC, Context)] => Rep[T],
-      expectedCost: Rep[(SC, Context)] => Rep[Int],
+  def checkInEnv[T](env: Map[String, Any], ctxVars: Map[Byte, SValue], name: String, script: String,
+      expectedCalc: Rep[Context] => Rep[T],
+      expectedCost: Rep[Context] => Rep[Int],
       doChecks: Boolean = true
-  ): Rep[(((SC, Context)) => T, ((SC, Context)) => Int)] = {
-    val cf = cost[SC](env, ctxVars, script)
-    val p @ Pair(calcF, costF) = cf match { case cf: RFunc[(SC, Context), Costed[_]]@unchecked =>
+  ): Rep[(Context => T, Context => Int)] = {
+    val cf = cost(env, ctxVars, script)
+    val p @ Pair(calcF, costF) = cf match { case cf: RFunc[Context, Costed[_]]@unchecked =>
       split(cf)
     }
     val expCalc = fun(expectedCalc)
@@ -40,7 +43,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
       emit(name, p, expCalc, expCost)
     }
 
-    val res = Pair(calcF.asRep[((SC, Context)) => T], costF.asRep[((SC, Context)) => Int])
+    val res = Pair(calcF.asRep[Context => T], costF.asRep[Context => Int])
     if (doChecks) {
       calcF shouldBe expCalc
       costF shouldBe expCost
@@ -49,15 +52,15 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   }
 
   def checkSC[T](name: String, script: String,
-      expectedCalc: Rep[(SigmaContract, Context)] => Rep[T],
-      expectedCost: Rep[(SigmaContract, Context)] => Rep[Int]
-  ): Rep[(((SigmaContract, Context)) => T, ((SigmaContract, Context)) => Int)] =
+      expectedCalc: Rep[Context] => Rep[T],
+      expectedCost: Rep[Context] => Rep[Int]
+  ): Rep[(Context => T, Context => Int)] =
     checkInEnv(env, Map(), name, script, expectedCalc, expectedCost)
 
-  def check[SC <: SigmaContract:Elem, T](name: String, script: String,
-      expectedCalc: Rep[(SC, Context)] => Rep[T],
-      expectedCost: Rep[(SC, Context)] => Rep[Int]
-  ): Rep[(((SC, Context)) => T, ((SC, Context)) => Int)] =
+  def check[T](name: String, script: String,
+      expectedCalc: Rep[Context] => Rep[T],
+      expectedCost: Rep[Context] => Rep[Int]
+  ): Rep[(Context => T, Context => Int)] =
     checkInEnv(env, Map(), name, script, expectedCalc, expectedCost)
 
   test("costed constants") {
@@ -73,25 +76,25 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     checkSC("or2", "1 > 1 || 2 < 1 || 2 > 1", _ => true,
       _ => ConstantNode * 6 + TripleDeclaration * 3 + OrDeclaration)
     checkSC("or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
-      { case Pair(c, ctx) => c.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
+      { ctx => sigmaDslBuilder.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
       _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + OrDeclaration)
 
     checkSC("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + AndDeclaration)
     checkSC("and2", "1 > 1 && 2 < 1 && 2 > 1", _ => false,
       _ => ConstantNode * 6 + TripleDeclaration * 3 + AndDeclaration)
     checkSC("and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1",
-    { case Pair(c, ctx) => c.allOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
+    { ctx => sigmaDslBuilder.allOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
     _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + AndDeclaration)
   }
 
   test("costed context data") {
-    checkSC("height1", "HEIGHT + 1L", in => in._2.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
-    checkSC("height2", "HEIGHT > 1L", in => in._2.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
+    checkSC("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
+    checkSC("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
     checkSC("size", "INPUTS.size + OUTPUTS.size",
-      in => {val Pair(_, ctx) = in; ctx.INPUTS.length + ctx.OUTPUTS.length},
+      ctx => { ctx.INPUTS.length + ctx.OUTPUTS.length },
       _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + TripleDeclaration)
     checkSC("value", "SELF.value + 1L",
-      in => in._2.SELF.value + 1L,
+      ctx => ctx.SELF.value + 1L,
       _ => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
   }
 
@@ -128,54 +131,54 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     val project = prover.dlogSecrets(1).publicImage
     val vars = Seq(backerPubKeyId -> ProofConstant(backer), projectPubKeyId -> ProofConstant(project)).toMap
 
-    checkInEnv[CrowdFunding, Boolean](envCF, vars, "CrowdFunding", crowdFundingScript,
-      { in: Rep[(CrowdFunding, Context)] =>
-        val Pair(cntr, ctx) = in
+    checkInEnv[Boolean](envCF, vars, "CrowdFunding", crowdFundingScript,
+      { ctx: Rep[Context] =>
         val backerPubKey = ctx.getVar[Sigma](backerPubKeyId)
         val projectPubKey = ctx.getVar[Sigma](projectPubKeyId)
-        val c1 = cntr.allOf(colBuilder(ctx.HEIGHT >= toRep(timeout), backerPubKey.isValid))
-        val c2 = cntr.allOf(colBuilder(
+        val c1 = dsl.allOf(colBuilder(ctx.HEIGHT >= toRep(timeout), backerPubKey.isValid))
+        val c2 = dsl.allOf(colBuilder(
           ctx.HEIGHT < toRep(timeout),
           projectPubKey.isValid,
           ctx.OUTPUTS.exists(fun { out =>
-            cntr.allOf(colBuilder(out.value >= toRep(minToRaise), out.propositionBytes === projectPubKey.propBytes))
+            dsl.allOf(colBuilder(out.value >= toRep(minToRaise), out.propositionBytes === projectPubKey.propBytes))
           })
         ))
-        cntr.anyOf(colBuilder(c1, c2))
+        dsl.anyOf(colBuilder(c1, c2))
       },
-      { in: Rep[(CrowdFunding, Context)] => HeightAccess + ConstantNode + TripleDeclaration}
+      { in: Rep[Context] => HeightAccess + ConstantNode + TripleDeclaration}
       , false)
   }
 
   test("Crowd Funding: measure") {
     def eval(i: Int) = {
-      val cf = cost[CrowdFunding](envCF ++ Seq("timeout" -> (timeout + i)), Map(), crowdFundingScript)
-      split(cf)
+      val cf = cost(envCF ++ Seq("timeout" -> (timeout + i)), Map(), crowdFundingScript)
+//      split(cf)
+      cf
     }
     var res: Rep[Any] = eval(0)
-//    measure(2) { j => // 10 warm up iterations when j == 0
-//      measure(j*500 + 10, false) { i =>
-//        res = eval(i)
-//      }
-//    }
+    measure(2) { j => // 10 warm up iterations when j == 0
+      measure(j*500 + 10, false) { i =>
+        res = eval(i)
+      }
+    }
+    println(s"Defs: $defCounter, Time: ${defTime / 1000000}")
     emit("Crowd_Funding_measure", res)
   }
 
   test("costed collection ops") {
-    val cost = (in: Rep[(SigmaContract, Context)]) => {
-      val Pair(_, ctx) = in
+    val cost = (ctx: Rep[Context]) => {
       toRep(OutputsAccess) +
           (toRep(VariableAccess) + ExtractAmount + ConstantNode + TripleDeclaration) *
               ctx.OUTPUTS.length
     }
     checkSC("exists", "OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
-      in => in._2.OUTPUTS.exists(fun(out => { out.value >= 0L })), cost)
+      ctx => ctx.OUTPUTS.exists(fun(out => { out.value >= 0L })), cost)
     checkSC("forall", "OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
-      in => in._2.OUTPUTS.forall(fun(out => { out.value >= 0L })), cost)
+      ctx => ctx.OUTPUTS.forall(fun(out => { out.value >= 0L })), cost)
     checkSC("map", "OUTPUTS.map(fun (out: Box) = { out.value >= 0L })",
-      in => in._2.OUTPUTS.map(fun(out => { out.value >= 0L })), cost)
+      ctx => ctx.OUTPUTS.map(fun(out => { out.value >= 0L })), cost)
     checkSC("where", "OUTPUTS.where(fun (out: Box) = { out.value >= 0L })",
-      in => in._2.OUTPUTS.filter(fun(out => { out.value >= 0L })), cost)
+      ctx => ctx.OUTPUTS.filter(fun(out => { out.value >= 0L })), cost)
   }
 
   def measure[T](nIters: Int, okShow: Boolean = true)(action: Int => Unit): Unit = {
@@ -194,7 +197,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     measure(2) { j => // 10 warm up iterations when j == 0
       measure(j*500 + 10, false) { i =>
         res = checkSC("", s"INPUTS.size + OUTPUTS.size + $i",
-          in => in._2.INPUTS.length + in._2.OUTPUTS.length + i,
+          ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i,
           _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + 2 * TripleDeclaration + ConstantNode)
       }
     }

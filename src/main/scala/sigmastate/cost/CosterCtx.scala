@@ -22,6 +22,18 @@ trait CosterCtx extends SigmaLibrary {
   import CostedArray._; import CostedNestedArray._; import CostedPairArray._
   import CostedCol._; import CostedNestedCol._; import CostedPairCol._
   import ProveDlogEvidence._
+  import SigmaDslBuilder._
+
+  var defCounter = 0
+  var defTime: Long = 0
+  override def def_unapply[T](e: Rep[T]) = {
+    defCounter += 1
+    val start = System.nanoTime()
+    val res = super.def_unapply(e)
+    val end = System.nanoTime()
+    defTime += (end - start)
+    res
+  }
 
   def plus(x: Rep[Int], n: Int) = {
     Range(0, n).foldLeft(x)((y, i) => y + i)
@@ -171,12 +183,12 @@ trait CosterCtx extends SigmaLibrary {
 
   type RCosted[A] = Rep[Costed[A]]
 
-  private def evalNode[SC <: SigmaContract, T <: SType](contr: Rep[SC], ctx: Rep[Context], vars: Map[Byte, Rep[_]], node: Value[T]): RCosted[T#WrappedType] = {
+  private def evalNode[T <: SType](ctx: Rep[Context], vars: Map[Byte, Rep[_]], node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._
     val res: Rep[Any] = node match {
       case Constant(v, tpe) => v match {
         case p: scapi.sigma.DLogProtocol.ProveDlog =>
-          val ge = evalNode(contr, ctx, vars, p.value).asRep[Costed[WECPoint]]
+          val ge = evalNode(ctx, vars, p.value).asRep[Costed[WECPoint]]
           CostedPrimRep(RProveDlogEvidence(ge.value), ge.cost + Dlog)
         case ge: CryptoConstants.EcPointType =>
           assert(tpe == SGroupElement)
@@ -199,34 +211,34 @@ trait CosterCtx extends SigmaLibrary {
           CostedPrimRep(ctx.getVar(id)(stypeToElem(tpe)), VariableAccess)
         }
       case SizeOf(xs) =>
-        val xsC = evalNode(contr, ctx, vars, xs).asRep[Costed[Col[Any]]]
+        val xsC = evalNode(ctx, vars, xs).asRep[Costed[Col[Any]]]
         CostedPrimRep(xsC.value.length, xsC.cost + SizeOfDeclaration)
       case IsValid(p) =>
-        val pC = evalNode(contr, ctx, vars, p).asRep[Costed[Sigma]]
+        val pC = evalNode(ctx, vars, p).asRep[Costed[Sigma]]
         CostedPrimRep(pC.value.isValid, pC.cost + ProofIsValidDeclaration)
       case ProofBytes(p) =>
-        val pC = evalNode(contr, ctx, vars, p).asRep[Costed[Sigma]]
+        val pC = evalNode(ctx, vars, p).asRep[Costed[Sigma]]
         CostedPrimRep(pC.value.propBytes, pC.cost + ProofBytesDeclaration + pC.value.propBytes.length)
       case utxo.ExtractAmount(box) =>
-        val boxC = evalNode(contr, ctx, vars, box).asRep[Costed[Box]]
+        val boxC = evalNode(ctx, vars, box).asRep[Costed[Box]]
         CostedPrimRep(boxC.value.value, boxC.cost + Cost.ExtractAmount)
       case utxo.ExtractScriptBytes(box) =>
-        val boxC = evalNode(contr, ctx, vars, box).asRep[Costed[Box]]
+        val boxC = evalNode(ctx, vars, box).asRep[Costed[Box]]
         val bytes = boxC.value.propositionBytes
         CostedPrimRep(bytes, boxC.cost + Cost.ExtractScriptBytes + bytes.length)
       case op: ArithOp[t] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)
         val binop = opcodeToEndoBinOp(op.opCode, et)
-        val x = evalNode(contr, ctx, vars, op.left)
-        val y = evalNode(contr, ctx, vars, op.right)
+        val x = evalNode(ctx, vars, op.left)
+        val y = evalNode(ctx, vars, op.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
           CostedPrimRep(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + TripleDeclaration)
         }
       case OR(input) => input.matchCase(
         cc => {
-          val itemsC = cc.items.map(evalNode(contr, ctx, vars, _))
-          val res = contr.anyOf(colBuilder.apply(itemsC.map(_.value): _*))
+          val itemsC = cc.items.map(evalNode(ctx, vars, _))
+          val res = sigmaDslBuilder.anyOf(colBuilder.apply(itemsC.map(_.value): _*))
           val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + OrDeclaration
           CostedPrimRep(res, cost)
         },
@@ -235,8 +247,8 @@ trait CosterCtx extends SigmaLibrary {
       )
       case AND(input) => input.matchCase(
         cc => {
-          val itemsC = cc.items.map(evalNode(contr, ctx, vars, _))
-          val res = contr.allOf(colBuilder.apply(itemsC.map(_.value): _*))
+          val itemsC = cc.items.map(evalNode(ctx, vars, _))
+          val res = sigmaDslBuilder.allOf(colBuilder.apply(itemsC.map(_.value): _*))
           val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + AndDeclaration
           CostedPrimRep(res, cost)
         },
@@ -247,8 +259,8 @@ trait CosterCtx extends SigmaLibrary {
         val tpe = rel.left.tpe
         val et = stypeToElem(tpe)
         val binop = opcodeToBinOp(rel.opCode, et)
-        val x = evalNode(contr, ctx, vars, rel.left)
-        val y = evalNode(contr, ctx, vars, rel.right)
+        val x = evalNode(ctx, vars, rel.left)
+        val y = evalNode(ctx, vars, rel.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
           CostedPrimRep(
             binop.apply(x.value, y.value.asRep[t#WrappedType]),
@@ -258,11 +270,11 @@ trait CosterCtx extends SigmaLibrary {
 
       case MapCollection(input, id, mapper) =>
         val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(contr, ctx, vars, input).asRep[Costed[Col[Any]]]
+        val inputC = evalNode(ctx, vars, input).asRep[Costed[Col[Any]]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         val Pair(mapperCalc, mapperCost) = split(fun { x: Rep[Any] =>
-          evalNode(contr, ctx, vars + (id -> CostedPrimRep(x, 0)), mapper)
+          evalNode(ctx, vars + (id -> CostedPrimRep(x, 0)), mapper)
         })
         val res = inputC.value.map(mapperCalc)
         val cost = inputC.cost + inputC.value.map(mapperCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
@@ -270,11 +282,11 @@ trait CosterCtx extends SigmaLibrary {
 
       case Where(input, id, cond) =>
         val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(contr, ctx, vars, input).asRep[Costed[Col[Any]]]
+        val inputC = evalNode(ctx, vars, input).asRep[Costed[Col[Any]]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         val Pair(condCalc, condCost) = split(fun { x: Rep[Any] =>
-          evalNode(contr, ctx, vars + (id -> CostedPrimRep(x, 0)), cond)
+          evalNode(ctx, vars + (id -> CostedPrimRep(x, 0)), cond)
         })
         val res = inputC.value.filter(condCalc)
         val cost = inputC.cost + inputC.value.map(condCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
@@ -282,11 +294,11 @@ trait CosterCtx extends SigmaLibrary {
 
       case trans: BooleanTransformer[_] =>
         val eItem = stypeToElem(trans.input.tpe.elemType)
-        val inputC = evalNode(contr, ctx, vars, trans.input).asRep[Costed[Col[Any]]]
+        val inputC = evalNode(ctx, vars, trans.input).asRep[Costed[Col[Any]]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eItem == eAny, s"Types should be equal: but $eItem != $eAny")
         val Pair(condCalc, condCost) = split(fun { x: Rep[Any] =>
-          evalNode(contr, ctx, vars + (trans.id -> CostedPrimRep(x, 0)), trans.condition)
+          evalNode(ctx, vars + (trans.id -> CostedPrimRep(x, 0)), trans.condition)
         })
         val value = trans.opCode match {
           case OpCodes.ExistsCode =>
@@ -303,11 +315,10 @@ trait CosterCtx extends SigmaLibrary {
     res.asRep[Costed[T#WrappedType]]
   }
 
-  def buildCostedGraph[SC <: SigmaContract: Elem, T <: SType](ctxVars: Map[Byte, SValue], tree: Value[T]): Rep[((SC, Context)) => Costed[T#WrappedType]] = {
-    fun { in: Rep[(SC, Context)] =>
-      val Pair(contr, ctx) = in
-      val vars = ctxVars.mapValues(v => evalNode(contr, ctx, Map(), v))
-      evalNode(contr, ctx, vars, tree)
+  def buildCostedGraph[T <: SType](ctxVars: Map[Byte, SValue], tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = {
+    fun { ctx: Rep[Context] =>
+      val vars = ctxVars.mapValues(v => evalNode(ctx, Map(), v))
+      evalNode(ctx, vars, tree)
     }
   }
 
