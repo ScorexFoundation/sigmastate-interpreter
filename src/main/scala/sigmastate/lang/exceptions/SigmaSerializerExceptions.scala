@@ -11,3 +11,6 @@ final class TypeDeserializeCallDepthExceeded(message: String, source: Option[Sou
 
 final class ValueDeserializeCallDepthExceeded(message: String, source: Option[SourceContext] = None)
   extends SerializerException(message, source)
+
+final class InvalidOpCode(message: String, source: Option[SourceContext] = None)
+  extends SerializerException(message, source)

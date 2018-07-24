@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidTypePrefix, ValueDeserializeCallDepthExceeded}
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Extensions._
 import sigmastate.{AND, SBoolean}
@@ -19,7 +19,7 @@ class DeserializationResilience extends SerializationSpecification {
     ValueSerializer.deserialize(Serializer.startReader(bytes, 0))
   }
 
-  property("zeroes") {
+  property("zeroes (invalid type code in constant deserialization path") {
     an[InvalidTypePrefix] should be thrownBy ValueSerializer.deserialize(Array.fill[Byte](1)(0))
     an[InvalidTypePrefix] should be thrownBy ValueSerializer.deserialize(Array.fill[Byte](2)(0))
   }
@@ -43,5 +43,10 @@ class DeserializationResilience extends SerializationSpecification {
     // test other API endpoints
     ValueSerializer.deserialize(Serializer.startReader(goodBytes, 0))
     Serializer.startReader(goodBytes, 0).getValue()
+  }
+
+  property("invalid op code") {
+    an[InvalidOpCode] should be thrownBy
+      ValueSerializer.deserialize(Array.fill[Byte](1)(255.toByte))
   }
 }

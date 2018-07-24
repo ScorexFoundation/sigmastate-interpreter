@@ -11,7 +11,7 @@ import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer,
 import sigmastate.utils.Extensions._
 import org.ergoplatform._
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.lang.exceptions.ValueDeserializeCallDepthExceeded
+import sigmastate.lang.exceptions.{InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
 
 import scala.collection.concurrent.TrieMap
@@ -100,7 +100,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers.get(opCode)
-    if (serializer == null) sys.error(s"Cannot find serializer for Value with opCode=$opCode")
+    if (serializer == null)
+      throw new InvalidOpCode(s"Cannot find serializer for Value with opCode=$opCode")
     serializer
   }
 
