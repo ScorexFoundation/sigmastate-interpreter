@@ -21,7 +21,7 @@ object Terms {
   }
   object Block {
     def apply(let: Let, result: SValue)(implicit o1: Overload1): Block =
-      mkBlock(Seq(let), result).asInstanceOf[Block]
+      Block(Seq(let), result)
   }
 
   case class Let(name: String, givenType: SType, body: SValue) extends Value[SType] {

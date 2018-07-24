@@ -9,12 +9,10 @@ import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{EvaluatedValue, NotReadyValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
@@ -258,7 +256,7 @@ object Values {
     def toConcreteCollection: ConcreteCollection[T] = {
       val tElem = c.tpe.elemType
       val items = c.value.map(v => tElem.mkConstant(v.asInstanceOf[tElem.WrappedType]))
-      mkConcreteCollection(items, tElem).asInstanceOf[ConcreteCollection[T]]
+      ConcreteCollection(items, tElem)
     }
   }
 
@@ -395,7 +393,7 @@ object Values {
   }
 
   object Tuple {
-    def apply(items: Value[SType]*): Tuple = mkTuple(items).asInstanceOf[Tuple]
+    def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
   }
 
   trait OptionValue[T <: SType] extends EvaluatedValue[SOption[T]] {
@@ -438,10 +436,10 @@ object Values {
   }
   object ConcreteCollection {
     def apply[V <: SType](items: Value[V]*)(implicit tV: V): ConcreteCollection[V] =
-      mkConcreteCollection(items.toIndexedSeq, tV).asInstanceOf[ConcreteCollection[V]]
+      ConcreteCollection(items.toIndexedSeq, tV)
 
     def apply[V <: SType](items: => Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
-      mkConcreteCollection(items.toIndexedSeq, tV).asInstanceOf[ConcreteCollection[V]]
+      ConcreteCollection(items.toIndexedSeq, tV)
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
@@ -465,8 +463,7 @@ object Values {
       matchCase(
         cc => cc,
         _.toConcreteCollection,
-        t => mkConcreteCollection(t.items.map(_.asValue[T]), SAny.asInstanceOf[T])
-          .asInstanceOf[ConcreteCollection[T]]
+        t => ConcreteCollection(t.items.map(_.asValue[T]), SAny.asInstanceOf[T])
       )
   }
 }

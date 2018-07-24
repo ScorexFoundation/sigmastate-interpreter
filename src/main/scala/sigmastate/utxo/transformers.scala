@@ -7,7 +7,6 @@ import sigmastate._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
-import sigmastate.utils.Helpers
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.{MandatoryRegisterId, RegisterId}
 import sigmastate.lang.DefaultSigmaBuilder._
@@ -344,7 +343,7 @@ object ExtractRegisterAs {
   def apply[V <: SType](input: Value[SBox.type],
                         registerId: RegisterId,
                         default: Option[Value[V]] = None)(implicit tpe: V): ExtractRegisterAs[V] =
-    mkExtractRegisterAs(input, registerId, tpe, default).asInstanceOf[ExtractRegisterAs[V]]
+    ExtractRegisterAs(input, registerId, tpe, default)
 }
 
 trait Deserialize[V <: SType] extends NotReadyValue[V]
