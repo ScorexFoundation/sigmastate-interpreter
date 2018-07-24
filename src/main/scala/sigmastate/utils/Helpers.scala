@@ -58,7 +58,12 @@ object Helpers {
     * Helper to construct a byte array from a bunch of bytes. The inputs are actually ints so that I
     * can use hex notation and not get stupid errors about precision.
   */
-  def bytesFromInts(bytesAsInts: Int*): Array[Byte] = bytesAsInts.map(_.toByte).toArray
+  def bytesFromInts(bytesAsInts: Int*): Array[Byte] =
+    bytesAsInts.map{ i =>
+      // values from unsigned byte range will be encoded as negative values which is expected here
+      assert(i >= Byte.MinValue && i <= 0xFF, s"$i is out of the signed/unsigned Byte range")
+      i.toByte
+    }.toArray
 }
 
 object Overloading {
