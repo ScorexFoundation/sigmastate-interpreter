@@ -7,6 +7,7 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
 /**
   * An example of an atomic ergo <=> asset exchange.
@@ -69,10 +70,35 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       GE(ExtractAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(1))
     )
 
+
+    val buyerEnv = Map("pkA" -> tokenBuyerKey)
+/*    val altBuyerProp = compile(buyerEnv,
+      """
+        |        OUTPUTS(0).R3[(ByteArray, Int)]._1 == "token1" &&
+        |        OUTPUTS(0).R3[(ByteArray, Int)]._2 >= 60 &&
+        |        OUTPUTS(0).propositionBytes == pkA.propBytes &&
+        |        OUTPUTS(0).value >= 1
+      """.stripMargin).asBoolValue
+
+    DOES NOT COMPILE!!!
+
+    altBuyerProp shouldBe buyerProp
+*/
+    // todo: why does the script above not compile? Fix it and make it match the white paper
+
     val sellerProp = AND(
       rightProtectionSeller,
       GE(ExtractAmount(ByIndex(Outputs, IntConstant.One)), LongConstant(100))
     )
+
+    val sellerEnv = Map("pkB" -> tokenSellerKey)
+    val altSellerProp = compile(sellerEnv,
+      """
+        |        OUTPUTS(1).value >= 100 &&
+        |        OUTPUTS(1).propositionBytes == pkB.propBytes
+      """.stripMargin).asBoolValue
+
+    // todo: THIS FAILS -- why? sellerProp shouldBe altSellerProp . Fix and make it match the white paper
 
     val newBox1 = ErgoBox(1, tokenBuyerKey, Seq(tokenId -> 60))
     val newBox2 = ErgoBox(100, tokenSellerKey)
