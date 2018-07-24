@@ -86,7 +86,7 @@ The Bitcoin Script language is a primitive stack-based language without loops. T
 To allow for more sophisticated ``smart'' contracts, Ethereum allows for arbitrary Turing-complete programs. This approach requires charging for computation in order to prevent denial-of-service attacks, because the running time of a Turing-complete program cannot, in general, be estimated without actually running the program.
 
 
-\paragraph{Our Contribution}
+\paragraph{Our contribution}
 In this paper we introduce a new language called \langname that is specifically designed to be friendly to cryptographic protocols and applications. \langname is considerably more powerful than Bitcoin Script, but it is not Turing-complete. Given a program in \langname, it is easy to obtain a bound on its running time. \knote{continue}
 
 
@@ -215,7 +215,7 @@ To access information inside a box \texttt{b}, scripts can use \texttt{b.value} 
 
 \lnote{ The comments in ErgoBox.scala says something about a unique nonce, but that doesn't seem to be matched by code. The code has transactionID and index, which seems to be hashed; if it is unique, then the hash will be unique, but I can't quite tell.}
 
-\paragraph{Spending only together example}
+\paragraph{Example: two boxes together}
 Access to this information allows us, for example, to create an output box that can be spent only in the same transaction as another output box, and only if no other inputs are present in the transaction. If \texttt{friend} stands for an already existing box (per the environment mapping), then we create a new box that can be spent only together with \texttt{friend} and no other input by the following script (note that it uses the array property \texttt{size} and array indexing, starting at 0, denoted by parentheses):
 
 \begin{verbatim}
@@ -239,7 +239,7 @@ It can also be written in one statement, as follows:
 \end{verbatim}
 
 
-\paragraph{Crowdfunding Example}
+\paragraph{Example: crowdfunding}
 Access to the context allows us to create a script for the following crowdfunding situation: a project backer (with key  \texttt{backerPubKey}) wishes to give money to a project (with key \texttt{projectPubKey}), but only if the project raises enough money (at least \texttt{minToRaise}) from other sources by a deadline (expressed in terms of \texttt{HEIGHT}). 
 
 To give money to the project, the backer will create an output box protected by the following script. The script contains two conditions: one for the case the deadline has passed (enabling the backer to get the money back) and one for the case it succeeded (enabling the project to spend the money if the amount is at least \texttt{minToRaise} before the deadline).  In order to ensure enough money has been raised, the script will search the output array for a box with a sufficient value going to the \texttt{projectPubKey}.
@@ -273,7 +273,35 @@ says that spending can be done only using the signature of Alice, and only if th
 
 \lnote{how high can numerical ids go -- is it sequential or are arbitrary numbers okay? Are they the numerical ids scoped per script or the same for all scripts in a given transaction? Why numerical and not string ids?}
 
-\subsection{Box registers}
+\paragraph{Example: atomic transactions and cross-chain trading}
+Suppose there are two separate blockchains, for two different asset types. Alice wants to receive some assets in her blockchain in exchange for giving some assets to Bob in his blockchain. \langname allows to accomplish in a simpler way than proposed for Bitcoin, for example, in \cite{Nol13}. 
+\lnote{is this the right text to go along with the reference to \cite{Nol13}?}
+
+Alice creates a random secret \texttt{x}, hashes it to obtain the value \texttt{hx}, and creates a transaction in Bob's blockchain with the output box protected by the following script:
+\begin{verbatim}
+        anyOf( Array(
+                HEIGHT > deadlineBob && pkA,
+                pkB && blake2b256(getVar[Array[Byte]](1)) == hx
+        ))
+\end{verbatim}
+Bob can receive the value of this box only upon presentation of a hash preimage of \texttt{hx}. Alice can reclaim it after \texttt{deadlineBob}.
+
+From this output, Bob learns \texttt{hx}. He creates a transaction in Alice's blockchain with an output box protected by the following script:
+\begin{verbatim}
+        anyOf( Array(
+                HEIGHT > deadlineAlice && pkB,
+                pkA && blake2b256(getVar[Array[Byte]](1)) == hx
+        ))
+\end{verbatim}
+
+If Alice is satisfied with the amount Bob is giving her, she claims the value of this box by revealing \texttt{x}. Alice is protected as long as the hash function is one-way and she keeps her \texttt{x} secret until she claims the value of this box. (She should be careful to submit her transaction in enough time before \texttt{deadlineAlice} to make sure it gets processed before Bob can reclaim this money, because once she submits the transaction, \texttt{x} is public and thus Bob can both reclaim this box and claim the box Alice left in his blockchain.)
+
+Bob is protected, because in order for Alice to claim the value of this box, she must present a hash preimage of \texttt{hx} as a context extension in the transaction that uses this box as input. But once she does, Bob also learns this hash preimage, and is able to claim the value of the box that Alice placed into his blockchain. Note that Bob needs to choose \texttt{deadlineAlice} early enough to make sure that he is able to learn the preimage of \texttt{hx} from the transaction in Alice's block chain, and create a transaction in his blockchain, all before \texttt{deadlineBob} that Alice chose. Note also that \texttt{HEIGHT} in the two scripts is with respect to two difference blockchains, which may be growing at a different rate.
+
+The same approach can be used to trade different assets on the same blockchain, in case of multiasset blockchains. However, for transactions on a single blockchain, an alternative approach is also possible. We describe it below.
+
+
+\subsection{Box Registers}
 In addition to its value and protecting script, a box can contain up to 10 numbered registers, \texttt{R0} through \texttt{R9}. The first four of these have fixed meaning, as follows. For a box \texttt{b}, \texttt{b.R0} is the same as \texttt{b.value} and \texttt{b.R1} is the same as \texttt{b.propositionBytes}. 
 \lnote{check}
 
@@ -283,41 +311,77 @@ The third register, \texttt{b.R2}, is for specifying additional, secondary token
 The fourth register, \texttt{b.R3}, contains a byte string specifying the transaction id where this box appears as an output, and the sequence number of this box in the \texttt{OUTPUTS} array (the sequence number occupies the last two bytes).
 \lnote{check and clarify the format of transaction id}
 
-The remaining six registers can be used arbitrarily.
+The remaining six registers can be used arbitrarily. The type of the register needs to be specified in brackets following the register number (for example, \texttt{b.R4[Int]}). 
+\lnote{check}
 
 \lnote{What's box.bytes and box.byteWithNoRef? are they available to a script?}
 
-\paragraph{Atomic exchange example}
+\paragraph{Example: atomic exchange on a single block chain}
 These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want exchange tokens: they agree that  Alice will give Bob 60 tokens of type ``token1'' in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with following script:
 
 \begin{verbatim}
-        OUTPUTS(0).R3[(ByteArray, Int)]._1 == "token1" && 
-        OUTPUTS(0).R3[(ByteArray, Int)]._2 >= 60 && 
-        OUTPUTS(0).propositionBytes == pkA.propBytes
+        (HEIGHT>deadline && pkA) || 
+        allOf( Array(
+                OUTPUTS(0).R3[(ByteArray, Int)]._1 == "token1",
+                OUTPUTS(0).R3[(ByteArray, Int)]._2 >= 60, 
+                OUTPUTS(0).propositionBytes == pkA.propBytes,
+        ))
 \end{verbatim}
 
-This script ensures that the box can be spent only in a transaction that produces an output with 60 tokens of type token1 and gives them to Alice. 
+This script ensures that the box can be spent only in a transaction that produces an output with 60 tokens of type token1 and gives them to Alice (Alice can reclaim the box after the deadline). 
 
 \lnote{the above doesn't work for some reason --- I get a parser exception ``ParserException: Unsupported type (Array[SByte],ArrayBuffer())''. What am I doing wrong?}
 
 Bob, similarly, could create an output box with value 0
 \lnote{for some reason the example in the code wants value 1 --- why? It's not explained.} and 60 tokens of type ``token1'' and protect it by the following script:
 \begin{verbatim}
-        OUTPUTS(1).value >= 100 &&
-        OUTPUTS(1).propositionBytes == pkB.propBytes
+        (HEIGHT>deadline && pkB) || 
+        allOf( Array( 
+                OUTPUTS(1).value >= 100,
+                OUTPUTS(1).propositionBytes == pkB.propBytes
+         ))
 \end{verbatim}
 
 \lnote{The above code does not match, when compiled, the proposition in AssetsAtomicExchangeSpecification.scala. I don't understand why.}
 
-A transaction containing these two boxes as inputs must produce two outputs: the first giving at least 60 tokens of type1 to Alice and the second giving at least 100 tokens of type2 to Bob. Once the two boxes are on the blockchain, anyone can create such a transaction using the two boxes as inputs, and thus effect the exchange between Alice and Bob.
+A transaction containing these two boxes as inputs must produce two outputs: the first giving at least 60 tokens of type1 to Alice and the second giving at least 100 tokens of type2 to Bob. Once the two boxes are on the blockchain, anyone can create such a transaction using the two boxes as inputs, and thus effect the exchange between Alice and Bob. Unlike the cross-chain trading example above using hashing (which requires one side to go first), there are no potential problems with synchronization here, because the exchange will happen in a single transaction or will not happen at all.
 
-We caution that these examples are deliberately simplified and these scripts are insufficient as written. To protect herself in case Bob doesn't create his box, Alice should build in a time out, after which she should be able to reclaim the amount (similarly to the crowdfunding example above); same for Bob. In addition, for security, Alice cannot have two such boxes outstanding at any given time, because they can be both used in a single transaction that contains just one output with 60 tokens of type ``token1" --- the script of each box will be individually satisfied, but Alice will get less only half of what owed to her.
+We caution that for security, Alice cannot have two such boxes outstanding at any given time, because they can be both used in a single transaction that contains just one output with 60 tokens of type ``token1" --- the script of each box will be individually satisfied, but Alice will get less only half of what owed to her. Same for Bob.
 
 \lnote{this seems like a pretty big security vulnerability and we should highlight it and show how to fix it. I haven't thought about how best to write a script that doesn't have it Maybe restricting the number of inputs and outputs to just 2 will work? Folding over all the inputs and outputs and summing up and making sure amounts are right may also work, though not sure how to handle all the different (unknowable in advance) token types. Or having a one-time pk just for this purpose (seems expensive)?}
 
+\lnote{Bigger question: why do this instead of hash-based example?}
 
-\subsection{Merkle AVL Trees}
-Explain \texttt{isMember} and provide an example of usage. \lnote{this should probably move lower} The context also contains the root hash of the all the unspent output boxes in the previous block \lnote{check: previous or current block? It would seem that the current is not available, so it should be previous.}, available via the predefined variable \texttt{LastBlockUtxoRootHash}. \lnote{See src/test/scala/sigmastate/utxo/examples/OracleExamplesSpecification.scala, FsmExample, MASTExample}
+\paragraph{Example: time-controlled coin emission}
+Box registers allow us to create a self-replicating box whose value goes down by a prespecified amount each time it is transacted (the amount by which the value is reduced can go to anyone---presumably, it will be claimed by the miner who created the block that contains the transaction). This box will store, in \texttt{R4}, the height at which it was created. Using this information, it will be able to determine how much value to emit. The box will be set to emit 
+a fixed amount specified by \texttt{fixedRate} per block until \texttt{HEIGHT} reaches \texttt{fixedRatePeriod}, and a linearly decreasing amount thereafter. The script will verify that the output box has the same script as itself, and that the new height stored in \texttt{R4} and the new value are correctly computed. The following script accomplished this goal:
+\begin{verbatim}
+        {
+                let epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
+                let out = OUTPUTS(0)
+                let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate 
+                                   else fixedRate - (oneEpochReduction * epoch)
+                let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
+                let sameScriptRule = SELF.propositionBytes == out.propositionBytes
+                let heightIncreased = HEIGHT > SELF.R4[Long].value
+                let heightCorrect = out.R4[Long].value == HEIGHT
+                let lastCoins = SELF.value <= oneEpochReduction
+                allOf(Array(
+                        correctCoinsConsumed, 
+                        heightCorrect, 
+                        heightIncreased, 
+                        sameScriptRule)) 
+                || (heightIncreased && lastCoins)
+        }
+\end{verbatim}
+
+\lnote{why do you need \texttt{heightIncreased}? How can be it be that height is correct but not increased?}
+
+\lnote{Not including demurrage example because it required more explanation about checking from miners and consensus about what registers are for what}
+
+
+\subsection{Merkle Trees}
+Explain \texttt{isMember} and provide an example of usage. Explain that the context also contains the root hash of the all the unspent output boxes in the previous block \lnote{check: previous or current block? It would seem that the current is not available, so it should be previous.}, available via the predefined variable \texttt{LastBlockUtxoRootHash}. Give examples of usage, such as oracle, MAST, FSM.
 
 
 
