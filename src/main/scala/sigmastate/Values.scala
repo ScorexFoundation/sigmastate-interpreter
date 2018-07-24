@@ -223,35 +223,18 @@ object Values {
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
-  def TaggedBoolean(id: Byte): TaggedBoolean =
-    mkTaggedVariable(id, SBoolean).asInstanceOf[TaggedBoolean]
-
-  def TaggedByte (id: Byte): TaggedByte =
-    mkTaggedVariable(id, SByte).asInstanceOf[TaggedByte]
-
-  def TaggedShort (id: Byte): TaggedShort =
-    mkTaggedVariable(id, SShort).asInstanceOf[TaggedShort]
-
-  def TaggedInt (id: Byte): TaggedInt =
-    mkTaggedVariable(id, SInt).asInstanceOf[TaggedInt]
-
-  def TaggedLong (id: Byte): TaggedLong =
-    mkTaggedVariable(id, SLong).asInstanceOf[TaggedLong]
-
-  def TaggedBigInt (id: Byte): TaggedBigInt =
-    mkTaggedVariable(id, SBigInt).asInstanceOf[TaggedBigInt]
-
-  def TaggedBox (id: Byte): TaggedBox =
-    mkTaggedVariable(id, SBox).asInstanceOf[TaggedBox]
-
-  def TaggedGroupElement(id: Byte): TaggedGroupElement =
-    mkTaggedVariable(id, SGroupElement).asInstanceOf[TaggedGroupElement]
-
-  def TaggedAvlTree (id: Byte): TaggedAvlTree =
-    mkTaggedVariable(id, SAvlTree).asInstanceOf[TaggedAvlTree]
-
-  def TaggedByteArray (id: Byte): TaggedByteArray =
-    mkTaggedVariable(id, SByteArray).asInstanceOf[TaggedByteArray]
+  def TaggedBoolean(id: Byte): Value[SBoolean.type] = mkTaggedVariable(id, SBoolean)
+  def TaggedByte(id: Byte): Value[SByte.type] = mkTaggedVariable(id, SByte)
+  def TaggedShort(id: Byte): Value[SShort.type] = mkTaggedVariable(id, SShort)
+  def TaggedInt(id: Byte): Value[SInt.type] = mkTaggedVariable(id, SInt)
+  def TaggedLong(id: Byte): Value[SLong.type] = mkTaggedVariable(id, SLong)
+  def TaggedBigInt(id: Byte): Value[SBigInt.type] = mkTaggedVariable(id, SBigInt)
+  def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
+  def TaggedGroupElement(id: Byte): Value[SGroupElement.type] =
+    mkTaggedVariable(id, SGroupElement)
+  def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
+  def TaggedByteArray (id: Byte): Value[SCollection[SByte.type]] =
+    mkTaggedVariable(id, SByteArray)
 
   trait EvaluatedCollection[T <: SType, C <: SCollection[T]] extends EvaluatedValue[C] {
     def elementType: T
