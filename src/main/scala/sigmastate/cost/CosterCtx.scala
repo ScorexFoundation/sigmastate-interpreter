@@ -184,7 +184,7 @@ trait CosterCtx extends SigmaLibrary {
   type RCosted[A] = Rep[Costed[A]]
 
   private def evalNode[T <: SType](ctx: Rep[Context], vars: Map[Byte, Rep[_]], node: Value[T]): RCosted[T#WrappedType] = {
-    import MonoidBuilderInst._
+    import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     val res: Rep[Any] = node match {
       case Constant(v, tpe) => v match {
         case p: scapi.sigma.DLogProtocol.ProveDlog =>
@@ -226,6 +226,18 @@ trait CosterCtx extends SigmaLibrary {
         val boxC = evalNode(ctx, vars, box).asRep[Costed[Box]]
         val bytes = boxC.value.propositionBytes
         CostedPrimRep(bytes, boxC.cost + Cost.ExtractScriptBytes + bytes.length)
+      case utxo.ExtractRegisterAs(box, regId, tpe, default) =>
+        val boxC = evalNode(ctx, vars, box).asRep[Costed[Box]]
+        val elem = stypeToElem(tpe)
+        val valueOpt = boxC.value.getReg(regId.number.toInt)(elem)
+        val baseCost = boxC.cost + Cost.ExtractRegister
+        val (v, c) = if (default.isDefined) {
+          val d = evalNode(ctx, vars, default.get)
+          (RWSpecialPredef.optionGetOrElse(valueOpt, d.value), baseCost + d.cost)
+        } else {
+          (valueOpt.get, baseCost)
+        }
+        CostedPrimRep(v, c)
       case op: ArithOp[t] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)

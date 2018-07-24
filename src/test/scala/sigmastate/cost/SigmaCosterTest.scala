@@ -17,7 +17,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   import ctx._
   import Context._; import SigmaContract._
   import Cost._; import ColBuilder._; import Col._; import Box._; import Sigma._; import CrowdFunding._
-  import SigmaDslBuilder._
+  import SigmaDslBuilder._; import WOption._
 
   lazy val dsl = sigmaDslBuilder
 
@@ -163,6 +163,47 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     }
     println(s"Defs: $defCounter, Time: ${defTime / 1000000}")
     emit("Crowd_Funding_measure", res)
+  }
+
+  val demurrageScript =
+    """{
+     | let c2 = allOf(Array(
+     |   HEIGHT >= SELF.R4[Long].value + demurragePeriod,
+     |   OUTPUTS.exists(fun (out: Box) = {
+     |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
+     |   })
+     | ))
+     | getVar[Proof](regScriptId) || c2
+     | }
+    """.stripMargin
+
+  val demurragePeriod = 100L
+  val demurrageCost = 2L
+  val regScriptId = 1.toByte
+  val envDem = Map(
+    "demurragePeriod" -> demurragePeriod,
+    "demurrageCost" -> demurrageCost,
+    "regScriptId" -> regScriptId,
+  )
+
+  test("Demurrage") {
+    val prover = new ErgoLikeProvingInterpreter()
+    val regScript = prover.dlogSecrets(0).publicImage
+    val vars = Seq(regScriptId -> ProofConstant(regScript)).toMap
+
+    checkInEnv[Boolean](envDem, vars, "Demurrage", demurrageScript,
+    { ctx: Rep[Context] =>
+      val regScript = ctx.getVar[Sigma](regScriptId)
+      val c2 = dsl.allOf(colBuilder(
+        ctx.HEIGHT >= ctx.SELF.R4[Long].get + demurragePeriod,
+        ctx.OUTPUTS.exists(fun { out =>
+          out.value >= ctx.SELF.value - demurrageCost && out.propositionBytes === ctx.SELF.propositionBytes
+        })
+      ))
+      regScript.isValid || c2
+    },
+    { in: Rep[Context] => 0 } // ignored
+    , false)
   }
 
   test("costed collection ops") {
