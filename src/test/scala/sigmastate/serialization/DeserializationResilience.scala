@@ -14,9 +14,7 @@ class DeserializationResilience extends SerializationSpecification {
   property("max size limit") {
     val bytes = Array.fill[Byte](Serializer.MaxInputSize + 1)(1)
     an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(bytes)
-    an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(bytes, 0)
-    // deliberately omitted assertion (hot path)
-    ValueSerializer.deserialize(Serializer.startReader(bytes, 0))
+    an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(Serializer.startReader(bytes, 0))
   }
 
   property("zeroes (invalid type code in constant deserialization path") {

@@ -11,7 +11,7 @@ import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer,
 import sigmastate.utils.Extensions._
 import org.ergoplatform._
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.lang.exceptions.{InvalidOpCode, ValueDeserializeCallDepthExceeded}
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
 
 import scala.collection.concurrent.TrieMap
@@ -118,6 +118,9 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   private val nestedValuesDepthPerReader = TrieMap[Int, Int]()
 
   override def deserialize(r: ByteReader): Value[SType] = {
+    val bytesRemaining = r.remaining
+    if (bytesRemaining > Serializer.MaxInputSize)
+      throw new InputSizeLimitExceeded(s"input size $bytesRemaining exceeds ${ Serializer.MaxInputSize}")
     val depthKey = r.hashCode()
     val depth = nestedValuesDepthPerReader.getOrElseUpdate(depthKey, 0)
     if (depth > Serializer.MaxTreeDepth)
