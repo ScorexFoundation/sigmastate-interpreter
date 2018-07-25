@@ -17,7 +17,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
   def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
-    val tagged = mkTaggedVariable(tag, tpe).asInstanceOf[TaggedVariable[SType]]
+    val tagged = mkTaggedVariable(tag, tpe)
     tagged
   }
 

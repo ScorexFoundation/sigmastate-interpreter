@@ -92,9 +92,19 @@ object Values {
   }
 
   /** Reference a context variable by id. */
-  case class TaggedVariable[T <: SType](varId: Byte, override val tpe: T) extends ContextVariable[T] {
+  trait TaggedVariable[T <: SType] extends ContextVariable[T] {
+    val varId: Byte
+  }
+
+  case class TaggedVariableNode[T <: SType](varId: Byte, override val tpe: T)
+    extends TaggedVariable[T] {
     override val opCode: OpCode = TaggedVariableCode
-    override def cost[C <: Context[C]](context: C) = context.extension.cost(varId) + 1
+    override def cost[C <: Context[C]](context: C): Long = context.extension.cost(varId) + 1
+  }
+
+  object TaggedVariable {
+    def apply[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
+      TaggedVariableNode(varId, tpe)
   }
 
   case object UnitConstant extends EvaluatedValue[SUnit.type] {

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ConcreteCollection, Constant, NoneValue, SValue, SigmaBoolean, SomeValue, TaggedVariable, Tuple, Value}
+import sigmastate.Values.{ConcreteCollection, Constant, NoneValue, SValue, SigmaBoolean, SomeValue, TaggedVariable, TaggedVariableNode, Tuple, Value}
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
@@ -113,7 +113,7 @@ trait SigmaBuilder {
   def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                        elementType: T): Value[SCollection[T]]
 
-  def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): Value[T]
+  def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): TaggedVariable[T]
 
   def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]]
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
@@ -319,8 +319,8 @@ class StdSigmaBuilder extends SigmaBuilder {
                                                 elementType: T): Value[SCollection[T]] =
     ConcreteCollection(items, elementType)
 
-  override def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): Value[T] =
-    TaggedVariable(varId, tpe)
+  override def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
+    TaggedVariableNode(varId, tpe)
 
   override def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]] = SomeValue(x)
   override def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]] = NoneValue(elemType)
