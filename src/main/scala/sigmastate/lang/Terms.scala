@@ -24,7 +24,13 @@ object Terms {
       Block(Seq(let), result)
   }
 
-  case class Let(name: String, givenType: SType, body: SValue) extends Value[SType] {
+  trait Let extends Value[SType] {
+    val name: String
+    val givenType: SType
+    val body: SValue
+  }
+
+  case class LetNode(name: String, givenType: SType, body: SValue) extends Let {
     override val opCode: OpCode = OpCodes.Undefined
 
     override def cost[C <: Context[C]](context: C): Long = ???
@@ -33,7 +39,12 @@ object Terms {
     def tpe: SType = givenType ?: body.tpe
   }
   object Let {
-    def apply(name: String, value: SValue): Let = Let(name, NoType, value)
+    def apply(name: String, body: SValue): Let = LetNode(name, NoType, body)
+    def apply(name: String, givenType: SType, body: SValue): Let = LetNode(name, givenType, body)
+    def unapply(v: SValue): Option[(String, SType, SValue)] = v match {
+      case LetNode(name, givenType, body) => Some((name, givenType, body))
+      case _ => None
+    }
   }
 
   case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {

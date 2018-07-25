@@ -49,7 +49,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
-        bs1 += mkLet(n, b1.tpe, b1).asInstanceOf[Let]
+        bs1 += mkLet(n, b1.tpe, b1)
       }
       val res1 = assignType(curEnv, res)
       mkBlock(bs1, res1)

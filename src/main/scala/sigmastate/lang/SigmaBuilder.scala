@@ -119,7 +119,7 @@ trait SigmaBuilder {
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
 
   def mkBlock(bindings: Seq[Let], result: Value[SType]): Value[SType]
-  def mkLet(name: String, givenType: SType, body: Value[SType]): Value[SType]
+  def mkLet(name: String, givenType: SType, body: Value[SType]): Let
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
   def mkIdent(name: String, tpe: SType): Value[SType]
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
@@ -328,8 +328,8 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkBlock(bindings: Seq[Let], result: Value[SType]): Value[SType] =
     Block(bindings, result)
 
-  override def mkLet(name: String, givenType: SType, body: Value[SType]): Value[SType] =
-    Let(name, givenType, body)
+  override def mkLet(name: String, givenType: SType, body: Value[SType]): Let =
+    LetNode(name, givenType, body)
 
   override def mkSelect(obj: Value[SType],
                         field: String,
