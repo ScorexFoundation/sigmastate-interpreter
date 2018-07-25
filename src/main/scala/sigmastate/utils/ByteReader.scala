@@ -2,11 +2,9 @@ package sigmastate.utils
 
 import java.nio.ByteBuffer
 import java.util._
+import java.util.concurrent.atomic.AtomicInteger
 
-import sigmastate.Values.SValue
-import sigmastate.SType
 import sigmastate.utils.Extensions._
-import sigmastate.serialization.{TypeSerializer, ValueSerializer}
 import sigmastate.utils.ByteBufferReader.decodeZigZagLong
 
 trait ByteReader {
@@ -69,8 +67,13 @@ trait ByteReader {
   def position: Int
   def position_=(p: Int)
   def remaining: Int
+  def level: Int
+  def level_=(v: Int)
 }
 
+/**
+  * Not thread safe
+  */
 class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
 
   @inline override def peekByte(): Byte = buf.array()(buf.position())
@@ -172,6 +175,10 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   @inline override def position_=(p: Int): Unit = buf.position(p)
 
   @inline override def remaining: Int = buf.remaining()
+
+  private var lvl: Int = 0
+  override def level: Int = lvl
+  override def level_=(v: Int): Unit = lvl = v
 }
 
 object ByteBufferReader {

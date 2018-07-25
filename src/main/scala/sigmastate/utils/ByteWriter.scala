@@ -72,6 +72,9 @@ trait ByteWriter {
   def toBytes: Array[Byte]
 }
 
+/**
+  * Not thread safe
+  */
 class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def put(x: Byte): ByteWriter = { b.append(x); this }
   @inline override def putBoolean(x: Boolean): ByteWriter = { b.append(x); this }
