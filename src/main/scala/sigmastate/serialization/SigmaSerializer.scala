@@ -3,34 +3,19 @@ package sigmastate.serialization
 import java.nio.ByteBuffer
 
 import sigmastate.lang.exceptions.SerializerException
-import sigmastate.serialization.Serializer.{Consumed, Position}
 import sigmastate.utils._
-
-import scala.util.Try
 
 trait Serializer[TFamily, T <: TFamily] {
 
-  final def toBytes(obj: T): Array[Byte] = serializeBody(obj)
+  def parseBody(r: ByteReader): TFamily
+  def serializeBody(obj: T, w: ByteWriter): Unit
+  def error(msg: String) = throw new SerializerException(msg, None)
 
-  final def parseBytes(bytes: Array[Byte]): Try[TFamily] = Try {
-    parseBody(bytes, 0)._1
-  }
-
-  final def parseBody(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = {
-    val r = Serializer.startReader(bytes, pos)
-    parseBody(r) -> r.consumed
-  }
-
-  final def serializeBody(obj: T): Array[Byte] = {
+  final def toBytes(obj: T): Array[Byte] = {
     val w = Serializer.startWriter()
     serializeBody(obj, w)
     w.toBytes
   }
-
-  def parseBody(r: ByteReader): TFamily
-  def serializeBody(obj: T, w: ByteWriter): Unit
-
-  def error(msg: String) = throw new SerializerException(msg, None)
 }
 
 object Serializer {
@@ -42,7 +27,7 @@ object Serializer {
     * val r = Serializer.startReader(bytes, pos)
     * val obj = r.getValue()
     * obj -> r.consumed */
-  def startReader(bytes: Array[Byte], pos: Int): ByteReader = {
+  def startReader(bytes: Array[Byte], pos: Int = 0): ByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
     val r = new ByteBufferReader(buf)
@@ -70,20 +55,7 @@ trait SigmaSerializerCompanion[TFamily] {
   type Tag
 
   def getSerializer(opCode: Tag): SigmaSerializer[TFamily, _ <: TFamily]
-
-  final def deserialize(bytes: Array[Byte], pos: Position): (TFamily, Consumed) = {
-    val r = Serializer.startReader(bytes, pos)
-    deserialize(r) -> r.consumed
-  }
-
   def deserialize(r: ByteReader): TFamily
-
-  final def serialize(v: TFamily): Array[Byte] = {
-    val w = Serializer.startWriter()
-    serialize(v, w)
-    w.toBytes
-  }
-
   def serialize(v: TFamily, w: ByteWriter): Unit
 }
 

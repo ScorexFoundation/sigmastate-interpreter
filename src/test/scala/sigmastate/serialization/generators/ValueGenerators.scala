@@ -152,7 +152,8 @@ trait ValueGenerators extends TypeGenerators {
       .map { varId =>
         for {
           arr <- byteArrayConstGen
-          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr)
+          longConst <- longConstGen
+          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr, longConst)
         }
           yield varId.toByte -> v.asInstanceOf[EvaluatedValue[SType]]
       }
