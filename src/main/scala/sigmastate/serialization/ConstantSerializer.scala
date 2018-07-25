@@ -17,7 +17,7 @@ case class ConstantSerializer(builder: SigmaBuilder)
   override def deserialize(r: ByteReader): Constant[SType] = {
     val tpe = r.getType()
     val obj = DataSerializer.deserialize(tpe, r)
-    builder.mkConstant(obj, tpe).asInstanceOf[Constant[SType]]
+    builder.mkConstant(obj, tpe)
   }
 }
 

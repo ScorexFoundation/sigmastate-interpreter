@@ -52,33 +52,33 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbInput = Arbitrary(inputGen)
 
   val byteConstGen: Gen[ByteConstant] =
-    arbByte.arbitrary.map { v => mkConstant[SByte.type](v, SByte).asInstanceOf[ByteConstant] }
+    arbByte.arbitrary.map { v => mkConstant[SByte.type](v, SByte) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
   val shortConstGen: Gen[ShortConstant] =
-    arbShort.arbitrary.map { v => mkConstant[SShort.type](v, SShort).asInstanceOf[ShortConstant] }
+    arbShort.arbitrary.map { v => mkConstant[SShort.type](v, SShort) }
   val intConstGen: Gen[IntConstant] =
-    arbInt.arbitrary.map { v => mkConstant[SInt.type](v, SInt).asInstanceOf[IntConstant] }
+    arbInt.arbitrary.map { v => mkConstant[SInt.type](v, SInt) }
   val longConstGen: Gen[LongConstant] =
-    arbLong.arbitrary.map { v => mkConstant[SLong.type](v, SLong).asInstanceOf[LongConstant] }
+    arbLong.arbitrary.map { v => mkConstant[SLong.type](v, SLong) }
   val bigIntConstGen: Gen[BigIntConstant] =
-    arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v.bigInteger, SBigInt).asInstanceOf[BigIntConstant] }
+    arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v.bigInteger, SBigInt) }
   val byteArrayConstGen: Gen[CollectionConstant[SByte.type]] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
-  } yield mkCollectionConstant[SByte.type](bytes.toArray, SByte).asInstanceOf[CollectionConstant[SByte.type]]
+  } yield mkCollectionConstant[SByte.type](bytes.toArray, SByte)
   val intArrayConstGen: Gen[CollectionConstant[SInt.type]] = for {
     length <- Gen.chooseNum(1, 100)
     ints <- Gen.listOfN(length, arbInt.arbitrary)
-  } yield mkCollectionConstant[SInt.type](ints.toArray, SInt).asInstanceOf[CollectionConstant[SInt.type]]
+  } yield mkCollectionConstant[SInt.type](ints.toArray, SInt)
   val groupElementConstGen: Gen[GroupElementConstant] = for {
     _ <- Gen.const(1)
     el = CryptoConstants.dlogGroup.createRandomGenerator()
-  } yield mkConstant[SGroupElement.type](el, SGroupElement).asInstanceOf[GroupElementConstant]
+  } yield mkConstant[SGroupElement.type](el, SGroupElement)
 
   def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {
     t <- aT.arbitrary
     id <- arbByte.arbitrary
-  } yield mkTaggedVariable(id, t).asInstanceOf[TaggedVariable[T]]
+  } yield mkTaggedVariable(id, t)
 
 
   val proveDlogGen: Gen[ProveDlog] =

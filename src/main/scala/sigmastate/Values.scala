@@ -71,7 +71,9 @@ object Values {
     override lazy val evaluated = true
   }
 
-  case class Constant[S <: SType](value: S#WrappedType, tpe: S) extends EvaluatedValue[S] {
+  trait Constant[S <: SType] extends EvaluatedValue[S] {}
+
+  case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     override val opCode: OpCode = (ConstantCode + tpe.typeCode).toByte
     override def cost[C <: Context[C]](context: C) = tpe.dataCost(value)
 
@@ -81,6 +83,14 @@ object Values {
     }
 
     override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
+  }
+
+  object Constant {
+    def apply[S <: SType](value: S#WrappedType, tpe: S): Constant[S] = ConstantNode(value, tpe)
+    def unapply[S <: SType](v: EvaluatedValue[S]): Option[(S#WrappedType, S)] = v match {
+      case ConstantNode(value, tpe) => Some((value, tpe))
+      case _ => None
+    }
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {

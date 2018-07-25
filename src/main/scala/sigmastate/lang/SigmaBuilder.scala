@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ConcreteCollection, Constant, NoneValue, SValue, SigmaBoolean, SomeValue, TaggedVariable, TaggedVariableNode, Tuple, Value}
+import sigmastate.Values.{ConcreteCollection, Constant, ConstantNode, NoneValue, SValue, SigmaBoolean, SomeValue, TaggedVariable, TaggedVariableNode, Tuple, Value}
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
@@ -132,9 +132,9 @@ trait SigmaBuilder {
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
 
-  def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Value[T]
+  def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T]
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
-                                       elementType: T): Value[SCollection[T]]
+                                       elementType: T): Constant[SCollection[T]]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -355,12 +355,12 @@ class StdSigmaBuilder extends SigmaBuilder {
                         body: Option[Value[SType]]): Value[SFunc] =
     Lambda(args, givenResType, body)
 
-  override def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Value[T] =
-    Constant[T](value, tpe)
+  override def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T] =
+    ConstantNode[T](value, tpe)
 
   override def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
-                                                elementType: T): Value[SCollection[T]] =
-    Constant[SCollection[T]](values, SCollection(elementType))
+                                                elementType: T): Constant[SCollection[T]] =
+    ConstantNode[SCollection[T]](values, SCollection(elementType))
 }
 
 trait TypeConstraintCheck {
