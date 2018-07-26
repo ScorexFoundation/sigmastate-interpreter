@@ -50,7 +50,7 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
   tablePredefinedBytesTest("Specific objects deserialize from predefined bytes")
 
   property("ConcreteCollection: deserialize collection of a crazy size") {
-    val bytes = Array[Byte](ConcreteCollectionSerializer.opCode) ++
+    val bytes = Array[Byte](OpCodes.ConcreteCollectionCode) ++
       Serializer.startWriter().putUInt(Int.MaxValue).toBytes
     an[AssertionError] should be thrownBy ValueSerializer.deserialize(bytes)
   }

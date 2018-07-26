@@ -5,16 +5,12 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utils.Extensions._
-import org.ergoplatform._
-import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
-
-import scala.collection.concurrent.TrieMap
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
