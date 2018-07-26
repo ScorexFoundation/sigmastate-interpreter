@@ -121,5 +121,13 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
   }
 
-  def deserialize(bytes: Array[Byte]): Value[_ <: SType] = deserialize(bytes, 0)._1
+  def serialize(v: Value[SType]): Array[Byte] = {
+    val w = Serializer.startWriter()
+    serialize(v, w)
+    w.toBytes
+  }
+
+  def deserialize(bytes: Array[Byte], pos: Serializer.Position = 0): Value[SType] =
+    deserialize(Serializer.startReader(bytes, pos))
+
 }
