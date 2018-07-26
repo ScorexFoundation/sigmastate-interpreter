@@ -19,6 +19,8 @@ import scala.reflect.ClassTag
 
 trait ValueGenerators extends TypeGenerators {
 
+  import sigmastate.lang.TransformingSigmaBuilder._
+
   implicit val arbByteConstants: Arbitrary[ByteConstant] = Arbitrary(byteConstGen)
   implicit val arbIntConstants: Arbitrary[IntConstant] = Arbitrary(intConstGen)
   implicit val arbLongConstants: Arbitrary[LongConstant] = Arbitrary(longConstGen)
@@ -49,42 +51,49 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbUnsignedInput = Arbitrary(unsignedInputGen)
   implicit val arbInput = Arbitrary(inputGen)
 
-  val byteConstGen: Gen[ByteConstant] = arbByte.arbitrary.map { v => ByteConstant(v) }
+  val byteConstGen: Gen[ByteConstant] =
+    arbByte.arbitrary.map { v => mkConstant[SByte.type](v, SByte) }
   val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
-  val shortConstGen: Gen[ShortConstant] = arbShort.arbitrary.map { v => ShortConstant(v) }
-  val intConstGen: Gen[IntConstant] = arbInt.arbitrary.map { v => IntConstant(v) }
-  val longConstGen: Gen[LongConstant] = arbLong.arbitrary.map { v => LongConstant(v) }
-  val bigIntConstGen: Gen[BigIntConstant] = arbBigInt.arbitrary.map { v => BigIntConstant(v.bigInteger) }
+  val shortConstGen: Gen[ShortConstant] =
+    arbShort.arbitrary.map { v => mkConstant[SShort.type](v, SShort) }
+  val intConstGen: Gen[IntConstant] =
+    arbInt.arbitrary.map { v => mkConstant[SInt.type](v, SInt) }
+  val longConstGen: Gen[LongConstant] =
+    arbLong.arbitrary.map { v => mkConstant[SLong.type](v, SLong) }
+  val bigIntConstGen: Gen[BigIntConstant] =
+    arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v.bigInteger, SBigInt) }
   val byteArrayConstGen: Gen[CollectionConstant[SByte.type]] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
-  } yield ByteArrayConstant(bytes.toArray)
+  } yield mkCollectionConstant[SByte.type](bytes.toArray, SByte)
   val intArrayConstGen: Gen[CollectionConstant[SInt.type]] = for {
     length <- Gen.chooseNum(1, 100)
     ints <- Gen.listOfN(length, arbInt.arbitrary)
-  } yield IntArrayConstant(ints.toArray)
+  } yield mkCollectionConstant[SInt.type](ints.toArray, SInt)
   val groupElementConstGen: Gen[GroupElementConstant] = for {
     _ <- Gen.const(1)
     el = CryptoConstants.dlogGroup.createRandomGenerator()
-  } yield GroupElementConstant(el)
+  } yield mkConstant[SGroupElement.type](el, SGroupElement)
 
   def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {
     t <- aT.arbitrary
     id <- arbByte.arbitrary
-  } yield TaggedVariable(id, t)
+  } yield mkTaggedVariable(id, t)
 
 
-  val proveDlogGen: Gen[ProveDlog] = arbGroupElementConstant.arbitrary.map(v => ProveDlog(v))
+  val proveDlogGen: Gen[ProveDlog] =
+    arbGroupElementConstant.arbitrary.map(v => mkProveDlog(v).asInstanceOf[ProveDlog])
   val proveDHTGen: Gen[ProveDiffieHellmanTuple] = for {
     gv: Value[SGroupElement.type] <- groupElementConstGen
     hv: Value[SGroupElement.type] <- groupElementConstGen
     uv: Value[SGroupElement.type] <- groupElementConstGen
     vv: Value[SGroupElement.type] <- groupElementConstGen
-  } yield ProveDiffieHellmanTuple(gv, hv, uv, vv)
+  } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDiffieHellmanTuple]
 
   val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
-  val taggedAvlTreeGen: Gen[TaggedAvlTree] = arbByte.arbitrary.map { v => TaggedAvlTree(v) }
+  val taggedAvlTreeGen: Gen[TaggedAvlTree] =
+    arbByte.arbitrary.map { v => TaggedAvlTree(v).asInstanceOf[TaggedAvlTree] }
 
   def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
     (0 until cnt)
@@ -193,7 +202,7 @@ trait ValueGenerators extends TypeGenerators {
       taggedVar[SBox.type],
       taggedVar(Arbitrary(sTupleGen(2, 10)))
     ))
-  } yield Tuple(values)
+  } yield mkTuple(values).asInstanceOf[Tuple]
 
   val ergoBoxGen: Gen[ErgoBox] = for {
     l <- arbLong.arbitrary

@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.syntax
+import sigmastate.lang.{SigmaBuilder, StdSigmaBuilder, syntax}
 
 trait Core extends syntax.Literals {
   import fastparse.noApi._
@@ -108,7 +108,7 @@ trait Core extends syntax.Literals {
 //    val ThisSuper = P( `this` | `super` ~ ClassQualifier.? )
 //    val ThisPath: P0 = P( ThisSuper ~ ("." ~ PostDotCheck ~/ Id).rep )
     val IdPath = P( Id.! ~ ("." ~ PostDotCheck ~/ (`this`.! | Id.!)).rep /*~ ("." ~ ThisPath).?*/ ).map {
-      case (h, t) => t.foldLeft[SValue](Ident(h))(Select(_, _))
+      case (h, t) => t.foldLeft[SValue](Ident(h))(builder.mkSelect(_, _))
     }
     P( /*ThisPath |*/ IdPath )
   }

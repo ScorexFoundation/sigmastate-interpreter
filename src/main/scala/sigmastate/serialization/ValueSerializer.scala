@@ -1,15 +1,14 @@
 package sigmastate.serialization
 
-import sigmastate._
-import Values._
-import OpCodes._
+import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
+import sigmastate.Values._
+import sigmastate._
+import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
-import sigmastate.utxo._
 import sigmastate.utils.Extensions._
-import org.ergoplatform._
-import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
 
 
@@ -26,27 +25,30 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
 object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   type Tag = OpCode
 
+  private val builder: DeserializationSigmaBuilder.type = DeserializationSigmaBuilder
+  import builder._
+
   private val serializers = SparseArrayContainer.buildFrom(Seq[ValueSerializer[_ <: Value[SType]]](
-    TupleSerializer,
-    SelectFieldSerializer,
-    Relation2Serializer(GtCode, DeserializationSigmaBuilder.GT[SType]),
-    Relation2Serializer(GeCode, DeserializationSigmaBuilder.GE[SType]),
-    Relation2Serializer(LtCode, DeserializationSigmaBuilder.LT[SType]),
-    Relation2Serializer(LeCode, DeserializationSigmaBuilder.LE[SType]),
-    Relation2Serializer(EqCode, DeserializationSigmaBuilder.EQ[SType]),
-    Relation2Serializer(NeqCode, DeserializationSigmaBuilder.NEQ[SType]),
-    Relation3Serializer(IsMemberCode, IsMember.apply),
-    QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, If.apply),
-    TwoArgumentsSerializer(XorCode, Xor.apply),
-    TwoArgumentsSerializer(ExponentiateCode, Exponentiate.apply),
-    TwoArgumentsSerializer(MultiplyGroupCode, MultiplyGroup.apply),
-    TwoArgumentsSerializer(MinusCode, DeserializationSigmaBuilder.Minus[SNumericType]),
-    TwoArgumentsSerializer(MultiplyCode, DeserializationSigmaBuilder.Multiply[SNumericType]),
-    TwoArgumentsSerializer(DivisionCode, DeserializationSigmaBuilder.Divide[SNumericType]),
-    TwoArgumentsSerializer(ModuloCode, DeserializationSigmaBuilder.Modulo[SNumericType]),
-    TwoArgumentsSerializer(PlusCode, DeserializationSigmaBuilder.Plus[SNumericType]),
-    ProveDiffieHellmanTupleSerializer,
-    ProveDlogSerializer,
+    TupleSerializer(mkTuple),
+    SelectFieldSerializer(mkSelectField),
+    Relation2Serializer(GtCode, mkGT[SType]),
+    Relation2Serializer(GeCode, mkGE[SType]),
+    Relation2Serializer(LtCode, mkLT[SType]),
+    Relation2Serializer(LeCode, mkLE[SType]),
+    Relation2Serializer(EqCode, mkEQ[SType]),
+    Relation2Serializer(NeqCode, mkNEQ[SType]),
+    Relation3Serializer(IsMemberCode, mkIsMember),
+    QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, mkIf),
+    TwoArgumentsSerializer(XorCode, mkXor),
+    TwoArgumentsSerializer(ExponentiateCode, mkExponentiate),
+    TwoArgumentsSerializer(MultiplyGroupCode, mkMultiplyGroup),
+    TwoArgumentsSerializer(MinusCode, mkMinus[SNumericType]),
+    TwoArgumentsSerializer(MultiplyCode, mkMultiply[SNumericType]),
+    TwoArgumentsSerializer(DivisionCode, mkDivide[SNumericType]),
+    TwoArgumentsSerializer(ModuloCode, mkModulo[SNumericType]),
+    TwoArgumentsSerializer(PlusCode, mkPlus[SNumericType]),
+    ProveDiffieHellmanTupleSerializer(mkProveDiffieHellmanTuple),
+    ProveDlogSerializer(mkProveDlog),
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
     CaseObjectSerialization(HeightCode, Height),
@@ -55,34 +57,34 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),
     CaseObjectSerialization(SelfCode, Self),
     CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
-    ConcreteCollectionSerializer,
-    ConcreteCollectionBooleanConstantSerializer,
-    LogicalTransformerSerializer(AndCode, AND.apply),
-    LogicalTransformerSerializer(OrCode, OR.apply),
-    TaggedVariableSerializer,
-    MapCollectionSerializer,
-    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ExistsCode, Exists.apply),
-    BooleanTransformerSerializer[SType, BooleanTransformer[SType]](ForAllCode, ForAll.apply),
-    FoldSerializer,
-    SimpleTransformerSerializer[SCollection[SType], SInt.type](SizeOfCode, SizeOf.apply),
-    SimpleTransformerSerializer[SBox.type, SLong.type](ExtractAmountCode, ExtractAmount.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractScriptBytesCode, ExtractScriptBytes.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesCode, ExtractBytes.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesWithNoRefCode, ExtractBytesWithNoRef.apply),
-    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, ExtractId.apply),
-    SimpleTransformerSerializer[SInt.type, SByte.type](IntToByteCode, IntToByte.apply),
-    SimpleTransformerSerializer[SLong.type, SByteArray](LongToByteArrayCode, LongToByteArray.apply),
-    SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, ByteArrayToBigInt.apply),
-    SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, CalcBlake2b256.apply),
-    SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, CalcSha256.apply),
-    DeserializeContextSerializer,
-    DeserializeRegisterSerializer,
-    ExtractRegisterAsSerializer,
-    WhereSerializer,
-    SliceSerializer,
-    ByIndexSerializer,
-    AppendSerializer,
-    UpcastSerializer,
+    ConcreteCollectionSerializer(mkConcreteCollection),
+    ConcreteCollectionBooleanConstantSerializer(mkConcreteCollection),
+    LogicalTransformerSerializer(AndCode, mkAND),
+    LogicalTransformerSerializer(OrCode, mkOR),
+    TaggedVariableSerializer(mkTaggedVariable),
+    MapCollectionSerializer(mkMapCollection),
+    BooleanTransformerSerializer[SType](ExistsCode, mkExists),
+    BooleanTransformerSerializer[SType](ForAllCode, mkForAll),
+    FoldSerializer(mkFold),
+    SimpleTransformerSerializer[SCollection[SType], SInt.type](SizeOfCode, mkSizeOf),
+    SimpleTransformerSerializer[SBox.type, SLong.type](ExtractAmountCode, mkExtractAmount),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractScriptBytesCode, mkExtractScriptBytes),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesCode, mkExtractBytes),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractBytesWithNoRefCode, mkExtractBytesWithNoRef),
+    SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, mkExtractId),
+    SimpleTransformerSerializer[SInt.type, SByte.type](IntToByteCode, mkIntToByte),
+    SimpleTransformerSerializer[SLong.type, SByteArray](LongToByteArrayCode, mkLongToByteArray),
+    SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, mkByteArrayToBigInt),
+    SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, mkCalcBlake2b256),
+    SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, mkCalcSha256),
+    DeserializeContextSerializer(mkDeserializeContext),
+    DeserializeRegisterSerializer(mkDeserializeRegister),
+    ExtractRegisterAsSerializer(mkExtractRegisterAs),
+    WhereSerializer(mkWhere),
+    SliceSerializer(mkSlice),
+    ByIndexSerializer(mkByIndex),
+    AppendSerializer(mkAppend),
+    UpcastSerializer(mkUpcast),
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
@@ -99,7 +101,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
-      ConstantSerializer.serialize(c, w)
+      ConstantSerializer(builder).serialize(c, w)
     case _ =>
       val opCode = v.opCode
       w.put(opCode)
@@ -111,7 +113,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     val firstByte = r.peekByte()
     if (firstByte.toUByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
-      ConstantSerializer.deserialize(r)
+      ConstantSerializer(builder).deserialize(r)
     }
     else {
       val opCode = r.getByte()

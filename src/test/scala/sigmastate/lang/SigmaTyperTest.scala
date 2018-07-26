@@ -6,18 +6,19 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, TyperException}
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException}
 import sigmastate.serialization.generators.ValueGenerators
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
   def typecheck(env: Map[String, Any], x: String): SType = {
     try {
-      val parsed = SigmaParser(x).get.value
-      val binder = new SigmaBinder(env)
+      val builder = TransformingSigmaBuilder
+      val parsed = SigmaParser(x, builder).get.value
+      val binder = new SigmaBinder(env, builder)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper
+      val typer = new SigmaTyper(builder)
       val typed = typer.typecheck(bound)
      typed.tpe
     } catch {
@@ -27,11 +28,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   def typefail(env: Map[String, Any], x: String, messageSubstr: String = ""): Unit = {
     try {
-      val parsed = SigmaParser(x).get.value
-      val binder = new SigmaBinder(env)
+      val builder = TransformingSigmaBuilder
+      val parsed = SigmaParser(x, builder).get.value
+      val binder = new SigmaBinder(env, builder)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper
+      val typer = new SigmaTyper(builder)
       val typed = typer.typecheck(bound)
       assert(false, s"Should not typecheck: $x")
     } catch {
@@ -117,6 +119,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "(1, 2L)._1") shouldBe SInt
     typecheck(env, "(1, 2L)._2") shouldBe SLong
     typecheck(env, "(1, 2L, 3)._3") shouldBe SInt
+
+    an[MethodNotFound] should be thrownBy typecheck(env, "(1, 2L)._3")
 
     // tuple as collection
     typecheck(env, "(1, 2L).size") shouldBe SInt

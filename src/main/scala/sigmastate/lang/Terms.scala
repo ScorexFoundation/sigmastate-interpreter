@@ -7,6 +7,7 @@ import sigmastate._
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
+import sigmastate.lang.TransformingSigmaBuilder._
 
 object Terms {
 
@@ -19,10 +20,17 @@ object Terms {
     def tpe: SType = result.tpe
   }
   object Block {
-    def apply(let: Let, result: SValue)(implicit o1: Overload1): Block = Block(Seq(let), result)
+    def apply(let: Let, result: SValue)(implicit o1: Overload1): Block =
+      Block(Seq(let), result)
   }
 
-  case class Let(name: String, givenType: SType, body: SValue) extends Value[SType] {
+  trait Let extends Value[SType] {
+    val name: String
+    val givenType: SType
+    val body: SValue
+  }
+
+  case class LetNode(name: String, givenType: SType, body: SValue) extends Let {
     override val opCode: OpCode = OpCodes.Undefined
 
     override def cost[C <: Context[C]](context: C): Long = ???
@@ -31,7 +39,12 @@ object Terms {
     def tpe: SType = givenType ?: body.tpe
   }
   object Let {
-    def apply(name: String, value: SValue): Let = Let(name, NoType, value)
+    def apply(name: String, body: SValue): Let = LetNode(name, NoType, body)
+    def apply(name: String, givenType: SType, body: SValue): Let = LetNode(name, givenType, body)
+    def unapply(v: SValue): Option[(String, SType, SValue)] = v match {
+      case LetNode(name, givenType, body) => Some((name, givenType, body))
+      case _ => None
+    }
   }
 
   case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {
@@ -136,7 +149,7 @@ object Terms {
         s"Invalid upcast from $tV to $targetType: target type should be larger than source type.")
       if (targetType == tV.tpe) v.asValue[T]
       else
-        Upcast(tV, targetType)
+        mkUpcast(tV, targetType)
     }
   }
 }

@@ -23,11 +23,11 @@ object SigmaParser extends Exprs with Types with Core {
   }
 
   val FunDef = {
-    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => Let(name, lam) }
+    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => builder.mkLet(name, NoType, lam) }
   }
 
   val ValVarDef = P( BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
-    case (Ident(n,_), t, body) => Let(n, t.getOrElse(NoType), body)
+    case (Ident(n,_), t, body) => builder.mkLet(n, t.getOrElse(NoType), body)
     case (pat,_,_) => error(s"Only single name patterns supported but was $pat")
   }
 
@@ -64,20 +64,18 @@ object SigmaParser extends Exprs with Types with Core {
     case ">"  => GT(l, r)
     case "<=" => LE(l, r)
     case "<"  => LT(l, r)
-    case "+"  => builder.Plus(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "-"  => builder.Minus(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "|"  => Xor(l.asValue[SByteArray], r.asValue[SByteArray])
-    case "++" => MethodCall(l, "++", IndexedSeq(r))
-    case "^"  => Exponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
-    case "*"  => MethodCall(l, "*", IndexedSeq(r))
-    case "/"  => builder.Divide(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "%"  => builder.Modulo(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "+"  => builder.mkPlus(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "-"  => builder.mkMinus(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "|"  => builder.mkXor(l.asValue[SByteArray], r.asValue[SByteArray])
+    case "++" => builder.mkMethodCall(l, "++", IndexedSeq(r))
+    case "^"  => builder.mkExponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
+    case "*"  => builder.mkMethodCall(l, "*", IndexedSeq(r))
+    case "/"  => builder.mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])
+    case "%"  => builder.mkModulo(l.asValue[SLong.type], r.asValue[SLong.type])
     case _ => error(s"Unknown binary operation $opName")
   }
 
-  private var builder: SigmaBuilder = StdSigmaBuilder
-
-  def apply(str: String, sigmaBuilder: SigmaBuilder = StdSigmaBuilder): core.Parsed[Value[_ <: SType], Char, String] = {
+  def apply(str: String, sigmaBuilder: SigmaBuilder): core.Parsed[Value[_ <: SType], Char, String] = {
     builder = sigmaBuilder
     (StatCtx.Expr ~ End).parse(str)
   }

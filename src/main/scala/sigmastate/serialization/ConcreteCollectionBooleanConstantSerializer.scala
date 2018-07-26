@@ -1,11 +1,11 @@
 package sigmastate.serialization
 
-import sigmastate.SBoolean
+import sigmastate.{SBoolean, SCollection}
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{ByteReader, ByteWriter}
 
-object ConcreteCollectionBooleanConstantSerializer
+case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[SBoolean.type]], SBoolean.type) => Value[SCollection[SBoolean.type]])
   extends ValueSerializer[ConcreteCollection[SBoolean.type]] {
 
   override val opCode: Byte = ConcreteCollectionBooleanConstantCode
@@ -19,9 +19,9 @@ object ConcreteCollectionBooleanConstantSerializer
       }.toArray)
   }
 
-  override def parseBody(r: ByteReader): ConcreteCollection[SBoolean.type] = {
+  override def parseBody(r: ByteReader): Value[SCollection[SBoolean.type]] = {
     val size = r.getUShort()
     val booleanConstants = r.getBits(size).map(v => BooleanConstant.fromBoolean(v))
-    ConcreteCollection(booleanConstants, SBoolean)
+    cons(booleanConstants, SBoolean)
   }
 }

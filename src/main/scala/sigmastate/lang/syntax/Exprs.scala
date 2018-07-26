@@ -3,8 +3,8 @@ package sigmastate.lang.syntax
 import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Lambda, ApplyTypes, Let, MethodCall, Apply, ValueOps, Select, Ident}
-import sigmastate.lang.{Terms, syntax, Types}
+import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, Let, MethodCall, Select, ValueOps}
+import sigmastate.lang._
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec
@@ -39,7 +39,7 @@ trait Exprs extends Core with Types {
       val If = {
         val Else = P( Semi.? ~ `else` ~/ Expr )
         P( `if` ~/ "(" ~ ExprCtx.Expr ~ ")" ~ Expr ~ Else ).map {
-          case (c, t, e) => sigmastate.If(c.asValue[SBoolean.type], t, e)
+          case (c, t, e) => builder.mkIf(c.asValue[SBoolean.type], t, e)
         }
       }
       val Fun = P( `fun` ~/ LambdaDef)
@@ -92,7 +92,7 @@ trait Exprs extends Core with Types {
         val obj = mkInfixTree(lhs, infixOps)
         postfix.fold(obj) {
           case Ident(name, _) =>
-            MethodCall(obj, name, IndexedSeq.empty)
+            builder.mkMethodCall(obj, name, IndexedSeq.empty)
         }
     }
 
@@ -107,27 +107,27 @@ trait Exprs extends Core with Types {
         | Parened.map(items =>
             if (items.isEmpty) UnitConstant
             else if (items.lengthCompare(1) == 0) items.head
-            else Tuple(items)) )
+            else builder.mkTuple(items)) )
     }
     val Guard : P0 = P( `if` ~/ PostfixExpr ).ignore
   }
 
   protected def mkIdent(nameParts: String, tpe: SType = NoType): SValue = {
-    Ident(nameParts, tpe)
+    builder.mkIdent(nameParts, tpe)
   }
 
   protected def mkLambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
     val names = args.map { case Ident(n, t) => (n, t) }
-    Lambda(names.toIndexedSeq, NoType, body)
+    builder.mkLambda(names.toIndexedSeq, NoType, Some(body))
   }
 
   protected def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType] = (func, args) match {
-    case _ => Apply(func, args)
+    case _ => builder.mkApply(func, args)
   }
 
   def mkApplyTypes(input: Value[SType], targs: IndexedSeq[SType]): Value[SType] = {
 //    val subst = targs.zipWithIndex.map { case (t, i) => (STypeIdent(s"_${i + 1}") -> t) }.toMap
-    ApplyTypes(input, targs)
+    builder.mkApplyTypes(input, targs)
   }
 
   /** The precedence of an infix operator is determined by the operator's first character.
@@ -181,7 +181,7 @@ trait Exprs extends Core with Types {
 
   protected def applySuffix(f: Value[SType], args: Seq[SigmaNode]): Value[SType] = {
     val rhs = args.foldLeft(f)((acc, arg) => arg match {
-      case Ident(name, _) => Select(acc, name)
+      case Ident(name, _) => builder.mkSelect(acc, name)
       case UnitConstant => mkApply(acc, IndexedSeq.empty)
       case Tuple(xs) => mkApply(acc, xs)
       case STypeApply("", targs) => mkApplyTypes(acc, targs)
@@ -194,7 +194,7 @@ trait Exprs extends Core with Types {
   val LambdaDef = {
     val Body = P( WL ~ `=` ~ StatCtx.Expr )
     P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-      case (_ @ Seq(args), resType, body) => Lambda(args.toIndexedSeq, resType.getOrElse(NoType), body)
+      case (_ @ Seq(args), resType, body) => builder.mkLambda(args.toIndexedSeq, resType.getOrElse(NoType), Some(body))
       case (secs, resType, body) => error(s"Function can only have single argument list: fun ($secs): $resType = $body")
     }
   }
@@ -231,7 +231,7 @@ trait Exprs extends Core with Types {
 
   protected def mkBlock(stats: Seq[SValue]): SValue = {
     val (lets, body) = extractBlockStats(stats)
-    Terms.Block(lets, body)
+    builder.mkBlock(lets, body)
   }
 
   def BaseBlock(end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
@@ -254,7 +254,7 @@ trait Exprs extends Core with Types {
 
   val TypePat = P( CompoundType )
   val ParenArgList = P( "(" ~/ Exprs /*~ (`:` ~/ `_*`).?*/.? ~ TrailingComma ~ ")" ).map {
-    case Some(exprs) => Tuple(exprs)
+    case Some(exprs) => builder.mkTuple(exprs)
     case None => UnitConstant
   }
   val ArgList = P( ParenArgList | OneNLMax ~ BlockExpr )

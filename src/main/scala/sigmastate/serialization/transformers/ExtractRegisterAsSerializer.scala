@@ -1,15 +1,17 @@
 package sigmastate.serialization.transformers
 
 import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.ExtractRegisterAs
 import sigmastate.{SBox, SType}
-import sigmastate.utils.Extensions._
 
-object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[SType]] {
+case class ExtractRegisterAsSerializer(cons: (Value[SBox.type], RegisterId, SType, Option[Value[SType]]) => Value[SType])
+  extends ValueSerializer[ExtractRegisterAs[SType]] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
 
   override def serializeBody(obj: ExtractRegisterAs[SType], w: ByteWriter): Unit =
@@ -18,13 +20,12 @@ object ExtractRegisterAsSerializer extends ValueSerializer[ExtractRegisterAs[STy
       .putOption(obj.default)((w, v) => w.putValue(v))
       .putType(obj.tpe)
 
-  override def parseBody(r: ByteReader): ExtractRegisterAs[SType] = {
+  override def parseBody(r: ByteReader): Value[SType] = {
     val input = r.getValue()
     val regId = r.getByte()
     val register = ErgoBox.findRegisterByIndex(regId).get
     val defaultValue = r.getOption(r.getValue())
     val tpe = r.getType()
-    ExtractRegisterAs(input.asInstanceOf[Value[SBox.type]], register, defaultValue)(tpe)
+    cons(input.asInstanceOf[Value[SBox.type]], register, tpe, defaultValue)
   }
-
 }

@@ -6,7 +6,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, TyperException}
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
@@ -19,8 +19,9 @@ import scala.collection.mutable.ArrayBuffer
   * from the AST, and one (tipe2) that represents names by references to the
   * nodes of their binding lambda expressions.
   */
-class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
+class SigmaTyper(val builder: SigmaBuilder) {
   import SigmaTyper._
+  import builder._
 
   /** Most Specific Generalized (MSG) type of ts.
     * Currently just the type of the first element as long as all the elements have the same type. */
@@ -48,13 +49,13 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
-        bs1 += Let(n, b1.tpe, b1)
+        bs1 += mkLet(n, b1.tpe, b1)
       }
       val res1 = assignType(curEnv, res)
-      Block(bs1, res1)
+      mkBlock(bs1, res1)
 
     case Tuple(items) =>
-      Tuple(items.map(assignType(env, _)))
+      mkTuple(items.map(assignType(env, _)))
 
     case c @ ConcreteCollection(items, _) =>
       val newItems = items.map(assignType(env, _))
@@ -67,11 +68,11 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         msgTypeOf(types).getOrElse(
           error(s"All element of array $c should have the same type but found $types"))
       }
-      ConcreteCollection(newItems)(tItem)
+      mkConcreteCollection(newItems, tItem)
 
     case Ident(n, _) =>
       env.get(n) match {
-        case Some(t) => Ident(n, t)
+        case Some(t) => mkIdent(n, t)
         case None => error(s"Cannot assign type for variable '$n' because it is not found in env $env")
       }
 
@@ -83,7 +84,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       }
       else
         error(s"Cannot find field '$n' in the object $obj of Sigma type with fields ${obj.fields}")
-      Select(newObj, n, Some(tRes))
+      mkSelect(newObj, n, Some(tRes))
 
     case sel @ Select(obj, n, None) =>
       val newObj = assignType(env, obj)
@@ -93,8 +94,8 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
           val tRes = if (iField != -1) {
             s.methods(iField).stype
           } else
-            error(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}")
-          Select(newObj, n, Some(tRes))
+            throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}")
+          mkSelect(newObj, n, Some(tRes))
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t")
       }
@@ -109,7 +110,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         if (newBody.isDefined && t != newBody.get.tpe)
           error(s"Invalid function $lam: resulting expression type ${newBody.get.tpe} doesn't equal declared type $t")
       }
-      val res = Lambda(args, newBody.fold(t)(_.tpe), newBody)
+      val res = mkLambda(args, newBody.fold(t)(_.tpe), newBody)
       res
 
     case app @ Apply(sel @ Select(obj, n, _), args) =>
@@ -123,13 +124,13 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
-              val newApply = Apply(Select(newObj, n, Some(concrFunTpe)), newArgs)
+              val newApply = mkApply(mkSelect(newObj, n, Some(concrFunTpe)), newArgs)
               newApply
             case None =>
               error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
           }
         case _ =>
-          Apply(newSel, args.map(assignType(env, _)))
+          mkApply(newSel, args.map(assignType(env, _)))
       }
 
     case app @ Apply(f, args) =>
@@ -146,17 +147,17 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
           val actualTypes = newArgs.map(_.tpe)
           if (actualTypes != argTypes)
             error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
-          Apply(new_f, newArgs)
+          mkApply(new_f, newArgs)
         case _: SCollectionType[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
             case Seq(Constant(index, _: SNumericType)) =>
-              ByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), None)
+              mkByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), None)
             case Seq(index) =>
               val typedIndex = assignType(env, index)
               typedIndex.tpe match {
                 case _: SNumericType =>
-                  ByIndex[SType](new_f.asCollection, typedIndex.upcastTo(SInt), None)
+                  mkByIndex[SType](new_f.asCollection, typedIndex.upcastTo(SInt), None)
                 case _ =>
                   error(s"Invalid argument type of array application $app: expected numeric type; actual: ${typedIndex.tpe}")
               }
@@ -168,12 +169,12 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
           args match {
             case Seq(Constant(index, _: SNumericType)) =>
               val fieldIndex = SByte.downcast(index.asInstanceOf[AnyVal]) + 1
-              SelectField(new_f.asTuple, fieldIndex.toByte)
+              mkSelectField(new_f.asTuple, fieldIndex.toByte)
             case Seq(index) =>
               val typedIndex = assignType(env, index)
               typedIndex.tpe match {
                 case _: SNumericType =>
-                  ByIndex(new_f.asCollection[SAny.type], typedIndex.upcastTo(SInt), None)
+                  mkByIndex(new_f.asCollection[SAny.type], typedIndex.upcastTo(SInt), None)
                 case _ =>
                   error(s"Invalid argument type of tuple application $app: expected numeric type; actual: ${typedIndex.tpe}")
               }
@@ -191,7 +192,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         case tCol: SCollectionType[a] => (m, newArgs) match {
           case ("++", Seq(r)) =>
             if (r.tpe == tCol)
-              Append(newObj.asCollection[a], r.asCollection[a])
+              mkAppend(newObj.asCollection[a], r.asCollection[a])
             else
               error(s"Invalid argument type for $m, expected $tCol but was ${r.tpe}")
           case _ =>
@@ -200,7 +201,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         case SGroupElement => (m, newArgs) match {
           case ("*", Seq(r)) =>
             if (r.tpe == SGroupElement)
-              MultiplyGroup(newObj.asGroupElement, r.asGroupElement)
+              mkMultiplyGroup(newObj.asGroupElement, r.asGroupElement)
             else
               error(s"Invalid argument type for $m, expected $SGroupElement but was ${r.tpe}")
           case _ =>
@@ -209,7 +210,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
         case nl: SNumericType => (m, newArgs) match {
           case ("*", Seq(r)) => r.tpe match {
             case nr: SNumericType =>
-              bimap(env, "*", newObj.asNumValue, r.asNumValue)(builder.Multiply)(tT, tT)
+              bimap(env, "*", newObj.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }
@@ -229,7 +230,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
             error(s"Wrong number of type arguments $app: expected $tyVars but provided $targs")
           val subst = tyVars.zip(targs).toMap
           val concrFunTpe = applySubst(genFunTpe, subst).asFunc
-          Select(obj, n, Some(concrFunTpe.tRange))
+          mkSelect(obj, n, Some(concrFunTpe.tRange))
         case _ =>
           error(s"Invalid application of type arguments $app: function $sel doesn't have type parameters")
       }
@@ -241,7 +242,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val c1 = assignType(env, c).asValue[SBoolean.type]
       val t1 = assignType(env, t)
       val e1 = assignType(env, e)
-      val ite = If(c1, t1, e1)
+      val ite = mkIf(c1, t1, e1)
       if (c1.tpe != SBoolean)
         error(s"Invalid type of condition in $ite: expected Boolean; actual: ${c1.tpe}")
       if (t1.tpe != e1.tpe)
@@ -252,36 +253,36 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val input1 = assignType(env, input).asValue[SCollection[SBoolean.type]]
       if (!(input1.tpe.isCollection && input1.tpe.elemType == SBoolean))
         error(s"Invalid operation AND: $op")
-      AND(input1)
+      mkAND(input1)
 
     case op @ OR(input) =>
       val input1 = assignType(env, input).asValue[SCollection[SBoolean.type]]
       if (!(input1.tpe.isCollection && input1.tpe.elemType == SBoolean))
         error(s"Invalid operation OR: $op")
-      OR(input1)
+      mkOR(input1)
 
-    case GE(l, r) => bimap(env, ">=", l, r)(builder.GE[SType])(tT, SBoolean)
-    case LE(l, r) => bimap(env, "<=", l, r)(builder.LE[SType])(tT, SBoolean)
-    case GT(l, r) => bimap(env, ">", l, r) (builder.GT[SType])(tT, SBoolean)
-    case LT(l, r) => bimap(env, "<", l, r) (builder.LT[SType])(tT, SBoolean)
-    case EQ(l, r) => bimap2(env, "==", l, r)(builder.EQ[SType])
-    case NEQ(l, r) => bimap2(env, "!=", l, r)(builder.NEQ[SType])
+    case GE(l, r) => bimap(env, ">=", l, r)(mkGE[SType])(tT, SBoolean)
+    case LE(l, r) => bimap(env, "<=", l, r)(mkLE[SType])(tT, SBoolean)
+    case GT(l, r) => bimap(env, ">", l, r) (mkGT[SType])(tT, SBoolean)
+    case LT(l, r) => bimap(env, "<", l, r) (mkLT[SType])(tT, SBoolean)
+    case EQ(l, r) => bimap2(env, "==", l, r)(mkEQ[SType])
+    case NEQ(l, r) => bimap2(env, "!=", l, r)(mkNEQ[SType])
 
-    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(builder.Minus)(tT, tT)
-    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(builder.Plus)(tT, tT)
-    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(builder.Multiply)(tT, tT)
-    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(builder.Modulo)(tT, tT)
-    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(builder.Divide)(tT, tT)
+    case ArithOp(l, r, OpCodes.MinusCode) => bimap(env, "-", l.asNumValue, r.asNumValue)(mkMinus)(tT, tT)
+    case ArithOp(l, r, OpCodes.PlusCode) => bimap(env, "+", l.asNumValue, r.asNumValue)(mkPlus)(tT, tT)
+    case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
+    case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(mkModulo)(tT, tT)
+    case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(mkDivide)(tT, tT)
     
-    case Xor(l, r) => bimap(env, "|", l, r)(Xor)(SByteArray, SByteArray)
-    case MultiplyGroup(l, r) => bimap(env, "*", l, r)(MultiplyGroup)(SGroupElement, SGroupElement)
+    case Xor(l, r) => bimap(env, "|", l, r)(mkXor)(SByteArray, SByteArray)
+    case MultiplyGroup(l, r) => bimap(env, "*", l, r)(mkMultiplyGroup)(SGroupElement, SGroupElement)
 
     case Exponentiate(l, r) =>
       val l1 = assignType(env, l).asGroupElement
       val r1 = assignType(env, r).asBigInt
       if (l1.tpe != SGroupElement || r1.tpe != SBigInt)
         error(s"Invalid binary operation Exponentiate: expected argument types ($SGroupElement, $SBigInt); actual: (${l.tpe}, ${r.tpe})")
-      Exponentiate(l1, r1)
+      mkExponentiate(l1, r1)
 
     case ByIndex(col, i, defaultValue) =>
       val c1 = assignType(env, col).asCollection[SType]
@@ -297,7 +298,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
       val c1 = assignType(env, col).asCollection[SType]
       if (!c1.tpe.isCollectionLike)
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})")
-      SizeOf(c1)
+      mkSizeOf(c1)
     
     case Height => Height
     case Self => Self
@@ -310,6 +311,7 @@ class SigmaTyper(val builder: SigmaBuilder = TransformingSigmaBuilder) {
     case v: ContextVariable[_] => v
     case v: EvaluatedValue[_] => v
     case v: SigmaBoolean => v
+    case v: Upcast[_, _] => v
     case v => error(s"Don't know how to assignType($v)")
   }
 

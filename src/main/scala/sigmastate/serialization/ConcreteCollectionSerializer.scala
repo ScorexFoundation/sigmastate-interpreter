@@ -1,12 +1,13 @@
 package sigmastate.serialization
 
-import sigmastate.SType
+import sigmastate.{SCollection, SType}
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utils.Extensions._
 
-object ConcreteCollectionSerializer extends ValueSerializer[ConcreteCollection[_ <: SType]] {
+case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) => Value[SCollection[SType]])
+  extends ValueSerializer[ConcreteCollection[_ <: SType]] {
 
   override val opCode: Byte = ConcreteCollectionCode
 
@@ -16,11 +17,11 @@ object ConcreteCollectionSerializer extends ValueSerializer[ConcreteCollection[_
     cc.items.foreach(w.putValue)
   }
 
-  override def parseBody(r: ByteReader): ConcreteCollection[SType] = {
+  override def parseBody(r: ByteReader): Value[SCollection[SType]] = {
     val size = r.getUShort()
     val tItem = r.getType()
     val values =  (1 to size).map(_ => r.getValue())
     assert(values.forall(_.tpe == tItem), s"Invalid type of collection value")
-    ConcreteCollection[SType](values)(tItem)
+    cons(values, tItem)
   }
 }

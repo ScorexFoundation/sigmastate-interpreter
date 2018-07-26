@@ -1,13 +1,14 @@
 package sigmastate.serialization
 
-import sigmastate.STuple
+import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
+import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.SelectField
-import sigmastate.utils.Extensions._
+import sigmastate.{STuple, SType}
 
-object SelectFieldSerializer extends ValueSerializer[SelectField] {
+case class SelectFieldSerializer(cons: (Value[STuple], Byte) => Value[SType]) extends ValueSerializer[SelectField] {
 
   override val opCode: Byte = SelectFieldCode
 
@@ -15,10 +16,10 @@ object SelectFieldSerializer extends ValueSerializer[SelectField] {
     w.putValue(obj.input)
       .put(obj.fieldIndex)
 
-  override def parseBody(r: ByteReader): SelectField = {
+  override def parseBody(r: ByteReader): Value[SType] = {
     val tuple = r.getValue().asValue[STuple]
     val fieldIndex = r.getByte()
-    SelectField(tuple, fieldIndex)
+    cons(tuple, fieldIndex)
   }
 
 }

@@ -1,9 +1,10 @@
 package sigmastate.lang
 
-import sigmastate.Values.SValue
-import sigmastate._
 import sigmastate.SCollection.SByteArray
-import sigmastate.lang.Terms.{Lambda, Ident}
+import sigmastate.Values.{SValue, Value}
+import sigmastate._
+import sigmastate.lang.Terms.Lambda
+import sigmastate.lang.TransformingSigmaBuilder._
 
 object SigmaPredef {
 
@@ -21,27 +22,27 @@ object SigmaPredef {
   private val tT = STypeIdent("T")
 
   val predefinedEnv: Map[String, SValue] = Seq(
-    "allOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-    "anyOf" -> Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-    "blake2b256" -> Lambda(Vector("input" -> SByteArray), SByteArray, None),
-    "sha256" -> Lambda(Vector("input" -> SByteArray), SByteArray, None),
-    "byteArrayToBigInt" -> Lambda(Vector("input" -> SByteArray), SBigInt, None),
-    "longToByteArray" -> Lambda(Vector("input" -> SLong), SByteArray, None),
-//    "intToBigInt" -> Lambda(Vector("input" -> SLong), SBigInt, None),
-    "intToByte" -> Lambda(Vector("input" -> SInt), SByte, None),
+    "allOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+    "anyOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+    "blake2b256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
+    "sha256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
+    "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
+    "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
+//    "intToBigInt" -> mkLambda(Vector("input" -> SLong), SBigInt, None),
+    "intToByte" -> mkLambda(Vector("input" -> SInt), SByte, None),
 
-    "getVar" -> Lambda(Vector("varId" -> SByte), tT, None),
+    "getVar" -> mkLambda(Vector("varId" -> SByte), tT, None),
 
-    "proveDHTuple" -> Lambda(Vector(
+    "proveDHTuple" -> mkLambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),
-    "proveDlog" -> Lambda(Vector("value" -> SGroupElement), SBoolean, None),
-    "isMember" -> Lambda(Vector(
+    "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SBoolean, None),
+    "isMember" -> mkLambda(Vector(
        "tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
   ).toMap
 
-  def PredefIdent(name: String) = {
+  def PredefIdent(name: String): Value[SType] = {
     val v = predefinedEnv(name)
-    Ident(name, v.tpe)
+    mkIdent(name, v.tpe)
   }
 
   val AllSym = PredefIdent("allOf")
