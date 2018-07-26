@@ -5,6 +5,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
@@ -95,7 +96,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers.get(opCode)
-    if (serializer == null) sys.error(s"Cannot find serializer for Value with opCode=$opCode")
+    if (serializer == null)
+      throw new InvalidOpCode(s"Cannot find serializer for Value with opCode=$opCode")
     serializer
   }
 
@@ -110,8 +112,15 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   override def deserialize(r: ByteReader): Value[SType] = {
+    val bytesRemaining = r.remaining
+    if (bytesRemaining > Serializer.MaxInputSize)
+      throw new InputSizeLimitExceeded(s"input size $bytesRemaining exceeds ${ Serializer.MaxInputSize}")
+    val depth = r.level
+    if (depth > Serializer.MaxTreeDepth)
+      throw new ValueDeserializeCallDepthExceeded(s"nested value deserialization call depth($depth) exceeds allowed maximum ${Serializer.MaxTreeDepth}")
+    r.level = depth + 1
     val firstByte = r.peekByte()
-    if (firstByte.toUByte <= LastConstantCode) {
+    val v = if (firstByte.toUByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
       ConstantSerializer(builder).deserialize(r)
     }
@@ -119,6 +128,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       val opCode = r.getByte()
       getSerializer(opCode).parseBody(r)
     }
+    r.level = depth - 1
+    v
   }
 
   def serialize(v: Value[SType]): Array[Byte] = {

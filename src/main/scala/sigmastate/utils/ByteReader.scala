@@ -2,11 +2,9 @@ package sigmastate.utils
 
 import java.nio.ByteBuffer
 import java.util._
+import java.util.concurrent.atomic.AtomicInteger
 
-import sigmastate.Values.SValue
-import sigmastate.SType
 import sigmastate.utils.Extensions._
-import sigmastate.serialization.{TypeSerializer, ValueSerializer}
 import sigmastate.utils.ByteBufferReader.decodeZigZagLong
 
 trait ByteReader {
@@ -69,8 +67,13 @@ trait ByteReader {
   def position: Int
   def position_=(p: Int)
   def remaining: Int
+  def level: Int
+  def level_=(v: Int)
 }
 
+/**
+  * Not thread safe
+  */
 class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
 
   @inline override def peekByte(): Byte = buf.array()(buf.position())
@@ -82,8 +85,13 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
     * Decode Short previously encoded with [[ByteArrayWriter.putUShort]] using VLQ.
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
     * @return Int
+    * @throws AssertionError for deserialized values not in unsigned Short range
     */
-  @inline override def getUShort(): Int = getUInt().toInt
+  @inline override def getUShort(): Int = {
+    val x = getULong().toInt
+    assert(x >= 0 && x <= 0xFFFF, s"$x is out of unsigned short range")
+    x
+  }
 
   /**
     * Decode signed Int previously encoded with [[ByteArrayWriter.putInt]] using VLQ with ZigZag.
@@ -102,7 +110,11 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
     * @see [[https://en.wikipedia.org/wiki/Variable-length_quantity]]
     * @return Long
     */
-  @inline override def getUInt(): Long = getULong()
+  @inline override def getUInt(): Long = {
+    val x = getULong()
+    assert(x >= 0L && x <= 0xFFFFFFFFL, s"$x is out of unsigned int range")
+    x
+  }
 
   /**
     * Decode signed Long previously encoded with [[ByteArrayWriter.putLong]] using VLQ with ZigZag.
@@ -163,6 +175,10 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   @inline override def position_=(p: Int): Unit = buf.position(p)
 
   @inline override def remaining: Int = buf.remaining()
+
+  private var lvl: Int = 0
+  override def level: Int = lvl
+  override def level_=(v: Int): Unit = lvl = v
 }
 
 object ByteBufferReader {
