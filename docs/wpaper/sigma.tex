@@ -23,7 +23,7 @@
 
 \newcommand{\lnote}[1]{{\authnote{\textcolor{orange}{Leo notes}}{#1}}}
 \newcommand{\knote}[1]{{\authnote{\textcolor{green}{kushti notes}}{#1}}}
-\newcommand{\mnote}[1]{{\authnote{\textcolor{blue}{morphic notes}}{#1}}}
+\newcommand{\mnote}[1]{{\authnote{\textcolor{red}{Morphic}}{#1}}}
 \newcommand{\dnote}[1]{{\authnote{\textcolor{brown}{Dima notes}}{#1}}}
 
 \newcommand{\ret}{\mathsf{ret}}
@@ -141,8 +141,39 @@ The simplest script allows the owner of a public key to spend an output box in a
 
 \lnote{when is it enough to just write pk and when do you need proveDlog(pk)? I see that ComplexSigSpecification uses the former, while ErgoLikeInterpreterSpecification (property ``Prove keys from registers'') uses the latter.}
 
-In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key. Thus, the constant public key is hardwired into the script at compile time. When the script is later evaluated (i.e., when the box is used as a transaction input), a $\Sigma$-proof of knowledge of the corresponding secret key must be supplied by the prover. 
+\mnote{ In ComplexSigSpecification \texttt{pubkeyA} has Scala type ProveDlog
+and \langname type Boolean. In ErgoLikeInterpreterSpecification pubkey1 has
+type GroupElement and proveDlog is a function returning Boolean. However,
+both cases have semantic problems. In the first case ProveDlog is not
+Boolean, because Boolean have two values True and False and ProveDlog is
+neither of them. In second case proveDlog computing Boolean (i.e. True
+$\vert$ False) from group element which doesn't make sense at all. Why it
+works? Because current implementation uses special Trick, it allow ProveDlog
+to be in position where Boolean value is expected and reduction procedure
+(reduceToCripto) knows what to do with this. Thus proveDlog function
+constructs ProveDlog(ge) from given ge and returns it as if it is Boolean
+(which is not, but remeber The Trick! ). ProveDlog is special not only
+because it CAN be used in place of Boolean, but also because it CANNOT be
+stored in context parameter and in register of the Box. The reason for this
+again lies in types. Suppose we want to put some value of ProveDlog type in
+context variable with id=1. Then we can access this value from \langname in
+expression like \texttt{getVar[Boolean](1) \&\& c2 $\vert \vert$ c3}. This is
+ok, because of The Trick. However, the following is illegal
+\texttt{getVar[Boolean](1).propBytes}, because Boolean cannot have such
+property, and the type checker of \langname rejects this expression. Because
+it see that getVar returns Boolean and Booleans cannot have properties.
+}
+
+In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to be supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key. Thus, the constant public key is hardwired into the script at compile time. When the script is later evaluated (i.e., when the box is used as a transaction input), a $\Sigma$-proof of knowledge of the corresponding secret key must be supplied by the prover. 
 \lnote{it is unclear to me how to create environments outside of Scala code, so I am not exactly sure what to write here, because typed objects live inside Scala. The description in LangSpec.md is confusing me: I understand that you want variables of type Sigma to be parameters to the script, but in most situations they need to specified (hardwired as constants) when the script is created, because the script has specific public keys in mind. So how do you specify which public keys you have in mind? The runtime shouldn't be able to change that specification.}
+
+\mnote{All global names in \langname are resolved at compile time.
+Compile time is when script text is transformed to a serialized byte array,
+which is later put into the blockchain. Environment is a compile-time data
+structure to resolve names, it is used by the compiler and should be created
+by the application before the compiler invocation. I planned to use
+parameters of the \texttt{guard} construction shown in LangSpec.md examples.
+However this has never been implemented. }
 
 A slightly more complex script may allow either one of two people to spend an box. If Alice owns public key \texttt{pkA}  and Bob owns public key \texttt{pkB} (with corresponding secret key \texttt{skA} and \texttt{skB}), then the script that would allow either one of them to spend the box is
 \begin{verbatim}
@@ -304,26 +335,40 @@ The remaining six registers can be used arbitrarily. The type of the register ne
 
 \lnote{What's box.bytes and box.byteWithNoRef? are they available to a script?}
 
+\mnote{box.bytes are available and equivalent to serialization of all Box data.
+box.byteWithNoRef is also available and equivalent to ErgoBoxCandidate serialization which doesn't include transactionId and index of the Box.}
+
 \paragraph{Example: atomic exchange on a single block chain}
-These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want exchange tokens: they agree that  Alice will give Bob 60 tokens of type ``token1'' in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with following script:
+These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that  Alice will give Bob 60 tokens of type \texttt{token1} in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with following script:
 
 \begin{verbatim}
-        (HEIGHT>deadline && pkA) || 
-        allOf( Array(
-                OUTPUTS(0).R3[(ByteArray, Int)]._1 == "token1",
-                OUTPUTS(0).R3[(ByteArray, Int)]._2 >= 60, 
-                OUTPUTS(0).propositionBytes == pkA.propBytes,
-        ))
+  (HEIGHT > deadline && pkA) || {
+    let tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].value(0)
+    allOf(Array(
+        tokenData._1 == token1,
+        tokenData._2 >= 60L,
+        OUTPUTS(0).propositionBytes == pkA.propBytes,
+        OUTPUTS(0).value >= 1L
+    ))
+  }
 \end{verbatim}
 
 This script ensures that the box can be spent only in a transaction that produces an output with 60 tokens of type token1 and gives them to Alice (Alice can reclaim the box after the deadline). 
 
 \lnote{the above doesn't work for some reason --- I get a parser exception ``ParserException: Unsupported type (Array[SByte],ArrayBuffer())''. What am I doing wrong?}
 
+\mnote{ We currently don't have string literals "token1", we don't even have
+String type. Here we actually need ByteArray type to compare with the second
+component of the pair. The values of such type cannot be written in the
+script directly using literal syntax. They can be passed as environment
+variables, which are resolved at compile time and replaced in the script by
+constants of the corresponding type. Alternatively they can be passed as
+context vars (getVar[T](id) syntax) or as registers. }
+
 Bob, similarly, could create an output box with value 0
 \lnote{for some reason the example in the code wants value 1 --- why? It's not explained.} and 60 tokens of type ``token1'' and protect it by the following script:
 \begin{verbatim}
-        (HEIGHT>deadline && pkB) || 
+        (HEIGHT > deadline && pkB) || 
         allOf( Array( 
                 OUTPUTS(1).value >= 100,
                 OUTPUTS(1).propositionBytes == pkB.propBytes
@@ -331,7 +376,7 @@ Bob, similarly, could create an output box with value 0
 \end{verbatim}
 
 \lnote{The above code does not match, when compiled, the proposition in AssetsAtomicExchangeSpecification.scala. I don't understand why.}
-
+\mnote{The order of arguments of AND matters.}
 A transaction containing these two boxes as inputs must produce two outputs: the first giving at least 60 tokens of type1 to Alice and the second giving at least 100 tokens of type2 to Bob. Once the two boxes are on the blockchain, anyone can create such a transaction using the two boxes as inputs, and thus effect the exchange between Alice and Bob. Unlike the cross-chain trading example above using hashing (which requires one side to go first), there are no potential problems with synchronization here, because the exchange will happen in a single transaction or will not happen at all.
 
 We caution that for security, Alice cannot have two such boxes outstanding at any given time, because they can be both used in a single transaction that contains just one output with 60 tokens of type ``token1" --- the script of each box will be individually satisfied, but Alice will get less only half of what owed to her. Same for Bob.

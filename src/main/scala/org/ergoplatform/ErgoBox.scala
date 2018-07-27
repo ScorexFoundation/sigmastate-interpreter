@@ -6,11 +6,12 @@ import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scorex.crypto.authds.ADKey
 import scorex.crypto.encode.Base16
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{ByteWriter, ByteReader}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -86,6 +87,8 @@ object ErgoBox {
   object TokenId {
     val size: Short = 32
   }
+  val STokenType = STuple(SByteArray, SLong)
+  val STokensRegType = SCollection(STokenType)
 
   type Amount = Long
 

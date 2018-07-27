@@ -141,6 +141,9 @@ class SigmaSpecializer {
       val defaultValue1 = eval(env, defaultValue).asValue[SType]
       Some(ByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
+    case Apply(col, Seq(index)) if col.tpe.isCollection =>
+      Some(ByIndex(col.asCollection[SType], index.asValue[SInt.type]))
+
     case opt: OptionValue[_] =>
       error(s"Option constructors are not supported: $opt")
 

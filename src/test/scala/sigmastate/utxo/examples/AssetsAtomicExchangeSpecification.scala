@@ -2,10 +2,10 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant, Value}
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{ByteArrayConstant, Value, LongConstant, IntConstant}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
-import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -40,19 +40,17 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeInterpreter
 
     val tokenId = Blake2b256("token1")
-
+    val deadline = 70L
     val tokenBuyerKey = tokenBuyer.dlogSecrets.head.publicImage
     val tokenSellerKey = tokenBuyer.dlogSecrets.head.publicImage
 
-    val buyerKeyBytes = ValueSerializer.serialize(tokenBuyerKey)
-    val sellerKeyBytes = ValueSerializer.serialize(tokenSellerKey)
+    val buyerKeyBytes = tokenBuyerKey.bytes
+    val sellerKeyBytes = tokenSellerKey.bytes
 
-    val tokenTypeEv = SCollection(STuple(SCollection.SByteArray, SLong))
-
-    def extractToken(box: Value[SBox.type]) = ByIndex(ExtractRegisterAs(box, ErgoBox.TokensRegId)(tokenTypeEv), 0)
+    def extractToken(box: Value[SBox.type]) = ByIndex(ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType), 0)
 
     def extractTokenId(box: Value[SBox.type]) =
-      SelectField(extractToken(box), 1).asInstanceOf[Value[SCollection.SByteArray]]
+      SelectField(extractToken(box), 1).asInstanceOf[Value[SByteArray]]
 
     def extractTokenAmount(box: Value[SBox.type]) =
       SelectField(extractToken(box), 2).asInstanceOf[Value[SLong.type]]
@@ -63,42 +61,49 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val rightProtectionSeller =
       EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.One)), ByteArrayConstant(sellerKeyBytes))
 
-    val buyerProp = AND(
-      EQ(extractTokenId(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(tokenId)),
-      GE(extractTokenAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(60)),
-      rightProtectionBuyer,
-      GE(ExtractAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(1))
+    val buyerProp = OR(
+      AND(GT(Height, deadline), tokenSellerKey),
+      AND(
+        EQ(extractTokenId(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(tokenId)),
+        GE(extractTokenAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(60)),
+        rightProtectionBuyer,
+        GE(ExtractAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(1))
+      )
     )
 
+//    val x = OR(ConcreteCollection(Vector(AND(ConcreteCollection(Vector(GT(Height, Constant(70, SLong)), ProveDlog(Constant((???, ???, ???, ???), SGroupElement))), SBoolean)), AND(ConcreteCollection(Vector(EQ(SelectField(Apply(ExtractRegisterAs(ByIndex(Outputs, Constant(0, SInt), None), R2, Array[(Array[SByte], SLong)], None), Vector(Constant(0, SInt))), 1), Constant(???, Array[SByte])), GE(SelectField(Apply(ExtractRegisterAs(ByIndex(Outputs, Constant(0, SInt), None), R2, Array[(Array[SByte], SLong)], None), Vector(Constant(0, SInt))), 2), Constant(60, SLong)), EQ(ExtractScriptBytes(ByIndex(Outputs, Constant(0, SInt), None)), Constant(???, Array[SByte])), GE(ExtractAmount(ByIndex(Outputs, Constant(0, SInt), None)), Constant(1, SLong))), SBoolean))), SBoolean))
 
-    val buyerEnv = Map("pkA" -> tokenBuyerKey)
-/*    val altBuyerProp = compile(buyerEnv,
-      """
-        |        OUTPUTS(0).R3[(ByteArray, Int)]._1 == "token1" &&
-        |        OUTPUTS(0).R3[(ByteArray, Int)]._2 >= 60 &&
-        |        OUTPUTS(0).propositionBytes == pkA.propBytes &&
-        |        OUTPUTS(0).value >= 1
+    val buyerEnv = Map("pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
+    val altBuyerProp = compile(buyerEnv,
+      """(HEIGHT > deadline && pkA) || {
+        |  let tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].value(0)
+        |  allOf(Array(
+        |      tokenData._1 == token1,
+        |      tokenData._2 >= 60L,
+        |      OUTPUTS(0).propositionBytes == pkA.propBytes,
+        |      OUTPUTS(0).value >= 1L
+        |  ))
+        |}
       """.stripMargin).asBoolValue
-
-    DOES NOT COMPILE!!!
-
     altBuyerProp shouldBe buyerProp
-*/
-    // todo: why does the script above not compile? Fix it and make it match the white paper
 
-    val sellerProp = AND(
-      rightProtectionSeller,
-      GE(ExtractAmount(ByIndex(Outputs, IntConstant.One)), LongConstant(100))
+    val sellerProp = OR(
+      AND(GT(Height, deadline), tokenSellerKey),
+      AND(
+        GE(ExtractAmount(ByIndex(Outputs, IntConstant.One)), LongConstant(100)),
+        rightProtectionSeller
+      )
     )
-
-    val sellerEnv = Map("pkB" -> tokenSellerKey)
+    val sellerEnv = Map("pkB" -> tokenSellerKey, "deadline" -> deadline)
     val altSellerProp = compile(sellerEnv,
-      """
-        |        OUTPUTS(1).value >= 100 &&
+      """ (HEIGHT > deadline && pkB) ||
+        | allOf(Array(
+        |        OUTPUTS(1).value >= 100L,
         |        OUTPUTS(1).propositionBytes == pkB.propBytes
+        | ))
       """.stripMargin).asBoolValue
 
-    // todo: THIS FAILS -- why? sellerProp shouldBe altSellerProp . Fix and make it match the white paper
+    sellerProp shouldBe altSellerProp
 
     val newBox1 = ErgoBox(1, tokenBuyerKey, Seq(tokenId -> 60))
     val newBox2 = ErgoBox(100, tokenSellerKey)
