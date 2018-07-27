@@ -2,7 +2,8 @@ package sigmastate.utils
 
 import java.nio.ByteBuffer
 
-import sigmastate.SType
+import scorex.crypto.encode.Base16
+import sigmastate.{ModifierId, SType}
 import sigmastate.Values.{SValue, Value}
 import sigmastate.serialization.{TypeSerializer, ValueSerializer}
 
@@ -178,6 +179,14 @@ object Extensions {
   implicit class ByteReaderOps(r: ByteReader) {
     @inline def getType(): SType = TypeSerializer.deserialize(r)
     @inline def getValue(): SValue = ValueSerializer.deserialize(r)
+  }
+
+  implicit class ModifierIdOps(m: ModifierId) {
+    @inline def toBytes: Array[Byte] = Base16.decode(m).get
+  }
+
+  implicit class ByteArrayOps(b: Array[Byte]) {
+    @inline def toModifierId: ModifierId = ModifierId @@ Base16.encode(b)
   }
 
 }

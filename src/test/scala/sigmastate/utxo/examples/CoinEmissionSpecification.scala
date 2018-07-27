@@ -103,7 +103,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
     val genesisState = ValidationState.initialState(initBlock)
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get
     val initialBox = ErgoBox(initialBoxCandidate.value, initialBoxCandidate.proposition,
-      initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters, initBlock.txs.head.serializedId, 0)
+      initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters, initBlock.txs.head.id, 0)
     initialBox shouldBe fromState
 
     def genCoinbaseLikeTransaction(state: ValidationState,

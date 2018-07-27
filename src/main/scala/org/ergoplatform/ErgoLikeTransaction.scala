@@ -3,6 +3,7 @@ package org.ergoplatform
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigmastate.ModifierId
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
 
@@ -10,7 +11,8 @@ import scala.util.Try
 import sigmastate.utils.{ByteReader, ByteWriter}
 
 import scala.collection.mutable
-import scala.util.Try
+import sigmastate.utils.Extensions._
+
 
 
 trait ErgoBoxReader {
@@ -24,10 +26,10 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
 
   require(outputCandidates.size <= Short.MaxValue)
 
-  val serializedId: Array[Byte]
+  val id: ModifierId
 
   lazy val outputs: IndexedSeq[ErgoBox] =
-    outputCandidates.indices.map(idx => outputCandidates(idx).toBox(serializedId, idx.toShort))
+    outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
 
   lazy val messageToSign: Array[Byte] =
     ErgoLikeTransaction.flattenedTxSerializer.bytesToSign(this)
@@ -40,7 +42,7 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
                                   override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoLikeTransactionTemplate[UnsignedInput] {
 
-  override lazy val serializedId: Digest32 = Blake2b256.hash(messageToSign)
+  override lazy val id: ModifierId = Blake2b256.hash(messageToSign).toModifierId
 
   def toSigned(proofs: IndexedSeq[ProverResult]): ErgoLikeTransaction = {
     require(proofs.size == inputs.size)
@@ -66,11 +68,11 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
 
   require(outputCandidates.length <= Short.MaxValue, s"${Short.MaxValue} is the maximum number of outputs")
 
-  override lazy val serializedId: Digest32 = Blake2b256.hash(messageToSign)
+  override lazy val id: ModifierId = Blake2b256.hash(messageToSign).toModifierId
 
   override def equals(obj: Any): Boolean = obj match {
     //we're ignoring spending proofs here
-    case tx: ErgoLikeTransaction => this.serializedId sameElements tx.serializedId
+    case tx: ErgoLikeTransaction => this.id == tx.id
     case _ => false
   }
 }
@@ -78,7 +80,7 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
 
 object ErgoLikeTransaction {
 
-  val TransactionIdSize: Short = 32
+  val TransactionIdBytesSize: Short = 32
 
   def apply(inputs: IndexedSeq[Input], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
     new ErgoLikeTransaction(inputs, outputCandidates)

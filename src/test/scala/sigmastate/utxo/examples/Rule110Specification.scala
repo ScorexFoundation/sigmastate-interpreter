@@ -9,6 +9,7 @@ import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
+import sigmastate.utils.Extensions._
 
 /**
   * Wolfram's Rule110 implementations
@@ -395,7 +396,7 @@ class Rule110Specification extends SigmaTestingCommons {
       val row = RowReg -> LongConstant(0)
       val column = ColumnReg -> LongConstant(col)
       val value = if (col == 15) ValueReg -> TrueLeaf else ValueReg -> FalseLeaf
-      ErgoBox(0L, prop, Seq(), Map(row, column, value), txId, col.toShort)
+      ErgoBox(0L, prop, Seq(), Map(row, column, value), txId.toModifierId, col.toShort)
     }
 
     val initBlock = BlockchainSimulationSpecification.Block {
