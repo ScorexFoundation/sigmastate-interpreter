@@ -7,7 +7,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{ByteWriter, ByteReader}
 import sigmastate.utxo.SigmaPropBytes
 
-object ProofBytesSerializer extends ValueSerializer[SigmaPropBytes] {
+object SigmaPropBytesSerializer extends ValueSerializer[SigmaPropBytes] {
   override val opCode: Byte = SigmaPropBytesCode
 
   def serializeBody(obj: SigmaPropBytes, w: ByteWriter): Unit = {
@@ -15,7 +15,7 @@ object ProofBytesSerializer extends ValueSerializer[SigmaPropBytes] {
   }
 
   def parseBody(r: ByteReader): Values.Value[SType] = {
-    val p = r.getValue().asProof
+    val p = r.getValue().asSigmaProp
     SigmaPropBytes(p)
   }
 }

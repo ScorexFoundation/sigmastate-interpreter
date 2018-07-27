@@ -272,7 +272,7 @@ case class SigmaPropIsValid(input: Value[SSigmaProp.type])
     input.value
   }
   override def cost[C <: Context[C]](context: C): Long =
-    input.cost(context) + Cost.ProofIsValidDeclaration
+    input.cost(context) + Cost.SigmaPropIsValidDeclaration
 }
 
 /** Extract serialized bytes of a Proof value */
@@ -286,7 +286,7 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
     ByteArrayConstant(input.value.bytes)
   }
   override def cost[C <: Context[C]](context: C): Long =
-    input.cost(context) + Cost.ProofBytes
+    input.cost(context) + Cost.SigmaPropBytes
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])

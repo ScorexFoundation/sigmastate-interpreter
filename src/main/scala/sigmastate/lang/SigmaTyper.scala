@@ -325,13 +325,13 @@ class SigmaTyper(val builder: SigmaBuilder) {
       val p1 = assignType(env, p)
       if (!p1.tpe.isProof)
         error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})")
-      SigmaPropIsValid(p1.asProof)
+      SigmaPropIsValid(p1.asSigmaProp)
 
     case SigmaPropBytes(p) =>
       val p1 = assignType(env, p)
       if (!p1.tpe.isProof)
         error(s"Invalid operation ProofBytes: expected argument types ($SSigmaProp); actual: (${p.tpe})")
-      SigmaPropBytes(p1.asProof)
+      SigmaPropBytes(p1.asSigmaProp)
 
     case Height => Height
     case Self => Self
@@ -367,7 +367,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
         val items = adaptProofToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
         assignConcreteCollection(cc, items.toIndexedSeq)
-      case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsValid(it.asProof)
+      case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsValid(it.asSigmaProp)
       case (it,_) => it
     }
     res
