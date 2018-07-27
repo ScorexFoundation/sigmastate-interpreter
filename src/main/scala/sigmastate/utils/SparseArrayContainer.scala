@@ -15,7 +15,9 @@ class SparseArrayContainer[T: ClassTag](values: Seq[(Byte, T)]) {
   private val sparseArray: Array[T] = build(values)
 
   private def build(sers: Seq[(Byte, T)]): Array[T] = {
-    require(sers.size == sers.map(_._1).toSet.size, s"expected distinct codes, got: $sers")
+    val set = sers.map(_._1).toSet
+    require(sers.size == set.size,
+      s"expected distinct codes, got duplicated: ${sers.groupBy { case (b, _) => b }.filter { case (k, g) => g.size > 1 }.toList }")
     val array = Array.fill[T](256)(null.asInstanceOf[T])
     sers.foreach { case (code, value) =>
         array(codeToIndex(code)) = value
