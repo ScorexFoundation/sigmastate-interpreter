@@ -454,21 +454,21 @@ There are two binary operations over $SigmaProp$ values:
 
 Any expression of $SigmaProp$ type can be efficiently verified using sigma protocol and thus mapped to a truth values.
 
-We implement a verification procedure $V: Sigma -> Boolean$, which performs such mapping, and satisfies the following
-naturality conditions with respect to Sigma and Boolean connectives.
+We implement a verification procedure $V: SigmaProp -> Boolean$, which performs such mapping, and satisfies the following
+naturality conditions with respect to SigmaProp and Boolean connectives.
 
-For any two statements $sigma1, sigma2: Sigma$:
+For any two statements $sigma1, sigma2: SigmaProp$:
 \begin{itemize}
     \item $V(s_1 \sqcup s_2) = V(s_1) \lor V(s_2)$
     \item $V(s_1 \sqcap s_2) = V(s_1) \land V(s_2)$
 \end{itemize}
 
-Bacause Sigma connectives and logical connectives satisfy naturality conditions we can reason about complex sigma statements
+Bacause SigmaProp connectives and logical connectives satisfy naturality conditions we can reason about complex sigma statements
 the same way we reason about logical statements.
 However, unlike logical statements evaluation of sigma statements is done with zero knowledge about intermediate steps.
 Thus, we can verify the truth of $s_1 \sqcup s_2$ (i.e. compute $V(s_1 \sqcup s_2)$) statement but we cannot know whether $s_1$ or $s_2$ or both is true. At the same time evaluation of $V(s_1) \lor V(s_2)$ discloses results of both $V(s_1)$ and $V(s_2)$ before execution of $\lor$.
 
-There is a function $isValid: Sigma -> Boolean$ in Sigma-state language which implements the function $V$.
+There is a function $isValid: SigmaProp -> Boolean$ in Sigma-state language which implements the function $V$.
 The type system of the language allows to explicitly delimit usages of zero knowledge evaluation
 of sigma statements and classical evaluation of boolean statements.
 
