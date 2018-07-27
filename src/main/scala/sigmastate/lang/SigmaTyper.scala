@@ -327,11 +327,11 @@ class SigmaTyper(val builder: SigmaBuilder) {
         error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})")
       IsValid(p1.asProof)
 
-    case ProofBytes(p) =>
+    case SigmaPropBytes(p) =>
       val p1 = assignType(env, p)
       if (!p1.tpe.isProof)
         error(s"Invalid operation ProofBytes: expected argument types ($SSigmaProp); actual: (${p.tpe})")
-      ProofBytes(p1.asProof)
+      SigmaPropBytes(p1.asProof)
 
     case Height => Height
     case Self => Self

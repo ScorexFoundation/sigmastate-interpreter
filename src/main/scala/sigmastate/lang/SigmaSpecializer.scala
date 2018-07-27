@@ -78,7 +78,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     // Rule: proof.propBytes --> ProofBytes(proof)
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
-      Some(ProofBytes(p.asProof))
+      Some(SigmaPropBytes(p.asProof))
 
     case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(_)), Seq(arg)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,

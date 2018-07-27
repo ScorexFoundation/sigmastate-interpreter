@@ -5,17 +5,17 @@ import sigmastate.lang.Terms._
 import sigmastate.utils.Extensions._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{ByteWriter, ByteReader}
-import sigmastate.utxo.ProofBytes
+import sigmastate.utxo.SigmaPropBytes
 
-object ProofBytesSerializer extends ValueSerializer[ProofBytes] {
-  override val opCode: Byte = ProofBytesCode
+object ProofBytesSerializer extends ValueSerializer[SigmaPropBytes] {
+  override val opCode: Byte = SigmaPropBytesCode
 
-  def serializeBody(obj: ProofBytes, w: ByteWriter): Unit = {
+  def serializeBody(obj: SigmaPropBytes, w: ByteWriter): Unit = {
     w.putValue(obj.input)
   }
 
   def parseBody(r: ByteReader): Values.Value[SType] = {
     val p = r.getValue().asProof
-    ProofBytes(p)
+    SigmaPropBytes(p)
   }
 }

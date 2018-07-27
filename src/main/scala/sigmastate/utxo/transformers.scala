@@ -276,9 +276,9 @@ case class IsValid(input: Value[SSigmaProp.type])
 }
 
 /** Extract serialized bytes of a Proof value */
-case class ProofBytes(input: Value[SSigmaProp.type])
+case class SigmaPropBytes(input: Value[SSigmaProp.type])
     extends Transformer[SSigmaProp.type, SByteArray] with NotReadyValue[SByteArray] {
-  override val opCode: OpCode = OpCodes.ProofBytesCode
+  override val opCode: OpCode = OpCodes.SigmaPropBytesCode
   def tpe = SByteArray
   override def transformationReady: Boolean = input.isInstanceOf[EvaluatedValue[_]]
 
