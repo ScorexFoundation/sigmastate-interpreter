@@ -251,7 +251,7 @@ object Values {
   type TaggedBigInt = TaggedVariable[SBigInt.type]
   type TaggedBox = TaggedVariable[SBox.type]
   type TaggedGroupElement = TaggedVariable[SGroupElement.type]
-  type TaggedProof = TaggedVariable[SSigmaProp.type]
+  type TaggedSigmaProp = TaggedVariable[SSigmaProp.type]
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
@@ -264,7 +264,7 @@ object Values {
   def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
   def TaggedGroupElement(id: Byte): Value[SGroupElement.type] =
     mkTaggedVariable(id, SGroupElement)
-  def TaggedProof(id: Byte): TaggedProof = TaggedVariable(id, SSigmaProp)
+  def TaggedSigmaProp(id: Byte): TaggedSigmaProp = TaggedVariable(id, SSigmaProp)
   def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
   def TaggedByteArray (id: Byte): Value[SCollection[SByte.type]] =
     mkTaggedVariable(id, SByteArray)

@@ -129,7 +129,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
           }
           val newArgs = new_f match {
             case AllSym | AnySym =>
-              adaptProofToBoolean(new_args, argTypes)
+              adaptSigmaPropToBoolean(new_args, argTypes)
             case _ => new_args
           }
           val actualTypes = newArgs.map(_.tpe)
@@ -323,13 +323,13 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
     case SigmaPropIsValid(p) =>
       val p1 = assignType(env, p)
-      if (!p1.tpe.isProof)
+      if (!p1.tpe.isSigmaProp)
         error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})")
       SigmaPropIsValid(p1.asSigmaProp)
 
     case SigmaPropBytes(p) =>
       val p1 = assignType(env, p)
-      if (!p1.tpe.isProof)
+      if (!p1.tpe.isSigmaProp)
         error(s"Invalid operation ProofBytes: expected argument types ($SSigmaProp); actual: (${p.tpe})")
       SigmaPropBytes(p1.asSigmaProp)
 
@@ -362,10 +362,10 @@ class SigmaTyper(val builder: SigmaBuilder) {
     ConcreteCollection(newItems)(tItem)
   }
 
-  def adaptProofToBoolean(items: Seq[Value[SType]], expectedTypes: Seq[SType]): Seq[Value[SType]] = {
+  def adaptSigmaPropToBoolean(items: Seq[Value[SType]], expectedTypes: Seq[SType]): Seq[Value[SType]] = {
     val res = items.zip(expectedTypes).map {
       case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
-        val items = adaptProofToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
+        val items = adaptSigmaPropToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
         assignConcreteCollection(cc, items.toIndexedSeq)
       case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsValid(it.asSigmaProp)
       case (it,_) => it

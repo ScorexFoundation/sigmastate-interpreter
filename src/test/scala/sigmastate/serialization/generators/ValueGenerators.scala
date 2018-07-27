@@ -42,7 +42,7 @@ trait ValueGenerators extends TypeGenerators {
 
   implicit val arbBigInteger = Arbitrary(arbBigInt.arbitrary.map(_.bigInteger))
   implicit val arbGroupElement = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
-  implicit val arbProof: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
+  implicit val arbSigmaProp: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
   implicit val arbBox = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
@@ -184,7 +184,7 @@ trait ValueGenerators extends TypeGenerators {
     case SLong => arbLong
     case SBigInt => arbBigInteger
     case SGroupElement => arbGroupElement
-    case SSigmaProp => arbProof
+    case SSigmaProp => arbSigmaProp
     case SBox => arbBox
     case SAvlTree => arbAvlTreeData
     case SAny => arbAnyVal

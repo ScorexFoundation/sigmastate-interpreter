@@ -65,7 +65,7 @@ object SType {
   implicit val typeBoolean = SBoolean
   implicit val typeAvlTree = SAvlTree
   implicit val typeGroupElement = SGroupElement
-  implicit val typeProof = SSigmaProp
+  implicit val typeSigmaProp = SSigmaProp
   implicit val typeBox = SBox
 
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
@@ -77,7 +77,7 @@ object SType {
   implicit class STypeOps(val tpe: SType) {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
-    def isProof: Boolean = tpe.isInstanceOf[SSigmaProp.type]
+    def isSigmaProp: Boolean = tpe.isInstanceOf[SSigmaProp.type]
     def isTuple: Boolean = tpe.isInstanceOf[STuple]
     def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
       case (NoType, _) => true
@@ -437,7 +437,7 @@ object SCollection {
   val SLongArray         = SCollection(SLong)
   val SBigIntArray       = SCollection(SBigInt)
   val SGroupElementArray = SCollection(SGroupElement)
-  val SProofArray        = SCollection(SSigmaProp)
+  val SSigmaPropArray        = SCollection(SSigmaProp)
   val SBoxArray          = SCollection(SBox)
   val SAvlTreeArray      = SCollection(SAvlTree)
 }

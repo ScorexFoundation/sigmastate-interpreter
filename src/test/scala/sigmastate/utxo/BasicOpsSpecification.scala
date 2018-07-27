@@ -104,27 +104,27 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   property("Proof operations") {
     test(env, ext,
       "{ getVar[Proof](proofVar1).isValid }",
-      TaggedProof(propVar1).isValid
+      TaggedSigmaProp(propVar1).isValid
     )
     test(env, ext,
       "{ getVar[Proof](proofVar1) || getVar[Proof](proofVar2) }",
-      OR(TaggedProof(propVar1).isValid, TaggedProof(propVar2).isValid)
+      OR(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
     )
     test(env, ext,
       "{ getVar[Proof](proofVar1) && getVar[Proof](proofVar2) }",
-      AND(TaggedProof(propVar1).isValid, TaggedProof(propVar2).isValid)
+      AND(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
     )
     test(env, ext,
       "{ getVar[Proof](proofVar1).isValid && getVar[Proof](proofVar2) }",
-      AND(TaggedProof(propVar1).isValid, TaggedProof(propVar2).isValid)
+      AND(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
     )
     test(env, ext,
       "{ getVar[Proof](proofVar1) && getVar[Int](intVar1) == 1 }",
-      AND(TaggedProof(propVar1).isValid, EQ(TaggedInt(intVar1), 1))
+      AND(TaggedSigmaProp(propVar1).isValid, EQ(TaggedInt(intVar1), 1))
     )
     test(env, ext,
       "{ getVar[Int](intVar1) == 1 || getVar[Proof](proofVar1) }",
-      OR(EQ(TaggedInt(intVar1), 1), TaggedProof(propVar1).isValid)
+      OR(EQ(TaggedInt(intVar1), 1), TaggedSigmaProp(propVar1).isValid)
     )
     test(env, ext,
       "{ SELF.R4[Proof].value.isValid }",
@@ -133,28 +133,28 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env, ext,
       "{ SELF.R4[Proof].value && getVar[Proof](proofVar1)}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedProof(propVar1).isValid),
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
       true
     )
     test(env, ext,
       "{ allOf(Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)))}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedProof(propVar1).isValid),
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
       true
     )
     test(env, ext,
       "{ anyOf(Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)))}",
-      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedProof(propVar1).isValid),
+      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
       true
     )
     test(env, ext,
       "{ Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)).forall(fun (p: Proof) = p.isValid) }",
-      ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), TaggedProof(propVar1)),
-        21, SigmaPropIsValid(TaggedProof(21))),
+      ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), TaggedSigmaProp(propVar1)),
+        21, SigmaPropIsValid(TaggedSigmaProp(21))),
       true
     )
     test(env, ext,
       "{ SELF.R4[Proof].value.propBytes != getVar[Proof](proofVar1).propBytes }",
-      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, reg1).propBytes, TaggedProof(propVar1).propBytes),
+      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, reg1).propBytes, TaggedSigmaProp(propVar1).propBytes),
       true
     )
   }
