@@ -4,19 +4,19 @@ import sigmastate.{Values, SType}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{ByteWriter, ByteReader}
-import sigmastate.utxo.IsValid
+import sigmastate.utxo.SigmaPropIsValid
 import sigmastate.utils.Extensions._
 
-object IsValidSerializer extends ValueSerializer[IsValid] {
+object IsValidSerializer extends ValueSerializer[SigmaPropIsValid] {
 
-  override val opCode: Byte = ProofIsValidCode
+  override val opCode: Byte = SigmaPropIsValidCode
 
-  def serializeBody(obj: IsValid, w: ByteWriter): Unit = {
+  def serializeBody(obj: SigmaPropIsValid, w: ByteWriter): Unit = {
     w.putValue(obj.input)
   }
 
   def parseBody(r: ByteReader): Values.Value[SType] = {
     val p = r.getValue().asProof
-    IsValid(p)
+    SigmaPropIsValid(p)
   }
 }

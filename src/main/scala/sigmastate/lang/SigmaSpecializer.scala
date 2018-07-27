@@ -74,7 +74,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     // Rule: proof.isValid --> IsValid(proof)
     case Select(p, SSigmaProp.IsValid, _) if p.tpe == SSigmaProp =>
-      Some(IsValid(p.asProof))
+      Some(SigmaPropIsValid(p.asProof))
 
     // Rule: proof.propBytes --> ProofBytes(proof)
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>

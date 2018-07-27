@@ -19,7 +19,7 @@ import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{DeserializeContext, CostTable, Transformer, IsValid}
+import sigmastate.utxo.{DeserializeContext, CostTable, Transformer, SigmaPropIsValid}
 import sigmastate.{SType, _}
 
 import scala.util.Try

@@ -16,7 +16,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{IsValid, SigmaPropBytes}
+import sigmastate.utxo.{SigmaPropIsValid, SigmaPropBytes}
 
 
 import scala.language.implicitConversions
@@ -503,7 +503,7 @@ object Values {
   }
 
   implicit class ProofValueOps(p: Value[SSigmaProp.type]) {
-    def isValid: Value[SBoolean.type] = IsValid(p)
+    def isValid: Value[SBoolean.type] = SigmaPropIsValid(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
 }

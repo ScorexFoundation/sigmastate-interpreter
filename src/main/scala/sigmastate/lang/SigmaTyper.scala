@@ -321,11 +321,11 @@ class SigmaTyper(val builder: SigmaBuilder) {
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})")
       mkSizeOf(c1)
 
-    case IsValid(p) =>
+    case SigmaPropIsValid(p) =>
       val p1 = assignType(env, p)
       if (!p1.tpe.isProof)
         error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})")
-      IsValid(p1.asProof)
+      SigmaPropIsValid(p1.asProof)
 
     case SigmaPropBytes(p) =>
       val p1 = assignType(env, p)
@@ -367,7 +367,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
         val items = adaptProofToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
         assignConcreteCollection(cc, items.toIndexedSeq)
-      case (it, SBoolean) if it.tpe == SSigmaProp => IsValid(it.asProof)
+      case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsValid(it.asProof)
       case (it,_) => it
     }
     res

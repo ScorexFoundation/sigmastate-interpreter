@@ -149,7 +149,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test(env, ext,
       "{ Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)).forall(fun (p: Proof) = p.isValid) }",
       ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), TaggedProof(proofVar1)),
-        21, IsValid(TaggedProof(21))),
+        21, SigmaPropIsValid(TaggedProof(21))),
       true
     )
     test(env, ext,
