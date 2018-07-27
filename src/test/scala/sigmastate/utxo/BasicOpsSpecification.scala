@@ -128,33 +128,33 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env, ext,
       "{ SELF.R4[Proof].value.isValid }",
-      ExtractRegisterAs[SProof.type](Self, reg1).isValid,
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid,
       true
     )
     test(env, ext,
       "{ SELF.R4[Proof].value && getVar[Proof](proofVar1)}",
-      AND(ExtractRegisterAs[SProof.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
       true
     )
     test(env, ext,
       "{ allOf(Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)))}",
-      AND(ExtractRegisterAs[SProof.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
       true
     )
     test(env, ext,
       "{ anyOf(Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)))}",
-      OR(ExtractRegisterAs[SProof.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
+      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedProof(proofVar1).isValid),
       true
     )
     test(env, ext,
       "{ Array(SELF.R4[Proof].value, getVar[Proof](proofVar1)).forall(fun (p: Proof) = p.isValid) }",
-      ForAll(ConcreteCollection(ExtractRegisterAs[SProof.type](Self, reg1), TaggedProof(proofVar1)),
+      ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), TaggedProof(proofVar1)),
         21, IsValid(TaggedProof(21))),
       true
     )
     test(env, ext,
       "{ SELF.R4[Proof].value.propBytes != getVar[Proof](proofVar1).propBytes }",
-      NEQ(ExtractRegisterAs[SProof.type](Self, reg1).propBytes, TaggedProof(proofVar1).propBytes),
+      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, reg1).propBytes, TaggedProof(proofVar1).propBytes),
       true
     )
   }

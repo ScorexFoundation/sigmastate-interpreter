@@ -25,7 +25,7 @@ object DataSerializer {
       w.putBytes(data)
     case SGroupElement =>
       GroupElementSerializer.serializeBody(v.asInstanceOf[EcPointType], w)
-    case SProof =>
+    case SSigmaProp =>
       val p = v.asInstanceOf[SigmaBoolean]
       w.putValue(p)
     case SBox =>
@@ -72,7 +72,7 @@ object DataSerializer {
       new BigInteger(valueBytes)
     case SGroupElement =>
       GroupElementSerializer.parseBody(r)
-    case SProof =>
+    case SSigmaProp =>
       val p = r.getValue().asInstanceOf[SigmaBoolean]
       p
     case SBox =>

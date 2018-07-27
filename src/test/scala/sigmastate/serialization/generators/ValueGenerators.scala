@@ -184,7 +184,7 @@ trait ValueGenerators extends TypeGenerators {
     case SLong => arbLong
     case SBigInt => arbBigInteger
     case SGroupElement => arbGroupElement
-    case SProof => arbProof
+    case SSigmaProp => arbProof
     case SBox => arbBox
     case SAvlTree => arbAvlTreeData
     case SAny => arbAnyVal

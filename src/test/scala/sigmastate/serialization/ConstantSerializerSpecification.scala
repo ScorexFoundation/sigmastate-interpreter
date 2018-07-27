@@ -45,7 +45,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { x: Long => roundTripTest(Constant[SLong.type](x, SLong)) }
     forAll { x: BigInteger => roundTripTest(Constant[SBigInt.type](x, SBigInt)) }
     forAll { x: EcPointType => roundTripTest(Constant[SGroupElement.type](x, SGroupElement)) }
-    forAll { x: SigmaBoolean => roundTripTest(Constant[SProof.type](x, SProof)) }
+    forAll { x: SigmaBoolean => roundTripTest(Constant[SSigmaProp.type](x, SSigmaProp)) }
     forAll { x: ErgoBox => roundTripTest(Constant[SBox.type](x, SBox)) }
     forAll { x: AvlTreeData => roundTripTest(Constant[SAvlTree.type](x, SAvlTree)) }
     forAll { x: Array[Byte] => roundTripTest(Constant[SByteArray](x, SByteArray)) }
@@ -61,7 +61,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     testCollection(SLong)
     testCollection(SBigInt)
     testCollection(SGroupElement)
-    testCollection(SProof)
+    testCollection(SSigmaProp)
     testCollection(SUnit)
     testCollection(SBox)
     testCollection(SAvlTree)

@@ -82,7 +82,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "allOf(Array(c1, c2))") shouldBe SBoolean
     typecheck(env, "getVar[Byte](10)") shouldBe SByte
     typecheck(env, "getVar[Array[Byte]](10)") shouldBe SByteArray
-    typecheck(env, "getVar[Proof](10)") shouldBe SProof
+    typecheck(env, "getVar[Proof](10)") shouldBe SSigmaProp
     typecheck(env, "p1 && getVar[Proof](10)") shouldBe SBoolean
     typecheck(env, "getVar[Proof](10) || p2") shouldBe SBoolean
     typecheck(env, "getVar[Proof](10) && getVar[Proof](11)") shouldBe SBoolean
@@ -212,7 +212,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "fun (p: (Int, GroupElement), box: Box): Boolean = p._1 > box.value && p._2.isIdentity") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
     typecheck(env, "fun (p: (Int, Proof), box: Box): Boolean = p._1 > box.value && p._2.isValid") shouldBe
-      SFunc(IndexedSeq(STuple(SInt, SProof), SBox), SBoolean)
+      SFunc(IndexedSeq(STuple(SInt, SSigmaProp), SBox), SBoolean)
 
     typefail(env, "fun (a) = a + 1", "undefined type of argument")
   }
@@ -341,8 +341,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       "((Int,Int), Array[Boolean] => Array[(Array[C], Boolean)]) => Int",
       ("A", SInt), ("B", SBoolean))
 
-    unifyTypes(SBoolean, SProof) shouldBe Some(emptySubst)
-    unifyTypes(SProof, SBoolean) shouldBe None
+    unifyTypes(SBoolean, SSigmaProp) shouldBe Some(emptySubst)
+    unifyTypes(SSigmaProp, SBoolean) shouldBe None
     check("(Int, Boolean)", "(Int, Proof)")
     check("(Int, Boolean, Boolean)", "(Int, Proof, Proof)")
     check("Array[Boolean]", "Array[Proof]")
@@ -375,8 +375,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     checkTypes(NoType, NoType, None)
     checkTypes(NoType, SInt, None)
     checkTypes(SInt, SInt, Some(SInt))
-    checkTypes(SBoolean, SProof, Some(SBoolean))
-    checkTypes(SProof, SBoolean, Some(SBoolean))
+    checkTypes(SBoolean, SSigmaProp, Some(SBoolean))
+    checkTypes(SSigmaProp, SBoolean, Some(SBoolean))
 
     check("(Int, Boolean)", "(Int, Proof)", Some(ty("(Int, Boolean)")))
     check("(Int, Proof)", "(Int, Boolean)", Some(ty("(Int, Boolean)")))

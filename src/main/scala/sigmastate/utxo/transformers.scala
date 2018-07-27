@@ -263,12 +263,12 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 }
 
 /** Represents execution of Sigma protocol that validates the given input Proof. */
-case class IsValid(input: Value[SProof.type])
-    extends Transformer[SProof.type, SBoolean.type] with NotReadyValueBoolean {
+case class IsValid(input: Value[SSigmaProp.type])
+    extends Transformer[SSigmaProp.type, SBoolean.type] with NotReadyValueBoolean {
   override val opCode: OpCode = OpCodes.ProofIsValidCode
   override def transformationReady: Boolean = input.isInstanceOf[EvaluatedValue[_]]
 
-  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SProof.type]): Value[SBoolean.type] = {
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SSigmaProp.type]): Value[SBoolean.type] = {
     input.value
   }
   override def cost[C <: Context[C]](context: C): Long =
@@ -276,13 +276,13 @@ case class IsValid(input: Value[SProof.type])
 }
 
 /** Extract serialized bytes of a Proof value */
-case class ProofBytes(input: Value[SProof.type])
-    extends Transformer[SProof.type, SByteArray] with NotReadyValue[SByteArray] {
+case class ProofBytes(input: Value[SSigmaProp.type])
+    extends Transformer[SSigmaProp.type, SByteArray] with NotReadyValue[SByteArray] {
   override val opCode: OpCode = OpCodes.ProofBytesCode
   def tpe = SByteArray
   override def transformationReady: Boolean = input.isInstanceOf[EvaluatedValue[_]]
 
-  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SProof.type]): Value[SByteArray] = {
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SSigmaProp.type]): Value[SByteArray] = {
     ByteArrayConstant(input.value.bytes)
   }
   override def cost[C <: Context[C]](context: C): Long =

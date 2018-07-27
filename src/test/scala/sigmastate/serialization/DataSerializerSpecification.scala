@@ -58,7 +58,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: Long => roundtrip[SLong.type](x, SLong) }
     forAll { x: BigInteger => roundtrip[SBigInt.type](x, SBigInt) }
     forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
-    forAll { x: SigmaBoolean => roundtrip[SProof.type](x, SProof) }
+    forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x, SSigmaProp) }
     forAll { x: ErgoBox => roundtrip[SBox.type](x, SBox) }
     forAll { x: AvlTreeData => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x, SByteArray) }

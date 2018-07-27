@@ -137,7 +137,7 @@ object Terms {
     def asSigmaValue: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
     def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
-    def asProof: Value[SProof.type] = v.asInstanceOf[Value[SProof.type]]
+    def asProof: Value[SSigmaProp.type] = v.asInstanceOf[Value[SSigmaProp.type]]
     def asByteArray: Value[SByteArray] = v.asInstanceOf[Value[SByteArray]]
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
     def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]

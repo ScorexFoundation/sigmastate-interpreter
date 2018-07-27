@@ -60,7 +60,7 @@ object Values {
 
     implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
-    implicit def liftProof(g: SigmaBoolean): Value[SProof.type] = ProofConstant(g)
+    implicit def liftProof(g: SigmaBoolean): Value[SSigmaProp.type] = ProofConstant(g)
 
     def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.mkConstant(const)
 
@@ -197,9 +197,9 @@ object Values {
   }
 
   object ProofConstant {
-    def apply(value: SigmaBoolean): Constant[SProof.type]  = Constant[SProof.type](value, SProof)
+    def apply(value: SigmaBoolean): Constant[SSigmaProp.type]  = Constant[SSigmaProp.type](value, SSigmaProp)
     def unapply(v: SValue): Option[SigmaBoolean] = v match {
-      case Constant(value: SigmaBoolean, SProof) => Some(value)
+      case Constant(value: SigmaBoolean, SSigmaProp) => Some(value)
       case _ => None
     }
   }
@@ -251,7 +251,7 @@ object Values {
   type TaggedBigInt = TaggedVariable[SBigInt.type]
   type TaggedBox = TaggedVariable[SBox.type]
   type TaggedGroupElement = TaggedVariable[SGroupElement.type]
-  type TaggedProof = TaggedVariable[SProof.type]
+  type TaggedProof = TaggedVariable[SSigmaProp.type]
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
@@ -264,7 +264,7 @@ object Values {
   def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
   def TaggedGroupElement(id: Byte): Value[SGroupElement.type] =
     mkTaggedVariable(id, SGroupElement)
-  def TaggedProof(id: Byte): TaggedProof = TaggedVariable(id, SProof)
+  def TaggedProof(id: Byte): TaggedProof = TaggedVariable(id, SSigmaProp)
   def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
   def TaggedByteArray (id: Byte): Value[SCollection[SByte.type]] =
     mkTaggedVariable(id, SByteArray)
@@ -502,7 +502,7 @@ object Values {
       )
   }
 
-  implicit class ProofValueOps(p: Value[SProof.type]) {
+  implicit class ProofValueOps(p: Value[SSigmaProp.type]) {
     def isValid: Value[SBoolean.type] = IsValid(p)
     def propBytes: Value[SByteArray] = ProofBytes(p)
   }

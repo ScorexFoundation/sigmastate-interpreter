@@ -195,19 +195,19 @@ class SigmaTyper(val builder: SigmaBuilder) {
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
-        case SProof => (m, newArgs) match {
+        case SSigmaProp => (m, newArgs) match {
           case ("||" | "&&", Seq(r)) => r.tpe match {
             case SBoolean =>
-              val (a,b) = (Select(newObj, SProof.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val (a,b) = (Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
               val res = if (m == "||") OR(a,b) else AND(a,b)
               res
-            case SProof =>
-              val a = Select(newObj, SProof.IsValid, Some(SBoolean)).asBoolValue
-              val b = Select(r, SProof.IsValid, Some(SBoolean)).asBoolValue
+            case SSigmaProp =>
+              val a = Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
+              val b = Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
               val res = if (m == "||") OR(a,b) else AND(a,b)
               res
             case _ =>
-              error(s"Invalid argument type for $m, expected $SProof but was ${r.tpe}")
+              error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}")
           }
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
@@ -228,8 +228,8 @@ class SigmaTyper(val builder: SigmaBuilder) {
             case SBoolean =>
               val res = if (m == "||") OR(newObj.asBoolValue, r.asBoolValue) else AND(newObj.asBoolValue, r.asBoolValue)
               res
-            case SProof =>
-              val (a,b) = (newObj.asBoolValue, Select(r, SProof.IsValid, Some(SBoolean)).asBoolValue)
+            case SSigmaProp =>
+              val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue)
               val res = if (m == "||") OR(a,b) else AND(a,b)
               res
             case _ =>
@@ -324,13 +324,13 @@ class SigmaTyper(val builder: SigmaBuilder) {
     case IsValid(p) =>
       val p1 = assignType(env, p)
       if (!p1.tpe.isProof)
-        error(s"Invalid operation IsValid: expected argument types ($SProof); actual: (${p.tpe})")
+        error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})")
       IsValid(p1.asProof)
 
     case ProofBytes(p) =>
       val p1 = assignType(env, p)
       if (!p1.tpe.isProof)
-        error(s"Invalid operation ProofBytes: expected argument types ($SProof); actual: (${p.tpe})")
+        error(s"Invalid operation ProofBytes: expected argument types ($SSigmaProp); actual: (${p.tpe})")
       ProofBytes(p1.asProof)
 
     case Height => Height
@@ -367,7 +367,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
         val items = adaptProofToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
         assignConcreteCollection(cc, items.toIndexedSeq)
-      case (it, SBoolean) if it.tpe == SProof => IsValid(it.asProof)
+      case (it, SBoolean) if it.tpe == SSigmaProp => IsValid(it.asProof)
       case (it,_) => it
     }
     res
@@ -478,7 +478,7 @@ object SigmaTyper {
     case (STypeApply(name1, args1), STypeApply(name2, args2))
       if name1 == name2 && args1.length == args2.length =>
       unifyTypeLists(args1, args2)
-    case (SBoolean, SProof) =>
+    case (SBoolean, SSigmaProp) =>
       unifiedWithoutSubst
     case (SPrimType(e1), SPrimType(e2)) if e1 == e2 =>
       unifiedWithoutSubst

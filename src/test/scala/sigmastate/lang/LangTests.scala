@@ -16,7 +16,7 @@ trait LangTests {
   def ByteIdent(name: String): Value[SByte.type] = Ident(name).asValue[SByte.type]
   def ByteArrayIdent(name: String): Value[SByteArray] = Ident(name).asValue[SByteArray]
   def GEIdent(name: String): Value[SGroupElement.type] = Ident(name).asValue[SGroupElement.type]
-  def ProofIdent(name: String): Value[SProof.type] = Ident(name).asValue[SProof.type]
+  def ProofIdent(name: String): Value[SSigmaProp.type] = Ident(name).asValue[SSigmaProp.type]
   def BigIntIdent(name: String): Value[SBigInt.type] = Ident(name).asValue[SBigInt.type]
 
 
