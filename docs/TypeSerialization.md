@@ -56,7 +56,7 @@ Id    |   Type
 5     |   Long (64 bit)
 6     |   BigInt (java.math.BigInteger)
 7     |   GroupElement (org.bouncycastle.math.ec.ECPoint)
-8     |   Proof 
+8     |   SigmaProp 
 9     |   reserved for Char
 10    |   reserved for String 
 11    |   reserved for Double

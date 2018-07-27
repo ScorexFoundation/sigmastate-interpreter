@@ -44,7 +44,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
         val p2 = dlogSecrets(1).publicImage
-        (ext ++ Seq(proofVar1 -> ProofConstant(p1), proofVar2 -> ProofConstant(p2))).toMap
+        (ext ++ Seq(proofVar1 -> SigmaPropConstant(p1), proofVar2 -> SigmaPropConstant(p2))).toMap
       }
     }
 
@@ -52,7 +52,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     prop shouldBe propExp
 
     val p3 = prover.dlogSecrets(2).publicImage
-    val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(reg1 -> ProofConstant(p3)))
+    val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(reg1 -> SigmaPropConstant(p3)))
 
     val ctx = ErgoLikeContext.dummy(outputToSpend)
 

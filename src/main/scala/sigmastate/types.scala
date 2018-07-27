@@ -319,7 +319,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
 case object SSigmaProp extends SProduct with SPrimType with SEmbeddable {
   override type WrappedType = SigmaBoolean
   override val typeCode: TypeCode = 8: Byte
-  override def mkConstant(v: SigmaBoolean): Value[SSigmaProp.type] = ProofConstant(v)
+  override def mkConstant(v: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.ProofConstantDeclaration
   def ancestors = Nil
   val PropBytes = "propBytes"

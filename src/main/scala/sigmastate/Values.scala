@@ -60,7 +60,7 @@ object Values {
 
     implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
-    implicit def liftProof(g: SigmaBoolean): Value[SSigmaProp.type] = ProofConstant(g)
+    implicit def liftSigmaProp(g: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(g)
 
     def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.mkConstant(const)
 
@@ -196,7 +196,7 @@ object Values {
     }
   }
 
-  object ProofConstant {
+  object SigmaPropConstant {
     def apply(value: SigmaBoolean): Constant[SSigmaProp.type]  = Constant[SSigmaProp.type](value, SSigmaProp)
     def unapply(v: SValue): Option[SigmaBoolean] = v match {
       case Constant(value: SigmaBoolean, SSigmaProp) => Some(value)
