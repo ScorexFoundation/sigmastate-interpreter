@@ -11,7 +11,7 @@ trait TypeGenerators {
   implicit val longTypeGen = Gen.const(SLong)
   implicit val bigIntTypeGen = Gen.const(SBigInt)
   implicit val groupElementTypeGen = Gen.const(SGroupElement)
-  implicit val proofTypeGen = Gen.const(SSigmaProp)
+  implicit val sigmaPropTypeGen = Gen.const(SSigmaProp)
   implicit val boxTypeGen = Gen.const(SBox)
   implicit val avlTreeTypeGen = Gen.const(SAvlTree)
 

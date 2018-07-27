@@ -35,7 +35,7 @@ object CostTable {
     val LongConstantDeclaration = 1
     val BigIntConstantDeclaration = 1
     val GroupElementConstantDeclaration = 10
-    val ProofConstantDeclaration = 10
+    val SigmaPropConstantDeclaration = 10
     val BoxConstantDeclaration = 10
     val AvlTreeConstantDeclaration = 50
 

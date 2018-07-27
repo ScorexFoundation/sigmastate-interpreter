@@ -137,7 +137,7 @@ object Values {
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
   type GroupElementConstant = Constant[SGroupElement.type]
-  type ProofConstant = Constant[SGroupElement.type]
+  type SigmaPropConstant = Constant[SSigmaProp.type]
   type AvlTreeConstant = Constant[SAvlTree.type]
 
   object ByteConstant {
@@ -502,7 +502,7 @@ object Values {
       )
   }
 
-  implicit class ProofValueOps(p: Value[SSigmaProp.type]) {
+  implicit class SigmaPropValueOps(p: Value[SSigmaProp.type]) {
     def isValid: Value[SBoolean.type] = SigmaPropIsValid(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }

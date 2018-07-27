@@ -320,7 +320,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable {
   override type WrappedType = SigmaBoolean
   override val typeCode: TypeCode = 8: Byte
   override def mkConstant(v: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.ProofConstantDeclaration
+  override def dataCost(v: SType#WrappedType): Long = Cost.SigmaPropConstantDeclaration
   def ancestors = Nil
   val PropBytes = "propBytes"
   val IsValid = "isValid"
