@@ -275,7 +275,7 @@ case class SigmaPropIsValid(input: Value[SSigmaProp.type])
     input.cost(context) + Cost.SigmaPropIsValidDeclaration
 }
 
-/** Extract serialized bytes of a Proof value */
+/** Extract serialized bytes of a SigmaProp value */
 case class SigmaPropBytes(input: Value[SSigmaProp.type])
     extends Transformer[SSigmaProp.type, SByteArray] with NotReadyValue[SByteArray] {
   override val opCode: OpCode = OpCodes.SigmaPropBytesCode

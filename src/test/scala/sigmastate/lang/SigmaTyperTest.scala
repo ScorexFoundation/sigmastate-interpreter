@@ -82,11 +82,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "allOf(Array(c1, c2))") shouldBe SBoolean
     typecheck(env, "getVar[Byte](10)") shouldBe SByte
     typecheck(env, "getVar[Array[Byte]](10)") shouldBe SByteArray
-    typecheck(env, "getVar[Proof](10)") shouldBe SSigmaProp
-    typecheck(env, "p1 && getVar[Proof](10)") shouldBe SBoolean
-    typecheck(env, "getVar[Proof](10) || p2") shouldBe SBoolean
-    typecheck(env, "getVar[Proof](10) && getVar[Proof](11)") shouldBe SBoolean
-    typecheck(env, "Array(true, getVar[Proof](11))") shouldBe SCollection(SBoolean)
+    typecheck(env, "getVar[SigmaProp](10)") shouldBe SSigmaProp
+    typecheck(env, "p1 && getVar[SigmaProp](10)") shouldBe SBoolean
+    typecheck(env, "getVar[SigmaProp](10) || p2") shouldBe SBoolean
+    typecheck(env, "getVar[SigmaProp](10) && getVar[SigmaProp](11)") shouldBe SBoolean
+    typecheck(env, "Array(true, getVar[SigmaProp](11))") shouldBe SCollection(SBoolean)
   }
 
   property("let constructs") {
@@ -211,7 +211,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       SFunc(IndexedSeq(SInt, SBox), SLong)
     typecheck(env, "fun (p: (Int, GroupElement), box: Box): Boolean = p._1 > box.value && p._2.isIdentity") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
-    typecheck(env, "fun (p: (Int, Proof), box: Box): Boolean = p._1 > box.value && p._2.isValid") shouldBe
+    typecheck(env, "fun (p: (Int, SigmaProp), box: Box): Boolean = p._1 > box.value && p._2.isValid") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SSigmaProp), SBox), SBoolean)
 
     typefail(env, "fun (a) = a + 1", "undefined type of argument")
@@ -343,16 +343,16 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
     unifyTypes(SBoolean, SSigmaProp) shouldBe Some(emptySubst)
     unifyTypes(SSigmaProp, SBoolean) shouldBe None
-    check("(Int, Boolean)", "(Int, Proof)")
-    check("(Int, Boolean, Boolean)", "(Int, Proof, Proof)")
-    check("Array[Boolean]", "Array[Proof]")
-    check("Array[(Int,Boolean)]", "Array[(Int,Proof)]")
-    check("Array[Array[Boolean]]", "Array[Array[Proof]]")
-    check("Option[Boolean]", "Option[Proof]")
-    check("Option[(Int,Boolean)]", "Option[(Int,Proof)]")
-    check("Option[Option[Boolean]]", "Option[Option[Proof]]")
-    check("Int => Boolean", "Int => Proof")
-    check("(Int, Boolean) => Int", "(Int, Proof) => Int")
+    check("(Int, Boolean)", "(Int, SigmaProp)")
+    check("(Int, Boolean, Boolean)", "(Int, SigmaProp, SigmaProp)")
+    check("Array[Boolean]", "Array[SigmaProp]")
+    check("Array[(Int,Boolean)]", "Array[(Int,SigmaProp)]")
+    check("Array[Array[Boolean]]", "Array[Array[SigmaProp]]")
+    check("Option[Boolean]", "Option[SigmaProp]")
+    check("Option[(Int,Boolean)]", "Option[(Int,SigmaProp)]")
+    check("Option[Option[Boolean]]", "Option[Option[SigmaProp]]")
+    check("Int => Boolean", "Int => SigmaProp")
+    check("(Int, Boolean) => Int", "(Int, SigmaProp) => Int")
   }
 
   property("most specific general (MSG) type") {
@@ -378,26 +378,26 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     checkTypes(SBoolean, SSigmaProp, Some(SBoolean))
     checkTypes(SSigmaProp, SBoolean, Some(SBoolean))
 
-    check("(Int, Boolean)", "(Int, Proof)", Some(ty("(Int, Boolean)")))
-    check("(Int, Proof)", "(Int, Boolean)", Some(ty("(Int, Boolean)")))
-    check("Array[Boolean]", "Array[Proof]", Some(ty("Array[Boolean]")))
-    check("Array[Proof]", "Array[Boolean]", Some(ty("Array[Boolean]")))
-    check("Array[(Int,Boolean)]", "Array[(Int,Proof)]", Some(ty("Array[(Int,Boolean)]")))
-    check("Array[(Int,Proof)]", "Array[(Int,Boolean)]", Some(ty("Array[(Int,Boolean)]")))
-    check("Array[Array[Boolean]]", "Array[Array[Proof]]", Some(ty("Array[Array[Boolean]]")))
-    check("Array[Array[Proof]]", "Array[Array[Boolean]]", Some(ty("Array[Array[Boolean]]")))
-    check("Option[(Int,Boolean)]", "Option[(Int,Proof)]", Some(ty("Option[(Int,Boolean)]")))
-    check("Option[(Int,Proof)]", "Option[(Int,Boolean)]", Some(ty("Option[(Int,Boolean)]")))
-    check("Option[Option[Boolean]]", "Option[Option[Proof]]", Some(ty("Option[Option[Boolean]]")))
-    check("Option[Option[Proof]]", "Option[Option[Boolean]]", Some(ty("Option[Option[Boolean]]")))
-    check("Int => Boolean", "Int => Proof", Some(ty("Int => Boolean")))
-    check("Int => Proof", "Int => Boolean", Some(ty("Int => Boolean")))
+    check("(Int, Boolean)", "(Int, SigmaProp)", Some(ty("(Int, Boolean)")))
+    check("(Int, SigmaProp)", "(Int, Boolean)", Some(ty("(Int, Boolean)")))
+    check("Array[Boolean]", "Array[SigmaProp]", Some(ty("Array[Boolean]")))
+    check("Array[SigmaProp]", "Array[Boolean]", Some(ty("Array[Boolean]")))
+    check("Array[(Int,Boolean)]", "Array[(Int,SigmaProp)]", Some(ty("Array[(Int,Boolean)]")))
+    check("Array[(Int,SigmaProp)]", "Array[(Int,Boolean)]", Some(ty("Array[(Int,Boolean)]")))
+    check("Array[Array[Boolean]]", "Array[Array[SigmaProp]]", Some(ty("Array[Array[Boolean]]")))
+    check("Array[Array[SigmaProp]]", "Array[Array[Boolean]]", Some(ty("Array[Array[Boolean]]")))
+    check("Option[(Int,Boolean)]", "Option[(Int,SigmaProp)]", Some(ty("Option[(Int,Boolean)]")))
+    check("Option[(Int,SigmaProp)]", "Option[(Int,Boolean)]", Some(ty("Option[(Int,Boolean)]")))
+    check("Option[Option[Boolean]]", "Option[Option[SigmaProp]]", Some(ty("Option[Option[Boolean]]")))
+    check("Option[Option[SigmaProp]]", "Option[Option[Boolean]]", Some(ty("Option[Option[Boolean]]")))
+    check("Int => Boolean", "Int => SigmaProp", Some(ty("Int => Boolean")))
+    check("Int => SigmaProp", "Int => Boolean", Some(ty("Int => Boolean")))
 
-    checkAll(Seq("Boolean", "Proof"), Some(SBoolean))
-    checkAll(Seq("Boolean", "Proof", "Boolean"), Some(SBoolean))
-    checkAll(Seq("Boolean", "Proof", "Int"), None)
+    checkAll(Seq("Boolean", "SigmaProp"), Some(SBoolean))
+    checkAll(Seq("Boolean", "SigmaProp", "Boolean"), Some(SBoolean))
+    checkAll(Seq("Boolean", "SigmaProp", "Int"), None)
     checkAll(Seq("Int", "Int", "Int"), Some(SInt))
-    checkAll(Seq("(Int, Boolean)", "(Int,Proof)", "(Int,Boolean)"), Some(ty("(Int,Boolean)")))
+    checkAll(Seq("(Int, Boolean)", "(Int,SigmaProp)", "(Int,Boolean)"), Some(ty("(Int,Boolean)")))
   }
 
   property("invalid binary operations type check") {
