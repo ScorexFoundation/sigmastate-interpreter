@@ -18,16 +18,13 @@ class ErgoLikeContext(val currentHeight: Height,
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
-                      override val extension: ContextExtension = ContextExtension(Map())
+                      val extension: ContextExtension = ContextExtension(Map())
                  ) extends Context[ErgoLikeContext] {
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, self, newExtension)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, newSpendingTransaction, self, extension)
-
-  def withSelf(newSelf: ErgoBox): ErgoLikeContext =
-    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, newSelf, extension)
 }
 
 object ErgoLikeContext {
