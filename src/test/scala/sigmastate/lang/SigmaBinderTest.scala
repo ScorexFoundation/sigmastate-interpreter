@@ -23,7 +23,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "x") shouldBe IntConstant(10)
     bind(env, "b1") shouldBe ByteConstant(1)
     bind(env, "x+y") shouldBe Plus(10, 11)
-    bind(env, "c1 && c2") shouldBe AND(TrueLeaf, FalseLeaf)
+    bind(env, "c1 && c2") shouldBe MethodCall(TrueLeaf, "&&", IndexedSeq(FalseLeaf))
     bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
     bind(env, "HEIGHT + 1") shouldBe mkPlus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
@@ -59,7 +59,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "{let X = (10, true); X._1 > 2 && X._2}") shouldBe
       Block(
         Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)),
-        AND(GT(Select(IntIdent("X"), "_1").asValue[SInt.type], 2), Select(IntIdent("X"), "_2").asValue[SBoolean.type]))
+        MethodCall(GT(Select(IntIdent("X"), "_1").asValue[SInt.type], 2), "&&", IndexedSeq(Select(IntIdent("X"), "_2").asValue[SBoolean.type])))
   }
 
   property("predefined Exists with lambda argument") {

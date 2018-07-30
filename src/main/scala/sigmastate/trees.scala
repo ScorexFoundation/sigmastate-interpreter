@@ -77,8 +77,8 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     input.matchCase(in => {
         val reduced = iterChildren(in.items, mutable.Buffer())
         reduced.size match {
-          case i: Int if i == 0 => FalseLeaf
-          case i: Int if i == 1 => reduced.head
+          case 0 => FalseLeaf
+          case 1 => reduced.head
           case _ =>
             if (reduced.forall(_.isInstanceOf[SigmaBoolean])) COR(reduced.map(_.asInstanceOf[SigmaBoolean]))
             else OR(reduced)

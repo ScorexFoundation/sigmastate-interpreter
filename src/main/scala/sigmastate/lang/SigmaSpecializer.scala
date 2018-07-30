@@ -72,6 +72,14 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       else
         error(s"The type of $obj is expected to be Collection to select 'size' property")
 
+    // Rule: proof.isValid --> IsValid(proof)
+    case Select(p, SSigmaProp.IsValid, _) if p.tpe == SSigmaProp =>
+      Some(SigmaPropIsValid(p.asSigmaProp))
+
+    // Rule: proof.propBytes --> ProofBytes(proof)
+    case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
+      Some(SigmaPropBytes(p.asSigmaProp))
+
     case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(_)), Seq(arg)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))

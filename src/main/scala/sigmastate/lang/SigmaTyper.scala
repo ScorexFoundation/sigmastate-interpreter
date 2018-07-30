@@ -5,8 +5,11 @@ import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import SCollection.SBooleanArray
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException}
+import sigmastate.lang.SigmaPredef._
+import sigmastate.lang.exceptions.{TyperException, InvalidBinaryOperationParameters}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
@@ -22,16 +25,6 @@ import scala.collection.mutable.ArrayBuffer
 class SigmaTyper(val builder: SigmaBuilder) {
   import SigmaTyper._
   import builder._
-
-  /** Most Specific Generalized (MSG) type of ts.
-    * Currently just the type of the first element as long as all the elements have the same type. */
-  def msgTypeOf(ts: Seq[SType]): Option[SType] = {
-    val types = ts.distinct
-    if (types.isEmpty) None
-    else
-    if (types.lengthCompare(1) == 0) Some(types.head)
-    else None
-  }
 
   private val tT = STypeIdent("T") // to be used in typing rules
 
@@ -59,16 +52,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
     case c @ ConcreteCollection(items, _) =>
       val newItems = items.map(assignType(env, _))
-      val types = newItems.map(_.tpe).distinct
-      val tItem = if (items.isEmpty) {
-        if (c.elementType == NoType)
-          error(s"Undefined type of empty collection $c")
-        c.elementType
-      } else {
-        msgTypeOf(types).getOrElse(
-          error(s"All element of array $c should have the same type but found $types"))
-      }
-      mkConcreteCollection(newItems, tItem)
+      assignConcreteCollection(c, newItems)
 
     case Ident(n, _) =>
       env.get(n) match {
@@ -135,19 +119,23 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
     case app @ Apply(f, args) =>
       val new_f = assignType(env, f)
-
       new_f.tpe match {
         case SFunc(argTypes, tRes, _) =>
           // If it's a pre-defined function application
           if (args.length != argTypes.length)
             error(s"Invalid argument type of application $app: invalid number of arguments")
-          val newArgs = args.zip(argTypes).map {
+          val new_args = args.zip(argTypes).map {
             case (arg, expectedType) => assignType(env, arg, Some(expectedType))
+          }
+          val newArgs = new_f match {
+            case AllSym | AnySym =>
+              adaptSigmaPropToBoolean(new_args, argTypes)
+            case _ => new_args
           }
           val actualTypes = newArgs.map(_.tpe)
           if (actualTypes != argTypes)
-            error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
-          mkApply(new_f, newArgs)
+            error(s"Invalid argument type of application $app: expected $argTypes; actual after typing: $actualTypes")
+          mkApply(new_f, newArgs.toIndexedSeq)
         case _: SCollectionType[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
@@ -207,10 +195,43 @@ class SigmaTyper(val builder: SigmaBuilder) {
           case _ =>
             error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
+        case SSigmaProp => (m, newArgs) match {
+          case ("||" | "&&", Seq(r)) => r.tpe match {
+            case SBoolean =>
+              val (a,b) = (Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val res = if (m == "||") OR(a,b) else AND(a,b)
+              res
+            case SSigmaProp =>
+              val a = Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
+              val b = Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
+              val res = if (m == "||") OR(a,b) else AND(a,b)
+              res
+            case _ =>
+              error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}")
+          }
+          case _ =>
+            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+        }
         case nl: SNumericType => (m, newArgs) match {
           case ("*", Seq(r)) => r.tpe match {
             case nr: SNumericType =>
               bimap(env, "*", newObj.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
+            case _ =>
+              error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
+          }
+
+          case _ =>
+            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+        }
+        case SBoolean => (m, newArgs) match {
+          case ("||" | "&&", Seq(r)) => r.tpe match {
+            case SBoolean =>
+              val res = if (m == "||") OR(newObj.asBoolValue, r.asBoolValue) else AND(newObj.asBoolValue, r.asBoolValue)
+              res
+            case SSigmaProp =>
+              val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue)
+              val res = if (m == "||") OR(a,b) else AND(a,b)
+              res
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }
@@ -273,7 +294,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
     case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
     case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(mkModulo)(tT, tT)
     case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(mkDivide)(tT, tT)
-    
+
     case Xor(l, r) => bimap(env, "|", l, r)(mkXor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(mkMultiplyGroup)(SGroupElement, SGroupElement)
 
@@ -299,7 +320,19 @@ class SigmaTyper(val builder: SigmaBuilder) {
       if (!c1.tpe.isCollectionLike)
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})")
       mkSizeOf(c1)
-    
+
+    case SigmaPropIsValid(p) =>
+      val p1 = assignType(env, p)
+      if (!p1.tpe.isSigmaProp)
+        error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})")
+      SigmaPropIsValid(p1.asSigmaProp)
+
+    case SigmaPropBytes(p) =>
+      val p1 = assignType(env, p)
+      if (!p1.tpe.isSigmaProp)
+        error(s"Invalid operation ProofBytes: expected argument types ($SSigmaProp); actual: (${p.tpe})")
+      SigmaPropBytes(p1.asSigmaProp)
+
     case Height => Height
     case Self => Self
     case Inputs => Inputs
@@ -312,7 +345,32 @@ class SigmaTyper(val builder: SigmaBuilder) {
     case v: EvaluatedValue[_] => v
     case v: SigmaBoolean => v
     case v: Upcast[_, _] => v
-    case v => error(s"Don't know how to assignType($v)")
+    case v =>
+      error(s"Don't know how to assignType($v)")
+  }
+
+  def assignConcreteCollection(cc: ConcreteCollection[SType], newItems: IndexedSeq[Value[SType]]) = {
+    val types = newItems.map(_.tpe).distinct
+    val tItem = if (cc.items.isEmpty) {
+      if (cc.elementType == NoType)
+        error(s"Undefined type of empty collection $cc")
+      cc.elementType
+    } else {
+      msgTypeOf(types).getOrElse(
+        error(s"All element of array $cc should have the same type but found $types"))
+    }
+    ConcreteCollection(newItems)(tItem)
+  }
+
+  def adaptSigmaPropToBoolean(items: Seq[Value[SType]], expectedTypes: Seq[SType]): Seq[Value[SType]] = {
+    val res = items.zip(expectedTypes).map {
+      case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
+        val items = adaptSigmaPropToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
+        assignConcreteCollection(cc, items.toIndexedSeq)
+      case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsValid(it.asSigmaProp)
+      case (it,_) => it
+    }
+    res
   }
 
   def bimap[T <: SType]
@@ -369,7 +427,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
     if (untyped != null)
       error(s"Errors found in $bound while assigning types to expression: $untyped assigned NoType")
-      
+
     assigned
   }
 }
@@ -399,10 +457,12 @@ object SigmaTyper {
       None
   }
 
+  private val unifiedWithoutSubst = Some(emptySubst)
+
   /** Finds a substitution `subst` of type variables such that unifyTypes(applySubst(t1, subst), t2) shouldBe Some(emptySubst) */
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
     case (id1 @ STypeIdent(n1), id2 @ STypeIdent(n2)) =>
-      if (n1 == n2) Some(emptySubst) else None
+      if (n1 == n2) unifiedWithoutSubst else None
     case (id1 @ STypeIdent(n), _) =>
       Some(Map(id1 -> t2))
     case (e1: SCollectionType[_], e2: SCollectionType[_]) =>
@@ -418,12 +478,14 @@ object SigmaTyper {
     case (STypeApply(name1, args1), STypeApply(name2, args2))
       if name1 == name2 && args1.length == args2.length =>
       unifyTypeLists(args1, args2)
+    case (SBoolean, SSigmaProp) =>
+      unifiedWithoutSubst
     case (SPrimType(e1), SPrimType(e2)) if e1 == e2 =>
-      Some(Map())
+      unifiedWithoutSubst
     case (e1: SProduct, e2: SProduct) if e1.sameMethods(e2) =>
       unifyTypeLists(e1.methods.map(_.stype), e2.methods.map(_.stype))
     case (SAny, _) =>
-      Some(Map())
+      unifiedWithoutSubst
     case _ => None
   }
 
@@ -436,6 +498,27 @@ object SigmaTyper {
         case id: STypeIdent if subst.contains(id) => subst(id)
       }
       rewrite(everywherebu(substRule))(tpe)
+  }
+
+  def msgType(t1: SType, t2: SType): Option[SType] = unifyTypes(t1, t2) match {
+    case Some(_) => Some(t1)
+    case None => unifyTypes(t2, t1).map(_ => t2)
+  }
+
+  /** Most Specific Generalized (MSG) type of ts.
+    * Currently just the type of the first element as long as all the elements have the same type. */
+  def msgTypeOf(ts: Seq[SType]): Option[SType] = {
+    if (ts.isEmpty) None
+    else {
+      var res: SType = ts.head
+      for (t <- ts.iterator.drop(1)) {
+        msgType(t, res) match {
+          case Some(msg) => res = msg //assign new
+          case None => return None
+        }
+      }
+      Some(res)
+    }
   }
 
   def error(msg: String) = throw new TyperException(msg, None)

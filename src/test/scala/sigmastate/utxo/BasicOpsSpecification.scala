@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox, ErgoLikeInterpreter, Self}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
@@ -8,25 +8,7 @@ import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
-
-  def test(env: Map[String, Any], ext: Seq[(Byte, EvaluatedValue[_ <: SType])], script: String, propExp: Value[SBoolean.type]) = {
-    val prover = new ErgoLikeProvingInterpreter() {
-      override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ext.toMap
-    }
-
-    val prop = compile(env, script).asBoolValue
-    prop shouldBe propExp
-    //    val prop = propExp
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-
-    val ctxExt = ctx.withExtension(pr.extension)
-
-    val verifier = new ErgoLikeInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
-  }
-
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
   val intVar1 = 1.toByte
   val intVar2 = 2.toByte
   val byteVar1 = 3.toByte
@@ -36,7 +18,9 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   val bigIntVar3 = 7.toByte
   val byteVar3 = 8.toByte
   val booleanVar = 9.toByte
-  val lastExtVar = booleanVar
+  val propVar1 = 10.toByte
+  val propVar2 = 11.toByte
+  val lastExtVar = propVar2
 
   val ext = Seq(
     (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
@@ -46,7 +30,41 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   val env = Map(
     "intVar1" -> intVar1, "intVar2" -> intVar2,
     "byteVar1" -> byteVar1, "byteVar2" -> byteVar2, "byteVar3" -> byteVar3,
-    "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2, "bigIntVar3" -> bigIntVar3, "trueVar" -> booleanVar)
+    "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2, "bigIntVar3" -> bigIntVar3,
+    "trueVar" -> booleanVar,
+    "proofVar1" -> propVar1,
+    "proofVar2" -> propVar2
+    )
+
+  def test(env: Map[String, Any],
+           ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
+           script: String, propExp: Value[SBoolean.type],
+      onlyPositive: Boolean = false) = {
+    val prover = new ErgoLikeProvingInterpreter() {
+      override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
+        val p1 = dlogSecrets(0).publicImage
+        val p2 = dlogSecrets(1).publicImage
+        (ext ++ Seq(propVar1 -> SigmaPropConstant(p1), propVar2 -> SigmaPropConstant(p2))).toMap
+      }
+    }
+
+    val prop = compile(env, script).asBoolValue
+    prop shouldBe propExp
+
+    val p3 = prover.dlogSecrets(2).publicImage
+    val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(reg1 -> SigmaPropConstant(p3)))
+
+    val ctx = ErgoLikeContext.dummy(outputToSpend)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+
+    val ctxExt = ctx.withExtension(pr.extension)
+
+    val verifier = new ErgoLikeInterpreter
+    if (!onlyPositive)
+      verifier.verify(prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+  }
 
   property("Relation operations") {
     test(env, ext,
@@ -80,6 +98,64 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test(env, ext,
       "{ getVar[BigInt](bigIntVar2) >= getVar[BigInt](bigIntVar1) && getVar[BigInt](bigIntVar1) <= getVar[BigInt](bigIntVar2) }",
       AND(GE(TaggedBigInt(bigIntVar2), TaggedBigInt(bigIntVar1)), LE(TaggedBigInt(bigIntVar1), TaggedBigInt(bigIntVar2)))
+    )
+  }
+
+  property("SigmaProp operations") {
+    test(env, ext,
+      "{ getVar[SigmaProp](proofVar1).isValid }",
+      TaggedSigmaProp(propVar1).isValid
+    )
+    test(env, ext,
+      "{ getVar[SigmaProp](proofVar1) || getVar[SigmaProp](proofVar2) }",
+      OR(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
+    )
+    test(env, ext,
+      "{ getVar[SigmaProp](proofVar1) && getVar[SigmaProp](proofVar2) }",
+      AND(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
+    )
+    test(env, ext,
+      "{ getVar[SigmaProp](proofVar1).isValid && getVar[SigmaProp](proofVar2) }",
+      AND(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
+    )
+    test(env, ext,
+      "{ getVar[SigmaProp](proofVar1) && getVar[Int](intVar1) == 1 }",
+      AND(TaggedSigmaProp(propVar1).isValid, EQ(TaggedInt(intVar1), 1))
+    )
+    test(env, ext,
+      "{ getVar[Int](intVar1) == 1 || getVar[SigmaProp](proofVar1) }",
+      OR(EQ(TaggedInt(intVar1), 1), TaggedSigmaProp(propVar1).isValid)
+    )
+    test(env, ext,
+      "{ SELF.R4[SigmaProp].value.isValid }",
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid,
+      true
+    )
+    test(env, ext,
+      "{ SELF.R4[SigmaProp].value && getVar[SigmaProp](proofVar1)}",
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
+      true
+    )
+    test(env, ext,
+      "{ allOf(Array(SELF.R4[SigmaProp].value, getVar[SigmaProp](proofVar1)))}",
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
+      true
+    )
+    test(env, ext,
+      "{ anyOf(Array(SELF.R4[SigmaProp].value, getVar[SigmaProp](proofVar1)))}",
+      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
+      true
+    )
+    test(env, ext,
+      "{ Array(SELF.R4[SigmaProp].value, getVar[SigmaProp](proofVar1)).forall(fun (p: SigmaProp) = p.isValid) }",
+      ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), TaggedSigmaProp(propVar1)),
+        21, SigmaPropIsValid(TaggedSigmaProp(21))),
+      true
+    )
+    test(env, ext,
+      "{ SELF.R4[SigmaProp].value.propBytes != getVar[SigmaProp](proofVar1).propBytes }",
+      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, reg1).propBytes, TaggedSigmaProp(propVar1).propBytes),
+      true
     )
   }
 

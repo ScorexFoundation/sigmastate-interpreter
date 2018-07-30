@@ -1,15 +1,14 @@
 package sigmastate.interpreter
 
-import java.math.BigInteger
 import java.util
 import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{and, everywherebu, log, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
@@ -17,10 +16,10 @@ import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.utxo.{DeserializeContext, CostTable, Transformer, SigmaPropIsValid}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -382,9 +381,9 @@ object Interpreter {
   type ReductionResult = (Value[SBoolean.type], Long)
 
   implicit class InterpreterOps(I: Interpreter) {
-    def eval[T <: SType](ctx: Context[_], ev: Value[T]): EvaluatedValue[T] = {
+    def eval[T <: SType](ctx: Context[_], ev: Value[T]): Value[T] = {
       val reduced = I.reduceUntilConverged(ctx.asInstanceOf[I.CTX], ev)
-      reduced.asInstanceOf[EvaluatedValue[T]]
+      reduced
     }
   }
 

@@ -16,6 +16,8 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
+import sigmastate.utxo.{SigmaPropIsValid, SigmaPropBytes}
+
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -57,6 +59,8 @@ object Values {
     implicit def liftBigInt(arr: BigInteger): Value[SBigInt.type] = BigIntConstant(arr)
 
     implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
+
+    implicit def liftSigmaProp(g: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(g)
 
     def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.mkConstant(const)
 
@@ -133,6 +137,7 @@ object Values {
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
   type GroupElementConstant = Constant[SGroupElement.type]
+  type SigmaPropConstant = Constant[SSigmaProp.type]
   type AvlTreeConstant = Constant[SAvlTree.type]
 
   object ByteConstant {
@@ -191,6 +196,14 @@ object Values {
     }
   }
 
+  object SigmaPropConstant {
+    def apply(value: SigmaBoolean): Constant[SSigmaProp.type]  = Constant[SSigmaProp.type](value, SSigmaProp)
+    def unapply(v: SValue): Option[SigmaBoolean] = v match {
+      case Constant(value: SigmaBoolean, SSigmaProp) => Some(value)
+      case _ => None
+    }
+  }
+
   object AvlTreeConstant {
     def apply(value: AvlTreeData): Constant[SAvlTree.type]  = Constant[SAvlTree.type](value, SAvlTree)
     def unapply(v: SValue): Option[AvlTreeData] = v match {
@@ -238,6 +251,7 @@ object Values {
   type TaggedBigInt = TaggedVariable[SBigInt.type]
   type TaggedBox = TaggedVariable[SBox.type]
   type TaggedGroupElement = TaggedVariable[SGroupElement.type]
+  type TaggedSigmaProp = TaggedVariable[SSigmaProp.type]
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
@@ -250,6 +264,7 @@ object Values {
   def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
   def TaggedGroupElement(id: Byte): Value[SGroupElement.type] =
     mkTaggedVariable(id, SGroupElement)
+  def TaggedSigmaProp(id: Byte): TaggedSigmaProp = TaggedVariable(id, SSigmaProp)
   def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
   def TaggedByteArray (id: Byte): Value[SCollection[SByte.type]] =
     mkTaggedVariable(id, SByteArray)
@@ -485,5 +500,10 @@ object Values {
         _.toConcreteCollection,
         t => ConcreteCollection(t.items.map(_.asValue[T]), SAny.asInstanceOf[T])
       )
+  }
+
+  implicit class SigmaPropValueOps(p: Value[SSigmaProp.type]) {
+    def isValid: Value[SBoolean.type] = SigmaPropIsValid(p)
+    def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
 }

@@ -8,6 +8,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
 import sigmastate.lang.TransformingSigmaBuilder._
+import sigmastate.utxo.CostTable.Cost
 
 object Terms {
 
@@ -50,7 +51,7 @@ object Terms {
   case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
 
-    override def cost[C <: Context[C]](context: C): Long = ???
+    override def cost[C <: Context[C]](context: C): Long = obj.cost(context) + Cost.SelectFieldDeclaration
 
     override def evaluated: Boolean = ???
     val tpe: SType = resType.getOrElse(obj.tpe match {
@@ -136,6 +137,7 @@ object Terms {
     def asSigmaValue: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
     def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
+    def asSigmaProp: Value[SSigmaProp.type] = v.asInstanceOf[Value[SSigmaProp.type]]
     def asByteArray: Value[SByteArray] = v.asInstanceOf[Value[SByteArray]]
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
     def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]

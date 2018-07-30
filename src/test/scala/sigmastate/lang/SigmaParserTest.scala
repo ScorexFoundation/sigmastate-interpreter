@@ -35,6 +35,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     }
   }
 
+  def and(l: SValue, r: SValue) = MethodCall(l, "&&", IndexedSeq(r))
+  def or(l: SValue, r: SValue) = MethodCall(l, "||", IndexedSeq(r))
+
   property("simple expressions") {
     parse("10") shouldBe IntConstant(10)
     parse("10L") shouldBe LongConstant(10)
@@ -51,11 +54,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("1 / 2") shouldBe Divide(1, 2)
     parse("5 % 2") shouldBe Modulo(5, 2)
     parse("1==1") shouldBe EQ(1, 1)
-    parse("true && true") shouldBe AND(TrueLeaf, TrueLeaf)
-    parse("true || false") shouldBe OR(TrueLeaf, FalseLeaf)
-    parse("true || (true && false)") shouldBe OR(TrueLeaf, AND(TrueLeaf, FalseLeaf))
-    parse("false || false || false") shouldBe OR(OR(FalseLeaf, FalseLeaf), FalseLeaf)
-    parse("(1>= 0)||(3L >2L)") shouldBe OR(GE(1, 0), GT(3L, 2L))
+    parse("true && true") shouldBe and(TrueLeaf, TrueLeaf)
+    parse("true || false") shouldBe or(TrueLeaf, FalseLeaf)
+    parse("true || (true && false)") shouldBe or(TrueLeaf, and(TrueLeaf, FalseLeaf))
+    parse("false || false || false") shouldBe or(or(FalseLeaf, FalseLeaf), FalseLeaf)
+    parse("(1>= 0)||(3L >2L)") shouldBe or(GE(1, 0), GT(3L, 2L))
     parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
     parse("arr1 ++ arr2") shouldBe MethodCall(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
     parse("col1 ++ col2") shouldBe MethodCall(Ident("col1"), "++", IndexedSeq(Ident("col2")))
@@ -66,19 +69,19 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   property("precedence of binary operations") {
     parse("1 + 2 + 3") shouldBe Plus(Plus(1, 2), 3)
     parse("1 + 2 + 3 + 4") shouldBe Plus(Plus(Plus(1, 2), 3), 4)
-    parse("1 == 0 || 3 == 2") shouldBe OR(EQ(1, 0), EQ(3, 2))
+    parse("1 == 0 || 3 == 2") shouldBe or(EQ(1, 0), EQ(3, 2))
     parse("3 + 2 > 2 + 1") shouldBe GT(Plus(3, 2), Plus(2, 1))
     parse("1 + 2 + 3 > 4 + 5 + 6") shouldBe GT(Plus(Plus(1, 2), 3), Plus(Plus(4, 5), 6))
-    parse("1 >= 0 || 3 > 2") shouldBe OR(GE(1, 0), GT(3, 2))
-    parse("2 >= 0 + 1 || 3 - 1 >= 2") shouldBe OR(GE(2, Plus(0, 1)), GE(Minus(3, 1), 2))
+    parse("1 >= 0 || 3 > 2") shouldBe or(GE(1, 0), GT(3, 2))
+    parse("2 >= 0 + 1 || 3 - 1 >= 2") shouldBe or(GE(2, Plus(0, 1)), GE(Minus(3, 1), 2))
     parse("x1 || x2 > x3 + x4 - x5 || x6") shouldBe
-      OR(
-        OR(BoolIdent("x1"),
+      or(
+        or(BoolIdent("x1"),
            GT(IntIdent("x2"),
               Minus(Plus(IntIdent("x3"), IntIdent("x4")), IntIdent("x5")))),
         BoolIdent("x6"))
     parse("x1 || x2 > x3 + x4") shouldBe
-      OR(BoolIdent("x1"),
+      or(BoolIdent("x1"),
         GT(IntIdent("x2"),
           Plus(IntIdent("x3"), IntIdent("x4"))))
   }
@@ -279,9 +282,16 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
                Plus(Ident("x").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]))
     parse("fun (p: (Int, GroupElement), box: Box): Boolean = p._1 > box.value && p._2.isIdentity") shouldBe
         Lambda(IndexedSeq("p" -> STuple(SInt, SGroupElement), "box" -> SBox), SBoolean,
-          AND(
+          and(
             GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]),
             Select(Select(Ident("p"), "_2"), "isIdentity").asValue[SBoolean.type]
+            )
+        )
+    parse("fun (p: (Int, SigmaProp), box: Box): Boolean = p._1 > box.value && p._2.isValid") shouldBe
+        Lambda(IndexedSeq("p" -> STuple(SInt, SSigmaProp), "box" -> SBox), SBoolean,
+          and(
+            GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]),
+            Select(Select(Ident("p"), "_2"), "isValid").asValue[SBoolean.type]
             )
         )
 

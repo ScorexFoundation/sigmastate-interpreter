@@ -1,9 +1,10 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
-
 import org.ergoplatform.ErgoBox
+import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{ByteWriter, ByteReader}
+import sigmastate.utils.Extensions._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import scala.collection.mutable
@@ -24,6 +25,9 @@ object DataSerializer {
       w.putBytes(data)
     case SGroupElement =>
       GroupElementSerializer.serializeBody(v.asInstanceOf[EcPointType], w)
+    case SSigmaProp =>
+      val p = v.asInstanceOf[SigmaBoolean]
+      w.putValue(p)
     case SBox =>
       ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
@@ -68,6 +72,9 @@ object DataSerializer {
       new BigInteger(valueBytes)
     case SGroupElement =>
       GroupElementSerializer.parseBody(r)
+    case SSigmaProp =>
+      val p = r.getValue().asInstanceOf[SigmaBoolean]
+      p
     case SBox =>
       ErgoBox.serializer.parseBody(r)
     case SAvlTree =>

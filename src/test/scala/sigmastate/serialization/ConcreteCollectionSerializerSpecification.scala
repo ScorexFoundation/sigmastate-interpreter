@@ -28,6 +28,7 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
     testCollectionWithConstant(SLong)
     testCollectionWithConstant(SBigInt)
     testCollectionWithConstant(SGroupElement)
+    testCollectionWithConstant(SSigmaProp)
     testCollectionWithConstant(SUnit)
     testCollectionWithConstant(SBox)
     testCollectionWithConstant(SAvlTree)
