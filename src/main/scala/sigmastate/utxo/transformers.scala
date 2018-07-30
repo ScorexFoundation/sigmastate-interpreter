@@ -7,7 +7,6 @@ import sigmastate._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
-import sigmastate.utils.Helpers
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.{MandatoryRegisterId, RegisterId}
 
@@ -128,7 +127,10 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
     val filtered = cc.items.filter { case v: EvaluatedValue[IV] =>
       val localCtx = ctx.withBindings(id -> v)
       val reduced = intr.eval(localCtx, condition)
-      reduced.value
+      reduced match {
+        case ev: EvaluatedValue[SBoolean.type] => ev.value
+        case _ => Interpreter.error(s"Expected EvaluatedValue during execution of where but found $reduced")
+      }
     }
     ConcreteCollection(filtered)(tpe.elemType)
   }
@@ -258,6 +260,33 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
   }
   override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.SelectFieldDeclaration
+}
+
+/** Represents execution of Sigma protocol that validates the given input SigmaProp. */
+case class SigmaPropIsValid(input: Value[SSigmaProp.type])
+    extends Transformer[SSigmaProp.type, SBoolean.type] with NotReadyValueBoolean {
+  override val opCode: OpCode = OpCodes.SigmaPropIsValidCode
+  override def transformationReady: Boolean = input.isInstanceOf[EvaluatedValue[_]]
+
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SSigmaProp.type]): Value[SBoolean.type] = {
+    input.value
+  }
+  override def cost[C <: Context[C]](context: C): Long =
+    input.cost(context) + Cost.SigmaPropIsValidDeclaration
+}
+
+/** Extract serialized bytes of a SigmaProp value */
+case class SigmaPropBytes(input: Value[SSigmaProp.type])
+    extends Transformer[SSigmaProp.type, SByteArray] with NotReadyValue[SByteArray] {
+  override val opCode: OpCode = OpCodes.SigmaPropBytesCode
+  def tpe = SByteArray
+  override def transformationReady: Boolean = input.isInstanceOf[EvaluatedValue[_]]
+
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SSigmaProp.type]): Value[SByteArray] = {
+    ByteArrayConstant(input.value.bytes)
+  }
+  override def cost[C <: Context[C]](context: C): Long =
+    input.cost(context) + Cost.SigmaPropBytes
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])

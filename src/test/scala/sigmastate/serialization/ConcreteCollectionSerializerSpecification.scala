@@ -28,6 +28,7 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
     testCollectionWithConstant(SLong)
     testCollectionWithConstant(SBigInt)
     testCollectionWithConstant(SGroupElement)
+    testCollectionWithConstant(SSigmaProp)
     testCollectionWithConstant(SUnit)
     testCollectionWithConstant(SBox)
     testCollectionWithConstant(SAvlTree)
@@ -49,4 +50,9 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
   tableRoundTripTest("Specific objects serializer round trip")
   tablePredefinedBytesTest("Specific objects deserialize from predefined bytes")
 
+  property("ConcreteCollection: deserialize collection of a crazy size") {
+    val bytes = Array[Byte](OpCodes.ConcreteCollectionCode) ++
+      Serializer.startWriter().putUInt(Int.MaxValue).toBytes
+    an[AssertionError] should be thrownBy ValueSerializer.deserialize(bytes)
+  }
 }

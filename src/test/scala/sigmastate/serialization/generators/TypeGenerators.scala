@@ -11,15 +11,16 @@ trait TypeGenerators {
   implicit val longTypeGen = Gen.const(SLong)
   implicit val bigIntTypeGen = Gen.const(SBigInt)
   implicit val groupElementTypeGen = Gen.const(SGroupElement)
+  implicit val sigmaPropTypeGen = Gen.const(SSigmaProp)
   implicit val boxTypeGen = Gen.const(SBox)
   implicit val avlTreeTypeGen = Gen.const(SAvlTree)
 
   implicit val primTypeGen: Gen[SPrimType] =
-    Gen.oneOf[SPrimType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SUnit)
+    Gen.oneOf[SPrimType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp, SUnit)
   implicit val arbPrimType = Arbitrary(primTypeGen)
 
   implicit val predefTypeGen: Gen[SPredefType] =
-    Gen.oneOf[SPredefType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SUnit, SBox, SAvlTree)
+    Gen.oneOf[SPredefType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp, SUnit, SBox, SAvlTree)
   implicit val arbPredefType = Arbitrary(predefTypeGen)
 
   implicit def getToArbitrary[T: Gen]: Arbitrary[T] = Arbitrary(implicitly[Gen[T]])

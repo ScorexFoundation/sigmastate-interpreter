@@ -1,24 +1,27 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Objects, Arrays}
+import java.util.{Arrays, Objects}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants}
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Overloading.Overload1
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
+import sigmastate.utxo.{SigmaPropIsValid, SigmaPropBytes}
+
+
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+import sigmastate.lang.DefaultSigmaBuilder._
 
 
 object Values {
@@ -57,6 +60,8 @@ object Values {
 
     implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
+    implicit def liftSigmaProp(g: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(g)
+
     def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.mkConstant(const)
 
     object Typed {
@@ -70,7 +75,9 @@ object Values {
     override lazy val evaluated = true
   }
 
-  case class Constant[S <: SType](value: S#WrappedType, tpe: S) extends EvaluatedValue[S] {
+  trait Constant[S <: SType] extends EvaluatedValue[S] {}
+
+  case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     override val opCode: OpCode = (ConstantCode + tpe.typeCode).toByte
     override def cost[C <: Context[C]](context: C) = tpe.dataCost(value)
 
@@ -82,6 +89,14 @@ object Values {
     override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
   }
 
+  object Constant {
+    def apply[S <: SType](value: S#WrappedType, tpe: S): Constant[S] = ConstantNode(value, tpe)
+    def unapply[S <: SType](v: EvaluatedValue[S]): Option[(S#WrappedType, S)] = v match {
+      case ConstantNode(value, tpe) => Some((value, tpe))
+      case _ => None
+    }
+  }
+
   trait NotReadyValue[S <: SType] extends Value[S] {
     override lazy val evaluated = false
   }
@@ -91,9 +106,19 @@ object Values {
   }
 
   /** Reference a context variable by id. */
-  case class TaggedVariable[T <: SType](varId: Byte, override val tpe: T) extends ContextVariable[T] {
+  trait TaggedVariable[T <: SType] extends ContextVariable[T] {
+    val varId: Byte
+  }
+
+  case class TaggedVariableNode[T <: SType](varId: Byte, override val tpe: T)
+    extends TaggedVariable[T] {
     override val opCode: OpCode = TaggedVariableCode
-    override def cost[C <: Context[C]](context: C) = context.extension.cost(varId) + 1
+    override def cost[C <: Context[C]](context: C): Long = context.extension.cost(varId) + 1
+  }
+
+  object TaggedVariable {
+    def apply[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
+      TaggedVariableNode(varId, tpe)
   }
 
   case object UnitConstant extends EvaluatedValue[SUnit.type] {
@@ -112,6 +137,7 @@ object Values {
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
   type GroupElementConstant = Constant[SGroupElement.type]
+  type SigmaPropConstant = Constant[SSigmaProp.type]
   type AvlTreeConstant = Constant[SAvlTree.type]
 
   object ByteConstant {
@@ -170,6 +196,14 @@ object Values {
     }
   }
 
+  object SigmaPropConstant {
+    def apply(value: SigmaBoolean): Constant[SSigmaProp.type]  = Constant[SSigmaProp.type](value, SSigmaProp)
+    def unapply(v: SValue): Option[SigmaBoolean] = v match {
+      case Constant(value: SigmaBoolean, SSigmaProp) => Some(value)
+      case _ => None
+    }
+  }
+
   object AvlTreeConstant {
     def apply(value: AvlTreeData): Constant[SAvlTree.type]  = Constant[SAvlTree.type](value, SAvlTree)
     def unapply(v: SValue): Option[AvlTreeData] = v match {
@@ -217,19 +251,23 @@ object Values {
   type TaggedBigInt = TaggedVariable[SBigInt.type]
   type TaggedBox = TaggedVariable[SBox.type]
   type TaggedGroupElement = TaggedVariable[SGroupElement.type]
+  type TaggedSigmaProp = TaggedVariable[SSigmaProp.type]
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
-  def TaggedBoolean(id: Byte): TaggedBoolean = TaggedVariable(id, SBoolean)
-  def TaggedByte   (id: Byte): TaggedByte = TaggedVariable(id, SByte)
-  def TaggedShort  (id: Byte): TaggedShort = TaggedVariable(id, SShort)
-  def TaggedInt    (id: Byte): TaggedInt = TaggedVariable(id, SInt)
-  def TaggedLong   (id: Byte): TaggedLong = TaggedVariable(id, SLong)
-  def TaggedBigInt (id: Byte): TaggedBigInt = TaggedVariable(id, SBigInt)
-  def TaggedBox    (id: Byte): TaggedBox = TaggedVariable(id, SBox)
-  def TaggedGroupElement(id: Byte): TaggedGroupElement = TaggedVariable(id, SGroupElement)
-  def TaggedAvlTree     (id: Byte): TaggedAvlTree = TaggedVariable(id, SAvlTree)
-  def TaggedByteArray   (id: Byte): TaggedByteArray = TaggedVariable(id, SByteArray)
+  def TaggedBoolean(id: Byte): Value[SBoolean.type] = mkTaggedVariable(id, SBoolean)
+  def TaggedByte(id: Byte): Value[SByte.type] = mkTaggedVariable(id, SByte)
+  def TaggedShort(id: Byte): Value[SShort.type] = mkTaggedVariable(id, SShort)
+  def TaggedInt(id: Byte): Value[SInt.type] = mkTaggedVariable(id, SInt)
+  def TaggedLong(id: Byte): Value[SLong.type] = mkTaggedVariable(id, SLong)
+  def TaggedBigInt(id: Byte): Value[SBigInt.type] = mkTaggedVariable(id, SBigInt)
+  def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
+  def TaggedGroupElement(id: Byte): Value[SGroupElement.type] =
+    mkTaggedVariable(id, SGroupElement)
+  def TaggedSigmaProp(id: Byte): TaggedSigmaProp = TaggedVariable(id, SSigmaProp)
+  def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
+  def TaggedByteArray (id: Byte): Value[SCollection[SByte.type]] =
+    mkTaggedVariable(id, SByteArray)
 
   trait EvaluatedCollection[T <: SType, C <: SCollection[T]] extends EvaluatedValue[C] {
     def elementType: T
@@ -251,9 +289,9 @@ object Values {
 
   implicit class CollectionConstantOps[T <: SType](c: CollectionConstant[T]) {
     def toConcreteCollection: ConcreteCollection[T] = {
-      implicit val tElem = c.tpe.elemType
+      val tElem = c.tpe.elemType
       val items = c.value.map(v => tElem.mkConstant(v.asInstanceOf[tElem.WrappedType]))
-      ConcreteCollection(items)
+      ConcreteCollection(items, tElem)
     }
   }
 
@@ -391,8 +429,6 @@ object Values {
 
   object Tuple {
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
-
-    def apply(items: Seq[Value[SType]])(implicit o: Overload1): Tuple = Tuple(items.toIndexedSeq)
   }
 
   trait OptionValue[T <: SType] extends EvaluatedValue[SOption[T]] {
@@ -434,11 +470,11 @@ object Values {
     }
   }
   object ConcreteCollection {
-    def apply[V <: SType](items: Value[V]*)(implicit tV: V) =
-      new ConcreteCollection(items.toIndexedSeq, tV)
+    def apply[V <: SType](items: Value[V]*)(implicit tV: V): ConcreteCollection[V] =
+      ConcreteCollection(items.toIndexedSeq, tV)
 
-    def apply[V <: SType](items: => Seq[Value[V]])(implicit tV: V) =
-      new ConcreteCollection(items.toIndexedSeq, tV)
+    def apply[V <: SType](items: => Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
+      ConcreteCollection(items.toIndexedSeq, tV)
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
@@ -464,5 +500,10 @@ object Values {
         _.toConcreteCollection,
         t => ConcreteCollection(t.items.map(_.asValue[T]), SAny.asInstanceOf[T])
       )
+  }
+
+  implicit class SigmaPropValueOps(p: Value[SSigmaProp.type]) {
+    def isValid: Value[SBoolean.type] = SigmaPropIsValid(p)
+    def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
 }

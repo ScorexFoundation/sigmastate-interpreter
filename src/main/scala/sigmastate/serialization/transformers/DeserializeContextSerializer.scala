@@ -1,13 +1,15 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.SType
+import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.DeserializeContext
-import sigmastate.utils.Extensions._
 
-object DeserializeContextSerializer extends ValueSerializer[DeserializeContext[SType]] {
+case class DeserializeContextSerializer(cons: (Byte, SType) => Value[SType])
+  extends ValueSerializer[DeserializeContext[SType]] {
 
   override val opCode: OpCode = OpCodes.DeserializeContextCode
 
@@ -15,9 +17,9 @@ object DeserializeContextSerializer extends ValueSerializer[DeserializeContext[S
     w.putType(obj.tpe)
       .put(obj.id)
 
-  override def parseBody(r: ByteReader): DeserializeContext[SType] = {
+  override def parseBody(r: ByteReader): Value[SType] = {
     val tpe = r.getType()
     val id = r.getByte()
-    DeserializeContext(id, tpe)
+    cons(id, tpe)
   }
 }

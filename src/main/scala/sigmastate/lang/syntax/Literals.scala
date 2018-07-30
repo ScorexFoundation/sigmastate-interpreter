@@ -8,7 +8,10 @@ import fastparse.{all, core}
 import java.lang.Long.parseLong
 import java.lang.Integer.parseInt
 
+import sigmastate.lang.{SigmaBuilder, StdSigmaBuilder}
+
 trait Literals { l =>
+  var builder: SigmaBuilder = StdSigmaBuilder
   def Block: P[Value[SType]]
   def Pattern: P0
 
@@ -87,9 +90,9 @@ trait Literals { l =>
               val suffix = lit.charAt(lit.length - 1)
               val (digits, radix) = if (lit.startsWith("0x")) (lit.substring(2), 16) else (lit, 10)
               if (suffix == 'L' || suffix == 'l')
-                LongConstant(sign * parseLong(digits.substring(0, digits.length - 1), radix))
+                builder.mkConstant[SLong.type](sign * parseLong(digits.substring(0, digits.length - 1), radix), SLong)
               else
-                IntConstant(sign * parseInt(digits, radix))
+                builder.mkConstant[SInt.type](sign * parseInt(digits, radix), SInt)
           }
         | Bool
         /*| String | "'" ~/ (Char | Symbol) | Null*/ )

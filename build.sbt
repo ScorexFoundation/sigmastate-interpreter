@@ -45,6 +45,7 @@ libraryDependencies ++= Seq(
 
 publishMavenStyle := true
 
+parallelExecution in Test := false
 publishArtifact in Test := false
 
 publishTo := {

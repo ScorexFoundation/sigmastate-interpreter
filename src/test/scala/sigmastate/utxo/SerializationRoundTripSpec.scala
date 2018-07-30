@@ -17,15 +17,15 @@ class SerializationRoundTripSpec extends PropSpec
 
   private def roundTripTest[T](v: T)(implicit serializer: Serializer[T, T]): Assertion = {
     val bytes = serializer.toBytes(v)
-    serializer.parseBytes(bytes).get shouldBe v
+    serializer.parseBody(Serializer.startReader(bytes)) shouldBe v
   }
 
   private def roundTripTestWithPos[T](v: T)(implicit serializer: Serializer[T, T]): Assertion = {
     val randomBytesCount = Gen.chooseNum(1, 20).sample.get
     val randomBytes = Gen.listOfN(randomBytesCount, arbByte.arbitrary).sample.get.toArray
     val bytes = serializer.toBytes(v)
-    serializer.parseBytes(bytes).get shouldBe v
-    serializer.parseBody(randomBytes ++ bytes, randomBytesCount) shouldEqual (v, bytes.length)
+    serializer.parseBody(Serializer.startReader(bytes)) shouldBe v
+    serializer.parseBody(Serializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
   }
 
   property("ErgoBoxCandidate: Serializer round trip") {

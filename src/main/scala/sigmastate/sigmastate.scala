@@ -2,36 +2,35 @@ import sigmastate.Values.Value
 import sigmastate.lang.DefaultSigmaBuilder
 
 package object sigmastate {
+  import DefaultSigmaBuilder._
 
   /**
     * SInt addition
     */
   def Plus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    DefaultSigmaBuilder.Plus(left, right)
+    mkPlus(left, right)
 
   /**
     * SInt subtraction
     */
   def Minus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    DefaultSigmaBuilder.Minus(left, right)
+    mkMinus(left, right)
 
   /**
     * SInt multiplication
     */
   def Multiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    DefaultSigmaBuilder.Multiply(left, right)
+    mkMultiply(left, right)
 
   /**
     * SInt division
     */
   def Divide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    DefaultSigmaBuilder.Divide(left, right)
+    mkDivide(left, right)
 
   /**
     * SInt modulo
     */
   def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    DefaultSigmaBuilder.Modulo(left, right)
-
-
+    mkModulo(left, right)
 }

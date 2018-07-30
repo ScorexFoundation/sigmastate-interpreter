@@ -28,15 +28,16 @@ class SigmaSpecializerTest extends PropSpec
     }
 
   def typed(env: Map[String, SValue], x: String): SValue = {
-    val parsed = SigmaParser(x).get.value
-    val binder = new SigmaBinder(env)
+    val builder = TransformingSigmaBuilder
+    val parsed = SigmaParser(x, builder).get.value
+    val binder = new SigmaBinder(env, builder)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper
+    val typer = new SigmaTyper(builder)
     val typed = typer.typecheck(bound)
     typed
   }
   def spec(env: Map[String, SValue], typed: SValue): SValue = {
-    val spec = new SigmaSpecializer()
+    val spec = new SigmaSpecializer(TransformingSigmaBuilder)
     spec.specialize(env, typed)
   }
   def spec(code: String): SValue = {

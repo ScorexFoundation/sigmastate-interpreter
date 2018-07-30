@@ -3,10 +3,11 @@ package sigmastate.serialization
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utils.Extensions._
+import sigmastate.utils.{ByteReader, ByteWriter}
 
-object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: SType]] {
+case class TaggedVariableSerializer(cons: (Byte, SType) => Value[SType])
+  extends ValueSerializer[TaggedVariable[_ <: SType]] {
 
   override val opCode: OpCode = TaggedVariableCode
 
@@ -14,9 +15,9 @@ object TaggedVariableSerializer extends ValueSerializer[TaggedVariable[_ <: STyp
     w.put(obj.varId)
       .putType(obj.tpe)
 
-  override def parseBody(r: ByteReader): TaggedVariable[_ <: SType] = {
+  override def parseBody(r: ByteReader): Value[SType] = {
     val varId = r.getByte()
     val tpe = r.getType()
-    TaggedVariable(varId, tpe)
+    cons(varId, tpe)
   }
 }

@@ -4,7 +4,6 @@ import sigmastate.SType
 import sigmastate.Values.Value
 import sigmastate.serialization.ValueSerializer
 
-import scala.collection.mutable
 import scala.reflect.ClassTag
 
 /**
@@ -16,17 +15,18 @@ class SparseArrayContainer[T: ClassTag](values: Seq[(Byte, T)]) {
   private val sparseArray: Array[T] = build(values)
 
   private def build(sers: Seq[(Byte, T)]): Array[T] = {
-    require(sers.size == sers.map(_._1).toSet.size, s"expected distinct codes, got: $sers")
-    val b = mutable.ArrayBuilder.make[T]()
-    val mappedSers: Map[Byte, T] = sers.toMap
-    for (i <- Byte.MinValue to Byte.MaxValue) {
-      mappedSers.get(i.toByte) match {
-        case Some(v) => b += v
-        case None => b += null.asInstanceOf[T]
-      }
+    val set = sers.map(_._1).toSet
+    require(sers.size == set.size,
+      s"expected distinct codes, got duplicated: ${sers.groupBy { case (b, _) => b }.filter { case (k, g) => g.size > 1 }.toList }")
+    val array = Array.fill[T](256)(null.asInstanceOf[T])
+    sers.foreach { case (code, value) =>
+        array(codeToIndex(code)) = value
     }
-    b.result()
+    array
   }
+
+  @inline
+  private def codeToIndex(code: Byte): Int = code + 128
 
   /**
     * Returns value for the given code
@@ -34,7 +34,7 @@ class SparseArrayContainer[T: ClassTag](values: Seq[(Byte, T)]) {
     * @return value or null if no value for a given code
     */
   @inline
-  def get(code: Byte): T = sparseArray(code + 128)
+  def get(code: Byte): T = sparseArray(codeToIndex(code))
 
 }
 

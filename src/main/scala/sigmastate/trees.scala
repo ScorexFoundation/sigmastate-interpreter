@@ -3,9 +3,8 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
-import scapi.sigma.DLogProtocol._
-import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
-import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
+import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.{Context, Interpreter}
@@ -78,8 +77,8 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     input.matchCase(in => {
         val reduced = iterChildren(in.items, mutable.Buffer())
         reduced.size match {
-          case i: Int if i == 0 => FalseLeaf
-          case i: Int if i == 1 => reduced.head
+          case 0 => FalseLeaf
+          case 1 => reduced.head
           case _ =>
             if (reduced.forall(_.isInstanceOf[SigmaBoolean])) COR(reduced.map(_.asInstanceOf[SigmaBoolean]))
             else OR(reduced)
@@ -96,7 +95,8 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   * OR logical conjunction
   */
 object OR {
-  def apply(children: Seq[Value[SBoolean.type]]): OR = OR(ConcreteCollection(children.toIndexedSeq))
+  def apply(children: Seq[Value[SBoolean.type]]): OR =
+    OR(ConcreteCollection(children.toIndexedSeq))
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): OR = apply(head +: tail)
 }
@@ -160,7 +160,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   * AND logical conjunction
   */
 object AND {
-  def apply(children: Seq[Value[SBoolean.type]]): AND = new AND(ConcreteCollection(children.toIndexedSeq))
+  def apply(children: Seq[Value[SBoolean.type]]): AND =
+    AND(ConcreteCollection(children.toIndexedSeq))
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }

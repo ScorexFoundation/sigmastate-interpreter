@@ -10,6 +10,8 @@ import sigmastate.utxo._
 trait TransformerGenerators {
   self: ValueGenerators with ConcreteCollectionGenerators =>
 
+  import TransformingSigmaBuilder._
+
   implicit val arbMapCollection: Arbitrary[MapCollection[SInt.type, SInt.type]] = Arbitrary(mapCollectionGen)
   implicit val arbExists: Arbitrary[Exists[SInt.type]] = Arbitrary(existsGen)
   implicit val arbForAll: Arbitrary[ForAll[SInt.type]] = Arbitrary(forAllGen)
@@ -36,19 +38,19 @@ trait TransformerGenerators {
     input <- arbCCOfIntConstant.arbitrary
     idByte <- arbByte.arbitrary
     mapper <- arbIntConstants.arbitrary
-  } yield MapCollection(input, idByte, mapper)
+  } yield mkMapCollection(input, idByte, mapper).asInstanceOf[MapCollection[SInt.type, SInt.type]]
 
   val existsGen: Gen[Exists[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
     idByte <- arbByte.arbitrary
     condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield Exists(input, idByte, condition)
+  } yield mkExists(input, idByte, condition).asInstanceOf[Exists[SInt.type]]
 
   val forAllGen: Gen[ForAll[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
     idByte <- arbByte.arbitrary
     condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield ForAll(input, idByte, condition)
+  } yield mkForAll(input, idByte, condition).asInstanceOf[ForAll[SInt.type]]
 
   val foldGen: Gen[Fold[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
@@ -58,28 +60,35 @@ trait TransformerGenerators {
     col1 <- arbCCOfIntConstant.arbitrary
     from <- intConstGen
     until <- intConstGen
-  } yield Slice(col1, from, until)
+  } yield mkSlice(col1, from, until).asInstanceOf[Slice[SInt.type]]
 
   val whereGen: Gen[Where[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
     id <- Arbitrary.arbitrary[Byte]
     condition <- booleanConstGen
-  } yield Where(col1, id, condition)
+  } yield mkWhere(col1, id, condition).asInstanceOf[Where[SInt.type]]
 
   val appendGen: Gen[Append[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
     col2 <- arbCCOfIntConstant.arbitrary
-  } yield Append(col1, col2)
+  } yield mkAppend(col1, col2).asInstanceOf[Append[SInt.type]]
 
   val sizeOfGen: Gen[SizeOf[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-  } yield SizeOf(input)
+  } yield mkSizeOf(input).asInstanceOf[SizeOf[SInt.type]]
 
-  val extractAmountGen: Gen[ExtractAmount] = arbTaggedBox.arbitrary.map { b => ExtractAmount(b) }
-  val extractScriptBytesGen: Gen[ExtractScriptBytes] = arbTaggedBox.arbitrary.map { b => ExtractScriptBytes(b) }
-  val extractBytesGen: Gen[ExtractBytes] = arbTaggedBox.arbitrary.map { b => ExtractBytes(b) }
-  val extractBytesWithNoRefGen: Gen[ExtractBytesWithNoRef] = arbTaggedBox.arbitrary.map { b => ExtractBytesWithNoRef(b) }
-  val extractIdGen: Gen[ExtractId] = arbTaggedBox.arbitrary.map { b => ExtractId(b) }
+  val extractAmountGen: Gen[ExtractAmount] =
+    arbTaggedBox.arbitrary.map { b => mkExtractAmount(b).asInstanceOf[ExtractAmount] }
+  val extractScriptBytesGen: Gen[ExtractScriptBytes] =
+    arbTaggedBox.arbitrary.map { b => mkExtractScriptBytes(b).asInstanceOf[ExtractScriptBytes] }
+  val extractBytesGen: Gen[ExtractBytes] =
+    arbTaggedBox.arbitrary.map { b => mkExtractBytes(b).asInstanceOf[ExtractBytes] }
+  val extractBytesWithNoRefGen: Gen[ExtractBytesWithNoRef] =
+    arbTaggedBox.arbitrary.map { b =>
+      mkExtractBytesWithNoRef(b).asInstanceOf[ExtractBytesWithNoRef]
+    }
+  val extractIdGen: Gen[ExtractId] =
+    arbTaggedBox.arbitrary.map { b => mkExtractId(b).asInstanceOf[ExtractId] }
   val extractRegisterAsGen: Gen[ExtractRegisterAs[SInt.type]] = for {
     input <- arbTaggedBox.arbitrary
     r <- arbRegisterIdentifier.arbitrary
@@ -88,17 +97,21 @@ trait TransformerGenerators {
   } yield ExtractRegisterAs(input, r, dv)
 
   val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] =
-    Arbitrary.arbitrary[Byte].map(b => DeserializeContext(b, SBoolean))
+    Arbitrary.arbitrary[Byte].map(b =>
+      mkDeserializeContext(b, SBoolean).asInstanceOf[DeserializeContext[SBoolean.type]])
 
   val deserializeRegisterGen: Gen[DeserializeRegister[SBoolean.type]] = for {
     r <- arbRegisterIdentifier.arbitrary
     default <- booleanConstGen
     isDefined <- Arbitrary.arbitrary[Boolean]
     defaultOpt = if (isDefined) Some(default) else None
-  } yield DeserializeRegister(r, SBoolean, defaultOpt)
+  } yield mkDeserializeRegister(r, SBoolean, defaultOpt)
+    .asInstanceOf[DeserializeRegister[SBoolean.type]]
 
   val longToByteArrayGen: Gen[LongToByteArray] = arbLongConstants.arbitrary.map { v => LongToByteArray(v) }
-  val byteArrayToBigIntGen: Gen[ByteArrayToBigInt] = arbByteArrayConstant.arbitrary.map { v => ByteArrayToBigInt(v) }
+  val byteArrayToBigIntGen: Gen[ByteArrayToBigInt] =
+    arbByteArrayConstant.arbitrary.map { v =>
+      mkByteArrayToBigInt(v).asInstanceOf[ByteArrayToBigInt] }
   val calcBlake2b256Gen: Gen[CalcBlake2b256] = arbByteArrayConstant.arbitrary.map { v => CalcBlake2b256(v) }
   val calcSha256Gen: Gen[CalcSha256] = arbByteArrayConstant.arbitrary.map { v => CalcSha256(v) }
 
@@ -134,11 +147,11 @@ trait TransformerGenerators {
     left <- numExprTreeGen
     right <- numExprTreeGen
     node <- Gen.oneOf(
-      TransformingSigmaBuilder.Plus(left, right),
-      TransformingSigmaBuilder.Minus(left, right),
-      TransformingSigmaBuilder.Multiply(left, right),
-      TransformingSigmaBuilder.Divide(left, right),
-      TransformingSigmaBuilder.Modulo(left, right)
+      mkPlus(left, right),
+      mkMinus(left, right),
+      mkMultiply(left, right),
+      mkDivide(left, right),
+      mkModulo(left, right)
     )
   } yield node
 
@@ -153,12 +166,12 @@ trait TransformerGenerators {
     left <- numExprTreeNodeGen
     right <- numExprTreeNodeGen
     node <- Gen.oneOf(
-      TransformingSigmaBuilder.EQ(left, right),
-      TransformingSigmaBuilder.NEQ(left, right),
-      TransformingSigmaBuilder.LE(left, right),
-      TransformingSigmaBuilder.GE(left, right),
-      TransformingSigmaBuilder.LT(left, right),
-      TransformingSigmaBuilder.GT(left, right)
+      mkEQ(left, right),
+      mkNEQ(left, right),
+      mkLE(left, right),
+      mkGE(left, right),
+      mkLT(left, right),
+      mkGT(left, right)
     )
   } yield node
 }

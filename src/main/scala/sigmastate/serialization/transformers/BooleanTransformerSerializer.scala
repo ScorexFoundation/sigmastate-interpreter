@@ -9,17 +9,18 @@ import sigmastate.utxo.BooleanTransformer
 import sigmastate.{SBoolean, SCollection, SType}
 import sigmastate.utils.Extensions._
 
-case class BooleanTransformerSerializer[T <: SType, R <: BooleanTransformer[T]]
-(code: OpCode, f: (Value[SCollection[T]], Byte, Value[SBoolean.type]) => R) extends ValueSerializer[R] {
+case class BooleanTransformerSerializer[T <: SType]
+(code: OpCode,
+ f: (Value[SCollection[T]], Byte, Value[SBoolean.type]) => Value[SBoolean.type]) extends ValueSerializer[BooleanTransformer[T]] {
 
   override val opCode: OpCode = code
 
-  override def serializeBody(obj: R, w: ByteWriter): Unit =
+  override def serializeBody(obj: BooleanTransformer[T], w: ByteWriter): Unit =
     w.putValue(obj.input)
       .put(obj.id)
       .putValue(obj.condition)
 
-  override def parseBody(r: ByteReader): R = {
+  override def parseBody(r: ByteReader): Value[SBoolean.type] = {
     val input = r.getValue().asCollection[T]
     val idByte = r.getByte()
     val condition = r.getValue().asValue[SBoolean.type]
