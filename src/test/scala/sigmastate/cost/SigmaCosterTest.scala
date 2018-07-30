@@ -2,7 +2,7 @@ package sigmastate.cost
 
 import com.google.common.base.Strings
 import sigmastate.SType
-import sigmastate.Values.{SValue, ProofConstant}
+import sigmastate.Values.{SValue, SigmaPropConstant}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.lang.{CosterCtx, LangTests, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
@@ -100,8 +100,8 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
 
   val crowdFundingScript =
     """{
-     | let backerPubKey = getVar[Proof](backerPubKeyId)
-     | let projectPubKey = getVar[Proof](projectPubKeyId)
+     | let backerPubKey = getVar[SigmaProp](backerPubKeyId)
+     | let projectPubKey = getVar[SigmaProp](projectPubKeyId)
      | let c1 = HEIGHT >= timeout && backerPubKey
      | let c2 = allOf(Array(
      |   HEIGHT < timeout,
@@ -129,7 +129,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     val prover = new ErgoLikeProvingInterpreter()
     val backer = prover.dlogSecrets(0).publicImage
     val project = prover.dlogSecrets(1).publicImage
-    val vars = Seq(backerPubKeyId -> ProofConstant(backer), projectPubKeyId -> ProofConstant(project)).toMap
+    val vars = Seq(backerPubKeyId -> SigmaPropConstant(backer), projectPubKeyId -> SigmaPropConstant(project)).toMap
 
     checkInEnv[Boolean](envCF, vars, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
@@ -173,7 +173,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
      |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
      |   })
      | ))
-     | getVar[Proof](regScriptId) || c2
+     | getVar[SigmaProp](regScriptId) || c2
      | }
     """.stripMargin
 
@@ -189,7 +189,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   test("Demurrage") {
     val prover = new ErgoLikeProvingInterpreter()
     val regScript = prover.dlogSecrets(0).publicImage
-    val vars = Seq(regScriptId -> ProofConstant(regScript)).toMap
+    val vars = Seq(regScriptId -> SigmaPropConstant(regScript)).toMap
 
     checkInEnv[Boolean](envDem, vars, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>

@@ -286,7 +286,7 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
     ByteArrayConstant(input.value.bytes)
   }
   override def cost[C <: Context[C]](context: C): Long =
-    input.cost(context) + Cost.SigmaPropBytes
+    input.cost(context) + Cost.SigmaPropBytesDeclaration
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])

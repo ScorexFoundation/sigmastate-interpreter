@@ -5,7 +5,7 @@ import org.bouncycastle.math.ec.ECPoint
 import scalan.{Lazy, SigmaLibrary}
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
-import sigmastate.Values.{TaggedVariable, Value, Constant, SValue}
+import sigmastate.Values.{TaggedVariableNode, Value, Constant, SValue}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
@@ -135,7 +135,7 @@ trait CosterCtx extends SigmaLibrary {
     case SLong => LongElement
     case SBox => boxElement
     case SGroupElement => EcPointElement
-    case SProof => sigmaElement
+    case SSigmaProp => sigmaElement
     case c: SCollection[a] => colElement(stypeToElem(c.elemType))
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asElem[T#WrappedType]
@@ -201,7 +201,7 @@ trait CosterCtx extends SigmaLibrary {
       case Inputs => CostedPrimRep(ctx.INPUTS, InputsAccess)
       case Outputs => CostedPrimRep(ctx.OUTPUTS, OutputsAccess)
       case Self => CostedPrimRep(ctx.SELF, SelfAccess)
-      case TaggedVariable(id, tpe) =>
+      case TaggedVariableNode(id, tpe) =>
         if (id >= 21) {
           vars.get(id) match {
             case Some(x: RCosted[a]@unchecked) => CostedPrimRep(x.value, x.cost + VariableAccess)
@@ -213,12 +213,12 @@ trait CosterCtx extends SigmaLibrary {
       case SizeOf(xs) =>
         val xsC = evalNode(ctx, vars, xs).asRep[Costed[Col[Any]]]
         CostedPrimRep(xsC.value.length, xsC.cost + SizeOfDeclaration)
-      case IsValid(p) =>
+      case SigmaPropIsValid(p) =>
         val pC = evalNode(ctx, vars, p).asRep[Costed[Sigma]]
-        CostedPrimRep(pC.value.isValid, pC.cost + ProofIsValidDeclaration)
-      case ProofBytes(p) =>
+        CostedPrimRep(pC.value.isValid, pC.cost + SigmaPropIsValidDeclaration)
+      case SigmaPropBytes(p) =>
         val pC = evalNode(ctx, vars, p).asRep[Costed[Sigma]]
-        CostedPrimRep(pC.value.propBytes, pC.cost + ProofBytesDeclaration + pC.value.propBytes.length)
+        CostedPrimRep(pC.value.propBytes, pC.cost + SigmaPropBytesDeclaration + pC.value.propBytes.length)
       case utxo.ExtractAmount(box) =>
         val boxC = evalNode(ctx, vars, box).asRep[Costed[Box]]
         CostedPrimRep(boxC.value.value, boxC.cost + Cost.ExtractAmount)
