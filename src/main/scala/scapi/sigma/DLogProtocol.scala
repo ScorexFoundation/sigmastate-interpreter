@@ -179,39 +179,4 @@ object DLogProtocol {
     }
   }
 
-  case class DLogActorProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
-    extends DLogInteractiveProver(publicInput, privateInputOpt) with ActorProver[DLogSigmaProtocol, ProveDlog, DLogProverInput]
-
-  case class DLogTranscript(override val x: ProveDlog,
-                            override val a: FirstDLogProverMessage,
-                            override val e: Challenge,
-                            override val z: SecondDLogProverMessage)
-    extends SigmaProtocolTranscript[DLogSigmaProtocol, ProveDlog] {
-
-    import CryptoConstants.dlogGroup
-
-
-    override lazy val accepted: Boolean = Try {
-      assert(dlogGroup.isMember(x.h))
-      val left = dlogGroup.exponentiate(dlogGroup.generator, z.z.bigInteger)
-      val hToe = dlogGroup.exponentiate(x.h, BigInt(1, e).bigInteger)
-      val right = dlogGroup.multiplyGroupElements(a.ecData, hToe)
-
-      left == right
-    }.getOrElse(false)
-  }
-
-  abstract class DLogVerifier[DP <: DLogInteractiveProver](override val publicInput: ProveDlog, override val prover: DP)
-    extends Verifier[DLogSigmaProtocol, ProveDlog] {
-
-    override type P = DP
-    override type ST = DLogTranscript
-  }
-
-  case class DLogActorVerifier(override val publicInput: ProveDlog, override val prover: DLogActorProver)
-    extends DLogVerifier[DLogActorProver](publicInput, prover) {
-
-    override def transcript: Future[Option[DLogTranscript]] = ???
-  }
-
 }

@@ -73,21 +73,6 @@ trait Party[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] {
 //implement it as a FSM-DSL waitfor - then - action - then - waitfor - etc
 trait InteractiveParty
 
-trait ActorParty extends InteractiveParty with Actor with ActorLogging {
-  def waitFor[T](handler: T => Receive): Receive = {
-    case t: T =>
-      context become handler(t)
-  }
-
-  def finished: Receive = {
-    case a: Any => log.warning(s"Prover has finished its job, but $a signal got")
-  }
-}
-
-object ActorParty {
-  case object StartInteraction
-}
-
 trait Prover[SP <: SigmaProtocol[SP],
 CI <: SigmaProtocolCommonInput[SP],
 PI <: SigmaProtocolPrivateInput[SP, CI]] extends Party[SP, CI] {
@@ -102,57 +87,6 @@ trait InteractiveProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[
   def secondMessage(challenge: Challenge): SP#Z
 
   def simulate(challenge: Challenge): (SP#A, SP#Z)
-}
-
-//todo: test
-//todo: timeout?
-trait ActorProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP], PI <: SigmaProtocolPrivateInput[SP, CI]]
-  extends InteractiveProver[SP, CI, PI] with ActorParty {
-
-  import ActorParty._
-
-  override def receive: Receive = waitFor[StartInteraction.type] { _ =>
-    sender() ! firstMessage
-
-    waitFor[Challenge] { e: Challenge =>
-      sender() ! secondMessage(e)
-      finished
-    }
-  }
-}
-
-trait ActorVerifier[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]]
-  extends Verifier[SP, CI] with ActorParty {
-
-  import ActorParty._
-
-  val proverRef: ActorRef
-
-  var started = false
-  var transcript_ : Option[ST] = None
-
-  override def transcript =
-    if (started) {
-      ???
-    } else {
-      Future(None)
-    }
-
-  def construct(x: CI, a: SP#A, e: Challenge, z: SP#Z): ST
-
-  override def receive: Receive = waitFor[StartInteraction.type] { _ =>
-    proverRef ! StartInteraction
-
-    started = true
-
-    waitFor[SP#A] { fm =>
-      proverRef ! challenge
-      waitFor[SP#Z] { sm =>
-        transcript_ = Some(construct(publicInput, fm, challenge, sm))
-        finished
-      }
-    }
-  }
 }
 
 trait SimulatingProver[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] {
