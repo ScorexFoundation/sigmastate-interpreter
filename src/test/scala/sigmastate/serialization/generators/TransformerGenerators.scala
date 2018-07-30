@@ -4,6 +4,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.Values.{FalseLeaf, IntConstant, TrueLeaf, Value}
 import sigmastate._
+import sigmastate.Values._
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
 
@@ -15,7 +16,7 @@ trait TransformerGenerators {
   implicit val arbMapCollection: Arbitrary[MapCollection[SInt.type, SInt.type]] = Arbitrary(mapCollectionGen)
   implicit val arbExists: Arbitrary[Exists[SInt.type]] = Arbitrary(existsGen)
   implicit val arbForAll: Arbitrary[ForAll[SInt.type]] = Arbitrary(forAllGen)
-  implicit val arbFold: Arbitrary[Fold[SInt.type]] = Arbitrary(foldGen)
+  implicit val arbFold: Arbitrary[Fold[SInt.type, SBoolean.type]] = Arbitrary(foldGen)
   implicit val arbAppend: Arbitrary[Append[SInt.type]] = Arbitrary(appendGen)
   implicit val arbSlice: Arbitrary[Slice[SInt.type]] = Arbitrary(sliceGen)
   implicit val arbWhere: Arbitrary[Where[SInt.type]] = Arbitrary(whereGen)
@@ -52,9 +53,10 @@ trait TransformerGenerators {
     condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
   } yield mkForAll(input, idByte, condition).asInstanceOf[ForAll[SInt.type]]
 
-  val foldGen: Gen[Fold[SInt.type]] = for {
+  val foldGen: Gen[Fold[SInt.type, SBoolean.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-  } yield Fold.sum(input)
+  } yield mkFold(input, 21, TrueLeaf, 22, AND(TaggedBoolean(21), GT(TaggedInt(21), IntConstant(1))))
+    .asInstanceOf[Fold[SInt.type, SBoolean.type]]
 
   val sliceGen: Gen[Slice[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary

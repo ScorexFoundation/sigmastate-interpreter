@@ -24,7 +24,7 @@ class TransformersSerializationSpec extends SerializationSpecification {
   }
 
   property("Fold: Serializer round trip") {
-    forAll { f: Fold[SInt.type] =>
+    forAll { f: Fold[SInt.type, SBoolean.type] =>
       roundTripTest(f)
     }
   }

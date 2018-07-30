@@ -10,10 +10,10 @@ import sigmastate.utxo.Fold
 import sigmastate.{SCollection, SType}
 
 case class FoldSerializer(cons: (Value[SCollection[SType]], Byte, Value[SType], Byte, Value[SType]) => Value[SType])
-  extends ValueSerializer[Fold[SType]] {
+  extends ValueSerializer[Fold[SType, SType]] {
   override val opCode: OpCode = OpCodes.FoldCode
 
-  override def serializeBody(obj: Fold[SType], w: ByteWriter): Unit =
+  override def serializeBody(obj: Fold[SType, SType], w: ByteWriter): Unit =
     w.putValue(obj.input)
       .put     (obj.id)
       .putValue(obj.zero)

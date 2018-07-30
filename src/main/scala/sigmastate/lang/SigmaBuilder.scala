@@ -74,11 +74,11 @@ trait SigmaBuilder {
                                id: Byte,
                                condition: Value[SBoolean.type]): Value[SBoolean.type]
 
-  def mkFold[IV <: SType](input: Value[SCollection[IV]],
+  def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                           id: Byte,
-                          zero: Value[IV],
+                          zero: Value[OV],
                           accId: Byte,
-                          foldOp: SValue): Value[IV]
+                          foldOp: SValue): Value[OV]
 
   def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
                                index: Value[SInt.type],
@@ -256,11 +256,11 @@ class StdSigmaBuilder extends SigmaBuilder {
                                      condition: Value[SBoolean.type]): Value[SBoolean.type] =
     ForAll(input, id, condition)
 
-  override def mkFold[IV <: SType](input: Value[SCollection[IV]],
+  override def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                    id: Byte,
-                                   zero: Value[IV],
+                                   zero: Value[OV],
                                    accId: Byte,
-                                   foldOp: SValue): Value[IV] =
+                                   foldOp: SValue): Value[OV] =
     Fold(input, id, zero, accId, foldOp)
 
   override def mkByIndex[IV <: SType](input: Value[SCollection[IV]],

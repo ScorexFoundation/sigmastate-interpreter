@@ -11,7 +11,6 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import org.ergoplatform.ErgoBox._
 import org.ergoplatform._
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
@@ -151,14 +150,22 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         """{
           |  let notTimePassed = HEIGHT <= timeout
           |  let outBytes = OUTPUTS.map(fun (box: Box) = box.bytesWithNoRef)
-          |  let outSumBytes = outBytes.fold(Array[Byte](), fun (arr1: Array[Byte], arr2: Array[Byte]) = arr2 ++ arr1)
+          |  let outSumBytes = outBytes.fold(Array[Byte](), fun (arr1: Array[Byte], arr2: Array[Byte]) = arr1 ++ arr2)
           |  let timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asBoolValue
 
       val prop = OR(
         AND(LE(Height, LongConstant(timeout)),
-          EQ(CalcBlake2b256(Fold.concat(MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))))),
+          EQ(CalcBlake2b256(
+            Fold(
+              MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))),
+              22,
+              ConcreteCollection()(SByte),
+              21,
+              Append(TaggedByteArray(21), TaggedByteArray(22))
+            )
+          ),
             ByteArrayConstant(properHash))),
         AND(GT(Height, LongConstant(timeout)), sender)
       )
@@ -201,7 +208,13 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val propExp = AND(
       pubkey,
       GT(
-        Fold.sum[SLong.type](MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))),
+        Fold(
+          MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21))),
+          22,
+          LongConstant(0),
+          21,
+          Plus(TaggedLong(22), TaggedLong(21))
+        ),
         LongConstant(20))
     )
     prop shouldBe propExp
