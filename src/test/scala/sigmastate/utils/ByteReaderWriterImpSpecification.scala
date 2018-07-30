@@ -118,12 +118,15 @@ class ByteReaderWriterImpSpecification extends PropSpec
     }
   }
 
+  private def bytesLong(v: Long): Array[Byte] =
+    byteArrayWriter().putULong(v).toBytes
+
   private def checkSize(low: Long, high: Long, size: Int): Assertion = {
+    // Gen.choose does not always include range limit values
+    bytesLong(low).length shouldBe size
+    bytesLong(high).length shouldBe size
     forAll(Gen.choose(low, high)) { v: Long =>
-      val writer = new ByteArrayWriter(new ByteArrayBuilder())
-      writer.putULong(v)
-      val encodedBytes = writer.toBytes
-      encodedBytes.length shouldEqual size
+      bytesLong(v).length shouldBe size
     }
   }
 
@@ -138,7 +141,50 @@ class ByteReaderWriterImpSpecification extends PropSpec
     checkSize(4398046511104L, 562949953421311L, 7)
     checkSize(562949953421312L, 72057594037927935L, 8)
     checkSize(72057594037927936L, Long.MaxValue, 9)
-    checkSize(Long.MinValue, 0, 10)
+    checkSize(Long.MinValue, -1L, 10)
+  }
+
+  private def bytesZigZaggedLong(v: Long): Array[Byte] =
+    byteArrayWriter().putULong(encodeZigZagLong(v)).toBytes
+
+  private def checkSizeZigZagged(low: Long, high: Long, size: Int): Unit = {
+    // Gen.choose does not always include range limit values
+    bytesZigZaggedLong(low).length shouldBe size
+    bytesZigZaggedLong(high).length shouldBe size
+    forAll(Gen.choose(low, high)) { v: Long =>
+      bytesZigZaggedLong(v).length shouldBe size
+    }
+  }
+
+  property("size of serialized zigzag'ed data") {
+    checkSizeZigZagged(-64L, 64L - 1, 1)
+
+    checkSizeZigZagged(-8192L, -64L - 1, 2)
+    checkSizeZigZagged(64L, 8192L - 1, 2)
+
+    checkSizeZigZagged(-1048576L, -8192L - 1, 3)
+    checkSizeZigZagged(8192L, 1048576L - 1, 3)
+
+    checkSizeZigZagged(-134217728L, -1048576L - 1, 4)
+    checkSizeZigZagged(1048576L, 134217728L - 1,  4)
+
+    checkSizeZigZagged(-17179869184L, -134217728L - 1, 5)
+    checkSizeZigZagged(134217728L, 17179869184L - 1,  5)
+
+    checkSizeZigZagged(-2199023255552L, -17179869184L - 1, 6)
+    checkSizeZigZagged(17179869184L, 2199023255552L - 1,  6)
+
+    checkSizeZigZagged(-281474976710656L, -2199023255552L - 1, 7)
+    checkSizeZigZagged(2199023255552L, 281474976710656L - 1,  7)
+
+    checkSizeZigZagged(-36028797018963968L, -281474976710656L - 1, 8)
+    checkSizeZigZagged(281474976710656L, 36028797018963968L - 1,  8)
+
+    checkSizeZigZagged(Long.MinValue / 2, -36028797018963968L - 1, 9)
+    checkSizeZigZagged(36028797018963968L, Long.MaxValue / 2,  9)
+
+    checkSizeZigZagged(Long.MinValue, Long.MinValue / 2 - 1, 10)
+    checkSizeZigZagged(Long.MaxValue / 2 + 1, Long.MaxValue,  10)
   }
 
   property("fail deserialization by deliberately messing with different methods") {
