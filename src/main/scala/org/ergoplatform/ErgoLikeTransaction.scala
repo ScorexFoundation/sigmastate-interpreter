@@ -75,6 +75,8 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
     case tx: ErgoLikeTransaction => this.id == tx.id
     case _ => false
   }
+
+  override def hashCode(): Int = id.hashCode()
 }
 
 
