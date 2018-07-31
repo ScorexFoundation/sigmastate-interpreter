@@ -1,15 +1,15 @@
 package sigmastate
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
-import sigmastate.lang.SigmaCompiler
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
-import org.ergoplatform.{ErgoBox, Height}
+import org.ergoplatform.{Height, ErgoBox}
 
 import scala.util.Random
 
@@ -77,7 +77,7 @@ class TestingInterpreterSpecification extends PropSpec
     }
   }
 
-  val compiler = new SigmaCompiler
+  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
   def compile(env: Map[String, Any], code: String): Value[SType] = {
     compiler.compile(env, code)
   }

@@ -3,13 +3,13 @@ package sigmastate.helpers
 import org.ergoplatform
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{EvaluatedValue, GroupElementConstant, TrueLeaf, Value}
+import sigmastate.Values.{TrueLeaf, Value, GroupElementConstant, EvaluatedValue}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.SigmaCompiler
-import sigmastate.{SBoolean, SGroupElement, SType}
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.{SGroupElement, SBoolean, SType}
 
 import scala.language.implicitConversions
 
@@ -28,7 +28,7 @@ trait SigmaTestingCommons extends PropSpec
 
   implicit def grLeafConvert(elem: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 
-  val compiler = new SigmaCompiler
+  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
 
   def compile(env: Map[String, Any], code: String): Value[SType] = {
     compiler.compile(env, code)

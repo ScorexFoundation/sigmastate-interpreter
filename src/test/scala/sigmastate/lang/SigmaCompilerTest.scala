@@ -10,7 +10,7 @@ import sigmastate.SCollection._
 import sigmastate.utxo.ByIndex
 
 class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with LangTests {
-  val compiler = new SigmaCompiler
+  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
 
   def comp(env: Map[String, Any], x: String) = compiler.compile(env, x)
 

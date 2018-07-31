@@ -2,14 +2,15 @@ package sigmastate.cost
 
 import com.google.common.base.Strings
 import sigmastate.SType
-import sigmastate.Values.{SValue, SigmaPropConstant}
+import sigmastate.Values.{SigmaPropConstant, SValue}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
-import sigmastate.lang.{CosterCtx, LangTests, SigmaCompiler}
+import sigmastate.lang.{CosterCtx, LangTests, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.utxo.CostTable.Cost
+
 import scalan.BaseCtxTests
 
 class SigmaCosterTest extends BaseCtxTests with LangTests {
-  val compiler = new SigmaCompiler
+  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
   lazy val ctx = new TestContext with CosterCtx {
     import TestSigmaDslBuilder._
     val sigmaDslBuilder = RTestSigmaDslBuilder()
