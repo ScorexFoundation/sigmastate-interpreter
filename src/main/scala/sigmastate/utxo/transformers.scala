@@ -211,6 +211,18 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
   }
 }
 
+object Fold {
+  def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
+    Fold(input, 22, Constant(tT.upcast(0.toByte), tT), 21, Plus(TaggedVariable(21, tT), TaggedVariable(22, tT)))
+
+  def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T): Fold[SCollection[T], T] = {
+    val tCol = SCollection(tT)
+    Fold[SCollection[T], T](
+      input, 22, ConcreteCollection()(tT).asValue[T], 21,
+      Append(TaggedVariable(21, tCol), TaggedVariable(22, tCol)))
+  }
+}
+
 case class ByIndex[V <: SType](input: Value[SCollection[V]],
                                index: Value[SInt.type],
                                default: Option[Value[V]] = None)

@@ -158,13 +158,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       val prop = OR(
         AND(LE(Height, LongConstant(timeout)),
           EQ(CalcBlake2b256(
-            Fold(
-              MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))),
-              22,
-              ConcreteCollection()(SByte),
-              21,
-              Append(TaggedByteArray(21), TaggedByteArray(22))
-            )
+            Fold.concat[SByte.type](
+              MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21)))
+            ).asByteArray
           ),
             ByteArrayConstant(properHash))),
         AND(GT(Height, LongConstant(timeout)), sender)
@@ -202,19 +198,13 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         |  let outValues = OUTPUTS.map(fun (box: Box) = box.value)
-        |  pubkey && outValues.fold(0L, fun (x: Long, y: Long) = y + x) > 20
+        |  pubkey && outValues.fold(0L, fun (x: Long, y: Long) = x + y) > 20
          }""".stripMargin).asBoolValue
 
     val propExp = AND(
       pubkey,
       GT(
-        Fold(
-          MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21))),
-          22,
-          LongConstant(0),
-          21,
-          Plus(TaggedLong(22), TaggedLong(21))
-        ),
+        Fold.sum[SLong.type](MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))),
         LongConstant(20))
     )
     prop shouldBe propExp
