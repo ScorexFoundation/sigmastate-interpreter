@@ -29,7 +29,6 @@ object SigmaPredef {
     "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
     "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
 //    "intToBigInt" -> mkLambda(Vector("input" -> SLong), SBigInt, None),
-    "intToByte" -> mkLambda(Vector("input" -> SInt), SByte, None),
 
     "getVar" -> mkLambda(Vector("varId" -> SByte), tT, None),
 
@@ -57,6 +56,5 @@ object SigmaPredef {
   val ProveDHTupleSym = PredefIdent("proveDHTuple")
 
 //  val IntToBigSym = PredefIdent("intToBigInt")
-  val IntToByteSym = PredefIdent("intToByte")
   val LongToByteArraySym = PredefIdent("longToByteArray")
 }

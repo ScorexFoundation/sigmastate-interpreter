@@ -169,8 +169,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       EQ(Plus(Multiply(TaggedBigInt(bigIntVar2), BigIntConstant(2)), TaggedBigInt(bigIntVar1)), TaggedBigInt(bigIntVar3))
     )
     test(env, ext :+ (byteVar3 -> ByteConstant(5)),
-      "{ getVar[Byte](byteVar2) * intToByte(2) + getVar[Byte](byteVar1) == intToByte(5) }",
-      EQ(Plus(Multiply(TaggedByte(byteVar2), IntToByte(IntConstant(2))), TaggedByte(byteVar1)), IntToByte(IntConstant(5)))
+      "{ getVar[Byte](byteVar2) * 2.toByte + getVar[Byte](byteVar1) == 5.toByte }",
+      EQ(Plus(Multiply(TaggedByte(byteVar2), Downcast(IntConstant(2), SByte)), TaggedByte(byteVar1)), Downcast(IntConstant(5), SByte))
     )
     test(env, ext,
       "{ getVar[Int](intVar2) / 2 + getVar[Int](intVar1) == 2 }",

@@ -71,6 +71,12 @@ object Extensions {
         throw new ArithmeticException("Byte overflow")
       x.toByte
     }
+
+    def toShortExact: Short = {
+      if (x < Short.MinValue || x > Short.MaxValue)
+        throw new ArithmeticException("Short overflow")
+      x.toShort
+    }
   }
 
   implicit class LongOps(x: Long) {
@@ -78,6 +84,18 @@ object Extensions {
       if (x < Byte.MinValue || x > Byte.MaxValue)
         throw new ArithmeticException("Byte overflow")
       x.toByte
+    }
+
+    def toShortExact: Short = {
+      if (x < Short.MinValue || x > Short.MaxValue)
+        throw new ArithmeticException("Short overflow")
+      x.toShort
+    }
+
+    def toIntExact: Int = {
+      if (x < Int.MinValue || x > Int.MaxValue)
+        throw new ArithmeticException("Int overflow")
+      x.toInt
     }
   }
 

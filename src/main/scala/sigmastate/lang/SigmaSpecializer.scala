@@ -8,7 +8,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Let, Select, ValueOps}
-import sigmastate.lang.exceptions.SpecializerException
+import sigmastate.lang.exceptions.{MethodNotFound, SpecializerException}
 import sigmastate.utxo._
 
 class SigmaSpecializer(val builder: SigmaBuilder) {
@@ -56,14 +56,25 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(mkProveDlog(g))
 
-    case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
-      Some(mkIntToByte(arg))
-
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))
 
     case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
       Some(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
+
+    case Downcast(Constant(value, tpe), toTpe: SNumericType) =>
+      Some(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
+
+    case Select(obj, field, _) if obj.tpe.isNumType =>
+      val numValue = obj.asNumValue
+      val iField = numValue.tpe.methodIndex(field)
+      val tRes = if (iField != -1) {
+        numValue.tpe.methods(iField).stype.asInstanceOf[SNumericType]
+      } else
+      // todo make a specializer exception
+        throw new MethodNotFound(s"Cannot find method '$field' in in the object $obj of Product type with methods ${numValue.tpe.methods}")
+      // todo mkCast? (makes either Upcast or Downcast)
+      Some(mkDowncast(numValue, tRes))
 
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>

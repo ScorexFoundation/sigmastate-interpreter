@@ -44,10 +44,10 @@ trait SigmaBuilder {
                        trueBranch: Value[T],
                        falseBranch: Value[T]): Value[T]
 
-  def mkIntToByte(input: Value[SInt.type]): Value[SByte.type]
   def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray]
   def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type]
   def mkUpcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
+  def mkDowncast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
 
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
@@ -209,9 +209,6 @@ class StdSigmaBuilder extends SigmaBuilder {
                                 falseBranch: Value[T]): Value[T] =
     If(condition, trueBranch, falseBranch)
 
-  override def mkIntToByte(input: Value[SInt.type]): Value[SByte.type] =
-    IntToByte(input)
-
   override def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray] =
     LongToByteArray(input)
 
@@ -222,6 +219,10 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkUpcast[T <: SNumericType, R <: SNumericType](input: Value[T],
                                                               tpe: R): Value[R] =
     Upcast(input, tpe)
+
+
+  override def mkDowncast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R] =
+    Downcast(input, tpe)
 
   override def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray] =
     CalcBlake2b256(input)
@@ -439,11 +440,17 @@ trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 case object StdSigmaBuilder extends StdSigmaBuilder
 
 case object CheckingSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder {
-  override def mkIntToByte(input: Value[SInt.type]): Value[SByte.type] = input match {
-    case Constant(value: Int, SInt) if value > Byte.MaxValue =>
-      throw new ArithException(s"Byte overflow in IntToByte($value)")
-    case _ => super.mkIntToByte(input)
-  }
+
+//  override def mkDowncast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R] = (input, tpe) match {
+//      // todo implement
+//    case (Constant(value: Short, SShort), SByte)
+//      if value < Byte.MinValue || value > Byte.MaxValue =>
+//      throw new ArithException(s"Byte overflow in Downcast($value)")
+//    case (Constant(value: Int, SInt), SByte)
+//      if value < Byte.MinValue || value > Byte.MaxValue =>
+//      throw new ArithException(s"Byte overflow in Downcast($value)")
+//    case _ => super.mkDowncast(input, tpe)
+//  }
 }
 
 case object DefaultSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
