@@ -10,21 +10,22 @@ import sigmastate.utxo.CostTable.Cost
 import scalan.BaseCtxTests
 
 class SigmaCosterTest extends BaseCtxTests with LangTests {
-  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
   lazy val ctx = new TestContext with CosterCtx {
     import TestSigmaDslBuilder._
     val sigmaDslBuilder = RTestSigmaDslBuilder()
+    val builder = TransformingSigmaBuilder
   }
   import ctx._
   import Context._; import SigmaContract._
   import Cost._; import ColBuilder._; import Col._; import Box._; import Sigma._; import CrowdFunding._
   import SigmaDslBuilder._; import WOption._
 
+  lazy val compiler = new SigmaCompiler(ctx.builder)
   lazy val dsl = sigmaDslBuilder
 
   def cost(env: Map[String, Any], ctxVars: Map[Byte, SValue], x: String) = {
-    val compiled = compiler.compile(env, x)
-    val cg = ctx.buildCostedGraph[SType](ctxVars, compiled)
+    val compiled = compiler.typecheck(env, x)
+    val cg = ctx.buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), ctxVars, compiled)
     cg
   }
 
@@ -52,12 +53,6 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     res
   }
 
-  def checkSC[T](name: String, script: String,
-      expectedCalc: Rep[Context] => Rep[T],
-      expectedCost: Rep[Context] => Rep[Int]
-  ): Rep[(Context => T, Context => Int)] =
-    checkInEnv(env, Map(), name, script, expectedCalc, expectedCost)
-
   def check[T](name: String, script: String,
       expectedCalc: Rep[Context] => Rep[T],
       expectedCost: Rep[Context] => Rep[Int]
@@ -65,36 +60,43 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     checkInEnv(env, Map(), name, script, expectedCalc, expectedCost)
 
   test("costed constants") {
-    checkSC("one", "1", _ => 1, _ => ConstantNode)
-    checkSC("oneL", "1L", _ => 1L, _ => ConstantNode)
+    check("one", "1", _ => 1, _ => ConstantNode)
+    check("oneL", "1L", _ => 1L, _ => ConstantNode)
+  }
+  test("test equality") {
+    val f = {ctx: Rep[Context] => sigmaDslBuilder.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, evalBlock { ctx.OUTPUTS.length < 1 } ))}
+    val f1 = fun(f)
+    val f2 = fun(f)
+    emit("equality", f1, f2)
+    f1 shouldBe f2
   }
 
   test("costed operations") {
-    checkSC("one+one", "1 + 1", _ => 1 + 1, _ => ConstantNode * 2 + TripleDeclaration)
-    checkSC("oneL+oneL", "1L - 1L", _ => 1L - 1L, _ => ConstantNode * 2 + TripleDeclaration)
-    checkSC("one_gt_one", "1 > 1", _ => false, _ => ConstantNode * 2 + TripleDeclaration)
-    checkSC("or", "1 > 1 || 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + OrDeclaration)
-    checkSC("or2", "1 > 1 || 2 < 1 || 2 > 1", _ => true,
-      _ => ConstantNode * 6 + TripleDeclaration * 3 + OrDeclaration)
-    checkSC("or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
-      { ctx => sigmaDslBuilder.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
+//    check("one+one", "1 + 1", _ => 1 + 1, _ => ConstantNode * 2 + TripleDeclaration)
+//    check("oneL+oneL", "1L - 1L", _ => 1L - 1L, _ => ConstantNode * 2 + TripleDeclaration)
+//    check("one_gt_one", "1 > 1", _ => false, _ => ConstantNode * 2 + TripleDeclaration)
+//    check("or", "1 > 1 || 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + OrDeclaration)
+//    check("or2", "1 > 1 || 2 < 1 || 2 > 1", _ => true,
+//      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * OrDeclaration)
+    check("or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
+      { ctx => sigmaDslBuilder.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, evalBlock { ctx.OUTPUTS.length < 1 })) },
       _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + OrDeclaration)
-
-    checkSC("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + AndDeclaration)
-    checkSC("and2", "1 > 1 && 2 < 1 && 2 > 1", _ => false,
-      _ => ConstantNode * 6 + TripleDeclaration * 3 + AndDeclaration)
-    checkSC("and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1",
-    { ctx => sigmaDslBuilder.allOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
-    _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + AndDeclaration)
+//
+//    check("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + AndDeclaration)
+//    check("and2", "1 > 1 && 2 < 1 && 2 > 1", _ => false,
+//      _ => ConstantNode * 6 + TripleDeclaration * 3 + AndDeclaration)
+//    check("and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1",
+//    { ctx => sigmaDslBuilder.allOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
+//    _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + AndDeclaration)
   }
 
   test("costed context data") {
-    checkSC("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
-    checkSC("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
-    checkSC("size", "INPUTS.size + OUTPUTS.size",
+    check("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
+    check("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
+    check("size", "INPUTS.size + OUTPUTS.size",
       ctx => { ctx.INPUTS.length + ctx.OUTPUTS.length },
       _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + TripleDeclaration)
-    checkSC("value", "SELF.value + 1L",
+    check("value", "SELF.value + 1L",
       ctx => ctx.SELF.value + 1L,
       _ => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
   }
@@ -213,13 +215,13 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
           (toRep(VariableAccess) + ExtractAmount + ConstantNode + TripleDeclaration) *
               ctx.OUTPUTS.length
     }
-    checkSC("exists", "OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
+    check("exists", "OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
       ctx => ctx.OUTPUTS.exists(fun(out => { out.value >= 0L })), cost)
-    checkSC("forall", "OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
+    check("forall", "OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
       ctx => ctx.OUTPUTS.forall(fun(out => { out.value >= 0L })), cost)
-    checkSC("map", "OUTPUTS.map(fun (out: Box) = { out.value >= 0L })",
+    check("map", "OUTPUTS.map(fun (out: Box) = { out.value >= 0L })",
       ctx => ctx.OUTPUTS.map(fun(out => { out.value >= 0L })), cost)
-    checkSC("where", "OUTPUTS.where(fun (out: Box) = { out.value >= 0L })",
+    check("where", "OUTPUTS.where(fun (out: Box) = { out.value >= 0L })",
       ctx => ctx.OUTPUTS.filter(fun(out => { out.value >= 0L })), cost)
   }
 
@@ -238,7 +240,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     var res: Rep[Any] = null
     measure(2) { j => // 10 warm up iterations when j == 0
       measure(j*500 + 10, false) { i =>
-        res = checkSC("", s"INPUTS.size + OUTPUTS.size + $i",
+        res = check("", s"INPUTS.size + OUTPUTS.size + $i",
           ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i,
           _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + 2 * TripleDeclaration + ConstantNode)
       }
@@ -246,73 +248,5 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     res.show
   }
 
-  test("split cols") {
-    ctx.emit("split_cols",
-      split(fun { in: Rep[(Col[Int], Byte)] =>
-        dataCost(in)
-      })
-    )
-  }
-
-  test("split pair cols") {
-    ctx.emit("split_pair_col",
-      split(fun { in: Rep[(Col[(Int, Short)], Byte)] =>
-        dataCost(in)
-      })
-    )
-    ctx.emit("split_pair_cols2",
-      split(fun { in: Rep[(Col[(Int, (Short, Boolean))], Byte)] =>
-        dataCost(in)
-      })
-    )
-  }
-
-  test("split nested cols") {
-    ctx.emit("split_nested_cols",
-      split(fun { in: Rep[(Col[Col[Int]], Byte)] =>
-        dataCost(in)
-      })
-    )
-  }
-
-  test("split nested pair cols") {
-    ctx.emit("split_nested_pair_cols",
-      split(fun { in: Rep[(Col[Col[(Int, Short)]], Byte)] =>
-        dataCost(in)
-      })
-    )
-  }
-
-  test("split nested nested cols") {
-    ctx.emit("split_nested_nested_cols",
-      split(fun { in: Rep[(Col[Col[Col[Int]]], Byte)] =>
-        dataCost(in)
-      })
-    )
-  }
-
-  test("split nested nested pair cols") {
-    ctx.emit("split_nested_nested_pair_cols",
-      split(fun { in: Rep[(Col[Col[Col[(Int, Short)]]], Byte)] =>
-        dataCost(in)
-      })
-    )
-  }
-
-  test("split complex1 cols") {
-    ctx.emit("split_complex1_cols",
-      split(fun { in: Rep[(Col[Col[(Col[(Int, Short)], Boolean)]], Byte)] =>
-        dataCost(in)
-      })
-    )
-  }
-
-  test("split complex2 cols") {
-    ctx.emit("split_complex2_cols",
-      split(fun { in: Rep[(Col[(Col[(Col[(Int, Boolean)], Short)], Char)], Byte)] =>
-        dataCost(in)
-      })
-    )
-  }
 
 }

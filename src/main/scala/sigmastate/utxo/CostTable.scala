@@ -90,7 +90,7 @@ object CostTable {
 
     val SizeOfDeclaration = 50
 
-    val ConcreteCollection = 20
+    val ConcreteCollectionDeclaration = 20
     val Tuple = 20
 
     val Exponentiate = 5000

@@ -470,7 +470,7 @@ object Values {
       else
         ConcreteCollectionCode
 
-    def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollection + items.map(_.cost(context)).sum
+    def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollectionDeclaration + items.map(_.cost(context)).sum
 
     val tpe = SCollection[V](elementType)
 

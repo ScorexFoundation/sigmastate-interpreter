@@ -1,12 +1,16 @@
 package sigmastate.lang
 
+import java.math.BigInteger
+
+import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ConcreteCollection, Constant, ConstantNode, NoneValue, SValue, SigmaBoolean, SomeValue, TaggedVariable, TaggedVariableNode, Tuple, Value}
+import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, Value, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
 import sigmastate._
-import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{ArithException, ConstraintFailed}
 import sigmastate.serialization.OpCodes
@@ -138,6 +142,25 @@ trait SigmaBuilder {
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
   def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type]
+
+  def liftAny(v: Any): Option[SValue] = v match {
+    case arr: Array[Boolean] => Some(mkCollectionConstant[SBoolean.type](arr, SBoolean))
+    case arr: Array[Byte] => Some(mkCollectionConstant[SByte.type](arr, SByte))
+    case arr: Array[Short] => Some(mkCollectionConstant[SShort.type](arr, SShort))
+    case arr: Array[Int] => Some(mkCollectionConstant[SInt.type](arr, SInt))
+    case arr: Array[Long] => Some(mkCollectionConstant[SLong.type](arr, SLong))
+    case v: Byte => Some(mkConstant[SByte.type](v, SByte))
+    case v: Short => Some(mkConstant[SShort.type](v, SShort))
+    case v: Int => Some(mkConstant[SInt.type](v, SInt))
+    case v: Long => Some(mkConstant[SLong.type](v, SLong))
+    case v: BigInteger => Some(mkConstant[SBigInt.type](v, SBigInt))
+    case v: CryptoConstants.EcPointType => Some(mkConstant[SGroupElement.type](v, SGroupElement))
+    case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
+    case b: ErgoBox => Some(mkConstant[SBox.type](b, SBox))
+    case avl: AvlTreeData => Some(mkConstant[SAvlTree.type](avl, SAvlTree))
+    case v: SValue => Some(v)
+    case _ => None
+  }
 }
 
 class StdSigmaBuilder extends SigmaBuilder {

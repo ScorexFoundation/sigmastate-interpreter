@@ -1,13 +1,13 @@
 package sigmastate.lang
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rewrite, reduce}
 import org.ergoplatform.ErgoBox
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
-import sigmastate.Values._
+import sigmastate.Values.{SValue, _}
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Let, Select, ValueOps}
+import sigmastate.lang.Terms.{Lambda, Let, Apply, ValueOps, Select, Block, Ident}
 import sigmastate.lang.exceptions.{MethodNotFound, SpecializerException}
 import sigmastate.utxo._
 

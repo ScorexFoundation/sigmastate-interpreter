@@ -73,7 +73,7 @@ case object Inputs extends LazyCollection[SBox.type] {
   override val opCode: OpCode = OpCodes.InputsCode
 
   override def cost[C <: Context[C]](context: C) =
-    context.asInstanceOf[ErgoLikeContext].boxesToSpend.map(_.cost).sum + Cost.ConcreteCollection
+    context.asInstanceOf[ErgoLikeContext].boxesToSpend.map(_.cost).sum + Cost.ConcreteCollectionDeclaration
 
   val tpe = SCollection(SBox)
 }
@@ -83,7 +83,7 @@ case object Outputs extends LazyCollection[SBox.type] {
   override val opCode: OpCode = OpCodes.OutputsCode
 
   override def cost[C <: Context[C]](context: C) =
-    context.asInstanceOf[ErgoLikeContext].spendingTransaction.outputs.map(_.cost).sum + Cost.ConcreteCollection
+    context.asInstanceOf[ErgoLikeContext].spendingTransaction.outputs.map(_.cost).sum + Cost.ConcreteCollectionDeclaration
 
   val tpe = SCollection(SBox)
 }
