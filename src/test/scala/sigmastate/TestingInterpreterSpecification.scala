@@ -163,6 +163,20 @@ class TestingInterpreterSpecification extends PropSpec
     testEval("5 % 2 == 1")
   }
 
+  property("numeric casts") {
+    // downcast
+    testEval("Array(1).size.toByte > 0")
+    // upcast
+    testEval("Array(1).size.toLong > 0")
+  }
+
+  property("failed numeric downcast (overflow)") {
+    an[ArithmeticException] should be thrownBy testEval("Array(999)(0).toByte > 0")
+    an[ArithmeticException] should be thrownBy testEval("Array(999)(0).toShort.toByte > 0")
+    an[ArithmeticException] should be thrownBy testEval(s"Array(${Int.MaxValue})(0).toShort > 0")
+    an[ArithmeticException] should be thrownBy testEval(s"Array(${Long.MaxValue}L)(0).toInt > 0")
+  }
+
   property("Array indexing (out of bounds with const default value)") {
     testEval("Array(1, 2).getOrElse(3, 0) == 0")
   }

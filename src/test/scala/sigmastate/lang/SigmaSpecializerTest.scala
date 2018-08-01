@@ -165,4 +165,12 @@ class SigmaSpecializerTest extends PropSpec
     spec("INPUTS.size.toLong") shouldBe Upcast(SizeOf(Inputs), SLong)
   }
 
+  property("failed numeric casts for constants") {
+    an[ArithmeticException] should be thrownBy spec("999.toByte")
+    an[ArithmeticException] should be thrownBy spec("999.toShort.toByte")
+    an[ArithmeticException] should be thrownBy spec(s"${Int.MaxValue}.toShort")
+    an[ArithmeticException] should be thrownBy spec(s"${Long.MaxValue}L.toInt")
+  }
+
+
 }
