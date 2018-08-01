@@ -43,8 +43,8 @@ object OpCodes extends ValueCodes {
 
   val LongToByteArrayCode       : OpCode = (LastConstantCode + 10).toByte
   val ByteArrayToBigIntCode    : OpCode = (LastConstantCode + 11).toByte
-  val Downcast                 : OpCode = (LastConstantCode + 12).toByte
-  val Upcast                   : OpCode = (LastConstantCode + 13).toByte
+  val DowncastCode                 : OpCode = (LastConstantCode + 12).toByte
+  val UpcastCode                   : OpCode = (LastConstantCode + 13).toByte
 
   // EvaluatedValue descendants
   val TrueCode:                 OpCode = (LastConstantCode + 15).toByte

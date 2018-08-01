@@ -173,7 +173,7 @@ object AND {
 case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   extends Transformer[T, R] {
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
-  override val opCode: OpCode = OpCodes.Upcast
+  override val opCode: OpCode = OpCodes.UpcastCode
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[T]): Value[R] =
     Constant(this.tpe.upcast(input.value.asInstanceOf[AnyVal]), this.tpe)
@@ -187,7 +187,7 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
 case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   extends Transformer[T, R] {
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Downcast node for non-numeric type ${input.tpe}")
-  override val opCode: OpCode = OpCodes.Downcast
+  override val opCode: OpCode = OpCodes.DowncastCode
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[T]): Value[R] =
     Constant(this.tpe.downcast(input.value.asInstanceOf[AnyVal]), this.tpe)

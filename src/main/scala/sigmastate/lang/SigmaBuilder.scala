@@ -439,19 +439,7 @@ trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 
 case object StdSigmaBuilder extends StdSigmaBuilder
 
-case object CheckingSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder {
-
-//  override def mkDowncast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R] = (input, tpe) match {
-//      // todo implement
-//    case (Constant(value: Short, SShort), SByte)
-//      if value < Byte.MinValue || value > Byte.MaxValue =>
-//      throw new ArithException(s"Byte overflow in Downcast($value)")
-//    case (Constant(value: Int, SInt), SByte)
-//      if value < Byte.MinValue || value > Byte.MaxValue =>
-//      throw new ArithException(s"Byte overflow in Downcast($value)")
-//    case _ => super.mkDowncast(input, tpe)
-//  }
-}
+case object CheckingSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
 
 case object DefaultSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
 case object TransformingSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder

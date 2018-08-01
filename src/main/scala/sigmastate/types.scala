@@ -199,17 +199,17 @@ trait SNumericType extends SProduct {
   import SNumericType._
 
   override def ancestors: Seq[SType] = Nil
-  val toByte = "toByte"
-  val toShort = "toShort"
-  val toInt = "toInt"
-  val toLong = "toLong"
+  val ToByte = "toByte"
+  val ToShort = "toShort"
+  val ToInt = "toInt"
+  val ToLong = "toLong"
   val methods = Vector(
-    SMethod(toByte, SByte),   // see Downcast
-    SMethod(toShort, SShort), // see Downcast
-    SMethod(toInt, SInt),     // see Downcast
-    SMethod(toLong, SLong)    // see Downcast
+    SMethod(ToByte, SByte),   // see Downcast
+    SMethod(ToShort, SShort), // see Downcast
+    SMethod(ToInt, SInt),     // see Downcast
+    SMethod(ToLong, SLong)    // see Downcast
   )
-  def isCastMethod (name: String): Boolean = Seq(toByte, toShort, toInt, toLong).contains(name)
+  def isCastMethod (name: String): Boolean = Seq(ToByte, ToShort, ToInt, ToLong).contains(name)
 
   def upcast(i: AnyVal): WrappedType
   def downcast(i: AnyVal): WrappedType
@@ -275,7 +275,6 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType {
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
   }
   override def downcast(v: AnyVal): Short = v match {
-    case b: Byte => b.toShort
     case s: Short => s
     case i: Int => i.toShortExact
     case l: Long => l.toShortExact
