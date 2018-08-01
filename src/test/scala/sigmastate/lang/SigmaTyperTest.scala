@@ -435,4 +435,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     // in an expression
     typecheck(env, "1L * 1.toLong") shouldBe SLong
   }
+
+  property("invalid cast method for numeric types") {
+    an[MethodNotFound] should be thrownBy typecheck(env, "1.toSuperBigInteger")
+  }
 }

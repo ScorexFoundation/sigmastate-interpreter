@@ -209,6 +209,7 @@ trait SNumericType extends SProduct {
     SMethod(toInt, SInt),     // see Downcast
     SMethod(toLong, SLong)    // see Downcast
   )
+  def isCastMethod (name: String): Boolean = Seq(toByte, toShort, toInt, toLong).contains(name)
 
   def upcast(i: AnyVal): WrappedType
   def downcast(i: AnyVal): WrappedType

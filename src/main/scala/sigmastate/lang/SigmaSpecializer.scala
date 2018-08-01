@@ -65,16 +65,16 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Downcast(Constant(value, tpe), toTpe: SNumericType) =>
       Some(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
 
-    case Select(obj, field, _) if obj.tpe.isNumType =>
+    // Rule: numeric.to* casts
+    case Select(obj, method, Some(tRes: SNumericType))
+      if obj.tpe.isNumType && obj.asNumValue.tpe.isCastMethod(method) =>
       val numValue = obj.asNumValue
-      val iField = numValue.tpe.methodIndex(field)
-      val tRes = if (iField != -1) {
-        numValue.tpe.methods(iField).stype.asInstanceOf[SNumericType]
-      } else
-      // todo make a specializer exception
-        throw new MethodNotFound(s"Cannot find method '$field' in in the object $obj of Product type with methods ${numValue.tpe.methods}")
-      // todo mkCast? (makes either Upcast or Downcast)
-      Some(mkDowncast(numValue, tRes))
+      if (numValue.tpe == tRes)
+        Some(numValue)
+      else if ((numValue.tpe max tRes) == numValue.tpe)
+        Some(mkDowncast(numValue, tRes))
+      else
+        Some(mkUpcast(numValue, tRes))
 
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>
