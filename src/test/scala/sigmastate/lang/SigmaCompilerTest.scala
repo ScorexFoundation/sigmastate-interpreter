@@ -49,7 +49,7 @@ class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with 
           Some(ConcreteCollection(Vector(IntConstant(2))))),
         0)
     comp(env, "arr1.getOrElse(999, 0.toByte)") shouldBe
-      ByIndex(ByteArrayConstant(Array(1, 2)), IntConstant(999), Some(Downcast(IntConstant(0), SByte)))
+      ByIndex(ByteArrayConstant(Array(1, 2)), IntConstant(999), Some(ByteConstant(0)))
   }
 
   property("predefined functions") {
