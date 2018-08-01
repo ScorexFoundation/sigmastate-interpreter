@@ -11,7 +11,6 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import org.ergoplatform.ErgoBox._
 import org.ergoplatform._
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
@@ -151,14 +150,18 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         """{
           |  let notTimePassed = HEIGHT <= timeout
           |  let outBytes = OUTPUTS.map(fun (box: Box) = box.bytesWithNoRef)
-          |  let outSumBytes = outBytes.fold(Array[Byte](), fun (arr1: Array[Byte], arr2: Array[Byte]) = arr2 ++ arr1)
+          |  let outSumBytes = outBytes.fold(Array[Byte](), fun (arr1: Array[Byte], arr2: Array[Byte]) = arr1 ++ arr2)
           |  let timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asBoolValue
 
       val prop = OR(
         AND(LE(Height, LongConstant(timeout)),
-          EQ(CalcBlake2b256(Fold.concat(MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21))))),
+          EQ(CalcBlake2b256(
+            Fold.concat[SByte.type](
+              MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21)))
+            ).asByteArray
+          ),
             ByteArrayConstant(properHash))),
         AND(GT(Height, LongConstant(timeout)), sender)
       )
@@ -195,7 +198,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         |  let outValues = OUTPUTS.map(fun (box: Box) = box.value)
-        |  pubkey && outValues.fold(0L, fun (x: Long, y: Long) = y + x) > 20
+        |  pubkey && outValues.fold(0L, fun (x: Long, y: Long) = x + y) > 20
          }""".stripMargin).asBoolValue
 
     val propExp = AND(

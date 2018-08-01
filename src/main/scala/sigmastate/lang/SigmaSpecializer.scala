@@ -138,11 +138,11 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       val body1 = eval(env + (n -> tagged), body)
       Some(mkMapCollection(col.asValue[SCollection[SType]], tagged.varId, body1))
 
-    case Apply(Select(col,"fold", _), Seq(zero, Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
-      val taggedZero = mkTagged(zeroArg, tZero, 21)
-      val taggedOp = mkTagged(opArg, tOp, 22)
-      val body1 = eval(env ++ Seq(zeroArg -> taggedZero, opArg -> taggedOp), body)
-      Some(mkFold(col.asValue[SCollection[SType]], taggedZero.varId, zero, taggedOp.varId, body1))
+    case Apply(Select(col,"fold", _), Seq(zero, Lambda(Seq((accArg, tAccArg), (opArg, tOpArg)), _, Some(body)))) =>
+      val taggedAcc = mkTagged(accArg, tAccArg, 21)
+      val taggedOp = mkTagged(opArg, tOpArg, 22)
+      val body1 = eval(env ++ Seq(accArg -> taggedAcc, opArg -> taggedOp), body)
+      Some(mkFold(col.asValue[SCollection[SType]], taggedOp.varId, zero, taggedAcc.varId, body1))
 
     case Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
       val index1 = eval(env, index).asValue[SInt.type]
