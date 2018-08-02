@@ -61,7 +61,7 @@ object CostTable {
     //Cost of Blake256 declaration
     val Blake256bDeclaration = 20
 
-    val Dlog = 10000
+    val DlogDeclaration = 10000
 
     val TxHasOutputDeclaration = 100
     val TxOutputDeclaration = 100

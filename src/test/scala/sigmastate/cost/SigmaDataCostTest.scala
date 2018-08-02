@@ -12,7 +12,7 @@ class SigmaDataCostTest extends BaseCtxTests with LangTests {
   }
   import ctx._
   import Col._
-  val compiler = new SigmaCompiler(builder)
+  lazy val compiler = new SigmaCompiler(builder)
 
   test("split cols") {
     ctx.emit("split_cols",

@@ -23,18 +23,18 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   lazy val compiler = new SigmaCompiler(ctx.builder)
   lazy val dsl = sigmaDslBuilder
 
-  def cost(env: Map[String, Any], ctxVars: Map[Byte, SValue], x: String) = {
+  def cost(env: Map[String, Any], x: String) = {
     val compiled = compiler.typecheck(env, x)
-    val cg = ctx.buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), ctxVars, compiled)
+    val cg = ctx.buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), compiled)
     cg
   }
 
-  def checkInEnv[T](env: Map[String, Any], ctxVars: Map[Byte, SValue], name: String, script: String,
+  def checkInEnv[T](env: Map[String, Any], name: String, script: String,
       expectedCalc: Rep[Context] => Rep[T],
       expectedCost: Rep[Context] => Rep[Int],
       doChecks: Boolean = true
   ): Rep[(Context => T, Context => Int)] = {
-    val cf = cost(env, ctxVars, script)
+    val cf = cost(env, script)
     val p @ Pair(calcF, costF) = cf match { case cf: RFunc[Context, Costed[_]]@unchecked =>
       split(cf)
     }
@@ -57,37 +57,30 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
       expectedCalc: Rep[Context] => Rep[T],
       expectedCost: Rep[Context] => Rep[Int]
   ): Rep[(Context => T, Context => Int)] =
-    checkInEnv(env, Map(), name, script, expectedCalc, expectedCost)
+    checkInEnv(Map(), name, script, expectedCalc, expectedCost)
 
   test("costed constants") {
     check("one", "1", _ => 1, _ => ConstantNode)
     check("oneL", "1L", _ => 1L, _ => ConstantNode)
   }
-  test("test equality") {
-    val f = {ctx: Rep[Context] => sigmaDslBuilder.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, evalBlock { ctx.OUTPUTS.length < 1 } ))}
-    val f1 = fun(f)
-    val f2 = fun(f)
-    emit("equality", f1, f2)
-    f1 shouldBe f2
-  }
-
+  
   test("costed operations") {
-//    check("one+one", "1 + 1", _ => 1 + 1, _ => ConstantNode * 2 + TripleDeclaration)
-//    check("oneL+oneL", "1L - 1L", _ => 1L - 1L, _ => ConstantNode * 2 + TripleDeclaration)
-//    check("one_gt_one", "1 > 1", _ => false, _ => ConstantNode * 2 + TripleDeclaration)
-//    check("or", "1 > 1 || 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + OrDeclaration)
-//    check("or2", "1 > 1 || 2 < 1 || 2 > 1", _ => true,
-//      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * OrDeclaration)
+    check("one+one", "1 + 1", _ => 1 + 1, _ => ConstantNode * 2 + TripleDeclaration)
+    check("oneL+oneL", "1L - 1L", _ => 1L - 1L, _ => ConstantNode * 2 + TripleDeclaration)
+    check("one_gt_one", "1 > 1", _ => false, _ => ConstantNode * 2 + TripleDeclaration)
+    check("or", "1 > 1 || 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + OrDeclaration)
+    check("or2", "1 > 1 || 2 < 1 || 2 > 1", _ => true,
+      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * OrDeclaration)
     check("or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
-      { ctx => sigmaDslBuilder.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, evalBlock { ctx.OUTPUTS.length < 1 })) },
+      { ctx => sigmaDslBuilder.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1 )) },
       _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + OrDeclaration)
-//
-//    check("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + AndDeclaration)
-//    check("and2", "1 > 1 && 2 < 1 && 2 > 1", _ => false,
-//      _ => ConstantNode * 6 + TripleDeclaration * 3 + AndDeclaration)
-//    check("and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1",
-//    { ctx => sigmaDslBuilder.allOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
-//    _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + AndDeclaration)
+
+    check("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + AndDeclaration)
+    check("and2", "1 > 1 && 2 < 1 && 2 > 1", _ => false,
+      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * AndDeclaration)
+    check("and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1",
+      { ctx => sigmaDslBuilder.allOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
+      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + AndDeclaration)
   }
 
   test("costed context data") {
@@ -132,9 +125,8 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     val prover = new ErgoLikeProvingInterpreter()
     val backer = prover.dlogSecrets(0).publicImage
     val project = prover.dlogSecrets(1).publicImage
-    val vars = Seq(backerPubKeyId -> SigmaPropConstant(backer), projectPubKeyId -> SigmaPropConstant(project)).toMap
 
-    checkInEnv[Boolean](envCF, vars, "CrowdFunding", crowdFundingScript,
+    checkInEnv[Boolean](envCF, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
         val backerPubKey = ctx.getVar[Sigma](backerPubKeyId)
         val projectPubKey = ctx.getVar[Sigma](projectPubKeyId)
@@ -154,7 +146,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
 
   test("Crowd Funding: measure") {
     def eval(i: Int) = {
-      val cf = cost(envCF ++ Seq("timeout" -> (timeout + i)), Map(), crowdFundingScript)
+      val cf = cost(envCF ++ Seq("timeout" -> (timeout + i)), crowdFundingScript)
 //      split(cf)
       cf
     }
@@ -192,9 +184,8 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   test("Demurrage") {
     val prover = new ErgoLikeProvingInterpreter()
     val regScript = prover.dlogSecrets(0).publicImage
-    val vars = Seq(regScriptId -> SigmaPropConstant(regScript)).toMap
 
-    checkInEnv[Boolean](envDem, vars, "Demurrage", demurrageScript,
+    checkInEnv[Boolean](envDem, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
       val regScript = ctx.getVar[Sigma](regScriptId)
       val c2 = dsl.allOf(colBuilder(
@@ -212,7 +203,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   test("costed collection ops") {
     val cost = (ctx: Rep[Context]) => {
       toRep(OutputsAccess) +
-          (toRep(VariableAccess) + ExtractAmount + ConstantNode + TripleDeclaration) *
+          (toRep(ExtractAmount) + ConstantNode + TripleDeclaration) *
               ctx.OUTPUTS.length
     }
     check("exists", "OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
