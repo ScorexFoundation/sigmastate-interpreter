@@ -48,14 +48,16 @@ class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with 
           0,
           Some(ConcreteCollection(Vector(IntConstant(2))))),
         0)
-    comp(env, "arr1.getOrElse(999, intToByte(0))") shouldBe
-      ByIndex(ByteArrayConstant(Array(1, 2)), IntConstant(999), Some(IntToByte(IntConstant(0))))
+    comp(env, "arr1.getOrElse(999, 0.toByte)") shouldBe
+      ByIndex(ByteArrayConstant(Array(1, 2)), IntConstant(999), Some(ByteConstant(0)))
   }
 
   property("predefined functions") {
     comp(env, "anyOf(Array(c1, c2))") shouldBe OR(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
     comp(env, "blake2b256(getVar[Array[Byte]](10))") shouldBe CalcBlake2b256(TaggedVariable(10, SByteArray))
-    comp(env, "intToByte(10)") shouldBe IntToByte(IntConstant(10))
+    comp(env, "10.toByte") shouldBe ByteConstant(10)
+    comp(env, "Array(1)(0).toByte") shouldBe
+      Downcast(ByIndex(ConcreteCollection(Vector(IntConstant(1)),SInt),IntConstant(0),None), SByte)
     comp(env, "allOf(Array(c1, c2))") shouldBe AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
     comp(env, "getVar[Byte](10)") shouldBe TaggedVariable(10, SByte)
     comp(env, "getVar[Array[Byte]](10)") shouldBe TaggedVariable(10, SByteArray)

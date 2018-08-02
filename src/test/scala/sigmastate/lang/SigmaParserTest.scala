@@ -373,4 +373,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     fail("{ X", 3)
     fail("{ let X", 7)
   }
+
+  property("numeric casts") {
+    parse("1.toByte") shouldBe Select(IntConstant(1), "toByte")
+    parse("1.toShort") shouldBe Select(IntConstant(1), "toShort")
+    parse("1L.toInt") shouldBe Select(LongConstant(1), "toInt")
+    parse("1.toLong") shouldBe Select(IntConstant(1), "toLong")
+  }
 }

@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import org.ergoplatform.Outputs
+import org.ergoplatform.{Height, Inputs, Outputs}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values._
@@ -157,4 +157,20 @@ class SigmaSpecializerTest extends PropSpec
       countANDORInputNodes(tree) shouldBe out.input.items.length
     }
   }
+
+  property("numeric casts") {
+    spec("1.toByte") shouldBe ByteConstant(1)
+    spec("HEIGHT.toLong") shouldBe Height
+    spec("HEIGHT.toByte") shouldBe Downcast(Height, SByte)
+    spec("INPUTS.size.toLong") shouldBe Upcast(SizeOf(Inputs), SLong)
+  }
+
+  property("failed numeric casts for constants") {
+    an[ArithmeticException] should be thrownBy spec("999.toByte")
+    an[ArithmeticException] should be thrownBy spec("999.toShort.toByte")
+    an[ArithmeticException] should be thrownBy spec(s"${Int.MaxValue}.toShort")
+    an[ArithmeticException] should be thrownBy spec(s"${Long.MaxValue}L.toInt")
+  }
+
+
 }

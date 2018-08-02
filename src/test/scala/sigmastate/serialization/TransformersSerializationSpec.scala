@@ -131,4 +131,8 @@ class TransformersSerializationSpec extends SerializationSpecification {
     }
   }
 
+  property("Downcast: Serializer round trip") {
+    forAll(downcastGen) { v => roundTripTest(v) }
+  }
+
 }

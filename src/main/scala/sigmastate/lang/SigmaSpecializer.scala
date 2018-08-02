@@ -8,7 +8,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Let, Select, ValueOps}
-import sigmastate.lang.exceptions.SpecializerException
+import sigmastate.lang.exceptions.{MethodNotFound, SpecializerException}
 import sigmastate.utxo._
 
 class SigmaSpecializer(val builder: SigmaBuilder) {
@@ -56,14 +56,25 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(mkProveDlog(g))
 
-    case Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
-      Some(mkIntToByte(arg))
-
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))
 
     case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
       Some(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
+
+    case Downcast(Constant(value, tpe), toTpe: SNumericType) =>
+      Some(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
+
+    // Rule: numeric.to* casts
+    case Select(obj, method, Some(tRes: SNumericType))
+      if obj.tpe.isNumType && obj.asNumValue.tpe.isCastMethod(method) =>
+      val numValue = obj.asNumValue
+      if (numValue.tpe == tRes)
+        Some(numValue)
+      else if ((numValue.tpe max tRes) == numValue.tpe)
+        Some(mkDowncast(numValue, tRes))
+      else
+        Some(mkUpcast(numValue, tRes))
 
     // Rule: col.size --> SizeOf(col)
     case Select(obj, "size", _) =>

@@ -176,4 +176,8 @@ trait TransformerGenerators {
       mkGT(left, right)
     )
   } yield node
+
+  val downcastGen: Gen[Downcast[SNumericType, SNumericType]] = for {
+    numVal <- Gen.oneOf(numExprTreeNodeGen, shortConstGen, intConstGen, longConstGen)
+  } yield mkDowncast(numVal, SByte).asInstanceOf[Downcast[SNumericType, SNumericType]]
 }
