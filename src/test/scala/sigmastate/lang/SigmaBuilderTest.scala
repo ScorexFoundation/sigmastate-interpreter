@@ -68,7 +68,5 @@ class SigmaBuilderTest extends PropSpec with PropertyChecks with Matchers with L
     an[ConstraintFailed] should be thrownBy mkMultiply(LongConstant(1), IntConstant(1))
     an[ConstraintFailed] should be thrownBy mkDivide(LongConstant(1), IntConstant(1))
     an[ConstraintFailed] should be thrownBy mkModulo(LongConstant(1), IntConstant(1))
-
-    an[ArithException] should be thrownBy mkIntToByte(IntConstant(129))
   }
 }

@@ -312,15 +312,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val code =
       """OUTPUTS
         |.map(fun (box: Box) = box.value)
-        |.fold(0L, fun (acc: Long, val: Long) = acc + val) == 20""".stripMargin
+        |.fold(true, fun (acc: Boolean, val: Long) = acc && (val < 0)) == false""".stripMargin
     val expectedPropTree = EQ(
       Fold(
         MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21))),
-        21,
-        LongConstant(0),
         22,
-        Plus(TaggedLong(21), TaggedLong(22))),
-      LongConstant(20))
+        TrueLeaf,
+        21,
+        AND(TaggedBoolean(21), LT(TaggedLong(22), LongConstant(0)))),
+      FalseLeaf)
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 

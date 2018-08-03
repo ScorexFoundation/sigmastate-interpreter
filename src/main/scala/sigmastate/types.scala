@@ -88,6 +88,7 @@ object SType {
         val okRange = f1.tRange.canBeTypedAs(f2.tRange)
         okDom && okRange
     }
+    def isNumType: Boolean = tpe.isInstanceOf[SNumericType]
     def asNumType: SNumericType = tpe.asInstanceOf[SNumericType]
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
     def classTag[T <: SType#WrappedType]: ClassTag[T] = (tpe match {
@@ -194,9 +195,24 @@ trait SPrimType extends SType with SPredefType {
 }
 
 /** Marker trait for all numeric types. */
-trait SNumericType extends SType {
+trait SNumericType extends SProduct {
   import SNumericType._
+
+  override def ancestors: Seq[SType] = Nil
+  val ToByte = "toByte"
+  val ToShort = "toShort"
+  val ToInt = "toInt"
+  val ToLong = "toLong"
+  val methods = Vector(
+    SMethod(ToByte, SByte),   // see Downcast
+    SMethod(ToShort, SShort), // see Downcast
+    SMethod(ToInt, SInt),     // see Downcast
+    SMethod(ToLong, SLong)    // see Downcast
+  )
+  def isCastMethod (name: String): Boolean = Seq(ToByte, ToShort, ToInt, ToLong).contains(name)
+
   def upcast(i: AnyVal): WrappedType
+  def downcast(i: AnyVal): WrappedType
 
   /** Returns a type which is larger. */
   @inline def max(that: SNumericType): SNumericType =
@@ -258,6 +274,12 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType {
     case x: Short => x
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
   }
+  override def downcast(v: AnyVal): Short = v match {
+    case s: Short => s
+    case i: Int => i.toShortExact
+    case l: Long => l.toShortExact
+    case _ => sys.error(s"Cannot downcast value $v to the type $this")
+  }
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
@@ -271,6 +293,13 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType {
     case x: Short => x.toInt
     case x: Int => x
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
+  }
+  override def downcast(v: AnyVal): Int = v match {
+    case b: Byte => b.toInt
+    case s: Short => s.toInt
+    case i: Int => i
+    case l: Long => l.toIntExact
+    case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
 
@@ -287,6 +316,13 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType {
     case x: Long => x
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
   }
+  override def downcast(v: AnyVal): Long = v match {
+    case b: Byte => b.toLong
+    case s: Short => s.toLong
+    case i: Int => i.toLong
+    case l: Long => l
+    case _ => sys.error(s"Cannot downcast value $v to the type $this")
+  }
 }
 
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
@@ -301,6 +337,13 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
     case x: Int => BigInteger.valueOf(x.toLong)
     case x: Long => BigInteger.valueOf(x)
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
+  }
+  override def downcast(v: AnyVal): BigInteger = v match {
+    case x: Byte => BigInteger.valueOf(x.toLong)
+    case x: Short => BigInteger.valueOf(x.toLong)
+    case x: Int => BigInteger.valueOf(x.toLong)
+    case x: Long => BigInteger.valueOf(x)
+    case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
 
@@ -411,7 +454,7 @@ object SCollection {
     SMethod("getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(tIV))),
     SMethod("map", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV))),
     SMethod("exists", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV))),
-    SMethod("fold", SFunc(IndexedSeq(SCollection(tIV), tIV, SFunc(IndexedSeq(tIV, tIV), tIV)), tIV, Seq(tIV))),
+    SMethod("fold", SFunc(IndexedSeq(SCollection(tIV), tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV, Seq(tIV, tOV))),
     SMethod("forall", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV))),
     SMethod("slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV))),
     SMethod("where", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV)))

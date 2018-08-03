@@ -183,29 +183,29 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
 }
 
 
-case class Fold[IV <: SType](input: Value[SCollection[IV]],
+case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                              id: Byte,
-                             zero: Value[IV],
+                             zero: Value[OV],
                              accId: Byte,
                              foldOp: SValue)
-  extends Transformer[SCollection[IV], IV] with NotReadyValue[IV] {
+  extends Transformer[SCollection[IV], OV] with NotReadyValue[OV] {
   override val opCode: OpCode = OpCodes.FoldCode
-  implicit def tpe = input.tpe.elemType
+  implicit def tpe = zero.tpe
 
   override def transformationReady: Boolean =
     input.evaluated &&
       input.items.forall(_.evaluated) &&
-      zero.isInstanceOf[EvaluatedValue[IV]]
+      zero.isInstanceOf[EvaluatedValue[OV]]
 
   override def cost[C <: Context[C]](context: C): Long =
     Cost.FoldDeclaration + zero.cost(context) + input.cost(context) * foldOp.cost(context)
 
-  override def function(I: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): Value[IV] = {
+  override def function(I: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[IV]]): Value[OV] = {
     val cc = input.toConcreteCollection
     cc.items.foldLeft(zero) { case (x, y) =>
-      val (acc: EvaluatedValue[IV], elem: EvaluatedValue[IV]) = (x, y)
+      val (acc: EvaluatedValue[OV], elem: EvaluatedValue[IV]) = (x, y)
       val localCtx = ctx.withBindings(id -> elem, accId -> acc)
-      val res = I.eval(localCtx, foldOp.asValue[IV])
+      val res = I.eval(localCtx, foldOp.asValue[OV])
       res
     }
   }
@@ -213,13 +213,13 @@ case class Fold[IV <: SType](input: Value[SCollection[IV]],
 
 object Fold {
   def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
-    Fold(input, 21, Constant(tT.upcast(0.toByte), tT), 22, Plus(TaggedVariable(22, tT), TaggedVariable(21, tT)))
+    Fold(input, 22, Constant(tT.upcast(0.toByte), tT), 21, Plus(TaggedVariable(21, tT), TaggedVariable(22, tT)))
 
-  def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T) = {
+  def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T): Fold[SCollection[T], T] = {
     val tCol = SCollection(tT)
-    Fold[SCollection[T]](
-      input, 21, ConcreteCollection()(tT), 22,
-      Append(TaggedVariable(22, tCol), TaggedVariable(21, tCol)))
+    Fold[SCollection[T], T](
+      input, 22, ConcreteCollection()(tT).asValue[T], 21,
+      Append(TaggedVariable(21, tCol), TaggedVariable(22, tCol)))
   }
 }
 

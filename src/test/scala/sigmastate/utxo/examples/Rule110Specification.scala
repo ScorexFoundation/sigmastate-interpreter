@@ -45,7 +45,7 @@ class Rule110Specification extends SigmaTestingCommons {
         |    let l = inLayer((if (i == 0) 5 else (i - 1)))
         |    let c = inLayer(i)
         |    let r = inLayer((i + 1) % 6)
-        |    intToByte((l * c * r + c * r + c + r) % 2)
+        |    ((l * c * r + c * r + c + r) % 2).toByte
         |  }
         |  (OUTPUTS(0).R4[Array[Byte]].value == indices.map(procCell)) &&
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
