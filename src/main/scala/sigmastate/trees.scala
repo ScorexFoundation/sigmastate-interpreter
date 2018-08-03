@@ -404,3 +404,16 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val second = trueBranch
   override lazy val third  = falseBranch
 }
+
+
+case class Min[T <: SNumericType](left: Value[T], right: Value[T])
+  extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
+  override def tpe: T = left.tpe
+  override val opCode: OpCode = OpCodes.MinCode
+}
+
+case class Max[T <: SNumericType](left: Value[T], right: Value[T])
+  extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
+  override def tpe: T = left.tpe
+  override val opCode: OpCode = OpCodes.MaxCode
+}

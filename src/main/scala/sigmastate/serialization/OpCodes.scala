@@ -81,7 +81,9 @@ object OpCodes extends ValueCodes {
   val DivisionCode     : OpCode = (LastConstantCode + 45).toByte
   val ModuloCode       : OpCode = (LastConstantCode + 46).toByte
   val ExponentiateCode : OpCode = (LastConstantCode + 47).toByte
-  val MultiplyGroupCode: OpCode = (LastConstantCode + 48).toByte  // reserved 49, 50
+  val MultiplyGroupCode: OpCode = (LastConstantCode + 48).toByte
+  val MinCode          : OpCode = (LastConstantCode + 49).toByte
+  val MaxCode          : OpCode = (LastConstantCode + 50).toByte
 
   // Environment codes
   val HeightCode               : OpCode = (LastConstantCode + 51).toByte
