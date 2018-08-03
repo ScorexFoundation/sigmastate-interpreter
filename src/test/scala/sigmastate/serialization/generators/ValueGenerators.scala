@@ -9,10 +9,10 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
+import scorex.util._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
-import sigmastate.utils.Extensions._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer

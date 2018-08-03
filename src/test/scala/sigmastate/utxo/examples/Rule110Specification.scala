@@ -2,6 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
+import scorex.util._
 import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, TaggedByteArray, TrueLeaf, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}

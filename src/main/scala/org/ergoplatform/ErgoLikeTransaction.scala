@@ -2,8 +2,8 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.ModifierId
+import scorex.crypto.hash.Blake2b256
+import scorex.util._
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
 
@@ -11,7 +11,6 @@ import scala.util.Try
 import sigmastate.utils.{ByteReader, ByteWriter}
 
 import scala.collection.mutable
-import sigmastate.utils.Extensions._
 
 
 

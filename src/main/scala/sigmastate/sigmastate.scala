@@ -1,12 +1,8 @@
 import sigmastate.Values.Value
 import sigmastate.lang.DefaultSigmaBuilder
-import supertagged.TaggedType
 
 package object sigmastate {
   import DefaultSigmaBuilder._
-
-  object ModifierId extends TaggedType[String]
-  type ModifierId = ModifierId.Type
 
   /**
     * SInt addition

@@ -9,7 +9,7 @@ import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.utils.Extensions._
+import scorex.util._
 import sigmastate.Values.LongConstant
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension

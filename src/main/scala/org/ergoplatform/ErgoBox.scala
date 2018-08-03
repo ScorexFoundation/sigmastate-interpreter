@@ -6,14 +6,13 @@ import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scorex.crypto.authds.ADKey
 import scorex.crypto.encode.Base16
-import scorex.crypto.hash.{Digest32, Blake2b256}
-import sigmastate.SCollection.SByteArray
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.util._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{ByteWriter, ByteReader}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utils.Extensions._
 
 import scala.runtime.ScalaRunTime
 
