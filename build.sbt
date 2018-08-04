@@ -31,6 +31,7 @@ val testingDependencies = Seq(
   "junit" % "junit" % "4.12" % "test",
   "com.novocode" % "junit-interface" % "0.11" % "test",
   "special" %% "library" % "0.3.0-SNAPSHOT" % allConfigDependency,
+  "special.sigma" %% "sigma-impl" % "0.3.0-SNAPSHOT" % allConfigDependency,
   "special.sigma" %% "sigma-library" % "0.3.0-SNAPSHOT" % allConfigDependency
 )
 
@@ -41,6 +42,7 @@ libraryDependencies ++= Seq(
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
   "com.lihaoyi" %% "fastparse" % "1.0.0",
   "special" %% "library" % "0.3.0-SNAPSHOT" % allConfigDependency,
+  "special.sigma" %% "sigma-impl" % "0.3.0-SNAPSHOT" % allConfigDependency,
   "special.sigma" %% "sigma-library" % "0.3.0-SNAPSHOT" % allConfigDependency
 ) ++ testingDependencies
 

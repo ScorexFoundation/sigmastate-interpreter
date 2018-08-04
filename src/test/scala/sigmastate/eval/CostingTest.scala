@@ -4,13 +4,13 @@ import com.google.common.base.Strings
 import sigmastate.SType
 import sigmastate.Values.{SigmaPropConstant, SValue}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
-import sigmastate.lang.{CosterCtx, LangTests, SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{Costing, LangTests, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.utxo.CostTable.Cost
 
 import scalan.BaseCtxTests
 
-class SigmaCosterTest extends BaseCtxTests with LangTests {
-  lazy val ctx = new TestContext with CosterCtx {
+class CostingTest extends BaseCtxTests with LangTests with ExampleContracts {
+  lazy val ctx = new TestContext with Costing {
     import TestSigmaDslBuilder._
     val sigmaDslBuilder = RTestSigmaDslBuilder()
     val builder = TransformingSigmaBuilder
@@ -20,14 +20,7 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
   import Cost._; import ColBuilder._; import Col._; import Box._; import Sigma._; import CrowdFunding._
   import SigmaDslBuilder._; import WOption._
 
-  lazy val compiler = new SigmaCompiler(ctx.builder)
   lazy val dsl = sigmaDslBuilder
-
-  def cost(env: Map[String, Any], x: String) = {
-    val compiled = compiler.typecheck(env, x)
-    val cg = ctx.buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), compiled)
-    cg
-  }
 
   def checkInEnv[T](env: Map[String, Any], name: String, script: String,
       expectedCalc: Rep[Context] => Rep[T],
@@ -94,33 +87,6 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
       _ => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
   }
 
-  val crowdFundingScript =
-    """{
-     | let backerPubKey = getVar[SigmaProp](backerPubKeyId)
-     | let projectPubKey = getVar[SigmaProp](projectPubKeyId)
-     | let c1 = HEIGHT >= timeout && backerPubKey
-     | let c2 = allOf(Array(
-     |   HEIGHT < timeout,
-     |   projectPubKey,
-     |   OUTPUTS.exists(fun (out: Box) = {
-     |     out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
-     |   })
-     | ))
-     | c1 || c2
-     | }
-    """.stripMargin
-
-  val timeout = 100L
-  val minToRaise = 1000L
-  val backerPubKeyId = 1.toByte
-  val projectPubKeyId = 2.toByte
-  val envCF = Map(
-    "timeout" -> timeout,
-    "minToRaise" -> minToRaise,
-    "backerPubKeyId" -> backerPubKeyId,
-    "projectPubKeyId" -> projectPubKeyId
-  )
-
   test("Crowd Funding") {
     val prover = new ErgoLikeProvingInterpreter()
     val backer = prover.dlogSecrets(0).publicImage
@@ -159,27 +125,6 @@ class SigmaCosterTest extends BaseCtxTests with LangTests {
     println(s"Defs: $defCounter, Time: ${defTime / 1000000}")
     emit("Crowd_Funding_measure", res)
   }
-
-  val demurrageScript =
-    """{
-     | let c2 = allOf(Array(
-     |   HEIGHT >= SELF.R4[Long].value + demurragePeriod,
-     |   OUTPUTS.exists(fun (out: Box) = {
-     |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
-     |   })
-     | ))
-     | getVar[SigmaProp](regScriptId) || c2
-     | }
-    """.stripMargin
-
-  val demurragePeriod = 100L
-  val demurrageCost = 2L
-  val regScriptId = 1.toByte
-  val envDem = Map(
-    "demurragePeriod" -> demurragePeriod,
-    "demurrageCost" -> demurrageCost,
-    "regScriptId" -> regScriptId,
-  )
 
   test("Demurrage") {
     val prover = new ErgoLikeProvingInterpreter()

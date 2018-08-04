@@ -4,8 +4,8 @@ import sigmastate.lang.{TransformingSigmaBuilder, LangTests, SigmaCompiler}
 
 import scalan.BaseCtxTests
 
-class SigmaDataCostTest extends BaseCtxTests with LangTests {
-  lazy val ctx = new TestContext with DataCostCtx {
+class DataCostingTest extends BaseCtxTests with LangTests {
+  lazy val ctx = new TestContext with DataCosting {
     import TestSigmaDslBuilder._
     val sigmaDslBuilder = RTestSigmaDslBuilder()
     val builder = TransformingSigmaBuilder

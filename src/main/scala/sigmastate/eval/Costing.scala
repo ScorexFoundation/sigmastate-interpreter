@@ -16,11 +16,10 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
-
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-trait CosterCtx extends SigmaLibrary {
+trait Costing extends SigmaLibrary {
   import Context._;
   import WArray._;
   import Col._;
@@ -55,6 +54,7 @@ trait CosterCtx extends SigmaLibrary {
   /** Should be specified in the final cake */
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
+  lazy val compiler = new SigmaCompiler(builder)
 
   val colBuilder: Rep[ColBuilder] = RColOverArrayBuilder()
   val costedBuilder = RConcreteCostedBuilder()
@@ -433,6 +433,12 @@ trait CosterCtx extends SigmaLibrary {
       val env = envVals.mapValues(v => evalNode(ctx, Map(), v))
       evalNode(ctx, env, tree)
     }
+  }
+
+  def cost(env: Map[String, Any], code: String) = {
+    val typed = compiler.typecheck(env, code)
+    val cg = buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), typed)
+    cg
   }
 
   def error(msg: String) = throw new CosterException(msg, None)

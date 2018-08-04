@@ -1,11 +1,11 @@
 package sigmastate.eval
 
-import sigmastate.lang.CosterCtx
+import sigmastate.lang.Costing
 
 import scalan.Lazy
 import sigmastate.utxo.CostTable.Cost.BoxConstantDeclaration
 
-trait DataCostCtx extends CosterCtx {
+trait DataCosting extends Costing {
   import WArray._; import Col._
   import Box._
   import ColBuilder._;

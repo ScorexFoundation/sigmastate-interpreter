@@ -1,8 +1,8 @@
 package sigmastate.eval
 
-import sigmastate.lang.CosterCtx
+import sigmastate.lang.Costing
 
-class SigmaCoster[Ctx <: CosterCtx](val ctx: Ctx) {
+class SigmaCoster[Ctx <: Costing](val ctx: Ctx) {
 
 
 }
