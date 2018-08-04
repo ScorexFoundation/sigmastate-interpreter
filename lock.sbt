@@ -18,12 +18,13 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.bitbucket.inkytonik.dsinfo" % "dsinfo_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.dsprofile" % "dsprofile_2.12" % "0.4.0",
   "org.bitbucket.inkytonik.kiama" % "kiama_2.12" % "2.1.0",
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.59",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.60",
   "org.rogach" % "scallop_2.12" % "2.1.1",
   "org.rudogma" % "supertagged_2.12" % "1.4",
   "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
-  "org.scorexfoundation" % "scrypto_2.12" % "2.1.2",
+  "org.scorexfoundation" % "scorex-util_2.12" % "0.1.1-SNAPSHOT",
+  "org.scorexfoundation" % "scrypto_2.12" % "2.1.3-SNAPSHOT",
   "org.slf4j" % "slf4j-api" % "1.8.0-beta1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH ec107806e987d35dd48e37c3541b2ea69c799107
+// LIBRARY_DEPENDENCIES_HASH b5f04ac1ccdbccbe66a4fac4928fe60352462c6e
