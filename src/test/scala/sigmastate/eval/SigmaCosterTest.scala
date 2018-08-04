@@ -1,4 +1,4 @@
-package sigmastate.cost
+package sigmastate.eval
 
 import com.google.common.base.Strings
 import sigmastate.SType

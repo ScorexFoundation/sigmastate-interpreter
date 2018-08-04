@@ -1,4 +1,4 @@
-package sigmastate.cost
+package sigmastate.eval
 
 import sigmastate.lang.{TransformingSigmaBuilder, LangTests, SigmaCompiler}
 

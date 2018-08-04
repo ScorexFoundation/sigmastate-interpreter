@@ -24,8 +24,8 @@ object CostTable {
     val ExtractScriptBytes = 10
     val ExtractRegister = 10
 
-    //cost for CustomByteArray declaration. Additional cost to be calculated when data is known
-    //(and CustomByteArray being converted to ByteArrayLeaf)
+    /** The cost for CustomByteArray declaration. Additional cost to be calculated when data is known
+     (and CustomByteArray being converted to ByteArrayLeaf) */
     val ByteArrayDeclaration = 1
 
     val ByteArrayPerKilobyte = 200
@@ -55,10 +55,10 @@ object CostTable {
     val OrDeclaration = 1
     val OrPerChild = 1
 
-    //PropLeaf declaration cost, wrapped script cost to be added as well.
+    /**PropLeaf declaration cost, wrapped script cost to be added as well.*/
     val PropLeafDeclaration = 500
 
-    //Cost of Blake256 declaration
+    /** Cost of Blake256 declaration */
     val Blake256bDeclaration = 20
 
     val DlogDeclaration = 10000
