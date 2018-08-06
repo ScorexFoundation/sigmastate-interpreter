@@ -3,7 +3,7 @@ package org.ergoplatform
 import java.util
 
 import org.ergoplatform.ErgoBox._
-import scorex.crypto.encode.Base16
+import scorex.util.encode.Base16
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigmastate.STuple.STokenType

@@ -5,7 +5,7 @@ import fastparse.core
 import sigmastate._
 import Values._
 import sigmastate.lang.Terms._
-import scorex.crypto.encode.Base58
+import scorex.util.encode.Base58
 import sigmastate.SCollection.SByteArray
 import sigmastate.lang.syntax.Basic._
 import sigmastate.lang.syntax.{Core, Exprs}
