@@ -40,6 +40,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   property("predefined functions") {
     bind(env, "getVar[Byte](10)") shouldBe TaggedVariable(10, SByte)
     bind(env, "getVar[Array[Byte]](10)") shouldBe TaggedVariable(10, SByteArray)
+    bind(env, "min(1,2)") shouldBe Min(IntConstant(1), IntConstant(2))
+    bind(env, "min(1,2L)") shouldBe Min(Upcast(IntConstant(1), SLong), LongConstant(2))
   }
 
   property("let constructs") {

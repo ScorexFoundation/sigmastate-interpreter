@@ -76,6 +76,14 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         else error(s"Invalid arguments of Some: expected one argument but found $args")
       Some(mkSomeValue(arg))
 
+    // Rule: min(x, y) -->
+    case Apply(Ident("min", _), Vector(l,r)) =>
+      Some(mkMin(l.asLongValue, r.asLongValue))
+
+    // Rule: max(x, y) -->
+    case Apply(Ident("max", _), Vector(l,r)) =>
+      Some(mkMax(l.asLongValue, r.asLongValue))
+
     case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
       if (targs.length != 1 || args.length != 1)
         error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
@@ -94,7 +102,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
 
     // Rule: { e } --> e
     case Block(Seq(), body) => Some(body)
-    
+
     case block @ Block(binds, t) =>
       val newBinds = for (Let(n, t, b) <- binds) yield {
         if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}")

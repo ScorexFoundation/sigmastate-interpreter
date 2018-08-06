@@ -87,6 +87,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "getVar[SigmaProp](10) || p2") shouldBe SBoolean
     typecheck(env, "getVar[SigmaProp](10) && getVar[SigmaProp](11)") shouldBe SBoolean
     typecheck(env, "Array(true, getVar[SigmaProp](11))") shouldBe SCollection(SBoolean)
+    typecheck(env, "min(1,2)") shouldBe SInt
   }
 
   property("let constructs") {
