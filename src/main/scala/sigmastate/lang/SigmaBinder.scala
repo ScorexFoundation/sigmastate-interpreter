@@ -9,7 +9,7 @@ import Values._
 import org.ergoplatform._
 import sigmastate.utils.Extensions._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.exceptions.BinderException
+import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
 
 class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
   import SigmaBinder._
@@ -77,12 +77,20 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
       Some(mkSomeValue(arg))
 
     // Rule: min(x, y) -->
-    case Apply(Ident("min", _), Vector(l,r)) =>
-      Some(mkMin(l.asLongValue, r.asLongValue))
+    case Apply(Ident("min", _), args) => args match {
+      case Seq(l: SValue, r: SValue) =>
+        Some(mkMin(l.asLongValue, r.asLongValue))
+      case _ =>
+        throw new InvalidArguments(s"Invalid arguments for min: $args")
+    }
 
     // Rule: max(x, y) -->
-    case Apply(Ident("max", _), Vector(l,r)) =>
-      Some(mkMax(l.asLongValue, r.asLongValue))
+    case Apply(Ident("max", _), args) => args match {
+      case Seq(l: SValue, r: SValue) =>
+        Some(mkMax(l.asLongValue, r.asLongValue))
+      case _ =>
+        throw new InvalidArguments(s"Invalid arguments for max: $args")
+    }
 
     case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
       if (targs.length != 1 || args.length != 1)
