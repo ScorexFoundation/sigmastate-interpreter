@@ -1,7 +1,8 @@
 package sigmastate.eval
 
 import sigmastate.SInt
-import sigmastate.Values.{TrueLeaf, LongConstant, FalseLeaf, IntConstant}
+import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, SigmaPropConstant, IntConstant}
+import sigmastate.helpers.ErgoLikeProvingInterpreter
 
 import scalan.BaseCtxTests
 import sigmastate.lang.{LangTests, TransformingSigmaBuilder}
@@ -21,14 +22,18 @@ class EvaluationTest extends BaseCtxTests with LangTests with ContractsTestkit w
     beginPass(new DefaultPass("mypass",
       Pass.defaultPassConfig.copy(constantPropagation = false)))
 
+    val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
+    val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
+    val monoidBuilderValue = new special.collection.MonoidBuilderInst()
+
     def getDataEnv: mutable.Map[Sym, AnyRef] = {
-      val monoidBuilder = new special.collection.MonoidBuilderInst()
+
       val env = mutable.Map[Sym, AnyRef](
-        sigmaDslBuilder -> new special.sigma.TestSigmaDslBuilder(),
-        sigmaDslBuilder.Cols -> new special.collection.ColOverArrayBuilder,
-        costedBuilder -> new special.collection.ConcreteCostedBuilder(),
-        costedBuilder.monoidBuilder -> monoidBuilder,
-        costedBuilder.monoidBuilder.intPlusMonoid -> monoidBuilder.intPlusMonoid
+        sigmaDslBuilder -> sigmaDslBuilderValue,
+        sigmaDslBuilder.Cols -> sigmaDslBuilderValue.Cols,
+        costedBuilder -> costedBuilderValue,
+        costedBuilder.monoidBuilder -> monoidBuilderValue,
+        costedBuilder.monoidBuilder.intPlusMonoid -> monoidBuilderValue.intPlusMonoid
       )
       env
     }
@@ -94,7 +99,16 @@ class EvaluationTest extends BaseCtxTests with LangTests with ContractsTestkit w
   }
 
   test("Crowd Funding") {
-    val ctx = newContext(height = 1, boxA1)
+    val backerProver = new ErgoLikeProvingInterpreter
+    val projectProver = new ErgoLikeProvingInterpreter
+    val backerPubKey = backerProver.dlogSecrets.head.publicImage
+    val projectPubKey = projectProver.dlogSecrets.head.publicImage
+
+    val ctx = newContext(height = 1, boxA1,
+      contextVars(Map(
+        backerPubKeyId -> backerPubKey,
+        projectPubKeyId -> projectPubKey
+      )).arr:_*)
     check(envCF, "CrowdFunding", crowdFundingScript, ctx,  1)
   }
 }

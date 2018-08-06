@@ -124,7 +124,7 @@ trait Costing extends SigmaLibrary {
   }
 
   def opcodeToBinOp[A](opCode: Byte, eA: Elem[A]): BinOp[A,_] = opCode match {
-    case OpCodes.EqCode => Equals[A]()
+    case OpCodes.EqCode => Equals[A]()(eA)
     case OpCodes.GtCode => OrderingGT[A](elemToOrdering(eA))
     case OpCodes.LtCode => OrderingLT[A](elemToOrdering(eA))
     case OpCodes.GeCode => OrderingGTEQ[A](elemToOrdering(eA))

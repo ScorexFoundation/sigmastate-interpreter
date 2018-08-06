@@ -2,10 +2,11 @@ package sigmastate.eval
 
 import java.lang.reflect.Method
 
-import sigmastate.Values.Value
+import sigmastate.Values.{Value, SigmaBoolean}
 import sigmastate.lang.Costing
 
 import scala.collection.mutable
+import scala.reflect.ClassTag
 import scala.util.Try
 
 trait Evaluation extends Costing {
@@ -60,12 +61,17 @@ trait Evaluation extends Costing {
 
   type ContextFunc[T <: SType] = SigmaContext => Value[T]
 
+  val sigmaDslBuilderValue: special.sigma.SigmaDslBuilder
+  val costedBuilderValue: special.collection.ConcreteCostedBuilder
+  val monoidBuilderValue: special.collection.MonoidBuilder
+
   def compile[T <: SType](dataEnv: mutable.Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
 
     def getArgTypes(args: Seq[AnyRef]) = {
       val types = args.map {
         case s: Sym => dataEnv(s).getClass
         case _: Seq[_] => classOf[Seq[_]]
+        case e: Elem[_] => classOf[ClassTag[_]]
       }
       types
     }
@@ -74,6 +80,7 @@ trait Evaluation extends Costing {
       val vs = args.map {
         case s: Sym => dataEnv(s)
         case vec: Vector[AnyRef]@unchecked => Vector(getArgValues(vec):_*)
+        case e: Elem[_] => e.classTag
       }
       vs
     }
@@ -104,28 +111,37 @@ trait Evaluation extends Costing {
 
     def evaluate(te: TableEntry[_]): Unit = {
       def out(v: AnyRef) = dataEnv += (te.sym -> v)
-      te.rhs match {
-        case Const(x) => out(x.asInstanceOf[AnyRef])
-        case _: DslBuilder | _: ColBuilder | _: IntPlusMonoid =>
-          dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te"))
-        case MethodCall(obj, m, args, _) =>
-          val argTypes = getArgTypes(args)
-          val argValues = getArgValues(args)
-          val objValue = dataEnv(obj)
-          val objMethod = getObjMethod(objValue.getClass, m, argTypes)
-          out(objMethod.invoke(objValue, argValues:_*))
-        case ApplyBinOp(op: BinOp[a,r], xSym, ySym) =>
-          val x = dataEnv(xSym)
-          val y = dataEnv(ySym)
-          out(op.applySeq(x, y).asInstanceOf[AnyRef])
-        case Lambda(l, _, x, y) =>
-          val f = (ctx: AnyRef) => {
-            dataEnv += (x -> ctx)
-            l.schedule.foreach(evaluate(_))
-            dataEnv(y)
-          }
-          out(f)
-        case _ => !!!(s"Don't know how to evaluate($te)")
+      try {
+        te.rhs match {
+          case Const(x) => out(x.asInstanceOf[AnyRef])
+          case _: DslBuilder | _: ColBuilder | _: IntPlusMonoid =>
+            dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te"))
+          case SigmaM.propBytes(prop) =>
+            val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]
+            out(sigmaDslBuilderValue.Cols.fromArray(sigmaBool.bytes))
+          case MethodCall(obj, m, args, _) =>
+            val argTypes = getArgTypes(args)
+            val argValues = getArgValues(args)
+            val objValue = dataEnv(obj)
+            val objMethod = getObjMethod(objValue.getClass, m, argTypes)
+            out(objMethod.invoke(objValue, argValues:_*))
+          case ApplyBinOp(op: BinOp[a,r], xSym, ySym) =>
+            val x = dataEnv(xSym)
+            val y = dataEnv(ySym)
+            out(op.applySeq(x, y).asInstanceOf[AnyRef])
+          case Lambda(l, _, x, y) =>
+            val f = (ctx: AnyRef) => {
+              dataEnv += (x -> ctx)
+              l.schedule.foreach(evaluate(_))
+              dataEnv(y)
+            }
+            out(f)
+          case _ => !!!(s"Don't know how to evaluate($te)")
+        }
+      }
+      catch {
+        case e: Throwable =>
+          !!!(s"Error in evaluate($te)", e)
       }
     }
 
