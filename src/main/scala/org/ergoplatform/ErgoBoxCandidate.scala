@@ -61,16 +61,16 @@ object ErgoBoxCandidate {
 
   object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
-    def serializeBodyWithIndexedTokenIds(obj: ErgoBoxCandidate,
-                                         digests: Option[IndexedSeq[Digest32]],
-                                         w: ByteWriter): Unit = {
+    def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
+                                        digests: Option[Array[Digest32]],
+                                        w: ByteWriter): Unit = {
       w.putULong(obj.value)
       w.putValue(obj.proposition)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
         if (digests.isDefined) {
           val digestIndex = digests.get.indexOf(id)
-          if (digestIndex == -1) sys.error(s"failed to find token id ($id) in tx's tokens index")
+          if (digestIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
           w.putUInt(digestIndex)
         } else {
           w.putBytes(id)
@@ -98,16 +98,17 @@ object ErgoBoxCandidate {
     }
 
     override def serializeBody(obj: ErgoBoxCandidate, w: ByteWriter): Unit = {
-      serializeBodyWithIndexedTokenIds(obj, None, w)
+      serializeBodyWithIndexedDigests(obj, None, w)
     }
 
-    def parseBodyWithIndexedTokenIds(digests: Option[IndexedSeq[Digest32]], r: ByteReader): ErgoBoxCandidate = {
+    def parseBodyWithIndexedDigests(digests: Option[Array[Digest32]], r: ByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
       val prop = r.getValue().asBoolValue
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
         val tokenId = if (digests.isDefined) {
           val digestIndex = r.getUInt().toInt
+          if (!digests.get.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
           digests.get.apply(digestIndex)
         } else {
           Digest32 @@ r.getBytes(TokenId.size)
@@ -126,7 +127,7 @@ object ErgoBoxCandidate {
     }
 
     override def parseBody(r: ByteReader): ErgoBoxCandidate = {
-      parseBodyWithIndexedTokenIds(None, r)
+      parseBodyWithIndexedDigests(None, r)
     }
   }
 }
