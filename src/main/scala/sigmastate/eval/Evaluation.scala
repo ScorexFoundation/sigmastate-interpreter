@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import java.lang.reflect.Method
 
-import sigmastate.Values.{Value, SigmaBoolean}
+import sigmastate.Values.{Value, SigmaBoolean, ConcreteCollection}
 import sigmastate.lang.Costing
 
 import scala.collection.mutable
@@ -14,11 +14,13 @@ trait Evaluation extends Costing {
   import Sigma._
   import Col._
   import Box._
+  import SigmaDslBuilder._
 
   val ContextM = ContextMethods
   val SigmaM = SigmaMethods
   val ColM = ColMethods
   val BoxM = BoxMethods
+  val SDBM = SigmaDslBuilderMethods
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
@@ -57,6 +59,7 @@ trait Evaluation extends Costing {
   }
 
   import sigmastate._
+  import Values.{FalseLeaf, TrueLeaf}
   import special.sigma.{Context => SigmaContext}
 
   type ContextFunc[T <: SType] = SigmaContext => Value[T]
@@ -66,6 +69,8 @@ trait Evaluation extends Costing {
   val monoidBuilderValue: special.collection.MonoidBuilder
 
   def compile[T <: SType](dataEnv: mutable.Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
+
+    object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
 
     def getArgTypes(args: Seq[AnyRef]) = {
       val types = args.map {
@@ -79,13 +84,14 @@ trait Evaluation extends Costing {
     def getArgValues(args: Seq[AnyRef]): Seq[AnyRef] = {
       val vs = args.map {
         case s: Sym => dataEnv(s)
-        case vec: Vector[AnyRef]@unchecked => Vector(getArgValues(vec):_*)
+        case vec: Seq[AnyRef]@unchecked => getArgValues(vec)
         case e: Elem[_] => e.classTag
       }
       vs
     }
 
-    def getObjMethod(objClass: Class[_], objMethod: Method, argTypes: Seq[Class[_]]): Method = {
+    def getObjMethod(objClass: Class[_], objMethod: Method, args: Seq[AnyRef]): Method = {
+      val argTypes = getArgTypes(args)
       val methods = objClass.getMethods
       val lookupName = objMethod.getName
       val resMethods = methods.filter(m => m.getName == lookupName)
@@ -109,6 +115,18 @@ trait Evaluation extends Costing {
       }
     }
 
+    def getObjMethodAndArgs(objClass: Class[_], mc: MethodCall): (Method, Seq[AnyRef]) = mc match {
+      case ColM.map(col, f) =>
+        val args = Seq(f, f.elem.eRange)
+        val m = getObjMethod(objClass, mc.method, args)
+        val argValues = getArgValues(args)
+        (m, argValues)
+      case _ =>
+        val m = getObjMethod(objClass, mc.method, mc.args)
+        val argValues = getArgValues(mc.args)
+        (m, argValues)
+    }
+
     def evaluate(te: TableEntry[_]): Unit = {
       def out(v: AnyRef) = dataEnv += (te.sym -> v)
       try {
@@ -119,11 +137,18 @@ trait Evaluation extends Costing {
           case SigmaM.propBytes(prop) =>
             val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]
             out(sigmaDslBuilderValue.Cols.fromArray(sigmaBool.bytes))
-          case MethodCall(obj, m, args, _) =>
-            val argTypes = getArgTypes(args)
-            val argValues = getArgValues(args)
+          case SigmaM.and_bool_&&(In(l: Value[SBoolean.type]@unchecked), In(b: Boolean)) =>
+            if (b)
+              out(l)
+            else
+              out(FalseLeaf)
+          case SDBM.anyZK(_, In(items: special.collection.Col[Value[SBoolean.type]]@unchecked)) =>
+            out(new OR(ConcreteCollection(items.arr.toIndexedSeq, SBoolean)).function(null, null))
+          case SigmaM.isValid(In(prop: AnyRef)) =>
+            out(prop)
+          case mc @ MethodCall(obj, m, args, _) =>
             val objValue = dataEnv(obj)
-            val objMethod = getObjMethod(objValue.getClass, m, argTypes)
+            val (objMethod, argValues) = getObjMethodAndArgs(objValue.getClass, mc)
             out(objMethod.invoke(objValue, argValues:_*))
           case ApplyBinOp(op: BinOp[a,r], xSym, ySym) =>
             val x = dataEnv(xSym)
@@ -143,6 +168,7 @@ trait Evaluation extends Costing {
         case e: Throwable =>
           !!!(s"Error in evaluate($te)", e)
       }
+      println(s"${te.sym} -> ${dataEnv(te.sym)}")
     }
 
     val g = new PGraph(f)
