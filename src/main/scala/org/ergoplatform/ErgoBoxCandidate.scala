@@ -61,12 +61,20 @@ object ErgoBoxCandidate {
 
   object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
-    override def serializeBody(obj: ErgoBoxCandidate, w: ByteWriter): Unit = {
+    def serializeBodyWithIndexedTokenIds(obj: ErgoBoxCandidate,
+                                         digests: Option[IndexedSeq[Digest32]],
+                                         w: ByteWriter): Unit = {
       w.putULong(obj.value)
       w.putValue(obj.proposition)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
-        w.putBytes(id)
+        if (digests.isDefined) {
+          val digestIndex = digests.get.indexOf(id)
+          if (digestIndex == -1) sys.error(s"failed to find token id ($id) in tx's tokens index")
+          w.putUInt(digestIndex)
+        } else {
+          w.putBytes(id)
+        }
         w.putULong(amount)
       }
       val nRegs = obj.additionalRegisters.keys.size
@@ -89,12 +97,21 @@ object ErgoBoxCandidate {
       }
     }
 
-    override def parseBody(r: ByteReader): ErgoBoxCandidate = {
+    override def serializeBody(obj: ErgoBoxCandidate, w: ByteWriter): Unit = {
+      serializeBodyWithIndexedTokenIds(obj, None, w)
+    }
+
+    def parseBodyWithIndexedTokenIds(digests: Option[IndexedSeq[Digest32]], r: ByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
       val prop = r.getValue().asBoolValue
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
-        val tokenId = Digest32 @@ r.getBytes(TokenId.size)
+        val tokenId = if (digests.isDefined) {
+          val digestIndex = r.getUInt().toInt
+          digests.get.apply(digestIndex)
+        } else {
+          Digest32 @@ r.getBytes(TokenId.size)
+        }
         val amount = r.getULong()
         tokenId -> amount
       }
@@ -106,6 +123,10 @@ object ErgoBoxCandidate {
         (reg, v)
       }.toMap
       new ErgoBoxCandidate(value, prop, addTokens, regs)
+    }
+
+    override def parseBody(r: ByteReader): ErgoBoxCandidate = {
+      parseBodyWithIndexedTokenIds(None, r)
     }
   }
 }

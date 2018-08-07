@@ -125,8 +125,10 @@ object ErgoLikeTransaction {
       for (input <- ftx.inputs) {
         Input.serializer.serializeBody(input, w)
       }
+      // todo build and serialize an array of token ids from all boxes
       w.putUShort(ftx.outputCandidates.length)
       for (out <- ftx.outputCandidates) {
+        // todo call serializeBody with optional token ids array
         ErgoBoxCandidate.serializer.serializeBody(out, w)
       }
     }
@@ -137,9 +139,11 @@ object ErgoLikeTransaction {
       for (_ <- 0 until inputsCount) {
         inputsBuilder += Input.serializer.parseBody(r)
       }
+      // todo parse and build an array of token ids
       val outsCount = r.getUShort()
       val outputCandidatesBuilder = mutable.ArrayBuilder.make[ErgoBoxCandidate]()
       for (_ <- 0 until outsCount) {
+        // todo call parseBody with optional token ids array
         outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBody(r)
       }
       FlattenedTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
