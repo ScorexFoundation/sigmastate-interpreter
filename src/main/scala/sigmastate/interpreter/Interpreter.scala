@@ -108,6 +108,12 @@ trait Interpreter {
     case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.DivisionCode) =>
       ByteConstant((l / r).toByte)
 
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MinCode) =>
+      ByteConstant(math.min(l, r).toByte)
+
+    case ArithOp(ByteConstant(l), ByteConstant(r), OpCodes.MaxCode) =>
+      ByteConstant(math.max(l, r).toByte)
+
     //Short Arith operations
     case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.PlusCode) =>
       ShortConstant(l.addExact(r))
@@ -123,6 +129,12 @@ trait Interpreter {
 
     case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.DivisionCode) =>
       ShortConstant((l / r).toShort)
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.MinCode) =>
+      ShortConstant(math.min(l, r).toShort)
+
+    case ArithOp(ShortConstant(l), ShortConstant(r), OpCodes.MaxCode) =>
+      ShortConstant(math.max(l, r).toShort)
 
     //Int Arith operations
     case ArithOp(IntConstant(l), IntConstant(r), OpCodes.PlusCode) =>
@@ -140,6 +152,12 @@ trait Interpreter {
     case ArithOp(IntConstant(l), IntConstant(r), OpCodes.DivisionCode) =>
       IntConstant(l / r)
 
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MinCode) =>
+      IntConstant(math.min(l, r))
+
+    case ArithOp(IntConstant(l), IntConstant(r), OpCodes.MaxCode) =>
+      IntConstant(math.max(l, r))
+
     //Long Arith operations
     case ArithOp(LongConstant(l), LongConstant(r), OpCodes.PlusCode) =>
       LongConstant(Math.addExact(l, r))
@@ -156,6 +174,12 @@ trait Interpreter {
     case ArithOp(LongConstant(l), LongConstant(r), OpCodes.DivisionCode) =>
       LongConstant(l / r)
 
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.MinCode) =>
+      LongConstant(math.min(l, r).toLong)
+
+    case ArithOp(LongConstant(l), LongConstant(r), OpCodes.MaxCode) =>
+      LongConstant(math.max(l, r).toLong)
+
     //BigInt Arith operations
     case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.PlusCode) =>
       BigIntConstant(l.add(r))
@@ -171,6 +195,12 @@ trait Interpreter {
 
     case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.DivisionCode) =>
       BigIntConstant(l.divide(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.MinCode) =>
+      BigIntConstant(l.min(r))
+
+    case ArithOp(BigIntConstant(l), BigIntConstant(r), OpCodes.MaxCode) =>
+      BigIntConstant(l.max(r))
 
     case Xor(ByteArrayConstant(l), ByteArrayConstant(r)) =>
       assert(l.length == r.length)

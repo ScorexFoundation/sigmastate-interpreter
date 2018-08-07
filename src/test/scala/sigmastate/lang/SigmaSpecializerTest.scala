@@ -172,4 +172,8 @@ class SigmaSpecializerTest extends PropSpec
     an[ArithmeticException] should be thrownBy spec(s"${Long.MaxValue}L.toInt")
   }
 
+  property("byteArrayToBigInt") {
+    spec("byteArrayToBigInt(longToByteArray(1L))") shouldBe ByteArrayToBigInt(LongToByteArray(LongConstant(1)))
+  }
+
 }
