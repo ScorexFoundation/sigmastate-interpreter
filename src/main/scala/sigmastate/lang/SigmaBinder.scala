@@ -79,7 +79,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
     // Rule: min(x, y) -->
     case Apply(Ident("min", _), args) => args match {
       case Seq(l: SValue, r: SValue) =>
-        Some(mkMin(l.asLongValue, r.asLongValue))
+        Some(mkMin(l.asNumValue, r.asNumValue))
       case _ =>
         throw new InvalidArguments(s"Invalid arguments for min: $args")
     }
@@ -87,7 +87,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
     // Rule: max(x, y) -->
     case Apply(Ident("max", _), args) => args match {
       case Seq(l: SValue, r: SValue) =>
-        Some(mkMax(l.asLongValue, r.asLongValue))
+        Some(mkMax(l.asNumValue, r.asNumValue))
       case _ =>
         throw new InvalidArguments(s"Invalid arguments for max: $args")
     }

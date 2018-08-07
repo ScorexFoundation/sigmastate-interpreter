@@ -87,7 +87,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "getVar[SigmaProp](10) || p2") shouldBe SBoolean
     typecheck(env, "getVar[SigmaProp](10) && getVar[SigmaProp](11)") shouldBe SBoolean
     typecheck(env, "Array(true, getVar[SigmaProp](11))") shouldBe SCollection(SBoolean)
-    typecheck(env, "min(1,2)") shouldBe SInt
+    typecheck(env, "min(1, 2)") shouldBe SInt
+    typecheck(env, "min(1L, 2)") shouldBe SLong
+    typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SLong
+    typecheck(env, "max(1, 2)") shouldBe SInt
+    typecheck(env, "max(1L, 2)") shouldBe SLong
   }
 
   property("let constructs") {
@@ -412,6 +416,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 - false")
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 / false")
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 % false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "min(1, false)")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "max(1, false)")
     an[TyperException] should be thrownBy typecheck(env, "1 * false")
   }
 

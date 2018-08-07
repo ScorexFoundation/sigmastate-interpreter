@@ -294,6 +294,8 @@ class SigmaTyper(val builder: SigmaBuilder) {
     case ArithOp(l, r, OpCodes.MultiplyCode) => bimap(env, "*", l.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
     case ArithOp(l, r, OpCodes.ModuloCode) => bimap(env, "%", l.asNumValue, r.asNumValue)(mkModulo)(tT, tT)
     case ArithOp(l, r, OpCodes.DivisionCode) => bimap(env, "/", l.asNumValue, r.asNumValue)(mkDivide)(tT, tT)
+    case ArithOp(l, r, OpCodes.MinCode) => bimap(env, "min", l.asNumValue, r.asNumValue)(mkMin)(tT, tT)
+    case ArithOp(l, r, OpCodes.MaxCode) => bimap(env, "max", l.asNumValue, r.asNumValue)(mkMax)(tT, tT)
 
     case Xor(l, r) => bimap(env, "|", l, r)(mkXor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(mkMultiplyGroup)(SGroupElement, SGroupElement)

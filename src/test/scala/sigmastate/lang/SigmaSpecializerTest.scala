@@ -172,11 +172,4 @@ class SigmaSpecializerTest extends PropSpec
     an[ArithmeticException] should be thrownBy spec(s"${Long.MaxValue}L.toInt")
   }
 
-  property("predefined functions") {
-    spec("min(1,2)") shouldBe Min(IntConstant(1), IntConstant(2))
-    spec("min(1L,2)") shouldBe Min(LongConstant(1), LongConstant(2))
-    spec("max(1,2)") shouldBe Max(IntConstant(1), IntConstant(2))
-  }
-
-
 }
