@@ -1,7 +1,8 @@
 package sigmastate.eval
 
-import sigmastate.SInt
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, SigmaPropConstant, IntConstant}
+import org.ergoplatform.{ErgoBox, ErgoLikeTransaction, ErgoLikeContext}
+import sigmastate.{SInt, AvlTreeData}
+import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, SigmaPropConstant, IntConstant, BooleanConstant}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 
 import scalan.BaseCtxTests
@@ -54,6 +55,22 @@ class EvaluationTest extends BaseCtxTests with LangTests with ContractsTestkit w
   val boxA1 = newAliceBox(1, 100)
   val boxA2 = newAliceBox(2, 200)
 
+  implicit class ErgoBoxOps(ebox: ErgoBox) {
+    def toTestBox: Box = {
+      val rs = regs(ebox.additionalRegisters.map { case (k,v) => (k.number -> v) })
+      new TestBox(ebox.id, ebox.value, Cols.fromArray(ebox.propositionBytes), rs)
+    }
+  }
+
+  implicit class ErgoLikeContextOps(ergoCtx: ErgoLikeContext) {
+    def toTestContext: TContext = {
+      val inputs = ergoCtx.boxesToSpend.toArray.map(_.toTestBox)
+      val outputs = ergoCtx.spendingTransaction.outputs.toArray.map(_.toTestBox)
+      val vars = contextVars(ergoCtx.extension.values)
+      new TContext(inputs, outputs, ergoCtx.currentHeight, ergoCtx.self.toTestBox, vars.arr)
+    }
+  }
+
   def check(env: Map[String, Any], name: String, script: String, ctx: Context, expected: Any): Unit = {
     import IR._
     val costed = cost(env, script)
@@ -103,12 +120,23 @@ class EvaluationTest extends BaseCtxTests with LangTests with ContractsTestkit w
     val projectProver = new ErgoLikeProvingInterpreter
     val backerPubKey = backerProver.dlogSecrets.head.publicImage
     val projectPubKey = projectProver.dlogSecrets.head.publicImage
+    val ctxVars = contextVars(Map(
+      backerPubKeyId -> backerPubKey,
+      projectPubKeyId -> projectPubKey
+    )).arr
+    val ctx = newContext(height = 1, boxA1, ctxVars:_*)
+    check(envCF, "CrowdFunding", crowdFundingScript, ctx, FalseLeaf)
 
-    val ctx = newContext(height = 1, boxA1,
-      contextVars(Map(
-        backerPubKeyId -> backerPubKey,
-        projectPubKeyId -> projectPubKey
-      )).arr:_*)
-    check(envCF, "CrowdFunding", crowdFundingScript, ctx,  1)
+    val boxToSpend = ErgoBox(10, TrueLeaf)
+    val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
+    val tx1Output2 = ErgoBox(1, projectPubKey)
+    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+    val ergoCtx = ErgoLikeContext(
+      currentHeight = timeout - 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction = tx1,
+      self = boxToSpend)
+    check(envCF, "CrowdFunding", crowdFundingScript, ergoCtx.toTestContext, TrueLeaf)
   }
 }

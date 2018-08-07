@@ -2,6 +2,17 @@ package sigmastate.eval
 
 trait ExampleContracts {
 
+  val timeout = 100L
+  val minToRaise = 1000L
+  val backerPubKeyId = 1.toByte
+  val projectPubKeyId = 2.toByte
+  val envCF = Map(
+    "timeout" -> timeout,
+    "minToRaise" -> minToRaise,
+    "backerPubKeyId" -> backerPubKeyId,
+    "projectPubKeyId" -> projectPubKeyId
+  )
+
   val crowdFundingScript =
     """{
      | let backerPubKey = getVar[SigmaProp](backerPubKeyId)
@@ -18,15 +29,13 @@ trait ExampleContracts {
      | }
     """.stripMargin
 
-  val timeout = 100L
-  val minToRaise = 1000L
-  val backerPubKeyId = 1.toByte
-  val projectPubKeyId = 2.toByte
-  val envCF = Map(
-    "timeout" -> timeout,
-    "minToRaise" -> minToRaise,
-    "backerPubKeyId" -> backerPubKeyId,
-    "projectPubKeyId" -> projectPubKeyId
+  val demurragePeriod = 100L
+  val demurrageCost = 2L
+  val regScriptId = 1.toByte
+  val envDem = Map(
+    "demurragePeriod" -> demurragePeriod,
+    "demurrageCost" -> demurrageCost,
+    "regScriptId" -> regScriptId,
   )
 
   val demurrageScript =
@@ -40,14 +49,5 @@ trait ExampleContracts {
      | getVar[SigmaProp](regScriptId) || c2
      | }
     """.stripMargin
-
-  val demurragePeriod = 100L
-  val demurrageCost = 2L
-  val regScriptId = 1.toByte
-  val envDem = Map(
-    "demurragePeriod" -> demurragePeriod,
-    "demurrageCost" -> demurrageCost,
-    "regScriptId" -> regScriptId,
-  )
 
 }
