@@ -15,6 +15,8 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
       (Minus(LongConstant(2), LongConstant(3)), Array[Byte](MinusCode, SLong.typeCode, 4, SLong.typeCode, 6)),
       (Plus(LongConstant(2), LongConstant(3)), Array[Byte](PlusCode, SLong.typeCode, 4, SLong.typeCode, 6)),
       (Multiply(LongConstant(2), LongConstant(3)), Array[Byte](MultiplyCode, SLong.typeCode, 4, SLong.typeCode, 6)),
+      (Min(LongConstant(2), LongConstant(3)), Array[Byte](MinCode, SLong.typeCode, 4, SLong.typeCode, 6)),
+      (Max(LongConstant(2), LongConstant(3)), Array[Byte](MaxCode, SLong.typeCode, 4, SLong.typeCode, 6)),
       (Xor(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))),
           Array[Byte](XorCode, ByteArrayTypeCode, 3, 1, 2, 3, ByteArrayTypeCode, 2, 3, 4)),
       (Append(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))),
@@ -25,7 +27,7 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
   tablePredefinedBytesTest("TwoArguments: deserialize from predefined bytes")
 
   property("ArithmeticOperations: Serializer round trip") {
-    forAll(longConstGen, longConstGen, aritmeticCodeGen) { (x1: LongConstant, x2: LongConstant, opCode: OpCode) =>
+    forAll(longConstGen, longConstGen, arithmeticCodeGen) { (x1: LongConstant, x2: LongConstant, opCode: OpCode) =>
       roundTripTest(ArithOp(x1, x2, opCode))
     }
   }
