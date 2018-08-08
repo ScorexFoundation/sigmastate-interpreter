@@ -383,5 +383,6 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("1.toShort") shouldBe Select(IntConstant(1), "toShort")
     parse("1L.toInt") shouldBe Select(LongConstant(1), "toInt")
     parse("1.toLong") shouldBe Select(IntConstant(1), "toLong")
+    parse("1.toBigInt") shouldBe Select(IntConstant(1), "toBigInt")
   }
 }

@@ -169,9 +169,7 @@ class TestingInterpreterSpecification extends PropSpec
     testWithCasting("toShort")
     testWithCasting("toInt")
     testWithCasting("toLong")
-    // convert to testWithCasting when `toBigInt` is available
-    testEval("min(byteArrayToBigInt(longToByteArray(1L)), byteArrayToBigInt(longToByteArray(2L))) == byteArrayToBigInt(longToByteArray(1L))")
-    testEval("max(byteArrayToBigInt(longToByteArray(1L)), byteArrayToBigInt(longToByteArray(2L))) == byteArrayToBigInt(longToByteArray(2L))")
+    testWithCasting("toBigInt")
   }
 
   property("numeric casts") {

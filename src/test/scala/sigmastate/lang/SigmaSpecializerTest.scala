@@ -161,9 +161,11 @@ class SigmaSpecializerTest extends PropSpec
   property("numeric casts") {
     spec("1.toByte") shouldBe ByteConstant(1)
     spec("1.toLong") shouldBe LongConstant(1)
+    spec("1.toBigInt") shouldBe BigIntConstant(1)
     spec("HEIGHT.toLong") shouldBe Height
     spec("HEIGHT.toByte") shouldBe Downcast(Height, SByte)
     spec("INPUTS.size.toLong") shouldBe Upcast(SizeOf(Inputs), SLong)
+    spec("INPUTS.size.toBigInt") shouldBe Upcast(SizeOf(Inputs), SBigInt)
   }
 
   property("failed numeric casts for constants") {

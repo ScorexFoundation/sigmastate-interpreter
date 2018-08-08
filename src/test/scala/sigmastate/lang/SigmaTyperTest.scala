@@ -439,6 +439,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "1.toShort") shouldBe SShort
     typecheck(env, "1L.toInt") shouldBe SInt
     typecheck(env, "1.toLong") shouldBe SLong
+    typecheck(env, "1.toBigInt") shouldBe SBigInt
     // in an expression
     typecheck(env, "1L * 1.toLong") shouldBe SLong
   }
