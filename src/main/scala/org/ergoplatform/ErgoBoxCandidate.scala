@@ -62,14 +62,14 @@ object ErgoBoxCandidate {
   object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
-                                        digests: Option[Array[Digest32]],
+                                        digestsInTx: Option[Array[Digest32]],
                                         w: ByteWriter): Unit = {
       w.putULong(obj.value)
       w.putValue(obj.proposition)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
-        if (digests.isDefined) {
-          val digestIndex = digests.get.indexOf(id)
+        if (digestsInTx.isDefined) {
+          val digestIndex = digestsInTx.get.indexOf(id)
           if (digestIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
           w.putUInt(digestIndex)
         } else {
@@ -81,7 +81,7 @@ object ErgoBoxCandidate {
       if (nRegs + ErgoBox.startingNonMandatoryIndex > 255)
         sys.error(s"The number of non-mandatory indexes $nRegs exceeds ${255 - ErgoBox.startingNonMandatoryIndex} limit.")
       w.putUByte(nRegs)
-      // we assume non-mandatory indexes are densely packed from startingNonManadatoryIndex
+      // we assume non-mandatory indexes are densely packed from startingNonMandatoryIndex
       // this convention allows to save 1 bite for each register
       val startReg = ErgoBox.startingNonMandatoryIndex
       val endReg = ErgoBox.startingNonMandatoryIndex + nRegs - 1
@@ -101,15 +101,15 @@ object ErgoBoxCandidate {
       serializeBodyWithIndexedDigests(obj, None, w)
     }
 
-    def parseBodyWithIndexedDigests(digests: Option[Array[Digest32]], r: ByteReader): ErgoBoxCandidate = {
+    def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: ByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
       val prop = r.getValue().asBoolValue
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
-        val tokenId = if (digests.isDefined) {
+        val tokenId = if (digestsInTx.isDefined) {
           val digestIndex = r.getUInt().toInt
-          if (!digests.get.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
-          digests.get.apply(digestIndex)
+          if (!digestsInTx.get.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
+          digestsInTx.get.apply(digestIndex)
         } else {
           Digest32 @@ r.getBytes(TokenId.size)
         }

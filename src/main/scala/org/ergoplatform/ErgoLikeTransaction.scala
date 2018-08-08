@@ -1,15 +1,14 @@
 package org.ergoplatform
 
+import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
-
-import scala.util.Try
-import org.ergoplatform.ErgoBox.BoxId
 import sigmastate.utils.{ByteReader, ByteWriter}
 
 import scala.collection.mutable
+import scala.util.Try
 
 
 trait ErgoBoxReader {
@@ -125,11 +124,14 @@ object ErgoLikeTransaction {
       for (input <- ftx.inputs) {
         Input.serializer.serializeBody(input, w)
       }
-      // todo build and serialize an array of token ids from all boxes
+      val digests = ftx.outputCandidates.flatMap(_.additionalTokens.map(_._1)).distinct
+      w.putUInt(digests.length)
+      digests.foreach { digest =>
+        w.putBytes(digest)
+      }
       w.putUShort(ftx.outputCandidates.length)
       for (out <- ftx.outputCandidates) {
-        // todo call serializeBody with optional token ids array
-        ErgoBoxCandidate.serializer.serializeBody(out, w)
+        ErgoBoxCandidate.serializer.serializeBodyWithIndexedDigests(out, Some(digests), w)
       }
     }
 
@@ -139,12 +141,16 @@ object ErgoLikeTransaction {
       for (_ <- 0 until inputsCount) {
         inputsBuilder += Input.serializer.parseBody(r)
       }
-      // todo parse and build an array of token ids
+      val digestsCount = r.getUInt().toInt
+      val digestsBuilder = mutable.ArrayBuilder.make[Digest32]()
+      for (_ <- 0 until digestsCount) {
+        digestsBuilder += Digest32 @@ r.getBytes(TokenId.size)
+      }
+      val digests = digestsBuilder.result()
       val outsCount = r.getUShort()
       val outputCandidatesBuilder = mutable.ArrayBuilder.make[ErgoBoxCandidate]()
       for (_ <- 0 until outsCount) {
-        // todo call parseBody with optional token ids array
-        outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBody(r)
+        outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(digests), r)
       }
       FlattenedTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
     }

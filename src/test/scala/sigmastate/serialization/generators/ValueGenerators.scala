@@ -45,7 +45,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbSigmaProp: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
   implicit val arbBox = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
-  implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen)
+  implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
   implicit val arbTransaction = Arbitrary(ergoTransactionGen)
   implicit val arbContextExtension = Arbitrary(contextExtensionGen)
   implicit val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
@@ -221,22 +221,33 @@ trait ValueGenerators extends TypeGenerators {
     ar <- Gen.sequence(additionalRegistersGen(regNum))
   } yield ergoplatform.ErgoBox(l, b, tokens.asScala, ar.asScala.toMap, tId.toArray, boxId)
 
-  val ergoBoxCandidateGen: Gen[ErgoBoxCandidate] = for {
+  def ergoBoxCandidateGen(availableTokens: Seq[TokenId]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
     p <- proveDlogGen
     b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
     tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
-    tokens <- Gen.sequence(additionalTokensGen(tokensCount))
-  } yield new ErgoBoxCandidate(l, b, tokens.asScala, ar.asScala.toMap)
+    tokens <- Gen.listOfN(tokensCount, Gen.oneOf(availableTokens))
+    tokenAmounts <- Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
+  } yield new ErgoBoxCandidate(l, b, tokens.zip(tokenAmounts), ar.asScala.toMap)
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
 
+  val tokenIdGen: Gen[TokenId] = for {
+    bytes <- Gen.listOfN(TokenId.size, arbByte.arbitrary).map(_.toArray)
+  } yield Digest32 @@ bytes
+
+  val tokensGen: Gen[Seq[TokenId]] = for {
+    count <- Gen.chooseNum(10, 50)
+    tokens <- Gen.listOfN(count, tokenIdGen)
+  } yield tokens
+
   val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
     inputs <- Gen.listOf(inputGen)
+    tokens <- tokensGen
     outputsCount <- Gen.chooseNum(50, 200)
-    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen)
+    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
   } yield ErgoLikeTransaction(inputs.toIndexedSeq, outputCandidates.toIndexedSeq)
 
   // distinct list of elements from a given generator
