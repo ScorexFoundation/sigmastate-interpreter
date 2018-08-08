@@ -1,8 +1,9 @@
 package sigmastate.serialization
 
-import sigmastate._
 import sigmastate.Values.{BooleanConstant, Constant, IntConstant}
+import sigmastate._
 import sigmastate.serialization.OpCodes._
+import sigmastate.utils.ByteArrayWriter.encodeZigZagInt
 
 class AndSerializerSpecification extends TableSerializationSpecification {
 
@@ -17,8 +18,8 @@ class AndSerializerSpecification extends TableSerializationSpecification {
     (AND(boolConst(true), EQ(IntConstant(1), IntConstant(1))),
       Array[Byte](AndCode, ConcreteCollectionCode, 2, SBoolean.typeCode, // collection type
         SBoolean.typeCode, 1,
-        EqCode, SInt.typeCode, 2, // 1 encoded as 2 via signed int ZigZag VLQ encoding
-        SInt.typeCode, 2)),
+        EqCode, SInt.typeCode, encodeZigZagInt(1).toByte,
+        SInt.typeCode, encodeZigZagInt(1).toByte)),
   )
 
   tableRoundTripTest("And: Serializer round trip on predefined values")
