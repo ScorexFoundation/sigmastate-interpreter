@@ -270,6 +270,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("f(x, y).get(1)") shouldBe Apply(Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "get"), IndexedSeq(IntConstant(1)))
     parse("{let y = f(x); y}") shouldBe Block(Seq(Let("y", Apply(Ident("f"), IndexedSeq(Ident("x"))))), Ident("y"))
     parse("getVar[Array[Byte]](10)") shouldBe Apply(ApplyTypes(Ident("getVar"), Seq(SByteArray)), IndexedSeq(IntConstant(10)))
+    parse("min(x, y)") shouldBe Apply(Ident("min"), IndexedSeq(Ident("x"), Ident("y")))
+    parse("min(1, 2)") shouldBe Apply(Ident("min"), IndexedSeq(IntConstant(1), IntConstant(2)))
+    parse("max(x, y)") shouldBe Apply(Ident("max"), IndexedSeq(Ident("x"), Ident("y")))
+    parse("max(1, 2)") shouldBe Apply(Ident("max"), IndexedSeq(IntConstant(1), IntConstant(2)))
   }
 
   property("lambdas") {
@@ -379,5 +383,6 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("1.toShort") shouldBe Select(IntConstant(1), "toShort")
     parse("1L.toInt") shouldBe Select(LongConstant(1), "toInt")
     parse("1.toLong") shouldBe Select(IntConstant(1), "toLong")
+    parse("1.toBigInt") shouldBe Select(IntConstant(1), "toBigInt")
   }
 }

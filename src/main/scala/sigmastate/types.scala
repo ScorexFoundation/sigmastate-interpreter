@@ -203,13 +203,15 @@ trait SNumericType extends SProduct {
   val ToShort = "toShort"
   val ToInt = "toInt"
   val ToLong = "toLong"
+  val ToBigInt = "toBigInt"
   val methods = Vector(
     SMethod(ToByte, SByte),   // see Downcast
     SMethod(ToShort, SShort), // see Downcast
     SMethod(ToInt, SInt),     // see Downcast
-    SMethod(ToLong, SLong)    // see Downcast
+    SMethod(ToLong, SLong),    // see Downcast
+    SMethod(ToBigInt, SBigInt)    // see Downcast
   )
-  def isCastMethod (name: String): Boolean = Seq(ToByte, ToShort, ToInt, ToLong).contains(name)
+  def isCastMethod (name: String): Boolean = Seq(ToByte, ToShort, ToInt, ToLong, ToBigInt).contains(name)
 
   def upcast(i: AnyVal): WrappedType
   def downcast(i: AnyVal): WrappedType
