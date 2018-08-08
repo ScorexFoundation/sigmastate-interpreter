@@ -179,6 +179,15 @@ object Values {
       case _ => None
     }
   }
+  object StringConstant {
+    def apply(value: String): Constant[SString.type]  = Constant[SString.type](value, SString)
+    def unapply(v: SValue): Option[String] = v match {
+      case Constant(value: String, SString) => Some(value)
+      case _ => None
+    }
+
+    def Empty = StringConstant("")
+  }
 
   object BoxConstant {
     def apply(value: ErgoBox): Constant[SBox.type]  = Constant[SBox.type](value, SBox)

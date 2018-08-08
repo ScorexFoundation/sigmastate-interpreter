@@ -95,7 +95,9 @@ trait Literals { l =>
                 builder.mkConstant[SInt.type](sign * parseInt(digits, radix), SInt)
           }
         | Bool
-        /*| String | "'" ~/ (Char | Symbol) | Null*/ )
+        | (String | "'" ~/ (Char | Symbol) | Null).!.map {
+          lit: String => builder.mkConstant[SString.type](lit, SString)
+        })
 
       val Interp: Parser[Unit] = interp match{
         case None => P ( Fail )
