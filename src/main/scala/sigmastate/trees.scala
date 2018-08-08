@@ -3,8 +3,9 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
-import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
-import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import scapi.sigma.DLogProtocol.TrivialSigma
+import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
+import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.{Context, Interpreter}
@@ -68,8 +69,8 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     def iterChildren(children: Seq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
       if (children.isEmpty) currentBuffer else children.head match {
-        case TrueLeaf => mutable.Buffer(TrueLeaf)
-        case FalseLeaf => iterChildren(children.tail, currentBuffer)
+        case TrueLeaf | TrivialSigma(true) => mutable.Buffer(TrueLeaf)
+        case FalseLeaf | TrivialSigma(false) => iterChildren(children.tail, currentBuffer)
         case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }
     }
@@ -126,8 +127,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     def iterChildren(children: IndexedSeq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
       if (children.isEmpty) currentBuffer else children.head match {
-        case FalseLeaf => mutable.Buffer(FalseLeaf)
-        case TrueLeaf => iterChildren(children.tail, currentBuffer)
+        case FalseLeaf | TrivialSigma(false) => mutable.Buffer(FalseLeaf)
+        case TrueLeaf | TrivialSigma(true) => iterChildren(children.tail, currentBuffer)
         case and: CAND => iterChildren(and.sigmaBooleans.toIndexedSeq ++ children.tail, currentBuffer)
         case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }

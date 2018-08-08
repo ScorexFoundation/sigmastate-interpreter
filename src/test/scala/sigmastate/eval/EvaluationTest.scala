@@ -1,9 +1,10 @@
 package sigmastate.eval
 
-import org.ergoplatform.{ErgoBox, ErgoLikeTransaction, ErgoLikeContext}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import sigmastate.{SInt, AvlTreeData}
 import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, SigmaPropConstant, IntConstant, BooleanConstant}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.interpreter.ContextExtension
 
 import scalan.BaseCtxTests
 import sigmastate.lang.{LangTests, TransformingSigmaBuilder}
@@ -136,7 +137,11 @@ class EvaluationTest extends BaseCtxTests with LangTests with ContractsTestkit w
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = boxToSpend)
-    check(envCF, "CrowdFunding", crowdFundingScript, ergoCtx.toTestContext, TrueLeaf)
+      self = boxToSpend,
+      extension = ContextExtension(Map(
+        backerPubKeyId -> SigmaPropConstant(backerPubKey),
+        projectPubKeyId -> SigmaPropConstant(projectPubKey)
+      )))
+    check(envCF, "CrowdFunding", crowdFundingScript, ergoCtx.toTestContext, projectPubKey)
   }
 }

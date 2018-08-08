@@ -24,6 +24,12 @@ object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
+  case class TrivialSigma(value: Boolean)
+    extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
+    override val opCode: OpCode = OpCodes.TrivialSigmaCode
+    override def cost[C <: Context[C]](context: C): Long = Cost.BooleanConstantDeclaration
+  }
+
   case class ProveDlog(value: Value[SGroupElement.type])
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 

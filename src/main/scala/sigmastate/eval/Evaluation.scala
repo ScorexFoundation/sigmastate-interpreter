@@ -2,7 +2,8 @@ package sigmastate.eval
 
 import java.lang.reflect.Method
 
-import sigmastate.Values.{Value, SigmaBoolean, ConcreteCollection}
+import scapi.sigma.DLogProtocol
+import sigmastate.Values.{ConcreteCollection, Value, SigmaBoolean, Constant}
 import sigmastate.lang.Costing
 
 import scala.collection.mutable
@@ -128,7 +129,7 @@ trait Evaluation extends Costing {
     }
 
     def evaluate(te: TableEntry[_]): Unit = {
-      def out(v: AnyRef) = dataEnv += (te.sym -> v)
+      def out(v: Any) = dataEnv += (te.sym -> v.asInstanceOf[AnyRef])
       try {
         te.rhs match {
           case Const(x) => out(x.asInstanceOf[AnyRef])
@@ -137,19 +138,33 @@ trait Evaluation extends Costing {
           case SigmaM.propBytes(prop) =>
             val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]
             out(sigmaDslBuilderValue.Cols.fromArray(sigmaBool.bytes))
+          case SigmaM.isValid(In(prop: AnyRef)) =>
+            out(prop)
+            
           case SigmaM.and_bool_&&(In(l: Value[SBoolean.type]@unchecked), In(b: Boolean)) =>
             if (b)
               out(l)
             else
-              out(FalseLeaf)
+              out(DLogProtocol.TrivialSigma(false))
+          case SigmaM.or_bool_||(In(l: Value[SBoolean.type]@unchecked), In(b: Boolean)) =>
+            if (b)
+              out(DLogProtocol.TrivialSigma(true))
+            else
+              out(l)
+
           case SDBM.anyZK(_, In(items: special.collection.Col[Value[SBoolean.type]]@unchecked)) =>
             out(new OR(ConcreteCollection(items.arr.toIndexedSeq, SBoolean)).function(null, null))
-          case SigmaM.isValid(In(prop: AnyRef)) =>
-            out(prop)
+          case SDBM.allZK(_, In(items: special.collection.Col[Value[SBoolean.type]]@unchecked)) =>
+            out(new AND(ConcreteCollection(items.arr.toIndexedSeq, SBoolean)).function(null, null))
+
           case mc @ MethodCall(obj, m, args, _) =>
             val objValue = dataEnv(obj)
             val (objMethod, argValues) = getObjMethodAndArgs(objValue.getClass, mc)
-            out(objMethod.invoke(objValue, argValues:_*))
+            val res = objMethod.invoke(objValue, argValues:_*) match {
+              case Constant(v, _) => v
+              case v => v
+            }
+            out(res)
           case ApplyBinOp(op: BinOp[a,r], xSym, ySym) =>
             val x = dataEnv(xSym)
             val y = dataEnv(ySym)
