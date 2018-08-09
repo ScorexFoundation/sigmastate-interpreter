@@ -389,9 +389,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   property("string literals") {
     parse("\"hello\"") shouldBe StringConstant("hello")
     // triple double quotes
-    parse("\"\"\"hello\"\"\"") shouldBe StringConstant("\"\"\"hello\"\"\"")
+    parse("\"\"\"hello\"\"\"") shouldBe StringConstant("hello")
     // triple double quotes with newline and a backslash
-    parse("\"\"\"h\\el\nlo\"\"\"") shouldBe StringConstant("\"\"\"h\\el\nlo\"\"\"")
+    parse("\"\"\"h\\el\nlo\"\"\"") shouldBe StringConstant("h\\el\nlo")
     // in expression
     parse(""" "hello" == "hello" """) shouldBe EQ(StringConstant("hello"), StringConstant("hello"))
   }

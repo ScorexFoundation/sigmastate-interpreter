@@ -95,8 +95,10 @@ trait Literals { l =>
                 builder.mkConstant[SInt.type](sign * parseInt(digits, radix), SInt)
           }
         | Bool
-        | (String | "'" ~/ (Char | Symbol) | Null).!.map {
-          lit: String => builder.mkConstant[SString.type](lit, SString)
+        | (String | "'" ~/ (Char | Symbol) | Null).!.map { lit: String =>
+          // strip single or triple quotes
+          def strip(s: String): String = if (!s.startsWith("\"")) s else strip(s.stripPrefix("\"").stripSuffix("\""))
+          builder.mkConstant[SString.type](strip(lit), SString)
         })
 
       val Interp: Parser[Unit] = interp match{
