@@ -98,7 +98,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val altSellerProp = compile(sellerEnv,
       """ (HEIGHT > deadline && pkB) ||
         | allOf(Array(
-        |        OUTPUTS(1).value >= 100L,
+        |        OUTPUTS(1).value >= 100,
         |        OUTPUTS(1).propositionBytes == pkB.propBytes
         | ))
       """.stripMargin).asBoolValue

@@ -86,7 +86,7 @@ On other end of the generality spectrum, Ethereum allows for arbitrary Turing-co
 A variety of cryptocurrency languages have appeared. We do not survey them here, but refer the reader to \cite[p. 11]{Scilla}. \lnote{if time, can talk about Simplicity, Plutus, TypeCoin, Rholang, Scilla \dots}
 
 \subsection{Our contribution: \langname}
-In this paper we introduce a new language called \langname that is specifically designed to be friendly to cryptographic protocols and applications. \langname is considerably more powerful than Bitcoin Script. As \langname contains no looping or recursive constructs, individual scripts in \langname are not Turing-complete.  In fact, given a program in \langname, it is easy to obtain an estimate of its running time (see \ref{sec:runningtime}). However, because \langname allows for self-replication, \langname can be used to create Turing-complete processes in a blockchain, as shown in \cite{CKM18} (see \ref{sec:rule110}).
+In this paper we introduce a new language called \langname that is specifically designed to be friendly to cryptographic protocols and applications. \langname is considerably more powerful than Bitcoin Script. As \langname contains no looping or recursive constructs, individual scripts in \langname are not Turing-complete.  In fact, given a program in \langname, it is easy to obtain an estimate of its running time (see \ref{sec:runningtime}). However, because \langname allows for self-replication, \langname can be used to create Turing-complete processes in a blockchain, as shown in \cite{CKM18} (see  Section \ref{sec:self-replicating}).
 
 
 \paragraph{Built-in $\Sigma$-protocols}
@@ -107,7 +107,7 @@ In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is pop
 \lnote{add $\tnode$ when we implement it}. 
 Crucially, the proof for an $\ornode$ connective does not reveal which of the relevant values the prover knows: for example, in \langname a ring signature by public keys $h_1, \dots, h_k$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_k$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
 
-Our implementation of these protocols uses \lnote{references to bouncycastle and scapi and anything else}
+Our implementation of these protocols is in Scala \cite{scala} and Java \cite{java}. The implementation was informed by SCAPI \cite{scapi}, but does not use SCAPI code. We use Bouncy Castle \cite{bouncycastle} for big integer and elliptic curve operations; the implementation of arithmetic in fields of characteristic 2 (for $\tnode$ connectives) is our own. \lnote{any other credits or background info?}
 
 \paragraph{Rich context, enabling self-replication}
 In addition to $\Sigma$-protocols, \langname allows for predicates over the state of the blockchain and the current transaction. These predicates can be combined, via Boolean connectives, with $\Sigma$-statements, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. This feature enables self-replication and sophisticated (even Turing-complete) long-term script behaviour, as described in examples below.
@@ -118,12 +118,16 @@ In addition to $\Sigma$-protocols, \langname allows for predicates over the stat
 \lnote{someone should fill this in, because I know very little about it}
 
 
-\section{Related Work}
 
 
 
 
 \section{\langname Language Description}
+
+\lnote{Should we add, for every code example, a link to the code where it appears? That would help the reader.}
+
+The language syntax is similar to Scala, and therefore many of the constructs are easy to read for those familiar with Scala. 
+
 Before we describe the language, let us fix some terminology. A \emph{box} (often called a ``coin'' in other literature) contains some amount (\emph{value}, measured in Ergo tokens) and is protected by a \emph{script} (boxes also contain additional information, such as other tokens; this information is described in detail in Section \ref{sec:box-registers}). A \emph{transaction} spends the value of boxes that are its \emph{inputs} (which are outputs of some earlier transaction) and produces boxes that are its \emph{outputs}. In a given transaction, the sum of the values of the inputs must equal the sum of the values of the outputs (as we describe below, the scripting language is rich enough to allow for payment transactions fees and for minting of new coins without violating this rule).
 
 
@@ -141,42 +145,8 @@ The simplest script allows the owner of a public key to spend an output box in a
         pk
 \end{verbatim}
 
-\lnote{when is it enough to just write pk and when do you need proveDlog(pk)? I see that ComplexSigSpecification uses the former, while ErgoLikeInterpreterSpecification (property ``Prove keys from registers'') uses the latter.}
-
-\mnote{ In ComplexSigSpecification \texttt{pubkeyA} has Scala type ProveDlog
-and \langname type Boolean. In ErgoLikeInterpreterSpecification pubkey1 has
-type GroupElement and proveDlog is a function returning Boolean. However,
-both cases have semantic problems. In the first case ProveDlog is not
-Boolean, because Boolean have two values True and False and ProveDlog is
-neither of them. In second case proveDlog computing Boolean (i.e. True
-$\vert$ False) from group element which doesn't make sense at all. Why it
-works? Because current implementation uses special Trick, it allow ProveDlog
-to be in position where Boolean value is expected and reduction procedure
-(reduceToCripto) knows what to do with this. Thus proveDlog function
-constructs ProveDlog(ge) from given ge and returns it as if it is Boolean
-(which is not, but remeber The Trick! ). ProveDlog is special not only
-because it CAN be used in place of Boolean, but also because it CANNOT be
-stored in context parameter and in register of the Box. The reason for this
-again lies in types. Suppose we want to put some value of ProveDlog type in
-context variable with id=1. Then we can access this value from \langname in
-expression like \texttt{getVar[Boolean](1) \&\& c2 $\vert \vert$ c3}. This is
-ok, because of The Trick. However, the following is illegal
-\texttt{getVar[Boolean](1).propBytes}, because Boolean cannot have such
-property, and the type checker of \langname rejects this expression. Because
-it see that getVar returns Boolean and Booleans cannot have properties.
-}
-
-
-In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to be supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key. Thus, the constant public key is hardwired into the script at compile time. When the script is later evaluated (i.e., when the box is used as a transaction input), a $\Sigma$-proof of knowledge of the corresponding secret key must be supplied by the prover. 
-\lnote{it is unclear to me how to create environments outside of Scala code, so I am not exactly sure what to write here, because typed objects live inside Scala. The description in LangSpec.md is confusing me: I understand that you want variables of type Sigma to be parameters to the script, but in most situations they need to specified (hardwired as constants) when the script is created, because the script has specific public keys in mind. So how do you specify which public keys you have in mind? The runtime shouldn't be able to change that specification.}
-
-\mnote{All global names in \langname are resolved at compile time.
-Compile time is when script text is transformed to a serialized byte array,
-which is later put into the blockchain. Environment is a compile-time data
-structure to resolve names, it is used by the compiler and should be created
-by the application before the compiler invocation. I planned to use
-parameters of the \texttt{guard} construction shown in LangSpec.md examples.
-However this has never been implemented. }
+In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to be supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key.\footnote{This map is an object in Scala, and is passed to the compiler as a parameter together with the script (which is passed in as a string) when the compiler is invoked from within Scala code. We postpone the discussion of how to invoke the compiler outside of Scala code.\lnote{we should add this discussion at some point}}
+Thus, the constant public key is hardwired into the script at compile time. When the script is later evaluated (i.e., when the box is used as a transaction input), a $\Sigma$-proof of knowledge of the corresponding secret key must be supplied by the prover. 
 
 A slightly more complex script may allow either one of two people to spend an box. If Alice owns public key \texttt{pkA}  and Bob owns public key \texttt{pkB} (with corresponding secret key \texttt{skA} and \texttt{skB}), then the script that would allow either one of them to spend the box is
 \begin{verbatim}
@@ -223,12 +193,19 @@ This script allows Alice or Bob to spend the box before \texttt{HEIGHT} reaches 
 
 In general, script evaluation reduces the script to a $\Sigma$-statement by first evaluating all the Boolean predicates that are not $\Sigma$-statements. As we saw in the above example, the resulting $\Sigma$-statement will, in general, depend on the values of the Boolean predicates (such as whether \texttt{HEIGHT > 500}).
 
-\subsection{The Context}
+We emphasize that this evaluation is not the same as the usual left-to-right lazy evaluation of logical expressions, because expressions involving $\Sigma$-statements are not treated the same way as usual boolean expressions: they are evaluated last and in zero-knowledge. In fact, $\texttt{pkA}$ is not of type \texttt{Boolean} \lnote{do we use \texttt{Boolean} or \texttt{Bool}?}. It is of type \texttt{GroupElement}; the compiler automatically converts it to \texttt{proveDlog(\texttt{pkA})}, which is of type \texttt{SigmaProp}. Type   \texttt{ProveDlog} is special because it is used differently by the prover (who constructs the proof) and the verifier (who checks it); moreover, variables of this type cannot be stored in boxes (Section \ref{sec:context}) or context extensions (Section \ref{sec:extension}).
+
+
+\lnote{Should we have an example with fees? According to Dima, Fees are implemented as boxes with TrueLeaf as a proposition, last transaction in a block consumes all this just created boxes and in favor of miner.}
+
+
+\subsection{Accessing the Context and Box Contents}
+\label{sec:context}
 In addition to the predefined variable \texttt{HEIGHT}, the context contains predefined arrays \texttt{INPUTS} and \texttt{OUTPUTS}, which refer to the inputs and outputs of the transaction. Elements of these arrays are of type \texttt{Box}. The script also has access to its own box via the context variable \texttt{SELF} of type \texttt{Box}. Note that \texttt{SELF} is also an element of the \texttt{INPUTS} array, because the script is executed when the its box is being spent.
 
 To access information inside a box \texttt{b}, scripts can use \texttt{b.value} for the amount, \texttt{b.propositionBytes} for the protecting script, and \texttt{b.id} for the identifier of the box, which is the BLAKE2b-256 hash of the contents of the box. Boxes include additional information in \emph{registers};  each box is unique, because ones of its registers includes the transaction id in which it was created as an output, and its own index in the \texttt{OUTPUTS} array, accessible through \texttt{b.R3} (see Section \ref{sec:box-registers} for more on registers).
 
-\lnote{ The comments in ErgoBox.scala says something about a unique nonce, but that doesn't seem to be matched by code. The code has transactionID and index, which seems to be hashed; if it is unique, then the hash will be unique, but I can't quite tell.}
+\lnote{ The comments in ErgoBox.scala says something about a unique nonce, but that doesn't seem to be matched by code. }
 
 \paragraph{Example: two boxes together}
 Access to this information allows us, for example, to create an output box that can be spent only in the same transaction as another output box, and only if no other inputs are present in the transaction. If \texttt{friend} stands for an already existing box (per the environment mapping), then we create a new box that can be spent only together with \texttt{friend} and no other input by the following script (note that it uses the array property \texttt{size} and array indexing, starting at 0, denoted by parentheses):
@@ -257,7 +234,7 @@ It can also be written in one statement, as follows:
 \paragraph{Example: crowdfunding}
 Access to the context allows us to create a script for the following crowdfunding situation: a project backer (with key  \texttt{backerPubKey}) wishes to give money to a project (with key \texttt{projectPubKey}), but only if the project raises enough money (at least \texttt{minToRaise}) from other sources by a deadline (expressed in terms of \texttt{HEIGHT}). 
 
-To give money to the project, the backer will create an output box protected by the following script. The script contains two conditions: one for the case the deadline has passed (enabling the backer to get the money back) and one for the case it succeeded (enabling the project to spend the money if the amount is at least \texttt{minToRaise} before the deadline).  In order to ensure enough money has been raised, the script will search the output array for a box with a sufficient value going to the \texttt{projectPubKey}.
+To give money to the project, the backer will create an output box protected by the following script. The script contains two conditions: one for the case the deadline has passed (enabling the backer to get the money back) and one for the case it succeeded (enabling the project to spend the money if the amount is at least \texttt{minToRaise} before the deadline).  In order to ensure enough money has been raised, the script will search the output array for a box with a sufficient value going to the \texttt{projectPubKey}. To check where the value of the output box is going, the script will read the script protecting the output box and compare it to the script corresponding to \texttt{proveDlog(projectPubKey)}; this script can be obtained by \texttt{projectPubKey.propBytes}.
 
 \begin{verbatim}
         {
@@ -278,6 +255,7 @@ As before, the values of \texttt{deadline}, \texttt{minToRaise}, and the two pub
 
 
 \subsection{Context Extension and Hashing}
+\label{sec:extension}
 A context can also contain typed variables that can be retrieved by numerical id using the operator \texttt{getVar}. These variables are supplied by the prover specifically for a given input box (via a \texttt{ContextExtension}) together with the proof for that box. The id can be any one-byte value (from -128 to 127) and is scoped for each box separately (so variable with id 17 for one input box in a transaction is not the same as variable with id 17 for another input box in the same transaction).
 
 Such context enxtensions can be useful, for example, for requiring a spending transaction to produce hash preimages (the BLAKE2b-256 and SHA-256 hash functions can invoked in \langname, using keywords \texttt{blake2b256} and \texttt{sha256}). For example,
@@ -316,35 +294,30 @@ If Alice is satisfied with the amount Bob is giving her, she claims the value of
 Bob is protected, because in order for Alice to claim the value of this box, she must present a hash preimage of \texttt{hx} as a context extension in the transaction that uses this box as input. But once she does, Bob also learns this hash preimage, and is able to claim the value of the box that Alice placed into his blockchain. Note that Bob needs to choose \texttt{deadlineAlice} early enough to make sure that he is able to learn the preimage of \texttt{hx} from the transaction in Alice's block chain, and create a transaction in his blockchain, all before \texttt{deadlineBob} that Alice chose. Note also that \texttt{HEIGHT} in the two scripts is with respect to two different blockchains, which may be growing at a different rate. Bob also needs to make sure that he can use Alice's \texttt{x} as a context extension; to make sure Alice cannot cheat by making this \texttt{x} so long that it will not be allowed as a context extension in his blockchain, he uses the constraint \texttt{getVar[Array[Byte]](1).size<33}.
 
 The same approach can be used to trade different assets on the same blockchain, in case of multiasset blockchains. However, for transactions on a single blockchain, an alternative approach is also possible. We describe it below.
-\dnote{Correct script should also have check of preimage length, otherwise the following attack is possible: imagine blockchain A allows transactions of size up to 1Kb, blockchain B allows transactions of size up to 10 Kb. Alice chose secret x of size 2Kb, and when she releases it in blockchain B (with tx size limit 10Kb) Bob knows the secret, but he can not use it, because blockchain A size limit is 1 Kb. We may add this length check or mention that this is principal (insecure) way of doing atomic swap}
 
-\subsection{Box Registers}
+\subsection{Box Registers and Additional Tokens}
 \label{sec:box-registers}
 In addition to its value and protecting script, a box can contain up to 10 numbered registers, \texttt{R0} through \texttt{R9}. The first four of these have fixed meaning, as follows. For a box \texttt{b}, \texttt{b.R0} is the same as \texttt{b.value} and \texttt{b.R1} is the same as \texttt{b.propositionBytes}. 
-\lnote{check}
 
-The third register, \texttt{b.R2}, is for specifying additional, secondary tokens contained in the box (the primary token amount is specified in \texttt{b.value}). \texttt{b.R2} contains an array of pairs, the first element of each pair specifying the token id (as a byte string) and the second element specifying the amount (as a long constant). The maximum number of tokens is set to 4. 
-\lnote{check}
 
-\dnote{Rule for additionalTokens is similar: for every token except of token with id == first input id, sum of token in inputs should equal sum of this token in inputs. See \url{https://github.com/ergoplatform/ergo/blob/513e7309e5e2c1243fddaaf8bcac97a92cb70382/src/main/scala/org/ergoplatform/modifiers/mempool/ErgoTransaction.scala\#L117} for implmentation}.
+The third register, \texttt{b.R2}, is for specifying additional, secondary tokens contained in the box (the primary token amount is specified in \texttt{b.value}). \texttt{b.R2} contains an array of pairs, the first element of each pair specifying the token id (as a byte string) and the second element specifying the amount (as a long constant). The maximum number of tokens in a box is set to 4. For every token id, the sum of amounts in inputs boxes should equal the sum of amounts in output boxes. There is one exception to this rule for the creation of new tokens. When a new token type gets created in a transaction, its id is equal to the id of the input box 0. Thus, the exception for the creation of new tokens is that if the token id in some output box is equal to the id of input box 0, then an arbitrary amount of this token can be output. Because each box has a unique id (see Section~\ref{sec:context}, this exception can be applied exactly once per token type. A newly created token can be emitted in a time-controlled fashion---see Section~\ref{sec:self-replicating}.
 
-The fourth register, \texttt{b.R3}, contains a byte string specifying the transaction id where this box appears as an output, and the sequence number of this box in the \texttt{OUTPUTS} array (the sequence number occupies the last two bytes).
-\lnote{check and clarify the format of transaction id}
 
-The remaining six registers can be used arbitrarily. The type of the register needs to be specified in brackets following the register number (for example, \texttt{b.R4[Int]}). 
-\lnote{check}
 
-\lnote{What's box.bytes and box.byteWithNoRef? are they available to a script?}
+The fourth register, \texttt{b.R3}, contains a 34-byte array. This array specifies the 32-byte transaction id \lnote{how is transaction id computed?} where this box appears as an output followed by a 2-byte sequence number of this box in the \texttt{OUTPUTS} array of that transaction. This ensures that each box has unique \texttt{R3} and therefore a unique \texttt{id} as long as there are no hash collisions (because the \texttt{id} of the box is computed by hashing its content, including \texttt{R3}).
 
-\mnote{box.bytes are available and equivalent to serialization of all Box data.
-box.byteWithNoRef is also available and equivalent to ErgoBoxCandidate serialization which doesn't include transactionId and index of the Box.}
+The remaining six registers can be used arbitrarily. 
+
+To access a register, the type of the register needs to be specified in brackets following the register number (for example, \texttt{b.R4[Int]}). Note that \texttt{b.R4[T]} is of type \texttt{Option[T]}; \texttt{b.R4[T].isDefined} indicates whether it actually contains a value of type \texttt{T}, and \texttt{b.R4[T].get} obtains this value.
+
+In addition to registers, scripts can access two serialized versions of the box: \texttt{b.bytes} is a serialization of the entire box including the value, all the registers, and the script \lnote{anything else?}, and \texttt{b.byteWithNoRef}, which the same but without \texttt{R3} (so that a box can be viewed independently of where it appeared \lnote{is there a good reason someone would need this? Can we explain it here?}). \lnote{Are there any other box properties that scripts can access?}
 
 \paragraph{Example: atomic exchange on a single block chain}
-These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that  Alice will give Bob 60 tokens of type \texttt{token1} in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with following script:
+These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that  Alice will give Bob 60 tokens of type \texttt{token1} (this type is mapped an actual token id in the environment map) in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with following script:
 
 \begin{verbatim}
   (HEIGHT > deadline && pkA) || {
-    let tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].value(0)
+    val tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].get(0)
     allOf(Array(
         tokenData._1 == token1,
         tokenData._2 >= 60L,
@@ -354,20 +327,11 @@ These box registers provide additional capabilities to \langname. Consider, for 
   }
 \end{verbatim}
 
+
 This script ensures that the box can be spent only in a transaction that produces an output with 60 tokens of type token1 and gives them to Alice (Alice can reclaim the box after the deadline). 
 
-\lnote{the above doesn't work for some reason --- I get a parser exception ``ParserException: Unsupported type (Array[SByte],ArrayBuffer())''. What am I doing wrong?}
-
-\mnote{ We currently don't have string literals "token1", we don't even have
-String type. Here we actually need ByteArray type to compare with the second
-component of the pair. The values of such type cannot be written in the
-script directly using literal syntax. They can be passed as environment
-variables, which are resolved at compile time and replaced in the script by
-constants of the corresponding type. Alternatively they can be passed as
-context vars (getVar[T](id) syntax) or as registers. }
-
 Bob, similarly, could create an output box with value 0
-\lnote{for some reason the example in the code wants value 1 --- why? It's not explained.} and 60 tokens of type ``token1'' and protect it by the following script:
+\lnote{for some reason the example in the code we want value 1 --- why? It's not explained. Similarly, why do we need \texttt{OUTPUTS(0).value >= 1L} in the script above? } and 60 tokens of type \texttt{token1} and protect it by the following script:
 \begin{verbatim}
         (HEIGHT > deadline && pkB) || 
         allOf( Array( 
@@ -376,50 +340,66 @@ Bob, similarly, could create an output box with value 0
          ))
 \end{verbatim}
 
-\lnote{The above code does not match, when compiled, the proposition in AssetsAtomicExchangeSpecification.scala. I don't understand why.}
-\mnote{The order of arguments of AND matters.}
+\lnote{Is the \texttt{L} after constants 60, 1, and 100 necessary? Won't conversion happen automatically? Some constants in other scripts above that probably need to be long, like 100 for height, don't have it. We should be consistent and clarify this for the reader. Also, make sure that scripts here match testing code.}
+
 A transaction containing these two boxes as inputs must produce two outputs: the first giving at least 60 tokens of type1 to Alice and the second giving at least 100 tokens of type2 to Bob. Once the two boxes are on the blockchain, anyone can create such a transaction using the two boxes as inputs, and thus effect the exchange between Alice and Bob. Unlike the cross-chain trading example above using hashing (which requires one side to go first), there are no potential problems with synchronization here, because the exchange will happen in a single transaction or will not happen at all.
 
 We caution that for security, Alice cannot have two such boxes outstanding at any given time, because they can be both used in a single transaction that contains just one output with 60 tokens of type ``token1" --- the script of each box will be individually satisfied, but Alice will get less only half of what owed to her. Same for Bob.
 
-\lnote{this seems like a pretty big security vulnerability and we should highlight it and show how to fix it. I haven't thought about how best to write a script that doesn't have it Maybe restricting the number of inputs and outputs to just 2 will work? Folding over all the inputs and outputs and summing up and making sure amounts are right may also work, though not sure how to handle all the different (unknowable in advance) token types. Or having a one-time pk just for this purpose (seems expensive)?}
-\lnote{Bigger question: why do this instead of hash-based example?}
+\lnote{this seems like a pretty big security vulnerability and we should highlight it and show how to fix it. Restricting the number of inputs and outputs to just 2 is not enough. For example, suppose Alice has another box C in the UTXO with value 100 Ergo and 60 token1, and the following script:}
+\begin{verbatim}
+  (HEIGHT > deadline && pkA) || {
+    val tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].get(0)
+    allOf(Array(
+        tokenData._1 == token1,
+        tokenData._2 >= 60L,
+        OUTPUTS(0).propositionBytes == pkA.propBytes,
+        OUTPUTS(0).value >= 100L
+    ))
+  } 
+  || ...
+\end{verbatim}
+\lnote{Basically, this script allows Alice to simply reclaim what she has in B; it may also also her to do other things, which is why  ``\texttt{|| ...}'' is there in the script. I don't know the purpose of such a script, but it seems plausible. Now, an adversary can create a transaction with two inputs: Alice's box above (which requires to give her 60 token1 in the output) and box C; and two outputs: output with value 100 Ergo + 60 token1 to Alice, and output with value 100 Ergo to the adversary). Alice just lost 100 Ergo.}
+
+
+\lnote{Another question: why do this instead of hash-based example?}
 
 \subsection{Self-Replicating Code}
+\label{sec:self-replicating}
 Access to box registers allow us to create self-replicating boxes, because a script can check that an output box contains the same script as \texttt{SELF}. As shown in \cite{CKM18}, this powerful tool allows for Turing-completeness as computation evolves from box to box, even if each individual script is not Turing-complete. We will demonstrate two examples of complex behavior via self-replication.
 
 \paragraph{Example: time-controlled coin emission}
-In this example, we will create a self-replicating box that emits new coins at each time step in order to add to the total amount of currency available. Its value will go down by a prespecified amount each time it is transacted. Because in each transaction, the sum of input values must equal the sum of output values, when the value of this box goes down, the difference must be claimed by someone. The box is set up to allow to the difference to go anyone---presumably, it will be claimed by the miner who created the block that contains the transaction. This box will store, in \texttt{R4}, the height at which it was created. Using this information, it will be able to determine how much value to emit. The box will be set to emit 
-a fixed amount specified by \texttt{fixedRate} per block until \texttt{HEIGHT} reaches \texttt{fixedRatePeriod}, and a linearly decreasing amount thereafter. The script will verify that the output box has the same script as itself, and that the new height stored in \texttt{R4} and the new value are correctly computed. The following script accomplished this goal:
+In this example, we will create a self-replicating box that emits new coins at each time step in order to add to the total amount of currency available. This box appears as an output in the genesis block (at height 0) of the blockchain; all "new" coins come from this box or its descendants, thus maintaining the invariant that for every transaction after the genesis block, the combined value of all inputs  is equal to the combined value of all outputs.
+
+The value of this box initially is equal to the total amount of currency that will eventually be available. This value will go down by a prespecified amount each time this box is transacted. Because in each transaction, the sum of input values must equal the sum of output values, when the value of this box goes down, the difference must be claimed by someone. The box is set up to allow to the difference to go anyone---presumably, it will be claimed by the miner who created the block that contains the transaction. This box will store, in \texttt{R4}, the height at which it was created. Using this information, it will be able to determine how much value to emit. The box will be set to emit 
+a fixed amount specified by \texttt{fixedRate} per block until \texttt{HEIGHT} reaches \texttt{fixedRatePeriod}, and a linearly decreasing amount thereafter. The script will verify that the output box has the same script as itself, and that the new height stored in \texttt{R4} and the new value are correctly computed (and that the height has increased, so that a miner cannot emit more than once per block). The following script accomplishes this goal:
 \begin{verbatim}
-        {
-                let epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
-                let out = OUTPUTS(0)
-                let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate 
-                                   else fixedRate - (oneEpochReduction * epoch)
-                let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
-                let sameScriptRule = SELF.propositionBytes == out.propositionBytes
-                let heightIncreased = HEIGHT > SELF.R4[Long].value
-                let heightCorrect = out.R4[Long].value == HEIGHT
-                let lastCoins = SELF.value <= oneEpochReduction
-                allOf(Array(
-                        correctCoinsConsumed, 
-                        heightCorrect, 
-                        heightIncreased, 
-                        sameScriptRule)) 
-                || (heightIncreased && lastCoins)
-        }
+      {
+              val epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
+              val out = OUTPUTS(0)
+              val coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate 
+                                 else fixedRate - (oneEpochReduction * epoch)
+              val correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
+              val sameScriptRule = SELF.propositionBytes == out.propositionBytes
+              val heightIncreased = HEIGHT > SELF.R4[Long].get
+              val heightCorrect = out.R4[Long].get == HEIGHT
+              val lastCoins = SELF.value <= oneEpochReduction
+              allOf(Array(
+                      correctCoinsConsumed, 
+                      heightCorrect, 
+                      heightIncreased, 
+                      sameScriptRule)) 
+              || (heightIncreased && lastCoins)
+      }
 \end{verbatim}
 
-\lnote{why do you need \texttt{heightIncreased}? How can be it be that height is correct but not increased?}
-\dnote{Miner may try to take reward twice inside the same block. E.g. first transaction of the block takes this output O, and creates new output O1. Second transation takes this just created output O1 and creates output O2. heightIncreased is the only rule that forbides miner to do this}
+
 \lnote{Not including demurrage example because it required more explanation about checking from miners and consensus about what registers are for what}
 
- \dnote{All coins are created in genesis block in a box, that is protected by special case of emission script, that allows every miner to take only part of this coins. See CoinEmissionSpecification and https://github.com/ergoplatform/ergo/blob/513e7309e5e2c1243fddaaf8bcac97a92cb70382/src/main/scala/org/ergoplatform/local/ErgoMiner.scala\#L200}.
 
-\lnote{Should we have an example with fees? According to Dima, Fees are implemented as boxes with TrueLeaf as a proposition, last transaction in a block consumes all this just created boxes and in favor of miner.}
+\paragraph{Example: arbitrary computation via a simple cellular automaton}
+The example in the paragraph is not meant for practical implementation; rather, it is here merely to demonstrate the Turing-complete power of self-replication. It implements the so-called ``rule 110'' cellular automaton \cite{wolfram1986theory}, which is known to be Turing-complete \cite{cook2004universality}. See \cite{CKM18}  for more details. The code for this example is too complex to be put here; it is available at \lnote{give a reference to the code once it is written in our \langname and is sitting online somewhere}.
 
-\dnote{I think example of rule 110 implementation from https://arxiv.org/abs/1806.10116 will be useful here, since it proves Turing completeness of our language and ErgoScript code was not included into original paper}
 
 
 \subsection{Merkle Trees}
