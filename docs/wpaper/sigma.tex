@@ -179,7 +179,7 @@ Using these operators, it is possible to produce more sophisticated scripts. For
 
 A valid proof (contained in the spending transaction) will not reveal which of two possibilities was used.
 
-\lnote{should probably do a diffie-hellman example, and maybe another one below with getting some of the DH values from a context. E.g., $g_1$ is just $g$, $g_2$ is $pk_A$, $h_1$ is a hash of a message in a context, and $h_2$ is from the context. This has to wait until \texttt{proveDHtuple} is implemented.}
+\lnote{should probably do a diffie-hellman example, and maybe another one below with getting some of the DH values from a context. E.g., $g_1$ is just $g$, $g_2$ is $pk_A$, $h_1$ is a hash of a message in a context, and $h_2$ is from the context. }
 
 \subsection{Mixing $\Sigma$-statements with other statements}
 \langname allows combining statements that require proofs with other boolean statements. These statements can refer to the \emph{context}, which has predefined variables with information about the transaction in which the script is evaluated (i.e., the box is spent). For example,

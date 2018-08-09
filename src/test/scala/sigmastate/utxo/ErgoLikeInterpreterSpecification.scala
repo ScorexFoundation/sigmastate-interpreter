@@ -39,25 +39,6 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       .get._1.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
-  property("proveDHtuple compilation") {
-    val prover = new ErgoLikeProvingInterpreter
-    val fakeProver = new ErgoLikeProvingInterpreter
-
-    val verifier = new ErgoLikeInterpreter
-
-    val secret = prover.dhSecrets.head
-
-    val ci = secret.commonInput
-
-    val prop = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)
-
-    val env = Map("g"->ci.g, "h"->ci.h, "u"->ci.u, "v"->ci.v, "s"->secret.publicImage)
-    val compiledProp1 = compile(env, "s").asBoolValue
-    val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v)").asBoolValue
-    compiledProp1 shouldBe prop
-    // TODO: compiledProp2 shouldBe prop 
-  }
-
   property("DH tuple") {
     val prover = new ErgoLikeProvingInterpreter
     val fakeProver = new ErgoLikeProvingInterpreter
@@ -70,6 +51,13 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prop = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)
     val wrongProp = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.u)
+
+    val env = Map("g"->ci.g, "h"->ci.h, "u"->ci.u, "v"->ci.v, "s"->secret.publicImage)
+    val compiledProp1 = compile(env, "s").asBoolValue
+    val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v)").asBoolValue
+    compiledProp1 shouldBe prop
+    compiledProp2 shouldBe prop
+
 
     val ctx = ErgoLikeContext(
       currentHeight = 1,
