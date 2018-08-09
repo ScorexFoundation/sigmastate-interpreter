@@ -1,11 +1,10 @@
 package sigmastate.eval
 
 import java.lang.reflect.Method
-
 import scapi.sigma.DLogProtocol
-import sigmastate.Values.{ConcreteCollection, Value, SigmaBoolean, Constant}
+import sigmastate.Values.{Constant, Value, IntConstant, SigmaBoolean, ConcreteCollection}
+import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.Costing
-
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -16,7 +15,9 @@ trait Evaluation extends Costing {
   import Col._
   import Box._
   import SigmaDslBuilder._
-
+  import ConcreteCostedBuilder._
+  import MonoidBuilderInst._
+  
   val ContextM = ContextMethods
   val SigmaM = SigmaMethods
   val ColM = ColMethods
@@ -68,6 +69,17 @@ trait Evaluation extends Costing {
   val sigmaDslBuilderValue: special.sigma.SigmaDslBuilder
   val costedBuilderValue: special.collection.ConcreteCostedBuilder
   val monoidBuilderValue: special.collection.MonoidBuilder
+
+  def getDataEnv: mutable.Map[Sym, AnyRef] = {
+    val env = mutable.Map[Sym, AnyRef](
+      sigmaDslBuilder -> sigmaDslBuilderValue,
+      sigmaDslBuilder.Cols -> sigmaDslBuilderValue.Cols,
+      costedBuilder -> costedBuilderValue,
+      costedBuilder.monoidBuilder -> monoidBuilderValue,
+      costedBuilder.monoidBuilder.intPlusMonoid -> monoidBuilderValue.intPlusMonoid
+    )
+    env
+  }
 
   def compile[T <: SType](dataEnv: mutable.Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
 
@@ -198,4 +210,16 @@ trait Evaluation extends Costing {
     res.asInstanceOf[ContextFunc[T]]
   }
 
+  def buildTree[T <: SType](f: Rep[Context => T#WrappedType]): Value[T] = {
+    val Def(Lambda(lam,_,_,_)) = f
+    val g = new PGraph(lam.y)
+    val schedule = g.scheduleAll
+    var i = schedule.length - 1
+    while (i >= 0) {
+//      val te = schedule(i)
+//      val
+      i += 1
+    }
+    IntConstant(1).asValue[T]
+  }
 }
