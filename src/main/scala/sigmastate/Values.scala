@@ -134,6 +134,7 @@ object Values {
   type ShortConstant = Constant[SShort.type]
   type IntConstant = Constant[SInt.type]
   type LongConstant = Constant[SLong.type]
+  type StringConstant = Constant[SString.type]
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
   type GroupElementConstant = Constant[SGroupElement.type]
