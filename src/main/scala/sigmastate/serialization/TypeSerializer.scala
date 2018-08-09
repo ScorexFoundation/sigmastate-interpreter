@@ -21,6 +21,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
 
   override def serialize(tpe: SType, w: ByteWriter) = tpe match {
     case p: SEmbeddable => w.put(p.typeCode)
+    case SString => w.put(SString.typeCode)
     case SAny => w.put(SAny.typeCode)
     case SUnit => w.put(SUnit.typeCode)
     case SBox => w.put(SBox.typeCode)
@@ -164,6 +165,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
           val items = (0 until len).map(_ => deserialize(r, depth + 1))
           STuple(items)
         }
+        case SString.typeCode => SString
         case SAny.typeCode => SAny
         case SUnit.typeCode => SUnit
         case SBox.typeCode => SBox

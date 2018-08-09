@@ -1,12 +1,15 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
+import java.nio.charset.StandardCharsets
+
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.SigmaBoolean
-import sigmastate.utils.{ByteWriter, ByteReader}
+import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utils.Extensions._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+
 import scala.collection.mutable
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
@@ -19,6 +22,10 @@ object DataSerializer {
     case SShort => w.putShort(v.asInstanceOf[Short])
     case SInt => w.putInt(v.asInstanceOf[Int])
     case SLong => w.putLong(v.asInstanceOf[Long])
+    case SString =>
+      val bytes = v.asInstanceOf[String].getBytes(StandardCharsets.UTF_8)
+      w.putUInt(bytes.length)
+      w.putBytes(bytes)
     case SBigInt =>
       val data = v.asInstanceOf[BigInteger].toByteArray
       w.putUShort(data.length)
@@ -66,6 +73,10 @@ object DataSerializer {
     case SShort => r.getShort()
     case SInt => r.getInt()
     case SLong => r.getLong()
+    case SString =>
+      val size = r.getUInt().toInt
+      val bytes = r.getBytes(size)
+      new String(bytes, StandardCharsets.UTF_8)
     case SBigInt =>
       val size: Short = r.getUShort().toShort
       val valueBytes = r.getBytes(size)
