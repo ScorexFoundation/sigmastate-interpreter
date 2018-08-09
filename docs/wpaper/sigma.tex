@@ -114,9 +114,9 @@ In addition to $\Sigma$-protocols, \langname allows for predicates over the stat
 
 \langname is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
 
-\paragraph{Running time estimation}
+\paragraph{Running time estimation and safety checks}
 \lnote{someone should fill this in, because I know very little about it}
-
+See Section \ref{sec:safety} for more details.
 
 
 
@@ -411,283 +411,17 @@ Explain \texttt{isMember} and provide an example of usage. Explain that the cont
 
 
 \section{Implementation}
+\label{sec:impl}
 A script is converted to an abstract syntax tree using standard compilation techniques. At evaluation time, values from the context are substituted for relevant variables and the tree is evaluated. There are two significant differences from standard compilation and evaluation techniques:
 
 \begin{itemize}
 \item We estimate the time required to process the script and, if it exceeds a certain bound, refuses to evaluate it in order to prevent a denial-of-service attack.
-\item The evaluation converts the script not to a Boolean value, but to a $\Sigma$-statement. The prover (when trying to use in a transaction the box that is protected by the script) generates a proof this $\Sigma$-statement. The verifier verifies it, obtaining a Boolean value.
+\item The evaluation converts the script not to a Boolean value, but to a $\Sigma$-statement. This statement is a tree, with  \texttt{proveDlog} or \texttt{proveDHtuple} nodes for leaves, and $\andnode$ (\texttt{\&\&}), $\ornode$ (\texttt{||}), or $\tnode$ (\lnote{insert \langname notation here}) for  non-leaves. The prover (when trying to use in a transaction the box that is protected by the script) generates a proof this $\Sigma$-statement. The verifier verifies it, obtaining a Boolean value.
 \end{itemize}
-
-We describe these two nonstandard steps in Section \ref{sec:safety} and Appendix \ref{app:crypto}
 
 \lnote{Is the above accurate about everything else being relatively standard? Is there anything we want to describe?}
 
-\section{Old Language Design Section}
-
-We assume that a {\em prover} and a {\em verifier} have a shared {\em context}. As we are designing a language for cryptocurrencies, the context is about current state of the blockchain (such as height $h$ of a best block in the blockchain, a spending transaction with outputs it spends and newly created outputs, etc). Please note that the language can be repurposed for other areas where shared context is possible, but this is out of scope of the paper.
-
-\subsection{Notation}
-
-We use $Dlog(x)$ to denote a statement ``prove a knowledge of such $w$ that $x = g^w$''. Proving is to be done by a prover in zero knowledge~(with no presenting the secret $w$ to a verifier). Statement $Dlog(x_1) \sqcap Dlog(x_2)$ means ``prove a knowledge of both $w_1$ and $w_2$, such as $x_1 = g^{w_1}, x_2 = g^{w_2}$'', similarly, $Dlog(x_1) \lor Dlog(x_2)$ is about a proof of knowledge of either $w_1$ or $w_2$.
-
-\subsection{UTXO model}
-
-We assume a transactional model close to Bitcoin's. That is, a transaction spends unspent outputs (pointed to by \emph{transaction inputs}) from previous transaction written into the blockchain, and creates new outputs. An output is associated with arbitrary amount of money, and also a protecting script. In Bitcoin, there is a special kind of transaction, so-called {\em coinbase transaction}, which can create some amount of money out of thin air~(to reward a block generator). In Bitcoin transaction fees money flow is not captured in outputs, a transaction fee is just a difference of amounts of outputs being spent and outputs being created. In Appendix~\ref{apx:unified} we provide a way to avoid coinbase transactions, and also express fees explicitly as outputs. In Appendix~\ref{apx:account} we discuss how to make a language for a cryptocurrency with account-based transactions~(such as Waves~\cite{Waves}).
-
-\subsection{Logic of $\Sigma$-protocols}
-
-Cryptocraphic propositions verifiable via $\Sigma$-protocols are represented by values of an algebraic data type $SigmaProp$,
-which stands for \emph{sigma proposition} and can be described using the following declaration (using Idris/Agda ADT notation~\cite{Idris, Agda})
-
-\begin{lstlisting}
-data SigmaProp: Type where
-  Dlog: GroupElement -> SigmaProp
-  Dht: (gv, hv, uv, vv: GroupElement) -> SigmaProp
-  ...
-\end{lstlisting}
-
-In the definition above, each constructor represents one of the cryptographic primitives, and the set of such constructors
-can be extended (although this extensibility is out of paper's scope).
-
-We want to be able to construct more complex statements out of basic primitive propositions.
-There are two binary operations over $SigmaProp$ values:
-\begin{itemize}
-\item $\sqcup: (SigmaProp, SigmaProp) -> SigmaProp$
-\item $\sqcap: (SigmaProp, SigmaProp) -> SigmaProp$
-\end{itemize}
-
-Any expression of $SigmaProp$ type can be efficiently verified using sigma protocol and thus mapped to a truth values.
-
-We implement a verification procedure $V: SigmaProp -> Boolean$, which performs such mapping, and satisfies the following
-naturality conditions with respect to SigmaProp and Boolean connectives.
-
-For any two statements $sigma1, sigma2: SigmaProp$:
-\begin{itemize}
-    \item $V(s_1 \sqcup s_2) = V(s_1) \lor V(s_2)$
-    \item $V(s_1 \sqcap s_2) = V(s_1) \land V(s_2)$
-\end{itemize}
-
-Bacause SigmaProp connectives and logical connectives satisfy naturality conditions we can reason about complex sigma statements
-the same way we reason about logical statements.
-However, unlike logical statements evaluation of sigma statements is done with zero knowledge about intermediate steps.
-Thus, we can verify the truth of $s_1 \sqcup s_2$ (i.e. compute $V(s_1 \sqcup s_2)$) statement but we cannot know whether $s_1$ or $s_2$ or both is true. At the same time evaluation of $V(s_1) \lor V(s_2)$ discloses results of both $V(s_1)$ and $V(s_2)$ before execution of $\lor$.
-
-There is a function $isValid: SigmaProp -> Boolean$ in Sigma-state language which implements the function $V$.
-The type system of the language allows to explicitly delimit usages of zero knowledge evaluation
-of sigma statements and classical evaluation of boolean statements.
-
-This allows script designer to explicitly control security (zero-knowledge) guarantees where it is necessary.
-
-\subsection{General Idea}
-
-By using a $\Sigma$-protocol, a prover can prove a knowledge of secret information corresponding to publicly known values, in zero-knowledge(i.e. without disclosing a secret value), for some relations between secret and public values. Unlike generic proof systems, $\Sigma$-protocols are efficient~(for both the prover and the verifier). For a cryptocurrency setting, the pros of this class of protocols are generic transformation from an interactive protocol to non-interactive one~(by using Fiat-Shamir transformation), and also composability: we can combine statements provable with $\Sigma$-protocols via $\land$, $\lor$ and k-out-of-N conjectures, and the compound statement is also provable via a $\Sigma$-protocol. An observation which is lying in the foundation of our work is that we can view a (potentially complex) statement provable via a $\Sigma$-protocol as a formula over sigma values homomorphic to logical formula. For example, the statement $dlog(x_1) \lor dlog(x_2)$ could be viewed as a formula consisting of two sigma values connected by $\lor$ and which is homomorphic to the formula $b1 or b2$. Then we can enrich the language of $\Sigma$-protocols (which describes relations between prover's secrets and their publicly known images) with deterministic predicates over a context shared between the prover and the verifier. Still, we are using only $\land$, $\lor$ and k-out-of-N conjectures. By evaluating predicates over the context into concrete boolean values and then eliminating them, both (honest) the prover and verifier do agree on the same reduction procedure output, which could be one of the following: boolean value (true or false) or a statement provable via a $\Sigma$-protocol. However, in the light of denial-of-service attacks found against scripting capabilities of Bitcoin and Ethereum \knote{todo: links}, we need to limit possible complexity of the reduction procedure. For that, we have two measures against possible overload issues. In the first place, we have to use only context which is efficiently computable. For example, we can not have predicates over transactional history, as it is linearly growing with time, and also could not be hold by a light client. In opposite, we can use height of a block which contains the transaction spending the output of interest, access to this information is constant-time and available to light clients. If a validation state~(which is similar to UTXO set in Bitcoin for Bitcoin-like cryptocurrencies) is authenticated~(like proposed in the paper \knote{cite AVL paper}), we can construct a predicate for existence of an unspent output (with some conditions to be met), then the prover is providing a Merkle proof for an output satisfying the predicate, and even a light client can validate the predicate efficiently. In the second place, we put a limit on size of an initial logic formula which protects an output, and also we take care that the formula will not become too big due rewritings (as some transformations in our proposal could actually increase a size of the formula\mnote{For example? Looks like all the transforms are decreasing.}) and number of transformations is below an upper limit.
-
-\subsection{Model}
-
-An output to spend is protected by a logical expression, which we are also calling a {\em guarding expression}. An expression is a mix of predicates over publicly known context, and statements provable via sigma protocols. As a simplest example, consider the following statement:
-
-\begin{equation}
-\label{eq:example1}
-dlog(x_1) \lor ((h > 5) \land dlog(x_2))
-\end{equation}
-
-which is to be read as ``proof of knowledge of a secret with public image $x_1$ is always enough, also, if height of a block containing spending transaction is more than 5, knowledge of a secret with public image $x_2$ is also enough'' to admit spending of the output.
-
-Both the prover and the verifier are first reducing the statement by substituting shared context variables and evaluating parts of the expression which are possible to evaluate. Four outcomes of the reduction process are possible: {\em true}, {\em false}, failure to reduce~(if statement is invalid, or transformations of it are taking too much time or result in unreasonably big statement), which is equivalent to {\em false}; or statement which contains only cryptographic statements. For the example, if $h = 10$, the reduced statement is $dlog(x_1) \lor dlog(x_2)$. In this case, the prover is generating a proof, and verifier is checking validity of the proof, accepting or rejecting it. We use cryptographic statements which are provable via {\em sigma protocols}~(\knote{links}). These protocols are efficient zero-knowledge \knote{special honest verifier ZK actually} proof-of-knowledge protocols which are composable via $\land$, $\lor$ and k-out-of-N conjectures, also any sigma protocol has a standard way to be converted into a signature by using the Fiat-Shamir transformation. 
-
-In addition to secret information, which knowledge is to be proven in zero-knowledge, we allow prover to enhance context with custom variables. For example, for the statement:
-
-$$dlog(x) \land (blake2b256(c) = C)$$
-
-where $C$ is some constant~\footnote{we avoid providing a value for the constant due to column size limit}, and $blake2b256$ is operation which calculates hash value for function Blake2b256~(\knote{link}). The prover then needs to prove knowledge of discrete logarithm of $x$ and also to present value $c$ such as Blake2b256 on $c$ evaluates to $C$. Even if verifier does not know $c$ before being presented a proof, we can not count $c$ as secret, as it could be replayed by an eavesdropper.
-
-
-
-\subsection{Language Details} 
-\label{sec:lang-details}
-
-Here we provide details on building blocks of the language.  
-Both the prover and the verifier are doing the same first few steps, and they both are using the same deterministic interpreter. In the first place, the interpreter is parsing incoming expression~(in typical case of validating a transaction within a block, it is encoded in a binary form), building a tree from the expression, and checking that the expression is well-formed according to typing rules. We describe types and typing rules in Section~\ref{sec:types}. The interpreter then is reducing the expression by applying rewriting rules to the tree as described in the Section~\ref{sec:rewriting}. The possible result of the reduction is whether an abort, or a successfully reduced expression, which could be whether a boolean value or a statement provable via a $\Sigma$-protocol. For the latter case, the prover and the verifier are doing different jobs: the prover is proving knowledge of secrets associated with the statement, as described in Section~\ref{sec:proving}; the verifier is checking a proof generated by the prover against the statement, as described in the Section~\ref{sec:verifying}.   
-
-The interpreter is also checking that the expression is not exceeding by number of sub-expressions and their cumulative complexity some predefined limit~(which is the same for the prover and the verifier, e.g a constant of a blockchain system, or changed by miners in predictable and controllable fashion, like gas limit per block in Ethereum). As complexity is going beyond the limit, the interpreter aborts immediately. 
-
-
-\subsection{Types}
-\label{sec:types}
-
-All the operations as well as operands have types. For example, addition operation ``+'' may take two Int and returns an Int value. Comparison operation ``$>$'' takes two Int and returns a boolean value. Some operations may be overloaded so that the same symbol is reused for operations acting on different types, e.g. $+: (Int,Int) \to Int$, $+: (Long, Long) \to Long$ etc.
-We consider statements provable via $\Sigma$-protocols, like $dlog(x)$ as instances of the boolean type. The interpreter checks that all the nodes in the tree have children of appropriate types, and the whole guarding expression~(the root node of the tree) has a boolean type and rejects the expression if the conditions are not met.
-
-We have following types in the language:
-
-\begin{itemize}
-    \item{signed integer types of 8, 16, 32 and 64-bits size}
-    \item{big integer type of arbitrary size}
-    \item{boolean}
-    \item{avl+ tree verification data}
-    \item{cryptography group element}
-    \item{box}
-    \item{tuple of values of different types}
-    \item{array of values of the same type}
-    \item{optional value}
-\end{itemize}
-
-\knote{todo: improve description, also, add unsigned integer?}
-
-\ignore{
-\begin{center}
-    \begin{tabular}{| l | l | l | l | l |}
-    \hline
-    Operation & bytes & ints & prop & bool \\ \hline
-    $=$ & + & + & + & + \\ 
-	$\neq$ & + & + & + & +\\ 
-	$+$ & + & + & - & - \\    
-	$-$ & - & + & - & - \\
-	$>$ & - & + & - & - \\
-	$\ge$ & - & + & - & -\\
-	$<$ & - & + & - & -\\
-	$\le$ & - & + & - & -\\
-	$\oplus$ & + & - & - & + \\
-	$\lor$ & - & - & - & + \\
-	$\land$ & - & - & - & + \\
-	$blake2b256$ & + & - & - & -\\
-	$dlog$ & - & - & - & -\\
-	$dh$ & - & - & - & -\\
-    \hline
-    \end{tabular}
-\end{center}
-}
-
-
-\subsection{Rewriting a Tree}
-\label{sec:rewriting}
-
-By parsing a statement, interpreter first builds a tree from a formula. For the example~\ref{eq:example1} the tree would be as following:
-
-\knote{draw the tree}.
-
-If the tree is well-formed according to the typing rules, and also has complexity no more than an allowed limit, interpreter is going to rewrite it, in potentially many steps. For every step, the interpreter tries, going from bottom to top of the tree, to replace nodes which are ready to be transformed~(operands are in place, and the transformation itself is known). The next step is about the same transformations in the same bottom-top order to be done. The process finishes in one of the following cases:
-
-\begin{itemize}
-    \item{abort: } happens if transformation process by its complexity exceeds an upper bound. The complexity estimation works as follows. The interpreter remembers initial cumulative complexity $C_0$, and for each replacement in the tree it calculates cumulative complexity of a subtree to be inserted instead of a subtree to be removed $\Delta C$, and adds $\Delta C$ to current cumulative complexity $C$, where $C = C_0$ initially.  
-    \item{success: } we finish with this status if during last step there are no any transformations done.  
-\end{itemize} 
-
-If the transformations are finishing with abortion, the result is considered as $false$ (we recall that the interpreter is giving a single boolean result finally, whether an output could be spent or not). Otherwise, if the tree could not be transformed anymore the interpreter is looking into it. If the tree is about just a single node which contains boolean constant value~($true$ or $false$), the value is the result of the interpretation. If the tree contains statements not provable via $\Sigma$-protocols, the interpreter finishes with $false$. Otherwise, if the tree contains only statements provable via $\Sigma$-protocols, the interpreter is continuing to work, and here execution is different for the prover and the verifier. The prover is generating a proof for the statement by using its secrets, as described in Section~\ref{sec:proving}, and the verifier checks the statement against the proof~(provided in a spending transaction), as described in Section~\ref{sec:verifying}. The verifier outputs $true$ if the proof is valid for the statement, $false$ otherwise. We are skipping for now the question how Fiat-Shamir transformation works in our setting, and how a message, which is used in a non-interactive protocol is formed; details are given further in Appendix~\ref{apx:tx-format}. 
-
-
-
-\section{Context}
-
-Shared context of a blockchain system could be expressed in different ways, based on desired expressiveness, efficiency, planned use cases and so on. In this paper we focus on context for Ergo blockchain. The main priority for this blockchain is maximum efficiency of transaction validation process, safety, and friendliness to light clients. Considering this, we require that context should contain only spending transaction along with outputs it spends, and limited number of last block headers. Thus even a client which does not have all the headers of the blockchain~(for example, the client could be working in a light-SPV mode, where the client is holding only sublinear part of the headers-chain) is able to validate a transaction, by being shown it~(as well as outputs the transaction spends along with Merkle proofs for them).
-
-\knote{brief context description, link to an appendix with details}
-
-
-
-
-\section{Examples}
-
-In this section we provide some examples of useful guarding scripts. We focus on examples which are impossible or much harder to express in Bitcoin Script.
-
-\subsection{Crowdfunding}
-\label{sec:crowdfunding}
-
-We provide simple solution to crowdfunding here. In the example, a crowdfunding project associated with public key $x_P$ is considered successful if it can collect unspent outputs with total value not less than $to\_raise$ before height $timeout$. A project backer creates an output protected by the following statement: 
-
-\begin{equation*}
-\begin{split}
-(height \ge timeout \land dlog(x_B)) \lor \\
-(height & < timeout \land dlog(x_P)\\
-& \land Exists(Outputs, 20,\\ 
-& \quad \quad \quad \quad ExtractAmount(TaggedBox(20)) \ge to\_raise \land \\ 
-& \quad \quad \quad \quad ExtractScriptBytes(TaggedBox(20)) = ToBytes(dlog(x_P))))
-\end{split}
-\end{equation*}
-
-Then the project can collect biggest outputs with total value not less than $to\_raise$ with a single transaction~(it is possible to collect up to ~22,000 outputs in Bitcoin, which is enough even for a big crowdfunding campaign). For remaining small outputs over $to\_raise$, it is possible to construct follow-up transactions. 
-
-Please note why such a guarding expression is not possible in Bitcoin: we use the condition on a spending transaction, namely, we require the transaction to have an output with value not less than required, and also with a particular statement protecting the output.
-
-\subsection{Money With Scheduled Maintenance Payments}
-
-\knote{description}
-
-\begin{equation*}
-\begin{split}
-user\_statement \lor \\ 
-(height & \ge (ExtractHeight(self) + period) \land \\
-    & Exists(Outputs, 20, \\
-    & \quad \quad \quad \quad ExtractAmount(TaggedBox(20)) \ge (ExtractAmount(self) - cost) \land \\ 
-    & \quad \quad \quad \quad ExtractScriptBytes(TaggedBox(20)) = ExtractScriptBytes(self)))
-\end{split}
-\end{equation*}
-
-We highlight impossibility of such a statement in the Bitcoin Script: similarly to the statement in the previous section~\ref{sec:crowdfunding}, we use a condition on a spending transaction. Another feature missed in the Bitcoin Script is that we also use an output to spend in the execution context. In particular, in the example above we require a spending transaction to have an output which has the same statement as an output it spends. 
-
-\subsection{Ring Signature}
-\label{sec:ring}
-
-Linear-sized ring signature is very straightforward in the language. Assume a ring consists of $m$ public keys $x_1, \dots, x_m$. If one wants an output to be spent by a ring signature associated with the ring, the output is to be protected by the following statement:
-
-$$dlog(x_1) \lor \dots \lor dlog(x_m)$$  
-
-Please note that proving of the statement is to be done in zero-knowledge, so it is not possible to know which key signed, the only fact to conclude is that some key from the ring signed output spending. 
-
-\subsection{Complex Signature Schemes}
-
-We can build more complex signature schemes than possible in Bitcoin. One particular example was provided in the previous Section~\ref{sec:ring}. Another example is a scheme where at least one out of (Alice, Bob), and at least one out of (Charles, Diana) are needed to sign, and it is not to be known who signed an output spending. The corresponding statement involving public keys $x_A, x_B, x_C, x_D$ of Alice, Bob, Charles and Diana respectively would be following:
-
-$$(dlog(x_A) \lor dlog(x_B)) \land (dlog(x_C) \lor dlog(x_D))$$
-
-\subsection{Simple Tumbler}
-\label{sec:tumbler}
-
-\knote{does the example makes sense? check other tumbler papers. also, update the scripts, now approach is more generic than using tx.outbytes}
-
-Privacy is a tough problem for cryptocurrency users. Bitcoin is a pseudonymous cryptocurrency, so no real identities attached to a transaction. However, it is possible to reconstruct transactional graph for all the transactions ever entered into the Bitcoin blockchain, and often restore real identities by using auxiliary databases. \knote{link} To improve privacy, tumblers are being used. A tumbler is a scheme which us getting some money transfers as inputs, produces output money transfers, and has a property of unlinkability: it is not possible to draw a link from an input to an output. Thus a tumbler user is hiding herself amongst a ring of users sending inputs to the scheme. Privacy then depends on a ring size. For maximum privacy, there exists a cryptocurrency ZCash with inbuilt tumbler based on zkSnarks\knote{links}, where a user is hiding among all the users in the system. However, ZCash requires trusted setup, and transaction validation is relatively slow~(10 ms). In other cryptocurrencies users are usually using external services varying in security and efficiency.
-
-Here we are describing simple tumbler service. It is very efficient and requires no trusted dealer. Its disadvantage is that from observing blockchain transactions it is possible to conclude that users are using a tumbler.
-
-Assume Alice with public key $x_A$ and Bob with public key $x_B$ want to relocate funds to keys $y_1$ and $y_2$ respectively, with a property than external observer looking into blockchain is not capable to know beyond the fact that money flows from $x_A$ to whether $y_1$ or $y_2$~(and the same for $x_B$).
-
-First, Alice and Bob communicate off-chain to construct collectively outputs of the final transaction~(payments to $y_1$ and $y_2$). Each of them then is calculating a hash value from outputs bytes $h$~(we assume that Blake2b-256 hash function is used). Then each of them is creating an output to spend~(possibly, in a dedicated transaction) with such a condition for Alice and Bob, respectively:
-
-$blake2b256(tx.outbytes) = h \lor dlog(x_A)$ 
-
-$blake2b256(tx.outbytes) = h \lor dlog(x_B)$
-
-Then it is possible to make a refund at any moment of time~(right condition in the $\lor$ conjectures), and before a refund any of the them can construct a transaction which is spending the outputs, and it is impossible to construct an alternative transaction, for which hash of the output bytes is $h$, but bytes are different~(if chosen hash function is collision-resistant).
-
-\subsection{Oracle Example}
-
-\knote{Text below is just copied from code comments, polish it}
-
-A trusted weather station is publishing temperature data on blockchain. Alice and Bob are making a contract based on the data:
-they have locked coins in such way that if output from the station shows that temperature announced by the oracle is > 15 degrees, money are going to Alice, otherwise to Bob.
-    
-We consider that for validating transaction only limited number of last headers and the spending transaction should be enough, in addition to outputs being spent by the transaction. Thus there is no need for knowledge of an arbitrary output. To show the coin of the weather service in the spending transaction, outputs from Alice and Bob are referencing to the coin by using Merkle proofs against UTXO set root hash of the latest known block.
-    
-A tricky moment is how Alice and Bob can be sure that a coin is indeed created by the service, having just the coin (and also service's public key x = $g^w$, where service's secret w is not known.
-    
-For that, we consider that the service creates a coin with registers of following semantics (R0 and R1 are standard):
-    
-R1 - coin amount
-R2 - protecting script, which is the pubkey of the service, $x = g^w$
-R3 - temperature data, number
-R4 - $a = g^r$, where r is secret random nonce
-R5 - $z = r + ew mod q$
-R6 - timestamp
-    
-Then Alice and Bob are requiring from the coin that the following equation holds: $g^z = a * x^e$, where $e = hash(R3 ++ R6)$
-    
-Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
-"the coin is spendable by presenting a proof of Alice's private key knowledge if against UTXO set root hash for
-the last known block there is a coin along with a Merkle proof, for which following requirements hold:
-$R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3 ++ R6)) /\ (R3) > 15$. Similarly, the coin is spendable by a proof of
-knowledge of the Bob's private key if all the same conditions are met but $(R3) <= 15$.".
-    
-The Bob can create a box with the same guarding conditions. However, if Alice's box is already in the state, then Bob can stick to it by using the trick from the "along with a brother" test.
+We describe these two nonstandard steps in Section \ref{sec:safety} and Appendix \ref{app:crypto}. \lnote{Should they be both in the appendix or both in the main body?}
 
 
 \section{Safety Guarantees}
@@ -820,21 +554,6 @@ $Constant$ tree nodes.
 
 
 
-\subsection{Denial-of-Service Attacks}
-
-
-\section{Extensibility}
-
-It is hard to predict which functions would be useful for blockchain applications.
-
-\section{Implementation and Evaluation}
-
-\section{Further Work}
-
-\section{Conclusion}
-
-We show in this paper...
-
 
 
 
@@ -845,54 +564,18 @@ We show in this paper...
 
 \appendix
 
-\section{Open Questions}
-
-\begin{enumerate}
-  \item Q: Let's use $\lor$, $\land$ for logical connectives, and $\sqcup$, $\sqcap$ for
-           sigma-connectives correspondingly? \linebreak
-        A:
-  \item Q: Do we have "knowledge of Pedersen commitment $x_2$ preimage" somehow implemented? \linebreak
-        A:
-  \item Q: What are the limitations of \langname? \linebreak
-        A: The following are the constraint of current implementation of \langname:
-        \begin{itemize}
-          \item Let bound expressions are copied in every usage site during compilation. This leads to repeated evaluation of the corresponding expressions.
-          \item Lambdas are not first-class. After compilation all Lamdas should be inlined.
-          \item Nested collections are not supported
-        \end{itemize}
-\end{enumerate}
-
-\section{Types}
-
-\[\begin{tabular}{@{}l c l l}
-      $\mathcal{T} \ni \tau$			& ::= 	    &\
-         \lst{Byte} $\mid$ \lst{Short} $\mid$
-         \lst{Int} $\mid$ \lst{Long} $\mid$ \lst{BigInt}  & numeric types     \\
-      &	$\mid$	& \lst{Boolean} 			& type of logical values true/false   \\
-      &	$\mid$	& \lst{Unit} 				& type with single element   \\
-      &	$\mid$	& \lst{GroupElement} 		& element of the cryptographic group  \\
-      &	$\mid$	& \lst{Box} 				& value in a box protected by proposition  \\
-      &	$\mid$	& \lst{AvlTree} 			&  Authenticated Dynamic Dictionary \\
-      &	$\mid$	& $(\tau_1, \dots, \tau_n) $	& binary product type  \\
-      & $\mid$  & $\text{\lst{Array}}[\tau]$	& array type       \\
-      & $\mid$  & $\text{\lst{Option}}[\tau]$	& optional value (either $Some(\tau)$ or $None$)      \\
-      & $\mid$  & \lst{Any}                     & type of any value (common supertype of all the types) \\
-\end{tabular}\]
-
-\section{Tree Nodes and Transformation Rules}
 
 
 \section{Implementation of Noninteractive $\Sigma$-protocols for an arbitrary And/Or/Threshold composition}
 \label{app:crypto}
 \subsection{Background}
 
-\lnote{need to give some references that explain $\Sigma$-protocols well. Not sure what --- may need to dig through the literature}
 
-In this section, we explain in detail how the $\Sigma$-protocol proving and verifying is implemented. Consider the tree after the rewriting process, as described in Section~\ref{sec:rewriting}, reduces it to only $\Sigma$-protocol nodes. Then the leaves of the tree are atomic $\Sigma$-protocols, and non-leaves are of one of three types: $\andnode$, $\ornode$, or $\tnode(k)$. \lnote{connect these types to what's described above}
+In this section, we explain in detail how the $\Sigma$-protocol proving and verifying is implemented. Consider the tree after the evaluation process, as described in Section~\ref{sec:impl}, reduces it to only $\Sigma$-protocol nodes. Then the leaves of the tree are atomic $\Sigma$-protocols, and non-leaves are of one of three types: $\andnode$, $\ornode$, or $\tnode(k)$. 
 
 The meaning of the proof corresponding to $\tnode(k)$ is ``the prover knows witnesses for at least $k$ children of this node''. Semantically, $\andnode$ and $\ornode$ are simply special cases of $\tnode$: the meaning  of the proof corresponding $\andnode$ (respectively, $\ornode)$ is ``the prover knows witnesses for all children (respectively, at least one child) of this node''. However, $\andnode$ and $\ornode$ are implemented differently from $\tnode$ for efficiency.
 
-For the purposes of this description, it does not matter what specific atomic $\Sigma$-protocols are used at the leaves. They can be, for example, $Dlog(x)$ for proving knowledge of the discrete logarithm $w$ of $x=g^w$, or $DH(g, x, h, y)$ for proving that $(g, x, h, y)$ form a Diffie-Hellman tuple, i.e., $(\exists w) \ x = g^w \, \wedge \, y = h^w$. \lnote{make this notation match what's in the language description} In general, we will assume the prover has some secret $w$ and wants to prove some property of it. 
+For the purposes of this description, it does not matter what specific atomic $\Sigma$-protocols are used at the leaves. They can be, for example, \texttt{proveDlog(x)} for proving knowledge of the discrete logarithm $w$ of $x=g^w$, or \texttt{proveDHtuple(g1, g2, u1, u2)} for proving that $(g_1, g_2, u_1, u_2)$ form a Diffie-Hellman tuple, i.e., $\exists w \mbox{\ such\  that\ } u_1 = g_1^w \, \wedge \, u_2 = h_2^w$. In general, we will assume the prover has some secret $w$ and wants to prove some property of it. 
 
 A $\Sigma$-protocol consist of three messages: 
 
@@ -1051,23 +734,6 @@ The pseudocode below details the verifier's steps.
 \end{enumerate}
 
 
-\section{Cost Table}
-
-\section{Roadmap}
-
-\section{Outputs vs Accounts}
-
-\section{Unified Transactions}
-\label{apx:unified}
-
-\section{An Example of a Concrete Transaction Format}
-\label{apx:tx-format}
-
-\knote{Describe Ergo transaction format here. Malleability problems to be discussed here.}
-
-\section{A Language For An Account-Based Cryptocurrency}
-\label{apx:account}
-
 \section{Old Intro Text -- not sure what's needed}
 
 Much like digital signatures prove that the signer knows the secret key, $\Sigma$-protocols can be used to prove knowledge of a discrete logarithm. 
@@ -1079,5 +745,333 @@ We use predicates over state of blockchain system during script validation~(whic
 
 In blockchain systems, there is a strict need to tackle the problem of denial-of-service attack carrying by crafting scripts which are too costly to validate. For example, if it is needed for more time to validate a script than average delay between blocks on commodity hardware, network could be obviously attacked, with nodes stuck in processing, and also increased number of forks as result. 
 
+\section{Old Language Design Section}
+
+We assume that a {\em prover} and a {\em verifier} have a shared {\em context}. As we are designing a language for cryptocurrencies, the context is about current state of the blockchain (such as height $h$ of a best block in the blockchain, a spending transaction with outputs it spends and newly created outputs, etc). Please note that the language can be repurposed for other areas where shared context is possible, but this is out of scope of the paper.
+
+\subsection{Notation}
+
+We use $Dlog(x)$ to denote a statement ``prove a knowledge of such $w$ that $x = g^w$''. Proving is to be done by a prover in zero knowledge~(with no presenting the secret $w$ to a verifier). Statement $Dlog(x_1) \sqcap Dlog(x_2)$ means ``prove a knowledge of both $w_1$ and $w_2$, such as $x_1 = g^{w_1}, x_2 = g^{w_2}$'', similarly, $Dlog(x_1) \lor Dlog(x_2)$ is about a proof of knowledge of either $w_1$ or $w_2$.
+
+\subsection{UTXO model}
+
+We assume a transactional model close to Bitcoin's. That is, a transaction spends unspent outputs (pointed to by \emph{transaction inputs}) from previous transaction written into the blockchain, and creates new outputs. An output is associated with arbitrary amount of money, and also a protecting script. In Bitcoin, there is a special kind of transaction, so-called {\em coinbase transaction}, which can create some amount of money out of thin air~(to reward a block generator). In Bitcoin transaction fees money flow is not captured in outputs, a transaction fee is just a difference of amounts of outputs being spent and outputs being created. In Appendix~\ref{apx:unified} we provide a way to avoid coinbase transactions, and also express fees explicitly as outputs. In Appendix~\ref{apx:account} we discuss how to make a language for a cryptocurrency with account-based transactions~(such as Waves~\cite{Waves}).
+
+\subsection{Logic of $\Sigma$-protocols}
+
+Cryptocraphic propositions verifiable via $\Sigma$-protocols are represented by values of an algebraic data type $SigmaProp$,
+which stands for \emph{sigma proposition} and can be described using the following declaration (using Idris/Agda ADT notation~\cite{Idris, Agda})
+
+\begin{lstlisting}
+data SigmaProp: Type where
+  Dlog: GroupElement -> SigmaProp
+  Dht: (gv, hv, uv, vv: GroupElement) -> SigmaProp
+  ...
+\end{lstlisting}
+
+In the definition above, each constructor represents one of the cryptographic primitives, and the set of such constructors
+can be extended (although this extensibility is out of paper's scope).
+
+We want to be able to construct more complex statements out of basic primitive propositions.
+There are two binary operations over $SigmaProp$ values:
+\begin{itemize}
+\item $\sqcup: (SigmaProp, SigmaProp) -> SigmaProp$
+\item $\sqcap: (SigmaProp, SigmaProp) -> SigmaProp$
+\end{itemize}
+
+Any expression of $SigmaProp$ type can be efficiently verified using sigma protocol and thus mapped to a truth values.
+
+We implement a verification procedure $V: SigmaProp -> Boolean$, which performs such mapping, and satisfies the following
+naturality conditions with respect to SigmaProp and Boolean connectives.
+
+For any two statements $sigma1, sigma2: SigmaProp$:
+\begin{itemize}
+    \item $V(s_1 \sqcup s_2) = V(s_1) \lor V(s_2)$
+    \item $V(s_1 \sqcap s_2) = V(s_1) \land V(s_2)$
+\end{itemize}
+
+Bacause SigmaProp connectives and logical connectives satisfy naturality conditions we can reason about complex sigma statements
+the same way we reason about logical statements.
+However, unlike logical statements evaluation of sigma statements is done with zero knowledge about intermediate steps.
+Thus, we can verify the truth of $s_1 \sqcup s_2$ (i.e. compute $V(s_1 \sqcup s_2)$) statement but we cannot know whether $s_1$ or $s_2$ or both is true. At the same time evaluation of $V(s_1) \lor V(s_2)$ discloses results of both $V(s_1)$ and $V(s_2)$ before execution of $\lor$.
+
+There is a function $isValid: SigmaProp -> Boolean$ in Sigma-state language which implements the function $V$.
+The type system of the language allows to explicitly delimit usages of zero knowledge evaluation
+of sigma statements and classical evaluation of boolean statements.
+
+This allows script designer to explicitly control security (zero-knowledge) guarantees where it is necessary.
+
+\subsection{General Idea}
+
+By using a $\Sigma$-protocol, a prover can prove a knowledge of secret information corresponding to publicly known values, in zero-knowledge(i.e. without disclosing a secret value), for some relations between secret and public values. Unlike generic proof systems, $\Sigma$-protocols are efficient~(for both the prover and the verifier). For a cryptocurrency setting, the pros of this class of protocols are generic transformation from an interactive protocol to non-interactive one~(by using Fiat-Shamir transformation), and also composability: we can combine statements provable with $\Sigma$-protocols via $\land$, $\lor$ and k-out-of-N conjectures, and the compound statement is also provable via a $\Sigma$-protocol. An observation which is lying in the foundation of our work is that we can view a (potentially complex) statement provable via a $\Sigma$-protocol as a formula over sigma values homomorphic to logical formula. For example, the statement $dlog(x_1) \lor dlog(x_2)$ could be viewed as a formula consisting of two sigma values connected by $\lor$ and which is homomorphic to the formula $b1 or b2$. Then we can enrich the language of $\Sigma$-protocols (which describes relations between prover's secrets and their publicly known images) with deterministic predicates over a context shared between the prover and the verifier. Still, we are using only $\land$, $\lor$ and k-out-of-N conjectures. By evaluating predicates over the context into concrete boolean values and then eliminating them, both (honest) the prover and verifier do agree on the same reduction procedure output, which could be one of the following: boolean value (true or false) or a statement provable via a $\Sigma$-protocol. However, in the light of denial-of-service attacks found against scripting capabilities of Bitcoin and Ethereum \knote{todo: links}, we need to limit possible complexity of the reduction procedure. For that, we have two measures against possible overload issues. In the first place, we have to use only context which is efficiently computable. For example, we can not have predicates over transactional history, as it is linearly growing with time, and also could not be hold by a light client. In opposite, we can use height of a block which contains the transaction spending the output of interest, access to this information is constant-time and available to light clients. If a validation state~(which is similar to UTXO set in Bitcoin for Bitcoin-like cryptocurrencies) is authenticated~(like proposed in the paper \knote{cite AVL paper}), we can construct a predicate for existence of an unspent output (with some conditions to be met), then the prover is providing a Merkle proof for an output satisfying the predicate, and even a light client can validate the predicate efficiently. In the second place, we put a limit on size of an initial logic formula which protects an output, and also we take care that the formula will not become too big due rewritings (as some transformations in our proposal could actually increase a size of the formula\mnote{For example? Looks like all the transforms are decreasing.}) and number of transformations is below an upper limit.
+
+\subsection{Model}
+
+An output to spend is protected by a logical expression, which we are also calling a {\em guarding expression}. An expression is a mix of predicates over publicly known context, and statements provable via sigma protocols. As a simplest example, consider the following statement:
+
+\begin{equation}
+\label{eq:example1}
+dlog(x_1) \lor ((h > 5) \land dlog(x_2))
+\end{equation}
+
+which is to be read as ``proof of knowledge of a secret with public image $x_1$ is always enough, also, if height of a block containing spending transaction is more than 5, knowledge of a secret with public image $x_2$ is also enough'' to admit spending of the output.
+
+Both the prover and the verifier are first reducing the statement by substituting shared context variables and evaluating parts of the expression which are possible to evaluate. Four outcomes of the reduction process are possible: {\em true}, {\em false}, failure to reduce~(if statement is invalid, or transformations of it are taking too much time or result in unreasonably big statement), which is equivalent to {\em false}; or statement which contains only cryptographic statements. For the example, if $h = 10$, the reduced statement is $dlog(x_1) \lor dlog(x_2)$. In this case, the prover is generating a proof, and verifier is checking validity of the proof, accepting or rejecting it. We use cryptographic statements which are provable via {\em sigma protocols}~(\knote{links}). These protocols are efficient zero-knowledge \knote{special honest verifier ZK actually} proof-of-knowledge protocols which are composable via $\land$, $\lor$ and k-out-of-N conjectures, also any sigma protocol has a standard way to be converted into a signature by using the Fiat-Shamir transformation. 
+
+In addition to secret information, which knowledge is to be proven in zero-knowledge, we allow prover to enhance context with custom variables. For example, for the statement:
+
+$$dlog(x) \land (blake2b256(c) = C)$$
+
+where $C$ is some constant~\footnote{we avoid providing a value for the constant due to column size limit}, and $blake2b256$ is operation which calculates hash value for function Blake2b256~(\knote{link}). The prover then needs to prove knowledge of discrete logarithm of $x$ and also to present value $c$ such as Blake2b256 on $c$ evaluates to $C$. Even if verifier does not know $c$ before being presented a proof, we can not count $c$ as secret, as it could be replayed by an eavesdropper.
+
+
+
+\subsection{Language Details} 
+\label{sec:lang-details}
+
+Here we provide details on building blocks of the language.  
+Both the prover and the verifier are doing the same first few steps, and they both are using the same deterministic interpreter. In the first place, the interpreter is parsing incoming expression~(in typical case of validating a transaction within a block, it is encoded in a binary form), building a tree from the expression, and checking that the expression is well-formed according to typing rules. We describe types and typing rules in Section~\ref{sec:types}. The interpreter then is reducing the expression by applying rewriting rules to the tree as described in the Section~\ref{sec:rewriting}. The possible result of the reduction is whether an abort, or a successfully reduced expression, which could be whether a boolean value or a statement provable via a $\Sigma$-protocol. For the latter case, the prover and the verifier are doing different jobs: the prover is proving knowledge of secrets associated with the statement, as described in Section~\ref{sec:proving}; the verifier is checking a proof generated by the prover against the statement, as described in the Section~\ref{sec:verifying}.   
+
+The interpreter is also checking that the expression is not exceeding by number of sub-expressions and their cumulative complexity some predefined limit~(which is the same for the prover and the verifier, e.g a constant of a blockchain system, or changed by miners in predictable and controllable fashion, like gas limit per block in Ethereum). As complexity is going beyond the limit, the interpreter aborts immediately. 
+
+
+\subsection{Types}
+\label{sec:types}
+
+All the operations as well as operands have types. For example, addition operation ``+'' may take two Int and returns an Int value. Comparison operation ``$>$'' takes two Int and returns a boolean value. Some operations may be overloaded so that the same symbol is reused for operations acting on different types, e.g. $+: (Int,Int) \to Int$, $+: (Long, Long) \to Long$ etc.
+We consider statements provable via $\Sigma$-protocols, like $dlog(x)$ as instances of the boolean type. The interpreter checks that all the nodes in the tree have children of appropriate types, and the whole guarding expression~(the root node of the tree) has a boolean type and rejects the expression if the conditions are not met.
+
+We have following types in the language:
+
+\begin{itemize}
+    \item{signed integer types of 8, 16, 32 and 64-bits size}
+    \item{big integer type of arbitrary size}
+    \item{boolean}
+    \item{avl+ tree verification data}
+    \item{cryptography group element}
+    \item{box}
+    \item{tuple of values of different types}
+    \item{array of values of the same type}
+    \item{optional value}
+\end{itemize}
+
+\knote{todo: improve description, also, add unsigned integer?}
+
+\ignore{
+\begin{center}
+    \begin{tabular}{| l | l | l | l | l |}
+    \hline
+    Operation & bytes & ints & prop & bool \\ \hline
+    $=$ & + & + & + & + \\ 
+	$\neq$ & + & + & + & +\\ 
+	$+$ & + & + & - & - \\    
+	$-$ & - & + & - & - \\
+	$>$ & - & + & - & - \\
+	$\ge$ & - & + & - & -\\
+	$<$ & - & + & - & -\\
+	$\le$ & - & + & - & -\\
+	$\oplus$ & + & - & - & + \\
+	$\lor$ & - & - & - & + \\
+	$\land$ & - & - & - & + \\
+	$blake2b256$ & + & - & - & -\\
+	$dlog$ & - & - & - & -\\
+	$dh$ & - & - & - & -\\
+    \hline
+    \end{tabular}
+\end{center}
+}
+
+
+\subsection{Rewriting a Tree}
+\label{sec:rewriting}
+
+By parsing a statement, interpreter first builds a tree from a formula. For the example~\ref{eq:example1} the tree would be as following:
+
+\knote{draw the tree}.
+
+If the tree is well-formed according to the typing rules, and also has complexity no more than an allowed limit, interpreter is going to rewrite it, in potentially many steps. For every step, the interpreter tries, going from bottom to top of the tree, to replace nodes which are ready to be transformed~(operands are in place, and the transformation itself is known). The next step is about the same transformations in the same bottom-top order to be done. The process finishes in one of the following cases:
+
+\begin{itemize}
+    \item{abort: } happens if transformation process by its complexity exceeds an upper bound. The complexity estimation works as follows. The interpreter remembers initial cumulative complexity $C_0$, and for each replacement in the tree it calculates cumulative complexity of a subtree to be inserted instead of a subtree to be removed $\Delta C$, and adds $\Delta C$ to current cumulative complexity $C$, where $C = C_0$ initially.  
+    \item{success: } we finish with this status if during last step there are no any transformations done.  
+\end{itemize} 
+
+If the transformations are finishing with abortion, the result is considered as $false$ (we recall that the interpreter is giving a single boolean result finally, whether an output could be spent or not). Otherwise, if the tree could not be transformed anymore the interpreter is looking into it. If the tree is about just a single node which contains boolean constant value~($true$ or $false$), the value is the result of the interpretation. If the tree contains statements not provable via $\Sigma$-protocols, the interpreter finishes with $false$. Otherwise, if the tree contains only statements provable via $\Sigma$-protocols, the interpreter is continuing to work, and here execution is different for the prover and the verifier. The prover is generating a proof for the statement by using its secrets, as described in Section~\ref{sec:proving}, and the verifier checks the statement against the proof~(provided in a spending transaction), as described in Section~\ref{sec:verifying}. The verifier outputs $true$ if the proof is valid for the statement, $false$ otherwise. We are skipping for now the question how Fiat-Shamir transformation works in our setting, and how a message, which is used in a non-interactive protocol is formed; details are given further in Appendix~\ref{apx:tx-format}. 
+
+
+
+\section{Old Context Section}
+
+Shared context of a blockchain system could be expressed in different ways, based on desired expressiveness, efficiency, planned use cases and so on. In this paper we focus on context for Ergo blockchain. The main priority for this blockchain is maximum efficiency of transaction validation process, safety, and friendliness to light clients. Considering this, we require that context should contain only spending transaction along with outputs it spends, and limited number of last block headers. Thus even a client which does not have all the headers of the blockchain~(for example, the client could be working in a light-SPV mode, where the client is holding only sublinear part of the headers-chain) is able to validate a transaction, by being shown it~(as well as outputs the transaction spends along with Merkle proofs for them).
+
+\knote{brief context description, link to an appendix with details}
+
+
+
+
+\section{Old Examples Section}
+
+In this section we provide some examples of useful guarding scripts. We focus on examples which are impossible or much harder to express in Bitcoin Script.
+
+\subsection{Crowdfunding}
+\label{sec:crowdfunding}
+
+We provide simple solution to crowdfunding here. In the example, a crowdfunding project associated with public key $x_P$ is considered successful if it can collect unspent outputs with total value not less than $to\_raise$ before height $timeout$. A project backer creates an output protected by the following statement: 
+
+\begin{equation*}
+\begin{split}
+(height \ge timeout \land dlog(x_B)) \lor \\
+(height & < timeout \land dlog(x_P)\\
+& \land Exists(Outputs, 20,\\ 
+& \quad \quad \quad \quad ExtractAmount(TaggedBox(20)) \ge to\_raise \land \\ 
+& \quad \quad \quad \quad ExtractScriptBytes(TaggedBox(20)) = ToBytes(dlog(x_P))))
+\end{split}
+\end{equation*}
+
+Then the project can collect biggest outputs with total value not less than $to\_raise$ with a single transaction~(it is possible to collect up to ~22,000 outputs in Bitcoin, which is enough even for a big crowdfunding campaign). For remaining small outputs over $to\_raise$, it is possible to construct follow-up transactions. 
+
+Please note why such a guarding expression is not possible in Bitcoin: we use the condition on a spending transaction, namely, we require the transaction to have an output with value not less than required, and also with a particular statement protecting the output.
+
+\subsection{Money With Scheduled Maintenance Payments}
+
+\knote{description}
+
+\begin{equation*}
+\begin{split}
+user\_statement \lor \\ 
+(height & \ge (ExtractHeight(self) + period) \land \\
+    & Exists(Outputs, 20, \\
+    & \quad \quad \quad \quad ExtractAmount(TaggedBox(20)) \ge (ExtractAmount(self) - cost) \land \\ 
+    & \quad \quad \quad \quad ExtractScriptBytes(TaggedBox(20)) = ExtractScriptBytes(self)))
+\end{split}
+\end{equation*}
+
+We highlight impossibility of such a statement in the Bitcoin Script: similarly to the statement in the previous section~\ref{sec:crowdfunding}, we use a condition on a spending transaction. Another feature missed in the Bitcoin Script is that we also use an output to spend in the execution context. In particular, in the example above we require a spending transaction to have an output which has the same statement as an output it spends. 
+
+\subsection{Ring Signature}
+\label{sec:ring}
+
+Linear-sized ring signature is very straightforward in the language. Assume a ring consists of $m$ public keys $x_1, \dots, x_m$. If one wants an output to be spent by a ring signature associated with the ring, the output is to be protected by the following statement:
+
+$$dlog(x_1) \lor \dots \lor dlog(x_m)$$  
+
+Please note that proving of the statement is to be done in zero-knowledge, so it is not possible to know which key signed, the only fact to conclude is that some key from the ring signed output spending. 
+
+\subsection{Complex Signature Schemes}
+
+We can build more complex signature schemes than possible in Bitcoin. One particular example was provided in the previous Section~\ref{sec:ring}. Another example is a scheme where at least one out of (Alice, Bob), and at least one out of (Charles, Diana) are needed to sign, and it is not to be known who signed an output spending. The corresponding statement involving public keys $x_A, x_B, x_C, x_D$ of Alice, Bob, Charles and Diana respectively would be following:
+
+$$(dlog(x_A) \lor dlog(x_B)) \land (dlog(x_C) \lor dlog(x_D))$$
+
+\subsection{Simple Tumbler}
+\label{sec:tumbler}
+
+\knote{does the example makes sense? check other tumbler papers. also, update the scripts, now approach is more generic than using tx.outbytes}
+
+Privacy is a tough problem for cryptocurrency users. Bitcoin is a pseudonymous cryptocurrency, so no real identities attached to a transaction. However, it is possible to reconstruct transactional graph for all the transactions ever entered into the Bitcoin blockchain, and often restore real identities by using auxiliary databases. \knote{link} To improve privacy, tumblers are being used. A tumbler is a scheme which us getting some money transfers as inputs, produces output money transfers, and has a property of unlinkability: it is not possible to draw a link from an input to an output. Thus a tumbler user is hiding herself amongst a ring of users sending inputs to the scheme. Privacy then depends on a ring size. For maximum privacy, there exists a cryptocurrency ZCash with inbuilt tumbler based on zkSnarks\knote{links}, where a user is hiding among all the users in the system. However, ZCash requires trusted setup, and transaction validation is relatively slow~(10 ms). In other cryptocurrencies users are usually using external services varying in security and efficiency.
+
+Here we are describing simple tumbler service. It is very efficient and requires no trusted dealer. Its disadvantage is that from observing blockchain transactions it is possible to conclude that users are using a tumbler.
+
+Assume Alice with public key $x_A$ and Bob with public key $x_B$ want to relocate funds to keys $y_1$ and $y_2$ respectively, with a property than external observer looking into blockchain is not capable to know beyond the fact that money flows from $x_A$ to whether $y_1$ or $y_2$~(and the same for $x_B$).
+
+First, Alice and Bob communicate off-chain to construct collectively outputs of the final transaction~(payments to $y_1$ and $y_2$). Each of them then is calculating a hash value from outputs bytes $h$~(we assume that Blake2b-256 hash function is used). Then each of them is creating an output to spend~(possibly, in a dedicated transaction) with such a condition for Alice and Bob, respectively:
+
+$blake2b256(tx.outbytes) = h \lor dlog(x_A)$ 
+
+$blake2b256(tx.outbytes) = h \lor dlog(x_B)$
+
+Then it is possible to make a refund at any moment of time~(right condition in the $\lor$ conjectures), and before a refund any of the them can construct a transaction which is spending the outputs, and it is impossible to construct an alternative transaction, for which hash of the output bytes is $h$, but bytes are different~(if chosen hash function is collision-resistant).
+
+\subsection{Oracle Example}
+
+\knote{Text below is just copied from code comments, polish it}
+
+A trusted weather station is publishing temperature data on blockchain. Alice and Bob are making a contract based on the data:
+they have locked coins in such way that if output from the station shows that temperature announced by the oracle is > 15 degrees, money are going to Alice, otherwise to Bob.
+    
+We consider that for validating transaction only limited number of last headers and the spending transaction should be enough, in addition to outputs being spent by the transaction. Thus there is no need for knowledge of an arbitrary output. To show the coin of the weather service in the spending transaction, outputs from Alice and Bob are referencing to the coin by using Merkle proofs against UTXO set root hash of the latest known block.
+    
+A tricky moment is how Alice and Bob can be sure that a coin is indeed created by the service, having just the coin (and also service's public key x = $g^w$, where service's secret w is not known.
+    
+For that, we consider that the service creates a coin with registers of following semantics (R0 and R1 are standard):
+    
+R1 - coin amount
+R2 - protecting script, which is the pubkey of the service, $x = g^w$
+R3 - temperature data, number
+R4 - $a = g^r$, where r is secret random nonce
+R5 - $z = r + ew mod q$
+R6 - timestamp
+    
+Then Alice and Bob are requiring from the coin that the following equation holds: $g^z = a * x^e$, where $e = hash(R3 ++ R6)$
+    
+Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
+"the coin is spendable by presenting a proof of Alice's private key knowledge if against UTXO set root hash for
+the last known block there is a coin along with a Merkle proof, for which following requirements hold:
+$R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3 ++ R6)) /\ (R3) > 15$. Similarly, the coin is spendable by a proof of
+knowledge of the Bob's private key if all the same conditions are met but $(R3) <= 15$.".
+    
+The Bob can create a box with the same guarding conditions. However, if Alice's box is already in the state, then Bob can stick to it by using the trick from the "along with a brother" test.
+
+\section{Open Questions}
+
+\begin{enumerate}
+  \item Q: Let's use $\lor$, $\land$ for logical connectives, and $\sqcup$, $\sqcap$ for
+           sigma-connectives correspondingly? \linebreak
+        A:
+  \item Q: Do we have "knowledge of Pedersen commitment $x_2$ preimage" somehow implemented? \linebreak
+        A:
+  \item Q: What are the limitations of \langname? \linebreak
+        A: The following are the constraint of current implementation of \langname:
+        \begin{itemize}
+          \item Let bound expressions are copied in every usage site during compilation. This leads to repeated evaluation of the corresponding expressions.
+          \item Lambdas are not first-class. After compilation all Lamdas should be inlined.
+          \item Nested collections are not supported
+        \end{itemize}
+\end{enumerate}
+
+\section{Types}
+
+\[\begin{tabular}{@{}l c l l}
+      $\mathcal{T} \ni \tau$			& ::= 	    &\
+         \lst{Byte} $\mid$ \lst{Short} $\mid$
+         \lst{Int} $\mid$ \lst{Long} $\mid$ \lst{BigInt}  & numeric types     \\
+      &	$\mid$	& \lst{Boolean} 			& type of logical values true/false   \\
+      &	$\mid$	& \lst{Unit} 				& type with single element   \\
+      &	$\mid$	& \lst{GroupElement} 		& element of the cryptographic group  \\
+      &	$\mid$	& \lst{Box} 				& value in a box protected by proposition  \\
+      &	$\mid$	& \lst{AvlTree} 			&  Authenticated Dynamic Dictionary \\
+      &	$\mid$	& $(\tau_1, \dots, \tau_n) $	& binary product type  \\
+      & $\mid$  & $\text{\lst{Array}}[\tau]$	& array type       \\
+      & $\mid$  & $\text{\lst{Option}}[\tau]$	& optional value (either $Some(\tau)$ or $None$)      \\
+      & $\mid$  & \lst{Any}                     & type of any value (common supertype of all the types) \\
+\end{tabular}\]
+
+
+\section{Possible Other Sections, Not Currently Realized}
+\begin{itemize}
+
+\item Roadmap
+
+\item Tree Nodes and Transformation Rules
+
+\item Cost Table
+
+\item Outputs vs Accounts OR A Language For An Account-Based Cryptocurrency
+
+\item Unified Transactions
+
+\item An Example of a Concrete Transaction Format \knote{Describe Ergo transaction format here. Malleability problems to be discussed here.}
+
+
+\item Denial-of-Service Attacks
+
+\item Extensibility : It is hard to predict which functions would be useful for blockchain applications.
+
+\item Implementation and Evaluation
+
+\item Further Work
+
+\item Conclusion
+\end{itemize}
 
 \end{document}
