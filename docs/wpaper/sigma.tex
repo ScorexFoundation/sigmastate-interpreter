@@ -85,7 +85,7 @@ On other end of the generality spectrum, Ethereum allows for arbitrary Turing-co
 
 A variety of cryptocurrency languages have appeared. We do not survey them here, but refer the reader to \cite[p. 11]{Scilla}. \lnote{if time, can talk about Simplicity, Plutus, TypeCoin, Rholang, Scilla \dots}
 
-\subsection{Our contribution: \langname}
+\subsection{Our Contribution: \langname}
 In this paper we introduce a new language called \langname that is specifically designed to be friendly to cryptographic protocols and applications. \langname is considerably more powerful than Bitcoin Script. As \langname contains no looping or recursive constructs, individual scripts in \langname are not Turing-complete.  In fact, given a program in \langname, it is easy to obtain an estimate of its running time (see \ref{sec:runningtime}). However, because \langname allows for self-replication, \langname can be used to create Turing-complete processes in a blockchain, as shown in \cite{CKM18} (see  Section \ref{sec:self-replicating}).
 
 
@@ -179,7 +179,7 @@ Using these operators, it is possible to produce more sophisticated scripts. For
 
 A valid proof (contained in the spending transaction) will not reveal which of two possibilities was used.
 
-\lnote{should probably do a diffie-hellman example, and maybe with getting some of the DH values from a context. E.g., $g_1$ is just $g$, $g_2$ is $pk_A$, $h_1$ is a hash of a message in a context, and $h_2$ is from the context}
+\lnote{should probably do a diffie-hellman example, and maybe another one below with getting some of the DH values from a context. E.g., $g_1$ is just $g$, $g_2$ is $pk_A$, $h_1$ is a hash of a message in a context, and $h_2$ is from the context. This has to wait until \texttt{proveDHtuple} is implemented.}
 
 \subsection{Mixing $\Sigma$-statements with other statements}
 \langname allows combining statements that require proofs with other boolean statements. These statements can refer to the \emph{context}, which has predefined variables with information about the transaction in which the script is evaluated (i.e., the box is spent). For example,
@@ -193,10 +193,10 @@ This script allows Alice or Bob to spend the box before \texttt{HEIGHT} reaches 
 
 In general, script evaluation reduces the script to a $\Sigma$-statement by first evaluating all the Boolean predicates that are not $\Sigma$-statements. As we saw in the above example, the resulting $\Sigma$-statement will, in general, depend on the values of the Boolean predicates (such as whether \texttt{HEIGHT > 500}).
 
-We emphasize that this evaluation is not the same as the usual left-to-right lazy evaluation of logical expressions, because expressions involving $\Sigma$-statements are not treated the same way as usual boolean expressions: they are evaluated last and in zero-knowledge. In fact, $\texttt{pkA}$ is not of type \texttt{Boolean} \lnote{do we use \texttt{Boolean} or \texttt{Bool}?}. It is of type \texttt{GroupElement}; the compiler automatically converts it to \texttt{proveDlog(\texttt{pkA})}, which is of type \texttt{SigmaProp}. Type   \texttt{ProveDlog} is special because it is used differently by the prover (who constructs the proof) and the verifier (who checks it); moreover, variables of this type cannot be stored in boxes (Section \ref{sec:context}) or context extensions (Section \ref{sec:extension}).
+We emphasize that this evaluation is not the same as the usual left-to-right lazy evaluation of logical expressions, because expressions involving $\Sigma$-statements are not treated the same way as usual boolean expressions: they are evaluated last and in zero-knowledge. In fact, $\texttt{pkA}$ is not of type \texttt{Boolean} \lnote{do we use \texttt{Boolean} or \texttt{Bool}?}. It is of type \texttt{GroupElement}; the compiler automatically converts it to \texttt{proveDlog(\texttt{pkA})}, which is of type \texttt{ProveDlog}. Type   \texttt{ProveDlog} is special because it is used differently by the prover (who constructs the proof) and the verifier (who checks it); moreover, variables of this type cannot be stored in boxes (Section \ref{sec:context}) or context extensions (Section \ref{sec:extension}). \lnote{the type system is undergoing changes, so this needs fixing}
 
 
-\lnote{Should we have an example with fees? According to Dima, Fees are implemented as boxes with TrueLeaf as a proposition, last transaction in a block consumes all this just created boxes and in favor of miner.}
+\lnote{Should we have an example with fees? According to Dima, fees are implemented as boxes with TrueLeaf as a proposition, last transaction in a block consumes all this just created boxes and in favor of miner.}
 
 
 \subsection{Accessing the Context and Box Contents}
@@ -403,7 +403,11 @@ The example in the paragraph is not meant for practical implementation; rather, 
 
 
 \subsection{Merkle Trees}
-Explain \texttt{isMember} and provide an example of usage. Explain that the context also contains the root hash of the all the unspent output boxes in the previous block \lnote{check: previous or current block? It would seem that the current is not available, so it should be previous.}, available via the predefined variable \texttt{LastBlockUtxoRootHash}. Give examples of usage, such as oracle, MAST, FSM.
+Explain \texttt{isMember} and provide an example of usage. Explain that the context also contains the root hash of the all the unspent output boxes in the previous block \lnote{check: previous or current block? It would seem that the current is not available, so it should be previous.}, available via the predefined variable \texttt{LastBlockUtxoRootHash}. Give examples of usage, such as oracle, MAST, FSM. (For the oracle, explain that our language is rich enough to support signature verification within the script.)
+
+\lnote{All of this has to wait until there are working code examples in \langname (currently, the examples in \texttt{OracleExamplesSpecification} and \texttt{MASTExampleSpecification} and \texttt{FsmExampleSpecification} are all written as ASTs, not as compilable code.}
+
+
 
 
 
