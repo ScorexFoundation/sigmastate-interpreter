@@ -53,9 +53,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val env = Map("g"->ci.g, "h"->ci.h, "u"->ci.u, "v"->ci.v, "s"->secret.publicImage)
     val compiledProp1 = compile(env, "s").asBoolValue
-    val compiledProp2 = compile(env, "proveDHtuple(g, h, u, v)").asBoolValue
+    val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v)").asBoolValue
     compiledProp1 shouldBe prop
-    compiledProp2 shouldBe prop
+    compiledProp2 shouldBe prop // FAILS!
   }
 
   property("DH tuple") {
