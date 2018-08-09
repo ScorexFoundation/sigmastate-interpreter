@@ -304,6 +304,12 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
   override def cost[C <: Context[C]](context: C) = Cost.MultiplyGroup + left.cost(context) + right.cost(context)
 }
 
+case class StringConcat(left: Value[SString.type], right: Value[SString.type])
+  extends TwoArgumentsOperation[SString.type, SString.type, SString.type] with NotReadyValue[SString.type] {
+  override def tpe: SString.type = left.tpe
+  override val opCode: OpCode = StringConcatCode
+}
+
 // Relation
 
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type]
