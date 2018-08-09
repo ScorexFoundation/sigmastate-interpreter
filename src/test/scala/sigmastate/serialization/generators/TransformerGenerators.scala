@@ -153,7 +153,9 @@ trait TransformerGenerators {
       mkMinus(left, right),
       mkMultiply(left, right),
       mkDivide(left, right),
-      mkModulo(left, right)
+      mkModulo(left, right),
+      mkMin(left, right),
+      mkMax(left, right)
     )
   } yield node
 

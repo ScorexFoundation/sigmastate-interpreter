@@ -48,6 +48,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(DivisionCode, mkDivide[SNumericType]),
     TwoArgumentsSerializer(ModuloCode, mkModulo[SNumericType]),
     TwoArgumentsSerializer(PlusCode, mkPlus[SNumericType]),
+    TwoArgumentsSerializer(MinCode, mkMin[SNumericType]),
+    TwoArgumentsSerializer(MaxCode, mkMax[SNumericType]),
     ProveDiffieHellmanTupleSerializer(mkProveDiffieHellmanTuple),
     ProveDlogSerializer(mkProveDlog),
     CaseObjectSerialization(TrueCode, TrueLeaf),

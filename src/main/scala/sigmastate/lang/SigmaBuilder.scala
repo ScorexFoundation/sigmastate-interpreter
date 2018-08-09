@@ -27,6 +27,8 @@ trait SigmaBuilder {
   def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkDivide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkModulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkMin[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkMax[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
 
   def mkOR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
   def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
@@ -183,6 +185,12 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkModulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.ModuloCode) })
+
+  override def mkMin[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MinCode)})
+
+  override def mkMax[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MaxCode)})
 
   override def mkOR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     OR(input)
@@ -362,6 +370,7 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                                 elementType: T): Constant[SCollection[T]] =
     ConstantNode[SCollection[T]](values, SCollection(elementType))
+
 }
 
 trait TypeConstraintCheck {

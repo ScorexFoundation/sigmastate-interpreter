@@ -59,6 +59,9 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))
 
+    case Apply(ByteArrayToBigIntSym, Seq(arg: Value[SByteArray]@unchecked)) =>
+      Some(mkByteArrayToBigInt(arg))
+
     case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
       Some(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 

@@ -33,4 +33,10 @@ package object sigmastate {
     */
   def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkModulo(left, right)
+
+  def Min[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    mkMin(left, right)
+
+  def Max[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    mkMax(left, right)
 }

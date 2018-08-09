@@ -156,11 +156,20 @@ class TestingInterpreterSpecification extends PropSpec
 //  }
 
   property("Evaluate arithmetic ops") {
-    testEval("1 + 2 == 3")
-    testEval("5 - 1 == 4")
-    testEval("5 * 2 == 10")
-    testEval("5 / 2 == 2")
-    testEval("5 % 2 == 1")
+    def testWithCasting(castSuffix: String): Unit = {
+      testEval(s"1.$castSuffix + 2.$castSuffix == 3.$castSuffix")
+      testEval(s"5.$castSuffix - 1.$castSuffix == 4.$castSuffix")
+      testEval(s"5.$castSuffix * 2.$castSuffix == 10.$castSuffix")
+      testEval(s"5.$castSuffix / 2.$castSuffix == 2.$castSuffix")
+      testEval(s"5.$castSuffix % 2.$castSuffix == 1.$castSuffix")
+      testEval(s"min(5.$castSuffix, 2.$castSuffix) == 2.$castSuffix")
+      testEval(s"max(5.$castSuffix, 2.$castSuffix) == 5.$castSuffix")
+    }
+    testWithCasting("toByte")
+    testWithCasting("toShort")
+    testWithCasting("toInt")
+    testWithCasting("toLong")
+    testWithCasting("toBigInt")
   }
 
   property("numeric casts") {

@@ -5,7 +5,7 @@ import sigmastate.serialization.OpCodes._
 
 trait OpcodesGen {
 
-  val aritmeticCodeGen: Gen[OpCode] = Gen.oneOf(MinusCode, PlusCode, MultiplyCode, DivisionCode, ModuloCode)
+  val arithmeticCodeGen: Gen[OpCode] = Gen.oneOf(MinusCode, PlusCode, MultiplyCode, DivisionCode, ModuloCode, MinCode, MaxCode)
 
 
 }

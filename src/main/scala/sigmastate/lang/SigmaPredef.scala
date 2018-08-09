@@ -55,4 +55,5 @@ object SigmaPredef {
   val ProveDHTupleSym = PredefIdent("proveDHTuple")
 
   val LongToByteArraySym = PredefIdent("longToByteArray")
+  val ByteArrayToBigIntSym = PredefIdent("byteArrayToBigInt")
 }
