@@ -186,6 +186,11 @@ class TestingInterpreterSpecification extends PropSpec
     an[ArithmeticException] should be thrownBy testEval(s"Array(${Long.MaxValue}L)(0).toInt > 0")
   }
 
+  property("string concat") {
+    testEval(""" "a" + "b" == "ab" """)
+    testEval(""" "a" + "b" != "cb" """)
+  }
+
   property("Array indexing (out of bounds with const default value)") {
     testEval("Array(1, 2).getOrElse(3, 0) == 0")
   }

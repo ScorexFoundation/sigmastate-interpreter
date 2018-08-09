@@ -354,6 +354,8 @@ case object SString extends SProduct {
   override def methods: Seq[SMethod] = Seq()
   override type WrappedType = String
   override val typeCode: TypeCode = 101: Byte
+  override def mkConstant(v: String): Value[SString.type] = StringConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.StringConstantDeclaration
 }
 
   case object SGroupElement extends SProduct with SPrimType with SEmbeddable {

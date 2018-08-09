@@ -263,6 +263,9 @@ trait Interpreter {
     case LE(BigIntConstant(l), BigIntConstant(r)) =>
       BooleanConstant.fromBoolean(l.compareTo(r) <= 0)
 
+    case StringConcat(StringConstant(l), StringConstant(r)) =>
+      StringConstant(l + r)
+
     case IsMember(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
       def invalidArg = Interpreter.error(s"Collection expected but found $key")
       val keyBytes = key.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
