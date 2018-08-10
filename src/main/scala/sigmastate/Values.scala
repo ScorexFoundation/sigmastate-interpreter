@@ -516,4 +516,59 @@ object Values {
     def isValid: Value[SBoolean.type] = SigmaPropIsValid(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
+
+  sealed trait BlockItem extends NotReadyValue[SType] {
+    def id: Int
+    def rhs: SValue
+    def isValDef: Boolean
+  }
+
+  /** IR node for let-bound expressions `let x = rhs` which is ValDef, or `let f[T] = rhs` which is FunDef.
+    * These nodes are used to represent ErgoTrees after common sub-expression elimination.
+    * This representation is more compact in serialized form.
+    * @param id unique identifier of the variable in the current scope. */
+  case class ValDef(id: Int, tpeArgs: Seq[STypeIdent], rhs: SValue) extends BlockItem {
+    val opCode: OpCode = if (tpeArgs.isEmpty) ValDefCode else FunDefCode
+    def tpe: SType = rhs.tpe
+    def cost[C <: Context[C]](ctx: C): Long = rhs.cost(ctx)
+    def isValDef: Boolean = tpeArgs.isEmpty
+  }
+  object ValDef {
+    def apply(id: Int, rhs: SValue): ValDef = ValDef(id, Nil, rhs)
+  }
+  object FunDef {
+    def unapply(d: BlockItem): Option[(Int, Seq[STypeIdent], SValue)] = d match {
+      case ValDef(id, targs, rhs) if !d.isValDef => Some((id, targs, rhs))
+      case _ => None
+    }
+  }
+
+  /** Special node which represents a reference to ValDef in was introduced as result of CSE. */
+  case class ValUse[T <: SType](valId: Int) extends NotReadyValue[T] {
+    override val opCode: OpCode = ValUseCode
+    override def cost[C <: Context[C]](context: C): Long = 1
+  }
+
+  /** The order of ValDefs in the block is used to assign ids to ValUse(id) nodes
+    * For all i: items(i).id == {number of ValDefs preceded in a graph} with respect to topological order.
+    * Specific topological order doesn't really matter, what is important is to preserve semantic linkage
+    * between ValUse(id) and ValDef with the corresponding id.
+    * This convention allow to valid serializing ids because we always serializing and deserializing
+    * in a fixed well defined order.
+    */
+  case class BlockValue(items: IndexedSeq[BlockItem], result: SValue) extends NotReadyValue[SType] {
+    val opCode: OpCode = BlockValueCode
+    def tpe: SType = result.tpe
+    def cost[C <: Context[C]](ctx: C): Long = items.map(_.cost(ctx)).sum + result.cost(ctx)
+  }
+
+  case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
+    lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
+    val opCode: OpCode = FuncValueCode
+    def cost[C <: Context[C]](context: C): Long = 1
+  }
+  object FuncValue {
+    def apply(argId: Byte, tArg: SType, body: SValue): FuncValue =
+      FuncValue(IndexedSeq((argId,tArg)), body)
+  }
 }

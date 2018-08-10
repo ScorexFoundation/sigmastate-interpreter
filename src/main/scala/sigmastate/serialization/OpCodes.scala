@@ -38,8 +38,9 @@ object OpCodes extends ValueCodes {
   // serialization is not required
   val Undefined: OpCode = 0: Byte
 
-  // variable
+  // variables
   val TaggedVariableCode: OpCode = (LastConstantCode + 1).toByte
+  val ValUseCode: OpCode = (LastConstantCode + 2).toByte   // reserved 3 - 9
 
   val LongToByteArrayCode       : OpCode = (LastConstantCode + 10).toByte
   val ByteArrayToBigIntCode    : OpCode = (LastConstantCode + 11).toByte
@@ -124,7 +125,13 @@ object OpCodes extends ValueCodes {
 
   // Deserialization codes
   val DeserializeContextCode : OpCode = (LastConstantCode + 100).toByte
-  val DeserializeRegisterCode: OpCode = (LastConstantCode + 101).toByte  // reserved 102 - 109
+  val DeserializeRegisterCode: OpCode = (LastConstantCode + 101).toByte
+
+  // Block codes
+  val ValDefCode: OpCode = (LastConstantCode + 102).toByte
+  val FunDefCode: OpCode = (LastConstantCode + 103).toByte
+  val BlockValueCode: OpCode = (LastConstantCode + 104).toByte
+  val FuncValueCode: OpCode = (LastConstantCode + 105).toByte // reserved 106 - 109
 
   val SomeValueCode           : OpCode = (LastConstantCode + 110).toByte
   val NoneValueCode           : OpCode = (LastConstantCode + 111).toByte

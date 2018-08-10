@@ -1,11 +1,15 @@
 package sigmastate.eval
 
 import java.lang.reflect.Method
+
 import scapi.sigma.DLogProtocol
-import sigmastate.Values.{Constant, Value, IntConstant, SigmaBoolean, ConcreteCollection}
+import sigmastate.Values
+import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, Value, IntConstant, SigmaBoolean, ValDef, ConcreteCollection}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.Costing
+
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -210,16 +214,60 @@ trait Evaluation extends Costing {
     res.asInstanceOf[ContextFunc[T]]
   }
 
+  /** Describes assignment of valIds for symbols which become ValDefs.
+    * Each ValDef in current scope have entry in this map */
+  type DefEnv = Map[Sym, Int]
+
+  def elemToSType[T <: SType](e: Elem[T#WrappedType]): T = (e match {
+    case ByteElement => SByte
+    case ShortElement => SShort
+    case IntElement => SInt
+    case LongElement => SLong
+    case _: BoxElem[_] => SBox
+    case EcPointElement => SGroupElement
+    case _: SigmaElem[_] => SSigmaProp
+    case ce: ColElem[_,_] => SCollection(elemToSType(ce.eItem))
+    case _ => error(s"Don't know how to convert Elem $e to SType")
+  }).asType[T]
+
+  def buildValDef(d: Def[_], env: DefEnv, nextFreeId: Int): ValDef = d match {
+    case Lambda(lam, _, x, y) =>
+      val env1 = env + (x -> nextFreeId) // arguments are treated as ValDefs and occupy valId space
+      val rhs = processAstGraph(lam, env1, nextFreeId + 1)
+      FuncValue(nextFreeId, elemToSType(x.elem), block)
+      ValDef(nextFreeId, Seq(), rhs)
+    case _ =>
+
+  }
+
+  def processAstGraph(g: AstGraph, env: DefEnv, nextFreeId: Int): SValue = {
+    val valdefs = new ArrayBuffer[ValDef]
+    var curId = nextFreeId
+    var curEnv = env
+    for (TableEntry(s, d) <- g.schedule) {
+      val n = g.node(s).get
+      if (n.outSyms.length > 1) {
+        val vd = buildValDef(d, curEnv, curId)
+        curEnv = curEnv + (s -> curId)  // assign valId to s, so it can be use in ValUse
+        curId += 1
+        valdefs += vd
+      }
+    }
+    val Seq(Def(root)) = g.roots
+    val ValDef(_,_, rhs) = buildValDef(root, curId)
+    val block = BlockValue(valdefs.toIndexedSeq, rhs)
+    block
+//    g match {
+//      case Lambda(lam,_,x,_) =>
+//        FuncValue(nextFreeId, elemToSType(x.elem), block)
+//      case _ => block
+//    }
+  }
+
   def buildTree[T <: SType](f: Rep[Context => T#WrappedType]): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
     val g = new PGraph(lam.y)
-    val schedule = g.scheduleAll
-    var i = schedule.length - 1
-    while (i >= 0) {
-//      val te = schedule(i)
-//      val
-      i += 1
-    }
-    IntConstant(1).asValue[T]
+    val block = processAstGraph(g, 1)
+    block.asValue[T]
   }
 }

@@ -113,7 +113,7 @@ object SType {
     }).asInstanceOf[ClassTag[T]]
   }
 
-  def typeOfData(x: Any): SType = x match {
+  def typeOfData(x: Any): Option[SType] = Option(x match {
     case _: Boolean => SBoolean
     case _: Byte => SByte
     case _: Short => SShort
@@ -121,7 +121,6 @@ object SType {
     case _: Long => SLong
     case _: BigInteger => SBigInt
     case _: CryptoConstants.EcPointType => SGroupElement
-    case _: SigmaBoolean => SSigmaProp
     case _: ErgoBox => SBox
     case _: AvlTreeData => SAvlTree
     case _: Unit => SUnit
@@ -135,9 +134,8 @@ object SType {
     case _: Array[ErgoBox] => SBoxArray
     case _: Array[AvlTreeData] => SAvlTreeArray
     case v: SValue => v.tpe
-    case _ => sys.error(s"Don't know how to return SType for $x: ${x.getClass}")
-  }
-
+    case _ => null
+  })
 }
 
 /** Base trait for all types which have methods (aka properties) */
