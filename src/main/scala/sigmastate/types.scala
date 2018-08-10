@@ -349,7 +349,16 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
   }
 }
 
-case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
+case object SString extends SProduct {
+  override def ancestors: Seq[SType] = Nil
+  override def methods: Seq[SMethod] = Seq()
+  override type WrappedType = String
+  override val typeCode: TypeCode = 101: Byte
+  override def mkConstant(v: String): Value[SString.type] = StringConstant(v)
+  override def dataCost(v: SType#WrappedType): Long = Cost.StringConstantDeclaration
+}
+
+  case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
   override type WrappedType = EcPointType
   override val typeCode: TypeCode = 7: Byte
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)

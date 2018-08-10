@@ -43,6 +43,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { x: Byte => roundTripTest(Constant[SByte.type](x, SByte)) }
     forAll { x: Boolean => roundTripTest(BooleanConstant.fromBoolean(x)) }
     forAll { x: Long => roundTripTest(Constant[SLong.type](x, SLong)) }
+    forAll { x: String => roundTripTest(Constant[SString.type](x, SString)) }
     forAll { x: BigInteger => roundTripTest(Constant[SBigInt.type](x, SBigInt)) }
     forAll { x: EcPointType => roundTripTest(Constant[SGroupElement.type](x, SGroupElement)) }
     forAll { x: SigmaBoolean => roundTripTest(Constant[SSigmaProp.type](x, SSigmaProp)) }

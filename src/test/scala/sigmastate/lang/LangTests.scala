@@ -1,7 +1,7 @@
 package sigmastate.lang
 
-import sigmastate.lang.Terms.Ident
-import sigmastate.Values.{ConcreteCollection, Value, LongConstant, SigmaBoolean}
+import sigmastate.lang.Terms.{Ident, MethodCall}
+import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, SigmaBoolean, Value}
 import sigmastate._
 import java.math.BigInteger
 
@@ -19,6 +19,8 @@ trait LangTests {
   def SigmaPropIdent(name: String): Value[SSigmaProp.type] = Ident(name).asValue[SSigmaProp.type]
   def BigIntIdent(name: String): Value[SBigInt.type] = Ident(name).asValue[SBigInt.type]
 
+  def plus(l: SValue, r: SValue, tpe: SType = NoType): MethodCall =
+    MethodCall(l, "+", IndexedSeq(r), tpe)
 
   val EV: Map[String, Any] = Map()
 

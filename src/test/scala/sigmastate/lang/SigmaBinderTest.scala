@@ -23,10 +23,12 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   property("simple expressions") {
     bind(env, "x") shouldBe IntConstant(10)
     bind(env, "b1") shouldBe ByteConstant(1)
-    bind(env, "x+y") shouldBe Plus(10, 11)
+    bind(env, "x-y") shouldBe Minus(10, 11)
+    bind(env, "x+y") shouldBe plus(10, 11)
     bind(env, "c1 && c2") shouldBe MethodCall(TrueLeaf, "&&", IndexedSeq(FalseLeaf))
     bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
-    bind(env, "HEIGHT + 1") shouldBe mkPlus(Height, 1)
+    bind(env, "HEIGHT - 1") shouldBe mkMinus(Height, 1)
+    bind(env, "HEIGHT + 1") shouldBe plus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
     bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10, 20))
     bind(env, "arr1 ++ arr2") shouldBe MethodCall(Array[Byte](1, 2), "++", IndexedSeq(Array[Byte](10, 20))) // AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
@@ -53,8 +55,10 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       Block(Let("X", SInt, IntConstant(10)), GT(IntIdent("X"), 2))
     bind(env, "{let X = 10; X >= X}") shouldBe
       Block(Let("X", SInt, IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
+    bind(env, "{let X = 10 - 1; X >= X}") shouldBe
+      Block(Let("X", SInt, Minus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
     bind(env, "{let X = 10 + 1; X >= X}") shouldBe
-      Block(Let("X", SInt, Plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
+      Block(Let("X", NoType, plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
     bind(env,
       """{let X = 10
         |let Y = 11
@@ -84,9 +88,11 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "()") shouldBe UnitConstant
     bind(env, "(1)") shouldBe IntConstant(1)
     bind(env, "(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
-    bind(env, "(1, x + 1)") shouldBe Tuple(IntConstant(1), Plus(10, 1))
+    bind(env, "(1, x - 1)") shouldBe Tuple(IntConstant(1), Minus(10, 1))
+    bind(env, "(1, x + 1)") shouldBe Tuple(IntConstant(1), plus(10, 1))
     bind(env, "(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
-    bind(env, "(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), Plus(2, 3), IntConstant(4))
+    bind(env, "(1, 2 - 3, 4)") shouldBe Tuple(IntConstant(1), Minus(2, 3), IntConstant(4))
+    bind(env, "(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), plus(2, 3), IntConstant(4))
   }
 
   property("types") {
@@ -118,30 +124,34 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Some(None)") shouldBe SomeValue(NoneValue(NoType))
     bind(env, "Some(10)") shouldBe SomeValue(IntConstant(10))
     bind(env, "Some(X)") shouldBe SomeValue(Ident("X"))
+    bind(env, "Some(Some(X - 1))") shouldBe
+      SomeValue(SomeValue(mkMinus(Ident("X").asValue[SInt.type], IntConstant(1))))
     bind(env, "Some(Some(X + 1))") shouldBe
-      SomeValue(SomeValue(mkPlus(Ident("X").asValue[SInt.type], IntConstant(1))))
+      SomeValue(SomeValue(plus(Ident("X").asValue[SInt.type], IntConstant(1))))
   }
 
   property("lambdas") {
+    bind(env, "fun (a: Int) = a - 1") shouldBe
+      Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 1))
     bind(env, "fun (a: Int) = a + 1") shouldBe
-      Lambda(IndexedSeq("a" -> SInt), NoType, mkPlus(IntIdent("a"), 1))
-    bind(env, "fun (a: Int, box: Box): Long = a + box.value") shouldBe
+      Lambda(IndexedSeq("a" -> SInt), NoType, plus(IntIdent("a"), 1))
+    bind(env, "fun (a: Int, box: Box): Long = a - box.value") shouldBe
       Lambda(IndexedSeq("a" -> SInt, "box" -> SBox), SLong,
-        mkPlus(IntIdent("a"), Select(Ident("box"), "value").asValue[SLong.type]))
-    bind(env, "fun (a) = a + 1") shouldBe
-      Lambda(IndexedSeq("a" -> NoType), NoType, mkPlus(IntIdent("a"), IntConstant(1)))
-    bind(env, "fun (a) = a + x") shouldBe
-      Lambda(IndexedSeq("a" -> NoType), NoType, mkPlus(IntIdent("a"), 10))
-    bind(env, "fun (a: Int) = { let Y = a + 1; Y + x }") shouldBe
+        mkMinus(IntIdent("a"), Select(Ident("box"), "value").asValue[SLong.type]))
+    bind(env, "fun (a) = a - 1") shouldBe
+      Lambda(IndexedSeq("a" -> NoType), NoType, mkMinus(IntIdent("a"), IntConstant(1)))
+    bind(env, "fun (a) = a - x") shouldBe
+      Lambda(IndexedSeq("a" -> NoType), NoType, mkMinus(IntIdent("a"), 10))
+    bind(env, "fun (a: Int) = { let Y = a - 1; Y - x }") shouldBe
       Lambda(IndexedSeq("a" -> SInt), NoType,
-        Block(Let("Y", NoType, mkPlus(IntIdent("a"), 1)), mkPlus(IntIdent("Y"), 10)))
+        Block(Let("Y", NoType, mkMinus(IntIdent("a"), 1)), mkMinus(IntIdent("Y"), 10)))
   }
 
   property("function definitions") {
-    bind(env, "{let f = fun (a: Int) = a + 1; f}") shouldBe
-      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, mkPlus(IntIdent("a"), 1))), Ident("f"))
-    bind(env, "{fun f(a: Int) = a + x; f}") shouldBe
-      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, mkPlus(IntIdent("a"), 10))), Ident("f"))
+    bind(env, "{let f = fun (a: Int) = a - 1; f}") shouldBe
+      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 1))), Ident("f"))
+    bind(env, "{fun f(a: Int) = a - x; f}") shouldBe
+      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 10))), Ident("f"))
   }
 
   property("predefined primitives") {

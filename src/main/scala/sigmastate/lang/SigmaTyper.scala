@@ -7,9 +7,8 @@ import sigmastate.Values._
 import sigmastate._
 import SCollection.SBooleanArray
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException}
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException, NonApplicableMethod}
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.exceptions.{TyperException, InvalidBinaryOperationParameters}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
@@ -184,7 +183,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
             else
               error(s"Invalid argument type for $m, expected $tCol but was ${r.tpe}")
           case _ =>
-            error(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs")
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs")
         }
         case SGroupElement => (m, newArgs) match {
           case ("*", Seq(r)) =>
@@ -193,7 +192,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
             else
               error(s"Invalid argument type for $m, expected $SGroupElement but was ${r.tpe}")
           case _ =>
-            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
         case SSigmaProp => (m, newArgs) match {
           case ("||" | "&&", Seq(r)) => r.tpe match {
@@ -210,19 +209,21 @@ class SigmaTyper(val builder: SigmaBuilder) {
               error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}")
           }
           case _ =>
-            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
-        case nl: SNumericType => (m, newArgs) match {
-          case ("*", Seq(r)) => r.tpe match {
-            case nr: SNumericType =>
-              bimap(env, "*", newObj.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
+        case _: SNumericType => (m, newArgs) match {
+          case("+" | "*", Seq(r)) => r.tpe match {
+            case _: SNumericType => m match {
+              case "*" => bimap(env, "*", newObj.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
+              case "+" => bimap(env, "+", newObj.asNumValue, r.asNumValue)(mkPlus)(tT, tT)
+            }
             case _ =>
-              error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
+              throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }
-
           case _ =>
-            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
+
         case SBoolean => (m, newArgs) match {
           case ("||" | "&&", Seq(r)) => r.tpe match {
             case SBoolean =>
@@ -237,7 +238,17 @@ class SigmaTyper(val builder: SigmaBuilder) {
           }
 
           case _ =>
-            error(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+        }
+        case _: SString.type => (m, newArgs) match {
+          case ("+", Seq(r)) => r.tpe match {
+            case _: SString.type =>
+              bimap(env, "+", newObj.asStringValue, r.asStringValue)(mkStringConcat)(tT, tT)
+            case _ =>
+              throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
+          }
+          case _ =>
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
         case t =>
           error(s"Invalid operation $mc on type $t")
@@ -334,6 +345,8 @@ class SigmaTyper(val builder: SigmaBuilder) {
       if (!p1.tpe.isSigmaProp)
         error(s"Invalid operation ProofBytes: expected argument types ($SSigmaProp); actual: (${p.tpe})")
       SigmaPropBytes(p1.asSigmaProp)
+
+    case SomeValue(x) => SomeValue(assignType(env, x))
 
     case Height => Height
     case Self => Self

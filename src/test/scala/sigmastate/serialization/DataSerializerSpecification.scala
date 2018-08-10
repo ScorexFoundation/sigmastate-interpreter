@@ -6,9 +6,8 @@ import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.SigmaBoolean
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate._
-import sigmastate.utils.ByteArrayBuilder
+import sigmastate.interpreter.CryptoConstants.EcPointType
 
 class DataSerializerSpecification extends SerializationSpecification {
 
@@ -56,6 +55,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: Byte => roundtrip[SByte.type](x, SByte) }
     forAll { x: Boolean => roundtrip[SBoolean.type](x, SBoolean) }
     forAll { x: Long => roundtrip[SLong.type](x, SLong) }
+    forAll { x: String => roundtrip[SString.type](x, SString) }
     forAll { x: BigInteger => roundtrip[SBigInt.type](x, SBigInt) }
     forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
     forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x, SSigmaProp) }

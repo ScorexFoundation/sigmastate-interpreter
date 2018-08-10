@@ -49,4 +49,10 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
       roundTripTest(Exponentiate(x1, x2))
     }
   }
+
+  property("StringConcat: Serializer round trip") {
+    forAll(stringConstGen, stringConstGen) { (x1: StringConstant, x2: StringConstant) =>
+      roundTripTest(StringConcat(x1, x2))
+    }
+  }
 }

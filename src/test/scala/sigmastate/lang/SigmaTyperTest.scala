@@ -6,7 +6,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException}
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, NonApplicableMethod, TyperException}
 import sigmastate.serialization.generators.ValueGenerators
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
@@ -418,7 +418,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 % false")
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "min(1, false)")
     an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "max(1, false)")
-    an[TyperException] should be thrownBy typecheck(env, "1 * false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 * false")
+    an[InvalidBinaryOperationParameters] should be thrownBy typecheck(env, "1 + \"a\"")
+    an[NonApplicableMethod] should be thrownBy typecheck(env, "1 || 1")
+    an[NonApplicableMethod] should be thrownBy typecheck(env, "col1 || col2")
+    an[NonApplicableMethod] should be thrownBy typecheck(env, "g1 || g2")
+    an[NonApplicableMethod] should be thrownBy typecheck(env, "true ++ false")
+    an[NonApplicableMethod] should be thrownBy typecheck(env, "\"a\" ++ \"a\"")
   }
 
   property("upcast for binary operations with numeric types") {
@@ -446,5 +452,9 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("invalid cast method for numeric types") {
     an[MethodNotFound] should be thrownBy typecheck(env, "1.toSuperBigInteger")
+  }
+
+  property("string concat") {
+    typecheck(env, """ "a" + "b" """) shouldBe SString
   }
 }

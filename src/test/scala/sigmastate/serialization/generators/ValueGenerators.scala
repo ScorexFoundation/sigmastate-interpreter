@@ -61,6 +61,8 @@ trait ValueGenerators extends TypeGenerators {
     arbInt.arbitrary.map { v => mkConstant[SInt.type](v, SInt) }
   val longConstGen: Gen[LongConstant] =
     arbLong.arbitrary.map { v => mkConstant[SLong.type](v, SLong) }
+  val stringConstGen: Gen[StringConstant] =
+    arbString.arbitrary.map { v => mkConstant[SString.type](v, SString) }
   val bigIntConstGen: Gen[BigIntConstant] =
     arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v.bigInteger, SBigInt) }
   val byteArrayConstGen: Gen[CollectionConstant[SByte.type]] = for {

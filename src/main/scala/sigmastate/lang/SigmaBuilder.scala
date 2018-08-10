@@ -137,6 +137,7 @@ trait SigmaBuilder {
   def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T]
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
+  def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -371,6 +372,8 @@ class StdSigmaBuilder extends SigmaBuilder {
                                                 elementType: T): Constant[SCollection[T]] =
     ConstantNode[SCollection[T]](values, SCollection(elementType))
 
+  override def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type] =
+    StringConcat(left, right)
 }
 
 trait TypeConstraintCheck {

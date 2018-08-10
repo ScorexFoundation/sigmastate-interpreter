@@ -134,6 +134,7 @@ object Values {
   type ShortConstant = Constant[SShort.type]
   type IntConstant = Constant[SInt.type]
   type LongConstant = Constant[SLong.type]
+  type StringConstant = Constant[SString.type]
   type BigIntConstant = Constant[SBigInt.type]
   type BoxConstant = Constant[SBox.type]
   type GroupElementConstant = Constant[SGroupElement.type]
@@ -178,6 +179,15 @@ object Values {
       case Constant(value: BigInteger, SBigInt) => Some(value)
       case _ => None
     }
+  }
+  object StringConstant {
+    def apply(value: String): Constant[SString.type]  = Constant[SString.type](value, SString)
+    def unapply(v: SValue): Option[String] = v match {
+      case Constant(value: String, SString) => Some(value)
+      case _ => None
+    }
+
+    def Empty = StringConstant("")
   }
 
   object BoxConstant {
