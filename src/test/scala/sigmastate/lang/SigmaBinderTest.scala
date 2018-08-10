@@ -24,9 +24,11 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "x") shouldBe IntConstant(10)
     bind(env, "b1") shouldBe ByteConstant(1)
     bind(env, "x-y") shouldBe Minus(10, 11)
+    bind(env, "x+y") shouldBe plus(10, 11)
     bind(env, "c1 && c2") shouldBe MethodCall(TrueLeaf, "&&", IndexedSeq(FalseLeaf))
     bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
     bind(env, "HEIGHT - 1") shouldBe mkMinus(Height, 1)
+    bind(env, "HEIGHT + 1") shouldBe plus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
     bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10, 20))
     bind(env, "arr1 ++ arr2") shouldBe MethodCall(Array[Byte](1, 2), "++", IndexedSeq(Array[Byte](10, 20))) // AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
@@ -55,6 +57,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       Block(Let("X", SInt, IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
     bind(env, "{let X = 10 - 1; X >= X}") shouldBe
       Block(Let("X", SInt, Minus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
+    bind(env, "{let X = 10 + 1; X >= X}") shouldBe
+      Block(Let("X", NoType, plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
     bind(env,
       """{let X = 10
         |let Y = 11
@@ -85,8 +89,10 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "(1)") shouldBe IntConstant(1)
     bind(env, "(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
     bind(env, "(1, x - 1)") shouldBe Tuple(IntConstant(1), Minus(10, 1))
+    bind(env, "(1, x + 1)") shouldBe Tuple(IntConstant(1), plus(10, 1))
     bind(env, "(1, 2, 3)") shouldBe Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
     bind(env, "(1, 2 - 3, 4)") shouldBe Tuple(IntConstant(1), Minus(2, 3), IntConstant(4))
+    bind(env, "(1, 2 + 3, 4)") shouldBe Tuple(IntConstant(1), plus(2, 3), IntConstant(4))
   }
 
   property("types") {
@@ -120,11 +126,15 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Some(X)") shouldBe SomeValue(Ident("X"))
     bind(env, "Some(Some(X - 1))") shouldBe
       SomeValue(SomeValue(mkMinus(Ident("X").asValue[SInt.type], IntConstant(1))))
+    bind(env, "Some(Some(X + 1))") shouldBe
+      SomeValue(SomeValue(plus(Ident("X").asValue[SInt.type], IntConstant(1))))
   }
 
   property("lambdas") {
     bind(env, "fun (a: Int) = a - 1") shouldBe
       Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 1))
+    bind(env, "fun (a: Int) = a + 1") shouldBe
+      Lambda(IndexedSeq("a" -> SInt), NoType, plus(IntIdent("a"), 1))
     bind(env, "fun (a: Int, box: Box): Long = a - box.value") shouldBe
       Lambda(IndexedSeq("a" -> SInt, "box" -> SBox), SLong,
         mkMinus(IntIdent("a"), Select(Ident("box"), "value").asValue[SLong.type]))
