@@ -61,19 +61,27 @@ object ErgoBoxCandidate {
 
   object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
-    override def serializeBody(obj: ErgoBoxCandidate, w: ByteWriter): Unit = {
+    def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
+                                        digestsInTx: Option[Array[Digest32]],
+                                        w: ByteWriter): Unit = {
       w.putULong(obj.value)
       w.putValue(obj.proposition)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
-        w.putBytes(id)
+        if (digestsInTx.isDefined) {
+          val digestIndex = digestsInTx.get.indexOf(id)
+          if (digestIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
+          w.putUInt(digestIndex)
+        } else {
+          w.putBytes(id)
+        }
         w.putULong(amount)
       }
       val nRegs = obj.additionalRegisters.keys.size
       if (nRegs + ErgoBox.startingNonMandatoryIndex > 255)
         sys.error(s"The number of non-mandatory indexes $nRegs exceeds ${255 - ErgoBox.startingNonMandatoryIndex} limit.")
       w.putUByte(nRegs)
-      // we assume non-mandatory indexes are densely packed from startingNonManadatoryIndex
+      // we assume non-mandatory indexes are densely packed from startingNonMandatoryIndex
       // this convention allows to save 1 bite for each register
       val startReg = ErgoBox.startingNonMandatoryIndex
       val endReg = ErgoBox.startingNonMandatoryIndex + nRegs - 1
@@ -89,12 +97,22 @@ object ErgoBoxCandidate {
       }
     }
 
-    override def parseBody(r: ByteReader): ErgoBoxCandidate = {
+    override def serializeBody(obj: ErgoBoxCandidate, w: ByteWriter): Unit = {
+      serializeBodyWithIndexedDigests(obj, None, w)
+    }
+
+    def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: ByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
       val prop = r.getValue().asBoolValue
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
-        val tokenId = Digest32 @@ r.getBytes(TokenId.size)
+        val tokenId = if (digestsInTx.isDefined) {
+          val digestIndex = r.getUInt().toInt
+          if (!digestsInTx.get.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
+          digestsInTx.get.apply(digestIndex)
+        } else {
+          Digest32 @@ r.getBytes(TokenId.size)
+        }
         val amount = r.getULong()
         tokenId -> amount
       }
@@ -106,6 +124,10 @@ object ErgoBoxCandidate {
         (reg, v)
       }.toMap
       new ErgoBoxCandidate(value, prop, addTokens, regs)
+    }
+
+    override def parseBody(r: ByteReader): ErgoBoxCandidate = {
+      parseBodyWithIndexedDigests(None, r)
     }
   }
 }
