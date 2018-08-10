@@ -56,6 +56,9 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(mkProveDlog(g))
 
+    case Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
+      Some(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement))
+
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))
 
@@ -162,6 +165,9 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       val index1 = eval(env, index).asValue[SInt.type]
       val defaultValue1 = eval(env, defaultValue).asValue[SType]
       Some(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
+
+    case Apply(col, Seq(index)) if col.tpe.isCollection =>
+      Some(ByIndex(col.asCollection[SType], index.asValue[SInt.type]))
 
     case opt: OptionValue[_] =>
       error(s"Option constructors are not supported: $opt")

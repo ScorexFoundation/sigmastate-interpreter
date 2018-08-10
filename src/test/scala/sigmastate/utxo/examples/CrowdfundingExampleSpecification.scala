@@ -70,6 +70,32 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     )
     compiledScript shouldBe crowdFundingScript
 
+    // Try a version of the script that matches the white paper -- should give the same result
+    val altEnv = Map(
+      "deadline" -> 100,
+      "minToRaise" -> 1000,
+      "backerPubKey" -> backerPubKey,
+      "projectPubKey" -> projectPubKey
+    )
+
+    val altScript = compile(altEnv,
+      """
+        |       {
+        |                let fundraisingFailure = HEIGHT >= deadline && backerPubKey
+        |                let enoughRaised = fun(outBox: Box) = {
+        |                        outBox.value >= minToRaise &&
+        |                        outBox.propositionBytes == projectPubKey.propBytes
+        |                }
+        |                let fundraisingSuccess = HEIGHT < deadline &&
+        |                         projectPubKey &&
+        |                         OUTPUTS.exists(enoughRaised)
+        |
+        |                fundraisingFailure || fundraisingSuccess
+        |        }
+      """.stripMargin).asBoolValue
+
+    altScript shouldBe compiledScript
+
     val outputToSpend = ErgoBox(10, compiledScript)
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold

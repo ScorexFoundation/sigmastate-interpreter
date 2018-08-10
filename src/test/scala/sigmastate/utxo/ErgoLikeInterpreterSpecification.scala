@@ -52,6 +52,13 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)
     val wrongProp = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.u)
 
+    val env = Map("g"->ci.g, "h"->ci.h, "u"->ci.u, "v"->ci.v, "s"->secret.publicImage)
+    val compiledProp1 = compile(env, "s").asBoolValue
+    val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v)").asBoolValue
+    compiledProp1 shouldBe prop
+    compiledProp2 shouldBe prop
+
+
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -379,6 +386,13 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       EQ(ExtractId(ByIndex(Inputs, 0)), ExtractId(BoxConstant(brother))))
     prop shouldBe propExpected
 
+    // try a version of the script that matches the white paper
+    val altEnv = Map("friend" -> brother)
+    val altProp = compile(altEnv, """INPUTS.size == 2 && INPUTS(0).id == friend.id""")
+    altProp shouldBe prop
+
+
+
     val s = ErgoBox(10, prop, Seq(), Map())
 
     val ctx = ErgoLikeContext(
@@ -411,6 +425,84 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     prover.prove(prop2, ctx, fakeMessage).isFailure shouldBe true
     verifier.verify(prop2, ctx, pr, fakeMessage).success.value._1 shouldBe false
   }
+
+  /**
+    * An example script where an output could be spent only along with an output with given id
+    * (and possibly others, too).
+    */
+  property("Along with a friend and maybe others") {
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
+
+    val pubkey1 = prover.dlogSecrets.head.publicImage
+    val pubkey2 = prover.dlogSecrets(1).publicImage
+
+    val friend = ErgoBox(10, pubkey1)
+    val friendWithWrongId = ErgoBox(10, pubkey1, boxId = 120: Short)
+
+    val newBox = ErgoBox(20, pubkey2)
+
+    val newBoxes = IndexedSeq(newBox)
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+
+    val env = Map("friend" -> friend)
+    val prop = compile(env,
+      """{
+        |
+        | let isFriend = fun (inputBox: Box) = {inputBox.id == friend.id}
+        | INPUTS.exists (isFriend)
+         }""".stripMargin).asBoolValue
+
+    val propExpected = Exists(Inputs, 21, EQ(ExtractId(TaggedBox(21)), ExtractId(BoxConstant(friend))))
+    prop shouldBe propExpected
+
+    // same script written differently
+    val altProp = compile(env, "INPUTS.exists (fun (inputBox: Box) = {inputBox.id == friend.id})")
+    altProp shouldBe prop
+
+    val s = ErgoBox(10, prop, Seq(), Map())
+
+    val ctx1 = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(friend, s),
+      spendingTransaction,
+      self = s)
+
+    val pr1 = prover.prove(prop, ctx1, fakeMessage).success.value
+    verifier.verify(prop, ctx1, pr1, fakeMessage).success.value._1 shouldBe true
+
+    val ctx2 = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(s, friend),
+      spendingTransaction,
+      self = s)
+
+    val pr2 = prover.prove(prop, ctx2, fakeMessage).success.value
+    verifier.verify(prop, ctx2, pr2, fakeMessage).success.value._1 shouldBe true
+
+    val ctx3 = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(friend, s, friendWithWrongId),
+      spendingTransaction,
+      self = s)
+
+    val pr3 = prover.prove(prop, ctx2, fakeMessage).success.value
+    verifier.verify(prop, ctx2, pr3, fakeMessage).success.value._1 shouldBe true
+
+    val wrongCtx1 = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(friendWithWrongId, s),
+      spendingTransaction,
+      self = s)
+
+    prover.prove(prop, wrongCtx1, fakeMessage).isFailure shouldBe true
+    verifier.verify(prop, wrongCtx1, pr1, fakeMessage).success.value._1 shouldBe false
+  }
+
 
   property("If") {
     val prover = new ErgoLikeProvingInterpreter

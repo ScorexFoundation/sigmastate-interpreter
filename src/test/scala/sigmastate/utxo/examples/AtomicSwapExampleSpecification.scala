@@ -6,6 +6,8 @@ import sigmastate.Values.{ByteArrayConstant, CollectionConstant, LongConstant, T
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
+import sigmastate.utxo.SizeOf
+import scorex.utils.Random
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
@@ -19,13 +21,13 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     * this implementation is simpler. In particular, only one transaction(one output) is required per party.
     */
   property("atomic cross-chain trading") {
-    val proverA = new ErgoLikeProvingInterpreter
+    val x = Random.randomBytes(32)
+    val proverA = (new ErgoLikeProvingInterpreter).withContextExtender(1, ByteArrayConstant(x))
     val proverB = new ErgoLikeProvingInterpreter
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val verifier = new ErgoLikeInterpreter
 
-    val x = proverA.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val hx = ByteArrayConstant(Blake2b256(x))
 
     val height1 = 100000L
@@ -53,21 +55,27 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     )
     prop1 shouldBe prop1Tree
 
-    val prop2 = compile(env,
+    val script2 =
       """{
         |  anyOf(Array(
         |    HEIGHT > height2 + deadlineB && pubkeyB,
-        |    pubkeyA && blake2b256(getVar[Array[Byte]](1)) == hx
+        |    allOf(Array(
+        |        pubkeyA,
+        |        getVar[Array[Byte]](1).size<33,
+        |        blake2b256(getVar[Array[Byte]](1)) == hx
+        |    ))
         |  ))
         |}
-      """.stripMargin).asBoolValue
+      """.stripMargin
+    val prop2 = compile(env, script2).asBoolValue
 
     //chain2 script
     val prop2Tree = OR(
       AND(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB),
-      AND(pubkeyA, EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
+      AND(pubkeyA, LT(SizeOf(TaggedByteArray(1)), 33), EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
     )
     prop2 shouldBe prop2Tree
+
 
     //Preliminary checks:
 
@@ -115,5 +123,16 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       self = fakeSelf)
     val pr2 = proverB2.prove(prop1, ctx2, fakeMessage).get
     verifier.verify(prop1, ctx2, pr2, fakeMessage).get._1 shouldBe true
+
+    // Bad prover with x that is too long should fail
+    // Replace x with a longer one and hx with the hash of this longer x in the script
+    // and check that the A fails to prove
+    val badX = Random.randomBytes(33)
+    val badProverA = proverA.withContextExtender(1, ByteArrayConstant(badX))
+    val badHx = ByteArrayConstant(Blake2b256(badX))
+    val badEnv = env + ("hx"->badHx)
+    val badProp2 = compile(badEnv, script2).asBoolValue
+
+    badProverA.prove(badProp2, ctx1, fakeMessage).isSuccess shouldBe false
   }
 }

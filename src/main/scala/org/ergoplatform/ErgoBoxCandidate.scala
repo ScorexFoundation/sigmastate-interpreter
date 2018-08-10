@@ -5,7 +5,6 @@ import java.util
 import org.ergoplatform.ErgoBox._
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Digest32
-import sigmastate.STuple.STokenType
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
