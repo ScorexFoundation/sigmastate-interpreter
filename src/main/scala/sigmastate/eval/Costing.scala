@@ -124,11 +124,12 @@ trait Costing extends SigmaLibrary {
   }
 
   def opcodeToBinOp[A](opCode: Byte, eA: Elem[A]): BinOp[A,_] = opCode match {
-    case OpCodes.EqCode => Equals[A]()(eA)
-    case OpCodes.GtCode => OrderingGT[A](elemToOrdering(eA))
-    case OpCodes.LtCode => OrderingLT[A](elemToOrdering(eA))
-    case OpCodes.GeCode => OrderingGTEQ[A](elemToOrdering(eA))
-    case OpCodes.LeCode => OrderingLTEQ[A](elemToOrdering(eA))
+    case OpCodes.EqCode  => Equals[A]()(eA)
+    case OpCodes.NeqCode => NotEquals[A]()(eA)
+    case OpCodes.GtCode  => OrderingGT[A](elemToOrdering(eA))
+    case OpCodes.LtCode  => OrderingLT[A](elemToOrdering(eA))
+    case OpCodes.GeCode  => OrderingGTEQ[A](elemToOrdering(eA))
+    case OpCodes.LeCode  => OrderingLTEQ[A](elemToOrdering(eA))
     case _ => error(s"Cannot find BinOp for opcode $opCode")
   }
 
@@ -206,9 +207,6 @@ trait Costing extends SigmaLibrary {
 
       case Terms.Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
         eval(mkProveDlog(g))
-
-      case Terms.Apply(IntToByteSym, Seq(arg: Value[SInt.type]@unchecked)) =>
-        eval(mkIntToByte(arg))
 
       case Terms.Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
         eval(mkLongToByteArray(arg))

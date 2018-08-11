@@ -26,6 +26,7 @@ trait SigmaBuilder {
   def mkLT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
   def mkLE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
 
+  def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: Byte): Value[T]
   def mkPlus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkMinus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
@@ -195,26 +196,29 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkLE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
     comparisonOp(left, right, LE.apply[T])
 
+  override def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: Byte): Value[T] =
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, opCode) })
+
   override def mkPlus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.PlusCode) })
+    mkArith(left, right, OpCodes.PlusCode)
 
   override def mkMinus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MinusCode) })
+    mkArith(left, right, OpCodes.MinusCode)
 
   override def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MultiplyCode) })
+    mkArith(left, right, OpCodes.MultiplyCode)
 
   override def mkDivide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.DivisionCode) })
+    mkArith(left, right, OpCodes.DivisionCode)
 
   override def mkModulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.ModuloCode) })
+    mkArith(left, right, OpCodes.ModuloCode)
 
   override def mkMin[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MinCode)})
+    mkArith(left, right, OpCodes.MinCode)
 
   override def mkMax[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MaxCode)})
+    mkArith(left, right, OpCodes.MaxCode)
 
   override def mkOR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     OR(input)

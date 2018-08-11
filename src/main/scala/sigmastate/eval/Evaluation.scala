@@ -7,6 +7,7 @@ import sigmastate.Values
 import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, Value, IntConstant, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.Costing
+import sigmastate.serialization.OpCodes._
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -219,6 +220,7 @@ trait Evaluation extends Costing {
   type DefEnv = Map[Sym, (Int, SType)]
 
   def elemToSType[T](e: Elem[T]): SType = (e match {
+    case BooleanElement => SBoolean
     case ByteElement => SByte
     case ShortElement => SShort
     case IntElement => SInt
@@ -229,6 +231,38 @@ trait Evaluation extends Costing {
     case ce: ColElem[_,_] => SCollection(elemToSType(ce.eItem))
     case _ => error(s"Don't know how to convert Elem $e to SType")
   })
+
+  object IsArithOp {
+    def unapply(op: EndoBinOp[_]): Option[Byte] = op match {
+      case _: NumericPlus[_]    => Some(PlusCode)
+      case _: NumericMinus[_]   => Some(MinusCode)
+      case _: NumericTimes[_]   => Some(MultiplyCode)
+      case _: IntegralDivide[_] => Some(DivisionCode)
+      case _: IntegralMod[_]    => Some(ModuloCode)
+      case _ => None
+    }
+  }
+
+  object IsRelationOp {
+    def unapply(op: BinOp[_,_]): Option[(SValue, SValue) => Value[SBoolean.type]] = op match {
+      case _: Equals[_]       => Some(builder.mkEQ[SType])
+      case _: NotEquals[_]    => Some(builder.mkNEQ[SType])
+      case _: OrderingGT[_]   => Some(builder.mkGT[SType])
+      case _: OrderingLT[_]   => Some(builder.mkLT[SType])
+      case _: OrderingGTEQ[_] => Some(builder.mkGE[SType])
+      case _: OrderingLTEQ[_] => Some(builder.mkLE[SType])
+      case _ => None
+    }
+  }
+
+//  def opcodeToBinOp[A](opCode: Byte, eA: Elem[A]): BinOp[A,_] = opCode match {
+//    case OpCodes.EqCode => Equals[A]()(eA)
+//    case OpCodes.GtCode => OrderingGT[A](elemToOrdering(eA))
+//    case OpCodes.LtCode => OrderingLT[A](elemToOrdering(eA))
+//    case OpCodes.GeCode => OrderingGTEQ[A](elemToOrdering(eA))
+//    case OpCodes.LeCode => OrderingLTEQ[A](elemToOrdering(eA))
+//    case _ => error(s"Cannot find BinOp for opcode $opCode")
+//  }
 
   def buildValDef(mainG: PGraph, env: DefEnv, s: Sym, defId: Int): SValue = s match {
     case _ if env.contains(s) =>
@@ -243,6 +277,13 @@ trait Evaluation extends Costing {
     case Def(Const(x)) =>
       val tpe = elemToSType(s.elem)
       builder.mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+    case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
+      val Seq(x, y) = Seq(xSym, ySym).map(buildValDef(mainG, env, _, defId))
+      builder.mkArith(x.asNumValue, y.asNumValue, opCode)
+    case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
+      val Seq(x, y) = Seq(xSym, ySym).map(buildValDef(mainG, env, _, defId))
+      mkNode(x, y)
+
     case _ =>
       !!!(s"Don't know how to buildValDef($mainG, $s, $env, $defId)")
   }
