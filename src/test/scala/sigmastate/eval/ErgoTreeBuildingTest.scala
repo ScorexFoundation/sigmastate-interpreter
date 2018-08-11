@@ -1,11 +1,13 @@
 package sigmastate.eval
 
+import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
-import sigmastate.Values.{ShortConstant, LongConstant, FalseLeaf, TrueLeaf, BlockValue, IntConstant, ByteConstant, ValDef, ValUse}
+import sigmastate.Values.{LongConstant, FuncValue, BlockValue, IntConstant, ValDef, ValUse}
 import sigmastate.serialization.OpCodes._
 
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
+import sigmastate.utxo.{ExtractAmount, SizeOf}
 
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
@@ -30,12 +32,18 @@ class ErgoTreeBuildingTest extends BaseCtxTests
 //    build(noEnv, "and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1", FalseLeaf)
   }
 
-//  test("context data") {
-//    build(noEnv, "height1", "HEIGHT + 1L", LongConstant(101))
-//    build(noEnv, "height2", "HEIGHT > 1L", TrueLeaf)
-//    build(noEnv, "size", "INPUTS.size + OUTPUTS.size", IntConstant(2))
-//    build(noEnv, "value", "SELF.value + 1L", LongConstant(101))
-//  }
+  test("context data") {
+    import IR.builder._
+    build(noEnv, "height1", "HEIGHT + 1L", mkPlus(Height, LongConstant(1)))
+    build(noEnv, "size", "INPUTS.size + OUTPUTS.size", mkPlus(SizeOf(Inputs), SizeOf(Outputs)))
+    build(noEnv, "value", "SELF.value + 1L", mkPlus(ExtractAmount(Self), LongConstant(1)))
+  }
+
+  test("simple lambdas") {
+    import IR.builder._
+    build(noEnv, "lam1", "fun (x: Long) = HEIGHT + x", FuncValue(Vector((2,SLong)), mkPlus(Height, ValUse(2,SLong))))
+    build(noEnv, "lam2", "{ let f = fun (x: Long) = HEIGHT + x; f }", FuncValue(Vector((2,SLong)), mkPlus(Height, ValUse(2,SLong))))
+  }
 
 //  test("Crowd Funding") {
 //    build(envCF, "CrowdFunding", crowdFundingScript, FalseLeaf)

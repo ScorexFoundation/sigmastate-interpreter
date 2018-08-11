@@ -2,12 +2,13 @@ package sigmastate.eval
 
 import java.lang.reflect.Method
 
+import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import scapi.sigma.DLogProtocol
-import sigmastate.Values
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, Value, IntConstant, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
+import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, Value, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.Costing
 import sigmastate.serialization.OpCodes._
+import sigmastate.utxo.{ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -66,7 +67,6 @@ trait Evaluation extends Costing {
   }
 
   import sigmastate._
-  import Values.{FalseLeaf, TrueLeaf}
   import special.sigma.{Context => SigmaContext}
 
   type ContextFunc[T <: SType] = SigmaContext => Value[T]
@@ -264,28 +264,38 @@ trait Evaluation extends Costing {
 //    case _ => error(s"Cannot find BinOp for opcode $opCode")
 //  }
 
-  def buildValDef(mainG: PGraph, env: DefEnv, s: Sym, defId: Int): SValue = s match {
-    case _ if env.contains(s) =>
-      val (id, tpe) = env(s)
-      ValUse(id, tpe) // recursion base
-    case Def(Lambda(lam, _, x, y)) =>
-      val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
-      val env1 = env + (x -> (varId, elemToSType(x.elem)))
-      val block = processAstGraph(mainG, env1, lam, varId + 1)
-      val rhs = FuncValue(varId, elemToSType(x.elem), block)
-      rhs
-    case Def(Const(x)) =>
-      val tpe = elemToSType(s.elem)
-      builder.mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
-    case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
-      val Seq(x, y) = Seq(xSym, ySym).map(buildValDef(mainG, env, _, defId))
-      builder.mkArith(x.asNumValue, y.asNumValue, opCode)
-    case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
-      val Seq(x, y) = Seq(xSym, ySym).map(buildValDef(mainG, env, _, defId))
-      mkNode(x, y)
+  def buildValDef(mainG: PGraph, env: DefEnv, s: Sym, defId: Int): SValue = {
+    def recurse[T <: SType](s: Sym) = buildValDef(mainG, env, s, defId).asValue[T]
+    s match {
+      case _ if env.contains(s) =>
+        val (id, tpe) = env(s)
+        ValUse(id, tpe) // recursion base
+      case Def(Lambda(lam, _, x, y)) =>
+        val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
+        val env1 = env + (x -> (varId, elemToSType(x.elem)))
+        val block = processAstGraph(mainG, env1, lam, varId + 1)
+        val rhs = FuncValue(varId, elemToSType(x.elem), block)
+        rhs
+      case Def(Const(x)) =>
+        val tpe = elemToSType(s.elem)
+        builder.mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+      case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        builder.mkArith(x.asNumValue, y.asNumValue, opCode)
+      case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkNode(x, y)
 
-    case _ =>
-      !!!(s"Don't know how to buildValDef($mainG, $s, $env, $defId)")
+      case ContextM.HEIGHT(_) => Height
+      case ContextM.INPUTS(_) => Inputs
+      case ContextM.OUTPUTS(_) => Outputs
+      case ContextM.SELF(_) => Self
+      case ColM.length(col) => SizeOf(recurse(col).asCollection[SType])
+      case BoxM.value(box) => ExtractAmount(recurse[SBox.type](box))
+
+      case Def(d) =>
+        !!!(s"Don't know how to buildValDef($mainG, $d, $env, $defId)")
+    }
   }
 
   def processAstGraph(mainG: PGraph, env: DefEnv, subG: AstGraph, nextFreeId: Int): SValue = {

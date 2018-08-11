@@ -30,8 +30,10 @@ trait Costing extends SigmaLibrary {
   import ConcreteCostedBuilder._
   import Costed._;
   import CostedPrim._;
+  import CostedFunc._;
   import ProveDlogEvidence._
   import SigmaDslBuilder._
+  import ClosureBase._
 
   override def rewriteDef[T](d: Def[T]): Rep[_] = {
     val CBM = ColBuilderMethods
@@ -420,10 +422,28 @@ trait Costing extends SigmaLibrary {
           )
         }
 
+      case Terms.Lambda(Seq((n, argTpe)), tpe, Some(body)) =>
+        implicit val eAny = stypeToElem(argTpe).asElem[Any]
+        val f = fun { x: Rep[Any] =>
+          evalNode(ctx, env + (n -> CostedPrimRep(x, 0)), body)
+        }
+        mkCostedFunc(f)
       case _ =>
         error(s"Don't know how to evalNode($node)")
     }
     res.asRep[Costed[T#WrappedType]]
+  }
+
+  def mkClosure[A,B](f: Rep[A=>B]): Rep[Closure[Unit,A,B]] = {
+    implicit val eA = f.elem.eDom
+    RClosureBase(toRep(()), fun { in: Rep[(Unit, A)] => f(in._2) })
+  }
+
+  def mkCostedFunc[A,B](f: Rep[A => Costed[B]]): Rep[Costed[A => B]] = {
+    val Pair(fV, fC) = split(f)
+    val cloV = mkClosure(fV)
+    val cloC = mkClosure(fC)
+    RCostedFunc(RCostedPrim((), 0), cloV, cloC.asRep[Closure[Unit, A, Long]])
   }
 
   def buildCostedGraph[T <: SType](envVals: Map[String, SValue], tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = {
