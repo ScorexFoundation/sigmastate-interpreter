@@ -544,7 +544,7 @@ object Values {
   }
 
   /** Special node which represents a reference to ValDef in was introduced as result of CSE. */
-  case class ValUse[T <: SType](valId: Int) extends NotReadyValue[T] {
+  case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
     override val opCode: OpCode = ValUseCode
     override def cost[C <: Context[C]](context: C): Long = 1
   }
@@ -568,7 +568,7 @@ object Values {
     def cost[C <: Context[C]](context: C): Long = 1
   }
   object FuncValue {
-    def apply(argId: Byte, tArg: SType, body: SValue): FuncValue =
+    def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
       FuncValue(IndexedSeq((argId,tArg)), body)
   }
 }
