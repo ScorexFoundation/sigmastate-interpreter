@@ -1,19 +1,20 @@
 package sigmastate.eval
 
-import sigmastate.Values.{TrueLeaf, LongConstant, FalseLeaf, IntConstant}
+import sigmastate.Values.{ShortConstant, LongConstant, FalseLeaf, TrueLeaf, IntConstant, ByteConstant}
+
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
 
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
 
-  test("costed constants") {
-    build(noEnv, "one", "1", IntConstant(1))
-//    build(noEnv, "oneL", "1L", LongConstant(1L))
+  test("constants") {
+    build(noEnv, "oneInt", "1", IntConstant(1))
+    build(noEnv, "oneLong", "1L", LongConstant(1L))
   }
 
-//  test("costed operations") {
-//    build(noEnv, "one+one", "1 + 1", IntConstant(2))
+  test("operations") {
+    build(noEnv, "one+one", "1 + 1", Plus(1, 1))
 //    build(noEnv, "oneL+oneL", "1L - 1L", LongConstant(0))
 //    build(noEnv, "one_gt_one", "1 > 1", FalseLeaf)
 //    build(noEnv, "or", "1 > 1 || 2 < 1", FalseLeaf)
@@ -22,7 +23,7 @@ class ErgoTreeBuildingTest extends BaseCtxTests
 //    build(noEnv, "and", "1 > 1 && 2 < 1", FalseLeaf)
 //    build(noEnv, "and2", "1 > 1 && 2 < 1 && 2 > 1", FalseLeaf)
 //    build(noEnv, "and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1", FalseLeaf)
-//  }
+  }
 //
 //  test("costed context data") {
 //    build(noEnv, "height1", "HEIGHT + 1L", LongConstant(101))
