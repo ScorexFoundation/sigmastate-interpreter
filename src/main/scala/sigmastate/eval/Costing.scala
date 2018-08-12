@@ -82,6 +82,7 @@ trait Costing extends SigmaLibrary {
   }
 
   def stypeToElem[T <: SType](t: T): Elem[T#WrappedType] = (t match {
+    case SBoolean => BooleanElement
     case SByte => ByteElement
     case SShort => ShortElement
     case SInt => IntElement
@@ -185,6 +186,7 @@ trait Costing extends SigmaLibrary {
         for (Let(n, _, b) <- binds) {
           if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
           val bC = evalNode(ctx, curEnv, b)
+//          val bC = valDef(n, Thunk(evalNode(ctx, curEnv, b)))
           curEnv = curEnv + (n -> bC)
         }
         val res1 = evalNode(ctx, curEnv, res)
@@ -327,24 +329,10 @@ trait Costing extends SigmaLibrary {
         val defaultValue1 = defaultValue.asValue[SType]
         eval(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
+//      case Terms.Apply(f, args) if f.tpe.isFunc =>
+
       case opt: OptionValue[_] =>
         error(s"Option constructors are not supported: $opt")
-
-//      case AND(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[AND]) =>
-//        eval(mkAND(
-//          mkConcreteCollection(
-//            items.flatMap {
-//              case AND(ConcreteCollection(innerItems, SBoolean)) => innerItems
-//              case v => IndexedSeq(v)
-//            }, SBoolean)))
-//
-//      case OR(ConcreteCollection(items, SBoolean)) if items.exists(_.isInstanceOf[OR]) =>
-//        eval(mkOR(
-//          mkConcreteCollection(
-//            items.flatMap {
-//              case OR(ConcreteCollection(innerItems, SBoolean)) => innerItems
-//              case v => IndexedSeq(v)
-//            }, SBoolean)))
 
       case SizeOf(xs) =>
         val xsC = evalNode(ctx, env, xs).asRep[Costed[Col[Any]]]
@@ -409,6 +397,19 @@ trait Costing extends SigmaLibrary {
         const => ???,
         tup => ???
       )
+
+      case BinOr(l, r) =>
+        val lC = evalNode(ctx, env, l)
+        val rValTh = Thunk(evalNode(ctx, env, r).value)
+        val rCost = evalNode(ctx, env, r).cost   // cost graph is built without Thunk (upper bound approximation)
+        CostedPrimRep(Or.applyLazy(lC.value, rValTh), lC.cost + rCost + BinOrDeclaration)
+
+      case BinAnd(l, r) =>
+        val lC = evalNode(ctx, env, l)
+        val rValTh = Thunk(evalNode(ctx, env, r).value)
+        val rCost = evalNode(ctx, env, r).cost
+        CostedPrimRep(And.applyLazy(lC.value, rValTh), lC.cost + rCost + BinAndDeclaration)
+
       case rel: Relation[t, _] =>
         val tpe = rel.left.tpe
         val et = stypeToElem(tpe)

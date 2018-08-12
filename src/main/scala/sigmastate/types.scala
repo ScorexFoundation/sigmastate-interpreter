@@ -78,6 +78,7 @@ object SType {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
     def isSigmaProp: Boolean = tpe.isInstanceOf[SSigmaProp.type]
+    def isFunc : Boolean = tpe.isInstanceOf[SFunc]
     def isTuple: Boolean = tpe.isInstanceOf[STuple]
     def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
       case (NoType, _) => true

@@ -130,6 +130,17 @@ object Values {
     val value = ()
   }
 
+  type ByteValue = Value[SByte.type]
+  type ShortValue = Value[SShort.type]
+  type IntValue = Value[SInt.type]
+  type LongValue = Value[SLong.type]
+  type StringValue = Value[SString.type]
+  type BigIntValue = Value[SBigInt.type]
+  type BoxValue = Value[SBox.type]
+  type GroupElementValue = Value[SGroupElement.type]
+  type SigmaPropValue = Value[SSigmaProp.type]
+  type AvlTreeValue = Value[SAvlTree.type]
+  
   type ByteConstant = Constant[SByte.type]
   type ShortConstant = Constant[SShort.type]
   type IntConstant = Constant[SInt.type]
@@ -180,13 +191,13 @@ object Values {
       case _ => None
     }
   }
+  
   object StringConstant {
     def apply(value: String): Constant[SString.type]  = Constant[SString.type](value, SString)
     def unapply(v: SValue): Option[String] = v match {
       case Constant(value: String, SString) => Some(value)
       case _ => None
     }
-
     def Empty = StringConstant("")
   }
 
@@ -351,6 +362,7 @@ object Values {
     }
   }
 
+  type BoolValue = Value[SBoolean.type]
   val BoolArrayTypeCode = (SCollectionType.CollectionTypeCode + SBoolean.typeCode).toByte
 
   object BoolArrayConstant {
@@ -434,7 +446,7 @@ object Values {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]])
     }
-    override def cost[C <: Context[C]](context: C) = Cost.Tuple + items.map(_.cost(context)).sum
+    override def cost[C <: Context[C]](context: C) = Cost.TupleDeclaration + items.map(_.cost(context)).sum
   }
 
   object Tuple {

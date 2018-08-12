@@ -11,7 +11,6 @@ object CostTable {
   val MaxExpressions = 300
 
   object Cost {
-    //Node which holds true/false
     val ConstantNode = 1
 
     val HeightAccess = 1
@@ -51,9 +50,11 @@ object CostTable {
     val AndDeclaration = 10
     val AndPerChild = 1
 
-
     val OrDeclaration = 1
     val OrPerChild = 1
+
+    val BinOrDeclaration = 1
+    val BinAndDeclaration = 1
 
     /**PropLeaf declaration cost, wrapped script cost to be added as well.*/
     val PropLeafDeclaration = 500
@@ -66,35 +67,23 @@ object CostTable {
     val TxHasOutputDeclaration = 100
     val TxOutputDeclaration = 100
 
-    val OutputScript = 100
-    val OutputAmount = 1
-
-    val TxOutBytes = 10
-
-    val SelfVariableDeclaration = 1
-
-    val FoldDeclaration = 200
-
     val ByIndexDeclaration = 50
     val SelectFieldDeclaration = 50
     val SigmaPropIsValidDeclaration = 50
     val SigmaPropBytesDeclaration = 50
 
     val MapDeclaration = 100
-
     val WhereDeclaration = 200
-
     val ExistsDeclaration = 200
-
     val ForAllDeclaration = 200
-
-    val SizeOfDeclaration = 50
+    val FoldDeclaration = 200
 
     val ConcreteCollectionDeclaration = 20
-    val Tuple = 20
+    val TupleDeclaration = 20
+    val LambdaDeclaration = 1
 
+    val SizeOfDeclaration = 50
     val Exponentiate = 5000
-
     val MultiplyGroup = 50
   }
 }

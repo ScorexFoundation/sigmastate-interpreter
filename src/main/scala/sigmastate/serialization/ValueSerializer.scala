@@ -38,6 +38,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(LeCode, mkLE[SType]),
     Relation2Serializer(EqCode, mkEQ[SType]),
     Relation2Serializer(NeqCode, mkNEQ[SType]),
+    Relation2Serializer(BinOrCode, mkBinOr),
+    Relation2Serializer(BinAndCode, mkBinAnd),
     Relation3Serializer(IsMemberCode, mkIsMember),
     QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, mkIf),
     TwoArgumentsSerializer(XorCode, mkXor),

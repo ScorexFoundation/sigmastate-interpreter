@@ -15,9 +15,9 @@ trait ExampleContracts {
 
   val crowdFundingScript =
     """{
-     | let backerPubKey = getVar[SigmaProp](backerPubKeyId)
+     | //let backerPubKey = getVar[SigmaProp](backerPubKeyId)
      | let projectPubKey = getVar[SigmaProp](projectPubKeyId)
-     | let c1 = HEIGHT >= timeout && backerPubKey
+     | let c1 = HEIGHT >= timeout && getVar[SigmaProp](backerPubKeyId)
      | let c2 = allOf(Array(
      |   HEIGHT < timeout,
      |   projectPubKey,

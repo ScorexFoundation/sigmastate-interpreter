@@ -362,6 +362,23 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
   override val opCode: OpCode = NeqCode
 }
 
+/**
+  * Logical OR with lazy right argument which is evaluated only if left == false.
+  * If left argument is true, the right is guaranteed to NOT be evaluated
+  */
+case class BinOr(override val left: BoolValue, override val right: BoolValue)
+  extends Relation[SBoolean.type, SBoolean.type] {
+  override val opCode: OpCode = BinOrCode
+}
+
+/**
+  * Logical AND with lazy right argument which is evaluated only if left == true.
+  * If left argument is false, the right is guaranteed to NOT be evaluated
+  */
+case class BinAnd(override val left: BoolValue, override val right: BoolValue)
+  extends Relation[SBoolean.type, SBoolean.type] {
+  override val opCode: OpCode = BinAndCode
+}
 
 /**
   * A tree node with three descendants

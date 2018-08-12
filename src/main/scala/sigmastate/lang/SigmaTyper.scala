@@ -190,23 +190,6 @@ class SigmaTyper(val builder: SigmaBuilder) {
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
-        case SSigmaProp => (m, newArgs) match {
-          case ("||" | "&&", Seq(r)) => r.tpe match {
-            case SBoolean =>
-              val (a,b) = (Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
-              val res = if (m == "||") OR(a,b) else AND(a,b)
-              res
-            case SSigmaProp =>
-              val a = Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
-              val b = Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
-              val res = if (m == "||") OR(a,b) else AND(a,b)
-              res
-            case _ =>
-              error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}")
-          }
-          case _ =>
-            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
-        }
         case _: SNumericType => (m, newArgs) match {
           case("+" | "*", Seq(r)) => r.tpe match {
             case _: SNumericType => m match {
@@ -220,19 +203,35 @@ class SigmaTyper(val builder: SigmaBuilder) {
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
 
+        case SSigmaProp => (m, newArgs) match {
+          case ("||" | "&&", Seq(r)) => r.tpe match {
+            case SBoolean =>
+              val (a,b) = (Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              res
+            case SSigmaProp =>
+              val a = Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
+              val b = Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
+              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              res
+            case _ =>
+              error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}")
+          }
+          case _ =>
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+        }
         case SBoolean => (m, newArgs) match {
           case ("||" | "&&", Seq(r)) => r.tpe match {
             case SBoolean =>
-              val res = if (m == "||") OR(newObj.asBoolValue, r.asBoolValue) else AND(newObj.asBoolValue, r.asBoolValue)
+              val res = if (m == "||") mkBinOr(newObj.asBoolValue, r.asBoolValue) else mkBinAnd(newObj.asBoolValue, r.asBoolValue)
               res
             case SSigmaProp =>
               val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue)
-              val res = if (m == "||") OR(a,b) else AND(a,b)
+              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
               res
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }
-
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }

@@ -9,7 +9,7 @@ import sigmastate.utxo.CostTable.Cost
 
 import scalan.BaseCtxTests
 
-class CostingTest extends BaseCtxTests with LangTests with ExampleContracts {
+class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit {
   lazy val ctx = new TestContext with Costing {
     import TestSigmaDslBuilder._
     val sigmaDslBuilder = RTestSigmaDslBuilder()
@@ -52,31 +52,31 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts {
   ): Rep[(Context => T, Context => Int)] =
     checkInEnv(Map(), name, script, expectedCalc, expectedCost)
 
-  test("costed constants") {
+  test("constants") {
     check("one", "1", _ => 1, _ => ConstantNode)
     check("oneL", "1L", _ => 1L, _ => ConstantNode)
   }
   
-  test("costed operations") {
+  test("operations") {
     check("one+one", "1 + 1", _ => 1 + 1, _ => ConstantNode * 2 + TripleDeclaration)
     check("oneL+oneL", "1L - 1L", _ => 1L - 1L, _ => ConstantNode * 2 + TripleDeclaration)
     check("one_gt_one", "1 > 1", _ => false, _ => ConstantNode * 2 + TripleDeclaration)
-    check("or", "1 > 1 || 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + OrDeclaration)
+    check("or", "1 > 1 || 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + BinOrDeclaration)
     check("or2", "1 > 1 || 2 < 1 || 2 > 1", _ => true,
-      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * OrDeclaration)
+      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * BinOrDeclaration)
     check("or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
-      { ctx => sigmaDslBuilder.anyOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1 )) },
-      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + OrDeclaration)
+      { ctx => (ctx.OUTPUTS.length > 1) lazy_|| Thunk(ctx.OUTPUTS.length < 1)  },
+      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + BinOrDeclaration)
 
-    check("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + AndDeclaration)
+    check("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + BinAndDeclaration)
     check("and2", "1 > 1 && 2 < 1 && 2 > 1", _ => false,
-      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * AndDeclaration)
+      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * BinAndDeclaration)
     check("and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1",
-      { ctx => sigmaDslBuilder.allOf(colBuilder.apply(ctx.OUTPUTS.length > 1, ctx.OUTPUTS.length < 1)) },
-      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + AndDeclaration)
+      { ctx => (ctx.OUTPUTS.length > 1) lazy_&& Thunk(ctx.OUTPUTS.length < 1) },
+      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + BinAndDeclaration)
   }
 
-  test("costed context data") {
+  test("context data") {
     check("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
     check("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
     check("size", "INPUTS.size + OUTPUTS.size",
@@ -85,6 +85,34 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts {
     check("value", "SELF.value + 1L",
       ctx => ctx.SELF.value + 1L,
       _ => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
+  }
+
+  test("collection ops") {
+    val cost = (ctx: Rep[Context]) => {
+      toRep(OutputsAccess) +
+          (toRep(ExtractAmount) + ConstantNode + TripleDeclaration) *
+              ctx.OUTPUTS.length
+    }
+    check("exists", "OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
+      ctx => ctx.OUTPUTS.exists(fun(out => { out.value >= 0L })), cost)
+    check("forall", "OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
+      ctx => ctx.OUTPUTS.forall(fun(out => { out.value >= 0L })), cost)
+    check("map", "OUTPUTS.map(fun (out: Box) = { out.value >= 0L })",
+      ctx => ctx.OUTPUTS.map(fun(out => { out.value >= 0L })), cost)
+    check("where", "OUTPUTS.where(fun (out: Box) = { out.value >= 0L })",
+      ctx => ctx.OUTPUTS.filter(fun(out => { out.value >= 0L })), cost)
+  }
+
+  test("lambdas") {
+    val lamCost = (ctx: Rep[Context]) => {
+      toRep(LambdaDeclaration)
+    }
+    check("lam1", "fun (out: Box) = { out.value >= 0L }",
+      ctx => fun { out: Rep[Box] => out.value >= 0L }, lamCost)
+    check("lam2", "{let f = fun (out: Box) = { out.value >= 0L }; f}",
+      ctx => fun { out: Rep[Box] => out.value >= 0L }, lamCost)
+//    check("lam3", "{let f = fun (out: Box) = { out.value >= 0L }; f(SELF) }",
+//      ctx => { val f = fun { out: Rep[Box] => out.value >= 0L }; f(ctx.SELF) }, lamCost)
   }
 
   test("Crowd Funding") {
@@ -143,22 +171,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts {
     },
     { in: Rep[Context] => 0 } // ignored
     , false)
-  }
-
-  test("costed collection ops") {
-    val cost = (ctx: Rep[Context]) => {
-      toRep(OutputsAccess) +
-          (toRep(ExtractAmount) + ConstantNode + TripleDeclaration) *
-              ctx.OUTPUTS.length
-    }
-    check("exists", "OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
-      ctx => ctx.OUTPUTS.exists(fun(out => { out.value >= 0L })), cost)
-    check("forall", "OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
-      ctx => ctx.OUTPUTS.forall(fun(out => { out.value >= 0L })), cost)
-    check("map", "OUTPUTS.map(fun (out: Box) = { out.value >= 0L })",
-      ctx => ctx.OUTPUTS.map(fun(out => { out.value >= 0L })), cost)
-    check("where", "OUTPUTS.where(fun (out: Box) = { out.value >= 0L })",
-      ctx => ctx.OUTPUTS.filter(fun(out => { out.value >= 0L })), cost)
   }
 
   def measure[T](nIters: Int, okShow: Boolean = true)(action: Int => Unit): Unit = {

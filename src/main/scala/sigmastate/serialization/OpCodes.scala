@@ -61,18 +61,20 @@ object OpCodes extends ValueCodes {
   val Select3Code             : OpCode = (LastConstantCode + 25).toByte
   val Select4Code             : OpCode = (LastConstantCode + 26).toByte
   val Select5Code             : OpCode = (LastConstantCode + 27).toByte
-  val SelectFieldCode         : OpCode = (LastConstantCode + 28).toByte  // reserved 29, 30
+  val SelectFieldCode         : OpCode = (LastConstantCode + 28).toByte  // reserved 29
 
   // Relation descendants
-  val LtCode : OpCode = (LastConstantCode + 31).toByte
-  val LeCode : OpCode = (LastConstantCode + 32).toByte
-  val GtCode : OpCode = (LastConstantCode + 33).toByte
-  val GeCode : OpCode = (LastConstantCode + 34).toByte
-  val EqCode : OpCode = (LastConstantCode + 35).toByte
-  val NeqCode: OpCode = (LastConstantCode + 36).toByte
-  val IfCode : OpCode = (LastConstantCode + 37).toByte
-  val AndCode: OpCode = (LastConstantCode + 38).toByte
-  val OrCode : OpCode = (LastConstantCode + 39).toByte  // reserved 40
+  val LtCode    : OpCode = (LastConstantCode + 30).toByte
+  val LeCode    : OpCode = (LastConstantCode + 31).toByte
+  val GtCode    : OpCode = (LastConstantCode + 32).toByte
+  val GeCode    : OpCode = (LastConstantCode + 33).toByte
+  val EqCode    : OpCode = (LastConstantCode + 34).toByte
+  val NeqCode   : OpCode = (LastConstantCode + 35).toByte
+  val IfCode    : OpCode = (LastConstantCode + 36).toByte
+  val AndCode   : OpCode = (LastConstantCode + 37).toByte
+  val OrCode    : OpCode = (LastConstantCode + 38).toByte
+  val BinOrCode : OpCode = (LastConstantCode + 39).toByte
+  val BinAndCode: OpCode = (LastConstantCode + 40).toByte
 
   // Arithmetic codes
   val MinusCode        : OpCode = (LastConstantCode + 41).toByte

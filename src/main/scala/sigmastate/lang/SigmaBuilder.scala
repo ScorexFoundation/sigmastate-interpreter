@@ -7,7 +7,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, Value, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
+import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, BoolValue, Value, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
@@ -35,8 +35,11 @@ trait SigmaBuilder {
   def mkMin[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkMax[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
 
-  def mkOR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
-  def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
+  def mkOR(input: Value[SCollection[SBoolean.type]]): BoolValue
+  def mkAND(input: Value[SCollection[SBoolean.type]]): BoolValue
+
+  def mkBinOr(left: BoolValue, right: BoolValue): BoolValue
+  def mkBinAnd(left: BoolValue, right: BoolValue): BoolValue
 
   def mkExponentiate(left: Value[SGroupElement.type],
                      right: Value[SBigInt.type]): Value[SGroupElement.type]
@@ -225,6 +228,10 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     AND(input)
+
+  override def mkBinOr(left: BoolValue, right: BoolValue) = BinOr(left, right)
+
+  override def mkBinAnd(left: BoolValue, right: BoolValue) = BinAnd(left, right)
 
   override def mkExponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =
     Exponentiate(left, right)

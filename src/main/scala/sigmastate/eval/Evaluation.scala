@@ -182,10 +182,20 @@ trait Evaluation extends Costing {
               case v => v
             }
             out(res)
-          case ApplyBinOp(op: BinOp[a,r], xSym, ySym) =>
-            val x = dataEnv(xSym)
-            val y = dataEnv(ySym)
+          case ApplyBinOp(op: BinOp[l,r], In(x), In(y)) =>
             out(op.applySeq(x, y).asInstanceOf[AnyRef])
+          case ApplyBinOpLazy(op, In(x: Boolean), In(y)) if op == Or =>
+            if (x) out(true)
+            else {
+              val th = y.asInstanceOf[() => Any]
+              out(th())
+            }
+          case ApplyBinOpLazy(op, In(x: Boolean), In(y)) if op == And =>
+            if (x) {
+              val th = y.asInstanceOf[() => Any]
+              out(th())
+            } else
+              out(false)
           case Lambda(l, _, x, y) =>
             val f = (ctx: AnyRef) => {
               dataEnv += (x -> ctx)
@@ -193,6 +203,12 @@ trait Evaluation extends Costing {
               dataEnv(y)
             }
             out(f)
+          case ThunkDef(y, schedule) =>
+            val th = () => {
+              schedule.foreach(evaluate(_))
+              dataEnv(y)
+            }
+            out(th)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
       }
