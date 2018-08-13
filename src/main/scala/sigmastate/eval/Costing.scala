@@ -34,10 +34,31 @@ trait Costing extends SigmaLibrary {
   import ProveDlogEvidence._
   import SigmaDslBuilder._
   import ClosureBase._
+  import TrivialSigma._
 
   override def rewriteDef[T](d: Def[T]): Rep[_] = {
     val CBM = ColBuilderMethods
+    val SigmaM = SigmaMethods
     d match {
+      case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch)))
+        if l.elem == BooleanElement =>
+          val l1: Rep[Sigma] = RTrivialSigma(l.asRep[Boolean])
+          val newSch = sch.filterNot(_.sym == root)
+          val res = if (newSch.nonEmpty) {
+            assert(newSch.exists(_.sym == prop))
+            val newThunk: Th[Sigma] = ThunkDef(prop, newSch)
+            if (op == And)
+              l1.lazyAnd(newThunk)
+            else
+              l1.lazyOr(newThunk)
+          } else {
+            // don't need new Thunk
+            if (op == And)
+              l1 && prop
+            else
+              l1 || prop
+          }
+          res.isValid
       case _ => super.rewriteDef(d)
     }
   }
