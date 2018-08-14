@@ -38,13 +38,19 @@ class EvaluationTest extends BaseCtxTests
     reduce(noEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size < 1", ctx, FalseLeaf)
   }
 
-//  test("lazy logical ops") {
-//    val prover = new ErgoLikeProvingInterpreter
-//    val pk = prover.dlogSecrets.head.publicImage
-//    val self = ErgoBox(1, pk, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
-//    val ctx = newContext(height = 1, self.toTestBox)
-//    reduce(noEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].value == 10", ctx, TrueLeaf)
-//  }
+  test("lazy logical ops") {
+    val prover = new ErgoLikeProvingInterpreter
+    val pk = prover.dlogSecrets.head.publicImage
+    val self = ErgoBox(1, pk, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
+    val ctx = newContext(height = 1, self.toTestBox)
+    // guarded register access: existing reg
+    reduce(noEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].value == 10", ctx, TrueLeaf)
+    // guarded register access: non-existing reg
+    reduce(noEnv, "lazy2", "SELF.R5[Int].isDefined && SELF.R5[Int].value == 10", ctx, FalseLeaf)
+
+    // guarded register access: reading register if it is defined and another one is undefined
+    reduce(noEnv, "lazy3", "SELF.R4[Int].isDefined && (SELF.R5[Int].isDefined || SELF.R4[Int].value == 10)", ctx, TrueLeaf)
+  }
 
   test("context data") {
     val ctx = newContext(height = 100, boxA1)

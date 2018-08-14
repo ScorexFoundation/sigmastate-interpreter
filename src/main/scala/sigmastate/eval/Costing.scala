@@ -256,10 +256,14 @@ trait Costing extends SigmaLibrary {
       case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropBytes(p.asSigmaProp))
 
-//      case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetMethod.name, Some(regType)) =>
-//        val reg = ErgoBox.registerByName.getOrElse(regName,
-//          error(s"Invalid register name $regName in expression $sel"))
-//        eval(mkExtractRegisterAs(box.asBox, reg, regType, None))
+      case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.IsDefinedMethod.name, Some(regType)) =>
+        val regId = ErgoBox.registerByName.getOrElse(regName,
+          error(s"Invalid register name $regName in expression $sel"))
+        val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
+        val elem = stypeToElem(regType)
+        val valueOpt = boxC.value.getReg(regId.number.toInt)(elem)
+        val baseCost = boxC.cost + Cost.ExtractRegister
+        CostedPrimRep(valueOpt.isDefined, baseCost)
 
       case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetMethod.name, Some(regType)) =>
         val reg = ErgoBox.registerByName.getOrElse(regName,

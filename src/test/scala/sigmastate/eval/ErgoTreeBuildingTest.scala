@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
-import sigmastate.Values.{LongConstant, FuncValue, BlockValue, IntConstant, ValDef, ValUse}
+import sigmastate.Values.{LongConstant, FuncValue, BlockValue, IntConstant, ValDef, ValUse, FalseLeaf, TrueLeaf}
 import sigmastate.serialization.OpCodes._
 
 import scalan.BaseCtxTests
@@ -20,16 +20,24 @@ class ErgoTreeBuildingTest extends BaseCtxTests
   test("binary operations") {
     build(noEnv, "one+one", "1 + 1", BlockValue(Vector(ValDef(1, IntConstant(1))), ArithOp(ValUse(1, SInt), ValUse(1, SInt), PlusCode)))
     build(noEnv, "oneL-oneL", "1L - 1L", BlockValue(Vector(ValDef(1, LongConstant(1))), ArithOp(ValUse(1, SLong), ValUse(1, SLong), MinusCode)))
-    Seq((">", GT[SType] _), ("<", LT[SType] _), (">=", GE[SType] _),("<=", LE[SType] _), ("==", EQ[SType] _),("!=", NEQ[SType] _))
+    Seq((">", GT[SType] _), ("<", LT[SType] _), (">=", GE[SType] _), ("<=", LE[SType] _), ("==", EQ[SType] _), ("!=", NEQ[SType] _))
           .foreach { case (op, mk) =>
             build(noEnv, s"one_${op}_one", s"1 $op 2", mk(IntConstant(1), IntConstant(2)))
           }
-//    build(noEnv, "or", "1 > 1 || 2 < 1", FalseLeaf)
-//    build(noEnv, "or2", "1 > 1 || 2 < 1 || 2 > 1", TrueLeaf)
-//    build(noEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1", TrueLeaf)
-//    build(noEnv, "and", "1 > 1 && 2 < 1", FalseLeaf)
-//    build(noEnv, "and2", "1 > 1 && 2 < 1 && 2 > 1", FalseLeaf)
-//    build(noEnv, "and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1", FalseLeaf)
+    build(noEnv, "logical", "1 > 1 || 2 < 1",
+      BlockValue(
+        Vector(ValDef(1, IntConstant(1))),
+        BinOr(GT(ValUse(1,SInt),ValUse(1,SInt)),LT(IntConstant(2),ValUse(1,SInt)))))
+    build(noEnv, "logical2", "1 > 1 && 2 < 1 || 2 > 1",
+      BlockValue(Vector(
+        ValDef(1,List(),IntConstant(1)),
+        ValDef(2,List(),IntConstant(2))),
+        BinOr(BinAnd(GT(ValUse(1,SInt),ValUse(1,SInt)),LT(ValUse(2,SInt),ValUse(1,SInt))),GT(ValUse(2,SInt),ValUse(1,SInt)))))
+    build(noEnv, "logical3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
+      BlockValue(Vector(
+        ValDef(1,List(),SizeOf(Outputs)),
+        ValDef(2,List(),IntConstant(1))),
+        BinOr(GT(ValUse(1,SInt),ValUse(2,SInt)),LT(ValUse(1,SInt),ValUse(2,SInt)))))
   }
 
   test("context data") {

@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import scapi.sigma.DLogProtocol
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, Value, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
+import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, BoolValue, Value, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.Costing
 import sigmastate.serialization.OpCodes._
@@ -226,7 +226,7 @@ trait Evaluation extends Costing {
         case e: Throwable =>
           !!!(s"Error in evaluate($te)", e)
       }
-      println(s"${te.sym} -> ${dataEnv(te.sym)}")
+//      println(s"${te.sym} -> ${dataEnv(te.sym)}")
     }
 
     val g = new PGraph(f)
@@ -281,17 +281,26 @@ trait Evaluation extends Costing {
     }
   }
 
-//  def opcodeToBinOp[A](opCode: Byte, eA: Elem[A]): BinOp[A,_] = opCode match {
-//    case OpCodes.EqCode => Equals[A]()(eA)
-//    case OpCodes.GtCode => OrderingGT[A](elemToOrdering(eA))
-//    case OpCodes.LtCode => OrderingLT[A](elemToOrdering(eA))
-//    case OpCodes.GeCode => OrderingGTEQ[A](elemToOrdering(eA))
-//    case OpCodes.LeCode => OrderingLTEQ[A](elemToOrdering(eA))
-//    case _ => error(s"Cannot find BinOp for opcode $opCode")
-//  }
+  object IsLogicalBinOp {
+    def unapply(op: BinOp[_,_]): Option[(BoolValue, BoolValue) => Value[SBoolean.type]] = op match {
+      case And => Some(builder.mkBinAnd)
+      case Or  => Some(builder.mkBinOr)
+      case _ => None
+    }
+  }
 
-  def buildValDef(mainG: PGraph, env: DefEnv, s: Sym, defId: Int): SValue = {
-    def recurse[T <: SType](s: Sym) = buildValDef(mainG, env, s, defId).asValue[T]
+  object IsContextProperty {
+    def unapply(d: Def[_]): Option[SValue] = d match {
+      case ContextM.HEIGHT(_) => Some(Height)
+      case ContextM.INPUTS(_) => Some(Inputs)
+      case ContextM.OUTPUTS(_) => Some(Outputs)
+      case ContextM.SELF(_) => Some(Self)
+      case _ => None
+    }
+  }
+
+  def buildValue(mainG: PGraph, env: DefEnv, s: Sym, defId: Int): SValue = {
+    def recurse[T <: SType](s: Sym) = buildValue(mainG, env, s, defId).asValue[T]
     s match {
       case _ if env.contains(s) =>
         val (id, tpe) = env(s)
@@ -302,6 +311,9 @@ trait Evaluation extends Costing {
         val block = processAstGraph(mainG, env1, lam, varId + 1)
         val rhs = FuncValue(varId, elemToSType(x.elem), block)
         rhs
+      case Def(th @ ThunkDef(root, _)) =>
+        val block = processAstGraph(mainG, env, th, defId)
+        block
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
         builder.mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
@@ -311,11 +323,10 @@ trait Evaluation extends Costing {
       case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
-
-      case ContextM.HEIGHT(_) => Height
-      case ContextM.INPUTS(_) => Inputs
-      case ContextM.OUTPUTS(_) => Outputs
-      case ContextM.SELF(_) => Self
+      case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkNode(x, y)
+      case Def(IsContextProperty(v)) => v
       case ColM.length(col) => SizeOf(recurse(col).asCollection[SType])
       case BoxM.value(box) => ExtractAmount(recurse[SBox.type](box))
 
@@ -329,8 +340,8 @@ trait Evaluation extends Costing {
     var curId = nextFreeId
     var curEnv = env
     for (TableEntry(s, d) <- subG.schedule) {
-      if (mainG.hasManyUsagesGlobal(s)) {
-        val rhs = buildValDef(mainG, curEnv, s, curId)
+      if (mainG.hasManyUsagesGlobal(s) && IsContextProperty.unapply(d).isEmpty) {
+        val rhs = buildValue(mainG, curEnv, s, curId)
         val vd = ValDef(curId, Seq(), rhs)
         curEnv = curEnv + (s -> (curId, elemToSType(s.elem)))  // assign valId to s, so it can be use in ValUse
         curId += 1
@@ -338,7 +349,7 @@ trait Evaluation extends Costing {
       }
     }
     val Seq(root) = subG.roots
-    val rhs = buildValDef(mainG, curEnv, root, curId)
+    val rhs = buildValue(mainG, curEnv, root, curId)
     val res = if (valdefs.nonEmpty) BlockValue(valdefs.toIndexedSeq, rhs) else rhs
     res
   }
