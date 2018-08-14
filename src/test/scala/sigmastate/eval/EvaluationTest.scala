@@ -17,14 +17,14 @@ import scala.util.Success
 class EvaluationTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
 
-  test("costed constants") {
+  test("constants") {
     val ctx = newContext(height = 1, boxA1)
 
     reduce(noEnv, "one", "1", ctx,  IntConstant(1))
     reduce(noEnv, "oneL", "1L", ctx, LongConstant(1L))
   }
 
-  test("costed operations") {
+  test("operations") {
     val ctx = newContext(height = 1, boxA1)
     reduce(noEnv, "one+one", "1 + 1", ctx, IntConstant(2))
     reduce(noEnv, "oneL+oneL", "1L - 1L", ctx, LongConstant(0))
@@ -34,10 +34,19 @@ class EvaluationTest extends BaseCtxTests
     reduce(noEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1", ctx, TrueLeaf)
     reduce(noEnv, "and", "1 > 1 && 2 < 1", ctx, FalseLeaf)
     reduce(noEnv, "and2", "1 > 1 && 2 < 1 && 2 > 1", ctx, FalseLeaf)
-    reduce(noEnv, "and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1", ctx, FalseLeaf)
+    reduce(noEnv, "and3", "1 == 1 && (2 < 1 || 2 > 1)", ctx, TrueLeaf)
+    reduce(noEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size < 1", ctx, FalseLeaf)
   }
 
-  test("costed context data") {
+//  test("lazy logical ops") {
+//    val prover = new ErgoLikeProvingInterpreter
+//    val pk = prover.dlogSecrets.head.publicImage
+//    val self = ErgoBox(1, pk, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
+//    val ctx = newContext(height = 1, self.toTestBox)
+//    reduce(noEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].value == 10", ctx, TrueLeaf)
+//  }
+
+  test("context data") {
     val ctx = newContext(height = 100, boxA1)
         .withInputs(boxA1)
         .withOutputs(boxA2)

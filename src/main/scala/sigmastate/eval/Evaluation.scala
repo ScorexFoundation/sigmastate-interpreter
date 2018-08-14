@@ -23,7 +23,8 @@ trait Evaluation extends Costing {
   import SigmaDslBuilder._
   import ConcreteCostedBuilder._
   import MonoidBuilderInst._
-  
+  import TrivialSigma._
+
   private val ContextM = ContextMethods
   private val SigmaM = SigmaMethods
   private val ColM = ColMethods
@@ -169,10 +170,17 @@ trait Evaluation extends Costing {
             else
               out(l)
 
+          case SigmaM.lazyAnd(In(l: SigmaBoolean), In(y)) =>
+            val th = y.asInstanceOf[() => SigmaBoolean]
+            out(AND(l, th()).function(null, null))
+          case SigmaM.lazyOr(In(l: SigmaBoolean), In(y)) =>
+            val th = y.asInstanceOf[() => SigmaBoolean]
+            out(OR(l, th()).function(null, null))
+
           case SDBM.anyZK(_, In(items: special.collection.Col[Value[SBoolean.type]]@unchecked)) =>
-            out(new OR(ConcreteCollection(items.arr.toIndexedSeq, SBoolean)).function(null, null))
+            out(OR(items.arr).function(null, null))
           case SDBM.allZK(_, In(items: special.collection.Col[Value[SBoolean.type]]@unchecked)) =>
-            out(new AND(ConcreteCollection(items.arr.toIndexedSeq, SBoolean)).function(null, null))
+            out(AND(items.arr).function(null, null))
 
           case mc @ MethodCall(obj, m, args, _) =>
             val objValue = dataEnv(obj)
@@ -209,6 +217,8 @@ trait Evaluation extends Costing {
               dataEnv(y)
             }
             out(th)
+          case TrivialSigmaCtor(In(isValid: Boolean)) =>
+            out(DLogProtocol.TrivialSigma(isValid))
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
       }

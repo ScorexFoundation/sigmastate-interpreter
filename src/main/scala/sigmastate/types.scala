@@ -525,14 +525,11 @@ object SOption {
   val OptionCollectionTypeConstrId = 4
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
-  private[sigmastate] def createMethods(tArg: STypeIdent): Seq[SMethod] =
-    Seq(
-      SMethod("isDefined", SBoolean),
-      SMethod("value", tArg),
-      SMethod("valueOrElse", SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(tT)))
-    )
   private val tT = STypeIdent("T")
-  val methods: Seq[SMethod] = createMethods(tT)
+  val IsDefinedMethod = SMethod("isDefined", SBoolean)
+  val GetMethod = SMethod("value", tT)
+  val GetOrElseMethod = SMethod("valueOrElse", SFunc(IndexedSeq(SOption(tT), tT), tT, Seq(tT)))
+  val methods: Seq[SMethod] = Seq(IsDefinedMethod, GetMethod, GetOrElseMethod)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }

@@ -173,6 +173,8 @@ trait Costing extends SigmaLibrary {
 
   type Env = Map[String, Sym]
 
+  import sigmastate._
+
   private def evalNode[T <: SType](ctx: Rep[Context], env: Map[String, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
@@ -254,15 +256,20 @@ trait Costing extends SigmaLibrary {
       case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropBytes(p.asSigmaProp))
 
-      case sel @ Terms.Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(_)), Seq(arg)) =>
-        val reg = ErgoBox.registerByName.getOrElse(regName,
-          error(s"Invalid register name $regName in expression $sel"))
-        eval(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
+//      case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetMethod.name, Some(regType)) =>
+//        val reg = ErgoBox.registerByName.getOrElse(regName,
+//          error(s"Invalid register name $regName in expression $sel"))
+//        eval(mkExtractRegisterAs(box.asBox, reg, regType, None))
 
-      case sel @ Select(Select(Typed(box, SBox), regName, _), "value", Some(regType)) =>
+      case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetMethod.name, Some(regType)) =>
         val reg = ErgoBox.registerByName.getOrElse(regName,
           error(s"Invalid register name $regName in expression $sel"))
         eval(mkExtractRegisterAs(box.asBox, reg, regType, None))
+
+      case sel @ Terms.Apply(Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetOrElseMethod.name, Some(_)), Seq(arg)) =>
+        val reg = ErgoBox.registerByName.getOrElse(regName,
+          error(s"Invalid register name $regName in expression $sel"))
+        eval(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
 
       case sel @ Select(obj, field, _) if obj.tpe == SBox =>
         (obj.asValue[SBox.type], field) match {
