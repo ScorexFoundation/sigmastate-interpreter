@@ -207,19 +207,19 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       // If the node is marked "simulated", mark all of its children "simulated"
       if (t.simulated) t.copy(children = t.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
       else {
-        // If  the node is TRESHOLD(k) marked "real", mark all but k of its children "simulated"
+        // If the node is THRESHOLD(k) marked "real", mark all but k of its children "simulated"
         // (the node is guaranteed, by the previous step, to have at least k "real" children).
         // Which particular ones are left "real" is not important for security;
         // the choice can be guided by efficiency or convenience considerations.
         //
-        // We'll mark the first k ones real
-        val newChildren = t.children.foldLeft((Seq[UnprovenTree](), 0)) { case ((children, count), child) =>
+        // We'll mark the first k real ones real
+        val newChildren = t.children.foldLeft((Seq[UnprovenTree](), 0)) { case ((children, countOfReal), child) =>
           val kid = child.asInstanceOf[UnprovenTree];
-          val (newKid, newCount) = kid.simulated match {
-            case false => (kid, count)
-            case true => (if (count>t.k) kid.withSimulated(true) else kid, count+1)
+          val (newKid, newCountOfReal) = kid.real match {
+            case false => (kid, countOfReal)
+            case true => ({if (countOfReal>t.k) kid.withSimulated(true) else kid}, countOfReal+1)
           }
-          (children:+newKid, newCount)
+          (children:+newKid, newCountOfReal)
         }._1
         t.copy(children = newChildren)
       }
