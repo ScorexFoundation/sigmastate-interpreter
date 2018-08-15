@@ -180,7 +180,7 @@ object AND {
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
 
-// TODO: WRITE ATLEAST
+// TODO: WRITE ATLEAST with two inputs: integer bound and children same as in AND/OR
 // It should go through the children.
 // If child is true, remove child and reduce bound. If child is false, remove child.
 // If at any point bound>number of children, the result is false.
