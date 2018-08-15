@@ -3,6 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
+import gf2t.GF2_192_Poly
 import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.SCollection.SByteArray
@@ -34,6 +35,19 @@ case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.Undefined
 
+  override def cost[C <: Context[C]](context: C): Long =
+    sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
+}
+
+/**
+  * THRESHOLD connector for sigma propositions
+  */
+case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  // TODO: how to limit k to 0...255 and the number of children to be at least k and at most 255
+  // (This may need to happen at CTHRESHOLD creation)
+  override val opCode: OpCode = OpCodes.AtLeastCode
+
+  // TODO: what should cost be?
   override def cost[C <: Context[C]](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 }
@@ -166,6 +180,16 @@ object AND {
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
 
+// TODO: WRITE ATLEAST
+// It should go through the children.
+// If child is true, remove child and reduce bound. If child is false, remove child.
+// If at any point bound>number of children, the result is false.
+// If at any bound <=0, result is true.
+// If at any point bound == 1, convert to OR. If at any point bound == number of children, convert to and.
+// Once you have only sigma propositions below, output CTHRESHOLD
+// Somewhere we should also make sure that number of children doesn't exceed 255
+// (this will ensure bound is between 2 and 254, because otherwise one of the conditions above will apply and it will
+// be converted to one of true, false, and, or)
 
 /**
   * Up cast for Numeric types

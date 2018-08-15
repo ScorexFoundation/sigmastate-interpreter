@@ -71,7 +71,8 @@ object OpCodes extends ValueCodes {
   val NeqCode: OpCode = (LastConstantCode + 36).toByte
   val IfCode : OpCode = (LastConstantCode + 37).toByte
   val AndCode: OpCode = (LastConstantCode + 38).toByte
-  val OrCode : OpCode = (LastConstantCode + 39).toByte  // reserved 40
+  val OrCode : OpCode = (LastConstantCode + 39).toByte
+  val AtLeastCode : OpCode = (LastConstantCode + 40).toByte  // TODO: 40 is no longer reserved -- okay?
 
   // Arithmetic codes
   val MinusCode        : OpCode = (LastConstantCode + 41).toByte

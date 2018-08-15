@@ -67,6 +67,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ConcreteCollectionSerializer(mkConcreteCollection),
     LogicalTransformerSerializer(AndCode, mkAND),
     LogicalTransformerSerializer(OrCode, mkOR),
+    TwoArgumentsSerializer(AtLeastCode, mkAtLeast), // TODO: is this correct?
     TaggedVariableSerializer(mkTaggedVariable),
     MapCollectionSerializer(mkMapCollection),
     BooleanTransformerSerializer[SType](ExistsCode, mkExists),

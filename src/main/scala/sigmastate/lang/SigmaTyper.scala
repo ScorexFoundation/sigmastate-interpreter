@@ -127,7 +127,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
             case (arg, expectedType) => assignType(env, arg, Some(expectedType))
           }
           val newArgs = new_f match {
-            case AllSym | AnySym =>
+            case AllSym | AnySym | AtLeastSym => // TODO: is this correct way to handle atleast?
               adaptSigmaPropToBoolean(new_args, argTypes)
             case _ => new_args
           }
@@ -292,6 +292,9 @@ class SigmaTyper(val builder: SigmaBuilder) {
       if (!(input1.tpe.isCollection && input1.tpe.elemType == SBoolean))
         error(s"Invalid operation OR: $op")
       mkOR(input1)
+
+
+      // TODO: write case for ATLEAST
 
     case GE(l, r) => bimap(env, ">=", l, r)(mkGE[SType])(tT, SBoolean)
     case LE(l, r) => bimap(env, "<=", l, r)(mkLE[SType])(tT, SBoolean)

@@ -6,6 +6,7 @@ import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogPr
 import scapi.sigma.VerifierMessage.Challenge
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.Values.SigmaBoolean
+import gf2t.GF2_192_Poly;
 
 sealed trait UncheckedTree extends ProofTree
 
@@ -71,4 +72,13 @@ case class COrUncheckedNode(override val challenge: Challenge,
                             override val children: Seq[UncheckedSigmaTree]) extends UncheckedConjecture {
 
   override val conjectureType = ConjectureType.OrConjecture
+
+}
+
+case class CThresholdUncheckedNode(override val challenge: Challenge,
+                            override val children: Seq[UncheckedSigmaTree],
+                            k: Integer, polynomialOpt: Option[GF2_192_Poly]) extends UncheckedConjecture {
+
+  // TODO: how to enforce limits on k (0 to 255) and on number of children (at most 255)?
+  override val conjectureType = ConjectureType.ThresholdConjecture
 }
