@@ -277,6 +277,22 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       or.copy(children = h +: t)
 
     case t: CThresholdUnproven if t.simulated =>
+      // The faster algorithm is as follows. Pick n-k fresh uniformly random values
+      // q_1, ..., q_{n-k} from {0,1}^t and let q_0=e_0.
+      // Viewing 1, 2, ..., n and q_0, \dots, q_{n-k} as elements of GF(2^t),
+      // evaluate the polynomial Q(x) = sum {q_i x^i} over GF(2^t) at points 1, 2, ..., n
+      // to get challenges for child 1, 2, ..., n, respectively.
+      assert(t.challengeOpt.isDefined)
+      val n = t.children.length
+      val unprovenChildren = t.children.cast[UnprovenTree]
+      val q = GF2_192_Poly.fromByteArray(t.challengeOpt.get, Random.randomBytes(CryptoFunctions.soundnessBytes*(n-t.k)) )
+
+      val newChildren = unprovenChildren.foldLeft((Seq[UnprovenTree](), 1)) {
+        case ((childSeq, childIndex), child) =>
+          (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray), childIndex + 1)
+      }._1
+      t.withPolynomial(q).copy(children=newChildren)
+
       // The algorithm with better resistance to timing attacks is as follows.
       // Pick n-k fresh uniformly random values e_1, ..., e_{n-k}
       // as challenges for the children number 1, ..., n-k.
@@ -286,6 +302,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       // from 0 to n-k (this polynomial will have n-k+1 coefficients, and the lowest coefficient will be e_0).
       // Set the challenge at child j for n-k<j<= n to equal Q(j).
 
+      /* **** Uncomment this and comment out the above algorithm if you want better resistance to timing attacks
       assert(t.challengeOpt.isDefined)
       val n = t.children.length
       val unprovenChildren = t.children.cast[UnprovenTree]
@@ -306,6 +323,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
           (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray), childIndex + 1)
       }._1
       t.withPolynomial(q).copy(children=newChildren)
+      */
 
 
 
