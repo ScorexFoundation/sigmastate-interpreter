@@ -130,6 +130,7 @@ object Values {
     val value = ()
   }
 
+  type BoolValue = Value[SBoolean.type]
   type ByteValue = Value[SByte.type]
   type ShortValue = Value[SShort.type]
   type IntValue = Value[SInt.type]
@@ -362,7 +363,6 @@ object Values {
     }
   }
 
-  type BoolValue = Value[SBoolean.type]
   val BoolArrayTypeCode = (SCollectionType.CollectionTypeCode + SBoolean.typeCode).toByte
 
   object BoolArrayConstant {

@@ -2,12 +2,12 @@ package sigmastate.eval
 
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
-import sigmastate.Values.{LongConstant, FuncValue, BlockValue, IntConstant, ValDef, ValUse, FalseLeaf, TrueLeaf}
+import sigmastate.Values.{LongConstant, FuncValue, FalseLeaf, TrueLeaf, BlockValue, IntConstant, ValDef, ValUse}
 import sigmastate.serialization.OpCodes._
 
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
-import sigmastate.utxo.{ExtractAmount, SizeOf}
+import sigmastate.utxo.{Exists1, ExtractAmount, SizeOf, ForAll1}
 
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
@@ -49,8 +49,13 @@ class ErgoTreeBuildingTest extends BaseCtxTests
 
   test("simple lambdas") {
     import IR.builder._
-    build(noEnv, "lam1", "fun (x: Long) = HEIGHT + x", FuncValue(Vector((2,SLong)), mkPlus(Height, ValUse(2,SLong))))
-    build(noEnv, "lam2", "{ let f = fun (x: Long) = HEIGHT + x; f }", FuncValue(Vector((2,SLong)), mkPlus(Height, ValUse(2,SLong))))
+    build(noEnv, "lam1", "fun (x: Long) = HEIGHT + x", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
+    build(noEnv, "lam2", "{ let f = fun (x: Long) = HEIGHT + x; f }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
+    build(noEnv, "lam3", "{ OUTPUTS.exists(fun (x: Box) = HEIGHT == x.value) }",
+      Exists1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
+    build(noEnv, "lam4", "{ OUTPUTS.forall(fun (x: Box) = HEIGHT == x.value) }",
+      ForAll1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
+//    build(noEnv, "lam2", "{ let f = fun (x: Long) = HEIGHT + x; f(10) }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
   }
 
 //  test("Crowd Funding") {

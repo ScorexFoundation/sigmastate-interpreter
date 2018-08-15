@@ -84,6 +84,10 @@ trait SigmaBuilder {
                                id: Byte,
                                condition: Value[SBoolean.type]): Value[SBoolean.type]
 
+  def mkExists1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
+
+  def mkForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
+
   def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                           id: Byte,
                           zero: Value[OV],
@@ -299,6 +303,14 @@ class StdSigmaBuilder extends SigmaBuilder {
                                      id: Byte,
                                      condition: Value[SBoolean.type]): Value[SBoolean.type] =
     ForAll(input, id, condition)
+
+  override def mkExists1[IV <: SType](input: Value[SCollection[IV]],
+                                     condition: Value[SFunc]): BoolValue =
+    Exists1(input, condition)
+
+  override def mkForAll1[IV <: SType](input: Value[SCollection[IV]],
+                                     condition: Value[SFunc]): BoolValue =
+    ForAll1(input, condition)
 
   override def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                    id: Byte,

@@ -143,6 +143,7 @@ object Terms {
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
     def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]
     def asTuple: Value[STuple] = v.asInstanceOf[Value[STuple]]
+    def asFunc: Value[SFunc] = v.asInstanceOf[Value[SFunc]]
     def asConcreteCollection[T <: SType]: ConcreteCollection[T] = v.asInstanceOf[ConcreteCollection[T]]
     def upcastTo[T <: SNumericType](targetType: T): Value[T] = {
       assert(v.tpe.isInstanceOf[SNumericType],

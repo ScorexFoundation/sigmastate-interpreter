@@ -386,7 +386,22 @@ case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[
 
 //todo: write test for this class
 case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
-
   override val opCode: OpCode = OpCodes.DeserializeRegisterCode
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }
+
+
+case class Exists1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc])
+    extends NotReadyValue[SBoolean.type] {
+  override val opCode: OpCode = OpCodes.ExistsCode
+  override def tpe = SBoolean
+  override def cost[C <: Context[C]](context: C): Long = ???
+}
+
+case class ForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc])
+    extends NotReadyValue[SBoolean.type] {
+  override val opCode: OpCode = OpCodes.ForAllCode
+  override def tpe = SBoolean
+  override def cost[C <: Context[C]](context: C) = ???
+}
+

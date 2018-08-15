@@ -8,7 +8,7 @@ import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, BoolValue, Va
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.Costing
 import sigmastate.serialization.OpCodes._
-import sigmastate.utxo.{ExtractAmount, SizeOf}
+import sigmastate.utxo.{ExtractAmount, SizeOf, Exists1}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -36,7 +36,7 @@ trait Evaluation extends Costing {
     case _: IntPlusMonoid =>
     case _: Lambda[_,_] =>
     case _: ThunkDef[_] =>
-    case ApplyBinOp(_: NumericPlus[_],_,_) =>
+    case ApplyBinOp(_: NumericPlus[_]| _: NumericTimes[_],_,_) =>
     case ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.getVar(_,_,_) =>
     case SigmaM.propBytes(_) =>
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) =>
@@ -317,6 +317,8 @@ trait Evaluation extends Costing {
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
         builder.mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+      case Def(IsContextProperty(v)) => v
+
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         builder.mkArith(x.asNumValue, y.asNumValue, opCode)
@@ -326,25 +328,32 @@ trait Evaluation extends Costing {
       case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
-      case Def(IsContextProperty(v)) => v
-      case ColM.length(col) => SizeOf(recurse(col).asCollection[SType])
-      case BoxM.value(box) => ExtractAmount(recurse[SBox.type](box))
+      case ColM.length(col) =>
+        SizeOf(recurse(col).asCollection[SType])
+      case ColM.exists(colSym, pSym) =>
+        val Seq(col, p) = Seq(colSym, pSym).map(recurse)
+        builder.mkExists1(col.asCollection[SType], p.asFunc)
+      case ColM.forall(colSym, pSym) =>
+        val Seq(col, p) = Seq(colSym, pSym).map(recurse)
+        builder.mkForAll1(col.asCollection[SType], p.asFunc)
+      case BoxM.value(box) =>
+        ExtractAmount(recurse[SBox.type](box))
 
       case Def(d) =>
-        !!!(s"Don't know how to buildValDef($mainG, $d, $env, $defId)")
+        !!!(s"Don't know how to buildValue($mainG, $d, $env, $defId)")
     }
   }
 
-  def processAstGraph(mainG: PGraph, env: DefEnv, subG: AstGraph, nextFreeId: Int): SValue = {
+  def processAstGraph(mainG: PGraph, env: DefEnv, subG: AstGraph, defId: Int): SValue = {
     val valdefs = new ArrayBuffer[ValDef]
-    var curId = nextFreeId
+    var curId = defId
     var curEnv = env
     for (TableEntry(s, d) <- subG.schedule) {
       if (mainG.hasManyUsagesGlobal(s) && IsContextProperty.unapply(d).isEmpty) {
         val rhs = buildValue(mainG, curEnv, s, curId)
+        curId += 1
         val vd = ValDef(curId, Seq(), rhs)
         curEnv = curEnv + (s -> (curId, elemToSType(s.elem)))  // assign valId to s, so it can be use in ValUse
-        curId += 1
         valdefs += vd
       }
     }
@@ -357,7 +366,7 @@ trait Evaluation extends Costing {
   def buildTree[T <: SType](f: Rep[Context => T#WrappedType]): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
     val mainG = new PGraph(lam.y)
-    val block = processAstGraph(mainG, Map(), mainG, 1)
+    val block = processAstGraph(mainG, Map(), mainG, 0)
     block.asValue[T]
   }
 }
