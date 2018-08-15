@@ -33,7 +33,7 @@ object CryptoConstants {
   val groupSize: Int = 256 / 8 //32 bytes
 
   //size of challenge in Sigma protocols, in bits
-  implicit val soundnessBits: Int = 224.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
+  implicit val soundnessBits: Int = 192.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
 }
 
 object CryptoFunctions {
