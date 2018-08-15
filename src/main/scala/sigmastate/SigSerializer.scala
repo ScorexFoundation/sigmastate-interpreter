@@ -126,7 +126,7 @@ object SigSerializer {
           // evaluate the polynomial Q(x) at points 1, 2, ..., n to get challenges for child 1, 2, ..., n, respectively.
 
           // Read the polynomial -- it has n-k coefficients
-          val endPolyPos = pos+chalLen*(t.sigmaBooleans.length-t.k+1);
+          val endPolyPos = pos+chalLen+hashSize*(t.sigmaBooleans.length-t.k);
           val polynomial = GF2_192_Poly.fromByteArray(challenge, bytes.slice(pos+chalLen,endPolyPos));
 
           val (seq, finalPos, lastChallenge) = t.sigmaBooleans.init.foldLeft((Seq[UncheckedSigmaTree](), endPolyPos, 1)) {
