@@ -211,6 +211,9 @@ trait Evaluation extends Costing {
               dataEnv(y)
             }
             out(f)
+          case Apply(In(_f), In(x: AnyRef), _) =>
+            val f = _f.asInstanceOf[AnyRef => Any]
+            out(f(x))
           case ThunkDef(y, schedule) =>
             val th = () => {
               schedule.foreach(evaluate(_))
@@ -255,6 +258,7 @@ trait Evaluation extends Costing {
     case EcPointElement => SGroupElement
     case _: SigmaElem[_] => SSigmaProp
     case ce: ColElem[_,_] => SCollection(elemToSType(ce.eItem))
+    case fe: FuncElem[_,_] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
     case _ => error(s"Don't know how to convert Elem $e to SType")
   })
 
@@ -311,6 +315,9 @@ trait Evaluation extends Costing {
         val block = processAstGraph(mainG, env1, lam, varId + 1)
         val rhs = FuncValue(varId, elemToSType(x.elem), block)
         rhs
+      case Def(Apply(fSym, xSym, _)) =>
+        val Seq(f, x) = Seq(fSym, xSym).map(recurse)
+        builder.mkApply(f, IndexedSeq(x))
       case Def(th @ ThunkDef(root, _)) =>
         val block = processAstGraph(mainG, env, th, defId)
         block

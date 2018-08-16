@@ -62,6 +62,11 @@ class EvaluationTest extends BaseCtxTests
     reduce(noEnv, "value", "SELF.value + 1L", ctx, LongConstant(101))
   }
 
+  test("lambdas") {
+    val ctx = newContext(height = 1, boxA1)
+    reduce(noEnv, "lam3", "{let f = fun (out: Box) = { out.value >= 0L }; f(SELF) }", ctx, TrueLeaf)
+  }
+
   test("Crowd Funding") {
     val backerProver = new ErgoLikeProvingInterpreter
     val projectProver = new ErgoLikeProvingInterpreter

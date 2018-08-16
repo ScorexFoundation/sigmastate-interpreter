@@ -361,7 +361,13 @@ trait Costing extends SigmaLibrary {
         val defaultValue1 = defaultValue.asValue[SType]
         eval(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
-//      case Terms.Apply(f, args) if f.tpe.isFunc =>
+      case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
+        val fC = evalNode(ctx, env, f).asRep[Costed[Any => Any]]
+        val xC = evalNode(ctx, env, x).asRep[Costed[Any]]
+        val res: Rep[_] = Apply(fC.value, xC.value, false)
+        val xV = xC.value
+        val evalCost = fC.applyCost(xV)
+        CostedPrimRep(res, fC.cost + xC.cost + evalCost)
 
       case opt: OptionValue[_] =>
         error(s"Option constructors are not supported: $opt")

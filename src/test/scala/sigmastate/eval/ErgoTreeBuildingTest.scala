@@ -7,6 +7,7 @@ import sigmastate.serialization.OpCodes._
 
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
+import sigmastate.lang.Terms.Apply
 import sigmastate.utxo.{Exists1, ExtractAmount, SizeOf, ForAll1}
 
 class ErgoTreeBuildingTest extends BaseCtxTests
@@ -55,7 +56,13 @@ class ErgoTreeBuildingTest extends BaseCtxTests
       Exists1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
     build(noEnv, "lam4", "{ OUTPUTS.forall(fun (x: Box) = HEIGHT == x.value) }",
       ForAll1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
-//    build(noEnv, "lam2", "{ let f = fun (x: Long) = HEIGHT + x; f(10) }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
+    build(noEnv, "lam5", "{ let f = fun (x: Long) = HEIGHT + x; f(10L) }",
+      Apply(FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))), Vector(LongConstant(10))))
+    build(noEnv, "lam6", "{ let f = fun (x: Long) = HEIGHT + x; f(10L) + f(20L) }",
+      BlockValue(Vector(
+        ValDef(1,List(),FuncValue(Vector((1,SLong)), Plus(Height, ValUse(1,SLong))))),
+        Plus(Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(10))).asNumValue,
+             Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(20))).asNumValue)))
   }
 
 //  test("Crowd Funding") {
