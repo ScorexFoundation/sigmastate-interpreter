@@ -40,12 +40,14 @@ object CostTable {
     val BoxConstantDeclaration = 10
     val AvlTreeConstantDeclaration = 50
 
-    val AndDeclaration = 10
+    val AndDeclaration = 1
     val AndPerChild = 1
-
 
     val OrDeclaration = 1
     val OrPerChild = 1
+
+    val AtLeastDeclaration = 1
+    val AtLeastPerChild = 1
 
     //PropLeaf declaration cost, wrapped script cost to be added as well.
     val PropLeafDeclaration = 500

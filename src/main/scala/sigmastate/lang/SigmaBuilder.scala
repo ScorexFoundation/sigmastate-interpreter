@@ -201,7 +201,7 @@ class StdSigmaBuilder extends SigmaBuilder {
     AND(input)
 
   override def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
-    AND(input) // TODO: this is just filler to avoid compiler errors; need to write ATLEAST and replace AND with it
+    AtLeast(bound, input)
 
   override def mkExponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =
     Exponentiate(left, right)

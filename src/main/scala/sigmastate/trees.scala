@@ -43,8 +43,7 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   * THRESHOLD connector for sigma propositions
   */
 case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  // TODO: how to limit k to 0...255 and the number of children to be at least k and at most 255
-  // (This may need to happen at CTHRESHOLD creation)
+  assert(k >= 0 && k <= 255 && sigmaBooleans.length >= k && sigmaBooleans.length <= 255)
   override val opCode: OpCode = OpCodes.AtLeastCode
 
   // TODO: what should cost be?
@@ -180,7 +179,7 @@ object AND {
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
 
-// TODO: WRITE ATLEAST with two inputs: integer bound and children same as in AND/OR
+/** ATLEAST has two inputs: integer bound and children same as in AND/OR
 // It should go through the children.
 // If child is true, remove child and reduce bound. If child is false, remove child.
 // If at any point bound>number of children, the result is false.
@@ -190,6 +189,75 @@ object AND {
 // Somewhere we should also make sure that number of children doesn't exceed 255
 // (this will ensure bound is between 2 and 254, because otherwise one of the conditions above will apply and it will
 // be converted to one of true, false, and, or)
+*/
+case class AtLeast(k: Value[SInt.type], input: Value[SCollection[SBoolean.type]])
+    extends Transformer[SCollection[SBoolean.type], SBoolean.type]
+        with NotReadyValueBoolean {
+  override val opCode: OpCode = AtLeastCode
+
+  override def cost[C <: Context[C]](context: C): Long =
+    k.cost(context) + input.cost(context) + Cost.AtLeastDeclaration
+
+  override def transformationReady: Boolean =
+    k.evaluated && input.evaluated && input.matchCase(
+      _.items.forall(_.evaluated),
+      _ => true,
+      _.items.forall(_.evaluated)
+    )
+
+  private def reduce(k: Int, children: Seq[Value[SBoolean.type]]): Value[SBoolean.type] = {
+    val sigmas = mutable.Buffer[SigmaBoolean]()
+    var bound = k
+    var childrenLeft = children.length
+    // we should make sure that number of children doesn't exceed 255
+    // (this will ensure bound is between 2 and 254, because otherwise one of the conditions above will apply and it will
+    // be converted to one of true, false, and, or)
+    assert(childrenLeft <= 255)
+    for (iChild <- children.indices) {
+      children(iChild) match {
+        case TrueLeaf => // If child is true, remove child and reduce bound.
+          childrenLeft -= 1
+          bound -= 1
+        case FalseLeaf => // If child is false, remove child, leave bound unchanged.
+          childrenLeft -= 1
+        case sigma: SigmaBoolean => sigmas += sigma
+      }
+      //If at any point bound > number of children, the result is false.
+      if (bound > childrenLeft) return FalseLeaf
+      // If at any point bound <= 0, result is true.
+      if (bound <= 0) return TrueLeaf
+      // If at any point bound == 1, convert to OR.
+      if (bound == 1)
+        return OR(sigmas ++ children.slice(iChild + 1, children.length))
+      // If at any point bound == number of children, convert to and.
+      if (bound == childrenLeft)
+        return AND(sigmas ++ children.slice(iChild + 1, children.length))
+      // Once you have only sigma propositions below, output CTHRESHOLD
+    }
+    CTHRESHOLD(bound, sigmas)
+  }
+
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
+    val k = this.k.asInstanceOf[EvaluatedValue[SInt.type]].value
+    input.matchCase(
+      cc => {
+        reduce(k, cc.items)
+      },
+      c => if (c.value.filter(_ == true).length == k) TrueLeaf else FalseLeaf,
+      _ => ???
+    )
+  }
+}
+
+/**
+  * Logical threshold
+  */
+object AtLeast {
+  def apply(children: Seq[Value[SBoolean.type]]): AND =
+    AND(ConcreteCollection(children.toIndexedSeq))
+
+  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
+}
 
 /**
   * Up cast for Numeric types
