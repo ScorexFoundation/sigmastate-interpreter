@@ -79,6 +79,6 @@ case class CThresholdUncheckedNode(override val challenge: Challenge,
                             override val children: Seq[UncheckedSigmaTree],
                             k: Integer, polynomialOpt: Option[GF2_192_Poly]) extends UncheckedConjecture {
 
-  // TODO: how to enforce limits on k (0 to 255) and on number of children (at most 255)?
+  // TODO: how to enforce limits on k (0 to number of children) and on number of children (at most 255)?
   override val conjectureType = ConjectureType.ThresholdConjecture
 }

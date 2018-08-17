@@ -82,7 +82,7 @@ case class CThresholdUnproven(override val proposition: CTHRESHOLD,
                        children: Seq[ProofTree],
                        polynomialOpt: Option[GF2_192_Poly]) extends UnprovenConjecture {
 
-  // TODO: how to enforce limits on k (0 to 255) and on number of children (at most 255)?
+  // TODO: how to enforce limits on k (0 to number of children) and on number of children (at most 255)?
 
   override val conjectureType = ConjectureType.ThresholdConjecture
 

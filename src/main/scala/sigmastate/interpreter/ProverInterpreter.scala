@@ -473,7 +473,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case or: COrUnproven =>
       COrUncheckedNode(or.challengeOpt.get,  or.children.map(convertToUnchecked))
     case t: CThresholdUnproven =>
-      CThresholdUncheckedNode(t.challengeOpt.get,  t.children.map(convertToUnchecked), t.k, t.polynomialOpt) // TODO: may need fixing
+      CThresholdUncheckedNode(t.challengeOpt.get,  t.children.map(convertToUnchecked), t.k, t.polynomialOpt)
     case s: UncheckedSchnorr => s
     case d: UncheckedDiffieHellmanTuple => d
     case _ => ???
