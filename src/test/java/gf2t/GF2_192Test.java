@@ -1,3 +1,31 @@
+/*
+ By Leonid Reyzin
+
+ This is free and unencumbered software released into the public domain.
+
+ Anyone is free to copy, modify, publish, use, compile, sell, or
+ distribute this software, either in source code form or as a compiled
+ binary, for any purpose, commercial or non-commercial, and by any
+ means.
+
+ In jurisdictions that recognize copyright laws, the author or authors
+ of this software dedicate any and all copyright interest in the
+ software to the public domain. We make this dedication for the benefit
+ of the public at large and to the detriment of our heirs and
+ successors. We intend this dedication to be an overt act of
+ relinquishment in perpetuity of all present and future rights to this
+ software under copyright law.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ OTHER DEALINGS IN THE SOFTWARE.
+
+ For more information, please refer to <http://unlicense.org>
+ */
 package gf2t;
 
 import org.junit.Test;
@@ -562,6 +590,15 @@ public class GF2_192Test {
 
 
         Random rand = new Random();
+
+        // Try with arrays of length 0
+        GF2_192_Poly p = GF2_192_Poly.interpolate(new byte[0], new GF2_192[0], new GF2_192(0));
+        assertFalse("Zero polynomial should be 0 at 0", !p.evaluate((byte)0).isZero());
+        assertFalse("Zero polynomial should be 0 at 5", !p.evaluate((byte)5).isZero());
+        GF2_192 val17 = new GF2_192(17);
+        p = GF2_192_Poly.interpolate(new byte[0], new GF2_192[0], val17);
+        assertFalse("Constant 17 polynomial should be 17 at 0", !p.evaluate((byte)0).equals(val17));
+        assertFalse("Constant 17 polynomial should be 17 at 5", !p.evaluate((byte)5).equals(val17));
 
         for (int len = 1; len < 100; len++) {
             byte[] points = new byte[len];

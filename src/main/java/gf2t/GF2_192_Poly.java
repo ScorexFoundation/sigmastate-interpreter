@@ -1,3 +1,32 @@
+/*
+ By Leonid Reyzin
+
+ This is free and unencumbered software released into the public domain.
+
+ Anyone is free to copy, modify, publish, use, compile, sell, or
+ distribute this software, either in source code form or as a compiled
+ binary, for any purpose, commercial or non-commercial, and by any
+ means.
+
+ In jurisdictions that recognize copyright laws, the author or authors
+ of this software dedicate any and all copyright interest in the
+ software to the public domain. We make this dedication for the benefit
+ of the public at large and to the detriment of our heirs and
+ successors. We intend this dedication to be an overt act of
+ relinquishment in perpetuity of all present and future rights to this
+ software under copyright law.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ OTHER DEALINGS IN THE SOFTWARE.
+
+ For more information, please refer to <http://unlicense.org>
+ */
+
 package gf2t;
 
 public class GF2_192_Poly {
@@ -37,21 +66,22 @@ public class GF2_192_Poly {
 
 
     /**
-     * Interpolates the polynomial at given points (and at point 0, if valueAt0.isPresent()).
-     * If points are not all distinct, or if 0 is in the points array and valueAt0.isPresent(), behavior is undefined.
+     * Interpolates the polynomial at given points (and at point 0, if valueAt0!=null).
+     * If points are not all distinct, or if 0 is in the points array and valueAt0!=null, behavior is undefined.
      * valueAt0 is separated only for efficiency reason; the caller can treat 0 like any other point instead
-     * (i.e., the points array can include 0 if !valueAt0.isPresent(), but computation will be slightly less efficient).
-     * If any input is null, or if lengths of points and values arrays differ, or if the arrays are 0 length, returns null.
+     * (i.e., the points array can include 0 if valueAt0==null, but computation will be slightly less efficient).
+     * If points is null, or values is null, or if lengths of points and values arrays differ,
+     * or if the arrays are 0 length and valueAt0 is null, returns null.
      *
      * @param points the set of distinct inputs to the returned polynomial
      *               (last byte of the field element only; all other bits are assumed to be 0)
-     * @param values value[i] will be the result evaluating the returned polynomial at points[i]. Values[i] must not be null.
+     * @param values values[i] will be the result evaluating the returned polynomial at points[i]. values[i] must not be null.
      * @param valueAt0 if not null, then valueAt0 will be the result of evaluating the returned polynomial at 0
-     * @return the unique lowest-degree polynomial p such that for every i, p(points[i]) = values[i] and p(0)=valueAt0.get()
-     *         (if valueAt0.isPresent())
+     * @return the unique lowest-degree polynomial p such that for every i, p(points[i]) = values[i] and p(0)=valueAt0
+     *         (if valueAt0!=null)
      */
     public static GF2_192_Poly interpolate (byte[] points, GF2_192 [] values, GF2_192 valueAt0) {
-        if (points == null || values == null || values.length == 0 || values.length!=points.length) return null;
+        if (points == null || values == null || (values.length == 0 && valueAt0 == null)|| values.length!=points.length) return null;
 
         int resultDegree = values.length-1;
         if (valueAt0!=null) {
