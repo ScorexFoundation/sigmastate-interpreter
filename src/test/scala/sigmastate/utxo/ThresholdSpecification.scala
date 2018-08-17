@@ -154,7 +154,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
 
     var twoToi = 1
-    for (i<- secrets.indices) {
+    for (i <- 0 to secrets.length) {
       for (bound <- 1 to i) {
         // don't go beyond i -- "threshold reduce to crypto" tests that atLeast then becomes false
         // don't test bound 0 -- "threshold reduce to crypto" tests that atLeast then becomes true
