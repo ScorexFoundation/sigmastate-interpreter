@@ -129,7 +129,8 @@ object SigSerializer {
           val endPolyPos = pos+chalLen+hashSize*(t.sigmaBooleans.length-t.k);
           val polynomial = GF2_192_Poly.fromByteArray(challenge, bytes.slice(pos+chalLen,endPolyPos));
 
-          val (seq, finalPos, lastChallenge) = t.sigmaBooleans.init.foldLeft((Seq[UncheckedSigmaTree](), endPolyPos, 1)) {
+
+          val (seq, finalPos, _) = t.sigmaBooleans.foldLeft((Seq[UncheckedSigmaTree](), endPolyPos, 1)) {
             case ((s, p, childIndex), child) =>
               val (rewrittenChild, consumed) = traverseNode(child, bytes, p, Some(Challenge @@ polynomial.evaluate(childIndex.toByte).toByteArray))
               (s :+ rewrittenChild, p + consumed, childIndex+1)

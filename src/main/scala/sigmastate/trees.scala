@@ -179,71 +179,74 @@ object AND {
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
 
-/** ATLEAST has two inputs: integer bound and children same as in AND/OR
-// It should go through the children.
-// If child is true, remove child and reduce bound. If child is false, remove child.
-// If at any point bound>number of children, the result is false.
-// If at any bound <=0, result is true.
-// If at any point bound == 1, convert to OR. If at any point bound == number of children, convert to and.
-// Once you have only sigma propositions below, output CTHRESHOLD
-// Somewhere we should also make sure that number of children doesn't exceed 255
-// (this will ensure bound is between 2 and 254, because otherwise one of the conditions above will apply and it will
-// be converted to one of true, false, and, or)
-*/
-case class AtLeast(k: Value[SInt.type], input: Value[SCollection[SBoolean.type]])
+/** AtLeast has two inputs: integer bound and children same as in AND/OR. The result is true if at least bound children are true.
+ */
+case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]])
     extends Transformer[SCollection[SBoolean.type], SBoolean.type]
         with NotReadyValueBoolean {
   override val opCode: OpCode = AtLeastCode
 
   override def cost[C <: Context[C]](context: C): Long =
-    k.cost(context) + input.cost(context) + Cost.AtLeastDeclaration
+    bound.cost(context) + input.cost(context) + Cost.AtLeastDeclaration
 
   override def transformationReady: Boolean =
-    k.evaluated && input.evaluated && input.matchCase(
+    bound.evaluated && input.evaluated && input.matchCase(
       _.items.forall(_.evaluated),
       _ => true,
       _.items.forall(_.evaluated)
     )
 
-  private def reduce(k: Int, children: Seq[Value[SBoolean.type]]): Value[SBoolean.type] = {
-    val sigmas = mutable.Buffer[SigmaBoolean]()
-    var bound = k
+  private def reduce(bound: Int, children: Seq[Value[SBoolean.type]]): Value[SBoolean.type] = {
+    if (bound<= 0) return TrueLeaf
+    if (bound>children.length) return FalseLeaf
+
+    var curBound = bound
     var childrenLeft = children.length
-    // we should make sure that number of children doesn't exceed 255
+    // invariant due to the two if statements above: 0<curBound<=childrenLeft
+
+    val sigmas = mutable.Buffer[SigmaBoolean]()
+
+    // we should make sure that number of children doesn't exceed 255, because CTHRESHOLD cannot handle
+    // more than 255 children, because of the way polynomial arithmetic is implemented (single-byte inputs only
+    // are allowed to polynomials)
+    //
     // (this will ensure bound is between 2 and 254, because otherwise one of the conditions above will apply and it will
     // be converted to one of true, false, and, or)
-    assert(childrenLeft <= 255)
+    assert(children.length <= 255) // TODO: I wouldn't use assert here, because asserts can be elided at scala compile time
+                                // (asserts are meant for debugging checks rather than safety checks)
+                                // My preferred method: if (children.length>=255) return FalseLeaf
+
+    // TODO: this constraint on the number of children of atLeast should also be ensured at ErgoScript compile time
+
     for (iChild <- children.indices) {
+      if (curBound == 1)
+        return OR(sigmas ++ children.slice(iChild, children.length))
+      // If at any point bound == number of children, convert to AND.
+      if (curBound == childrenLeft)
+        return AND(sigmas ++ children.slice(iChild, children.length))
+      // at this point 1<curBound<childrenLeft
       children(iChild) match {
         case TrueLeaf => // If child is true, remove child and reduce bound.
           childrenLeft -= 1
-          bound -= 1
+          curBound -= 1
         case FalseLeaf => // If child is false, remove child, leave bound unchanged.
           childrenLeft -= 1
         case sigma: SigmaBoolean => sigmas += sigma
       }
-      //If at any point bound > number of children, the result is false.
-      if (bound > childrenLeft) return FalseLeaf
-      // If at any point bound <= 0, result is true.
-      if (bound <= 0) return TrueLeaf
-      // If at any point bound == 1, convert to OR.
-      if (bound == 1)
-        return OR(sigmas ++ children.slice(iChild + 1, children.length))
-      // If at any point bound == number of children, convert to and.
-      if (bound == childrenLeft)
-        return AND(sigmas ++ children.slice(iChild + 1, children.length))
-      // Once you have only sigma propositions below, output CTHRESHOLD
+      // at this point 1<=curBound<=childrenLeft
     }
-    CTHRESHOLD(bound, sigmas)
+    if (curBound == 1) return OR(sigmas)
+    if (curBound == childrenLeft) return AND(sigmas)
+    CTHRESHOLD(curBound, sigmas)
   }
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
-    val k = this.k.asInstanceOf[EvaluatedValue[SInt.type]].value
+    val k = bound.asInstanceOf[EvaluatedValue[SInt.type]].value
     input.matchCase(
       cc => {
         reduce(k, cc.items)
       },
-      c => if (c.value.filter(_ == true).length == k) TrueLeaf else FalseLeaf,
+      c => if (c.value.filter(_ == true).length >= k) TrueLeaf else FalseLeaf,
       _ => ???
     )
   }
@@ -253,10 +256,10 @@ case class AtLeast(k: Value[SInt.type], input: Value[SCollection[SBoolean.type]]
   * Logical threshold
   */
 object AtLeast {
-  def apply(children: Seq[Value[SBoolean.type]]): AND =
-    AND(ConcreteCollection(children.toIndexedSeq))
+  def apply(bound: Int, children: Seq[Value[SBoolean.type]]): AtLeast =
+    AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
 
-  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
+  def apply(bound: Int, head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AtLeast = apply(bound, head +: tail)
 }
 
 /**

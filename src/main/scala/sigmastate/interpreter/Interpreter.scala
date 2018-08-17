@@ -3,12 +3,13 @@ package sigmastate.interpreter
 import java.util
 import java.util.Objects
 
+
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
@@ -16,10 +17,10 @@ import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{DeserializeContext, CostTable, Transformer, SigmaPropIsValid}
+import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -355,8 +356,7 @@ trait Interpreter {
         SigSerializer.parseAndComputeChallenges(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree =>
-
-            // Perform Verifier Steps 4
+            // Perform Verifier Step 4
             val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
 
             /**
@@ -365,7 +365,6 @@ trait Interpreter {
               * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
               * (and, if applicable,  the associated data). Reject otherwise.
               */
-
             val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
             util.Arrays.equals(newRoot.challenge, expectedChallenge)
         }

@@ -120,7 +120,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   }
 
   def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[ProverResult] = Try {
+
     val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions), exp).get
+
     val proofTree = reducedProp match {
       case bool: BooleanConstant =>
         bool match {
@@ -217,7 +219,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
           val kid = child.asInstanceOf[UnprovenTree];
           val (newKid, newCountOfReal) = kid.real match {
             case false => (kid, countOfReal)
-            case true => ({if (countOfReal>t.k) kid.withSimulated(true) else kid}, countOfReal+1)
+            case true => ({if (countOfReal>=t.k) kid.withSimulated(true) else kid}, countOfReal+1)
           }
           (children:+newKid, newCountOfReal)
         }._1
@@ -396,17 +398,20 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       // i of the node, if the child is marked "real", compute its challenge as Q(i) (if the child is marked
       // "simulated", its challenge is already Q(i), by construction of Q).
       assert(t.challengeOpt.isDefined)
-      val (points, values, _) = t.children.foldLeft(((Array[Byte](), Array[GF2_192](),1))) {
+      val (points, values, _) = t.children.foldLeft(Array[Byte](), Array[GF2_192](),1) {
         case ((p, v, count), child) =>
-          val (newPoints, newValues) = child match {
-            case r: UnprovenTree if r.simulated => (p:+count.toByte, v:+new GF2_192(r.challengeOpt.get))
-            case _ => (p, v)
+          val (newPoints, newValues) = {
+            // This is the easiest way to find out whether a child is simulated -- just to check if it alread
+            // has a challenge. Other ways are more of a pain because the children can be of different types
+            val challengeOpt = extractChallenge(child)
+            if (challengeOpt.isEmpty) (p, v)
+            else (p:+count.toByte, v:+new GF2_192(challengeOpt.get))
+
           }
           (newPoints, newValues, count+1)
       }
       val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get))
-
-      val newChildren = t.children.foldLeft((Seq[ProofTree](), 1)) {
+      val newChildren = t.children.foldLeft(Seq[ProofTree](), 1) {
         case ((s, count), child) =>
           val newChild = child match {
             case r: UnprovenTree if r.real => r.withChallenge(Challenge @@ q.evaluate(count.toByte).toByteArray())
@@ -443,7 +448,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     case ut: UnprovenTree => ut
 
-    case a: Any => println(a); ???
+    case a: Any =>  ???
   })
 
 
@@ -454,7 +459,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case COR(children) =>
       COrUnproven(COR(children), None, simulated = false, children.map(convertToUnproven))
     case CTHRESHOLD(k, children) =>
-      CThresholdUnproven(CTHRESHOLD(k, children), None, simulated = false, k, children.map(convertToUnproven), None) // TODO: may need fixing
+      CThresholdUnproven(CTHRESHOLD(k, children), None, simulated = false, k, children.map(convertToUnproven), None)
     case ci: ProveDlog =>
       UnprovenSchnorr(ci, None, None, None, simulated = false)
     case dh: ProveDiffieHellmanTuple =>

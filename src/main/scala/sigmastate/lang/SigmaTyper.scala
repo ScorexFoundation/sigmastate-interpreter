@@ -127,8 +127,10 @@ class SigmaTyper(val builder: SigmaBuilder) {
             case (arg, expectedType) => assignType(env, arg, Some(expectedType))
           }
           val newArgs = new_f match {
-            case AllSym | AnySym | AtLeastSym => // TODO: is this correct way to handle atleast?
+            case AllSym | AnySym =>
               adaptSigmaPropToBoolean(new_args, argTypes)
+            case AtLeastSym => // TODO: is this correct way to handle atleast?
+              new_args.head+:adaptSigmaPropToBoolean(new_args.tail, argTypes.tail)
             case _ => new_args
           }
           val actualTypes = newArgs.map(_.tpe)

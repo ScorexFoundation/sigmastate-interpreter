@@ -146,7 +146,13 @@ object FiatShamirTree {
         val childrenCountBytes = Shorts.toByteArray(c.children.length.toShort)
         val conjBytes = Array(internalNodePrefix, c.conjectureType.id.toByte)
         // TODO: this is lame -- there should be a better way
-        val thresholdByte = if (c.isInstanceOf[CThresholdUnproven]) Array(c.asInstanceOf[CThresholdUnproven].k.toByte) else Array()
+        val thresholdByte = if (c.isInstanceOf[CThresholdUnproven]) {
+          Array(c.asInstanceOf[CThresholdUnproven].k.toByte)
+        }
+        else if(c.isInstanceOf[CThresholdUncheckedNode]) {
+          Array(c.asInstanceOf[CThresholdUncheckedNode].k.toByte)
+        }
+        else Array()
 
         c.children.foldLeft(conjBytes ++ thresholdByte ++ childrenCountBytes) { case (acc, ch) =>
           acc ++ traverseNode(ch)
