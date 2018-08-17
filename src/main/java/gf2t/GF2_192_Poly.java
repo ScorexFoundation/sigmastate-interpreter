@@ -81,7 +81,7 @@ public class GF2_192_Poly {
      *         (if valueAt0!=null)
      */
     public static GF2_192_Poly interpolate (byte[] points, GF2_192 [] values, GF2_192 valueAt0) {
-        if (points == null || values == null || (values.length == 0 && valueAt0 == null)|| values.length!=points.length) return null;
+        if (points == null || values == null || (values.length == 0 && valueAt0 == null) || values.length!=points.length) return null;
 
         int resultDegree = values.length-1;
         if (valueAt0!=null) {
@@ -206,8 +206,8 @@ public class GF2_192_Poly {
      * Lowest-degree coefficient (0 or 1 depending on coeff0) starts at index 0 of the returned array.
      * Each coefficient takes 24 bytes, for a total of degree*24 bytes if coeff0 is false,
      * or (degree+1)*24 bytes if coeff0 is true
-     * @param coeff0
-     * @return
+     * @param coeff0 whether to include coeff0
+     * @return array of all coefficients (except possibly 0th depending on coeff0)
      */
     public  byte[] toByteArray(Boolean coeff0) {
         int c0;
