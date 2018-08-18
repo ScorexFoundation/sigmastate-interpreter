@@ -5,9 +5,9 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.{ProveDiffieHellmanTuple, DLogProtocol}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, BoolValue, Value, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
+import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, BoolValue, Value, SigmaPropValue, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
@@ -37,6 +37,9 @@ trait SigmaBuilder {
 
   def mkOR(input: Value[SCollection[SBoolean.type]]): BoolValue
   def mkAND(input: Value[SCollection[SBoolean.type]]): BoolValue
+
+  def mkAnyOf(input: Seq[Value[SBoolean.type]]): BoolValue
+  def mkAllOf(input: Seq[Value[SBoolean.type]]): BoolValue
 
   def mkBinOr(left: BoolValue, right: BoolValue): BoolValue
   def mkBinAnd(left: BoolValue, right: BoolValue): BoolValue
@@ -123,6 +126,10 @@ trait SigmaBuilder {
                                 uv: Value[SGroupElement.type],
                                 vv: Value[SGroupElement.type]): SigmaBoolean
   def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
+  def mkTrivialSigma(value: BoolValue): SigmaPropValue
+
+  def mkSigmaPropIsValid(value: Value[SSigmaProp.type]): BoolValue
+  def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray]
 
   def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                        elementType: T): Value[SCollection[T]]
@@ -232,6 +239,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     AND(input)
+
+  override def mkAnyOf(input: Seq[Value[SBoolean.type]]) = OR(input)
+  override def mkAllOf(input: Seq[Value[SBoolean.type]]) = AND(input)
 
   override def mkBinOr(left: BoolValue, right: BoolValue) = BinOr(left, right)
 
@@ -370,6 +380,12 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean =
     ProveDlog(value)
+
+  override def mkTrivialSigma(value: BoolValue) = TrivialSigma(value)
+
+  override def mkSigmaPropIsValid(value: Value[SSigmaProp.type]) = SigmaPropIsValid(value)
+
+  override def mkSigmaPropBytes(value: Value[SSigmaProp.type]) = SigmaPropBytes(value)
 
   override def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                                 elementType: T): Value[SCollection[T]] =

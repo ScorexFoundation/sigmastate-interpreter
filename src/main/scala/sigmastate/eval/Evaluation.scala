@@ -4,11 +4,11 @@ import java.lang.reflect.Method
 
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import scapi.sigma.DLogProtocol
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, BoolValue, Value, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
+import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.Costing
 import sigmastate.serialization.OpCodes._
-import sigmastate.utxo.{ExtractAmount, SizeOf, Exists1}
+import sigmastate.utxo.{Exists1, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -20,6 +20,7 @@ trait Evaluation extends Costing {
   import Sigma._
   import Col._
   import Box._
+  import ColBuilder._
   import SigmaDslBuilder._
   import ConcreteCostedBuilder._
   import MonoidBuilderInst._
@@ -29,6 +30,7 @@ trait Evaluation extends Costing {
   private val SigmaM = SigmaMethods
   private val ColM = ColMethods
   private val BoxM = BoxMethods
+  private val CBM = ColBuilderMethods
   private val SDBM = SigmaDslBuilderMethods
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
@@ -68,6 +70,7 @@ trait Evaluation extends Costing {
   }
 
   import sigmastate._
+  import Values.{TrueLeaf, FalseLeaf}
   import special.sigma.{Context => SigmaContext}
 
   type ContextFunc[T <: SType] = SigmaContext => Value[T]
@@ -159,14 +162,14 @@ trait Evaluation extends Costing {
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
             
-          case SigmaM.and_bool_&&(In(l: Value[SBoolean.type]@unchecked), In(b: Boolean)) =>
+          case SigmaM.and_bool_&&(In(l), In(b: Boolean)) =>
             if (b)
               out(l)
             else
-              out(DLogProtocol.TrivialSigma(false))
-          case SigmaM.or_bool_||(In(l: Value[SBoolean.type]@unchecked), In(b: Boolean)) =>
+              out(sigmastate.TrivialSigma(FalseLeaf))
+          case SigmaM.or_bool_||(In(l), In(b: Boolean)) =>
             if (b)
-              out(DLogProtocol.TrivialSigma(true))
+              out(sigmastate.TrivialSigma(TrueLeaf))
             else
               out(l)
 
@@ -221,7 +224,7 @@ trait Evaluation extends Costing {
             }
             out(th)
           case TrivialSigmaCtor(In(isValid: Boolean)) =>
-            out(DLogProtocol.TrivialSigma(isValid))
+            out(sigmastate.TrivialSigma(BooleanConstant(isValid)))
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
       }
@@ -303,8 +306,17 @@ trait Evaluation extends Costing {
     }
   }
 
+  object IsInternalDef {
+    def unapply(d: Def[_]): Option[Def[_]] = d match {
+      case _: SigmaDslBuilder | _: ColBuilder => Some(d)
+      case _ => None
+    }
+  }
+
   def buildValue(mainG: PGraph, env: DefEnv, s: Sym, defId: Int): SValue = {
+    import builder._
     def recurse[T <: SType](s: Sym) = buildValue(mainG, env, s, defId).asValue[T]
+    object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(mainG, env, s, defId)) }
     s match {
       case _ if env.contains(s) =>
         val (id, tpe) = env(s)
@@ -323,12 +335,14 @@ trait Evaluation extends Costing {
         block
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
-        builder.mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+        mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
       case Def(IsContextProperty(v)) => v
-
+      case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
+        val tpe = elemToSType(eVar)
+        mkTaggedVariable(id, tpe)
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
-        builder.mkArith(x.asNumValue, y.asNumValue, opCode)
+        mkArith(x.asNumValue, y.asNumValue, opCode)
       case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
@@ -339,15 +353,50 @@ trait Evaluation extends Costing {
         SizeOf(recurse(col).asCollection[SType])
       case ColM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
-        builder.mkExists1(col.asCollection[SType], p.asFunc)
+        mkExists1(col.asCollection[SType], p.asFunc)
       case ColM.forall(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
-        builder.mkForAll1(col.asCollection[SType], p.asFunc)
-      case BoxM.value(box) =>
-        ExtractAmount(recurse[SBox.type](box))
+        mkForAll1(col.asCollection[SType], p.asFunc)
 
+      case BoxM.value(box) =>
+        mkExtractAmount(recurse[SBox.type](box))
+      case BoxM.propositionBytes(In(box)) =>
+        mkExtractScriptBytes(box.asBox)
+
+      case Def(AnyZk(_, colSyms)) =>
+        val col = colSyms.map(recurse(_).asSigmaProp)
+        SigmaOr(col)
+      case Def(AllZk(_, colSyms)) =>
+        val col = colSyms.map(recurse(_).asSigmaProp)
+        SigmaAnd(col)
+
+      case Def(AnyOf(_, colSyms)) =>
+        val col = colSyms.map(recurse(_).asBoolValue)
+        mkAnyOf(col)
+      case Def(AllOf(_, colSyms)) =>
+        val col = colSyms.map(recurse(_).asBoolValue)
+        mkAllOf(col)
+
+      case SigmaM.and_bool_&&(In(prop), In(cond)) =>
+        SigmaAnd(Seq(prop.asSigmaProp, mkTrivialSigma(cond.asBoolValue)))
+      case SigmaM.or_bool_||(In(prop), In(cond)) =>
+        SigmaOr(Seq(prop.asSigmaProp, mkTrivialSigma(cond.asBoolValue)))
+      case SigmaM.and_sigma_&&(In(p1), In(p2)) =>
+        SigmaAnd(Seq(p1.asSigmaProp, p2.asSigmaProp))
+      case SigmaM.or_sigma_||(In(p1), In(p2)) =>
+        SigmaOr(Seq(p1.asSigmaProp, p2.asSigmaProp))
+//      case SigmaM.lazyAnd(In(l), In(r)) =>
+//        mkBinAnd(l.asSigmaProp, r.asSigmaProp)
+//      case SigmaM.lazyOr(In(l), In(r)) =>
+//        mkBinOr(l.asSigmaProp, r.asSigmaProp)
+      case SigmaM.isValid(In(prop)) =>
+        mkSigmaPropIsValid(prop.asSigmaProp)
+      case SigmaM.propBytes(In(prop)) =>
+        mkSigmaPropBytes(prop.asSigmaProp)
+      case Def(TrivialSigmaCtor(In(cond))) =>
+        mkTrivialSigma(cond.asBoolValue)
       case Def(d) =>
-        !!!(s"Don't know how to buildValue($mainG, $d, $env, $defId)")
+        !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
     }
   }
 
@@ -356,7 +405,7 @@ trait Evaluation extends Costing {
     var curId = defId
     var curEnv = env
     for (TableEntry(s, d) <- subG.schedule) {
-      if (mainG.hasManyUsagesGlobal(s) && IsContextProperty.unapply(d).isEmpty) {
+      if (mainG.hasManyUsagesGlobal(s) && IsContextProperty.unapply(d).isEmpty && IsInternalDef.unapply(d).isEmpty) {
         val rhs = buildValue(mainG, curEnv, s, curId)
         curId += 1
         val vd = ValDef(curId, Seq(), rhs)

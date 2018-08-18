@@ -405,6 +405,11 @@ object Values {
 
   object BooleanConstant {
     def fromBoolean(v: Boolean): BooleanConstant = if (v) TrueLeaf else FalseLeaf
+    def apply(value: Boolean): BooleanConstant = Constant[SBoolean.type](value, SBoolean)
+    def unapply(v: SValue): Option[Boolean] = v match {
+      case Constant(value: Boolean, SBoolean) => Some(value)
+      case _ => None
+    }
   }
 
   val TrueLeaf: Constant[SBoolean.type] = Constant[SBoolean.type](true, SBoolean)

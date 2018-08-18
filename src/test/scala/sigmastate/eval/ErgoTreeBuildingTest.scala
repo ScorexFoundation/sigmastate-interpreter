@@ -2,13 +2,14 @@ package sigmastate.eval
 
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
-import sigmastate.Values.{LongConstant, FuncValue, FalseLeaf, TrueLeaf, BlockValue, IntConstant, ValDef, ValUse}
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.Values.{LongConstant, FuncValue, FalseLeaf, TrueLeaf, BlockValue, IntConstant, ValDef, ValUse, TaggedVariable}
 import sigmastate.serialization.OpCodes._
 
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
 import sigmastate.lang.Terms.Apply
-import sigmastate.utxo.{Exists1, ExtractAmount, SizeOf, ForAll1}
+import sigmastate.utxo._
 
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
@@ -65,7 +66,22 @@ class ErgoTreeBuildingTest extends BaseCtxTests
              Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(20))).asNumValue)))
   }
 
-//  test("Crowd Funding") {
-//    build(envCF, "CrowdFunding", crowdFundingScript, FalseLeaf)
-//  }
+  test("Crowd Funding") {
+    build(envCF, "CrowdFunding", crowdFundingScript,
+      BlockValue(Vector(
+        ValDef(1,List(),LongConstant(100)),
+        ValDef(2,List(),TaggedVariable(2,SSigmaProp))),
+        SigmaPropIsValid(SigmaOr(Seq(
+          SigmaAnd(Seq(TrivialSigma(GE(Height,ValUse(1,SLong))),TaggedVariable(1,SSigmaProp))),
+          SigmaAnd(Seq(
+            TrivialSigma(AND(Vector(
+              LT(Height,ValUse(1,SLong)),
+              Exists1(Outputs, FuncValue(Vector((3,SBox)),
+                  BinAnd(
+                    GE(ExtractAmount(ValUse(3,SBox)),LongConstant(1000)),
+                    EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp)))))
+              )))),
+            ValUse(2,SSigmaProp)
+          )))))))
+  }
 }

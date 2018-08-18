@@ -3,7 +3,6 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
-import scapi.sigma.DLogProtocol.TrivialSigma
 import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.SCollection.SByteArray
@@ -42,6 +41,32 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
   extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
+case class TrivialSigma(value: BoolValue) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.TrivialSigmaCode
+  override def cost[C <: Context[C]](context: C): Long = ??? //Cost.BooleanConstantDeclaration
+  def tpe = SSigmaProp
+  def evaluated = false
+}
+
+/**
+  * AND conjunction for sigma propositions
+  */
+case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.SigmaAndCode
+  override def cost[C <: Context[C]](context: C): Long = ???
+  def tpe = SSigmaProp
+  def evaluated = false
+}
+
+/**
+  * OR disjunction for sigma propositions
+  */
+case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.SigmaOrCode
+  override def cost[C <: Context[C]](context: C): Long = ???
+  def tpe = SSigmaProp
+  def evaluated = false
+}
 
 /**
   * OR logical conjunction
@@ -69,8 +94,8 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     def iterChildren(children: Seq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
       if (children.isEmpty) currentBuffer else children.head match {
-        case TrueLeaf | TrivialSigma(true) => mutable.Buffer(TrueLeaf)
-        case FalseLeaf | TrivialSigma(false) => iterChildren(children.tail, currentBuffer)
+        case TrueLeaf  => mutable.Buffer(TrueLeaf)
+        case FalseLeaf  => iterChildren(children.tail, currentBuffer)
         case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }
     }
@@ -127,8 +152,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     def iterChildren(children: IndexedSeq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
       if (children.isEmpty) currentBuffer else children.head match {
-        case FalseLeaf | TrivialSigma(false) => mutable.Buffer(FalseLeaf)
-        case TrueLeaf | TrivialSigma(true) => iterChildren(children.tail, currentBuffer)
+        case FalseLeaf  => mutable.Buffer(FalseLeaf)
+        case TrueLeaf  => iterChildren(children.tail, currentBuffer)
         case and: CAND => iterChildren(and.sigmaBooleans.toIndexedSeq ++ children.tail, currentBuffer)
         case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }

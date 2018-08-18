@@ -15,6 +15,7 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 
+import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -239,10 +240,13 @@ object SPrimType {
   final val PrimRange: Byte = (MaxPrimTypeCode + 1).toByte
 }
 
-case object SBoolean extends SPrimType with SEmbeddable {
+trait SLogical extends SType {
+}
+
+case object SBoolean extends SPrimType with SEmbeddable with SLogical {
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 1: Byte
-  override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant.fromBoolean(v)
+  override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant(v)
   override def dataCost(v: SType#WrappedType): Long = Cost.BooleanConstantDeclaration
 }
 
@@ -369,7 +373,7 @@ case object SString extends SProduct {
   )
 }
 
-case object SSigmaProp extends SProduct with SPrimType with SEmbeddable {
+case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLogical {
   override type WrappedType = SigmaBoolean
   override val typeCode: TypeCode = 8: Byte
   override def mkConstant(v: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(v)
