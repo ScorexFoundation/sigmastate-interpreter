@@ -135,7 +135,7 @@ object Terms {
     def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
     def asIntValue: Value[SInt.type] = v.asInstanceOf[Value[SInt.type]]
     def asLongValue: Value[SLong.type] = v.asInstanceOf[Value[SLong.type]]
-    def asSigmaValue: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
+    def asSigmaBoolean: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
     def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
     def asSigmaProp: Value[SSigmaProp.type] = v.asInstanceOf[Value[SSigmaProp.type]]

@@ -7,10 +7,11 @@ import org.bouncycastle.math.ec.ECPoint
 
 import scalan.{Lazy, SigmaLibrary}
 import org.ergoplatform._
+import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
-import sigmastate.Values.{OptionValue, Constant, SValue, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ConcreteCollection}
+import sigmastate.Values.{OptionValue, Constant, SValue, SigmaPropConstant, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ConcreteCollection}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._
@@ -211,6 +212,7 @@ trait Costing extends SigmaLibrary {
   type Env = Map[String, Sym]
 
   import sigmastate._
+  import scapi.sigma.{DLogProtocol, DiffieHellmanTupleProtocol}
 
   private def evalNode[T <: SType](ctx: Rep[Context], env: Map[String, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
@@ -220,8 +222,11 @@ trait Costing extends SigmaLibrary {
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
 
+      case _: DLogProtocol.ProveDlog | _: ProveDiffieHellmanTuple =>
+        eval(SigmaPropConstant(node.asSigmaBoolean))
+
       case c @ Constant(v, tpe) => v match {
-        case p: scapi.sigma.DLogProtocol.ProveDlog =>
+        case p: DLogProtocol.ProveDlog =>
           val ge = evalNode(ctx, env, p.value).asRep[Costed[WECPoint]]
           val resV = RProveDlogEvidence(ge.value)
           CostedPrimRep(resV, ge.cost + costOf(p))
@@ -330,8 +335,8 @@ trait Costing extends SigmaLibrary {
 
       case Select(obj: SigmaBoolean, field, _) =>
         field match {
-          case SigmaBoolean.PropBytes => eval(ByteArrayConstant(obj.bytes))
-          case SigmaBoolean.IsValid => eval(obj)
+          case SigmaBoolean.PropBytes => eval(SigmaPropBytes(SigmaPropConstant(obj)))
+          case SigmaBoolean.IsValid => eval(SigmaPropIsValid(SigmaPropConstant(obj)))
         }
 
       case Select(obj, "value", Some(SLong)) if obj.tpe == SBox =>

@@ -56,7 +56,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       }
 
     case sel @ Select(obj: SigmaBoolean, n, None) =>
-      val newObj = assignType(env, obj).asSigmaValue
+      val newObj = assignType(env, obj).asSigmaBoolean
       val iField = newObj.fields.indexWhere(_._1 == n)
       val tRes = if (iField != -1) {
         obj.fields(iField)._2

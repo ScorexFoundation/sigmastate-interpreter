@@ -9,7 +9,7 @@ import sigmastate.Values._
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.lang.{LangTests, Costing, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.SizeOf
+import sigmastate.utxo.{SizeOf, SigmaPropBytes}
 
 import scalan.BaseCtxTests
 
@@ -68,9 +68,9 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "bigint", "n1", {_ => toRep(n1) }, { _ => costOf(BigIntConstant(n1))})
     checkInEnv(env, "bigint2", "big", {_ => toRep(big) }, { _ => costOf(BigIntConstant(big))})
     checkInEnv(env, "group", "g1", {_ => mkWECPointConst(g1) }, { _ => costOf(GroupElementConstant(g1))})
-    checkInEnv(env, "sigmaprop", "p1",
-      {_ => RProveDlogEvidence(mkWECPointConst(g1)) },
-      { _ => costOf(GroupElementConstant(g1)) + costOf(p1)})
+    checkInEnv(env, "sigmaprop", "p1.propBytes",
+      {_ => RProveDlogEvidence(mkWECPointConst(g1)).asRep[Sigma].propBytes },
+      { _ => costOf(GroupElementConstant(g1)) + costOf(p1) + costOf(SigmaPropBytes(SigmaPropConstant(p1)))})
   }
   
   test("operations") {
