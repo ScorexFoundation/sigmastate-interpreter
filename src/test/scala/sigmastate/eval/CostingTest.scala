@@ -1,21 +1,23 @@
 package sigmastate.eval
 
+import java.math.BigInteger
+
 import com.google.common.base.Strings
+import org.bouncycastle.math.ec.ECPoint
 import sigmastate.SType
-import sigmastate.Values.{SigmaPropConstant, SValue}
+import sigmastate.Values._
 import sigmastate.helpers.ErgoLikeProvingInterpreter
-import sigmastate.lang.{Costing, LangTests, SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{LangTests, Costing, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.SizeOf
 
 import scalan.BaseCtxTests
 
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit {
-  lazy val ctx = new TestContext with Costing {
-    import TestSigmaDslBuilder._
-    val sigmaDslBuilder = RTestSigmaDslBuilder()
-    val builder = TransformingSigmaBuilder
-  }
-  import ctx._
+  import IR._
+  import WArray._
+  import WECPoint._
+  import ProveDlogEvidence._
   import Context._; import SigmaContract._
   import Cost._; import ColBuilder._; import Col._; import Box._; import Sigma._; import CrowdFunding._
   import SigmaDslBuilder._; import WOption._
@@ -53,8 +55,22 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(Map(), name, script, expectedCalc, expectedCost)
 
   test("constants") {
-    check("one", "1", _ => 1, _ => ConstantNode)
-    check("oneL", "1L", _ => 1L, _ => ConstantNode)
+    check("int", "1", _ => 1, _ => costOf(IntConstant(1)))
+    check("long", "1L", _ => 1L, _ => costOf(LongConstant(1)))
+    check("boolean", "true", _ => true, _ => costOf(TrueLeaf))
+    checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => costOf(ByteConstant(1)))
+    checkInEnv(env, "arr", "arr1.size",
+      _ => colBuilder.fromArray(mkWArrayConst(Array[Byte](1, 2))).length,
+      { _ =>
+        val c = ByteArrayConstant(env("arr1").asInstanceOf[Array[Byte]])
+        costOf(c) + costOf(SizeOf(c))
+      })
+    checkInEnv(env, "bigint", "n1", {_ => toRep(n1) }, { _ => costOf(BigIntConstant(n1))})
+    checkInEnv(env, "bigint2", "big", {_ => toRep(big) }, { _ => costOf(BigIntConstant(big))})
+    checkInEnv(env, "group", "g1", {_ => mkWECPointConst(g1) }, { _ => costOf(GroupElementConstant(g1))})
+    checkInEnv(env, "sigmaprop", "p1",
+      {_ => RProveDlogEvidence(mkWECPointConst(g1)) },
+      { _ => costOf(GroupElementConstant(g1)) + costOf(p1)})
   }
   
   test("operations") {
@@ -114,6 +130,17 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     check("lam3", "{let f = fun (out: Box) = { out.value >= 0L }; f(SELF) }",
       ctx => { val f = fun { out: Rep[Box] => out.value >= 0L }; Apply(f, ctx.SELF, false) },
       ctx => { toRep(LambdaDeclaration) + SelfAccess + (TripleDeclaration + ExtractAmount + LongConstantDeclaration) })
+  }
+
+  test("if then else") {
+    check("lam1", "{ let x = if (OUTPUTS.size > 0) OUTPUTS(0).value else SELF.value; x }",
+      { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x },
+      { ctx =>
+        val condCost = toRep(SizeOfDeclaration) + IntConstantDeclaration + TripleDeclaration
+        val thenCost = toRep(ByIndexDeclaration) + ExtractAmount + IntConstantDeclaration
+        val elseCost = toRep(SelfAccess) + ExtractAmount
+        toRep(OutputsAccess) + condCost + IfDeclaration + (thenCost max elseCost)
+      })
   }
 
   test("Crowd Funding") {

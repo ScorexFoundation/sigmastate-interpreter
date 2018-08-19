@@ -29,6 +29,7 @@ trait LangTests {
   val g2 = dlog.multiplyGroupElements(g1, g1)
   protected val n1: BigInteger = BigInt(10).underlying()
   protected val n2: BigInteger = BigInt(20).underlying()
+  protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
   protected val p1: SigmaBoolean = ProveDlog(g1)
   protected val p2: SigmaBoolean = ProveDlog(g2)
 
@@ -46,7 +47,8 @@ trait LangTests {
     "p1" -> p1,
     "p2" -> p2,
     "n1" -> n1,
-    "n2" -> n2
+    "n2" -> n2,
+    "big" -> big
   )
 
   /** Parses string to SType tree */

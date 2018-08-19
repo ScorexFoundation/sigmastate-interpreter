@@ -93,6 +93,7 @@ object SType {
     def isNumType: Boolean = tpe.isInstanceOf[SNumericType]
     def asNumType: SNumericType = tpe.asInstanceOf[SNumericType]
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
+    def asCollection[T <: SType] = tpe.asInstanceOf[SCollection[T]]
     def classTag[T <: SType#WrappedType]: ClassTag[T] = (tpe match {
       case SBoolean => reflect.classTag[Boolean]
       case SByte => reflect.classTag[Byte]
@@ -334,7 +335,11 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
   override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.BigIntConstantDeclaration
+  override def dataCost(v: SType#WrappedType): Long = {
+    val bytes = v.asInstanceOf[BigInteger].bitLength() >> 3
+    Cost.BigIntConstantDeclaration + bytes
+  }
+
   val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
   override def upcast(v: AnyVal): BigInteger = v match {
     case x: Byte => BigInteger.valueOf(x.toLong)

@@ -55,6 +55,7 @@ object CostTable {
 
     val BinOrDeclaration = 1
     val BinAndDeclaration = 1
+    val IfDeclaration = 1
 
     /**PropLeaf declaration cost, wrapped script cost to be added as well.*/
     val PropLeafDeclaration = 500
@@ -67,6 +68,7 @@ object CostTable {
     val TxHasOutputDeclaration = 100
     val TxOutputDeclaration = 100
 
+    val SizeOfDeclaration = 30
     val ByIndexDeclaration = 50
     val SelectFieldDeclaration = 50
     val SigmaPropIsValidDeclaration = 50
@@ -82,7 +84,7 @@ object CostTable {
     val TupleDeclaration = 20
     val LambdaDeclaration = 1
 
-    val SizeOfDeclaration = 50
+
     val Exponentiate = 5000
     val MultiplyGroup = 50
   }
