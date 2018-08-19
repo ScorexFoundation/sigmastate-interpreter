@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import com.google.common.base.Strings
 import org.bouncycastle.math.ec.ECPoint
-import sigmastate.SType
+import sigmastate._
 import sigmastate.Values._
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.lang.{LangTests, Costing, TransformingSigmaBuilder, SigmaCompiler}
@@ -74,22 +74,40 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
   
   test("operations") {
-    check("one+one", "1 + 1", _ => 1 + 1, _ => ConstantNode * 2 + TripleDeclaration)
-    check("oneL+oneL", "1L - 1L", _ => 1L - 1L, _ => ConstantNode * 2 + TripleDeclaration)
-    check("one_gt_one", "1 > 1", _ => false, _ => ConstantNode * 2 + TripleDeclaration)
-    check("or", "1 > 1 || 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + BinOrDeclaration)
-    check("or2", "1 > 1 || 2 < 1 || 2 > 1", _ => true,
-      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * BinOrDeclaration)
-    check("or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
-      { ctx => (ctx.OUTPUTS.length > 1) lazy_|| Thunk(ctx.OUTPUTS.length < 1)  },
-      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + BinOrDeclaration)
-
-    check("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + BinAndDeclaration)
-    check("and2", "1 > 1 && 2 < 1 && 2 > 1", _ => false,
-      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * BinAndDeclaration)
-    check("and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1",
-      { ctx => (ctx.OUTPUTS.length > 1) lazy_&& Thunk(ctx.OUTPUTS.length < 1) },
-      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + BinAndDeclaration)
+    import NumericOps._
+    import builder._
+    check("one+one", "1 + 1", _ => toRep(1) + 1,
+      {_ => val c1 = IntConstant(1); costOf(c1) + costOf(c1) + costOf(Plus(c1, c1)) })
+    checkInEnv(env, "one+one2", "big - n1", _ => toRep(big) - n1,
+      {_ =>
+        val c1 = BigIntConstant(big);
+        val c2 = BigIntConstant(n1);
+        costOf(c1) + costOf(c2) + costOf(Minus(c1, c2)) })
+    check("one_gt_one", "1 > 1", _ => toRep(1) > 1,
+      { _ => val c1 = IntConstant(1); costOf(c1) + costOf(c1) + costOf(GT(c1, c1)) })
+    checkInEnv(env, "or", "1 > 1 || n1 < big", _ => (toRep(1) > 1) lazy_|| Thunk(toRep(n1) < big),
+      { _ =>
+        val (lv, lc) = {
+          val c1 = IntConstant(1);
+          val res = mkGT(c1, c1); (res, costOf(c1) + costOf(c1) + costOf(res)) }
+        val (rv, rc) = {
+          val c1 = BigIntConstant(n1);
+          val c2 = BigIntConstant(big);
+          val res = mkLT(c1, c1); (res, costOf(c1) + costOf(c2) + costOf(res)) }
+        lc + rc + costOf(mkBinOr(lv, rv))
+      })
+//    check("or2", "1 > 1 || 2 < 1 || 2 > 1", _ => true,
+//      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * BinOrDeclaration)
+//    check("or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
+//      { ctx => (ctx.OUTPUTS.length > 1) lazy_|| Thunk(ctx.OUTPUTS.length < 1)  },
+//      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + BinOrDeclaration)
+//
+//    check("and", "1 > 1 && 2 < 1", _ => false, _ => ConstantNode * 4 + TripleDeclaration * 2 + BinAndDeclaration)
+//    check("and2", "1 > 1 && 2 < 1 && 2 > 1", _ => false,
+//      _ => ConstantNode * 6 + TripleDeclaration * 3 + 2 * BinAndDeclaration)
+//    check("and3", "OUTPUTS.size > 1 && OUTPUTS.size < 1",
+//      { ctx => (ctx.OUTPUTS.length > 1) lazy_&& Thunk(ctx.OUTPUTS.length < 1) },
+//      _ => (OutputsAccess + SizeOfDeclaration) * 2 + TripleDeclaration * 2 + ConstantNode * 2 + BinAndDeclaration)
   }
 
   test("context data") {

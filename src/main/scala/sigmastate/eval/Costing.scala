@@ -19,7 +19,7 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
-
+import sigmastate.eval.{NumericOps, OrderingOps}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
@@ -153,23 +153,27 @@ trait Costing extends SigmaLibrary {
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asElem[T#WrappedType]
 
+  import NumericOps._
   private val elemToNumericMap = Map[Elem[_], Numeric[_]](
     (ByteElement, numeric[Byte]),
     (ShortElement, numeric[Short]),
     (IntElement, numeric[Int]),
-    (LongElement, numeric[Long])
+    (LongElement, numeric[Long]),
+    (BigIntegerElement, numeric[BigInteger])
   )
   private val elemToIntegralMap = Map[Elem[_], Integral[_]](
     (ByteElement, integral[Byte]),
     (ShortElement, integral[Short]),
     (IntElement, integral[Int]),
-    (LongElement, integral[Long])
+    (LongElement, integral[Long]),
+    (BigIntegerElement, integral[BigInteger])
   )
   private val elemToOrderingMap = Map[Elem[_], Ordering[_]](
     (ByteElement, implicitly[Ordering[Byte]]),
     (ShortElement, implicitly[Ordering[Short]]),
     (IntElement, implicitly[Ordering[Int]]),
-    (LongElement, implicitly[Ordering[Long]])
+    (LongElement, implicitly[Ordering[Long]]),
+    (BigIntegerElement, implicitly[Ordering[BigInteger]])
   )
 
   def elemToNumeric [T](e: Elem[T]): Numeric[T]  = elemToNumericMap(e).asInstanceOf[Numeric[T]]
