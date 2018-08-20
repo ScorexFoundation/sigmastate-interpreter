@@ -14,6 +14,7 @@ import special.sigma.{Box, ContractsTestkit, AnyValue, Context, TestBox, TestCon
 import scala.collection.mutable
 import scala.util.Success
 
+
 class EvaluationTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
 
