@@ -129,8 +129,9 @@ class SigmaTyper(val builder: SigmaBuilder) {
           val newArgs = new_f match {
             case AllSym | AnySym =>
               adaptSigmaPropToBoolean(new_args, argTypes)
-            case AtLeastSym => // TODO: is this correct way to handle atleast?
-              new_args.head+:adaptSigmaPropToBoolean(new_args.tail, argTypes.tail)
+            case AtLeastSym =>
+              // In new_args the first item is `bound`, the second - collection of logical values
+              new_args.head +: adaptSigmaPropToBoolean(new_args.tail, argTypes.tail)
             case _ => new_args
           }
           val actualTypes = newArgs.map(_.tpe)
