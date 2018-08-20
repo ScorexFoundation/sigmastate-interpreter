@@ -44,7 +44,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
       Some(mkOR(arr))
 
-    // Rule: atLeast(bound, arr) --> OR(arr)
+    // Rule: atLeast(bound, arr) --> AtLeast(bound, arr)
     case Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
       Some(mkAtLeast(bound.asIntValue, arr))
 

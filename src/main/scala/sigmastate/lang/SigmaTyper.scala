@@ -296,9 +296,6 @@ class SigmaTyper(val builder: SigmaBuilder) {
         error(s"Invalid operation OR: $op")
       mkOR(input1)
 
-
-      // TODO: write case for ATLEAST
-
     case GE(l, r) => bimap(env, ">=", l, r)(mkGE[SType])(tT, SBoolean)
     case LE(l, r) => bimap(env, "<=", l, r)(mkLE[SType])(tT, SBoolean)
     case GT(l, r) => bimap(env, ">", l, r) (mkGT[SType])(tT, SBoolean)
