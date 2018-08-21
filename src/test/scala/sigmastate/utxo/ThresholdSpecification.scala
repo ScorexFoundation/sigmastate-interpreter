@@ -33,8 +33,8 @@ class ThresholdSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    case class TestCase(numTrue:Int, vector: Seq[Value[SBoolean.type]],  dlogOnlyVector: DlogOnlyVector)
-    case class DlogOnlyVector(v:Seq[Value[SBoolean.type]] ) {
+    case class TestCase(numTrue: Int, vector: Seq[Value[SBoolean.type]], dlogOnlyVector: DlogOnlyVector)
+    case class DlogOnlyVector(v: Seq[Value[SBoolean.type]]) {
       lazy val orVersion = prover.reduceToCrypto(ctx, OR(v)).get._1
       lazy val andVersion = prover.reduceToCrypto(ctx, AND(v)).get._1
     }
@@ -42,7 +42,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
     // create four secrets
     var secrets = Seq[DLogProverInput]()
-    for (i<- 1 to 1) {
+    for (i <- 1 to 1) {
       val secret = DLogProverInput.random()
       val subProp = secret.publicImage
       secrets = secrets :+ secret
@@ -54,52 +54,52 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
     // build test cases of length 0 to 3 ProveDlogs with all possible inbetweens: nothing, false, true
     var testCaseSeq = Seq[TestCase](
-      TestCase(0,Seq(),emptyDlogOnlyVector),
+      TestCase(0, Seq(), emptyDlogOnlyVector),
       TestCase(0, Seq(fls), emptyDlogOnlyVector),
       TestCase(1, Seq(tr), emptyDlogOnlyVector))
     for (sk <- secrets) {
       val pk = sk.publicImage
       var newTestCaseSeq = Seq[TestCase]()
       for (t <- testCaseSeq) {
-        val dlogOnly = DlogOnlyVector(t.dlogOnlyVector.v :+ pk);
+        val dlogOnly = DlogOnlyVector(t.dlogOnlyVector.v :+ pk)
         newTestCaseSeq ++=
           Seq(t,
-            (TestCase(t.numTrue, t.vector :+ pk, dlogOnly)),
-            (TestCase(t.numTrue, t.vector :+ pk :+ fls, dlogOnly)),
-            (TestCase(t.numTrue+1, t.vector :+ pk :+ tr, dlogOnly)))
+            TestCase(t.numTrue, t.vector :+ pk, dlogOnly),
+            TestCase(t.numTrue, t.vector :+ pk :+ fls, dlogOnly),
+            TestCase(t.numTrue + 1, t.vector :+ pk :+ tr, dlogOnly))
       }
       testCaseSeq = newTestCaseSeq
     }
 
     // for each test case, make into atleast and reduce it to crypto with different thresholds
-    for (t<-testCaseSeq) {
-      for (bound<-0 to testCaseSeq.length+1) {
+    for (t <- testCaseSeq) {
+      for (bound <- 0 to testCaseSeq.length + 1) {
         val pReduced = prover.reduceToCrypto(ctx, AtLeast(bound, t.vector))
         pReduced.isSuccess shouldBe true
-        if (t.dlogOnlyVector.v.length == 0) {
+        if (t.dlogOnlyVector.v.isEmpty) {
           // Should be just true or false depending on numTrue vs bound
-          pReduced.get._1 shouldBe (if (t.numTrue>=bound) tr else fls)
+          pReduced.get._1 shouldBe (if (t.numTrue >= bound) tr else fls)
         }
         else if (t.dlogOnlyVector.v.length == 1) {
           // Should be just true if numTrue>=bound
-          if (t.numTrue>=bound) pReduced.get._1 shouldBe tr
+          if (t.numTrue >= bound) pReduced.get._1 shouldBe tr
           // Should be false if bound>numTrue + 1
-          else if (bound>t.numTrue+1) pReduced.get._1 shouldBe fls
+          else if (bound > t.numTrue + 1) pReduced.get._1 shouldBe fls
           // if bound is exactly numTrue+1, should be just dlog
-          else if (bound==t.numTrue+1) pReduced.get._1 shouldBe t.dlogOnlyVector.v(0)
+          else if (bound == t.numTrue + 1) pReduced.get._1 shouldBe t.dlogOnlyVector.v.head
         }
         else {
           // Should be just true if numTrue>=bound
-          if (t.numTrue>=bound) pReduced.get._1 shouldBe tr
+          if (t.numTrue >= bound) pReduced.get._1 shouldBe tr
           // Should be false if bound>numTrue + dlogOnlyVector.length
-          else if (bound>t.numTrue+t.dlogOnlyVector.v.length) pReduced.get._1 shouldBe fls
+          else if (bound > t.numTrue + t.dlogOnlyVector.v.length) pReduced.get._1 shouldBe fls
           // if bound is exactly numTrue+dlogOnlyVector, should be just AND of all dlogs
-          else if (bound==t.numTrue+t.dlogOnlyVector.v.length) pReduced.get._1 shouldBe t.dlogOnlyVector.andVersion
+          else if (bound == t.numTrue + t.dlogOnlyVector.v.length) pReduced.get._1 shouldBe t.dlogOnlyVector.andVersion
           // if bound is exactly numTrue+1, should be just OR of all dlogs
-          else if (bound==t.numTrue+1) pReduced.get._1 shouldBe t.dlogOnlyVector.orVersion
+          else if (bound == t.numTrue + 1) pReduced.get._1 shouldBe t.dlogOnlyVector.orVersion
           // else should be AtLeast
           else {
-            val atLeastReduced = prover.reduceToCrypto(ctx, AtLeast(bound-t.numTrue, t.dlogOnlyVector.v))
+            val atLeastReduced = prover.reduceToCrypto(ctx, AtLeast(bound - t.numTrue, t.dlogOnlyVector.v))
             pReduced.get._1 shouldBe atLeastReduced.get._1
           }
         }
@@ -131,8 +131,8 @@ class ThresholdSpecification extends SigmaTestingCommons {
     // the integer indicates how many subpropositions the prover can prove
     var provers = Seq[(Int, ErgoLikeProvingInterpreter)]((0, new ErgoLikeProvingInterpreter))
     // create 32 different provers
-    for (i<- secrets.indices) {
-      provers = provers ++ provers.map(p=>(p._1+1, p._2.withSecrets(secrets(i))))
+    for (i <- secrets.indices) {
+      provers = provers ++ provers.map(p => (p._1 + 1, p._2.withSecrets(secrets(i))))
     }
     val ctx = ErgoLikeContext(
       currentHeight = 1,
@@ -143,12 +143,12 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeInterpreter
 
-    def canProve(prover: ErgoLikeProvingInterpreter, proposition:Value[SBoolean.type]): Unit = {
+    def canProve(prover: ErgoLikeProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
       val proof = prover.prove(proposition, ctx, fakeMessage).get
       verifier.verify(proposition, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    def cannotProve(prover: ErgoLikeProvingInterpreter, proposition:Value[SBoolean.type]): Unit = {
+    def cannotProve(prover: ErgoLikeProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
       prover.prove(proposition, ctx, fakeMessage).isFailure shouldBe true
     }
 
@@ -164,10 +164,10 @@ class ThresholdSpecification extends SigmaTestingCommons {
         val AndPlusAtLeastOnLeftProp = AND(pureAtLeastProp, secret6.publicImage)
         val AndPlusAtLeastOnRightProp = AND(secret6.publicImage, pureAtLeastProp)
 
-        for (p <- provers.slice(0,twoToi)) {
+        for (p <- provers.slice(0, twoToi)) {
           val pWithSecret6 = p._2.withSecrets(Seq(secret6))
           // only consider first 2^i provers, because later provers have secrets that are not relevant to this proposition
-          if (p._1 >= bound) {  // enough secrets for at least
+          if (p._1 >= bound) { // enough secrets for at least
             // prover should be able to prove pure and both ors
             canProve(p._2, pureAtLeastProp)
             canProve(p._2, OrPlusAtLeastOnRightProp)
@@ -202,7 +202,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
         }
 
       }
-      twoToi*=2
+      twoToi *= 2
     }
   }
 }
