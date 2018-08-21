@@ -1,26 +1,109 @@
 package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
+import sigmastate.Values.{ConcreteCollection, Value}
 import scapi.sigma.DLogProtocol.DLogProverInput
-import sigmastate.Values.Value
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.lang.Terms._
 
 
 class ThresholdSpecification extends SigmaTestingCommons {
 
-  property("threshold compilation") {
+  property("basic threshold compilation/execution") {
     val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
+    val proverD = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
 
-    val pubkeyA = proverA.dlogSecrets.head.publicImage
-    val pubkeyB = proverA.dlogSecrets(1).publicImage
-    val pubkeyC = proverA.dlogSecrets(2).publicImage
+    val skA = proverA.dlogSecrets.head
+    val skB = proverB.dlogSecrets.head
+    val skC = proverC.dlogSecrets.head
+
+    val pubkeyA = skA.publicImage
+    val pubkeyB = skB.publicImage
+    val pubkeyC = skC.publicImage
+
+    val proverABC = proverA.withSecrets(Seq(skB, skC))
+    val proverAB = proverA.withSecrets(Seq(skB))
+    val proverAC = proverA.withSecrets(Seq(skC))
+    val proverBC = proverB.withSecrets(Seq(skC))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction = null,
+      self = fakeSelf)
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compile(env, """atLeast(2, Array(pubkeyA, pubkeyB, pubkeyC))""")
-    val prop = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
-    compiledProp shouldBe prop
+
+    // Basic compilation
+    val compiledProp1 = compile(env, """atLeast(2, Array(pubkeyA, pubkeyB, pubkeyC))""")
+    val prop1 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
+    compiledProp1 shouldBe prop1
+
+    // this example is from the white paper
+    val compiledProp2 = compile(env,
+      """{
+        |    let array = Array(pubkeyA, pubkeyB, pubkeyC)
+        |    atLeast(array.size, array)
+        |}""".stripMargin).asBoolValue
+
+
+    val prop2 = AtLeast(SizeOf(ConcreteCollection(Vector(pubkeyA, pubkeyB, pubkeyC))), pubkeyA, pubkeyB, pubkeyC)
+    compiledProp2 shouldBe prop2
+
+    val proof = proverABC.prove(compiledProp2, ctx, fakeMessage).get
+    verifier.verify(compiledProp2, ctx, proof, fakeMessage).get._1 shouldBe true
+
+    val nonWorkingProvers2 = Seq(proverA, proverB, proverC, proverAB, proverAC, proverBC, proverD)
+    for (prover <- nonWorkingProvers2) {
+      prover.prove(compiledProp2, ctx, fakeMessage).isFailure shouldBe true
+    }
+
+    val prop2And = AND(pubkeyA, pubkeyB, pubkeyC)
+    proverA.reduceToCrypto(ctx, compiledProp2).get._1 shouldBe proverA.reduceToCrypto(ctx, prop2And).get._1
+
+    // this example is from the white paper
+    val compiledProp3 = compile(env,
+      """{
+        |    let array = Array(pubkeyA, pubkeyB, pubkeyC)
+        |    atLeast(1, array)
+        |}""".stripMargin).asBoolValue
+    val prop3 = AtLeast(1, pubkeyA, pubkeyB, pubkeyC)
+    compiledProp3 shouldBe prop3
+
+    val workingProvers3 = Seq(proverA, proverB, proverC, proverAB, proverBC, proverAC, proverABC)
+    for (prover <- workingProvers3) {
+      val proof = prover.prove(compiledProp3, ctx, fakeMessage).get
+      verifier.verify(compiledProp3, ctx, proof, fakeMessage).get._1 shouldBe true
+    }
+    proverD.prove(compiledProp3, ctx, fakeMessage).isFailure shouldBe true
+
+    val prop3Or = OR(pubkeyA, pubkeyB, pubkeyC)
+    proverA.reduceToCrypto(ctx, compiledProp3).get._1 shouldBe proverA.reduceToCrypto(ctx, prop3Or).get._1
+
+    val compiledProp4 = compile(env,
+      """{
+        |    let array = Array(pubkeyA, pubkeyB, pubkeyC)
+        |    atLeast(2, array)
+        |}""".stripMargin).asBoolValue
+    val prop4 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
+    compiledProp4 shouldBe prop4
+
+    val workingProvers4 = Seq(proverAB, proverBC, proverAC, proverABC)
+    for (prover <- workingProvers4) {
+      val proof = prover.prove(compiledProp4, ctx, fakeMessage).get
+      verifier.verify(compiledProp4, ctx, proof, fakeMessage).get._1 shouldBe true
+    }
+    val nonWorkingProvers4 = Seq(proverA, proverB, proverC, proverD)
+    for (prover <- nonWorkingProvers4) {
+      prover.prove(compiledProp4, ctx, fakeMessage).isFailure shouldBe true
+    }
   }
+
 
   property("threshold reduce to crypto") {
     val prover = new ErgoLikeProvingInterpreter
@@ -141,6 +224,74 @@ class ThresholdSpecification extends SigmaTestingCommons {
     case0FalseHit && case0TrueHit shouldBe true
     case1FalseHit && case1TrueHit && case1DLogHit shouldBe true
     case2FalseHit && case2TrueHit && case2AndHit && case2OrHit && case2AtLeastHit shouldBe true
+  }
+
+  property("3-out-of-6 threshold") {
+    // This example is from the white paper
+    val proverA = new ErgoLikeProvingInterpreter
+    val proverB = new ErgoLikeProvingInterpreter
+    val proverC = new ErgoLikeProvingInterpreter
+    val proverD = new ErgoLikeProvingInterpreter
+    val proverE = new ErgoLikeProvingInterpreter
+    val proverF = new ErgoLikeProvingInterpreter
+    val proverG = new ErgoLikeProvingInterpreter
+    val proverH = new ErgoLikeProvingInterpreter
+    val proverI = new ErgoLikeProvingInterpreter
+
+    val skA = proverA.dlogSecrets.head
+    val skB = proverB.dlogSecrets.head
+    val skC = proverC.dlogSecrets.head
+    val skD = proverD.dlogSecrets.head
+    val skE = proverE.dlogSecrets.head
+    val skF = proverF.dlogSecrets.head
+    val skG = proverG.dlogSecrets.head
+    val skH = proverH.dlogSecrets.head
+    val skI = proverI.dlogSecrets.head
+
+    val pkA = skA.publicImage
+    val pkB = skB.publicImage
+    val pkC = skC.publicImage
+    val pkD = skD.publicImage
+    val pkE = skE.publicImage
+    val pkF = skF.publicImage
+    val pkG = skG.publicImage
+    val pkH = skH.publicImage
+    val pkI = skI.publicImage
+
+
+    val env = Map("pkA" -> pkA, "pkB" -> pkB, "pkC" -> pkC,
+      "pkD" -> pkD, "pkE" -> pkE, "pkF" -> pkF,
+      "pkG" -> pkG, "pkH" -> pkH, "pkI" -> pkI)
+    val compiledProp = compile(env, """atLeast(3, Array (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""")
+    val prop = AtLeast(3, pkA, pkB, pkC, AND(pkD, pkE), AND(pkF, pkG), AND(pkH, pkI))
+
+    compiledProp shouldBe prop
+
+    val badProver = proverH.withSecrets(Seq(skB, skC, skE))
+    val goodProver1 = badProver.withSecrets(Seq(skD))
+    val goodProver2 = badProver.withSecrets(Seq(skA))
+    val goodProver3 = badProver.withSecrets(Seq(skF, skG))
+    val goodProver4 = badProver.withSecrets(Seq(skF, skG, skA))
+
+    val goodProvers = Seq(goodProver1, goodProver2, goodProver3, goodProver4)
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction = null,
+      self = fakeSelf)
+
+    val verifier = new ErgoLikeInterpreter
+
+
+    for (prover <- goodProvers) {
+      val proof = prover.prove(prop, ctx, fakeMessage).get
+      verifier.verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+    }
+
+    badProver.prove(prop,ctx,fakeMessage).isFailure shouldBe true
+
   }
 
   property("threshold proving of different trees") {
