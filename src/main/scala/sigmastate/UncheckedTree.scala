@@ -79,7 +79,7 @@ case class CThresholdUncheckedNode(override val challenge: Challenge,
                                    override val children: Seq[UncheckedSigmaTree],
                                    k: Integer,
                                    polynomialOpt: Option[GF2_192_Poly]) extends UncheckedConjecture {
-  require(children.length <= 255)
+  require(children.length <= 255) // Our polynomial arithmetic can take only byte inputs
   require(k >= 0 && k <= children.length)
 
   override val conjectureType = ConjectureType.ThresholdConjecture

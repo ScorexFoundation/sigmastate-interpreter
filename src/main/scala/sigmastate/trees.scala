@@ -41,7 +41,8 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   * THRESHOLD connector for sigma propositions
   */
 case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  require(k >= 0 && k <= 255 && sigmaBooleans.length >= k && sigmaBooleans.length <= 255)
+  // Our polynomial arithmetic can take only byte inputs
+  require(k >= 0 && k <= sigmaBooleans.length && sigmaBooleans.length <= 255)
 
   override val opCode: OpCode = OpCodes.AtLeastCode
 

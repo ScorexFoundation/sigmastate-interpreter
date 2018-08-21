@@ -11,12 +11,10 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   property("threshold compilation") {
     val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
-    val pubkeyB = proverB.dlogSecrets.head.publicImage
-    val pubkeyC = proverC.dlogSecrets.head.publicImage
+    val pubkeyB = proverA.dlogSecrets(1).publicImage
+    val pubkeyC = proverA.dlogSecrets(2).publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compile(env, """atLeast(2, Array(pubkeyA, pubkeyB, pubkeyC))""")

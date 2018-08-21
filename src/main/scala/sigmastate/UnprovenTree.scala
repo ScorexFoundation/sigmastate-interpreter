@@ -83,7 +83,7 @@ case class CThresholdUnproven(override val proposition: CTHRESHOLD,
                        polynomialOpt: Option[GF2_192_Poly]) extends UnprovenConjecture {
 
   require(k >= 0 && k <= children.length, "Wrong k value")
-  require(children.size <= 255)
+  require(children.size <= 255) // Our polynomial arithmetic can take only byte inputs
 
   override val conjectureType = ConjectureType.ThresholdConjecture
 
