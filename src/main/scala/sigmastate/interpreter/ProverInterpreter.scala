@@ -238,23 +238,21 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * compute the commitment a.
     */
   val simulateAndCommit: Strategy = everywheretd(rule[ProofTree] {
-    // Step 4 part 1: If the node is marked "real", then each of its simulated children gets a fresh uniformly random challenge
-    // in {0,1}^t.
+    // Step 4 part 1: If the node is marked "real", then each of its simulated children gets a fresh uniformly
+    // random challenge in {0,1}^t.
     case and: CAndUnproven if and.real => and // A real AND node has no simulated children
 
-    case or: COrUnproven if or.real =>
-      val newChildren = or.children.cast[UnprovenTree].map(c =>
+      //real OR or Threshold case
+    case uc: UnprovenConjecture if uc.real =>
+      val newChildren = uc.children.cast[UnprovenTree].map(c =>
         if (c.real) c
         else c.withChallenge(Challenge @@ Random.randomBytes(CryptoFunctions.soundnessBytes))
       )
-      or.copy(children = newChildren)
-
-    case t: CThresholdUnproven if t.real => // TODO: this case identical to the one above -- can we merge them?
-      val newChildren = t.children.cast[UnprovenTree].map(c =>
-        if (c.real) c
-        else c.withChallenge(Challenge @@ Random.randomBytes(CryptoFunctions.soundnessBytes))
-      )
-      t.copy(children = newChildren)
+      uc match {
+        case or: COrUnproven        => or.copy(children = newChildren)
+        case t: CThresholdUnproven  => t.copy(children = newChildren)
+        case _ => ???
+      }
 
     // Step 4 part 2: If the node is marked "simulated", let e_0 be the challenge computed for it.
     // All of its children are simulated, and thus we compute challenges for all
