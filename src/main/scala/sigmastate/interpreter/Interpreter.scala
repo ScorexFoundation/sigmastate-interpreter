@@ -35,7 +35,8 @@ object CryptoConstants {
 
   //size of challenge in Sigma protocols, in bits
   //if this anything but 192, threshold won't work, because we have polynomials over GF(2^192) and no others
-  //so DO NOT change the value without implementing polynomials over GF(2^soundnessBits) first!!!
+  //so DO NOT change the value without implementing polynomials over GF(2^soundnessBits) first
+  //and changing code that calls on GF2_192 and GF2_192_Poly classes!!!
   implicit val soundnessBits: Int = 192.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
 }
 
