@@ -6,7 +6,6 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteWriter, ByteReader}
-import sigmastate.utxo.Slice
 import sigmastate._
 
 case class AtLeastSerializer(cons: (Value[SInt.type], Value[SCollection[SBoolean.type]]) => Value[SBoolean.type])
