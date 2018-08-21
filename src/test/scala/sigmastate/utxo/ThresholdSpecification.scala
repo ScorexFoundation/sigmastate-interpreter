@@ -39,7 +39,8 @@ class ThresholdSpecification extends SigmaTestingCommons {
       lazy val andVersion = prover.reduceToCrypto(ctx, AND(v)).get._1
     }
 
-    val secrets = Seq[DLogProverInput](DLogProverInput.random())
+    // Sequence of three secrets, in order to build test cases with 0, 1, 2, or 3 ProveDlogs inputs
+    val secrets = Seq[DLogProverInput](DLogProverInput.random(), DLogProverInput.random(), DLogProverInput.random())
 
     val fls = SBoolean.mkConstant(false)
     val tr = SBoolean.mkConstant(true)
@@ -64,40 +65,84 @@ class ThresholdSpecification extends SigmaTestingCommons {
       testCaseSeq = newTestCaseSeq
     }
 
+
+    var case0TrueHit = false
+    var case0FalseHit = false
+    var case1TrueHit = false
+    var case1FalseHit = false
+    var case1DLogHit = false
+    var case2TrueHit = false
+    var case2FalseHit = false
+    var case2OrHit = false
+    var case2AndHit = false
+    var case2AtLeastHit = false
+
     // for each test case, make into atleast and reduce it to crypto with different thresholds
     for (t <- testCaseSeq) {
       for (bound <- 0 to testCaseSeq.length + 1) {
         val pReduced = prover.reduceToCrypto(ctx, AtLeast(bound, t.vector))
         pReduced.isSuccess shouldBe true
-        if (t.dlogOnlyVector.v.isEmpty) {
-          // Should be just true or false depending on numTrue vs bound
-          pReduced.get._1 shouldBe (if (t.numTrue >= bound) tr else fls)
+        if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
+          if (t.numTrue >= bound)  {
+            pReduced.get._1 shouldBe tr
+            case0TrueHit = true
+          }
+          else {
+            pReduced.get._1 shouldBe fls
+            case0FalseHit = true
+          }
         }
-        else if (t.dlogOnlyVector.v.length == 1) {
+        else if (t.dlogOnlyVector.v.length == 1) { // Case 1: 1 ProveDlog in the test vector
           // Should be just true if numTrue>=bound
-          if (t.numTrue >= bound) pReduced.get._1 shouldBe tr
+          if (t.numTrue >= bound) {
+            pReduced.get._1 shouldBe tr
+            case1TrueHit = true
+          }
           // Should be false if bound>numTrue + 1
-          else if (bound > t.numTrue + 1) pReduced.get._1 shouldBe fls
+          else if (bound > t.numTrue + 1) {
+            pReduced.get._1 shouldBe fls
+            case1FalseHit = true
+          }
           // if bound is exactly numTrue+1, should be just dlog
-          else if (bound == t.numTrue + 1) pReduced.get._1 shouldBe t.dlogOnlyVector.v.head
+          else if (bound == t.numTrue + 1) {
+            pReduced.get._1 shouldBe t.dlogOnlyVector.v.head
+            case1DLogHit = true
+          }
         }
-        else {
+        else { // Case 2: more than 1 ProveDlogs in the test vector
           // Should be just true if numTrue>=bound
-          if (t.numTrue >= bound) pReduced.get._1 shouldBe tr
+          if (t.numTrue >= bound) {
+            pReduced.get._1 shouldBe tr
+            case2TrueHit = true
+          }
           // Should be false if bound>numTrue + dlogOnlyVector.length
-          else if (bound > t.numTrue + t.dlogOnlyVector.v.length) pReduced.get._1 shouldBe fls
+          else if (bound > t.numTrue + t.dlogOnlyVector.v.length) {
+            pReduced.get._1 shouldBe fls
+            case2FalseHit = true
+          }
           // if bound is exactly numTrue+dlogOnlyVector, should be just AND of all dlogs
-          else if (bound == t.numTrue + t.dlogOnlyVector.v.length) pReduced.get._1 shouldBe t.dlogOnlyVector.andVersion
+          else if (bound == t.numTrue + t.dlogOnlyVector.v.length) {
+            pReduced.get._1 shouldBe t.dlogOnlyVector.andVersion
+            case2AndHit = true
+
+          }
           // if bound is exactly numTrue+1, should be just OR of all dlogs
-          else if (bound == t.numTrue + 1) pReduced.get._1 shouldBe t.dlogOnlyVector.orVersion
+          else if (bound == t.numTrue + 1) {
+            pReduced.get._1 shouldBe t.dlogOnlyVector.orVersion
+            case2OrHit = true
+          }
           // else should be AtLeast
           else {
             val atLeastReduced = prover.reduceToCrypto(ctx, AtLeast(bound - t.numTrue, t.dlogOnlyVector.v))
             pReduced.get._1 shouldBe atLeastReduced.get._1
+            case2AtLeastHit = true
           }
         }
       }
     }
+    case0FalseHit && case0TrueHit shouldBe true
+    case1FalseHit && case1TrueHit && case1DLogHit shouldBe true
+    case2FalseHit && case2TrueHit && case2AndHit && case2OrHit && case2AtLeastHit shouldBe true
   }
 
   property("threshold proving of different trees") {
