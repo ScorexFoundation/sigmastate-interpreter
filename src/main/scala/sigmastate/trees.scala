@@ -3,7 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
-import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._

@@ -78,11 +78,12 @@ case class COrUnproven(override val proposition: COR,
 case class CThresholdUnproven(override val proposition: CTHRESHOLD,
                        override val challengeOpt: Option[Challenge] = None,
                        override val simulated: Boolean,
-                       val k: Integer,
+                       k: Integer,
                        children: Seq[ProofTree],
                        polynomialOpt: Option[GF2_192_Poly]) extends UnprovenConjecture {
 
-  // TODO: how to enforce limits on k (0 to number of children) and on number of children (at most 255)?
+  require(k >= 0 && k <= children.length, "Wrong k value")
+  require(children.size <= 255)
 
   override val conjectureType = ConjectureType.ThresholdConjecture
 
@@ -148,11 +149,9 @@ object FiatShamirTree {
         // TODO: this is lame -- there should be a better way
         val thresholdByte = if (c.isInstanceOf[CThresholdUnproven]) {
           Array(c.asInstanceOf[CThresholdUnproven].k.toByte)
-        }
-        else if(c.isInstanceOf[CThresholdUncheckedNode]) {
+        } else if(c.isInstanceOf[CThresholdUncheckedNode]) {
           Array(c.asInstanceOf[CThresholdUncheckedNode].k.toByte)
-        }
-        else Array()
+        } else Array()
 
         c.children.foldLeft(conjBytes ++ thresholdByte ++ childrenCountBytes) { case (acc, ch) =>
           acc ++ traverseNode(ch)
