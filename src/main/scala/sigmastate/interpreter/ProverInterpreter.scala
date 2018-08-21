@@ -119,7 +119,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     convertToUnchecked(step9)
   }
 
-  def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[ProverResult] = Try {
+  def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
 
     val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions), exp).get
 
@@ -448,7 +448,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     case ut: UnprovenTree => ut
 
-    case a: Any =>  ???
+    case a: Any =>  log.warn("Wrong input in prove(): ", a); ???
   })
 
 

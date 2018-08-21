@@ -3,7 +3,6 @@ package sigmastate.interpreter
 import java.util
 import java.util.Objects
 
-
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
@@ -15,6 +14,7 @@ import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
+import scorex.utils.ScryptoLogging
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -47,7 +47,7 @@ object CryptoFunctions {
   }
 }
 
-trait Interpreter {
+trait Interpreter extends ScryptoLogging {
 
   import CryptoConstants._
   import Interpreter.ReductionResult
