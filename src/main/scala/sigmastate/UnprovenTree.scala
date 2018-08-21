@@ -14,7 +14,7 @@ import sigmastate.serialization.ValueSerializer
 object ConjectureType extends Enumeration {
   val AndConjecture = Value(0)
   val OrConjecture = Value(1)
-  val ThresholdConjecture = Value(3);
+  val ThresholdConjecture = Value(2)
 }
 
 //Proof tree
