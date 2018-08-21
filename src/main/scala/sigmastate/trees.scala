@@ -255,10 +255,10 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.ty
   * Logical threshold
   */
 object AtLeast {
-  def apply(bound: Int, children: Seq[Value[SBoolean.type]]): AtLeast =
+  def apply(bound: Value[SInt.type], children: Seq[Value[SBoolean.type]]): AtLeast =
     AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
 
-  def apply(bound: Int, head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AtLeast = apply(bound, head +: tail)
+  def apply(bound: Value[SInt.type], head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AtLeast = apply(bound, head +: tail)
 }
 
 /**
