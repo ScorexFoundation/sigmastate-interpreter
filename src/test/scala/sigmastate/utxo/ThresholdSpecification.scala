@@ -39,14 +39,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       lazy val andVersion = prover.reduceToCrypto(ctx, AND(v)).get._1
     }
 
-
-    // create four secrets
-    var secrets = Seq[DLogProverInput]()
-    for (i <- 1 to 1) {
-      val secret = DLogProverInput.random()
-      val subProp = secret.publicImage
-      secrets = secrets :+ secret
-    }
+    val secrets = Seq[DLogProverInput](DLogProverInput.random())
 
     val fls = SBoolean.mkConstant(false)
     val tr = SBoolean.mkConstant(true)
@@ -181,8 +174,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
             canProve(pWithSecret6, AndPlusAtLeastOnRightProp)
             canProve(pWithSecret6, AndPlusAtLeastOnLeftProp)
 
-          }
-          else { // not enough secrets for atLeast
+          } else { // not enough secrets for atLeast
             // prover should be unable to prove pure and both ors and both ands
             cannotProve(p._2, pureAtLeastProp)
             cannotProve(p._2, OrPlusAtLeastOnRightProp)
