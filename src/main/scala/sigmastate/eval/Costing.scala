@@ -62,7 +62,7 @@ trait Costing extends SigmaLibrary {
       case ArithOp(_, _, opCode) =>
         costOf(opcodeToArithOpName(opCode), opCode)
       case c @ Constant(v, tpe) =>
-        costOf(s"Const[$tpe]", OpCodes.ConstantCode, tpe.dataCost(v).toInt)
+        costOf(s"Const[$tpe]", OpCodes.ConstantCode, tpe.dataSize(v).toInt)
       case v =>
         val className = v.getClass.getSimpleName
         costOf(className, v.opCode)

@@ -79,7 +79,7 @@ object Values {
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     override val opCode: OpCode = (ConstantCode + tpe.typeCode).toByte
-    override def cost[C <: Context[C]](context: C) = tpe.dataCost(value)
+    override def cost[C <: Context[C]](context: C) = tpe.dataSize(value)
 
     override def equals(obj: scala.Any): Boolean = obj match {
       case c: Constant[_] => Objects.deepEquals(value, c.value) && tpe == c.tpe

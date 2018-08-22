@@ -40,7 +40,7 @@ class SparseArrayContainer[T: ClassTag](values: Seq[(Byte, T)]) {
 
 object SparseArrayContainer {
 
-  def buildFrom(sers: Seq[ValueSerializer[_ <: Value[SType]]]): SparseArrayContainer[ValueSerializer[_ <: Value[SType]]] = {
+  def buildForSerializers(sers: Seq[ValueSerializer[_ <: Value[SType]]]): SparseArrayContainer[ValueSerializer[_ <: Value[SType]]] = {
     new SparseArrayContainer(sers.map(s => (s.opCode, s)))
   }
 }

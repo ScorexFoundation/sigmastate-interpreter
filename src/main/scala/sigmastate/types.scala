@@ -3,6 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
+import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
@@ -15,7 +16,6 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 
-import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -42,9 +42,14 @@ sealed trait SType extends SigmaNode {
   type WrappedType
   val typeCode: SType.TypeCode  //TODO remove, because in general type is encoded by more than one byte
 
-  def dataCost(v: SType#WrappedType): Long = sys.error(s"Don't know how to compute dataCost($v) with T = $this")
+  /** Approximate size of the given value in bytes. It is actual size only for primitive types.*/
+  def dataSize(v: SType#WrappedType): Long = sys.error(s"Don't know how to compute dataCost($v) with T = $this")
 
   def isEmbeddable: Boolean = false
+
+  /** Returns true is dataSize doesn't depend on data value.
+    * This is useful for optimizations of calculating sizes of collections. */
+  def isConstantSize: Boolean
 
   /** Elvis operator for types. See https://en.wikipedia.org/wiki/Elvis_operator*/
   def ?:(whenNoType: => SType): SType = if (this == NoType) whenNoType else this
@@ -173,6 +178,7 @@ case class SMethod(name: String, stype: SType)
 case object NoType extends SType {
   type WrappedType = Nothing
   val typeCode = 0: Byte
+  def isConstantSize = true
 }
 
 /** Base trait for all pre-defined types which are not necessary primitive (e.g. Box, AvlTree).
@@ -248,14 +254,16 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical {
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 1: Byte
   override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.BooleanConstantDeclaration
+  override def dataSize(v: SType#WrappedType): Long = 1
+  override def isConstantSize = true
 }
 
 case object SByte extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Byte
   override val typeCode: TypeCode = 2: Byte //TODO change to 4 after SByteArray is removed
   override def mkConstant(v: Byte): Value[SByte.type] = ByteConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.ByteConstantDeclaration
+  override def dataSize(v: SType#WrappedType): Long = 1
+  override def isConstantSize = true
   override def upcast(v: AnyVal): Byte = v match {
     case b: Byte => b
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
@@ -274,7 +282,8 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Short
   override val typeCode: TypeCode = 3: Byte
   override def mkConstant(v: Short): Value[SShort.type] = ShortConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.ShortConstantDeclaration
+  override def dataSize(v: SType#WrappedType): Long = 2
+  override def isConstantSize = true
   override def upcast(v: AnyVal): Short = v match {
     case x: Byte => x.toShort
     case x: Short => x
@@ -293,7 +302,8 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Int
   override val typeCode: TypeCode = 4: Byte
   override def mkConstant(v: Int): Value[SInt.type] = IntConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.IntConstantDeclaration
+  override def dataSize(v: SType#WrappedType): Long = 4
+  override def isConstantSize = true
   override def upcast(v: AnyVal): Int = v match {
     case x: Byte => x.toInt
     case x: Short => x.toInt
@@ -314,7 +324,8 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 5: Byte
   override def mkConstant(v: Long): Value[SLong.type] = LongConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.LongConstantDeclaration
+  override def dataSize(v: SType#WrappedType): Long = 8
+  override def isConstantSize = true
   override def upcast(v: AnyVal): Long = v match {
     case x: Byte => x.toLong
     case x: Short => x.toLong
@@ -335,11 +346,15 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
   override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = {
-    val bytes = v.asInstanceOf[BigInteger].bitLength() >> 3
-    Cost.BigIntConstantDeclaration + bytes
+  override def dataSize(v: SType#WrappedType): Long = {
+    val bits = v.asInstanceOf[BigInteger].bitLength()
+    val bytes =
+      if (bits == 0) 0
+      else
+        ((bits - 1) >> 3) + 1
+    bytes
   }
-
+  override def isConstantSize = false
   val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
   override def upcast(v: AnyVal): BigInteger = v match {
     case x: Byte => BigInteger.valueOf(x.toLong)
@@ -363,14 +378,16 @@ case object SString extends SProduct {
   override type WrappedType = String
   override val typeCode: TypeCode = 101: Byte
   override def mkConstant(v: String): Value[SString.type] = StringConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.StringConstantDeclaration
+  override def dataSize(v: SType#WrappedType): Long = v.asInstanceOf[String].length
+  override def isConstantSize = false
 }
 
   case object SGroupElement extends SProduct with SPrimType with SEmbeddable {
   override type WrappedType = EcPointType
   override val typeCode: TypeCode = 7: Byte
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.GroupElementConstantDeclaration
+  override def dataSize(v: SType#WrappedType): Long = 32
+    override def isConstantSize = true
   def ancestors = Nil
   val methods = Seq(
     SMethod("isIdentity", SBoolean),
@@ -382,7 +399,11 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override type WrappedType = SigmaBoolean
   override val typeCode: TypeCode = 8: Byte
   override def mkConstant(v: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.SigmaPropConstantDeclaration
+  override def dataSize(v: SType#WrappedType): Long = v match {
+    case ProveDlog(GroupElementConstant(g)) => SGroupElement.dataSize(g.asInstanceOf[SType#WrappedType])
+    case _ => ???
+  }
+  override def isConstantSize = false
   def ancestors = Nil
   val PropBytes = "propBytes"
   val IsValid = "isValid"
@@ -396,7 +417,15 @@ case object SAvlTree extends SProduct with SPredefType {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 100: Byte
   override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = Cost.AvlTreeConstantDeclaration
+  override def dataSize(v: SType#WrappedType): Long = {
+    val tree = v.asInstanceOf[AvlTreeData]
+    tree.startingDigest.length +
+    4 + // keyLength
+    tree.valueLengthOpt.fold(0)(_ => 4) +
+    tree.maxNumOperations.fold(0)(_ => 4) +
+    tree.maxDeletes.fold(0)(_ => 4)
+  }
+  override def isConstantSize = false
   def ancestors = Nil
   val methods = Nil
 }
@@ -405,8 +434,16 @@ case object SBox extends SProduct with SPredefType {
   override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 99: Byte
   override def mkConstant(v: ErgoBox): Value[SBox.type] = BoxConstant(v)
-  override def dataCost(v: SType#WrappedType): Long = v.asInstanceOf[this.WrappedType].cost
-
+  override def dataSize(v: SType#WrappedType): Long = {
+    val box = v.asInstanceOf[this.WrappedType]
+    4 + // box.value
+    box.propositionBytes.length +
+    box.additionalTokens.length * (32 + 4) +
+    box.additionalRegisters.values.map(x => x.tpe.dataSize(x.value)).sum +
+    box.transactionId.length +
+    2 // box.index
+  }
+  override def isConstantSize = false
   def ancestors = Nil
 
   private val tT = STypeIdent("T")
@@ -431,18 +468,22 @@ case object SBox extends SProduct with SPredefType {
 case object SUnit extends SPrimType {
   override type WrappedType = Unit
   override val typeCode: Byte = 98: Byte
+  override def dataSize(v: SType#WrappedType) = 1
+  override def isConstantSize = true
 }
 
 /** Any other type is implicitly subtype of this type. */
 case object SAny extends SPrimType {
   override type WrappedType = Any
   override val typeCode: Byte = 97: Byte
+  override def isConstantSize = false
 }
 
 trait SCollection[T <: SType] extends SProduct {
   def elemType: T
   override type WrappedType = Array[T#WrappedType]
   def ancestors = Nil
+  override def isConstantSize = false
 }
 
 case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
@@ -451,8 +492,18 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
   override def mkConstant(v: Array[T#WrappedType]): Value[this.type] =
     CollectionConstant(v, elemType).asValue[this.type]
 
-  override def dataCost(v: SType#WrappedType): Long =
-    ((v.asInstanceOf[Array[T#WrappedType]].length / 1024) + 1) * Cost.ByteArrayPerKilobyte
+  override def dataSize(v: SType#WrappedType): Long = {
+    val arr = v.asInstanceOf[Array[T#WrappedType]]
+    val header = 2
+    val res =
+      if (arr.isEmpty)
+        header
+      else if (elemType.isConstantSize)
+        header + elemType.dataSize(arr(0)) * arr.length
+      else
+        arr.map(x => elemType.dataSize(x)).sum
+    res
+  }
 
   override def methods = SCollection.methods
   override def toString = s"Array[$elemType]"
@@ -516,8 +567,13 @@ object SCollection {
 /** Type description of optional values. Instances of `Option`
   *  are either constructed by `Some` or by `None` constructors. */
 case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
-  override type WrappedType = Option[Value[ElemType]]
+  override type WrappedType = Option[ElemType#WrappedType]
   override val typeCode: TypeCode = SOption.OptionTypeCode
+  override def dataSize(v: SType#WrappedType) = {
+    val opt = v.asInstanceOf[Option[ElemType#WrappedType]]
+    1L + opt.fold(0L)(x => elemType.dataSize(x))
+  }
+  override def isConstantSize = elemType.isConstantSize
   def ancestors = Nil
   override lazy val methods: Seq[SMethod] = {
     val subst = Map(SOption.tT -> elemType)
@@ -546,6 +602,16 @@ object SOption {
 case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   import STuple._
   override val typeCode = STuple.TupleTypeCode
+
+  override def dataSize(v: SType#WrappedType) = {
+    val arr = v.asInstanceOf[Array[Any]]
+    assert(arr.length == items.length)
+    var sum: Long = 2 // header
+    for (i <- arr.indices) {
+      sum += items(i).dataSize(arr(i).asInstanceOf[SType#WrappedType])
+    }
+    sum
+  }
 
   override def elemType: SAny.type = SAny
 
@@ -592,6 +658,7 @@ object STuple {
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil) extends SType {
   override type WrappedType = Seq[Any] => tRange.WrappedType
   override val typeCode = SFunc.FuncTypeCode
+  override def isConstantSize = false
   override def toString = {
     val args = if (tpeArgs.isEmpty) "" else tpeArgs.mkString("[", ",", "]")
     s"$args(${tDom.mkString(",")}) => $tRange"
@@ -607,6 +674,7 @@ object SFunc {
 case class STypeApply(name: String, args: IndexedSeq[SType] = IndexedSeq()) extends SType {
   override type WrappedType = Any
   override val typeCode = STypeApply.TypeCode
+  override def isConstantSize = false
 }
 object STypeApply {
   val TypeCode = 94: Byte
@@ -615,6 +683,7 @@ object STypeApply {
 case class STypeIdent(name: String) extends SType {
   override type WrappedType = Any
   override val typeCode = STypeIdent.TypeCode
+  override def isConstantSize = false
   override def toString = name
 }
 object STypeIdent {

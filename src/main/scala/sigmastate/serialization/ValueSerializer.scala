@@ -29,7 +29,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   private val builder: DeserializationSigmaBuilder.type = DeserializationSigmaBuilder
   import builder._
 
-  private val serializers = SparseArrayContainer.buildFrom(Seq[ValueSerializer[_ <: Value[SType]]](
+  private val serializers = SparseArrayContainer.buildForSerializers(Seq[ValueSerializer[_ <: Value[SType]]](
     TupleSerializer(mkTuple),
     SelectFieldSerializer(mkSelectField),
     Relation2Serializer(GtCode, mkGT[SType]),
