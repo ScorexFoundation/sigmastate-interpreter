@@ -24,36 +24,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   lazy val dsl = sigmaDslBuilder
 
-  def checkInEnv[T](env: Map[String, Any], name: String, script: String,
-      expectedCalc: Rep[Context] => Rep[T],
-      expectedCost: Rep[Context] => Rep[Int],
-      doChecks: Boolean = true
-  ): Rep[(Context => T, Context => Int)] = {
-    val cf = cost(env, script)
-    val p @ Pair(calcF, costF) = cf match { case cf: RFunc[Context, Costed[_]]@unchecked =>
-      split(cf)
-    }
-    val expCalc = fun(expectedCalc)
-    val expCost = fun(expectedCost)
-
-    if (!Strings.isNullOrEmpty(name)) {
-      emit(name, p, expCalc, expCost)
-    }
-
-    val res = Pair(calcF.asRep[Context => T], costF.asRep[Context => Int])
-    if (doChecks) {
-      calcF shouldBe expCalc
-      costF shouldBe expCost
-    }
-    res
-  }
-
-  def check[T](name: String, script: String,
-      expectedCalc: Rep[Context] => Rep[T],
-      expectedCost: Rep[Context] => Rep[Int]
-  ): Rep[(Context => T, Context => Int)] =
-    checkInEnv(Map(), name, script, expectedCalc, expectedCost)
-
   test("constants") {
     check("int", "1", _ => 1, _ => costOf(IntConstant(1)))
     check("long", "1L", _ => 1L, _ => costOf(LongConstant(1)))

@@ -43,6 +43,8 @@ trait Evaluation extends Costing {
     case SigmaM.propBytes(_) =>
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) =>
     case BoxM.propositionBytes(_) =>
+    case _: CostOf =>
+    case _ => !!!(s"Invalid primitive in Cost function: $d")
   }
 
   def verifyCostFunc(costF: Rep[Context => Int]): Try[Unit] = {
@@ -225,6 +227,10 @@ trait Evaluation extends Costing {
             out(th)
           case TrivialSigmaCtor(In(isValid: Boolean)) =>
             out(sigmastate.TrivialSigma(BooleanConstant(isValid)))
+          case CostOf(_, _, Some(givenCost)) =>
+            out(givenCost)
+//          case CostOf(opName, opCode, None) =>
+//            out()
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
       }

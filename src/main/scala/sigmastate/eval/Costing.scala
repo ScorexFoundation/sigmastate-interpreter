@@ -58,7 +58,6 @@ trait Costing extends SigmaLibrary {
   def costOf(opName: String, opCode: Byte, givenCost: Int): Rep[Int] = CostOf(opName, opCode, Some(givenCost))
 
   def costOf(v: SValue): Rep[Int] = {
-    import OpCodes._
     v match {
       case ArithOp(_, _, opCode) =>
         costOf(opcodeToArithOpName(opCode), opCode)
