@@ -354,6 +354,40 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(prop, wrongCtx, pr, fakeMessage).isFailure shouldBe true
   }
 
+  //p2sh with 160-bit hash function (which is about just cutting first 160 bits from 256-bit hash)
+  property("P2SH - 160 bits") {
+    val scriptId = 21.toByte
+
+    val bitsCount = 160
+    val bytesCount= bitsCount / 8
+
+    val prover0 = new ErgoLikeProvingInterpreter()
+
+    val customScript = prover0.dlogSecrets.head.publicImage
+    val scriptBytes = ValueSerializer.serialize(customScript)
+    val scriptHash = Blake2b256(scriptBytes).take(bytesCount)
+
+    val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
+
+    val hashEquals = EQ(Slice(CalcBlake2b256(TaggedByteArray(scriptId)), IntConstant(0), IntConstant(bytesCount)),
+      scriptHash)
+    val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
+    val prop = AND(hashEquals, scriptIsCorrect)
+
+    val recipientProposition = new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
+      self = ErgoBox(20, TrueLeaf, Seq(), Map()))
+
+    val proof = prover.prove(prop, ctx, fakeMessage).get
+
+    (new ErgoLikeInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+  }
+
+
   /**
     * An example script where an output could be spent only along with an output with given id
     * (and no more outputs could be provided as an input of a spending transaction).
