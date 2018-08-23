@@ -6,20 +6,21 @@ import java.util.Objects
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import sigmastate.Values.{ByteArrayConstant, _}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
+import scorex.utils.ScryptoLogging
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{DeserializeContext, CostTable, Transformer, SigmaPropIsValid}
+import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -33,7 +34,10 @@ object CryptoConstants {
   val groupSize: Int = 256 / 8 //32 bytes
 
   //size of challenge in Sigma protocols, in bits
-  implicit val soundnessBits: Int = 224.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
+  //if this anything but 192, threshold won't work, because we have polynomials over GF(2^192) and no others
+  //so DO NOT change the value without implementing polynomials over GF(2^soundnessBits) first
+  //and changing code that calls on GF2_192 and GF2_192_Poly classes!!!
+  implicit val soundnessBits: Int = 192.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
 }
 
 object CryptoFunctions {
@@ -44,7 +48,7 @@ object CryptoFunctions {
   }
 }
 
-trait Interpreter {
+trait Interpreter extends ScryptoLogging {
 
   import CryptoConstants._
   import Interpreter.ReductionResult
@@ -353,8 +357,7 @@ trait Interpreter {
         SigSerializer.parseAndComputeChallenges(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree =>
-
-            // Perform Verifier Steps 4
+            // Perform Verifier Step 4
             val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
 
             /**
@@ -363,7 +366,6 @@ trait Interpreter {
               * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
               * (and, if applicable,  the associated data). Reject otherwise.
               */
-
             val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
             util.Arrays.equals(newRoot.challenge, expectedChallenge)
         }

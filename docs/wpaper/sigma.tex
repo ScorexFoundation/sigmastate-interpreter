@@ -103,11 +103,10 @@ In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is pop
 \lnote{This is not the notation used in the code, but in the code, $g$ is overloaded verloaded because it's the base point in item 1 and an arbitrary point in item 2; $h$ is also overloaded. Perhaps we should change the code to better notation and then make this text match it.}
 
 
-\langname also provides the ability to build more sophisticated $\Sigma$-protocols by using $\andnode$ and $\ornode$ connectives 
-\lnote{add $\tnode$ when we implement it}. 
-Crucially, the proof for an $\ornode$ connective does not reveal which of the relevant values the prover knows: for example, in \langname a ring signature by public keys $h_1, \dots, h_k$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_k$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
+\langname also provides the ability to build more sophisticated $\Sigma$-protocols by using connectives $\andnode$, $\ornode$, and $\tnode$ (also known as $k$-out-of-$n$).
+Crucially, the proof for an $\ornode$ and a $\tnode$ connective does not reveal which of the relevant values the prover knows: for example, in \langname a ring signature by public keys $h_1, \dots, h_n$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_n$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
 
-Our implementation of these protocols is in Scala \cite{scala} and Java \cite{java}. The implementation was informed by SCAPI \cite{scapi}, but does not use SCAPI code. We use Bouncy Castle \cite{bouncycastle} for big integer and elliptic curve operations; the implementation of arithmetic in fields of characteristic 2 (for $\tnode$ connectives) is our own. \lnote{any other credits or background info?}
+Our implementation of these protocols is in Scala \cite{scala} and Java \cite{java}. The implementation was informed by SCAPI \cite{scapi}, but does not use SCAPI code. \lnote{our code currently has subdirectories named ``scapi'' so it's hard to say we don't use it\dots} We use Bouncy Castle \cite{bouncycastle} for big integer and elliptic curve operations; the implementation of arithmetic in fields of characteristic 2 (for $\tnode$ connectives) is our own. \lnote{any other credits or background info?}
 
 \paragraph{Rich context, enabling self-replication}
 In addition to $\Sigma$-protocols, \langname allows for predicates over the state of the blockchain and the current transaction. These predicates can be combined, via Boolean connectives, with $\Sigma$-statements, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. This feature enables self-replication and sophisticated (even Turing-complete) long-term script behaviour, as described in examples below.
@@ -171,13 +170,24 @@ A conjunction is also possible: the script
 \end{verbatim}
 requires Alice and Bob to use secret keys corresponding to \texttt{pkA} and \texttt{pkB} in order to spend the box. Note that Alice and Bob will have to communicate to produce the proof: separate signatures by Alice and Bob will not be sufficient (but Alice and Bob will not have to reveal their secret keys to each other; see Section~\ref{sec:proving}). Similarly to \texttt{||}, multiple \texttt{\&\&} can be used in sequence, and the operator \texttt{allOf} can be used for arrays.
 
+
 Using these operators, it is possible to produce more sophisticated scripts. For example, here is a script stating that the box can be spent either by Carol or by a collaboration between Alice and Bob:
 
 \begin{verbatim}
         (pkA && pkB) || pkC
 \end{verbatim}
 
+
 A valid proof (contained in the spending transaction) will not reveal which of two possibilities was used.
+
+Operators \texttt{allOf} and \texttt{anyOf} are actually special cases of the operator \texttt{atLeast(bound, array)}, which requires the prover to know secrets for $\texttt{bound}$ elements of the \texttt{array} (just in like in \texttt{anyOf}, which secrets the prover used will not be revealed by the proof). \texttt{allOf(array)} is the same as \texttt{atLeast(array.size, array)} and $\texttt{anyOf(array)}$ is the same as \texttt{atLeast(1, array)}.
+
+For example, here is a script stating that the box can be spent by any 3 out of the following 6 possibilities: Alice, Bob, Charlie, David and Edie, Fran and George, Helen and Irene:
+\begin{verbatim}
+        atLeast(3, Array (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))
+\end{verbatim}
+The same result could be achieved by writing an \texttt{anyOf} of all possible 3-out-of-6 (twenty) combinations.
+
 
 \lnote{should probably do a diffie-hellman example, and maybe another one below with getting some of the DH values from a context. E.g., $g_1$ is just $g$, $g_2$ is $pk_A$, $h_1$ is a hash of a message in a context, and $h_2$ is from the context. }
 
@@ -573,7 +583,7 @@ $Constant$ tree nodes.
 \subsection{Background}
 
 
-In this section, we explain in detail how the $\Sigma$-protocol proving and verifying is implemented. Consider the tree after the evaluation process, as described in Section~\ref{sec:impl}, reduces it to only $\Sigma$-protocol nodes. Then the leaves of the tree are atomic $\Sigma$-protocols, and non-leaves are of one of three types: $\andnode$, $\ornode$, or $\tnode(k)$. 
+In this section, we explain in detail how the $\Sigma$-protocol proving and verifying is implemented. Consider the tree after the evaluation process, as described in Section~\ref{sec:impl}, reduces it to only $\Sigma$-protocol nodes. Then the leaves of the tree are atomic $\Sigma$-protocols, and non-leaves are of one of three types: $\andnode$ (corresponding to \texttt{\&\&} or \texttt{allOf} in \langname), $\ornode$ (corresponding to \texttt{||} or \texttt{anyOf} in \langname), or $\tnode(k)$ (corresponding to \texttt{atLeast} in \langname). 
 
 The meaning of the proof corresponding to $\tnode(k)$ is ``the prover knows witnesses for at least $k$ children of this node''. Semantically, $\andnode$ and $\ornode$ are simply special cases of $\tnode$: the meaning  of the proof corresponding $\andnode$ (respectively, $\ornode)$ is ``the prover knows witnesses for all children (respectively, at least one child) of this node''. However, $\andnode$ and $\ornode$ are implemented differently from $\tnode$ for efficiency.
 

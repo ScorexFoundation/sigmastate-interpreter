@@ -3,7 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
-import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput, _}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -13,7 +13,6 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.Transformer
 import sigmastate.utils.Helpers._
-import sigmastate.utils.Extensions._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -36,6 +35,19 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
 
   override def cost[C <: Context[C]](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
+}
+
+/**
+  * THRESHOLD connector for sigma propositions
+  */
+case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+  // Our polynomial arithmetic can take only byte inputs
+  require(k >= 0 && k <= sigmaBooleans.length && sigmaBooleans.length <= 255)
+
+  override val opCode: OpCode = OpCodes.AtLeastCode
+
+  override def cost[C <: Context[C]](context: C): Long =
+    sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.AtLeastPerChild + Cost.AtLeastDeclaration
 }
 
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
@@ -75,15 +87,15 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     }
 
     input.matchCase(in => {
-        val reduced = iterChildren(in.items, mutable.Buffer())
-        reduced.size match {
-          case 0 => FalseLeaf
-          case 1 => reduced.head
-          case _ =>
-            if (reduced.forall(_.isInstanceOf[SigmaBoolean])) COR(reduced.map(_.asInstanceOf[SigmaBoolean]))
-            else OR(reduced)
-        }
-      },
+      val reduced = iterChildren(in.items, mutable.Buffer())
+      reduced.size match {
+        case 0 => FalseLeaf
+        case 1 => reduced.head
+        case _ =>
+          if (reduced.forall(_.isInstanceOf[SigmaBoolean])) COR(reduced.map(_.asInstanceOf[SigmaBoolean]))
+          else OR(reduced)
+      }
+    },
       c => if (anyOf(c.value)) TrueLeaf else FalseLeaf,
       _ => ???
     )
@@ -134,22 +146,22 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     }
 
     input.matchCase(in => {
-        val reduced = iterChildren(in.items, mutable.Buffer())
-        reduced.size match {
-          case 0 => TrueLeaf
-          case 1 => reduced.head
-          case _ =>
-            // TODO we may have Sigma and Boolean values in different order
-            // current implementation is "all or nothing"
-            if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
-              CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
-            else if (reduced.forall(!_.isInstanceOf[SigmaBoolean]))
-              AND(reduced)
-            else
-              Interpreter.error(
-                s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: $reduced")
+      val reduced = iterChildren(in.items, mutable.Buffer())
+      reduced.size match {
+        case 0 => TrueLeaf
+        case 1 => reduced.head
+        case _ =>
+          // TODO we may have Sigma and Boolean values in different order
+          // current implementation is "all or nothing"
+          if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
+            CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
+          else if (reduced.forall(!_.isInstanceOf[SigmaBoolean]))
+            AND(reduced)
+          else
+            Interpreter.error(
+              s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: $reduced")
       }
-      },
+    },
       c => if (allOf(c.value)) TrueLeaf else FalseLeaf,
       _ => ???
     )
@@ -166,6 +178,88 @@ object AND {
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
 
+/** AtLeast has two inputs: integer bound and children same as in AND/OR. The result is true if at least bound children are true.
+  */
+case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]])
+  extends Transformer[SCollection[SBoolean.type], SBoolean.type]
+    with NotReadyValueBoolean {
+  override val opCode: OpCode = AtLeastCode
+
+  override def cost[C <: Context[C]](context: C): Long =
+    bound.cost(context) + input.cost(context) + Cost.AtLeastDeclaration
+
+  override def transformationReady: Boolean =
+    bound.evaluated && input.evaluated && input.matchCase(
+      _.items.forall(_.evaluated),
+      _ => true,
+      _.items.forall(_.evaluated)
+    )
+
+  private def reduce(bound: Int, children: Seq[Value[SBoolean.type]]): Value[SBoolean.type] = {
+    if (bound <= 0) return TrueLeaf
+    if (bound > children.length) return FalseLeaf
+
+    var curBound = bound
+    var childrenLeft = children.length
+    // invariant due to the two if statements above: 0<curBound<=childrenLeft
+
+    val sigmas = mutable.Buffer[SigmaBoolean]()
+
+    // we should make sure that number of children doesn't exceed 255, because CTHRESHOLD cannot handle
+    // more than 255 children, because of the way polynomial arithmetic is implemented (single-byte inputs only
+    // are allowed to polynomials)
+    //
+    // (this will ensure bound is between 2 and 254, because otherwise one of the conditions above will apply and it will
+    // be converted to one of true, false, and, or)
+    require(children.length <= 255)
+    // My preferred method: if (children.length>=255) return FalseLeaf
+
+
+    // TODO: this constraint on the number of children of atLeast should also be ensured at ErgoScript compile time
+
+    for (iChild <- children.indices) {
+      if (curBound == 1)
+        return OR(sigmas ++ children.slice(iChild, children.length))
+      // If at any point bound == number of children, convert to AND.
+      if (curBound == childrenLeft)
+        return AND(sigmas ++ children.slice(iChild, children.length))
+      // at this point 1<curBound<childrenLeft
+      children(iChild) match {
+        case TrueLeaf => // If child is true, remove child and reduce bound.
+          childrenLeft -= 1
+          curBound -= 1
+        case FalseLeaf => // If child is false, remove child, leave bound unchanged.
+          childrenLeft -= 1
+        case sigma: SigmaBoolean => sigmas += sigma
+      }
+      // at this point 1<=curBound<=childrenLeft
+    }
+    if (curBound == 1) return OR(sigmas)
+    if (curBound == childrenLeft) return AND(sigmas)
+    CTHRESHOLD(curBound, sigmas)
+  }
+
+  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
+    val k = bound.asInstanceOf[EvaluatedValue[SInt.type]].value
+    input.matchCase(
+      cc => {
+        reduce(k, cc.items)
+      },
+      c => if (c.value.filter(_ == true).length >= k) TrueLeaf else FalseLeaf,
+      _ => ???
+    )
+  }
+}
+
+/**
+  * Logical threshold
+  */
+object AtLeast {
+  def apply(bound: Value[SInt.type], children: Seq[Value[SBoolean.type]]): AtLeast =
+    AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
+
+  def apply(bound: Value[SInt.type], head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AtLeast = apply(bound, head +: tail)
+}
 
 /**
   * Up cast for Numeric types
@@ -199,7 +293,7 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   * Cast SLong to SByteArray
   */
 case class LongToByteArray(input: Value[SLong.type])
-    extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
+  extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.LongToByteArrayCode
 
   override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SLong.type]): Value[SByteArray] =
@@ -256,7 +350,7 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   */
 sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
-  val left : Value[LIV]
+  val left: Value[LIV]
   val right: Value[RIV]
 
   override def cost[C <: Context[C]](context: C): Long =
@@ -307,6 +401,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
 case class StringConcat(left: Value[SString.type], right: Value[SString.type])
   extends TwoArgumentsOperation[SString.type, SString.type, SString.type] with NotReadyValue[SString.type] {
   override def tpe: SString.type = left.tpe
+
   override val opCode: OpCode = StringConcatCode
 }
 
@@ -367,9 +462,9 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
   */
 sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] extends NotReadyValue[OV] {
 
-  val first : Value[IV1]
+  val first: Value[IV1]
   val second: Value[IV2]
-  val third : Value[IV3]
+  val third: Value[IV3]
 
   override def cost[C <: Context[C]](context: C): Long =
     first.cost(context) + second.cost(context) + third.cost(context) + Cost.QuadrupleDeclaration
@@ -387,17 +482,17 @@ case class IsMember(tree: Value[SAvlTree.type],
                     proof: Value[SByteArray]) extends Relation3[SAvlTree.type, SByteArray, SByteArray] {
   override val opCode: OpCode = OpCodes.IsMemberCode
 
-  override lazy val first  = tree
+  override lazy val first = tree
   override lazy val second = key
-  override lazy val third  = proof
+  override lazy val third = proof
 }
 
 /**
   * If conditional function.
   * Non-lazy - evaluate both branches.
   *
-  * @param condition - condition to check
-  * @param trueBranch - branch that will be used if condition is true
+  * @param condition   - condition to check
+  * @param trueBranch  - branch that will be used if condition is true
   * @param falseBranch - branch that will be used if condition is false
   */
 case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T], falseBranch: Value[T])
@@ -406,7 +501,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 
   override def tpe = trueBranch.tpe
 
-  override lazy val first  = condition
+  override lazy val first = condition
   override lazy val second = trueBranch
-  override lazy val third  = falseBranch
+  override lazy val third = falseBranch
 }

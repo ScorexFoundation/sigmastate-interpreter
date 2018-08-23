@@ -32,6 +32,7 @@ trait SigmaBuilder {
 
   def mkOR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
   def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
+  def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
 
   def mkExponentiate(left: Value[SGroupElement.type],
                      right: Value[SBigInt.type]): Value[SGroupElement.type]
@@ -198,6 +199,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     AND(input)
+
+  override def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
+    AtLeast(bound, input)
 
   override def mkExponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =
     Exponentiate(left, right)

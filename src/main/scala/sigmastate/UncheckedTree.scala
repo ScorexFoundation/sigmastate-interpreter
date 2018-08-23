@@ -6,6 +6,7 @@ import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogPr
 import scapi.sigma.VerifierMessage.Challenge
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.Values.SigmaBoolean
+import gf2t.GF2_192_Poly
 
 sealed trait UncheckedTree extends ProofTree
 
@@ -19,7 +20,7 @@ trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedConjecture =>
-        util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
+      util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
         children == x.children
   }
 }
@@ -36,7 +37,7 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedSchnorr =>
-        util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
+      util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
         commitmentOpt == x.commitmentOpt &&
         secondMessage == x.secondMessage
     case _ => false
@@ -53,9 +54,9 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHell
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedDiffieHellmanTuple =>
       proposition == x.proposition &&
-      commitmentOpt == x.commitmentOpt &&
-      util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
-      secondMessage == x.secondMessage
+        commitmentOpt == x.commitmentOpt &&
+        util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
+        secondMessage == x.secondMessage
   }
 }
 
@@ -71,4 +72,15 @@ case class COrUncheckedNode(override val challenge: Challenge,
                             override val children: Seq[UncheckedSigmaTree]) extends UncheckedConjecture {
 
   override val conjectureType = ConjectureType.OrConjecture
+
+}
+
+case class CThresholdUncheckedNode(override val challenge: Challenge,
+                                   override val children: Seq[UncheckedSigmaTree],
+                                   k: Integer,
+                                   polynomialOpt: Option[GF2_192_Poly]) extends UncheckedConjecture {
+  require(children.length <= 255) // Our polynomial arithmetic can take only byte inputs
+  require(k >= 0 && k <= children.length)
+
+  override val conjectureType = ConjectureType.ThresholdConjecture
 }

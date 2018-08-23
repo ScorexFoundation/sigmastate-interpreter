@@ -24,6 +24,7 @@ object SigmaPredef {
   val predefinedEnv: Map[String, SValue] = Seq(
     "allOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "anyOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+    "atLeast" -> mkLambda(Vector("k" -> SInt, "conditions" -> SCollection(SBoolean)), SBoolean, None),
     "blake2b256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
     "sha256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
     "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
@@ -45,6 +46,7 @@ object SigmaPredef {
 
   val AllSym = PredefIdent("allOf")
   val AnySym = PredefIdent("anyOf")
+  val AtLeastSym = PredefIdent("atLeast")
 
   val GetVarSym = PredefIdent("getVar")
 
