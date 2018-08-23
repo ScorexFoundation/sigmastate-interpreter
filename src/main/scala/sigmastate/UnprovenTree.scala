@@ -3,6 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Shorts
+import gf2t.GF2_192_Poly
 import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import scapi.sigma.VerifierMessage.Challenge
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple}
@@ -13,6 +14,7 @@ import sigmastate.serialization.ValueSerializer
 object ConjectureType extends Enumeration {
   val AndConjecture = Value(0)
   val OrConjecture = Value(1)
+  val ThresholdConjecture = Value(2)
 }
 
 //Proof tree
@@ -73,6 +75,26 @@ case class COrUnproven(override val proposition: COR,
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
+case class CThresholdUnproven(override val proposition: CTHRESHOLD,
+                       override val challengeOpt: Option[Challenge] = None,
+                       override val simulated: Boolean,
+                       k: Integer,
+                       children: Seq[ProofTree],
+                       polynomialOpt: Option[GF2_192_Poly]) extends UnprovenConjecture {
+
+  require(k >= 0 && k <= children.length, "Wrong k value")
+  require(children.size <= 255) // Our polynomial arithmetic can take only byte inputs
+
+  override val conjectureType = ConjectureType.ThresholdConjecture
+
+  override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
+
+  override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+
+  def withPolynomial(newPolynomial: GF2_192_Poly) = this.copy(polynomialOpt = Some(newPolynomial))
+}
+
+
 case class UnprovenSchnorr(override val proposition: ProveDlog,
                            override val commitmentOpt: Option[FirstDLogProverMessage],
                            randomnessOpt: Option[BigInteger],
@@ -123,9 +145,15 @@ object FiatShamirTree {
 
       case c: ProofTreeConjecture =>
         val childrenCountBytes = Shorts.toByteArray(c.children.length.toShort)
-        val conjBytes = Array(internalNodePrefix, c.conjectureType.id.toByte) ++ childrenCountBytes
+        val conjBytes = Array(internalNodePrefix, c.conjectureType.id.toByte)
+        // TODO: this is lame -- there should be a better way
+        val thresholdByte = if (c.isInstanceOf[CThresholdUnproven]) {
+          Array(c.asInstanceOf[CThresholdUnproven].k.toByte)
+        } else if(c.isInstanceOf[CThresholdUncheckedNode]) {
+          Array(c.asInstanceOf[CThresholdUncheckedNode].k.toByte)
+        } else Array()
 
-        c.children.foldLeft(conjBytes) { case (acc, ch) =>
+        c.children.foldLeft(conjBytes ++ thresholdByte ++ childrenCountBytes) { case (acc, ch) =>
           acc ++ traverseNode(ch)
         }
     }

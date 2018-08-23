@@ -87,6 +87,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ExtractRegisterAsSerializer(mkExtractRegisterAs),
     WhereSerializer(mkWhere),
     SliceSerializer(mkSlice),
+    AtLeastSerializer(mkAtLeast),
     ByIndexSerializer(mkByIndex),
     AppendSerializer(mkAppend),
     NumericCastSerializer(UpcastCode, mkUpcast),
