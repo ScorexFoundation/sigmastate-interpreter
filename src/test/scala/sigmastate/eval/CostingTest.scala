@@ -26,7 +26,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   lazy val dsl = sigmaDslBuilder
 
-  test("data sizes") {
+  test("SType.dataSize") {
     def check(tpe: SType, v: Any, exp: Long) =
       tpe.dataSize(v.asInstanceOf[SType#WrappedType]) shouldBe exp
 
@@ -52,6 +52,19 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     check(STuple(SInt, STuple(SInt, SInt)), Array(10, Array[Any](20, 30)), 2 + 4 + (2 + 4 + 4))
   }
 
+  test("Sized.dataSize") {
+    import CostedPrim._
+    import NumericOps._
+    val V1 = toRep(BigInteger.TEN)
+    val Def(IR.SizeOf(v)) = sizeOf(V1)
+    v  shouldBe V1
+    val V2 = toRep(big)
+    val res = V1 * V2
+    val s = sizeOf(res)
+    emit("size", res, s)
+    s should matchPattern { case Def(ApplyBinOp(_: NumericPlus[_], Def(IR.SizeOf(V1)), Def(IR.SizeOf(V2)))) => }
+  }
+
   test("constants") {
     check("int", "1", _ => 1, _ => costOf(IntConstant(1)))
     check("long", "1L", _ => 1L, _ => costOf(LongConstant(1)))
@@ -61,7 +74,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       _ => colBuilder.fromArray(mkWArrayConst(Array[Byte](1, 2))).length,
       { _ =>
         val c = ByteArrayConstant(env("arr1").asInstanceOf[Array[Byte]])
-        costOf(c) + costOf(SizeOf(c))
+        costOf(c) + costOf(utxo.SizeOf(c))
       })
     checkInEnv(env, "bigint", "n1", {_ => toRep(n1) }, { _ => costOf(BigIntConstant(n1))})
     checkInEnv(env, "bigint2", "big", {_ => toRep(big) }, { _ => costOf(BigIntConstant(big))})
@@ -109,14 +122,15 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("context data") {
-    check("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
-    check("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
-    check("size", "INPUTS.size + OUTPUTS.size",
-      ctx => { ctx.INPUTS.length + ctx.OUTPUTS.length },
-      _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + TripleDeclaration)
-    check("value", "SELF.value + 1L",
-      ctx => ctx.SELF.value + 1L,
-      _ => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
+    check("var1", "getVar[BigInt](1)", ctx => ctx.getVar[BigInteger](1.toByte), _ => 1)
+//    check("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
+//    check("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
+//    check("size", "INPUTS.size + OUTPUTS.size",
+//      ctx => { ctx.INPUTS.length + ctx.OUTPUTS.length },
+//      _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + TripleDeclaration)
+//    check("value", "SELF.value + 1L",
+//      ctx => ctx.SELF.value + 1L,
+//      _ => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
   }
 
   test("collection ops") {

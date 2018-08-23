@@ -68,7 +68,12 @@ trait Costing extends SigmaLibrary {
         costOf(className, v.opCode)
     }
   }
-  
+  override def sizeOf[T](value: Rep[T]): Rep[Long] = value match {
+    case Def(ApplyBinOp(op: NumericTimes[_], l, r)) if value.elem == BigIntegerElement =>
+      sizeOf(l) + sizeOf(r)
+    case _ => super.sizeOf(value)
+  }
+
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
     case CostOf(name, code, Some(given)) => s"CostOf($name, $given)"
     case CostOf(name, code, _) => s"CostOf($name)"
@@ -421,7 +426,7 @@ trait Costing extends SigmaLibrary {
       case opt: OptionValue[_] =>
         error(s"Option constructors are not supported: $opt")
 
-      case SizeOf(xs) =>
+      case utxo.SizeOf(xs) =>
         val xsC = evalNode(ctx, env, xs).asRep[Costed[Col[Any]]]
         CostedPrimRep(xsC.value.length, xsC.cost + costOf(node))
       case ByIndex(xs, i, None) =>

@@ -356,7 +356,7 @@ trait Evaluation extends Costing {
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
       case ColM.length(col) =>
-        SizeOf(recurse(col).asCollection[SType])
+        utxo.SizeOf(recurse(col).asCollection[SType])
       case ColM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
         mkExists1(col.asCollection[SType], p.asFunc)
