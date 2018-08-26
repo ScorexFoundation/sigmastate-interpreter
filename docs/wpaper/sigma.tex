@@ -100,16 +100,16 @@ In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is pop
 \item A proof of knowledge of discrete logarithm with respect to a fixed group generator: given a group element $h$, the proof convinces a verifier that the prover knows $w$ such that $h=g^w$, where $g$ is the group generator (also known as base point), without revealing $w$. This is the same as a Schnorr signature with public key $h$.
 \item A proof that of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g_1, g_2, u_1, u_2$, the proof convinces a verifier that the prover knows $w$ such that $u_1=g_1^w$ and $u_2=g_2^w$, without revealing $w$
 \end{itemize}
-\lnote{This is not the notation used in the code, but in the code, $g$ is overloaded verloaded because it's the base point in item 1 and an arbitrary point in item 2; $h$ is also overloaded. Perhaps we should change the code to better notation and then make this text match it.}
+\lnote{This is not the notation used in the code, but in the code, $g$ is overloaded because it's the base point in item 1 and an arbitrary point in item 2; $h$ is also overloaded. Perhaps we should change the code to better notation and then make this text match it.}
 
 
 \langname also provides the ability to build more sophisticated $\Sigma$-protocols by using connectives $\andnode$, $\ornode$, and $\tnode$ (also known as $k$-out-of-$n$).
 Crucially, the proof for an $\ornode$ and a $\tnode$ connective does not reveal which of the relevant values the prover knows: for example, in \langname a ring signature by public keys $h_1, \dots, h_n$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_n$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
 
-Our implementation of these protocols is in Scala \cite{scala} and Java \cite{java}. The implementation was informed by SCAPI \cite{scapi}, but does not use SCAPI code. \lnote{our code currently has subdirectories named ``scapi'' so it's hard to say we don't use it\dots} We use Bouncy Castle \cite{bouncycastle} for big integer and elliptic curve operations; the implementation of arithmetic in fields of characteristic 2 (for $\tnode$ connectives) is our own. \lnote{any other credits or background info?}
+Our implementation of these protocols is in Scala \cite{scala} and Java \cite{java}. The implementation was informed by SCAPI \cite{scapi}, but does not use SCAPI code. \lnote{our code currently has subdirectories named ``scapi'' so it's hard to say we don't use it\dots} We use Bouncy Castle \cite{bouncycastle} for big integer\mnote{Don't we use java.util.BigInteger?} and elliptic curve operations; the implementation of arithmetic in fields of characteristic 2 (for $\tnode$ connectives) is our own. \lnote{any other credits or background info?}
 
 \paragraph{Rich context, enabling self-replication}
-In addition to $\Sigma$-protocols, \langname allows for predicates over the state of the blockchain and the current transaction. These predicates can be combined, via Boolean connectives, with $\Sigma$-statements, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. This feature enables self-replication and sophisticated (even Turing-complete) long-term script behaviour, as described in examples below.
+In addition to $\Sigma$-protocols, \langname allows for predicates over the state of the blockchain and the current transaction. These predicates can be combined, via Boolean connectives, with $\Sigma$-statements, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients.\mnote{Do we assume the lite client can run JVM? Or we assume alternative implementation of ErgoScript?} Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. This feature enables self-replication and sophisticated (even Turing-complete) long-term script behaviour\mnote{\emph{long-term script behaviour} is not clear at this moment}, as described in examples below.
 
 \langname is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
 
@@ -123,28 +123,46 @@ See Section \ref{sec:safety} for more details.
 
 \section{\langname Language Description}
 
-\lnote{Should we add, for every code example, a link to the code where it appears? That would help the reader.}
+\lnote{Should we add, for every code example, a link to the code where it
+appears? That would help the reader.} \mnote{This would be really useful but
+currently the examples are spread all over the code base. We first need to
+collect them in a single place (package or file).}
 
 The language syntax is similar to Scala, and therefore many of the constructs are easy to read for those familiar with Scala. 
 
-Before we describe the language, let us fix some terminology. A \emph{box} (often called a ``coin'' in other literature) contains some amount (\emph{value}, measured in Ergo tokens) and is protected by a \emph{script} (boxes also contain additional information, such as other tokens; this information is described in detail in Section \ref{sec:box-registers}). A \emph{transaction} spends the value of boxes that are its \emph{inputs} (which are outputs of some earlier transaction) and produces boxes that are its \emph{outputs}. In a given transaction, the sum of the values of the inputs must equal the sum of the values of the outputs (as we describe below, the scripting language is rich enough to allow for payment transactions fees and for minting of new coins without violating this rule).
+Before we describe the language, let us fix some terminology. A \emph{box} (often called a ``coin'' in other literature) contains some amount (\emph{value}, measured in Ergo tokens\mnote{The "token" word here is overloaded. We are talking about minimal unit of measure (like Satoshi in Bitcoin), right? Then it is probably not Ergo.}) and is protected by a \emph{script} (boxes also contain additional information, such as other tokens; this information is described in detail in Section \ref{sec:box-registers}). A \emph{transaction} spends the value of boxes that are its \emph{inputs} (which are outputs of some earlier transaction) and produces boxes that are its \emph{outputs}. In a given transaction, the sum of the values of the inputs must equal the sum of the values of the outputs (as we describe below, the scripting language is rich enough to allow for payment transactions fees and for minting of new coins without violating this rule).
 
 
-All the unspent transaction outputs (\emph{UTXO}) at a given time represent the value stored in the blockchain. A script for a box must evaluate to ``true'' when this box is used as an input to a transaction. This evaluation is helped by a \emph{proof} (for $\Sigma$-statements) and a \emph{context}, which are part of the transaction. The proof is produced by someone who knows the relevant secrets, such as secret keys; the context contains information about the transaction, such as details of its inputs and outputs, and the current state of the blockchain, such as the current number of blocks (height) and the root of the Merkle tree that contains the UTXO set.
+All the unspent transaction outputs (\emph{UTXO}) at a given time represent the value stored in the blockchain\mnote{The meaning of value is not clear.}. A script for a box must evaluate to ``true'' when this box is used as an input to a transaction. This evaluation is helped by a \emph{proof} (for $\Sigma$-statements) and a \emph{context}, which are part of the transaction. The proof is produced by someone who knows the relevant secrets, such as secret keys; the context contains information about the transaction, such as details of its inputs and outputs, and the current state of the blockchain, such as the current number of blocks (height) and the root of the Merkle tree that contains the UTXO set.
 \dnote{This should change in future, e.g. fixed number of last headers is going to be added here (and header contains height and root hash).} \lnote{adjust this as needed}
 
 \subsection{$\Sigma$-Statements}
 
 \lnote{every script example here should be also in our test code exactly as written, to make sure our own paper passes our own tests. These should be edited as the language evolves.}
 
-\lnote{If we want to show examples of the underlying syntax tree to which the language gets compiled, we can to that here, in parallel with examples in the language}
+\lnote{If we want to show examples of the underlying syntax tree to which the language gets compiled, we can do that here, in parallel with examples in the language}
 
-The simplest script allows the owner of a public key to spend an output box in a future transaction by issuing a signature with the corresponding secret key. If the variable \texttt{pk} holds the public key, then this script is specified simply as a string
+The simplest script allows the owner of a public key to create an output box
+which can be spent in a future transaction by issuing a signature with the
+corresponding secret key. If the variable \texttt{pk} holds the public key,
+then this script is specified simply as a string\mnote{We can start
+description with introducting function PK("...") as motivated in \footnote{
+https://github.com/ScorexFoundation/sigmastate-interpreter/issues/230}}
+
 \begin{verbatim}
-        pk
+val pk: SigmaProp = PK("<base64 encoding of public key>")
+pk.isValid
 \end{verbatim}
 
-In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to be supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key.\footnote{This map is an object in Scala, and is passed to the compiler as a parameter together with the script (which is passed in as a string) when the compiler is invoked from within Scala code. We postpone the discussion of how to invoke the compiler outside of Scala code.\lnote{we should add this discussion at some point}}
+\mnote{The environment is really misleading here.
+It is not part of the language, but rather specific way of integration of the language in Scala runtime.
+The language itself should be self-contained.
+In particular it should be possible to introduce constant values of all types using the language itself.
+The val definitions above is exactly equivalent to how the environment is used by the compiler
+to embed constants in the ErgoTree.}
+\mnote{We say, our language is statically typed, but we don't show the types of the values.
+In particular the reader will guess the type of pk. We need to refer to~\ref{sec:sigmaprop}}
+
 Thus, the constant public key is hardwired into the script at compile time. When the script is later evaluated (i.e., when the box is used as a transaction input), a $\Sigma$-proof of knowledge of the corresponding secret key must be supplied by the prover. 
 
 A slightly more complex script may allow either one of two people to spend an box. If Alice owns public key \texttt{pkA}  and Bob owns public key \texttt{pkB} (with corresponding secret key \texttt{skA} and \texttt{skB}), then the script that would allow either one of them to spend the box is
@@ -203,8 +221,27 @@ This script allows Alice or Bob to spend the box before \texttt{HEIGHT} reaches 
 
 In general, script evaluation reduces the script to a $\Sigma$-statement by first evaluating all the Boolean predicates that are not $\Sigma$-statements. As we saw in the above example, the resulting $\Sigma$-statement will, in general, depend on the values of the Boolean predicates (such as whether \texttt{HEIGHT > 500}).
 
-We emphasize that this evaluation is not the same as the usual left-to-right lazy evaluation of logical expressions, because expressions involving $\Sigma$-statements are not treated the same way as usual boolean expressions: they are evaluated last and in zero-knowledge. In fact, $\texttt{pkA}$ is not of type \texttt{Boolean} \lnote{do we use \texttt{Boolean} or \texttt{Bool}?}. It is of type \texttt{GroupElement}; the compiler automatically converts it to \texttt{proveDlog(\texttt{pkA})}, which is of type \texttt{ProveDlog}. Type   \texttt{ProveDlog} is special because it is used differently by the prover (who constructs the proof) and the verifier (who checks it); moreover, variables of this type cannot be stored in boxes (Section \ref{sec:context}) or context extensions (Section \ref{sec:extension}). \lnote{the type system is undergoing changes, so this needs fixing}
+We emphasize that evaluation of \texttt{\&\&} and \texttt{||} over proofs is
+not the same as the usual left-to-right lazy evaluation of logical
+expressions over booleans, because expressions involving $\Sigma$-statements
+are not treated the same way as usual boolean expressions: they are always
+evaluated in zero-knowledge and always inside special ZK scope of the script
+(see~\ref{sec:sigmaprop}~and~\ref{sec:zk-scope}).
+In fact,
+$\texttt{pkA}$ is not of type \texttt{Boolean} \lnote{do we use
+\texttt{Boolean} or \texttt{Bool}?}. \mnote{We should stick to Boolean, same
+as in Scala} It is of type \texttt{SigmaProp}, which is special type for
+sigma proofs (see~\ref{sec:sigmaprop}). The values of type \texttt{SigmaProp}
+are used differently by the prover (who constructs the proof) and the
+verifier (who checks it). \mnote{The following is no longer true: "moreover,
+variables
+of this type cannot be stored in boxes (Section \ref{sec:context}) or context
+extensions (Section \ref{sec:extension})." } 
 
+\lnote{the type system is undergoing changes, so this needs fixing}
+\mnote{I think the connection between Boolean, SigmaProp, isValid, and
+zero-knowledge scoping is now described in \ref{sec:sigmaprop} and
+\ref{sec:zk-scope}. Please check.}
 
 \lnote{Should we have an example with fees? According to Dima, fees are implemented as boxes with TrueLeaf as a proposition, last transaction in a block consumes all this just created boxes and in favor of miner.}
 
@@ -213,7 +250,7 @@ We emphasize that this evaluation is not the same as the usual left-to-right laz
 \label{sec:context}
 In addition to the predefined variable \texttt{HEIGHT}, the context contains predefined arrays \texttt{INPUTS} and \texttt{OUTPUTS}, which refer to the inputs and outputs of the transaction. Elements of these arrays are of type \texttt{Box}. The script also has access to its own box via the context variable \texttt{SELF} of type \texttt{Box}. Note that \texttt{SELF} is also an element of the \texttt{INPUTS} array, because the script is executed when the its box is being spent.
 
-To access information inside a box \texttt{b}, scripts can use \texttt{b.value} for the amount, \texttt{b.propositionBytes} for the protecting script, and \texttt{b.id} for the identifier of the box, which is the BLAKE2b-256 hash of the contents of the box. Boxes include additional information in \emph{registers};  each box is unique, because ones of its registers includes the transaction id in which it was created as an output, and its own index in the \texttt{OUTPUTS} array, accessible through \texttt{b.R3} (see Section \ref{sec:box-registers} for more on registers).
+To access information inside a box \texttt{b}, scripts can use \texttt{b.value} for the amount, \texttt{b.propositionBytes} for the protecting script, and \texttt{b.id} for the identifier of the box, which is the BLAKE2b-256 hash of the contents of the box. Boxes include additional information in \emph{registers};  each box is unique, because one of its registers includes the transaction id in which it was created as an output, and its own index in the \texttt{OUTPUTS} array, accessible through \texttt{b.R3} (see Section \ref{sec:box-registers} for more on registers).
 
 \lnote{ The comments in ErgoBox.scala says something about a unique nonce, but that doesn't seem to be matched by code. }
 
@@ -289,16 +326,18 @@ Bob can receive the value of this box only upon presentation of a hash preimage 
 
 From this output, Bob learns \texttt{hx}. He creates a transaction in Alice's blockchain with an output box protected by the following script:
 \begin{verbatim}
+        let x = getVar[Array[Byte]](1) 
         anyOf( Array(
                 HEIGHT > deadlineAlice && pkB,
                 allOf( Array( 
                         pkA,
-                        getVar[Array[Byte]](1).size<33,
-                        blake2b256(getVar[Array[Byte]](1)) == hx
+                        x.size < 33,
+                        blake2b256(x) == hx
                 ))
         ))
 \end{verbatim}
 
+\mnote{Maybe make sense to introduce variable x explicitly?}
 If Alice is satisfied with the amount Bob is giving her, she claims the value of this box by revealing \texttt{x}. Alice is protected as long as the hash function is one-way and she keeps her \texttt{x} secret until she claims the value of this box. (She should be careful to submit her transaction in enough time before \texttt{deadlineAlice} to make sure it gets processed before Bob can reclaim this money, because once she submits the transaction, \texttt{x} is public and thus, if the \texttt{deadlineAlice} passes before the transaction is processed, Bob can both reclaim this box and claim the box Alice left in his blockchain.)
 
 Bob is protected, because in order for Alice to claim the value of this box, she must present a hash preimage of \texttt{hx} as a context extension in the transaction that uses this box as input. But once she does, Bob also learns this hash preimage, and is able to claim the value of the box that Alice placed into his blockchain. Note that Bob needs to choose \texttt{deadlineAlice} early enough to make sure that he is able to learn the preimage of \texttt{hx} from the transaction in Alice's block chain, and create a transaction in his blockchain, all before \texttt{deadlineBob} that Alice chose. Note also that \texttt{HEIGHT} in the two scripts is with respect to two different blockchains, which may be growing at a different rate. Bob also needs to make sure that he can use Alice's \texttt{x} as a context extension; to make sure Alice cannot cheat by making this \texttt{x} so long that it will not be allowed as a context extension in his blockchain, he uses the constraint \texttt{getVar[Array[Byte]](1).size<33}.
@@ -314,7 +353,7 @@ The third register, \texttt{b.R2}, is for specifying additional, secondary token
 
 
 
-The fourth register, \texttt{b.R3}, contains a 34-byte array. This array specifies the 32-byte transaction id \lnote{how is transaction id computed?} where this box appears as an output followed by a 2-byte sequence number of this box in the \texttt{OUTPUTS} array of that transaction. This ensures that each box has unique \texttt{R3} and therefore a unique \texttt{id} as long as there are no hash collisions (because the \texttt{id} of the box is computed by hashing its content, including \texttt{R3}).
+The fourth register, \texttt{b.R3}, contains a 34-byte array. This array specifies the 32-byte transaction id \lnote{how is transaction id computed?} where this box appears as an output followed by a 2-byte sequence number of this box in the \texttt{OUTPUTS} array of that transaction. This ensures that each box has unique \texttt{R3} and therefore a unique \texttt{id} as long as there are no hash collisions (because the \texttt{id} of the box is computed by hashing its content, including \texttt{R3}\mnote{It looks like self reference, in order to compute id we need R3, and R3 contains id.}).
 
 The remaining six registers can be used arbitrarily. 
 
@@ -770,48 +809,65 @@ We use $Dlog(x)$ to denote a statement ``prove a knowledge of such $w$ that $x =
 We assume a transactional model close to Bitcoin's. That is, a transaction spends unspent outputs (pointed to by \emph{transaction inputs}) from previous transaction written into the blockchain, and creates new outputs. An output is associated with arbitrary amount of money, and also a protecting script. In Bitcoin, there is a special kind of transaction, so-called {\em coinbase transaction}, which can create some amount of money out of thin air~(to reward a block generator). In Bitcoin transaction fees money flow is not captured in outputs, a transaction fee is just a difference of amounts of outputs being spent and outputs being created. In Appendix~\ref{apx:unified} we provide a way to avoid coinbase transactions, and also express fees explicitly as outputs. In Appendix~\ref{apx:account} we discuss how to make a language for a cryptocurrency with account-based transactions~(such as Waves~\cite{Waves}).
 
 \subsection{Logic of $\Sigma$-protocols}
+\label{sec:sigmaprop}
 
-Cryptocraphic propositions verifiable via $\Sigma$-protocols are represented by values of an algebraic data type $SigmaProp$,
-which stands for \emph{sigma proposition} and can be described using the following declaration (using Idris/Agda ADT notation~\cite{Idris, Agda})
+Cryptocraphic propositions verifiable via $\Sigma$-protocols are represented
+by values of an algebraic data type \texttt{SigmaProp}, which stands for
+\emph{sigma proposition}. The values of type \texttt{SigmaProp}
+are used differently by the prover (who constructs the proof) and the
+verifier (who checks it). The type can be described using the following
+declaration (using Scala notation).
 
-\begin{lstlisting}
-data SigmaProp: Type where
-  Dlog: GroupElement -> SigmaProp
-  Dht: (gv, hv, uv, vv: GroupElement) -> SigmaProp
-  ...
-\end{lstlisting}
+\begin{verbatim}
+trait SigmaProp
+case class TrivialSigma(b: Boolean) extends SigmaProp
+case class Dlog(g: GroupElement) extends SigmaProp
+case class Dht (gv: GroupElement, hv: GroupElement,
+                uv: GroupElement, vv: GroupElement) extends SigmaProp
+...
+\end{verbatim}
+In the definition above, each constructor represents one of the cryptographic
+primitives, and the set of such constructors can be extended (although this
+extensibility is out of paper's scope).\mnote{How to describe the role of TrivialSigma?}
 
-In the definition above, each constructor represents one of the cryptographic primitives, and the set of such constructors
-can be extended (although this extensibility is out of paper's scope).
-
-We want to be able to construct more complex statements out of basic primitive propositions.
-There are two binary operations over $SigmaProp$ values:
+It is possible to construct more complex statements out of basic primitive propositions.
+There are two binary operations over \texttt{SigmaProp} values:
 \begin{itemize}
-\item $\sqcup: (SigmaProp, SigmaProp) -> SigmaProp$
-\item $\sqcap: (SigmaProp, SigmaProp) -> SigmaProp$
+\item \texttt{\&\&: (SigmaProp, SigmaProp) -> SigmaProp}
+\item \texttt{||: (SigmaProp, SigmaProp) -> SigmaProp}
 \end{itemize}
 
-Any expression of $SigmaProp$ type can be efficiently verified using sigma protocol and thus mapped to a truth values.
+Any expression of \texttt{SigmaProp} type can be efficiently verified using sigma protocol and thus mapped to a truth values.
 
-We implement a verification procedure $V: SigmaProp -> Boolean$, which performs such mapping, and satisfies the following
-naturality conditions with respect to SigmaProp and Boolean connectives.
+Verification procedure \texttt{ZK: SigmaProp -> Boolean} performs such
+mapping, and satisfies the following naturality conditions with respect to
+\texttt{SigmaProp} and Boolean connectives.
 
-For any two statements $sigma1, sigma2: SigmaProp$:
+For any two statements \texttt{s1, s2: SigmaProp}:
 \begin{itemize}
-    \item $V(s_1 \sqcup s_2) = V(s_1) \lor V(s_2)$
-    \item $V(s_1 \sqcap s_2) = V(s_1) \land V(s_2)$
+    \item \texttt{ZK(s1 \&\& s2) = ZK(s1) \&\& ZK(s2)}
+    \item \texttt{ZK(s1 || s2) = ZK(s1) || ZK(s2)}
 \end{itemize}
 
-Bacause SigmaProp connectives and logical connectives satisfy naturality conditions we can reason about complex sigma statements
+Note, the operations \texttt{\&\&} and \texttt{||} are overloaded and work
+for both \texttt{SigmaProp} (on the left) and \texttt{Boolean} (on the right).
+
+Because SigmaProp connectives and logical connectives satisfy naturality conditions we can reason about complex sigma statements
 the same way we reason about logical statements.
 However, unlike logical statements evaluation of sigma statements is done with zero knowledge about intermediate steps.
-Thus, we can verify the truth of $s_1 \sqcup s_2$ (i.e. compute $V(s_1 \sqcup s_2)$) statement but we cannot know whether $s_1$ or $s_2$ or both is true. At the same time evaluation of $V(s_1) \lor V(s_2)$ discloses results of both $V(s_1)$ and $V(s_2)$ before execution of $\lor$.
+Thus, we can verify the truth of \texttt{s1 || s2} (i.e. compute
+\texttt{ZK(s1 || s2)}) statement but we cannot know whether \texttt{s1} or
+\texttt{s2} or both is true. At the same time evaluation of \texttt{ZK(s1) ||
+ZK(s2)} discloses results of both \texttt{ZK(s1)} and \texttt{ZK(s2)} before
+execution of \texttt{||}.
 
-There is a function $isValid: SigmaProp -> Boolean$ in Sigma-state language which implements the function $V$.
-The type system of the language allows to explicitly delimit usages of zero knowledge evaluation
-of sigma statements and classical evaluation of boolean statements.
+The type system of \langname allows to explicitly delimit usages of zero knowledge evaluation
+of sigma statements and classical evaluation of boolean statements (see~\ref{sec:zk-scope}).
 
-This allows script designer to explicitly control security (zero-knowledge) guarantees where it is necessary.
+This allows programmer to explicitly control security (zero-knowledge) guarantees where it is necessary.
+
+\subsection{ZK scopes}
+\label{sec:zk-scope}
 
 \subsection{General Idea}
 
