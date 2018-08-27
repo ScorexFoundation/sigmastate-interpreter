@@ -9,6 +9,7 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
+import scorex.util._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
@@ -221,7 +222,7 @@ trait ValueGenerators extends TypeGenerators {
     tokens <- Gen.sequence(additionalTokensGen(tokensCount))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-  } yield ergoplatform.ErgoBox(l, b, tokens.asScala, ar.asScala.toMap, tId.toArray, boxId)
+  } yield ergoplatform.ErgoBox(l, b, tokens.asScala, ar.asScala.toMap, tId.toArray.toModifierId, boxId)
 
   def ergoBoxCandidateGen(availableTokens: Seq[TokenId]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
