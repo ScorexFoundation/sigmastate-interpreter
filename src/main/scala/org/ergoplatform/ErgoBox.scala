@@ -11,6 +11,7 @@ import scorex.util._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.Serializer
+import sigmastate.SCollection.SByteArray
 import sigmastate.utils.{ByteWriter, ByteReader}
 import sigmastate.utxo.CostTable.Cost
 

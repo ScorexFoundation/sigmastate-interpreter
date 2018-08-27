@@ -6,7 +6,6 @@ import org.ergoplatform.ErgoBox._
 import scorex.util.encode.Base16
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
-import sigmastate.STuple.STokenType
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
