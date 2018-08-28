@@ -37,6 +37,8 @@ object SigmaPredef {
     "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SBoolean, None),
     "isMember" -> mkLambda(Vector(
        "tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
+    "fromBase58" -> mkLambda(Vector("input" -> SString), SByteArray, None),
+    "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
   ).toMap
 
   def PredefIdent(name: String): Value[SType] = {
