@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
-import scorex.crypto.encode.Base16
+import scorex.util.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{ByteArrayConstant, TaggedByteArray}
 import sigmastate._

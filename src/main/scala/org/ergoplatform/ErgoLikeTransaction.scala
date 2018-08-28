@@ -3,12 +3,15 @@ package org.ergoplatform
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.util._
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
+
+import scala.util.Try
 import sigmastate.utils.{ByteReader, ByteWriter}
 
 import scala.collection.mutable
-import scala.util.Try
+
 
 
 trait ErgoBoxReader {
@@ -22,9 +25,7 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
 
   require(outputCandidates.size <= Short.MaxValue)
 
-  type IdType <: Array[Byte]
-
-  val id: IdType
+  val id: ModifierId
 
   lazy val outputs: IndexedSeq[ErgoBox] =
     outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
@@ -40,9 +41,7 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
                                   override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoLikeTransactionTemplate[UnsignedInput] {
 
-  override type IdType = Digest32
-
-  override lazy val id: IdType = Blake2b256.hash(messageToSign)
+  override lazy val id: ModifierId = Blake2b256.hash(messageToSign).toModifierId
 
   def toSigned(proofs: IndexedSeq[ProverResult]): ErgoLikeTransaction = {
     require(proofs.size == inputs.size)
@@ -68,20 +67,21 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
 
   require(outputCandidates.length <= Short.MaxValue, s"${Short.MaxValue} is the maximum number of outputs")
 
-  override type IdType = Digest32
-
-  override lazy val id: IdType = Blake2b256.hash(messageToSign)
+  override lazy val id: ModifierId = Blake2b256.hash(messageToSign).toModifierId
 
   override def equals(obj: Any): Boolean = obj match {
-    case tx: ErgoLikeTransaction => this.id sameElements tx.id  //we're ignoring spending proofs here
+    //we're ignoring spending proofs here
+    case tx: ErgoLikeTransaction => this.id == tx.id
     case _ => false
   }
+
+  override def hashCode(): Int = id.hashCode()
 }
 
 
 object ErgoLikeTransaction {
 
-  val TransactionIdSize: Short = 32
+  val TransactionIdBytesSize: Short = 32
 
   def apply(inputs: IndexedSeq[Input], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
     new ErgoLikeTransaction(inputs, outputCandidates)
