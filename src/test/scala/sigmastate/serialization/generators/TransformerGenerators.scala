@@ -188,4 +188,12 @@ trait TransformerGenerators {
   val downcastGen: Gen[Downcast[SNumericType, SNumericType]] = for {
     numVal <- Gen.oneOf(numExprTreeNodeGen, shortConstGen, intConstGen, longConstGen)
   } yield mkDowncast(numVal, SByte).asInstanceOf[Downcast[SNumericType, SNumericType]]
+
+  val base58ToByteArrayGen: Gen[Base58ToByteArray] = for {
+    str <- arbString.arbitrary
+  } yield mkBase58ToByteArray(StringConstant(str)).asInstanceOf[Base58ToByteArray]
+
+  val base64ToByteArrayGen: Gen[Base64ToByteArray] = for {
+    str <- arbString.arbitrary
+  } yield mkBase64ToByteArray(StringConstant(str)).asInstanceOf[Base64ToByteArray]
 }

@@ -308,7 +308,7 @@ case class LongToByteArray(input: Value[SLong.type])
   */
 case class Base58ToByteArray(input: Value[SString.type])
   extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
-  override val opCode: OpCode = OpCodes.Base58ToByteArray
+  override val opCode: OpCode = OpCodes.Base58ToByteArrayCode
 
   override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SByteArray] =
     ByteArrayConstant(Base58.decode(bal.value).get)
@@ -321,7 +321,7 @@ case class Base58ToByteArray(input: Value[SString.type])
   */
 case class Base64ToByteArray(input: Value[SString.type])
   extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
-  override val opCode: OpCode = OpCodes.Base64ToByteArray
+  override val opCode: OpCode = OpCodes.Base64ToByteArrayCode
 
   override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SByteArray] =
     ByteArrayConstant(Base64.decode(bal.value).get)

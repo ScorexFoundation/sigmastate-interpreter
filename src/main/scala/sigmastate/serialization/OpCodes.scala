@@ -129,6 +129,6 @@ object OpCodes extends ValueCodes {
   val SomeValueCode           : OpCode = (LastConstantCode + 110).toByte
   val NoneValueCode           : OpCode = (LastConstantCode + 111).toByte
 
-  val Base58ToByteArray       : OpCode = (LastConstantCode + 112).toByte
-  val Base64ToByteArray       : OpCode = (LastConstantCode + 113).toByte
+  val Base58ToByteArrayCode       : OpCode = (LastConstantCode + 112).toByte
+  val Base64ToByteArrayCode       : OpCode = (LastConstantCode + 113).toByte
 }
