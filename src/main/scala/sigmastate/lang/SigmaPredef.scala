@@ -60,4 +60,7 @@ object SigmaPredef {
 
   val LongToByteArraySym = PredefIdent("longToByteArray")
   val ByteArrayToBigIntSym = PredefIdent("byteArrayToBigInt")
+
+  val FromBase58Sym = PredefIdent("fromBase58")
+  val FromBase64Sym = PredefIdent("fromBase64")
 }

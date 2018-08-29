@@ -66,6 +66,12 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))
 
+    case Apply(FromBase58Sym, Seq(arg: Value[SString.type]@unchecked)) =>
+      Some(mkBase58ToByteArray(arg))
+
+    case Apply(FromBase64Sym, Seq(arg: Value[SString.type]@unchecked)) =>
+      Some(mkBase64ToByteArray(arg))
+
     case Apply(ByteArrayToBigIntSym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(mkByteArrayToBigInt(arg))
 

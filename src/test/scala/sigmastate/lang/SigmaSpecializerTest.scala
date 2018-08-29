@@ -179,4 +179,9 @@ class SigmaSpecializerTest extends PropSpec
     spec("byteArrayToBigInt(longToByteArray(1L))") shouldBe ByteArrayToBigInt(LongToByteArray(LongConstant(1)))
   }
 
+  property("fromBaseX") {
+    spec("fromBase58(\"111\")") shouldBe Base58ToByteArray(StringConstant("111"))
+    spec("fromBase64(\"111\")") shouldBe Base64ToByteArray(StringConstant("111"))
+  }
+
 }
