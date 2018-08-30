@@ -257,20 +257,6 @@ trait Evaluation extends Costing {
     * Each ValDef in current scope have entry in this map */
   type DefEnv = Map[Sym, (Int, SType)]
 
-  def elemToSType[T](e: Elem[T]): SType = (e match {
-    case BooleanElement => SBoolean
-    case ByteElement => SByte
-    case ShortElement => SShort
-    case IntElement => SInt
-    case LongElement => SLong
-    case _: BoxElem[_] => SBox
-    case EcPointElement => SGroupElement
-    case _: SigmaElem[_] => SSigmaProp
-    case ce: ColElem[_,_] => SCollection(elemToSType(ce.eItem))
-    case fe: FuncElem[_,_] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
-    case _ => error(s"Don't know how to convert Elem $e to SType")
-  })
-
   object IsArithOp {
     def unapply(op: EndoBinOp[_]): Option[Byte] = op match {
       case _: NumericPlus[_]    => Some(PlusCode)

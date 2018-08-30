@@ -69,27 +69,35 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       testContract: Option[SContract] = None,
       expectedCalc: Option[Rep[Context] => Rep[T]] = None,
       expectedCost: Option[Rep[Context] => Rep[Int]] = None,
+      expectedSize: Option[Rep[Context] => Rep[Long]] = None,
       expectedTree: Option[SValue] = None,
       expectedResult: Option[T] = None,
       printGraphs: Boolean = true)
   {
     lazy val expectedCalcF = expectedCalc.map(fun(_))
     lazy val expectedCostF = expectedCost.map(fun(_))
+    lazy val expectedSizeF = expectedSize.map(fun(_))
 
     def checkExpected[T](x: T, expected: Option[T]) = {
       if (expected.isDefined)
         x shouldBe expected.get
+    }
+    def pairify(xs: Seq[Sym]): Sym = xs match {
+      case Seq(x) => x
+      case Seq(a, b) => Pair(a, b)
+      case _ => Pair(xs.head, pairify(xs.tail))
     }
 
     def doCosting: Rep[(Context => T, (Context => Int, Context => Long))] = {
       val costed = cost(env, script)
       val res @ Tuple(calcF, costF, sizeF) = split(costed.asRep[Context => Costed[T]])
       if (printGraphs) {
-        val graphs = Seq(res) ++ expectedCalcF.toSeq ++ expectedCostF.toSeq
+        val graphs = Seq(res, pairify(expectedCalcF.toSeq ++ expectedCostF.toSeq ++ expectedSizeF.toSeq))
         emit(name, graphs:_*)
       }
       checkExpected(calcF, expectedCalcF)
       checkExpected(costF, expectedCostF)
+      checkExpected(sizeF, expectedSizeF)
       res
     }
 
@@ -109,20 +117,26 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
 
   def checkInEnv[T](env: EsEnv, name: String, script: String,
       expectedCalc: Rep[Context] => Rep[T],
-      expectedCost: Rep[Context] => Rep[Int],
-      doChecks: Boolean = true ): Rep[(Context => T, (Context => Int, Context => Long))] =
+      expectedCost: Rep[Context] => Rep[Int] = null,
+      expectedSize: Rep[Context] => Rep[Long] = null
+  ): Rep[(Context => T, (Context => Int, Context => Long))] =
   {
     val tc = EsTestCase[T](name, env, script,
-      expectedCalc = if (doChecks) Some(expectedCalc) else None,
-      expectedCost = if (doChecks) Some(expectedCost) else None)
+      expectedCalc = Option(expectedCalc),
+      expectedCost = Option(expectedCost),
+      expectedSize = Option(expectedSize))
     val res = tc.doCosting
     res
   }
 
   def check[T](name: String, script: String,
       expectedCalc: Rep[Context] => Rep[T],
-      expectedCost: Rep[Context] => Rep[Int]): Rep[(Context => T, (Context => Int, Context => Long))] =
-    checkInEnv(Map(), name, script, expectedCalc, expectedCost)
+      expectedCost: Rep[Context] => Rep[Int] = null,
+      expectedSize: Rep[Context] => Rep[Long] = null
+      ): Rep[(Context => T, (Context => Int, Context => Long))] =
+  {
+    checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize)
+  }
 
   def reduce(env: EsEnv, name: String, script: String, ctx: VContext, expectedResult: Any): Unit = {
     val tcase = EsTestCase[SType#WrappedType](name, env, script, Some(ctx), expectedResult = Some(expectedResult.asInstanceOf[SType#WrappedType]))

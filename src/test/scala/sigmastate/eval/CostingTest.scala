@@ -66,21 +66,25 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("constants") {
-    check("int", "1", _ => 1, _ => costOf(IntConstant(1)))
-    check("long", "1L", _ => 1L, _ => costOf(LongConstant(1)))
-    check("boolean", "true", _ => true, _ => costOf(TrueLeaf))
-    checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => costOf(ByteConstant(1)))
-    checkInEnv(env, "arr", "arr1.size",
-      _ => colBuilder.fromArray(mkWArrayConst(Array[Byte](1, 2))).length,
+    check("int", "1", _ => 1, _ => constCost[Int], _ => sizeOf(1))
+    check("long", "1L", _ => 1L, _ => constCost[Long], _ => sizeOf(1L))
+    check("boolean", "true", _ => true, _ => constCost[Boolean], _ => sizeOf(true))
+    checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => constCost[Byte], _ => sizeOf(1.toByte))
+
+    val arr1 = env("arr1").asInstanceOf[Array[Byte]]
+    checkInEnv(env, "arr", "arr1",
+      {_ => colBuilder.fromArray(mkWArrayConst(arr1)) }, null, null)
+    checkInEnv(env, "arr2", "arr1.size",
+      {_ => colBuilder.fromArray(mkWArrayConst(arr1)).length },
       { _ =>
-        val c = ByteArrayConstant(env("arr1").asInstanceOf[Array[Byte]])
+        val c = ByteArrayConstant(arr1)
         costOf(c) + costOf(utxo.SizeOf(c))
       })
     checkInEnv(env, "bigint", "n1", {_ => toRep(n1) }, { _ => costOf(BigIntConstant(n1))})
     checkInEnv(env, "bigint2", "big", {_ => toRep(big) }, { _ => costOf(BigIntConstant(big))})
-    checkInEnv(env, "group", "g1", {_ => mkWECPointConst(g1) }, { _ => costOf(GroupElementConstant(g1))})
+    checkInEnv(env, "group", "g1", {_ => mkWECPointConst(g1) }, {_ => costOf(GroupElementConstant(g1))})
     checkInEnv(env, "sigmaprop", "p1.propBytes",
-      {_ => RProveDlogEvidence(mkWECPointConst(g1)).asRep[Sigma].propBytes },
+      { _ => RProveDlogEvidence(mkWECPointConst(g1)).asRep[Sigma].propBytes },
       { _ => costOf(GroupElementConstant(g1)) + costOf(p1) + costOf(SigmaPropBytes(SigmaPropConstant(p1)))})
   }
   
@@ -89,14 +93,14 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     import builder._
     check("one+one", "1 + 1", _ => toRep(1) + 1,
       {_ => val c1 = IntConstant(1); costOf(c1) + costOf(c1) + costOf(Plus(c1, c1)) })
-    checkInEnv(env, "one+one2", "big - n1", _ => toRep(big) - n1,
+    checkInEnv(env, "one+one2", "big - n1", {_ => toRep(big) - n1},
       {_ =>
         val c1 = BigIntConstant(big);
         val c2 = BigIntConstant(n1);
         costOf(c1) + costOf(c2) + costOf(Minus(c1, c2)) })
-    check("one_gt_one", "1 > 1", _ => toRep(1) > 1,
+    check("one_gt_one", "1 > 1", {_ => toRep(1) > 1},
       { _ => val c1 = IntConstant(1); costOf(c1) + costOf(c1) + costOf(GT(c1, c1)) })
-    checkInEnv(env, "or", "1 > 1 || n1 < big", _ => (toRep(1) > 1) lazy_|| Thunk(toRep(n1) < big),
+    checkInEnv(env, "or", "1 > 1 || n1 < big", {_ => (toRep(1) > 1) lazy_|| Thunk(toRep(n1) < big)},
       { _ =>
         val (lv, lc) = {
           val c1 = IntConstant(1);
@@ -191,9 +195,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
           })
         ))
         dsl.anyOf(colBuilder(c1, c2))
-      },
-      { in: Rep[Context] => HeightAccess + ConstantNode + TripleDeclaration}
-      , false)
+      }
+      )
   }
 
   test("Crowd Funding: measure") {
@@ -226,9 +229,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
         })
       ))
       regScript.isValid || c2
-    },
-    { in: Rep[Context] => 0 } // ignored
-    , false)
+    }
+    )
   }
 
   def measure[T](nIters: Int, okShow: Boolean = true)(action: Int => Unit): Unit = {

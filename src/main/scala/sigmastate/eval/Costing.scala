@@ -57,14 +57,19 @@ trait Costing extends SigmaLibrary {
   case class CostOf(opName: String, opCode: Byte, optGiven: Option[Int] = None) extends BaseDef[Int]
 
   def costOf(opName: String, opCode: Byte): Rep[Int] = CostOf(opName, opCode)
-  def costOf(opName: String, opCode: Byte, givenCost: Int): Rep[Int] = CostOf(opName, opCode, Some(givenCost))
+//  def costOf(opName: String, opCode: Byte, givenCost: Int): Rep[Int] = CostOf(opName, opCode, Some(givenCost))
+
+  def constCost[T: Elem]: Rep[Int] = {
+    val tpe = elemToSType(element[T])
+    costOf(s"Const[$tpe]", OpCodes.ConstantCode)
+  }
 
   def costOf(v: SValue): Rep[Int] = {
     v match {
       case ArithOp(_, _, opCode) =>
         costOf(opcodeToArithOpName(opCode), opCode)
-      case c @ Constant(v, tpe) =>
-        costOf(s"Const[$tpe]", OpCodes.ConstantCode, tpe.dataSize(v).toInt)
+      case c @ Constant(_, tpe) =>
+        costOf(s"Const[$tpe]", OpCodes.ConstantCode)
       case v =>
         val className = v.getClass.getSimpleName
         costOf(className, v.opCode)
@@ -78,8 +83,22 @@ trait Costing extends SigmaLibrary {
     case (_xs, ce: ColElem[a,_]) =>
       val xs = _xs.asRep[Col[a]]
       implicit val eA = xs.elem.eItem
-      xs.map(fun(sizeOf(_))).sum(costedBuilder.monoidBuilder.longPlusMonoid)
+      val tpe = elemToSType(eA)
+      if (tpe.isConstantSize)
+        typeSize(tpe) * xs.length.toLong
+      else
+        xs.map(fun(sizeOf(_))).sum(costedBuilder.monoidBuilder.longPlusMonoid)
     case _ => super.sizeOf(value)
+  }
+
+  case class TypeSize(tpe: SType) extends BaseDef[Long]
+
+  def typeSize(tpe: SType): Rep[Long] = TypeSize(tpe)
+
+  def typeSize[T: Elem]: Rep[Long] = {
+    val tpe = elemToSType(element[T])
+    assert(tpe.isConstantSize)
+    typeSize(tpe)
   }
 
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
@@ -156,6 +175,20 @@ trait Costing extends SigmaLibrary {
     case c: SCollection[a] => colElement(stypeToElem(c.elemType))
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asElem[T#WrappedType]
+
+  def elemToSType[T](e: Elem[T]): SType = (e match {
+    case BooleanElement => SBoolean
+    case ByteElement => SByte
+    case ShortElement => SShort
+    case IntElement => SInt
+    case LongElement => SLong
+    case _: BoxElem[_] => SBox
+    case EcPointElement => SGroupElement
+    case _: SigmaElem[_] => SSigmaProp
+    case ce: ColElem[_,_] => SCollection(elemToSType(ce.eItem))
+    case fe: FuncElem[_,_] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
+    case _ => error(s"Don't know how to convert Elem $e to SType")
+  })
 
   import NumericOps._
   private val elemToNumericMap = Map[Elem[_], Numeric[_]](
@@ -256,11 +289,10 @@ trait Costing extends SigmaLibrary {
           val tpeA = tpe.asCollection[SType].elemType
           val eA = stypeToElem(tpeA).asElem[a]
           val wa = mkWArrayConst(arr)(eA)
-          val size = tpeA.dataSize(arr.asWrappedType)
-          CostedPrimRep(colBuilder.fromArray(wa), costOf(c), size)
+          withDefaultSize(colBuilder.fromArray(wa), costOf(c))
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
-          CostedPrimRep(resV, costOf(c), tpe.dataSize(v.asWrappedType))
+          withDefaultSize(resV, costOf(c))
       }
 
       case Height =>
