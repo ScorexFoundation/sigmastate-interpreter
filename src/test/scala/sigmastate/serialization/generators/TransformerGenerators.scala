@@ -2,6 +2,7 @@ package sigmastate.serialization.generators
 
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
+import scorex.util.encode.{Base58, Base64}
 import sigmastate.Values.{FalseLeaf, IntConstant, TrueLeaf, Value}
 import sigmastate._
 import sigmastate.Values._
@@ -189,11 +190,19 @@ trait TransformerGenerators {
     numVal <- Gen.oneOf(numExprTreeNodeGen, shortConstGen, intConstGen, longConstGen)
   } yield mkDowncast(numVal, SByte).asInstanceOf[Downcast[SNumericType, SNumericType]]
 
+  val base58StringGen: Gen[String] = for {
+    s <- Gen.someOf(Base58.Alphabet).suchThat(_.nonEmpty)
+  } yield s.toString
+
   val base58ToByteArrayGen: Gen[Base58ToByteArray] = for {
-    str <- arbString.arbitrary
-  } yield mkBase58ToByteArray(StringConstant(str)).asInstanceOf[Base58ToByteArray]
+    s <- base58StringGen
+  } yield mkBase58ToByteArray(StringConstant(s)).asInstanceOf[Base58ToByteArray]
+
+  val base64StringGen: Gen[String] = for {
+    s <- Gen.someOf(Base64.Alphabet).suchThat(_.length > 1)
+  } yield s.toString
 
   val base64ToByteArrayGen: Gen[Base64ToByteArray] = for {
-    str <- arbString.arbitrary
-  } yield mkBase64ToByteArray(StringConstant(str)).asInstanceOf[Base64ToByteArray]
+    s <- base64StringGen
+  } yield mkBase64ToByteArray(StringConstant(s)).asInstanceOf[Base64ToByteArray]
 }
