@@ -29,14 +29,15 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
 
   val noEnv: EsEnv = Map()
   val AliceId = Array[Byte](1) // 0x0001
-  def newAliceBox(id: Byte, value: Long) = new TestBox(Array[Byte](0, id), value, Cols.fromArray(AliceId), noRegisters)
+  def newAliceBox(id: Byte, value: Long) = new TestBox(
+    Cols.fromArray(Array[Byte](0, id)), value, Cols.fromArray(AliceId), noBytes, noBytes, noRegisters)
 
   def newContext(height: Long, self: Box, vars: AnyValue*): TContext = {
-    new TContext(noInputs, noOutputs, height, self, vars.toArray)
+    new TContext(noInputs, noOutputs, height, self, emptyAvlTree, vars.toArray)
   }
   implicit class TContextOps(ctx: TContext) {
-    def withInputs(inputs: Box*) = new TContext(inputs.toArray, ctx.outputs, ctx.height, ctx.selfBox, ctx.vars)
-    def withOutputs(outputs: Box*) = new TContext(ctx.inputs, outputs.toArray, ctx.height, ctx.selfBox, ctx.vars)
+    def withInputs(inputs: Box*) = new TContext(inputs.toArray, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, ctx.vars)
+    def withOutputs(outputs: Box*) = new TContext(ctx.inputs, outputs.toArray, ctx.height, ctx.selfBox, emptyAvlTree, ctx.vars)
   }
 
   val boxA1 = newAliceBox(1, 100)
@@ -45,7 +46,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
   implicit class ErgoBoxOps(ebox: ErgoBox) {
     def toTestBox: Box = {
       val rs = regs(ebox.additionalRegisters.map { case (k,v) => (k.number -> v) })
-      new TestBox(ebox.id, ebox.value, Cols.fromArray(ebox.propositionBytes), rs)
+      new TestBox(Cols.fromArray(ebox.id), ebox.value, Cols.fromArray(ebox.propositionBytes), noBytes, noBytes, rs)
     }
   }
 
@@ -54,7 +55,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       val inputs = ergoCtx.boxesToSpend.toArray.map(_.toTestBox)
       val outputs = ergoCtx.spendingTransaction.outputs.toArray.map(_.toTestBox)
       val vars = contextVars(ergoCtx.extension.values)
-      new TContext(inputs, outputs, ergoCtx.currentHeight, ergoCtx.self.toTestBox, vars.arr)
+      new TContext(inputs, outputs, ergoCtx.currentHeight, ergoCtx.self.toTestBox, emptyAvlTree, vars.arr)
     }
   }
 
@@ -80,9 +81,9 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
         x shouldBe expected.get
     }
 
-    def doCosting: Rep[(Context => T, Context => Int)] = {
+    def doCosting: Rep[(Context => T, (Context => Int, Context => Long))] = {
       val costed = cost(env, script)
-      val res @ Pair(calcF, costF) = split(costed.asRep[Context => Costed[T]])
+      val res @ Tuple(calcF, costF, sizeF) = split(costed.asRep[Context => Costed[T]])
       if (printGraphs) {
         val graphs = Seq(res) ++ expectedCalcF.toSeq ++ expectedCostF.toSeq
         emit(name, graphs:_*)
@@ -93,7 +94,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
     }
 
     def doReduce(): T = {
-      val Pair(calcF, costF) = doCosting
+      val Tuple(calcF, costF, _) = doCosting
       verifyCostFunc(costF) shouldBe Success(())
       verifyIsValid(calcF) shouldBe Success(())
       val costFun = IR.compile[SInt.type](getDataEnv, costF)
@@ -109,7 +110,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
   def checkInEnv[T](env: EsEnv, name: String, script: String,
       expectedCalc: Rep[Context] => Rep[T],
       expectedCost: Rep[Context] => Rep[Int],
-      doChecks: Boolean = true ): Rep[(Context => T, Context => Int)] =
+      doChecks: Boolean = true ): Rep[(Context => T, (Context => Int, Context => Long))] =
   {
     val tc = EsTestCase[T](name, env, script,
       expectedCalc = if (doChecks) Some(expectedCalc) else None,
@@ -120,7 +121,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
 
   def check[T](name: String, script: String,
       expectedCalc: Rep[Context] => Rep[T],
-      expectedCost: Rep[Context] => Rep[Int]): Rep[(Context => T, Context => Int)] =
+      expectedCost: Rep[Context] => Rep[Int]): Rep[(Context => T, (Context => Int, Context => Long))] =
     checkInEnv(Map(), name, script, expectedCalc, expectedCost)
 
   def reduce(env: EsEnv, name: String, script: String, ctx: VContext, expectedResult: Any): Unit = {
@@ -130,7 +131,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
 
   def build(env: Map[String, Any], name: String, script: String, expected: SValue): Unit = {
     val costed = cost(env, script)
-    val Pair(valueF, costF) = split(costed)
+    val Tuple(valueF, costF, sizeF) = split(costed)
     emit(name, valueF, costF)
     verifyCostFunc(costF) shouldBe(Success(()))
     verifyIsValid(valueF) shouldBe(Success(()))

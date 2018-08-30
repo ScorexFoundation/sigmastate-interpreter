@@ -121,6 +121,10 @@ object SType {
     }).asInstanceOf[ClassTag[T]]
   }
 
+  implicit class AnyOps(x: Any) {
+    def asWrappedType: SType#WrappedType = x.asInstanceOf[SType#WrappedType]
+  }
+
   def typeOfData(x: Any): Option[SType] = Option(x match {
     case _: Boolean => SBoolean
     case _: Byte => SByte

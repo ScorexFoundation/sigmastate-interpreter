@@ -23,6 +23,7 @@ import sigmastate.eval.{NumericOps, OrderingOps}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
+import SType._
 
 trait Costing extends SigmaLibrary {
   import Context._;
@@ -38,11 +39,12 @@ trait Costing extends SigmaLibrary {
   import Costed._;
   import CostedPrim._;
   import CostedFunc._;
+  import CostedCol._;
   import ProveDlogEvidence._
   import SigmaDslBuilder._
-  import ClosureBase._
   import TrivialSigma._
-
+  import MonoidBuilderInst._
+  
   def opcodeToArithOpName(opCode: Byte): String = opCode match {
     case OpCodes.PlusCode     => "+"
     case OpCodes.MinusCode    => "-"
@@ -68,9 +70,15 @@ trait Costing extends SigmaLibrary {
         costOf(className, v.opCode)
     }
   }
-  override def sizeOf[T](value: Rep[T]): Rep[Long] = value match {
-    case Def(ApplyBinOp(op: NumericTimes[_], l, r)) if value.elem == BigIntegerElement =>
+  override def sizeOf[T](value: Rep[T]): Rep[Long] = (value, value.elem) match {
+    case (Def(ApplyBinOp(op: NumericTimes[_], l, r)), BigIntegerElement) =>
       sizeOf(l) + sizeOf(r)
+    case (_, _: BoxElem[_]) =>
+      value.asRep[Box].dataSize
+    case (_xs, ce: ColElem[a,_]) =>
+      val xs = _xs.asRep[Col[a]]
+      implicit val eA = xs.elem.eItem
+      xs.map(fun(sizeOf(_))).sum(costedBuilder.monoidBuilder.longPlusMonoid)
     case _ => super.sizeOf(value)
   }
 
@@ -124,23 +132,15 @@ trait Costing extends SigmaLibrary {
   val costedBuilder = RConcreteCostedBuilder()
   import Cost._
 
-  def byteSize[T](eT: BaseElem[T]): Int = eT match {
-    case BooleanElement => 1
-    case ByteElement => 1
-    case CharElement => 2
-    case ShortElement => 2
-    case IntElement => 4
-    case LongElement => 8
-  }
-
-  def split[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Int)] = {
+  def split[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, (T => Int, T => Long))] = {
     implicit val eT = f.elem.eDom
     val calc = fun { x: Rep[T] =>
       val y = f(x);
       y.value
     }
     val cost = fun { x: Rep[T] => f(x).cost }
-    Pair(calc, cost)
+    val size = fun { x: Rep[T] => f(x).dataSize }
+    Tuple(calc, cost, size)
   }
 
   def stypeToElem[T <: SType](t: T): Elem[T#WrappedType] = (t match {
@@ -214,7 +214,15 @@ trait Costing extends SigmaLibrary {
       val costed = block
       costed.cost
     }
-    RCostedPrim(v, c)
+    val s = Thunk.forced {
+      val costed = block
+      costed.dataSize
+    }
+    RCostedPrim(v, c, s)
+  }
+
+  implicit class RepOps[T](x: Rep[T]) {
+    def dataSize: Rep[Long] = sizeOf(x)
   }
 
   type Env = Map[String, Sym]
@@ -225,6 +233,7 @@ trait Costing extends SigmaLibrary {
   private def evalNode[T <: SType](ctx: Rep[Context], env: Map[String, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
+    def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = CostedPrimRep(v, cost, v.dataSize)
 
     val res: Rep[Any] = node match {
       case Ident(n, _) =>
@@ -237,28 +246,35 @@ trait Costing extends SigmaLibrary {
         case p: DLogProtocol.ProveDlog =>
           val ge = evalNode(ctx, env, p.value).asRep[Costed[WECPoint]]
           val resV = RProveDlogEvidence(ge.value)
-          CostedPrimRep(resV, ge.cost + costOf(p))
+          CostedPrimRep(resV, ge.cost + costOf(p), ge.dataSize)
         case ge: ECPoint =>
           assert(tpe == SGroupElement)
           val resV = mkWECPointConst(ge)
-          CostedPrimRep(resV, costOf(c))
+          val size = SGroupElement.dataSize(ge.asWrappedType)
+          CostedPrimRep(resV, costOf(c), size)
         case arr: Array[a] =>
-          val eA = stypeToElem(tpe.asCollection[SType].elemType).asElem[a]
+          val tpeA = tpe.asCollection[SType].elemType
+          val eA = stypeToElem(tpeA).asElem[a]
           val wa = mkWArrayConst(arr)(eA)
-          CostedPrimRep(colBuilder.fromArray(wa), costOf(c))
+          val size = tpeA.dataSize(arr.asWrappedType)
+          CostedPrimRep(colBuilder.fromArray(wa), costOf(c), size)
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
-          CostedPrimRep(resV, costOf(c))
+          CostedPrimRep(resV, costOf(c), tpe.dataSize(v.asWrappedType))
       }
 
-      case Height => CostedPrimRep(ctx.HEIGHT, costOf(Height))
-      case Inputs => CostedPrimRep(ctx.INPUTS, costOf(Inputs))
-      case Outputs => CostedPrimRep(ctx.OUTPUTS, costOf(Outputs))
-      case Self => CostedPrimRep(ctx.SELF, costOf(Self))
+      case Height =>
+        withDefaultSize(ctx.HEIGHT, costOf(Height))
+      case Inputs =>
+        withDefaultSize(ctx.INPUTS, costOf(Inputs))
+      case Outputs =>
+        withDefaultSize(ctx.OUTPUTS, costOf(Outputs))
+      case Self =>
+        withDefaultSize(ctx.SELF, costOf(Self))
 
       case op @ TaggedVariableNode(id, tpe) =>
         val resV = ctx.getVar(id)(stypeToElem(tpe))
-        CostedPrimRep(resV, costOf("getVar", op.opCode))
+        withDefaultSize(resV, costOf("getVar", op.opCode))
 
       case Terms.Block(binds, res) =>
         var curEnv = env
@@ -294,7 +310,7 @@ trait Costing extends SigmaLibrary {
       case Terms.Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
         eval(mkLongToByteArray(arg))
 
-      case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
+      case sigmastate.Upcast(Constant(value, tpe), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 
       // Rule: col.size --> SizeOf(col)
@@ -312,6 +328,7 @@ trait Costing extends SigmaLibrary {
       case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropBytes(p.asSigmaProp))
 
+      // box.regName[regType].isDefined =>
       case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.IsDefinedMethod.name, Some(regType)) =>
         val regId = ErgoBox.registerByName.getOrElse(regName,
           error(s"Invalid register name $regName in expression $sel"))
@@ -319,7 +336,8 @@ trait Costing extends SigmaLibrary {
         val elem = stypeToElem(regType)
         val valueOpt = boxC.value.getReg(regId.number.toInt)(elem)
         val baseCost = boxC.cost + Cost.ExtractRegister
-        CostedPrimRep(valueOpt.isDefined, baseCost)
+        val v = valueOpt.isDefined
+        withDefaultSize(v, baseCost)
 
       case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetMethod.name, Some(regType)) =>
         val reg = ErgoBox.registerByName.getOrElse(regName,
@@ -361,15 +379,14 @@ trait Costing extends SigmaLibrary {
         val input = col.asValue[SCollection[SType]]
         val cond = body.asValue[SBoolean.type]
         val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(ctx, env, input).asRep[Costed[Col[Any]]]
+        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-        val Pair(condCalc, condCost) = split(fun { x: Rep[Any] =>
-          evalNode(ctx, env + (n -> CostedPrimRep(x, 0)), cond)
-        })
-        val res = inputC.value.filter(condCalc)
-        val cost = inputC.cost + inputC.value.map(condCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
-        CostedPrimRep(res, cost)
+        val condC = fun { x: Rep[Costed[Any]] =>
+          evalNode(ctx, env + (n -> x), cond)
+        }
+        val res = inputC.filterCosted(condC)
+        res
 
       case Terms.Apply(Select(col, method @ (SCollection.ExistsMethod.name | SCollection.ForallMethod.name), _),
                        Seq(Terms.Lambda(Seq((n, t)), _, Some(body)))) =>
@@ -379,30 +396,28 @@ trait Costing extends SigmaLibrary {
         val inputC = evalNode(ctx, env, input).asRep[Costed[Col[Any]]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eItem == eAny, s"Types should be equal: but $eItem != $eAny")
-        val Pair(condCalc, condCost) = split(fun { x: Rep[Any] =>
-          evalNode(ctx, env + (n -> CostedPrimRep(x, 0)), cond)
+        val Tuple(condCalc, condCost, condSize) = split(fun { x: Rep[Any] =>
+          evalNode(ctx, env + (n -> CostedPrimRep(x, 0, x.dataSize)), cond)
         })
-        val value = method match {
-          case SCollection.ExistsMethod.name =>
-            inputC.value.exists(condCalc)
-          case SCollection.ForallMethod.name =>
-            inputC.value.forall(condCalc)
+        val inputV = inputC.value
+        val res = method match {
+          case SCollection.ExistsMethod.name => inputV.exists(condCalc)
+          case SCollection.ForallMethod.name => inputV.forall(condCalc)
         }
-        val cost = inputC.cost + inputC.value.map(condCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
-        CostedPrimRep(value, cost)
+        val cost = inputC.cost + inputV.map(condCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
+        withDefaultSize(res, cost)
 
       case Terms.Apply(Select(col,"map", _), Seq(Terms.Lambda(Seq((n, t)), _, Some(mapper)))) =>
         val input = col.asValue[SCollection[SType]]
         val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(ctx, env, input).asRep[Costed[Col[Any]]]
+        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-        val Pair(mapperCalc, mapperCost) = split(fun { x: Rep[Any] =>
-          evalNode(ctx, env + (n -> CostedPrimRep(x, 0)), mapper)
-        })
-        val res = inputC.value.map(mapperCalc)
-        val cost = inputC.cost + inputC.value.map(mapperCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
-        CostedPrimRep(res, cost)
+        val mapperC = fun { x: Rep[Costed[Any]] =>
+          evalNode(ctx, env + (n -> x), mapper)
+        }
+        val res = inputC.mapCosted(mapperC)
+        res
 
 //      case Terms.Apply(Select(col,"fold", _), Seq(zero, Terms.Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
 //        val taggedZero = mkTaggedVariable(21, tZero)
@@ -418,46 +433,48 @@ trait Costing extends SigmaLibrary {
       case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
         val fC = evalNode(ctx, env, f).asRep[Costed[Any => Any]]
         val xC = evalNode(ctx, env, x).asRep[Costed[Any]]
-        val res: Rep[_] = Apply(fC.value, xC.value, false)
-        val xV = xC.value
-        val evalCost = fC.applyCost(xV)
-        CostedPrimRep(res, fC.cost + xC.cost + evalCost)
+        val res = fC.applyCosted(xC)
 
       case opt: OptionValue[_] =>
         error(s"Option constructors are not supported: $opt")
 
       case utxo.SizeOf(xs) =>
         val xsC = evalNode(ctx, env, xs).asRep[Costed[Col[Any]]]
-        CostedPrimRep(xsC.value.length, xsC.cost + costOf(node))
+        val v = xsC.value.length
+        withDefaultSize(v, xsC.cost + costOf(node))
       case ByIndex(xs, i, None) =>
-        val xsC = evalNode(ctx, env, xs).asRep[Costed[Col[Any]]]
-        val iC = evalNode(ctx, env, i)
-        CostedPrimRep(xsC.value(iC.value), xsC.cost + iC.cost + costOf(node))
+        val xsC = evalNode(ctx, env, xs).asRep[CostedCol[Any]]
+        val iC = evalNode(ctx, env, i).asRep[Costed[Int]]
+        val iV = iC.value
+        val size = xsC.sizes(iV)
+        CostedPrimRep(xsC.value(iV), xsC.cost + iC.cost + costOf(node), size)
 
       case SigmaPropIsValid(p) =>
         val pC = evalNode(ctx, env, p).asRep[Costed[Sigma]]
-        CostedPrimRep(pC.value.isValid, pC.cost + costOf(node))
+        val v = pC.value.isValid
+        withDefaultSize(v, pC.cost + costOf(node))
       case SigmaPropBytes(p) =>
         val pC = evalNode(ctx, env, p).asRep[Costed[Sigma]]
-        CostedPrimRep(pC.value.propBytes, pC.cost + costOf(node))
+        val v = pC.value.propBytes
+        withDefaultSize(v, pC.cost + costOf(node))
       case utxo.ExtractAmount(box) =>
         val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
-        CostedPrimRep(boxC.value.value, boxC.cost + costOf(node))
+        withDefaultSize(boxC.value.value, boxC.cost + costOf(node))
       case utxo.ExtractScriptBytes(box) =>
         val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
         val bytes = boxC.value.propositionBytes
-        CostedPrimRep(bytes, boxC.cost + costOf(node))
+        withDefaultSize(bytes, boxC.cost + costOf(node))
       case utxo.ExtractRegisterAs(box, regId, tpe, default) =>
         val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
         val elem = stypeToElem(tpe)
         val valueOpt = boxC.value.getReg(regId.number.toInt)(elem)
         val (v, c) = if (default.isDefined) {
           val d = evalNode(ctx, env, default.get)
-          (RWSpecialPredef.optionGetOrElse(valueOpt, d.value), boxC.cost + d.cost + costOf(node) )
+          (RWSpecialPredef.optionGetOrElse(valueOpt, d.value), boxC.cost + d.cost + costOf(node))
         } else {
           (valueOpt.get, boxC.cost + costOf(node))
         }
-        CostedPrimRep(v, c)
+        withDefaultSize(v, c)
       case op: ArithOp[t] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)
@@ -465,14 +482,14 @@ trait Costing extends SigmaLibrary {
         val x = evalNode(ctx, env, op.left)
         val y = evalNode(ctx, env, op.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
-          CostedPrimRep(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + costOf(op))
+          withDefaultSize(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + costOf(op))
         }
       case OR(input) => input.matchCase(
         cc => {
           val itemsC = cc.items.map(evalNode(ctx, env, _))
           val res = sigmaDslBuilder.anyOf(colBuilder.apply(itemsC.map(_.value): _*))
           val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + costOf(node)
-          CostedPrimRep(res, cost)
+          withDefaultSize(res, cost)
 //          val headC = evalNode(ctx, env, cc.items(0))
 //          val tailC = cc.items.iterator.drop(1).map(x => evalCostedBlock(evalNode(ctx, env, x)))
 //          val itemsC = (Iterator.single(headC) ++ tailC).toIndexedSeq
@@ -488,7 +505,7 @@ trait Costing extends SigmaLibrary {
           val itemsC = cc.items.map(evalNode(ctx, env, _))
           val res = sigmaDslBuilder.allOf(colBuilder.apply(itemsC.map(_.value): _*))
           val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + costOf(node)
-          CostedPrimRep(res, cost)
+          withDefaultSize(res, cost)
         },
         const => ???,
         tup => ???
@@ -498,13 +515,13 @@ trait Costing extends SigmaLibrary {
         val lC = evalNode(ctx, env, l)
         val rValTh = Thunk(evalNode(ctx, env, r).value)
         val rCost = evalNode(ctx, env, r).cost   // cost graph is built without Thunk (upper bound approximation)
-        CostedPrimRep(Or.applyLazy(lC.value, rValTh), lC.cost + rCost + costOf(node))
+        withDefaultSize(Or.applyLazy(lC.value, rValTh), lC.cost + rCost + costOf(node))
 
       case BinAnd(l, r) =>
         val lC = evalNode(ctx, env, l)
         val rValTh = Thunk(evalNode(ctx, env, r).value)
         val rCost = evalNode(ctx, env, r).cost
-        CostedPrimRep(And.applyLazy(lC.value, rValTh), lC.cost + rCost + costOf(node))
+        withDefaultSize(And.applyLazy(lC.value, rValTh), lC.cost + rCost + costOf(node))
 
       case rel: Relation[t, _] =>
         val tpe = rel.left.tpe
@@ -513,7 +530,7 @@ trait Costing extends SigmaLibrary {
         val x = evalNode(ctx, env, rel.left)
         val y = evalNode(ctx, env, rel.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
-          CostedPrimRep(
+          withDefaultSize(
             binop.apply(x.value, y.value.asRep[t#WrappedType]),
             x.cost + y.cost + costOf(rel)
           )
@@ -525,31 +542,21 @@ trait Costing extends SigmaLibrary {
         def eC = evalNode(ctx, env, e)
         val resV = IF (cC.value) THEN tC.value ELSE eC.value
         val resCost = cC.cost + (tC.cost max eC.cost) + costOf(node)
-        CostedPrimRep(resV, resCost)
+        withDefaultSize(resV, resCost)
         
-      case Terms.Lambda(Seq((n, argTpe)), tpe, Some(body)) =>
+      case l @ Terms.Lambda(Seq((n, argTpe)), tpe, Some(body)) =>
         implicit val eAny = stypeToElem(argTpe).asElem[Any]
-        val f = fun { x: Rep[Any] =>
-          evalNode(ctx, env + (n -> CostedPrimRep(x, 0)), body)
+        val f = fun { x: Rep[Costed[Any]] =>
+          evalNode(ctx, env + (n -> x), body)
         }
-        mkCostedFunc(f)
+        RCostedFunc(RCostedPrim((), 0, 0L), f, costOf(node), l.tpe.dataSize(0.asWrappedType))
+
       case _ =>
         error(s"Don't know how to evalNode($node)")
     }
     res.asRep[Costed[T#WrappedType]]
   }
 
-  def mkClosure[A,B](f: Rep[A=>B]): Rep[Closure[Unit,A,B]] = {
-    implicit val eA = f.elem.eDom
-    RClosureBase(toRep(()), fun { in: Rep[(Unit, A)] => f(in._2) })
-  }
-
-  def mkCostedFunc[A,B](f: Rep[A => Costed[B]]): Rep[Costed[A => B]] = {
-    val Pair(fV, fC) = split(f)
-    val cloV = mkClosure(fV)
-    val cloC = mkClosure(fC)
-    RCostedFunc(RCostedPrim((), 0), cloV, cloC.asRep[Closure[Unit, A, Long]])
-  }
 
   def buildCostedGraph[T <: SType](envVals: Map[String, SValue], tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = {
     fun { ctx: Rep[Context] =>

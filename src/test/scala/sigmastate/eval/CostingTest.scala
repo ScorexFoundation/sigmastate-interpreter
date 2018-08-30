@@ -180,8 +180,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
     checkInEnv[Boolean](envCF, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
-        val backerPubKey = ctx.getVar[Sigma](backerPubKeyId)
-        val projectPubKey = ctx.getVar[Sigma](projectPubKeyId)
+        val backerPubKey = ctx.getVar[Sigma](backerPubKeyId).get
+        val projectPubKey = ctx.getVar[Sigma](projectPubKeyId).get
         val c1 = dsl.allOf(colBuilder(ctx.HEIGHT >= toRep(timeout), backerPubKey.isValid))
         val c2 = dsl.allOf(colBuilder(
           ctx.HEIGHT < toRep(timeout),
@@ -218,7 +218,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
     checkInEnv[Boolean](envDem, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
-      val regScript = ctx.getVar[Sigma](regScriptId)
+      val regScript = ctx.getVar[Sigma](regScriptId).get
       val c2 = dsl.allOf(colBuilder(
         ctx.HEIGHT >= ctx.SELF.R4[Long].get + demurragePeriod,
         ctx.OUTPUTS.exists(fun { out =>
