@@ -41,6 +41,8 @@ libraryDependencies ++= Seq(
 ) ++ testingDependencies
 
 
+scalacOptions ++= Seq("-feature", "-deprecation")
+
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
 

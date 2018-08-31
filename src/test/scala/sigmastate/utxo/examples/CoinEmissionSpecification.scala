@@ -1,7 +1,7 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform.{ErgoLikeContext, Height, _}
-import scorex.utils.ScryptoLogging
+import scorex.util.ScorexLogging
 import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -15,7 +15,7 @@ import sigmastate.{SLong, _}
   * Instead of having implicit emission via coinbase transaction, we implement 1 output in a state with script,
   * that controls emission rules
   */
-class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging {
+class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
