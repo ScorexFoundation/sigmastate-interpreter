@@ -14,7 +14,7 @@ import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
-import scorex.utils.ScryptoLogging
+import scorex.util.ScorexLogging
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -48,7 +48,7 @@ object CryptoFunctions {
   }
 }
 
-trait Interpreter extends ScryptoLogging {
+trait Interpreter extends ScorexLogging {
 
   import CryptoConstants._
   import Interpreter.ReductionResult
