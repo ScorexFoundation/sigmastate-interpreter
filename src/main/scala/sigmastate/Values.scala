@@ -32,6 +32,9 @@ object Values {
   type Idn = String
 
   trait Value[+S <: SType] extends SigmaNode {
+    def companion: ValueCompanion =
+      sys.error(s"Companion object is not defined for AST node ${this.getClass}")
+
     val opCode: OpCode
 
     def tpe: S
@@ -44,6 +47,9 @@ object Values {
     def evaluated: Boolean
 
     lazy val bytes = ValueSerializer.serialize(this)
+  }
+
+  trait ValueCompanion extends SigmaNodeCompanion {
   }
 
   object Value {
@@ -78,7 +84,9 @@ object Values {
   trait Constant[S <: SType] extends EvaluatedValue[S] {}
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
-    override val opCode: OpCode = (ConstantCode + tpe.typeCode).toByte
+    override def companion: ValueCompanion = Constant
+
+    override val opCode: OpCode = ConstantCode
     override def cost[C <: Context[C]](context: C) = tpe.dataSize(value)
 
     override def equals(obj: scala.Any): Boolean = obj match {
@@ -89,7 +97,7 @@ object Values {
     override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
   }
 
-  object Constant {
+  object Constant extends ValueCompanion {
     def apply[S <: SType](value: S#WrappedType, tpe: S): Constant[S] = ConstantNode(value, tpe)
     def unapply[S <: SType](v: EvaluatedValue[S]): Option[(S#WrappedType, S)] = v match {
       case ConstantNode(value, tpe) => Some((value, tpe))

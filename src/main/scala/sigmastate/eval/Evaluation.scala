@@ -8,6 +8,7 @@ import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, BoolValue, Va
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.Costing
 import sigmastate.serialization.OpCodes._
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{Exists1, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
@@ -156,6 +157,7 @@ trait Evaluation extends Costing {
       try {
         te.rhs match {
           case Const(x) => out(x.asInstanceOf[AnyRef])
+          case wc: WrapperConst[_] => out(wc.wrappedValue)
           case _: DslBuilder | _: ColBuilder | _: IntPlusMonoid =>
             dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te"))
           case SigmaM.propBytes(prop) =>
@@ -230,7 +232,8 @@ trait Evaluation extends Costing {
           case CostOf(_, _, Some(givenCost)) =>
             out(givenCost)
           case CostOf(opName, opCode, None) =>
-            out(0)
+            val ser = ValueSerializer.getSerializer(opCode)
+            out(ser.opCost)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
       }

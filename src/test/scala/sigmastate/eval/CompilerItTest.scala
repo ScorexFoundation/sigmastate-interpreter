@@ -1,6 +1,6 @@
 package sigmastate.eval
 
-import sigmastate.Values.IntConstant
+import sigmastate.Values.{LongConstant, IntConstant, BigIntConstant}
 import sigmastate.lang.LangTests
 
 import scalan.BaseCtxTests
@@ -11,17 +11,22 @@ class CompilerItTest extends BaseCtxTests
   import WArray._
   import ColBuilder._
   import Col._
+  import WBigInteger._
 
   lazy val dsl = sigmaDslBuilder
 
   test("constants") {
     val ctx = newContext(height = 1, boxA1)
-    checkAll(env, "int", "1", ctx,
-      contract = {_ => 1},
-      calc = {_ => 1},
-      cost = {_ => constCost[Int]},
-      size = {_ => sizeOf(1)},
-      tree = IntConstant(1), 1)
+//    checkAll(env, "int", "1", ctx, contract = {_ => 1},
+//      calc = {_ => 1},
+//      cost = {_ => constCost[Int]},
+//      size = {_ => sizeOf(1)},
+//      tree = IntConstant(1), 1)
+    checkAll(env, "BigInteger", "big", ctx, contract = {_ => big},
+      calc = {_ => mkWBigIntegerConst(big) },
+      cost = {_ => constCost[WBigInteger]},
+      size = {_ => sizeOf(mkWBigIntegerConst(big))},
+      tree = BigIntConstant(big), big)
 //    check("long", "1L", _ => 1L, _ => constCost[Long], _ => sizeOf(1L))
 //    check("boolean", "true", _ => true, _ => constCost[Boolean], _ => sizeOf(true))
 //    checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => constCost[Byte], _ => sizeOf(1.toByte))

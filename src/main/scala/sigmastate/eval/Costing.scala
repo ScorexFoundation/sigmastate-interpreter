@@ -29,6 +29,7 @@ trait Costing extends SigmaLibrary {
   import Context._;
   import WArray._;
   import WECPoint._;
+  import WBigInteger._;
   import Col._;
   import ColBuilder._;
   import Sigma._;
@@ -124,7 +125,7 @@ trait Costing extends SigmaLibrary {
     }
   }
 
-  implicit lazy val BigIntegerElement: Elem[BigInteger] = new BaseElem(BigInteger.ZERO)
+  lazy val BigIntegerElement: Elem[WBigInteger] = wBigIntegerElement
 
   override def toRep[A](x: A)(implicit eA: Elem[A]):Rep[A] = eA match {
     case BigIntegerElement => Const(x)
@@ -168,9 +169,9 @@ trait Costing extends SigmaLibrary {
     case SShort => ShortElement
     case SInt => IntElement
     case SLong => LongElement
-    case SBigInt => BigIntegerElement
+    case SBigInt => wBigIntegerElement
     case SBox => boxElement
-    case SGroupElement => EcPointElement
+    case SGroupElement => wECPointElement
     case SSigmaProp => sigmaElement
     case c: SCollection[a] => colElement(stypeToElem(c.elemType))
     case _ => error(s"Don't know how to convert SType $t to Elem")
@@ -182,8 +183,9 @@ trait Costing extends SigmaLibrary {
     case ShortElement => SShort
     case IntElement => SInt
     case LongElement => SLong
+    case _: WBigIntegerElem[_] => SBigInt
     case _: BoxElem[_] => SBox
-    case EcPointElement => SGroupElement
+    case _: WECPointElem[_] => SGroupElement
     case _: SigmaElem[_] => SSigmaProp
     case ce: ColElem[_,_] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_,_] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
@@ -280,6 +282,10 @@ trait Costing extends SigmaLibrary {
           val ge = evalNode(ctx, env, p.value).asRep[Costed[WECPoint]]
           val resV = RProveDlogEvidence(ge.value)
           CostedPrimRep(resV, ge.cost + costOf(p), ge.dataSize)
+        case bi: BigInteger =>
+          assert(tpe == SBigInt)
+          val resV = mkWBigIntegerConst(bi)
+          withDefaultSize(resV, costOf(c))
         case ge: ECPoint =>
           assert(tpe == SGroupElement)
           val resV = mkWECPointConst(ge)

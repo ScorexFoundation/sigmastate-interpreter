@@ -24,6 +24,9 @@ import scala.reflect.ClassTag
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
 
+/** Base type for all companions of AST nodes of sigma lang. */
+trait SigmaNodeCompanion
+
 /** Every type descriptor is a tree represented by nodes in SType hierarchy.
   * In order to extend type family:
   * - Implement concrete class derived from SType

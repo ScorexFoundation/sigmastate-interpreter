@@ -11,7 +11,7 @@ import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
-
+import sigmastate.utxo.CostTable._
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
 
@@ -21,6 +21,8 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
     * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
   val opCode: OpCode
 
+  def opCost: ExpressionCost =
+    sys.error(s"Operation opCost is not defined for AST node ${this.getClass}")
 }
 
 object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
@@ -30,6 +32,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   import builder._
 
   private val serializers = SparseArrayContainer.buildForSerializers(Seq[ValueSerializer[_ <: Value[SType]]](
+    ConstantSerializer(builder),
     TupleSerializer(mkTuple),
     SelectFieldSerializer(mkSelectField),
     Relation2Serializer(GtCode, mkGT[SType]),
