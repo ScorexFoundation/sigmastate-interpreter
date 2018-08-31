@@ -101,6 +101,10 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     val businessKey = business.dlogSecrets.head.publicImage
 
     val spendingEnv = Map(
+      "pubkeyA" -> pubkeyA,
+      "pubkeyB" -> pubkeyB,
+      "pubkeyC" -> pubkeyC,
+      "pubkeyD" -> pubkeyD,
       "business" -> businessKey,
       "pubkeyTool1" -> toolRing(0),
       "pubkeyTool2" -> toolRing(1),
