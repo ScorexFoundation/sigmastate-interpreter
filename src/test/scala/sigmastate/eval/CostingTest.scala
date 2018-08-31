@@ -72,8 +72,9 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => constCost[Byte], _ => sizeOf(1.toByte))
 
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
+    val symArr1 = colBuilder.fromArray(mkWArrayConst(arr1))
     checkInEnv(env, "arr", "arr1",
-      {_ => colBuilder.fromArray(mkWArrayConst(arr1)) }, null, null)
+      {_ => symArr1}, {_ => constCost[Col[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
     checkInEnv(env, "arr2", "arr1.size",
       {_ => colBuilder.fromArray(mkWArrayConst(arr1)).length },
       { _ =>

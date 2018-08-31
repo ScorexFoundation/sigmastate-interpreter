@@ -229,8 +229,8 @@ trait Evaluation extends Costing {
             out(sigmastate.TrivialSigma(BooleanConstant(isValid)))
           case CostOf(_, _, Some(givenCost)) =>
             out(givenCost)
-//          case CostOf(opName, opCode, None) =>
-//            out()
+          case CostOf(opName, opCode, None) =>
+            out(0)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
       }

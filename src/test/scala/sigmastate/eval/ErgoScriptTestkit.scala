@@ -6,6 +6,7 @@ import sigmastate.Values.{Constant, SValue, IntConstant}
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import sigmastate.utxo.CostTable
 import special.sigma.{TestBox, ContractsTestkit, AnyValue, Box, TestContext => TContext, SigmaContract => SContract, Context => VContext}
+
 import scalan.BaseCtxTests
 import sigmastate.lang.TransformingSigmaBuilder
 import org.scalatest.TryValues._
@@ -59,6 +60,8 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
     }
   }
 
+  def contract(canOpen: VContext => Boolean) = new NoEnvContract(canOpen)
+
   import IR._
   import Context._
   case class EsTestCase[T](
@@ -66,7 +69,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       env: EsEnv,
       script: String,
       ctx: Option[VContext] = None,
-      testContract: Option[SContract] = None,
+      testContract: Option[VContext => T] = None,
       expectedCalc: Option[Rep[Context] => Rep[T]] = None,
       expectedCost: Option[Rep[Context] => Rep[Int]] = None,
       expectedSize: Option[Rep[Context] => Rep[Long]] = None,
@@ -82,6 +85,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       if (expected.isDefined)
         x shouldBe expected.get
     }
+
     def pairify(xs: Seq[Sym]): Sym = xs match {
       case Seq(x) => x
       case Seq(a, b) => Pair(a, b)
@@ -92,7 +96,12 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       val costed = cost(env, script)
       val res @ Tuple(calcF, costF, sizeF) = split(costed.asRep[Context => Costed[T]])
       if (printGraphs) {
-        val graphs = Seq(res, pairify(expectedCalcF.toSeq ++ expectedCostF.toSeq ++ expectedSizeF.toSeq))
+        val str = struct("calc" -> calcF, "cost" -> costF, "size" -> sizeF)
+        val strExp = struct(
+          expectedCalcF.map("calcExp" -> _).toSeq ++
+          expectedCostF.map("costExp" -> _).toSeq ++
+          expectedSizeF.map("sizeExp" -> _).toSeq)
+        val graphs = Seq(str, strExp)
         emit(name, graphs:_*)
       }
       checkExpected(calcF, expectedCalcF)
@@ -101,18 +110,40 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       res
     }
 
-    def doReduce(): T = {
-      val Tuple(calcF, costF, _) = doCosting
+    def doReduce(): Unit = {
+      val Tuple(calcF, costF, sizeF) = doCosting
       verifyCostFunc(costF) shouldBe Success(())
       verifyIsValid(calcF) shouldBe Success(())
-      val costFun = IR.compile[SInt.type](getDataEnv, costF)
-      val IntConstant(estimatedCost) = costFun(ctx.get)
-      (estimatedCost < CostTable.ScriptLimit) shouldBe true
-      val valueFun = IR.compile[SType](getDataEnv, calcF.asRep[Context => SType#WrappedType])
-      val Constant(res: T @unchecked, _) = valueFun(ctx.get)
-      checkExpected(res, expectedResult)
-      res
+      if (ctx.isDefined) {
+        val testContractRes = testContract.map(_(ctx.get))
+        testContractRes.foreach { res =>
+          checkExpected(res, expectedResult)
+        }
+        val costFun = IR.compile[SInt.type](getDataEnv, costF)
+        val IntConstant(estimatedCost) = costFun(ctx.get)
+        (estimatedCost < CostTable.ScriptLimit) shouldBe true
+        val valueFun = IR.compile[SType](getDataEnv, calcF.asRep[Context => SType#WrappedType])
+        val Constant(res: T @unchecked, _) = valueFun(ctx.get)
+        checkExpected(res, expectedResult)
+      }
     }
+  }
+
+  def checkAll[T](env: EsEnv, name: String, script: String, ctx: VContext,
+      contract: VContext => T,
+      calc: Rep[Context] => Rep[T],
+      cost: Rep[Context] => Rep[Int],
+      size: Rep[Context] => Rep[Long],
+      tree: SValue,
+      result: T): Unit =
+  {
+    val tcase = EsTestCase[T](
+          name, env, script,
+          Option(ctx), Option(contract),
+          Option(calc), Option(cost), Option(size),
+          Option(tree),
+          Option(result))
+    tcase.doReduce()
   }
 
   def checkInEnv[T](env: EsEnv, name: String, script: String,
@@ -146,7 +177,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
   def build(env: Map[String, Any], name: String, script: String, expected: SValue): Unit = {
     val costed = cost(env, script)
     val Tuple(valueF, costF, sizeF) = split(costed)
-    emit(name, valueF, costF)
+    emit(name, valueF, costF, sizeF)
     verifyCostFunc(costF) shouldBe(Success(()))
     verifyIsValid(valueF) shouldBe(Success(()))
     IR.buildTree(valueF) shouldBe expected
