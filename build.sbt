@@ -6,6 +6,7 @@ lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   version := "0.9.4",
   scalaVersion := "2.12.4",
+  resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
   pomExtra :=
@@ -31,13 +32,16 @@ val testingDependencies = Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.scorexfoundation" %% "scrypto" % "2.1.+",
+  "org.scorexfoundation" %% "scrypto" % "2.1.3",
+  "org.scorexfoundation" %% "scorex-util" % "0.1.1-SNAPSHOT",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
   "com.lihaoyi" %% "fastparse" % "1.0.0"
 ) ++ testingDependencies
 
+
+scalacOptions ++= Seq("-feature", "-deprecation")
 
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )

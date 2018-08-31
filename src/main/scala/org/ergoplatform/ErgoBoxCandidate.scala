@@ -3,8 +3,9 @@ package org.ergoplatform
 import java.util
 
 import org.ergoplatform.ErgoBox._
-import scorex.crypto.encode.Base16
+import scorex.util.encode.Base16
 import scorex.crypto.hash.Digest32
+import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
@@ -26,7 +27,7 @@ class ErgoBoxCandidate(val value: Long,
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
-  def toBox(txId: Array[Byte], boxId: Short) =
+  def toBox(txId: ModifierId, boxId: Short) =
     ErgoBox(value, proposition, additionalTokens, additionalRegisters, txId, boxId)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {

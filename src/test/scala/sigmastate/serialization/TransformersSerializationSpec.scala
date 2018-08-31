@@ -141,4 +141,11 @@ class TransformersSerializationSpec extends SerializationSpecification {
     forAll(downcastGen) { v => roundTripTest(v) }
   }
 
+  property("Base58ToByteArray: Serializer round trip") {
+    forAll(base58ToByteArrayGen) { v => roundTripTest(v) }
+  }
+
+  property("Base64ToByteArray: Serializer round trip") {
+    forAll(base64ToByteArrayGen) { v => roundTripTest(v) }
+  }
 }

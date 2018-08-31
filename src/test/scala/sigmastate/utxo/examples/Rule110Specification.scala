@@ -2,6 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
+import scorex.util._
 import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, TaggedByteArray, TrueLeaf, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
@@ -9,6 +10,7 @@ import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
+import sigmastate.utils.Extensions._
 
 /**
   * Wolfram's Rule110 implementations
@@ -395,7 +397,7 @@ class Rule110Specification extends SigmaTestingCommons {
       val row = RowReg -> LongConstant(0)
       val column = ColumnReg -> LongConstant(col)
       val value = if (col == 15) ValueReg -> TrueLeaf else ValueReg -> FalseLeaf
-      ErgoBox(0L, prop, Seq(), Map(row, column, value), txId, col.toShort)
+      ErgoBox(0L, prop, Seq(), Map(row, column, value), txId.toModifierId, col.toShort)
     }
 
     val initBlock = BlockchainSimulationSpecification.Block {

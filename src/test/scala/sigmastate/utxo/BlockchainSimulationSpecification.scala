@@ -9,6 +9,7 @@ import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.util._
 import sigmastate.Values.LongConstant
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
@@ -203,7 +204,7 @@ object BlockchainSimulationSpecification {
 
     val initBlock = Block {
       (0 until windowSize).map { i =>
-        val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
+        val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
         val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Seq(), Map(heightReg -> LongConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       }
