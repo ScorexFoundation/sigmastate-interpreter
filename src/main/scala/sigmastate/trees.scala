@@ -5,6 +5,7 @@ import java.math.BigInteger
 import com.google.common.primitives.Longs
 import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import scorex.util.encode.{Base58, Base64}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.{Context, Interpreter}
@@ -300,6 +301,32 @@ case class LongToByteArray(input: Value[SLong.type])
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
+}
+
+/**
+  * Decode Base58-encoded string into SByteArray
+  */
+case class Base58ToByteArray(input: Value[SString.type])
+  extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.Base58ToByteArrayCode
+
+  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SByteArray] =
+    ByteArrayConstant(Base58.decode(bal.value).get)
+
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context)
+}
+
+/**
+  * Decode Base64-encoded string into SByteArray
+  */
+case class Base64ToByteArray(input: Value[SString.type])
+  extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.Base64ToByteArrayCode
+
+  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SByteArray] =
+    ByteArrayConstant(Base64.decode(bal.value).get)
+
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context)
 }
 
 /**

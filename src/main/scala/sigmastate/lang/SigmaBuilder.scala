@@ -139,6 +139,9 @@ trait SigmaBuilder {
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
   def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type]
+
+  def mkBase58ToByteArray(input: Value[SString.type]): Value[SByteArray]
+  def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -378,6 +381,12 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type] =
     StringConcat(left, right)
+
+  override def mkBase58ToByteArray(input: Value[SString.type]): Value[SByteArray] =
+    Base58ToByteArray(input)
+
+  override def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray] =
+    Base64ToByteArray(input)
 }
 
 trait TypeConstraintCheck {
