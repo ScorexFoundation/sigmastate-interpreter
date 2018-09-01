@@ -128,6 +128,8 @@ object Terms {
     def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(args, NoType, Some(body))
   }
 
+  case class OperationId(name: String, opType: SFunc)
+
   implicit class ValueOps(v: Value[SType]) {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
     def asNumValue: Value[SNumericType] = v.asInstanceOf[Value[SNumericType]]
@@ -154,6 +156,25 @@ object Terms {
       if (targetType == tV.tpe) v.asValue[T]
       else
         mkUpcast(tV, targetType)
+    }
+
+    /** Every value represents an operation and that operation can be associated with a function type,
+      * describing functional meaning of the operation, kind of operation signature.
+      * Thus we can obtain global operation identifiers by combining Value.opName with Value.opType,
+      * so that if (v1.opName == v2.opName) && (v1.opType == v2.opType) then v1 and v2 are functionally
+      * point-wise equivalent.
+      * This in particular means that if two _different_ ops have the same opType they _should_ have
+      * different opNames.
+      * Thus defined op ids are used in a Cost Model - a table of all existing primitives coupled with
+      * performance parameters.
+      * */
+    def opType: SFunc = v match {
+      case ev: EvaluatedValue[_] => SFunc(Vector(SUnit), ev.tpe)
+      case Select(obj, name, Some(tres)) => SFunc(obj.tpe, tres)
+      case MethodCall(obj, name, args, tres) => SFunc(obj.tpe +: args.map(_.tpe), tres)
+      case Ident(name, tpe) => SFunc(Vector(SUnit), tpe)
+      case t: Triple[_,_,_] => SFunc(Vector(t.left.tpe, t.right.tpe), t.tpe)
+      case _ => sys.error(s"Value.opType is not defined for $v")
     }
   }
 }
