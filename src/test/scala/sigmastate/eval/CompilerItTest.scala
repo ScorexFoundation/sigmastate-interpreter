@@ -1,5 +1,6 @@
 package sigmastate.eval
 
+import sigmastate.{SFunc, SBigInt}
 import sigmastate.Values.{LongConstant, IntConstant, BigIntConstant}
 import sigmastate.lang.LangTests
 
@@ -8,31 +9,71 @@ import scalan.BaseCtxTests
 class CompilerItTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
   import IR._
+  import builder._
   import WArray._
   import ColBuilder._
   import Col._
   import WBigInteger._
+  import sigmastate.serialization.OpCodes._
 
   lazy val dsl = sigmaDslBuilder
+  lazy val bigSym = mkWBigIntegerConst(big)
+  lazy val n1Sym = mkWBigIntegerConst(n1)
+  val ctx = newContext(height = 1, boxA1)
+
+  def intCase = {
+    Case(env, "int", "1", ctx, contract = {_ => 1},
+      calc = {_ => 1},
+      cost = {_ => constCost[Int]},
+      size = {_ => sizeOf(1)},
+      tree = IntConstant(1), Result(1, 1, 4))
+  }
+
+  def bigIntegerCase = {
+    Case(env, "BigInteger", "big", ctx, contract = {_ => big},
+      calc = {_ => bigSym },
+      cost = {_ => constCost[WBigInteger]},
+      size = {_ => sizeOf(bigSym)},
+      tree = BigIntConstant(big), Result(big, 1, 16))
+  }
+
+  def addBigIntegersCase = {
+    val size = (sizeOf(bigSym) max sizeOf(n1Sym)) + 1L
+    val res = big.add(n1)
+    Case(env, "BigInteger2", "big + n1", ctx, contract = {_ => big.add(n1)},
+      calc = {_ => bigSym.add(n1Sym) },
+      cost = {_ => constCost[WBigInteger] + constCost[WBigInteger] +
+          costOf("+", PlusCode, SFunc(Vector(SBigInt, SBigInt), SBigInt)) +
+          costOf("+_per_item", PlusCode, SFunc(Vector(SBigInt, SBigInt), SBigInt)) * size.toInt },
+      size = {_ => size },
+      tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)),
+      Result(res, 119, 17))
+  }
+
+  def arrayCase = {
+    //    val arr1 = env("arr1").asInstanceOf[Array[Byte]]
+    //    val arr1Sym = colBuilder.fromArray(mkWArrayConst(arr1))
+    //    checkAll(env, "arr", "arr1", ctx, contract = {_ => Cols.fromArray(arr1) },
+    //      calc = {_ => arr1Sym },
+    //      cost = {_ => constCost[WBigInteger]},
+    //      size = {_ => sizeOf(bigSym) + sizeOf(n1Sym) },
+    //      tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)), Result(big))
+  }
+
+  lazy val testCases = Seq[EsTestCase[_]](
+    intCase, bigIntegerCase, addBigIntegersCase
+  )
+
+  test("run all") {
+    for (c <- testCases)
+      c.doReduce()
+  }
 
   test("constants") {
-    val ctx = newContext(height = 1, boxA1)
-//    checkAll(env, "int", "1", ctx, contract = {_ => 1},
-//      calc = {_ => 1},
-//      cost = {_ => constCost[Int]},
-//      size = {_ => sizeOf(1)},
-//      tree = IntConstant(1), 1)
-    checkAll(env, "BigInteger", "big", ctx, contract = {_ => big},
-      calc = {_ => mkWBigIntegerConst(big) },
-      cost = {_ => constCost[WBigInteger]},
-      size = {_ => sizeOf(mkWBigIntegerConst(big))},
-      tree = BigIntConstant(big), big)
-//    check("long", "1L", _ => 1L, _ => constCost[Long], _ => sizeOf(1L))
-//    check("boolean", "true", _ => true, _ => constCost[Boolean], _ => sizeOf(true))
-//    checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => constCost[Byte], _ => sizeOf(1.toByte))
-//
-//    val arr1 = env("arr1").asInstanceOf[Array[Byte]]
-//    val symArr1 = colBuilder.fromArray(mkWArrayConst(arr1))
+    intCase.doReduce
+    bigIntegerCase.doReduce
+    addBigIntegersCase.doReduce()
+
 //    checkInEnv(env, "arr", "arr1",
 //    {_ => symArr1}, {_ => constCost[Col[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
   }

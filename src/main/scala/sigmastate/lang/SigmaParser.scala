@@ -79,5 +79,11 @@ object SigmaParser extends Exprs with Types with Core {
     (StatCtx.Expr ~ End).parse(str)
   }
 
-  def parseType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
+  def parsedType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
+
+  def parseType(x: String): SType = {
+    val res = parsedType(x).get.value
+    res
+  }
+
 }

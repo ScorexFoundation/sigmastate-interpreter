@@ -55,32 +55,32 @@ trait Costing extends SigmaLibrary {
     case _ => error(s"Cannot find ArithOpName for opcode $opCode")
   }
 
-  case class CostOf(opName: String, opCode: Byte, optGiven: Option[Int] = None) extends BaseDef[Int]
+  case class CostOf(opName: String, opCode: Byte, opType: SFunc) extends BaseDef[Int]
 
-  def costOf(opName: String, opCode: Byte): Rep[Int] = CostOf(opName, opCode)
-//  def costOf(opName: String, opCode: Byte, givenCost: Int): Rep[Int] = CostOf(opName, opCode, Some(givenCost))
+  def costOf(opName: String, opCode: Byte, opType: SFunc): Rep[Int] = CostOf(opName, opCode, opType)
 
   def constCost[T: Elem]: Rep[Int] = {
     val tpe = elemToSType(element[T])
-    costOf(s"Const[$tpe]", OpCodes.ConstantCode)
+    costOf(s"Const", OpCodes.ConstantCode, Constant[SType](0.asWrappedType, tpe).opType)
   }
 
   def costOf(v: SValue): Rep[Int] = {
+    val opTy = v.opType
     v match {
       case ArithOp(_, _, opCode) =>
-        costOf(opcodeToArithOpName(opCode), opCode)
+        costOf(opcodeToArithOpName(opCode), opCode, opTy)
       case c @ Constant(_, tpe) =>
-        costOf(s"Const[$tpe]", OpCodes.ConstantCode)
+        costOf(s"Const", OpCodes.ConstantCode, opTy)
       case v =>
         val className = v.getClass.getSimpleName
-        costOf(className, v.opCode)
+        costOf(className, v.opCode, opTy)
     }
   }
   override def sizeOf[T](value: Rep[T]): Rep[Long] = (value, value.elem) match {
-    case (Def(ApplyBinOp(op: NumericTimes[_], l, r)), BigIntegerElement) =>
-      sizeOf(l) + sizeOf(r)
     case (_, _: BoxElem[_]) =>
       value.asRep[Box].dataSize
+//    case (Def(ApplyBinOp(op: NumericTimes[_], l, r)), BigIntegerElement) =>
+//      sizeOf(l) + sizeOf(r)
     case (_xs, ce: ColElem[a,_]) =>
       val xs = _xs.asRep[Col[a]]
       implicit val eA = xs.elem.eItem
@@ -103,7 +103,6 @@ trait Costing extends SigmaLibrary {
   }
 
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
-    case CostOf(name, code, Some(given)) => s"CostOf($name, $given)"
     case CostOf(name, code, _) => s"CostOf($name)"
     case _ => super.formatDef(d)
   }
@@ -289,8 +288,8 @@ trait Costing extends SigmaLibrary {
         case ge: ECPoint =>
           assert(tpe == SGroupElement)
           val resV = mkWECPointConst(ge)
-          val size = SGroupElement.dataSize(ge.asWrappedType)
-          CostedPrimRep(resV, costOf(c), size)
+//          val size = SGroupElement.dataSize(ge.asWrappedType)
+          withDefaultSize(resV, costOf(c))
         case arr: Array[a] =>
           val tpeA = tpe.asCollection[SType].elemType
           val eA = stypeToElem(tpeA).asElem[a]
@@ -312,7 +311,7 @@ trait Costing extends SigmaLibrary {
 
       case op @ TaggedVariableNode(id, tpe) =>
         val resV = ctx.getVar(id)(stypeToElem(tpe))
-        withDefaultSize(resV, costOf("getVar", op.opCode))
+        withDefaultSize(resV, costOf(op))
 
       case Terms.Block(binds, res) =>
         var curEnv = env
@@ -513,6 +512,21 @@ trait Costing extends SigmaLibrary {
           (valueOpt.get, boxC.cost + costOf(node))
         }
         withDefaultSize(v, c)
+      case op: ArithOp[t] if op.tpe == SBigInt =>
+        import OpCodes._
+        op.opCode match {
+          case PlusCode =>
+            val x = evalNode(ctx, env, op.left).asRep[Costed[WBigInteger]]
+            val y = evalNode(ctx, env, op.right).asRep[Costed[WBigInteger]]
+            val addSize = x.dataSize.max(y.dataSize) + 1L // according to algorithm in BigInteger.add()
+            val cost = x.cost + y.cost + costOf(op) + costOf("+_per_item", op.opCode, op.opType) * addSize.toInt
+            RCostedPrim(x.value.add(y.value), cost, addSize)
+//          case MinusCode => NumericMinus(elemToNumeric(eT))(eT)
+//          case MultiplyCode => NumericTimes(elemToNumeric(eT))(eT)
+//          case DivisionCode => IntegralDivide(elemToIntegral(eT))(eT)
+//          case ModuloCode => IntegralMod(elemToIntegral(eT))(eT)
+          case _ => error(s"Cannot perform Costing.evalNode($op)")
+        }
       case op: ArithOp[t] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)

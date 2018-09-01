@@ -1,20 +1,21 @@
 package sigmastate.eval
 
 import java.lang.reflect.Method
-
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import scapi.sigma.DLogProtocol
+import sigmastate.SType
 import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
-import sigmastate.lang.Terms.ValueOps
+import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.lang.Costing
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{Exists1, ExtractAmount, SizeOf}
+import sigmastate.utxo.{Exists1, CostTable, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Try
+import SType._
 
 trait Evaluation extends Costing {
   import Context._
@@ -197,6 +198,8 @@ trait Evaluation extends Costing {
               case v => v
             }
             out(res)
+          case ApplyUnOp(op: UnOp[l,r], In(x)) =>
+            out(op.applySeq(x).asInstanceOf[AnyRef])
           case ApplyBinOp(op: BinOp[l,r], In(x), In(y)) =>
             out(op.applySeq(x, y).asInstanceOf[AnyRef])
           case ApplyBinOpLazy(op, In(x: Boolean), In(y)) if op == Or =>
@@ -229,11 +232,14 @@ trait Evaluation extends Costing {
             out(th)
           case TrivialSigmaCtor(In(isValid: Boolean)) =>
             out(sigmastate.TrivialSigma(BooleanConstant(isValid)))
-          case CostOf(_, _, Some(givenCost)) =>
-            out(givenCost)
-          case CostOf(opName, opCode, None) =>
-            val ser = ValueSerializer.getSerializer(opCode)
-            out(ser.opCost)
+          case CostOf(opName, opCode, tpe) =>
+            val operId = OperationId(opName, tpe)
+            val cost = CostTable.DefaultCosts(operId)
+            out(cost)
+          case SizeOf(sym @ In(data)) =>
+            val tpe = elemToSType(sym.elem)
+            val size = tpe.dataSize(data.asWrappedType)
+            out(size)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
       }

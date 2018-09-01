@@ -1,8 +1,40 @@
 package sigmastate.utxo
 
+import sigmastate.lang.SigmaParser
+import sigmastate.lang.Terms.OperationId
+
+case class CostTable(operCosts: Map[OperationId, Double]) extends (OperationId => Int) {
+  override def apply(operId: OperationId) = {
+    operCosts.get(operId) match {
+      case Some(cost) => (cost * 1000000).toInt
+      case None => sys.error(s"Cannot find cost in CostTable for $operId")
+    }
+  }
+}
 
 object CostTable {
   type ExpressionCost = Int
+  val DefaultCosts = CostTable.fromSeq(Seq(
+    ("Const", "() => Unit",    0.000001),
+    ("Const", "() => Boolean", 0.000001),
+    ("Const", "() => Byte",    0.000001),
+    ("Const", "() => Short",   0.000001),
+    ("Const", "() => Int",     0.000001),
+    ("Const", "() => Long",    0.000001),
+    ("Const", "() => BigInt",  0.000001),
+    ("Const", "() => String",  0.000001),
+    ("Const", "() => GroupElement", 0.000001),
+    ("+", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("+_per_item", "(BigInt, BigInt) => BigInt", 0.000001)
+  ))
+
+  def fromSeq(items: Seq[(String, String, Double)]): CostTable = {
+    val parsed = for ((name, ts, cost) <- items) yield {
+      val ty = SigmaParser.parseType(ts).asFunc
+      (OperationId(name, ty), cost)
+    }
+    CostTable(parsed.toMap)
+  }
 
   //Maximum cost of a script
   val ScriptLimit = 1000000

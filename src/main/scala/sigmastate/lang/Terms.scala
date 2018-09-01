@@ -169,10 +169,10 @@ object Terms {
       * performance parameters.
       * */
     def opType: SFunc = v match {
-      case ev: EvaluatedValue[_] => SFunc(Vector(SUnit), ev.tpe)
+      case ev: EvaluatedValue[_] => SFunc(Vector(), ev.tpe)
       case Select(obj, name, Some(tres)) => SFunc(obj.tpe, tres)
       case MethodCall(obj, name, args, tres) => SFunc(obj.tpe +: args.map(_.tpe), tres)
-      case Ident(name, tpe) => SFunc(Vector(SUnit), tpe)
+      case Ident(name, tpe) => SFunc(Vector(), tpe)
       case t: Triple[_,_,_] => SFunc(Vector(t.left.tpe, t.right.tpe), t.tpe)
       case _ => sys.error(s"Value.opType is not defined for $v")
     }

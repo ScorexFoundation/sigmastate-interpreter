@@ -5,12 +5,13 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.lang.Terms.OperationId
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
+import sigmastate.serialization.trees.{Relation3Serializer, QuadrupleSerializer, Relation2Serializer}
 import sigmastate.utils.Extensions._
-import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
+import sigmastate.utils.{ByteWriter, SparseArrayContainer, ByteReader}
 import sigmastate.utxo.CostTable._
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -21,7 +22,7 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
     * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
   val opCode: OpCode
 
-  def opCost: ExpressionCost =
+  def opCost(opId: OperationId): ExpressionCost =
     sys.error(s"Operation opCost is not defined for AST node ${this.getClass}")
 }
 

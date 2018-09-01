@@ -3,6 +3,7 @@ package sigmastate.serialization
 import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.lang.SigmaBuilder
+import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteWriter, ByteReader}
@@ -14,7 +15,7 @@ case class ConstantSerializer(builder: SigmaBuilder)
 
   val opCode: OpCode = OpCodes.ConstantCode
 
-  override def opCost = Cost.ConstantNode
+  override def opCost(opId: OperationId) = Cost.ConstantNode
 
   def parseBody(r: ByteReader): Value[SType] = deserialize(r)
 

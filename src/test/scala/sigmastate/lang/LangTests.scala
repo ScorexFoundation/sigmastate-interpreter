@@ -52,5 +52,5 @@ trait LangTests {
   )
 
   /** Parses string to SType tree */
-  def ty(s: String): SType = SigmaParser.parseType(s).get.value
+  def ty(s: String): SType = SigmaParser.parseType(s)
 }

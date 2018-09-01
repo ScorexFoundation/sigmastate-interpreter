@@ -12,6 +12,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.{LangTests, Costing, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.{SigmaPropBytes, SizeOf}
+import SType._
 
 import scalan.BaseCtxTests
 
@@ -28,7 +29,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("SType.dataSize") {
     def check(tpe: SType, v: Any, exp: Long) =
-      tpe.dataSize(v.asInstanceOf[SType#WrappedType]) shouldBe exp
+      tpe.dataSize(v.asWrappedType) shouldBe exp
 
     check(SBoolean, true, 1)
     check(SByte, 1.toByte, 1)
@@ -52,19 +53,19 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     check(STuple(SInt, STuple(SInt, SInt)), Array(10, Array[Any](20, 30)), 2 + 4 + (2 + 4 + 4))
   }
 
-  test("Sized.dataSize") {
-    import CostedPrim._
-    import NumericOps._
-    import WBigInteger._
-    val V1 = mkWBigIntegerConst(BigInteger.TEN)
-    val Def(IR.SizeOf(v)) = sizeOf(V1)
-    v  shouldBe V1
-    val V2 = mkWBigIntegerConst(big)
-    val res = V1.multiply(V2)
-    val s = sizeOf(res)
-    emit("size", res, s)
-    s should matchPattern { case Def(ApplyBinOp(_: NumericPlus[_], Def(IR.SizeOf(V1)), Def(IR.SizeOf(V2)))) => }
-  }
+//  test("Sized.dataSize") {
+//    import CostedPrim._
+//    import NumericOps._
+//    import WBigInteger._
+//    val V1 = mkWBigIntegerConst(BigInteger.TEN)
+//    val Def(IR.SizeOf(v)) = sizeOf(V1)
+//    v  shouldBe V1
+//    val V2 = mkWBigIntegerConst(big)
+//    val res = V1.multiply(V2)
+//    val s = sizeOf(res)
+//    emit("size", res, s)
+//    s should matchPattern { case Def(ApplyBinOp(_: NumericPlus[_], Def(IR.SizeOf(V1)), Def(IR.SizeOf(V2)))) => }
+//  }
 
   test("constants") {
     check("int", "1", _ => 1, _ => constCost[Int], _ => sizeOf(1))
