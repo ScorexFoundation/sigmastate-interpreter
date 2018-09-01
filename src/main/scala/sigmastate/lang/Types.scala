@@ -29,7 +29,12 @@ trait Types extends Core {
 
   val PostfixType = P( InfixType ~ (`=>` ~/ Type ).? ).map {
     case (t, None) => t
-    case (d, Some(r)) => SFunc(IndexedSeq(d), r)
+    case (d, Some(r)) => d match {
+      case STuple(items) =>
+        SFunc(items, r)
+      case _ =>
+        SFunc(IndexedSeq(d), r)
+    }
   }
   val Type: P[SType] = P( `=>`.? ~~ PostfixType ~ TypeBounds ~ `*`.? )
 
