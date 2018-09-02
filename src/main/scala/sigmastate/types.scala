@@ -19,6 +19,7 @@ import sigmastate.utxo.CostTable.Cost
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+import scalan.meta.ScalanAst.STypeArgAnnotation
 
 
 /** Base type for all AST nodes of sigma lang. */
@@ -174,6 +175,17 @@ trait SProduct extends SType {
   }
 }
 
+/** Base trait implemented by all generic types (those which has type parameters,
+  * e.g. Array[T], Option[T], etc.)*/
+trait SGenericType {
+  def typeParams: Seq[STypeParam]
+  def tparamSubst: Map[String, SType]
+}
+
+case class STypeParam(name: String) {
+  val asTypeIdent = STypeIdent(name)
+}
+
 case class SMethod(name: String, stype: SType)
 
 /** Special type to represent untyped values.
@@ -208,6 +220,19 @@ trait SEmbeddable extends SType {
 trait SPrimType extends SType with SPredefType {
 }
 
+/** Primitive type recognizer to pattern match on TypeCode */
+object SPrimType {
+  def unapply(tc: TypeCode): Option[SType] = SType.typeCodeToType.get(tc)
+  def unapply(t: SType): Option[SType] = SType.allPredefTypes.find(_ == t)
+
+  /** Type code of the last valid prim type so that (1 to LastPrimTypeCode) is a range of valid codes. */
+  final val LastPrimTypeCode: Byte = 9: Byte
+
+  /** Upper limit of the interval of valid type codes for primitive types */
+  final val MaxPrimTypeCode: Byte = 11: Byte
+  final val PrimRange: Byte = (MaxPrimTypeCode + 1).toByte
+}
+
 /** Marker trait for all numeric types. */
 trait SNumericType extends SProduct {
   import SNumericType._
@@ -239,19 +264,6 @@ trait SNumericType extends SProduct {
 }
 object SNumericType {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
-}
-
-/** Primitive type recognizer to pattern match on TypeCode */
-object SPrimType {
-  def unapply(tc: TypeCode): Option[SType] = SType.typeCodeToType.get(tc)
-  def unapply(t: SType): Option[SType] = SType.allPredefTypes.find(_ == t)
-
-  /** Type code of the last valid prim type so that (1 to LastPrimTypeCode) is a range of valid codes. */
-  final val LastPrimTypeCode: Byte = 9: Byte
-
-  /** Upper limit of the interval of valid type codes for primitive types */
-  final val MaxPrimTypeCode: Byte = 11: Byte
-  final val PrimRange: Byte = (MaxPrimTypeCode + 1).toByte
 }
 
 trait SLogical extends SType {
@@ -486,7 +498,7 @@ case object SAny extends SPrimType {
   override def isConstantSize = false
 }
 
-trait SCollection[T <: SType] extends SProduct {
+trait SCollection[T <: SType] extends SProduct with SGenericType {
   def elemType: T
   override type WrappedType = Array[T#WrappedType]
   def ancestors = Nil
@@ -511,7 +523,8 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
         arr.map(x => elemType.dataSize(x)).sum
     res
   }
-
+  val typeParams = Seq(STypeParam(tIV.name))
+  val tparamSubst = Map(tIV.name -> elemType)
   override def methods = SCollection.methods
   override def toString = s"Array[$elemType]"
 }
@@ -640,6 +653,9 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   /** Construct tree node Constant for a given data object. */
   override def mkConstant(v: Array[Any]): Value[this.type] =
     Constant[STuple](v, this).asValue[this.type]
+
+  val typeParams = Seq()
+  val tparamSubst = Map()
 
   override def toString = s"(${items.mkString(",")})"
 }

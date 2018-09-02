@@ -1,7 +1,7 @@
 package sigmastate.eval
 
-import sigmastate.{SFunc, SBigInt}
-import sigmastate.Values.{LongConstant, IntConstant, BigIntConstant}
+import sigmastate.{SBigInt, SFunc}
+import sigmastate.Values.{LongConstant, IntConstant, BigIntConstant, ByteArrayConstant}
 import sigmastate.lang.LangTests
 
 import scalan.BaseCtxTests
@@ -51,13 +51,14 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def arrayCase = {
-    //    val arr1 = env("arr1").asInstanceOf[Array[Byte]]
-    //    val arr1Sym = colBuilder.fromArray(mkWArrayConst(arr1))
-    //    checkAll(env, "arr", "arr1", ctx, contract = {_ => Cols.fromArray(arr1) },
-    //      calc = {_ => arr1Sym },
-    //      cost = {_ => constCost[WBigInteger]},
-    //      size = {_ => sizeOf(bigSym) + sizeOf(n1Sym) },
-    //      tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)), Result(big))
+        val arr1 = env("arr1").asInstanceOf[Array[Byte]]
+        val arr1Sym = colBuilder.fromArray(mkWArrayConst(arr1))
+        val res = Cols.fromArray(arr1).arr
+        Case(env, "arr", "arr1", ctx, contract = {_ => res },
+          calc = {_ => arr1Sym },
+          cost = {_ => constCost[Col[Byte]] },
+          size = {_ => sizeOf(arr1Sym) },
+          tree = ByteArrayConstant(arr1), Result(res))
   }
 
   lazy val testCases = Seq[EsTestCase[_]](
@@ -70,12 +71,11 @@ class CompilerItTest extends BaseCtxTests
   }
 
   test("constants") {
-    intCase.doReduce
-    bigIntegerCase.doReduce
-    addBigIntegersCase.doReduce()
+//    intCase.doReduce
+//    bigIntegerCase.doReduce
+//    addBigIntegersCase.doReduce()
+      arrayCase.doReduce()
 
-//    checkInEnv(env, "arr", "arr1",
-//    {_ => symArr1}, {_ => constCost[Col[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
   }
 
 }

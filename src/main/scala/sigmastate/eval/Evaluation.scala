@@ -240,6 +240,9 @@ trait Evaluation extends Costing {
             val tpe = elemToSType(sym.elem)
             val size = tpe.dataSize(data.asWrappedType)
             out(size)
+          case TypeSize(tpe) =>
+            val size = tpe.dataSize(0.asWrappedType)
+            out(size)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
       }
@@ -256,6 +259,7 @@ trait Evaluation extends Costing {
     val res = (ctx: SigmaContext) => {
       fun(ctx) match {
         case v: Value[_] => v
+        case col: special.collection.Col[_] => builder.liftAny(col.arr).get
         case x => builder.liftAny(x).get
       }
     }

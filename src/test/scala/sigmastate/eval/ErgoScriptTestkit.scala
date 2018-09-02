@@ -104,9 +104,9 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       if (printGraphs) {
         val str = struct("calc" -> calcF, "cost" -> costF, "size" -> sizeF)
         val strExp = struct(
-          expectedCalcF.map("calcExp" -> _).toSeq ++
-          expectedCostF.map("costExp" -> _).toSeq ++
-          expectedSizeF.map("sizeExp" -> _).toSeq)
+          expectedCalcF.map("calc" -> _).toSeq ++
+          expectedCostF.map("cost" -> _).toSeq ++
+          expectedSizeF.map("size" -> _).toSeq)
         val graphs = Seq(str, strExp)
         emit(name, graphs:_*)
       }

@@ -92,7 +92,10 @@ trait Costing extends SigmaLibrary {
     case _ => super.sizeOf(value)
   }
 
-  case class TypeSize(tpe: SType) extends BaseDef[Long]
+  /** Graph node to represent computation of size for types with isConstantSize == true. */
+  case class TypeSize(tpe: SType) extends BaseDef[Long] {
+    assert(tpe.isConstantSize, s"Expected isConstantSize type but was TypeSize($tpe)")
+  }
 
   def typeSize(tpe: SType): Rep[Long] = TypeSize(tpe)
 
@@ -103,7 +106,7 @@ trait Costing extends SigmaLibrary {
   }
 
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
-    case CostOf(name, code, _) => s"CostOf($name)"
+    case CostOf(name, code, opType) => s"CostOf($name:$opType)"
     case _ => super.formatDef(d)
   }
 

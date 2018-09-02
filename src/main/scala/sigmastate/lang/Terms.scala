@@ -169,7 +169,13 @@ object Terms {
       * performance parameters.
       * */
     def opType: SFunc = v match {
-      case ev: EvaluatedValue[_] => SFunc(Vector(), ev.tpe)
+      case ev: EvaluatedValue[_] =>
+        val resType = ev.tpe match {
+          case ct @ SCollection(tItem) =>
+            SCollection(ct.typeParams.head.asTypeIdent)
+          case _ => ev.tpe
+        }
+        SFunc(Vector(), resType)
       case Select(obj, name, Some(tres)) => SFunc(obj.tpe, tres)
       case MethodCall(obj, name, args, tres) => SFunc(obj.tpe +: args.map(_.tpe), tres)
       case Ident(name, tpe) => SFunc(Vector(), tpe)
