@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import scapi.sigma.DLogProtocol
-import sigmastate.{SBigInt, SFunc}
+import sigmastate._
 import sigmastate.Values.{LongConstant, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, SigmaBoolean}
 import sigmastate.lang.LangTests
 
@@ -18,6 +18,7 @@ class CompilerItTest extends BaseCtxTests
   import WBigInteger._
   import WECPoint._
   import ProveDlogEvidence._
+  import ProveDHTEvidence._
   import sigmastate.serialization.OpCodes._
 
   lazy val dsl = sigmaDslBuilder
@@ -75,8 +76,25 @@ class CompilerItTest extends BaseCtxTests
           tree = SigmaPropConstant(p1), Result(res, 1 + 1, 32 + 1))
   }
 
+  def andSigmaPropConstsCase = {
+        val p1Sym: Sigma = RProveDlogEvidence(mkWECPointConst(g1))
+        val p2Sym: Sigma = RProveDlogEvidence(mkWECPointConst(g2))
+        val res = CAND(Seq(p1, p2))
+        val resSym = (p1Sym && p2Sym).isValid
+        Case(env, "andSigmaPropConsts", "p1 && p2", ctx, contract = {_ => res },
+          calc = {_ => resSym },
+          cost = {_ =>
+            val c1 = constCost[WECPoint] + constCost[Sigma] +
+                      costOf("SigmaPropIsValid", SigmaPropIsValidCode, SFunc(SSigmaProp, SBoolean))
+            c1 + c1 + costOf("BinAnd", BinAndCode, SFunc(Vector(SBoolean, SBoolean), SBoolean))
+          },
+          size = {_ => sizeOf(resSym) },
+          tree = AND(SigmaPropConstant(p1).isValid, SigmaPropConstant(p1).isValid),
+          Result(res, 1 + 1, 1))
+  }
+
   lazy val testCases = Seq[EsTestCase[_]](
-    intConstCase, bigIntegerConstCase, addBigIntegerConstsCase, arrayConstCase
+    intConstCase, bigIntegerConstCase, addBigIntegerConstsCase, arrayConstCase, sigmaPropConstCase
   )
 
   test("run all") {
@@ -85,11 +103,12 @@ class CompilerItTest extends BaseCtxTests
   }
 
   test("constants") {
-    intConstCase.doReduce
-    bigIntegerConstCase.doReduce
-    addBigIntegerConstsCase.doReduce()
-    arrayConstCase.doReduce()
-    sigmaPropConstCase.doReduce()
+//    intConstCase.doReduce
+//    bigIntegerConstCase.doReduce
+//    addBigIntegerConstsCase.doReduce()
+//    arrayConstCase.doReduce()
+//    sigmaPropConstCase.doReduce()
+    andSigmaPropConstsCase.doReduce()
   }
 
 }

@@ -6,6 +6,7 @@ import sigmastate._
 import java.math.BigInteger
 
 import scapi.sigma.DLogProtocol.ProveDlog
+import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants
 
@@ -27,11 +28,16 @@ trait LangTests {
   val dlog = CryptoConstants.dlogGroup
   val g1 = dlog.generator
   val g2 = dlog.multiplyGroupElements(g1, g1)
+  val g3 = dlog.multiplyGroupElements(g2, g2)
+  val g4 = dlog.multiplyGroupElements(g3, g3)
+
   protected val n1: BigInteger = BigInt(10).underlying()
   protected val n2: BigInteger = BigInt(20).underlying()
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
   protected val p1: SigmaBoolean = ProveDlog(GroupElementConstant(g1))
   protected val p2: SigmaBoolean = ProveDlog(GroupElementConstant(g2))
+  protected val dht1: SigmaBoolean = ProveDiffieHellmanTuple(
+      GroupElementConstant(g1), GroupElementConstant(g2), GroupElementConstant(g3), GroupElementConstant(g4))
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
@@ -48,7 +54,8 @@ trait LangTests {
     "p2" -> p2,
     "n1" -> n1,
     "n2" -> n2,
-    "big" -> big
+    "big" -> big,
+    "dht1" -> dht1
   )
 
   /** Parses string to SType tree */

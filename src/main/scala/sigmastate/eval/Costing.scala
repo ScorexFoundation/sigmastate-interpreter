@@ -76,6 +76,15 @@ trait Costing extends SigmaLibrary {
         costOf(className, v.opCode, opTy)
     }
   }
+
+  object ConstantSizeType {
+    def unapply(e: Elem[_]): Option[SType] = {
+      val tpe = elemToSType(e)
+      if (tpe.isConstantSize) Some(tpe)
+      else None
+    }
+  }
+
   override def sizeOf[T](value: Rep[T]): Rep[Long] = (value, value.elem) match {
     case (_, _: BoxElem[_]) =>
       value.asRep[Box].dataSize
@@ -87,7 +96,10 @@ trait Costing extends SigmaLibrary {
         typeSize(tpe) * xs.length.toLong
       else
         xs.map(fun(sizeOf(_))).sum(costedBuilder.monoidBuilder.longPlusMonoid)
-    case _ => super.sizeOf(value)
+    case (_, ConstantSizeType(tpe)) =>
+      typeSize(tpe)
+    case _ =>
+      super.sizeOf(value)
   }
 
   /** Graph node to represent computation of size for types with isConstantSize == true. */
@@ -105,6 +117,10 @@ trait Costing extends SigmaLibrary {
 
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
     case CostOf(name, code, opType) => s"CostOf($name:$opType)"
+    case WECPointConst(p) =>
+      val rawX = p.getRawXCoord.toString.substring(0, 6)
+      val rawY = p.getRawYCoord.toString.substring(0, 6)
+      s"ECPoint($rawX,$rawY,...)"
     case _ => super.formatDef(d)
   }
 

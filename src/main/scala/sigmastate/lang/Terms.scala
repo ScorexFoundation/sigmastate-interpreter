@@ -9,6 +9,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.SigmaPropIsValid
 
 object Terms {
 
@@ -180,6 +181,7 @@ object Terms {
       case MethodCall(obj, name, args, tres) => SFunc(obj.tpe +: args.map(_.tpe), tres)
       case Ident(name, tpe) => SFunc(Vector(), tpe)
       case t: Triple[_,_,_] => SFunc(Vector(t.left.tpe, t.right.tpe), t.tpe)
+      case SigmaPropIsValid(p) => SFunc(p.tpe, SBoolean)
       case _ => sys.error(s"Value.opType is not defined for $v")
     }
   }
