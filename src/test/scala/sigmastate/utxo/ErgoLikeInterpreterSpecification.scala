@@ -49,12 +49,12 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val ci = secret.commonInput
 
-    val prop = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)
-    val wrongProp = ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.u)
+    val prop = SigmaPropConstant(ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)).isValid
+    val wrongProp = SigmaPropConstant(ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.u)).isValid
 
     val env = Map("g"->ci.g, "h"->ci.h, "u"->ci.u, "v"->ci.v, "s"->secret.publicImage)
-    val compiledProp1 = compile(env, "s").asBoolValue
-    val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v)").asBoolValue
+    val compiledProp1 = compile(env, "s.isValid").asBoolValue
+    val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v).isValid").asBoolValue
     compiledProp1 shouldBe prop
     compiledProp2 shouldBe prop
 

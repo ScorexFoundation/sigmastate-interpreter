@@ -57,7 +57,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       Some(mkProveDlog(g))
 
     case Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
-      Some(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement))
+      Some(SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)))
 
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))

@@ -32,7 +32,7 @@ object SigmaPredef {
     "getVar" -> mkLambda(Vector("varId" -> SByte), tT, None),
 
     "proveDHTuple" -> mkLambda(Vector(
-      "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),
+      "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
     "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SBoolean, None),
     "isMember" -> mkLambda(Vector(
        "tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
