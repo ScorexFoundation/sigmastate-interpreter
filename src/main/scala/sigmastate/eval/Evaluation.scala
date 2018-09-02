@@ -1,6 +1,7 @@
 package sigmastate.eval
 
 import java.lang.reflect.Method
+
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import scapi.sigma.DLogProtocol
 import sigmastate.SType
@@ -27,6 +28,7 @@ trait Evaluation extends Costing {
   import ConcreteCostedBuilder._
   import MonoidBuilderInst._
   import TrivialSigma._
+  import WBigInteger._
 
   private val ContextM = ContextMethods
   private val SigmaM = SigmaMethods
@@ -34,6 +36,7 @@ trait Evaluation extends Costing {
   private val BoxM = BoxMethods
   private val CBM = ColBuilderMethods
   private val SDBM = SigmaDslBuilderMethods
+  private val BIM = WBigIntegerMethods
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
@@ -341,10 +344,26 @@ trait Evaluation extends Costing {
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
         mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+      case CBM.fromArray(_, arr @ Def(wc: WrapperConst[a])) =>
+        val colTpe = elemToSType(s.elem)
+        mkConstant[colTpe.type](wc.wrappedValue.asInstanceOf[colTpe.WrappedType], colTpe)
+      case Def(wc: WrapperConst[a]) =>
+        val tpe = elemToSType(s.elem)
+        mkConstant[tpe.type](wc.wrappedValue.asInstanceOf[tpe.WrappedType], tpe)
       case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)
         mkTaggedVariable(id, tpe)
+      case BIM.subtract(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, MinusCode)
+      case BIM.add(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, PlusCode)
+      case BIM.multiply(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, MultiplyCode)
+      case BIM.divide(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, DivisionCode)
+      case BIM.mod(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, ModuloCode)
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)

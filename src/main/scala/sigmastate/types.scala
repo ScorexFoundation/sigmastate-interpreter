@@ -406,7 +406,7 @@ case object SString extends SProduct {
   override val typeCode: TypeCode = 7: Byte
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 32
-    override def isConstantSize = true
+  override def isConstantSize = true
   def ancestors = Nil
   val methods = Seq(
     SMethod("isIdentity", SBoolean),

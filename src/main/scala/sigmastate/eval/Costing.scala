@@ -79,8 +79,6 @@ trait Costing extends SigmaLibrary {
   override def sizeOf[T](value: Rep[T]): Rep[Long] = (value, value.elem) match {
     case (_, _: BoxElem[_]) =>
       value.asRep[Box].dataSize
-//    case (Def(ApplyBinOp(op: NumericTimes[_], l, r)), BigIntegerElement) =>
-//      sizeOf(l) + sizeOf(r)
     case (_xs, ce: ColElem[a,_]) =>
       val xs = _xs.asRep[Col[a]]
       implicit val eA = xs.elem.eItem

@@ -1,7 +1,7 @@
 package sigmastate.lang
 
-import sigmastate.lang.Terms.{Ident, MethodCall}
-import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, SigmaBoolean, Value}
+import sigmastate.lang.Terms.{MethodCall, Ident}
+import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, GroupElementConstant, ConcreteCollection}
 import sigmastate._
 import java.math.BigInteger
 
@@ -30,8 +30,8 @@ trait LangTests {
   protected val n1: BigInteger = BigInt(10).underlying()
   protected val n2: BigInteger = BigInt(20).underlying()
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
-  protected val p1: SigmaBoolean = ProveDlog(g1)
-  protected val p2: SigmaBoolean = ProveDlog(g2)
+  protected val p1: SigmaBoolean = ProveDlog(GroupElementConstant(g1))
+  protected val p2: SigmaBoolean = ProveDlog(GroupElementConstant(g2))
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,

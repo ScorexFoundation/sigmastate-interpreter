@@ -120,6 +120,9 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       val Tuple(calcF, costF, sizeF) = doCosting
       verifyCostFunc(costF) shouldBe Success(())
       verifyIsValid(calcF) shouldBe Success(())
+
+      checkExpected(IR.buildTree(calcF.asRep[Context => SType#WrappedType]), expectedTree)
+
       if (ctx.isDefined) {
         val testContractRes = testContract.map(_(ctx.get))
         testContractRes.foreach { res =>
