@@ -280,8 +280,8 @@ trait Costing extends SigmaLibrary {
       case c @ Constant(v, tpe) => v match {
         case p: DLogProtocol.ProveDlog =>
           val ge = evalNode(ctx, env, p.value).asRep[Costed[WECPoint]]
-          val resV = RProveDlogEvidence(ge.value)
-          CostedPrimRep(resV, ge.cost + costOf(p), ge.dataSize)
+          val resV: Rep[Sigma] = RProveDlogEvidence(ge.value)
+          withDefaultSize(resV, ge.cost + costOf(SigmaPropConstant(p)))
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = mkWBigIntegerConst(bi)

@@ -173,6 +173,7 @@ trait SigmaBuilder {
     case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
     case b: ErgoBox => Some(mkConstant[SBox.type](b, SBox))
     case avl: AvlTreeData => Some(mkConstant[SAvlTree.type](avl, SAvlTree))
+    case sb: SigmaBoolean => Some(mkConstant[SSigmaProp.type](sb, SSigmaProp))
     case v: SValue => Some(v)
     case _ => None
   }

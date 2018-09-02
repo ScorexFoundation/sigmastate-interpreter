@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import scapi.sigma.DLogProtocol
 import sigmastate.SType
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
+import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.lang.Costing
 import sigmastate.serialization.OpCodes._
@@ -17,6 +17,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Try
 import SType._
+import org.bouncycastle.math.ec.ECPoint
+import sigmastate.interpreter.CryptoConstants.EcPointType
 
 trait Evaluation extends Costing {
   import Context._
@@ -28,6 +30,7 @@ trait Evaluation extends Costing {
   import ConcreteCostedBuilder._
   import MonoidBuilderInst._
   import TrivialSigma._
+  import ProveDlogEvidence._
   import WBigInteger._
 
   private val ContextM = ContextMethods
@@ -235,6 +238,9 @@ trait Evaluation extends Costing {
             out(th)
           case TrivialSigmaCtor(In(isValid: Boolean)) =>
             out(sigmastate.TrivialSigma(BooleanConstant(isValid)))
+          case ProveDlogEvidenceCtor(In(g: ECPoint)) =>
+            val res = DLogProtocol.ProveDlog(GroupElementConstant(g.asInstanceOf[EcPointType]))
+            out(res)
           case CostOf(opName, opCode, tpe) =>
             val operId = OperationId(opName, tpe)
             val cost = CostTable.DefaultCosts(operId)
@@ -261,6 +267,7 @@ trait Evaluation extends Costing {
     val fun = dataEnv(f).asInstanceOf[SigmaContext => Any]
     val res = (ctx: SigmaContext) => {
       fun(ctx) match {
+        case sb: SigmaBoolean => builder.liftAny(sb).get
         case v: Value[_] => v
         case col: special.collection.Col[_] => builder.liftAny(col.arr).get
         case x => builder.liftAny(x).get
@@ -419,6 +426,8 @@ trait Evaluation extends Costing {
         mkSigmaPropBytes(prop.asSigmaProp)
       case Def(TrivialSigmaCtor(In(cond))) =>
         mkTrivialSigma(cond.asBoolValue)
+      case Def(ProveDlogEvidenceCtor(In(g))) =>
+        SigmaPropConstant(mkProveDlog(g.asGroupElement))
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
     }

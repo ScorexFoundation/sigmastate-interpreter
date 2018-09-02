@@ -4,6 +4,7 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
 import scapi.sigma.DLogProtocol.ProveDlog
+import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
@@ -415,11 +416,17 @@ case object SString extends SProduct {
 }
 
 case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLogical {
+  import SType._
   override type WrappedType = SigmaBoolean
   override val typeCode: TypeCode = 8: Byte
   override def mkConstant(v: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(v)
   override def dataSize(v: SType#WrappedType): Long = v match {
-    case ProveDlog(GroupElementConstant(g)) => SGroupElement.dataSize(g.asInstanceOf[SType#WrappedType])
+    case ProveDlog(GroupElementConstant(g)) =>
+      SGroupElement.dataSize(g.asWrappedType) + 1
+    case ProveDiffieHellmanTuple(
+          GroupElementConstant(gv), GroupElementConstant(hv),
+          GroupElementConstant(uv), GroupElementConstant(vv)) =>
+      SGroupElement.dataSize(gv.asWrappedType) * 4 + 1
     case _ => ???
   }
   override def isConstantSize = false

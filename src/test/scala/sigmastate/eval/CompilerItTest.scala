@@ -1,7 +1,8 @@
 package sigmastate.eval
 
+import scapi.sigma.DLogProtocol
 import sigmastate.{SBigInt, SFunc}
-import sigmastate.Values.{LongConstant, BigIntConstant, ByteArrayConstant, IntConstant, SigmaBoolean}
+import sigmastate.Values.{LongConstant, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, SigmaBoolean}
 import sigmastate.lang.LangTests
 
 import scalan.BaseCtxTests
@@ -66,12 +67,12 @@ class CompilerItTest extends BaseCtxTests
 
   def sigmaPropConstCase = {
         val resSym = RProveDlogEvidence(mkWECPointConst(g1))
-        val res = special.sigma.ProveDlogEvidence(g1)
+        val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
         Case(env, "sigmaPropConst", "p1", ctx, contract = {_ => res },
           calc = {_ => resSym },
-          cost = {_ => constCost[Sigma] },
+          cost = {_ => constCost[WECPoint] + constCost[Sigma] },
           size = {_ => sizeOf(resSym) },
-          tree = p1, Result(res, 1, 2))
+          tree = SigmaPropConstant(p1), Result(res, 1 + 1, 32 + 1))
   }
 
   lazy val testCases = Seq[EsTestCase[_]](
@@ -88,7 +89,7 @@ class CompilerItTest extends BaseCtxTests
     bigIntegerConstCase.doReduce
     addBigIntegerConstsCase.doReduce()
     arrayConstCase.doReduce()
-//    sigmaPropConstCase.doReduce()
+    sigmaPropConstCase.doReduce()
   }
 
 }
