@@ -1,6 +1,7 @@
 package sigmastate
 
 import org.ergoplatform.ErgoLikeInterpreter
+import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.ByteArrayConstant
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
@@ -15,9 +16,9 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     val coopD = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 
-    val totalValue = 10000
-    val toolValue = 5000
-    val constructionValue = 2000
+    val totalValue = 10000L
+    val toolValue = 5000L
+    val constructionValue = 2000L
 
     val skA = coopA.dlogSecrets.head
     val skB = coopB.dlogSecrets.head
@@ -38,13 +39,13 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "spendingContract3Hash" -> ByteArrayConstant(Blake2b256(Array.emptyByteArray))
     )
 
-    def withdraw(minHeight: Int, totalValue: Int) = {
+    def withdraw(minHeight: Long, totalValue: Long) = {
       s"""
-         |let withdrawCondition = HEIGHT > $minHeight &&
-         |        OUTPUTS(0).value >= ${totalValue / 4} && OUTPUTS(0).propositionBytes == pubkeyA.propBytes &&
-         |        OUTPUTS(1).value >= ${totalValue / 4} && OUTPUTS(1).propositionBytes == pubkeyB.propBytes &&
-         |        OUTPUTS(2).value >= ${totalValue / 4} && OUTPUTS(2).propositionBytes == pubkeyC.propBytes &&
-         |        OUTPUTS(3).value >= ${totalValue / 4} && OUTPUTS(3).propositionBytes == pubkeyD.propBytes
+         |let withdrawCondition = HEIGHT > ${minHeight}L &&
+         |        OUTPUTS(0).value >= ${totalValue / 4}L && OUTPUTS(0).propositionBytes == pubkeyA.propBytes &&
+         |        OUTPUTS(1).value >= ${totalValue / 4}L && OUTPUTS(1).propositionBytes == pubkeyB.propBytes &&
+         |        OUTPUTS(2).value >= ${totalValue / 4}L && OUTPUTS(2).propositionBytes == pubkeyC.propBytes &&
+         |        OUTPUTS(3).value >= ${totalValue / 4}L && OUTPUTS(3).propositionBytes == pubkeyD.propBytes
        """.stripMargin
     }
 
@@ -106,32 +107,36 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyC" -> pubkeyC,
       "pubkeyD" -> pubkeyD,
       "business" -> businessKey,
-      "pubkeyTool1" -> toolRing(0),
-      "pubkeyTool2" -> toolRing(1),
-      "pubkeyTool3" -> toolRing(2),
-      "pubkeyTool4" -> toolRing(3),
+      "pubkeyTool1" -> (toolRing(0) : ProveDlog),
+      "pubkeyTool2" -> (toolRing(1) : ProveDlog),
+      "pubkeyTool3" -> (toolRing(2) : ProveDlog),
+      "pubkeyTool4" -> (toolRing(3) : ProveDlog),
       "pubkeyConstr1" -> constructionRing(0),
       "pubkeyConstr2" -> constructionRing(1),
       "pubkeyConstr3" -> constructionRing(2)
     )
 
-
     val spendingProp1 = compile(spendingEnv,
       s"""
+         |{
          | let spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && business
          |
          | ${withdraw(5000, toolValue)}
          |
          | spendingSuccess || withdrawCondition
+         |}
        """.stripMargin)
 
     val spendingProp2 = compile(spendingEnv,
       s"""
-         | let spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && business
+         | {
          |
-         | ${withdraw(5000, constructionValue)}
+         |  let spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && business
          |
-         | spendingSuccess || withdrawCondition
+         |  ${withdraw(5000, constructionValue)}
+         |
+         |  spendingSuccess || withdrawCondition
+         | }
        """.stripMargin)
 
     //todo: failback
