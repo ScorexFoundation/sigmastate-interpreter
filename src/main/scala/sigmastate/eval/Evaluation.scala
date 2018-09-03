@@ -172,7 +172,10 @@ trait Evaluation extends Costing {
             out(sigmaDslBuilderValue.Cols.fromArray(sigmaBool.bytes))
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
-            
+
+          case SigmaM.and_sigma_&&(In(l), In(r)) =>
+            out(AND(l.asInstanceOf[BoolValue], r.asInstanceOf[BoolValue]))
+
           case SigmaM.and_bool_&&(In(l), In(b: Boolean)) =>
             if (b)
               out(l)

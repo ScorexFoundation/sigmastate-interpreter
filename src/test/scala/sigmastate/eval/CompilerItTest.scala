@@ -77,9 +77,9 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def andSigmaPropConstsCase = {
-        val p1Sym: Sigma = RProveDlogEvidence(mkWECPointConst(g1))
-        val p2Sym: Sigma = RProveDlogEvidence(mkWECPointConst(g2))
-        val res = CAND(Seq(p1, p2))
+        val p1Sym: Rep[Sigma] = RProveDlogEvidence(mkWECPointConst(g1))
+        val p2Sym: Rep[Sigma] = RProveDlogEvidence(mkWECPointConst(g2))
+        val res = AND(p1, p2)
         val resSym = (p1Sym && p2Sym).isValid
         Case(env, "andSigmaPropConsts", "p1 && p2", ctx, contract = {_ => res },
           calc = {_ => resSym },
@@ -89,8 +89,8 @@ class CompilerItTest extends BaseCtxTests
             c1 + c1 + costOf("BinAnd", BinAndCode, SFunc(Vector(SBoolean, SBoolean), SBoolean))
           },
           size = {_ => sizeOf(resSym) },
-          tree = AND(SigmaPropConstant(p1).isValid, SigmaPropConstant(p1).isValid),
-          Result(res, 1 + 1, 1))
+          tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))).isValid,
+          Result(res, (1 + 1 + 1) * 2 + 1, 1))
   }
 
   lazy val testCases = Seq[EsTestCase[_]](
@@ -103,11 +103,11 @@ class CompilerItTest extends BaseCtxTests
   }
 
   test("constants") {
-//    intConstCase.doReduce
-//    bigIntegerConstCase.doReduce
-//    addBigIntegerConstsCase.doReduce()
-//    arrayConstCase.doReduce()
-//    sigmaPropConstCase.doReduce()
+    intConstCase.doReduce
+    bigIntegerConstCase.doReduce
+    addBigIntegerConstsCase.doReduce()
+    arrayConstCase.doReduce()
+    sigmaPropConstCase.doReduce()
     andSigmaPropConstsCase.doReduce()
   }
 

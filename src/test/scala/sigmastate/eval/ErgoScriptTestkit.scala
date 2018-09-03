@@ -87,9 +87,10 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
     lazy val expectedCostF = expectedCost.map(fun(_))
     lazy val expectedSizeF = expectedSize.map(fun(_))
 
-    def checkExpected[T](x: T, expected: Option[T]) = {
+    def checkExpected[T](x: T, expected: Option[T], messageFmt: String) = {
       if (expected.isDefined)
-        x shouldBe expected.get
+        assert(x equals expected.get,
+          String.format(messageFmt, x.asInstanceOf[AnyRef], expected.get.asInstanceOf[AnyRef]))
     }
 
     def pairify(xs: Seq[Sym]): Sym = xs match {
@@ -110,9 +111,9 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
         val graphs = Seq(str, strExp)
         emit(name, graphs:_*)
       }
-      checkExpected(calcF, expectedCalcF)
-      checkExpected(costF, expectedCostF)
-      checkExpected(sizeF, expectedSizeF)
+      checkExpected(calcF, expectedCalcF, "Calc function actual: %s, expected: %s")
+      checkExpected(costF, expectedCostF, "Cost function actual: %s, expected: %s")
+      checkExpected(sizeF, expectedSizeF, "Size function actual: %s, expected: %s")
       res
     }
 
@@ -121,29 +122,37 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       verifyCostFunc(costF) shouldBe Success(())
       verifyIsValid(calcF) shouldBe Success(())
 
-      checkExpected(IR.buildTree(calcF.asRep[Context => SType#WrappedType]), expectedTree)
+      checkExpected(IR.buildTree(calcF.asRep[Context => SType#WrappedType]), expectedTree,
+        "Compiled Tree actual: %s, expected: %s")
 
       if (ctx.isDefined) {
         val testContractRes = testContract.map(_(ctx.get))
         testContractRes.foreach { res =>
-          checkExpected(res, expectedResult.calc)
+          checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")
         }
 
         // check cost
         val costFun = IR.compile[SInt.type](getDataEnv, costF)
         val IntConstant(estimatedCost) = costFun(ctx.get)
-        checkExpected(estimatedCost, expectedResult.cost)
+        checkExpected(estimatedCost, expectedResult.cost,
+          "Cost evaluation: estimatedCost = %s, expectedResult.cost = %s")
         (estimatedCost < CostTable.ScriptLimit) shouldBe true
 
         // check size
         val sizeFun = IR.compile[SLong.type](getDataEnv, sizeF)
         val LongConstant(estimatedSize) = sizeFun(ctx.get)
-        checkExpected(estimatedSize, expectedResult.size)
+        checkExpected(estimatedSize, expectedResult.size,
+          "Size evaluation: estimatedSize = %s, expectedResult.size: %s"
+        )
 
         // check calc
         val valueFun = IR.compile[SType](getDataEnv, calcF.asRep[Context => SType#WrappedType])
-        val Constant(res: T @unchecked, _) = valueFun(ctx.get)
-        checkExpected(res, expectedResult.calc)
+        val res = valueFun(ctx.get) match {
+          case Constant(res: T @unchecked, _) => res
+          case v => v
+        }
+        checkExpected(res, expectedResult.calc,
+          "Calc evaluation:\n value = %s,\n expectedResult.calc: %s\n")
       }
     }
   }

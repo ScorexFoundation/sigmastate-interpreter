@@ -26,6 +26,10 @@ object CostTable {
     ("Const", "() => GroupElement", 0.000001),
     ("Const", "() => SigmaProp", 0.000001),
     ("Const", "() => Array[IV]", 0.000001),
+    ("SigmaPropIsValid", "SigmaProp => Boolean", 0.000001),
+    ("SigmaPropBytes", "SigmaProp => Array[Byte]", 0.000001),
+    ("BinAnd", "(Boolean, Boolean) => Boolean", 0.000001),
+    ("BinOr", "(Boolean, Boolean) => Boolean", 0.000001),
     ("+", "(BigInt, BigInt) => BigInt", 0.0001),
     ("+_per_item", "(BigInt, BigInt) => BigInt", 0.000001)
   ))
