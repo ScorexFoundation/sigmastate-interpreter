@@ -33,6 +33,7 @@ trait LangTests {
 
   protected val n1: BigInteger = BigInt(10).underlying()
   protected val n2: BigInteger = BigInt(20).underlying()
+  protected val bigIntArr1: Array[BigInteger] = Array(n1, n2)
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
   protected val p1: SigmaBoolean = ProveDlog(GroupElementConstant(g1))
   protected val p2: SigmaBoolean = ProveDlog(GroupElementConstant(g2))
@@ -55,7 +56,8 @@ trait LangTests {
     "n1" -> n1,
     "n2" -> n2,
     "big" -> big,
-    "dht1" -> dht1
+    "dht1" -> dht1,
+    "bigIntArr1" -> bigIntArr1
   )
 
   /** Parses string to SType tree */

@@ -370,6 +370,17 @@ object Values {
       case _ => None
     }
   }
+  
+  object BigIntArrayConstant {
+    def apply(value: Array[BigInteger]): CollectionConstant[SBigInt.type] = CollectionConstant[SBigInt.type](value, SBigInt)
+    def unapply(node: SValue): Option[Array[BigInteger]] = node match {
+      case coll: CollectionConstant[SBigInt.type] @unchecked => coll match {
+        case CollectionConstant(arr, SBigInt) => Some(arr)
+        case _ => None
+      }
+      case _ => None
+    }
+  }
 
   val BoolArrayTypeCode = (SCollectionType.CollectionTypeCode + SBoolean.typeCode).toByte
 

@@ -1,15 +1,16 @@
 package sigmastate.eval
 
 import scala.util.Success
-import sigmastate.{SInt, SLong, SType}
-import sigmastate.Values.{Constant, SValue, IntConstant, LongConstant}
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import sigmastate.{SInt, AvlTreeData, SLong, SType}
+import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, IntConstant}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import sigmastate.utxo.CostTable
 import special.sigma.{TestBox, ContractsTestkit, AnyValue, Box, TestContext => TContext, SigmaContract => SContract, Context => VContext}
 
 import scalan.BaseCtxTests
 import sigmastate.lang.TransformingSigmaBuilder
 import org.scalatest.TryValues._
+import sigmastate.interpreter.ContextExtension
 
 trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
 
@@ -36,6 +37,19 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
   def newContext(height: Long, self: Box, vars: AnyValue*): TContext = {
     new TContext(noInputs, noOutputs, height, self, emptyAvlTree, vars.toArray)
   }
+
+  def newErgoContext(height: Long, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
+    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())
+    val ergoCtx = ErgoLikeContext(
+      currentHeight = height,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction = tx1,
+      self = boxToSpend,
+      extension = ContextExtension(extension))
+    ergoCtx
+  }
+
   implicit class TContextOps(ctx: TContext) {
     def withInputs(inputs: Box*) = new TContext(inputs.toArray, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, ctx.vars)
     def withOutputs(outputs: Box*) = new TContext(ctx.inputs, outputs.toArray, ctx.height, ctx.selfBox, emptyAvlTree, ctx.vars)
@@ -74,7 +88,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       name: String,  // name of the test case, used in forming file names in test-out directory
       env: EsEnv,
       script: String,
-      ctx: Option[VContext] = None,
+      ergoCtx: Option[ErgoLikeContext] = None,
       testContract: Option[VContext => T] = None,
       expectedCalc: Option[Rep[Context] => Rep[T]] = None,
       expectedCost: Option[Rep[Context] => Rep[Int]] = None,
@@ -125,29 +139,30 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       checkExpected(IR.buildTree(calcF.asRep[Context => SType#WrappedType]), expectedTree,
         "Compiled Tree actual: %s, expected: %s")
 
-      if (ctx.isDefined) {
-        val testContractRes = testContract.map(_(ctx.get))
+      if (ergoCtx.isDefined) {
+        val ctx = ergoCtx.get.toTestContext
+        val testContractRes = testContract.map(_(ctx))
         testContractRes.foreach { res =>
           checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")
         }
 
         // check cost
         val costFun = IR.compile[SInt.type](getDataEnv, costF)
-        val IntConstant(estimatedCost) = costFun(ctx.get)
+        val IntConstant(estimatedCost) = costFun(ctx)
         checkExpected(estimatedCost, expectedResult.cost,
           "Cost evaluation: estimatedCost = %s, expectedResult.cost = %s")
         (estimatedCost < CostTable.ScriptLimit) shouldBe true
 
         // check size
         val sizeFun = IR.compile[SLong.type](getDataEnv, sizeF)
-        val LongConstant(estimatedSize) = sizeFun(ctx.get)
+        val LongConstant(estimatedSize) = sizeFun(ctx)
         checkExpected(estimatedSize, expectedResult.size,
           "Size evaluation: estimatedSize = %s, expectedResult.size: %s"
         )
 
         // check calc
         val valueFun = IR.compile[SType](getDataEnv, calcF.asRep[Context => SType#WrappedType])
-        val res = valueFun(ctx.get) match {
+        val res = valueFun(ctx) match {
           case Constant(res: T @unchecked, _) => res
           case v => v
         }
@@ -157,7 +172,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
     }
   }
 
-  def Case[T](env: EsEnv, name: String, script: String, ctx: VContext,
+  def Case[T](env: EsEnv, name: String, script: String, ctx: ErgoLikeContext,
       contract: VContext => T,
       calc: Rep[Context] => Rep[T],
       cost: Rep[Context] => Rep[Int],
@@ -168,7 +183,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       Option(calc), Option(cost), Option(size),
       Option(tree), result)
 
-  def checkAll[T](env: EsEnv, name: String, script: String, ctx: VContext,
+  def checkAll[T](env: EsEnv, name: String, script: String, ergoCtx: ErgoLikeContext,
       contract: VContext => T,
       calc: Rep[Context] => Rep[T],
       cost: Rep[Context] => Rep[Int],
@@ -176,7 +191,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       tree: SValue,
       result: Result[T]): Unit =
   {
-    val tcase = Case[T](env, name, script, ctx, contract, calc, cost, size, tree, result)
+    val tcase = Case[T](env, name, script, ergoCtx, contract, calc, cost, size, tree, result)
     tcase.doReduce()
   }
 
@@ -203,8 +218,8 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
     checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize)
   }
 
-  def reduce(env: EsEnv, name: String, script: String, ctx: VContext, expectedResult: Any): Unit = {
-    val tcase = EsTestCase[SType#WrappedType](name, env, script, Some(ctx), expectedResult = Result(expectedResult.asInstanceOf[SType#WrappedType]))
+  def reduce(env: EsEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
+    val tcase = EsTestCase[SType#WrappedType](name, env, script, Some(ergoCtx), expectedResult = Result(expectedResult.asInstanceOf[SType#WrappedType]))
     tcase.doReduce()
   }
 
