@@ -589,13 +589,15 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     //todo: check failing branches
   }
 
-  property("PK") {
+  property("PK - P2PK address type") {
+    implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(ErgoAddressEncoder.TestnetNetworkPrefix)
+
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter(networkPrefix = ErgoAddressEncoder.TestnetNetworkPrefix)
 
     val dk1 = ProveDlog(prover.dlogSecrets.head.publicImage.h)
     val p2pk = P2PKAddress(dk1)
-    val encodedP2PK = ErgoAddressEncoder(ErgoAddressEncoder.TestnetNetworkPrefix).toString(p2pk)
+    val encodedP2PK = p2pk.toString
 
     val prop1 = ErgoAddressToSigmaProp(StringConstant(encodedP2PK)).isValid
 
@@ -612,5 +614,4 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val verifierWrongNetwork = new ErgoLikeInterpreter(networkPrefix = ErgoAddressEncoder.MainnetNetworkPrefix)
     verifierWrongNetwork.verify(prop1, ctx, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe false
   }
-
 }
