@@ -7,7 +7,8 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 
-class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends Interpreter {
+class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit,
+                          val networkPrefix: Byte = ErgoAddressEncoder.TestnetNetworkPrefix) extends Interpreter {
   override type CTX = ErgoLikeContext
 
   override def evaluateNode(context: ErgoLikeContext, tree: SValue): SValue = tree match {

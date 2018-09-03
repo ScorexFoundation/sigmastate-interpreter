@@ -198,6 +198,9 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
 }
 
 object ErgoAddressEncoder {
+  val MainnetNetworkPrefix: Byte = 0.toByte
+  val TestnetNetworkPrefix: Byte = 16.toByte
+
   def hash256(input: Array[Byte]): Digest32 = Blake2b256(input)
 
   def hash192(input: Array[Byte]): Array[Byte] = hash256(input).take(24)
