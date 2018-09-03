@@ -289,6 +289,19 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
     input.cost(context) + Cost.SigmaPropBytes
 }
 
+/** Decode a SigmaProp(ProveDlog) from an ergo address */
+case class ErgoAddressToSigmaProp(input: Value[SString.type])
+  extends Transformer[SString.type, SSigmaProp.type] with NotReadyValue[SSigmaProp.type] {
+  override val opCode: OpCode = OpCodes.ErgoAddressToSigmaPropCode
+
+  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SSigmaProp.type] = ???
+
+  override def cost[C <: Context[C]](context: C): Long =
+    input.cost(context) + Cost.ParseSigmaProp
+
+  override def tpe: SSigmaProp.type = SSigmaProp
+}
+
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
     extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override val opCode: OpCode = OpCodes.SizeOfCode

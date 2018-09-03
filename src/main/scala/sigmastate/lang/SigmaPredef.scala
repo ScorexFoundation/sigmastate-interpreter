@@ -39,7 +39,7 @@ object SigmaPredef {
        "tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
     "fromBase58" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
-    "PK" -> mkLambda(Vector("input" -> SString), SSigmaProp, None),
+    "PK" -> mkLambda(Vector("input" -> SString), SBoolean, None),
   ).toMap
 
   def PredefIdent(name: String): Value[SType] = {

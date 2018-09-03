@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
@@ -106,6 +106,9 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     // Rule: proof.propBytes --> ProofBytes(proof)
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
       Some(SigmaPropBytes(p.asSigmaProp))
+
+    case Apply(PKSym, Seq(arg: Value[SString.type]@unchecked)) =>
+      Some(mkPK(arg))
 
     case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "getOrElse", Some(_)), Seq(arg)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
