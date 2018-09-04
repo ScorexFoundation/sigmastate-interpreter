@@ -310,8 +310,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """{
-        |  let pubkey1 = SELF.R4[GroupElement].value
-        |  let pubkey2 = SELF.R5[GroupElement].value
+        |  let pubkey1 = SELF.R4[GroupElement].get
+        |  let pubkey2 = SELF.R5[GroupElement].get
         |  proveDlog(pubkey1) && proveDlog(pubkey2)
         |}""".stripMargin).asBoolValue
 
@@ -554,9 +554,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       """{
         |  let cond = INPUTS(0).value > 10
         |  let preimage = if (cond)
-        |    INPUTS(2).R4[Array[Byte]].value
+        |    INPUTS(2).R4[Array[Byte]].get
         |  else
-        |    INPUTS(1).R4[Array[Byte]].value
+        |    INPUTS(1).R4[Array[Byte]].get
         |  helloHash == blake2b256(preimage)
          }""".stripMargin).asBoolValue
 

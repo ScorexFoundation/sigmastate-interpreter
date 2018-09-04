@@ -76,7 +76,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val buyerEnv = Map("pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
     val altBuyerProp = compile(buyerEnv,
       """(HEIGHT > deadline && pkA) || {
-        |  let tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].value(0)
+        |  let tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].get(0)
         |  allOf(Array(
         |      tokenData._1 == token1,
         |      tokenData._2 >= 60L,

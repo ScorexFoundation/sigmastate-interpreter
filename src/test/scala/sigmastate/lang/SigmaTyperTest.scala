@@ -80,13 +80,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("predefined functions") {
     typecheck(env, "allOf") shouldBe AllSym.tpe
     typecheck(env, "allOf(Array(c1, c2))") shouldBe SBoolean
-    typecheck(env, "getVar[Byte](10)") shouldBe SByte
-    typecheck(env, "getVar[Array[Byte]](10)") shouldBe SByteArray
-    typecheck(env, "getVar[SigmaProp](10)") shouldBe SSigmaProp
-    typecheck(env, "p1 && getVar[SigmaProp](10)") shouldBe SBoolean
-    typecheck(env, "getVar[SigmaProp](10) || p2") shouldBe SBoolean
-    typecheck(env, "getVar[SigmaProp](10) && getVar[SigmaProp](11)") shouldBe SBoolean
-    typecheck(env, "Array(true, getVar[SigmaProp](11))") shouldBe SCollection(SBoolean)
+    typecheck(env, "getVar[Byte](10).get") shouldBe SByte
+    typecheck(env, "getVar[Array[Byte]](10).get") shouldBe SByteArray
+    typecheck(env, "getVar[SigmaProp](10).get") shouldBe SSigmaProp
+    typecheck(env, "p1 && getVar[SigmaProp](10).get") shouldBe SBoolean
+    typecheck(env, "getVar[SigmaProp](10).get || p2") shouldBe SBoolean
+    typecheck(env, "getVar[SigmaProp](10).get && getVar[SigmaProp](11).get") shouldBe SBoolean
+    typecheck(env, "Array(true, getVar[SigmaProp](11).get)") shouldBe SCollection(SBoolean)
     typecheck(env, "min(1, 2)") shouldBe SInt
     typecheck(env, "min(1L, 2)") shouldBe SLong
     typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SLong
@@ -239,12 +239,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("type parameters") {
     typecheck(env, "SELF.R1[Int]") shouldBe SOption(SInt)
     typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
-    typecheck(env, "SELF.R1[Int].value") shouldBe SInt
+    typecheck(env, "SELF.R1[Int].get") shouldBe SInt
     typefail(env, "x[Int]", "doesn't have type parameters")
     typefail(env, "arr1[Int]", "doesn't have type parameters")
     typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))
-    typecheck(env, "SELF.R1[(Int,Boolean)].value") shouldBe STuple(SInt, SBoolean)
-    an[IllegalArgumentException] should be thrownBy typecheck(env, "SELF.R1[Int,Boolean].value")
+    typecheck(env, "SELF.R1[(Int,Boolean)].get") shouldBe STuple(SInt, SBoolean)
+    an[IllegalArgumentException] should be thrownBy typecheck(env, "SELF.R1[Int,Boolean].get")
     typecheck(env, "Array[Int]()") shouldBe SCollection(SInt)
   }
 

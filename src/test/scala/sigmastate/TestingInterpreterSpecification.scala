@@ -127,15 +127,15 @@ class TestingInterpreterSpecification extends PropSpec
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R4[Array[Int]].value
+              |  let arr = box1.R4[Array[Int]].get
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R5[Array[Boolean]].value
+              |  let arr = box1.R5[Array[Boolean]].get
               |  anyOf(arr)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R5[Array[Boolean]].value
+              |  let arr = box1.R5[Array[Boolean]].get
               |  allOf(arr) == false
               |}""".stripMargin)
     testEval("""{

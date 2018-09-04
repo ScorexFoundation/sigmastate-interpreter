@@ -270,7 +270,7 @@ A context can also contain typed variables that can be retrieved by numerical id
 
 Such context enxtensions can be useful, for example, for requiring a spending transaction to produce hash preimages (the BLAKE2b-256 and SHA-256 hash functions can invoked in \langname, using keywords \texttt{blake2b256} and \texttt{sha256}). For example,
 \begin{verbatim}
-       pkA && blake2b256(getVar[Array[Byte]](1)) ==  hashOutput
+       pkA && blake2b256(getVar[Array[Byte]](1).get) ==  hashOutput
 \end{verbatim}
 says that spending can be done only using the signature of Alice, and only if the preimage of \texttt{hashOutput} is written in the context. Specifically, the script requires that the context extension should contain a variable (with id \texttt{1}), which is an array of bytes that hashes to the value of \texttt{hashOutput} (the value of \texttt{hashOutput}, like \texttt{pkA}, is defined in the environment and is hardwired into the script at compile time).  Note that although the script requires both the secret key corresponding to \texttt{pkA} and the hash preimage corresponding to \texttt{hashOutput}, there is the stark difference between how these two values are used: the secret key is not revealed in the proof (by the zero-knowledge property of $\Sigma$-proofs), while the hash preimage is explicitly written into the context extension and can be seen by anyone once the transaction takes place.
 
@@ -282,7 +282,7 @@ Alice creates a random secret \texttt{x} of 256 bits (32 bytes), hashes it to ob
 \begin{verbatim}
         anyOf( Array(
                 HEIGHT > deadlineBob && pkA,
-                pkB && blake2b256(getVar[Array[Byte]](1)) == hx
+                pkB && blake2b256(getVar[Array[Byte]](1).get) == hx
         ))
 \end{verbatim}
 Bob can receive the value of this box only upon presentation of a hash preimage of \texttt{hx}. Alice can reclaim it after \texttt{deadlineBob}.
@@ -293,15 +293,15 @@ From this output, Bob learns \texttt{hx}. He creates a transaction in Alice's bl
                 HEIGHT > deadlineAlice && pkB,
                 allOf( Array( 
                         pkA,
-                        getVar[Array[Byte]](1).size<33,
-                        blake2b256(getVar[Array[Byte]](1)) == hx
+                        getVar[Array[Byte]](1).get.size < 33,
+                        blake2b256(getVar[Array[Byte]](1).get) == hx
                 ))
         ))
 \end{verbatim}
 
 If Alice is satisfied with the amount Bob is giving her, she claims the value of this box by revealing \texttt{x}. Alice is protected as long as the hash function is one-way and she keeps her \texttt{x} secret until she claims the value of this box. (She should be careful to submit her transaction in enough time before \texttt{deadlineAlice} to make sure it gets processed before Bob can reclaim this money, because once she submits the transaction, \texttt{x} is public and thus, if the \texttt{deadlineAlice} passes before the transaction is processed, Bob can both reclaim this box and claim the box Alice left in his blockchain.)
 
-Bob is protected, because in order for Alice to claim the value of this box, she must present a hash preimage of \texttt{hx} as a context extension in the transaction that uses this box as input. But once she does, Bob also learns this hash preimage, and is able to claim the value of the box that Alice placed into his blockchain. Note that Bob needs to choose \texttt{deadlineAlice} early enough to make sure that he is able to learn the preimage of \texttt{hx} from the transaction in Alice's block chain, and create a transaction in his blockchain, all before \texttt{deadlineBob} that Alice chose. Note also that \texttt{HEIGHT} in the two scripts is with respect to two different blockchains, which may be growing at a different rate. Bob also needs to make sure that he can use Alice's \texttt{x} as a context extension; to make sure Alice cannot cheat by making this \texttt{x} so long that it will not be allowed as a context extension in his blockchain, he uses the constraint \texttt{getVar[Array[Byte]](1).size<33}.
+Bob is protected, because in order for Alice to claim the value of this box, she must present a hash preimage of \texttt{hx} as a context extension in the transaction that uses this box as input. But once she does, Bob also learns this hash preimage, and is able to claim the value of the box that Alice placed into his blockchain. Note that Bob needs to choose \texttt{deadlineAlice} early enough to make sure that he is able to learn the preimage of \texttt{hx} from the transaction in Alice's block chain, and create a transaction in his blockchain, all before \texttt{deadlineBob} that Alice chose. Note also that \texttt{HEIGHT} in the two scripts is with respect to two different blockchains, which may be growing at a different rate. Bob also needs to make sure that he can use Alice's \texttt{x} as a context extension; to make sure Alice cannot cheat by making this \texttt{x} so long that it will not be allowed as a context extension in his blockchain, he uses the constraint \texttt{getVar[Array[Byte]](1).get.size < 33}.
 
 The same approach can be used to trade different assets on the same blockchain, in case of multiasset blockchains. However, for transactions on a single blockchain, an alternative approach is also possible. We describe it below.
 

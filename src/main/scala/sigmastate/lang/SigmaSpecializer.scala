@@ -107,12 +107,12 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
       Some(SigmaPropBytes(p.asSigmaProp))
 
-    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(_)), Seq(arg)) =>
+    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "getOrElse", Some(_)), Seq(arg)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
       Some(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
 
-    case sel @ Select(Select(Typed(box, SBox), regName, _), "value", Some(regType)) =>
+    case sel @ Select(Select(Typed(box, SBox), regName, _), "get", Some(regType)) =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
       Some(mkExtractRegisterAs(box.asBox, reg, regType, None))
@@ -145,27 +145,27 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(Select(col, "slice", _), Seq(from, until)) =>
       Some(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
 
-    case Apply(Select(col, "where", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, "where", _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkWhere(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col,"exists", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col,"exists", _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkExists(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col,"forall", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col,"forall", _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkForAll(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col,"map", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col,"map", _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkMapCollection(col.asValue[SCollection[SType]], tagged.varId, body1))
 
-    case Apply(Select(col,"fold", _), Seq(zero, Lambda(Seq((accArg, tAccArg), (opArg, tOpArg)), _, Some(body)))) =>
+    case Apply(Select(col,"fold", _), Seq(zero, Lambda(_, Seq((accArg, tAccArg), (opArg, tOpArg)), _, Some(body)))) =>
       val taggedAcc = mkTagged(accArg, tAccArg, 21)
       val taggedOp = mkTagged(opArg, tOpArg, 22)
       val body1 = eval(env ++ Seq(accArg -> taggedAcc, opArg -> taggedOp), body)

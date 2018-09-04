@@ -30,7 +30,7 @@ object SigmaPredef {
     "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
     "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
 
-    "getVar" -> mkGenLambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), tT, None),
+    "getVar" -> mkGenLambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), SOption(tT), None),
 
     "proveDHTuple" -> mkLambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),

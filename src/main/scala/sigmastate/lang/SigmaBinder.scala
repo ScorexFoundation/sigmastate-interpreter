@@ -93,7 +93,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         throw new InvalidArguments(s"Invalid arguments for max: $args")
     }
 
-    case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
+    case e @ Select(Apply(ApplyTypes(f @ GetVarSym, targs), args), "get", _) =>
       if (targs.length != 1 || args.length != 1)
         error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
       val id = args.head match {

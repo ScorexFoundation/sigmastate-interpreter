@@ -522,9 +522,10 @@ object SOption {
 
   private[sigmastate] def createMethods(tArg: STypeIdent): Seq[SMethod] =
     Seq(
+      SMethod("isEmpty", SBoolean),
       SMethod("isDefined", SBoolean),
-      SMethod("value", tArg),
-      SMethod("valueOrElse", SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(STypeParam(tT))))
+      SMethod("get", tArg),
+      SMethod("getOrElse", SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(STypeParam(tT))))
     )
   private val tT = STypeIdent("T")
   val methods: Seq[SMethod] = createMethods(tT)
