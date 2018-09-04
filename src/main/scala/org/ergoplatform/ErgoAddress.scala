@@ -59,7 +59,7 @@ import scala.util.{Failure, Success, Try}
   *
   * Prefix byte = network type + address type
   *
-  * checksum = hash256(prefix byte ++ content bytes)
+  * checksum = blake2b256(prefix byte ++ content bytes)
   *
   * address = prefix byte ++ content bytes ++ checksum
   *
@@ -97,7 +97,7 @@ object P2PKAddress {
   val addressTypePrefix: Byte = 1: Byte
 
   def apply(pubkey: ProveDlog)(implicit encoder: ErgoAddressEncoder): P2PKAddress = {
-    val bs = pubkey.h.getEncoded(true)
+    val bs = ValueSerializer.serialize(pubkey)
     new P2PKAddress(pubkey, bs)
   }
 }
@@ -169,7 +169,7 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
 
   import ErgoAddressEncoder._
 
-  implicit private val ergoAddressEncoder = this
+  implicit private val ergoAddressEncoder: ErgoAddressEncoder = this
 
   val ChecksumLength = 4
 
