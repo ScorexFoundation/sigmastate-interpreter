@@ -240,11 +240,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "SELF.R1[Int]") shouldBe SOption(SInt)
     typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].value") shouldBe SInt
-    typefail(env, "X[Int]", "expression doesn't have type parameters")
-    typefail(env, "arr1[Int]", "expression doesn't have type parameters")
+    typefail(env, "x[Int]", "doesn't have type parameters")
+    typefail(env, "arr1[Int]", "doesn't have type parameters")
     typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))
     typecheck(env, "SELF.R1[(Int,Boolean)].value") shouldBe STuple(SInt, SBoolean)
-    typefail(env, "SELF.R1[Int,Boolean].value", "Wrong number of type arguments")
+    an[IllegalArgumentException] should be thrownBy typecheck(env, "SELF.R1[Int,Boolean].value")
     typecheck(env, "Array[Int]()") shouldBe SCollection(SInt)
   }
 

@@ -1,9 +1,9 @@
 package sigmastate.lang
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{SValue, Value}
+import sigmastate.Values.{Value, SValue}
 import sigmastate._
-import sigmastate.lang.Terms.Lambda
+import sigmastate.lang.Terms.{Lambda, STypeParam}
 import sigmastate.lang.TransformingSigmaBuilder._
 
 object SigmaPredef {
@@ -30,7 +30,7 @@ object SigmaPredef {
     "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
     "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
 
-    "getVar" -> mkLambda(Vector("varId" -> SByte), tT, None),
+    "getVar" -> mkGenLambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), tT, None),
 
     "proveDHTuple" -> mkLambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),

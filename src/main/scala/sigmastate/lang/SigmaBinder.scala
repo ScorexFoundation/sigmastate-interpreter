@@ -1,5 +1,6 @@
 package sigmastate.lang
 
+import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
@@ -103,7 +104,8 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
       Some(mkTaggedVariable(id, targs.head))
 
     // Rule: fun (...) = ... --> fun (...): T = ...
-    case lam @ Lambda(args, t, Some(body)) =>
+    case lam @ Lambda(params, args, t, Some(body)) =>
+      require(params.isEmpty)
       val b1 = eval(body, env)
       val newLam = mkLambda(args, t, Some(b1))
       if (newLam != lam) Some(newLam) else None
@@ -125,7 +127,9 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         None
   })))(e)
 
-  def bind(e: SValue): SValue = eval(e, env)
+  def bind(e: SValue): SValue =
+    try eval(e, env)
+    catch { case e: InvocationTargetException => throw e.getCause }
 }
 
 object SigmaBinder {
