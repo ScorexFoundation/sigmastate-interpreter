@@ -84,6 +84,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, mkCalcSha256),
     SimpleTransformerSerializer[SString.type, SByteArray](Base58ToByteArrayCode, mkBase58ToByteArray),
     SimpleTransformerSerializer[SString.type, SByteArray](Base64ToByteArrayCode, mkBase64ToByteArray),
+    SimpleTransformerSerializer[SString.type, SSigmaProp.type](ErgoAddressToSigmaPropCode, mkPK),
     DeserializeContextSerializer(mkDeserializeContext),
     DeserializeRegisterSerializer(mkDeserializeRegister),
     ExtractRegisterAsSerializer(mkExtractRegisterAs),

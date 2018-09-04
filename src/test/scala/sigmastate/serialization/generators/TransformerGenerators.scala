@@ -1,5 +1,6 @@
 package sigmastate.serialization.generators
 
+import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.util.encode.{Base58, Base64}
@@ -205,4 +206,8 @@ trait TransformerGenerators {
   val base64ToByteArrayGen: Gen[Base64ToByteArray] = for {
     s <- base64StringGen
   } yield mkBase64ToByteArray(StringConstant(s)).asInstanceOf[Base64ToByteArray]
+
+  def p2pkAddressGen(networkPrefix: Byte): Gen[P2PKAddress] = for {
+    pd <- proveDlogGen
+  } yield P2PKAddress(pd)(new ErgoAddressEncoder(networkPrefix))
 }
