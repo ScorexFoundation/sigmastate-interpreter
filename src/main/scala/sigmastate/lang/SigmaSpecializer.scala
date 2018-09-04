@@ -7,9 +7,10 @@ import sigmastate.Values.Value.Typed
 import sigmastate._
 import sigmastate.Values.{SValue, _}
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Lambda, Let, Apply, ValueOps, Select, Block, Ident}
-import sigmastate.lang.exceptions.{MethodNotFound, SpecializerException}
+import sigmastate.lang.Terms.{Lambda, ApplyTypes, Let, Apply, ValueOps, Select, Block, Ident}
+import sigmastate.lang.exceptions.{SpecializerException, MethodNotFound}
 import sigmastate.utxo._
+import sigmastate.utils.Extensions._
 
 class SigmaSpecializer(val builder: SigmaBuilder) {
   import SigmaSpecializer._
@@ -106,6 +107,16 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
       Some(mkExtractRegisterAs(box.asBox, reg, regType, None))
+
+    case sel @ Select(e @ Apply(ApplyTypes(f @ GetVarSym, targs), args), "get", Some(regType)) =>
+      if (targs.length != 1 || args.length != 1)
+        error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
+      val id = args.head match {
+        case LongConstant(i) => i.toByteExact  //TODO use SByte.downcast once it is implemented
+        case IntConstant(i) => i.toByteExact
+        case ByteConstant(i) => i
+      }
+      Some(mkTaggedVariable(id, targs.head))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {

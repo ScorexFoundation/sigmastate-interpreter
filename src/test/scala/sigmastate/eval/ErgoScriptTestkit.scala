@@ -173,25 +173,23 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
   }
 
   def Case[T](env: EsEnv, name: String, script: String, ctx: ErgoLikeContext,
-      contract: VContext => T,
       calc: Rep[Context] => Rep[T],
       cost: Rep[Context] => Rep[Int],
       size: Rep[Context] => Rep[Long],
       tree: SValue,
       result: Result[T]) =
-    EsTestCase[T](name, env, script, Option(ctx), Option(contract),
+    EsTestCase[T](name, env, script, Option(ctx), None,
       Option(calc), Option(cost), Option(size),
       Option(tree), result)
 
   def checkAll[T](env: EsEnv, name: String, script: String, ergoCtx: ErgoLikeContext,
-      contract: VContext => T,
       calc: Rep[Context] => Rep[T],
       cost: Rep[Context] => Rep[Int],
       size: Rep[Context] => Rep[Long],
       tree: SValue,
       result: Result[T]): Unit =
   {
-    val tcase = Case[T](env, name, script, ergoCtx, contract, calc, cost, size, tree, result)
+    val tcase = Case[T](env, name, script, ergoCtx, calc, cost, size, tree, result)
     tcase.doReduce()
   }
 

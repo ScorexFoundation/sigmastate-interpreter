@@ -1,12 +1,17 @@
 package sigmastate.eval
 
+import java.math.BigInteger
+
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import scapi.sigma.DLogProtocol
+import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
+import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
 import sigmastate.lang.LangTests
+import special.collection.{Col => VCol}
 import special.sigma.{TestValue => VTestValue}
 
 import scalan.BaseCtxTests
@@ -16,7 +21,9 @@ class CompilerItTest extends BaseCtxTests
   import IR._
   import builder._
   import WArray._
+  import WOption._
   import ColBuilder._
+  import Context._
   import Col._
   import Sigma._
   import WBigInteger._
@@ -56,7 +63,7 @@ class CompilerItTest extends BaseCtxTests
     )))
 
   def intConstCase = {
-    Case(env, "intConst", "1", ergoCtx, contract = {_ => 1},
+    Case(env, "intConst", "1", ergoCtx,
       calc = {_ => 1},
       cost = {_ => constCost[Int]},
       size = {_ => sizeOf(1)},
@@ -64,7 +71,7 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def bigIntegerConstCase = {
-    Case(env, "bigIntegerConst", "big", ergoCtx, contract = {_ => big},
+    Case(env, "bigIntegerConst", "big", ergoCtx,
       calc = {_ => bigSym },
       cost = {_ => constCost[WBigInteger]},
       size = {_ => sizeOf(bigSym)},
@@ -74,7 +81,7 @@ class CompilerItTest extends BaseCtxTests
   def addBigIntegerConstsCase = {
     val size = (sizeOf(bigSym) max sizeOf(n1Sym)) + 1L
     val res = big.add(n1)
-    Case(env, "addBigIntegerConsts", "big + n1", ergoCtx, contract = {_ => big.add(n1)},
+    Case(env, "addBigIntegerConsts", "big + n1", ergoCtx,
       calc = {_ => bigSym.add(n1Sym) },
       cost = {_ => constCost[WBigInteger] + constCost[WBigInteger] +
           costOf("+", PlusCode, SFunc(Vector(SBigInt, SBigInt), SBigInt)) +
@@ -85,53 +92,52 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def arrayConstCase = {
-        val arr1 = env("arr1").asInstanceOf[Array[Byte]]
-        val arr1Sym = colBuilder.fromArray(mkWArrayConst(arr1))
-        val res = Cols.fromArray(arr1).arr
-        Case(env, "arrayConst", "arr1", ergoCtx, contract = {_ => res },
-          calc = {_ => arr1Sym },
-          cost = {_ => constCost[Col[Byte]] },
-          size = {_ => sizeOf(arr1Sym) },
-          tree = ByteArrayConstant(arr1), Result(res, 1, 2))
+    val arr1 = env("arr1").asInstanceOf[Array[Byte]]
+    val arr1Sym = colBuilder.fromArray(mkWArrayConst(arr1))
+    val res = Cols.fromArray(arr1).arr
+    Case(env, "arrayConst", "arr1", ergoCtx,
+      calc = {_ => arr1Sym },
+      cost = {_ => constCost[Col[Byte]] },
+      size = {_ => sizeOf(arr1Sym) },
+      tree = ByteArrayConstant(arr1), Result(res, 1, 2))
   }
 
-//  def bigIntArrayVar_Map_Case = {
-//        val arr1Sym = colBuilder.fromArray(mkWArrayConst(arr1))
-//        val res = Cols.fromArray(arr1).arr
-//        Case(env, "bigIntArrayVar_Map",
-//          "getVar[Array[BigInt]](1).get.map(fun (n: BigInt) = n + 1)", ctx,
-//          contract = { ctx => ctx.getVar[Col(1) },
-//          calc = {_ => arr1Sym },
-//          cost = {_ => constCost[Col[Byte]] },
-//          size = {_ => sizeOf(arr1Sym) },
-//          tree = ByteArrayConstant(arr1), Result(res, 1, 2))
-//  }
+  def bigIntArrayVar_Map_Case = {
+    import SCollection._
+    val res = Cols.fromArray(bigIntArr1).map(n => n.add(n1))
+    Case(env, "bigIntArrayVar_Map",
+      "getVar[Array[BigInt]](3).get.map(fun (i: BigInt) = i + n1)", ergoCtx,
+      calc = { ctx => ctx.getVar[Col[WBigInteger]](3.toByte).get.map(fun(n => n.add(mkWBigIntegerConst(n1)))) },
+      cost = {_ => 1 },
+      size = {_ => 1L },
+      tree = builder.mkTaggedVariable(3.toByte, SBigIntArray),
+      Result(res, 1, 2))
+  }
 
   def sigmaPropConstCase = {
-        val resSym = RProveDlogEvidence(mkWECPointConst(g1))
-        val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
-        Case(env, "sigmaPropConst", "p1", ergoCtx, contract = {_ => res },
-          calc = {_ => resSym },
-          cost = {_ => constCost[WECPoint] + constCost[Sigma] },
-          size = {_ => sizeOf(resSym) },
-          tree = SigmaPropConstant(p1), Result(res, 1 + 1, 32 + 1))
+    val resSym = RProveDlogEvidence(mkWECPointConst(g1))
+    val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
+    Case(env, "sigmaPropConst", "p1", ergoCtx,
+      calc = {_ => resSym },
+      cost = {_ => constCost[WECPoint] + constCost[Sigma] },
+      size = {_ => sizeOf(resSym) },
+      tree = SigmaPropConstant(p1), Result(res, 1 + 1, 32 + 1))
   }
 
   def andSigmaPropConstsCase = {
-        val p1Sym: Rep[Sigma] = RProveDlogEvidence(mkWECPointConst(g1))
-        val p2Sym: Rep[Sigma] = RProveDlogEvidence(mkWECPointConst(g2))
-        val res = AND(p1, p2)
-        val resSym = (p1Sym && p2Sym).isValid
-        Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx, contract = {_ => res },
-          calc = {_ => resSym },
-          cost = {_ =>
-            val c1 = constCost[WECPoint] + constCost[Sigma] +
-                      costOf("SigmaPropIsValid", SigmaPropIsValidCode, SFunc(SSigmaProp, SBoolean))
-            c1 + c1 + costOf("BinAnd", BinAndCode, SFunc(Vector(SBoolean, SBoolean), SBoolean))
-          },
-          size = {_ => sizeOf(resSym) },
-          tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))).isValid,
-          Result(res, (1 + 1 + 1) * 2 + 1, 1))
+    val p1Sym: Rep[Sigma] = RProveDlogEvidence(mkWECPointConst(g1))
+    val p2Sym: Rep[Sigma] = RProveDlogEvidence(mkWECPointConst(g2))
+    val resSym = (p1Sym && p2Sym).isValid
+    Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
+      calc = {_ => resSym },
+      cost = {_ =>
+        val c1 = constCost[WECPoint] + constCost[Sigma] +
+                  costOf("SigmaPropIsValid", SigmaPropIsValidCode, SFunc(SSigmaProp, SBoolean))
+        c1 + c1 + costOf("BinAnd", BinAndCode, SFunc(Vector(SBoolean, SBoolean), SBoolean))
+      },
+      size = {_ => sizeOf(resSym) },
+      tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))).isValid,
+      Result(AND(p1, p2), (1 + 1 + 1) * 2 + 1, 1))
   }
 
   lazy val testCases = Seq[EsTestCase[_]](
@@ -144,12 +150,13 @@ class CompilerItTest extends BaseCtxTests
   }
 
   test("constants") {
-    intConstCase.doReduce
-    bigIntegerConstCase.doReduce
-    addBigIntegerConstsCase.doReduce()
-    arrayConstCase.doReduce()
-    sigmaPropConstCase.doReduce()
-    andSigmaPropConstsCase.doReduce()
+//    intConstCase.doReduce
+//    bigIntegerConstCase.doReduce
+//    addBigIntegerConstsCase.doReduce()
+//    arrayConstCase.doReduce()
+//    sigmaPropConstCase.doReduce()
+//    andSigmaPropConstsCase.doReduce()
+    bigIntArrayVar_Map_Case.doReduce()
   }
 
 }

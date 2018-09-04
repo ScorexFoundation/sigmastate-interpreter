@@ -263,7 +263,9 @@ class SigmaTyper(val builder: SigmaBuilder) {
       }
 
     case app @ ApplyTypes(in, targs) =>
-      error(s"Invalid application of type arguments $app: expression doesn't have type parameters")
+      val newIn = assignType(env, in)
+      ApplyTypes(newIn, targs)
+//      error(s"Invalid application of type arguments $app: expression doesn't have type parameters")
 
     case If(c, t, e) =>
       val c1 = assignType(env, c).asValue[SBoolean.type]

@@ -89,7 +89,7 @@ object Terms {
   }
 
   /** Apply types for type parameters of input value. */
-  case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] {
+  case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] { node =>
 
     override val opCode: OpCode = OpCodes.Undefined
 
@@ -98,6 +98,7 @@ object Terms {
     override def evaluated: Boolean = false
     lazy val tpe: SType = input.tpe match {
       case funcType: SFunc =>
+        assert(funcType.tpeArgs.length == tpeArgs.length, s"Invalid number of tpeArgs in $node")
         val subst = funcType.tpeArgs.zip(tpeArgs).toMap
         SigmaTyper.applySubst(input.tpe, subst)
       case _ => input.tpe

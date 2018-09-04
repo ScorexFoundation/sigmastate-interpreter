@@ -72,16 +72,6 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         throw new InvalidArguments(s"Invalid arguments for max: $args")
     }
 
-    case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
-      if (targs.length != 1 || args.length != 1)
-        error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
-      val id = args.head match {
-        case LongConstant(i) => i.toByteExact  //TODO use SByte.downcast once it is implemented
-        case IntConstant(i) => i.toByteExact
-        case ByteConstant(i) => i
-      }
-      Some(mkTaggedVariable(id, targs.head))
-
     // Rule: fun (...) = ... --> fun (...): T = ...
     case lam @ Lambda(args, t, Some(body)) =>
       val b1 = eval(body, env)
