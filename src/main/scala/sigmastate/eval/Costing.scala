@@ -208,6 +208,22 @@ trait Costing extends SigmaLibrary {
     case _ => error(s"Don't know how to convert Elem $e to SType")
   })
 
+  import Liftables._
+  def liftableFromElem[WT](eWT: Elem[WT]): Liftable[_,WT] = (eWT match {
+    case BooleanElement => BooleanIsLiftable
+    case ByteElement => ByteIsLiftable
+    case ShortElement => ShortIsLiftable
+    case IntElement => IntIsLiftable
+    case LongElement => LongIsLiftable
+    case StringElement => StringIsLiftable
+    case UnitElement => UnitIsLiftable
+    case e: WBigIntegerElem[_] => LiftableBigInteger
+    case e: WECPointElem[_] => LiftableECPoint
+    case ae: WArrayElem[t,_] =>
+      implicit val lt = liftableFromElem[t](ae.eItem)
+      liftableArray(lt)
+  }).asInstanceOf[Liftable[_,WT]]
+
   import NumericOps._
   private val elemToNumericMap = Map[Elem[_], Numeric[_]](
     (ByteElement, numeric[Byte]),
@@ -300,18 +316,21 @@ trait Costing extends SigmaLibrary {
           withDefaultSize(resV, ge.cost + costOf(SigmaPropConstant(p)))
         case bi: BigInteger =>
           assert(tpe == SBigInt)
-          val resV = mkWBigIntegerConst(bi)
+          val resV = liftBigInteger(bi)
           withDefaultSize(resV, costOf(c))
         case ge: ECPoint =>
           assert(tpe == SGroupElement)
-          val resV = mkWECPointConst(ge)
+          val resV = liftECPoint(ge)
 //          val size = SGroupElement.dataSize(ge.asWrappedType)
           withDefaultSize(resV, costOf(c))
         case arr: Array[a] =>
           val tpeA = tpe.asCollection[SType].elemType
-          val eA = stypeToElem(tpeA).asElem[a]
-          val wa = mkWArrayConst(arr)(eA)
-          withDefaultSize(colBuilder.fromArray(wa), costOf(c))
+          stypeToElem(tpeA) match {
+            case eWA: Elem[wa] =>
+              implicit val l = liftableFromElem[wa](eWA).asInstanceOf[Liftable[a,wa]]
+              val arrSym = liftConst[Array[a], WArray[wa]](arr)
+              withDefaultSize(colBuilder.fromArray(arrSym), costOf(c))
+          }
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
           withDefaultSize(resV, costOf(c))

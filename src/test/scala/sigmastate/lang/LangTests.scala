@@ -5,6 +5,7 @@ import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, GroupElemen
 import sigmastate._
 import java.math.BigInteger
 
+import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray

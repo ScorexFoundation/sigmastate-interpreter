@@ -32,7 +32,8 @@ trait Evaluation extends Costing {
   import TrivialSigma._
   import ProveDlogEvidence._
   import WBigInteger._
-
+  import Liftables._
+  
   private val ContextM = ContextMethods
   private val SigmaM = SigmaMethods
   private val ColM = ColMethods
@@ -164,7 +165,7 @@ trait Evaluation extends Costing {
       try {
         te.rhs match {
           case Const(x) => out(x.asInstanceOf[AnyRef])
-          case wc: WrapperConst[_] => out(wc.wrappedValue)
+          case wc: LiftedConst[_] => out(wc.constValue)
           case _: DslBuilder | _: ColBuilder | _: IntPlusMonoid =>
             dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te"))
           case SigmaM.propBytes(prop) =>
@@ -354,12 +355,12 @@ trait Evaluation extends Costing {
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
         mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
-      case CBM.fromArray(_, arr @ Def(wc: WrapperConst[a])) =>
+      case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a])) =>
         val colTpe = elemToSType(s.elem)
-        mkConstant[colTpe.type](wc.wrappedValue.asInstanceOf[colTpe.WrappedType], colTpe)
-      case Def(wc: WrapperConst[a]) =>
+        mkConstant[colTpe.type](wc.constValue.asInstanceOf[colTpe.WrappedType], colTpe)
+      case Def(wc: LiftedConst[a]) =>
         val tpe = elemToSType(s.elem)
-        mkConstant[tpe.type](wc.wrappedValue.asInstanceOf[tpe.WrappedType], tpe)
+        mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
       case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)

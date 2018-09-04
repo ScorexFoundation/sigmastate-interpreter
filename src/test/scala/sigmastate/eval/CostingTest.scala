@@ -24,7 +24,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import Context._; import SigmaContract._
   import Cost._; import ColBuilder._; import Col._; import Box._; import Sigma._; import CrowdFunding._
   import SigmaDslBuilder._; import WOption._
-
+  import Liftables._
+  
   lazy val dsl = sigmaDslBuilder
 
   test("SType.dataSize") {
@@ -74,11 +75,11 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => constCost[Byte], _ => sizeOf(1.toByte))
 
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
-    val symArr1 = colBuilder.fromArray(mkWArrayConst(arr1))
+    val symArr1 = colBuilder.fromArray(liftConst(arr1))
     checkInEnv(env, "arr", "arr1",
       {_ => symArr1}, {_ => constCost[Col[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
     checkInEnv(env, "arr2", "arr1.size",
-      {_ => colBuilder.fromArray(mkWArrayConst(arr1)).length },
+      {_ => colBuilder.fromArray(liftConst(arr1)).length },
       { _ =>
         val c = ByteArrayConstant(arr1)
         costOf(c) + costOf(utxo.SizeOf(c))

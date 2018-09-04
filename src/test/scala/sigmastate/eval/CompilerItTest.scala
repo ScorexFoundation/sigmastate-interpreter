@@ -2,6 +2,7 @@ package sigmastate.eval
 
 import java.math.BigInteger
 
+import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import scapi.sigma.DLogProtocol
 import sigmastate.SCollection.SByteArray
@@ -31,10 +32,11 @@ class CompilerItTest extends BaseCtxTests
   import ProveDlogEvidence._
   import ProveDHTEvidence._
   import sigmastate.serialization.OpCodes._
+  import Liftables._
 
   lazy val dsl = sigmaDslBuilder
-  lazy val bigSym = mkWBigIntegerConst(big)
-  lazy val n1Sym = mkWBigIntegerConst(n1)
+  lazy val bigSym = liftConst(big)
+  lazy val n1Sym = liftConst(n1)
 
   val backerProver = new ErgoLikeProvingInterpreter
   val projectProver = new ErgoLikeProvingInterpreter
@@ -63,8 +65,8 @@ class CompilerItTest extends BaseCtxTests
     )))
 
   def intConstCase = {
-    Case(env, "intConst", "1", ergoCtx,
-      calc = {_ => 1},
+    Case[Int](env, "intConst", "1", ergoCtx,
+      calc = {_ => 1 },
       cost = {_ => constCost[Int]},
       size = {_ => sizeOf(1)},
       tree = IntConstant(1), Result(1, 1, 4))
@@ -93,7 +95,7 @@ class CompilerItTest extends BaseCtxTests
 
   def arrayConstCase = {
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
-    val arr1Sym = colBuilder.fromArray(mkWArrayConst(arr1))
+    val arr1Sym = colBuilder.fromArray[Byte](liftConst(arr1))
     val res = Cols.fromArray(arr1).arr
     Case(env, "arrayConst", "arr1", ergoCtx,
       calc = {_ => arr1Sym },
@@ -102,12 +104,13 @@ class CompilerItTest extends BaseCtxTests
       tree = ByteArrayConstant(arr1), Result(res, 1, 2))
   }
 
-  def bigIntArrayVar_Map_Case = {
+  def bigIntArray_Map_Case = {
     import SCollection._
     val res = Cols.fromArray(bigIntArr1).map(n => n.add(n1))
-    Case(env, "bigIntArrayVar_Map",
-      "getVar[Array[BigInt]](3).get.map(fun (i: BigInt) = i + n1)", ergoCtx,
-      calc = { ctx => ctx.getVar[Col[WBigInteger]](3.toByte).get.map(fun(n => n.add(mkWBigIntegerConst(n1)))) },
+    val arrSym = colBuilder.fromArray(liftConst(bigIntArr1))
+    Case(env, "bigIntArray_Map",
+      "bigIntArr1.map(fun (i: BigInt) = i + n1)", ergoCtx,
+      calc = { ctx => liftConst(bigIntArr1).map(fun(n => n.add(liftConst(n1)))) },
       cost = {_ => 1 },
       size = {_ => 1L },
       tree = builder.mkTaggedVariable(3.toByte, SBigIntArray),
@@ -115,7 +118,7 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def sigmaPropConstCase = {
-    val resSym = RProveDlogEvidence(mkWECPointConst(g1))
+    val resSym = RProveDlogEvidence(liftECPoint(g1))
     val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
     Case(env, "sigmaPropConst", "p1", ergoCtx,
       calc = {_ => resSym },
@@ -125,8 +128,8 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def andSigmaPropConstsCase = {
-    val p1Sym: Rep[Sigma] = RProveDlogEvidence(mkWECPointConst(g1))
-    val p2Sym: Rep[Sigma] = RProveDlogEvidence(mkWECPointConst(g2))
+    val p1Sym: Rep[Sigma] = RProveDlogEvidence(liftECPoint(g1))
+    val p2Sym: Rep[Sigma] = RProveDlogEvidence(liftECPoint(g2))
     val resSym = (p1Sym && p2Sym).isValid
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => resSym },
@@ -150,13 +153,13 @@ class CompilerItTest extends BaseCtxTests
   }
 
   test("constants") {
-//    intConstCase.doReduce
-//    bigIntegerConstCase.doReduce
-//    addBigIntegerConstsCase.doReduce()
-//    arrayConstCase.doReduce()
-//    sigmaPropConstCase.doReduce()
-//    andSigmaPropConstsCase.doReduce()
-    bigIntArrayVar_Map_Case.doReduce()
+    intConstCase.doReduce
+    bigIntegerConstCase.doReduce
+    addBigIntegerConstsCase.doReduce()
+    arrayConstCase.doReduce()
+    sigmaPropConstCase.doReduce()
+    andSigmaPropConstsCase.doReduce()
+//    bigIntArray_Map_Case.doReduce()
   }
 
 }
