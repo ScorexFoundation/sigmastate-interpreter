@@ -27,12 +27,14 @@ class CompilerItTest extends BaseCtxTests
   import Context._
   import Col._
   import Sigma._
+  import CostedCol._
   import WBigInteger._
   import WECPoint._
   import ProveDlogEvidence._
   import ProveDHTEvidence._
   import sigmastate.serialization.OpCodes._
   import Liftables._
+  import SType.AnyOps
 
   lazy val dsl = sigmaDslBuilder
   lazy val bigSym = liftConst(big)
@@ -110,7 +112,14 @@ class CompilerItTest extends BaseCtxTests
     val arrSym = colBuilder.fromArray(liftConst(bigIntArr1))
     Case(env, "bigIntArray_Map",
       "bigIntArr1.map(fun (i: BigInt) = i + n1)", ergoCtx,
-      calc = { ctx => liftConst(bigIntArr1).map(fun(n => n.add(liftConst(n1)))) },
+      calc = { ctx =>
+        val arr = liftConst(bigIntArr1)
+        val vals = colBuilder.fromArray(arr)
+        val costs = colBuilder.replicate(arr.length, constCost[WBigInteger])
+        val sizes = colBuilder.fromArray(liftConst(bigIntArr1.map(x => SBigInt.dataSize(x.asWrappedType))))
+        val arrC = RCostedCol(vals, costs, sizes, constCost[Col[WBigInteger]])
+        vals.map(fun(n => n.add(liftConst(n1))))
+      },
       cost = {_ => 1 },
       size = {_ => 1L },
       tree = builder.mkTaggedVariable(3.toByte, SBigIntArray),

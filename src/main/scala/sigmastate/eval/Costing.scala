@@ -125,9 +125,23 @@ trait Costing extends SigmaLibrary {
     case _ => super.formatDef(d)
   }
 
+  type RCostedCol[T] = Rep[CostedCol[T]]
+  type RCostedFunc[A,B] = Rep[Costed[A] => Costed[B]]
+
+  implicit def extendCostedElem[A](e: Elem[Costed[A]]): CostedElem[A,_] = e.asInstanceOf[CostedElem[A,_]]
+
+  def splitCostedFunc[A,B](f: RCostedFunc[A,B]): (Rep[A=>B], Rep[((Int, Long)) => Int], Rep[Long => Long]) = {
+    implicit val eA = f.elem.eDom.eVal
+    val calcF = fun { x: Rep[A] => f(RCostedPrim(x, 0, 0L)).value }
+    val costF = fun { x: Rep[(Int, Long)] => f(RCostedPrim(fresh[A], x._1, x._2)).cost }
+    val sizeF = fun { x: Rep[Long] => f(RCostedPrim(fresh[A], 0, x)).dataSize }
+    (calcF, costF, sizeF)
+  }
+
   override def rewriteDef[T](d: Def[T]): Rep[_] = {
     val CBM = ColBuilderMethods
     val SigmaM = SigmaMethods
+    val CCM = CostedColMethods
     d match {
       case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
         val l1: Rep[Sigma] = RTrivialSigma(l.asRep[Boolean])
@@ -137,7 +151,17 @@ trait Costing extends SigmaLibrary {
         else
           l1 || prop
         res.isValid
+
       case TrivialSigmaCtor(SigmaM.isValid(p)) => p
+
+      case CCM.mapCosted(xs: RCostedCol[a], _f: RCostedFunc[_, b]) =>
+        val f = _f.asRep[Costed[a] => Costed[b]]
+        val (calcF, costF, sizeF) = splitCostedFunc[a, b](f)
+        val vals = xs.values.map(calcF)
+        val costs = xs.costs.zip(xs.sizes).map(costF)
+        val sizes = xs.sizes.map(sizeF)
+        RCostedCol(vals, costs, sizes, xs.valuesCost)
+
       case _ => super.rewriteDef(d)
     }
   }
@@ -338,7 +362,9 @@ trait Costing extends SigmaLibrary {
                 if (tpeA.isConstantSize)
                   colBuilder.replicate(arrSym.length, typeSize(tpeA))
                 else {
-                  resVals.map(fun{ x: Rep[wa] => sizeOf(x) }(Lazy(eWA)))
+                  val sizesConst: Array[Long] = arr.map { x: a => tpeA.dataSize(x.asWrappedType) }
+                  val sizesArr = liftConst(sizesConst)
+                  colBuilder.fromArray(sizesArr)
                 }
               RCostedCol(resVals, resCosts, resSizes, costOf(c))
           }
