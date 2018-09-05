@@ -350,6 +350,17 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
           Block(Let("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
   }
 
+  property("new lambda syntax") {
+    parse("{ (x: Int) =>  x - 1 }") shouldBe
+      Lambda(IndexedSeq("x" -> SInt), mkMinus(Ident("x").asValue[SInt.type], IntConstant(1)))
+    // todo single params without parenthesis
+    parse("{ (x: Int) =>  let y = x - 1; y }") shouldBe
+      Lambda(IndexedSeq("x" -> SInt),
+        Block(Let("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
+    // todo multiple parameters
+    // todo large body (multiple expressions)
+  }
+
   property("predefined Exists with lambda argument") {
     parse("OUTPUTS.exists(fun (out: Box) = { out.amount >= minToRaise })") shouldBe
       Apply(Select(Ident("OUTPUTS"), "exists"),

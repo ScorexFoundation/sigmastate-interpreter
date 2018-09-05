@@ -89,7 +89,7 @@ trait Core extends syntax.Literals {
   val `}` = P( Semis.? ~ "}" )
   val `{` = P( "{" ~ Semis.? )
 
-  val Id = P( WL ~ Identifiers.Id )
+  val Id = P( WL ~ Identifiers.Id ).log()
   val VarId = P( WL ~ Identifiers.VarId )
   val BacktickId = P( WL ~ Identifiers.BacktickId )
   val ExprLiteral = P( WL ~ Literals.Expr.Literal )

@@ -21,16 +21,16 @@ object SigmaParser extends Exprs with Types with Core {
     P( "{" ~/ BlockLambda.? ~ Semis.? ~ TmplStat.repX(sep = Semis) ~ Semis.? ~ `}` )
   }
 
-  val FunDef = {
-    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => builder.mkLet(name, NoType, lam) }
-  }
+//  val FunDef = {
+//    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => builder.mkLet(name, NoType, lam) }
+//  }
 
   val ValVarDef = P( BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
     case (Ident(n,_), t, body) => builder.mkLet(n, t.getOrElse(NoType), body)
     case (pat,_,_) => error(s"Only single name patterns supported but was $pat")
   }
 
-  val BlockDef = P( Dcl )
+  val BlockDef = P( Dcl ).log()
 
   val Constr = P( AnnotType ~~ (NotNewline ~ ParenArgList ).repX )
   val Constrs = P( (WL ~ Constr).rep(1, `with`.~/) )
