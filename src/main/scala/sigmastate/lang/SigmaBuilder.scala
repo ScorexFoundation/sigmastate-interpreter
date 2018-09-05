@@ -164,6 +164,7 @@ trait SigmaBuilder {
     case arr: Array[Short] => Some(mkCollectionConstant[SShort.type](arr, SShort))
     case arr: Array[Int] => Some(mkCollectionConstant[SInt.type](arr, SInt))
     case arr: Array[Long] => Some(mkCollectionConstant[SLong.type](arr, SLong))
+    case arr: Array[BigInteger] => Some(mkCollectionConstant[SBigInt.type](arr, SBigInt))
     case v: Byte => Some(mkConstant[SByte.type](v, SByte))
     case v: Short => Some(mkConstant[SShort.type](v, SShort))
     case v: Int => Some(mkConstant[SInt.type](v, SInt))

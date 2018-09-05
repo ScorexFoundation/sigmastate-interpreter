@@ -6,6 +6,7 @@ import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
 
 import scalan.{Lazy, SigmaLibrary}
+import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
@@ -166,6 +167,8 @@ trait Costing extends SigmaLibrary {
 
   val colBuilder: Rep[ColBuilder] = RColOverArrayBuilder()
   val costedBuilder = RConcreteCostedBuilder()
+  val intPlusMonoid = costedBuilder.monoidBuilder.intPlusMonoid
+  val longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
   import Cost._
 
   def split[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, (T => Int, T => Long))] = {
@@ -329,7 +332,15 @@ trait Costing extends SigmaLibrary {
             case eWA: Elem[wa] =>
               implicit val l = liftableFromElem[wa](eWA).asInstanceOf[Liftable[a,wa]]
               val arrSym = liftConst[Array[a], WArray[wa]](arr)
-              withDefaultSize(colBuilder.fromArray(arrSym), costOf(c))
+              val resVals  = colBuilder.fromArray(arrSym)
+              val resCosts = colBuilder.replicate(arrSym.length, constCost(eWA))
+              val resSizes =
+                if (tpeA.isConstantSize)
+                  colBuilder.replicate(arrSym.length, typeSize(tpeA))
+                else {
+                  resVals.map(fun{ x: Rep[wa] => sizeOf(x) }(Lazy(eWA)))
+                }
+              RCostedCol(resVals, resCosts, resSizes, costOf(c))
           }
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
@@ -639,6 +650,14 @@ trait Costing extends SigmaLibrary {
         }
         RCostedFunc(RCostedPrim((), 0, 0L), f, costOf(node), l.tpe.dataSize(0.asWrappedType))
 
+      case col @ ConcreteCollection(items, elemTpe) =>
+        val (vals, costs, sizes) = items.mapUnzip { x: SValue =>
+          val xC = eval(x)
+          (xC.value, xC.cost, xC.dataSize)
+        }
+        val resV = colBuilder.apply(vals: _*)
+        val resC = colBuilder.apply(costs: _*).sum(intPlusMonoid) + costOf(col)
+        withDefaultSize(resV, resC)
       case _ =>
         error(s"Don't know how to evalNode($node)")
     }

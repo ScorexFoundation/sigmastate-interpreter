@@ -153,13 +153,13 @@ class CompilerItTest extends BaseCtxTests
   }
 
   test("constants") {
-    intConstCase.doReduce
-    bigIntegerConstCase.doReduce
-    addBigIntegerConstsCase.doReduce()
-    arrayConstCase.doReduce()
-    sigmaPropConstCase.doReduce()
-    andSigmaPropConstsCase.doReduce()
-//    bigIntArray_Map_Case.doReduce()
+//    intConstCase.doReduce
+//    bigIntegerConstCase.doReduce
+//    addBigIntegerConstsCase.doReduce()
+//    arrayConstCase.doReduce()
+//    sigmaPropConstCase.doReduce()
+//    andSigmaPropConstsCase.doReduce()
+    bigIntArray_Map_Case.doReduce()
   }
 
 }

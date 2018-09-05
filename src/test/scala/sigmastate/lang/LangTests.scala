@@ -57,7 +57,6 @@ trait LangTests {
     "n1" -> n1,
     "n2" -> n2,
     "big" -> big,
-    "dht1" -> dht1,
     "bigIntArr1" -> bigIntArr1
   )
 
