@@ -357,6 +357,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("{ (x: Int) =>  let y = x - 1; y }") shouldBe
       Lambda(IndexedSeq("x" -> SInt),
         Block(Let("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
+    parse(
+      """{ (x: Int) =>
+        |let y = x - 1
+        |y
+        |}""".stripMargin) shouldBe
+      Lambda(IndexedSeq("x" -> SInt),
+        Block(Let("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
     // todo multiple parameters
     // todo large body (multiple expressions)
   }

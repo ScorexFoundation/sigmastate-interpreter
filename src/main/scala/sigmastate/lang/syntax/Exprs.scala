@@ -246,8 +246,11 @@ trait Exprs extends Core with Types {
       // todo error on multiple argument lists
       case (Some((Seq(args), _)), Seq((Seq(), Seq(b)))) =>
         builder.mkLambda(args.toIndexedSeq, NoType, Some(b))
-      case (Some((Seq(args), _)), Seq((Seq(), bodyVals))) =>
-        builder.mkLambda(args.toIndexedSeq, NoType, Some(mkBlock(bodyVals)))
+      case (Some((Seq(args), _)), bodyItems) =>
+        val block = mkBlock(bodyItems.flatMap {
+          case (Seq(), exprs) => exprs
+        })
+        builder.mkLambda(args.toIndexedSeq, NoType, Some(block))
       case (None, Seq((Seq(), b))) => mkBlock(b)
     }
   }
