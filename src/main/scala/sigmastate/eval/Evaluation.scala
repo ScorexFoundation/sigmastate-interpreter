@@ -1,6 +1,7 @@
 package sigmastate.eval
 
 import java.lang.reflect.Method
+import java.math.BigInteger
 
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import scapi.sigma.DLogProtocol
@@ -14,7 +15,7 @@ import sigmastate.utxo.{Exists1, CostTable, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import SType._
 import org.bouncycastle.math.ec.ECPoint
@@ -32,6 +33,8 @@ trait Evaluation extends Costing {
   import TrivialSigma._
   import ProveDlogEvidence._
   import WBigInteger._
+  import WArray._
+  import WECPoint._
   import Liftables._
   
   private val ContextM = ContextMethods
@@ -40,6 +43,7 @@ trait Evaluation extends Costing {
   private val BoxM = BoxMethods
   private val CBM = ColBuilderMethods
   private val SDBM = SigmaDslBuilderMethods
+  private val AM = WArrayMethods
   private val BIM = WBigIntegerMethods
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
@@ -96,7 +100,8 @@ trait Evaluation extends Costing {
       sigmaDslBuilder.Cols -> sigmaDslBuilderValue.Cols,
       costedBuilder -> costedBuilderValue,
       costedBuilder.monoidBuilder -> monoidBuilderValue,
-      costedBuilder.monoidBuilder.intPlusMonoid -> monoidBuilderValue.intPlusMonoid
+      costedBuilder.monoidBuilder.intPlusMonoid -> monoidBuilderValue.intPlusMonoid,
+      costedBuilder.monoidBuilder.longPlusMonoid -> monoidBuilderValue.longPlusMonoid
     )
     env
   }
@@ -118,6 +123,8 @@ trait Evaluation extends Costing {
       val vs = args.map {
         case s: Sym => dataEnv(s)
         case vec: Seq[AnyRef]@unchecked => getArgValues(vec)
+        case e: WBigIntegerElem[_] => classTag[BigInteger]
+        case e: WECPointElem[_] => classTag[ECPoint]
         case e: Elem[_] => e.classTag
       }
       vs
@@ -166,7 +173,7 @@ trait Evaluation extends Costing {
         te.rhs match {
           case Const(x) => out(x.asInstanceOf[AnyRef])
           case wc: LiftedConst[_] => out(wc.constValue)
-          case _: DslBuilder | _: ColBuilder | _: IntPlusMonoid =>
+          case _: DslBuilder | _: ColBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
             dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te"))
           case SigmaM.propBytes(prop) =>
             val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]
@@ -200,6 +207,9 @@ trait Evaluation extends Costing {
           case SDBM.allZK(_, In(items: special.collection.Col[Value[SBoolean.type]]@unchecked)) =>
             out(AND(items.arr).function(null, null))
 
+          case AM.length(In(arr: Array[_])) => out(arr.length)
+          case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
+            out(b.replicate(n, x)(xSym.elem.classTag))
           case mc @ MethodCall(obj, m, args, _) =>
             val objValue = dataEnv(obj)
             val (objMethod, argValues) = getObjMethodAndArgs(objValue.getClass, mc)
@@ -234,6 +244,8 @@ trait Evaluation extends Costing {
           case Apply(In(_f), In(x: AnyRef), _) =>
             val f = _f.asInstanceOf[AnyRef => Any]
             out(f(x))
+          case First(In(p: Tuple2[_,_])) => out(p._1)
+          case Second(In(p: Tuple2[_,_])) => out(p._2)
           case ThunkDef(y, schedule) =>
             val th = () => {
               schedule.foreach(evaluate(_))

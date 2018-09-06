@@ -108,7 +108,7 @@ class CompilerItTest extends BaseCtxTests
 
   def bigIntArray_Map_Case = {
     import SCollection._
-    val res = Cols.fromArray(bigIntArr1).map(n => n.add(n1))
+    val res = Cols.fromArray(bigIntArr1).map(n => n.add(n1)).arr
     val arrSym = colBuilder.fromArray(liftConst(bigIntArr1))
     Case(env, "bigIntArray_Map",
       "bigIntArr1.map(fun (i: BigInt) = i + n1)", ergoCtx,
@@ -142,7 +142,7 @@ class CompilerItTest extends BaseCtxTests
         BigIntArrayConstant(bigIntArr1),
         mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))
       ),
-      Result(res, 1, 2))
+      Result(res, 208, 4))
   }
 
   def sigmaPropConstCase = {

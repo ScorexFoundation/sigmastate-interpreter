@@ -694,7 +694,8 @@ trait Costing extends SigmaLibrary {
   def buildCostedGraph[T <: SType](envVals: Map[String, SValue], tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = {
     fun { ctx: Rep[Context] =>
       val env = envVals.mapValues(v => evalNode(ctx, Map(), v))
-      evalNode(ctx, env, tree)
+      val res = evalNode(ctx, env, tree)
+      res
     }
   }
 

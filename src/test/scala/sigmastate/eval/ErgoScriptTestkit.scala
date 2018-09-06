@@ -103,8 +103,8 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
 
     def checkExpected[T](x: T, expected: Option[T], messageFmt: String) = {
       if (expected.isDefined)
-        assert(x equals expected.get,
-          String.format(messageFmt, x.asInstanceOf[AnyRef], expected.get.asInstanceOf[AnyRef]))
+        x shouldBe expected.get
+//          String.format(messageFmt, x.asInstanceOf[AnyRef], expected.get.asInstanceOf[AnyRef]))
     }
 
     def pairify(xs: Seq[Sym]): Sym = xs match {
