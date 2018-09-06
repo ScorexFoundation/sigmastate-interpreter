@@ -45,7 +45,7 @@ class Rule110Specification extends SigmaTestingCommons {
       """{
         |  let indices: Array[Int] = Array(0, 1, 2, 3, 4, 5)
         |  let inLayer: Array[Byte] = SELF.R4[Array[Byte]].get
-        |  fun procCell(i: Int): Byte = {
+        |  let procCell = {(i: Int) =>
         |    let l = inLayer((if (i == 0) 5 else (i - 1)))
         |    let c = inLayer(i)
         |    let r = inLayer((i + 1) % 6)

@@ -158,8 +158,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       val compiledProp = compile(env,
         """{
           |  let notTimePassed = HEIGHT <= timeout
-          |  let outBytes = OUTPUTS.map(fun (box: Box) = box.bytesWithNoRef)
-          |  let outSumBytes = outBytes.fold(Array[Byte](), fun (arr1: Array[Byte], arr2: Array[Byte]) = arr1 ++ arr2)
+          |  let outBytes = OUTPUTS.map({(box: Box) => box.bytesWithNoRef})
+          |  let outSumBytes = outBytes.fold(Array[Byte](), {(arr1: Array[Byte], arr2: Array[Byte]) => arr1 ++ arr2})
           |  let timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asBoolValue
@@ -206,8 +206,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val env = Map("pubkey" -> pubkey)
     val prop = compile(env,
       """{
-        |  let outValues = OUTPUTS.map(fun (box: Box) = box.value)
-        |  pubkey && outValues.fold(0L, fun (x: Long, y: Long) = x + y) > 20
+        |  let outValues = OUTPUTS.map({ (box: Box) => box.value })
+        |  pubkey && outValues.fold(0L, { (x: Long, y: Long) => x + y }) > 20
          }""".stripMargin).asBoolValue
 
     val propExp = AND(
@@ -485,7 +485,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         |
-        | let isFriend = fun (inputBox: Box) = {inputBox.id == friend.id}
+        | let isFriend = { (inputBox: Box) => inputBox.id == friend.id }
         | INPUTS.exists (isFriend)
          }""".stripMargin).asBoolValue
 
@@ -493,7 +493,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     prop shouldBe propExpected
 
     // same script written differently
-    val altProp = compile(env, "INPUTS.exists (fun (inputBox: Box) = {inputBox.id == friend.id})")
+    val altProp = compile(env, "INPUTS.exists ({ (inputBox: Box) => inputBox.id == friend.id })")
     altProp shouldBe prop
 
     val s = ErgoBox(10, prop, Seq(), Map())

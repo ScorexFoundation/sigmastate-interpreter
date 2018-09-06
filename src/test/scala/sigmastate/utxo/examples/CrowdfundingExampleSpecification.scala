@@ -45,7 +45,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
         | let c2 = allOf(Array(
         |   HEIGHT < timeout,
         |   projectPubKey,
-        |   OUTPUTS.exists(fun (out: Box) = {
+        |   OUTPUTS.exists({ (out: Box) =>
         |     out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
         |   })
         | ))
@@ -82,7 +82,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       """
         |       {
         |                let fundraisingFailure = HEIGHT >= deadline && backerPubKey
-        |                let enoughRaised = fun(outBox: Box) = {
+        |                let enoughRaised = {(outBox: Box) =>
         |                        outBox.value >= minToRaise &&
         |                        outBox.propositionBytes == projectPubKey.propBytes
         |                }

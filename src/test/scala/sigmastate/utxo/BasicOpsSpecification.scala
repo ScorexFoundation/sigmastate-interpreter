@@ -147,7 +147,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
     test(env, ext,
-      "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall(fun (p: SigmaProp) = p.isValid) }",
+      "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isValid }) }",
       ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), TaggedSigmaProp(propVar1)),
         21, SigmaPropIsValid(TaggedSigmaProp(21))),
       true
@@ -237,7 +237,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test(env1, ext1,
       """{
         |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
-        |  data.exists(fun (p: (Array[Byte], Long)) = p._2 == 10L)
+        |  data.exists({ (p: (Array[Byte], Long)) => p._2 == 10L })
         |}""".stripMargin,
       {
         val data = TaggedVariable(dataVar, dataType)
@@ -247,7 +247,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test(env1, ext1,
       """{
         |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
-        |  data.forall(fun (p: (Array[Byte], Long)) = p._1.size > 0)
+        |  data.forall({ (p: (Array[Byte], Long)) => p._1.size > 0 })
         |}""".stripMargin,
       {
         val data = TaggedVariable(dataVar, dataType)
@@ -258,7 +258,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test(env1, ext1,
       """{
         |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
-        |  data.map(fun (p: (Array[Byte], Long)) = (p._2, p._1)).size == 1
+        |  data.map({ (p: (Array[Byte], Long)) => (p._2, p._1)}).size == 1
         |}""".stripMargin,
       {
         val data = TaggedVariable(dataVar, dataType)

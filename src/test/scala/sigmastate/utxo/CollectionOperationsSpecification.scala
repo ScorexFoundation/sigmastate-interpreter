@@ -56,7 +56,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compile(Map(), "OUTPUTS.exists(fun (box: Box) = box.value + 5 > 10)").asBoolValue
+    val prop = compile(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue
 
     val expProp = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), LongConstant(5)), LongConstant(10)))
     prop shouldBe expProp
@@ -84,7 +84,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compile(Map(), "OUTPUTS.forall(fun (box: Box) = box.value == 10)").asBoolValue
+    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue
 
     val propTree = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), LongConstant(10)))
     prop shouldBe propTree
@@ -113,7 +113,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compile(Map(), "OUTPUTS.forall(fun (box: Box) = box.value == 10)").asBoolValue
+    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue
     val propTree = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), LongConstant(10)))
     prop shouldBe propTree
 
@@ -140,7 +140,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = compile(Map(),
-      """OUTPUTS.exists(fun (box: Box) = {
+      """OUTPUTS.exists({ (box: Box) =>
         |  box.R4[Long].get == SELF.R4[Long].get + 1
          })""".stripMargin).asBoolValue
 
@@ -174,7 +174,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = compile(Map(),
-      """OUTPUTS.exists(fun (box: Box) = {
+      """OUTPUTS.exists({ (box: Box) =>
         |  box.R4[Long].getOrElse(0L) == SELF.R4[Long].get + 1
          })""".stripMargin).asBoolValue
 
@@ -238,7 +238,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   property("slice") {
     val outputBoxValues = IndexedSeq(10L, 10L)
-    val code = "OUTPUTS.slice(1, OUTPUTS.size).forall(fun (box: Box) = box.value == 10)"
+    val code = "OUTPUTS.slice(1, OUTPUTS.size).forall({ (box: Box) => box.value == 10 })"
     val expectedPropTree = ForAll(
       Slice(Outputs, IntConstant(1), SizeOf(Outputs)),
       21,
@@ -285,7 +285,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """OUTPUTS
-        |.map(fun (box: Box): Long = box.value).getOrElse(3, 0L)== 0""".stripMargin
+        |.map({ (box: Box): Long => box.value }).getOrElse(3, 0L)== 0""".stripMargin
     val expectedPropTree = EQ(
       ByIndex(
         MapCollection(Outputs,21,ExtractAmount(TaggedBox(21))),
@@ -311,8 +311,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """OUTPUTS
-        |.map(fun (box: Box) = box.value)
-        |.fold(true, fun (acc: Boolean, val: Long) = acc && (val < 0)) == false""".stripMargin
+        |.map({ (box: Box) => box.value })
+        |.fold(true, { (acc: Boolean, val: Long) => acc && (val < 0) }) == false""".stripMargin
     val expectedPropTree = EQ(
       Fold(
         MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21))),
@@ -329,7 +329,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val code =
       """{
         |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
-        |  fun elementRule(index: Int) = {
+        |  let elementRule = {(index: Int) =>
         |    let boundaryIndex = if (index == 0) 5 else (index - 1)
         |    boundaryIndex >= 0 && boundaryIndex <= 5
         |  }
@@ -352,7 +352,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       """{
         |  let string = Array(1, 1, 0, 0, 0, 1)
         |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
-        |  fun elementRule(index: Int) = {
+        |  let elementRule = {(index: Int) =>
         |    let boundedIndex = if (index <= 0) 5 else (index - 1)
         |    let element = string(boundedIndex)
         |    element == 0 || element == 1
