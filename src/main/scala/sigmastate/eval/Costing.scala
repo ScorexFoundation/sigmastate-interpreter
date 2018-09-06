@@ -56,25 +56,25 @@ trait Costing extends SigmaLibrary {
     case _ => error(s"Cannot find ArithOpName for opcode $opCode")
   }
 
-  case class CostOf(opName: String, opCode: Byte, opType: SFunc) extends BaseDef[Int]
+  case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int]
 
-  def costOf(opName: String, opCode: Byte, opType: SFunc): Rep[Int] = CostOf(opName, opCode, opType)
+  def costOf(opName: String, opType: SFunc): Rep[Int] = CostOf(opName, opType)
 
   def constCost[T: Elem]: Rep[Int] = {
     val tpe = elemToSType(element[T])
-    costOf(s"Const", OpCodes.ConstantCode, Constant[SType](0.asWrappedType, tpe).opType)
+    costOf(s"Const", Constant[SType](0.asWrappedType, tpe).opType)
   }
 
   def costOf(v: SValue): Rep[Int] = {
     val opTy = v.opType
     v match {
       case ArithOp(_, _, opCode) =>
-        costOf(opcodeToArithOpName(opCode), opCode, opTy)
+        costOf(opcodeToArithOpName(opCode), opTy)
       case c @ Constant(_, tpe) =>
-        costOf(s"Const", OpCodes.ConstantCode, opTy)
+        costOf(s"Const", opTy)
       case v =>
         val className = v.getClass.getSimpleName
-        costOf(className, v.opCode, opTy)
+        costOf(className, opTy)
     }
   }
 
@@ -117,7 +117,7 @@ trait Costing extends SigmaLibrary {
   }
 
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
-    case CostOf(name, code, opType) => s"CostOf($name:$opType)"
+    case CostOf(name, opType) => s"CostOf($name:$opType)"
     case WECPointConst(p) =>
       val rawX = p.getRawXCoord.toString.substring(0, 6)
       val rawY = p.getRawYCoord.toString.substring(0, 6)
@@ -592,7 +592,7 @@ trait Costing extends SigmaLibrary {
             val x = evalNode(ctx, env, op.left).asRep[Costed[WBigInteger]]
             val y = evalNode(ctx, env, op.right).asRep[Costed[WBigInteger]]
             val addSize = x.dataSize.max(y.dataSize) + 1L // according to algorithm in BigInteger.add()
-            val cost = x.cost + y.cost + costOf(op) + costOf("+_per_item", op.opCode, op.opType) * addSize.toInt
+            val cost = x.cost + y.cost + costOf(op) + costOf("+_per_item", op.opType) * addSize.toInt
             RCostedPrim(x.value.add(y.value), cost, addSize)
 //          case MinusCode => NumericMinus(elemToNumeric(eT))(eT)
 //          case MultiplyCode => NumericTimes(elemToNumeric(eT))(eT)

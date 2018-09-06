@@ -7,7 +7,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.{ProveDiffieHellmanTuple, DLogProtocol}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, BoolValue, Value, SigmaPropValue, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
+import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, BoolValue, Value, SigmaPropValue, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
@@ -65,15 +65,16 @@ trait SigmaBuilder {
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
 
-  def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                                                id: Byte,
-                                                mapper: SValue): Value[SCollection[OV]]
   def mkAppend[IV <: SType](input: Value[SCollection[IV]],
                             col2: Value[SCollection[IV]]): Value[SCollection[IV]]
 
   def mkSlice[IV <: SType](input: Value[SCollection[IV]],
                            from: Value[SInt.type],
                            until: Value[SInt.type]): Value[SCollection[IV]]
+
+  def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
+      id: Byte,
+      mapper: SValue): Value[SCollection[OV]]
 
   def mkWhere[IV <: SType](input: Value[SCollection[IV]],
                            id: Byte,
@@ -84,8 +85,13 @@ trait SigmaBuilder {
                             condition: Value[SBoolean.type]): Value[SBoolean.type]
 
   def mkForAll[IV <: SType](input: Value[SCollection[IV]],
-                               id: Byte,
-                               condition: Value[SBoolean.type]): Value[SBoolean.type]
+                            id: Byte,
+                            condition: Value[SBoolean.type]): Value[SBoolean.type]
+
+  def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc]
+
+  def mkMapCollection1[IV <: SType, OV <: SType](
+      input: Value[SCollection[IV]], mapper: Value[SFunc]): Value[SCollection[OV]]
 
   def mkExists1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
 
@@ -315,6 +321,13 @@ class StdSigmaBuilder extends SigmaBuilder {
                                      id: Byte,
                                      condition: Value[SBoolean.type]): Value[SBoolean.type] =
     ForAll(input, id, condition)
+
+  def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc] =
+    FuncValue(args, body)
+
+  def mkMapCollection1[IV <: SType, OV <: SType](
+        input: Value[SCollection[IV]], mapper: Value[SFunc]) =
+    MapCollection1(input, mapper)
 
   override def mkExists1[IV <: SType](input: Value[SCollection[IV]],
                                      condition: Value[SFunc]): BoolValue =

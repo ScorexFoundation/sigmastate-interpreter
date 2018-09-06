@@ -245,7 +245,7 @@ trait Evaluation extends Costing {
           case ProveDlogEvidenceCtor(In(g: ECPoint)) =>
             val res = DLogProtocol.ProveDlog(GroupElementConstant(g.asInstanceOf[EcPointType]))
             out(res)
-          case CostOf(opName, opCode, tpe) =>
+          case CostOf(opName, tpe) =>
             val operId = OperationId(opName, tpe)
             val cost = CostTable.DefaultCosts(operId)
             out(cost)
@@ -344,7 +344,7 @@ trait Evaluation extends Costing {
         val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
         val env1 = env + (x -> (varId, elemToSType(x.elem)))
         val block = processAstGraph(mainG, env1, lam, varId + 1)
-        val rhs = FuncValue(varId, elemToSType(x.elem), block)
+        val rhs = mkFuncValue(Vector((varId, elemToSType(x.elem))), block)
         rhs
       case Def(Apply(fSym, xSym, _)) =>
         val Seq(f, x) = Seq(fSym, xSym).map(recurse)
@@ -386,12 +386,18 @@ trait Evaluation extends Costing {
         mkNode(x, y)
       case ColM.length(col) =>
         utxo.SizeOf(recurse(col).asCollection[SType])
+
       case ColM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
         mkExists1(col.asCollection[SType], p.asFunc)
+
       case ColM.forall(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
         mkForAll1(col.asCollection[SType], p.asFunc)
+
+      case ColM.map(colSym, fSym) =>
+        val Seq(col, f) = Seq(colSym, fSym).map(recurse)
+        mkMapCollection1(col.asCollection[SType], f.asFunc)
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))

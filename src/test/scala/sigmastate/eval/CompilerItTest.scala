@@ -7,7 +7,7 @@ import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import scapi.sigma.DLogProtocol
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean}
+import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean, ValUse}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
@@ -88,8 +88,8 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "addBigIntegerConsts", "big + n1", ergoCtx,
       calc = {_ => bigSym.add(n1Sym) },
       cost = {_ => constCost[WBigInteger] + constCost[WBigInteger] +
-          costOf("+", PlusCode, SFunc(Vector(SBigInt, SBigInt), SBigInt)) +
-          costOf("+_per_item", PlusCode, SFunc(Vector(SBigInt, SBigInt), SBigInt)) * size.toInt },
+          costOf("+", SFunc(Vector(SBigInt, SBigInt), SBigInt)) +
+          costOf("+_per_item", SFunc(Vector(SBigInt, SBigInt), SBigInt)) * size.toInt },
       size = {_ => size },
       tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)),
       Result(res, 119, 17))
@@ -120,9 +120,28 @@ class CompilerItTest extends BaseCtxTests
         val arrC = RCostedCol(vals, costs, sizes, constCost[Col[WBigInteger]])
         vals.map(fun(n => n.add(liftConst(n1))))
       },
-      cost = {_ => 1 },
-      size = {_ => 1L },
-      tree = builder.mkTaggedVariable(3.toByte, SBigIntArray),
+      cost = {_ =>
+        val arr = liftConst(bigIntArr1)
+        val opType = SFunc(Vector(SBigInt,SBigInt), SBigInt)
+        val f = fun { in: Rep[(Int, Long)] =>
+          val Pair(c, s) = in
+          val c1 = c + constCost[WBigInteger] + costOf("+", opType)
+          val c2 = costOf("+_per_item", opType) * ((s max sizeOf(liftConst(n1))) + 1L).toInt
+          c1 + c2
+        }
+        val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
+        val costs = colBuilder.replicate(arr.length, constCost[WBigInteger]).zip(arrSizes).map(f)
+        costs.sum(intPlusMonoid)
+      },
+      size = {_ =>
+        val f = fun {s: Rep[Long] => (s max sizeOf(liftConst(n1))) + 1L}
+        val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
+        arrSizes.map(f).sum(longPlusMonoid)
+      },
+      tree = mkMapCollection1(
+        BigIntArrayConstant(bigIntArr1),
+        mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))
+      ),
       Result(res, 1, 2))
   }
 
@@ -144,8 +163,8 @@ class CompilerItTest extends BaseCtxTests
       calc = {_ => resSym },
       cost = {_ =>
         val c1 = constCost[WECPoint] + constCost[Sigma] +
-                  costOf("SigmaPropIsValid", SigmaPropIsValidCode, SFunc(SSigmaProp, SBoolean))
-        c1 + c1 + costOf("BinAnd", BinAndCode, SFunc(Vector(SBoolean, SBoolean), SBoolean))
+                  costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
+        c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
       },
       size = {_ => sizeOf(resSym) },
       tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))).isValid,

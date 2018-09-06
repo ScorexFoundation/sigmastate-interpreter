@@ -390,6 +390,14 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }
 
+case class MapCollection1[IV <: SType, OV <: SType](
+    input: Value[SCollection[IV]],
+    mapper: Value[SFunc])
+    extends NotReadyValue[SCollection[OV]] {
+  override val opCode: OpCode = OpCodes.MapCollectionCode
+  val tpe = SCollection[OV](mapper.tpe.tRange.asInstanceOf[OV])
+  def cost[C <: Context[C]](context: C) = ???
+}
 
 case class Exists1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc])
     extends NotReadyValue[SBoolean.type] {
