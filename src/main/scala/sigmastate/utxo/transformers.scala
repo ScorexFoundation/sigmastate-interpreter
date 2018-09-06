@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeInterpreter, P2PKAddress, Pay2SAddress}
+import org.ergoplatform._
 import sigmastate.SCollection.{SBooleanArray, SByteArray}
 import sigmastate.Values._
 import sigmastate.lang.Terms._
@@ -297,15 +297,14 @@ case class ErgoAddressToSigmaProp(input: Value[SString.type])
 
   override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SSigmaProp.type] =
     intr match {
-      case ergoInterpreter: ErgoLikeInterpreter =>
-        ErgoAddressEncoder(ergoInterpreter.networkPrefix)
+      case _: ErgoLikeInterpreter if ctx.isInstanceOf[ErgoLikeContext] =>
+        ErgoAddressEncoder(ctx.asInstanceOf[ErgoLikeContext].metadata.networkPrefix)
           .fromString(bal.value)
           .get match {
           case a: P2PKAddress => a.pubkey
           case a@_ => Interpreter.error(s"unsupported address $a")
         }
-      case i@_ => Interpreter.error(s"unsupported interpreter $i")
-
+      case i => Interpreter.error(s"unsupported interpreter $i")
     }
 
   override def cost[C <: Context[C]](context: C): Long =
