@@ -77,7 +77,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     val env = this.env ++ Map(
       "minToRaise" -> minToRaise
     )
-    bind(env, "OUTPUTS.exists(fun (out: Box) = { out.amount >= minToRaise })") shouldBe
+    bind(env, "OUTPUTS.exists({ (out: Box) => out.amount >= minToRaise })") shouldBe
       Apply(Select(Outputs, "exists"),
         IndexedSeq(
           Lambda(IndexedSeq("out" -> SBox), NoType,
@@ -131,34 +131,32 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("lambdas") {
-    bind(env, "fun (a: Int) = a - 1") shouldBe
+    bind(env, "{ (a: Int) => a - 1 }") shouldBe
       Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 1))
-    bind(env, "fun (a: Int) = a + 1") shouldBe
+    bind(env, "{ (a: Int) => a + 1 }") shouldBe
       Lambda(IndexedSeq("a" -> SInt), NoType, plus(IntIdent("a"), 1))
-    bind(env, "fun (a: Int, box: Box): Long = a - box.value") shouldBe
-      Lambda(IndexedSeq("a" -> SInt, "box" -> SBox), SLong,
+    bind(env, "{ (a: Int, box: Box): Long => a - box.value }") shouldBe
+      Lambda(IndexedSeq("a" -> SInt, "box" -> SBox), NoType,
         mkMinus(IntIdent("a"), Select(Ident("box"), "value").asValue[SLong.type]))
-    bind(env, "fun (a) = a - 1") shouldBe
+    bind(env, "{ (a) => a - 1 }") shouldBe
       Lambda(IndexedSeq("a" -> NoType), NoType, mkMinus(IntIdent("a"), IntConstant(1)))
-    bind(env, "fun (a) = a - x") shouldBe
+    bind(env, "{ (a) => a - x }") shouldBe
       Lambda(IndexedSeq("a" -> NoType), NoType, mkMinus(IntIdent("a"), 10))
-    bind(env, "fun (a: Int) = { let Y = a - 1; Y - x }") shouldBe
+    bind(env, "{ (a: Int) => { let Y = a - 1; Y - x } }") shouldBe
       Lambda(IndexedSeq("a" -> SInt), NoType,
         Block(Let("Y", NoType, mkMinus(IntIdent("a"), 1)), mkMinus(IntIdent("Y"), 10)))
   }
 
   property("function definitions") {
-    bind(env, "{let f = fun (a: Int) = a - 1; f}") shouldBe
+    bind(env, "{let f = {(a: Int) => a - 1}; f}") shouldBe
       Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 1))), Ident("f"))
-    bind(env, "{fun f(a: Int) = a - x; f}") shouldBe
-      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 10))), Ident("f"))
   }
 
   property("predefined primitives") {
-    bind(env, "fun (box: Box): Long = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SLong, Select(Ident("box"), "value"))
-    bind(env, "fun (box: Box): Array[Byte] = box.propositionBytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), SBox.PropositionBytes))
-    bind(env, "fun (box: Box): Array[Byte] = box.bytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "bytes"))
-    bind(env, "fun (box: Box): Array[Byte] = box.id") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "id"))
+    bind(env, "{ (box: Box) => box.value }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "value"))
+    bind(env, "{ (box: Box) => box.propositionBytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), SBox.PropositionBytes))
+    bind(env, "{ (box: Box) => box.bytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "bytes"))
+    bind(env, "{ (box: Box) => box.id }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "id"))
   }
 
   property("type parameters") {

@@ -315,6 +315,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("lambdas") {
+    parse("{ (x) => x - 1 }") shouldBe
+      Lambda(IndexedSeq("x" -> NoType), mkMinus(Ident("x").asValue[SInt.type], IntConstant(1)))
     parse("{ (x: Int) => x - 1 }") shouldBe
       Lambda(IndexedSeq("x" -> SInt), mkMinus(Ident("x").asValue[SInt.type], IntConstant(1)))
     parse("{ (x: Int) => x + 1 }") shouldBe
@@ -369,6 +371,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("function definitions") {
+    parse("{let f = { (x: Int) => x - 1 }; f}") shouldBe
+      Block(Let("f", Lambda(IndexedSeq("x" -> SInt), mkMinus(IntIdent("x"), 1))), Ident("f"))
     parse(
       """{let f = { (x: Int) => x - 1 }
        |f}
