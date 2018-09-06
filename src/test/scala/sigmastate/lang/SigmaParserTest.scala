@@ -364,8 +364,15 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         |}""".stripMargin) shouldBe
       Lambda(IndexedSeq("x" -> SInt),
         Block(Let("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
-    // todo multiple parameters
-    // todo large body (multiple expressions)
+    parse("{ (x: Int, y: Int) =>  x - y }") shouldBe
+      Lambda(IndexedSeq("x" -> SInt, "y" -> SInt), mkMinus(Ident("x").asValue[SInt.type], Ident("y").asValue[SInt.type]))
+    parse("{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isValid }") shouldBe
+      Lambda(IndexedSeq("p" -> STuple(SInt, SSigmaProp), "box" -> SBox), NoType,
+        and(
+          GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]),
+          Select(Select(Ident("p"), "_2"), "isValid").asValue[SBoolean.type]
+        )
+      )
   }
 
   property("predefined Exists with lambda argument") {
