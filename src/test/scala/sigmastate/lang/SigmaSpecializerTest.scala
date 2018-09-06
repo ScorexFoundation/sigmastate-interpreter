@@ -94,21 +94,21 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("generic methods of arrays") {
-    spec("OUTPUTS.map(fun (out: Box) = { out.value >= 10 })") shouldBe
+    spec("OUTPUTS.map({ (out: Box) => out.value >= 10 })") shouldBe
       MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
-    spec("OUTPUTS.exists(fun (out: Box) = { out.value >= 10 })") shouldBe
+    spec("OUTPUTS.exists({ (out: Box) => out.value >= 10 })") shouldBe
         Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
-    spec("OUTPUTS.forall(fun (out: Box) = { out.value >= 10 })") shouldBe
+    spec("OUTPUTS.forall({ (out: Box) => out.value >= 10 })") shouldBe
         ForAll(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
-    spec("{ let arr = Array(1,2); arr.fold(0, fun (n1: Int, n2: Int) = n1 + n2)}") shouldBe
+    spec("{ let arr = Array(1,2); arr.fold(0, { (n1: Int, n2: Int) => n1 + n2 })}") shouldBe
         Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
              22, IntConstant(0), 21, Plus(TaggedInt(21), TaggedInt(22)))
-    spec("{ let arr = Array(1,2); arr.fold(true, fun (n1: Boolean, n2: Int) = n1 && (n2 > 1))}") shouldBe
+    spec("{ let arr = Array(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
       Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
         22, TrueLeaf, 21, AND(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
     spec("OUTPUTS.slice(0, 10)") shouldBe
         Slice(Outputs, IntConstant(0), IntConstant(10))
-    spec("OUTPUTS.where(fun (out: Box) = { out.value >= 10 })") shouldBe
+    spec("OUTPUTS.where({ (out: Box) => out.value >= 10 })") shouldBe
         Where(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
   }
 
