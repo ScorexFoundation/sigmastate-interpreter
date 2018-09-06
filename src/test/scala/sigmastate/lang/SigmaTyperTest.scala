@@ -94,7 +94,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "max(1L, 2)") shouldBe SLong
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
-    typecheck(env, """PK("111")""") shouldBe SBoolean
+    typecheck(env, """PK("111")""") shouldBe SSigmaProp
   }
 
   property("let constructs") {
