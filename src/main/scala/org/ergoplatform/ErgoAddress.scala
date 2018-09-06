@@ -88,7 +88,7 @@ class P2PKAddress(val pubkey: ProveDlog,
     case _ => false
   }
 
-  override def hashCode(): Int = Ints.fromByteArray(pubkeyBytes.takeRight(4))
+  override def hashCode(): Int = Ints.fromByteArray(pubkeyBytes)
 
   override def toString: String = encoder.toString(this)
 }
@@ -121,7 +121,7 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
     case _ => false
   }
 
-  override def hashCode(): Int = Ints.fromByteArray(scriptHash.takeRight(4))
+  override def hashCode(): Int = Ints.fromByteArray(scriptHash)
 
   override def toString: String = encoder.toString(this)
 }
@@ -150,7 +150,7 @@ class Pay2SAddress(override val script: Value[SBoolean.type],
     case _ => false
   }
 
-  override def hashCode(): Int = Ints.fromByteArray(scriptBytes.takeRight(4))
+  override def hashCode(): Int = Ints.fromByteArray(scriptBytes)
 
   override def toString: String = encoder.toString(this)
 }
