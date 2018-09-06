@@ -251,7 +251,10 @@ trait Exprs extends Core with Types {
           case (Seq(), exprs) => exprs
         })
         builder.mkLambda(args.toIndexedSeq, NoType, Some(block))
-      case (None, Seq((Seq(), b))) => mkBlock(b)
+      case (None, bodyItems) =>
+        mkBlock(bodyItems.flatMap {
+          case (Seq(), exprs) => exprs
+        })
     }
   }
   val Block = BaseBlock("}").log()

@@ -274,28 +274,28 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("generic methods of arrays") {
-    parse("OUTPUTS.map(fun (out: Box) = out.value)") shouldBe
+    parse("OUTPUTS.map({ (out: Box) => out.value })") shouldBe
       Apply(Select(Ident("OUTPUTS"), "map"),
             Vector(Lambda(Vector(("out",SBox)), Select(Ident("out"),"value"))))
-    parse("OUTPUTS.exists(fun (out: Box) = out.value > 0)") shouldBe
+    parse("OUTPUTS.exists({ (out: Box) => out.value > 0 })") shouldBe
       Apply(Select(Ident("OUTPUTS"), "exists"),
             Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
-    parse("OUTPUTS.forall(fun (out: Box) = out.value > 0)") shouldBe
+    parse("OUTPUTS.forall({ (out: Box) => out.value > 0 })") shouldBe
       Apply(Select(Ident("OUTPUTS"), "forall"),
             Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
-    parse("Array(1,2).fold(0, fun (n1: Int, n2: Int) = n1 - n2)") shouldBe
+    parse("Array(1,2).fold(0, { (n1: Int, n2: Int) => n1 - n2 })") shouldBe
       Apply(
         Select(Apply(Ident("Array"), Vector(IntConstant(1), IntConstant(2))), "fold"),
         Vector(IntConstant(0), Lambda(Vector(("n1",SInt), ("n2",SInt)), Minus(IntIdent("n1"), IntIdent("n2"))))
       )
-    parse("Array(1,2).fold(0, fun (n1: Int, n2: Int) = n1 + n2)") shouldBe
+    parse("Array(1,2).fold(0, { (n1: Int, n2: Int) => n1 + n2 })") shouldBe
       Apply(
         Select(Apply(Ident("Array"), Vector(IntConstant(1), IntConstant(2))), "fold"),
         Vector(IntConstant(0), Lambda(Vector(("n1",SInt), ("n2",SInt)), plus(IntIdent("n1"), IntIdent("n2"))))
       )
     parse("OUTPUTS.slice(0, 10)") shouldBe
         Apply(Select(Ident("OUTPUTS"), "slice"), Vector(IntConstant(0), IntConstant(10)))
-    parse("OUTPUTS.where(fun (out: Box) = out.value > 0)") shouldBe
+    parse("OUTPUTS.where({ (out: Box) => out.value > 0 })") shouldBe
         Apply(Select(Ident("OUTPUTS"), "where"),
           Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
   }
@@ -315,48 +315,42 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("lambdas") {
-    parse("fun (x: Int) = x - 1") shouldBe
+    parse("{ (x: Int) => x - 1 }") shouldBe
       Lambda(IndexedSeq("x" -> SInt), mkMinus(Ident("x").asValue[SInt.type], IntConstant(1)))
-    parse("fun (x: Int) = x + 1") shouldBe
+    parse("{ (x: Int) => x + 1 }") shouldBe
       Lambda(IndexedSeq("x" -> SInt), plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-    parse("fun (x: Int): Int = x - 1") shouldBe
-      Lambda(IndexedSeq("x" -> SInt), SInt, mkMinus(Ident("x").asValue[SInt.type], IntConstant(1)))
-    parse("fun (x: Int): Int = x + 1") shouldBe
-      Lambda(IndexedSeq("x" -> SInt), SInt, plus(Ident("x").asValue[SInt.type], IntConstant(1)))
-    parse("fun (x: Int, box: Box): Long = x - box.value") shouldBe
-        Lambda(IndexedSeq("x" -> SInt, "box" -> SBox), SLong,
+    parse("{ (x: Int) => x - 1 }") shouldBe
+      Lambda(IndexedSeq("x" -> SInt), NoType, mkMinus(Ident("x").asValue[SInt.type], IntConstant(1)))
+    parse("{ (x: Int) => x + 1 }") shouldBe
+      Lambda(IndexedSeq("x" -> SInt), NoType, plus(Ident("x").asValue[SInt.type], IntConstant(1)))
+    parse("{ (x: Int, box: Box) => x - box.value }") shouldBe
+        Lambda(IndexedSeq("x" -> SInt, "box" -> SBox), NoType,
                Minus(Ident("x").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]))
-    parse("fun (p: (Int, GroupElement), box: Box): Boolean = p._1 > box.value && p._2.isIdentity") shouldBe
-        Lambda(IndexedSeq("p" -> STuple(SInt, SGroupElement), "box" -> SBox), SBoolean,
+    parse("{ (p: (Int, GroupElement), box: Box) => p._1 > box.value && p._2.isIdentity }") shouldBe
+        Lambda(IndexedSeq("p" -> STuple(SInt, SGroupElement), "box" -> SBox), NoType,
           and(
             GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]),
             Select(Select(Ident("p"), "_2"), "isIdentity").asValue[SBoolean.type]
             )
         )
-    parse("fun (p: (Int, SigmaProp), box: Box): Boolean = p._1 > box.value && p._2.isValid") shouldBe
-        Lambda(IndexedSeq("p" -> STuple(SInt, SSigmaProp), "box" -> SBox), SBoolean,
+    parse("{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isValid }") shouldBe
+        Lambda(IndexedSeq("p" -> STuple(SInt, SSigmaProp), "box" -> SBox), NoType,
           and(
             GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]),
             Select(Select(Ident("p"), "_2"), "isValid").asValue[SBoolean.type]
             )
         )
 
-    parse("fun (x) = x - 1") shouldBe
+    parse("{ (x) => x - 1 }") shouldBe
         Lambda(IndexedSeq("x" -> NoType), mkMinus(Ident("x").asValue[SInt.type], IntConstant(1)))
-    parse("fun (x: Int) = { x - 1 }") shouldBe
+    parse("{ (x: Int) => { x - 1 } }") shouldBe
         Lambda(IndexedSeq("x" -> SInt), Block(Seq(), mkMinus(Ident("x").asValue[SInt.type], IntConstant(1))))
-    parse("fun (x: Int) = { let y = x - 1; y }") shouldBe
-        Lambda(IndexedSeq("x" -> SInt),
-          Block(Let("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
-  }
-
-  property("new lambda syntax") {
-    parse("{ (x: Int) =>  x - 1 }") shouldBe
-      Lambda(IndexedSeq("x" -> SInt), mkMinus(Ident("x").asValue[SInt.type], IntConstant(1)))
-    // todo single params without parenthesis
     parse("{ (x: Int) =>  let y = x - 1; y }") shouldBe
       Lambda(IndexedSeq("x" -> SInt),
         Block(Let("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
+    parse("{ (x: Int) => { let y = x - 1; y } }") shouldBe
+        Lambda(IndexedSeq("x" -> SInt),
+          Block(Let("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
     parse(
       """{ (x: Int) =>
         |let y = x - 1
@@ -364,34 +358,19 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         |}""".stripMargin) shouldBe
       Lambda(IndexedSeq("x" -> SInt),
         Block(Let("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
-    parse("{ (x: Int, y: Int) =>  x - y }") shouldBe
-      Lambda(IndexedSeq("x" -> SInt, "y" -> SInt), mkMinus(Ident("x").asValue[SInt.type], Ident("y").asValue[SInt.type]))
-    parse("{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isValid }") shouldBe
-      Lambda(IndexedSeq("p" -> STuple(SInt, SSigmaProp), "box" -> SBox), NoType,
-        and(
-          GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]),
-          Select(Select(Ident("p"), "_2"), "isValid").asValue[SBoolean.type]
-        )
-      )
   }
 
   property("predefined Exists with lambda argument") {
-    parse("OUTPUTS.exists(fun (out: Box) = { out.amount >= minToRaise })") shouldBe
+    parse("OUTPUTS.exists({ (out: Box) => out.amount >= minToRaise })") shouldBe
       Apply(Select(Ident("OUTPUTS"), "exists"),
         IndexedSeq(
           Lambda(IndexedSeq("out" -> SBox),
-            Block(IndexedSeq(),
-              GE(Select(Ident("out"), "amount").asValue[SLong.type], IntIdent("minToRaise"))))))
+            GE(Select(Ident("out"), "amount").asValue[SLong.type], IntIdent("minToRaise")))))
   }
 
   property("function definitions") {
     parse(
-      """{let f = fun (x: Int) = x - 1
-       |f}
-      """.stripMargin) shouldBe
-        Block(Let("f", Lambda(IndexedSeq("x" -> SInt), mkMinus(IntIdent("x"), 1))), Ident("f"))
-    parse(
-      """{fun f(x: Int) = x - 1
+      """{let f = { (x: Int) => x - 1 }
        |f}
       """.stripMargin) shouldBe
         Block(Let("f", Lambda(IndexedSeq("x" -> SInt), mkMinus(IntIdent("x"), 1))), Ident("f"))
@@ -407,10 +386,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("Box properties") {
-    parse("fun (box: Box): Long = box.value") shouldBe Lambda(IndexedSeq("box" -> SBox), SLong, Select(Ident("box"), "value"))
-    parse("fun (box: Box): Array[Byte] = box.propositionBytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), SBox.PropositionBytes))
-    parse("fun (box: Box): Array[Byte] = box.bytes") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "bytes"))
-    parse("fun (box: Box): Array[Byte] = box.id") shouldBe Lambda(IndexedSeq("box" -> SBox), SByteArray, Select(Ident("box"), "id"))
+    parse("{ (box: Box) => box.value }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "value"))
+    parse("{ (box: Box) => box.propositionBytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), SBox.PropositionBytes))
+    parse("{ (box: Box) => box.bytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "bytes"))
+    parse("{ (box: Box) => box.id }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "id"))
   }
 
   property("type parameters") {
