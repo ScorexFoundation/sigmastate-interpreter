@@ -216,10 +216,9 @@ trait Exprs extends Core with Types {
     val Arg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
       case (n, Some(t)) => (n, t)
       case (n, None) => (n, NoType)
-    }
+    }.log()
     val Args = P( Arg.repTC(1) ).log()
-    val LambdaArgs = P( OneNLMax ~ "(" ~ Args.? ~ ")" ).log().map(_.toSeq.flatten)
-    P( LambdaArgs.rep )
+    P( OneNLMax ~ "(" ~ Args.? ~ ")" ).log().map(_.toSeq.flatten)
   }.log()
 
   val BlockLambda = P( BlockLambdaHead ~ `=>` ).log()
@@ -251,14 +250,13 @@ trait Exprs extends Core with Types {
     val BlockEnd = P( Semis.? ~ &(end) ).log()
     val Body = P( BlockChunk.repX(sep = Semis) ).log()
     P( Semis.? ~ BlockLambda.? ~ Body ~/ BlockEnd ).map {
-      // todo error on multiple argument lists
       case (Some(args), Seq((Seq(), Seq(b)))) =>
-        builder.mkLambda(args.flatten.toIndexedSeq, NoType, Some(b))
+        builder.mkLambda(args.toIndexedSeq, NoType, Some(b))
       case (Some(args), bodyItems) =>
         val block = mkBlock(bodyItems.flatMap {
           case (Seq(), exprs) => exprs
         })
-        builder.mkLambda(args.flatten.toIndexedSeq, NoType, Some(block))
+        builder.mkLambda(args.toIndexedSeq, NoType, Some(block))
       case (None, bodyItems) =>
         mkBlock(bodyItems.flatMap {
           case (Seq(), exprs) => exprs
