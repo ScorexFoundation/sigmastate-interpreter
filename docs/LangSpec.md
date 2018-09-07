@@ -81,9 +81,10 @@ Every box has the following properties:
 Besides properties, every box can have up to 10 numbered registers.
 The following syntax is supported to access registers on box objects:
 ```
-SELF.R3[Int].value     // access R3 register, cast its value to Int and return it
-SELF.R3.isDefined      // check that value of R3  is defined
-SELF.R3[Int].isDefined // check that value of R3  is defined and has type Int
+SELF.R3[Int].get            // access R3 register, cast its value to Int and return it
+SELF.R3[Int].isDefined      // check that value of R3  is defined and has type Int
+SELF.R3[Int].isEmpty        // check that value of R3  is undefined 
+SELF.R3[Int].getOrElse(def) // access R3 value if defined, otherwise return def
 ```
 Note, that Option[T] is introduced at frontend to represent the type of register value
 ```
@@ -156,7 +157,7 @@ fun byteArrayToBigInt(input: Array[Byte]): BigInt
 fun intToByteArray(input: Int): Array[Byte]
 
 /** Returns value of the given type from the environment by its tag.*/
-fun getVar[T](tag: Int): T
+fun getVar[T](tag: Int): Option[T]
 
 fun proveDHTuple(g: GroupElement, h: GroupElement, 
                  u: GroupElement, v: GroupElement): Boolean
@@ -208,7 +209,7 @@ into the blockchain yet, then R3 contains the current height of the blockchain).
 ```
 guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript: Sigma) {
   let c2 = allOf(Array(
-   HEIGHT >= SELF.R3[Int].value + demurragePeriod,
+   HEIGHT >= SELF.R3[Int].get + demurragePeriod,
    OUTPUTS.exists(fun (out: Box) = {
      out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
    })

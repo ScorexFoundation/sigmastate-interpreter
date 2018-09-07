@@ -68,92 +68,92 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("Relation operations") {
     test(env, ext,
-      "{ allOf(Array(getVar[Boolean](trueVar), true, true)) }",
+      "{ allOf(Array(getVar[Boolean](trueVar).get, true, true)) }",
       AND(TaggedBoolean(booleanVar), TrueLeaf, TrueLeaf)
     )
     test(env, ext,
-      "{ anyOf(Array(getVar[Boolean](trueVar), true, false)) }",
+      "{ anyOf(Array(getVar[Boolean](trueVar).get, true, false)) }",
       OR(TaggedBoolean(booleanVar), TrueLeaf, FalseLeaf)
     )
     test(env, ext,
-      "{ getVar[Int](intVar2) > getVar[Int](intVar1) && getVar[Int](intVar1) < getVar[Int](intVar2) }",
+      "{ getVar[Int](intVar2).get > getVar[Int](intVar1).get && getVar[Int](intVar1).get < getVar[Int](intVar2).get }",
       AND(GT(TaggedInt(intVar2), TaggedInt(intVar1)), LT(TaggedInt(intVar1), TaggedInt(intVar2)))
     )
     test(env, ext,
-      "{ getVar[Int](intVar2) >= getVar[Int](intVar1) && getVar[Int](intVar1) <= getVar[Int](intVar2) }",
+      "{ getVar[Int](intVar2).get >= getVar[Int](intVar1).get && getVar[Int](intVar1).get <= getVar[Int](intVar2).get }",
       AND(GE(TaggedInt(intVar2), TaggedInt(intVar1)), LE(TaggedInt(intVar1), TaggedInt(intVar2)))
     )
     test(env, ext,
-      "{ getVar[Byte](byteVar2) > getVar[Byte](byteVar1) && getVar[Byte](byteVar1) < getVar[Byte](byteVar2) }",
+      "{ getVar[Byte](byteVar2).get > getVar[Byte](byteVar1).get && getVar[Byte](byteVar1).get < getVar[Byte](byteVar2).get }",
       AND(GT(TaggedByte(byteVar2), TaggedByte(byteVar1)), LT(TaggedByte(byteVar1), TaggedByte(byteVar2)))
     )
     test(env, ext,
-      "{ getVar[Byte](byteVar2) >= getVar[Byte](byteVar1) && getVar[Byte](byteVar1) <= getVar[Byte](byteVar2) }",
+      "{ getVar[Byte](byteVar2).get >= getVar[Byte](byteVar1).get && getVar[Byte](byteVar1).get <= getVar[Byte](byteVar2).get }",
       AND(GE(TaggedByte(byteVar2), TaggedByte(byteVar1)), LE(TaggedByte(byteVar1), TaggedByte(byteVar2)))
     )
     test(env, ext,
-      "{ getVar[BigInt](bigIntVar2) > getVar[BigInt](bigIntVar1) && getVar[BigInt](bigIntVar1) < getVar[BigInt](bigIntVar2) }",
+      "{ getVar[BigInt](bigIntVar2).get > getVar[BigInt](bigIntVar1).get && getVar[BigInt](bigIntVar1).get < getVar[BigInt](bigIntVar2).get }",
       AND(GT(TaggedBigInt(bigIntVar2), TaggedBigInt(bigIntVar1)), LT(TaggedBigInt(bigIntVar1), TaggedBigInt(bigIntVar2)))
     )
     test(env, ext,
-      "{ getVar[BigInt](bigIntVar2) >= getVar[BigInt](bigIntVar1) && getVar[BigInt](bigIntVar1) <= getVar[BigInt](bigIntVar2) }",
+      "{ getVar[BigInt](bigIntVar2).get >= getVar[BigInt](bigIntVar1).get && getVar[BigInt](bigIntVar1).get <= getVar[BigInt](bigIntVar2).get }",
       AND(GE(TaggedBigInt(bigIntVar2), TaggedBigInt(bigIntVar1)), LE(TaggedBigInt(bigIntVar1), TaggedBigInt(bigIntVar2)))
     )
   }
 
   property("SigmaProp operations") {
     test(env, ext,
-      "{ getVar[SigmaProp](proofVar1).isValid }",
+      "{ getVar[SigmaProp](proofVar1).get.isValid }",
       TaggedSigmaProp(propVar1).isValid
     )
     test(env, ext,
-      "{ getVar[SigmaProp](proofVar1) || getVar[SigmaProp](proofVar2) }",
+      "{ getVar[SigmaProp](proofVar1).get || getVar[SigmaProp](proofVar2).get }",
       OR(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
     )
     test(env, ext,
-      "{ getVar[SigmaProp](proofVar1) && getVar[SigmaProp](proofVar2) }",
+      "{ getVar[SigmaProp](proofVar1).get && getVar[SigmaProp](proofVar2).get }",
       AND(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
     )
     test(env, ext,
-      "{ getVar[SigmaProp](proofVar1).isValid && getVar[SigmaProp](proofVar2) }",
+      "{ getVar[SigmaProp](proofVar1).get.isValid && getVar[SigmaProp](proofVar2).get }",
       AND(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
     )
     test(env, ext,
-      "{ getVar[SigmaProp](proofVar1) && getVar[Int](intVar1) == 1 }",
+      "{ getVar[SigmaProp](proofVar1).get && getVar[Int](intVar1).get == 1 }",
       AND(TaggedSigmaProp(propVar1).isValid, EQ(TaggedInt(intVar1), 1))
     )
     test(env, ext,
-      "{ getVar[Int](intVar1) == 1 || getVar[SigmaProp](proofVar1) }",
+      "{ getVar[Int](intVar1).get == 1 || getVar[SigmaProp](proofVar1).get }",
       OR(EQ(TaggedInt(intVar1), 1), TaggedSigmaProp(propVar1).isValid)
     )
     test(env, ext,
-      "{ SELF.R4[SigmaProp].value.isValid }",
+      "{ SELF.R4[SigmaProp].get.isValid }",
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid,
       true
     )
     test(env, ext,
-      "{ SELF.R4[SigmaProp].value && getVar[SigmaProp](proofVar1)}",
+      "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
       AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
       true
     )
     test(env, ext,
-      "{ allOf(Array(SELF.R4[SigmaProp].value, getVar[SigmaProp](proofVar1)))}",
+      "{ allOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
       AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
       true
     )
     test(env, ext,
-      "{ anyOf(Array(SELF.R4[SigmaProp].value, getVar[SigmaProp](proofVar1)))}",
+      "{ anyOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
       OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
       true
     )
     test(env, ext,
-      "{ Array(SELF.R4[SigmaProp].value, getVar[SigmaProp](proofVar1)).forall(fun (p: SigmaProp) = p.isValid) }",
+      "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall(fun (p: SigmaProp) = p.isValid) }",
       ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), TaggedSigmaProp(propVar1)),
         21, SigmaPropIsValid(TaggedSigmaProp(21))),
       true
     )
     test(env, ext,
-      "{ SELF.R4[SigmaProp].value.propBytes != getVar[SigmaProp](proofVar1).propBytes }",
+      "{ SELF.R4[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
       NEQ(ExtractRegisterAs[SSigmaProp.type](Self, reg1).propBytes, TaggedSigmaProp(propVar1).propBytes),
       true
     )
@@ -161,38 +161,38 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("Arith operations") {
     test(env, ext,
-      "{ getVar[Int](intVar2) * 2 + getVar[Int](intVar1) == 5 }",
+      "{ getVar[Int](intVar2).get * 2 + getVar[Int](intVar1).get == 5 }",
       EQ(Plus(Multiply(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(5))
     )
     test(env, ext :+ (bigIntVar3 -> BigIntConstant(50)),
-      "{ getVar[BigInt](bigIntVar2) * 2 + getVar[BigInt](bigIntVar1) == getVar[BigInt](bigIntVar3) }",
+      "{ getVar[BigInt](bigIntVar2).get * 2 + getVar[BigInt](bigIntVar1).get == getVar[BigInt](bigIntVar3).get }",
       EQ(Plus(Multiply(TaggedBigInt(bigIntVar2), BigIntConstant(2)), TaggedBigInt(bigIntVar1)), TaggedBigInt(bigIntVar3))
     )
     test(env, ext :+ (byteVar3 -> ByteConstant(5)),
-      "{ getVar[Byte](byteVar2) * 2.toByte + getVar[Byte](byteVar1) == 5.toByte }",
+      "{ getVar[Byte](byteVar2).get * 2.toByte + getVar[Byte](byteVar1).get == 5.toByte }",
       EQ(Plus(Multiply(TaggedByte(byteVar2), ByteConstant(2)), TaggedByte(byteVar1)), ByteConstant(5))
     )
     test(env, ext,
-      "{ getVar[Int](intVar2) / 2 + getVar[Int](intVar1) == 2 }",
+      "{ getVar[Int](intVar2).get / 2 + getVar[Int](intVar1).get == 2 }",
       EQ(Plus(Divide(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(2))
     )
     test(env, ext,
-      "{ getVar[Int](intVar2) % 2 + getVar[Int](intVar1) == 1 }",
+      "{ getVar[Int](intVar2).get % 2 + getVar[Int](intVar1).get == 1 }",
       EQ(Plus(Modulo(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(1))
     )
   }
 
   property("Tuple operations") {
     test(env, ext,
-      "{ (getVar[Int](intVar1), getVar[Int](intVar2))._1 == 1 }",
+      "{ (getVar[Int](intVar1).get, getVar[Int](intVar2).get)._1 == 1 }",
       EQ(SelectField(Tuple(TaggedInt(intVar1), TaggedInt(intVar2)), 1), IntConstant(1))
     )
     test(env, ext,
-      "{ (getVar[Int](intVar1), getVar[Int](intVar2))._2 == 2 }",
+      "{ (getVar[Int](intVar1).get, getVar[Int](intVar2).get)._2 == 2 }",
       EQ(SelectField(Tuple(TaggedInt(intVar1), TaggedInt(intVar2)), 2), IntConstant(2))
     )
     test(env, ext,
-      """{ let p = (getVar[Int](intVar1), getVar[Int](intVar2))
+      """{ let p = (getVar[Int](intVar1).get, getVar[Int](intVar2).get)
         |  let res = p._1 + p._2
         |  res == 3 }""".stripMargin,
       {
@@ -205,14 +205,14 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("Tuple as Collection operations") {
     test(env, ext,
-    """{ let p = (getVar[Int](intVar1), getVar[Byte](byteVar2))
+    """{ let p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p.size == 2 }""".stripMargin,
     {
       val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
       EQ(SizeOf(p), IntConstant(2))
     })
     test(env, ext,
-    """{ let p = (getVar[Int](intVar1), getVar[Byte](byteVar2))
+    """{ let p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p(0) == 1 }""".stripMargin,
     {
       val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
@@ -226,7 +226,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val ext1 = ext :+ (dataVar, Constant[SCollection[STuple]](data, dataType))
     test(env1, ext1,
       """{
-        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar)
+        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
         |  data.size == 1
         |}""".stripMargin,
       {
@@ -236,7 +236,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env1, ext1,
       """{
-        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar)
+        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
         |  data.exists(fun (p: (Array[Byte], Long)) = p._2 == 10L)
         |}""".stripMargin,
       {
@@ -246,7 +246,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env1, ext1,
       """{
-        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar)
+        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
         |  data.forall(fun (p: (Array[Byte], Long)) = p._1.size > 0)
         |}""".stripMargin,
       {
@@ -257,7 +257,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env1, ext1,
       """{
-        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar)
+        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
         |  data.map(fun (p: (Array[Byte], Long)) = (p._2, p._1)).size == 1
         |}""".stripMargin,
       {
@@ -270,7 +270,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
 // TODO uncomment after operations over Any are implemented
 //    test(env, ext,
-//    """{ let p = (getVar[Int](intVar1), getVar[Byte](byteVar2))
+//    """{ let p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
 //     |  p.getOrElse(2, 3).isInstanceOf[Int] }""".stripMargin,
 //    {
 //      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
