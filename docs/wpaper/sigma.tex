@@ -229,7 +229,7 @@ Note that the script does not prevent the \texttt{friend} box from being spent o
 We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input array using the \texttt{exists} operator, which applies a boolean function to each array element until it finds one that satisfies the function or finds that none exists. To define a function, we use \texttt{fun} keyword; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{let} keyword.
 \begin{verbatim}
         {
-                val isFriend = fun (inputBox: Box) = {inputBox.id == friend.id}
+                val isFriend = { (inputBox: Box) => inputBox.id == friend.id }
                 INPUTS.exists (isFriend)
         }
 \end{verbatim}
@@ -237,7 +237,7 @@ We can be more permissive and allow for other inputs in addition to the friend b
 This is our first example of a script with more than one statement; note that such scripts require braces, and their output is determined by the last statement.
 It can also be written in one statement, as follows:
 \begin{verbatim}
-        INPUTS.exists (fun (inputBox: Box) = {inputBox.id == friend.id})
+        INPUTS.exists ({ (inputBox: Box) => inputBox.id == friend.id })
 \end{verbatim}
 
 
