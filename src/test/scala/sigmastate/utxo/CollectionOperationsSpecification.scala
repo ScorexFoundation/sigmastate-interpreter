@@ -285,7 +285,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """OUTPUTS
-        |.map({ (box: Box): Long => box.value }).getOrElse(3, 0L)== 0""".stripMargin
+        |.map({ (box: Box) => box.value }).getOrElse(3, 0L)== 0""".stripMargin
     val expectedPropTree = EQ(
       ByIndex(
         MapCollection(Outputs,21,ExtractAmount(TaggedBox(21))),

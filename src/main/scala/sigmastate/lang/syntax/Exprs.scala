@@ -104,11 +104,11 @@ trait Exprs extends Core with Types {
     val SimpleExpr = {
 //      val New = P( `new` ~/ AnonTmpl )
 
-      P( /*New | */ BlockExpr.log()
-        | ExprLiteral.log()
+      P( /*New | */ BlockExpr
+        | ExprLiteral
         | StableId //.map { case Ident(ps, t) => mkIdent(ps, t) }
         | `_`.!.map(Ident(_)).log()
-        | Parened.map(items =>
+        | Parened.log().map(items =>
             if (items.isEmpty) UnitConstant
             else if (items.lengthCompare(1) == 0) items.head
             else builder.mkTuple(items)) )
@@ -212,9 +212,17 @@ trait Exprs extends Core with Types {
 
   val BlockExpr = P( "{" ~/ (/*CaseClauses |*/ Block ~ "}") ).log()
 
-  val BlockLambdaHead: P0 = P( "(" ~ BlockLambdaHead ~ ")" | `this` | Id | `_` ).log()
-//  val BlockLambda = P( BlockLambdaHead  ~ (`=>` | `:` ~ InfixType ~ `=>`.?) ).log()
-  val BlockLambda = P( FunSig  ~ (`=>` | `:` ~ InfixType ~ `=>`.?) ).log()
+  val BlockLambdaHead = {
+    val Arg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
+      case (n, Some(t)) => (n, t)
+      case (n, None) => (n, NoType)
+    }
+    val Args = P( Arg.repTC(1) ).log()
+    val LambdaArgs = P( OneNLMax ~ "(" ~ Args.? ~ ")" ).log().map(_.toSeq.flatten)
+    P( LambdaArgs.rep )
+  }.log()
+
+  val BlockLambda = P( BlockLambdaHead ~ `=>` ).log()
 
   val BlockChunk = {
     val Prelude = P( Annot.rep ~ `lazy`.? ).log()
@@ -242,15 +250,15 @@ trait Exprs extends Core with Types {
   def BaseBlock(end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
     val BlockEnd = P( Semis.? ~ &(end) ).log()
     val Body = P( BlockChunk.repX(sep = Semis) ).log()
-    P( Semis.? ~ BlockLambda.? ~ Body ~/ BlockEnd ).log().map {
+    P( Semis.? ~ BlockLambda.? ~ Body ~/ BlockEnd ).map {
       // todo error on multiple argument lists
-      case (Some((Seq(args), _)), Seq((Seq(), Seq(b)))) =>
-        builder.mkLambda(args.toIndexedSeq, NoType, Some(b))
-      case (Some((Seq(args), _)), bodyItems) =>
+      case (Some(args), Seq((Seq(), Seq(b)))) =>
+        builder.mkLambda(args.flatten.toIndexedSeq, NoType, Some(b))
+      case (Some(args), bodyItems) =>
         val block = mkBlock(bodyItems.flatMap {
           case (Seq(), exprs) => exprs
         })
-        builder.mkLambda(args.toIndexedSeq, NoType, Some(block))
+        builder.mkLambda(args.flatten.toIndexedSeq, NoType, Some(block))
       case (None, bodyItems) =>
         mkBlock(bodyItems.flatMap {
           case (Seq(), exprs) => exprs

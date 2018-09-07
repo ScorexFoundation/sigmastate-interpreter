@@ -135,7 +135,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 1))
     bind(env, "{ (a: Int) => a + 1 }") shouldBe
       Lambda(IndexedSeq("a" -> SInt), NoType, plus(IntIdent("a"), 1))
-    bind(env, "{ (a: Int, box: Box): Long => a - box.value }") shouldBe
+    bind(env, "{ (a: Int, box: Box) => a - box.value }") shouldBe
       Lambda(IndexedSeq("a" -> SInt, "box" -> SBox), NoType,
         mkMinus(IntIdent("a"), Select(Ident("box"), "value").asValue[SLong.type]))
     bind(env, "{ (a) => a - 1 }") shouldBe

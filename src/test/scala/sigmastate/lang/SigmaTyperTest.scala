@@ -212,14 +212,14 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("lambdas") {
     typecheck(env, "{ (a: Int) => a + 1 }") shouldBe SFunc(IndexedSeq(SInt), SInt)
-    typecheck(env, "{ (a: Int): Int => a + 1 }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "{ (a: Int) => a + 1 }") shouldBe SFunc(IndexedSeq(SInt), SInt)
     typecheck(env, "{ (a: Int) => { a + 1 } }") shouldBe SFunc(IndexedSeq(SInt), SInt)
     typecheck(env, "{ (a: Int) => { let b = a + 1; b } }") shouldBe SFunc(IndexedSeq(SInt), SInt)
-    typecheck(env, "{ (a: Int, box: Box): Long => a + box.value }") shouldBe
+    typecheck(env, "{ (a: Int, box: Box) => a + box.value }") shouldBe
       SFunc(IndexedSeq(SInt, SBox), SLong)
-    typecheck(env, "{ (p: (Int, GroupElement), box: Box): Boolean => p._1 > box.value && p._2.isIdentity }") shouldBe
+    typecheck(env, "{ (p: (Int, GroupElement), box: Box) => p._1 > box.value && p._2.isIdentity }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
-    typecheck(env, "{ (p: (Int, SigmaProp), box: Box): Boolean => p._1 > box.value && p._2.isValid }") shouldBe
+    typecheck(env, "{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isValid }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SSigmaProp), SBox), SBoolean)
 
     typefail(env, "{ (a) => a + 1 }", "undefined type of argument")

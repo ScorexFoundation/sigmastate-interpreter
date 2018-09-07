@@ -33,10 +33,10 @@ trait Core extends syntax.Literals {
   // Keywords that match themselves and nothing else
   val `=>` = O("=>") | O("⇒")
 //  val `<-` = O("<-") | O("←")
-  val `:` = O(":")
+  val `:` = O(":").log()
   val `=` = O("=")
   val `@` = O("@")
-  val `_` = W("_")
+  val `_` = W("_").log()
   val `type` = W("type")
   val `let` = W("let")
   val `fun` = W("fun")
@@ -92,7 +92,7 @@ trait Core extends syntax.Literals {
   val Id = P( WL ~ Identifiers.Id ).log()
   val VarId = P( WL ~ Identifiers.VarId )
   val BacktickId = P( WL ~ Identifiers.BacktickId )
-  val ExprLiteral = P( WL ~ Literals.Expr.Literal )
+  val ExprLiteral = P( WL ~ Literals.Expr.Literal ).log()
   val PatLiteral = P( WL ~ Literals.Pat.Literal )
 
   val QualId = P( WL ~ Id.rep(1, sep = ".") )
@@ -111,5 +111,5 @@ trait Core extends syntax.Literals {
       case (h, t) => t.foldLeft[SValue](Ident(h))(builder.mkSelect(_, _))
     }
     P( /*ThisPath |*/ IdPath )
-  }
+  }.log()
 }
