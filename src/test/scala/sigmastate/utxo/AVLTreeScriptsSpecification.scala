@@ -77,10 +77,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
     val propCompiled = compile(env,
       """{
-        |  let tree = SELF.R3[AvlTree].get
-        |  let proof = getVar[Array[Byte]](proofId).get
-        |  let element = getVar[Long](elementId).get
-        |  let elementKey = blake2b256(longToByteArray(element))
+        |  val tree = SELF.R3[AvlTree].get
+        |  val proof = getVar[Array[Byte]](proofId).get
+        |  val element = getVar[Long](elementId).get
+        |  val elementKey = blake2b256(longToByteArray(element))
         |  element >= 120 && isMember(tree, elementKey, proof)
         |}""".stripMargin).asBoolValue
 
@@ -136,9 +136,9 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val env = Map("proofId" -> proofId.toLong)
     val prop = compile(env,
       """{
-        |  let tree = SELF.R4[AvlTree].get
-        |  let key = SELF.R5[Array[Byte]].get
-        |  let proof = getVar[Array[Byte]](proofId).get
+        |  val tree = SELF.R4[AvlTree].get
+        |  val key = SELF.R5[Array[Byte]].get
+        |  val proof = getVar[Array[Byte]](proofId).get
         |  isMember(tree, key, proof)
         |}""".stripMargin).asBoolValue
 

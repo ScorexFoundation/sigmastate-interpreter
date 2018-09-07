@@ -50,25 +50,25 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     an[InvalidArguments] should be thrownBy bind(env, "max(1)")
   }
 
-  property("let constructs") {
-    bind(env, "{let X = 10; X > 2}") shouldBe
-      Block(Let("X", SInt, IntConstant(10)), GT(IntIdent("X"), 2))
-    bind(env, "{let X = 10; X >= X}") shouldBe
-      Block(Let("X", SInt, IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
-    bind(env, "{let X = 10 - 1; X >= X}") shouldBe
-      Block(Let("X", SInt, Minus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
-    bind(env, "{let X = 10 + 1; X >= X}") shouldBe
-      Block(Let("X", NoType, plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
+  property("val constructs") {
+    bind(env, "{val X = 10; X > 2}") shouldBe
+      Block(Val("X", SInt, IntConstant(10)), GT(IntIdent("X"), 2))
+    bind(env, "{val X = 10; X >= X}") shouldBe
+      Block(Val("X", SInt, IntConstant(10)), GE(IntIdent("X"), IntIdent("X")))
+    bind(env, "{val X = 10 - 1; X >= X}") shouldBe
+      Block(Val("X", SInt, Minus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
+    bind(env, "{val X = 10 + 1; X >= X}") shouldBe
+      Block(Val("X", NoType, plus(10, 1)), GE(IntIdent("X"), IntIdent("X")))
     bind(env,
-      """{let X = 10
-        |let Y = 11
+      """{val X = 10
+        |val Y = 11
         |X > Y}
       """.stripMargin) shouldBe Block(
-      Seq(Let("X", SInt, IntConstant(10)), Let("Y", SInt, IntConstant(11))),
+      Seq(Val("X", SInt, IntConstant(10)), Val("Y", SInt, IntConstant(11))),
       GT(IntIdent("X"), IntIdent("Y")))
-    bind(env, "{let X = (10, true); X._1 > 2 && X._2}") shouldBe
+    bind(env, "{val X = (10, true); X._1 > 2 && X._2}") shouldBe
       Block(
-        Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)),
+        Val("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)),
         MethodCall(GT(Select(IntIdent("X"), "_1").asValue[SInt.type], 2), "&&", IndexedSeq(Select(IntIdent("X"), "_2").asValue[SBoolean.type])))
   }
 
@@ -96,14 +96,14 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("types") {
-    bind(env, "{let X: Int = 10; 3 > 2}") shouldBe Block(Let("X", SInt, IntConstant(10)), GT(3, 2))
-    bind(env, "{let X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe
-      Block(Let("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)), GT(3, 2))
-    bind(env, "{let X: Array[Int] = Array(1,2,3); X.size}") shouldBe
-      Block(Let("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3)))),
+    bind(env, "{val X: Int = 10; 3 > 2}") shouldBe Block(Val("X", SInt, IntConstant(10)), GT(3, 2))
+    bind(env, "{val X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe
+      Block(Val("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)), GT(3, 2))
+    bind(env, "{val X: Array[Int] = Array(1,2,3); X.size}") shouldBe
+      Block(Val("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3)))),
         Select(Ident("X"), "size"))
-    bind(env, "{let X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}") shouldBe
-      Block(Let("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT"))),
+    bind(env, "{val X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}") shouldBe
+      Block(Val("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT"))),
         Select(Ident("X"), "_1"))
   }
 
@@ -112,10 +112,10 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "if(c1) 1 else if(x==y) 2 else 3") shouldBe
       If(TrueLeaf, IntConstant(1), If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
     bind(env,
-      """if (true) { let A = x; 1 }
+      """if (true) { val A = x; 1 }
         |else if (x == y) 2 else 3""".stripMargin) shouldBe
       If(TrueLeaf,
-        Block(Let("A", SInt, IntConstant(10)), IntConstant(1)),
+        Block(Val("A", SInt, IntConstant(10)), IntConstant(1)),
         If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
   }
 
@@ -142,14 +142,14 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       Lambda(IndexedSeq("a" -> NoType), NoType, mkMinus(IntIdent("a"), IntConstant(1)))
     bind(env, "{ (a) => a - x }") shouldBe
       Lambda(IndexedSeq("a" -> NoType), NoType, mkMinus(IntIdent("a"), 10))
-    bind(env, "{ (a: Int) => { let Y = a - 1; Y - x } }") shouldBe
+    bind(env, "{ (a: Int) => { val Y = a - 1; Y - x } }") shouldBe
       Lambda(IndexedSeq("a" -> SInt), NoType,
-        Block(Let("Y", NoType, mkMinus(IntIdent("a"), 1)), mkMinus(IntIdent("Y"), 10)))
+        Block(Val("Y", NoType, mkMinus(IntIdent("a"), 1)), mkMinus(IntIdent("Y"), 10)))
   }
 
   property("function definitions") {
-    bind(env, "{let f = {(a: Int) => a - 1}; f}") shouldBe
-      Block(Let("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 1))), Ident("f"))
+    bind(env, "{val f = {(a: Int) => a - 1}; f}") shouldBe
+      Block(Val("f", SFunc(IndexedSeq(SInt), NoType), Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 1))), Ident("f"))
   }
 
   property("predefined primitives") {

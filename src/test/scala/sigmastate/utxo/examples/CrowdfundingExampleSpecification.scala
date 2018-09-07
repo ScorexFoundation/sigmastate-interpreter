@@ -41,8 +41,8 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     )
     val compiledScript = compile(env,
       """{
-        | let c1 = HEIGHT >= timeout && backerPubKey
-        | let c2 = allOf(Array(
+        | val c1 = HEIGHT >= timeout && backerPubKey
+        | val c2 = allOf(Array(
         |   HEIGHT < timeout,
         |   projectPubKey,
         |   OUTPUTS.exists({ (out: Box) =>
@@ -81,12 +81,12 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val altScript = compile(altEnv,
       """
         |       {
-        |                let fundraisingFailure = HEIGHT >= deadline && backerPubKey
-        |                let enoughRaised = {(outBox: Box) =>
+        |                val fundraisingFailure = HEIGHT >= deadline && backerPubKey
+        |                val enoughRaised = {(outBox: Box) =>
         |                        outBox.value >= minToRaise &&
         |                        outBox.propositionBytes == projectPubKey.propBytes
         |                }
-        |                let fundraisingSuccess = HEIGHT < deadline &&
+        |                val fundraisingSuccess = HEIGHT < deadline &&
         |                         projectPubKey &&
         |                         OUTPUTS.exists(enoughRaised)
         |

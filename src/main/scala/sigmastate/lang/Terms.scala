@@ -12,7 +12,7 @@ import sigmastate.utxo.CostTable.Cost
 
 object Terms {
 
-  case class Block(bindings: Seq[Let], result: SValue) extends Value[SType] {
+  case class Block(bindings: Seq[Val], result: SValue) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
 
     override def cost[C <: Context[C]](context: C): Long = ???
@@ -21,17 +21,17 @@ object Terms {
     def tpe: SType = result.tpe
   }
   object Block {
-    def apply(let: Let, result: SValue)(implicit o1: Overload1): Block =
+    def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
       Block(Seq(let), result)
   }
 
-  trait Let extends Value[SType] {
+  trait Val extends Value[SType] {
     val name: String
     val givenType: SType
     val body: SValue
   }
 
-  case class LetNode(name: String, givenType: SType, body: SValue) extends Let {
+  case class ValNode(name: String, givenType: SType, body: SValue) extends Val {
     override val opCode: OpCode = OpCodes.Undefined
 
     override def cost[C <: Context[C]](context: C): Long = ???
@@ -39,11 +39,11 @@ object Terms {
     override def evaluated: Boolean = ???
     def tpe: SType = givenType ?: body.tpe
   }
-  object Let {
-    def apply(name: String, body: SValue): Let = LetNode(name, NoType, body)
-    def apply(name: String, givenType: SType, body: SValue): Let = LetNode(name, givenType, body)
+  object Val {
+    def apply(name: String, body: SValue): Val = ValNode(name, NoType, body)
+    def apply(name: String, givenType: SType, body: SValue): Val = ValNode(name, givenType, body)
     def unapply(v: SValue): Option[(String, SType, SValue)] = v match {
-      case LetNode(name, givenType, body) => Some((name, givenType, body))
+      case ValNode(name, givenType, body) => Some((name, givenType, body))
       case _ => None
     }
   }

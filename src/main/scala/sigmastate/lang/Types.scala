@@ -16,7 +16,7 @@ trait Types extends Core {
 //  def FunDef: P[Value[SType]]
 
   val Dcl = {
-    P( `let` ~/ ValVarDef /*| /* `fun` ~/ */ FunDef */ )
+    P( `val` ~/ ValVarDef /*| /* `fun` ~/ */ FunDef */ )
   }
 
   /** This map should be in sync with SType.allPredefTypes*/

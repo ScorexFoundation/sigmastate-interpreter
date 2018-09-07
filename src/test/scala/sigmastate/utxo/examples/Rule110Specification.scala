@@ -43,12 +43,12 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """{
-        |  let indices: Array[Int] = Array(0, 1, 2, 3, 4, 5)
-        |  let inLayer: Array[Byte] = SELF.R4[Array[Byte]].get
-        |  let procCell = {(i: Int) =>
-        |    let l = inLayer((if (i == 0) 5 else (i - 1)))
-        |    let c = inLayer(i)
-        |    let r = inLayer((i + 1) % 6)
+        |  val indices: Array[Int] = Array(0, 1, 2, 3, 4, 5)
+        |  val inLayer: Array[Byte] = SELF.R4[Array[Byte]].get
+        |  val procCell = {(i: Int) =>
+        |    val l = inLayer((if (i == 0) 5 else (i - 1)))
+        |    val c = inLayer(i)
+        |    val r = inLayer((i + 1) % 6)
         |    ((l * c * r + c * r + c + r) % 2).toByte
         |  }
         |  (OUTPUTS(0).R4[Array[Byte]].get == indices.map(procCell)) &&

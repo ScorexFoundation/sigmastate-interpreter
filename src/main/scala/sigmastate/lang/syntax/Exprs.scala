@@ -3,7 +3,7 @@ package sigmastate.lang.syntax
 import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, Let, MethodCall, Select, ValueOps}
+import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, Val, MethodCall, Select, ValueOps}
 import sigmastate.lang._
 import sigmastate.lang.syntax.Basic._
 
@@ -229,11 +229,11 @@ trait Exprs extends Core with Types {
     P( BlockLambda.rep ~ BlockStat.rep(sep = Semis) )
   }.log()
 
-  def extractBlockStats(stats: Seq[SValue]): (Seq[Let], SValue) = {
+  def extractBlockStats(stats: Seq[SValue]): (Seq[Val], SValue) = {
     if (stats.nonEmpty) {
       val lets = stats.iterator.take(stats.size - 1).map {
-        case l: Let => l
-        case _ => error(s"Block should contain a list of Let bindings and one expression: but was $stats")
+        case l: Val => l
+        case _ => error(s"Block should contain a list of Val bindings and one expression: but was $stats")
       }
       (lets.toList, stats.last)
     }

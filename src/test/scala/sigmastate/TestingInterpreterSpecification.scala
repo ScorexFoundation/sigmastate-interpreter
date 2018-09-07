@@ -107,50 +107,50 @@ class TestingInterpreterSpecification extends PropSpec
 
   property("Evaluate array ops") {
     testEval("""{
-              |  let arr = Array(1, 2) ++ Array(3, 4)
+              |  val arr = Array(1, 2) ++ Array(3, 4)
               |  arr.size == 4
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array(1, 2, 3)
+              |  val arr = Array(1, 2, 3)
               |  arr.slice(1, 3) == Array(2, 3)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = bytes1 ++ bytes2
+              |  val arr = bytes1 ++ bytes2
               |  arr.size == 6
               |}""".stripMargin)
     testEval("""{
-              |  let arr = bytes1 ++ Array[Byte]()
+              |  val arr = bytes1 ++ Array[Byte]()
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array[Byte]() ++ bytes1
+              |  val arr = Array[Byte]() ++ bytes1
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R4[Array[Int]].get
+              |  val arr = box1.R4[Array[Int]].get
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R5[Array[Boolean]].get
+              |  val arr = box1.R5[Array[Boolean]].get
               |  anyOf(arr)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R5[Array[Boolean]].get
+              |  val arr = box1.R5[Array[Boolean]].get
               |  allOf(arr) == false
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array(1, 2, 3)
+              |  val arr = Array(1, 2, 3)
               |  arr.map({(i: Int) => i + 1}) == Array(2, 3, 4)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array(1, 2, 3)
+              |  val arr = Array(1, 2, 3)
               |  arr.where({(i: Int) => i < 3}) == Array(1, 2)
               |}""".stripMargin)
   }
 
 //  property("Evaluate sigma in lambdas") {
 //    testeval("""{
-//              |  let arr = Array(dk1, dk2)
+//              |  val arr = Array(dk1, dk2)
 //              |  allOf(arr.map(fun (d: Boolean) = d && true))
 //              |}""".stripMargin)
 //  }

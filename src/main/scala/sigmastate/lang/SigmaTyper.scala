@@ -36,12 +36,12 @@ class SigmaTyper(val builder: SigmaBuilder) {
                  expected: Option[SType] = None): SValue = bound match {
     case Block(bs, res) =>
       var curEnv = env
-      val bs1 = ArrayBuffer[Let]()
-      for (Let(n, _, b) <- bs) {
+      val bs1 = ArrayBuffer[Val]()
+      for (Val(n, _, b) <- bs) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
-        bs1 += mkLet(n, b1.tpe, b1)
+        bs1 += mkVal(n, b1.tpe, b1)
       }
       val res1 = assignType(curEnv, res)
       mkBlock(bs1, res1)

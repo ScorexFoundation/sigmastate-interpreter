@@ -114,10 +114,10 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
     case Block(Seq(), body) => Some(body)
 
     case block @ Block(binds, t) =>
-      val newBinds = for (Let(n, t, b) <- binds) yield {
+      val newBinds = for (Val(n, t, b) <- binds) yield {
         if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}")
         val b1 = eval(b, env)
-        mkLet(n, if (t != NoType) t else b1.tpe, b1)
+        mkVal(n, if (t != NoType) t else b1.tpe, b1)
       }
       val t1 = eval(t, env)
       val newBlock = mkBlock(newBinds, t1)

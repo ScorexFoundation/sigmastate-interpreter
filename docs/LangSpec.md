@@ -17,13 +17,13 @@
 
 - Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, *, ^, ++`
 - predefined primitives: `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
-- let declarations: `let h = blake2b256(pubkey)`
+- val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
 - array literals: `Array(1, 2, 3, 4)`
 - generic high-order array operations: `map`, `fold`, `exists`, `forall`, etc.
 - accessing fields of any predefined structured objects: `box.value`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
-- user defined functions: `let isValid(pk: GroupElement) = proveDlog(pk)`
+- user defined functions: `val isValid(pk: GroupElement) = proveDlog(pk)`
 - lambdas and high-order methods: `OUTPUTS.exists(fun (out: Box) = out.value >= minToRaise)`
 
 #### Data types 
@@ -48,10 +48,10 @@
 There is a syntax for literals, which can be used to introduce values 
 of some types directly in program text like the following examples:
 ```
- let unit: Unit = ()       // unit constant
- let long: Int = 10       // interger value literal
- let bool: Boolean = true  // logical literal
- let arr = Array(1, 2, 3)  // constructs array with given items
+ val unit: Unit = ()       // unit constant
+ val long: Int = 10       // interger value literal
+ val bool: Boolean = true  // logical literal
+ val arr = Array(1, 2, 3)  // constructs array with given items
 ```
 Note that many types don't have literal syntax and their values are introduced 
 by applying operations.
@@ -100,21 +100,21 @@ As in many languages Array is a collection of items of the same type.
 
 Each item can be accessed by constant index, for example:
 ```
-let myOutput = OUTPUTS(0)
-let myInput = INPUTS(0)
+val myOutput = OUTPUTS(0)
+val myInput = INPUTS(0)
 ```
 
 Array have `size` property which returns number of elements in an array. 
 
 ```
-let size = OUTPUTS.size
+val size = OUTPUTS.size
 ```
 
 Even though ErgoScript is not object-oriented language, Array operations use the syntax of method invocations. 
 For example the following script check an existence of some element in the array satisfying some predicate (condition)
 
 ```
-let ok = OUTPUTS.exists(fun (box: Box) = box.value > 1000)
+val ok = OUTPUTS.exists(fun (box: Box) = box.value > 1000)
 ``` 
 
 The following properties and methods can be used with arrays
@@ -180,8 +180,8 @@ After the timeout output could be spent by backer only.
 ```
 guard CrowdFunding(timeout: Int, minToRaise: Int, 
                    backerPubKey: Sigma, projectPubKey: Sigma) {
-  let c1 = HEIGHT >= timeout && backerPubKey
-  let c2 = allOf(Array(
+  val c1 = HEIGHT >= timeout && backerPubKey
+  val c2 = allOf(Array(
     HEIGHT < timeout,
     projectPubKey,
     OUTPUTS.exists(fun (out: Box) = {

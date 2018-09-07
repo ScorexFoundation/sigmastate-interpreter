@@ -328,9 +328,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """{
-        |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
-        |  let elementRule = {(index: Int) =>
-        |    let boundaryIndex = if (index == 0) 5 else (index - 1)
+        |  val indexCollection = Array(0, 1, 2, 3, 4, 5)
+        |  val elementRule = {(index: Int) =>
+        |    val boundaryIndex = if (index == 0) 5 else (index - 1)
         |    boundaryIndex >= 0 && boundaryIndex <= 5
         |  }
         |  indexCollection.forall(elementRule)
@@ -350,11 +350,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """{
-        |  let string = Array(1, 1, 0, 0, 0, 1)
-        |  let indexCollection = Array(0, 1, 2, 3, 4, 5)
-        |  let elementRule = {(index: Int) =>
-        |    let boundedIndex = if (index <= 0) 5 else (index - 1)
-        |    let element = string(boundedIndex)
+        |  val string = Array(1, 1, 0, 0, 0, 1)
+        |  val indexCollection = Array(0, 1, 2, 3, 4, 5)
+        |  val elementRule = {(index: Int) =>
+        |    val boundedIndex = if (index <= 0) 5 else (index - 1)
+        |    val element = string(boundedIndex)
         |    element == 0 || element == 1
         |  }
         |  indexCollection.forall(elementRule)

@@ -22,11 +22,11 @@ object SigmaParser extends Exprs with Types with Core {
   }
 
 //  val FunDef = {
-//    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => builder.mkLet(name, NoType, lam) }
+//    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => builder.mkVal(name, NoType, lam) }
 //  }
 
   val ValVarDef = P( BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
-    case (Ident(n,_), t, body) => builder.mkLet(n, t.getOrElse(NoType), body)
+    case (Ident(n,_), t, body) => builder.mkVal(n, t.getOrElse(NoType), body)
     case (pat,_,_) => error(s"Only single name patterns supported but was $pat")
   }
 
