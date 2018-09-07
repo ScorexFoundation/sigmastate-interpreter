@@ -52,7 +52,7 @@ trait Exprs extends Core with Types {
 //        case (args, None) => mkLambda(args, UnitConstant)
 //        case (args, Some(body)) => mkLambda(args, body)
 //      }
-      val PostfixLambda = P( PostfixExpr ~ (`=>` ~ LambdaRhs.? | SuperPostfixSuffix).? ).log().map {
+      val PostfixLambda = P( PostfixExpr ~ (`=>` ~ LambdaRhs.? | SuperPostfixSuffix).? ).map {
         case (e, None) => e
         case (e, Some(None)) => e
         case (Tuple(args), Some(Some(body))) => mkLambda(args, body)
@@ -61,36 +61,36 @@ trait Exprs extends Core with Types {
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
 //      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => Ident(IndexedSeq(n), t)}
       P( If /*| Fun*/ | SmallerExprOrLambda )
-    }.log()
+    }
 
     val SuperPostfixSuffix = P( (`=` ~/ Expr).? /*~ MatchAscriptionSuffix.?*/ )
     val AscriptionType = (if (arrowTypeAscriptions) P( Type ) else P( InfixType )).ignore
     val Ascription = P( `:` ~/ (`_*` |  AscriptionType | Annot.rep(1)) )
     val MatchAscriptionSuffix = P(`match` ~/ "{" ~ CaseClauses | Ascription)
-    val ExprPrefix = P( WL ~ CharIn("-+!~").! ~~ !syntax.Basic.OpChar ~ WS).log()
+    val ExprPrefix = P( WL ~ CharIn("-+!~").! ~~ !syntax.Basic.OpChar ~ WS)
     val ExprSuffix = P(
       (WL ~ "." ~/ Id.!.map(Ident(_))
       | WL ~ TypeArgs.map(items => STypeApply("", items.toIndexedSeq))
       | NoSemis ~ ArgList ).repX /* ~~ (NoSemis  ~ `_`).? */
-    ).log()
+    )
 
-    val PrefixExpr = P( ExprPrefix.? ~ SimpleExpr ).log().map {
+    val PrefixExpr = P( ExprPrefix.? ~ SimpleExpr ).map {
       case (Some(op), e) => mkUnaryOp(op, e)
       case (None, e) => e
     }
 
     // Intermediate `WL` needs to always be non-cutting, because you need to
     // backtrack out of `InfixSuffix` into `PostFixSuffix` if it doesn't work out
-    val InfixSuffix = P( NoSemis ~~ WL ~~ Id.! /*~ TypeArgs.?*/ ~~ OneSemiMax ~ PrefixExpr ~~ ExprSuffix).log().map {
+    val InfixSuffix = P( NoSemis ~~ WL ~~ Id.! /*~ TypeArgs.?*/ ~~ OneSemiMax ~ PrefixExpr ~~ ExprSuffix).map {
       case (op, f, args) =>
         val rhs = applySuffix(f, args)
         (op, rhs)
     }
-    val PostFix = P( NoSemis ~~ WL ~~ Id.! ~ Newline.? ).log().map(Ident(_))
+    val PostFix = P( NoSemis ~~ WL ~~ Id.! ~ Newline.? ).map(Ident(_))
 
-    val PostfixSuffix = P( InfixSuffix.repX ~~ PostFix.?).log()
+    val PostfixSuffix = P( InfixSuffix.repX ~~ PostFix.?)
 
-    val PostfixExpr = P( PrefixExpr ~~ ExprSuffix ~~ PostfixSuffix ).log().map {
+    val PostfixExpr = P( PrefixExpr ~~ ExprSuffix ~~ PostfixSuffix ).map {
       case (prefix, suffix, (infixOps, postfix)) =>
         val lhs = applySuffix(prefix, suffix)
         val obj = mkInfixTree(lhs, infixOps)
@@ -107,12 +107,12 @@ trait Exprs extends Core with Types {
       P( /*New | */ BlockExpr
         | ExprLiteral
         | StableId //.map { case Ident(ps, t) => mkIdent(ps, t) }
-        | `_`.!.map(Ident(_)).log()
-        | Parened.log().map(items =>
+        | `_`.!.map(Ident(_))
+        | Parened.map(items =>
             if (items.isEmpty) UnitConstant
             else if (items.lengthCompare(1) == 0) items.head
             else builder.mkTuple(items)) )
-    }.log()
+    }
     val Guard : P0 = P( `if` ~/ PostfixExpr ).ignore
   }
 
@@ -210,24 +210,24 @@ trait Exprs extends Core with Types {
     P( /*Thingy | PatLiteral |*/ TupleEx | Extractor | VarId.!.map(Ident(_)))
   }
 
-  val BlockExpr = P( "{" ~/ (/*CaseClauses |*/ Block ~ "}") ).log()
+  val BlockExpr = P( "{" ~/ (/*CaseClauses |*/ Block ~ "}") )
 
   val BlockLambdaHead = {
     val Arg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
       case (n, Some(t)) => (n, t)
       case (n, None) => (n, NoType)
-    }.log()
-    val Args = P( Arg.repTC(1) ).log()
-    P( OneNLMax ~ "(" ~ Args.? ~ ")" ).log().map(_.toSeq.flatten)
-  }.log()
+    }
+    val Args = P( Arg.repTC(1) )
+    P( OneNLMax ~ "(" ~ Args.? ~ ")" ).map(_.toSeq.flatten)
+  }
 
-  val BlockLambda = P( BlockLambdaHead ~ `=>` ).log()
+  val BlockLambda = P( BlockLambdaHead ~ `=>` )
 
   val BlockChunk = {
-    val Prelude = P( Annot.rep ~ `lazy`.? ).log()
-    val BlockStat = P( Prelude ~ BlockDef | StatCtx.Expr ).log()
+    val Prelude = P( Annot.rep ~ `lazy`.? )
+    val BlockStat = P( Prelude ~ BlockDef | StatCtx.Expr )
     P( BlockLambda.rep ~ BlockStat.rep(sep = Semis) )
-  }.log()
+  }
 
   def extractBlockStats(stats: Seq[SValue]): (Seq[Val], SValue) = {
     if (stats.nonEmpty) {
@@ -247,8 +247,8 @@ trait Exprs extends Core with Types {
   }
 
   def BaseBlock(end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
-    val BlockEnd = P( Semis.? ~ &(end) ).log()
-    val Body = P( BlockChunk.repX(sep = Semis) ).log()
+    val BlockEnd = P( Semis.? ~ &(end) )
+    val Body = P( BlockChunk.repX(sep = Semis) )
     P( Semis.? ~ BlockLambda.? ~ Body ~/ BlockEnd ).map {
       case (Some(args), Seq((Seq(), Seq(b)))) =>
         builder.mkLambda(args.toIndexedSeq, NoType, Some(b))
@@ -263,7 +263,7 @@ trait Exprs extends Core with Types {
         })
     }
   }
-  val Block = BaseBlock("}").log()
+  val Block = BaseBlock("}")
   val CaseBlock = BaseBlock("}" | `case`)
 
   val Patterns: P0 = P( Pattern.rep(1, sep = ",".~/) )

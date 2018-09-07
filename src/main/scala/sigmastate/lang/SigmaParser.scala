@@ -30,7 +30,7 @@ object SigmaParser extends Exprs with Types with Core {
     case (pat,_,_) => error(s"Only single name patterns supported but was $pat")
   }
 
-  val BlockDef = P( Dcl ).log()
+  val BlockDef = P( Dcl )
 
   val Constr = P( AnnotType ~~ (NotNewline ~ ParenArgList ).repX )
   val Constrs = P( (WL ~ Constr).rep(1, `with`.~/) )

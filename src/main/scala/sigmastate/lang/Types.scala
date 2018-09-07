@@ -31,7 +31,7 @@ trait Types extends Core {
     case (t, None) => t
     case (d, Some(r)) => SFunc(IndexedSeq(d), r)
   }
-  val Type: P[SType] = P( `=>`.? ~~ PostfixType ~ TypeBounds ~ `*`.? ).log()
+  val Type: P[SType] = P( `=>`.? ~~ PostfixType ~ TypeBounds ~ `*`.? )
 
 
   // Can't cut after `Id` because it may be a `*`, in which case
@@ -60,7 +60,7 @@ trait Types extends Core {
       }
     }
     P( CompoundType ~~ (NotNewline ~ Id.! ~~ OneNLMax ~ CompoundType).repX ).map { case (t, h) => buildInfix(t,h) }
-  }.log()
+  }
 
   val CompoundType = {
 //    val Refinement = P( OneNLMax ~ `{` ~/ Dcl.repX(sep=Semis) ~ `}` )
@@ -105,17 +105,17 @@ trait Types extends Core {
 //      case (n, Some(t)) => (n, t)
 //      case (n, None) => (n, NoType)
 //    }
-//    val Args = P( FunArg.repTC(1) ).log()
-//    val FunArgs = P( OneNLMax ~ "(" ~/ Args.? ~ ")" ).log().map(_.toSeq.flatten)
-//    val FunTypeArgs = P( "[" ~/ (Annot.rep ~ TypeArg).repTC(1) ~ "]" ).log()
+//    val Args = P( FunArg.repTC(1) )
+//    val FunArgs = P( OneNLMax ~ "(" ~/ Args.? ~ ")" ).map(_.toSeq.flatten)
+//    val FunTypeArgs = P( "[" ~/ (Annot.rep ~ TypeArg).repTC(1) ~ "]" )
 //    P( FunTypeArgs.? ~~ FunArgs.rep )
-//  }.log()
+//  }
 
   val TypeBounds: P0 = P( (`>:` ~/ Type).? ~ (`<:` ~/ Type).? ).ignore
   val TypeArg: P0 = {
     val CtxBounds = P((`:` ~/ Type).rep)
     P((Id | `_`) ~ TypeArgList.? ~ TypeBounds ~ CtxBounds).ignore
-  }.log()
+  }
 
   val Annot: P0 = P( `@` ~/ SimpleType ~  ("(" ~/ (Exprs ~ (`:` ~/ `_*`).?).? ~ TrailingComma ~ ")").rep ).ignore
 
