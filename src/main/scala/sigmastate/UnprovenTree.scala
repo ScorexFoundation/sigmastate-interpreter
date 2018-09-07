@@ -10,6 +10,7 @@ import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, Pr
 import sigmastate.Values.SigmaBoolean
 import sigmastate.serialization.ValueSerializer
 
+import scala.language.existentials
 
 object ConjectureType extends Enumeration {
   val AndConjecture = Value(0)

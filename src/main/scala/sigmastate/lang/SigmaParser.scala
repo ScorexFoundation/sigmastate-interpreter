@@ -5,7 +5,6 @@ import fastparse.core
 import sigmastate._
 import Values._
 import sigmastate.lang.Terms._
-import scorex.util.encode.Base58
 import sigmastate.SCollection.SByteArray
 import sigmastate.lang.syntax.Basic._
 import sigmastate.lang.syntax.{Core, Exprs}
@@ -44,12 +43,6 @@ object SigmaParser extends Exprs with Types with Core {
 
   val logged = mutable.Buffer.empty[String]
   implicit val logger = Logger(m => this.synchronized { logged.append(m) })
-
-  private val Base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-
-  private def byteVectorP: P[Value[SByteArray]] =
-    P("base58'" ~ CharsWhileIn(Base58Chars).! ~ "'")
-        .map(x => ByteArrayConstant(Base58.decode(x).get))
 
   def mkUnaryOp(opName: String, arg: Value[SType]) = opName match {
     case _ => error(s"Unknown prefix operation $opName")
