@@ -103,7 +103,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
       }
       Some(mkTaggedVariable(id, targs.head))
 
-    // Rule: fun (...) = ... --> fun (...): T = ...
+    // Rule: lambda (...) = ... --> lambda (...): T = ...
     case lam @ Lambda(params, args, t, Some(body)) =>
       require(params.isEmpty)
       val b1 = eval(body, env)

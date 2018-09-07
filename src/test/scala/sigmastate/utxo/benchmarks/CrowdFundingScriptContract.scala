@@ -29,7 +29,7 @@ class CrowdFundingScriptContract(
        | val c2 = allOf(Array(
        |   HEIGHT < timeout,
        |   projectPubKey,
-       |   OUTPUTS.exists(fun (out: Box) = {
+       |   OUTPUTS.exists({ (out: Box) =>
        |     out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
        |   })
        | ))
