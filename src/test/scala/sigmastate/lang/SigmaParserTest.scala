@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import fastparse.core.ParseError
+import fastparse.core.{ParseError, Parsed}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
@@ -13,8 +13,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   import StdSigmaBuilder._
 
   def parse(x: String): SValue = {
-    val res = SigmaParser(x, TransformingSigmaBuilder).get.value
-    res
+    SigmaParser(x, TransformingSigmaBuilder) match {
+      case Parsed.Success(v, _) => v
+      case f@Parsed.Failure(_, _, extra) =>
+        val traced = extra.traced
+        println(s"\nTRACE: ${traced.trace}")
+        f.get.value // force show error diagnostics
+    }
   }
 
   def parseType(x: String): SType = {
