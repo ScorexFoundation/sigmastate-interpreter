@@ -97,12 +97,13 @@ class CompilerItTest extends BaseCtxTests
 
   def arrayConstCase = {
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
-    val arr1Sym = colBuilder.fromArray[Byte](liftConst(arr1))
+    val arr1Sym = liftConst(arr1)
+    val col1Sym = colBuilder.fromArray[Byte](arr1Sym)
     val res = Cols.fromArray(arr1).arr
     Case(env, "arrayConst", "arr1", ergoCtx,
-      calc = {_ => arr1Sym },
+      calc = {_ => col1Sym },
       cost = {_ => constCost[Col[Byte]] },
-      size = {_ => sizeOf(arr1Sym) },
+      size = {_ => sizeOf(col1Sym) },
       tree = ByteArrayConstant(arr1), Result(res, 1, 2))
   }
 
@@ -130,8 +131,8 @@ class CompilerItTest extends BaseCtxTests
           c1 + c2
         }
         val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
-        val costs = colBuilder.replicate(arr.length, constCost[WBigInteger]).zip(arrSizes).map(f)
-        costs.sum(intPlusMonoid)
+        val costs = colBuilder.replicate(arr.length, 0).zip(arrSizes).map(f)
+        constCost[Col[WBigInteger]] + costs.sum(intPlusMonoid)
       },
       size = {_ =>
         val f = fun {s: Rep[Long] => (s max sizeOf(liftConst(n1))) + 1L}
@@ -142,7 +143,7 @@ class CompilerItTest extends BaseCtxTests
         BigIntArrayConstant(bigIntArr1),
         mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))
       ),
-      Result(res, 208, 4))
+      Result(res, 207, 4))
   }
 
   def sigmaPropConstCase = {
@@ -181,12 +182,12 @@ class CompilerItTest extends BaseCtxTests
   }
 
   test("constants") {
-//    intConstCase.doReduce
-//    bigIntegerConstCase.doReduce
-//    addBigIntegerConstsCase.doReduce()
-//    arrayConstCase.doReduce()
-//    sigmaPropConstCase.doReduce()
-//    andSigmaPropConstsCase.doReduce()
+    intConstCase.doReduce
+    bigIntegerConstCase.doReduce
+    addBigIntegerConstsCase.doReduce()
+    arrayConstCase.doReduce()
+    sigmaPropConstCase.doReduce()
+    andSigmaPropConstsCase.doReduce()
     bigIntArray_Map_Case.doReduce()
   }
 

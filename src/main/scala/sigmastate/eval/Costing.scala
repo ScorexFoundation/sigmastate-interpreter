@@ -357,10 +357,10 @@ trait Costing extends SigmaLibrary {
               implicit val l = liftableFromElem[wa](eWA).asInstanceOf[Liftable[a,wa]]
               val arrSym = liftConst[Array[a], WArray[wa]](arr)
               val resVals  = colBuilder.fromArray(arrSym)
-              val resCosts = colBuilder.replicate(arrSym.length, constCost(eWA))
+              val resCosts = colBuilder.replicate(arrSym.length, 0)
               val resSizes =
                 if (tpeA.isConstantSize)
-                  colBuilder.replicate(arrSym.length, typeSize(tpeA))
+                  colBuilder.replicate(resVals.length, typeSize(tpeA))
                 else {
                   val sizesConst: Array[Long] = arr.map { x: a => tpeA.dataSize(x.asWrappedType) }
                   val sizesArr = liftConst(sizesConst)

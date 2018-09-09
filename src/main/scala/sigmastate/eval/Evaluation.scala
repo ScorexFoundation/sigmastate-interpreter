@@ -110,7 +110,7 @@ trait Evaluation extends Costing {
 
     object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
 
-    def getArgTypes(args: Seq[AnyRef]) = {
+    def getArgClasses(args: Seq[AnyRef]): Seq[Class[_]] = {
       val types = args.map {
         case s: Sym => dataEnv(s).getClass
         case _: Seq[_] => classOf[Seq[_]]
@@ -131,7 +131,7 @@ trait Evaluation extends Costing {
     }
 
     def getObjMethod(objClass: Class[_], objMethod: Method, args: Seq[AnyRef]): Method = {
-      val argTypes = getArgTypes(args)
+      val argTypes = getArgClasses(args)
       val methods = objClass.getMethods
       val lookupName = objMethod.getName
       val resMethods = methods.filter(m => m.getName == lookupName)
@@ -143,11 +143,11 @@ trait Evaluation extends Costing {
           resMethods(0)
         case _ =>
           val res = resMethods.find { m =>
-            val mArgTypes = m.getParameterTypes
-            val N = mArgTypes.length
+            val mArgClasses = m.getParameterTypes
+            val N = mArgClasses.length
             (N == argTypes.length) && {
               (0 until N).forall { i =>
-                mArgTypes(i).isAssignableFrom(argTypes(i))
+                mArgClasses(i).isAssignableFrom(argTypes(i))
               }
             }
           }
@@ -172,7 +172,7 @@ trait Evaluation extends Costing {
       try {
         te.rhs match {
           case Const(x) => out(x.asInstanceOf[AnyRef])
-          case wc: LiftedConst[_] => out(wc.constValue)
+          case wc: LiftedConst[_,_] => out(wc.constValue)
           case _: DslBuilder | _: ColBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
             dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te"))
           case SigmaM.propBytes(prop) =>
@@ -211,9 +211,8 @@ trait Evaluation extends Costing {
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
             out(b.replicate(n, x)(xSym.elem.classTag))
           case mc @ MethodCall(obj, m, args, _) =>
-            val objValue = dataEnv(obj)
-            val (objMethod, argValues) = getObjMethodAndArgs(objValue.getClass, mc)
-            val res = objMethod.invoke(objValue, argValues:_*) match {
+            val dataRes = obj.elem.invokeUnlifted(mc, dataEnv)
+            val res = dataRes match {
               case Constant(v, _) => v
               case v => v
             }
@@ -367,10 +366,10 @@ trait Evaluation extends Costing {
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
         mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
-      case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a])) =>
+      case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
         val colTpe = elemToSType(s.elem)
         mkConstant[colTpe.type](wc.constValue.asInstanceOf[colTpe.WrappedType], colTpe)
-      case Def(wc: LiftedConst[a]) =>
+      case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
         mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
       case Def(IsContextProperty(v)) => v

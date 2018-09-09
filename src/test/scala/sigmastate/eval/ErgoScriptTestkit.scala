@@ -117,11 +117,16 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       val costed = cost(env, script)
       val res @ Tuple(calcF, costF, sizeF) = split(costed.asRep[Context => Costed[T]])
       if (printGraphs) {
-        val str = struct("calc" -> calcF, "cost" -> costF, "size" -> sizeF)
+        val str = struct(
+          "calc" -> calcF,
+          "cost" -> costF,
+          "size" -> sizeF
+        )
         val strExp = struct(
           expectedCalcF.map("calc" -> _).toSeq ++
           expectedCostF.map("cost" -> _).toSeq ++
-          expectedSizeF.map("size" -> _).toSeq)
+          expectedSizeF.map("size" -> _).toSeq
+        )
         val graphs = Seq(str, strExp)
         emit(name, graphs:_*)
       }
