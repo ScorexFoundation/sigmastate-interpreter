@@ -1,5 +1,7 @@
 package sigmastate.serialization
 
+import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeContext}
+import sigmastate.Values.StringConstant
 import sigmastate._
 import sigmastate.utxo._
 
@@ -147,5 +149,11 @@ class TransformersSerializationSpec extends SerializationSpecification {
 
   property("Base64ToByteArray: Serializer round trip") {
     forAll(base64ToByteArrayGen) { v => roundTripTest(v) }
+  }
+
+  property("PK(P2PK): Serializer round trip") {
+    forAll(p2pkAddressGen(ErgoLikeContext.Metadata.TestnetNetworkPrefix)) { p2pk =>
+      roundTripTest(ErgoAddressToSigmaProp(StringConstant(p2pk.toString)))
+    }
   }
 }

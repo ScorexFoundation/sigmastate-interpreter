@@ -1,6 +1,8 @@
 package sigmastate.utxo
 
 import org.ergoplatform
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
@@ -165,7 +167,8 @@ class SpamSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = ErgoBox(11, prop))
+      self = ErgoBox(11, prop),
+      metadata = Metadata(TestnetNetworkPrefix))
 
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(prop, ctx, fakeMessage).get

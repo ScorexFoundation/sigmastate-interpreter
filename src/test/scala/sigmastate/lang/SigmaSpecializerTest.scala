@@ -184,4 +184,8 @@ class SigmaSpecializerTest extends PropSpec
     spec("""fromBase64("111")""") shouldBe Base64ToByteArray(StringConstant("111"))
   }
 
+  property("PK") {
+    spec("""PK("111")""") shouldBe ErgoAddressToSigmaProp(StringConstant("111"))
+  }
+
 }

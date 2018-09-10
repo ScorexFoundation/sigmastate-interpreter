@@ -73,6 +73,7 @@ object CostTable {
     val SelectFieldDeclaration = 50
     val SigmaPropIsValidDeclaration = 50
     val SigmaPropBytes = 50
+    val ParseSigmaProp = 50
 
     val MapDeclaration = 100
 

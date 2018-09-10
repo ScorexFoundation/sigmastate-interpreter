@@ -1,5 +1,7 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
@@ -439,6 +441,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           left,
+          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultLeft = prover.prove(left.proposition, contextLeft, ut.messageToSign).get
 
@@ -447,6 +450,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           center,
+          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultCenter = prover.prove(center.proposition, contextCenter, ut.messageToSign).get
 
@@ -455,6 +459,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           right,
+          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultRight = prover.prove(right.proposition, contextRight, ut.messageToSign).get
         ut.toSigned(IndexedSeq(proverResultLeft, proverResultCenter, proverResultRight))

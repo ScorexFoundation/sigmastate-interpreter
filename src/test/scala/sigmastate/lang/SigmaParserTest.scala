@@ -448,4 +448,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("""fromBase58("111")""") shouldBe Apply(Ident("fromBase58"), IndexedSeq(StringConstant("111")))
     parse("""fromBase64("111")""") shouldBe Apply(Ident("fromBase64"), IndexedSeq(StringConstant("111")))
   }
+
+  property("PK") {
+    parse("""PK("111")""") shouldBe Apply(Ident("PK"), IndexedSeq(StringConstant("111")))
+  }
 }
