@@ -226,7 +226,7 @@ Access to this information allows us, for example, to create an output box that 
 
 Note that the script does not prevent the \texttt{friend} box from being spent on its own, in which case the output box protected by the script above will become not spendable.
 
-We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input array using the \texttt{exists} operator, which applies a boolean function to each array element until it finds one that satisfies the function or finds that none exists. To define a function, we use \texttt{fun} keyword; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{let} keyword.
+We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input array using the \texttt{exists} operator, which applies a boolean function to each array element until it finds one that satisfies the function or finds that none exists. To define a function, we use lambda syntax; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{val} keyword.
 \begin{verbatim}
         {
                 val isFriend = { (inputBox: Box) => inputBox.id == friend.id }
@@ -249,7 +249,7 @@ To give money to the project, the backer will create an output box protected by 
 \begin{verbatim}
         {
                 val fundraisingFailure = HEIGHT >= deadline && backerPubKey
-                val enoughRaised = fun(outBox: Box) = {
+                val enoughRaised = {(outBox: Box) =>
                         outBox.value >= minToRaise && 
                         outBox.propositionBytes == projectPubKey.propBytes
                 }
