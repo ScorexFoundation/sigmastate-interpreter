@@ -122,10 +122,10 @@ The following properties and methods can be used with arrays
 Function  | Description
 --------- | ------------
 `Array[T].size` |  number of items in the array
-`fun Array[T].exists(p: T => Boolean): Boolean ` | Returns true if there exists an item `x` in the array for which `p(x) == true`  
-`fun Array[T].forall(f: T => Boolean): Boolean ` | Returns true if for all items `x` in the array `p(x) == true`   
-`fun Array[T].map[R](f: T => R): Array[R] ` | Applies function `f` for each element of array collecting results in a new array of type `R`. 
-`fun Array[T].reduce(f: (T, T) => T): T ` | For an array `Array(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
+`def Array[T].exists(p: T => Boolean): Boolean ` | Returns true if there exists an item `x` in the array for which `p(x) == true`  
+`def Array[T].forall(f: T => Boolean): Boolean ` | Returns true if for all items `x` in the array `p(x) == true`   
+`def Array[T].map[R](f: T => R): Array[R] ` | Applies function `f` for each element of array collecting results in a new array of type `R`. 
+`def Array[T].reduce(f: (T, T) => T): T ` | For an array `Array(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
 
 #### AvlTree
 TBD
@@ -139,32 +139,32 @@ The following function declarations are automatically imported into any script:
 
 ```
 /** Returns true if all the conditions are true */
-fun allOf(conditions: Array[Boolean]): Boolean
+def allOf(conditions: Array[Boolean]): Boolean
 
 /** Returns true if any of the conditions is true */
-fun anyOf(conditions: Array[Boolean]): Boolean
+def anyOf(conditions: Array[Boolean]): Boolean
 
 /** Cryptographic hash function Blake2b */
-fun blake2b256(input: Array[Byte]): Array[Byte]
+def blake2b256(input: Array[Byte]): Array[Byte]
 
 /** Cryptographic hash function Sha256 */
-fun sha256(input: Array[Byte]): Array[Byte]
+def sha256(input: Array[Byte]): Array[Byte]
 
 /** Create BigInt from byte array representation. */
-fun byteArrayToBigInt(input: Array[Byte]): BigInt
+def byteArrayToBigInt(input: Array[Byte]): BigInt
 
 /** Returns bytes representation of integer value. */
-fun intToByteArray(input: Int): Array[Byte]
+def intToByteArray(input: Int): Array[Byte]
 
 /** Returns value of the given type from the environment by its tag.*/
-fun getVar[T](tag: Int): Option[T]
+def getVar[T](tag: Int): Option[T]
 
-fun proveDHTuple(g: GroupElement, h: GroupElement, 
+def proveDHTuple(g: GroupElement, h: GroupElement, 
                  u: GroupElement, v: GroupElement): Boolean
-fun proveDlog(value: GroupElement): Boolean
+def proveDlog(value: GroupElement): Boolean
 
 /** Predicate which checks whether a key is in a tree, by using a membership proof. */
-fun isMember(tree: AvlTree, key: Array[Byte], proof: Array[Byte]): Boolean
+def isMember(tree: AvlTree, key: Array[Byte], proof: Array[Byte]): Boolean
 ```
 
 ## Examples
