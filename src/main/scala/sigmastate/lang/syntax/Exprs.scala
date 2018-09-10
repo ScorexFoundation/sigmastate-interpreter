@@ -42,7 +42,7 @@ trait Exprs extends Core with Types {
           case (c, t, e) => builder.mkIf(c.asValue[SBoolean.type], t, e)
         }
       }
-//      val Fun = P( /* `fun` ~/ */ LambdaDef)
+//      val Fun = P( /* `fun` ~/ */ FunDef)
 
       val LambdaRhs = if (semiInference) P( BlockChunk.map {
         case (_ , b)  => mkBlock(b)
@@ -195,7 +195,7 @@ trait Exprs extends Core with Types {
     rhs
   }
 
-//  val LambdaDef = {
+//  val FunDef = {
 //    val Body = P( WL ~ `=>` ~ StatCtx.Expr )
 //    P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
 //      case (_ @ Seq(args), resType, body) => builder.mkLambda(args.toIndexedSeq, resType.getOrElse(NoType), Some(body))
