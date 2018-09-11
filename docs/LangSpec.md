@@ -23,7 +23,7 @@
 - generic high-order array operations: `map`, `fold`, `exists`, `forall`, etc.
 - accessing fields of any predefined structured objects: `box.value`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
-- user defined functions: `val isValid(pk: GroupElement) = proveDlog(pk)`
+- user defined functions: `def isValid(pk: GroupElement) = proveDlog(pk)`
 - lambdas and high-order methods: `OUTPUTS.exists({ (out: Box) => out.value >= minToRaise })`
 
 #### Data types 
