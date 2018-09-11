@@ -26,7 +26,7 @@ class CompilerItTest extends BaseCtxTests
   import ColBuilder._
   import Context._
   import Col._
-  import Sigma._
+  import SigmaProp._
   import CostedCol._
   import WBigInteger._
   import WECPoint._
@@ -147,23 +147,23 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def sigmaPropConstCase = {
-    val resSym = RProveDlogEvidence(liftECPoint(g1))
+    val resSym = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
     val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
     Case(env, "sigmaPropConst", "p1", ergoCtx,
       calc = {_ => resSym },
-      cost = {_ => constCost[WECPoint] + constCost[Sigma] },
+      cost = {_ => constCost[WECPoint] + constCost[SigmaProp] },
       size = {_ => sizeOf(resSym) },
       tree = SigmaPropConstant(p1), Result(res, 1 + 1, 32 + 1))
   }
 
   def andSigmaPropConstsCase = {
-    val p1Sym: Rep[Sigma] = RProveDlogEvidence(liftECPoint(g1))
-    val p2Sym: Rep[Sigma] = RProveDlogEvidence(liftECPoint(g2))
+    val p1Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
+    val p2Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g2.asInstanceOf[ECPoint]))
     val resSym = (p1Sym && p2Sym).isValid
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => resSym },
       cost = {_ =>
-        val c1 = constCost[WECPoint] + constCost[Sigma] +
+        val c1 = constCost[WECPoint] + constCost[SigmaProp] +
                   costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
         c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
       },

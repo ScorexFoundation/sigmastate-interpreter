@@ -30,13 +30,6 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
   type EsEnv = Map[String, Any]
 
   val noEnv: EsEnv = Map()
-  val AliceId = Array[Byte](1) // 0x0001
-  def newAliceBox(id: Byte, value: Long) = new TestBox(
-    Cols.fromArray(Array[Byte](0, id)), value, Cols.fromArray(AliceId), noBytes, noBytes, noRegisters)
-
-  def newContext(height: Long, self: Box, vars: AnyValue*): TContext = {
-    new TContext(noInputs, noOutputs, height, self, emptyAvlTree, vars.toArray)
-  }
 
   def newErgoContext(height: Long, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())
@@ -50,10 +43,6 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
     ergoCtx
   }
 
-  implicit class TContextOps(ctx: TContext) {
-    def withInputs(inputs: Box*) = new TContext(inputs.toArray, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, ctx.vars)
-    def withOutputs(outputs: Box*) = new TContext(ctx.inputs, outputs.toArray, ctx.height, ctx.selfBox, emptyAvlTree, ctx.vars)
-  }
 
   val boxA1 = newAliceBox(1, 100)
   val boxA2 = newAliceBox(2, 200)

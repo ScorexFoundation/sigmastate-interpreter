@@ -33,7 +33,7 @@ trait Costing extends SigmaLibrary {
   import WBigInteger._;
   import Col._;
   import ColBuilder._;
-  import Sigma._;
+  import SigmaProp._;
   import TrivialSigma._
   import Box._
   import ColOverArrayBuilder._;
@@ -140,11 +140,11 @@ trait Costing extends SigmaLibrary {
 
   override def rewriteDef[T](d: Def[T]): Rep[_] = {
     val CBM = ColBuilderMethods
-    val SigmaM = SigmaMethods
+    val SigmaM = SigmaPropMethods
     val CCM = CostedColMethods
     d match {
       case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
-        val l1: Rep[Sigma] = RTrivialSigma(l.asRep[Boolean])
+        val l1: Rep[SigmaProp] = RTrivialSigma(l.asRep[Boolean])
         // don't need new Thunk because sigma logical ops always strict
         val res = if (op == And)
           l1 && prop
@@ -215,7 +215,7 @@ trait Costing extends SigmaLibrary {
     case SBigInt => wBigIntegerElement
     case SBox => boxElement
     case SGroupElement => wECPointElement
-    case SSigmaProp => sigmaElement
+    case SSigmaProp => sigmaPropElement
     case c: SCollection[a] => colElement(stypeToElem(c.elemType))
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asElem[T#WrappedType]
@@ -229,7 +229,7 @@ trait Costing extends SigmaLibrary {
     case _: WBigIntegerElem[_] => SBigInt
     case _: BoxElem[_] => SBox
     case _: WECPointElem[_] => SGroupElement
-    case _: SigmaElem[_] => SSigmaProp
+    case _: SigmaPropElem[_] => SSigmaProp
     case ce: ColElem[_,_] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_,_] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
     case _ => error(s"Don't know how to convert Elem $e to SType")
@@ -339,15 +339,15 @@ trait Costing extends SigmaLibrary {
       case c @ Constant(v, tpe) => v match {
         case p: DLogProtocol.ProveDlog =>
           val ge = evalNode(ctx, env, p.value).asRep[Costed[WECPoint]]
-          val resV: Rep[Sigma] = RProveDlogEvidence(ge.value)
+          val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
           withDefaultSize(resV, ge.cost + costOf(SigmaPropConstant(p)))
         case bi: BigInteger =>
           assert(tpe == SBigInt)
-          val resV = liftBigInteger(bi)
+          val resV = liftConst(bi)
           withDefaultSize(resV, costOf(c))
         case ge: ECPoint =>
           assert(tpe == SGroupElement)
-          val resV = liftECPoint(ge)
+          val resV = liftConst(ge)
 //          val size = SGroupElement.dataSize(ge.asWrappedType)
           withDefaultSize(resV, costOf(c))
         case arr: Array[a] =>
@@ -560,11 +560,11 @@ trait Costing extends SigmaLibrary {
         CostedPrimRep(xsC.value(iV), xsC.cost + iC.cost + costOf(node), size)
 
       case SigmaPropIsValid(p) =>
-        val pC = evalNode(ctx, env, p).asRep[Costed[Sigma]]
+        val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
         val v = pC.value.isValid
         withDefaultSize(v, pC.cost + costOf(node))
       case SigmaPropBytes(p) =>
-        val pC = evalNode(ctx, env, p).asRep[Costed[Sigma]]
+        val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
         val v = pC.value.propBytes
         withDefaultSize(v, pC.cost + costOf(node))
       case utxo.ExtractAmount(box) =>

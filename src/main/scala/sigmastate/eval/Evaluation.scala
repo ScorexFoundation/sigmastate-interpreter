@@ -23,7 +23,7 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 
 trait Evaluation extends Costing {
   import Context._
-  import Sigma._
+  import SigmaProp._
   import Col._
   import Box._
   import ColBuilder._
@@ -38,7 +38,7 @@ trait Evaluation extends Costing {
   import Liftables._
   
   private val ContextM = ContextMethods
-  private val SigmaM = SigmaMethods
+  private val SigmaM = SigmaPropMethods
   private val ColM = ColMethods
   private val BoxM = BoxMethods
   private val CBM = ColBuilderMethods
@@ -110,62 +110,62 @@ trait Evaluation extends Costing {
 
     object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
 
-    def getArgClasses(args: Seq[AnyRef]): Seq[Class[_]] = {
-      val types = args.map {
-        case s: Sym => dataEnv(s).getClass
-        case _: Seq[_] => classOf[Seq[_]]
-        case e: Elem[_] => classOf[ClassTag[_]]
-      }
-      types
-    }
+//    def getArgClasses(args: Seq[AnyRef]): Seq[Class[_]] = {
+//      val types = args.map {
+//        case s: Sym => dataEnv(s).getClass
+//        case _: Seq[_] => classOf[Seq[_]]
+//        case e: Elem[_] => classOf[ClassTag[_]]
+//      }
+//      types
+//    }
 
-    def getArgValues(args: Seq[AnyRef]): Seq[AnyRef] = {
-      val vs = args.map {
-        case s: Sym => dataEnv(s)
-        case vec: Seq[AnyRef]@unchecked => getArgValues(vec)
-        case e: WBigIntegerElem[_] => classTag[BigInteger]
-        case e: WECPointElem[_] => classTag[ECPoint]
-        case e: Elem[_] => e.classTag
-      }
-      vs
-    }
+//    def getArgValues(args: Seq[AnyRef]): Seq[AnyRef] = {
+//      val vs = args.map {
+//        case s: Sym => dataEnv(s)
+//        case vec: Seq[AnyRef]@unchecked => getArgValues(vec)
+//        case e: WBigIntegerElem[_] => classTag[BigInteger]
+//        case e: WECPointElem[_] => classTag[ECPoint]
+//        case e: Elem[_] => e.classTag
+//      }
+//      vs
+//    }
 
-    def getObjMethod(objClass: Class[_], objMethod: Method, args: Seq[AnyRef]): Method = {
-      val argTypes = getArgClasses(args)
-      val methods = objClass.getMethods
-      val lookupName = objMethod.getName
-      val resMethods = methods.filter(m => m.getName == lookupName)
-      def error = !!!(s"Cannot resolve of pre-staged method $objMethod in class $objClass")
-      resMethods.length match {
-        case 0 =>
-          error
-        case 1 =>
-          resMethods(0)
-        case _ =>
-          val res = resMethods.find { m =>
-            val mArgClasses = m.getParameterTypes
-            val N = mArgClasses.length
-            (N == argTypes.length) && {
-              (0 until N).forall { i =>
-                mArgClasses(i).isAssignableFrom(argTypes(i))
-              }
-            }
-          }
-          res.getOrElse(error)
-      }
-    }
+//    def getObjMethod(objClass: Class[_], objMethod: Method, args: Seq[AnyRef]): Method = {
+//      val argTypes = getArgClasses(args)
+//      val methods = objClass.getMethods
+//      val lookupName = objMethod.getName
+//      val resMethods = methods.filter(m => m.getName == lookupName)
+//      def error = !!!(s"Cannot resolve of pre-staged method $objMethod in class $objClass")
+//      resMethods.length match {
+//        case 0 =>
+//          error
+//        case 1 =>
+//          resMethods(0)
+//        case _ =>
+//          val res = resMethods.find { m =>
+//            val mArgClasses = m.getParameterTypes
+//            val N = mArgClasses.length
+//            (N == argTypes.length) && {
+//              (0 until N).forall { i =>
+//                mArgClasses(i).isAssignableFrom(argTypes(i))
+//              }
+//            }
+//          }
+//          res.getOrElse(error)
+//      }
+//    }
 
-    def getObjMethodAndArgs(objClass: Class[_], mc: MethodCall): (Method, Seq[AnyRef]) = mc match {
-      case ColM.map(col, f) =>
-        val args = Seq(f, f.elem.eRange)
-        val m = getObjMethod(objClass, mc.method, args)
-        val argValues = getArgValues(args)
-        (m, argValues)
-      case _ =>
-        val m = getObjMethod(objClass, mc.method, mc.args)
-        val argValues = getArgValues(mc.args)
-        (m, argValues)
-    }
+//    def getObjMethodAndArgs(objClass: Class[_], mc: MethodCall): (Method, Seq[AnyRef]) = mc match {
+//      case ColM.map(col, f) =>
+//        val args = Seq(f, f.elem.eRange)
+//        val m = getObjMethod(objClass, mc.method, args)
+//        val argValues = getArgValues(args)
+//        (m, argValues)
+//      case _ =>
+//        val m = getObjMethod(objClass, mc.method, mc.args)
+//        val argValues = getArgValues(mc.args)
+//        (m, argValues)
+//    }
 
     def evaluate(te: TableEntry[_]): Unit = {
       def out(v: Any) = dataEnv += (te.sym -> v.asInstanceOf[AnyRef])

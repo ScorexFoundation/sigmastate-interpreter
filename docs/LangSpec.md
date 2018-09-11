@@ -32,7 +32,7 @@
 - `Unit` - a type with a single value `()`
 - `Int` - 64 bit signed integer
 - `Boolean` - a type with two logical values `true` and `false`
-- `Sigma`  - a type which represent a logical value which can be be obtained by 
+- `SigmaProp`  - a type which represent a logical value which can be be obtained by 
              executing a Sigma protocol with zero-knowledge proof of knowledge
 - `BigInt`  - immutable arbitrary-precision integers
 - `ByteArray` - arbitrary sequence of bytes
@@ -178,7 +178,7 @@ After the timeout output could be spent by backer only.
     
 ```
 guard CrowdFunding(timeout: Int, minToRaise: Int, 
-                   backerPubKey: Sigma, projectPubKey: Sigma) {
+                   backerPubKey: SigmaProp, projectPubKey: SigmaProp) {
   let c1 = HEIGHT >= timeout && backerPubKey
   let c2 = allOf(Array(
     HEIGHT < timeout,
@@ -206,7 +206,7 @@ an input got into a block in the register R3 (if the transaction is not included
 into the blockchain yet, then R3 contains the current height of the blockchain).
     
 ```
-guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript: Sigma) {
+guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript: SigmaProp) {
   let c2 = allOf(Array(
    HEIGHT >= SELF.R3[Int].value + demurragePeriod,
    OUTPUTS.exists(fun (out: Box) = {
@@ -224,7 +224,7 @@ The ring is an array of public keys which correspond to some secret keys (of som
 The script below checks that at least one party provided the signature WITHOUT disclosing this party.
 
 ```
-guard RingSignature(ring: Array[Sigma]) {
+guard RingSignature(ring: Array[SigmaProp]) {
   anyOf(ring)
 }
 ```

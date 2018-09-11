@@ -22,7 +22,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import WECPoint._
   import ProveDlogEvidence._
   import Context._; import SigmaContract._
-  import Cost._; import ColBuilder._; import Col._; import Box._; import Sigma._; import CrowdFunding._
+  import Cost._; import ColBuilder._; import Col._; import Box._; import SigmaProp._; import CrowdFunding._
   import SigmaDslBuilder._; import WOption._
   import Liftables._
   
@@ -188,8 +188,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
     checkInEnv[Boolean](envCF, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
-        val backerPubKey = ctx.getVar[Sigma](backerPubKeyId).get
-        val projectPubKey = ctx.getVar[Sigma](projectPubKeyId).get
+        val backerPubKey = ctx.getVar[SigmaProp](backerPubKeyId).get
+        val projectPubKey = ctx.getVar[SigmaProp](projectPubKeyId).get
         val c1 = dsl.allOf(colBuilder(ctx.HEIGHT >= toRep(timeout), backerPubKey.isValid))
         val c2 = dsl.allOf(colBuilder(
           ctx.HEIGHT < toRep(timeout),
@@ -225,7 +225,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
     checkInEnv[Boolean](envDem, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
-      val regScript = ctx.getVar[Sigma](regScriptId).get
+      val regScript = ctx.getVar[SigmaProp](regScriptId).get
       val c2 = dsl.allOf(colBuilder(
         ctx.HEIGHT >= ctx.SELF.R4[Long].get + demurragePeriod,
         ctx.OUTPUTS.exists(fun { out =>
