@@ -1,5 +1,7 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.util.ScorexLogging
 import sigmastate.Values.{IntConstant, LongConstant}
@@ -81,8 +83,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
         |    let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
         |    let sameScriptRule = SELF.propositionBytes == out.propositionBytes
-        |    let heightIncreased = HEIGHT > SELF.R4[Long].value
-        |    let heightCorrect = out.R4[Long].value == HEIGHT
+        |    let heightIncreased = HEIGHT > SELF.R4[Long].get
+        |    let heightCorrect = out.R4[Long].get == HEIGHT
         |    let lastCoins = SELF.value <= oneEpochReduction
         |    allOf(Array(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule)) || (heightIncreased && lastCoins)
         |}""".stripMargin).asBoolValue
@@ -132,6 +134,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         IndexedSeq(emissionBox),
         ut,
         emissionBox,
+        metadata = Metadata(MainnetNetworkPrefix),
         ContextExtension.empty)
       val proverResult = prover.prove(prop, context, ut.messageToSign).get
       ut.toSigned(IndexedSeq(proverResult))

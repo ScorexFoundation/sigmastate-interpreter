@@ -134,6 +134,9 @@ trait SigmaBuilder {
   def mkLambda(args: IndexedSeq[(String,SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
+  def mkGenLambda(tpeParams: Seq[STypeParam], args: IndexedSeq[(String,SType)],
+               givenResType: SType,
+               body: Option[Value[SType]]): Value[SFunc]
 
   def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T]
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
@@ -142,6 +145,8 @@ trait SigmaBuilder {
 
   def mkBase58ToByteArray(input: Value[SString.type]): Value[SByteArray]
   def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray]
+
+  def mkPK(input: Value[SString.type]): Value[SSigmaProp.type]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -370,7 +375,13 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkLambda(args: IndexedSeq[(String, SType)],
                         givenResType: SType,
                         body: Option[Value[SType]]): Value[SFunc] =
-    Lambda(args, givenResType, body)
+    Lambda(Nil, args, givenResType, body)
+
+  def mkGenLambda(tpeParams: Seq[STypeParam],
+                  args: IndexedSeq[(String, SType)],
+                  givenResType: SType,
+                  body: Option[Value[SType]]) =
+    Lambda(tpeParams, args, givenResType, body)
 
   override def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T] =
     ConstantNode[T](value, tpe)
@@ -387,6 +398,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray] =
     Base64ToByteArray(input)
+
+  override def mkPK(input: Value[SString.type]): Value[SSigmaProp.type] =
+    ErgoAddressToSigmaProp(input)
 }
 
 trait TypeConstraintCheck {

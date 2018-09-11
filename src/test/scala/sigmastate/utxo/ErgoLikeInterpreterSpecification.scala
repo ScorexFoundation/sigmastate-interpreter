@@ -1,6 +1,8 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
@@ -310,8 +312,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """{
-        |  let pubkey1 = SELF.R4[GroupElement].value
-        |  let pubkey2 = SELF.R5[GroupElement].value
+        |  let pubkey1 = SELF.R4[GroupElement].get
+        |  let pubkey2 = SELF.R5[GroupElement].get
         |  proveDlog(pubkey1) && proveDlog(pubkey2)
         |}""".stripMargin).asBoolValue
 
@@ -554,9 +556,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       """{
         |  let cond = INPUTS(0).value > 10
         |  let preimage = if (cond)
-        |    INPUTS(2).R4[Array[Byte]].value
+        |    INPUTS(2).R4[Array[Byte]].get
         |  else
-        |    INPUTS(1).R4[Array[Byte]].value
+        |    INPUTS(1).R4[Array[Byte]].get
         |  helloHash == blake2b256(preimage)
          }""".stripMargin).asBoolValue
 
@@ -587,5 +589,39 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     //todo: check failing branches
+  }
+
+  property("PK - P2PK address type") {
+    implicit val ergoAddressEncoder: ErgoAddressEncoder =
+      new ErgoAddressEncoder(TestnetNetworkPrefix)
+
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
+
+    val dk1 = ProveDlog(prover.dlogSecrets.head.publicImage.h)
+    val p2pk = P2PKAddress(dk1)
+    val encodedP2PK = p2pk.toString
+
+    val prop1 = ErgoAddressToSigmaProp(StringConstant(encodedP2PK)).isValid
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq()),
+      self = ErgoBox(20, TrueLeaf, Seq(), Map()))
+
+    val proof1 = prover.prove(prop1, ctx, fakeMessage).get.proof
+    verifier.verify(prop1, ctx, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe true
+
+    val ctxMainnet = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq()),
+      self = ErgoBox(20, TrueLeaf, Seq(), Map()),
+      metadata = Metadata(MainnetNetworkPrefix))
+
+    verifier.verify(prop1, ctxMainnet, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe false
   }
 }

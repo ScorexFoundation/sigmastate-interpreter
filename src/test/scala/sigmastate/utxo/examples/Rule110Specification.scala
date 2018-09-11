@@ -1,5 +1,7 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
@@ -42,14 +44,14 @@ class Rule110Specification extends SigmaTestingCommons {
     val prop = compile(Map(),
       """{
         |  let indices: Array[Int] = Array(0, 1, 2, 3, 4, 5)
-        |  let inLayer: Array[Byte] = SELF.R4[Array[Byte]].value
+        |  let inLayer: Array[Byte] = SELF.R4[Array[Byte]].get
         |  fun procCell(i: Int): Byte = {
         |    let l = inLayer((if (i == 0) 5 else (i - 1)))
         |    let c = inLayer(i)
         |    let r = inLayer((i + 1) % 6)
         |    ((l * c * r + c * r + c + r) % 2).toByte
         |  }
-        |  (OUTPUTS(0).R4[Array[Byte]].value == indices.map(procCell)) &&
+        |  (OUTPUTS(0).R4[Array[Byte]].get == indices.map(procCell)) &&
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
          }""".stripMargin).asBoolValue
 
@@ -439,6 +441,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           left,
+          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultLeft = prover.prove(left.proposition, contextLeft, ut.messageToSign).get
 
@@ -447,6 +450,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           center,
+          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultCenter = prover.prove(center.proposition, contextCenter, ut.messageToSign).get
 
@@ -455,6 +459,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           right,
+          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultRight = prover.prove(right.proposition, contextRight, ut.messageToSign).get
         ut.toSigned(IndexedSeq(proverResultLeft, proverResultCenter, proverResultRight))

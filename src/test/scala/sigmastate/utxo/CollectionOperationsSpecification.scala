@@ -141,7 +141,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """OUTPUTS.exists(fun (box: Box) = {
-        |  box.R4[Long].value == SELF.R4[Long].value + 1
+        |  box.R4[Long].get == SELF.R4[Long].get + 1
          })""".stripMargin).asBoolValue
 
     val propTree = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), reg1)(SLong),
@@ -175,7 +175,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """OUTPUTS.exists(fun (box: Box) = {
-        |  box.R4[Long].valueOrElse(0L) == SELF.R4[Long].value + 1
+        |  box.R4[Long].getOrElse(0L) == SELF.R4[Long].get + 1
          })""".stripMargin).asBoolValue
 
     val propTree = Exists(Outputs, 21,

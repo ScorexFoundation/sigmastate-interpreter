@@ -307,7 +307,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("f(x, y).size") shouldBe Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "size")
     parse("f(x, y).get(1)") shouldBe Apply(Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "get"), IndexedSeq(IntConstant(1)))
     parse("{let y = f(x); y}") shouldBe Block(Seq(Let("y", Apply(Ident("f"), IndexedSeq(Ident("x"))))), Ident("y"))
-    parse("getVar[Array[Byte]](10)") shouldBe Apply(ApplyTypes(Ident("getVar"), Seq(SByteArray)), IndexedSeq(IntConstant(10)))
+    parse("getVar[Array[Byte]](10).get") shouldBe Select(Apply(ApplyTypes(Ident("getVar"), Seq(SByteArray)), IndexedSeq(IntConstant(10))), "get")
     parse("min(x, y)") shouldBe Apply(Ident("min"), IndexedSeq(Ident("x"), Ident("y")))
     parse("min(1, 2)") shouldBe Apply(Ident("min"), IndexedSeq(IntConstant(1), IntConstant(2)))
     parse("max(x, y)") shouldBe Apply(Ident("max"), IndexedSeq(Ident("x"), Ident("y")))
@@ -447,5 +447,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   property("fromBaseX string decoding") {
     parse("""fromBase58("111")""") shouldBe Apply(Ident("fromBase58"), IndexedSeq(StringConstant("111")))
     parse("""fromBase64("111")""") shouldBe Apply(Ident("fromBase64"), IndexedSeq(StringConstant("111")))
+  }
+
+  property("PK") {
+    parse("""PK("111")""") shouldBe Apply(Ident("PK"), IndexedSeq(StringConstant("111")))
   }
 }

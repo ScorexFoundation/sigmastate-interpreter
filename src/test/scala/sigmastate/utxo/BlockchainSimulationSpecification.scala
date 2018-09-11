@@ -3,6 +3,8 @@ package sigmastate.utxo
 import java.io.{File, FileWriter}
 
 import org.ergoplatform
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
@@ -42,6 +44,7 @@ class BlockchainSimulationSpecification extends PropSpec
         IndexedSeq(box),
         tx,
         box,
+        Metadata(TestnetNetworkPrefix),
         ContextExtension.empty)
       val proverResult = miner.prove(box.proposition, context, tx.messageToSign).get
 
@@ -185,7 +188,8 @@ object BlockchainSimulationSpecification {
       val height = state.currentHeight + 1
 
       val blockCost = block.txs.foldLeft(0L) {case (accCost, tx) =>
-        ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader) match {
+        ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader,
+          Metadata(TestnetNetworkPrefix)) match {
           case Left(throwable) => throw throwable
           case Right(cost) => accCost + cost
         }

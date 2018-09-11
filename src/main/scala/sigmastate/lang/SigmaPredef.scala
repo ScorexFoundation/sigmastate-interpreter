@@ -1,9 +1,9 @@
 package sigmastate.lang
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{SValue, Value}
+import sigmastate.Values.{Value, SValue}
 import sigmastate._
-import sigmastate.lang.Terms.Lambda
+import sigmastate.lang.Terms.{Lambda, STypeParam}
 import sigmastate.lang.TransformingSigmaBuilder._
 
 object SigmaPredef {
@@ -30,7 +30,7 @@ object SigmaPredef {
     "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
     "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
 
-    "getVar" -> mkLambda(Vector("varId" -> SByte), tT, None),
+    "getVar" -> mkGenLambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), SOption(tT), None),
 
     "proveDHTuple" -> mkLambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),
@@ -39,6 +39,7 @@ object SigmaPredef {
        "tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
     "fromBase58" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
+    "PK" -> mkLambda(Vector("input" -> SString), SSigmaProp, None),
   ).toMap
 
   def PredefIdent(name: String): Value[SType] = {
@@ -63,4 +64,6 @@ object SigmaPredef {
 
   val FromBase58Sym = PredefIdent("fromBase58")
   val FromBase64Sym = PredefIdent("fromBase64")
+
+  val PKSym = PredefIdent("PK")
 }

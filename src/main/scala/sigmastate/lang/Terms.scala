@@ -88,7 +88,7 @@ object Terms {
   }
 
   /** Apply types for type parameters of input value. */
-  case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] {
+  case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] { node =>
 
     override val opCode: OpCode = OpCodes.Undefined
 
@@ -97,7 +97,8 @@ object Terms {
     override def evaluated: Boolean = false
     lazy val tpe: SType = input.tpe match {
       case funcType: SFunc =>
-        val subst = funcType.tpeArgs.zip(tpeArgs).toMap
+        require(funcType.tpeParams.length == tpeArgs.length, s"Invalid number of type parameters in $node")
+        val subst = funcType.tpeParams.map(_.ident).zip(tpeArgs).toMap
         SigmaTyper.applySubst(input.tpe, subst)
       case _ => input.tpe
     }
@@ -112,20 +113,27 @@ object Terms {
     override def evaluated: Boolean = false
   }
 
-  case class Lambda(args: IndexedSeq[(String,SType)], givenResType: SType, body: Option[Value[SType]]) extends Value[SFunc] {
-
+  case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
+    assert(upperBound.isEmpty && lowerBound.isEmpty, s"Type parameters with bounds are not supported, but found $this")
+    override def toString = ident.toString + upperBound.fold("")(u => s" <: $u") + lowerBound.fold("")(l => s" >: $l")
+  }
+  
+  case class Lambda(
+        tpeParams: Seq[STypeParam],
+        args: IndexedSeq[(String,SType)],
+        givenResType: SType,
+        body: Option[Value[SType]]) extends Value[SFunc]
+  {
+    require(!(tpeParams.nonEmpty && body.nonEmpty), s"Generic function definitions are not supported, but found $this")
     override val opCode: OpCode = OpCodes.Undefined
-
-
     override def cost[C <: Context[C]](context: C): Long = ???
-
     override def evaluated: Boolean = false
-    lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe))
+    lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe), tpeParams)
   }
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
-      Lambda(args, resTpe, Some(body))
-    def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(args, NoType, Some(body))
+      Lambda(Nil, args, resTpe, Some(body))
+    def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(Nil, args, NoType, Some(body))
   }
 
   implicit class ValueOps(v: Value[SType]) {
