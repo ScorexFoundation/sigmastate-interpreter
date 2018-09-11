@@ -369,11 +369,18 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("predefined Exists with lambda argument") {
-    parse("OUTPUTS.exists({ (out: Box) => out.amount >= minToRaise })") shouldBe
-      Apply(Select(Ident("OUTPUTS"), "exists"),
-        IndexedSeq(
-          Lambda(IndexedSeq("out" -> SBox),
-            GE(Select(Ident("out"), "amount").asValue[SLong.type], IntIdent("minToRaise")))))
+    val tree = Apply(Select(Ident("OUTPUTS"), "exists"),
+      IndexedSeq(
+        Lambda(IndexedSeq("out" -> SBox),
+          GE(Select(Ident("out"), "amount").asValue[SLong.type], IntIdent("minToRaise")))))
+    // both parens and curly braces
+    parse("OUTPUTS.exists ({ (out: Box) => out.amount >= minToRaise })") shouldBe tree
+    // only curly braces (one line)
+    parse("OUTPUTS.exists { (out: Box) => out.amount >= minToRaise }") shouldBe tree
+    // only curly braces (multiline)
+    parse(
+      """OUTPUTS.exists { (out: Box) =>
+        |out.amount >= minToRaise }""".stripMargin) shouldBe tree
   }
 
   property("function definitions") {

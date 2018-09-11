@@ -24,7 +24,7 @@
 - accessing fields of any predefined structured objects: `box.value`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
 - user defined functions: `def isValid(pk: GroupElement) = proveDlog(pk)`
-- lambdas and high-order methods: `OUTPUTS.exists({ (out: Box) => out.value >= minToRaise })`
+- lambdas and high-order methods: `OUTPUTS.exists { (out: Box) => out.value >= minToRaise }`
 
 #### Data types 
 
@@ -114,7 +114,7 @@ Even though ErgoScript is not object-oriented language, Array operations use the
 For example the following script check an existence of some element in the array satisfying some predicate (condition)
 
 ```
-val ok = OUTPUTS.exists({ (box: Box) => box.value > 1000 })
+val ok = OUTPUTS.exists { (box: Box) => box.value > 1000 }
 ``` 
 
 The following properties and methods can be used with arrays
@@ -184,9 +184,9 @@ guard CrowdFunding(timeout: Int, minToRaise: Int,
   val c2 = allOf(Array(
     HEIGHT < timeout,
     projectPubKey,
-    OUTPUTS.exists({ (out: Box) => 
+    OUTPUTS.exists { (out: Box) => 
       out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
-    })
+    }
   ))
   c1 || c2
 }
@@ -210,9 +210,9 @@ into the blockchain yet, then R3 contains the current height of the blockchain).
 guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript: Sigma) {
   val c2 = allOf(Array(
    HEIGHT >= SELF.R3[Int].get + demurragePeriod,
-   OUTPUTS.exists({ (out: Box) => 
+   OUTPUTS.exists { (out: Box) => 
      out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
-   })
+   }
  ))
  regularScript || c2
 }

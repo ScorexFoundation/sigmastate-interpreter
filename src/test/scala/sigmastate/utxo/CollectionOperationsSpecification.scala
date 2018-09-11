@@ -140,9 +140,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = compile(Map(),
-      """OUTPUTS.exists({ (box: Box) =>
+      """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].get == SELF.R4[Long].get + 1
-         })""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue
 
     val propTree = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), reg1)(SLong),
       Plus(ExtractRegisterAs(Self, reg1)(SLong), LongConstant(1))))
@@ -174,9 +174,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = compile(Map(),
-      """OUTPUTS.exists({ (box: Box) =>
+      """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].getOrElse(0L) == SELF.R4[Long].get + 1
-         })""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue
 
     val propTree = Exists(Outputs, 21,
       EQ(ExtractRegisterAs(TaggedBox(21), reg1, default = Some(LongConstant(0L))),
@@ -285,7 +285,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """OUTPUTS
-        |.map({ (box: Box) => box.value }).getOrElse(3, 0L)== 0""".stripMargin
+        |.map { (box: Box) => box.value }
+        |.getOrElse(3, 0L)== 0""".stripMargin
     val expectedPropTree = EQ(
       ByIndex(
         MapCollection(Outputs,21,ExtractAmount(TaggedBox(21))),

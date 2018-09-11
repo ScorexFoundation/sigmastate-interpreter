@@ -140,11 +140,11 @@ class TestingInterpreterSpecification extends PropSpec
               |}""".stripMargin)
     testEval("""{
               |  val arr = Array(1, 2, 3)
-              |  arr.map({(i: Int) => i + 1}) == Array(2, 3, 4)
+              |  arr.map {(i: Int) => i + 1} == Array(2, 3, 4)
               |}""".stripMargin)
     testEval("""{
               |  val arr = Array(1, 2, 3)
-              |  arr.where({(i: Int) => i < 3}) == Array(1, 2)
+              |  arr.where {(i: Int) => i < 3} == Array(1, 2)
               |}""".stripMargin)
   }
 
