@@ -17,14 +17,14 @@
 
 - Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, *, ^, ++`
 - predefined primitives: `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
-- let declarations: `let h = blake2b256(pubkey)`
+- val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
 - array literals: `Array(1, 2, 3, 4)`
 - generic high-order array operations: `map`, `fold`, `exists`, `forall`, etc.
 - accessing fields of any predefined structured objects: `box.value`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
-- user defined functions: `let isValid(pk: GroupElement) = proveDlog(pk)`
-- lambdas and high-order methods: `OUTPUTS.exists(fun (out: Box) = out.value >= minToRaise)`
+- user defined functions: `def isValid(pk: GroupElement) = proveDlog(pk)`
+- lambdas and high-order methods: `OUTPUTS.exists { (out: Box) => out.value >= minToRaise }`
 
 #### Data types 
 
@@ -48,10 +48,10 @@
 There is a syntax for literals, which can be used to introduce values 
 of some types directly in program text like the following examples:
 ```
- let unit: Unit = ()       // unit constant
- let long: Int = 10       // interger value literal
- let bool: Boolean = true  // logical literal
- let arr = Array(1, 2, 3)  // constructs array with given items
+ val unit: Unit = ()       // unit constant
+ val long: Int = 10       // interger value literal
+ val bool: Boolean = true  // logical literal
+ val arr = Array(1, 2, 3)  // constructs array with given items
 ```
 Note that many types don't have literal syntax and their values are introduced 
 by applying operations.
@@ -100,21 +100,21 @@ As in many languages Array is a collection of items of the same type.
 
 Each item can be accessed by constant index, for example:
 ```
-let myOutput = OUTPUTS(0)
-let myInput = INPUTS(0)
+val myOutput = OUTPUTS(0)
+val myInput = INPUTS(0)
 ```
 
 Array have `size` property which returns number of elements in an array. 
 
 ```
-let size = OUTPUTS.size
+val size = OUTPUTS.size
 ```
 
 Even though ErgoScript is not object-oriented language, Array operations use the syntax of method invocations. 
 For example the following script check an existence of some element in the array satisfying some predicate (condition)
 
 ```
-let ok = OUTPUTS.exists(fun (box: Box) = box.value > 1000)
+val ok = OUTPUTS.exists { (box: Box) => box.value > 1000 }
 ``` 
 
 The following properties and methods can be used with arrays
@@ -122,10 +122,10 @@ The following properties and methods can be used with arrays
 Function  | Description
 --------- | ------------
 `Array[T].size` |  number of items in the array
-`fun Array[T].exists(p: T => Boolean): Boolean ` | Returns true if there exists an item `x` in the array for which `p(x) == true`  
-`fun Array[T].forall(f: T => Boolean): Boolean ` | Returns true if for all items `x` in the array `p(x) == true`   
-`fun Array[T].map[R](f: T => R): Array[R] ` | Applies function `f` for each element of array collecting results in a new array of type `R`. 
-`fun Array[T].reduce(f: (T, T) => T): T ` | For an array `Array(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
+`def Array[T].exists(p: T => Boolean): Boolean ` | Returns true if there exists an item `x` in the array for which `p(x) == true`  
+`def Array[T].forall(f: T => Boolean): Boolean ` | Returns true if for all items `x` in the array `p(x) == true`   
+`def Array[T].map[R](f: T => R): Array[R] ` | Applies function `f` for each element of array collecting results in a new array of type `R`. 
+`def Array[T].reduce(f: (T, T) => T): T ` | For an array `Array(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
 
 #### AvlTree
 TBD
@@ -139,32 +139,32 @@ The following function declarations are automatically imported into any script:
 
 ```
 /** Returns true if all the conditions are true */
-fun allOf(conditions: Array[Boolean]): Boolean
+def allOf(conditions: Array[Boolean]): Boolean
 
 /** Returns true if any of the conditions is true */
-fun anyOf(conditions: Array[Boolean]): Boolean
+def anyOf(conditions: Array[Boolean]): Boolean
 
 /** Cryptographic hash function Blake2b */
-fun blake2b256(input: Array[Byte]): Array[Byte]
+def blake2b256(input: Array[Byte]): Array[Byte]
 
 /** Cryptographic hash function Sha256 */
-fun sha256(input: Array[Byte]): Array[Byte]
+def sha256(input: Array[Byte]): Array[Byte]
 
 /** Create BigInt from byte array representation. */
-fun byteArrayToBigInt(input: Array[Byte]): BigInt
+def byteArrayToBigInt(input: Array[Byte]): BigInt
 
 /** Returns bytes representation of integer value. */
-fun intToByteArray(input: Int): Array[Byte]
+def intToByteArray(input: Int): Array[Byte]
 
 /** Returns value of the given type from the environment by its tag.*/
-fun getVar[T](tag: Int): Option[T]
+def getVar[T](tag: Int): Option[T]
 
-fun proveDHTuple(g: GroupElement, h: GroupElement, 
+def proveDHTuple(g: GroupElement, h: GroupElement, 
                  u: GroupElement, v: GroupElement): Boolean
-fun proveDlog(value: GroupElement): Boolean
+def proveDlog(value: GroupElement): Boolean
 
 /** Predicate which checks whether a key is in a tree, by using a membership proof. */
-fun isMember(tree: AvlTree, key: Array[Byte], proof: Array[Byte]): Boolean
+def isMember(tree: AvlTree, key: Array[Byte], proof: Array[Byte]): Boolean
 ```
 
 ## Examples
@@ -180,13 +180,13 @@ After the timeout output could be spent by backer only.
 ```
 guard CrowdFunding(timeout: Int, minToRaise: Int, 
                    backerPubKey: Sigma, projectPubKey: Sigma) {
-  let c1 = HEIGHT >= timeout && backerPubKey
-  let c2 = allOf(Array(
+  val c1 = HEIGHT >= timeout && backerPubKey
+  val c2 = allOf(Array(
     HEIGHT < timeout,
     projectPubKey,
-    OUTPUTS.exists(fun (out: Box) = {
+    OUTPUTS.exists { (out: Box) => 
       out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
-    })
+    }
   ))
   c1 || c2
 }
@@ -208,11 +208,11 @@ into the blockchain yet, then R3 contains the current height of the blockchain).
     
 ```
 guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript: Sigma) {
-  let c2 = allOf(Array(
+  val c2 = allOf(Array(
    HEIGHT >= SELF.R3[Int].get + demurragePeriod,
-   OUTPUTS.exists(fun (out: Box) = {
+   OUTPUTS.exists { (out: Box) => 
      out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
-   })
+   }
  ))
  regularScript || c2
 }

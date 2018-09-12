@@ -78,14 +78,14 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       "oneEpochReduction" -> s.oneEpochReduction)
     val prop1 = compile(env,
       """{
-        |    let epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
-        |    let out = OUTPUTS(0)
-        |    let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
-        |    let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
-        |    let sameScriptRule = SELF.propositionBytes == out.propositionBytes
-        |    let heightIncreased = HEIGHT > SELF.R4[Long].get
-        |    let heightCorrect = out.R4[Long].get == HEIGHT
-        |    let lastCoins = SELF.value <= oneEpochReduction
+        |    val epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
+        |    val out = OUTPUTS(0)
+        |    val coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
+        |    val correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
+        |    val sameScriptRule = SELF.propositionBytes == out.propositionBytes
+        |    val heightIncreased = HEIGHT > SELF.R4[Long].get
+        |    val heightCorrect = out.R4[Long].get == HEIGHT
+        |    val lastCoins = SELF.value <= oneEpochReduction
         |    allOf(Array(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule)) || (heightIncreased && lastCoins)
         |}""".stripMargin).asBoolValue
 

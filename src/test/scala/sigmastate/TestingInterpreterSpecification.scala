@@ -107,50 +107,50 @@ class TestingInterpreterSpecification extends PropSpec
 
   property("Evaluate array ops") {
     testEval("""{
-              |  let arr = Array(1, 2) ++ Array(3, 4)
+              |  val arr = Array(1, 2) ++ Array(3, 4)
               |  arr.size == 4
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array(1, 2, 3)
+              |  val arr = Array(1, 2, 3)
               |  arr.slice(1, 3) == Array(2, 3)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = bytes1 ++ bytes2
+              |  val arr = bytes1 ++ bytes2
               |  arr.size == 6
               |}""".stripMargin)
     testEval("""{
-              |  let arr = bytes1 ++ Array[Byte]()
+              |  val arr = bytes1 ++ Array[Byte]()
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array[Byte]() ++ bytes1
+              |  val arr = Array[Byte]() ++ bytes1
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R4[Array[Int]].get
+              |  val arr = box1.R4[Array[Int]].get
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R5[Array[Boolean]].get
+              |  val arr = box1.R5[Array[Boolean]].get
               |  anyOf(arr)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R5[Array[Boolean]].get
+              |  val arr = box1.R5[Array[Boolean]].get
               |  allOf(arr) == false
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array(1, 2, 3)
-              |  arr.map(fun (i: Int) = i + 1) == Array(2, 3, 4)
+              |  val arr = Array(1, 2, 3)
+              |  arr.map {(i: Int) => i + 1} == Array(2, 3, 4)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array(1, 2, 3)
-              |  arr.where(fun (i: Int) = i < 3) == Array(1, 2)
+              |  val arr = Array(1, 2, 3)
+              |  arr.where {(i: Int) => i < 3} == Array(1, 2)
               |}""".stripMargin)
   }
 
 //  property("Evaluate sigma in lambdas") {
 //    testeval("""{
-//              |  let arr = Array(dk1, dk2)
+//              |  val arr = Array(dk1, dk2)
 //              |  allOf(arr.map(fun (d: Boolean) = d && true))
 //              |}""".stripMargin)
 //  }
@@ -288,6 +288,32 @@ class TestingInterpreterSpecification extends PropSpec
     val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes))
 
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
+  }
+
+  property("passing a lambda argument") {
+    // single expression
+    testEval(
+      """ Array[Int](1,2,3).map { (a: Int) =>
+        |   a + 1
+        | } == Array[Int](2,3,4) """.stripMargin)
+    // block
+    testEval(
+      """ Array[Int](1,2,3).map { (a: Int) =>
+        |   val b = a - 1
+        |   b + 2
+        | } == Array[Int](2,3,4) """.stripMargin)
+    // block with nested lambda
+    testEval(
+      """ Array[Int](1,2,3).exists { (a: Int) =>
+        |   Array[Int](1).exists{ (c: Int) => c == 1 }
+        | } == true """.stripMargin)
+
+    // block with nested lambda (assigned to a val)
+    testEval(
+      """ Array[Int](1,2,3).exists { (a: Int) =>
+        |   val g = { (c: Int) => c == 1 }
+        |   Array[Int](1).exists(g)
+        | } == true """.stripMargin)
   }
 }
 
