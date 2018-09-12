@@ -289,6 +289,32 @@ class TestingInterpreterSpecification extends PropSpec
 
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
+
+  property("passing a lambda argument") {
+    // single expression
+    testEval(
+      """ Array[Int](1,2,3).map { (a: Int) =>
+        |   a + 1
+        | } == Array[Int](2,3,4) """.stripMargin)
+    // block
+    testEval(
+      """ Array[Int](1,2,3).map { (a: Int) =>
+        |   val b = a - 1
+        |   b + 2
+        | } == Array[Int](2,3,4) """.stripMargin)
+    // block with nested lambda
+    testEval(
+      """ Array[Int](1,2,3).exists { (a: Int) =>
+        |   Array[Int](1).exists{ (c: Int) => c == 1 }
+        | } == true """.stripMargin)
+
+    // block with nested lambda (assigned to a val)
+    testEval(
+      """ Array[Int](1,2,3).exists { (a: Int) =>
+        |   val g = { (c: Int) => c == 1 }
+        |   Array[Int](1).exists(g)
+        | } == true """.stripMargin)
+  }
 }
 
 

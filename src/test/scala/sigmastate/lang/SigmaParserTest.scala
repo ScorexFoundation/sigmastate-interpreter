@@ -368,19 +368,44 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         Block(Val("y", mkMinus(IntIdent("x"), 1)), Ident("y")))
   }
 
-  property("predefined Exists with lambda argument") {
-    val tree = Apply(Select(Ident("OUTPUTS"), "exists"),
-      IndexedSeq(
-        Lambda(IndexedSeq("out" -> SBox),
-          GE(Select(Ident("out"), "amount").asValue[SLong.type], IntIdent("minToRaise")))))
+  property("passing a lambda argument") {
+    val tree = Apply(Select(Ident("arr"), "exists"),
+      IndexedSeq(Lambda(IndexedSeq("a" -> SInt), GE(Ident("a"), IntConstant(1)))))
     // both parens and curly braces
-    parse("OUTPUTS.exists ({ (out: Box) => out.amount >= minToRaise })") shouldBe tree
+    parse("arr.exists ({ (a: Int) => a >= 1 })") shouldBe tree
     // only curly braces (one line)
-    parse("OUTPUTS.exists { (out: Box) => out.amount >= minToRaise }") shouldBe tree
-    // only curly braces (multiline)
+    parse("arr.exists { (a: Int) => a >= 1 }") shouldBe tree
+    // only curly braces (multi line)
     parse(
-      """OUTPUTS.exists { (out: Box) =>
-        |out.amount >= minToRaise }""".stripMargin) shouldBe tree
+      """arr.exists { (a: Int) =>
+        |a >= 1 }""".stripMargin) shouldBe tree
+
+    val tree1 = Apply(Ident("f"), IndexedSeq(
+      Lambda(IndexedSeq("a" -> SInt),
+        Block(Val("b", mkMinus(IntIdent("a"), IntConstant(1))), Minus(IntIdent("a"), IntIdent("b"))))
+    ))
+    // single line block
+    parse("f { (a: Int) => val b = a - 1; a - b }") shouldBe tree1
+    // multi line block
+    parse(
+      """f { (a: Int) =>
+        |val b = a - 1
+        |a - b
+        |}""".stripMargin) shouldBe tree1
+
+    // nested lambda
+    parse(
+      """f { (a: Int) =>
+        |val g = { (c: Int) => c - 1 }
+        |a - g(a)
+        |}""".stripMargin) shouldBe Apply(Ident("f"), IndexedSeq(
+      Lambda(IndexedSeq("a" -> SInt),
+        Block(
+          Val("g",
+            Lambda(IndexedSeq("c" -> SInt), mkMinus(IntIdent("c"), IntConstant(1)))),
+          Minus(IntIdent("a"), Apply(IntIdent("g"), IndexedSeq(IntIdent("a"))).asValue[SLong.type]))
+      )))
+    // todo test in interpreter
   }
 
   property("function definitions") {
