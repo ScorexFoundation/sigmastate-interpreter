@@ -11,6 +11,7 @@ import org.ergoplatform._
 import sigmastate.utils.Extensions._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
+import sigmastate.utxo.GetVar
 
 class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
   import SigmaBinder._
@@ -93,15 +94,20 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         throw new InvalidArguments(s"Invalid arguments for max: $args")
     }
 
-    case e @ Select(Apply(ApplyTypes(f @ GetVarSym, targs), args), "get", _) =>
+    // Rule getVar[T](id) --> GetVar(id)
+    case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
       if (targs.length != 1 || args.length != 1)
         error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
       val id = args.head match {
-        case LongConstant(i) => i.toByteExact  //TODO use SByte.downcast once it is implemented
-        case IntConstant(i) => i.toByteExact
+        case LongConstant(i) => SByte.downcast(i)
+        case IntConstant(i) => SByte.downcast(i)
         case ByteConstant(i) => i
       }
-      Some(mkTaggedVariable(id, targs.head))
+      Some(mkGetVar(id, targs.head))
+
+    // Rule getVar[T](id).get --> TaggedVariable(id)
+    case Select(GetVar(varId, tpe), "get", _) =>
+      Some(mkTaggedVariable(varId, tpe.elemType))
 
     // Rule: lambda (...) = ... --> lambda (...): T = ...
     case lam @ Lambda(params, args, t, Some(body)) =>

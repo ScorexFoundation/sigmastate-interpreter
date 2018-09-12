@@ -186,6 +186,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "Some(Some(10))") shouldBe SOption(SOption(SInt))
   }
 
+  property("methods returning Option") {
+    typecheck(env, "getVar[Int](10)") shouldBe SOption(SInt)
+    typecheck(env, "{ let v = getVar[Int](1); v.get }") shouldBe SInt
+  }
+
   property("array indexed access") {
     typefail(env, "Array()(0)", "Undefined type of empty collection")
     typecheck(env, "Array(0)(0)") shouldBe SInt

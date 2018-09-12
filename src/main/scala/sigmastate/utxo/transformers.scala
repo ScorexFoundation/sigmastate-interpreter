@@ -414,3 +414,19 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
   override val opCode: OpCode = OpCodes.DeserializeRegisterCode
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }
+
+case class GetVar[V <: SType](id: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
+  override val opCode: OpCode = OpCodes.GetVarCode
+  override def cost[C <: Context[C]](context: C): Long = ???
+}
+
+object GetVar {
+  def apply[V <: SType](id: Byte, innerTpe: V): GetVar[V] = GetVar[V](id, SOption(innerTpe))
+}
+
+case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[SOption[V], V] with NotReadyValue[V] {
+  override val opCode: OpCode = OpCodes.OptionGetCode
+  override def tpe: V = input.tpe.elemType
+  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] = ???
+  override def cost[C <: Context[C]](context: C): Long = ???
+}

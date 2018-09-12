@@ -133,4 +133,7 @@ object OpCodes extends ValueCodes {
   val Base64ToByteArrayCode       : OpCode = (LastConstantCode + 113).toByte
 
   val ErgoAddressToSigmaPropCode  : OpCode = (LastConstantCode + 114).toByte
+
+  val GetVarCode : OpCode = (LastConstantCode + 115).toByte
+  val OptionGetCode : OpCode = (LastConstantCode + 116).toByte
 }

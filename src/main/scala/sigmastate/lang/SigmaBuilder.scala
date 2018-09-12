@@ -147,6 +147,7 @@ trait SigmaBuilder {
   def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray]
 
   def mkPK(input: Value[SString.type]): Value[SSigmaProp.type]
+  def mkGetVar[T <: SType](varId: Byte, innerTpe: T): Value[SType]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -401,6 +402,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkPK(input: Value[SString.type]): Value[SSigmaProp.type] =
     ErgoAddressToSigmaProp(input)
+
+  override def mkGetVar[T <: SType](varId: Byte, innerTpe: T): Value[SType] =
+    GetVar(varId, SOption(innerTpe))
 }
 
 trait TypeConstraintCheck {
