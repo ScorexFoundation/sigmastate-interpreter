@@ -8,6 +8,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
+import sigmastate.lang.syntax.ParserException
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
@@ -405,7 +406,6 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
             Lambda(IndexedSeq("c" -> SInt), mkMinus(IntIdent("c"), IntConstant(1)))),
           Minus(IntIdent("a"), Apply(IntIdent("g"), IndexedSeq(IntIdent("a"))).asValue[SLong.type]))
       )))
-    // todo test in interpreter
   }
 
   property("function definitions") {
@@ -465,6 +465,14 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     fail("{ X", 3)
     fail("{ val X", 7)
     fail("\"str", 4)
+  }
+
+  property("not(yet) supported lambda syntax") {
+    // passing a lambda without curly braces is not supported yet :)
+    fail("arr.exists ( (a: Int) => a >= 1 )", 15)
+    // no argument type
+    an[ParserException] should be thrownBy parse("arr.exists ( a => a >= 1 )")
+    an[ParserException] should be thrownBy parse("arr.exists { a => a >= 1 }")
   }
 
   property("numeric casts") {
