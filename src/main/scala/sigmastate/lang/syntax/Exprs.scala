@@ -3,7 +3,7 @@ package sigmastate.lang.syntax
 import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, Let, MethodCall, Select, ValueOps}
+import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, Val, MethodCall, Select, ValueOps}
 import sigmastate.lang._
 import sigmastate.lang.syntax.Basic._
 
@@ -42,21 +42,25 @@ trait Exprs extends Core with Types {
           case (c, t, e) => builder.mkIf(c.asValue[SBoolean.type], t, e)
         }
       }
-      val Fun = P( `fun` ~/ LambdaDef)
+//      val Fun = P( /* `fun` ~/ */ FunDef)
 
-      val LambdaRhs = if (semiInference) P( BlockChunk.map(mkBlock) ) else P( Expr )
+      val LambdaRhs = if (semiInference) P( BlockChunk.map {
+        case (_ , b)  => mkBlock(b)
+      } )
+      else P( Expr )
 //      val ParenedLambda = P( Parened ~~ (WL ~ `=>` ~ LambdaRhs.? /*| ExprSuffix ~~ PostfixSuffix ~ SuperPostfixSuffix*/) ).map {
 //        case (args, None) => mkLambda(args, UnitConstant)
 //        case (args, Some(body)) => mkLambda(args, body)
 //      }
-      val PostfixLambda = P( PostfixExpr ~ ((`=>` ~ LambdaRhs.?) | SuperPostfixSuffix) ).map {
+      val PostfixLambda = P( PostfixExpr ~ (`=>` ~ LambdaRhs.? | SuperPostfixSuffix).? ).map {
         case (e, None) => e
-        case (Tuple(args), Some(body)) => mkLambda(args, body)
+        case (e, Some(None)) => e
+        case (Tuple(args), Some(Some(body))) => mkLambda(args, body)
         case (e, Some(body)) => error(s"Invalid declaration of lambda $e => $body")
       }
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
 //      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => Ident(IndexedSeq(n), t)}
-      P( If | Fun | SmallerExprOrLambda )
+      P( If /*| Fun*/ | SmallerExprOrLambda )
     }
 
     val SuperPostfixSuffix = P( (`=` ~/ Expr).? /*~ MatchAscriptionSuffix.?*/ )
@@ -191,13 +195,13 @@ trait Exprs extends Core with Types {
     rhs
   }
 
-  val LambdaDef = {
-    val Body = P( WL ~ `=` ~ StatCtx.Expr )
-    P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-      case (_ @ Seq(args), resType, body) => builder.mkLambda(args.toIndexedSeq, resType.getOrElse(NoType), Some(body))
-      case (secs, resType, body) => error(s"Function can only have single argument list: fun ($secs): $resType = $body")
-    }
-  }
+//  val FunDef = {
+//    val Body = P( WL ~ `=>` ~ StatCtx.Expr )
+//    P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
+//      case (_ @ Seq(args), resType, body) => builder.mkLambda(args.toIndexedSeq, resType.getOrElse(NoType), Some(body))
+//      case (secs, resType, body) => error(s"Function can only have single argument list: fun ($secs): $resType = $body")
+//    }
+//  }
 
   val SimplePattern = {
     val TupleEx = P( "(" ~/ Pattern.repTC() ~ ")" )
@@ -208,8 +212,16 @@ trait Exprs extends Core with Types {
 
   val BlockExpr = P( "{" ~/ (/*CaseClauses |*/ Block ~ "}") )
 
-  val BlockLambdaHead: P0 = P( "(" ~ BlockLambdaHead ~ ")" | `this` | Id | `_` )
-  val BlockLambda = P( BlockLambdaHead  ~ (`=>` | `:` ~ InfixType ~ `=>`.?) ).ignore
+  val BlockLambdaHead = {
+    val Arg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
+      case (n, Some(t)) => (n, t)
+      case (n, None) => (n, NoType)
+    }
+    val Args = P( Arg.repTC(1) )
+    P( OneNLMax ~ "(" ~ Args.? ~ ")" ).map(_.toSeq.flatten)
+  }
+
+  val BlockLambda = P( BlockLambdaHead ~ `=>` )
 
   val BlockChunk = {
     val Prelude = P( Annot.rep ~ `lazy`.? )
@@ -217,11 +229,11 @@ trait Exprs extends Core with Types {
     P( BlockLambda.rep ~ BlockStat.rep(sep = Semis) )
   }
 
-  def extractBlockStats(stats: Seq[SValue]): (Seq[Let], SValue) = {
+  def extractBlockStats(stats: Seq[SValue]): (Seq[Val], SValue) = {
     if (stats.nonEmpty) {
       val lets = stats.iterator.take(stats.size - 1).map {
-        case l: Let => l
-        case _ => error(s"Block should contain a list of Let bindings and one expression: but was $stats")
+        case l: Val => l
+        case _ => error(s"Block should contain a list of Val bindings and one expression: but was $stats")
       }
       (lets.toList, stats.last)
     }
@@ -237,7 +249,19 @@ trait Exprs extends Core with Types {
   def BaseBlock(end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
     val BlockEnd = P( Semis.? ~ &(end) )
     val Body = P( BlockChunk.repX(sep = Semis) )
-    P( Semis.? /*~ BlockLambda.?*/ ~ Body ~/ BlockEnd ).map(ss => mkBlock(ss.flatten))
+    P( Semis.? ~ BlockLambda.? ~ Body ~/ BlockEnd ).map {
+      case (Some(args), Seq((Seq(), Seq(b)))) =>
+        builder.mkLambda(args.toIndexedSeq, NoType, Some(b))
+      case (Some(args), bodyItems) =>
+        val block = mkBlock(bodyItems.flatMap {
+          case (Seq(), exprs) => exprs
+        })
+        builder.mkLambda(args.toIndexedSeq, NoType, Some(block))
+      case (None, bodyItems) =>
+        mkBlock(bodyItems.flatMap {
+          case (Seq(), exprs) => exprs
+        })
+    }
   }
   val Block = BaseBlock("}")
   val CaseBlock = BaseBlock("}" | `case`)
