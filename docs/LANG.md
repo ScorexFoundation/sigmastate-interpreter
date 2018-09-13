@@ -48,6 +48,6 @@ The following transformations are performed by `Specializer`:
 (e.g. arr(0) --> ByIndex(arr, 0), etc) 
 
 As result of specialization the following AST nodes should be eliminated:
- Block, Let, Ident, Select, Lambda, Apply 
+ Block, Val, Ident, Select, Lambda, Apply 
 
 In case of any error it throws `SpecializerException`

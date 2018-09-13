@@ -7,7 +7,7 @@ import sigmastate.Values.Value.Typed
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Let, Select, ValueOps}
+import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Val, Select, ValueOps}
 import sigmastate.lang.exceptions.{MethodNotFound, SpecializerException}
 import sigmastate.utxo._
 
@@ -28,7 +28,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case _ @ Block(binds, res) =>
       var curEnv = env
-      for (Let(n, _, b) <- binds) {
+      for (Val(n, _, b) <- binds) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = eval(curEnv, b)
         curEnv = curEnv + (n -> b1)

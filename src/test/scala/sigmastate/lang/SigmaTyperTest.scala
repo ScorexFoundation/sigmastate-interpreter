@@ -97,17 +97,17 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, """PK("111")""") shouldBe SSigmaProp
   }
 
-  property("let constructs") {
-    typecheck(env, "{let X = 10; X > 2}") shouldBe SBoolean
-    typecheck(env, """{let X = 10; X >= X}""".stripMargin) shouldBe SBoolean
-    typecheck(env, """{let X = 10 + 1; X >= X}""".stripMargin) shouldBe SBoolean
+  property("val constructs") {
+    typecheck(env, "{val X = 10; X > 2}") shouldBe SBoolean
+    typecheck(env, """{val X = 10; X >= X}""".stripMargin) shouldBe SBoolean
+    typecheck(env, """{val X = 10 + 1; X >= X}""".stripMargin) shouldBe SBoolean
     typecheck(env,
-      """{let X = 10
-       |let Y = X + 1
+      """{val X = 10
+       |val Y = X + 1
        |X < Y}
       """.stripMargin) shouldBe SBoolean
-    typecheck(env, "{let X = (10, true); X._1 > 2 && X._2}") shouldBe SBoolean
-    typecheck(env, "{let X = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
+    typecheck(env, "{val X = (10, true); X._1 > 2 && X._2}") shouldBe SBoolean
+    typecheck(env, "{val X = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
   }
 
   property("generic methods of arrays") {
@@ -115,12 +115,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     val env = this.env ++ Map(
       "minToRaise" -> minToRaise
     )
-    typecheck(env, "OUTPUTS.map(fun (out: Box) = { out.value >= minToRaise })") shouldBe ty("Array[Boolean]")
-    typecheck(env, "OUTPUTS.exists(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
-    typecheck(env, "OUTPUTS.forall(fun (out: Box) = { out.value >= minToRaise })") shouldBe SBoolean
-    typecheck(env, "{ let arr = Array(1,2,3); arr.fold(0, fun (i1: Int, i2: Int) = i1 + i2)}") shouldBe SInt
+    typecheck(env, "OUTPUTS.map({ (out: Box) => out.value >= minToRaise })") shouldBe ty("Array[Boolean]")
+    typecheck(env, "OUTPUTS.exists({ (out: Box) => out.value >= minToRaise })") shouldBe SBoolean
+    typecheck(env, "OUTPUTS.forall({ (out: Box) => out.value >= minToRaise })") shouldBe SBoolean
+    typecheck(env, "{ val arr = Array(1,2,3); arr.fold(0, { (i1: Int, i2: Int) => i1 + i2 })}") shouldBe SInt
     typecheck(env, "OUTPUTS.slice(0, 10)") shouldBe ty("Array[Box]")
-    typecheck(env, "OUTPUTS.where(fun (out: Box) = { out.value >= minToRaise })") shouldBe ty("Array[Box]")
+    typecheck(env, "OUTPUTS.where({ (out: Box) => out.value >= minToRaise })") shouldBe ty("Array[Box]")
   }
 
   property("tuple constructor") {
@@ -143,16 +143,16 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "(1, 2L)(1)") shouldBe SLong
     typecheck(env, "(1, 2L).getOrElse(2, 3)") shouldBe SAny
     typecheck(env, "(1, 2L).slice(0, 2)") shouldBe SCollection(SAny)
-    typecheck(env, "fun (a: Int) = (1, 2L)(a)") shouldBe SFunc(IndexedSeq(SInt), SAny)
+    typecheck(env, "{ (a: Int) => (1, 2L)(a) }") shouldBe SFunc(IndexedSeq(SInt), SAny)
   }
 
   property("types") {
-    typecheck(env, "{let X: Int = 10; 3 > 2}") shouldBe SBoolean
-    typecheck(env, "{let X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe SBoolean
-    typecheck(env, "{let X: Array[Int] = Array(1,2,3); X.size}") shouldBe SInt
-    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
-    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
-    typecheck(env, "{let X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
+    typecheck(env, "{val X: Int = 10; 3 > 2}") shouldBe SBoolean
+    typecheck(env, "{val X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe SBoolean
+    typecheck(env, "{val X: Array[Int] = Array(1,2,3); X.size}") shouldBe SInt
+    typecheck(env, "{val X: (Array[Int], Int) = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
+    typecheck(env, "{val X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
+    typecheck(env, "{val X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
   }
 
   property("if") {
@@ -161,7 +161,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "if(c1) x else y") shouldBe SInt
     typecheck(env,
       """if (true) {
-        |  let A = 10; A
+        |  val A = 10; A
         |} else
         |  if ( x == y) 2 else 3""".stripMargin) shouldBe SInt
   }
@@ -211,30 +211,29 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("lambdas") {
-    typecheck(env, "fun (a: Int) = a + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
-    typecheck(env, "fun (a: Int): Int = a + 1") shouldBe SFunc(IndexedSeq(SInt), SInt)
-    typecheck(env, "fun (a: Int) = { a + 1 }") shouldBe SFunc(IndexedSeq(SInt), SInt)
-    typecheck(env, "fun (a: Int) = { let b = a + 1; b }") shouldBe SFunc(IndexedSeq(SInt), SInt)
-    typecheck(env, "fun (a: Int, box: Box): Long = a + box.value") shouldBe
+    typecheck(env, "{ (a: Int) => a + 1 }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "{ (a: Int) => a + 1 }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "{ (a: Int) => { a + 1 } }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "{ (a: Int) => { val b = a + 1; b } }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "{ (a: Int, box: Box) => a + box.value }") shouldBe
       SFunc(IndexedSeq(SInt, SBox), SLong)
-    typecheck(env, "fun (p: (Int, GroupElement), box: Box): Boolean = p._1 > box.value && p._2.isIdentity") shouldBe
+    typecheck(env, "{ (p: (Int, GroupElement), box: Box) => p._1 > box.value && p._2.isIdentity }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
-    typecheck(env, "fun (p: (Int, SigmaProp), box: Box): Boolean = p._1 > box.value && p._2.isValid") shouldBe
+    typecheck(env, "{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isValid }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SSigmaProp), SBox), SBoolean)
 
-    typefail(env, "fun (a) = a + 1", "undefined type of argument")
+    typefail(env, "{ (a) => a + 1 }", "undefined type of argument")
   }
 
   property("function definitions") {
-    typecheck(env, "{ let f = fun (x: Int) = x + 1; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
-    typecheck(env, "{ fun f(x: Int) = x + 1; f } ") shouldBe SFunc(IndexedSeq(SInt), SInt)
+    typecheck(env, "{ val f = { (x: Int) => x + 1 }; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
   }
 
   property("predefined primitives") {
-    typecheck(env, "fun (box: Box): Long = box.value") shouldBe SFunc(IndexedSeq(SBox), SLong)
-    typecheck(env, "fun (box: Box): Array[Byte] = box.propositionBytes") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
-    typecheck(env, "fun (box: Box): Array[Byte] = box.bytes") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
-    typecheck(env, "fun (box: Box): Array[Byte] = box.id") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
+    typecheck(env, "{ (box: Box) => box.value }") shouldBe SFunc(IndexedSeq(SBox), SLong)
+    typecheck(env, "{ (box: Box) => box.propositionBytes }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
+    typecheck(env, "{ (box: Box) => box.bytes }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
+    typecheck(env, "{ (box: Box) => box.id }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
   }
 
   property("type parameters") {

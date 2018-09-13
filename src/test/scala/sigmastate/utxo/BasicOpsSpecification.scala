@@ -147,7 +147,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
     test(env, ext,
-      "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall(fun (p: SigmaProp) = p.isValid) }",
+      "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isValid }) }",
       ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), TaggedSigmaProp(propVar1)),
         21, SigmaPropIsValid(TaggedSigmaProp(21))),
       true
@@ -192,8 +192,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       EQ(SelectField(Tuple(TaggedInt(intVar1), TaggedInt(intVar2)), 2), IntConstant(2))
     )
     test(env, ext,
-      """{ let p = (getVar[Int](intVar1).get, getVar[Int](intVar2).get)
-        |  let res = p._1 + p._2
+      """{ val p = (getVar[Int](intVar1).get, getVar[Int](intVar2).get)
+        |  val res = p._1 + p._2
         |  res == 3 }""".stripMargin,
       {
         val p = Tuple(TaggedInt(intVar1), TaggedInt(intVar2))
@@ -205,14 +205,14 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("Tuple as Collection operations") {
     test(env, ext,
-    """{ let p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
+    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p.size == 2 }""".stripMargin,
     {
       val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
       EQ(SizeOf(p), IntConstant(2))
     })
     test(env, ext,
-    """{ let p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
+    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p(0) == 1 }""".stripMargin,
     {
       val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
@@ -226,7 +226,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val ext1 = ext :+ (dataVar, Constant[SCollection[STuple]](data, dataType))
     test(env1, ext1,
       """{
-        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
+        |  val data = getVar[Array[(Array[Byte], Long)]](dataVar).get
         |  data.size == 1
         |}""".stripMargin,
       {
@@ -236,8 +236,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env1, ext1,
       """{
-        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
-        |  data.exists(fun (p: (Array[Byte], Long)) = p._2 == 10L)
+        |  val data = getVar[Array[(Array[Byte], Long)]](dataVar).get
+        |  data.exists({ (p: (Array[Byte], Long)) => p._2 == 10L })
         |}""".stripMargin,
       {
         val data = TaggedVariable(dataVar, dataType)
@@ -246,8 +246,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env1, ext1,
       """{
-        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
-        |  data.forall(fun (p: (Array[Byte], Long)) = p._1.size > 0)
+        |  val data = getVar[Array[(Array[Byte], Long)]](dataVar).get
+        |  data.forall({ (p: (Array[Byte], Long)) => p._1.size > 0 })
         |}""".stripMargin,
       {
         val data = TaggedVariable(dataVar, dataType)
@@ -257,8 +257,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env1, ext1,
       """{
-        |  let data = getVar[Array[(Array[Byte], Long)]](dataVar).get
-        |  data.map(fun (p: (Array[Byte], Long)) = (p._2, p._1)).size == 1
+        |  val data = getVar[Array[(Array[Byte], Long)]](dataVar).get
+        |  data.map({ (p: (Array[Byte], Long)) => (p._2, p._1)}).size == 1
         |}""".stripMargin,
       {
         val data = TaggedVariable(dataVar, dataType)
@@ -270,7 +270,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
 // TODO uncomment after operations over Any are implemented
 //    test(env, ext,
-//    """{ let p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
+//    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
 //     |  p.getOrElse(2, 3).isInstanceOf[Int] }""".stripMargin,
 //    {
 //      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))

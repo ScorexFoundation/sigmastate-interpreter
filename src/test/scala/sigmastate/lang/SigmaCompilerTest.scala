@@ -69,6 +69,6 @@ class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with 
     fail(env, "X)", 1, "End")
     fail(env, "(X", 2, "\")\"")
     fail(env, "{ X", 3, "\"}\"")
-    fail(env, "{ let X", 7, "\"=\"")
+    fail(env, "{ val X", 7, "\"=\"")
   }
 }

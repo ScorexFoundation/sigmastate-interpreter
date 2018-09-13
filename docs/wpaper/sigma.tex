@@ -226,10 +226,10 @@ Access to this information allows us, for example, to create an output box that 
 
 Note that the script does not prevent the \texttt{friend} box from being spent on its own, in which case the output box protected by the script above will become not spendable.
 
-We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input array using the \texttt{exists} operator, which applies a boolean function to each array element until it finds one that satisfies the function or finds that none exists. To define a function, we use \texttt{fun} keyword; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{let} keyword.
+We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input array using the \texttt{exists} operator, which applies a boolean function to each array element until it finds one that satisfies the function or finds that none exists. To define a function, we use lambda syntax; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{val} keyword.
 \begin{verbatim}
         {
-                let isFriend = fun (inputBox: Box) = {inputBox.id == friend.id}
+                val isFriend = { (inputBox: Box) => inputBox.id == friend.id }
                 INPUTS.exists (isFriend)
         }
 \end{verbatim}
@@ -237,7 +237,7 @@ We can be more permissive and allow for other inputs in addition to the friend b
 This is our first example of a script with more than one statement; note that such scripts require braces, and their output is determined by the last statement.
 It can also be written in one statement, as follows:
 \begin{verbatim}
-        INPUTS.exists (fun (inputBox: Box) = {inputBox.id == friend.id})
+        INPUTS.exists { (inputBox: Box) => inputBox.id == friend.id }
 \end{verbatim}
 
 
@@ -248,12 +248,12 @@ To give money to the project, the backer will create an output box protected by 
 
 \begin{verbatim}
         {
-                let fundraisingFailure = HEIGHT >= deadline && backerPubKey
-                let enoughRaised = fun(outBox: Box) = {
+                val fundraisingFailure = HEIGHT >= deadline && backerPubKey
+                val enoughRaised = {(outBox: Box) =>
                         outBox.value >= minToRaise && 
                         outBox.propositionBytes == projectPubKey.propBytes
                 }
-                let fundraisingSuccess = HEIGHT < deadline &&
+                val fundraisingSuccess = HEIGHT < deadline &&
                          projectPubKey &&  
                          OUTPUTS.exists(enoughRaised)
                  
@@ -537,7 +537,7 @@ $Constant$ tree nodes.
     D, t_1 \otimes t_2 & \to & genCF(D, t_1) + Cost_\otimes + genCF(D, t_2) \\
     arr.map(f) & \to & 
         \begin{tabular}[t]{l}
-            let $f_{cost}$ = $genCF(D, f)$ \\
+            val $f_{cost}$ = $genCF(D, f)$ \\
             $sum(arr.map(\lambda x \to f_{cost}(x)))$ \\
         \end{tabular} \\
      & \to & $\mnote{arg}$ \\

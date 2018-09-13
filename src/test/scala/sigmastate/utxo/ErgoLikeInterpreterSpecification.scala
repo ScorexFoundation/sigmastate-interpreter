@@ -157,10 +157,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
       val compiledProp = compile(env,
         """{
-          |  let notTimePassed = HEIGHT <= timeout
-          |  let outBytes = OUTPUTS.map(fun (box: Box) = box.bytesWithNoRef)
-          |  let outSumBytes = outBytes.fold(Array[Byte](), fun (arr1: Array[Byte], arr2: Array[Byte]) = arr1 ++ arr2)
-          |  let timePassed = HEIGHT > timeout
+          |  val notTimePassed = HEIGHT <= timeout
+          |  val outBytes = OUTPUTS.map({(box: Box) => box.bytesWithNoRef})
+          |  val outSumBytes = outBytes.fold(Array[Byte](), {(arr1: Array[Byte], arr2: Array[Byte]) => arr1 ++ arr2})
+          |  val timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asBoolValue
 
@@ -206,8 +206,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val env = Map("pubkey" -> pubkey)
     val prop = compile(env,
       """{
-        |  let outValues = OUTPUTS.map(fun (box: Box) = box.value)
-        |  pubkey && outValues.fold(0L, fun (x: Long, y: Long) = x + y) > 20
+        |  val outValues = OUTPUTS.map({ (box: Box) => box.value })
+        |  pubkey && outValues.fold(0L, { (x: Long, y: Long) => x + y }) > 20
          }""".stripMargin).asBoolValue
 
     val propExp = AND(
@@ -312,8 +312,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prop = compile(Map(),
       """{
-        |  let pubkey1 = SELF.R4[GroupElement].get
-        |  let pubkey2 = SELF.R5[GroupElement].get
+        |  val pubkey1 = SELF.R4[GroupElement].get
+        |  val pubkey2 = SELF.R5[GroupElement].get
         |  proveDlog(pubkey1) && proveDlog(pubkey2)
         |}""".stripMargin).asBoolValue
 
@@ -412,8 +412,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val env = Map("brother" -> brother)
     val prop = compile(env,
       """{
-        |  let okInputs = INPUTS.size == 2
-        |  let okIds = INPUTS(0).id == brother.id
+        |  val okInputs = INPUTS.size == 2
+        |  val okIds = INPUTS(0).id == brother.id
         |  okInputs && okIds
          }""".stripMargin).asBoolValue
 
@@ -453,8 +453,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prop2 = compile(env,
       """{
-        |  let okInputs = INPUTS.size == 3
-        |  let okIds = INPUTS(0).id == brother.id
+        |  val okInputs = INPUTS.size == 3
+        |  val okIds = INPUTS(0).id == brother.id
         |  okInputs && okIds
          }""".stripMargin).asBoolValue
 
@@ -485,7 +485,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         |
-        | let isFriend = fun (inputBox: Box) = {inputBox.id == friend.id}
+        | val isFriend = { (inputBox: Box) => inputBox.id == friend.id }
         | INPUTS.exists (isFriend)
          }""".stripMargin).asBoolValue
 
@@ -493,7 +493,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     prop shouldBe propExpected
 
     // same script written differently
-    val altProp = compile(env, "INPUTS.exists (fun (inputBox: Box) = {inputBox.id == friend.id})")
+    val altProp = compile(env, "INPUTS.exists ({ (inputBox: Box) => inputBox.id == friend.id })")
     altProp shouldBe prop
 
     val s = ErgoBox(10, prop, Seq(), Map())
@@ -554,8 +554,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val env = Map("helloHash" -> helloHash)
     val prop = compile(env,
       """{
-        |  let cond = INPUTS(0).value > 10
-        |  let preimage = if (cond)
+        |  val cond = INPUTS(0).value > 10
+        |  val preimage = if (cond)
         |    INPUTS(2).R4[Array[Byte]].get
         |  else
         |    INPUTS(1).R4[Array[Byte]].get

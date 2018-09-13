@@ -121,8 +121,8 @@ trait SigmaBuilder {
   def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]]
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
 
-  def mkBlock(bindings: Seq[Let], result: Value[SType]): Value[SType]
-  def mkLet(name: String, givenType: SType, body: Value[SType]): Let
+  def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType]
+  def mkVal(name: String, givenType: SType, body: Value[SType]): Val
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
   def mkIdent(name: String, tpe: SType): Value[SType]
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
@@ -347,11 +347,11 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]] = SomeValue(x)
   override def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]] = NoneValue(elemType)
 
-  override def mkBlock(bindings: Seq[Let], result: Value[SType]): Value[SType] =
+  override def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType] =
     Block(bindings, result)
 
-  override def mkLet(name: String, givenType: SType, body: Value[SType]): Let =
-    LetNode(name, givenType, body)
+  override def mkVal(name: String, givenType: SType, body: Value[SType]): Val =
+    ValNode(name, givenType, body)
 
   override def mkSelect(obj: Value[SType],
                         field: String,
