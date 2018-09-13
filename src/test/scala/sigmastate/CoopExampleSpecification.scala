@@ -58,7 +58,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
 
     def withdraw(minHeight: Long, totalValue: Long) = {
       s"""
-         |let withdrawCondition = HEIGHT > ${minHeight}L &&
+         |val withdrawCondition = HEIGHT > ${minHeight}L &&
          |        OUTPUTS(0).value >= ${totalValue / 4}L && OUTPUTS(0).propositionBytes == pubkeyA.propBytes &&
          |        OUTPUTS(1).value >= ${totalValue / 4}L && OUTPUTS(1).propositionBytes == pubkeyB.propBytes &&
          |        OUTPUTS(2).value >= ${totalValue / 4}L && OUTPUTS(2).propositionBytes == pubkeyC.propBytes &&
@@ -84,7 +84,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
      val spendingProp1 = compile(spendingEnv,
       s"""
          |{
-         | let spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && business
+         | val spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && business
          |
          | ${withdraw(5000, toolValue)}
          |
@@ -125,7 +125,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     val spendingProp2 = compile(spendingEnv2,
       s"""
          |{
-         | let spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && business
+         | val spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && business
          |
          | ${withdraw(5000, toolValue)}
          |
@@ -188,7 +188,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       s"""
          | {
          |
-         |  let spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && business
+         |  val spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && business
          |
          |  ${withdraw(5000, constructionValue)}
          |
@@ -233,7 +233,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       s"""
          | {
          |
-         |  let spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && business
+         |  val spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && business
          |
          |  ${withdraw(5000, constructionValue)}
          |
@@ -288,8 +288,8 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     // Basic compilation
     val thresholdProp = compile(thresholdEnv,
       s""" {
-         | let votingSuccess = atLeast(3, Array(pubkeyA, pubkeyB, pubkeyC, pubkeyD))
-         | let properSpending = OUTPUTS(0).value == ${toolValue}L &&
+         | val votingSuccess = atLeast(3, Array(pubkeyA, pubkeyB, pubkeyC, pubkeyD))
+         | val properSpending = OUTPUTS(0).value == ${toolValue}L &&
          |                      blake2b256(OUTPUTS(0).propositionBytes) == spendingContract1Hash &&
          |                      OUTPUTS(1).value == ${constructionValue}L &&
          |                      blake2b256(OUTPUTS(1).propositionBytes) == spendingContract2Hash &&
