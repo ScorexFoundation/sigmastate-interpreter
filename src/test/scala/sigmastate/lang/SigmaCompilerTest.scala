@@ -1,13 +1,14 @@
 package sigmastate.lang
 
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.syntax.ParserException
 import sigmastate.SCollection._
-import sigmastate.utxo.ByIndex
+import sigmastate.utxo.{ByIndex, OptionGet}
+import sigmastate.utxo.GetVar._
 
 class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   val compiler = new SigmaCompiler
@@ -54,13 +55,13 @@ class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with 
 
   property("predefined functions") {
     comp(env, "anyOf(Array(c1, c2))") shouldBe OR(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
-    comp(env, "blake2b256(getVar[Array[Byte]](10).get)") shouldBe CalcBlake2b256(TaggedVariable(10, SByteArray))
+    comp(env, "blake2b256(getVar[Array[Byte]](10).get)") shouldBe CalcBlake2b256(OptionGet(GetVarByteArray(10)))
     comp(env, "10.toByte") shouldBe ByteConstant(10)
     comp(env, "Array(1)(0).toByte") shouldBe
       Downcast(ByIndex(ConcreteCollection(Vector(IntConstant(1)),SInt),IntConstant(0),None), SByte)
     comp(env, "allOf(Array(c1, c2))") shouldBe AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
-    comp(env, "getVar[Byte](10).get") shouldBe TaggedVariable(10, SByte)
-    comp(env, "getVar[Array[Byte]](10).get") shouldBe TaggedVariable(10, SByteArray)
+    comp(env, "getVar[Byte](10).get") shouldBe OptionGet(GetVarByte(10))
+    comp(env, "getVar[Array[Byte]](10).get") shouldBe OptionGet(GetVarByteArray(10))
   }
 
   property("negative tests") {

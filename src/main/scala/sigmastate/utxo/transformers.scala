@@ -10,6 +10,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.{MandatoryRegisterId, RegisterId}
+import sigmastate.lang.exceptions.OptionUnwrapNone
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -415,18 +416,30 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }
 
-case class GetVar[V <: SType](id: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
+case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override val opCode: OpCode = OpCodes.GetVarCode
-  override def cost[C <: Context[C]](context: C): Long = ???
+  override def cost[C <: Context[C]](context: C): Long = context.extension.cost(varId) + 1
 }
 
 object GetVar {
-  def apply[V <: SType](id: Byte, innerTpe: V): GetVar[V] = GetVar[V](id, SOption(innerTpe))
+  def apply[V <: SType](varId: Byte, innerTpe: V): GetVar[V] = GetVar[V](varId, SOption(innerTpe))
+
+  def GetVarBoolean(varId: Byte): GetVar[SBoolean.type] = GetVar(varId, SBoolean)
+  def GetVarByte(varId: Byte): GetVar[SByte.type] = GetVar(varId, SByte)
+  def GetVarShort(varId: Byte): GetVar[SShort.type] = GetVar(varId, SShort)
+  def GetVarInt(varId: Byte): GetVar[SInt.type] = GetVar(varId, SInt)
+  def GetVarLong(varId: Byte): GetVar[SLong.type] = GetVar(varId, SLong)
+  def GetVarBigInt(varId: Byte): GetVar[SBigInt.type] = GetVar(varId, SBigInt)
+  def GetVarSigmaProp(varId: Byte): GetVar[SSigmaProp.type] = GetVar(varId, SSigmaProp)
+  def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
 }
 
 case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[SOption[V], V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.OptionGetCode
   override def tpe: V = input.tpe.elemType
-  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] = ???
-  override def cost[C <: Context[C]](context: C): Long = ???
+  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] = input match {
+    case SomeValue(v) => v
+    case n @ NoneValue(_) => throw new OptionUnwrapNone(s"Cannot unwrap None: $n")
+  }
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionGet
 }

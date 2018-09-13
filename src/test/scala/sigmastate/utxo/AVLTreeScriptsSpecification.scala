@@ -9,6 +9,7 @@ import sigmastate.Values._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform._
 import sigmastate.lang.Terms._
+import sigmastate.utxo.GetVar._
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
@@ -71,8 +72,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val elementId = 1: Byte
 
     val prop: Value[SBoolean.type] = AND(
-      GE(TaggedInt(elementId), LongConstant(120)),
-      IsMember(ExtractRegisterAs(Self, reg1), CalcBlake2b256(LongToByteArray(TaggedLong(elementId))), TaggedByteArray(proofId))
+      GE(OptionGet(GetVarLong(elementId)), LongConstant(120)),
+      IsMember(ExtractRegisterAs(Self, reg1),
+        CalcBlake2b256(LongToByteArray(OptionGet(GetVarLong(elementId)))),
+        OptionGet(GetVarByteArray(proofId)))
     )
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
     val propCompiled = compile(env,
@@ -142,7 +145,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
         |  isMember(tree, key, proof)
         |}""".stripMargin).asBoolValue
 
-    val propTree = IsMember(ExtractRegisterAs(Self, reg1), ExtractRegisterAs(Self, reg2), TaggedByteArray(proofId))
+    val propTree = IsMember(
+      ExtractRegisterAs(Self, reg1),
+      ExtractRegisterAs(Self, reg2),
+      OptionGet(GetVarByteArray(proofId)))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)

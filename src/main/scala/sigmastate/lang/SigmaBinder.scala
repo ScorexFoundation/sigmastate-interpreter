@@ -95,7 +95,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
     }
 
     // Rule getVar[T](id) --> GetVar(id)
-    case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
+    case e @ Apply(ApplyTypes(GetVarSym, targs), args) =>
       if (targs.length != 1 || args.length != 1)
         error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
       val id = args.head match {
@@ -103,11 +103,11 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         case IntConstant(i) => SByte.downcast(i)
         case ByteConstant(i) => i
       }
-      Some(mkGetVar(id, targs.head))
+      Some(mkGetVar(id, SOption(targs.head)))
 
-    // Rule getVar[T](id).get --> TaggedVariable(id)
-    case Select(GetVar(varId, tpe), "get", _) =>
-      Some(mkTaggedVariable(varId, tpe.elemType))
+    // Rule getVar[T](id).get --> OptionGet(GetVar(id))
+    case Select(v @ GetVar(_, _), "get", _) =>
+      Some(mkOptionGet(v))
 
     // Rule: lambda (...) = ... --> lambda (...): T = ...
     case lam @ Lambda(params, args, t, Some(body)) =>

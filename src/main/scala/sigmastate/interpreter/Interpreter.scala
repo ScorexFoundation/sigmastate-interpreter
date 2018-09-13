@@ -17,10 +17,11 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
+import sigmastate.lang.exceptions.{InterpreterException, SourceContext}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -92,6 +93,12 @@ trait Interpreter extends ScorexLogging {
         context.extension.values(t.varId)
       else
         null
+
+    case t: GetVar[_] =>
+      if (context.extension.values.contains(t.varId))
+        SomeValue(context.extension.values(t.varId))
+      else
+        NoneValue(t.tpe.elemType)
 
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
@@ -424,5 +431,3 @@ object Interpreter {
 
   def error(msg: String) = throw new InterpreterException(msg)
 }
-
-class InterpreterException(msg: String) extends Exception(msg)

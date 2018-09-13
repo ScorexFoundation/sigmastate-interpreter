@@ -6,6 +6,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
+import sigmastate.utxo.GetVar._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
@@ -69,62 +70,70 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   property("Relation operations") {
     test(env, ext,
       "{ allOf(Array(getVar[Boolean](trueVar).get, true, true)) }",
-      AND(TaggedBoolean(booleanVar), TrueLeaf, TrueLeaf)
+      AND(OptionGet(GetVarBoolean(booleanVar)), TrueLeaf, TrueLeaf)
     )
     test(env, ext,
       "{ anyOf(Array(getVar[Boolean](trueVar).get, true, false)) }",
-      OR(TaggedBoolean(booleanVar), TrueLeaf, FalseLeaf)
+      OR(OptionGet(GetVarBoolean(booleanVar)), TrueLeaf, FalseLeaf)
     )
     test(env, ext,
       "{ getVar[Int](intVar2).get > getVar[Int](intVar1).get && getVar[Int](intVar1).get < getVar[Int](intVar2).get }",
-      AND(GT(TaggedInt(intVar2), TaggedInt(intVar1)), LT(TaggedInt(intVar1), TaggedInt(intVar2)))
+      AND(GT(OptionGet(GetVarInt(intVar2)), OptionGet(GetVarInt(intVar1))),
+        LT(OptionGet(GetVarInt(intVar1)), OptionGet(GetVarInt(intVar2))))
     )
     test(env, ext,
       "{ getVar[Int](intVar2).get >= getVar[Int](intVar1).get && getVar[Int](intVar1).get <= getVar[Int](intVar2).get }",
-      AND(GE(TaggedInt(intVar2), TaggedInt(intVar1)), LE(TaggedInt(intVar1), TaggedInt(intVar2)))
+      AND(GE(OptionGet(GetVarInt(intVar2)), OptionGet(GetVarInt(intVar1))),
+        LE(OptionGet(GetVarInt(intVar1)), OptionGet(GetVarInt(intVar2))))
     )
     test(env, ext,
       "{ getVar[Byte](byteVar2).get > getVar[Byte](byteVar1).get && getVar[Byte](byteVar1).get < getVar[Byte](byteVar2).get }",
-      AND(GT(TaggedByte(byteVar2), TaggedByte(byteVar1)), LT(TaggedByte(byteVar1), TaggedByte(byteVar2)))
+      AND(GT(OptionGet(GetVarByte(byteVar2)), OptionGet(GetVarByte(byteVar1))),
+        LT(OptionGet(GetVarByte(byteVar1)), OptionGet(GetVarByte(byteVar2))))
     )
     test(env, ext,
       "{ getVar[Byte](byteVar2).get >= getVar[Byte](byteVar1).get && getVar[Byte](byteVar1).get <= getVar[Byte](byteVar2).get }",
-      AND(GE(TaggedByte(byteVar2), TaggedByte(byteVar1)), LE(TaggedByte(byteVar1), TaggedByte(byteVar2)))
+      AND(GE(OptionGet(GetVarByte(byteVar2)), OptionGet(GetVarByte(byteVar1))),
+        LE(OptionGet(GetVarByte(byteVar1)), OptionGet(GetVarByte(byteVar2))))
     )
     test(env, ext,
       "{ getVar[BigInt](bigIntVar2).get > getVar[BigInt](bigIntVar1).get && getVar[BigInt](bigIntVar1).get < getVar[BigInt](bigIntVar2).get }",
-      AND(GT(TaggedBigInt(bigIntVar2), TaggedBigInt(bigIntVar1)), LT(TaggedBigInt(bigIntVar1), TaggedBigInt(bigIntVar2)))
+      AND(
+        GT(OptionGet(GetVarBigInt(bigIntVar2)), OptionGet(GetVarBigInt(bigIntVar1))),
+        LT(OptionGet(GetVarBigInt(bigIntVar1)), OptionGet(GetVarBigInt(bigIntVar2))))
     )
     test(env, ext,
       "{ getVar[BigInt](bigIntVar2).get >= getVar[BigInt](bigIntVar1).get && getVar[BigInt](bigIntVar1).get <= getVar[BigInt](bigIntVar2).get }",
-      AND(GE(TaggedBigInt(bigIntVar2), TaggedBigInt(bigIntVar1)), LE(TaggedBigInt(bigIntVar1), TaggedBigInt(bigIntVar2)))
+      AND(
+        GE(OptionGet(GetVarBigInt(bigIntVar2)), OptionGet(GetVarBigInt(bigIntVar1))),
+        LE(OptionGet(GetVarBigInt(bigIntVar1)), OptionGet(GetVarBigInt(bigIntVar2))))
     )
   }
 
   property("SigmaProp operations") {
     test(env, ext,
       "{ getVar[SigmaProp](proofVar1).get.isValid }",
-      TaggedSigmaProp(propVar1).isValid
+      GetVarSigmaProp(propVar1).get.isValid
     )
     test(env, ext,
       "{ getVar[SigmaProp](proofVar1).get || getVar[SigmaProp](proofVar2).get }",
-      OR(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
+      OR(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
     )
     test(env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[SigmaProp](proofVar2).get }",
-      AND(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
+      AND(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
     )
     test(env, ext,
       "{ getVar[SigmaProp](proofVar1).get.isValid && getVar[SigmaProp](proofVar2).get }",
-      AND(TaggedSigmaProp(propVar1).isValid, TaggedSigmaProp(propVar2).isValid)
+      AND(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
     )
     test(env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[Int](intVar1).get == 1 }",
-      AND(TaggedSigmaProp(propVar1).isValid, EQ(TaggedInt(intVar1), 1))
+      AND(GetVarSigmaProp(propVar1).get.isValid, EQ(OptionGet(GetVarInt(intVar1)), 1))
     )
     test(env, ext,
       "{ getVar[Int](intVar1).get == 1 || getVar[SigmaProp](proofVar1).get }",
-      OR(EQ(TaggedInt(intVar1), 1), TaggedSigmaProp(propVar1).isValid)
+      OR(EQ(OptionGet(GetVarInt(intVar1)), 1), GetVarSigmaProp(propVar1).get.isValid)
     )
     test(env, ext,
       "{ SELF.R4[SigmaProp].get.isValid }",
@@ -133,28 +142,28 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env, ext,
       "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, GetVarSigmaProp(propVar1).get.isValid),
       true
     )
     test(env, ext,
       "{ allOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, GetVarSigmaProp(propVar1).get.isValid),
       true
     )
     test(env, ext,
       "{ anyOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, TaggedSigmaProp(propVar1).isValid),
+      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, GetVarSigmaProp(propVar1).get.isValid),
       true
     )
     test(env, ext,
       "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isValid }) }",
-      ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), TaggedSigmaProp(propVar1)),
+      ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), GetVarSigmaProp(propVar1).get),
         21, SigmaPropIsValid(TaggedSigmaProp(21))),
       true
     )
     test(env, ext,
       "{ SELF.R4[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
-      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, reg1).propBytes, TaggedSigmaProp(propVar1).propBytes),
+      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, reg1).propBytes, GetVarSigmaProp(propVar1).get.propBytes),
       true
     )
   }
@@ -162,41 +171,47 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   property("Arith operations") {
     test(env, ext,
       "{ getVar[Int](intVar2).get * 2 + getVar[Int](intVar1).get == 5 }",
-      EQ(Plus(Multiply(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(5))
+      EQ(Plus(Multiply(OptionGet(GetVarInt(intVar2)), IntConstant(2)), OptionGet(GetVarInt(intVar1))), IntConstant(5))
     )
+
     test(env, ext :+ (bigIntVar3 -> BigIntConstant(50)),
       "{ getVar[BigInt](bigIntVar2).get * 2 + getVar[BigInt](bigIntVar1).get == getVar[BigInt](bigIntVar3).get }",
-      EQ(Plus(Multiply(TaggedBigInt(bigIntVar2), BigIntConstant(2)), TaggedBigInt(bigIntVar1)), TaggedBigInt(bigIntVar3))
+      EQ(
+        Plus(Multiply(OptionGet(GetVarBigInt(bigIntVar2)), BigIntConstant(2)),
+          OptionGet(GetVarBigInt(bigIntVar1))),
+        OptionGet(GetVarBigInt(bigIntVar3)))
     )
     test(env, ext :+ (byteVar3 -> ByteConstant(5)),
       "{ getVar[Byte](byteVar2).get * 2.toByte + getVar[Byte](byteVar1).get == 5.toByte }",
-      EQ(Plus(Multiply(TaggedByte(byteVar2), ByteConstant(2)), TaggedByte(byteVar1)), ByteConstant(5))
+      EQ(
+        Plus(Multiply(OptionGet(GetVarByte(byteVar2)), ByteConstant(2)),
+          OptionGet(GetVarByte(byteVar1))), ByteConstant(5))
     )
     test(env, ext,
       "{ getVar[Int](intVar2).get / 2 + getVar[Int](intVar1).get == 2 }",
-      EQ(Plus(Divide(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(2))
+      EQ(Plus(Divide(OptionGet(GetVarInt(intVar2)), IntConstant(2)), OptionGet(GetVarInt(intVar1))), IntConstant(2))
     )
     test(env, ext,
       "{ getVar[Int](intVar2).get % 2 + getVar[Int](intVar1).get == 1 }",
-      EQ(Plus(Modulo(TaggedInt(intVar2), IntConstant(2)), TaggedInt(intVar1)), IntConstant(1))
+      EQ(Plus(Modulo(OptionGet(GetVarInt(intVar2)), IntConstant(2)), OptionGet(GetVarInt(intVar1))), IntConstant(1))
     )
   }
 
   property("Tuple operations") {
     test(env, ext,
       "{ (getVar[Int](intVar1).get, getVar[Int](intVar2).get)._1 == 1 }",
-      EQ(SelectField(Tuple(TaggedInt(intVar1), TaggedInt(intVar2)), 1), IntConstant(1))
+      EQ(SelectField(Tuple(OptionGet(GetVarInt(intVar1)), OptionGet(GetVarInt(intVar2))), 1), IntConstant(1))
     )
     test(env, ext,
       "{ (getVar[Int](intVar1).get, getVar[Int](intVar2).get)._2 == 2 }",
-      EQ(SelectField(Tuple(TaggedInt(intVar1), TaggedInt(intVar2)), 2), IntConstant(2))
+      EQ(SelectField(Tuple(OptionGet(GetVarInt(intVar1)), OptionGet(GetVarInt(intVar2))), 2), IntConstant(2))
     )
     test(env, ext,
       """{ val p = (getVar[Int](intVar1).get, getVar[Int](intVar2).get)
         |  val res = p._1 + p._2
         |  res == 3 }""".stripMargin,
       {
-        val p = Tuple(TaggedInt(intVar1), TaggedInt(intVar2))
+        val p = Tuple(OptionGet(GetVarInt(intVar1)), OptionGet(GetVarInt(intVar2)))
         val res = Plus(SelectField(p, 1).asIntValue, SelectField(p, 2).asIntValue)
         EQ(res, IntConstant(3))
       }
@@ -208,14 +223,14 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p.size == 2 }""".stripMargin,
     {
-      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
+      val p = Tuple(OptionGet(GetVarInt(intVar1)), OptionGet(GetVarByte(byteVar2)))
       EQ(SizeOf(p), IntConstant(2))
     })
     test(env, ext,
     """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p(0) == 1 }""".stripMargin,
     {
-      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
+      val p = Tuple(OptionGet(GetVarInt(intVar1)), OptionGet(GetVarByte(byteVar2)))
       EQ(SelectField(p, 1), IntConstant(1))
     })
 
@@ -230,7 +245,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |  data.size == 1
         |}""".stripMargin,
       {
-        val data = TaggedVariable(dataVar, dataType)
+        val data = OptionGet(GetVar(dataVar, dataType))
         EQ(SizeOf(data), IntConstant(1))
       }
     )
@@ -240,7 +255,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |  data.exists({ (p: (Array[Byte], Long)) => p._2 == 10L })
         |}""".stripMargin,
       {
-        val data = TaggedVariable(dataVar, dataType)
+        val data = OptionGet(GetVar(dataVar, dataType))
         Exists(data, 21, EQ(SelectField(TaggedVariable(21, STuple(SCollection(SByte), SLong)), 2), LongConstant(10)))
       }
     )
@@ -250,7 +265,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |  data.forall({ (p: (Array[Byte], Long)) => p._1.size > 0 })
         |}""".stripMargin,
       {
-        val data = TaggedVariable(dataVar, dataType)
+        val data = OptionGet(GetVar(dataVar, dataType))
         val p = TaggedVariable(21, STuple(SCollection(SByte), SLong))
         ForAll(data, 21, GT(SizeOf(SelectField(p, 1).asValue[SByteArray]), IntConstant(0)))
       }
@@ -261,7 +276,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |  data.map({ (p: (Array[Byte], Long)) => (p._2, p._1)}).size == 1
         |}""".stripMargin,
       {
-        val data = TaggedVariable(dataVar, dataType)
+        val data = OptionGet(GetVar(dataVar, dataType))
         val p = TaggedVariable(21, STuple(SCollection(SByte), SLong))
         val swapped = MapCollection(data, 21, Tuple(SelectField(p, 2), SelectField(p, 1))).asCollection[STuple]
         EQ(SizeOf(swapped), IntConstant(1))
@@ -273,7 +288,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 //    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
 //     |  p.getOrElse(2, 3).isInstanceOf[Int] }""".stripMargin,
 //    {
-//      val p = Tuple(TaggedInt(intVar1), TaggedByte(byteVar2))
+//      val p = Tuple(OptionGet(GetVarInt(intVar1)), OptionGet(GetVarByte(byteVar2)))
 //      EQ(ByIndex[SAny.type](p, IntConstant(2), Some(IntConstant(3).asValue[SAny.type])), IntConstant(3))
 //    })
   }
