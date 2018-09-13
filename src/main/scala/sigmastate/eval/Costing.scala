@@ -381,6 +381,8 @@ trait Costing extends SigmaLibrary {
         withDefaultSize(ctx.OUTPUTS, costOf(Outputs))
       case Self =>
         withDefaultSize(ctx.SELF, costOf(Self))
+      case LastBlockUtxoRootHash =>
+        withDefaultSize(ctx.LastBlockUtxoRootHash, costOf(LastBlockUtxoRootHash))
 
       case op @ TaggedVariableNode(id, tpe) =>
         val resV = ctx.getVar(id)(stypeToElem(tpe))

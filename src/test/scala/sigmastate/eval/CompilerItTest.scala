@@ -50,7 +50,8 @@ class CompilerItTest extends BaseCtxTests
     3.toByte -> bigIntArr1
   )).arr
 
-  val boxToSpend = ErgoBox(10, TrueLeaf)
+  val boxToSpend = ErgoBox(10, TrueLeaf,
+    additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntArr1)))
   val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
   val tx1Output2 = ErgoBox(1, projectPubKey)
   val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
@@ -172,6 +173,31 @@ class CompilerItTest extends BaseCtxTests
       Result(AND(p1, p2), (1 + 1 + 1) * 2 + 1, 1))
   }
 
+  def register_BinIntArr_Case = {
+    import SCollection._
+    Case(env, "register_BinIntArr_Case",
+      "SELF.R4[Array[BigInt]].value", ergoCtx,
+      calc = null,
+      cost = null,
+      size = null,
+      tree = null,
+      Result.Ignore)
+  }
+
+  def register_BinIntArr_Map_Case = {
+    import SCollection._
+    Case(env, "contextVar_BinIntArr_Map_Case",
+      "SELF.R4[Array[BigInt]].value.map(fun (i: BigInt) = i + n1)", ergoCtx,
+      calc = null,
+      cost = null,
+      size = null,
+      tree = mkMapCollection1(
+        BigIntArrayConstant(bigIntArr1),
+        mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))
+      ),
+      Result.Ignore)
+  }
+
   lazy val testCases = Seq[EsTestCase[_]](
     intConstCase , bigIntegerConstCase, addBigIntegerConstsCase, arrayConstCase, sigmaPropConstCase
   )
@@ -182,13 +208,14 @@ class CompilerItTest extends BaseCtxTests
   }
 
   test("constants") {
-    intConstCase.doReduce
-    bigIntegerConstCase.doReduce
-    addBigIntegerConstsCase.doReduce()
-    arrayConstCase.doReduce()
-    sigmaPropConstCase.doReduce()
-    andSigmaPropConstsCase.doReduce()
-    bigIntArray_Map_Case.doReduce()
+//    intConstCase.doReduce
+//    bigIntegerConstCase.doReduce
+//    addBigIntegerConstsCase.doReduce()
+//    arrayConstCase.doReduce()
+//    sigmaPropConstCase.doReduce()
+//    andSigmaPropConstsCase.doReduce()
+//    bigIntArray_Map_Case.doReduce()
+    register_BinIntArr_Case.doReduce()
   }
 
 }

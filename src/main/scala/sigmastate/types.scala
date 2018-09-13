@@ -2,7 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SType.TypeCode
@@ -81,8 +81,9 @@ object SType {
 
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
 
-  /** All pre-defined types should be listed here. Note, NoType is not listed. */
-  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SAvlTree, SGroupElement, SSigmaProp, SBox, SUnit, SAny)
+  /** All pre-defined types should be listed here. Note, NoType is not listed.
+    * Should be in sync with sigmastate.lang.Types.predefTypes. */
+  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SAvlTree, SGroupElement, SSigmaProp, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   implicit class STypeOps(val tpe: SType) {
@@ -437,6 +438,18 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
     SMethod(PropBytes, SByteArray),
     SMethod(IsValid, SBoolean)
   )
+}
+
+case object SContext extends SProduct with SPredefType {
+  override type WrappedType = ErgoLikeContext
+  override val typeCode: TypeCode = 101: Byte
+  override def mkConstant(v: ErgoLikeContext): Value[SContext.type] = ContextConstant(v)
+  override def dataSize(v: SType#WrappedType): Long = {
+    ???
+  }
+  override def isConstantSize = false
+  def ancestors = Nil
+  val methods = Nil
 }
 
 case object SAvlTree extends SProduct with SPredefType {

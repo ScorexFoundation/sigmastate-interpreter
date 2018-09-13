@@ -1,23 +1,22 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Arrays, Objects}
+import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants}
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{SigmaPropIsValid, SigmaPropBytes}
-
+import sigmastate.utxo.{SigmaPropBytes, SigmaPropIsValid}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -251,6 +250,14 @@ object Values {
         c.value.valueLengthOpt,
         c.value.maxNumOperations,
         c.value.maxDeletes)
+  }
+
+  object ContextConstant {
+    def apply(value: ErgoLikeContext): Constant[SContext.type]  = Constant[SContext.type](value, SContext)
+    def unapply(v: SValue): Option[ErgoLikeContext] = v match {
+      case Constant(value: ErgoLikeContext, SContext) => Some(value)
+      case _ => None
+    }
   }
 
   trait NotReadyValueByte extends NotReadyValue[SByte.type] {

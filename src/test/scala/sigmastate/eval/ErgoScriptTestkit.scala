@@ -69,6 +69,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
   import Context._
   case class Result[+T](calc: Option[T], cost: Option[Int], size: Option[Long])
   object Result {
+    def Ignore = Result(None, None, None)
     def apply[T](calc: T): Result[T] = Result[T](Some(calc), None, None)
     def apply[T](calc: T, cost: Int, size: Long): Result[T] = Result[T](Some(calc), Some(cost), Some(size))
   }
@@ -90,9 +91,11 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
     lazy val expectedCostF = expectedCost.map(fun(_))
     lazy val expectedSizeF = expectedSize.map(fun(_))
 
-    def checkExpected[T](x: T, expected: Option[T], messageFmt: String) = {
-      if (expected.isDefined)
+    def checkExpected[T](block: => T, expected: Option[T], messageFmt: String) = {
+      if (expected.isDefined) {
+        val x = block
         x shouldBe expected.get
+      }
 //          String.format(messageFmt, x.asInstanceOf[AnyRef], expected.get.asInstanceOf[AnyRef]))
     }
 

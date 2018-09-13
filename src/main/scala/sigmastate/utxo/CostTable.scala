@@ -26,6 +26,8 @@ object CostTable {
     ("Const", "() => GroupElement", 0.000001),
     ("Const", "() => SigmaProp", 0.000001),
     ("Const", "() => Array[IV]", 0.000001),
+    ("Self$", "Context => Box", 0.000001),
+    ("ExtractRegisterAs", "(Box,Byte) => Array[BigInt]", 0.000001),
     ("SigmaPropIsValid", "SigmaProp => Boolean", 0.000001),
     ("SigmaPropBytes", "SigmaProp => Array[Byte]", 0.000001),
     ("BinAnd", "(Boolean, Boolean) => Boolean", 0.000001),

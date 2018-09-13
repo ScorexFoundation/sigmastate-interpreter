@@ -1,5 +1,6 @@
 package sigmastate.lang
 
+import org.ergoplatform.Self
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
@@ -9,7 +10,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.SigmaPropIsValid
+import sigmastate.utxo.{SigmaPropIsValid, ExtractRegisterAs}
 
 object Terms {
 
@@ -183,6 +184,8 @@ object Terms {
       case Ident(name, tpe) => SFunc(Vector(), tpe)
       case t: Triple[_,_,_] => SFunc(Vector(t.left.tpe, t.right.tpe), t.tpe)
       case SigmaPropIsValid(p) => SFunc(p.tpe, SBoolean)
+      case Self => SFunc(SContext, SBox)
+      case ExtractRegisterAs(input, _, tpe, _) => SFunc(Vector(SBox, SByte), tpe)
       case _ => sys.error(s"Value.opType is not defined for $v")
     }
   }
