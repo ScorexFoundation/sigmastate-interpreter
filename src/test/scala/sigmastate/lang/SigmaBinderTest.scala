@@ -50,8 +50,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("Option.get (OptionGet)") {
-    bind(env, "getVar[Byte](10).get") shouldBe OptionGet(GetVar(10.toByte, SByte))
-    bind(env, "getVar[Array[Byte]](10).get") shouldBe OptionGet(GetVar(10.toByte, SByteArray))
+    bind(env, "getVar[Byte](10).get") shouldBe GetVar(10.toByte, SByte).get
+    bind(env, "getVar[Array[Byte]](10).get") shouldBe GetVar(10.toByte, SByteArray).get
   }
 
   property("val constructs") {

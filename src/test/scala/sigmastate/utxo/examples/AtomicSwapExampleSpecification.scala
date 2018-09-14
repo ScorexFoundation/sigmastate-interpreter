@@ -6,7 +6,7 @@ import sigmastate.Values.{ByteArrayConstant, CollectionConstant, LongConstant}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{OptionGet, SizeOf}
+import sigmastate.utxo.SizeOf
 import sigmastate.utxo.GetVar._
 import scorex.utils.Random
 
@@ -52,7 +52,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     //chain1 script
     val prop1Tree = OR(
       AND(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))), pubkeyA),
-      AND(pubkeyB, EQ(CalcBlake2b256(OptionGet(GetVarByteArray(1))), hx))
+      AND(pubkeyB, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )
     prop1 shouldBe prop1Tree
 
@@ -74,8 +74,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val prop2Tree = OR(
       AND(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB),
       AND(pubkeyA,
-        LT(SizeOf(OptionGet(GetVarByteArray(1))), 33),
-        EQ(CalcBlake2b256(OptionGet(GetVarByteArray(1))), hx))
+        LT(SizeOf(GetVarByteArray(1).get), 33),
+        EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )
     prop2 shouldBe prop2Tree
 

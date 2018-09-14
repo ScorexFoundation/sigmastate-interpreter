@@ -24,7 +24,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       """.stripMargin)
     val prop = AND(
       pubkey,
-      EQ(CalcBlake2b256(OptionGet(GetVarByteArray(1))), ByteArrayConstant(Blake2b256(preimage)))
+      EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage)))
     )
     compiledScript shouldBe prop
 
@@ -54,7 +54,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val prop = AND(
       pubkey,
       EQ(
-        CalcBlake2b256(Append(OptionGet(GetVarByteArray(1)), OptionGet(GetVarByteArray(2)))),
+        CalcBlake2b256(Append(GetVarByteArray(1).get, GetVarByteArray(2).get)),
         ByteArrayConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
@@ -90,7 +90,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
         |}
       """.stripMargin)
 
-    val prop = EQ(Xor(OptionGet(GetVarByteArray(k1)), OptionGet(GetVarByteArray(k2))), ByteArrayConstant(r))
+    val prop = EQ(Xor(GetVarByteArray(k1).get, GetVarByteArray(k2).get), ByteArrayConstant(r))
     compiledScript shouldBe prop
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
@@ -118,7 +118,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
         |}
       """.stripMargin)
 
-    val prop = EQ(CalcBlake2b256(OptionGet(GetVarByteArray(1))), ByteArrayConstant(Blake2b256(preimage)))
+    val prop = EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage)))
     compiledScript shouldBe prop
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
@@ -144,7 +144,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
         |}
       """.stripMargin)
 
-    val prop = EQ(CalcBlake2b256(Append(OptionGet(GetVarByteArray(2)), OptionGet(GetVarByteArray(1)))),
+    val prop = EQ(CalcBlake2b256(Append(GetVarByteArray(2).get, GetVarByteArray(1).get)),
       ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
     compiledScript shouldBe prop
 

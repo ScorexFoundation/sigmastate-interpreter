@@ -72,10 +72,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val elementId = 1: Byte
 
     val prop: Value[SBoolean.type] = AND(
-      GE(OptionGet(GetVarLong(elementId)), LongConstant(120)),
+      GE(GetVarLong(elementId).get, LongConstant(120)),
       IsMember(ExtractRegisterAs(Self, reg1),
-        CalcBlake2b256(LongToByteArray(OptionGet(GetVarLong(elementId)))),
-        OptionGet(GetVarByteArray(proofId)))
+        CalcBlake2b256(LongToByteArray(GetVarLong(elementId).get)),
+        GetVarByteArray(proofId).get)
     )
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
     val propCompiled = compile(env,
@@ -148,7 +148,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val propTree = IsMember(
       ExtractRegisterAs(Self, reg1),
       ExtractRegisterAs(Self, reg2),
-      OptionGet(GetVarByteArray(proofId)))
+      GetVarByteArray(proofId).get)
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
