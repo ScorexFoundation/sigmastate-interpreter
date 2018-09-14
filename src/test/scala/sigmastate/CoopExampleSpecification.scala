@@ -1,14 +1,46 @@
 package sigmastate
 
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, ErgoLikeTransaction}
+import org.scalatest.Assertion
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.ByteArrayConstant
+import sigmastate.Values.{ByteArrayConstant, Value}
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 
 class CoopExampleSpecification extends SigmaTestingCommons {
+  
+  
+  def mkTxFromOutputs(ergoBox: ErgoBox*): ErgoLikeTransaction = {
+    ErgoLikeTransaction(IndexedSeq(), ergoBox.toIndexedSeq)
+  }
+
+  def mkCtx(height: Long,
+            tx: ErgoLikeTransaction,
+            self: ErgoBox): ErgoLikeContext = {
+    ErgoLikeContext(
+      currentHeight = height,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction = tx,
+      self = self)
+  }
+
+  def successProofTest(exp: Value[SBoolean.type],
+                       ctx: ErgoLikeContext,
+                       prover: ErgoLikeProvingInterpreter,
+                       verifier: ErgoLikeInterpreter): Assertion = {
+    val proofResult = prover.prove(exp, ctx, fakeMessage)
+    proofResult should be a 'success
+    verifier.verify(exp, ctx, proofResult.success.value, fakeMessage) should be a 'success
+  }
+
+  def failingProofTest(exp: Value[SBoolean.type],
+                       ctx: ErgoLikeContext,
+                       prover: ErgoLikeProvingInterpreter): Assertion = {
+    prover.prove(exp, ctx, fakeMessage) should be a 'failure
+  }
 
   property("commit to the threshold sig") {
 
@@ -92,20 +124,16 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |}
        """.stripMargin).asBoolValue
 
-    val output4 = ErgoBox(totalValue, spendingProp1)
-    val tx4Output1 = ErgoBox(totalValue / 4, pubkeyA)
-    val tx4Output2 = ErgoBox(totalValue / 4, pubkeyB)
-    val tx4Output3 = ErgoBox(totalValue / 4, pubkeyC)
-    val tx4Output4 = ErgoBox(totalValue / 4, pubkeyD)
-    val tx4 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx4Output1, tx4Output2, tx4Output3, tx4Output4))
-    val ctx4 = ErgoLikeContext(
-      currentHeight = 5001L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx4,
-      self = output4)
-    val proof4 = coopA.prove(spendingProp1, ctx4, fakeMessage).success.value.proof
-    verifier.verify(spendingProp1, ctx4, proof4, fakeMessage) should be a 'success
+    {
+      val self = ErgoBox(totalValue, spendingProp1)
+      val output1 = ErgoBox(totalValue / 4, pubkeyA)
+      val output2 = ErgoBox(totalValue / 4, pubkeyB)
+      val output3 = ErgoBox(totalValue / 4, pubkeyC)
+      val output4 = ErgoBox(totalValue / 4, pubkeyD)
+      val tx = mkTxFromOutputs(output1, output2, output3, output4)
+      val ctx = mkCtx(5001, tx, self)
+      successProofTest(spendingProp1, ctx, coopA, verifier)
+    }
 
     val spendingEnv2 = Map(
       "pubkeyA" -> pubkeyA,
@@ -134,54 +162,44 @@ class CoopExampleSpecification extends SigmaTestingCommons {
        """.stripMargin).asBoolValue
 
     /**
-      * Will spend correctly if all the conditions are satisfied
+      * Withdraw successfully
       */
-    val output5 = ErgoBox(totalValue, spendingProp2)
-    val tx5Output1 = ErgoBox(totalValue / 4, pubkeyA)
-    val tx5Output2 = ErgoBox(totalValue / 4, pubkeyB)
-    val tx5Output3 = ErgoBox(totalValue / 4, pubkeyC)
-    val tx5Output4 = ErgoBox(totalValue / 4, pubkeyD)
-    val tx5 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx5Output1, tx5Output2, tx5Output3, tx5Output4))
-    val ctx5 = ErgoLikeContext(
-      currentHeight = 5001L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx5,
-      self = output5)
-    val proof5 = coopA.prove(spendingProp2, ctx5, fakeMessage).success.value.proof
-    verifier.verify(spendingProp2, ctx5, proof5, fakeMessage) should be a 'success
+    {
+      val self = ErgoBox(totalValue, spendingProp2)
+      val output1 = ErgoBox(totalValue / 4, pubkeyA)
+      val output2 = ErgoBox(totalValue / 4, pubkeyB)
+      val output3 = ErgoBox(totalValue / 4, pubkeyC)
+      val output4 = ErgoBox(totalValue / 4, pubkeyD)
+      val tx = mkTxFromOutputs(output1, output2, output3, output4)
+      val ctx = mkCtx(5001L, tx, self)
+      successProofTest(spendingProp2, ctx, coopA, verifier)
+    }
 
     /**
       * Won't spend more then defined share
       */
-    val output6 = ErgoBox(totalValue, spendingProp2)
-    val tx6Output1 = ErgoBox(totalValue / 2, pubkeyB)
-    val tx6Output2 = ErgoBox(totalValue / 2, pubkeyC)
-    val tx6 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx6Output1, tx6Output2))
-    val ctx6 = ErgoLikeContext(
-      currentHeight = 5001L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx6,
-      self = output6)
-    coopA.prove(spendingProp2, ctx6, fakeMessage) should be a 'failure
+    {
+      val self = ErgoBox(totalValue, spendingProp2)
+      val output1 = ErgoBox(totalValue / 2, pubkeyB)
+      val output2 = ErgoBox(totalValue / 2, pubkeyC)
+      val tx = mkTxFromOutputs(output1, output2)
+      val ctx = mkCtx(5001L, tx, self = self)
+      failingProofTest(spendingProp2, ctx, coopA)
+    }
 
     /**
-      * Won't spend before minimail height
+      * Won't spend before minimal height
       */
-    val output7 = ErgoBox(totalValue, spendingProp2)
-    val tx7Output1 = ErgoBox(totalValue / 4, pubkeyA)
-    val tx7Output2 = ErgoBox(totalValue / 4, pubkeyB)
-    val tx7Output3 = ErgoBox(totalValue / 4, pubkeyC)
-    val tx7Output4 = ErgoBox(totalValue / 4, pubkeyD)
-    val tx7 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx7Output1, tx7Output2, tx7Output3, tx7Output4))
-    val ctx7 = ErgoLikeContext(
-      currentHeight = 4500L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx7,
-      self = output7)
-    coopA.prove(spendingProp2, ctx7, fakeMessage) should be a 'failure
+    {
+      val self = ErgoBox(totalValue, spendingProp2)
+      val output1 = ErgoBox(totalValue / 4, pubkeyA)
+      val output2 = ErgoBox(totalValue / 4, pubkeyB)
+      val output3 = ErgoBox(totalValue / 4, pubkeyC)
+      val output4 = ErgoBox(totalValue / 4, pubkeyD)
+      val tx = mkTxFromOutputs(output1, output2, output3, output4)
+      val ctx = mkCtx(5000L, tx, self)
+      failingProofTest(spendingProp2, ctx, coopA)
+    }
 
 
     val spendingProp3 = compile(spendingEnv,
@@ -199,20 +217,16 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     /**
       * Will spend correctly if all the conditions are satisfied
       */
-    val output8 = ErgoBox(totalValue, spendingProp2)
-    val tx8Output1 = ErgoBox(totalValue / 4, pubkeyA)
-    val tx8Output2 = ErgoBox(totalValue / 4, pubkeyB)
-    val tx8Output3 = ErgoBox(totalValue / 4, pubkeyC)
-    val tx8Output4 = ErgoBox(totalValue / 4, pubkeyD)
-    val tx8 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx8Output1, tx8Output2, tx8Output3, tx8Output4))
-    val ctx8 = ErgoLikeContext(
-      currentHeight = 5001L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx8,
-      self = output8)
-    val proof8 = coopA.prove(spendingProp3, ctx8, fakeMessage).success.value.proof
-    verifier.verify(spendingProp3, ctx8, proof8, fakeMessage) should be a 'success
+    {
+      val self = ErgoBox(totalValue, spendingProp3)
+      val output1 = ErgoBox(totalValue / 4, pubkeyA)
+      val output2 = ErgoBox(totalValue / 4, pubkeyB)
+      val output3 = ErgoBox(totalValue / 4, pubkeyC)
+      val output4 = ErgoBox(totalValue / 4, pubkeyD)
+      val tx = mkTxFromOutputs(output1, output2, output3, output4)
+      val ctx = mkCtx(5001L, tx, self)
+      successProofTest(spendingProp2, ctx, coopA, verifier)
+    }
 
     val spendingEnv3 = Map(
       "pubkeyA" -> pubkeyA,
@@ -241,39 +255,30 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          | }
        """.stripMargin).asBoolValue
 
-    val output9 = ErgoBox(totalValue, spendingProp4)
-    val tx9Output1 = ErgoBox(totalValue / 4, pubkeyA)
-    val tx9Output2 = ErgoBox(totalValue / 4, pubkeyB)
-    val tx9Output3 = ErgoBox(totalValue / 4, pubkeyC)
-    val tx9Output4 = ErgoBox(totalValue / 4, pubkeyD)
-    val tx9 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx9Output1, tx9Output2, tx9Output3, tx9Output4))
-    val ctx9 = ErgoLikeContext(
-      currentHeight = 5001L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx9,
-      self = output9)
-    val proof9 = coopA.prove(spendingProp4, ctx9, fakeMessage).success.value.proof
-    verifier.verify(spendingProp4, ctx9, proof9, fakeMessage) should be a 'success
+    {
+      val self = ErgoBox(totalValue, spendingProp4)
+      val output1 = ErgoBox(totalValue / 4, pubkeyA)
+      val output2 = ErgoBox(totalValue / 4, pubkeyB)
+      val output3 = ErgoBox(totalValue / 4, pubkeyC)
+      val output4 = ErgoBox(totalValue / 4, pubkeyD)
+      val tx = mkTxFromOutputs(output1, output2, output3, output4)
+      val ctx = mkCtx(5001L, tx, self)
+      successProofTest(spendingProp4, ctx, coopA, verifier)
+    }
 
-    //todo: failback
     val spendingProp5 = compile(spendingEnv, "business").asBoolValue
 
-    val output10 = ErgoBox(totalValue, spendingProp5)
-    val tx10Output1 = ErgoBox(totalValue, businessKey)
-    val tx10 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx10Output1))
-    val ctx10 = ErgoLikeContext(
-      currentHeight = 1L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx10,
-      self = output10)
-    val proof10 = business.prove(spendingProp5, ctx10, fakeMessage).success.value.proof
-    coopA.prove(spendingProp5, ctx10, fakeMessage)should be a 'failure
-    coopB.prove(spendingProp5, ctx10, fakeMessage)should be a 'failure
-    coopC.prove(spendingProp5, ctx10, fakeMessage)should be a 'failure
-    coopD.prove(spendingProp5, ctx10, fakeMessage)should be a 'failure
-    verifier.verify(spendingProp5, ctx10, proof10, fakeMessage) should be a 'success
+    {
+      val self = ErgoBox(totalValue, spendingProp5)
+      val output = ErgoBox(totalValue, businessKey)
+      val tx = mkTxFromOutputs(output)
+      val ctx = mkCtx(1L, tx, self)
+      failingProofTest(spendingProp5, ctx, coopA)
+      failingProofTest(spendingProp5, ctx, coopB)
+      failingProofTest(spendingProp5, ctx, coopC)
+      failingProofTest(spendingProp5, ctx, coopD)
+      successProofTest(spendingProp5, ctx, business, verifier)
+    }
 
     val thresholdEnv = Map(
       "pubkeyA" -> pubkeyA,
@@ -303,21 +308,53 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       """.stripMargin).asBoolValue
 
 
-    val output0 = ErgoBox(totalValue + 1L, thresholdProp)
-    val tx0Output0 = ErgoBox(toolValue, spendingProp1)
-    val tx0Output1 = ErgoBox(constructionValue, spendingProp3)
-    val tx0Output2 = ErgoBox(totalValue - toolValue - constructionValue, spendingProp5)
-    //hack for avoiding None.get exception.
-    val tx0Output3 = ErgoBox(0L, SBoolean.mkConstant(true))
-    val tx0 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx0Output0, tx0Output1, tx0Output2, tx0Output3))
-    val ctx0 = ErgoLikeContext(
-      currentHeight = 2000L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx0,
-      self = output0)
-    val proof0 = business.prove(thresholdProp, ctx0, fakeMessage).get.proof
-    verifier.verify(thresholdProp, ctx0, proof0, fakeMessage) should be a 'success
+    /**
+      * Check votingSuccess && properSpending case
+      */
+    {
+      val self = ErgoBox(totalValue + 1L, thresholdProp)
+      val output1 = ErgoBox(toolValue, spendingProp1)
+      val output2 = ErgoBox(constructionValue, spendingProp3)
+      val output3 = ErgoBox(totalValue - toolValue - constructionValue, spendingProp5)
+      //hack for avoiding None.get exception.
+      val dummy = ErgoBox(0L, SBoolean.mkConstant(true))
+      val tx = mkTxFromOutputs(output1, output2, output3, dummy)
+      val ctx = mkCtx(2000L, tx, self)
+
+      failingProofTest(thresholdProp, ctx, business)
+      failingProofTest(thresholdProp, ctx, business.withSecrets(Seq(skA)))
+      failingProofTest(thresholdProp, ctx, business.withSecrets(Seq(skA, skB)))
+      successProofTest(thresholdProp, ctx, business.withSecrets(Seq(skA, skB, skC)), verifier)
+      successProofTest(thresholdProp, ctx, business.withSecrets(Seq(skA, skB, skC, skD)), verifier)
+    }
+
+    /**
+      * Check withdraw success
+      */
+    {
+      val self = ErgoBox(totalValue + 1L, thresholdProp)
+      val output0 = ErgoBox(totalValue / 4, pubkeyA)
+      val output1 = ErgoBox(totalValue / 4, pubkeyB)
+      val output2 = ErgoBox(totalValue / 4, pubkeyC)
+      val output3 = ErgoBox(totalValue / 4, pubkeyD)
+      val tx = mkTxFromOutputs(output0, output1, output2, output3)
+      val ctx = mkCtx(2000L, tx, self)
+      successProofTest(thresholdProp, ctx, business, verifier)
+    }
+
+    /**
+      * Check withdraw failure. Not enough height case.
+      */
+    {
+      val self = ErgoBox(totalValue + 1L, thresholdProp)
+      val output0 = ErgoBox(totalValue / 4, pubkeyA)
+      val output1 = ErgoBox(totalValue / 4, pubkeyB)
+      val output2 = ErgoBox(totalValue / 4, pubkeyC)
+      val output3 = ErgoBox(totalValue / 4, pubkeyD)
+      val tx = mkTxFromOutputs(output0, output1, output2, output3)
+      val ctx = mkCtx(1000L, tx, self)
+      failingProofTest(thresholdProp, ctx, business)
+    }
 
 
     val inputEnv = Map(
@@ -333,45 +370,34 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     /**
       * height not higher, total value is equal
       */
-    val output1 = ErgoBox(totalValue, inputProp)
-    val tx1Output1 = ErgoBox(totalValue, thresholdProp)
-    val tx1 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1))
-    val ctx1 = ErgoLikeContext(
-      currentHeight = 1000L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx1,
-      self = output1)
-    val proof1 = coopA.prove(inputProp, ctx1, fakeMessage).success.value.proof
-    verifier.verify(inputProp, ctx1, proof1, fakeMessage) should be a 'success
+    {
+      val self = ErgoBox(totalValue, inputProp)
+      val output = ErgoBox(totalValue, thresholdProp)
+      val tx = mkTxFromOutputs(output)
+      val ctx = mkCtx(1000L, tx, self)
+      successProofTest(inputProp, ctx, coopA, verifier)
+    }
 
     /**
       * total value is lower, height is higher
       */
-    val output2 = ErgoBox(totalValue - 1L, inputProp)
-    val tx2Output1 = ErgoBox(totalValue - 1L, thresholdProp)
-    val tx2 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx2Output1))
-    val ctx2 = ErgoLikeContext(
-      currentHeight = 1001L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx2,
-      self = output2)
-    val proof2 = coopA.prove(inputProp, ctx2, fakeMessage).success.value.proof
-    verifier.verify(inputProp, ctx2, proof2, fakeMessage) should be a 'success
+    {
+      val self = ErgoBox(totalValue - 1L, inputProp)
+      val output = ErgoBox(totalValue - 1L, thresholdProp)
+      val tx = mkTxFromOutputs(output)
+      val ctx = mkCtx(1001L, tx, self)
+      successProofTest(inputProp, ctx, coopA, verifier)
+    }
 
     /**
       * negative condition
       */
-    val output3 = ErgoBox(totalValue - 1L, inputProp)
-    val tx3Output1 = ErgoBox(totalValue - 1L, thresholdProp)
-    val tx3 =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx3Output1))
-    val ctx3 = ErgoLikeContext(
-      currentHeight = 1000L,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx3,
-      self = output3)
-    coopA.prove(inputProp, ctx3, fakeMessage) should be a 'failure
+    {
+      val self = ErgoBox(totalValue - 1L, inputProp)
+      val output = ErgoBox(totalValue - 1L, thresholdProp)
+      val tx = mkTxFromOutputs(output)
+      val ctx = mkCtx(1000L, tx, self)
+      failingProofTest(inputProp, ctx, coopA)
+    }
   }
 }
