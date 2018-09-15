@@ -31,10 +31,13 @@ object CostTable {
     ("GetVar", "(Context, Byte) => Option[T]", 0.000001),
     ("AccessRegister", "Box => Option[T]", 0.000001),
     ("ExtractRegisterAs", "(Box,Byte) => Array[BigInt]", 0.000001),
+    ("Slice", "(Array[IV],Int,Int) => Array[IV]", 0.000001),
     ("SigmaPropIsValid", "SigmaProp => Boolean", 0.000001),
     ("SigmaPropBytes", "SigmaProp => Array[Byte]", 0.000001),
     ("BinAnd", "(Boolean, Boolean) => Boolean", 0.000001),
     ("BinOr", "(Boolean, Boolean) => Boolean", 0.000001),
+    ("GT", "(BigInt,BigInt) => Boolean", 0.0001),
+    (">_per_item", "(BigInt, BigInt) => BigInt", 0.000001),
     ("+", "(BigInt, BigInt) => BigInt", 0.0001),
     ("+_per_item", "(BigInt, BigInt) => BigInt", 0.000001)
   ))

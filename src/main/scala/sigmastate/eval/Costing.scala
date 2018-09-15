@@ -163,6 +163,14 @@ trait Costing extends SigmaLibrary {
         val sizes = xs.sizes.map(sizeF)
         RCostedCol(vals, costs, sizes, xs.valuesCost)
 
+//      case CCM.filterCosted(xs: RCostedCol[a], _f: RCostedFunc[_,_]) =>
+//        val f = _f.asRep[Costed[a] => Costed[Boolean]]
+//        val (calcF, costF, _) = splitCostedFunc[a, Boolean](f)
+//        val vals = xs.values.filter(calcF)
+//        val costs = xs.costs.zip(xs.sizes).map(costF)  // TODO how to filter our sizes and costs
+//        val sizes = colBuilder.replicate(xs.sizes.length, 1L)
+//        RCostedCol(vals, costs, sizes, xs.valuesCost)
+
       case _ => super.rewriteDef(d)
     }
   }
@@ -329,7 +337,7 @@ trait Costing extends SigmaLibrary {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = CostedPrimRep(v, cost, v.dataSize)
-
+    object In { def unapply(v: SValue): Option[RCosted[Any]] = Some(evalNode(ctx, env, v).asRep[Costed[Any]]) }
     val res: Rep[Any] = node match {
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
@@ -482,6 +490,17 @@ trait Costing extends SigmaLibrary {
 
       case Terms.Apply(Select(col, "slice", _), Seq(from, until)) =>
         eval(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
+
+      case op @ Slice(In(input), In(from), In(until)) =>
+        val inputC = input.asRep[CostedCol[Any]]
+        val fromC = from.asRep[Costed[Int]]
+        val untilC = until.asRep[Costed[Int]]
+        val f = fromC.value
+        val u = untilC.value
+        val vals = inputC.values.slice(f, u)
+        val costs = inputC.costs.slice(f, u)
+        val sizes = inputC.sizes.slice(f, u)
+        RCostedCol(vals, costs, sizes, inputC.valuesCost + costOf(op))
 
       case Terms.Apply(Select(col, "where", _), Seq(Terms.Lambda(Seq((n, t)), _, Some(body)))) =>
         val input = col.asValue[SCollection[SType]]
@@ -646,6 +665,21 @@ trait Costing extends SigmaLibrary {
         val rCost = evalNode(ctx, env, r).cost
         withDefaultSize(And.applyLazy(lC.value, rValTh), lC.cost + rCost + costOf(node))
 
+      case op: Relation[t,_] if op.tpe == SBigInt =>
+        import OpCodes._
+        op.opCode match {
+          case GtCode =>
+            val x = evalNode(ctx, env, op.left).asRep[Costed[WBigInteger]]
+            val y = evalNode(ctx, env, op.right).asRep[Costed[WBigInteger]]
+            val resSize = x.dataSize.min(y.dataSize)
+            val cost = x.cost + y.cost + costOf(op) + costOf(">_per_item", op.opType) * resSize.toInt
+            RCostedPrim(x.value.compareTo(y.value) > 0, cost, resSize)
+          //          case MinusCode => NumericMinus(elemToNumeric(eT))(eT)
+          //          case MultiplyCode => NumericTimes(elemToNumeric(eT))(eT)
+          //          case DivisionCode => IntegralDivide(elemToIntegral(eT))(eT)
+          //          case ModuloCode => IntegralMod(elemToIntegral(eT))(eT)
+          case _ => error(s"Cannot perform Costing.evalNode($op)")
+        }
       case rel: Relation[t, _] =>
         val tpe = rel.left.tpe
         val et = stypeToElem(tpe)

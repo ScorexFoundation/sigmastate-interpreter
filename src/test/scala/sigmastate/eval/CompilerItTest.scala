@@ -158,6 +158,16 @@ class CompilerItTest extends BaseCtxTests
       Result.Ignore)
   }
 
+  def bigIntArray_Slice_Case = {
+    import SCollection._
+    Case(env, "bigIntArray_Slice_Case",
+      "bigIntArr1.slice(0,1)", ergoCtx,
+      calc = null,
+      cost = null,
+      size = null,
+      tree = null,
+      Result.Ignore)
+  }
 
   def sigmaPropConstCase = {
     val resSym = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
@@ -256,9 +266,13 @@ class CompilerItTest extends BaseCtxTests
     bigIntArray_Map_Case.doReduce()
   }
 
-//  test("bigIntArray_Where_Case") {
-//    bigIntArray_Where_Case.doReduce()
-//  }
+  test("bigIntArray_Slice_Case") {
+    bigIntArray_Slice_Case.doReduce()
+  }
+
+  test("bigIntArray_Where_Case") {
+    bigIntArray_Where_Case.doReduce()
+  }
 
   test("register_BinIntArr_Case") {
     register_BinIntArr_Case.doReduce()

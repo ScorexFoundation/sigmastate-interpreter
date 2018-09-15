@@ -10,7 +10,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{SigmaPropIsValid, ExtractRegisterAs}
+import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsValid, Slice}
 
 object Terms {
 
@@ -186,6 +186,9 @@ object Terms {
       case SigmaPropIsValid(p) => SFunc(p.tpe, SBoolean)
       case Self => SFunc(SContext, SBox)
       case ExtractRegisterAs(input, _, tpe, _) => SFunc(Vector(SBox, SByte), tpe)
+      case Slice(input,_,_) =>
+        val tpeCol = SCollection(input.tpe.typeParams.head.asTypeIdent)
+        SFunc(Vector(tpeCol, SInt, SInt), tpeCol)
       case _ => sys.error(s"Value.opType is not defined for $v")
     }
   }
