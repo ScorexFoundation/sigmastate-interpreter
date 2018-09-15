@@ -4,7 +4,6 @@ import java.math.BigInteger
 
 import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
-
 import scalan.{Lazy, SigmaLibrary}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
@@ -20,13 +19,13 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
-import sigmastate.eval.{NumericOps, OrderingOps}
+import sigmastate.eval.{OrderingOps, NumericOps, DataCosting}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
 
-trait Costing extends SigmaLibrary {
+trait Costing extends SigmaLibrary with DataCosting {
   import Context._;
   import WArray._;
   import WECPoint._;
@@ -591,8 +590,9 @@ trait Costing extends SigmaLibrary {
         val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
         val bytes = boxC.value.propositionBytes
         withDefaultSize(bytes, boxC.cost + costOf(node))
-      case utxo.ExtractRegisterAs(box, regId, tpe, default) =>
-        val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
+
+      case utxo.ExtractRegisterAs(In(box), regId, tpe, default) =>
+        val boxC = box.asRep[Costed[Box]]
         val elem = stypeToElem(tpe)
         val valueOpt = boxC.value.getReg(regId.number.toInt)(elem)
         val (v, c) = if (default.isDefined) {
@@ -601,7 +601,8 @@ trait Costing extends SigmaLibrary {
         } else {
           (valueOpt.get, boxC.cost + costOf(node))
         }
-        withDefaultSize(v, c)
+        dataCost(v)
+
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._
         op.opCode match {

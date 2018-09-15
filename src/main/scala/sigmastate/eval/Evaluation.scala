@@ -34,6 +34,7 @@ trait Evaluation extends Costing {
   import ProveDlogEvidence._
   import WBigInteger._
   import WArray._
+  import WOption._
   import WECPoint._
   import Liftables._
   
@@ -44,6 +45,7 @@ trait Evaluation extends Costing {
   private val CBM = ColBuilderMethods
   private val SDBM = SigmaDslBuilderMethods
   private val AM = WArrayMethods
+  private val OM = WOptionMethods
   private val BIM = WBigIntegerMethods
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
@@ -57,7 +59,8 @@ trait Evaluation extends Costing {
          ContextM.cost(_) | ContextM.dataSize(_) =>
     case SigmaM.propBytes(_) =>
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) =>
-    case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) =>
+    case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
+    case OM.get(_) =>
     case _: CostOf =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
   }

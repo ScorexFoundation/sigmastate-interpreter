@@ -208,7 +208,7 @@ class CompilerItTest extends BaseCtxTests
 
   def register_BinIntArr_Map_Case = {
     import SCollection._
-    Case(env, "contextVar_BinIntArr_Map_Case",
+    Case(env, "register_BinIntArr_Map_Case",
       "SELF.R4[Array[BigInt]].value.map(fun (i: BigInt) = i + n1)", ergoCtx,
       calc = null,
       cost = null,
@@ -270,16 +270,16 @@ class CompilerItTest extends BaseCtxTests
     bigIntArray_Slice_Case.doReduce()
   }
 
-  test("bigIntArray_Where_Case") {
-    bigIntArray_Where_Case.doReduce()
-  }
+//  test("bigIntArray_Where_Case") {
+//    bigIntArray_Where_Case.doReduce()
+//  }
 
   test("register_BinIntArr_Case") {
     register_BinIntArr_Case.doReduce()
   }
 
-//  test("register_BinIntArr_Map_Case") {
-//    register_BinIntArr_Map_Case.doReduce()
-//  }
+  test("register_BinIntArr_Map_Case") {
+    register_BinIntArr_Map_Case.doReduce()
+  }
 
 }

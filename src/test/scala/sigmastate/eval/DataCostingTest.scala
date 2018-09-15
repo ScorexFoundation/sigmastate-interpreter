@@ -1,27 +1,27 @@
 package sigmastate.eval
 
-import sigmastate.lang.{TransformingSigmaBuilder, LangTests, SigmaCompiler}
+import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler, Costing}
 
 import scalan.BaseCtxTests
 
-//class DataCostingTest extends BaseCtxTests with LangTests {
-//  lazy val ctx = new TestContext with DataCosting {
-//    import TestSigmaDslBuilder._
-//    val sigmaDslBuilder = RTestSigmaDslBuilder()
-//    val builder = TransformingSigmaBuilder
-//  }
-//  import ctx._
-//  import Col._
-//  lazy val compiler = new SigmaCompiler(builder)
-//
-//  test("split cols") {
-//    ctx.emit("split_cols",
-//      split(fun { in: Rep[(Col[Int], Byte)] =>
-//        dataCost(in)
-//      })
-//    )
-//  }
-//
+class DataCostingTest extends BaseCtxTests with LangTests {
+  lazy val ctx = new TestContext with Costing {
+    import TestSigmaDslBuilder._
+    val sigmaDslBuilder = RTestSigmaDslBuilder()
+    val builder = TransformingSigmaBuilder
+  }
+  import ctx._
+  import Col._
+  lazy val compiler = new SigmaCompiler(builder)
+
+  test("split cols") {
+    ctx.emit("split_cols",
+      split(fun { in: Rep[(Col[Int], Byte)] =>
+        dataCost(in)
+      })
+    )
+  }
+
 //  test("split pair cols") {
 //    ctx.emit("split_pair_col",
 //      split(fun { in: Rep[(Col[(Int, Short)], Byte)] =>
@@ -83,4 +83,4 @@ import scalan.BaseCtxTests
 //    )
 //  }
 //
-//}
+}
