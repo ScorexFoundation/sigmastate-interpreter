@@ -1,11 +1,12 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox, ErgoLikeInterpreter, Self}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, Self}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.OptionUnwrapNone
 import sigmastate.utxo.GetVar._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
@@ -291,5 +292,26 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 //      val p = Tuple(GetVarInt(intVar1).get, GetVarByte(byteVar2).get)
 //      EQ(ByIndex[SAny.type](p, IntConstant(2), Some(IntConstant(3).asValue[SAny.type])), IntConstant(3))
 //    })
+  }
+
+  property("GetVar") {
+    test(env, ext,
+      "{ getVar[Int](intVar2).get == 2 }",
+      EQ(GetVarInt(intVar2).get, IntConstant(2))
+    )
+  }
+
+  property("OptionGet success (SomeValue)") {
+    test(env, ext,
+      "{ getVar[Int](intVar2).get == 2 }",
+      EQ(GetVarInt(intVar2).get, IntConstant(2))
+    )
+  }
+
+  property("OptionGet fail (NoneValue)") {
+    an[OptionUnwrapNone] should be thrownBy test(env, ext,
+      "{ getVar[Int](99).get == 2 }",
+      EQ(GetVarInt(99).get, IntConstant(2))
+    )
   }
 }
