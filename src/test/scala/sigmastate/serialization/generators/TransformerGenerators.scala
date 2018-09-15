@@ -9,6 +9,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
+import sigmastate.utxo.GetVar._
 
 trait TransformerGenerators {
   self: ValueGenerators with ConcreteCollectionGenerators =>
@@ -210,4 +211,12 @@ trait TransformerGenerators {
   def p2pkAddressGen(networkPrefix: Byte): Gen[P2PKAddress] = for {
     pd <- proveDlogGen
   } yield P2PKAddress(pd)(new ErgoAddressEncoder(networkPrefix))
+
+  val getVarIntGen: Gen[GetVar[SInt.type]] = for {
+    varId <- arbByte.arbitrary
+  } yield GetVarInt(varId)
+
+  val optionGetGen: Gen[OptionGet[SInt.type]] = for {
+    getVar <- getVarIntGen
+  } yield OptionGet(getVar)
 }
