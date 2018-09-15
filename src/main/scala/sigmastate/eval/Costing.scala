@@ -39,6 +39,7 @@ trait Costing extends SigmaLibrary {
   import ColOverArrayBuilder._;
   import ConcreteCostedBuilder._
   import Costed._;
+  import CostedContext._
   import CostedPrim._;
   import CostedFunc._;
   import CostedCol._;
@@ -324,7 +325,7 @@ trait Costing extends SigmaLibrary {
   import sigmastate._
   import scapi.sigma.{DLogProtocol, DiffieHellmanTupleProtocol}
 
-  private def evalNode[T <: SType](ctx: Rep[Context], env: Map[String, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
+  private def evalNode[T <: SType](ctx: Rep[CostedContext], env: Map[String, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = CostedPrimRep(v, cost, v.dataSize)
@@ -373,16 +374,11 @@ trait Costing extends SigmaLibrary {
           withDefaultSize(resV, costOf(c))
       }
 
-      case Height =>
-        withDefaultSize(ctx.HEIGHT, costOf(Height))
-      case Inputs =>
-        withDefaultSize(ctx.INPUTS, costOf(Inputs))
-      case Outputs =>
-        withDefaultSize(ctx.OUTPUTS, costOf(Outputs))
-      case Self =>
-        withDefaultSize(ctx.SELF, costOf(Self))
-      case LastBlockUtxoRootHash =>
-        withDefaultSize(ctx.LastBlockUtxoRootHash, costOf(LastBlockUtxoRootHash))
+      case Height  => ctx.HEIGHT
+      case Inputs  => ctx.INPUTS
+      case Outputs => ctx.OUTPUTS
+      case Self    => ctx.SELF
+      case LastBlockUtxoRootHash => ctx.LastBlockUtxoRootHash
 
       case op @ TaggedVariableNode(id, tpe) =>
         val resV = ctx.getVar(id)(stypeToElem(tpe))
@@ -695,8 +691,9 @@ trait Costing extends SigmaLibrary {
 
   def buildCostedGraph[T <: SType](envVals: Map[String, SValue], tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = {
     fun { ctx: Rep[Context] =>
-      val env = envVals.mapValues(v => evalNode(ctx, Map(), v))
-      val res = evalNode(ctx, env, tree)
+      val ctxC = RCostedContext(ctx)
+      val env = envVals.mapValues(v => evalNode(ctxC, Map(), v))
+      val res = evalNode(ctxC, env, tree)
       res
     }
   }

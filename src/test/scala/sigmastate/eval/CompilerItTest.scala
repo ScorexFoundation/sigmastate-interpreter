@@ -147,6 +147,18 @@ class CompilerItTest extends BaseCtxTests
       Result(res, 207, 4))
   }
 
+  def bigIntArray_Where_Case = {
+    import SCollection._
+    Case(env, "bigIntArray_Where_Case",
+      "bigIntArr1.where(fun (i: BigInt) = i > 0)", ergoCtx,
+      calc = null,
+      cost = null,
+      size = null,
+      tree = null,
+      Result.Ignore)
+  }
+
+
   def sigmaPropConstCase = {
     val resSym = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
     val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
@@ -181,7 +193,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result.Ignore)
+      Result(bigIntArr1))
   }
 
   def register_BinIntArr_Map_Case = {
@@ -191,31 +203,69 @@ class CompilerItTest extends BaseCtxTests
       calc = null,
       cost = null,
       size = null,
-      tree = mkMapCollection1(
-        BigIntArrayConstant(bigIntArr1),
-        mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))
-      ),
+      tree = null,
       Result.Ignore)
   }
+
+  def register_BinIntArr_Where_Case = {
+    import SCollection._
+    Case(env, "contextVar_BinIntArr_Map_Case",
+      "SELF.R4[Array[BigInt]].value.where(fun (i: BigInt) = i > 0)", ergoCtx,
+      calc = null,
+      cost = null,
+      size = null,
+      tree = null,
+      Result.Ignore)
+  }
+
 
   lazy val testCases = Seq[EsTestCase[_]](
     intConstCase , bigIntegerConstCase, addBigIntegerConstsCase, arrayConstCase, sigmaPropConstCase
   )
 
-  test("run all") {
-    for (c <- testCases)
-      c.doReduce()
+//  test("run all") {
+//    for (c <- testCases)
+//      c.doReduce()
+//  }
+
+  test("intConstCase") {
+    intConstCase.doReduce
   }
 
-  test("constants") {
-//    intConstCase.doReduce
-//    bigIntegerConstCase.doReduce
-//    addBigIntegerConstsCase.doReduce()
-//    arrayConstCase.doReduce()
-//    sigmaPropConstCase.doReduce()
-//    andSigmaPropConstsCase.doReduce()
-//    bigIntArray_Map_Case.doReduce()
+  test("bigIntegerConstCase") {
+    bigIntegerConstCase.doReduce
+  }
+
+  test("addBigIntegerConstsCase") {
+    addBigIntegerConstsCase.doReduce()
+  }
+
+  test("arrayConstCase") {
+    arrayConstCase.doReduce()
+  }
+
+  test("sigmaPropConstCase") {
+    sigmaPropConstCase.doReduce()
+  }
+
+  test("andSigmaPropConstsCase") {
+    andSigmaPropConstsCase.doReduce()
+  }
+
+  test("bigIntArray_Map_Case") {
+    bigIntArray_Map_Case.doReduce()
+  }
+
+//  test("bigIntArray_Where_Case") {
+//    bigIntArray_Where_Case.doReduce()
+//  }
+
+  test("register_BinIntArr_Case") {
     register_BinIntArr_Case.doReduce()
   }
+
+//  test("register_BinIntArr_Map_Case") {
+//    register_BinIntArr_Map_Case.doReduce()
+//  }
 
 }

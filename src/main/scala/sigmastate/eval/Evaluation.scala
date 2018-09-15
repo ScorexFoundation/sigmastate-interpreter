@@ -52,10 +52,12 @@ trait Evaluation extends Costing {
     case _: Lambda[_,_] =>
     case _: ThunkDef[_] =>
     case ApplyBinOp(_: NumericPlus[_]| _: NumericTimes[_],_,_) =>
-    case ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.getVar(_,_,_) =>
+    case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.LastBlockUtxoRootHash(_) |
+         ContextM.getVar(_,_,_) | ContextM.deserialize(_,_,_) |
+         ContextM.cost(_) | ContextM.dataSize(_) =>
     case SigmaM.propBytes(_) =>
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) =>
-    case BoxM.propositionBytes(_) =>
+    case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) =>
     case _: CostOf =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
   }
@@ -107,65 +109,7 @@ trait Evaluation extends Costing {
   }
 
   def compile[T <: SType](dataEnv: mutable.Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
-
     object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
-
-//    def getArgClasses(args: Seq[AnyRef]): Seq[Class[_]] = {
-//      val types = args.map {
-//        case s: Sym => dataEnv(s).getClass
-//        case _: Seq[_] => classOf[Seq[_]]
-//        case e: Elem[_] => classOf[ClassTag[_]]
-//      }
-//      types
-//    }
-
-//    def getArgValues(args: Seq[AnyRef]): Seq[AnyRef] = {
-//      val vs = args.map {
-//        case s: Sym => dataEnv(s)
-//        case vec: Seq[AnyRef]@unchecked => getArgValues(vec)
-//        case e: WBigIntegerElem[_] => classTag[BigInteger]
-//        case e: WECPointElem[_] => classTag[ECPoint]
-//        case e: Elem[_] => e.classTag
-//      }
-//      vs
-//    }
-
-//    def getObjMethod(objClass: Class[_], objMethod: Method, args: Seq[AnyRef]): Method = {
-//      val argTypes = getArgClasses(args)
-//      val methods = objClass.getMethods
-//      val lookupName = objMethod.getName
-//      val resMethods = methods.filter(m => m.getName == lookupName)
-//      def error = !!!(s"Cannot resolve of pre-staged method $objMethod in class $objClass")
-//      resMethods.length match {
-//        case 0 =>
-//          error
-//        case 1 =>
-//          resMethods(0)
-//        case _ =>
-//          val res = resMethods.find { m =>
-//            val mArgClasses = m.getParameterTypes
-//            val N = mArgClasses.length
-//            (N == argTypes.length) && {
-//              (0 until N).forall { i =>
-//                mArgClasses(i).isAssignableFrom(argTypes(i))
-//              }
-//            }
-//          }
-//          res.getOrElse(error)
-//      }
-//    }
-
-//    def getObjMethodAndArgs(objClass: Class[_], mc: MethodCall): (Method, Seq[AnyRef]) = mc match {
-//      case ColM.map(col, f) =>
-//        val args = Seq(f, f.elem.eRange)
-//        val m = getObjMethod(objClass, mc.method, args)
-//        val argValues = getArgValues(args)
-//        (m, argValues)
-//      case _ =>
-//        val m = getObjMethod(objClass, mc.method, mc.args)
-//        val argValues = getArgValues(mc.args)
-//        (m, argValues)
-//    }
 
     def evaluate(te: TableEntry[_]): Unit = {
       def out(v: Any) = dataEnv += (te.sym -> v.asInstanceOf[AnyRef])
@@ -274,13 +218,13 @@ trait Evaluation extends Costing {
         case e: Throwable =>
           !!!(s"Error in evaluate($te)", e)
       }
-//      println(s"${te.sym} -> ${dataEnv(te.sym)}")
+      println(s"${te.sym} -> ${dataEnv(te.sym)}")
     }
 
     val g = new PGraph(f)
     g.schedule.foreach(evaluate(_))
     val fun = dataEnv(f).asInstanceOf[SigmaContext => Any]
-    val res = (ctx: SigmaContext) => {
+    val res = (ctx: SContext) => {
       fun(ctx) match {
         case sb: SigmaBoolean => builder.liftAny(sb).get
         case v: Value[_] => v

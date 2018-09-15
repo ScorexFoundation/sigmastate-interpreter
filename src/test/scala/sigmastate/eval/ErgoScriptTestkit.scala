@@ -49,7 +49,12 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
 
   implicit class ErgoBoxOps(ebox: ErgoBox) {
     def toTestBox: Box = {
-      val rs = regs(ebox.additionalRegisters.map { case (k,v) => (k.number -> v) })
+      val rs = regs(ebox.additionalRegisters.map {
+        case (k, Constant(arr: Array[a], tpeA)) =>
+          (k.number -> Cols.fromArray(arr))
+        case (k,v) =>
+          (k.number -> v)
+      })
       new TestBox(Cols.fromArray(ebox.id), ebox.value, Cols.fromArray(ebox.propositionBytes), noBytes, noBytes, rs)
     }
   }
