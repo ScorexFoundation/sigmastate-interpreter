@@ -21,6 +21,9 @@ object Terms {
 
     override def evaluated: Boolean = false
     def tpe: SType = result.tpe
+
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Block {
     def apply(let: Let, result: SValue)(implicit o1: Overload1): Block =
@@ -40,6 +43,8 @@ object Terms {
 
     override def evaluated: Boolean = ???
     def tpe: SType = givenType ?: body.tpe
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Let {
     def apply(name: String, body: SValue): Let = LetNode(name, NoType, body)
@@ -63,6 +68,8 @@ object Terms {
         else p.methods(i).stype
       case _ => NoType
     })
+
+    def opType: SFunc = SFunc(obj.tpe, tpe)
   }
 
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
@@ -71,6 +78,8 @@ object Terms {
     override def cost[C <: Context[C]](context: C): Long = ???
 
     override def evaluated: Boolean = ???
+
+    def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Ident {
     def apply(name: String): Ident = Ident(name, NoType)
@@ -87,6 +96,8 @@ object Terms {
       case tCol: SCollectionType[_] => tCol.elemType
       case _ => NoType
     }
+
+    def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
   }
 
   /** Apply types for type parameters of input value. */
@@ -104,6 +115,8 @@ object Terms {
         SigmaTyper.applySubst(input.tpe, subst)
       case _ => input.tpe
     }
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = ???
   }
 
   case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
@@ -113,6 +126,8 @@ object Terms {
     override def cost[C <: Context[C]](context: C): Long = ???
 
     override def evaluated: Boolean = false
+
+    def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
   }
 
   case class Lambda(args: IndexedSeq[(String,SType)], givenResType: SType, body: Option[Value[SType]]) extends Value[SFunc] {
@@ -124,6 +139,8 @@ object Terms {
 
     override def evaluated: Boolean = false
     lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe))
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
@@ -159,37 +176,6 @@ object Terms {
       if (targetType == tV.tpe) v.asValue[T]
       else
         mkUpcast(tV, targetType)
-    }
-
-    /** Every value represents an operation and that operation can be associated with a function type,
-      * describing functional meaning of the operation, kind of operation signature.
-      * Thus we can obtain global operation identifiers by combining Value.opName with Value.opType,
-      * so that if (v1.opName == v2.opName) && (v1.opType == v2.opType) then v1 and v2 are functionally
-      * point-wise equivalent.
-      * This in particular means that if two _different_ ops have the same opType they _should_ have
-      * different opNames.
-      * Thus defined op ids are used in a Cost Model - a table of all existing primitives coupled with
-      * performance parameters.
-      * */
-    def opType: SFunc = v match {
-      case ev: EvaluatedValue[_] =>
-        val resType = ev.tpe match {
-          case ct @ SCollection(tItem) =>
-            SCollection(ct.typeParams.head.asTypeIdent)
-          case _ => ev.tpe
-        }
-        SFunc(Vector(), resType)
-      case Select(obj, name, Some(tres)) => SFunc(obj.tpe, tres)
-      case MethodCall(obj, name, args, tres) => SFunc(obj.tpe +: args.map(_.tpe), tres)
-      case Ident(name, tpe) => SFunc(Vector(), tpe)
-      case t: Triple[_,_,_] => SFunc(Vector(t.left.tpe, t.right.tpe), t.tpe)
-      case SigmaPropIsValid(p) => SFunc(p.tpe, SBoolean)
-      case Self => SFunc(SContext, SBox)
-      case ExtractRegisterAs(input, _, tpe, _) => SFunc(Vector(SBox, SByte), tpe)
-      case Slice(input,_,_) =>
-        val tpeCol = SCollection(input.tpe.typeParams.head.asTypeIdent)
-        SFunc(Vector(tpeCol, SInt, SInt), tpeCol)
-      case _ => sys.error(s"Value.opType is not defined for $v")
     }
   }
 }

@@ -46,6 +46,18 @@ object Values {
     def evaluated: Boolean
 
     lazy val bytes = ValueSerializer.serialize(this)
+
+    /** Every value represents an operation and that operation can be associated with a function type,
+      * describing functional meaning of the operation, kind of operation signature.
+      * Thus we can obtain global operation identifiers by combining Value.opName with Value.opType,
+      * so that if (v1.opName == v2.opName) && (v1.opType == v2.opType) then v1 and v2 are functionally
+      * point-wise equivalent.
+      * This in particular means that if two _different_ ops have the same opType they _should_ have
+      * different opNames.
+      * Thus defined op ids are used in a Cost Model - a table of all existing primitives coupled with
+      * performance parameters.
+      * */
+    def opType: SFunc
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {
@@ -72,12 +84,21 @@ object Values {
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
     }
-
+    def notSupportedError(v: SValue, opName: String) =
+      throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
   }
 
   trait EvaluatedValue[S <: SType] extends Value[S] {
     val value: S#WrappedType
     override lazy val evaluated = true
+    def opType: SFunc = {
+      val resType = tpe match {
+        case ct @ SCollection(tItem) =>
+          SCollection(ct.typeParams.head.asTypeIdent)
+        case _ => tpe
+      }
+      SFunc(Vector(), resType)
+    }
   }
 
   trait Constant[S <: SType] extends EvaluatedValue[S] {}
@@ -121,6 +142,7 @@ object Values {
     extends TaggedVariable[T] {
     override val opCode: OpCode = TaggedVariableCode
     override def cost[C <: Context[C]](context: C): Long = context.extension.cost(varId) + 1
+    def opType: SFunc = ???
   }
 
   object TaggedVariable {
@@ -148,7 +170,7 @@ object Values {
   type GroupElementValue = Value[SGroupElement.type]
   type SigmaPropValue = Value[SSigmaProp.type]
   type AvlTreeValue = Value[SAvlTree.type]
-  
+
   type ByteConstant = Constant[SByte.type]
   type ShortConstant = Constant[SShort.type]
   type IntConstant = Constant[SInt.type]
@@ -199,7 +221,7 @@ object Values {
       case _ => None
     }
   }
-  
+
   object StringConstant {
     def apply(value: String): Constant[SString.type]  = Constant[SString.type](value, SString)
     def unapply(v: SValue): Option[String] = v match {
@@ -355,7 +377,7 @@ object Values {
       case _ => None
     }
   }
-  
+
   object IntArrayConstant {
     def apply(value: Array[Int]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value, SInt)
     def unapply(node: SValue): Option[Array[Int]] = node match {
@@ -377,7 +399,7 @@ object Values {
       case _ => None
     }
   }
-  
+
   object BigIntArrayConstant {
     def apply(value: Array[BigInteger]): CollectionConstant[SBigInt.type] = CollectionConstant[SBigInt.type](value, SBigInt)
     def unapply(node: SValue): Option[Array[BigInteger]] = node match {
@@ -454,6 +476,8 @@ object Values {
     override def tpe = SBoolean
 
     def fields: Seq[(String, SType)] = SigmaBoolean.fields
+    /** This is not used as operation, but rather as value of SigmaProp type. */
+    def opType: SFunc = ???
   }
 
   object SigmaBoolean {
@@ -492,12 +516,14 @@ object Values {
     override val opCode = SomeValueCode
     def cost[C <: Context[C]](context: C): Long = x.cost(context) + 1
     val tpe = SOption(x.tpe)
+    def opType = SFunc(x.tpe, tpe)
   }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
     override val opCode = NoneValueCode
     def cost[C <: Context[C]](context: C): Long = 1
     val tpe = SOption(elemType)
+    def opType = SFunc(elemType, tpe)
   }
 
   case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
@@ -570,6 +596,8 @@ object Values {
     def tpe: SType = rhs.tpe
     def cost[C <: Context[C]](ctx: C): Long = rhs.cost(ctx)
     def isValDef: Boolean = tpeArgs.isEmpty
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object ValDef {
     def apply(id: Int, rhs: SValue): ValDef = ValDef(id, Nil, rhs)
@@ -585,6 +613,8 @@ object Values {
   case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
     override val opCode: OpCode = ValUseCode
     override def cost[C <: Context[C]](context: C): Long = 1
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
   /** The order of ValDefs in the block is used to assign ids to ValUse(id) nodes
@@ -598,12 +628,16 @@ object Values {
     val opCode: OpCode = BlockValueCode
     def tpe: SType = result.tpe
     def cost[C <: Context[C]](ctx: C): Long = items.map(_.cost(ctx)).sum + result.cost(ctx)
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
     lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
     val opCode: OpCode = FuncValueCode
     def cost[C <: Context[C]](context: C): Long = 1
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object FuncValue {
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =

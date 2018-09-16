@@ -46,6 +46,7 @@ case class TrivialSigma(value: BoolValue) extends SigmaPropValue {
   override def cost[C <: Context[C]](context: C): Long = ??? //Cost.BooleanConstantDeclaration
   def tpe = SSigmaProp
   def evaluated = false
+  val opType = SFunc(SBoolean, SSigmaProp)
 }
 
 /**
@@ -56,6 +57,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaPropValue {
   override def cost[C <: Context[C]](context: C): Long = ???
   def tpe = SSigmaProp
   def evaluated = false
+  val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 
 /**
@@ -66,6 +68,7 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaPropValue {
   override def cost[C <: Context[C]](context: C): Long = ???
   def tpe = SSigmaProp
   def evaluated = false
+  val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 
 /**
@@ -80,6 +83,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.AndDeclaration
 
+  val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
@@ -138,6 +142,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
   override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.AndDeclaration
+
+  val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
@@ -205,6 +211,8 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
     Constant(this.tpe.upcast(input.value.asInstanceOf[AnyVal]), this.tpe)
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+
+  val opType = SFunc(input.tpe, tpe)
 }
 
 /**
@@ -219,6 +227,8 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
     Constant(this.tpe.downcast(input.value.asInstanceOf[AnyVal]), this.tpe)
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+
+  val opType = SFunc(input.tpe, tpe)
 }
 
 /**
@@ -232,6 +242,8 @@ case class LongToByteArray(input: Value[SLong.type])
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
+
+  val opType = SFunc(SLong, SByteArray)
 }
 
 /**
@@ -246,6 +258,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
     BigIntConstant(new BigInteger(1, bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
+  val opType = SFunc(SByteArray, SBigInt)
 }
 
 trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByteArray {
@@ -257,6 +270,7 @@ trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByt
     ByteArrayConstant(hashFn.apply(bal.value))
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.Blake256bDeclaration
+  val opType = SFunc(SByteArray, SByteArray)
 }
 
 /**
@@ -287,6 +301,8 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
 
   override def cost[C <: Context[C]](context: C): Long =
     left.cost(context) + right.cost(context) + Cost.TripleDeclaration
+
+  def opType = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
 
 // TwoArgumentsOperation
@@ -416,6 +432,7 @@ sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] ex
 
   override def cost[C <: Context[C]](context: C): Long =
     first.cost(context) + second.cost(context) + third.cost(context) + Cost.QuadrupleDeclaration
+  val opType = SFunc(Vector(first.tpe, second.tpe, third.tpe), tpe)
 }
 
 sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]

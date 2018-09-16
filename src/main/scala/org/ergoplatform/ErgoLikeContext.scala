@@ -66,6 +66,8 @@ case object Height extends NotReadyValueLong {
   override val opCode: OpCode = OpCodes.HeightCode
 
   override def cost[C <: Context[C]](context: C): Long = 2 * Cost.IntConstantDeclaration
+
+  def opType = SFunc(SContext, SInt)
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
@@ -76,6 +78,7 @@ case object Inputs extends LazyCollection[SBox.type] {
     context.asInstanceOf[ErgoLikeContext].boxesToSpend.map(_.cost).sum + Cost.ConcreteCollectionDeclaration
 
   val tpe = SCollection(SBox)
+  def opType = SFunc(SContext, tpe)
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
@@ -86,6 +89,7 @@ case object Outputs extends LazyCollection[SBox.type] {
     context.asInstanceOf[ErgoLikeContext].spendingTransaction.outputs.map(_.cost).sum + Cost.ConcreteCollectionDeclaration
 
   val tpe = SCollection(SBox)
+  def opType = SFunc(SContext, tpe)
 }
 
 /** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */
@@ -93,6 +97,7 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree {
   override val opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
 
   override def cost[C <: Context[C]](context: C) = Cost.AvlTreeConstantDeclaration + 1
+  def opType = SFunc(SContext, tpe)
 }
 
 
@@ -101,4 +106,6 @@ case object Self extends NotReadyValueBox {
   override val opCode: OpCode = OpCodes.SelfCode
 
   override def cost[C <: Context[C]](context: C) = context.asInstanceOf[ErgoLikeContext].self.cost
+
+  def opType = SFunc(SContext, SBox)
 }

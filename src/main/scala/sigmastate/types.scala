@@ -567,6 +567,8 @@ object SCollection {
   val ForallMethod = SMethod("forall", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)))
   val SliceMethod = SMethod("slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV)))
   val WhereMethod = SMethod("where", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV)))
+  val AppendMethod = SMethod("append", SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SCollection(tIV), Seq(tIV)))
+  val ApplyMethod = SMethod("apply", SFunc(IndexedSeq(SCollection(tIV), SInt), tIV, Seq(tIV)))
 
   val methods = Seq(
     SizeMethod,
@@ -576,7 +578,9 @@ object SCollection {
     FoldMethod,
     ForallMethod,
     SliceMethod,
-    WhereMethod
+    WhereMethod,
+    AppendMethod,
+    ApplyMethod
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
@@ -706,6 +710,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIden
     val args = if (tpeArgs.isEmpty) "" else tpeArgs.mkString("[", ",", "]")
     s"$args(${tDom.mkString(",")}) => $tRange"
   }
+  override def dataSize(v: SType#WrappedType) = 8L
 }
 
 object SFunc {
