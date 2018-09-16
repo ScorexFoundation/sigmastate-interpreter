@@ -100,8 +100,8 @@ trait Evaluation extends Costing {
   val costedBuilderValue: special.collection.ConcreteCostedBuilder
   val monoidBuilderValue: special.collection.MonoidBuilder
 
-  def getDataEnv: mutable.Map[Sym, AnyRef] = {
-    val env = mutable.Map[Sym, AnyRef](
+  def getDataEnv: DataEnv = {
+    val env = Map[Sym, AnyRef](
       sigmaDslBuilder -> sigmaDslBuilderValue,
       sigmaDslBuilder.Cols -> sigmaDslBuilderValue.Cols,
       costedBuilder -> costedBuilderValue,
@@ -112,17 +112,17 @@ trait Evaluation extends Costing {
     env
   }
 
-  def compile[T <: SType](dataEnv: mutable.Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
-    object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
+  def compile[T <: SType](dataEnv: Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
 
-    def evaluate(te: TableEntry[_]): Unit = {
-      def out(v: Any) = dataEnv += (te.sym -> v.asInstanceOf[AnyRef])
+    def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
+      object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
+      def out(v: Any): (DataEnv, Sym) = { (dataEnv + (te.sym -> v.asInstanceOf[AnyRef]), te.sym) }
       try {
-        te.rhs match {
+        val res: (DataEnv, Sym) = te.rhs match {
           case Const(x) => out(x.asInstanceOf[AnyRef])
           case wc: LiftedConst[_,_] => out(wc.constValue)
           case _: DslBuilder | _: ColBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
-            dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te"))
+            out(dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te")))
           case SigmaM.propBytes(prop) =>
             val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]
             out(sigmaDslBuilderValue.Cols.fromArray(sigmaBool.bytes))
@@ -183,9 +183,11 @@ trait Evaluation extends Costing {
               out(false)
           case Lambda(l, _, x, y) =>
             val f = (ctx: AnyRef) => {
-              dataEnv += (x -> ctx)
-              l.schedule.foreach(evaluate(_))
-              dataEnv(y)
+              val resEnv = l.schedule.foldLeft(dataEnv + (x -> ctx)) { (env, te) =>
+                val (e, _) = evaluate(te).run(env)
+                e
+              }
+              resEnv(y)
             }
             out(f)
           case Apply(In(_f), In(x: AnyRef), _) =>
@@ -217,19 +219,21 @@ trait Evaluation extends Costing {
             out(size)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
+        println(s"${te.sym} -> ${res._1(te.sym)}")
+        res
       }
       catch {
         case e: Throwable =>
           !!!(s"Error in evaluate($te)", e)
       }
-      println(s"${te.sym} -> ${dataEnv(te.sym)}")
     }
 
     val g = new PGraph(f)
-    g.schedule.foreach { te =>
-      evaluate(te)
+    val resEnv = g.schedule.foldLeft(dataEnv) { (env, te) =>
+      val (e, _) = evaluate(te).run(env)
+      e
     }
-    val fun = dataEnv(f).asInstanceOf[SigmaContext => Any]
+    val fun = resEnv(f).asInstanceOf[SigmaContext => Any]
     val res = (ctx: SContext) => {
       fun(ctx) match {
         case sb: SigmaBoolean => builder.liftAny(sb).get

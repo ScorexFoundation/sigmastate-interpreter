@@ -214,7 +214,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result.Ignore)
+      Result(bigIntArr1.map(i => i.add(n1)), 207, 4L))
   }
 
   def register_BinIntArr_Where_Case = {
