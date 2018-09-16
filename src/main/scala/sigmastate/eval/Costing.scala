@@ -131,13 +131,21 @@ trait Costing extends SigmaLibrary with DataCosting {
   type RCostedCol[T] = Rep[CostedCol[T]]
   type RCostedFunc[A,B] = Rep[Costed[A] => Costed[B]]
 
+  implicit class RCostedFuncOps[A,B](f: RCostedFunc[A,B]) {
+    implicit val eA = f.elem.eDom.eVal
+    def sliceCalc: Rep[A => B] = fun { x: Rep[A] => f(RCostedPrim(x, 0, 0L)).value }
+    def sliceCost: Rep[((Int,Long)) => Int] = fun { x: Rep[(Int, Long)] => f(RCostedPrim(fresh[A], x._1, x._2)).cost }
+    def sliceSize: Rep[Long => Long] = fun { x: Rep[Long] => f(RCostedPrim(fresh[A], 0, x)).dataSize }
+  }
+
   implicit def extendCostedElem[A](e: Elem[Costed[A]]): CostedElem[A,_] = e.asInstanceOf[CostedElem[A,_]]
+  implicit def extendCostedFuncElem[E,A,B](e: Elem[CostedFunc[E,A,B]]): CostedFuncElem[E,A,B] = e.asInstanceOf[CostedFuncElem[E,A,B]]
 
   def splitCostedFunc[A,B](f: RCostedFunc[A,B]): (Rep[A=>B], Rep[((Int, Long)) => Int], Rep[Long => Long]) = {
     implicit val eA = f.elem.eDom.eVal
-    val calcF = fun { x: Rep[A] => f(RCostedPrim(x, 0, 0L)).value }
-    val costF = fun { x: Rep[(Int, Long)] => f(RCostedPrim(fresh[A], x._1, x._2)).cost }
-    val sizeF = fun { x: Rep[Long] => f(RCostedPrim(fresh[A], 0, x)).dataSize }
+    val calcF = f.sliceCalc
+    val costF = f.sliceCost
+    val sizeF = f.sliceSize
     (calcF, costF, sizeF)
   }
 
@@ -145,6 +153,7 @@ trait Costing extends SigmaLibrary with DataCosting {
     val CBM = ColBuilderMethods
     val SigmaM = SigmaPropMethods
     val CCM = CostedColMethods
+    val CostedM = CostedMethods
     d match {
       case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
         val l1: Rep[SigmaProp] = RTrivialSigma(l.asRep[Boolean])
@@ -173,6 +182,8 @@ trait Costing extends SigmaLibrary with DataCosting {
 //        val sizes = colBuilder.replicate(xs.sizes.length, 1L)
 //        RCostedCol(vals, costs, sizes, xs.valuesCost)
 
+      case CostedM.value(Def(CostedFuncCtor(_, func: RCostedFunc[a,b], _,_))) =>
+        func.sliceCalc
       case _ => super.rewriteDef(d)
     }
   }
@@ -560,9 +571,18 @@ trait Costing extends SigmaLibrary with DataCosting {
         eval(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
       case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
-        val fC = evalNode(ctx, env, f).asRep[Costed[Any => Any]]
+        val fC = evalNode(ctx, env, f).asRep[CostedFunc[Unit, Any, Any]]
         val xC = evalNode(ctx, env, x).asRep[Costed[Any]]
-        val res = fC.applyCosted(xC)
+        if (f.tpe.asFunc.tRange.isCollection) {
+          ???
+        }
+        else {
+          val (calcF, costF, sizeF) = splitCostedFunc(fC.func)
+          val y: Rep[Any] = Apply(calcF, xC.value, false)
+          val c: Rep[Int] = Apply(costF, Pair(xC.cost, xC.dataSize), false)
+          val s: Rep[Long]= Apply(sizeF, xC.dataSize, false)
+          RCostedPrim(y, c, s)
+        }
 
       case opt: OptionValue[_] =>
         error(s"Option constructors are not supported: $opt")

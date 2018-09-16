@@ -66,7 +66,7 @@ class ErgoTreeBuildingTest extends BaseCtxTests
              Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(20))).asNumValue)))
   }
 
-  test("Crowd Funding") {
+  ignore("Crowd Funding") {
     build(envCF, "CrowdFunding", crowdFundingScript,
       BlockValue(Vector(
         ValDef(1,List(),LongConstant(100)),

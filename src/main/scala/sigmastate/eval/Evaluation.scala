@@ -64,6 +64,7 @@ trait Evaluation extends Costing {
     case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
     case OM.get(_) =>
     case _: CostOf =>
+    case _: Apply[_,_] =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
   }
 
