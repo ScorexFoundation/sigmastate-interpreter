@@ -90,7 +90,8 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       expectedSize: Option[Rep[Context] => Rep[Long]] = None,
       expectedTree: Option[SValue] = None,
       expectedResult: Result[T] = NoResult,
-      printGraphs: Boolean = true)
+      printGraphs: Boolean = true,
+      measureTime: Boolean = false)
   {
     lazy val expectedCalcF = expectedCalc.map(fun(_))
     lazy val expectedCostF = expectedCost.map(fun(_))

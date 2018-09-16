@@ -116,12 +116,15 @@ trait Costing extends SigmaLibrary with DataCosting {
     typeSize(tpe)
   }
 
+  def showECPoint(p: ECPoint) = {
+    val rawX = p.getRawXCoord.toString.substring(0, 6)
+    val rawY = p.getRawYCoord.toString.substring(0, 6)
+    s"ECPoint($rawX,$rawY,...)"
+  }
+
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
     case CostOf(name, opType) => s"CostOf($name:$opType)"
-    case WECPointConst(p) =>
-      val rawX = p.getRawXCoord.toString.substring(0, 6)
-      val rawY = p.getRawYCoord.toString.substring(0, 6)
-      s"ECPoint($rawX,$rawY,...)"
+    case WECPointConst(p) => showECPoint(p)
     case _ => super.formatDef(d)
   }
 

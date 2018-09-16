@@ -19,6 +19,7 @@ import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import SType._
 import org.bouncycastle.math.ec.ECPoint
+import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
 trait Evaluation extends Costing {
@@ -58,7 +59,7 @@ trait Evaluation extends Costing {
          ContextM.getVar(_,_,_) | ContextM.deserialize(_,_,_) |
          ContextM.cost(_) | ContextM.dataSize(_) =>
     case SigmaM.propBytes(_) =>
-    case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) =>
+    case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) | ColM.slice(_,_,_) =>
     case CBM.replicate(_,_,_) =>
     case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
     case OM.get(_) =>
@@ -110,6 +111,21 @@ trait Evaluation extends Costing {
       costedBuilder.monoidBuilder.longPlusMonoid -> monoidBuilderValue.longPlusMonoid
     )
     env
+  }
+
+  def printEnvEntry(entry: (DataEnv, Sym)) = {
+    val (env, sym) = entry
+    def show(x: Any) = x match {
+      case arr: Array[_] => s"Array(${arr.mkString(",")})"
+      case p: ECPoint => showECPoint(p)
+      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${showECPoint(g)})"
+      case _ => x.toString
+    }
+    sym match {
+      case x if x.isVar => s"Var($sym -> ${show(env(sym))})"
+      case Def(Lambda(_, _, x, y)) => s"Lam($x => $y)"
+      case _ => s"$sym -> ${show(env(sym))}"
+    }
   }
 
   def compile[T <: SType](dataEnv: Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
@@ -219,7 +235,7 @@ trait Evaluation extends Costing {
             out(size)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
-        println(s"${te.sym} -> ${res._1(te.sym)}")
+        println(printEnvEntry(res))
         res
       }
       catch {

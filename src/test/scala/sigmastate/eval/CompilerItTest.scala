@@ -74,6 +74,9 @@ class CompilerItTest extends BaseCtxTests
       size = {_ => sizeOf(1)},
       tree = IntConstant(1), Result(1, 1, 4))
   }
+  test("intConstCase") {
+    intConstCase.doReduce
+  }
 
   def bigIntegerConstCase = {
     Case(env, "bigIntegerConst", "big", ergoCtx,
@@ -81,6 +84,9 @@ class CompilerItTest extends BaseCtxTests
       cost = {_ => constCost[WBigInteger]},
       size = {_ => sizeOf(bigSym)},
       tree = BigIntConstant(big), Result(big, 1, 16))
+  }
+  test("bigIntegerConstCase") {
+    bigIntegerConstCase.doReduce
   }
 
   def addBigIntegerConstsCase = {
@@ -95,6 +101,9 @@ class CompilerItTest extends BaseCtxTests
       tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)),
       Result(res, 119, 17))
   }
+  test("addBigIntegerConstsCase") {
+    addBigIntegerConstsCase.doReduce()
+  }
 
   def arrayConstCase = {
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
@@ -106,6 +115,42 @@ class CompilerItTest extends BaseCtxTests
       cost = {_ => constCost[Col[Byte]] },
       size = {_ => sizeOf(col1Sym) },
       tree = ByteArrayConstant(arr1), Result(res, 1, 2))
+  }
+  test("arrayConstCase") {
+    arrayConstCase.doReduce()
+  }
+
+  def sigmaPropConstCase = {
+    val resSym = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
+    val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
+    Case(env, "sigmaPropConst", "p1", ergoCtx,
+      calc = {_ => resSym },
+      cost = {_ => constCost[WECPoint] + constCost[SigmaProp] },
+      size = {_ => sizeOf(resSym) },
+      tree = SigmaPropConstant(p1), Result(res, 1 + 1, 32 + 1))
+  }
+  test("sigmaPropConstCase") {
+    sigmaPropConstCase.doReduce()
+  }
+
+  def andSigmaPropConstsCase = {
+    val p1Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
+    val p2Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g2.asInstanceOf[ECPoint]))
+    val resSym = (p1Sym && p2Sym).isValid
+    Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
+      calc = {_ => resSym },
+      cost = {_ =>
+        val c1 = constCost[WECPoint] + constCost[SigmaProp] +
+            costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
+        c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
+      },
+      size = {_ => sizeOf(resSym) },
+      tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))).isValid,
+      Result(AND(p1, p2), (1 + 1 + 1) * 2 + 1, 1))
+  }
+
+  test("andSigmaPropConstsCase") {
+    andSigmaPropConstsCase.doReduce()
   }
 
   def bigIntArray_Map_Case = {
@@ -146,16 +191,8 @@ class CompilerItTest extends BaseCtxTests
       ),
       Result(res, 207, 4))
   }
-
-  def bigIntArray_Where_Case = {
-    import SCollection._
-    Case(env, "bigIntArray_Where_Case",
-      "bigIntArr1.where(fun (i: BigInt) = i > 0)", ergoCtx,
-      calc = null,
-      cost = null,
-      size = null,
-      tree = null,
-      Result.Ignore)
+  test("bigIntArray_Map_Case") {
+    bigIntArray_Map_Case.doReduce()
   }
 
   def bigIntArray_Slice_Case = {
@@ -166,36 +203,27 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result.Ignore)
+      Result(bigIntArr1.slice(0, 1), 2, 1))
+  }
+  test("bigIntArray_Slice_Case") {
+    bigIntArray_Slice_Case.doReduce()
   }
 
-  def sigmaPropConstCase = {
-    val resSym = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
-    val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
-    Case(env, "sigmaPropConst", "p1", ergoCtx,
-      calc = {_ => resSym },
-      cost = {_ => constCost[WECPoint] + constCost[SigmaProp] },
-      size = {_ => sizeOf(resSym) },
-      tree = SigmaPropConstant(p1), Result(res, 1 + 1, 32 + 1))
-  }
+//  def bigIntArray_Where_Case = {
+//    import SCollection._
+//    Case(env, "bigIntArray_Where_Case",
+//      "bigIntArr1.where(fun (i: BigInt) = i > 0)", ergoCtx,
+//      calc = null,
+//      cost = null,
+//      size = null,
+//      tree = null,
+//      Result.Ignore)
+//  }
+//  test("bigIntArray_Where_Case") {
+//    bigIntArray_Where_Case.doReduce()
+//  }
 
-  def andSigmaPropConstsCase = {
-    val p1Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
-    val p2Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g2.asInstanceOf[ECPoint]))
-    val resSym = (p1Sym && p2Sym).isValid
-    Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
-      calc = {_ => resSym },
-      cost = {_ =>
-        val c1 = constCost[WECPoint] + constCost[SigmaProp] +
-                  costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
-        c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
-      },
-      size = {_ => sizeOf(resSym) },
-      tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))).isValid,
-      Result(AND(p1, p2), (1 + 1 + 1) * 2 + 1, 1))
-  }
-
-  def register_BinIntArr_Case = {
+  def register_BigIntArr_Case = {
     import SCollection._
     Case(env, "register_BinIntArr_Case",
       "SELF.R4[Array[BigInt]].value", ergoCtx,
@@ -203,12 +231,15 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1))
+      Result(bigIntArr1, 1, 2L))
+  }
+  test("register_BigIntArr_Case") {
+    register_BigIntArr_Case.doReduce()
   }
 
-  def register_BinIntArr_Map_Case = {
+  def register_BigIntArr_Map_Case = {
     import SCollection._
-    Case(env, "register_BinIntArr_Map_Case",
+    Case(env, "register_BigIntArr_Map_Case",
       "SELF.R4[Array[BigInt]].value.map(fun (i: BigInt) = i + n1)", ergoCtx,
       calc = null,
       cost = null,
@@ -216,70 +247,33 @@ class CompilerItTest extends BaseCtxTests
       tree = null,
       Result(bigIntArr1.map(i => i.add(n1)), 207, 4L))
   }
+  test("register_BigIntArr_Map_Case") {
+    register_BigIntArr_Map_Case.doReduce()
+  }
 
-  def register_BinIntArr_Where_Case = {
+  def register_BigIntArr_Slice_Case = {
     import SCollection._
-    Case(env, "contextVar_BinIntArr_Map_Case",
-      "SELF.R4[Array[BigInt]].value.where(fun (i: BigInt) = i > 0)", ergoCtx,
+    Case(env, "register_BinIntArr_Slice_Case",
+      "SELF.R4[Array[BigInt]].value.slice(0,1)", ergoCtx,
       calc = null,
       cost = null,
       size = null,
       tree = null,
-      Result.Ignore)
+      Result(bigIntArr1.slice(0,1)/*,207, 1L*/))
+  }
+  test("register_BigIntArr_Slice_Case") {
+    register_BigIntArr_Slice_Case.doReduce()
   }
 
-
-  lazy val testCases = Seq[EsTestCase[_]](
-    intConstCase , bigIntegerConstCase, addBigIntegerConstsCase, arrayConstCase, sigmaPropConstCase
-  )
-
-//  test("run all") {
-//    for (c <- testCases)
-//      c.doReduce()
-//  }
-
-  test("intConstCase") {
-    intConstCase.doReduce
-  }
-
-  test("bigIntegerConstCase") {
-    bigIntegerConstCase.doReduce
-  }
-
-  test("addBigIntegerConstsCase") {
-    addBigIntegerConstsCase.doReduce()
-  }
-
-  test("arrayConstCase") {
-    arrayConstCase.doReduce()
-  }
-
-  test("sigmaPropConstCase") {
-    sigmaPropConstCase.doReduce()
-  }
-
-  test("andSigmaPropConstsCase") {
-    andSigmaPropConstsCase.doReduce()
-  }
-
-  test("bigIntArray_Map_Case") {
-    bigIntArray_Map_Case.doReduce()
-  }
-
-  test("bigIntArray_Slice_Case") {
-    bigIntArray_Slice_Case.doReduce()
-  }
-
-//  test("bigIntArray_Where_Case") {
-//    bigIntArray_Where_Case.doReduce()
-//  }
-
-  test("register_BinIntArr_Case") {
-    register_BinIntArr_Case.doReduce()
-  }
-
-  test("register_BinIntArr_Map_Case") {
-    register_BinIntArr_Map_Case.doReduce()
-  }
+  //  def register_BinIntArr_Where_Case = {
+  //    import SCollection._
+  //    Case(env, "contextVar_BinIntArr_Map_Case",
+  //      "SELF.R4[Array[BigInt]].value.where(fun (i: BigInt) = i > 0)", ergoCtx,
+  //      calc = null,
+  //      cost = null,
+  //      size = null,
+  //      tree = null,
+  //      Result.Ignore)
+  //  }
 
 }
