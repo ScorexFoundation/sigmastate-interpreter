@@ -110,7 +110,7 @@ object Terms {
     override def evaluated: Boolean = false
     lazy val tpe: SType = input.tpe match {
       case funcType: SFunc =>
-        assert(funcType.tpeArgs.length == tpeArgs.length, s"Invalid number of tpeArgs in $node")
+        assert(funcType.tpeArgs.length == tpeArgs.length, s"Invalid number of tpeArgs in $node: expected ${funcType.tpeArgs} but found $tpeArgs")
         val subst = funcType.tpeArgs.zip(tpeArgs).toMap
         SigmaTyper.applySubst(input.tpe, subst)
       case _ => input.tpe

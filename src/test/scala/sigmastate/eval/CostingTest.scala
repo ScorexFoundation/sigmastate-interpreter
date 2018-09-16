@@ -167,7 +167,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
   }
 
-  test("Crowd Funding") {
+  ignore("Crowd Funding") {
     val prover = new ErgoLikeProvingInterpreter()
     val backer = prover.dlogSecrets(0).publicImage
     val project = prover.dlogSecrets(1).publicImage
@@ -189,7 +189,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       )
   }
 
-  test("Crowd Funding: measure") {
+  ignore("Crowd Funding: measure") {
     def eval(i: Int) = {
       val cf = cost(envCF ++ Seq("timeout" -> (timeout + i)), crowdFundingScript)
 //      split(cf)
@@ -205,7 +205,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     emit("Crowd_Funding_measure", res)
   }
 
-  test("Demurrage") {
+  ignore("Demurrage") {
     val prover = new ErgoLikeProvingInterpreter()
     val regScript = prover.dlogSecrets(0).publicImage
 
