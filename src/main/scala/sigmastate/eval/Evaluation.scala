@@ -58,7 +58,8 @@ trait Evaluation extends Costing {
          ContextM.getVar(_,_,_) | ContextM.deserialize(_,_,_) |
          ContextM.cost(_) | ContextM.dataSize(_) =>
     case SigmaM.propBytes(_) =>
-    case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) =>
+    case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) =>
+    case CBM.replicate(_,_,_) =>
     case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
     case OM.get(_) =>
     case _: CostOf =>
@@ -225,7 +226,9 @@ trait Evaluation extends Costing {
     }
 
     val g = new PGraph(f)
-    g.schedule.foreach(evaluate(_))
+    g.schedule.foreach { te =>
+      evaluate(te)
+    }
     val fun = dataEnv(f).asInstanceOf[SigmaContext => Any]
     val res = (ctx: SContext) => {
       fun(ctx) match {
