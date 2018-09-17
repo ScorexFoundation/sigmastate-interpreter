@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import org.ergoplatform.ErgoBox.R8
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, Self}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -312,6 +313,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     an[OptionUnwrapNone] should be thrownBy test(env, ext,
       "{ getVar[Int](99).get == 2 }",
       EQ(GetVarInt(99).get, IntConstant(2))
+    )
+    an[OptionUnwrapNone] should be thrownBy test(env, ext,
+      "{ SELF.R8[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
+      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, R8).get.propBytes, GetVarSigmaProp(propVar1).get.propBytes),
+      true
     )
   }
 }

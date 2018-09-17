@@ -386,11 +386,14 @@ case class ExtractRegisterAs[V <: SType](
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
   override def cost[C <: Context[C]](context: C) = 1000 //todo: the same as ExtractBytes.cost
   override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SOption[V]] = {
-    // todo when NoneValue?
-    val res = box.value.get(registerId).orElse(default).get
-    if (res.tpe != this.tpe.elemType)
-      Interpreter.error(s"Invalid value type ${res.tpe} in register R${registerId.number}, expected $tpe")
-    SomeValue(res.asInstanceOf[Value[V]])
+    box.value.get(registerId).orElse(default) match {
+      case Some(res) =>
+        if (res.tpe != tpe.elemType)
+          Interpreter.error(s"Invalid value type ${res.tpe} in register R${registerId.number}, expected $tpe")
+        SomeValue(res.asInstanceOf[Value[V]])
+      case None =>
+        NoneValue(tpe.elemType)
+    }
   }
 }
 
