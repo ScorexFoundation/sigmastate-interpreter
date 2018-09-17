@@ -80,13 +80,13 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val scriptVarId = 2: Byte
     val transitionProofId = 3: Byte
 
-    val isMember = IsMember(ExtractRegisterAs(Self, fsmDescRegister),
+    val isMember = IsMember(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get,
         Append(
           ConcreteCollection[SByte.type](
-            ExtractRegisterAs[SByte.type](Self, currentStateRegister),
+            ExtractRegisterAs[SByte.type](Self, currentStateRegister).get,
             ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
                                           currentStateRegister,
-                                          Some(ByteConstant(-1 :Byte)))),
+                                          Some(ByteConstant(-1 :Byte))).get),
           CalcBlake2b256(TaggedByteArray(scriptVarId))
         ),
         TaggedByteArray(transitionProofId))
@@ -96,15 +96,15 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val treePreservation = EQ(
       ExtractRegisterAs[SAvlTree.type](ByIndex(Outputs, IntConstant.Zero),
                                         fsmDescRegister,
-                                        Some(AvlTreeConstant(AvlTreeData.dummy))),
-      ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister))
+                                        Some(AvlTreeConstant(AvlTreeData.dummy))).get,
+      ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get)
 
     val preservation = AND(scriptPreservation, treePreservation)
 
-    val finalStateCheck = EQ(ExtractRegisterAs[SByte.type](Self, currentStateRegister), ByteConstant(state3Id))
-    val finalScriptCorrect = IsMember(ExtractRegisterAs(Self, fsmDescRegister),
+    val finalStateCheck = EQ(ExtractRegisterAs[SByte.type](Self, currentStateRegister).get, ByteConstant(state3Id))
+    val finalScriptCorrect = IsMember(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get,
       Append(
-        ConcreteCollection[SByte.type](ExtractRegisterAs[SByte.type](Self, currentStateRegister),
+        ConcreteCollection[SByte.type](ExtractRegisterAs[SByte.type](Self, currentStateRegister).get,
                                        ByteConstant(leaveFsmStateId)),
         CalcBlake2b256(TaggedByteArray(scriptVarId))
       ),

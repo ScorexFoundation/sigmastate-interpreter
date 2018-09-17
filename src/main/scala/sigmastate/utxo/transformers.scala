@@ -380,23 +380,24 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
 case class ExtractRegisterAs[V <: SType](
                                           input: Value[SBox.type],
                                           registerId: RegisterId,
-                                          tpe: V,
+                                          override val tpe: SOption[V],
                                           default: Option[Value[V]])
-    extends Extract[V] with NotReadyValue[V] {
+  extends Extract[SOption[V]] with NotReadyValue[SOption[V]] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
   override def cost[C <: Context[C]](context: C) = 1000 //todo: the same as ExtractBytes.cost
-  override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[V] = {
+  override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SOption[V]] = {
+    // todo when NoneValue?
     val res = box.value.get(registerId).orElse(default).get
-    if (res.tpe != this.tpe)
+    if (res.tpe != this.tpe.elemType)
       Interpreter.error(s"Invalid value type ${res.tpe} in register R${registerId.number}, expected $tpe")
-    res.asInstanceOf[Value[V]]
+    SomeValue(res.asInstanceOf[Value[V]])
   }
 }
 
 object ExtractRegisterAs {
   def apply[V <: SType](input: Value[SBox.type],
                         registerId: RegisterId,
-                        default: Option[Value[V]] = None)(implicit tpe: V): ExtractRegisterAs[V] =
+                        default: Option[Value[V]] = None)(implicit tpe: SOption[V]): ExtractRegisterAs[V] =
     ExtractRegisterAs(input, registerId, tpe, default)
 }
 

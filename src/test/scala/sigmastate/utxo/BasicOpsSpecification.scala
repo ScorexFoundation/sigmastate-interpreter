@@ -138,33 +138,33 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env, ext,
       "{ SELF.R4[SigmaProp].get.isValid }",
-      ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid,
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
       true
     )
     test(env, ext,
       "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, GetVarSigmaProp(propVar1).get.isValid),
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
       true
     )
     test(env, ext,
       "{ allOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, GetVarSigmaProp(propVar1).get.isValid),
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
       true
     )
     test(env, ext,
       "{ anyOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).isValid, GetVarSigmaProp(propVar1).get.isValid),
+      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
       true
     )
     test(env, ext,
       "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isValid }) }",
-      ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1), GetVarSigmaProp(propVar1).get),
+      ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get),
         21, SigmaPropIsValid(TaggedSigmaProp(21))),
       true
     )
     test(env, ext,
       "{ SELF.R4[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
-      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, reg1).propBytes, GetVarSigmaProp(propVar1).get.propBytes),
+      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.propBytes, GetVarSigmaProp(propVar1).get.propBytes),
       true
     )
   }

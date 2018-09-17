@@ -8,6 +8,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform._
+import sigmastate.SCollection.SByteArray
 import sigmastate.lang.Terms._
 import sigmastate.utxo.GetVar._
 
@@ -38,7 +39,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val env = Map("key" -> key, "proof" -> proof)
     val prop = compile(env, """isMember(SELF.R4[AvlTree].get, key, proof)""").asBoolValue
 
-    val propTree = IsMember(ExtractRegisterAs(Self, reg1),
+    val propTree = IsMember(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key),
       ByteArrayConstant(proof))
     prop shouldBe propTree
@@ -73,7 +74,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val prop: Value[SBoolean.type] = AND(
       GE(GetVarLong(elementId).get, LongConstant(120)),
-      IsMember(ExtractRegisterAs(Self, reg1),
+      IsMember(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
         CalcBlake2b256(LongToByteArray(GetVarLong(elementId).get)),
         GetVarByteArray(proofId).get)
     )
@@ -146,8 +147,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
         |}""".stripMargin).asBoolValue
 
     val propTree = IsMember(
-      ExtractRegisterAs(Self, reg1),
-      ExtractRegisterAs(Self, reg2),
+      ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+      ExtractRegisterAs[SByteArray](Self, reg2).get,
       GetVarByteArray(proofId).get)
     prop shouldBe propTree
 

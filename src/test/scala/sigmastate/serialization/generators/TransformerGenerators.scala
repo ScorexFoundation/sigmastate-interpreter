@@ -105,7 +105,7 @@ trait TransformerGenerators {
     r <- arbRegisterIdentifier.arbitrary
     dvInt <- arbIntConstants.arbitrary
     dv <- Gen.oneOf(None, Some(dvInt))
-  } yield ExtractRegisterAs(input, r, dv)
+  } yield ExtractRegisterAs(input, r, dv)(SOption(SInt))
 
   val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] =
     Arbitrary.arbitrary[Byte].map(b =>

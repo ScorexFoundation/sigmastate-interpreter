@@ -520,6 +520,19 @@ object SOption {
   val OptionCollectionTypeConstrId = 4
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
+  implicit val optionTypeByte = SOption(SByte)
+  implicit val optionTypeShort = SOption(SShort)
+  implicit val optionTypeInt = SOption(SInt)
+  implicit val optionTypeLong = SOption(SLong)
+  implicit val optionTypeBigInt = SOption(SBigInt)
+  implicit val optionTypeBoolean = SOption(SBoolean)
+  implicit val optionTypeAvlTree = SOption(SAvlTree)
+  implicit val optionTypeGroupElement = SOption(SGroupElement)
+  implicit val optionTypeSigmaProp = SOption(SSigmaProp)
+  implicit val optionTypeBox = SOption(SBox)
+
+  implicit def optionTypeCollection[V <: SType](implicit tV: V): SOption[SCollection[V]] = SOption(SCollection[V])
+
   private[sigmastate] def createMethods(tArg: STypeIdent): Seq[SMethod] =
     Seq(
       SMethod("isEmpty", SBoolean),
