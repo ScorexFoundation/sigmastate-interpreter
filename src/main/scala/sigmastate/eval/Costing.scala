@@ -624,7 +624,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         } else {
           (valueOpt.get, boxC.cost + costOf(node))
         }
-        dataCost(v)
+        dataCost(v, Some(c))
 
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._

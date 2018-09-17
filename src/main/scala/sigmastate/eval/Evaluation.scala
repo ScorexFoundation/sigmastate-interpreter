@@ -51,10 +51,11 @@ trait Evaluation extends Costing {
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
-    case _: Tup[_,_] =>
+    case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] =>
     case _: IntPlusMonoid =>
     case _: Lambda[_,_] =>
     case _: ThunkDef[_] =>
+    case ApplyUnOp(_: NumericToLong[_], _) =>
     case ApplyBinOp(_: NumericPlus[_]| _: NumericTimes[_],_,_) =>
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.LastBlockUtxoRootHash(_) |
          ContextM.getVar(_,_,_) | ContextM.deserialize(_,_,_) |
@@ -138,6 +139,9 @@ trait Evaluation extends Costing {
       try {
         val res: (DataEnv, Sym) = te.rhs match {
           case Const(x) => out(x.asInstanceOf[AnyRef])
+          case Tup(In(a), In(b)) => out((a,b))
+          case First(In(p: Tuple2[_,_])) => out(p._1)
+          case Second(In(p: Tuple2[_,_])) => out(p._2)
           case wc: LiftedConst[_,_] => out(wc.constValue)
           case _: DslBuilder | _: ColBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
             out(dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te")))

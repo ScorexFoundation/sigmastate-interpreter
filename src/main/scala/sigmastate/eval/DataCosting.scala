@@ -20,11 +20,11 @@ trait DataCosting { self: Costing =>
   import CostedCol._;
   import CostedNestedCol._; import CostedPairCol._
 
-  def dataCost[T](x: Rep[T]): Rep[Costed[T]] = {
+  def dataCost[T](x: Rep[T], optCost: Option[Rep[Int]]): Rep[Costed[T]] = {
     val res: Rep[Any] = x.elem match {
       case pe: PairElem[a,b] =>
-        val l = dataCost(x.asRep[(a,b)]._1)
-        val r = dataCost(x.asRep[(a,b)]._2)
+        val l = dataCost(x.asRep[(a,b)]._1, None)
+        val r = dataCost(x.asRep[(a,b)]._2, optCost)
         RCostedPair(l, r)
       case ce: ColElem[_,_] =>
         ce.eA match {
@@ -37,7 +37,8 @@ trait DataCosting { self: Costing =>
               colBuilder.replicate(xs.length, typeSize(tpe))
             else
               xs.map(fun(sizeOf(_)))
-            RCostedCol(xs, costs, sizes, costOf(CollectionConstant(null, tpe)))
+            val colCost = costOf(CollectionConstant(null, tpe))
+            RCostedCol(xs, costs, sizes, optCost.fold(colCost)(c => c + colCost))
 //          case pe: PairElem[a,b] =>
 //            val arr = x.asRep[Col[(a,b)]]
 //            implicit val ea = pe.eFst
@@ -55,7 +56,8 @@ trait DataCosting { self: Costing =>
 //            val costs = col.map(fun((r: Rep[a]) => dataCost(r).cost)(Lazy(entE)))
 //            CostedColRep(col, costs)
         }
-      case _ => CostedPrimRep(x, 0, sizeOf(x))
+      case _ =>
+        CostedPrimRep(x, optCost.getOrElse(0), sizeOf(x))
     }
     res.asRep[Costed[T]]
   }

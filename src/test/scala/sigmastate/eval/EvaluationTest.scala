@@ -61,11 +61,26 @@ class EvaluationTest extends BaseCtxTests
     reduce(noEnv, "value", "SELF.value + 1L", ctx, 11L)
   }
 
-//  test("lambdas") {
-//    val ctx = newErgoContext(height = 1, boxToSpend)
-//    reduce(noEnv, "lam3", "{let f = fun (out: Box) = { out.value >= 0L }; f(SELF) }", ctx, true)
-//  }
-//
+  test("lambdas") {
+    val ctx = newErgoContext(height = 1, boxToSpend)
+    reduce(noEnv, "lam3", "{let f = fun (out: Box) = { out.value >= 0L }; f(SELF) }", ctx, true)
+
+    // access R5 and call g only if f returns false
+    reduce(noEnv, "lam4",
+      """{
+       |  let f = fun (out: Box) = { out.value >= 0L };
+       |  let g = fun (x: Int) = { x < 0 };
+       |  f(SELF) || g(SELF.R5[Int].value)
+       | }""".stripMargin, ctx, true)
+       
+//    reduce(noEnv, "lam5",
+//      """{
+//       |  let f = fun (out: Box) = { out.value >= 0L };
+//       |  let g = fun (xs: Array[Int]) = { xs.size > 0 };
+//       |  f(SELF) || g(SELF.R5[Array[Int]].value)
+//       | }""".stripMargin, ctx, true)
+  }
+
 //  test("Crowd Funding") {
 //    val backerProver = new ErgoLikeProvingInterpreter
 //    val projectProver = new ErgoLikeProvingInterpreter
