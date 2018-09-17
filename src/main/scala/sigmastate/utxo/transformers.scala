@@ -10,7 +10,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.{MandatoryRegisterId, RegisterId}
-import sigmastate.lang.exceptions.OptionUnwrapNone
+import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -389,7 +389,7 @@ case class ExtractRegisterAs[V <: SType](
     box.value.get(registerId).orElse(default) match {
       case Some(res) =>
         if (res.tpe != tpe.elemType)
-          Interpreter.error(s"Invalid value type ${res.tpe} in register R${registerId.number}, expected $tpe")
+          throw new InvalidType(s"Invalid value type ${res.tpe} in register R${registerId.number}, expected ${tpe.elemType}")
         SomeValue(res.asInstanceOf[Value[V]])
       case None =>
         NoneValue(tpe.elemType)

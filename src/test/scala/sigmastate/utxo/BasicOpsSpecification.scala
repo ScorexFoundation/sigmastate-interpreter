@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.OptionUnwrapNone
+import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
 import sigmastate.utxo.GetVar._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
@@ -299,6 +299,23 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test(env, ext,
       "{ getVar[Int](intVar2).get == 2 }",
       EQ(GetVarInt(intVar2).get, IntConstant(2))
+    )
+    an[InvalidType] should be thrownBy test(env, ext,
+      "{ getVar[Int](proofVar1).get == 2 }",
+      EQ(GetVarInt(propVar1).get, IntConstant(2))
+    )
+  }
+
+  property("ExtractRegisterAs") {
+    test(env, ext,
+      "{ SELF.R4[SigmaProp].get.isValid }",
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
+      true
+    )
+    an[InvalidType] should be thrownBy test(env, ext,
+      "{ SELF.R4[Int].get == 1 }",
+      EQ(ExtractRegisterAs[SInt.type](Self, reg1).get, IntConstant(1)),
+      true
     )
   }
 
