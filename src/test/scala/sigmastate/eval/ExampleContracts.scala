@@ -1,11 +1,9 @@
 package sigmastate.eval
 
-trait ExampleContracts {
+import scalan.BaseCtxTests
 
-  val timeout = 100L
-  val minToRaise = 1000L
-  val backerPubKeyId = 1.toByte
-  val projectPubKeyId = 2.toByte
+trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
+
   val envCF = Map(
     "timeout" -> timeout,
     "minToRaise" -> minToRaise,

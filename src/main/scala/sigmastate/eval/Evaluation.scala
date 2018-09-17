@@ -51,6 +51,7 @@ trait Evaluation extends Costing {
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
+    case _: Tup[_,_] =>
     case _: IntPlusMonoid =>
     case _: Lambda[_,_] =>
     case _: ThunkDef[_] =>
@@ -214,8 +215,11 @@ trait Evaluation extends Costing {
           case Second(In(p: Tuple2[_,_])) => out(p._2)
           case ThunkDef(y, schedule) =>
             val th = () => {
-              schedule.foreach(evaluate(_))
-              dataEnv(y)
+              val resEnv = schedule.foldLeft(dataEnv) { (env, te) =>
+                val (e, _) = evaluate(te).run(env)
+                e
+              }
+              resEnv(y)
             }
             out(th)
           case TrivialSigmaCtor(In(isValid: Boolean)) =>

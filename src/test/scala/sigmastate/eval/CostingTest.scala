@@ -26,8 +26,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import SigmaDslBuilder._; import WOption._
   import Liftables._
   
-  lazy val dsl = sigmaDslBuilder
-
   test("SType.dataSize") {
     def check(tpe: SType, v: Any, exp: Long) =
       tpe.dataSize(v.asWrappedType) shouldBe exp

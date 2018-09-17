@@ -2,30 +2,48 @@ package sigmastate.eval
 
 import scala.util.Success
 import sigmastate.{SInt, AvlTreeData, SLong, SType}
-import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, IntConstant}
+import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, IntConstant, BigIntArrayConstant}
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import sigmastate.utxo.CostTable
-import special.sigma.{TestBox, ContractsTestkit, AnyValue, Box, TestContext => TContext, SigmaContract => SContract, Context => VContext}
+import special.sigma.{TestBox => DTestBox, ContractsTestkit, AnyValue, Box => DBox, TestContext => DTestContext, SigmaContract => DContract, Context => DContext}
 
 import scalan.BaseCtxTests
-import sigmastate.lang.TransformingSigmaBuilder
+import sigmastate.lang.{TransformingSigmaBuilder, LangTests}
 import org.scalatest.TryValues._
+import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 
-trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
+trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxTests =>
 
-  lazy val IR = new TestContext with Evaluation {
+  lazy val IR: TestContext with Evaluation = new TestContext with Evaluation {
     import TestSigmaDslBuilder._
 
     val sigmaDslBuilder = RTestSigmaDslBuilder()
     val builder = TransformingSigmaBuilder
-    beginPass(new DefaultPass("mypass",
-      Pass.defaultPassConfig.copy(constantPropagation = false)))
+
+    beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
 
     val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
     val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
     val monoidBuilderValue = new special.collection.MonoidBuilderInst()
   }
+
+  import IR._
+  import Context._
+  import Liftables._
+  import WArray._
+  import WOption._
+  import ColBuilder._
+  import Context._
+  import Col._
+  import SigmaProp._
+  import CostedCol._
+  import WBigInteger._
+  import WECPoint._
+  import ProveDlogEvidence._
+  import ProveDHTEvidence._
+  import sigmastate.serialization.OpCodes._
+  import SType.AnyOps
 
   type EsEnv = Map[String, Any]
 
@@ -48,30 +66,73 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
   val boxA2 = newAliceBox(2, 200)
 
   implicit class ErgoBoxOps(ebox: ErgoBox) {
-    def toTestBox: Box = {
+    def toTestBox: DBox = {
       val rs = regs(ebox.additionalRegisters.map {
         case (k, Constant(arr: Array[a], tpeA)) =>
           (k.number -> Cols.fromArray(arr))
         case (k,v) =>
           (k.number -> v)
       })
-      new TestBox(Cols.fromArray(ebox.id), ebox.value, Cols.fromArray(ebox.propositionBytes), noBytes, noBytes, rs)
+      new DTestBox(Cols.fromArray(ebox.id), ebox.value, Cols.fromArray(ebox.propositionBytes), noBytes, noBytes, rs)
     }
   }
 
   implicit class ErgoLikeContextOps(ergoCtx: ErgoLikeContext) {
-    def toTestContext: TContext = {
+    def toTestContext: DContext = {
       val inputs = ergoCtx.boxesToSpend.toArray.map(_.toTestBox)
       val outputs = ergoCtx.spendingTransaction.outputs.toArray.map(_.toTestBox)
       val vars = contextVars(ergoCtx.extension.values)
-      new TContext(inputs, outputs, ergoCtx.currentHeight, ergoCtx.self.toTestBox, emptyAvlTree, vars.arr)
+      new DTestContext(inputs, outputs, ergoCtx.currentHeight, ergoCtx.self.toTestBox, emptyAvlTree, vars.arr)
     }
+//    def withInputs(inputs: ErgoBox*) =
+//      new ErgoLikeContext(
+//        ergoCtx.currentHeight,
+//        ergoCtx.lastBlockUtxoRoot,
+//        ergoCtx.boxesToSpend, ergoCtx.spendingTransaction, ergoCtx.self, ergoCtx.extension)
+//    def withOutputs(outputs: ErgoBox*) =
+//      new ErgoLikeContext(
+//        ergoCtx.currentHeight,
+//        ergoCtx.lastBlockUtxoRoot,
+//        ergoCtx.boxesToSpend, ergoCtx.spendingTransaction, ergoCtx.self, ergoCtx.extension)
   }
 
-  def contract(canOpen: VContext => Boolean) = new NoEnvContract(canOpen)
+  def contract(canOpen: DContext => Boolean) = new NoEnvContract(canOpen)
 
-  import IR._
-  import Context._
+  lazy val dsl = sigmaDslBuilder
+  lazy val bigSym = liftConst(big)
+  lazy val n1Sym = liftConst(n1)
+
+  val timeout = 100L
+  val minToRaise = 1000L
+  val backerPubKeyId = 1.toByte
+  val projectPubKeyId = 2.toByte
+  val backerProver = new ErgoLikeProvingInterpreter
+  val projectProver = new ErgoLikeProvingInterpreter
+  val backerPubKey = backerProver.dlogSecrets.head.publicImage
+  val projectPubKey = projectProver.dlogSecrets.head.publicImage
+  val ctxVars = contextVars(Map(
+    backerPubKeyId -> backerPubKey,
+    projectPubKeyId -> projectPubKey,
+    3.toByte -> bigIntArr1
+  )).arr
+
+  val boxToSpend = ErgoBox(10, TrueLeaf,
+    additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntArr1)))
+  val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
+  val tx1Output2 = ErgoBox(1, projectPubKey)
+  val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+  val ergoCtx = ErgoLikeContext(
+    currentHeight = timeout - 1,
+    lastBlockUtxoRoot = AvlTreeData.dummy,
+    boxesToSpend = IndexedSeq(),
+    spendingTransaction = tx1,
+    self = boxToSpend,
+    extension = ContextExtension(Map(
+      backerPubKeyId -> SigmaPropConstant(backerPubKey),
+      projectPubKeyId -> SigmaPropConstant(projectPubKey),
+      3.toByte -> BigIntArrayConstant(bigIntArr1)
+    )))
+
   case class Result[+T](calc: Option[T], cost: Option[Int], size: Option[Long])
   object Result {
     def Ignore = Result(None, None, None)
@@ -84,7 +145,7 @@ trait ErgoScriptTestkit extends ContractsTestkit { self: BaseCtxTests =>
       env: EsEnv,
       script: String,
       ergoCtx: Option[ErgoLikeContext] = None,
-      testContract: Option[VContext => T] = None,
+      testContract: Option[DContext => T] = None,
       expectedCalc: Option[Rep[Context] => Rep[T]] = None,
       expectedCost: Option[Rep[Context] => Rep[Int]] = None,
       expectedSize: Option[Rep[Context] => Rep[Long]] = None,

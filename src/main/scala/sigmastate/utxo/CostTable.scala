@@ -4,42 +4,47 @@ import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
 
 case class CostTable(operCosts: Map[OperationId, Double]) extends (OperationId => Int) {
+  import CostTable._
   override def apply(operId: OperationId) = {
     operCosts.get(operId) match {
-      case Some(cost) => (cost * 1000000).toInt
-      case None => sys.error(s"Cannot find cost in CostTable for $operId")
+      case Some(cost) => costToInt(cost)
+      case None => costToInt(MinimalCost)
+//      sys.error(s"Cannot find cost in CostTable for $operId")
     }
   }
 }
 
 object CostTable {
   type ExpressionCost = Int
+  def costToInt(cost: Double): Int = (cost * 1000000).toInt
+  val MinimalCost = 0.000001
   val DefaultCosts = CostTable.fromSeq(Seq(
-    ("Const", "() => Unit",    0.000001),
-    ("Const", "() => Boolean", 0.000001),
-    ("Const", "() => Byte",    0.000001),
-    ("Const", "() => Short",   0.000001),
-    ("Const", "() => Int",     0.000001),
-    ("Const", "() => Long",    0.000001),
-    ("Const", "() => BigInt",  0.000001),
-    ("Const", "() => String",  0.000001),
-    ("Const", "() => GroupElement", 0.000001),
-    ("Const", "() => SigmaProp", 0.000001),
-    ("Const", "() => Array[IV]", 0.000001),
-    ("Self$", "Context => Box", 0.000001),
-    ("AccessBox", "Context => Box", 0.000001),
-    ("GetVar", "(Context, Byte) => Option[T]", 0.000001),
-    ("AccessRegister", "Box => Option[T]", 0.000001),
-    ("ExtractRegisterAs", "(Box,Byte) => Array[BigInt]", 0.000001),
-    ("Slice", "(Array[IV],Int,Int) => Array[IV]", 0.000001),
-    ("SigmaPropIsValid", "SigmaProp => Boolean", 0.000001),
-    ("SigmaPropBytes", "SigmaProp => Array[Byte]", 0.000001),
-    ("BinAnd", "(Boolean, Boolean) => Boolean", 0.000001),
-    ("BinOr", "(Boolean, Boolean) => Boolean", 0.000001),
+    ("Const", "() => Unit",    MinimalCost),
+    ("Const", "() => Boolean", MinimalCost),
+    ("Const", "() => Byte",    MinimalCost),
+    ("Const", "() => Short",   MinimalCost),
+    ("Const", "() => Int",     MinimalCost),
+    ("Const", "() => Long",    MinimalCost),
+    ("Const", "() => BigInt",  MinimalCost),
+    ("Const", "() => String",  MinimalCost),
+    ("Const", "() => GroupElement", MinimalCost),
+    ("Const", "() => SigmaProp", MinimalCost),
+    ("Const", "() => Array[IV]", MinimalCost),
+    ("Self$", "Context => Box", MinimalCost),
+    ("AccessBox", "Context => Box", MinimalCost),
+    ("GetVar", "(Context, Byte) => Option[T]", MinimalCost),
+    ("AccessRegister", "Box => Option[T]", MinimalCost),
+    ("ExtractRegisterAs", "(Box,Byte) => Array[BigInt]", MinimalCost),
+    ("Slice", "(Array[IV],Int,Int) => Array[IV]", MinimalCost),
+    ("SigmaPropIsValid", "SigmaProp => Boolean", MinimalCost),
+    ("SigmaPropBytes", "SigmaProp => Array[Byte]", MinimalCost),
+    ("BinAnd", "(Boolean, Boolean) => Boolean", MinimalCost),
+    ("BinOr", "(Boolean, Boolean) => Boolean", MinimalCost),
     ("GT", "(BigInt,BigInt) => Boolean", 0.0001),
-    (">_per_item", "(BigInt, BigInt) => BigInt", 0.000001),
+    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+    ("+", "(Int, Int) => Int", 0.0001),
     ("+", "(BigInt, BigInt) => BigInt", 0.0001),
-    ("+_per_item", "(BigInt, BigInt) => BigInt", 0.000001)
+    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost)
   ))
 
   def fromSeq(items: Seq[(String, String, Double)]): CostTable = {
