@@ -179,7 +179,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
          }""".stripMargin).asBoolValue
 
     val propTree = Exists(Outputs, 21,
-      EQ(ExtractRegisterAs(TaggedBox(21), reg1, default = Some(LongConstant(0L))).get,
+      EQ(ExtractRegisterAs(TaggedBox(21), reg1).getOrElse(LongConstant(0L)),
         Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))))
     prop shouldBe propTree
 

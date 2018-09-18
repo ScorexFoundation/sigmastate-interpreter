@@ -110,20 +110,16 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(PKSym, Seq(arg: Value[SString.type]@unchecked)) =>
       Some(mkPK(arg))
 
-    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "getOrElse", Some(regType)), Seq(arg)) =>
+    case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
-      Some(
-        mkOptionGet(
-          mkExtractRegisterAs(box.asBox, reg, SOption(arg.tpe), Some(arg)).asValue[SOption[regType.type]]))
+      Some(mkExtractRegisterAs(box.asBox, reg, SOption(valType), None).asValue[SOption[valType.type]])
 
-    case sel @ Select(Select(Typed(box, SBox), regName, _), "get", Some(regType)) =>
-      val reg = ErgoBox.registerByName.getOrElse(regName,
-        error(s"Invalid register name $regName in expression $sel"))
-      // todo move to binder
-      Some(
-        mkOptionGet(
-          mkExtractRegisterAs(box.asBox, reg, SOption(regType), None).asValue[SOption[regType.type]]))
+    case Select(reg @ ExtractRegisterAs(_, _, _, _), "get", _) =>
+      Some(mkOptionGet(reg))
+
+    case Apply(Select(reg @ ExtractRegisterAs(_, _, _, _), "getOrElse", _), Seq(arg)) =>
+      Some(mkOptionGetOrElse(reg, arg))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {

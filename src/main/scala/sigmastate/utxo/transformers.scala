@@ -447,3 +447,13 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   }
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionGet
 }
+
+case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[V]) extends Transformer[SOption[V], V] with NotReadyValue[V] {
+  override val opCode: OpCode = OpCodes.OptionGetOrElseCode
+  override def tpe: V = input.tpe.elemType
+  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] = input match {
+    case SomeValue(v) => v
+    case NoneValue(_) => default
+  }
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionGetOrElse
+}

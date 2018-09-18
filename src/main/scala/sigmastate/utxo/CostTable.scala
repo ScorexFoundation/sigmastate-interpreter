@@ -93,5 +93,6 @@ object CostTable {
     val MultiplyGroup = 50
 
     val OptionGet = 1
+    val OptionGetOrElse = 1
   }
 }

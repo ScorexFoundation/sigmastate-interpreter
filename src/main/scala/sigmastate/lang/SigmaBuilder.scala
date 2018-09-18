@@ -149,6 +149,7 @@ trait SigmaBuilder {
   def mkPK(input: Value[SString.type]): Value[SSigmaProp.type]
   def mkGetVar[T <: SType](varId: Byte, tpe: SOption[T]): Value[SType]
   def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[SType]
+  def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[SType]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -409,6 +410,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[SType] =
     OptionGet(input)
+
+  override def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[SType] =
+    OptionGetOrElse(input, default)
 }
 
 trait TypeConstraintCheck {
