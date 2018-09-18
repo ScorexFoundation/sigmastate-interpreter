@@ -223,4 +223,8 @@ trait TransformerGenerators {
   val optionGetOrElseGen: Gen[OptionGetOrElse[SInt.type]] = for {
     getVar <- getVarIntGen
   } yield OptionGetOrElse(getVar, IntConstant(1))
+
+  val optionIsDefinedGen: Gen[OptionIsDefined[SInt.type]] = for {
+    getVar <- getVarIntGen
+  } yield OptionIsDefined(getVar)
 }

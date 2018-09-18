@@ -168,4 +168,8 @@ class TransformersSerializationSpec extends SerializationSpecification {
   property("OptionGetOrElse: Serializer round trip") {
     forAll(optionGetOrElseGen) { v => roundTripTest(v) }
   }
+
+  property("OptionIsDefined: Serializer round trip") {
+    forAll(optionIsDefinedGen) { v => roundTripTest(v) }
+  }
 }
