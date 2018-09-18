@@ -87,6 +87,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SString.type, SByteArray](Base64ToByteArrayCode, mkBase64ToByteArray),
     SimpleTransformerSerializer[SString.type, SSigmaProp.type](ErgoAddressToSigmaPropCode, mkPK),
     SimpleTransformerSerializer[SOption[SType], SType](OptionGetCode, mkOptionGet),
+    SimpleTransformerSerializer[SOption[SType], SBoolean.type](OptionIsDefinedCode, mkOptionIsDefined),
     OptionGetOrElseSerializer(mkOptionGetOrElse),
     DeserializeContextSerializer(mkDeserializeContext),
     DeserializeRegisterSerializer(mkDeserializeRegister),

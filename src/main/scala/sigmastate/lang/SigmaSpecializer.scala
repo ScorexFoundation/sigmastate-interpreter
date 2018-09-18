@@ -115,11 +115,14 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         error(s"Invalid register name $regName in expression $sel"))
       Some(mkExtractRegisterAs(box.asBox, reg, SOption(valType), None).asValue[SOption[valType.type]])
 
-    case Select(reg @ ExtractRegisterAs(_, _, _, _), "get", _) =>
+    case Select(reg @ ExtractRegisterAs(_, _, _, _), SOption.Get, _) =>
       Some(mkOptionGet(reg))
 
-    case Apply(Select(reg @ ExtractRegisterAs(_, _, _, _), "getOrElse", _), Seq(arg)) =>
+    case Apply(Select(reg @ ExtractRegisterAs(_, _, _, _), SOption.GetOrElse, _), Seq(arg)) =>
       Some(mkOptionGetOrElse(reg, arg))
+
+    case Select(reg @ ExtractRegisterAs(_, _, _, _), SOption.IsDefined, _) =>
+      Some(mkOptionIsDefined(reg))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {

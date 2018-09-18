@@ -16,7 +16,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{OptionGet, OptionGetOrElse, SigmaPropBytes, SigmaPropIsValid}
+import sigmastate.utxo._
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -519,5 +519,6 @@ object Values {
   implicit class OptionValueOps[T <: SType](p: Value[SOption[T]]) {
     def get: Value[T] = OptionGet(p)
     def getOrElse(default: Value[T]): Value[T] = OptionGetOrElse(p, default)
+    def isDefined: Value[SBoolean.type] = OptionIsDefined(p)
   }
 }

@@ -312,11 +312,6 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
       true
     )
-    an[InvalidType] should be thrownBy test(env, ext,
-      "{ SELF.R4[Int].get == 1 }",
-      EQ(ExtractRegisterAs[SInt.type](Self, reg1).get, IntConstant(1)),
-      true
-    )
   }
 
   property("OptionGet success (SomeValue)") {
@@ -345,4 +340,25 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
   }
+
+  property("OptionIsDefined") {
+    test(env, ext,
+      "{ SELF.R4[SigmaProp].isDefined }",
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).isDefined,
+      true
+    )
+    // wrong type
+    test(env, ext,
+      "{ SELF.R4[Int].isDefined == false }",
+      EQ(ExtractRegisterAs[SInt.type](Self, reg1).isDefined, FalseLeaf),
+      true
+    )
+    // no value
+    test(env, ext,
+      "{ SELF.R8[Int].isDefined == false }",
+      EQ(ExtractRegisterAs[SInt.type](Self, R8).isDefined, FalseLeaf),
+      true
+    )
+  }
+
 }

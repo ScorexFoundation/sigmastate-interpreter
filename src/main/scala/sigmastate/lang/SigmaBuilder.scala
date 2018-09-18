@@ -150,6 +150,7 @@ trait SigmaBuilder {
   def mkGetVar[T <: SType](varId: Byte, tpe: SOption[T]): Value[SType]
   def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[SType]
   def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[SType]
+  def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -413,6 +414,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[SType] =
     OptionGetOrElse(input, default)
+
+  override def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type] =
+    OptionIsDefined(input)
 }
 
 trait TypeConstraintCheck {

@@ -533,12 +533,17 @@ object SOption {
 
   implicit def optionTypeCollection[V <: SType](implicit tV: V): SOption[SCollection[V]] = SOption(SCollection[V])
 
+  val IsEmpty = "isEmpty"
+  val IsDefined = "isDefined"
+  val Get = "get"
+  val GetOrElse = "getOrElse"
+
   private[sigmastate] def createMethods(tArg: STypeIdent): Seq[SMethod] =
     Seq(
-      SMethod("isEmpty", SBoolean),
-      SMethod("isDefined", SBoolean),
-      SMethod("get", tArg),
-      SMethod("getOrElse", SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(STypeParam(tT))))
+      SMethod(IsEmpty, SBoolean),
+      SMethod(IsDefined, SBoolean),
+      SMethod(Get, tArg),
+      SMethod(GetOrElse, SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(STypeParam(tT))))
     )
   private val tT = STypeIdent("T")
   val methods: Seq[SMethod] = createMethods(tT)
