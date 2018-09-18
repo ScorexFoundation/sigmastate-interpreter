@@ -94,5 +94,6 @@ object CostTable {
 
     val OptionGet = 1
     val OptionGetOrElse = 1
+    val OptionIsDefined = 1
   }
 }

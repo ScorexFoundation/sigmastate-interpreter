@@ -438,22 +438,37 @@ object GetVar {
   def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
 }
 
-case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[SOption[V], V] with NotReadyValue[V] {
+case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[SOption[V], V] {
   override val opCode: OpCode = OpCodes.OptionGetCode
   override def tpe: V = input.tpe.elemType
-  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] = input match {
-    case SomeValue(v) => v
-    case n @ NoneValue(_) => throw new OptionUnwrapNone(s"Cannot unwrap None: $n")
-  }
+  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] =
+    input match {
+      case SomeValue(v) => v
+      case n @ NoneValue(_) => throw new OptionUnwrapNone(s"Cannot unwrap None: $n")
+    }
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionGet
 }
 
-case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[V]) extends Transformer[SOption[V], V] with NotReadyValue[V] {
+case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[V])
+  extends Transformer[SOption[V], V] {
   override val opCode: OpCode = OpCodes.OptionGetOrElseCode
   override def tpe: V = input.tpe.elemType
-  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] = input match {
-    case SomeValue(v) => v
-    case NoneValue(_) => default
-  }
+  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] =
+    input match {
+      case SomeValue(v) => v
+      case NoneValue(_) => default
+    }
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionGetOrElse
+}
+
+case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
+  extends Transformer[SOption[V], SBoolean.type] {
+  override val opCode: OpCode = OpCodes.OptionIsDefinedCode
+  override def tpe= SBoolean
+  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[SBoolean.type] =
+    input match {
+      case SomeValue(_) => TrueLeaf
+      case NoneValue(_) => FalseLeaf
+    }
+  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionIsDefined
 }
