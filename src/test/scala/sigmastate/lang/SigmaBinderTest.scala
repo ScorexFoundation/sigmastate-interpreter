@@ -49,11 +49,6 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     an[InvalidArguments] should be thrownBy bind(env, "max(1)")
   }
 
-  property("Option.get (OptionGet)") {
-    bind(env, "getVar[Byte](10).get") shouldBe GetVar(10.toByte, SByte).get
-    bind(env, "getVar[Array[Byte]](10).get") shouldBe GetVar(10.toByte, SByteArray).get
-  }
-
   property("val constructs") {
     bind(env, "{val X = 10; X > 2}") shouldBe
       Block(Val("X", SInt, IntConstant(10)), GT(IntIdent("X"), 2))

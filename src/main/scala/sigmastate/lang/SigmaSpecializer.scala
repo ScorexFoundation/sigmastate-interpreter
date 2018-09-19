@@ -118,6 +118,9 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Select(reg @ ExtractRegisterAs(_, _, _), SOption.Get, _) =>
       Some(mkOptionGet(reg))
 
+    case Select(getVar @ GetVar(_, _), SOption.Get, _) =>
+      Some(mkOptionGet(getVar))
+
     case Apply(Select(reg @ ExtractRegisterAs(_, _, _), SOption.GetOrElse, _), Seq(arg)) =>
       Some(mkOptionGetOrElse(reg, arg))
 

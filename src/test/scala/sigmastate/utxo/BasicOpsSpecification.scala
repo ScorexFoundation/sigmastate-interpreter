@@ -318,6 +318,10 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       "{ getVar[Int](intVar2).get == 2 }",
       EQ(GetVarInt(intVar2).get, IntConstant(2))
     )
+    test(env, ext,
+      "{ val v = getVar[Int](intVar2); v.get == 2 }",
+      EQ(GetVarInt(intVar2).get, IntConstant(2))
+    )
   }
 
   property("OptionGet fail (NoneValue)") {

@@ -105,10 +105,6 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
       }
       Some(mkGetVar(id, SOption(targs.head)))
 
-    // Rule getVar[T](id).get --> OptionGet(GetVar(id))
-    case Select(v @ GetVar(_, _), "get", _) =>
-      Some(mkOptionGet(v))
-
     // Rule: lambda (...) = ... --> lambda (...): T = ...
     case lam @ Lambda(params, args, t, Some(body)) =>
       require(params.isEmpty)
