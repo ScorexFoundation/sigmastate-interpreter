@@ -7,7 +7,7 @@ import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utxo.GetVar
 
-case class GetVarSerializer(cons: (Byte, SOption[SType]) => Value[SType])
+case class GetVarSerializer(cons: (Byte, SType) => Value[SOption[SType]])
   extends ValueSerializer[GetVar[_ <: SType]] {
 
   override val opCode: OpCode = GetVarCode
@@ -19,6 +19,6 @@ case class GetVarSerializer(cons: (Byte, SOption[SType]) => Value[SType])
   override def parseBody(r: ByteReader): Value[SType] = {
     val varId = r.getByte()
     val tpe = r.getType()
-    cons(varId, SOption(tpe))
+    cons(varId, tpe)
   }
 }

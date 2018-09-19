@@ -105,7 +105,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         case ByteConstant(i) => i
         case v => error(s"invalid type for var id, expected numeric, got $v")
       }
-      Some(mkGetVar(id, SOption(targs.head)))
+      Some(mkGetVar(id, targs.head))
 
     // Rule: lambda (...) = ... --> lambda (...): T = ...
     case lam @ Lambda(params, args, t, Some(body)) =>
