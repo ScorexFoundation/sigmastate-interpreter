@@ -101,7 +101,9 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
       val id = args.head match {
         case LongConstant(i) => SByte.downcast(i)
         case IntConstant(i) => SByte.downcast(i)
+        case ShortConstant(i) => SByte.downcast(i)
         case ByteConstant(i) => i
+        case v => error(s"invalid type for var id, expected numeric, got $v")
       }
       Some(mkGetVar(id, SOption(targs.head)))
 
