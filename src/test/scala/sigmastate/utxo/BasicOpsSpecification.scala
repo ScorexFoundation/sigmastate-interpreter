@@ -393,7 +393,5 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       EQ(GetVarInt(99).isDefined, FalseLeaf),
       true
     )
-
   }
-
 }
