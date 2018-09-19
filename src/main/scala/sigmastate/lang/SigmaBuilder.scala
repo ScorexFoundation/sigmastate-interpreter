@@ -97,8 +97,7 @@ trait SigmaBuilder {
 
   def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
                                       registerId: RegisterId,
-                                      tpe: SOption[IV],
-                                      default: Option[Value[IV]]): Value[SType]
+                                      tpe: SOption[IV]): Value[SType]
 
   def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T]
   def mkDeserializeRegister[T <: SType](reg: RegisterId,
@@ -317,9 +316,8 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
                                                 registerId: RegisterId,
-                                                tpe: SOption[IV],
-                                                default: Option[Value[IV]] = None): Value[SType] =
-    ExtractRegisterAs(input, registerId, tpe, default)
+                                                tpe: SOption[IV]): Value[SType] =
+    ExtractRegisterAs(input, registerId, tpe)
 
   override def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T] =
     DeserializeContext(id, tpe)

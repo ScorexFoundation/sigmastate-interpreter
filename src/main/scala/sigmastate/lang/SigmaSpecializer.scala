@@ -113,18 +113,18 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
-      Some(mkExtractRegisterAs(box.asBox, reg, SOption(valType), None).asValue[SOption[valType.type]])
+      Some(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
 
-    case Select(reg @ ExtractRegisterAs(_, _, _, _), SOption.Get, _) =>
+    case Select(reg @ ExtractRegisterAs(_, _, _), SOption.Get, _) =>
       Some(mkOptionGet(reg))
 
-    case Apply(Select(reg @ ExtractRegisterAs(_, _, _, _), SOption.GetOrElse, _), Seq(arg)) =>
+    case Apply(Select(reg @ ExtractRegisterAs(_, _, _), SOption.GetOrElse, _), Seq(arg)) =>
       Some(mkOptionGetOrElse(reg, arg))
 
     case Apply(Select(getVar @ GetVar(_, _), SOption.GetOrElse, _), Seq(arg)) =>
       Some(mkOptionGetOrElse(getVar, arg))
 
-    case Select(reg @ ExtractRegisterAs(_, _, _, _), SOption.IsDefined, _) =>
+    case Select(reg @ ExtractRegisterAs(_, _, _), SOption.IsDefined, _) =>
       Some(mkOptionIsDefined(reg))
 
     case Select(getVar @ GetVar(_, _), SOption.IsDefined, _) =>

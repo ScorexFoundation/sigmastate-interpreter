@@ -85,8 +85,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
           ConcreteCollection[SByte.type](
             ExtractRegisterAs[SByte.type](Self, currentStateRegister).get,
             ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
-                                          currentStateRegister,
-                                          Some(ByteConstant(-1 :Byte))).get),
+                                          currentStateRegister).getOrElse(ByteConstant(-1))),
           CalcBlake2b256(TaggedByteArray(scriptVarId))
         ),
         TaggedByteArray(transitionProofId))
@@ -95,8 +94,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     val treePreservation = EQ(
       ExtractRegisterAs[SAvlTree.type](ByIndex(Outputs, IntConstant.Zero),
-                                        fsmDescRegister,
-                                        Some(AvlTreeConstant(AvlTreeData.dummy))).get,
+                                        fsmDescRegister).getOrElse(AvlTreeConstant(AvlTreeData.dummy)),
       ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get)
 
     val preservation = AND(scriptPreservation, treePreservation)

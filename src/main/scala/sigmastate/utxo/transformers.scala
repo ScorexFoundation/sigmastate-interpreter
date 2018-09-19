@@ -380,13 +380,12 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
 case class ExtractRegisterAs[V <: SType](
                                           input: Value[SBox.type],
                                           registerId: RegisterId,
-                                          override val tpe: SOption[V],
-                                          default: Option[Value[V]])
+                                          override val tpe: SOption[V])
   extends Extract[SOption[V]] with NotReadyValue[SOption[V]] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
   override def cost[C <: Context[C]](context: C) = 1000 //todo: the same as ExtractBytes.cost
   override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SOption[V]] = {
-    box.value.get(registerId).orElse(default) match {
+    box.value.get(registerId) match {
       case Some(res) if res.tpe == tpe.elemType =>
         SomeValue(res.asInstanceOf[Value[V]])
       case _ =>
@@ -397,9 +396,8 @@ case class ExtractRegisterAs[V <: SType](
 
 object ExtractRegisterAs {
   def apply[V <: SType](input: Value[SBox.type],
-                        registerId: RegisterId,
-                        default: Option[Value[V]] = None)(implicit tpe: SOption[V]): ExtractRegisterAs[V] =
-    ExtractRegisterAs(input, registerId, tpe, default)
+                        registerId: RegisterId)(implicit tpe: V): ExtractRegisterAs[V] =
+    ExtractRegisterAs(input, registerId, SOption(tpe))
 }
 
 trait Deserialize[V <: SType] extends NotReadyValue[V]

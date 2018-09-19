@@ -113,7 +113,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
     def extract[T <: SType](Rn: RegisterId)(implicit tT: T) =
-      ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)(SOption[T]).get
+      ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)(tT).get
 
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
