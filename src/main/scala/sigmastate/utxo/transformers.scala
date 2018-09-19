@@ -9,8 +9,8 @@ import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
-import org.ergoplatform.ErgoBox.{MandatoryRegisterId, RegisterId}
-import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
+import org.ergoplatform.ErgoBox.RegisterId
+import sigmastate.lang.exceptions.OptionUnwrapNone
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {

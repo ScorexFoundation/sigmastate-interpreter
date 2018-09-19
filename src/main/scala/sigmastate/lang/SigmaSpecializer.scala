@@ -121,8 +121,14 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(Select(reg @ ExtractRegisterAs(_, _, _, _), SOption.GetOrElse, _), Seq(arg)) =>
       Some(mkOptionGetOrElse(reg, arg))
 
+    case Apply(Select(getVar @ GetVar(_, _), SOption.GetOrElse, _), Seq(arg)) =>
+      Some(mkOptionGetOrElse(getVar, arg))
+
     case Select(reg @ ExtractRegisterAs(_, _, _, _), SOption.IsDefined, _) =>
       Some(mkOptionIsDefined(reg))
+
+    case Select(getVar @ GetVar(_, _), SOption.IsDefined, _) =>
+      Some(mkOptionIsDefined(getVar))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {

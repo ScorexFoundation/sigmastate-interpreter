@@ -7,11 +7,12 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
+import sigmastate.lang.exceptions.OptionUnwrapNone
 import sigmastate.utxo.GetVar._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
+  private val reg2 = ErgoBox.nonMandatoryRegisters.tail.head
   val intVar1 = 1.toByte
   val intVar2 = 2.toByte
   val byteVar1 = 3.toByte
@@ -55,7 +56,9 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     prop shouldBe propExp
 
     val p3 = prover.dlogSecrets(2).publicImage
-    val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(reg1 -> SigmaPropConstant(p3)))
+    val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(
+      reg1 -> SigmaPropConstant(p3),
+      reg2 -> IntConstant(1)))
 
     val ctx = ErgoLikeContext.dummy(outputToSpend)
 
@@ -300,10 +303,6 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       "{ getVar[Int](intVar2).get == 2 }",
       EQ(GetVarInt(intVar2).get, IntConstant(2))
     )
-    an[InvalidType] should be thrownBy test(env, ext,
-      "{ getVar[Int](proofVar1).get == 2 }",
-      EQ(GetVarInt(propVar1).get, IntConstant(2))
-    )
   }
 
   property("ExtractRegisterAs") {
@@ -335,8 +334,25 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("OptionGetOrElse") {
     test(env, ext,
+      "{ SELF.R5[Int].getOrElse(3) == 1 }",
+      EQ(ExtractRegisterAs[SInt.type](Self, reg2).getOrElse(IntConstant(3)), IntConstant(1)),
+      true
+    )
+    // register should be empty
+    test(env, ext,
       "{ SELF.R6[Int].getOrElse(3) == 3 }",
       EQ(ExtractRegisterAs[SInt.type](Self, R6).getOrElse(IntConstant(3)), IntConstant(3)),
+      true
+    )
+    test(env, ext,
+      "{ getVar[Int](intVar2).getOrElse(3) == 2 }",
+      EQ(GetVarInt(intVar2).getOrElse(IntConstant(3)), IntConstant(2)),
+      true
+    )
+    // there should be no variable with this id
+    test(env, ext,
+      "{ getVar[Int](99).getOrElse(3) == 3 }",
+      EQ(GetVarInt(99).getOrElse(IntConstant(3)), IntConstant(3)),
       true
     )
   }
@@ -359,6 +375,25 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       EQ(ExtractRegisterAs[SInt.type](Self, R8).isDefined, FalseLeaf),
       true
     )
+
+    test(env, ext,
+      "{ getVar[Int](intVar2).isDefined }",
+      GetVarInt(intVar2).isDefined,
+      true
+    )
+    // wrong type
+    test(env, ext,
+      "{ getVar[Byte](intVar2).isDefined == false }",
+      EQ(GetVarByte(intVar2).isDefined, FalseLeaf),
+      true
+    )
+    // there should be no variable with this id
+    test(env, ext,
+      "{ getVar[Int](99).isDefined == false }",
+      EQ(GetVarInt(99).isDefined, FalseLeaf),
+      true
+    )
+
   }
 
 }

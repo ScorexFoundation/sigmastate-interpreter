@@ -17,7 +17,7 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.lang.exceptions.{InterpreterException, InvalidType, OptionUnwrapNone, SourceContext}
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
@@ -98,8 +98,9 @@ trait Interpreter extends ScorexLogging {
       if (context.extension.values.contains(t.varId)) {
         val v = context.extension.values(t.varId)
         if (v.tpe != t.tpe.elemType)
-          throw new InvalidType(s"Invalid value type ${v.tpe} in variable ${t.varId}, expected ${t.tpe.elemType}")
-        SomeValue(v)
+          NoneValue(t.tpe.elemType)
+        else
+          SomeValue(v)
       }
       else
         NoneValue(t.tpe.elemType)
