@@ -1,10 +1,9 @@
 package sigmastate.utxo
 
 import sigmastate.GE
-import sigmastate.Values.IntConstant
+import sigmastate.Values._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.lang.Terms._
-import sigmastate.utxo.GetVar._
 
 /**
   * Specification for compile function

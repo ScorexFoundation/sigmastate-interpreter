@@ -3,11 +3,10 @@ package sigmastate.utxo
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
 import scorex.util.encode.Base16
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.ByteArrayConstant
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.exceptions.OptionUnwrapNone
-import sigmastate.utxo.GetVar._
 
 class ContextEnrichingSpecification extends SigmaTestingCommons {
 

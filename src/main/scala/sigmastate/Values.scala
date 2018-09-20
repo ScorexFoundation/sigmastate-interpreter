@@ -521,4 +521,14 @@ object Values {
     def getOrElse(default: Value[T]): Value[T] = OptionGetOrElse(p, default)
     def isDefined: Value[SBoolean.type] = OptionIsDefined(p)
   }
+
+  def GetVarBoolean(varId: Byte): GetVar[SBoolean.type] = GetVar(varId, SBoolean)
+  def GetVarByte(varId: Byte): GetVar[SByte.type] = GetVar(varId, SByte)
+  def GetVarShort(varId: Byte): GetVar[SShort.type] = GetVar(varId, SShort)
+  def GetVarInt(varId: Byte): GetVar[SInt.type] = GetVar(varId, SInt)
+  def GetVarLong(varId: Byte): GetVar[SLong.type] = GetVar(varId, SLong)
+  def GetVarBigInt(varId: Byte): GetVar[SBigInt.type] = GetVar(varId, SBigInt)
+  def GetVarSigmaProp(varId: Byte): GetVar[SSigmaProp.type] = GetVar(varId, SSigmaProp)
+  def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
+
 }

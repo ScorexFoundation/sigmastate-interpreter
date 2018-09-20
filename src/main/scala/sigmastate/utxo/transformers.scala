@@ -424,14 +424,6 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
 object GetVar {
   def apply[V <: SType](varId: Byte, innerTpe: V): GetVar[V] = GetVar[V](varId, SOption(innerTpe))
 
-  def GetVarBoolean(varId: Byte): GetVar[SBoolean.type] = GetVar(varId, SBoolean)
-  def GetVarByte(varId: Byte): GetVar[SByte.type] = GetVar(varId, SByte)
-  def GetVarShort(varId: Byte): GetVar[SShort.type] = GetVar(varId, SShort)
-  def GetVarInt(varId: Byte): GetVar[SInt.type] = GetVar(varId, SInt)
-  def GetVarLong(varId: Byte): GetVar[SLong.type] = GetVar(varId, SLong)
-  def GetVarBigInt(varId: Byte): GetVar[SBigInt.type] = GetVar(varId, SBigInt)
-  def GetVarSigmaProp(varId: Byte): GetVar[SSigmaProp.type] = GetVar(varId, SSigmaProp)
-  def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
 }
 
 case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[SOption[V], V] {

@@ -9,7 +9,6 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
-import sigmastate.utxo.GetVar._
 
 trait TransformerGenerators {
   self: ValueGenerators with ConcreteCollectionGenerators =>

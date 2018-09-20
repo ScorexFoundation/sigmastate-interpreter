@@ -10,7 +10,6 @@ import sigmastate.lang.Terms.Ident
 import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ValueGenerators}
 import sigmastate.utxo._
-import sigmastate.utxo.GetVar._
 
 class SigmaSpecializerTest extends PropSpec
   with PropertyChecks

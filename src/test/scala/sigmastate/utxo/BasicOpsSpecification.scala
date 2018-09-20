@@ -8,7 +8,6 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.OptionUnwrapNone
-import sigmastate.utxo.GetVar._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   private val reg1 = ErgoBox.nonMandatoryRegisters.head

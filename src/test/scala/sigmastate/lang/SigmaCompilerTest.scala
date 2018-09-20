@@ -6,9 +6,7 @@ import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.syntax.ParserException
-import sigmastate.SCollection._
 import sigmastate.utxo.ByIndex
-import sigmastate.utxo.GetVar._
 
 class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   val compiler = new SigmaCompiler

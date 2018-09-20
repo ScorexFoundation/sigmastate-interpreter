@@ -10,7 +10,6 @@ import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.lang.Terms._
-import sigmastate.utxo.GetVar._
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 

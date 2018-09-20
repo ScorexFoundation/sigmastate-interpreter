@@ -2,12 +2,11 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, LongConstant}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.utxo.SizeOf
-import sigmastate.utxo.GetVar._
 import scorex.utils.Random
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
