@@ -110,15 +110,28 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(PKSym, Seq(arg: Value[SString.type]@unchecked)) =>
       Some(mkPK(arg))
 
-    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "getOrElse", Some(_)), Seq(arg)) =>
+    case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
-      Some(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
+      Some(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
 
-    case sel @ Select(Select(Typed(box, SBox), regName, _), "get", Some(regType)) =>
-      val reg = ErgoBox.registerByName.getOrElse(regName,
-        error(s"Invalid register name $regName in expression $sel"))
-      Some(mkExtractRegisterAs(box.asBox, reg, regType, None))
+    case Select(reg @ ExtractRegisterAs(_, _, _), SOption.Get, _) =>
+      Some(mkOptionGet(reg))
+
+    case Select(getVar @ GetVar(_, _), SOption.Get, _) =>
+      Some(mkOptionGet(getVar))
+
+    case Apply(Select(reg @ ExtractRegisterAs(_, _, _), SOption.GetOrElse, _), Seq(arg)) =>
+      Some(mkOptionGetOrElse(reg, arg))
+
+    case Apply(Select(getVar @ GetVar(_, _), SOption.GetOrElse, _), Seq(arg)) =>
+      Some(mkOptionGetOrElse(getVar, arg))
+
+    case Select(reg @ ExtractRegisterAs(_, _, _), SOption.IsDefined, _) =>
+      Some(mkOptionIsDefined(reg))
+
+    case Select(getVar @ GetVar(_, _), SOption.IsDefined, _) =>
+      Some(mkOptionIsDefined(getVar))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {

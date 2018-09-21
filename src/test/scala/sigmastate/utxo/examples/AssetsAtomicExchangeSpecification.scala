@@ -47,7 +47,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val buyerKeyBytes = tokenBuyerKey.bytes
     val sellerKeyBytes = tokenSellerKey.bytes
 
-    def extractToken(box: Value[SBox.type]) = ByIndex(ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType), 0)
+    def extractToken(box: Value[SBox.type]) = ByIndex(
+      ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType).get, 0)
 
     def extractTokenId(box: Value[SBox.type]) =
       SelectField(extractToken(box), 1).asInstanceOf[Value[SByteArray]]

@@ -520,12 +520,30 @@ object SOption {
   val OptionCollectionTypeConstrId = 4
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
+  implicit val optionTypeByte = SOption(SByte)
+  implicit val optionTypeShort = SOption(SShort)
+  implicit val optionTypeInt = SOption(SInt)
+  implicit val optionTypeLong = SOption(SLong)
+  implicit val optionTypeBigInt = SOption(SBigInt)
+  implicit val optionTypeBoolean = SOption(SBoolean)
+  implicit val optionTypeAvlTree = SOption(SAvlTree)
+  implicit val optionTypeGroupElement = SOption(SGroupElement)
+  implicit val optionTypeSigmaProp = SOption(SSigmaProp)
+  implicit val optionTypeBox = SOption(SBox)
+
+  implicit def optionTypeCollection[V <: SType](implicit tV: V): SOption[SCollection[V]] = SOption(SCollection[V])
+
+  val IsEmpty = "isEmpty"
+  val IsDefined = "isDefined"
+  val Get = "get"
+  val GetOrElse = "getOrElse"
+
   private[sigmastate] def createMethods(tArg: STypeIdent): Seq[SMethod] =
     Seq(
-      SMethod("isEmpty", SBoolean),
-      SMethod("isDefined", SBoolean),
-      SMethod("get", tArg),
-      SMethod("getOrElse", SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(STypeParam(tT))))
+      SMethod(IsEmpty, SBoolean),
+      SMethod(IsDefined, SBoolean),
+      SMethod(Get, tArg),
+      SMethod(GetOrElse, SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(STypeParam(tT))))
     )
   private val tT = STypeIdent("T")
   val methods: Seq[SMethod] = createMethods(tT)

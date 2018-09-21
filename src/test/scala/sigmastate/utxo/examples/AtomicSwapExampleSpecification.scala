@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, LongConstant, TaggedByteArray}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
@@ -51,7 +51,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     //chain1 script
     val prop1Tree = OR(
       AND(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))), pubkeyA),
-      AND(pubkeyB, EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
+      AND(pubkeyB, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )
     prop1 shouldBe prop1Tree
 
@@ -72,7 +72,9 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     //chain2 script
     val prop2Tree = OR(
       AND(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB),
-      AND(pubkeyA, LT(SizeOf(TaggedByteArray(1)), 33), EQ(CalcBlake2b256(TaggedByteArray(1)), hx))
+      AND(pubkeyA,
+        LT(SizeOf(GetVarByteArray(1).get), 33),
+        EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )
     prop2 shouldBe prop2Tree
 

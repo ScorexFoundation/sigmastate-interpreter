@@ -97,8 +97,7 @@ trait SigmaBuilder {
 
   def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
                                       registerId: RegisterId,
-                                      tpe: IV,
-                                      default: Option[Value[IV]]): Value[IV]
+                                      tpe: SOption[IV]): Value[SType]
 
   def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T]
   def mkDeserializeRegister[T <: SType](reg: RegisterId,
@@ -147,6 +146,10 @@ trait SigmaBuilder {
   def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray]
 
   def mkPK(input: Value[SString.type]): Value[SSigmaProp.type]
+  def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]]
+  def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T]
+  def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T]
+  def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type]
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -313,9 +316,8 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
                                                 registerId: RegisterId,
-                                                tpe: IV,
-                                                default: Option[Value[IV]] = None): Value[IV] =
-    ExtractRegisterAs(input, registerId, tpe, default)
+                                                tpe: SOption[IV]): Value[SType] =
+    ExtractRegisterAs(input, registerId, tpe)
 
   override def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T] =
     DeserializeContext(id, tpe)
@@ -401,6 +403,18 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkPK(input: Value[SString.type]): Value[SSigmaProp.type] =
     ErgoAddressToSigmaProp(input)
+
+  override def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]] =
+    GetVar(varId, tpe)
+
+  override def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T] =
+    OptionGet(input)
+
+  override def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T] =
+    OptionGetOrElse(input, default)
+
+  override def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type] =
+    OptionIsDefined(input)
 }
 
 trait TypeConstraintCheck {

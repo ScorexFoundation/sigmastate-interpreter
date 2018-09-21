@@ -103,8 +103,7 @@ trait TransformerGenerators {
     input <- arbTaggedBox.arbitrary
     r <- arbRegisterIdentifier.arbitrary
     dvInt <- arbIntConstants.arbitrary
-    dv <- Gen.oneOf(None, Some(dvInt))
-  } yield ExtractRegisterAs(input, r, dv)
+  } yield ExtractRegisterAs(input, r)(SInt)
 
   val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] =
     Arbitrary.arbitrary[Byte].map(b =>
@@ -210,4 +209,20 @@ trait TransformerGenerators {
   def p2pkAddressGen(networkPrefix: Byte): Gen[P2PKAddress] = for {
     pd <- proveDlogGen
   } yield P2PKAddress(pd)(new ErgoAddressEncoder(networkPrefix))
+
+  val getVarIntGen: Gen[GetVar[SInt.type]] = for {
+    varId <- arbByte.arbitrary
+  } yield GetVarInt(varId)
+
+  val optionGetGen: Gen[OptionGet[SInt.type]] = for {
+    getVar <- getVarIntGen
+  } yield OptionGet(getVar)
+
+  val optionGetOrElseGen: Gen[OptionGetOrElse[SInt.type]] = for {
+    getVar <- getVarIntGen
+  } yield OptionGetOrElse(getVar, IntConstant(1))
+
+  val optionIsDefinedGen: Gen[OptionIsDefined[SInt.type]] = for {
+    getVar <- getVarIntGen
+  } yield OptionIsDefined(getVar)
 }

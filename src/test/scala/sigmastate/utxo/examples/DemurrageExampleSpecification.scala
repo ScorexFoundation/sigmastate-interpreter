@@ -56,7 +56,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val propTree = OR(
       regScript,
       AND(
-        GE(Height, Plus(ExtractRegisterAs[SLong.type](Self, reg1), LongConstant(demurragePeriod))),
+        GE(Height, Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(demurragePeriod))),
         Exists(Outputs, 21,
           AND(
             GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),

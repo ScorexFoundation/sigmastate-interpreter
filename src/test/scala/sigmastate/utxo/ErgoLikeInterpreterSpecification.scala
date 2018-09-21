@@ -317,7 +317,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  proveDlog(pubkey1) && proveDlog(pubkey2)
         |}""".stripMargin).asBoolValue
 
-    val propTree = AND(new ProveDlog(ExtractRegisterAs(Self, reg1)), new ProveDlog(ExtractRegisterAs(Self, reg2)))
+    val propTree = AND(
+      new ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, reg1).get),
+      new ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, reg2).get))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey3)
@@ -565,8 +567,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val propExpected = EQ(ByteArrayConstant(helloHash),
       CalcBlake2b256(
         If(GT(ExtractAmount(ByIndex(Inputs, 0)), LongConstant(10)),
-          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 2), reg1),
-          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 1), reg1))))
+          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 2), reg1).get,
+          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 1), reg1).get)))
     prop shouldBe propExpected
 
     val input0 = ErgoBox(10, pubkey, Seq(), Map())

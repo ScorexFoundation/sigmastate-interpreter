@@ -1,6 +1,7 @@
 package sigmastate.lang
 
-import org.ergoplatform.{Height, Inputs, Outputs}
+import org.ergoplatform.ErgoBox.R4
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values._
@@ -188,4 +189,22 @@ class SigmaSpecializerTest extends PropSpec
     spec("""PK("111")""") shouldBe ErgoAddressToSigmaProp(StringConstant("111"))
   }
 
+  property("ExtractRegisterAs") {
+    spec("SELF.R4[Int]") shouldBe ExtractRegisterAs[SInt.type](Self, R4)
+  }
+
+  property("OptionIsDefined") {
+    spec("SELF.R4[Int].isDefined") shouldBe ExtractRegisterAs[SInt.type](Self, R4).isDefined
+    spec("getVar[Int](1).isDefined") shouldBe GetVarInt(1).isDefined
+  }
+
+  property("OptionGet") {
+    spec("SELF.R4[Int].get") shouldBe ExtractRegisterAs[SInt.type](Self, R4).get
+    spec("getVar[Int](1).get") shouldBe GetVarInt(1).get
+  }
+
+  property("OptionGetOrElse") {
+    spec("SELF.R4[Int].getOrElse(0)") shouldBe ExtractRegisterAs[SInt.type](Self, R4).getOrElse(IntConstant(0))
+    spec("getVar[Int](1).getOrElse(0)") shouldBe GetVarInt(1).getOrElse(IntConstant(0))
+  }
 }

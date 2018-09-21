@@ -17,10 +17,11 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
+import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.Try
@@ -92,6 +93,17 @@ trait Interpreter extends ScorexLogging {
         context.extension.values(t.varId)
       else
         null
+
+    case t: GetVar[_] =>
+      if (context.extension.values.contains(t.varId)) {
+        val v = context.extension.values(t.varId)
+        if (v.tpe != t.tpe.elemType)
+          throw new InvalidType(s"Invalid value type ${v.tpe} in context variable with id ${t.varId}, expected ${t.tpe.elemType}")
+        else
+          SomeValue(v)
+      }
+      else
+        NoneValue(t.tpe.elemType)
 
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
@@ -424,5 +436,3 @@ object Interpreter {
 
   def error(msg: String) = throw new InterpreterException(msg)
 }
-
-class InterpreterException(msg: String) extends Exception(msg)
