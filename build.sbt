@@ -4,7 +4,7 @@ name := "sigma-state"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  version := "0.10.0",
+  version := "0.11.0-SNAPSHOT",
   scalaVersion := "2.12.4",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
@@ -59,5 +59,12 @@ publishTo := {
 }
 
 pomIncludeRepository := { _ => false }
+
+credentials += Credentials(Path.userHome / ".sbt" / ".sigma-sonatype-credentials")
+
+credentials ++= (for {
+  username <- Option(System.getenv().get("SONATYPE_USERNAME"))
+  password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
+} yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 
 lazy val sigma = (project in file(".")).settings(commonSettings: _*)
