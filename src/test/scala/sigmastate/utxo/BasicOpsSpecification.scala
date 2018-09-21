@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.OptionUnwrapNone
+import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
@@ -302,12 +302,24 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       "{ getVar[Int](intVar2).get == 2 }",
       EQ(GetVarInt(intVar2).get, IntConstant(2))
     )
+    // wrong type
+    an[InvalidType] should be thrownBy test(env, ext,
+      "{ getVar[Byte](intVar2).isDefined }",
+      GetVarByte(intVar2).isDefined,
+      true
+    )
   }
 
   property("ExtractRegisterAs") {
     test(env, ext,
       "{ SELF.R4[SigmaProp].get.isValid }",
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
+      true
+    )
+    // wrong type
+    an[InvalidType] should be thrownBy test(env, ext,
+      "{ SELF.R4[Int].isDefined }",
+      ExtractRegisterAs[SInt.type](Self, reg1).isDefined,
       true
     )
   }
@@ -366,12 +378,6 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).isDefined,
       true
     )
-    // wrong type
-    test(env, ext,
-      "{ SELF.R4[Int].isDefined == false }",
-      EQ(ExtractRegisterAs[SInt.type](Self, reg1).isDefined, FalseLeaf),
-      true
-    )
     // no value
     test(env, ext,
       "{ SELF.R8[Int].isDefined == false }",
@@ -382,12 +388,6 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test(env, ext,
       "{ getVar[Int](intVar2).isDefined }",
       GetVarInt(intVar2).isDefined,
-      true
-    )
-    // wrong type
-    test(env, ext,
-      "{ getVar[Byte](intVar2).isDefined == false }",
-      EQ(GetVarByte(intVar2).isDefined, FalseLeaf),
       true
     )
     // there should be no variable with this id
