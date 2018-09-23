@@ -66,23 +66,23 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   val boxA2 = newAliceBox(2, 200)
 
   implicit class ErgoBoxOps(ebox: ErgoBox) {
-    def toTestBox: DBox = {
+    def toTestBox(isCost: Boolean): DBox = {
       val rs = regs(ebox.additionalRegisters.map {
         case (k, Constant(arr: Array[a], tpeA)) =>
           (k.number -> Cols.fromArray(arr))
         case (k,v) =>
           (k.number -> v)
       })
-      new DTestBox(Cols.fromArray(ebox.id), ebox.value, Cols.fromArray(ebox.propositionBytes), noBytes, noBytes, rs)
+      new CostingBox(IR, Cols.fromArray(ebox.id), ebox.value, Cols.fromArray(ebox.propositionBytes), noBytes, noBytes, rs, isCost)
     }
   }
 
   implicit class ErgoLikeContextOps(ergoCtx: ErgoLikeContext) {
-    def toTestContext: DContext = {
-      val inputs = ergoCtx.boxesToSpend.toArray.map(_.toTestBox)
-      val outputs = ergoCtx.spendingTransaction.outputs.toArray.map(_.toTestBox)
+    def toTestContext(isCost: Boolean): DContext = {
+      val inputs = ergoCtx.boxesToSpend.toArray.map(_.toTestBox(isCost))
+      val outputs = ergoCtx.spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
       val vars = contextVars(ergoCtx.extension.values)
-      new DTestContext(inputs, outputs, ergoCtx.currentHeight, ergoCtx.self.toTestBox, emptyAvlTree, vars.arr)
+      new CostingDataContext(IR, inputs, outputs, ergoCtx.currentHeight, ergoCtx.self.toTestBox(isCost), emptyAvlTree, vars.arr, isCost)
     }
 //    def withInputs(inputs: ErgoBox*) =
 //      new ErgoLikeContext(
@@ -204,29 +204,30 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
         "Compiled Tree actual: %s, expected: %s")
 
       if (ergoCtx.isDefined) {
-        val ctx = ergoCtx.get.toTestContext
-        val testContractRes = testContract.map(_(ctx))
+        val calcCtx = ergoCtx.get.toTestContext(isCost = false)
+        val testContractRes = testContract.map(_(calcCtx))
         testContractRes.foreach { res =>
           checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")
         }
 
         // check cost
+        val costCtx = ergoCtx.get.toTestContext(isCost = true)
         val costFun = IR.compile[SInt.type](getDataEnv, costF)
-        val IntConstant(estimatedCost) = costFun(ctx)
+        val IntConstant(estimatedCost) = costFun(costCtx)
         checkExpected(estimatedCost, expectedResult.cost,
           "Cost evaluation: estimatedCost = %s, expectedResult.cost = %s")
         (estimatedCost < CostTable.ScriptLimit) shouldBe true
 
         // check size
         val sizeFun = IR.compile[SLong.type](getDataEnv, sizeF)
-        val LongConstant(estimatedSize) = sizeFun(ctx)
+        val LongConstant(estimatedSize) = sizeFun(costCtx)
         checkExpected(estimatedSize, expectedResult.size,
           "Size evaluation: estimatedSize = %s, expectedResult.size: %s"
         )
 
         // check calc
         val valueFun = IR.compile[SType](getDataEnv, calcF.asRep[Context => SType#WrappedType])
-        val res = valueFun(ctx) match {
+        val res = valueFun(calcCtx) match {
           case Constant(res: T @unchecked, _) => res
           case v => v
         }
@@ -292,6 +293,17 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     verifyCostFunc(costF) shouldBe(Success(()))
     verifyIsValid(valueF) shouldBe(Success(()))
     IR.buildTree(valueF) shouldBe expected
+  }
+
+  def measure[T](nIters: Int, okShow: Boolean = true)(action: Int => Unit): Unit = {
+    for (i <- 0 until nIters) {
+      val start = System.currentTimeMillis()
+      val res = action(i)
+      val end = System.currentTimeMillis()
+      val iterTime = end - start
+      if (okShow)
+        println(s"Iter $i: $iterTime ms")
+    }
   }
 
 }

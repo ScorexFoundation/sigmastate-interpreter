@@ -221,17 +221,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     )
   }
 
-  def measure[T](nIters: Int, okShow: Boolean = true)(action: Int => Unit): Unit = {
-    for (i <- 0 until nIters) {
-      val start = System.currentTimeMillis()
-      val res = action(i)
-      val end = System.currentTimeMillis()
-      val iterTime = end - start
-      if (okShow)
-        println(s"Iter $i: $iterTime ms")
-    }
-  }
-
   ignore("measure: costed context data") {
     var res: Rep[Any] = null
     measure(2) { j => // 10 warm up iterations when j == 0

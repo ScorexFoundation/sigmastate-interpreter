@@ -72,13 +72,13 @@ class EvaluationTest extends BaseCtxTests
        |  let g = fun (x: Int) = { x < 0 };
        |  f(SELF) || g(SELF.R5[Int].value)
        | }""".stripMargin, ctx, true)
-       
-//    reduce(noEnv, "lam5",
-//      """{
-//       |  let f = fun (out: Box) = { out.value >= 0L };
-//       |  let g = fun (xs: Array[Int]) = { xs.size > 0 };
-//       |  f(SELF) || g(SELF.R5[Array[Int]].value)
-//       | }""".stripMargin, ctx, true)
+
+    reduce(noEnv, "lam5",
+      """{
+       |  let f = fun (out: Box) = { out.value >= 0L };
+       |  let g = fun (xs: Array[Int]) = { xs.size > 0 };
+       |  f(SELF) || g(SELF.R5[Array[Int]].value)
+       | }""".stripMargin, ctx, true)
   }
 
 //  test("Crowd Funding") {

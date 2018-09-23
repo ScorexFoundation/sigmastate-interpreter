@@ -195,16 +195,18 @@ class CompilerItTest extends BaseCtxTests
 
   def register_BigIntArr_Case = {
     import SCollection._
-    Case(env, "register_BinIntArr_Case",
+    Case(env, "register_BigIntArr_Case",
       "SELF.R4[Array[BigInt]].value", ergoCtx,
       calc = null,
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1, 1, 2L))
+      Result(bigIntArr1, 2, 2L))
   }
   test("register_BigIntArr_Case") {
-    register_BigIntArr_Case.doReduce()
+    measure(5) { i =>
+      register_BigIntArr_Case.doReduce()
+    }
   }
 
   def register_BigIntArr_Map_Case = {
@@ -215,7 +217,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1.map(i => i.add(n1)), 207, 4L))
+      Result(bigIntArr1.map(i => i.add(n1)), 208, 4L))
   }
   test("register_BigIntArr_Map_Case") {
     register_BigIntArr_Map_Case.doReduce()

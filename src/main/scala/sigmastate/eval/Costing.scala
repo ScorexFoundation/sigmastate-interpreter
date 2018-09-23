@@ -4,6 +4,7 @@ import java.math.BigInteger
 
 import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
+
 import scalan.{Lazy, SigmaLibrary}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
@@ -20,6 +21,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 import sigmastate.eval.{OrderingOps, NumericOps, DataCosting}
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
@@ -30,6 +32,7 @@ trait Costing extends SigmaLibrary with DataCosting {
   import WArray._;
   import WECPoint._;
   import WBigInteger._;
+  import WOption._
   import Col._;
   import ColBuilder._;
   import SigmaProp._;
@@ -42,6 +45,11 @@ trait Costing extends SigmaLibrary with DataCosting {
   import CostedPrim._;
   import CostedFunc._;
   import CostedCol._;
+  import CostedBox._;
+  import CostedBuilder._;
+  import CostedOption._;
+  import CostedNone._
+  import CostedSome._
   import ProveDlogEvidence._
   import SigmaDslBuilder._
   import TrivialSigma._
@@ -149,11 +157,48 @@ trait Costing extends SigmaLibrary with DataCosting {
     (calcF, costF, sizeF)
   }
 
+  type RWOption[T] = Rep[WOption[T]]
+
+  object CostedFoldExtractors {
+    val CM = CostedMethods
+    val COM = CostedOptionMethods
+    val WOM = WOptionMethods
+    type Result = (RWOption[A], Th[B], RFunc[A, Costed[B]]) forSome {type A; type B}
+
+    object IsGetCost {
+      def unapply(d: Def[_]): Option[Result] = d match {
+        case CM.cost(COM.get(WOM.fold(opt, th, f))) =>
+          Some((opt, th, f)).asInstanceOf[Option[Result]]
+        case _ => None
+      }
+    }
+    object IsGetDataSize {
+      def unapply(d: Def[_]): Option[Result] = d match {
+        case CM.dataSize(COM.get(WOM.fold(opt, th, f))) =>
+          Some((opt, th, f)).asInstanceOf[Option[Result]]
+        case _ => None
+      }
+    }
+    object IsGet {
+      def unapply(d: Def[_]): Option[Result] = d match {
+        case COM.get(WOM.fold(opt, th, f)) =>
+          Some((opt, th, f)).asInstanceOf[Option[Result]]
+        case _ => None
+      }
+    }
+  }
+  override val performUnapplyViews = false
+
+  type CostedThunk[T] = Th[Costed[T]]
+
   override def rewriteDef[T](d: Def[T]): Rep[_] = {
     val CBM = ColBuilderMethods
     val SigmaM = SigmaPropMethods
     val CCM = CostedColMethods
     val CostedM = CostedMethods
+    val CostedOptionM = CostedOptionMethods
+    val WOptionM = WOptionMethods
+
     d match {
       case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
         val l1: Rep[SigmaProp] = RTrivialSigma(l.asRep[Boolean])
@@ -184,6 +229,21 @@ trait Costing extends SigmaLibrary with DataCosting {
 
       case CostedM.value(Def(CostedFuncCtor(_, func: RCostedFunc[a,b], _,_))) =>
         func.sliceCalc
+
+//      case CostedFoldExtractors.IsGetCost(opt: RWOption[a], th: CostedThunk[b]@unchecked, f) =>
+//        implicit val eA = opt.elem.eItem
+//        opt.fold(Thunk { forceThunkByMirror(th).cost }, fun { x: Rep[a] => f.asRep[a => Costed[b]](x).cost })
+//
+//      case CostedFoldExtractors.IsGetDataSize(opt: RWOption[a], th: CostedThunk[b]@unchecked, f) =>
+//        implicit val eA = opt.elem.eItem
+//        opt.fold(Thunk { forceThunkByMirror(th).dataSize }, fun { x: Rep[a] => f.asRep[a => Costed[b]](x).dataSize })
+
+      case CostedFoldExtractors.IsGet(opt: RWOption[a], _th, _f) =>
+        implicit val eA = opt.elem.eItem
+        val th = _th.asRep[Thunk[CostedOption[Any]]]
+        val f = _f.asRep[a => CostedOption[Any]]
+        f(opt.get).get
+
       case _ => super.rewriteDef(d)
     }
   }
@@ -249,8 +309,9 @@ trait Costing extends SigmaLibrary with DataCosting {
     case IntElement => SInt
     case LongElement => SLong
     case _: WBigIntegerElem[_] => SBigInt
-    case _: BoxElem[_] => SBox
     case _: WECPointElem[_] => SGroupElement
+    case oe: WOptionElem[_,_] => sigmastate.SOption(elemToSType(oe.eItem))
+    case _: BoxElem[_] => SBox
     case _: SigmaPropElem[_] => SSigmaProp
     case ce: ColElem[_,_] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_,_] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
@@ -614,17 +675,21 @@ trait Costing extends SigmaLibrary with DataCosting {
         val bytes = boxC.value.propositionBytes
         withDefaultSize(bytes, boxC.cost + costOf(node))
 
-      case utxo.ExtractRegisterAs(In(box), regId, tpe, default) =>
-        val boxC = box.asRep[Costed[Box]]
-        val elem = stypeToElem(tpe)
-        val valueOpt = boxC.value.getReg(regId.number.toInt)(elem)
-        val (v, c) = if (default.isDefined) {
-          val d = evalNode(ctx, env, default.get)
-          (RWSpecialPredef.optionGetOrElse(valueOpt, d.value), boxC.cost + d.cost + costOf(node))
-        } else {
-          (valueOpt.get, boxC.cost + costOf(node))
-        }
-        dataCost(v, Some(c))
+      case utxo.ExtractRegisterAs(In(box), regId, tpe, None) =>
+        val boxC = box.asRep[CostedBox]
+        implicit val elem = stypeToElem(tpe).asElem[Any]
+        val valueOpt = boxC.getReg(regId.number.toInt)(elem)
+        val res = valueOpt.get
+        res
+//        if (default.isDefined) {
+//          val d = evalNode(ctx, env, default.get)
+//          val (v,c) = (RWSpecialPredef.optionGetOrElse(valueOpt, d.value), boxC.cost + d.cost + costOf(node))
+//          costedBuilder.costedValue(v, RWSpecialPredef.some(c))
+//        } else {
+//          val c = boxC.cost + costOf(node)
+//          val vC = costedBuilder.costedValue(valueOpt, RWSpecialPredef.some(c)).asRep[CostedOption[Any]]
+//          vC.get
+//        }
 
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._

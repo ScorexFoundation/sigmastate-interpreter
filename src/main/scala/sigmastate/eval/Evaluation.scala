@@ -64,7 +64,7 @@ trait Evaluation extends Costing {
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) | ColM.slice(_,_,_) =>
     case CBM.replicate(_,_,_) =>
     case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
-    case OM.get(_) =>
+    case OM.get(_) | OM.fold(_,_,_) =>
     case _: CostOf =>
     case _: Apply[_,_] =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
@@ -244,7 +244,7 @@ trait Evaluation extends Costing {
             out(size)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
-        println(printEnvEntry(res))
+//        println(printEnvEntry(res))
         res
       }
       catch {

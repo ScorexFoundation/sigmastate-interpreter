@@ -1,24 +1,39 @@
 package sigmastate.eval
 
-import sigmastate.Values.{Constant, CollectionConstant}
+import sigmastate.Values.{CollectionConstant, Constant}
 import sigmastate.lang.Costing
 
+import scalan.SigmaLibrary
 import scalan.Lazy
 import sigmastate.utxo.CostTable.Cost.BoxConstantDeclaration
 
-trait DataCosting { self: Costing =>
+trait DataCosting extends SigmaLibrary { self: Costing =>
   import WArray._; import Col._
+  import WOption._
   import Box._
   import ColBuilder._;
   import ReplCol._;
   import Costed._;
   import CostedPrim._;
   import CostedPair._;
+  import CostedOption._;
   import CostedArray._;
   import CostedNestedArray._;
   import CostedPairArray._
   import CostedCol._;
   import CostedNestedCol._; import CostedPairCol._
+  import ConcreteCostedBuilder._
+  import WSpecialPredef._
+
+  override def rewriteDef[T](d: Def[T]): Rep[_] = {
+    val CCB = ConcreteCostedBuilderMethods
+    val SPCM = WSpecialPredefCompanionMethods
+    d match {
+      case CCB.costedValue(b, x, SPCM.some(cost)) =>
+        dataCost(x, Some(cost.asRep[Int]))
+      case _ => super.rewriteDef(d)
+    }
+  }
 
   def dataCost[T](x: Rep[T], optCost: Option[Rep[Int]]): Rep[Costed[T]] = {
     val res: Rep[Any] = x.elem match {
@@ -26,6 +41,10 @@ trait DataCosting { self: Costing =>
         val l = dataCost(x.asRep[(a,b)]._1, None)
         val r = dataCost(x.asRep[(a,b)]._2, optCost)
         RCostedPair(l, r)
+//      case optE: WOptionElem[a,_] =>
+//        val optX = x.asRep[WOption[a]]
+//        val cost = optX.getOrElse()
+//        RCostedOption(optX)
       case ce: ColElem[_,_] =>
         ce.eA match {
           case e: Elem[a] =>
