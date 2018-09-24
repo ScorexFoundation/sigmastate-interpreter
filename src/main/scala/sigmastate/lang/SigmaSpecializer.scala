@@ -57,6 +57,9 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
       Some(mkIsMember(tree, key, proof))
 
+    case Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
+      Some(mkTreeLookupSym(tree, key, proof))
+
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(mkProveDlog(g))
 

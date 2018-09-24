@@ -16,6 +16,54 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
+  property("avl tree lookup") {
+    val prover = new ErgoLikeProvingInterpreter
+    val verifier = new ErgoLikeInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+
+    val key = Blake2b256("key")
+    val value = Blake2b256("value")
+    val key2 = Blake2b256("key2")
+    avlProver.performOneOperation(Insert(ADKey @@ key, ADValue @@ value))
+    avlProver.performOneOperation(Insert(ADKey @@ key2, ADValue @@ key2))
+    avlProver.generateProof()
+
+    avlProver.performOneOperation(Lookup(ADKey @@ key))
+
+    val digest = avlProver.digest
+    val proof = avlProver.generateProof()
+
+    val treeData = new AvlTreeData(digest, 32, None)
+
+    val env = Map("key" -> key, "proof" -> proof, "value" -> value)
+//    val propCompiled = compile(env, """treeLookup(SELF.R4[AvlTree].get, key, proof) == Some(value)""").asBoolValue
+
+    val prop = EQ(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+      ByteArrayConstant(key),
+      ByteArrayConstant(proof)), SomeValue(ByteArrayConstant(value)))
+//    prop shouldBe propCompiled
+
+    val newBox1 = ErgoBox(10, pubkey)
+    val newBoxes = IndexedSeq(newBox1)
+
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+
+    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(),
+      spendingTransaction,
+      self = s)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
+
   property("avl tree - simplest case") {
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter

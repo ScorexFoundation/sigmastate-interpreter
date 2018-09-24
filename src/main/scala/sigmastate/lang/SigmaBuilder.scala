@@ -40,9 +40,14 @@ trait SigmaBuilder {
                       right: Value[SGroupElement.type]): Value[SGroupElement.type]
   def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
 
+  def mkTreeLookupSym(tree: Value[SAvlTree.type],
+                      key: Value[SByteArray],
+                      proof: Value[SByteArray]): Value[SOption[SByteArray]]
+
   def mkIsMember(tree: Value[SAvlTree.type],
                  key: Value[SByteArray],
                  proof: Value[SByteArray]): Value[SBoolean.type]
+
   def mkIf[T <: SType](condition: Value[SBoolean.type],
                        trueBranch: Value[T],
                        falseBranch: Value[T]): Value[T]
@@ -222,6 +227,11 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray] =
     Xor(left, right)
+
+  override def mkTreeLookupSym(tree: Value[SAvlTree.type],
+                          key: Value[SByteArray],
+                          proof: Value[SByteArray]): Value[SOption[SByteArray]] =
+    TreeLookup(tree, key, proof)
 
   override def mkIsMember(tree: Value[SAvlTree.type],
                           key: Value[SByteArray],

@@ -12,10 +12,9 @@ import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.SCollection.SByteArray
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import scorex.crypto.authds.{ADKey, ADValue, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
-import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -24,7 +23,7 @@ import sigmastate.utils.Extensions._
 import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 
 object CryptoConstants {
@@ -289,6 +288,20 @@ trait Interpreter extends ScorexLogging {
       val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
       val res = bv.performOneOperation(Lookup(ADKey @@ keyBytes))
       BooleanConstant.fromBoolean(res.isSuccess && res.get.isDefined)
+
+    case TreeLookup(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
+      def invalidArg = Interpreter.error(s"Collection expected but found $key")
+
+      val keyBytes = key.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
+      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
+      val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
+      bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect")
+        case Success(r) => r match {
+          case Some(v) => SomeValue(v)
+          case _ => NoneValue[SByteArray](SByteArray)
+        }
+      }
 
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
