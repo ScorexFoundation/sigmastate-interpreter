@@ -86,9 +86,9 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val env = Map("key" -> key, "proof" -> proof)
     val prop = compile(env, """isMember(SELF.R4[AvlTree].get, key, proof)""").asBoolValue
 
-    val propTree = IsMember(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+    val propTree = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key),
-      ByteArrayConstant(proof))
+      ByteArrayConstant(proof)))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)
@@ -121,9 +121,9 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val prop: Value[SBoolean.type] = AND(
       GE(GetVarLong(elementId).get, LongConstant(120)),
-      IsMember(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+      OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
         CalcBlake2b256(LongToByteArray(GetVarLong(elementId).get)),
-        GetVarByteArray(proofId).get)
+        GetVarByteArray(proofId).get))
     )
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
     val propCompiled = compile(env,
@@ -193,10 +193,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
         |  isMember(tree, key, proof)
         |}""".stripMargin).asBoolValue
 
-    val propTree = IsMember(
+    val propTree = OptionIsDefined(TreeLookup(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ExtractRegisterAs[SByteArray](Self, reg2).get,
-      GetVarByteArray(proofId).get)
+      GetVarByteArray(proofId).get))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)

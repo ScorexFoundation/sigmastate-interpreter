@@ -281,14 +281,6 @@ trait Interpreter extends ScorexLogging {
     case StringConcat(StringConstant(l), StringConstant(r)) =>
       StringConstant(l + r)
 
-    case IsMember(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
-      def invalidArg = Interpreter.error(s"Collection expected but found $key")
-      val keyBytes = key.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
-      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
-      val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
-      val res = bv.performOneOperation(Lookup(ADKey @@ keyBytes))
-      BooleanConstant.fromBoolean(res.isSuccess && res.get.isDefined)
-
     case TreeLookup(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
       def invalidArg = Interpreter.error(s"Collection expected but found $key")
 

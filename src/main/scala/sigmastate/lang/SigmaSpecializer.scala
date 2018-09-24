@@ -1,14 +1,14 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
+import org.ergoplatform.ErgoBox
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
-import sigmastate._
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Val, Select, ValueOps}
-import sigmastate.lang.exceptions.{MethodNotFound, SpecializerException}
+import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Select, Val, ValueOps}
+import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 
 class SigmaSpecializer(val builder: SigmaBuilder) {
@@ -58,7 +58,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       Some(mkIsMember(tree, key, proof))
 
     case Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-      Some(mkTreeLookupSym(tree, key, proof))
+      Some(mkTreeLookup(tree, key, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(mkProveDlog(g))

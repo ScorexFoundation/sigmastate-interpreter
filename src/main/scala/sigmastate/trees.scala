@@ -501,19 +501,6 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
   extends Quadruple[IV1, IV2, IV3, SBoolean.type] with NotReadyValueBoolean
 
 /**
-  * Predicate which checks whether a key is in a tree, by using a membership proof
-  */
-case class IsMember(tree: Value[SAvlTree.type],
-                    key: Value[SByteArray],
-                    proof: Value[SByteArray]) extends Relation3[SAvlTree.type, SByteArray, SByteArray] {
-  override val opCode: OpCode = OpCodes.IsMemberCode
-
-  override lazy val first = tree
-  override lazy val second = key
-  override lazy val third = proof
-}
-
-/**
   * Perform a lookup of key `key` in a tree with root `tree` using proof `proof`.
   * Throws exception if proof is incorrect
   * Return SomeValue(SByteArray) of leaf with key `key` if it exists
