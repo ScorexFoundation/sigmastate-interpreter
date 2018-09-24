@@ -59,8 +59,6 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         | }
       """.stripMargin).asBoolValue
 
-    println(prop)
-
     val propTree = OR(
       regScript,
       AND(
