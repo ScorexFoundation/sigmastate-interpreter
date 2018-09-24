@@ -702,7 +702,9 @@ object STuple {
   val componentNames = Range(1, 31).map(i => s"_$i")
 }
 
-case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil) extends SType {
+case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil)
+      extends SType with SGenericType
+{
   override type WrappedType = Seq[Any] => tRange.WrappedType
   override val typeCode = SFunc.FuncTypeCode
   override def isConstantSize = false
@@ -711,9 +713,19 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIden
     s"$args(${tDom.mkString(",")}) => $tRange"
   }
   override def dataSize(v: SType#WrappedType) = 8L
+  import SFunc._
+  val typeParams: Seq[STypeParam] = (tDom.zipWithIndex.map { case (t, i) => STypeParam(tD.name + (i + 1)) }) :+ STypeParam(tR.name)
+  val tparamSubst = typeParams.zip(tDom).map { case (p, t) => p.name -> t }.toMap + (tR.name -> tRange)
+
+  def getGenericType: SFunc = {
+    val ts = typeParams.map(_.asTypeIdent)
+    SFunc(ts.init.toIndexedSeq, ts.last, Nil)
+  }
 }
 
 object SFunc {
+  val tD = STypeIdent("D")
+  val tR = STypeIdent("R")
   final val FuncTypeCode: TypeCode = OpCodes.FirstFuncType
   def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
 }

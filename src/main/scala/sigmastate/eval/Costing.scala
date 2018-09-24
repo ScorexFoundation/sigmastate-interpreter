@@ -68,9 +68,16 @@ trait Costing extends SigmaLibrary with DataCosting {
 
   def costOf(opName: String, opType: SFunc): Rep[Int] = CostOf(opName, opType)
 
+  def constCost(tpe: SType): Rep[Int] = tpe match {
+    case f: SFunc =>
+      costOf(s"Lambda", Constant[SType](0.asWrappedType, tpe).opType)
+    case _ =>
+      costOf(s"Const", Constant[SType](0.asWrappedType, tpe).opType)
+  }
+
   def constCost[T: Elem]: Rep[Int] = {
     val tpe = elemToSType(element[T])
-    costOf(s"Const", Constant[SType](0.asWrappedType, tpe).opType)
+    constCost(tpe)
   }
 
   def costOf(v: SValue): Rep[Int] = {
@@ -78,6 +85,8 @@ trait Costing extends SigmaLibrary with DataCosting {
     v match {
       case ArithOp(_, _, opCode) =>
         costOf(opcodeToArithOpName(opCode), opTy)
+      case l: Terms.Lambda =>
+        constCost(l.tpe)
       case c @ Constant(_, tpe) =>
         costOf(s"Const", opTy)
       case v =>
@@ -694,12 +703,15 @@ trait Costing extends SigmaLibrary with DataCosting {
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._
         op.opCode match {
-          case PlusCode =>
+          case PlusCode | MinusCode =>
             val x = evalNode(ctx, env, op.left).asRep[Costed[WBigInteger]]
             val y = evalNode(ctx, env, op.right).asRep[Costed[WBigInteger]]
-            val addSize = x.dataSize.max(y.dataSize) + 1L // according to algorithm in BigInteger.add()
-            val cost = x.cost + y.cost + costOf(op) + costOf("+_per_item", op.opType) * addSize.toInt
-            RCostedPrim(x.value.add(y.value), cost, addSize)
+            val resSize = x.dataSize.max(y.dataSize) + 1L  // according to algorithm in BigInteger.add()
+            val isPlus = op.opCode == PlusCode
+            val opName = if (isPlus) "+" else "-"
+            val cost = x.cost + y.cost + costOf(op) + costOf(opName + "_per_item", op.opType) * resSize.toInt
+            val resValue = if (isPlus) x.value.add(y.value) else x.value.subtract(y.value)
+            RCostedPrim(resValue, cost, resSize)
 //          case MinusCode => NumericMinus(elemToNumeric(eT))(eT)
 //          case MultiplyCode => NumericTimes(elemToNumeric(eT))(eT)
 //          case DivisionCode => IntegralDivide(elemToIntegral(eT))(eT)

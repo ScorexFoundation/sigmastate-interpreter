@@ -95,6 +95,8 @@ object Values {
       val resType = tpe match {
         case ct @ SCollection(tItem) =>
           SCollection(ct.typeParams.head.asTypeIdent)
+        case ft @ SFunc(tD, tR, _) =>
+          ft.getGenericType
         case _ => tpe
       }
       SFunc(Vector(), resType)

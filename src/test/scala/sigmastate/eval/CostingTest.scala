@@ -20,6 +20,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import IR._
   import WArray._
   import WECPoint._
+  import WBigInteger._
   import ProveDlogEvidence._
   import Context._; import SigmaContract._
   import Cost._; import ColBuilder._; import Col._; import Box._; import SigmaProp._; import CrowdFunding._
@@ -52,20 +53,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     check(STuple(SInt, STuple(SInt, SInt)), Array(10, Array[Any](20, 30)), 2 + 4 + (2 + 4 + 4))
   }
 
-//  test("Sized.dataSize") {
-//    import CostedPrim._
-//    import NumericOps._
-//    import WBigInteger._
-//    val V1 = mkWBigIntegerConst(BigInteger.TEN)
-//    val Def(IR.SizeOf(v)) = sizeOf(V1)
-//    v  shouldBe V1
-//    val V2 = mkWBigIntegerConst(big)
-//    val res = V1.multiply(V2)
-//    val s = sizeOf(res)
-//    emit("size", res, s)
-//    s should matchPattern { case Def(ApplyBinOp(_: NumericPlus[_], Def(IR.SizeOf(V1)), Def(IR.SizeOf(V2)))) => }
-//  }
-
   test("constants") {
     check("int", "1", _ => 1, _ => constCost[Int], _ => sizeOf(1))
     check("long", "1L", _ => 1L, _ => constCost[Long], _ => sizeOf(1L))
@@ -82,12 +69,16 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
         val c = ByteArrayConstant(arr1)
         costOf(c) + costOf(utxo.SizeOf(c))
       })
-//    checkInEnv(env, "bigint", "n1", {_ => toRep(n1) }, { _ => costOf(BigIntConstant(n1))})
-//    checkInEnv(env, "bigint2", "big", {_ => toRep(big) }, { _ => costOf(BigIntConstant(big))})
-//    checkInEnv(env, "group", "g1", {_ => mkWECPointConst(g1) }, {_ => costOf(GroupElementConstant(g1))})
-//    checkInEnv(env, "sigmaprop", "p1.propBytes",
-//      { _ => RProveDlogEvidence(mkWECPointConst(g1)).asRep[Sigma].propBytes },
-//      { _ => costOf(GroupElementConstant(g1)) + costOf(p1) + costOf(SigmaPropBytes(SigmaPropConstant(p1)))})
+
+    val n1Sym = liftConst(n1)
+    checkInEnv(env, "bigint", "n1", {_ => n1Sym }, { _ => constCost[WBigInteger] }, { _ => sizeOf(n1Sym) })
+
+    val g1Sym = liftConst(g1.asInstanceOf[ECPoint])
+    checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[WECPoint]}, { _ => typeSize[WECPoint] })
+
+    checkInEnv(env, "sigmaprop", "p1.propBytes",
+      { _ => RProveDlogEvidence(g1Sym).asRep[SigmaProp].propBytes },
+      { _ => constCost[WECPoint] + constCost[SigmaProp] + costOf("SigmaPropBytes", SFunc(SSigmaProp, SCollection.SByteArray))})
   }
   
   test("operations") {
@@ -95,11 +86,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     import builder._
     check("one+one", "1 + 1", _ => toRep(1) + 1,
       {_ => val c1 = IntConstant(1); costOf(c1) + costOf(c1) + costOf(Plus(c1, c1)) })
-//    checkInEnv(env, "one+one2", "big - n1", {_ => toRep(big) - n1},
-//      {_ =>
-//        val c1 = BigIntConstant(big);
-//        val c2 = BigIntConstant(n1);
-//        costOf(c1) + costOf(c2) + costOf(Minus(c1, c2)) })
+    checkInEnv(env, "one+one2", "big - n1", {_ => liftConst(big).subtract(liftConst(n1))})
     check("one_gt_one", "1 > 1", {_ => toRep(1) > 1},
       { _ => val c1 = IntConstant(1); costOf(c1) + costOf(c1) + costOf(GT(c1, c1)) })
 //    checkInEnv(env, "or", "1 > 1 || n1 < big", {_ => (toRep(1) > 1) lazy_|| Thunk(toRep(n1) < big)},
@@ -129,14 +116,10 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("context data") {
 //    check("var1", "getVar[BigInt](1)", ctx => ctx.getVar[BigInteger](1.toByte), _ => 1)
-//    check("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
-//    check("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L, _ => HeightAccess + ConstantNode + TripleDeclaration)
-//    check("size", "INPUTS.size + OUTPUTS.size",
-//      ctx => { ctx.INPUTS.length + ctx.OUTPUTS.length },
-//      _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + TripleDeclaration)
-//    check("value", "SELF.value + 1L",
-//      ctx => ctx.SELF.value + 1L,
-//      _ => SelfAccess + ExtractAmount + ConstantNode + TripleDeclaration)
+    check("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L)
+    check("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L)
+    check("size", "INPUTS.size + OUTPUTS.size", ctx => { ctx.INPUTS.length + ctx.OUTPUTS.length })
+    check("value", "SELF.value + 1L", ctx => ctx.SELF.value + 1L)
   }
 
   test("collection ops") {
@@ -150,15 +133,14 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 //      ctx => ctx.OUTPUTS.filter(fun(out => { out.value >= 0L })))
   }
 
-// TODO implement CostedFunc correctly
-//  test("lambdas") {
-//    check("lam1", "fun (out: Box) = { out.value >= 0L }",
-//      ctx => fun { out: Rep[Box] => out.value >= 0L })
-//    check("lam2", "{let f = fun (out: Box) = { out.value >= 0L }; f}",
-//      ctx => fun { out: Rep[Box] => out.value >= 0L })
-//    check("lam3", "{let f = fun (out: Box) = { out.value >= 0L }; f(SELF) }",
-//      ctx => { val f = fun { out: Rep[Box] => out.value >= 0L }; Apply(f, ctx.SELF, false) })
-//  }
+  test("lambdas") {
+    check("lam1", "fun (out: Box) = { out.value >= 0L }",
+      ctx => fun { out: Rep[Box] => out.value >= 0L }, {_ => constCost[Box => Boolean]}, {_ => 8L})
+    check("lam2", "{let f = fun (out: Box) = { out.value >= 0L }; f}",
+      ctx => fun { out: Rep[Box] => out.value >= 0L }, {_ => constCost[Box => Boolean]}, {_ => 8L})
+    check("lam3", "{let f = fun (out: Box) = { out.value >= 0L }; f(SELF) }",
+      ctx => { val f = fun { out: Rep[Box] => out.value >= 0L }; Apply(f, ctx.SELF, false) })
+  }
 
   test("if then else") {
     check("lam1", "{ let x = if (OUTPUTS.size > 0) OUTPUTS(0).value else SELF.value; x }",
