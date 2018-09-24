@@ -4,7 +4,6 @@ name := "sigma-state"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  version := "0.11.0-SNAPSHOT",
   scalaVersion := "2.12.4",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
@@ -22,6 +21,22 @@ lazy val commonSettings = Seq(
         </developer>
       </developers>
 )
+
+enablePlugins(GitVersioning)
+
+version in ThisBuild := {
+  if (git.gitCurrentTags.value.nonEmpty) {
+    git.gitDescribedVersion.value.get
+  } else {
+    if (git.gitHeadCommit.value.contains(git.gitCurrentBranch.value)) {
+      git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
+    } else {
+      git.gitCurrentBranch.value + "-" + git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
+    }
+  }
+}
+
+git.gitUncommittedChanges in ThisBuild := true
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
