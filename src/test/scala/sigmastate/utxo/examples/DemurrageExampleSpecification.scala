@@ -23,7 +23,9 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     * the blockchain).
     *
     * (regular_script) ∨
-    * (height > (self.R3 + demurrage_period ) ∧ has_output(value >= self.value − demurrage_cost, script = self.script))
+    * (height > (self.R3 + demurrage_period)
+    *   ∧ has_output(value >= self.value − demurrage_cost, script = self.script, R3 + 50 <= height)
+    * )
     */
   property("Evaluation - Demurrage Example") {
     val demurragePeriod = 100L
@@ -47,12 +49,18 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         | val c2 = allOf(Array(
         |   HEIGHT >= SELF.R4[Long].get + demurragePeriod,
         |   OUTPUTS.exists({ (out: Box) =>
-        |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
+        |     out.value >= SELF.value - demurrageCost &&
+        |     out.propositionBytes == SELF.propositionBytes &&
+        |     out.R4[Long].get <= HEIGHT &&
+        |     out.R4[Long].get >= HEIGHT - 50L
         |   })
         | ))
         | regScript || c2
         | }
       """.stripMargin).asBoolValue
+
+    println(prop)
+
     val propTree = OR(
       regScript,
       AND(
@@ -60,7 +68,9 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         Exists(Outputs, 21,
           AND(
             GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),
-            EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self))
+            EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self)),
+            LE(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).get, Height),
+            GE(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).get, Minus(Height, 50L))
           )
         )
       )
@@ -103,15 +113,15 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
 
     //miner can spend "demurrageCost" tokens
-    val tx3 = ErgoLikeTransaction(IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue - demurrageCost, prop, additionalRegisters = Map(reg1 -> LongConstant(curHeight)))))
+    val demHeight = outHeight + demurragePeriod
+    val b = ErgoBox(outValue - demurrageCost, prop, additionalRegisters = Map(reg1 -> LongConstant(demHeight)))
+    val tx3 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b))
     val ctx3 = ErgoLikeContext(
-      currentHeight = outHeight + demurragePeriod,
+      currentHeight = demHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(b),
       spendingTransaction = tx3,
       self = createBox(outValue, prop, additionalRegisters = Map(reg1 -> LongConstant(outHeight))))
-
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 

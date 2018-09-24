@@ -361,6 +361,8 @@ trait Interpreter extends ScorexLogging {
              message: Array[Byte]): Try[VerificationResult] = Try {
     val (cProp, cost) = reduceToCrypto(context, exp).get
 
+    println(cProp)
+
     val checkingResult = cProp match {
       case TrueLeaf => true
       case FalseLeaf => false
