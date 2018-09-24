@@ -46,7 +46,8 @@ class ErgoBox private(
                        override val additionalTokens: Seq[(TokenId, Long)] = Seq(),
                        override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
                        val transactionId: ModifierId,
-                       val index: Short
+                       val index: Short,
+                       val creationHeight: Int
 ) extends ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters) {
 
   import ErgoBox._
@@ -57,7 +58,8 @@ class ErgoBox private(
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
-      case ReferenceRegId => Some(ByteArrayConstant(transactionId.toBytes ++ Shorts.toByteArray(index)))
+      case ReferenceRegId =>
+        Some(Tuple(IntConstant(creationHeight), ByteArrayConstant(transactionId.toBytes ++ Shorts.toByteArray(index))))
       case _ => super.get(identifier)
     }
   }
@@ -135,8 +137,9 @@ object ErgoBox {
             additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId,
-            boxId: Short = 0): ErgoBox =
-    new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId)
+            boxId: Short = 0,
+            creationHeight: Int = 0): ErgoBox =
+    new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId, creationHeight)
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
 
