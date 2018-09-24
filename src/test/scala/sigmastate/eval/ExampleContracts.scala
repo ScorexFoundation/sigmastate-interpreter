@@ -13,8 +13,9 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
 
   val crowdFundingScript =
     """{
-     | let projectPubKey = getVar[SigmaProp](projectPubKeyId)
-     | let c1 = HEIGHT >= timeout && getVar[SigmaProp](backerPubKeyId)
+     | //let projectPubKey = proveDlog(project)  //getVar[SigmaProp](projectPubKeyId)
+     | //let backerPubKey = proveDlog(backer)  //getVar[SigmaProp](backerPubKeyId)
+     | let c1 = HEIGHT >= timeout && backerPubKey
      | let c2 = allOf(Array(
      |   HEIGHT < timeout,
      |   projectPubKey,

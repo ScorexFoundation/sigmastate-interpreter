@@ -210,7 +210,7 @@ trait Costing extends SigmaLibrary with DataCosting {
 
     d match {
       case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
-        val l1: Rep[SigmaProp] = RTrivialSigma(l.asRep[Boolean])
+        val l1 = RTrivialSigma(l.asRep[Boolean]).asRep[SigmaProp]
         // don't need new Thunk because sigma logical ops always strict
         val res = if (op == And)
           l1 && prop

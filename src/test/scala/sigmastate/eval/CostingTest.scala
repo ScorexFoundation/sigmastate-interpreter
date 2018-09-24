@@ -16,7 +16,7 @@ import SType._
 
 import scalan.BaseCtxTests
 
-class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit {
+class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>
   import IR._
   import WArray._
   import WECPoint._
@@ -25,6 +25,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import Context._; import SigmaContract._
   import Cost._; import ColBuilder._; import Col._; import Box._; import SigmaProp._; import CrowdFunding._
   import SigmaDslBuilder._; import WOption._
+  import TrivialSigma._
   import Liftables._
   
   test("SType.dataSize") {
@@ -147,24 +148,24 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
   }
 
-  ignore("Crowd Funding") {
+  test("Crowd Funding") {
     val prover = new ErgoLikeProvingInterpreter()
-    val backer = prover.dlogSecrets(0).publicImage
-    val project = prover.dlogSecrets(1).publicImage
+    val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
+    val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
 
-    checkInEnv[Boolean](envCF, "CrowdFunding", crowdFundingScript,
+    val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
+    checkInEnv[Boolean](env, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
-        val backerPubKey = ctx.getVar[SigmaProp](backerPubKeyId).get
-        val projectPubKey = ctx.getVar[SigmaProp](projectPubKeyId).get
-        val c1 = dsl.allOf(colBuilder(ctx.HEIGHT >= toRep(timeout), backerPubKey.isValid))
-        val c2 = dsl.allOf(colBuilder(
+        val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
+        val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val c1 = RTrivialSigma(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
+        val c2 = RTrivialSigma(dsl.allOf(colBuilder(
           ctx.HEIGHT < toRep(timeout),
-          projectPubKey.isValid,
           ctx.OUTPUTS.exists(fun { out =>
-            dsl.allOf(colBuilder(out.value >= toRep(minToRaise), out.propositionBytes === projectPubKey.propBytes))
-          })
-        ))
-        dsl.anyOf(colBuilder(c1, c2))
+            out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectPubKey.propBytes)
+          }))
+        )).asRep[SigmaProp] && projectPubKey
+        (c1 || c2).isValid
       }
       )
   }
