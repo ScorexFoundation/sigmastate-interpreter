@@ -212,7 +212,7 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
     bytes.head match {
       case OpCodes.ProveDlogCode if bytes.tail.head == (OpCodes.ConstantCode + SGroupElement.typeCode).toByte =>
         P2PKAddress(script.asInstanceOf[ProveDlog])
-      case OpCodes.AndCode if bytes.take(P2shConstantLength) sameElements P2shSample.take(P2shConstantLength) =>
+      case OpCodes.AndCode if util.Arrays.equals(bytes.take(P2shConstantLength), P2shSample.take(P2shConstantLength)) =>
         Pay2SHAddress(script.asInstanceOf[Value[SBoolean.type]])
       case _ => Pay2SAddress(script.asInstanceOf[Value[SBoolean.type]])
     }
