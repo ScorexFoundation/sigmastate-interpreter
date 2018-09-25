@@ -1,7 +1,5 @@
 package org.ergoplatform
 
-import java.util.Arrays
-
 import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scorex.crypto.authds.ADKey
@@ -47,19 +45,19 @@ class ErgoBox private(
                        override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
                        val transactionId: ModifierId,
                        val index: Short,
-                       val creationHeight: Int
-) extends ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters) {
+                       override val creationHeight: Long
+) extends ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters, creationHeight) {
 
   import ErgoBox._
 
   lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
-  override lazy val cost = (bytesWithNoRef.size / 1024 + 1) * Cost.BoxPerKilobyte
+  override lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ReferenceRegId =>
-        Some(Tuple(IntConstant(creationHeight), ByteArrayConstant(transactionId.toBytes ++ Shorts.toByteArray(index))))
+        Some(Tuple(LongConstant(creationHeight), ByteArrayConstant(transactionId.toBytes ++ Shorts.toByteArray(index))))
       case _ => super.get(identifier)
     }
   }
@@ -67,17 +65,19 @@ class ErgoBox private(
   lazy val bytes: Array[Byte] = ErgoBox.serializer.toBytes(this)
 
   override def equals(arg: Any): Boolean = arg match {
-    case x: ErgoBox => Arrays.equals(id, x.id)
+    case x: ErgoBox => java.util.Arrays.equals(id, x.id)
     case _ => false
   }
 
-  override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters, index))
+  override def hashCode(): Int =
+    ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters, index, creationHeight))
 
-  def toCandidate: ErgoBoxCandidate = new ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters)
+  def toCandidate: ErgoBoxCandidate =
+    new ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters, creationHeight)
 
   override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$proposition," +
     s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2)}), $transactionId, " +
-    s"$index, $additionalRegisters)"
+    s"$index, $additionalRegisters, $creationHeight)"
 }
 
 object ErgoBox {
@@ -138,7 +138,7 @@ object ErgoBox {
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId,
             boxId: Short = 0,
-            creationHeight: Int = 0): ErgoBox =
+            creationHeight: Long = 0): ErgoBox =
     new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId, creationHeight)
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
@@ -159,6 +159,5 @@ object ErgoBox {
       val index = r.getUShort()
       ergoBoxCandidate.toBox(transactionId, index.toShort)
     }
-
   }
 }

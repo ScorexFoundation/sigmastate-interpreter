@@ -1,10 +1,8 @@
 package sigmastate.utxo.examples
 
-import sigmastate.Values.{LongConstant, TaggedBox}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform._
-import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
 class DemurrageExampleSpecification extends SigmaTestingCommons {
@@ -47,22 +45,23 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val prop = compile(env,
       """{
         | val c2 = allOf(Array(
-        |   HEIGHT >= SELF.R4[Long].get + demurragePeriod,
+        |   HEIGHT >= SELF.R3[(Long, Array[Byte])].get._1 + demurragePeriod,
         |   OUTPUTS.exists({ (out: Box) =>
         |     out.value >= SELF.value - demurrageCost &&
         |     out.propositionBytes == SELF.propositionBytes &&
-        |     out.R4[Long].get <= HEIGHT &&
-        |     out.R4[Long].get >= HEIGHT - 50L
+        |     out.R3[(Long, Array[Byte])].get._1 <= HEIGHT &&
+        |     out.R3[(Long, Array[Byte])].get._1 >= HEIGHT - 50L
         |   })
         | ))
         | regScript || c2
         | }
       """.stripMargin).asBoolValue
 
+    /*
     val propTree = OR(
       regScript,
       AND(
-        GE(Height, Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(demurragePeriod))),
+        GE(Height, Plus(ExtractRegisterAs[STuple](Self, reg1).get.asTuple. , LongConstant(demurragePeriod))),
         Exists(Outputs, 21,
           AND(
             GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),
@@ -74,22 +73,22 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       )
     )
     prop shouldBe propTree
+    */
 
     val outHeight = 100
     val outValue = 10
-    val curHeight = outHeight + demurragePeriod
 
     //case 1: demurrage time hasn't come yet
-    val tx1 = ErgoLikeTransaction(
-      IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue, prop, additionalRegisters = Map(reg1 -> LongConstant(curHeight)))))
+    val currentHeight1 = outHeight + demurragePeriod - 1
+
+    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue, prop, currentHeight1)))
 
     val ctx1 = ErgoLikeContext(
-      currentHeight = outHeight + demurragePeriod - 1,
+      currentHeight1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = createBox(outValue, prop, additionalRegisters = Map(reg1 -> LongConstant(outHeight))))
+      self = createBox(outValue, prop, outHeight))
 
     //user can spend all the money
     val uProof1 = userProver.prove(prop, ctx1, fakeMessage).get.proof
@@ -99,54 +98,56 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx1, NoProof, fakeMessage).get._1 shouldBe false
 
     //case 2: demurrage time has come
+    val currentHeight2 = outHeight + demurragePeriod
+    val tx2 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue, prop, currentHeight2)))
     val ctx2 = ErgoLikeContext(
-      currentHeight = outHeight + demurragePeriod,
+      currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
-      spendingTransaction = tx1,
-      self = createBox(outValue, prop, additionalRegisters = Map(reg1 -> LongConstant(outHeight))))
+      spendingTransaction = tx2,
+      self = createBox(outValue, prop, outHeight))
 
     //user can spend all the money
-    val uProof2 = userProver.prove(prop, ctx1, fakeMessage).get.proof
+    val uProof2 = userProver.prove(prop, ctx2, fakeMessage).get.proof
     verifier.verify(prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
 
     //miner can spend "demurrageCost" tokens
-    val demHeight = outHeight + demurragePeriod
-    val b = ErgoBox(outValue - demurrageCost, prop, additionalRegisters = Map(reg1 -> LongConstant(demHeight)))
+    val currentHeight3 = outHeight + demurragePeriod
+    val b = createBox(outValue - demurrageCost, prop, currentHeight3)
     val tx3 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b))
     val ctx3 = ErgoLikeContext(
-      currentHeight = demHeight,
+      currentHeight = currentHeight3,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(b),
       spendingTransaction = tx3,
-      self = createBox(outValue, prop, additionalRegisters = Map(reg1 -> LongConstant(outHeight))))
+      self = createBox(outValue, prop, outHeight))
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
     verifier.verify(prop, ctx3, NoProof, fakeMessage).get._1 shouldBe true
 
     //miner can't spend more
-    val tx4 = ErgoLikeTransaction(IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue - demurrageCost - 1, prop, additionalRegisters = Map(reg1 -> LongConstant(curHeight)))))
+    val currentHeight4 = outHeight + demurragePeriod
+    val tx4 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue - demurrageCost - 1, prop, currentHeight4)))
     val ctx4 = ErgoLikeContext(
-      currentHeight = outHeight + demurragePeriod,
+      currentHeight = currentHeight4,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx4,
-      self = createBox(outValue, prop, additionalRegisters = Map(reg1 -> LongConstant(outHeight))))
+      self = createBox(outValue, prop, outHeight))
 
     verifier.verify(prop, ctx4, NoProof, fakeMessage).get._1 shouldBe false
 
     //miner can spend less
     val tx5 = ErgoLikeTransaction(IndexedSeq(),
-      IndexedSeq(ErgoBox(outValue - demurrageCost + 1, prop, additionalRegisters = Map(reg1 -> LongConstant(curHeight)))))
+      IndexedSeq(createBox(outValue - demurrageCost + 1, prop, currentHeight4)))
 
     val ctx5 = ErgoLikeContext(
-      currentHeight = outHeight + demurragePeriod,
+      currentHeight = currentHeight4,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx5,
-      self = createBox(outValue, prop, additionalRegisters = Map(reg1 -> LongConstant(outHeight))))
+      self = createBox(outValue, prop, outHeight))
 
     verifier.verify(prop, ctx5, NoProof, fakeMessage).get._1 shouldBe true
   }

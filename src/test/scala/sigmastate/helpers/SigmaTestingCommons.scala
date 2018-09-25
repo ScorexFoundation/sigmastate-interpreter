@@ -1,11 +1,11 @@
 package sigmastate.helpers
 
-import org.ergoplatform
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.hash.Blake2b256
+import scorex.util._
 import sigmastate.Values.{EvaluatedValue, GroupElementConstant, TrueLeaf, Value}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.SigmaCompiler
@@ -38,6 +38,10 @@ trait SigmaTestingCommons extends PropSpec
                 proposition: Value[SBoolean.type],
                 additionalTokens: Seq[(TokenId, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
-  = ergoplatform.ErgoBox(value, proposition, additionalTokens, additionalRegisters)
+    = ErgoBox(value, proposition, additionalTokens, additionalRegisters)
 
+  def createBox(value: Int,
+                proposition: Value[SBoolean.type],
+                creationHeight: Long)
+    = ErgoBox(value, proposition, Seq(), Map(), Array.fill[Byte](32)(0.toByte).toModifierId, 0, creationHeight)
 }
