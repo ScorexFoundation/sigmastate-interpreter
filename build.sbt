@@ -1,3 +1,5 @@
+import scala.util.Try
+
 organization := "org.scorexfoundation"
 
 name := "sigma-state"
@@ -29,7 +31,20 @@ version in ThisBuild := {
     git.gitDescribedVersion.value.get
   } else {
     if (git.gitHeadCommit.value.contains(git.gitCurrentBranch.value)) {
-      git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
+      if (Try(sys.env("TRAVIS")).getOrElse("false") == "true") {
+        if (Try(sys.env("TRAVIS_PULL_REQUEST")).getOrElse("false") == "true") {
+          // build is triggered by a pull request
+          val prBranchName = Try(sys.env("TRAVIS_PULL_REQUEST_BRANCH")).get
+          val prHeadCommitSha = Try(sys.env("TRAVIS_PULL_REQUEST_SHA")).get
+          prBranchName + "-" + prHeadCommitSha.take(8) + "-SNAPSHOT"
+        } else {
+          // build is triggered by a push
+          val branchName = Try(sys.env("TRAVIS_BRANCH")).get
+          branchName + "-" + git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
+        }
+      } else {
+        git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
+      }
     } else {
       git.gitCurrentBranch.value + "-" + git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
     }
