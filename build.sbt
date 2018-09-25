@@ -31,8 +31,10 @@ version in ThisBuild := {
     git.gitDescribedVersion.value.get
   } else {
     if (git.gitHeadCommit.value.contains(git.gitCurrentBranch.value)) {
+      // see https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
       if (Try(sys.env("TRAVIS")).getOrElse("false") == "true") {
-        if (Try(sys.env("TRAVIS_PULL_REQUEST")).getOrElse("false") == "true") {
+        // pull request number, "false" if not a pull request
+        if (Try(sys.env("TRAVIS_PULL_REQUEST")).getOrElse("false") != "false") {
           // build is triggered by a pull request
           val prBranchName = Try(sys.env("TRAVIS_PULL_REQUEST_BRANCH")).get
           val prHeadCommitSha = Try(sys.env("TRAVIS_PULL_REQUEST_SHA")).get
