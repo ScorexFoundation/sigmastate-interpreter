@@ -1,20 +1,17 @@
 package org.ergoplatform
 
-import java.nio.ByteBuffer
 import java.util
 
 import com.google.common.primitives.Ints
 import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
-import sigmastate._
 import sigmastate.Values.{IntConstant, TaggedByteArray, Value}
-import sigmastate.serialization.{DataSerializer, ValueSerializer}
-import sigmastate.utils.ByteBufferReader
+import sigmastate._
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.{DeserializeContext, Slice}
 
-import scala.util.{Failure, Success, Try}
-
+import scala.util.Try
 
 /**
   * An address is a short string corresponding to some script used to protect a box. Unlike (string-encoded) binary
@@ -172,6 +169,9 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
 
   implicit private val ergoAddressEncoder: ErgoAddressEncoder = this
 
+  private val P2shSample: Array[Byte] = new Pay2SHAddress(hash192(Array(0: Byte))).script.bytes
+  private val P2shConstantLength: Int = 16
+
   val ChecksumLength = 4
 
   def toString(address: ErgoAddress): String = {
@@ -204,6 +204,17 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
           new Pay2SAddress(ValueSerializer.deserialize(bs).asInstanceOf[Value[SBoolean.type]], bs)
         case _ => throw new Exception("Unsupported address type: " + addressType)
       }
+    }
+  }
+
+  def fromPropositionBytes(bytes: Array[Byte]): Try[ErgoAddress] = Try {
+    val script: Value[SType] = ValueSerializer.deserialize(bytes)
+    bytes.head match {
+      case OpCodes.ProveDlogCode if bytes.tail.head == (OpCodes.ConstantCode + SGroupElement.typeCode).toByte =>
+        P2PKAddress(script.asInstanceOf[ProveDlog])
+      case OpCodes.AndCode if bytes.take(P2shConstantLength) sameElements P2shSample.take(P2shConstantLength) =>
+        Pay2SHAddress(script.asInstanceOf[Value[SBoolean.type]])
+      case _ => Pay2SAddress(script.asInstanceOf[Value[SBoolean.type]])
     }
   }
 }
