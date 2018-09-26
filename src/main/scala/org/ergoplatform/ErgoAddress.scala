@@ -125,7 +125,6 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
 }
 
 object Pay2SHAddress {
-  def apply(pubkey: ProveDlog)(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = apply(pubkey)
 
   def apply(script: Value[SBoolean.type])(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = {
     val sb = ValueSerializer.serialize(script)
