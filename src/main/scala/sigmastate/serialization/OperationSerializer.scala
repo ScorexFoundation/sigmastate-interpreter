@@ -20,8 +20,10 @@ class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends S
     parse(r, Seq())
   }
 
-  def serializeSeq(ops: Seq[Operation], w: ByteWriter): Unit = {
+  def serializeSeq(ops: Seq[Operation]): Array[Byte] = {
+    val w = Serializer.startWriter()
     ops.foreach(o => serializeBody(o, w))
+    w.toBytes
   }
 
   override def parseBody(r: ByteReader): Operation = {

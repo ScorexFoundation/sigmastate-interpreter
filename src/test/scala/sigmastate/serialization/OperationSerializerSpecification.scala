@@ -11,14 +11,10 @@ class OperationSerializerSpecification extends SerializationSpecification {
   property("operation seq serialization") {
     forAll(Gen.nonEmptyListOf(operationGen)) { ops =>
       val serializer = new OperationSerializer(keyLength, None)
-      val w = Serializer.startWriter()
-      serializer.serializeSeq(ops, w)
-      val bytes = w.toBytes
-      val r = Serializer.startReader(bytes, 0)
-      val parsed = serializer.parseSeq(r)
-      val w2 = Serializer.startWriter()
-      serializer.serializeSeq(parsed, w2)
-      w2.toBytes shouldEqual bytes
+      val bytes = serializer.serializeSeq(ops)
+      val parsed = serializer.parseSeq(Serializer.startReader(bytes, 0))
+      val bytes2 = serializer.serializeSeq(parsed)
+      bytes2 shouldEqual bytes
     }
   }
 

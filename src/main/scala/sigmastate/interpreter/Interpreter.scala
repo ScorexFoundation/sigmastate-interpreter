@@ -17,7 +17,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
@@ -285,9 +285,10 @@ trait Interpreter extends ScorexLogging {
       def invalidArg(value: EvaluatedValue[SByteArray]) = Interpreter.error(s"Collection expected but found $value")
 
       val operationsBytes = ops.matchCase(cc => cc.value, c => c.value, _ => invalidArg(ops))
-      val operations: Seq[Operation] = ???
       val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg(proof))
       val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
+      val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
+      val operations: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
       operations.foreach(o => bv.performOneOperation(o))
       bv.digest match {
         case Some(v) => SomeValue(v)
