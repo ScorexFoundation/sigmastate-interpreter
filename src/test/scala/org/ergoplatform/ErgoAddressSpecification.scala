@@ -59,7 +59,7 @@ class ErgoAddressSpecification extends PropSpec
     }
   }
 
-  property("fromProposition() should properly distinct all types of addresses from plain script bytes") {
+  property("fromProposition() should properly distinct all types of addresses from script AST") {
 
     val pk: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
     val sh: Array[Byte] = ErgoAddressEncoder.hash192(ValueSerializer.serialize(pk))
