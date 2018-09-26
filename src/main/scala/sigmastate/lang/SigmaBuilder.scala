@@ -396,7 +396,7 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean =
     ProveDlog(value)
 
-  override def mkTrivialSigma(value: BoolValue) = TrivialSigma(value)
+  override def mkTrivialSigma(value: BoolValue) = BoolToSigmaProp(value)
 
   override def mkSigmaPropIsValid(value: Value[SSigmaProp.type]) = SigmaPropIsValid(value)
 

@@ -1,9 +1,12 @@
 package sigmastate.eval
 
+import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.Values.{LongConstant, FuncValue, FalseLeaf, TrueLeaf, BlockValue, IntConstant, ValDef, ValUse, TaggedVariable}
+import sigmastate.Values.{LongConstant, FuncValue, FalseLeaf, TrueLeaf, BlockValue, SigmaPropConstant, IntConstant, ValDef, GroupElementConstant, ValUse, TaggedVariable}
+import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.serialization.OpCodes._
 
 import scalan.BaseCtxTests
@@ -66,15 +69,19 @@ class ErgoTreeBuildingTest extends BaseCtxTests
              Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(20))).asNumValue)))
   }
 
-  ignore("Crowd Funding") {
-    build(envCF, "CrowdFunding", crowdFundingScript,
+  test("Crowd Funding") {
+    val prover = new ErgoLikeProvingInterpreter()
+    val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
+    val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
+    val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
+    build(env, "CrowdFunding", crowdFundingScript,
       BlockValue(Vector(
         ValDef(1,List(),LongConstant(100)),
-        ValDef(2,List(),TaggedVariable(2,SSigmaProp))),
-        SigmaPropIsValid(SigmaOr(Seq(
-          SigmaAnd(Seq(TrivialSigma(GE(Height,ValUse(1,SLong))),TaggedVariable(1,SSigmaProp))),
+        ValDef(2,List(),SigmaPropConstant(projectPK))),
+        SigmaOr(Seq(
+          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,ValUse(1,SLong))),SigmaPropConstant(backerPK))),
           SigmaAnd(Seq(
-            TrivialSigma(AND(Vector(
+            BoolToSigmaProp(AND(Vector(
               LT(Height,ValUse(1,SLong)),
               Exists1(Outputs, FuncValue(Vector((3,SBox)),
                   BinAnd(
@@ -82,6 +89,6 @@ class ErgoTreeBuildingTest extends BaseCtxTests
                     EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp)))))
               )))),
             ValUse(2,SSigmaProp)
-          )))))))
+          ))))))
   }
 }

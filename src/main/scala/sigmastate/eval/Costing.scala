@@ -290,7 +290,11 @@ trait Costing extends SigmaLibrary with DataCosting {
     implicit val eT = f.elem.eDom
     val calc = fun { x: Rep[T] =>
       val y = f(x);
-      y.value
+      val res = y.value match {
+        case SigmaPropMethods.isValid(p) => p
+        case v => v
+      }
+      res.asRep[R]
     }
     val cost = fun { x: Rep[T] => f(x).cost }
     val size = fun { x: Rep[T] => f(x).dataSize }
@@ -671,7 +675,9 @@ trait Costing extends SigmaLibrary with DataCosting {
       case SigmaPropIsValid(p) =>
         val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
         val v = pC.value.isValid
-        withDefaultSize(v, pC.cost + costOf(node))
+        val c = pC.cost + costOf(node)
+        val s = pC.dataSize // NOTE: we pass SigmaProp's size, this is handled in buildCostedGraph
+        CostedPrimRep(v, c, s)
       case SigmaPropBytes(p) =>
         val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
         val v = pC.value.propBytes
@@ -830,6 +836,12 @@ trait Costing extends SigmaLibrary with DataCosting {
       val env = envVals.mapValues(v => evalNode(ctxC, Map(), v))
       val res = evalNode(ctxC, env, tree)
       res
+//      val res1 = res match {
+//        case RCostedPrim(SigmaPropMethods.isValid(p), Def(ApplyBinOp(op, l, r)), s) if op.isInstanceOf[NumericPlus[_]] =>
+//          RCostedPrim(p, l.asRep[Int], s)
+//        case _ => res
+//      }
+//      res1.asRep[Costed[T#WrappedType]]
     }
   }
 

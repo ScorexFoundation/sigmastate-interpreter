@@ -41,8 +41,13 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
   extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
-case class TrivialSigma(value: BoolValue) extends SigmaPropValue {
-  override val opCode: OpCode = OpCodes.TrivialSigmaCode
+case class TrivialProof(condition: Boolean) extends SigmaBoolean {
+  override val opCode: OpCode = OpCodes.TrivialProofCode
+  override def cost[C <: Context[C]](context: C): Long = ??? //Cost.BooleanConstantDeclaration
+}
+
+case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
   override def cost[C <: Context[C]](context: C): Long = ??? //Cost.BooleanConstantDeclaration
   def tpe = SSigmaProp
   def evaluated = false

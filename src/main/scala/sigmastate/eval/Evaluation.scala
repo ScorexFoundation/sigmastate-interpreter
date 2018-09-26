@@ -135,6 +135,11 @@ trait Evaluation extends Costing {
 
     def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
       object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
+//      object InTyped { def unapply[T:ClassTag](s: Sym): Option[T] = {
+//        val v = dataEnv(s)
+//        assert(v.isInstanceOf[T])
+//        Some(v.asInstanceOf[T])
+//      }}
       def out(v: Any): (DataEnv, Sym) = { (dataEnv + (te.sym -> v.asInstanceOf[AnyRef]), te.sym) }
       try {
         val res: (DataEnv, Sym) = te.rhs match {
@@ -151,31 +156,35 @@ trait Evaluation extends Costing {
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
 
-          case SigmaM.and_sigma_&&(In(l), In(r)) =>
-            out(AND(l.asInstanceOf[BoolValue], r.asInstanceOf[BoolValue]))
+          case SigmaM.and_sigma_&&(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
+            out(CAND(Seq(l, r)))
 
-          case SigmaM.and_bool_&&(In(l), In(b: Boolean)) =>
-            if (b)
+          case SigmaM.or_sigma_||(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
+            out(COR(Seq(l, r)))
+
+          case SigmaM.and_bool_&&(In(l: SigmaBoolean), In(b: Boolean)) =>
+            if (b) {
               out(l)
-            else
-              out(sigmastate.TrivialSigma(FalseLeaf))
-          case SigmaM.or_bool_||(In(l), In(b: Boolean)) =>
+            } else
+              out(sigmastate.TrivialProof(false))
+
+          case SigmaM.or_bool_||(In(l: SigmaBoolean), In(b: Boolean)) =>
             if (b)
-              out(sigmastate.TrivialSigma(TrueLeaf))
-            else
+              out(sigmastate.TrivialProof(true))
+            else {
               out(l)
+            }
+//          case SigmaM.lazyAnd(In(l: SigmaBoolean), In(y)) =>
+//            val th = y.asInstanceOf[() => SigmaBoolean]
+//            out(AND(l, th()).function(null, null))
+//          case SigmaM.lazyOr(In(l: SigmaBoolean), In(y)) =>
+//            val th = y.asInstanceOf[() => SigmaBoolean]
+//            out(OR(l, th()).function(null, null))
 
-          case SigmaM.lazyAnd(In(l: SigmaBoolean), In(y)) =>
-            val th = y.asInstanceOf[() => SigmaBoolean]
-            out(AND(l, th()).function(null, null))
-          case SigmaM.lazyOr(In(l: SigmaBoolean), In(y)) =>
-            val th = y.asInstanceOf[() => SigmaBoolean]
-            out(OR(l, th()).function(null, null))
-
-          case SDBM.anyZK(_, In(items: special.collection.Col[Value[SBoolean.type]]@unchecked)) =>
-            out(OR(items.arr).function(null, null))
-          case SDBM.allZK(_, In(items: special.collection.Col[Value[SBoolean.type]]@unchecked)) =>
-            out(AND(items.arr).function(null, null))
+          case SDBM.anyZK(_, In(items: special.collection.Col[SigmaBoolean]@unchecked)) =>
+            out(COR(items.arr.toSeq))
+          case SDBM.allZK(_, In(items: special.collection.Col[SigmaBoolean]@unchecked)) =>
+            out(CAND(items.arr.toSeq))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
@@ -227,7 +236,8 @@ trait Evaluation extends Costing {
             }
             out(th)
           case TrivialSigmaCtor(In(isValid: Boolean)) =>
-            out(sigmastate.TrivialSigma(BooleanConstant(isValid)))
+            val res = sigmastate.TrivialProof(isValid)
+            out(res)
           case ProveDlogEvidenceCtor(In(g: ECPoint)) =>
             val res = DLogProtocol.ProveDlog(GroupElementConstant(g.asInstanceOf[EcPointType]))
             out(res)

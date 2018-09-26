@@ -3,15 +3,16 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
+import org.ergoplatform._
 import scapi.sigma.DLogProtocol
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean, ValUse}
+import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean, GroupElementConstant, ValUse}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
 import sigmastate.lang.LangTests
+import sigmastate.utxo.{Exists1, ExtractScriptBytes, SigmaPropBytes, ExtractAmount}
 import special.collection.{Col => VCol}
 import special.sigma.{TestValue => VTestValue}
 
@@ -106,17 +107,16 @@ class CompilerItTest extends BaseCtxTests
   def andSigmaPropConstsCase = {
     val p1Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
     val p2Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g2.asInstanceOf[ECPoint]))
-    val resSym = (p1Sym && p2Sym).isValid
+    val resSym = (p1Sym && p2Sym)
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => resSym },
       cost = {_ =>
-        val c1 = constCost[WECPoint] + constCost[SigmaProp] +
-            costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
+        val c1 = constCost[WECPoint] + constCost[SigmaProp] + costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
         c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
       },
-      size = {_ => sizeOf(resSym) },
-      tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))).isValid,
-      Result(AND(p1, p2), (1 + 1 + 1) * 2 + 1, 1))
+      size = {_ => typeSize[Boolean] },
+      tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))),
+      Result(CAND(Seq(p1, p2)), (1 + 1 + 1) * 2 + 1, 1))
   }
 
   test("andSigmaPropConstsCase") {
@@ -235,6 +235,60 @@ class CompilerItTest extends BaseCtxTests
   }
   test("register_BigIntArr_Slice_Case") {
     register_BigIntArr_Slice_Case.doReduce()
+  }
+
+  def crowdFunding_Case = {
+    import SCollection._
+    import TrivialSigma._
+    import SigmaDslBuilder._
+    import Box._
+    import Values._
+    val prover = new ErgoLikeProvingInterpreter()
+    val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
+    val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
+
+    val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
+    Case(env, "crowdFunding_Case", crowdFundingScript, ergoCtx,
+      { ctx: Rep[Context] =>
+        val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
+        val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val c1 = RTrivialSigma(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
+        val c2 = RTrivialSigma(dsl.allOf(colBuilder(
+          ctx.HEIGHT < toRep(timeout),
+          ctx.OUTPUTS.exists(fun { out =>
+            out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectPubKey.propBytes)
+          }))
+        )).asRep[SigmaProp] && projectPubKey
+        (c1 || c2)
+      },
+      cost = null,
+      size = null,
+      tree = BlockValue(Vector(
+        ValDef(1,List(),LongConstant(100)),
+        ValDef(2,List(),SigmaPropConstant(projectPK))),
+        SigmaOr(Seq(
+          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,ValUse(1,SLong))),SigmaPropConstant(backerPK))),
+          SigmaAnd(Seq(
+            BoolToSigmaProp(AND(Vector(
+              LT(Height,ValUse(1,SLong)),
+              Exists1(Outputs, FuncValue(Vector((3,SBox)),
+                BinAnd(
+                  GE(ExtractAmount(ValUse(3,SBox)),LongConstant(1000)),
+                  EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp)))))
+              )))),
+            ValUse(2,SSigmaProp)
+          ))))),
+      Result({
+        import sigmastate._
+        COR(Seq(
+          CAND(Seq(TrivialProof(false), backerPK)),
+          CAND(Seq(TrivialProof(false), projectPK))
+        ))
+      }, 36, 1L)
+    )
+  }
+  test("crowdFunding_Case") {
+    crowdFunding_Case.doReduce()
   }
 
   //  def register_BinIntArr_Where_Case = {
