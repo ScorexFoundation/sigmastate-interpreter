@@ -6,6 +6,22 @@ import scorex.crypto.authds.{ADKey, ADValue}
 
 class OperationSerializerSpecification extends SerializationSpecification {
 
+  val keyLength: Int = 32
+
+  property("operation seq serialization") {
+    forAll(Gen.nonEmptyListOf(operationGen)) { ops =>
+      val serializer = new OperationSerializer(keyLength, None)
+      val w = Serializer.startWriter()
+      serializer.serializeSeq(ops, w)
+      val bytes = w.toBytes
+      val r = Serializer.startReader(bytes, 0)
+      val parsed = serializer.parseSeq(r)
+      val w2 = Serializer.startWriter()
+      serializer.serializeSeq(parsed, w2)
+      w2.toBytes shouldEqual bytes
+    }
+  }
+
   property("operation serialization") {
     def roundTrip(op: Operation, serializer: OperationSerializer) = {
       val randValueBytes = serializer.toBytes(op)
@@ -14,7 +30,6 @@ class OperationSerializerSpecification extends SerializationSpecification {
     }
 
     forAll(operationGen) { op =>
-      val keyLength = op.key.length
       val valueLength = op match {
         case Insert(k, v) => v.length
         case Update(k, v) => v.length
@@ -28,7 +43,7 @@ class OperationSerializerSpecification extends SerializationSpecification {
 
   lazy val operationGen: Gen[Operation] = for {
     tp <- Gen.choose(0, 6)
-    key <- Arbitrary.arbitrary[Array[Byte]].map(k => ADKey @@ k)
+    key <- Gen.listOfN(keyLength, Arbitrary.arbitrary[Byte]).map(_.toArray).map(k => ADKey @@ k)
     value <- Arbitrary.arbitrary[Array[Byte]].map(k => ADValue @@ k)
   } yield {
     tp match {

@@ -11,9 +11,9 @@ import sigmastate.Values._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
+import sigmastate.utils.Helpers._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.Transformer
-import sigmastate.utils.Helpers._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -516,6 +516,19 @@ case class TreeLookup(tree: Value[SAvlTree.type],
 
   override lazy val first = tree
   override lazy val second = key
+  override lazy val third = proof
+}
+
+case class TreeModifications(tree: Value[SAvlTree.type],
+                             operations: Value[SByteArray],
+                             proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
+
+  override def tpe = SOption[SByteArray]
+
+  override val opCode: OpCode = OpCodes.TreeLookupCode
+
+  override lazy val first = tree
+  override lazy val second = operations
   override lazy val third = proof
 }
 

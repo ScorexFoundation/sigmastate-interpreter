@@ -4,7 +4,25 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import sigmastate.utils.{ByteReader, ByteWriter}
 
+import scala.annotation.tailrec
+
 class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends Serializer[Operation, Operation] {
+
+  def parseSeq(r: ByteReader): Seq[Operation] = {
+    @tailrec
+    def parse(r: ByteReader, acc: Seq[Operation]): Seq[Operation] = if (r.remaining > 0) {
+      val op = parseBody(r)
+      parse(r, op +: acc)
+    } else {
+      acc.reverse
+    }
+
+    parse(r, Seq())
+  }
+
+  def serializeSeq(ops: Seq[Operation], w: ByteWriter): Unit = {
+    ops.foreach(o => serializeBody(o, w))
+  }
 
   override def parseBody(r: ByteReader): Operation = {
     def parseValue(): ADValue = {
