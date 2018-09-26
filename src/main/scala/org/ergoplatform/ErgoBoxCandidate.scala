@@ -22,7 +22,7 @@ class ErgoBoxCandidate(val value: Long,
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
                        val creationHeight: Long = 0) {
 
-  lazy val cost = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
+  lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
 
   val propositionBytes: Array[Byte] = proposition.bytes
 
@@ -52,7 +52,7 @@ class ErgoBoxCandidate(val value: Long,
     }
   }
 
-  override def hashCode() =
+  override def hashCode(): Int =
     ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters, creationHeight))
 
   override def toString: Idn = s"ErgoBoxCandidate($value, $proposition," +

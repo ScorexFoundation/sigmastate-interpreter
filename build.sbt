@@ -4,7 +4,7 @@ name := "sigma-state"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  version := "0.10.0",
+  version := "0.10.1-SNAPSHOT",
   scalaVersion := "2.12.4",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
