@@ -6,8 +6,6 @@ import org.ergoplatform._
 import sigmastate.lang.Terms._
 
 class DemurrageExampleSpecification extends SigmaTestingCommons {
-  private val reg1 = ErgoBox.nonMandatoryRegisters.head
-
   /**
     * Demurrage currency example.
     *
@@ -58,6 +56,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       """.stripMargin).asBoolValue
 
     /*
+    val reg1 = ErgoBox.nonMandatoryRegisters.head
     val propTree = OR(
       regScript,
       AND(
