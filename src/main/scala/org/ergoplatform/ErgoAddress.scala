@@ -206,7 +206,7 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
   def fromProposition(proposition: Value[SType]): Try[ErgoAddress] = Try {
     proposition match {
       case d @ ProveDlog(_) => P2PKAddress(d)
-      case a @ AND(ConcreteCollection(Vector(EQ(Slice(_, ConstantNode(0, SInt), ConstantNode(24, SInt)), _), _), _)) =>
+      case a @ AND(ConcreteCollection(Vector(EQ(Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)), _), _), _)) =>
         Pay2SHAddress(a)
       case b: Value[SBoolean.type ]@unchecked if b.tpe == SBoolean => Pay2SAddress(b)
       case other => throw new RuntimeException(s"Invalid proposition type: ${other.tpe}")
