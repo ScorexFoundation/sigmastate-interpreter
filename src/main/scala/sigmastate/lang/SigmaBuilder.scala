@@ -8,7 +8,7 @@ import sigmastate.Values.{ConcreteCollection, Constant, ConstantNode, NoneValue,
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{ArithException, ConstraintFailed}
+import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
@@ -39,6 +39,10 @@ trait SigmaBuilder {
   def mkMultiplyGroup(left: Value[SGroupElement.type],
                       right: Value[SGroupElement.type]): Value[SGroupElement.type]
   def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
+
+  def mkTreeModifications(tree: Value[SAvlTree.type],
+                          operations: Value[SByteArray],
+                          proof: Value[SByteArray]): Value[SOption[SByteArray]]
 
   def mkTreeLookup(tree: Value[SAvlTree.type],
                    key: Value[SByteArray],
@@ -232,6 +236,11 @@ class StdSigmaBuilder extends SigmaBuilder {
                             key: Value[SByteArray],
                             proof: Value[SByteArray]): Value[SOption[SByteArray]] =
     TreeLookup(tree, key, proof)
+
+  override def mkTreeModifications(tree: Value[SAvlTree.type],
+                                   operations: Value[SByteArray],
+                                   proof: Value[SByteArray]): Value[SOption[SByteArray]] =
+    TreeModifications(tree, operations, proof)
 
   override def mkIsMember(tree: Value[SAvlTree.type],
                           key: Value[SByteArray],

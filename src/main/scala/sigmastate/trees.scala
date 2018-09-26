@@ -525,7 +525,7 @@ case class TreeModifications(tree: Value[SAvlTree.type],
 
   override def tpe = SOption[SByteArray]
 
-  override val opCode: OpCode = OpCodes.TreeLookupCode
+  override val opCode: OpCode = OpCodes.TreeModificationsCode
 
   override lazy val first = tree
   override lazy val second = operations

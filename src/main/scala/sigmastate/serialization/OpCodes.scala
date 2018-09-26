@@ -105,6 +105,7 @@ object OpCodes extends ValueCodes {
   val WhereCode        : OpCode = (LastConstantCode + 69).toByte
   val TreeLookupCode   : OpCode = (LastConstantCode + 70).toByte
   val StringConcatCode : OpCode = (LastConstantCode + 71).toByte
+  val TreeModificationsCode   : OpCode = (LastConstantCode + 72).toByte
   // reserved 72 - 80
 
   // Type casts codes
