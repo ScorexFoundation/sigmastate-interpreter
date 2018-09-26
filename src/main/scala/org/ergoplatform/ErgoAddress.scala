@@ -8,7 +8,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
 import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, TaggedByteArray, Value}
 import sigmastate._
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{DeserializeContext, Slice}
 
 import scala.util.Try
