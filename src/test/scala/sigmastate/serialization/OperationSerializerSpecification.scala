@@ -8,9 +8,9 @@ class OperationSerializerSpecification extends SerializationSpecification {
 
   property("operation serialization") {
     def roundTrip(op: Operation, serializer: OperationSerializer) = {
-      val randValueBytes = serializer.serialize(op)
-      val randValueRecovered = serializer.deserialize(randValueBytes)
-      serializer.serialize(randValueRecovered) shouldEqual randValueBytes
+      val randValueBytes = serializer.toBytes(op)
+      val randValueRecovered = serializer.parseBody(Serializer.startReader(randValueBytes, 0))
+      serializer.toBytes(randValueRecovered) shouldEqual randValueBytes
     }
 
     forAll(operationGen) { op =>
