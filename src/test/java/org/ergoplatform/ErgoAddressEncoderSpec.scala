@@ -21,8 +21,8 @@ class ErgoAddressEncoderSpec extends PropSpec with Matchers with TryValues {
     val p2sh: Pay2SHAddress = new Pay2SHAddress(sh)
     val p2pk: P2PKAddress = P2PKAddress(pk)
 
-    encoder.fromPropositionBytes(p2s.scriptBytes).success.value.isInstanceOf[Pay2SAddress] shouldBe true
-    encoder.fromPropositionBytes(p2sh.script.bytes).success.value.isInstanceOf[Pay2SHAddress] shouldBe true
-    encoder.fromPropositionBytes(p2pk.contentBytes).success.value.isInstanceOf[P2PKAddress] shouldBe true
+    encoder.fromProposition(p2s.script).success.value.isInstanceOf[Pay2SAddress] shouldBe true
+    encoder.fromProposition(p2sh.script).success.value.isInstanceOf[Pay2SHAddress] shouldBe true
+    encoder.fromProposition(p2pk.script).success.value.isInstanceOf[P2PKAddress] shouldBe true
   }
 }

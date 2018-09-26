@@ -6,7 +6,7 @@ import com.google.common.primitives.Ints
 import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
-import sigmastate.Values.{IntConstant, TaggedByteArray, Value}
+import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, TaggedByteArray, Value}
 import sigmastate._
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.{DeserializeContext, Slice}
@@ -168,9 +168,6 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
 
   implicit private val ergoAddressEncoder: ErgoAddressEncoder = this
 
-  private val P2shSample: Array[Byte] = new Pay2SHAddress(hash192(Array(0: Byte))).script.bytes
-  private val P2shConstantLength: Int = 16
-
   val ChecksumLength = 4
 
   def toString(address: ErgoAddress): String = {
@@ -206,14 +203,13 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
     }
   }
 
-  def fromPropositionBytes(bytes: Array[Byte]): Try[ErgoAddress] = Try {
-    val script: Value[SType] = ValueSerializer.deserialize(bytes)
-    bytes.head match {
-      case OpCodes.ProveDlogCode if bytes.tail.head == (OpCodes.ConstantCode + SGroupElement.typeCode).toByte =>
-        P2PKAddress(script.asInstanceOf[ProveDlog])
-      case OpCodes.AndCode if util.Arrays.equals(bytes.take(P2shConstantLength), P2shSample.take(P2shConstantLength)) =>
-        Pay2SHAddress(script.asInstanceOf[Value[SBoolean.type]])
-      case _ => Pay2SAddress(script.asInstanceOf[Value[SBoolean.type]])
+  def fromProposition(proposition: Value[SType]): Try[ErgoAddress] = Try {
+    proposition match {
+      case d @ ProveDlog(_) => P2PKAddress(d)
+      case a @ AND(ConcreteCollection(Vector(EQ(Slice(_, ConstantNode(0, SInt), ConstantNode(24, SInt)), _), _), _)) =>
+        Pay2SHAddress(a)
+      case b: Value[SBoolean.type ]@unchecked if b.tpe == SBoolean => Pay2SAddress(b)
+      case other => throw new RuntimeException(s"Invalid proposition type: ${other.tpe}")
     }
   }
 }
