@@ -35,8 +35,9 @@ object SigmaPredef {
     "proveDHTuple" -> mkLambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SBoolean, None),
     "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SBoolean, None),
-    "isMember" -> mkLambda(Vector(
-       "tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
+    "isMember" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
+    "treeLookup" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
+    "treeModifications" -> mkLambda(Vector("tree" -> SAvlTree, "ops" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
     "fromBase58" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "PK" -> mkLambda(Vector("input" -> SString), SSigmaProp, None),
@@ -57,6 +58,8 @@ object SigmaPredef {
   val Blake2b256Sym = PredefIdent("blake2b256")
   val Sha256Sym = PredefIdent("sha256")
   val IsMemberSym = PredefIdent("isMember")
+  val TreeLookupSym = PredefIdent("treeLookup")
+  val TreeModificationsSym = PredefIdent("treeModifications")
   val ProveDlogSym = PredefIdent("proveDlog")
   val ProveDHTupleSym = PredefIdent("proveDHTuple")
 

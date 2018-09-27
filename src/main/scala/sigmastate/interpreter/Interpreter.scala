@@ -4,27 +4,26 @@ import java.util
 import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import sigmastate.Values.{ByteArrayConstant, _}
-import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
-import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.SCollection.SByteArray
+import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
-import sigmastate.Values._
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{ByteArrayConstant, _}
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
-import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.Helpers
+import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.Extensions._
+import sigmastate.utils.Helpers
 import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 
 object CryptoConstants {
@@ -282,13 +281,33 @@ trait Interpreter extends ScorexLogging {
     case StringConcat(StringConstant(l), StringConstant(r)) =>
       StringConstant(l + r)
 
-    case IsMember(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
-      def invalidArg = Interpreter.error(s"Collection expected but found $key")
-      val keyBytes = key.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
-      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
+    case TreeModifications(tree: EvaluatedValue[AvlTreeData]@unchecked, ops: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
+      def invalidArg(value: EvaluatedValue[SByteArray]) = Interpreter.error(s"Collection expected but found $value")
+
+      val operationsBytes = ops.matchCase(cc => cc.value, c => c.value, _ => invalidArg(ops))
+      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg(proof))
       val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
-      val res = bv.performOneOperation(Lookup(ADKey @@ keyBytes))
-      BooleanConstant.fromBoolean(res.isSuccess && res.get.isDefined)
+      val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
+      val operations: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
+      operations.foreach(o => bv.performOneOperation(o))
+      bv.digest match {
+        case Some(v) => SomeValue(v)
+        case _ => NoneValue[SByteArray](SByteArray)
+      }
+
+    case TreeLookup(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
+      def invalidArg(value: EvaluatedValue[SByteArray]) = Interpreter.error(s"Collection expected but found $value")
+
+      val keyBytes = key.matchCase(cc => cc.value, c => c.value, _ => invalidArg(key))
+      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg(proof))
+      val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
+      bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect")
+        case Success(r) => r match {
+          case Some(v) => SomeValue(v)
+          case _ => NoneValue[SByteArray](SByteArray)
+        }
+      }
 
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
