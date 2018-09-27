@@ -44,7 +44,8 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
      |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
      |   })
      | ))
-     | getVar[SigmaProp](regScriptId) || c2
+     | //getVar[SigmaProp](regScriptId) || c2
+     | regScript || c2
      | }
     """.stripMargin
 

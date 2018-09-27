@@ -170,15 +170,19 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       )
   }
 
-  ignore("Crowd Funding: measure") {
+  test("Crowd Funding: measure") {
+    val prover = new ErgoLikeProvingInterpreter()
+    val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
+    val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
+    val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     def eval(i: Int) = {
-      val cf = cost(envCF ++ Seq("timeout" -> (timeout + i)), crowdFundingScript)
+      val cf = cost(env ++ Seq("timeout" -> (timeout + i)), crowdFundingScript)
 //      split(cf)
       cf
     }
     var res: Rep[Any] = eval(0)
     measure(2) { j => // 10 warm up iterations when j == 0
-      measure(j*500 + 10, false) { i =>
+      measure(j*10 + 10, false) { i =>
         res = eval(i)
       }
     }
@@ -186,31 +190,31 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     emit("Crowd_Funding_measure", res)
   }
 
-  ignore("Demurrage") {
+  test("Demurrage") {
     val prover = new ErgoLikeProvingInterpreter()
-    val regScript = prover.dlogSecrets(0).publicImage
-
-    checkInEnv[Boolean](envDem, "Demurrage", demurrageScript,
+    val regScriptPK  @ DLogProtocol.ProveDlog(GroupElementConstant(script: ECPoint)) = prover.dlogSecrets(0).publicImage
+    val env = envDem ++ Seq("regScript" -> regScriptPK)
+    checkInEnv[Boolean](env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
-      val regScript = ctx.getVar[SigmaProp](regScriptId).get
+      val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp] //val regScript = ctx.getVar[SigmaProp](regScriptId).get
       val c2 = dsl.allOf(colBuilder(
-        ctx.HEIGHT >= ctx.SELF.R4[Long].get + demurragePeriod,
+        ctx.HEIGHT >= ctx.SELF.getReg[Long](4).get + demurragePeriod,
         ctx.OUTPUTS.exists(fun { out =>
-          out.value >= ctx.SELF.value - demurrageCost && out.propositionBytes === ctx.SELF.propositionBytes
+          val selfBytes = ctx.SELF.propositionBytes
+          (out.value >= ctx.SELF.value - demurrageCost) lazy_&& Thunk{out.propositionBytes === selfBytes}
         })
       ))
-      regScript.isValid || c2
+      regScript.isValid lazy_|| Thunk{c2}
     }
     )
   }
 
-  ignore("measure: costed context data") {
+  test("measure: costed context data") {
     var res: Rep[Any] = null
     measure(2) { j => // 10 warm up iterations when j == 0
       measure(j*500 + 10, false) { i =>
         res = check("", s"INPUTS.size + OUTPUTS.size + $i",
-          ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i,
-          _ => InputsAccess + SizeOfDeclaration + OutputsAccess + SizeOfDeclaration + 2 * TripleDeclaration + ConstantNode)
+          ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i)
       }
     }
     res.show
