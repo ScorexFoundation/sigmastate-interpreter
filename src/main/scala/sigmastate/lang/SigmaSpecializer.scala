@@ -121,23 +121,14 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         error(s"Invalid register name $regName in expression $sel"))
       Some(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
 
-    case Select(reg @ ExtractRegisterAs(_, _, _), SOption.Get, _) =>
-      Some(mkOptionGet(reg))
+    case Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.Get, _) =>
+      Some(mkOptionGet(nrv))
 
-    case Select(getVar @ GetVar(_, _), SOption.Get, _) =>
-      Some(mkOptionGet(getVar))
+    case Apply(Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.GetOrElse, _), Seq(arg)) =>
+      Some(mkOptionGetOrElse(nrv, arg))
 
-    case Apply(Select(reg @ ExtractRegisterAs(_, _, _), SOption.GetOrElse, _), Seq(arg)) =>
-      Some(mkOptionGetOrElse(reg, arg))
-
-    case Apply(Select(getVar @ GetVar(_, _), SOption.GetOrElse, _), Seq(arg)) =>
-      Some(mkOptionGetOrElse(getVar, arg))
-
-    case Select(reg @ ExtractRegisterAs(_, _, _), SOption.IsDefined, _) =>
-      Some(mkOptionIsDefined(reg))
-
-    case Select(getVar @ GetVar(_, _), SOption.IsDefined, _) =>
-      Some(mkOptionIsDefined(getVar))
+    case Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.IsDefined, _) =>
+      Some(mkOptionIsDefined(nrv))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {

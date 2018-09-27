@@ -43,11 +43,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val prop = EQ(TreeModifications(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(opsBytes),
-      ByteArrayConstant(proof)), SomeValue(ByteArrayConstant(endDigest)))
-    //    TODO uncomment after fix of "Option constructors are not supported"
-    //    val env = Map("ops" -> opsBytes, "proof" -> proof, "endDigest" -> endDigest)
-    //    val propCompiled = compile(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof) == Some(endDigest)""").asBoolValue
-    //    prop shouldBe propCompiled
+      ByteArrayConstant(proof)).get, ByteArrayConstant(endDigest))
+    val env = Map("ops" -> opsBytes, "proof" -> proof, "endDigest" -> endDigest)
+    val propCompiled = compile(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue
+    prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
@@ -91,12 +90,11 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val prop = EQ(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key),
-      ByteArrayConstant(proof)), SomeValue(ByteArrayConstant(value)))
+      ByteArrayConstant(proof)).get, ByteArrayConstant(value))
 
-    //    TODO uncomment after fix of "Option constructors are not supported"
-    //    val env = Map("key" -> key, "proof" -> proof, "value" -> value)
-    //    val propCompiled = compile(env, """treeLookup(SELF.R4[AvlTree].get, key, proof) == Some(value)""").asBoolValue
-    //    prop shouldBe propCompiled
+    val env = Map("key" -> key, "proof" -> proof, "value" -> value)
+    val propCompiled = compile(env, """treeLookup(SELF.R4[AvlTree].get, key, proof).get == value""").asBoolValue
+    prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey)
     val newBoxes = IndexedSeq(newBox1)
