@@ -165,6 +165,9 @@ def proveDlog(value: GroupElement): Boolean
 
 /** Predicate which checks whether a key is in a tree, by using a membership proof. */
 def isMember(tree: AvlTree, key: Array[Byte], proof: Array[Byte]): Boolean
+
+/** Deserializes values from Base58 encoded binary data at compile time */
+def deserialize[T](string: String): T
 ```
 
 ## Examples

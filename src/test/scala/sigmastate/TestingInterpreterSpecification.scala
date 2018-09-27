@@ -10,6 +10,8 @@ import sigmastate.lang.SigmaCompiler
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
 import org.ergoplatform.{ErgoBox, Height}
+import scorex.util.encode.Base58
+import sigmastate.serialization.ValueSerializer
 
 import scala.util.Random
 
@@ -314,6 +316,12 @@ class TestingInterpreterSpecification extends PropSpec
         |   val g = { (c: Int) => c == 1 }
         |   Array[Int](1).exists(g)
         | } == true """.stripMargin)
+  }
+
+  property("deserialize") {
+    val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
+    testEval(s"""deserialize[Array[Byte]]("$str").size == 1""")
+    testEval(s"""deserialize[Array[Byte]]("$str")(0) == 2""")
   }
 }
 

@@ -40,6 +40,7 @@ object SigmaPredef {
     "fromBase58" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "PK" -> mkLambda(Vector("input" -> SString), SSigmaProp, None),
+    "deserialize" -> mkGenLambda(Seq(STypeParam(tT)), Vector("str" -> SString), SOption(tT), None),
   ).toMap
 
   def PredefIdent(name: String): Value[SType] = {
@@ -66,4 +67,6 @@ object SigmaPredef {
   val FromBase64Sym = PredefIdent("fromBase64")
 
   val PKSym = PredefIdent("PK")
+
+  val DeserializeSym = PredefIdent("deserialize")
 }
