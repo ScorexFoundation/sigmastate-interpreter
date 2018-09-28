@@ -83,9 +83,9 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     avlProver.generateProof()
     val treeData = new AvlTreeData(avlProver.digest, 32, None)
 
-    val merklePathToScript = IsMember(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+    val merklePathToScript = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       CalcBlake2b256(TaggedByteArray(scriptId)),
-      TaggedByteArray(proofId))
+      TaggedByteArray(proofId)))
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(merklePathToScript, scriptIsCorrect)
 

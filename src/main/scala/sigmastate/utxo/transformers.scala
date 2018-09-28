@@ -33,13 +33,15 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 }
 
 case class MapCollection[IV <: SType, OV <: SType](
-    input: Value[SCollection[IV]],
-    id: Byte,
-    mapper: SValue)
+                                                    input: Value[SCollection[IV]],
+                                                    id: Byte,
+                                                    mapper: SValue)
   extends Transformer[SCollection[IV], SCollection[OV]] {
 
   override val opCode: OpCode = OpCodes.MapCollectionCode
+
   implicit def tOV = mapper.asValue[OV].tpe
+
   val tpe = SCollection[OV](tOV)
 
   override def transformationReady: Boolean = input.isEvaluatedCollection
@@ -142,6 +144,7 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
   override val input: Value[SCollection[IV]]
   val id: Byte
   val condition: Value[SBoolean.type]
+
   def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type]
 
   override def tpe = SBoolean
@@ -186,12 +189,13 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
 
 
 case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                             id: Byte,
-                             zero: Value[OV],
-                             accId: Byte,
-                             foldOp: SValue)
+                                          id: Byte,
+                                          zero: Value[OV],
+                                          accId: Byte,
+                                          foldOp: SValue)
   extends Transformer[SCollection[IV], OV] with NotReadyValue[OV] {
   override val opCode: OpCode = OpCodes.FoldCode
+
   implicit def tpe = zero.tpe
 
   override def transformationReady: Boolean =
@@ -231,6 +235,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
   extends Transformer[SCollection[V], V] with NotReadyValue[V] {
   override val opCode: OpCode = OpCodes.ByIndexCode
   override val tpe = input.tpe.elemType
+
   override def transformationReady: Boolean =
     input.isEvaluatedCollection && index.evaluated && default.forall(_.evaluated)
 
@@ -245,48 +250,56 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
         tuple.items.lift(i).orElse(default).get.asValue[V]
     )
   }
+
   override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.ByIndexDeclaration + default.map(_.cost(context)).getOrElse(0L)
 }
 
-/** Select tuple field by its 1-based index. E.g. input._1 is transformed to SelectField(input, 1)*/
+/** Select tuple field by its 1-based index. E.g. input._1 is transformed to SelectField(input, 1) */
 case class SelectField(input: Value[STuple], fieldIndex: Byte)
   extends Transformer[STuple, SType] with NotReadyValue[SType] {
   override val opCode: OpCode = OpCodes.SelectFieldCode
   override val tpe = input.tpe.items(fieldIndex - 1)
+
   override def transformationReady: Boolean = input.isEvaluatedCollection
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[STuple]): Value[SType] = {
     val item = input.value(fieldIndex - 1)
     Value.apply(tpe)(item.asInstanceOf[tpe.WrappedType])
   }
+
   override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.SelectFieldDeclaration
 }
 
 /** Represents execution of Sigma protocol that validates the given input SigmaProp. */
 case class SigmaPropIsValid(input: Value[SSigmaProp.type])
-    extends Transformer[SSigmaProp.type, SBoolean.type] with NotReadyValueBoolean {
+  extends Transformer[SSigmaProp.type, SBoolean.type] with NotReadyValueBoolean {
   override val opCode: OpCode = OpCodes.SigmaPropIsValidCode
+
   override def transformationReady: Boolean = input.isInstanceOf[EvaluatedValue[_]]
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SSigmaProp.type]): Value[SBoolean.type] = {
     input.value
   }
+
   override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.SigmaPropIsValidDeclaration
 }
 
 /** Extract serialized bytes of a SigmaProp value */
 case class SigmaPropBytes(input: Value[SSigmaProp.type])
-    extends Transformer[SSigmaProp.type, SByteArray] with NotReadyValue[SByteArray] {
+  extends Transformer[SSigmaProp.type, SByteArray] with NotReadyValue[SByteArray] {
   override val opCode: OpCode = OpCodes.SigmaPropBytesCode
+
   def tpe = SByteArray
+
   override def transformationReady: Boolean = input.isInstanceOf[EvaluatedValue[_]]
 
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SSigmaProp.type]): Value[SByteArray] = {
     ByteArrayConstant(input.value.bytes)
   }
+
   override def cost[C <: Context[C]](context: C): Long =
     input.cost(context) + Cost.SigmaPropBytes
 }
@@ -296,7 +309,9 @@ case class ErgoAddressToSigmaProp(input: Value[SString.type])
   extends Transformer[SString.type, SSigmaProp.type] with NotReadyValue[SSigmaProp.type] {
   override val opCode: OpCode = OpCodes.ErgoAddressToSigmaPropCode
 
-  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SSigmaProp.type] =
+  override def function(intr: Interpreter,
+                        ctx: Context[_],
+                        bal: EvaluatedValue[SString.type]): Value[SSigmaProp.type] =
     intr match {
       case _: ErgoLikeInterpreter if ctx.isInstanceOf[ErgoLikeContext] =>
         ErgoAddressEncoder(ctx.asInstanceOf[ErgoLikeContext].metadata.networkPrefix)
@@ -315,9 +330,11 @@ case class ErgoAddressToSigmaProp(input: Value[SString.type])
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
-    extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
+  extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override val opCode: OpCode = OpCodes.SizeOfCode
+
   override def transformationReady: Boolean = input.isEvaluatedCollection
+
   override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[V]]) =
     IntConstant(input.length)
 
@@ -383,6 +400,7 @@ case class ExtractRegisterAs[V <: SType](
                                           override val tpe: SOption[V])
   extends Extract[SOption[V]] with NotReadyValue[SOption[V]] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
+
   override def cost[C <: Context[C]](context: C) = 1000 //todo: the same as ExtractBytes.cost
   override def function(intr: Interpreter, ctx: Context[_], box: EvaluatedValue[SBox.type]): Value[SOption[V]] = {
     box.value.get(registerId) match {
@@ -407,6 +425,7 @@ trait Deserialize[V <: SType] extends NotReadyValue[V]
 
 case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[V] {
   override val opCode: OpCode = OpCodes.DeserializeContextCode
+
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }
 
@@ -415,11 +434,13 @@ case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[
 case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
 
   override val opCode: OpCode = OpCodes.DeserializeRegisterCode
+
   override def cost[C <: Context[C]](context: C): Long = 1000 //todo: rework, consider limits
 }
 
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override val opCode: OpCode = OpCodes.GetVarCode
+
   override def cost[C <: Context[C]](context: C): Long = context.extension.cost(varId) + 1
 }
 
@@ -430,35 +451,44 @@ object GetVar {
 
 case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[SOption[V], V] {
   override val opCode: OpCode = OpCodes.OptionGetCode
+
   override def tpe: V = input.tpe.elemType
+
   override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] =
     input match {
       case SomeValue(v) => v
-      case n @ NoneValue(_) => throw new OptionUnwrapNone(s"Cannot unwrap None: $n")
+      case n@NoneValue(_) => throw new OptionUnwrapNone(s"Cannot unwrap None: $n")
     }
+
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionGet
 }
 
 case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[V])
   extends Transformer[SOption[V], V] {
   override val opCode: OpCode = OpCodes.OptionGetOrElseCode
+
   override def tpe: V = input.tpe.elemType
+
   override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] =
     input match {
       case SomeValue(v) => v
       case NoneValue(_) => default
     }
+
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionGetOrElse
 }
 
 case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
   extends Transformer[SOption[V], SBoolean.type] {
   override val opCode: OpCode = OpCodes.OptionIsDefinedCode
-  override def tpe= SBoolean
+
+  override def tpe = SBoolean
+
   override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[SBoolean.type] =
     input match {
       case SomeValue(_) => TrueLeaf
       case NoneValue(_) => FalseLeaf
     }
+
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionIsDefined
 }

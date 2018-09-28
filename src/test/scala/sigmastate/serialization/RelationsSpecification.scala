@@ -38,8 +38,8 @@ class RelationsSpecification extends TableSerializationSpecification {
     }
   }
 
-  property("IsMember: Serializer round trip") {
-    forAll { im: IsMember =>
+  property("TreeLookup: Serializer round trip") {
+    forAll { im: TreeLookup =>
       roundTripTest(im)
     }
   }

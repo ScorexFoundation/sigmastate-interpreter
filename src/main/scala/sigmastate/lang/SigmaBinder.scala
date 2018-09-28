@@ -8,10 +8,10 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import Values._
 import org.ergoplatform._
-import sigmastate.utils.Extensions._
+import scorex.util.encode.Base58
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
-import sigmastate.utxo.GetVar
+import sigmastate.lang.exceptions.{BinderException, InvalidArguments, InvalidTypeArguments}
+import sigmastate.serialization.ValueSerializer
 
 class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
   import SigmaBinder._
@@ -129,6 +129,19 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         Some(newBlock)
       else
         None
+    case e @ Apply(ApplyTypes(DeserializeSym, targs), args) =>
+      if (targs.length != 1)
+        throw new InvalidTypeArguments(s"Wrong number of type arguments in $e: expected one type argument")
+      if (args.length != 1)
+        throw new InvalidArguments(s"Wrong number of arguments in $e: expected one argument")
+      val str = args.head match {
+        case StringConstant(s) => s
+        case _ =>
+          throw new InvalidArguments(s"invalid argument in $e: expected a string constant")
+      }
+      val bytes = Base58.decode(str).get
+      Some(
+        ValueSerializer.deserialize(bytes))
   })))(e)
 
   def bind(e: SValue): SValue =

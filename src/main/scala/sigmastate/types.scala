@@ -479,9 +479,9 @@ object SCollection {
 
   type SBooleanArray      = SCollection[SBoolean.type]
   type SByteArray         = SCollection[SByte.type]
-  type SShortArray          = SCollection[SShort.type]
+  type SShortArray        = SCollection[SShort.type]
   type SIntArray          = SCollection[SInt.type]
-  type SLongArray          = SCollection[SLong.type]
+  type SLongArray         = SCollection[SLong.type]
   type SBigIntArray       = SCollection[SBigInt.type]
   type SGroupElementArray = SCollection[SGroupElement.type]
   type SBoxArray          = SCollection[SBox.type]
@@ -494,7 +494,7 @@ object SCollection {
   val SLongArray         = SCollection(SLong)
   val SBigIntArray       = SCollection(SBigInt)
   val SGroupElementArray = SCollection(SGroupElement)
-  val SSigmaPropArray        = SCollection(SSigmaProp)
+  val SSigmaPropArray    = SCollection(SSigmaProp)
   val SBoxArray          = SCollection(SBox)
   val SAvlTreeArray      = SCollection(SAvlTree)
 }
@@ -521,6 +521,7 @@ object SOption {
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
   implicit val optionTypeByte = SOption(SByte)
+  implicit val optionTypeByteArray = SOption(SByteArray)
   implicit val optionTypeShort = SOption(SShort)
   implicit val optionTypeInt = SOption(SInt)
   implicit val optionTypeLong = SOption(SLong)

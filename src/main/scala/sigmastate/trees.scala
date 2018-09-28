@@ -11,9 +11,9 @@ import sigmastate.Values._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes._
+import sigmastate.utils.Helpers._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.Transformer
-import sigmastate.utils.Helpers._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -500,17 +500,35 @@ sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] ex
 sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
   extends Quadruple[IV1, IV2, IV3, SBoolean.type] with NotReadyValueBoolean
 
-
 /**
-  * Predicate which checks whether a key is in a tree, by using a membership proof
+  * Perform a lookup of key `key` in a tree with root `tree` using proof `proof`.
+  * Throws exception if proof is incorrect
+  * Return SomeValue(SByteArray) of leaf with key `key` if it exists
+  * Return NoneValue if leaf with provided key does not exist.
   */
-case class IsMember(tree: Value[SAvlTree.type],
-                    key: Value[SByteArray],
-                    proof: Value[SByteArray]) extends Relation3[SAvlTree.type, SByteArray, SByteArray] {
-  override val opCode: OpCode = OpCodes.IsMemberCode
+case class TreeLookup(tree: Value[SAvlTree.type],
+                      key: Value[SByteArray],
+                      proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
+
+  override def tpe = SOption[SByteArray]
+
+  override val opCode: OpCode = OpCodes.TreeLookupCode
 
   override lazy val first = tree
   override lazy val second = key
+  override lazy val third = proof
+}
+
+case class TreeModifications(tree: Value[SAvlTree.type],
+                             operations: Value[SByteArray],
+                             proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
+
+  override def tpe = SOption[SByteArray]
+
+  override val opCode: OpCode = OpCodes.TreeModificationsCode
+
+  override lazy val first = tree
+  override lazy val second = operations
   override lazy val third = proof
 }
 
