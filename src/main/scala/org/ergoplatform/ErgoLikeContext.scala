@@ -21,7 +21,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       val self: ErgoBox,
                       val metadata: Metadata,
                       override val extension: ContextExtension = ContextExtension(Map())
-                 ) extends Context[ErgoLikeContext] {
+                 ) extends Context {
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, self, metadata, newExtension)
 
@@ -78,14 +78,14 @@ object ErgoLikeContext {
 case object Height extends NotReadyValueLong {
   override val opCode: OpCode = OpCodes.HeightCode
 
-  override def cost[C <: Context[C]](context: C): Long = 2 * Cost.IntConstantDeclaration
+  override def cost[C <: Context](context: C): Long = 2 * Cost.IntConstantDeclaration
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
 case object Inputs extends LazyCollection[SBox.type] {
   override val opCode: OpCode = OpCodes.InputsCode
 
-  override def cost[C <: Context[C]](context: C) =
+  override def cost[C <: Context](context: C) =
     context.asInstanceOf[ErgoLikeContext].boxesToSpend.map(_.cost).sum + Cost.ConcreteCollection
 
   val tpe = SCollection(SBox)
@@ -95,7 +95,7 @@ case object Inputs extends LazyCollection[SBox.type] {
 case object Outputs extends LazyCollection[SBox.type] {
   override val opCode: OpCode = OpCodes.OutputsCode
 
-  override def cost[C <: Context[C]](context: C) =
+  override def cost[C <: Context](context: C) =
     context.asInstanceOf[ErgoLikeContext].spendingTransaction.outputs.map(_.cost).sum + Cost.ConcreteCollection
 
   val tpe = SCollection(SBox)
@@ -105,7 +105,7 @@ case object Outputs extends LazyCollection[SBox.type] {
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree {
   override val opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
 
-  override def cost[C <: Context[C]](context: C) = Cost.AvlTreeConstantDeclaration + 1
+  override def cost[C <: Context](context: C) = Cost.AvlTreeConstantDeclaration + 1
 }
 
 
@@ -113,5 +113,5 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree {
 case object Self extends NotReadyValueBox {
   override val opCode: OpCode = OpCodes.SelfCode
 
-  override def cost[C <: Context[C]](context: C) = context.asInstanceOf[ErgoLikeContext].self.cost
+  override def cost[C <: Context](context: C) = context.asInstanceOf[ErgoLikeContext].self.cost
 }

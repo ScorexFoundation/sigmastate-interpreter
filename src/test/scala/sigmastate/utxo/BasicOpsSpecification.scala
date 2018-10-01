@@ -1,11 +1,11 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{R6, R8}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, Self}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, Self}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
 
@@ -43,7 +43,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
            ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
            script: String, propExp: Value[SBoolean.type],
       onlyPositive: Boolean = false) = {
-    val prover = new ErgoLikeProvingInterpreter() {
+    val prover = new ErgoLikeTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
         val p2 = dlogSecrets(1).publicImage
@@ -65,7 +65,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val ctxExt = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
     if (!onlyPositive)
       verifier.verify(prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
     verifier.verify(prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true

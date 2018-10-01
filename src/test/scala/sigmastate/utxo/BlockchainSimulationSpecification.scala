@@ -13,7 +13,7 @@ import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values.LongConstant
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import org.ergoplatform._
 import sigmastate.{AvlTreeData, GE}
@@ -31,7 +31,7 @@ class BlockchainSimulationSpecification extends PropSpec
 
   import BlockchainSimulationSpecification._
 
-  def generateBlock(state: ValidationState, miner: ErgoLikeProvingInterpreter, height: Int): Block = {
+  def generateBlock(state: ValidationState, miner: ErgoLikeTestProvingInterpreter, height: Int): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
     val boxesToSpend = state.boxesReader.byHeightRegValue(height)
 
@@ -57,7 +57,7 @@ class BlockchainSimulationSpecification extends PropSpec
 
   property("apply one valid block") {
     val state = ValidationState.initialState()
-    val miner = new ErgoLikeProvingInterpreter()
+    val miner = new ErgoLikeTestProvingInterpreter()
     val block = generateBlock(state, miner, 0)
     val updStateTry = state.applyBlock(block)
     updStateTry.isSuccess shouldBe true
@@ -65,7 +65,7 @@ class BlockchainSimulationSpecification extends PropSpec
 
   property("too costly block") {
     val state = ValidationState.initialState()
-    val miner = new ErgoLikeProvingInterpreter()
+    val miner = new ErgoLikeTestProvingInterpreter()
     val block = generateBlock(state, miner, 0)
     val updStateTry = state.applyBlock(block, maxCost = 1)
     updStateTry.isSuccess shouldBe false
@@ -73,11 +73,11 @@ class BlockchainSimulationSpecification extends PropSpec
 
   property("apply many blocks") {
     val state = ValidationState.initialState()
-    val miner = new ErgoLikeProvingInterpreter()
+    val miner = new ErgoLikeTestProvingInterpreter()
 
     @tailrec
     def checkState(state: ValidationState,
-                   miner: ErgoLikeProvingInterpreter,
+                   miner: ErgoLikeTestProvingInterpreter,
                    currentLevel: Int,
                    limit: Int): Unit = currentLevel match {
       case i if i >= limit => ()
@@ -98,7 +98,7 @@ class BlockchainSimulationSpecification extends PropSpec
     def bench(numberOfBlocks: Int): Unit = {
 
       val state = ValidationState.initialState()
-      val miner = new ErgoLikeProvingInterpreter()
+      val miner = new ErgoLikeTestProvingInterpreter()
 
       val (_, time) = (0 until numberOfBlocks).foldLeft(state -> 0L) { case ((s, timeAcc), h) =>
         val b = generateBlock(state, miner, h)

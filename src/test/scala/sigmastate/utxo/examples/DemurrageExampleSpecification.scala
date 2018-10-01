@@ -1,9 +1,10 @@
 package sigmastate.utxo.examples
 
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform._
 import sigmastate.lang.Terms._
+import sigmastate.utxo.ErgoLikeTestInterpreter
 
 class DemurrageExampleSpecification extends SigmaTestingCommons {
   /**
@@ -28,10 +29,10 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val demurrageCost = 2
 
     //a blockchain node veryfing a block containing a spending transaction
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     //backer's prover with his private key
-    val userProver = new ErgoLikeProvingInterpreter
+    val userProver = new ErgoLikeTestProvingInterpreter
 
     val regScript = userProver.dlogSecrets.head.publicImage
 

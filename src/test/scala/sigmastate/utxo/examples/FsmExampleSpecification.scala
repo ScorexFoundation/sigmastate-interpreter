@@ -8,7 +8,7 @@ import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -40,7 +40,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     */
   property("simple FSM example"){
 
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
 
     val script1 = prover.dlogSecrets.head.publicImage
     val script2 = prover.dhSecrets.head.publicImage
@@ -143,7 +143,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       .withContextExtender(transitionProofId, ByteArrayConstant(transition12Proof))
       .prove(fsmScript, ctx, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(fsmScript, ctx, spendingProof, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(fsmScript, ctx, spendingProof, fakeMessage).get._1 shouldBe true
 
     //successful transition back from state2 to state1
 
@@ -162,7 +162,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       .withContextExtender(transitionProofId, ByteArrayConstant(transition21Proof))
       .prove(fsmScript, ctx2, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(fsmScript, ctx2, spendingProof2, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(fsmScript, ctx2, spendingProof2, fakeMessage).get._1 shouldBe true
 
 
     //Box for state3
@@ -215,7 +215,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       .withContextExtender(transitionProofId, ByteArrayConstant(transition23Proof))
       .prove(fsmScript, ctx23, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(fsmScript, ctx23, spendingProof23, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(fsmScript, ctx23, spendingProof23, fakeMessage).get._1 shouldBe true
 
     //clearing FSM out of the box in the final state
 
@@ -236,7 +236,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       .withContextExtender(transitionProofId, ByteArrayConstant(transition30Proof))
       .prove(fsmScript, ctx30, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(fsmScript, ctx30, spendingProof30, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(fsmScript, ctx30, spendingProof30, fakeMessage).get._1 shouldBe true
 
     //it is impossible to leave FSM at state2
     val ctx20 = ErgoLikeContext(
