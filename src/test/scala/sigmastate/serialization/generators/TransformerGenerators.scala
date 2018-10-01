@@ -182,4 +182,19 @@ trait TransformerGenerators {
   val downcastGen: Gen[Downcast[SNumericType, SNumericType]] = for {
     numVal <- Gen.oneOf(numExprTreeNodeGen, shortConstGen, intConstGen, longConstGen)
   } yield mkDowncast(numVal, SByte).asInstanceOf[Downcast[SNumericType, SNumericType]]
+
+  val valDefGen: Gen[ValDef] = for {
+    id <- unsignedIntGen
+    rhs <- booleanExprGen
+  } yield ValDef(id, Seq(), rhs)
+
+  val funDefGen: Gen[ValDef] = for {
+    id <- unsignedIntGen
+    tpeArgs <- Gen.nonEmptyListOf(sTypeIdentGen)
+    rhs <- booleanExprGen
+  } yield ValDef(id, tpeArgs, rhs)
+
+  val valOrFunDefGen: Gen[ValDef] = for {
+    v <- Gen.oneOf(valDefGen, funDefGen)
+  } yield v
 }

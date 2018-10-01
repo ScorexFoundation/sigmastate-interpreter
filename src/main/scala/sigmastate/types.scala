@@ -742,13 +742,14 @@ object STypeApply {
 }
 
 case class STypeIdent(name: String) extends SType {
+  require(name.length <= 255, "name is too long")
   override type WrappedType = Any
   override val typeCode = STypeIdent.TypeCode
   override def isConstantSize = false
   override def toString = name
 }
 object STypeIdent {
-  val TypeCode = 95: Byte
+  val TypeCode = 102: Byte
   implicit def liftString(n: String): STypeIdent = STypeIdent(n)
 }
 

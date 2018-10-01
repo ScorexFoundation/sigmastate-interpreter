@@ -1,5 +1,7 @@
 package sigmastate.serialization
 
+import java.nio.charset.StandardCharsets
+
 import sigmastate._
 import sigmastate.lang.exceptions.{InvalidTypePrefix, TypeDeserializeCallDepthExceeded}
 import sigmastate.utils.{ByteReader, ByteWriter}
@@ -98,6 +100,12 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         // `Tuple` type with more than 4 items `(Int, Byte, Box, Boolean, Int)`
         serializeTuple(tup, w)
     }
+    case typeIdent: STypeIdent => {
+      w.put(typeIdent.typeCode)
+      val bytes = typeIdent.name.getBytes(StandardCharsets.UTF_8)
+      w.putUByte(bytes.length)
+        .putBytes(bytes)
+    }
   }
 
   override def deserialize(r: ByteReader): SType = deserialize(r, 0)
@@ -170,6 +178,11 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case SUnit.typeCode => SUnit
         case SBox.typeCode => SBox
         case SAvlTree.typeCode => SAvlTree
+        case STypeIdent.TypeCode => {
+          val nameLength = r.getUByte()
+          val name = new String(r.getBytes(nameLength), StandardCharsets.UTF_8)
+          STypeIdent(name)
+        }
         case _ =>
           sys.error(s"Cannot deserialize type starting from code $c")
       }
