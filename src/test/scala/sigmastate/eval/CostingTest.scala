@@ -218,6 +218,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       }
     }
     res.show
+    println(s"Defs: $defCounter, Time: ${defTime / 1000000}")
   }
 
 

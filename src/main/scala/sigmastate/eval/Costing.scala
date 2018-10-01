@@ -151,8 +151,8 @@ trait Costing extends SigmaLibrary with DataCosting {
   implicit class RCostedFuncOps[A,B](f: RCostedFunc[A,B]) {
     implicit val eA = f.elem.eDom.eVal
     def sliceCalc: Rep[A => B] = fun { x: Rep[A] => f(RCostedPrim(x, 0, 0L)).value }
-    def sliceCost: Rep[((Int,Long)) => Int] = fun { x: Rep[(Int, Long)] => f(RCostedPrim(fresh[A], x._1, x._2)).cost }
-    def sliceSize: Rep[Long => Long] = fun { x: Rep[Long] => f(RCostedPrim(fresh[A], 0, x)).dataSize }
+    def sliceCost: Rep[((Int,Long)) => Int] = fun { x: Rep[(Int, Long)] => f(RCostedPrim(variable[A], x._1, x._2)).cost }
+    def sliceSize: Rep[Long => Long] = fun { x: Rep[Long] => f(RCostedPrim(variable[A], 0, x)).dataSize }
   }
 
   implicit def extendCostedElem[A](e: Elem[Costed[A]]): CostedElem[A,_] = e.asInstanceOf[CostedElem[A,_]]
@@ -196,7 +196,7 @@ trait Costing extends SigmaLibrary with DataCosting {
       }
     }
   }
-  override val performUnapplyViews = false
+  override val performViewsLifting = false
 
   type CostedThunk[T] = Th[Costed[T]]
 
