@@ -2,9 +2,11 @@ package sigmastate.interpreter
 
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
+import sigmastate.eval.Evaluation
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{ByteReader, ByteWriter}
 import sigmastate.utils.Extensions._
+import special.sigma
 
 /**
   * Variables to be put into context
@@ -48,4 +50,6 @@ trait Context[C <: Context[C]] {
     val ext = extension.add(bindings:_*)
     withExtension(ext)
   }
+
+  def toSigmaContext(IR: Evaluation): sigma.Context
 }

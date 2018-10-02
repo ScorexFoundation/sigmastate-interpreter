@@ -4,11 +4,16 @@ import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform.ErgoLikeContext.{Height, Metadata}
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.eval.{CostingBox, CostingDataContext, Evaluation}
 import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
+import special.collection.{Col, ColOverArrayBuilder}
+import special.sigma
+import special.sigma.{AnyValue, Box, TestAvlTree, TestValue}
 
+import scala.reflect.ClassTag
 import scala.util.Try
 
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
@@ -27,6 +32,56 @@ class ErgoLikeContext(val currentHeight: Height,
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, newSpendingTransaction, self, metadata, extension)
+
+  val Cols: ColOverArrayBuilder = new ColOverArrayBuilder
+
+  def collection[T:ClassTag](items: T*) = Cols.fromArray(items.toArray)
+
+  val noBytes = collection[Byte]()
+  val noInputs = Array[Box]()
+  val noOutputs = Array[Box]()
+  val emptyAvlTree = new TestAvlTree(noBytes, 0, None, None, None)
+
+
+  def regs(m: Map[Byte, Any]): Col[AnyValue] = {
+    val res = new Array[AnyValue](10)
+    for ((id, v) <- m) {
+      assert(res(id) == null, s"register $id is defined more then once")
+      res(id) = new TestValue(v)
+    }
+    Cols.fromArray(res)
+  }
+
+  def contextVars(m: Map[Byte, Any]): Col[AnyValue] = {
+    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
+    val res = new Array[AnyValue](maxKey)
+    for ((id, v) <- m) {
+      val i = id - 1
+      assert(res(i) == null, s"register $id is defined more then once")
+      res(i) = new TestValue(v)
+    }
+    Cols.fromArray(res)
+  }
+
+  override def toSigmaContext(IR: Evaluation): sigma.Context = {
+    implicit val IRForBox = IR
+    val inputs = boxesToSpend.toArray.map(_.toTestBox(true))
+    val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox(true))
+    val vars = contextVars(extension.values)
+    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(true), emptyAvlTree, vars.arr, true)
+  }
+
+  implicit class ErgoBoxOps(ebox: ErgoBox) {
+    def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
+      val rs = regs(ebox.additionalRegisters.map {
+        case (k, Constant(arr: Array[a], tpeA)) =>
+          (k.number -> Cols.fromArray(arr))
+        case (k,v) =>
+          (k.number -> v)
+      })
+      new CostingBox(IR, Cols.fromArray(ebox.id), ebox.value, Cols.fromArray(ebox.propositionBytes), noBytes, noBytes, rs, isCost)
+    }
+  }
 }
 
 object ErgoLikeContext {

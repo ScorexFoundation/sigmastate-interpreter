@@ -3,26 +3,38 @@ package sigmastate.interpreter
 import java.util
 import java.util.Objects
 
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
+import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{ByteArrayConstant, _}
+import sigmastate.eval.Evaluation
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
 import sigmastate.interpreter.Interpreter.VerificationResult
+import sigmastate.lang.TransformingSigmaBuilder
+import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utils.Extensions._
 import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
 import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
+import sigmastate.utxo.{DeserializeContext, Transformer}
 import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
+import special.collection.{Col, ColOverArrayBuilder}
+import special.sigma.{AnyValue, Box, TestAvlTree, TestValue}
 
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 
@@ -349,31 +361,62 @@ trait Interpreter extends ScorexLogging {
     * @return
     */
   def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]): Try[ReductionResult] = Try {
-    require(new Tree(exp).nodes.length < CostTable.MaxExpressions,
-      s"Too long expression, contains ${new Tree(exp).nodes.length} nodes, " +
-        s"allowed maximum is ${CostTable.MaxExpressions}")
+    // todo run deserializations first
+    //    // Substitute Deserialize* nodes with deserialized subtrees
+    //    // We can estimate cost of the tree evaluation only after this step.
+    //    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
+    //
+    //    val substTree = everywherebu(substRule)(exp) match {
+    //      case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
+    //      case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
+    //    }
 
-    // Substitute Deserialize* nodes with deserialized subtrees
-    // We can estimate cost of the tree evaluation only after this step.
-    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
-
-    val substTree = everywherebu(substRule)(exp) match {
-      case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
-      case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
+    // todo get env
+    val env = Map[String, Any]()
+    val IR.Tuple(calcF, costF, sizeF) = doCosting[SType#WrappedType](env, exp)
+    require(IR.verifyCostFunc(costF).isSuccess)
+    require(IR.verifyIsValid(calcF).isSuccess)
+    // check cost
+    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
+    val IntConstant(estimatedCost) = costFun(context.toSigmaContext(IR))
+    if (estimatedCost > maxCost) {
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
     }
-
-    val cost = substTree.cost(context)
-    if (cost > maxCost) {
-      throw new Error(s"Estimated expression complexity $cost exceeds the limit $maxCost in $substTree")
-    }
-
+    // check calc
+    val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, calcF.asRep[IR.Context => SBoolean.WrappedType])
+    //    val res = valueFun(sigmaContext) match {
+    //      case Constant(inVal, _) => inVal
+    //      case v => v
+    //    }
+    val value = valueFun(context.toSigmaContext(IR))
     // After performing deserializations and checking cost of the resulting tree, both the prover
     // and the verifier are evaluating the tree by applying rewriting rules, until no rules trigger during tree
     // traversal.
-    val res = reduceUntilConverged(context, substTree)
-    res -> cost
+    val res = reduceUntilConverged(context, value)
+    res -> estimatedCost
   }
 
+  lazy val IR: Evaluation = new Evaluation {
+    import TestSigmaDslBuilder._
+
+    val sigmaDslBuilder = RTestSigmaDslBuilder()
+    val builder = TransformingSigmaBuilder
+
+    beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
+
+    val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
+    val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
+    val monoidBuilderValue = new special.collection.MonoidBuilderInst()
+  }
+
+  implicit class RepForSomeExtension(x: IR.Rep[_]) {
+    def asRep[T]: IR.Rep[T] = x.asInstanceOf[IR.Rep[T]]
+  }
+
+  def doCosting[T](env: Map[String, Any], typed: SValue): IR.Rep[(IR.Context => T, (IR.Context => Int, IR.Context => Long))] = {
+    val costed = IR.buildCostedGraph[SType](env.mapValues(IR.builder.liftAny(_).get), typed)
+    IR.split(costed.asRep[IR.Context => IR.Costed[T]])
+  }
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,
