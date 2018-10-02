@@ -31,10 +31,7 @@ import sigmastate.utils.Helpers
 import sigmastate.utxo.{DeserializeContext, Transformer}
 import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
-import special.collection.{Col, ColOverArrayBuilder}
-import special.sigma.{AnyValue, Box, TestAvlTree, TestValue}
 
-import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 
@@ -351,6 +348,21 @@ trait Interpreter extends ScorexLogging {
     currTree
   }
 
+  lazy val IR: Evaluation = new Evaluation {
+    import TestSigmaDslBuilder._
+
+    val sigmaDslBuilder = RTestSigmaDslBuilder()
+    val builder = TransformingSigmaBuilder
+
+    beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
+
+    val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
+    val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
+    val monoidBuilderValue = new special.collection.MonoidBuilderInst()
+  }
+
+  import IR._
+
   /**
     * As the first step both prover and verifier are applying context-specific transformations and then estimating
     * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
@@ -384,33 +396,8 @@ trait Interpreter extends ScorexLogging {
     }
     // check calc
     val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, calcF.asRep[IR.Context => SBoolean.WrappedType])
-    //    val res = valueFun(sigmaContext) match {
-    //      case Constant(inVal, _) => inVal
-    //      case v => v
-    //    }
-    val value = valueFun(context.toSigmaContext(IR))
-    // After performing deserializations and checking cost of the resulting tree, both the prover
-    // and the verifier are evaluating the tree by applying rewriting rules, until no rules trigger during tree
-    // traversal.
-    val res = reduceUntilConverged(context, value)
+    val res = valueFun(context.toSigmaContext(IR))
     res -> estimatedCost
-  }
-
-  lazy val IR: Evaluation = new Evaluation {
-    import TestSigmaDslBuilder._
-
-    val sigmaDslBuilder = RTestSigmaDslBuilder()
-    val builder = TransformingSigmaBuilder
-
-    beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
-
-    val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
-    val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
-    val monoidBuilderValue = new special.collection.MonoidBuilderInst()
-  }
-
-  implicit class RepForSomeExtension(x: IR.Rep[_]) {
-    def asRep[T]: IR.Rep[T] = x.asInstanceOf[IR.Rep[T]]
   }
 
   def doCosting[T](env: Map[String, Any], typed: SValue): IR.Rep[(IR.Context => T, (IR.Context => Int, IR.Context => Long))] = {
