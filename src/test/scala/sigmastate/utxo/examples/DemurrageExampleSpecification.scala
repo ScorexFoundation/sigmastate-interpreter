@@ -30,7 +30,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val demurragePeriod = 100L
     val demurrageCost = 2
 
-    //a blockchain node veryfing a block containing a spending transaction
+    //a blockchain node verifying a block containing a spending transaction
     val verifier = new ErgoLikeTestInterpreter()
 
     //backer's prover with his private key
@@ -50,7 +50,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         | val out = OUTPUTS(outIdx)
         |
         | val c2 = allOf(Array(
-        |   HEIGHT >= SELF.R3[(Long, Array[Byte])].get._1 + demurragePeriod,
+        |     HEIGHT >= SELF.R3[(Long, Array[Byte])].get._1 + demurragePeriod,
         |     out.value >= SELF.value - demurrageCost ,
         |     out.propositionBytes == SELF.propositionBytes,
         |     out.R3[(Long, Array[Byte])].get._1 <= HEIGHT,
@@ -61,6 +61,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       """.stripMargin).asBoolValue
 
     /*
+    todo: fix / uncomment
     val reg1 = ErgoBox.nonMandatoryRegisters.head
     val propTree = OR(
       regScript,
