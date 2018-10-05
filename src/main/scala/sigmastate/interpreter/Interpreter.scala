@@ -381,8 +381,6 @@ trait Interpreter extends ScorexLogging {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
     }
-
-    // todo get env
     val env = Map[String, Any]()
     val IR.Tuple(calcF, costF, sizeF) = doCosting[SType#WrappedType](env, substTree)
     require(IR.verifyCostFunc(costF).isSuccess)
