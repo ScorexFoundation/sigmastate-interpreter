@@ -63,12 +63,12 @@ class ErgoLikeContext(val currentHeight: Height,
     Cols.fromArray(res)
   }
 
-  override def toSigmaContext(IR: Evaluation): sigma.Context = {
+  override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
     implicit val IRForBox = IR
-    val inputs = boxesToSpend.toArray.map(_.toTestBox(true))
-    val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox(true))
+    val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost))
+    val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
     val vars = contextVars(extension.values)
-    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(true), emptyAvlTree, vars.arr, true)
+    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), emptyAvlTree, vars.arr, true)
   }
 
   implicit class ErgoBoxOps(ebox: ErgoBox) {

@@ -51,5 +51,5 @@ trait Context[C <: Context[C]] {
     withExtension(ext)
   }
 
-  def toSigmaContext(IR: Evaluation): sigma.Context
+  def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context
 }

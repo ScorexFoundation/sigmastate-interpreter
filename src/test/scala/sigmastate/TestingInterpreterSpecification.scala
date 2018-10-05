@@ -334,7 +334,7 @@ case class TestingContext(height: Int,
                          ) extends Context[TestingContext] {
   override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
 
-  override def toSigmaContext(IR: Evaluation): sigma.Context = ???
+  override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = ???
 }
 
 /** An interpreter for tests with 2 random secrets*/
