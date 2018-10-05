@@ -373,26 +373,25 @@ trait Interpreter extends ScorexLogging {
     * @return
     */
   def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]): Try[ReductionResult] = Try {
-    // todo run deserializations first
-    //    // Substitute Deserialize* nodes with deserialized subtrees
-    //    // We can estimate cost of the tree evaluation only after this step.
-    //    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
-    //
-    //    val substTree = everywherebu(substRule)(exp) match {
-    //      case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
-    //      case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
-    //    }
+    // Substitute Deserialize* nodes with deserialized subtrees
+    // We can estimate cost of the tree evaluation only after this step.
+    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
+
+    val substTree = everywherebu(substRule)(exp) match {
+      case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
+      case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
+    }
 
     // todo get env
     val env = Map[String, Any]()
-    val IR.Tuple(calcF, costF, sizeF) = doCosting[SType#WrappedType](env, exp)
+    val IR.Tuple(calcF, costF, sizeF) = doCosting[SType#WrappedType](env, substTree)
     require(IR.verifyCostFunc(costF).isSuccess)
     require(IR.verifyIsValid(calcF).isSuccess)
     // check cost
     val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
     val IntConstant(estimatedCost) = costFun(context.toSigmaContext(IR, isCost = true))
     if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $substTree")
     }
     // check calc
     val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, calcF.asRep[IR.Context => SBoolean.WrappedType])
