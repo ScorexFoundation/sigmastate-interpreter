@@ -16,6 +16,12 @@ trait TypeGenerators {
   implicit val boxTypeGen = Gen.const(SBox)
   implicit val avlTreeTypeGen = Gen.const(SAvlTree)
 
+  implicit val optionSigmaPropTypeGen = Gen.const(SOption(SSigmaProp))
+
+//    Gen[SOption[SSigmaProp.type]] = for {
+//    tpe <- Gen.const(SSigmaProp)
+//  } yield SOption(tpe)
+
   implicit val primTypeGen: Gen[SPrimType] =
     Gen.oneOf[SPrimType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp, SUnit)
   implicit val arbPrimType = Arbitrary(primTypeGen)

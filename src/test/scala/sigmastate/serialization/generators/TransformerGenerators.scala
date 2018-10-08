@@ -1,7 +1,9 @@
 package sigmastate.serialization.generators
 
+import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
+import scorex.util.encode.{Base58, Base64}
 import sigmastate.Values.{FalseLeaf, IntConstant, TrueLeaf, Value}
 import sigmastate._
 import sigmastate.Values._
@@ -19,6 +21,7 @@ trait TransformerGenerators {
   implicit val arbFold: Arbitrary[Fold[SInt.type, SBoolean.type]] = Arbitrary(foldGen)
   implicit val arbAppend: Arbitrary[Append[SInt.type]] = Arbitrary(appendGen)
   implicit val arbSlice: Arbitrary[Slice[SInt.type]] = Arbitrary(sliceGen)
+  implicit val arbAtLeast: Arbitrary[AtLeast] = Arbitrary(atLeastGen)
   implicit val arbWhere: Arbitrary[Where[SInt.type]] = Arbitrary(whereGen)
   implicit val sizeOf: Arbitrary[SizeOf[SInt.type]] = Arbitrary(sizeOfGen)
   implicit val arbExtractAmount: Arbitrary[ExtractAmount] = Arbitrary(extractAmountGen)
@@ -64,6 +67,11 @@ trait TransformerGenerators {
     until <- intConstGen
   } yield mkSlice(col1, from, until).asInstanceOf[Slice[SInt.type]]
 
+  val atLeastGen: Gen[AtLeast] = for {
+    bound <- intConstGen
+    input <- arbCCOfBoolConstant.arbitrary
+  } yield mkAtLeast(bound, input).asInstanceOf[AtLeast]
+
   val whereGen: Gen[Where[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
     id <- Arbitrary.arbitrary[Byte]
@@ -95,8 +103,7 @@ trait TransformerGenerators {
     input <- arbTaggedBox.arbitrary
     r <- arbRegisterIdentifier.arbitrary
     dvInt <- arbIntConstants.arbitrary
-    dv <- Gen.oneOf(None, Some(dvInt))
-  } yield ExtractRegisterAs(input, r, dv)
+  } yield ExtractRegisterAs(input, r)(SInt)
 
   val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] =
     Arbitrary.arbitrary[Byte].map(b =>
@@ -182,6 +189,42 @@ trait TransformerGenerators {
   val downcastGen: Gen[Downcast[SNumericType, SNumericType]] = for {
     numVal <- Gen.oneOf(numExprTreeNodeGen, shortConstGen, intConstGen, longConstGen)
   } yield mkDowncast(numVal, SByte).asInstanceOf[Downcast[SNumericType, SNumericType]]
+
+  val base58StringGen: Gen[String] = for {
+    s <- Gen.someOf(Base58.Alphabet).suchThat(_.nonEmpty)
+  } yield s.toString
+
+  val base58ToByteArrayGen: Gen[Base58ToByteArray] = for {
+    s <- base58StringGen
+  } yield mkBase58ToByteArray(StringConstant(s)).asInstanceOf[Base58ToByteArray]
+
+  val base64StringGen: Gen[String] = for {
+    s <- Gen.someOf(Base64.Alphabet).suchThat(_.length > 1)
+  } yield s.toString
+
+  val base64ToByteArrayGen: Gen[Base64ToByteArray] = for {
+    s <- base64StringGen
+  } yield mkBase64ToByteArray(StringConstant(s)).asInstanceOf[Base64ToByteArray]
+
+  def p2pkAddressGen(networkPrefix: Byte): Gen[P2PKAddress] = for {
+    pd <- proveDlogGen
+  } yield P2PKAddress(pd)(new ErgoAddressEncoder(networkPrefix))
+
+  val getVarIntGen: Gen[GetVar[SInt.type]] = for {
+    varId <- arbByte.arbitrary
+  } yield GetVarInt(varId)
+
+  val optionGetGen: Gen[OptionGet[SInt.type]] = for {
+    getVar <- getVarIntGen
+  } yield OptionGet(getVar)
+
+  val optionGetOrElseGen: Gen[OptionGetOrElse[SInt.type]] = for {
+    getVar <- getVarIntGen
+  } yield OptionGetOrElse(getVar, IntConstant(1))
+
+  val optionIsDefinedGen: Gen[OptionIsDefined[SInt.type]] = for {
+    getVar <- getVarIntGen
+  } yield OptionIsDefined(getVar)
 
   val valDefGen: Gen[ValDef] = for {
     id <- unsignedIntGen

@@ -1,9 +1,9 @@
 package sigmastate
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.ErgoLikeContext
 import org.scalatest.prop.{PropertyChecks, TableFor2, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
-import scorex.crypto.encode.Base16
+import org.scalatest.Matchers
+import scorex.util.encode.Base16
 import sigmastate.Values.{CollectionConstant, ByteArrayConstant}
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 

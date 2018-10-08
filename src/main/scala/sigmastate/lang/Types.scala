@@ -13,10 +13,10 @@ trait Types extends Core {
   import WhitespaceApi._
   def TypeExpr: P[Value[SType]]
   def ValVarDef: P[Value[SType]]
-  def FunDef: P[Value[SType]]
+//  def FunDef: P[Value[SType]]
 
   val Dcl = {
-    P( `let` ~/ ValVarDef | `fun` ~/ FunDef )
+    P( `val` ~/ ValVarDef /*| /* `fun` ~/ */ FunDef */ )
   }
 
   /** This map should be in sync with SType.allPredefTypes*/
@@ -105,16 +105,16 @@ trait Types extends Core {
     }
   }
 
-  val FunSig = {
-    val FunArg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
-      case (n, Some(t)) => (n, t)
-      case (n, None) => (n, NoType)
-    }
-    val Args = P( FunArg.repTC(1) )
-    val FunArgs = P( OneNLMax ~ "(" ~/ Args.? ~ ")" ).map(_.toSeq.flatten)
-    val FunTypeArgs = P( "[" ~/ (Annot.rep ~ TypeArg).repTC(1) ~ "]" )
-    P( FunTypeArgs.? ~~ FunArgs.rep )
-  }
+//  val FunSig = {
+//    val FunArg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
+//      case (n, Some(t)) => (n, t)
+//      case (n, None) => (n, NoType)
+//    }
+//    val Args = P( FunArg.repTC(1) )
+//    val FunArgs = P( OneNLMax ~ "(" ~/ Args.? ~ ")" ).map(_.toSeq.flatten)
+//    val FunTypeArgs = P( "[" ~/ (Annot.rep ~ TypeArg).repTC(1) ~ "]" )
+//    P( FunTypeArgs.? ~~ FunArgs.rep )
+//  }
 
   val TypeBounds: P0 = P( (`>:` ~/ Type).? ~ (`<:` ~/ Type).? ).ignore
   val TypeArg: P0 = {

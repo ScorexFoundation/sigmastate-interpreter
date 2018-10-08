@@ -1,11 +1,12 @@
 package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
-import scorex.crypto.encode.Base16
+import scorex.util.encode.Base16
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, TaggedByteArray}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.lang.exceptions.OptionUnwrapNone
 
 class ContextEnrichingSpecification extends SigmaTestingCommons {
 
@@ -17,12 +18,12 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage), "pubkey" -> pubkey)
     val compiledScript = compile(env,
       """{
-        |  pubkey && blake2b256(getVar[Array[Byte]](1)) == blake
+        |  pubkey && blake2b256(getVar[Array[Byte]](1).get) == blake
         |}
       """.stripMargin)
     val prop = AND(
       pubkey,
-      EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
+      EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage)))
     )
     compiledScript shouldBe prop
 
@@ -45,14 +46,14 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage1 ++ preimage2), "pubkey" -> pubkey)
     val compiledScript = compile(env,
       """{
-        |  pubkey && blake2b256(getVar[Array[Byte]](1) ++ getVar[Array[Byte]](2)) == blake
+        |  pubkey && blake2b256(getVar[Array[Byte]](1).get ++ getVar[Array[Byte]](2).get) == blake
         |}
       """.stripMargin)
 
     val prop = AND(
       pubkey,
       EQ(
-        CalcBlake2b256(Append(TaggedByteArray(1), TaggedByteArray(2))),
+        CalcBlake2b256(Append(GetVarByteArray(1).get, GetVarByteArray(2).get)),
         ByteArrayConstant(Blake2b256(preimage1 ++ preimage2))
       )
     )
@@ -84,11 +85,11 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("k1" -> k1.toInt, "k2" -> k2.toInt, "r" -> r)
     val compiledScript = compile(env,
       """{
-        |  (getVar[Array[Byte]](k1) | getVar[Array[Byte]](k2)) == r
+        |  (getVar[Array[Byte]](k1).get | getVar[Array[Byte]](k2).get) == r
         |}
       """.stripMargin)
 
-    val prop = EQ(Xor(TaggedByteArray(k1), TaggedByteArray(k2)), ByteArrayConstant(r))
+    val prop = EQ(Xor(GetVarByteArray(k1).get, GetVarByteArray(k2).get), ByteArrayConstant(r))
     compiledScript shouldBe prop
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
@@ -97,7 +98,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).get._1 shouldBe false //context w/out extensions
+    //context w/out extensions
+    an[OptionUnwrapNone] should be thrownBy verifier.verify(prop, ctx, pr.proof, fakeMessage).get
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
@@ -111,11 +113,11 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage))
     val compiledScript = compile(env,
       """{
-        |  blake2b256(getVar[Array[Byte]](1)) == blake
+        |  blake2b256(getVar[Array[Byte]](1).get) == blake
         |}
       """.stripMargin)
 
-    val prop = EQ(CalcBlake2b256(TaggedByteArray(1)), ByteArrayConstant(Blake2b256(preimage)))
+    val prop = EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage)))
     compiledScript shouldBe prop
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
@@ -124,7 +126,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).get._1 shouldBe false //context w/out extensions
+    //context w/out extensions
+    an[OptionUnwrapNone] should be thrownBy verifier.verify(prop, ctx, pr.proof, fakeMessage).get
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
@@ -136,11 +139,11 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage2 ++ preimage1))
     val compiledScript = compile(env,
       """{
-        |  blake2b256(getVar[Array[Byte]](2) ++ getVar[Array[Byte]](1)) == blake
+        |  blake2b256(getVar[Array[Byte]](2).get ++ getVar[Array[Byte]](1).get) == blake
         |}
       """.stripMargin)
 
-    val prop = EQ(CalcBlake2b256(Append(TaggedByteArray(2), TaggedByteArray(1))),
+    val prop = EQ(CalcBlake2b256(Append(GetVarByteArray(2).get, GetVarByteArray(1).get)),
       ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
     compiledScript shouldBe prop
 
@@ -150,7 +153,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).get._1 shouldBe false //context w/out extensions
+    //context w/out extensions
+    an[OptionUnwrapNone] should be thrownBy verifier.verify(prop, ctx, pr.proof, fakeMessage).get
     verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 }

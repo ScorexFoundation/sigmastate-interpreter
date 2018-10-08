@@ -12,7 +12,7 @@ import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{ArithException, ConstraintFailed}
+import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
@@ -43,6 +43,7 @@ trait SigmaBuilder {
 
   def mkBinOr(left: BoolValue, right: BoolValue): BoolValue
   def mkBinAnd(left: BoolValue, right: BoolValue): BoolValue
+  def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
 
   def mkExponentiate(left: Value[SGroupElement.type],
                      right: Value[SBigInt.type]): Value[SGroupElement.type]
@@ -50,9 +51,18 @@ trait SigmaBuilder {
                       right: Value[SGroupElement.type]): Value[SGroupElement.type]
   def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
 
+  def mkTreeModifications(tree: Value[SAvlTree.type],
+                          operations: Value[SByteArray],
+                          proof: Value[SByteArray]): Value[SOption[SByteArray]]
+
+  def mkTreeLookup(tree: Value[SAvlTree.type],
+                   key: Value[SByteArray],
+                   proof: Value[SByteArray]): Value[SOption[SByteArray]]
+
   def mkIsMember(tree: Value[SAvlTree.type],
                  key: Value[SByteArray],
                  proof: Value[SByteArray]): Value[SBoolean.type]
+
   def mkIf[T <: SType](condition: Value[SBoolean.type],
                        trueBranch: Value[T],
                        falseBranch: Value[T]): Value[T]
@@ -117,8 +127,7 @@ trait SigmaBuilder {
 
   def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
                                       registerId: RegisterId,
-                                      tpe: IV,
-                                      default: Option[Value[IV]]): Value[IV]
+                                      tpe: SOption[IV]): Value[SType]
 
   def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T]
   def mkDeserializeRegister[T <: SType](reg: RegisterId,
@@ -145,8 +154,8 @@ trait SigmaBuilder {
   def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]]
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
 
-  def mkBlock(bindings: Seq[Let], result: Value[SType]): Value[SType]
-  def mkLet(name: String, givenType: SType, body: Value[SType]): Let
+  def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType]
+  def mkVal(name: String, givenType: SType, body: Value[SType]): Val
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
   def mkIdent(name: String, tpe: SType): Value[SType]
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
@@ -158,11 +167,23 @@ trait SigmaBuilder {
   def mkLambda(args: IndexedSeq[(String,SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
+  def mkGenLambda(tpeParams: Seq[STypeParam], args: IndexedSeq[(String,SType)],
+               givenResType: SType,
+               body: Option[Value[SType]]): Value[SFunc]
 
   def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T]
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
   def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type]
+
+  def mkBase58ToByteArray(input: Value[SString.type]): Value[SByteArray]
+  def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray]
+
+  def mkPK(input: Value[SString.type]): Value[SSigmaProp.type]
+  def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]]
+  def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T]
+  def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T]
+  def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type]
 
   def liftAny(v: Any): Option[SValue] = v match {
     case arr: Array[Boolean] => Some(mkCollectionConstant[SBoolean.type](arr, SBoolean))
@@ -255,6 +276,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBinAnd(left: BoolValue, right: BoolValue) = BinAnd(left, right)
 
+  override def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
+    AtLeast(bound, input)
+
   override def mkExponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =
     Exponentiate(left, right)
 
@@ -264,10 +288,20 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray] =
     Xor(left, right)
 
+  override def mkTreeLookup(tree: Value[SAvlTree.type],
+                            key: Value[SByteArray],
+                            proof: Value[SByteArray]): Value[SOption[SByteArray]] =
+    TreeLookup(tree, key, proof)
+
+  override def mkTreeModifications(tree: Value[SAvlTree.type],
+                                   operations: Value[SByteArray],
+                                   proof: Value[SByteArray]): Value[SOption[SByteArray]] =
+    TreeModifications(tree, operations, proof)
+
   override def mkIsMember(tree: Value[SAvlTree.type],
                           key: Value[SByteArray],
                           proof: Value[SByteArray]): Value[SBoolean.type] =
-    IsMember(tree, key, proof)
+    OptionIsDefined(TreeLookup(tree, key, proof))
 
   override def mkIf[T <: SType](condition: Value[SBoolean.type],
                                 trueBranch: Value[T],
@@ -372,9 +406,8 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
                                                 registerId: RegisterId,
-                                                tpe: IV,
-                                                default: Option[Value[IV]] = None): Value[IV] =
-    ExtractRegisterAs(input, registerId, tpe, default)
+                                                tpe: SOption[IV]): Value[SType] =
+    ExtractRegisterAs(input, registerId, tpe)
 
   override def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T] =
     DeserializeContext(id, tpe)
@@ -412,11 +445,11 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]] = SomeValue(x)
   override def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]] = NoneValue(elemType)
 
-  override def mkBlock(bindings: Seq[Let], result: Value[SType]): Value[SType] =
+  override def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType] =
     Block(bindings, result)
 
-  override def mkLet(name: String, givenType: SType, body: Value[SType]): Let =
-    LetNode(name, givenType, body)
+  override def mkVal(name: String, givenType: SType, body: Value[SType]): Val =
+    ValNode(name, givenType, body)
 
   override def mkSelect(obj: Value[SType],
                         field: String,
@@ -440,7 +473,13 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkLambda(args: IndexedSeq[(String, SType)],
                         givenResType: SType,
                         body: Option[Value[SType]]): Value[SFunc] =
-    Lambda(args, givenResType, body)
+    Lambda(Nil, args, givenResType, body)
+
+  def mkGenLambda(tpeParams: Seq[STypeParam],
+                  args: IndexedSeq[(String, SType)],
+                  givenResType: SType,
+                  body: Option[Value[SType]]) =
+    Lambda(tpeParams, args, givenResType, body)
 
   override def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T] =
     ConstantNode[T](value, tpe)
@@ -451,6 +490,27 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type] =
     StringConcat(left, right)
+
+  override def mkBase58ToByteArray(input: Value[SString.type]): Value[SByteArray] =
+    Base58ToByteArray(input)
+
+  override def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray] =
+    Base64ToByteArray(input)
+
+  override def mkPK(input: Value[SString.type]): Value[SSigmaProp.type] =
+    ErgoAddressToSigmaProp(input)
+
+  override def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]] =
+    GetVar(varId, tpe)
+
+  override def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T] =
+    OptionGet(input)
+
+  override def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T] =
+    OptionGetOrElse(input, default)
+
+  override def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type] =
+    OptionIsDefined(input)
 }
 
 trait TypeConstraintCheck {

@@ -1,7 +1,9 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform.{ErgoLikeContext, Height, _}
-import scorex.utils.ScryptoLogging
+import scorex.util.ScorexLogging
 import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -15,7 +17,7 @@ import sigmastate.{SLong, _}
   * Instead of having implicit emission via coinbase transaction, we implement 1 output in a state with script,
   * that controls emission rules
   */
-class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging {
+class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
@@ -63,8 +65,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
       Minus(s.fixedRate, Multiply(s.oneEpochReduction, epoch))
     )
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(out))
-    val heightCorrect = EQ(ExtractRegisterAs[SLong.type](out, register), Height)
-    val heightIncreased = GT(Height, ExtractRegisterAs[SLong.type](Self, register))
+    val heightCorrect = EQ(ExtractRegisterAs[SLong.type](out, register).get, Height)
+    val heightIncreased = GT(Height, ExtractRegisterAs[SLong.type](Self, register).get)
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(out)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
@@ -76,14 +78,14 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
       "oneEpochReduction" -> s.oneEpochReduction)
     val prop1 = compile(env,
       """{
-        |    let epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
-        |    let out = OUTPUTS(0)
-        |    let coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
-        |    let correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
-        |    let sameScriptRule = SELF.propositionBytes == out.propositionBytes
-        |    let heightIncreased = HEIGHT > SELF.R4[Long].value
-        |    let heightCorrect = out.R4[Long].value == HEIGHT
-        |    let lastCoins = SELF.value <= oneEpochReduction
+        |    val epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
+        |    val out = OUTPUTS(0)
+        |    val coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
+        |    val correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
+        |    val sameScriptRule = SELF.propositionBytes == out.propositionBytes
+        |    val heightIncreased = HEIGHT > SELF.R4[Long].get
+        |    val heightCorrect = out.R4[Long].get == HEIGHT
+        |    val lastCoins = SELF.value <= oneEpochReduction
         |    allOf(Array(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule)) || (heightIncreased && lastCoins)
         |}""".stripMargin).asBoolValue
 
@@ -132,6 +134,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScryptoLogging 
         IndexedSeq(emissionBox),
         ut,
         emissionBox,
+        metadata = Metadata(MainnetNetworkPrefix),
         ContextExtension.empty)
       val proverResult = prover.prove(prop, context, ut.messageToSign).get
       ut.toSigned(IndexedSeq(proverResult))

@@ -1,6 +1,7 @@
 package org.ergoplatform
 
-import org.ergoplatform.ErgoLikeContext.Height
+import org.ergoplatform.ErgoLikeContext.Metadata._
+import org.ergoplatform.ErgoLikeContext.{Height, Metadata}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.{Context, ContextExtension}
@@ -18,35 +19,46 @@ class ErgoLikeContext(val currentHeight: Height,
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
-                      val extension: ContextExtension = ContextExtension(Map())
+                      val metadata: Metadata,
+                      override val extension: ContextExtension = ContextExtension(Map())
                  ) extends Context[ErgoLikeContext] {
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
-    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, self, newExtension)
+    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, self, metadata, newExtension)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
-    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, newSpendingTransaction, self, extension)
+    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, newSpendingTransaction, self, metadata, extension)
 }
 
 object ErgoLikeContext {
   type Height = Long
+
+  case class Metadata(networkPrefix: NetworkPrefix)
+
+  object Metadata {
+    type NetworkPrefix = Byte
+    val MainnetNetworkPrefix: NetworkPrefix = 0.toByte
+    val TestnetNetworkPrefix: NetworkPrefix = 16.toByte
+  }
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
+            metadata: Metadata = Metadata(TestnetNetworkPrefix),
             extension: ContextExtension = ContextExtension(Map())) =
-    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, self, extension)
+    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, self, metadata, extension)
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,
     lastBlockUtxoRoot = AvlTreeData.dummy, boxesToSpend = IndexedSeq(),
-    spendingTransaction = null, self = selfDesc)
+    spendingTransaction = null, self = selfDesc, metadata = Metadata(networkPrefix = TestnetNetworkPrefix))
 
   def fromTransaction(tx: ErgoLikeTransaction,
                       blockchainState: BlockchainState,
                       boxesReader: ErgoBoxReader,
-                      inputIndex: Int): Try[ErgoLikeContext] = Try {
+                      inputIndex: Int,
+                      metadata: Metadata): Try[ErgoLikeContext] = Try {
 
     val boxes = tx.inputs.map(_.boxId).map(id => boxesReader.byId(id).get)
 
@@ -57,6 +69,7 @@ object ErgoLikeContext {
       boxes,
       tx,
       boxes(inputIndex),
+      metadata,
       proverExtension)
   }
 }

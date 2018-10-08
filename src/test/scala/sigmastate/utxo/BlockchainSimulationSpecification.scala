@@ -3,12 +3,15 @@ package sigmastate.utxo
 import java.io.{File, FileWriter}
 
 import org.ergoplatform
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.util._
 import sigmastate.Values.LongConstant
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
@@ -41,6 +44,7 @@ class BlockchainSimulationSpecification extends PropSpec
         IndexedSeq(box),
         tx,
         box,
+        Metadata(TestnetNetworkPrefix),
         ContextExtension.empty)
       val proverResult = miner.prove(box.proposition, context, tx.messageToSign).get
 
@@ -184,7 +188,8 @@ object BlockchainSimulationSpecification {
       val height = state.currentHeight + 1
 
       val blockCost = block.txs.foldLeft(0L) {case (accCost, tx) =>
-        ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader) match {
+        ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader,
+          Metadata(TestnetNetworkPrefix)) match {
           case Left(throwable) => throw throwable
           case Right(cost) => accCost + cost
         }
@@ -203,7 +208,7 @@ object BlockchainSimulationSpecification {
 
     val initBlock = Block {
       (0 until windowSize).map { i =>
-        val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes)
+        val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
         val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Seq(), Map(heightReg -> LongConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       }

@@ -44,9 +44,9 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     )
     val prop = compile(env,
       """{
-        | let c2 = allOf(Array(
-        |   HEIGHT >= SELF.R4[Long].value + demurragePeriod,
-        |   OUTPUTS.exists(fun (out: Box) = {
+        | val c2 = allOf(Array(
+        |   HEIGHT >= SELF.R4[Long].get + demurragePeriod,
+        |   OUTPUTS.exists({ (out: Box) =>
         |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
         |   })
         | ))
@@ -56,7 +56,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val propTree = OR(
       regScript,
       AND(
-        GE(Height, Plus(ExtractRegisterAs[SLong.type](Self, reg1), LongConstant(demurragePeriod))),
+        GE(Height, Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(demurragePeriod))),
         Exists(Outputs, 21,
           AND(
             GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),

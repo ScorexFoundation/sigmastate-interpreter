@@ -488,7 +488,7 @@ case object SBox extends SProduct with SPredefType {
 
   private val tT = STypeIdent("T")
   def registers(): Seq[SMethod] = {
-    (1 to 10).map(i => SMethod(s"R$i", SFunc(IndexedSeq(), SOption(tT), Seq(tT))))
+    (1 to 10).map(i => SMethod(s"R$i", SFunc(IndexedSeq(), SOption(tT), Seq(STypeParam(tT)))))
   }
   val PropositionBytes = "propositionBytes"
   val Value = "value"
@@ -589,9 +589,9 @@ object SCollection {
 
   type SBooleanArray      = SCollection[SBoolean.type]
   type SByteArray         = SCollection[SByte.type]
-  type SShortArray          = SCollection[SShort.type]
+  type SShortArray        = SCollection[SShort.type]
   type SIntArray          = SCollection[SInt.type]
-  type SLongArray          = SCollection[SLong.type]
+  type SLongArray         = SCollection[SLong.type]
   type SBigIntArray       = SCollection[SBigInt.type]
   type SGroupElementArray = SCollection[SGroupElement.type]
   type SBoxArray          = SCollection[SBox.type]
@@ -635,6 +635,32 @@ object SOption {
   val OptionCollectionTypeConstrId = 4
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
+  implicit val optionTypeByte = SOption(SByte)
+  implicit val optionTypeByteArray = SOption(SByteArray)
+  implicit val optionTypeShort = SOption(SShort)
+  implicit val optionTypeInt = SOption(SInt)
+  implicit val optionTypeLong = SOption(SLong)
+  implicit val optionTypeBigInt = SOption(SBigInt)
+  implicit val optionTypeBoolean = SOption(SBoolean)
+  implicit val optionTypeAvlTree = SOption(SAvlTree)
+  implicit val optionTypeGroupElement = SOption(SGroupElement)
+  implicit val optionTypeSigmaProp = SOption(SSigmaProp)
+  implicit val optionTypeBox = SOption(SBox)
+
+  implicit def optionTypeCollection[V <: SType](implicit tV: V): SOption[SCollection[V]] = SOption(SCollection[V])
+
+  val IsEmpty = "isEmpty"
+  val IsDefined = "isDefined"
+  val Get = "get"
+  val GetOrElse = "getOrElse"
+
+  private[sigmastate] def createMethods(tArg: STypeIdent): Seq[SMethod] =
+    Seq(
+      SMethod(IsEmpty, SBoolean),
+      SMethod(IsDefined, SBoolean),
+      SMethod(Get, tArg),
+      SMethod(GetOrElse, SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(STypeParam(tT))))
+    )
   private val tT = STypeIdent("T")
   val IsDefinedMethod = SMethod("isDefined", SBoolean)
   val GetMethod = SMethod("value", tT)
@@ -703,14 +729,14 @@ object STuple {
   val componentNames = Range(1, 31).map(i => s"_$i")
 }
 
-case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil)
+case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypeParam] = Nil)
       extends SType with SGenericType
 {
   override type WrappedType = Seq[Any] => tRange.WrappedType
   override val typeCode = SFunc.FuncTypeCode
   override def isConstantSize = false
   override def toString = {
-    val args = if (tpeArgs.isEmpty) "" else tpeArgs.mkString("[", ",", "]")
+    val args = if (tpeParams.isEmpty) "" else tpeParams.mkString("[", ",", "]")
     s"$args(${tDom.mkString(",")}) => $tRange"
   }
   override def dataSize(v: SType#WrappedType) = 8L

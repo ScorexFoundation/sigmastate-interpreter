@@ -4,25 +4,26 @@ import java.util
 import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import sigmastate.Values.{ByteArrayConstant, _}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, strategy, everywherebu, log, and}
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
-import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.SCollection.SByteArray
+import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values._
+import scorex.util.ScorexLogging
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{ByteArrayConstant, _}
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.{ValueSerializer, OpCodes}
-import sigmastate.utils.Helpers
+import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
+import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{DeserializeContext, CostTable, Transformer, SigmaPropIsValid}
+import sigmastate.utils.Helpers
+import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 
 object CryptoConstants {
@@ -33,7 +34,10 @@ object CryptoConstants {
   val groupSize: Int = 256 / 8 //32 bytes
 
   //size of challenge in Sigma protocols, in bits
-  implicit val soundnessBits: Int = 224.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
+  //if this anything but 192, threshold won't work, because we have polynomials over GF(2^192) and no others
+  //so DO NOT change the value without implementing polynomials over GF(2^soundnessBits) first
+  //and changing code that calls on GF2_192 and GF2_192_Poly classes!!!
+  implicit val soundnessBits: Int = 192.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
 }
 
 object CryptoFunctions {
@@ -44,7 +48,7 @@ object CryptoFunctions {
   }
 }
 
-trait Interpreter {
+trait Interpreter extends ScorexLogging {
 
   import CryptoConstants._
   import Interpreter.ReductionResult
@@ -88,6 +92,17 @@ trait Interpreter {
         context.extension.values(t.varId)
       else
         null
+
+    case t: GetVar[_] =>
+      if (context.extension.values.contains(t.varId)) {
+        val v = context.extension.values(t.varId)
+        if (v.tpe != t.tpe.elemType)
+          throw new InvalidType(s"Invalid value type ${v.tpe} in context variable with id ${t.varId}, expected ${t.tpe.elemType}")
+        else
+          SomeValue(v)
+      }
+      else
+        NoneValue(t.tpe.elemType)
 
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
@@ -266,13 +281,33 @@ trait Interpreter {
     case StringConcat(StringConstant(l), StringConstant(r)) =>
       StringConstant(l + r)
 
-    case IsMember(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
-      def invalidArg = Interpreter.error(s"Collection expected but found $key")
-      val keyBytes = key.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
-      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
+    case TreeModifications(tree: EvaluatedValue[AvlTreeData]@unchecked, ops: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
+      def invalidArg(value: EvaluatedValue[SByteArray]) = Interpreter.error(s"Collection expected but found $value")
+
+      val operationsBytes = ops.matchCase(cc => cc.value, c => c.value, _ => invalidArg(ops))
+      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg(proof))
       val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
-      val res = bv.performOneOperation(Lookup(ADKey @@ keyBytes))
-      BooleanConstant.fromBoolean(res.isSuccess && res.get.isDefined)
+      val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
+      val operations: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
+      operations.foreach(o => bv.performOneOperation(o))
+      bv.digest match {
+        case Some(v) => SomeValue(v)
+        case _ => NoneValue[SByteArray](SByteArray)
+      }
+
+    case TreeLookup(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
+      def invalidArg(value: EvaluatedValue[SByteArray]) = Interpreter.error(s"Collection expected but found $value")
+
+      val keyBytes = key.matchCase(cc => cc.value, c => c.value, _ => invalidArg(key))
+      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg(proof))
+      val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
+      bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect")
+        case Success(r) => r match {
+          case Some(v) => SomeValue(v)
+          case _ => NoneValue[SByteArray](SByteArray)
+        }
+      }
 
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
@@ -353,8 +388,7 @@ trait Interpreter {
         SigSerializer.parseAndComputeChallenges(cProp, proof) match {
           case NoProof => false
           case sp: UncheckedSigmaTree =>
-
-            // Perform Verifier Steps 4
+            // Perform Verifier Step 4
             val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
 
             /**
@@ -363,7 +397,6 @@ trait Interpreter {
               * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
               * (and, if applicable,  the associated data). Reject otherwise.
               */
-
             val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
             util.Arrays.equals(newRoot.challenge, expectedChallenge)
         }
@@ -422,5 +455,3 @@ object Interpreter {
 
   def error(msg: String) = throw new InterpreterException(msg)
 }
-
-class InterpreterException(msg: String) extends Exception(msg)

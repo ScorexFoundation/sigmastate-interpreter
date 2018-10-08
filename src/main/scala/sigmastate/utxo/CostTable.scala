@@ -98,7 +98,7 @@ object CostTable {
     val BoxConstantDeclaration = 10
     val AvlTreeConstantDeclaration = 50
 
-    val AndDeclaration = 10
+    val AndDeclaration = 1
     val AndPerChild = 1
 
     val OrDeclaration = 1
@@ -109,6 +109,10 @@ object CostTable {
     val IfDeclaration = 1
 
     /**PropLeaf declaration cost, wrapped script cost to be added as well.*/
+    val AtLeastDeclaration = 1
+    val AtLeastPerChild = 1
+
+    //PropLeaf declaration cost, wrapped script cost to be added as well.
     val PropLeafDeclaration = 500
 
     /** Cost of Blake256 declaration */
@@ -124,6 +128,7 @@ object CostTable {
     val SelectFieldDeclaration = 50
     val SigmaPropIsValidDeclaration = 50
     val SigmaPropBytesDeclaration = 50
+    val ParseSigmaProp = 50
 
     val MapDeclaration = 100
     val WhereDeclaration = 200
@@ -138,5 +143,9 @@ object CostTable {
 
     val Exponentiate = 5000
     val MultiplyGroup = 50
+
+    val OptionGet = 1
+    val OptionGetOrElse = 1
+    val OptionIsDefined = 1
   }
 }

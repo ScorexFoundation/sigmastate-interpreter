@@ -47,7 +47,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val buyerKeyBytes = tokenBuyerKey.bytes
     val sellerKeyBytes = tokenSellerKey.bytes
 
-    def extractToken(box: Value[SBox.type]) = ByIndex(ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType), 0)
+    def extractToken(box: Value[SBox.type]) = ByIndex(
+      ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType).get, 0)
 
     def extractTokenId(box: Value[SBox.type]) =
       SelectField(extractToken(box), 1).asInstanceOf[Value[SByteArray]]
@@ -76,7 +77,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val buyerEnv = Map("pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
     val altBuyerProp = compile(buyerEnv,
       """(HEIGHT > deadline && pkA) || {
-        |  let tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].value(0)
+        |  val tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].get(0)
         |  allOf(Array(
         |      tokenData._1 == token1,
         |      tokenData._2 >= 60L,
