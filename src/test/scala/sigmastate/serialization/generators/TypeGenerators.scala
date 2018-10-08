@@ -2,6 +2,7 @@ package sigmastate.serialization.generators
 
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate._
+import org.scalacheck.Arbitrary._
 
 trait TypeGenerators {
   implicit val booleanTypeGen = Gen.const(SBoolean)
@@ -35,4 +36,8 @@ trait TypeGenerators {
       bigIntTypeGen,
     ))
   } yield STuple(values.toIndexedSeq)
+
+  val sTypeIdentGen: Gen[STypeIdent] = for {
+    name <- arbString.arbitrary.suchThat(_.length <= 100)
+  } yield STypeIdent(name)
 }

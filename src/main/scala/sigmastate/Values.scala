@@ -593,7 +593,10 @@ object Values {
     * These nodes are used to represent ErgoTrees after common sub-expression elimination.
     * This representation is more compact in serialized form.
     * @param id unique identifier of the variable in the current scope. */
-  case class ValDef(id: Int, tpeArgs: Seq[STypeIdent], rhs: SValue) extends BlockItem {
+  case class ValDef(override val id: Int,
+                    tpeArgs: Seq[STypeIdent],
+                    override val rhs: SValue) extends BlockItem {
+    require(id >= 0, "id must be >= 0")
     val opCode: OpCode = if (tpeArgs.isEmpty) ValDefCode else FunDefCode
     def tpe: SType = rhs.tpe
     def cost[C <: Context[C]](ctx: C): Long = rhs.cost(ctx)

@@ -1,17 +1,25 @@
 package sigmastate.serialization
 
 import org.scalacheck.Arbitrary._
+import org.scalatest.Assertion
 import sigmastate._
 import sigmastate.lang.exceptions.TypeDeserializeCallDepthExceeded
 import sigmastate.utils.Extensions._
 
 class TypeSerializerSpecification extends SerializationSpecification {
 
-  def roundtrip[T <: SType](tpe: T, expected: Array[Byte]) = {
+  private def roundtrip[T <: SType](tpe: T, expected: Array[Byte]): Assertion = {
     val w = Serializer.startWriter()
         .putType(tpe)
     val bytes = w.toBytes
     bytes shouldBe expected
+    roundtrip(tpe)
+  }
+
+  private def roundtrip[T <: SType](tpe: T): Assertion = {
+    val w = Serializer.startWriter()
+      .putType(tpe)
+    val bytes = w.toBytes
     val r = Serializer.startReader(bytes, 0)
     val res = r.getType()
     res shouldBe tpe
@@ -90,5 +98,11 @@ class TypeSerializerSpecification extends SerializationSpecification {
     val bytes = List.tabulate(Serializer.MaxTreeDepth + 1)(_ => Array[Byte](TupleTypeCode, 2))
       .toArray.flatten
     an[TypeDeserializeCallDepthExceeded] should be thrownBy Serializer.startReader(bytes, 0).getType()
+  }
+
+  property("STypeIdent serialization roundtrip") {
+    forAll(sTypeIdentGen) { ti =>
+      roundtrip(ti)
+    }
   }
 }

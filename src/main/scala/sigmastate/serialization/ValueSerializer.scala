@@ -97,6 +97,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     AppendSerializer(mkAppend),
     NumericCastSerializer(UpcastCode, mkUpcast),
     NumericCastSerializer(DowncastCode, mkDowncast),
+    ValDefSerializer(ValDefCode),
+    ValDefSerializer(FunDefCode),
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
