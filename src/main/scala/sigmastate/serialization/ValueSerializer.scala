@@ -1,5 +1,8 @@
 package sigmastate.serialization
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -11,6 +14,8 @@ import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteReader, ByteWriter, SparseArrayContainer}
+
+import scala.collection.mutable
 
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -146,13 +151,61 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     v
   }
 
+  private val gzipStats = mutable.MutableList[(Int, Int)]()
+
+  def calcWinsPercent(stats: List[(Int, Int)]): Double = {
+    val winsCount = stats.count { case (o, c) => o > c }
+    (winsCount.toFloat / stats.size.toFloat) * 100.0
+  }
+
+  def printGzipStats(): Unit = {
+    gzipStats.filter { case (o, c) => o > c }
+      .map(_._1)
+      .toList.sorted
+      .headOption match {
+      case Some(v) =>
+        val winsTotal = calcWinsPercent(gzipStats.toList)
+        val aboveV = gzipStats.filter { case (o, c) => o >= v }
+        val winsAfterV = calcWinsPercent(aboveV.toList)
+        println(f"Total samples: ${gzipStats.size}, winning: $winsTotal%2.2f%%; winning after $v bytes size(${aboveV.size} samples): $winsAfterV%2.2f%%")
+      case None =>
+        println(f"Total samples: ${gzipStats.size}, no winning")
+    }
+  }
+
   def serialize(v: Value[SType]): Array[Byte] = {
     val w = Serializer.startWriter()
     serialize(v, w)
     w.toBytes
   }
 
+  def measureGzip(exp: Value[SType]): Unit = {
+    val bytes = ValueSerializer.serialize(exp)
+    val compressed = Gzip.compress(bytes)
+    gzipStats += bytes.length -> compressed.length
+    printGzipStats()
+  }
+
   def deserialize(bytes: Array[Byte], pos: Serializer.Position = 0): Value[SType] =
     deserialize(Serializer.startReader(bytes, pos))
 
+}
+
+object Gzip {
+
+  def compress(input: Array[Byte]): Array[Byte] = {
+    val bos = new ByteArrayOutputStream(input.length)
+    val gzip = new GZIPOutputStream(bos)
+    gzip.write(input)
+    gzip.close()
+    val compressed = bos.toByteArray
+    bos.close()
+    compressed
+  }
+
+  def decompress(compressed: Array[Byte]): Array[Byte] = {
+    val inputStream = new GZIPInputStream(new ByteArrayInputStream(compressed))
+    // todo optimize
+    scala.io.Source.fromInputStream(inputStream).toArray.map(_.toByte)
+  }
 }

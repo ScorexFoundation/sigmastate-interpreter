@@ -294,7 +294,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   }
 
-  property("threshold proving of different trees") {
+  ignore("threshold proving of different trees") {
     val secret1 = DLogProverInput.random()
     val subProp1 = secret1.publicImage
     val secret2 = DLogProverInput.random()

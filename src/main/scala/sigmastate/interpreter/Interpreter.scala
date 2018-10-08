@@ -17,7 +17,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
-import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
+import sigmastate.serialization._
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
@@ -378,6 +378,9 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
+
+    ValueSerializer.measureGzip(exp)
+
     val (cProp, cost) = reduceToCrypto(context, exp).get
 
     val checkingResult = cProp match {
