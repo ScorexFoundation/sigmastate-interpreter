@@ -44,12 +44,12 @@ class EvaluationTest extends BaseCtxTests
     val self = ErgoBox(1, pk, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
     val ctx = newErgoContext(height = 1, self)
     // guarded register access: existing reg
-    reduce(noEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].value == 10", ctx, true)
+    reduce(noEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].get == 10", ctx, true)
     // guarded register access: non-existing reg
-    reduce(noEnv, "lazy2", "SELF.R5[Int].isDefined && SELF.R5[Int].value == 10", ctx, false)
+    reduce(noEnv, "lazy2", "SELF.R5[Int].isDefined && SELF.R5[Int].get == 10", ctx, false)
 
     // guarded register access: reading register if it is defined and another one is undefined
-    reduce(noEnv, "lazy3", "SELF.R4[Int].isDefined && (SELF.R5[Int].isDefined || SELF.R4[Int].value == 10)", ctx, true)
+    reduce(noEnv, "lazy3", "SELF.R4[Int].isDefined && (SELF.R5[Int].isDefined || SELF.R4[Int].get == 10)", ctx, true)
   }
 
   test("context data") {
@@ -63,21 +63,21 @@ class EvaluationTest extends BaseCtxTests
 
   test("lambdas") {
     val ctx = newErgoContext(height = 1, boxToSpend)
-    reduce(noEnv, "lam3", "{let f = fun (out: Box) = { out.value >= 0L }; f(SELF) }", ctx, true)
+    reduce(noEnv, "lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }", ctx, true)
 
     // access R5 and call g only if f returns false
     reduce(noEnv, "lam4",
       """{
-       |  let f = fun (out: Box) = { out.value >= 0L };
-       |  let g = fun (x: Int) = { x < 0 };
-       |  f(SELF) || g(SELF.R5[Int].value)
+       |  val f = { (out: Box) => out.value >= 0L };
+       |  val g = { (x: Int) => x < 0 };
+       |  f(SELF) || g(SELF.R5[Int].get)
        | }""".stripMargin, ctx, true)
 
     reduce(noEnv, "lam5",
       """{
-       |  let f = fun (out: Box) = { out.value >= 0L };
-       |  let g = fun (xs: Array[Int]) = { xs.size > 0 };
-       |  f(SELF) || g(SELF.R5[Array[Int]].value)
+       |  val f = { (out: Box) => out.value >= 0L };
+       |  val g = { (xs: Array[Int]) => xs.size > 0 };
+       |  f(SELF) || g(SELF.R5[Array[Int]].get)
        | }""".stripMargin, ctx, true)
   }
 

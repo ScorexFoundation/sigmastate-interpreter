@@ -54,15 +54,15 @@ class ErgoTreeBuildingTest extends BaseCtxTests
 
   test("simple lambdas") {
     import IR.builder._
-    build(noEnv, "lam1", "fun (x: Long) = HEIGHT + x", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
-    build(noEnv, "lam2", "{ let f = fun (x: Long) = HEIGHT + x; f }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
-    build(noEnv, "lam3", "{ OUTPUTS.exists(fun (x: Box) = HEIGHT == x.value) }",
+    build(noEnv, "lam1", "{ (x: Long) => HEIGHT + x }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
+    build(noEnv, "lam2", "{ val f = { (x: Long) => HEIGHT + x }; f }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
+    build(noEnv, "lam3", "{ OUTPUTS.exists { (x: Box) => HEIGHT == x.value } }",
       Exists1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
-    build(noEnv, "lam4", "{ OUTPUTS.forall(fun (x: Box) = HEIGHT == x.value) }",
+    build(noEnv, "lam4", "{ OUTPUTS.forall { (x: Box) => HEIGHT == x.value } }",
       ForAll1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
-    build(noEnv, "lam5", "{ let f = fun (x: Long) = HEIGHT + x; f(10L) }",
+    build(noEnv, "lam5", "{ val f = { (x: Long) => HEIGHT + x }; f(10L) }",
       Apply(FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))), Vector(LongConstant(10))))
-    build(noEnv, "lam6", "{ let f = fun (x: Long) = HEIGHT + x; f(10L) + f(20L) }",
+    build(noEnv, "lam6", "{ val f = { (x: Long) => HEIGHT + x }; f(10L) + f(20L) }",
       BlockValue(Vector(
         ValDef(1,List(),FuncValue(Vector((1,SLong)), Plus(Height, ValUse(1,SLong))))),
         Plus(Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(10))).asNumValue,

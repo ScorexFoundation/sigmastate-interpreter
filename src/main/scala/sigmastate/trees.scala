@@ -224,6 +224,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.ty
   extends Transformer[SCollection[SBoolean.type], SBoolean.type]
     with NotReadyValueBoolean {
   override val opCode: OpCode = AtLeastCode
+  override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
 
   override def cost[C <: Context[C]](context: C): Long =
     bound.cost(context) + input.cost(context) + Cost.AtLeastDeclaration
@@ -354,6 +355,7 @@ case class LongToByteArray(input: Value[SLong.type])
 case class Base58ToByteArray(input: Value[SString.type])
   extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.Base58ToByteArrayCode
+  val opType: SFunc = SFunc(SString, SByteArray)
 
   override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SByteArray] =
     ByteArrayConstant(Base58.decode(bal.value).get)
@@ -367,7 +369,7 @@ case class Base58ToByteArray(input: Value[SString.type])
 case class Base64ToByteArray(input: Value[SString.type])
   extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.Base64ToByteArrayCode
-
+  val opType: SFunc = SFunc(SString, SByteArray)
   override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SByteArray] =
     ByteArrayConstant(Base64.decode(bal.value).get)
 

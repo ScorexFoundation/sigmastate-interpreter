@@ -269,9 +269,9 @@ class SigmaTyper(val builder: SigmaBuilder) {
           error(s"Invalid application of type arguments $app: function $input doesn't have type parameters")
       }
 
-    case app @ ApplyTypes(in, targs) =>
-      val newIn = assignType(env, in)
-      ApplyTypes(newIn, targs)
+//    case app @ ApplyTypes(in, targs) =>
+//      val newIn = assignType(env, in)
+//      ApplyTypes(newIn, targs)
 //      error(s"Invalid application of type arguments $app: expression doesn't have type parameters")
 
     case If(c, t, e) =>

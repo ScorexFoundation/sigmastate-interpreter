@@ -94,7 +94,7 @@ object Values {
     def opType: SFunc = {
       val resType = tpe match {
         case ct @ SCollection(tItem) =>
-          SCollection(ct.typeParams.head.asTypeIdent)
+          SCollection(ct.typeParams.head.ident)
         case ft @ SFunc(tD, tR, _) =>
           ft.getGenericType
         case _ => tpe

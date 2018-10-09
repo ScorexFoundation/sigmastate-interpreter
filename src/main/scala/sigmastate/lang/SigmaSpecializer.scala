@@ -7,7 +7,7 @@ import sigmastate.Values.Value.Typed
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Select, Val, ValueOps}
+import sigmastate.lang.Terms.{Lambda, ApplyTypes, Apply, Val, ValueOps, Select, Block, Ident}
 import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 import sigmastate.utils.Extensions._

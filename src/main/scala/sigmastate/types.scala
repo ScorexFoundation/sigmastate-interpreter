@@ -185,10 +185,6 @@ trait SGenericType {
   def tparamSubst: Map[String, SType]
 }
 
-case class STypeParam(name: String) {
-  val asTypeIdent = STypeIdent(name)
-}
-
 case class SMethod(name: String, stype: SType)
 
 /** Special type to represent untyped values.
@@ -561,15 +557,15 @@ object SCollection {
   val tIV = STypeIdent("IV")
   val tOV = STypeIdent("OV")
   val SizeMethod = SMethod("size", SInt)
-  val GetOrElseMethod = SMethod("getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(tIV)))
-  val MapMethod = SMethod("map", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV)))
-  val ExistsMethod = SMethod("exists", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)))
-  val FoldMethod = SMethod("fold", SFunc(IndexedSeq(SCollection(tIV), tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV, Seq(tIV, tOV)))
-  val ForallMethod = SMethod("forall", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV)))
-  val SliceMethod = SMethod("slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV)))
-  val WhereMethod = SMethod("where", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV)))
-  val AppendMethod = SMethod("append", SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SCollection(tIV), Seq(tIV)))
-  val ApplyMethod = SMethod("apply", SFunc(IndexedSeq(SCollection(tIV), SInt), tIV, Seq(tIV)))
+  val GetOrElseMethod = SMethod("getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(STypeParam(tIV))))
+  val MapMethod = SMethod("map", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(STypeParam(tIV), STypeParam(tOV))))
+  val ExistsMethod = SMethod("exists", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV))))
+  val FoldMethod = SMethod("fold", SFunc(IndexedSeq(SCollection(tIV), tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV, Seq(STypeParam(tIV), STypeParam(tOV))))
+  val ForallMethod = SMethod("forall", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV))))
+  val SliceMethod = SMethod("slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(STypeParam(tIV))))
+  val WhereMethod = SMethod("where", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(STypeParam(tIV))))
+  val AppendMethod = SMethod("append", SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SCollection(tIV), Seq(STypeParam(tIV))))
+  val ApplyMethod = SMethod("apply", SFunc(IndexedSeq(SCollection(tIV), SInt), tIV, Seq(STypeParam(tIV))))
 
   val methods = Seq(
     SizeMethod,
@@ -654,18 +650,12 @@ object SOption {
   val Get = "get"
   val GetOrElse = "getOrElse"
 
-  private[sigmastate] def createMethods(tArg: STypeIdent): Seq[SMethod] =
-    Seq(
-      SMethod(IsEmpty, SBoolean),
-      SMethod(IsDefined, SBoolean),
-      SMethod(Get, tArg),
-      SMethod(GetOrElse, SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(STypeParam(tT))))
-    )
   private val tT = STypeIdent("T")
-  val IsDefinedMethod = SMethod("isDefined", SBoolean)
-  val GetMethod = SMethod("value", tT)
-  val GetOrElseMethod = SMethod("valueOrElse", SFunc(IndexedSeq(SOption(tT), tT), tT, Seq(tT)))
-  val methods: Seq[SMethod] = Seq(IsDefinedMethod, GetMethod, GetOrElseMethod)
+  val IsEmptyMethod   = SMethod(IsEmpty, SBoolean)
+  val IsDefinedMethod = SMethod(IsDefined, SBoolean)
+  val GetMethod       = SMethod(Get, tT)
+  val GetOrElseMethod = SMethod(GetOrElse, SFunc(IndexedSeq(SOption(tT), tT), tT, Seq(STypeParam(tT))))
+  val methods: Seq[SMethod] = Seq(IsEmptyMethod, IsDefinedMethod, GetMethod, GetOrElseMethod)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
@@ -742,10 +732,10 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
   override def dataSize(v: SType#WrappedType) = 8L
   import SFunc._
   val typeParams: Seq[STypeParam] = (tDom.zipWithIndex.map { case (t, i) => STypeParam(tD.name + (i + 1)) }) :+ STypeParam(tR.name)
-  val tparamSubst = typeParams.zip(tDom).map { case (p, t) => p.name -> t }.toMap + (tR.name -> tRange)
+  val tparamSubst = typeParams.zip(tDom).map { case (p, t) => p.ident.name -> t }.toMap + (tR.name -> tRange)
 
   def getGenericType: SFunc = {
-    val ts = typeParams.map(_.asTypeIdent)
+    val ts = typeParams.map(_.ident)
     SFunc(ts.init.toIndexedSeq, ts.last, Nil)
   }
 }

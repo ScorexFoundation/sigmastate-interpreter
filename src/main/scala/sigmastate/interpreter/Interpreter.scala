@@ -94,15 +94,16 @@ trait Interpreter extends ScorexLogging {
         null
 
     case t: GetVar[_] =>
+      val elemType = t.tpe.elemType
       if (context.extension.values.contains(t.varId)) {
         val v = context.extension.values(t.varId)
-        if (v.tpe != t.tpe.elemType)
+        if (v.tpe != elemType)
           throw new InvalidType(s"Invalid value type ${v.tpe} in context variable with id ${t.varId}, expected ${t.tpe.elemType}")
         else
           SomeValue(v)
       }
       else
-        NoneValue(t.tpe.elemType)
+        NoneValue(elemType)
 
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)

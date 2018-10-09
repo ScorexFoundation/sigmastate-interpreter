@@ -124,27 +124,27 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("collection ops") {
-    check("exists", "OUTPUTS.exists(fun (out: Box) = { out.value >= 0L })",
+    check("exists", "OUTPUTS.exists { (out: Box) => out.value >= 0L }",
       ctx => ctx.OUTPUTS.exists(fun(out => { out.value >= 0L })))
-    check("forall", "OUTPUTS.forall(fun (out: Box) = { out.value >= 0L })",
+    check("forall", "OUTPUTS.forall { (out: Box) => out.value >= 0L }",
       ctx => ctx.OUTPUTS.forall(fun(out => { out.value >= 0L })))
-    check("map", "OUTPUTS.map(fun (out: Box) = { out.value >= 0L })",
+    check("map", "OUTPUTS.map { (out: Box) => out.value >= 0L }",
       ctx => ctx.OUTPUTS.map(fun(out => { out.value >= 0L })))
 //    check("where", "OUTPUTS.where(fun (out: Box) = { out.value >= 0L })",
 //      ctx => ctx.OUTPUTS.filter(fun(out => { out.value >= 0L })))
   }
 
   test("lambdas") {
-    check("lam1", "fun (out: Box) = { out.value >= 0L }",
+    check("lam1", "{ (out: Box) => out.value >= 0L }",
       ctx => fun { out: Rep[Box] => out.value >= 0L }, {_ => constCost[Box => Boolean]}, {_ => 8L})
-    check("lam2", "{let f = fun (out: Box) = { out.value >= 0L }; f}",
+    check("lam2", "{ val f = { (out: Box) => out.value >= 0L }; f }",
       ctx => fun { out: Rep[Box] => out.value >= 0L }, {_ => constCost[Box => Boolean]}, {_ => 8L})
-    check("lam3", "{let f = fun (out: Box) = { out.value >= 0L }; f(SELF) }",
+    check("lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }",
       ctx => { val f = fun { out: Rep[Box] => out.value >= 0L }; Apply(f, ctx.SELF, false) })
   }
 
   test("if then else") {
-    check("lam1", "{ let x = if (OUTPUTS.size > 0) OUTPUTS(0).value else SELF.value; x }",
+    check("lam1", "{ val x = if (OUTPUTS.size > 0) OUTPUTS(0).value else SELF.value; x }",
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
   }
 

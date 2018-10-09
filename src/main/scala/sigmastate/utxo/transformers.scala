@@ -110,7 +110,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
     input.cost(context) * 2 + from.cost(context) + until.cost(context)
 
   def opType = {
-    val tpeCol = SCollection(input.tpe.typeParams.head.asTypeIdent)
+    val tpeCol = SCollection(input.tpe.typeParams.head.ident)
     SFunc(Vector(tpeCol, SInt, SInt), tpeCol)
   }
 }
@@ -314,7 +314,7 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
 case class ErgoAddressToSigmaProp(input: Value[SString.type])
   extends Transformer[SString.type, SSigmaProp.type] with NotReadyValue[SSigmaProp.type] {
   override val opCode: OpCode = OpCodes.ErgoAddressToSigmaPropCode
-
+  val opType: SFunc = SFunc(SString, SSigmaProp)
   override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SSigmaProp.type] =
     intr match {
       case _: ErgoLikeInterpreter if ctx.isInstanceOf[ErgoLikeContext] =>
@@ -444,6 +444,7 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
 
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override val opCode: OpCode = OpCodes.GetVarCode
+  val opType = SFunc(Vector(SContext, SByte), tpe)
   override def cost[C <: Context[C]](context: C): Long = context.extension.cost(varId) + 1
 }
 
@@ -454,36 +455,39 @@ object GetVar {
 
 case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[SOption[V], V] {
   override val opCode: OpCode = OpCodes.OptionGetCode
+  val opType = SFunc(input.tpe, tpe)
   override def tpe: V = input.tpe.elemType
-  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] =
-    input match {
-      case SomeValue(v) => v
-      case n @ NoneValue(_) => throw new OptionUnwrapNone(s"Cannot unwrap None: $n")
-    }
+  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] = ???
+//    input match {
+//      case SomeValue(v) => v
+//      case n @ NoneValue(_) => throw new OptionUnwrapNone(s"Cannot unwrap None: $n")
+//    }
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionGet
 }
 
 case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[V])
   extends Transformer[SOption[V], V] {
   override val opCode: OpCode = OpCodes.OptionGetOrElseCode
+  val opType = SFunc(IndexedSeq(input.tpe, tpe), tpe)
   override def tpe: V = input.tpe.elemType
-  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] =
-    input match {
-      case SomeValue(v) => v
-      case NoneValue(_) => default
-    }
+  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[V] = ???
+//    input match {
+//      case SomeValue(v) => v
+//      case NoneValue(_) => default
+//    }
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionGetOrElse
 }
 
 case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
   extends Transformer[SOption[V], SBoolean.type] {
   override val opCode: OpCode = OpCodes.OptionIsDefinedCode
+  val opType = SFunc(input.tpe, SBoolean)
   override def tpe= SBoolean
-  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[SBoolean.type] =
-    input match {
-      case SomeValue(_) => TrueLeaf
-      case NoneValue(_) => FalseLeaf
-    }
+  override def function(int: Interpreter, ctx: Context[_], input: EvaluatedValue[SOption[V]]): Value[SBoolean.type] = ???
+//    input match {
+//      case SomeValue(_) => TrueLeaf
+//      case NoneValue(_) => FalseLeaf
+//    }
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.OptionIsDefined
 }
 

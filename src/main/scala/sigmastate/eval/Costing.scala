@@ -1,7 +1,8 @@
 package sigmastate.lang
 
 import java.math.BigInteger
-
+import scala.language.implicitConversions
+import scala.language.existentials
 import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
 
@@ -481,7 +482,7 @@ trait Costing extends SigmaLibrary with DataCosting {
 
       case Terms.Block(binds, res) =>
         var curEnv = env
-        for (Let(n, _, b) <- binds) {
+        for (Val(n, _, b) <- binds) {
           if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
           val bC = evalNode(ctx, curEnv, b)
 //          val bC = valDef(n, Thunk(evalNode(ctx, curEnv, b)))
@@ -542,15 +543,15 @@ trait Costing extends SigmaLibrary with DataCosting {
         val v = valueOpt.isDefined
         withDefaultSize(v, baseCost)
 
-      case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetMethod.name, Some(regType)) =>
+      case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.Get, Some(regType)) =>
         val reg = ErgoBox.registerByName.getOrElse(regName,
           error(s"Invalid register name $regName in expression $sel"))
-        eval(mkExtractRegisterAs(box.asBox, reg, regType, None))
+        eval(mkExtractRegisterAs(box.asBox, reg, sigmastate.SOption(regType)))
 
-      case sel @ Terms.Apply(Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetOrElseMethod.name, Some(_)), Seq(arg)) =>
-        val reg = ErgoBox.registerByName.getOrElse(regName,
-          error(s"Invalid register name $regName in expression $sel"))
-        eval(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
+//      case sel @ Terms.Apply(Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetOrElseMethod.name, Some(_)), Seq(arg)) =>
+//        val reg = ErgoBox.registerByName.getOrElse(regName,
+//          error(s"Invalid register name $regName in expression $sel"))
+//        eval(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
 
       case sel @ Select(obj, field, _) if obj.tpe == SBox =>
         (obj.asValue[SBox.type], field) match {
@@ -589,7 +590,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         val sizes = inputC.sizes.slice(f, u)
         RCostedCol(vals, costs, sizes, inputC.valuesCost + costOf(op))
 
-      case Terms.Apply(Select(col, "where", _), Seq(Terms.Lambda(Seq((n, t)), _, Some(body)))) =>
+      case Terms.Apply(Select(col, "where", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(body)))) =>
         val input = col.asValue[SCollection[SType]]
         val cond = body.asValue[SBoolean.type]
         val eIn = stypeToElem(input.tpe.elemType)
@@ -603,7 +604,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         res
 
       case Terms.Apply(Select(col, method @ (SCollection.ExistsMethod.name | SCollection.ForallMethod.name), _),
-                       Seq(Terms.Lambda(Seq((n, t)), _, Some(body)))) =>
+                       Seq(Terms.Lambda(_, Seq((n, t)), _, Some(body)))) =>
         val input = col.asValue[SCollection[SType]]
         val cond = body.asValue[SBoolean.type]
         val eItem = stypeToElem(input.tpe.elemType)
@@ -621,7 +622,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         val cost = inputC.cost + inputV.map(condCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
         withDefaultSize(res, cost)
 
-      case Terms.Apply(Select(col,"map", _), Seq(Terms.Lambda(Seq((n, t)), _, Some(mapper)))) =>
+      case Terms.Apply(Select(col,"map", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(mapper)))) =>
         val input = col.asValue[SCollection[SType]]
         val eIn = stypeToElem(input.tpe.elemType)
         val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
@@ -690,9 +691,9 @@ trait Costing extends SigmaLibrary with DataCosting {
         val bytes = boxC.value.propositionBytes
         withDefaultSize(bytes, boxC.cost + costOf(node))
 
-      case utxo.ExtractRegisterAs(In(box), regId, tpe, None) =>
+      case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
         val boxC = box.asRep[CostedBox]
-        implicit val elem = stypeToElem(tpe).asElem[Any]
+        implicit val elem = stypeToElem(optTpe.elemType).asElem[Any]
         val valueOpt = boxC.getReg(regId.number.toInt)(elem)
         val res = valueOpt.get
         res
@@ -808,7 +809,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         val resCost = cC.cost + (tC.cost max eC.cost) + costOf(node)
         withDefaultSize(resV, resCost)
         
-      case l @ Terms.Lambda(Seq((n, argTpe)), tpe, Some(body)) =>
+      case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
         implicit val eAny = stypeToElem(argTpe).asElem[Any]
         val f = fun { x: Rep[Costed[Any]] =>
           evalNode(ctx, env + (n -> x), body)
