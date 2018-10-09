@@ -54,7 +54,7 @@ class BlockchainSimulationSpecification extends PropSpec
     Block(txs)
   }
 
-  property("apply one valid block") {
+  ignore("apply one valid block") {
     val state = ValidationState.initialState()
     val miner = new ErgoLikeProvingInterpreter()
     val block = generateBlock(state, miner, 0)
@@ -62,7 +62,7 @@ class BlockchainSimulationSpecification extends PropSpec
     updStateTry.isSuccess shouldBe true
   }
 
-  property("too costly block") {
+  ignore("too costly block") {
     val state = ValidationState.initialState()
     val miner = new ErgoLikeProvingInterpreter()
     val block = generateBlock(state, miner, 0)

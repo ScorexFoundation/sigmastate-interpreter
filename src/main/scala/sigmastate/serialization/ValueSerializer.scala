@@ -1,8 +1,9 @@
 package sigmastate.serialization
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
+import com.github.tototoshi.csv._
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -179,11 +180,28 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     w.toBytes
   }
 
+  private lazy val csvFile = {
+    val f = new File("GZipMeasurements.csv")
+    val writer = CSVWriter.open(f, append = false)
+    writer.writeRow(List("TestName", "IR", "OriginalSerializedSize", "CompressedSize", "OrigCompRatio"))
+    writer.close()
+    f
+  }
+
   def measureGzip(exp: Value[SType])(implicit testName: String): Unit = {
+    if (testName == "NoTest") {
+      return
+    }
+
     val bytes = ValueSerializer.serialize(exp)
     val compressed = Gzip.compress(bytes)
     gzipStats += ((testName, exp.toString, bytes.length, compressed.length))
     printGzipStats()
+
+    val writer = CSVWriter.open(csvFile, append = true)
+    val ratio = bytes.length.toDouble / compressed.length.toDouble
+    writer.writeRow(List(testName, exp.toString, bytes.length.toString, compressed.length.toString, f"$ratio%2.3f"))
+    writer.close()
   }
 
   def deserialize(bytes: Array[Byte], pos: Serializer.Position = 0): Value[SType] =

@@ -60,7 +60,8 @@ val testingDependencies = Seq(
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
   "junit" % "junit" % "4.12" % "test",
-  "com.novocode" % "junit-interface" % "0.11" % "test"
+  "com.novocode" % "junit-interface" % "0.11" % "test",
+  "com.github.tototoshi" %% "scala-csv" % "1.3.5"
 )
 
 libraryDependencies ++= Seq(
