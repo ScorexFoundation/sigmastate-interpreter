@@ -377,7 +377,7 @@ trait Interpreter extends ScorexLogging {
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proof: Array[Byte],
-             message: Array[Byte]): Try[VerificationResult] = Try {
+             message: Array[Byte])(implicit testName: String): Try[VerificationResult] = Try {
 
     ValueSerializer.measureGzip(exp)
 
@@ -430,7 +430,7 @@ trait Interpreter extends ScorexLogging {
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proverResult: ProverResult,
-             message: Array[Byte]): Try[VerificationResult] = {
+             message: Array[Byte])(implicit testName: String = "NoTest"): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
     verify(exp, ctxv, proverResult.proof, message)
   }
@@ -440,7 +440,7 @@ trait Interpreter extends ScorexLogging {
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proof: ProofT,
-             message: Array[Byte]): Try[VerificationResult] = {
+             message: Array[Byte])(implicit testName: String): Try[VerificationResult] = {
     verify(exp, context, SigSerializer.toBytes(proof), message)
   }
 }

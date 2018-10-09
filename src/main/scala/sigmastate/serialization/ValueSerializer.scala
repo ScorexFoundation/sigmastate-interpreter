@@ -151,21 +151,21 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     v
   }
 
-  private val gzipStats = mutable.MutableList[(Int, Int)]()
+  private val gzipStats = mutable.MutableList[(String, String, Int, Int)]()
 
-  def calcWinsPercent(stats: List[(Int, Int)]): Double = {
-    val winsCount = stats.count { case (o, c) => o > c }
+  def calcWinsPercent(stats: List[(String, String, Int, Int)]): Double = {
+    val winsCount = stats.count { case (_, _, o, c) => o > c }
     (winsCount.toFloat / stats.size.toFloat) * 100.0
   }
 
   def printGzipStats(): Unit = {
-    gzipStats.filter { case (o, c) => o > c }
-      .map(_._1)
+    gzipStats.filter { case (_, _, o, c) => o > c }
+      .map(_._3)
       .toList.sorted
       .headOption match {
       case Some(v) =>
         val winsTotal = calcWinsPercent(gzipStats.toList)
-        val aboveV = gzipStats.filter { case (o, c) => o >= v }
+        val aboveV = gzipStats.filter { case (_, _, o, _) => o >= v }
         val winsAfterV = calcWinsPercent(aboveV.toList)
         println(f"Total samples: ${gzipStats.size}, winning: $winsTotal%2.2f%%; winning after $v bytes size(${aboveV.size} samples): $winsAfterV%2.2f%%")
       case None =>
@@ -179,10 +179,10 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     w.toBytes
   }
 
-  def measureGzip(exp: Value[SType]): Unit = {
+  def measureGzip(exp: Value[SType])(implicit testName: String): Unit = {
     val bytes = ValueSerializer.serialize(exp)
     val compressed = Gzip.compress(bytes)
-    gzipStats += bytes.length -> compressed.length
+    gzipStats += ((testName, exp.toString, bytes.length, compressed.length))
     printGzipStats()
   }
 

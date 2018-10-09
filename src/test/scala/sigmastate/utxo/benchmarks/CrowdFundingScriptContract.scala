@@ -47,7 +47,7 @@ class CrowdFundingScriptContract(
   def verify(proof: Array[Byte],
              ctx: ErgoLikeContext,
              fakeMessage: Array[Byte]): Try[Interpreter.VerificationResult] = {
-    val res = verifier.verify(compiledProposition, ctx, proof, fakeMessage)
+    val res = verifier.verify(compiledProposition, ctx, proof, fakeMessage)("CrowdFundingContract")
     res
   }
 }

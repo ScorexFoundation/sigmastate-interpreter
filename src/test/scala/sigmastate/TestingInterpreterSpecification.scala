@@ -11,6 +11,7 @@ import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
 import org.ergoplatform.{ErgoBox, Height}
 import scorex.util.encode.Base58
+import sigmastate.helpers.{SigmaTestingCommons, TestName}
 import sigmastate.serialization.ValueSerializer
 
 import scala.util.Random
@@ -20,7 +21,8 @@ import scala.util.Random
 class TestingInterpreterSpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
-  with Matchers {
+  with Matchers
+  with TestName {
 
   import TestingInterpreter._
 

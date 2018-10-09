@@ -4,7 +4,7 @@ import org.ergoplatform
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{Matchers, Outcome, PropSpec}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{EvaluatedValue, GroupElementConstant, TrueLeaf, Value}
 import sigmastate.interpreter.CryptoConstants
@@ -13,10 +13,20 @@ import sigmastate.{SBoolean, SGroupElement, SType}
 
 import scala.language.implicitConversions
 
+trait TestName extends PropSpec {
+
+  implicit var testName: String = "UndefinedTestName"
+  override def withFixture (test: NoArgTest): Outcome= {
+    testName = s"${test.pos.get.fileName}: ${test.name}"
+    super.withFixture(test)
+  }
+}
+
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
-  with Matchers {
+  with Matchers
+  with TestName {
 
 
   val fakeSelf: ErgoBox = createBox(0, TrueLeaf)
