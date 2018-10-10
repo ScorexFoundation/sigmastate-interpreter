@@ -18,14 +18,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   lazy val IR: TestContext with Evaluation = new TestContext with Evaluation {
     import TestSigmaDslBuilder._
 
-    val sigmaDslBuilder = RTestSigmaDslBuilder()
-    val builder = TransformingSigmaBuilder
+    override val sigmaDslBuilder = RTestSigmaDslBuilder()
+    override val builder = TransformingSigmaBuilder
 
     beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
 
-    val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
-    val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
-    val monoidBuilderValue = new special.collection.MonoidBuilderInst()
+    override val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
+    override val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
+    override val monoidBuilderValue = new special.collection.MonoidBuilderInst()
   }
 
   import IR._

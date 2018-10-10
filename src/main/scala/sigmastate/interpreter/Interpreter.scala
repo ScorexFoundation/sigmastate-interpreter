@@ -4,32 +4,24 @@ import java.util
 import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
-import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
-import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ByteArrayConstant, _}
-import sigmastate.eval.Evaluation
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
+import sigmastate.eval.Evaluation
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.TransformingSigmaBuilder
-import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.Extensions._
 import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
 import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
-import sigmastate.utxo.{DeserializeContext, Transformer}
-import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
+import sigmastate.utxo.{DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.{Failure, Success, Try}
@@ -351,14 +343,14 @@ trait Interpreter extends ScorexLogging {
   lazy val IR: Evaluation = new Evaluation {
     import TestSigmaDslBuilder._
 
-    val sigmaDslBuilder = RTestSigmaDslBuilder()
-    val builder = TransformingSigmaBuilder
+    override val sigmaDslBuilder = RTestSigmaDslBuilder()
+    override val builder = TransformingSigmaBuilder
 
     beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
 
-    val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
-    val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
-    val monoidBuilderValue = new special.collection.MonoidBuilderInst()
+    override val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
+    override val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
+    override val monoidBuilderValue = new special.collection.MonoidBuilderInst()
   }
 
   import IR._
