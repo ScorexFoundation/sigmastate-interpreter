@@ -267,14 +267,14 @@ trait Costing extends SigmaLibrary with DataCosting {
 
   var defCounter = 0
   var defTime: Long = 0
-  override def def_unapply[T](e: Rep[T]) = {
-    defCounter += 1
-    val start = System.nanoTime()
-    val res = super.def_unapply(e)
-    val end = System.nanoTime()
-    defTime += (end - start)
-    res
-  }
+//  override def def_unapply[T](e: Rep[T]) = {
+//    defCounter += 1
+//    val start = System.nanoTime()
+//    val res = super.def_unapply(e)
+//    val end = System.nanoTime()
+//    defTime += (end - start)
+//    res
+//  }
 
   /** Should be specified in the final cake */
   val builder: sigmastate.lang.SigmaBuilder
@@ -287,7 +287,36 @@ trait Costing extends SigmaLibrary with DataCosting {
   val longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
   import Cost._
 
-  def split[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, (T => Int, T => Long))] = {
+  def splitFast[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Int)] = {
+    implicit val eT = f.elem.eDom
+    f.getLambda
+    val calc = fun { x: Rep[T] =>
+      val y = f(x);
+      val res = y.value match {
+        case SigmaPropMethods.isValid(p) => p
+        case v => v
+      }
+      res.asRep[R]
+    }
+    val cost = fun { x: Rep[T] => f(x).cost }
+    Pair(calc, cost)
+  }
+
+  def split2[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Int)] = {
+    implicit val eT = f.elem.eDom
+    val calc = fun { x: Rep[T] =>
+      val y = f(x);
+      val res = y.value match {
+        case SigmaPropMethods.isValid(p) => p
+        case v => v
+      }
+      res.asRep[R]
+    }
+    val cost = fun { x: Rep[T] => f(x).cost }
+    Pair(calc, cost)
+  }
+
+  def split3[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, (T => Int, T => Long))] = {
     implicit val eT = f.elem.eDom
     val calc = fun { x: Rep[T] =>
       val y = f(x);
@@ -611,7 +640,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         val inputC = evalNode(ctx, env, input).asRep[Costed[Col[Any]]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eItem == eAny, s"Types should be equal: but $eItem != $eAny")
-        val Tuple(condCalc, condCost, condSize) = split(fun { x: Rep[Any] =>
+        val Pair(condCalc, condCost) = split2(fun { x: Rep[Any] =>
           evalNode(ctx, env + (n -> CostedPrimRep(x, 0, x.dataSize)), cond)
         })
         val inputV = inputC.value
@@ -848,6 +877,11 @@ trait Costing extends SigmaLibrary with DataCosting {
 
   def cost(env: Map[String, Any], code: String) = {
     val typed = compiler.typecheck(env, code)
+    val cg = buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), typed)
+    cg
+  }
+
+  def cost(env: Map[String, Any], typed: SValue) = {
     val cg = buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), typed)
     cg
   }

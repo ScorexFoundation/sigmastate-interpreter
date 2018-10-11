@@ -175,17 +175,25 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
     val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
+    val parsed = compiler.parse(crowdFundingScript)
+    val env2 = env ++ Seq("timeout" -> (timeout + 1))
+    val typed = compiler.typecheck(env2, parsed)
     def eval(i: Int) = {
-      val cf = cost(env ++ Seq("timeout" -> (timeout + i)), crowdFundingScript)
-//      split(cf)
+      val cf = cost(env2, typed)
       cf
     }
-    var res: Rep[Any] = eval(0)
-    measure(2) { j => // 10 warm up iterations when j == 0
-      measure(j*10 + 10, false) { i =>
+
+    println("Warming up ...")
+    var res: Rep[Any] = null
+    for (i <- 1 to 1000)
+      res = eval(i)
+
+    println("Processing ...")
+    measure(1) { k =>
+      for (i <- 1 to 2000)
         res = eval(i)
-      }
     }
+    
     println(s"Defs: $defCounter, Time: ${defTime / 1000000}")
     emit("Crowd_Funding_measure", res)
   }

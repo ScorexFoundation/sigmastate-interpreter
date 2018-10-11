@@ -16,7 +16,7 @@ class DataCostingTest extends BaseCtxTests with LangTests {
 
   test("split cols") {
     ctx.emit("split_cols",
-      split(fun { in: Rep[(Col[Int], Byte)] =>
+      split3(fun { in: Rep[(Col[Int], Byte)] =>
         dataCost(in, None)
       })
     )

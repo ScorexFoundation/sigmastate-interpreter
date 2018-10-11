@@ -174,7 +174,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
 
     def doCosting: Rep[(Context => T, (Context => Int, Context => Long))] = {
       val costed = cost(env, script)
-      val res @ Tuple(calcF, costF, sizeF) = split(costed.asRep[Context => Costed[T]])
+      val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[T]])
       if (printGraphs) {
         val str = struct(
           "calc" -> calcF,
@@ -288,7 +288,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
 
   def build(env: Map[String, Any], name: String, script: String, expected: SValue): Unit = {
     val costed = cost(env, script)
-    val Tuple(valueF, costF, sizeF) = split(costed)
+    val Tuple(valueF, costF, sizeF) = split3(costed)
     emit(name, valueF, costF, sizeF)
     verifyCostFunc(costF) shouldBe(Success(()))
     verifyIsValid(valueF) shouldBe(Success(()))

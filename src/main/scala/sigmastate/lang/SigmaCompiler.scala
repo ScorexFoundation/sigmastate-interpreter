@@ -16,13 +16,17 @@ class SigmaCompiler(builder: SigmaBuilder) {
     }
   }
 
-  def typecheck(env: Map[String, Any], code: String): Value[SType] = {
-    val parsed = parse(code)
+  def typecheck(env: Map[String, Any], parsed: SValue): Value[SType] = {
     val binder = new SigmaBinder(env, builder)
     val bound = binder.bind(parsed)
     val typer = new SigmaTyper(builder)
     val typed = typer.typecheck(bound)
     typed
+  }
+
+  def typecheck(env: Map[String, Any], code: String): Value[SType] = {
+    val parsed = parse(code)
+    typecheck(env, parsed)
   }
 
   def compile(env: Map[String, Any], code: String): Value[SType] = {
