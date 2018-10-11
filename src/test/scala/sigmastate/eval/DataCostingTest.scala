@@ -1,11 +1,11 @@
 package sigmastate.eval
 
-import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler, Costing}
+import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
 
 import scalan.BaseCtxTests
 
 class DataCostingTest extends BaseCtxTests with LangTests {
-  lazy val ctx = new TestContext with Costing {
+  lazy val ctx = new TestContext with RuntimeCosting {
     import TestSigmaDslBuilder._
     val sigmaDslBuilder = RTestSigmaDslBuilder()
     val builder = TransformingSigmaBuilder

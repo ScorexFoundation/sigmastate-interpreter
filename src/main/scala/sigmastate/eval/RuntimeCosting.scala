@@ -1,12 +1,13 @@
-package sigmastate.lang
+package sigmastate.eval
 
 import java.math.BigInteger
+
 import scala.language.implicitConversions
 import scala.language.existentials
 import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
 
-import scalan.{Lazy, SigmaLibrary}
+import scalan.{Lazy, SigmaLibrary, Nullable}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import scapi.sigma.ProveDiffieHellmanTuple
@@ -21,14 +22,14 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
-import sigmastate.eval.{OrderingOps, NumericOps, DataCosting}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
+import sigmastate.lang.{Terms, SigmaCompiler}
 
-trait Costing extends SigmaLibrary with DataCosting {
+trait RuntimeCosting extends SigmaLibrary with DataCosting {
   import Context._;
   import WArray._;
   import WECPoint._;
@@ -55,7 +56,7 @@ trait Costing extends SigmaLibrary with DataCosting {
   import SigmaDslBuilder._
   import TrivialSigma._
   import MonoidBuilderInst._
-  
+
   def opcodeToArithOpName(opCode: Byte): String = opCode match {
     case OpCodes.PlusCode     => "+"
     case OpCodes.MinusCode    => "-"
@@ -106,9 +107,9 @@ trait Costing extends SigmaLibrary with DataCosting {
 
   override def sizeOf[T](value: Rep[T]): Rep[Long] = (value, value.elem) match {
     case (_, _: BoxElem[_]) =>
-      value.asRep[Box].dataSize
+      asRep[Box](value).dataSize
     case (_xs, ce: ColElem[a,_]) =>
-      val xs = _xs.asRep[Col[a]]
+      val xs = asRep[Col[a]](_xs)
       implicit val eA = xs.elem.eItem
       val tpe = elemToSType(eA)
       if (tpe.isConstantSize)
@@ -176,24 +177,27 @@ trait Costing extends SigmaLibrary with DataCosting {
     type Result = (RWOption[A], Th[B], RFunc[A, Costed[B]]) forSome {type A; type B}
 
     object IsGetCost {
-      def unapply(d: Def[_]): Option[Result] = d match {
+      def unapply(d: Def[_]): Nullable[Result] = d match {
         case CM.cost(COM.get(WOM.fold(opt, th, f))) =>
-          Some((opt, th, f)).asInstanceOf[Option[Result]]
-        case _ => None
+          val res = (opt, th, f).asInstanceOf[Result]
+          Nullable(res)
+        case _ => Nullable.None
       }
     }
     object IsGetDataSize {
-      def unapply(d: Def[_]): Option[Result] = d match {
+      def unapply(d: Def[_]): Nullable[Result] = d match {
         case CM.dataSize(COM.get(WOM.fold(opt, th, f))) =>
-          Some((opt, th, f)).asInstanceOf[Option[Result]]
-        case _ => None
+          val res = (opt, th, f).asInstanceOf[Result]
+          Nullable(res)
+        case _ => Nullable.None
       }
     }
     object IsGet {
-      def unapply(d: Def[_]): Option[Result] = d match {
+      def unapply(d: Def[_]): Nullable[Result] = d match {
         case COM.get(WOM.fold(opt, th, f)) =>
-          Some((opt, th, f)).asInstanceOf[Option[Result]]
-        case _ => None
+          val res = (opt, th, f).asInstanceOf[Result]
+          Nullable(res)
+        case _ => Nullable.None
       }
     }
   }
@@ -211,7 +215,7 @@ trait Costing extends SigmaLibrary with DataCosting {
 
     d match {
       case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
-        val l1 = RTrivialSigma(l.asRep[Boolean]).asRep[SigmaProp]
+        val l1 = asRep[SigmaProp](RTrivialSigma(asRep[Boolean](l)))
         // don't need new Thunk because sigma logical ops always strict
         val res = if (op == And)
           l1 && prop
@@ -222,7 +226,7 @@ trait Costing extends SigmaLibrary with DataCosting {
       case TrivialSigmaCtor(SigmaM.isValid(p)) => p
 
       case CCM.mapCosted(xs: RCostedCol[a], _f: RCostedFunc[_, b]) =>
-        val f = _f.asRep[Costed[a] => Costed[b]]
+        val f = asRep[Costed[a] => Costed[b]](_f)
         val (calcF, costF, sizeF) = splitCostedFunc[a, b](f)
         val vals = xs.values.map(calcF)
         val costs = xs.costs.zip(xs.sizes).map(costF)
@@ -230,7 +234,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         RCostedCol(vals, costs, sizes, xs.valuesCost)
 
 //      case CCM.filterCosted(xs: RCostedCol[a], _f: RCostedFunc[_,_]) =>
-//        val f = _f.asRep[Costed[a] => Costed[Boolean]]
+//        val f = asRep[Costed[a] => Costed[Boolean]](_f)
 //        val (calcF, costF, _) = splitCostedFunc[a, Boolean](f)
 //        val vals = xs.values.filter(calcF)
 //        val costs = xs.costs.zip(xs.sizes).map(costF)  // TODO how to filter our sizes and costs
@@ -242,17 +246,20 @@ trait Costing extends SigmaLibrary with DataCosting {
 
 //      case CostedFoldExtractors.IsGetCost(opt: RWOption[a], th: CostedThunk[b]@unchecked, f) =>
 //        implicit val eA = opt.elem.eItem
-//        opt.fold(Thunk { forceThunkByMirror(th).cost }, fun { x: Rep[a] => f.asRep[a => Costed[b]](x).cost })
+//        opt.fold(Thunk { forceThunkByMirror(th).cost }, fun { x: Rep[a] => asRep[a => Costed[b]](f)(x).cost })
 //
 //      case CostedFoldExtractors.IsGetDataSize(opt: RWOption[a], th: CostedThunk[b]@unchecked, f) =>
 //        implicit val eA = opt.elem.eItem
-//        opt.fold(Thunk { forceThunkByMirror(th).dataSize }, fun { x: Rep[a] => f.asRep[a => Costed[b]](x).dataSize })
+//        opt.fold(Thunk { forceThunkByMirror(th).dataSize }, fun { x: Rep[a] => asRep[a => Costed[b]](f)(x).dataSize })
 
-      case CostedFoldExtractors.IsGet(opt: RWOption[a], _th, _f) =>
+      case CostedFoldExtractors.IsGet(opt: RWOption[a], _, _f) =>
         implicit val eA = opt.elem.eItem
-        val th = _th.asRep[Thunk[CostedOption[Any]]]
-        val f = _f.asRep[a => CostedOption[Any]]
+        val f = asRep[a => CostedOption[Any]](_f)
         f(opt.get).get
+
+      case CostedOptionM.isDefined(WOptionM.fold(opt: RWOption[a], _, _f)) =>
+        implicit val eA = opt.elem.eItem
+        RCostedPrim(opt.isDefined, costedBuilder.SelectFieldCost, 1L)
 
       case _ => super.rewriteDef(d)
     }
@@ -276,21 +283,6 @@ trait Costing extends SigmaLibrary with DataCosting {
   val longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
   import Cost._
 
-  def splitFast[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Int)] = {
-    implicit val eT = f.elem.eDom
-    f.getLambda
-    val calc = fun { x: Rep[T] =>
-      val y = f(x);
-      val res = y.value match {
-        case SigmaPropMethods.isValid(p) => p
-        case v => v
-      }
-      res.asRep[R]
-    }
-    val cost = fun { x: Rep[T] => f(x).cost }
-    Pair(calc, cost)
-  }
-
   def split2[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Int)] = {
     implicit val eT = f.elem.eDom
     val calc = fun { x: Rep[T] =>
@@ -299,7 +291,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         case SigmaPropMethods.isValid(p) => p
         case v => v
       }
-      res.asRep[R]
+      asRep[R](res)
     }
     val cost = fun { x: Rep[T] => f(x).cost }
     Pair(calc, cost)
@@ -313,7 +305,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         case SigmaPropMethods.isValid(p) => p
         case v => v
       }
-      res.asRep[R]
+      asRep[R](res)
     }
     val cost = fun { x: Rep[T] => f(x).cost }
     val size = fun { x: Rep[T] => f(x).dataSize }
@@ -414,6 +406,11 @@ trait Costing extends SigmaLibrary with DataCosting {
 
   type RCosted[A] = Rep[Costed[A]]
 
+  /** This method works by:
+    * 1) staging block in the new scope of new thunk
+    * 2) extracting value, cost, or dataSize respectively
+    * 3) building the schedule by deps, effectively doing DCE along the way
+    * This has an effect of splitting the costed graph into three separate graphs*/
   def evalCostedBlock[T](block: => Rep[Costed[T]]): Rep[Costed[T]] = {
     val v = Thunk.forced {
       val costed = block
@@ -430,30 +427,20 @@ trait Costing extends SigmaLibrary with DataCosting {
     RCostedPrim(v, c, s)
   }
 
-  implicit class RepOps[T](x: Rep[T]) {
-    def dataSize: Rep[Long] = sizeOf(x)
-  }
-
   type Env = Map[String, Sym]
 
   import sigmastate._
   import scapi.sigma.{DLogProtocol, DiffieHellmanTupleProtocol}
 
-  private def evalNode[T <: SType](ctx: Rep[CostedContext], env: Map[String, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
+  protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: Map[String, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
-    def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = CostedPrimRep(v, cost, v.dataSize)
-    object In { def unapply(v: SValue): Option[RCosted[Any]] = Some(evalNode(ctx, env, v).asRep[Costed[Any]]) }
+    def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = CostedPrimRep(v, cost, sizeOf(v))
+    object In { def unapply(v: SValue): Option[RCosted[Any]] = Some(asRep[Costed[Any]](evalNode(ctx, env, v))) }
     val res: Rep[Any] = node match {
-      case Ident(n, _) =>
-        env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
-
-      case _: DLogProtocol.ProveDlog | _: ProveDiffieHellmanTuple =>
-        eval(SigmaPropConstant(node.asSigmaBoolean))
-
       case c @ Constant(v, tpe) => v match {
         case p: DLogProtocol.ProveDlog =>
-          val ge = evalNode(ctx, env, p.value).asRep[Costed[WECPoint]]
+          val ge = asRep[Costed[WECPoint]](evalNode(ctx, env, p.value))
           val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
           withDefaultSize(resV, ge.cost + costOf(SigmaPropConstant(p)))
         case bi: BigInteger =>
@@ -503,104 +490,38 @@ trait Costing extends SigmaLibrary with DataCosting {
         for (Val(n, _, b) <- binds) {
           if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
           val bC = evalNode(ctx, curEnv, b)
-//          val bC = valDef(n, Thunk(evalNode(ctx, curEnv, b)))
           curEnv = curEnv + (n -> bC)
         }
         val res1 = evalNode(ctx, curEnv, res)
         res1
 
-      // Rule: allOf(arr) --> AND(arr)
-      case Terms.Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-        eval(mkAND(arr))
+      // opt.get =>
+      case utxo.OptionGet(In(_opt)) =>
+        val opt = asRep[CostedOption[Any]](_opt)
+        opt.get
 
-      // Rule: anyOf(arr) --> OR(arr)
-      case Terms.Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-        eval(mkOR(arr))
+      // opt.isDefined =>
+      case utxo.OptionIsDefined(In(_opt)) =>
+        val opt = asRep[CostedOption[Any]](_opt)
+        opt.isDefined
 
-      case Terms.Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-        eval(mkCalcBlake2b256(arg))
+      // TODO opt.getOrElse =>
+//      case utxo.OptionGetOrElse(In(_opt), In(_default)) =>
+//        val opt = asRep[CostedOption[Any]](_opt)
+//        opt.getOrElse()
 
-      case Terms.Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-        eval(mkCalcSha256(arg))
 
-      case Terms.Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkIsMember(tree, key, proof))
-
-      case Terms.Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
-        eval(mkProveDlog(g))
-
-      case Terms.Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
-        eval(mkLongToByteArray(arg))
-
-      case sigmastate.Upcast(Constant(value, tpe), toTpe: SNumericType) =>
-        eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
-
-      // Rule: col.size --> SizeOf(col)
-      case Select(obj, "size", _) =>
-        if (obj.tpe.isCollectionLike)
-          eval(mkSizeOf(obj.asValue[SCollection[SType]]))
-        else
-          error(s"The type of $obj is expected to be Collection to select 'size' property")
-
-      // Rule: proof.isValid --> IsValid(proof)
-      case Select(p, SSigmaProp.IsValid, _) if p.tpe == SSigmaProp =>
-        eval(SigmaPropIsValid(p.asSigmaProp))
-
-      // Rule: proof.propBytes --> ProofBytes(proof)
-      case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
-        eval(SigmaPropBytes(p.asSigmaProp))
-
-      // box.regName[regType].isDefined =>
-      case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.IsDefinedMethod.name, Some(regType)) =>
-        val regId = ErgoBox.registerByName.getOrElse(regName,
-          error(s"Invalid register name $regName in expression $sel"))
-        val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
-        val elem = stypeToElem(regType)
-        val valueOpt = boxC.value.getReg(regId.number.toInt)(elem)
-        val baseCost = boxC.cost + Cost.ExtractRegister
-        val v = valueOpt.isDefined
-        withDefaultSize(v, baseCost)
-
-      case sel @ Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.Get, Some(regType)) =>
-        val reg = ErgoBox.registerByName.getOrElse(regName,
-          error(s"Invalid register name $regName in expression $sel"))
-        eval(mkExtractRegisterAs(box.asBox, reg, sigmastate.SOption(regType)))
-
-//      case sel @ Terms.Apply(Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetOrElseMethod.name, Some(_)), Seq(arg)) =>
+      //      case sel @ Terms.Apply(Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetOrElseMethod.name, Some(_)), Seq(arg)) =>
 //        val reg = ErgoBox.registerByName.getOrElse(regName,
 //          error(s"Invalid register name $regName in expression $sel"))
 //        eval(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
 
-      case sel @ Select(obj, field, _) if obj.tpe == SBox =>
-        (obj.asValue[SBox.type], field) match {
-          case (box, SBox.Value) => eval(mkExtractAmount(box))
-          case (box, SBox.PropositionBytes) => eval(mkExtractScriptBytes(box))
-          case (box, SBox.Id) => eval(mkExtractId(box))
-          case (box, SBox.Bytes) => eval(mkExtractBytes(box))
-          case (box, SBox.BytesWithNoRef) => eval(mkExtractBytesWithNoRef(box))
-          case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
-        }
 
-      case Select(obj: SigmaBoolean, field, _) =>
-        field match {
-          case SigmaBoolean.PropBytes => eval(SigmaPropBytes(SigmaPropConstant(obj)))
-          case SigmaBoolean.IsValid => eval(SigmaPropIsValid(SigmaPropConstant(obj)))
-        }
-
-      case Select(obj, "value", Some(SLong)) if obj.tpe == SBox =>
-        eval(mkExtractAmount(obj.asValue[SBox.type]))
-
-      case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
-        val index = fn.substring(1).toByte
-        eval(mkSelectField(tuple.asTuple, index))
-
-      case Terms.Apply(Select(col, "slice", _), Seq(from, until)) =>
-        eval(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
 
       case op @ Slice(In(input), In(from), In(until)) =>
-        val inputC = input.asRep[CostedCol[Any]]
-        val fromC = from.asRep[Costed[Int]]
-        val untilC = until.asRep[Costed[Int]]
+        val inputC = asRep[CostedCol[Any]](input)
+        val fromC = asRep[Costed[Int]](from)
+        val untilC = asRep[Costed[Int]](until)
         val f = fromC.value
         val u = untilC.value
         val vals = inputC.values.slice(f, u)
@@ -612,7 +533,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         val input = col.asValue[SCollection[SType]]
         val cond = body.asValue[SBoolean.type]
         val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
+        val inputC = asRep[CostedCol[Any]](evalNode(ctx, env, input))
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         val condC = fun { x: Rep[Costed[Any]] =>
@@ -630,7 +551,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eItem == eAny, s"Types should be equal: but $eItem != $eAny")
         val Pair(condCalc, condCost) = split2(fun { x: Rep[Any] =>
-          evalNode(ctx, env + (n -> CostedPrimRep(x, 0, x.dataSize)), cond)
+          evalNode(ctx, env + (n -> CostedPrimRep(x, 0, sizeOf(x))), cond)
         })
         val inputV = inputC.value
         val res = method match {
@@ -658,10 +579,6 @@ trait Costing extends SigmaLibrary with DataCosting {
 //        val env1 = env ++ Seq(zeroArg -> taggedZero, opArg -> taggedOp)
 //        some(mkFold(col.asValue[SCollection[SType]], taggedZero.varId, zero, taggedOp.varId, body))(env1)
 
-      case Terms.Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
-        val index1 = index.asValue[SInt.type]
-        val defaultValue1 = defaultValue.asValue[SType]
-        eval(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
       case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
         val fC = evalNode(ctx, env, f).asRep[CostedFunc[Unit, Any, Any]]
@@ -710,11 +627,10 @@ trait Costing extends SigmaLibrary with DataCosting {
         withDefaultSize(bytes, boxC.cost + costOf(node))
 
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
-        val boxC = box.asRep[CostedBox]
+        val boxC = asRep[CostedBox](box)
         implicit val elem = stypeToElem(optTpe.elemType).asElem[Any]
         val valueOpt = boxC.getReg(regId.number.toInt)(elem)
-        val res = valueOpt.get
-        res
+        valueOpt
 //        if (default.isDefined) {
 //          val d = evalNode(ctx, env, default.get)
 //          val (v,c) = (RWSpecialPredef.optionGetOrElse(valueOpt, d.value), boxC.cost + d.cost + costOf(node))
@@ -826,7 +742,7 @@ trait Costing extends SigmaLibrary with DataCosting {
         val resV = IF (cC.value) THEN tC.value ELSE eC.value
         val resCost = cC.cost + (tC.cost max eC.cost) + costOf(node)
         withDefaultSize(resV, resCost)
-        
+
       case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
         implicit val eAny = stypeToElem(argTpe).asElem[Any]
         val f = fun { x: Rep[Costed[Any]] =>
@@ -845,7 +761,7 @@ trait Costing extends SigmaLibrary with DataCosting {
       case _ =>
         error(s"Don't know how to evalNode($node)")
     }
-    res.asRep[Costed[T#WrappedType]]
+    asRep[Costed[T#WrappedType]](res)
   }
 
 

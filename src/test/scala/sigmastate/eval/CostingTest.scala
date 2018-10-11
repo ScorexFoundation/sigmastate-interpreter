@@ -9,7 +9,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.{LangTests, Costing, TransformingSigmaBuilder, SigmaCompiler}
+import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.{SigmaPropBytes, SizeOf}
 import SType._

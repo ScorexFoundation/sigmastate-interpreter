@@ -8,7 +8,6 @@ import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
-import sigmastate.lang.Costing
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{Exists1, CostTable, ExtractAmount, SizeOf}
@@ -22,7 +21,7 @@ import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
-trait Evaluation extends Costing {
+trait Evaluation extends RuntimeCosting {
   import Context._
   import SigmaProp._
   import Col._
@@ -64,7 +63,7 @@ trait Evaluation extends Costing {
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) | ColM.slice(_,_,_) =>
     case CBM.replicate(_,_,_) =>
     case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
-    case OM.get(_) | OM.fold(_,_,_) =>
+    case OM.get(_) | OM.fold(_,_,_) | OM.isDefined(_) =>
     case _: CostOf =>
     case _: Apply[_,_] =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")

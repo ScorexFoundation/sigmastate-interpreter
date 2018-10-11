@@ -1,13 +1,12 @@
 package sigmastate.eval
 
 import sigmastate.Values.{CollectionConstant, Constant}
-import sigmastate.lang.Costing
 
 import scalan.SigmaLibrary
 import scalan.Lazy
 import sigmastate.utxo.CostTable.Cost.BoxConstantDeclaration
 
-trait DataCosting extends SigmaLibrary { self: Costing =>
+trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
   import WArray._; import Col._
   import WOption._
   import Box._
@@ -30,7 +29,7 @@ trait DataCosting extends SigmaLibrary { self: Costing =>
     val SPCM = WSpecialPredefCompanionMethods
     d match {
       case CCB.costedValue(b, x, SPCM.some(cost)) =>
-        dataCost(x, Some(cost.asRep[Int]))
+        dataCost(x, Some(asRep[Int](cost)))
       case _ => super.rewriteDef(d)
     }
   }
@@ -38,18 +37,18 @@ trait DataCosting extends SigmaLibrary { self: Costing =>
   def dataCost[T](x: Rep[T], optCost: Option[Rep[Int]]): Rep[Costed[T]] = {
     val res: Rep[Any] = x.elem match {
       case pe: PairElem[a,b] =>
-        val l = dataCost(x.asRep[(a,b)]._1, None)
-        val r = dataCost(x.asRep[(a,b)]._2, optCost)
+        val l = dataCost(asRep[(a,b)](x)._1, None)
+        val r = dataCost(asRep[(a,b)](x)._2, optCost)
         RCostedPair(l, r)
 //      case optE: WOptionElem[a,_] =>
-//        val optX = x.asRep[WOption[a]]
+//        val optX = asRep[WOption[a]](x)
 //        val cost = optX.getOrElse()
 //        RCostedOption(optX)
       case ce: ColElem[_,_] =>
         ce.eA match {
           case e: Elem[a] =>
             implicit val eA = e
-            val xs = x.asRep[Col[a]]
+            val xs = asRep[Col[a]](x)
             val costs = colBuilder.replicate(xs.length, 0)
             val tpe = elemToSType(e)
             val sizes = if (tpe.isConstantSize)
@@ -59,7 +58,7 @@ trait DataCosting extends SigmaLibrary { self: Costing =>
             val colCost = costOf(CollectionConstant(null, tpe))
             RCostedCol(xs, costs, sizes, optCost.fold(colCost)(c => c + colCost))
 //          case pe: PairElem[a,b] =>
-//            val arr = x.asRep[Col[(a,b)]]
+//            val arr = asRep[Col[(a,b)]](x)
 //            implicit val ea = pe.eFst
 //            implicit val eb = pe.eSnd
 //            val ls = dataCost[Col[a]](arr.map(fun[(a,b), a](_._1)(Lazy(pe))))
@@ -67,18 +66,18 @@ trait DataCosting extends SigmaLibrary { self: Costing =>
 //            CostedPairColRep(ls, rs)
 //          case ce: ColElem[a,_] =>
 //            implicit val ea = ce.eA
-//            val col = x.asRep[Col[Col[a]]]
+//            val col = asRep[Col[Col[a]]](x)
 //            val rows = col.map(fun((r: Rep[Col[a]]) => dataCost(r)))
 //            CostedNestedColRep(rows)
 //          case entE: EntityElem[a] => // fallback case
-//            val col = x.asRep[Col[a]]
+//            val col = asRep[Col[a]](x)
 //            val costs = col.map(fun((r: Rep[a]) => dataCost(r).cost)(Lazy(entE)))
 //            CostedColRep(col, costs)
         }
       case _ =>
         CostedPrimRep(x, optCost.getOrElse(0), sizeOf(x))
     }
-    res.asRep[Costed[T]]
+    asRep[Costed[T]](res)
   }
 
 }

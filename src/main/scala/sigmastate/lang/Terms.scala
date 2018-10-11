@@ -160,7 +160,7 @@ object Terms {
 
   case class OperationId(name: String, opType: SFunc)
 
-  implicit class ValueOps(v: Value[SType]) {
+  implicit class ValueOps(val v: Value[SType]) extends AnyVal {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
     def asNumValue: Value[SNumericType] = v.asInstanceOf[Value[SNumericType]]
     def asStringValue: Value[SString.type] = v.asInstanceOf[Value[SString.type]]

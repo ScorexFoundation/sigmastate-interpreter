@@ -1,7 +1,6 @@
 package sigmastate.eval
 
 import scala.collection.mutable.ArrayBuffer
-import sigmastate.lang.Costing
 import sigmastate._
 import sigmastate.Values.{SValue, BlockValue, SigmaPropConstant, BoolValue, Value, ValDef, ValUse}
 import sigmastate.serialization.OpCodes._
@@ -14,7 +13,6 @@ import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
-import sigmastate.lang.Costing
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{Exists1, CostTable, ExtractAmount, SizeOf}
@@ -28,7 +26,7 @@ import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
-trait TreeBuilding extends Costing {
+trait TreeBuilding extends RuntimeCosting {
   import Liftables._
   import Context._
   import SigmaProp._
