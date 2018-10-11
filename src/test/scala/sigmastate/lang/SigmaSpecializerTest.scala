@@ -106,7 +106,7 @@ class SigmaSpecializerTest extends PropSpec
              22, IntConstant(0), 21, Plus(TaggedInt(21), TaggedInt(22)))
     spec("{ val arr = Array(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
       Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
-        22, TrueLeaf, 21, AND(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
+        22, TrueLeaf, 21, BinAnd(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
     spec("OUTPUTS.slice(0, 10)") shouldBe
         Slice(Outputs, IntConstant(0), IntConstant(10))
     spec("OUTPUTS.where({ (out: Box) => out.value >= 10 })") shouldBe

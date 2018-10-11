@@ -3,7 +3,6 @@ package sigmastate.interpreter
 import java.util
 import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
@@ -15,12 +14,14 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
+import sigmastate.eval.Evaluation
 import sigmastate.interpreter.Interpreter.VerificationResult
+import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
 import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
-import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
+import sigmastate.utxo.{DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
 
 import scala.util.{Failure, Success, Try}
@@ -339,6 +340,21 @@ trait Interpreter extends ScorexLogging {
     currTree
   }
 
+  lazy val IR: Evaluation = new Evaluation {
+    import TestSigmaDslBuilder._
+
+    override val sigmaDslBuilder = RTestSigmaDslBuilder()
+    override val builder = TransformingSigmaBuilder
+
+    beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
+
+    override val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
+    override val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
+    override val monoidBuilderValue = new special.collection.MonoidBuilderInst()
+  }
+
+  import IR._
+
   /**
     * As the first step both prover and verifier are applying context-specific transformations and then estimating
     * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
@@ -349,10 +365,6 @@ trait Interpreter extends ScorexLogging {
     * @return
     */
   def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]): Try[ReductionResult] = Try {
-    require(new Tree(exp).nodes.length < CostTable.MaxExpressions,
-      s"Too long expression, contains ${new Tree(exp).nodes.length} nodes, " +
-        s"allowed maximum is ${CostTable.MaxExpressions}")
-
     // Substitute Deserialize* nodes with deserialized subtrees
     // We can estimate cost of the tree evaluation only after this step.
     val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
@@ -361,19 +373,26 @@ trait Interpreter extends ScorexLogging {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
     }
-
-    val cost = substTree.cost(context)
-    if (cost > maxCost) {
-      throw new Error(s"Estimated expression complexity $cost exceeds the limit $maxCost in $substTree")
+    val env = Map[String, Any]()
+    val IR.Tuple(calcF, costF, sizeF) = doCosting[SType#WrappedType](env, substTree)
+    require(IR.verifyCostFunc(costF).isSuccess)
+    require(IR.verifyIsValid(calcF).isSuccess)
+    // check cost
+    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
+    val IntConstant(estimatedCost) = costFun(context.toSigmaContext(IR, isCost = true))
+    if (estimatedCost > maxCost) {
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $substTree")
     }
-
-    // After performing deserializations and checking cost of the resulting tree, both the prover
-    // and the verifier are evaluating the tree by applying rewriting rules, until no rules trigger during tree
-    // traversal.
-    val res = reduceUntilConverged(context, substTree)
-    res -> cost
+    // check calc
+    val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, calcF.asRep[IR.Context => SBoolean.WrappedType])
+    val res = valueFun(context.toSigmaContext(IR, isCost = false))
+    res -> estimatedCost
   }
 
+  def doCosting[T](env: Map[String, Any], typed: SValue): IR.Rep[(IR.Context => T, (IR.Context => Int, IR.Context => Long))] = {
+    val costed = IR.buildCostedGraph[SType](env.mapValues(IR.builder.liftAny(_).get), typed)
+    IR.split(costed.asRep[IR.Context => IR.Costed[T]])
+  }
 
   def verify(exp: Value[SBoolean.type],
              context: CTX,

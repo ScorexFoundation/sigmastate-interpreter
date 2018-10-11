@@ -217,7 +217,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
           ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i)
       }
     }
-    res.show
     println(s"Defs: $defCounter, Time: ${defTime / 1000000}")
   }
 

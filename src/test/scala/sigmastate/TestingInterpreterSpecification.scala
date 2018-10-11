@@ -1,14 +1,17 @@
 package sigmastate
 
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
-import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Matchers, PropSpec}
+import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
 import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
+import org.ergoplatform.{ErgoBox, Height}
+import sigmastate.eval.Evaluation
+import special.sigma
 import org.ergoplatform.{Height, ErgoBox}
 import scorex.util.encode.Base58
 import sigmastate.serialization.ValueSerializer
@@ -330,6 +333,8 @@ case class TestingContext(height: Int,
                           override val extension: ContextExtension = ContextExtension(values = Map())
                          ) extends Context[TestingContext] {
   override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
+
+  override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = ???
 }
 
 /** An interpreter for tests with 2 random secrets*/
