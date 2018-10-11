@@ -265,17 +265,6 @@ trait Costing extends SigmaLibrary with DataCosting {
     case _ => super.toRep(x)
   }
 
-  var defCounter = 0
-  var defTime: Long = 0
-//  override def def_unapply[T](e: Rep[T]) = {
-//    defCounter += 1
-//    val start = System.nanoTime()
-//    val res = super.def_unapply(e)
-//    val end = System.nanoTime()
-//    defTime += (end - start)
-//    res
-//  }
-
   /** Should be specified in the final cake */
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
@@ -875,13 +864,12 @@ trait Costing extends SigmaLibrary with DataCosting {
     }
   }
 
-  def cost(env: Map[String, Any], code: String) = {
+  def cost(env: Map[String, Any], code: String): Rep[Context => Costed[SType#WrappedType]] = {
     val typed = compiler.typecheck(env, code)
-    val cg = buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), typed)
-    cg
+    cost(env, typed)
   }
 
-  def cost(env: Map[String, Any], typed: SValue) = {
+  def cost(env: Map[String, Any], typed: SValue): Rep[Context => Costed[SType#WrappedType]] = {
     val cg = buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), typed)
     cg
   }

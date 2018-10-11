@@ -374,7 +374,7 @@ trait Interpreter extends ScorexLogging {
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
     }
     val env = Map[String, Any]()
-    val IR.Tuple(calcF, costF, sizeF) = doCosting[SType#WrappedType](env, substTree)
+    val IR.Pair(calcF, costF) = doCosting[SType#WrappedType](env, substTree)
     require(IR.verifyCostFunc(costF).isSuccess)
     require(IR.verifyIsValid(calcF).isSuccess)
     // check cost
@@ -389,9 +389,9 @@ trait Interpreter extends ScorexLogging {
     res -> estimatedCost
   }
 
-  def doCosting[T](env: Map[String, Any], typed: SValue): IR.Rep[(IR.Context => T, (IR.Context => Int, IR.Context => Long))] = {
+  def doCosting[T](env: Map[String, Any], typed: SValue): IR.Rep[(IR.Context => T, IR.Context => Int)] = {
     val costed = IR.buildCostedGraph[SType](env.mapValues(IR.builder.liftAny(_).get), typed)
-    IR.split(costed.asRep[IR.Context => IR.Costed[T]])
+    IR.split2(costed.asRep[IR.Context => IR.Costed[T]])
   }
 
   def verify(exp: Value[SBoolean.type],

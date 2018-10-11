@@ -15,7 +15,7 @@ import sigmastate.interpreter.ContextExtension
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxTests =>
 
-  lazy val IR: TestContext with Evaluation = new TestContext with Evaluation {
+  lazy val IR: TestContext with Evaluation with TreeBuilding = new TestContext with Evaluation with TreeBuilding {
     import TestSigmaDslBuilder._
 
     override val sigmaDslBuilder = RTestSigmaDslBuilder()

@@ -194,7 +194,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
         res = eval(i)
     }
     
-    println(s"Defs: $defCounter, Time: ${defTime / 1000000}")
     emit("Crowd_Funding_measure", res)
   }
 
@@ -225,7 +224,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
           ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i)
       }
     }
-    println(s"Defs: $defCounter, Time: ${defTime / 1000000}")
   }
 
 
