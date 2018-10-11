@@ -3,10 +3,10 @@ package sigmastate.interpreter
 import java.util
 import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
@@ -14,17 +14,17 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
-import sigmastate.eval.Evaluation
+import sigmastate.eval.{Evaluation, RuntimeIRContext}
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.TransformingSigmaBuilder
-import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
-import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
+import sigmastate.lang.exceptions.{InvalidType, InterpreterException}
+import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
-import sigmastate.utxo.{DeserializeContext, GetVar, Transformer}
+import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
 import sigmastate.{SType, _}
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Failure, Try}
 
 
 object CryptoConstants {
@@ -340,19 +340,7 @@ trait Interpreter extends ScorexLogging {
     currTree
   }
 
-  lazy val IR: Evaluation = new Evaluation {
-    import TestSigmaDslBuilder._
-
-    override val sigmaDslBuilder = RTestSigmaDslBuilder()
-    override val builder = TransformingSigmaBuilder
-
-    beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
-
-    override val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
-    override val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
-    override val monoidBuilderValue = new special.collection.MonoidBuilderInst()
-  }
-
+  val IR: Evaluation = new RuntimeIRContext {}
   import IR._
 
   /**
@@ -375,8 +363,13 @@ trait Interpreter extends ScorexLogging {
     }
     val env = Map[String, Any]()
     val IR.Pair(calcF, costF) = doCosting[SType#WrappedType](env, substTree)
-    require(IR.verifyCostFunc(costF).isSuccess)
-    require(IR.verifyIsValid(calcF).isSuccess)
+
+    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
+//    if (!okCostF.isSuccess) Interpreter.error(s"Cost function has invalid operation")
+
+    IR.verifyIsValid(calcF).fold(t => throw t, x => x)
+//    if (!okCalcF.isSuccess) Interpreter.error(s"")
+
     // check cost
     val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
     val IntConstant(estimatedCost) = costFun(context.toSigmaContext(IR, isCost = true))
@@ -403,7 +396,7 @@ trait Interpreter extends ScorexLogging {
     val checkingResult = cProp match {
       case TrueLeaf => true
       case FalseLeaf => false
-      case b: Value[SBoolean.type] if b.evaluated =>
+      case SigmaPropConstant(cProp) =>
         // Perform Verifier Steps 1-3
         SigSerializer.parseAndComputeChallenges(cProp, proof) match {
           case NoProof => false

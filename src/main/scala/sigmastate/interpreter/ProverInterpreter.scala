@@ -125,12 +125,14 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions), exp).get
 
     val proofTree = reducedProp match {
-      case bool: BooleanConstant =>
-        bool match {
-          case TrueLeaf => NoProof
-          case _ => ???
-        }
+      case BooleanConstant(boolResult) =>
+        if (boolResult) NoProof
+        else Interpreter.error("Script reduced to false")
+      case SigmaPropConstant(sigmaBoolean) =>
+        val ct = convertToUnproven(sigmaBoolean)
+        prove(ct, message)
       case _ =>
+        // TODO this case should be removed, because above cases should cover all possible variants
         val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }
           .recover { case _ => throw new InterpreterException(s"failed to cast to SigmaBoolean: $reducedProp") }
           .get

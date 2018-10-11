@@ -15,19 +15,8 @@ import sigmastate.interpreter.ContextExtension
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxTests =>
 
-  lazy val IR: TestContext with Evaluation with TreeBuilding =
-    new TestContext with Evaluation with TreeBuilding with CompiletimeCosting {
-    import TestSigmaDslBuilder._
-
-    override val sigmaDslBuilder = RTestSigmaDslBuilder()
-    override val builder = TransformingSigmaBuilder
-
-    beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
-
-    override val sigmaDslBuilderValue = new special.sigma.TestSigmaDslBuilder()
-    override val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
-    override val monoidBuilderValue = new special.collection.MonoidBuilderInst()
-  }
+  lazy val IR: TestContext with RuntimeIRContext =
+    new TestContext with RuntimeIRContext with CompiletimeCosting
 
   import IR._
   import Context._

@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{R6, R8}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, Self}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox, Self, ErgoLikeInterpreter}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
@@ -9,7 +9,11 @@ import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
 
+import scalan.BaseCtxTests
+
 class BasicOpsSpecification extends SigmaTestingCommons {
+  lazy val scalanIR = new ScalanCtx
+
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters.tail.head
   val intVar1 = 1.toByte
@@ -49,6 +53,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         val p2 = dlogSecrets(1).publicImage
         (ext ++ Seq(propVar1 -> SigmaPropConstant(p1), propVar2 -> SigmaPropConstant(p2))).toMap
       }
+      override val IR = scalanIR
     }
 
     val prop = compile(env, script).asBoolValue
@@ -82,33 +87,33 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env, ext,
       "{ getVar[Int](intVar2).get > getVar[Int](intVar1).get && getVar[Int](intVar1).get < getVar[Int](intVar2).get }",
-      AND(GT(GetVarInt(intVar2).get, GetVarInt(intVar1).get),
+      BinAnd(GT(GetVarInt(intVar2).get, GetVarInt(intVar1).get),
         LT(GetVarInt(intVar1).get, GetVarInt(intVar2).get))
     )
     test(env, ext,
       "{ getVar[Int](intVar2).get >= getVar[Int](intVar1).get && getVar[Int](intVar1).get <= getVar[Int](intVar2).get }",
-      AND(GE(GetVarInt(intVar2).get, GetVarInt(intVar1).get),
+      BinAnd(GE(GetVarInt(intVar2).get, GetVarInt(intVar1).get),
         LE(GetVarInt(intVar1).get, GetVarInt(intVar2).get))
     )
     test(env, ext,
       "{ getVar[Byte](byteVar2).get > getVar[Byte](byteVar1).get && getVar[Byte](byteVar1).get < getVar[Byte](byteVar2).get }",
-      AND(GT(GetVarByte(byteVar2).get, GetVarByte(byteVar1).get),
+      BinAnd(GT(GetVarByte(byteVar2).get, GetVarByte(byteVar1).get),
         LT(GetVarByte(byteVar1).get, GetVarByte(byteVar2).get))
     )
     test(env, ext,
       "{ getVar[Byte](byteVar2).get >= getVar[Byte](byteVar1).get && getVar[Byte](byteVar1).get <= getVar[Byte](byteVar2).get }",
-      AND(GE(GetVarByte(byteVar2).get, GetVarByte(byteVar1).get),
+      BinAnd(GE(GetVarByte(byteVar2).get, GetVarByte(byteVar1).get),
         LE(GetVarByte(byteVar1).get, GetVarByte(byteVar2).get))
     )
     test(env, ext,
       "{ getVar[BigInt](bigIntVar2).get > getVar[BigInt](bigIntVar1).get && getVar[BigInt](bigIntVar1).get < getVar[BigInt](bigIntVar2).get }",
-      AND(
+      BinAnd(
         GT(GetVarBigInt(bigIntVar2).get, GetVarBigInt(bigIntVar1).get),
         LT(GetVarBigInt(bigIntVar1).get, GetVarBigInt(bigIntVar2).get))
     )
     test(env, ext,
       "{ getVar[BigInt](bigIntVar2).get >= getVar[BigInt](bigIntVar1).get && getVar[BigInt](bigIntVar1).get <= getVar[BigInt](bigIntVar2).get }",
-      AND(
+      BinAnd(
         GE(GetVarBigInt(bigIntVar2).get, GetVarBigInt(bigIntVar1).get),
         LE(GetVarBigInt(bigIntVar1).get, GetVarBigInt(bigIntVar2).get))
     )
@@ -121,23 +126,23 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env, ext,
       "{ getVar[SigmaProp](proofVar1).get || getVar[SigmaProp](proofVar2).get }",
-      OR(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
+      BinOr(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
     )
     test(env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[SigmaProp](proofVar2).get }",
-      AND(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
+      BinAnd(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
     )
     test(env, ext,
       "{ getVar[SigmaProp](proofVar1).get.isValid && getVar[SigmaProp](proofVar2).get }",
-      AND(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
+      BinAnd(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
     )
     test(env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[Int](intVar1).get == 1 }",
-      AND(GetVarSigmaProp(propVar1).get.isValid, EQ(GetVarInt(intVar1).get, 1))
+      BinAnd(GetVarSigmaProp(propVar1).get.isValid, EQ(GetVarInt(intVar1).get, 1))
     )
     test(env, ext,
       "{ getVar[Int](intVar1).get == 1 || getVar[SigmaProp](proofVar1).get }",
-      OR(EQ(GetVarInt(intVar1).get, 1), GetVarSigmaProp(propVar1).get.isValid)
+      BinOr(EQ(GetVarInt(intVar1).get, 1), GetVarSigmaProp(propVar1).get.isValid)
     )
     test(env, ext,
       "{ SELF.R4[SigmaProp].get.isValid }",
@@ -146,17 +151,17 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test(env, ext,
       "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+      BinAnd(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
       true
     )
     test(env, ext,
       "{ allOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+      BinAnd(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
       true
     )
     test(env, ext,
       "{ anyOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+      BinOr(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
       true
     )
     test(env, ext,

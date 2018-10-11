@@ -13,7 +13,7 @@ import sigmastate.utxo._
 import sigmastate.SType._
 import sigmastate.Values.Value.Typed
 import sigmastate.lang.SigmaSpecializer.error
-import sigmastate.lang.Terms
+import sigmastate.lang.{Terms, TransformingSigmaBuilder}
 
 trait CompiletimeCosting extends RuntimeCosting {
   import builder._

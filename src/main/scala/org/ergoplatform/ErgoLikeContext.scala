@@ -60,7 +60,9 @@ class ErgoLikeContext(val currentHeight: Height,
   override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
     implicit val IRForBox = IR
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost))
-    val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
+    val outputs =
+      if (spendingTransaction == null) noOutputs
+      else spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
     val vars = contextVars(extension.values)
     val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
     val emptyAvlTree = new TestAvlTree(noBytes, 0, None, None, None)

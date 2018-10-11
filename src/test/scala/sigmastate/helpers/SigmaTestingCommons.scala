@@ -7,16 +7,18 @@ import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Matchers}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{TrueLeaf, Value, GroupElementConstant, EvaluatedValue}
+import sigmastate.eval.{CompiletimeCosting, Evaluation, RuntimeIRContext}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.{SGroupElement, SBoolean, SType}
 
 import scala.language.implicitConversions
+import scalan.{TestUtils, TestContexts}
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
-  with Matchers {
+  with Matchers with TestUtils with TestContexts {
 
 
   val fakeSelf: ErgoBox = createBox(0, TrueLeaf)
@@ -38,6 +40,7 @@ trait SigmaTestingCommons extends PropSpec
                 proposition: Value[SBoolean.type],
                 additionalTokens: Seq[(TokenId, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
-  = ergoplatform.ErgoBox(value, proposition, additionalTokens, additionalRegisters)
+    = ergoplatform.ErgoBox(value, proposition, additionalTokens, additionalRegisters)
 
+  class ScalanCtx extends TestContext with RuntimeIRContext with CompiletimeCosting
 }

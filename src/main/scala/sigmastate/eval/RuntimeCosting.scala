@@ -481,9 +481,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
       case Self    => ctx.SELF
       case LastBlockUtxoRootHash => ctx.LastBlockUtxoRootHash
 
-      case op @ TaggedVariableNode(id, tpe) =>
-        val resV = ctx.getVar(id)(stypeToElem(tpe))
-        withDefaultSize(resV, costOf(op))
+      case op @ GetVar(id, optTpe) =>
+        val res = ctx.getVar(id)(stypeToElem(optTpe.elemType))
+        res
+
+//      case op @ TaggedVariableNode(id, tpe) =>
+//        val resV = ctx.getVar(id)(stypeToElem(tpe))
+//        withDefaultSize(resV, costOf(op))
 
       case Terms.Block(binds, res) =>
         var curEnv = env
@@ -631,15 +635,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         implicit val elem = stypeToElem(optTpe.elemType).asElem[Any]
         val valueOpt = boxC.getReg(regId.number.toInt)(elem)
         valueOpt
-//        if (default.isDefined) {
-//          val d = evalNode(ctx, env, default.get)
-//          val (v,c) = (RWSpecialPredef.optionGetOrElse(valueOpt, d.value), boxC.cost + d.cost + costOf(node))
-//          costedBuilder.costedValue(v, RWSpecialPredef.some(c))
-//        } else {
-//          val c = boxC.cost + costOf(node)
-//          val vC = costedBuilder.costedValue(valueOpt, RWSpecialPredef.some(c)).asRep[CostedOption[Any]]
-//          vC.get
-//        }
 
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._
