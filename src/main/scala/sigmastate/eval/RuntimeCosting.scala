@@ -214,6 +214,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     val WOptionM = WOptionMethods
 
     d match {
+      case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
+        // don't need new Thunk because sigma logical ops always strict
+        val r = asRep[SigmaProp](RTrivialSigma(asRep[Boolean](root)))
+        val res = if (op == And)
+          l && r
+        else
+          l || r
+        res.isValid
+
       case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
         val l1 = asRep[SigmaProp](RTrivialSigma(asRep[Boolean](l)))
         // don't need new Thunk because sigma logical ops always strict

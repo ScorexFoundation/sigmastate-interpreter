@@ -156,20 +156,20 @@ trait Evaluation extends RuntimeCosting {
             out(prop)
 
           case SigmaM.and_sigma_&&(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
-            out(CAND(Seq(l, r)))
+            out(CAND.normalized(Seq(l, r)))
 
           case SigmaM.or_sigma_||(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
-            out(COR(Seq(l, r)))
+            out(COR.normalized(Seq(l, r)))
 
           case SigmaM.and_bool_&&(In(l: SigmaBoolean), In(b: Boolean)) =>
             if (b) {
               out(l)
             } else
-              out(sigmastate.TrivialProof(false))
+              out(TrivialProof.FalseProof)
 
           case SigmaM.or_bool_||(In(l: SigmaBoolean), In(b: Boolean)) =>
             if (b)
-              out(sigmastate.TrivialProof(true))
+              out(TrivialProof.TrueProof)
             else {
               out(l)
             }
@@ -181,9 +181,9 @@ trait Evaluation extends RuntimeCosting {
 //            out(OR(l, th()).function(null, null))
 
           case SDBM.anyZK(_, In(items: special.collection.Col[SigmaBoolean]@unchecked)) =>
-            out(COR(items.arr.toSeq))
+            out(COR.normalized(items.arr.toSeq))
           case SDBM.allZK(_, In(items: special.collection.Col[SigmaBoolean]@unchecked)) =>
-            out(CAND(items.arr.toSeq))
+            out(CAND.normalized(items.arr.toSeq))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>

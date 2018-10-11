@@ -340,7 +340,7 @@ trait Interpreter extends ScorexLogging {
     currTree
   }
 
-  val IR: Evaluation = new RuntimeIRContext {}
+  val IR: RuntimeIRContext = new RuntimeIRContext {}
   import IR._
 
   /**
@@ -362,7 +362,8 @@ trait Interpreter extends ScorexLogging {
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
     }
     val env = Map[String, Any]()
-    val IR.Pair(calcF, costF) = doCosting[SType#WrappedType](env, substTree)
+    val costingRes @ IR.Pair(calcF, costF) = doCosting[SType#WrappedType](env, substTree)
+    IR.onCostingResult(costingRes)
 
     IR.verifyCostFunc(costF).fold(t => throw t, x => x)
 //    if (!okCostF.isSuccess) Interpreter.error(s"Cost function has invalid operation")
@@ -382,11 +383,6 @@ trait Interpreter extends ScorexLogging {
     res -> estimatedCost
   }
 
-  def doCosting[T](env: Map[String, Any], typed: SValue): IR.Rep[(IR.Context => T, IR.Context => Int)] = {
-    val costed = IR.buildCostedGraph[SType](env.mapValues(IR.builder.liftAny(_).get), typed)
-    IR.split2(costed.asRep[IR.Context => IR.Costed[T]])
-  }
-
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proof: Array[Byte],
@@ -397,21 +393,25 @@ trait Interpreter extends ScorexLogging {
       case TrueLeaf => true
       case FalseLeaf => false
       case SigmaPropConstant(cProp) =>
-        // Perform Verifier Steps 1-3
-        SigSerializer.parseAndComputeChallenges(cProp, proof) match {
-          case NoProof => false
-          case sp: UncheckedSigmaTree =>
-            // Perform Verifier Step 4
-            val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
+        cProp match {
+          case TrivialProof.TrueProof => true
+          case _ =>
+            // Perform Verifier Steps 1-3
+            SigSerializer.parseAndComputeChallenges(cProp, proof) match {
+              case NoProof => false
+              case sp: UncheckedSigmaTree =>
+                // Perform Verifier Step 4
+                val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
 
-            /**
-              * Verifier Steps 5-6: Convert the tree to a string s for input to the Fiat-Shamir hash function,
-              * using the same conversion as the prover in 7
-              * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
-              * (and, if applicable,  the associated data). Reject otherwise.
-              */
-            val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
-            util.Arrays.equals(newRoot.challenge, expectedChallenge)
+                /**
+                  * Verifier Steps 5-6: Convert the tree to a string s for input to the Fiat-Shamir hash function,
+                  * using the same conversion as the prover in 7
+                  * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
+                  * (and, if applicable,  the associated data). Reject otherwise.
+                  */
+                val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
+                util.Arrays.equals(newRoot.challenge, expectedChallenge)
+            }
         }
       case _: Value[_] => false
     }

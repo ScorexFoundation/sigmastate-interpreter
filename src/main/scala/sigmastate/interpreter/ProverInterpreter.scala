@@ -121,16 +121,23 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   }
 
   def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
-
+    import TrivialProof._
     val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions), exp).get
+
+    def errorReducedToFalse = Interpreter.error("Script reduced to false")
 
     val proofTree = reducedProp match {
       case BooleanConstant(boolResult) =>
         if (boolResult) NoProof
-        else Interpreter.error("Script reduced to false")
+        else errorReducedToFalse
       case SigmaPropConstant(sigmaBoolean) =>
-        val ct = convertToUnproven(sigmaBoolean)
-        prove(ct, message)
+        sigmaBoolean match {
+          case TrueProof => NoProof
+          case FalseProof => errorReducedToFalse
+          case _ =>
+            val ct = convertToUnproven(sigmaBoolean)
+            prove(ct, message)
+        }
       case _ =>
         // TODO this case should be removed, because above cases should cover all possible variants
         val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }

@@ -3,9 +3,9 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
-import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
-import scorex.util.encode.{Base58, Base64}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
+import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import scorex.util.encode.{Base64, Base58}
 import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.SCollection.SByteArray
@@ -19,6 +19,7 @@ import sigmastate.utxo.Transformer
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * AND conjunction for sigma propositions
@@ -29,6 +30,23 @@ case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost[C <: Context[C]](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 }
+object CAND {
+  import TrivialProof._
+  def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
+    require(items.nonEmpty)
+    val res = new ArrayBuffer[SigmaBoolean]()
+    for (x <- items) {
+      x match {
+        case FalseProof => return FalseProof
+        case TrueProof => // skip
+        case _ => res += x
+      }
+    }
+    if (res.isEmpty) TrueProof
+    else if (res.length == 1) res(0)
+    else CAND(res)
+  }
+}
 
 /**
   * OR disjunction for sigma propositions
@@ -38,6 +56,23 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
 
   override def cost[C <: Context[C]](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
+}
+object COR {
+  import TrivialProof._
+  def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
+    require(items.nonEmpty)
+    val res = new ArrayBuffer[SigmaBoolean]()
+    for (x <- items) {
+      x match {
+        case FalseProof => // skip
+        case TrueProof => return TrueProof
+        case _ => res += x
+      }
+    }
+    if (res.isEmpty) FalseProof
+    else if (res.length == 1) res(0)
+    else COR(res)
+  }
 }
 
 /**
@@ -59,6 +94,10 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 case class TrivialProof(condition: Boolean) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.TrivialProofCode
   override def cost[C <: Context[C]](context: C): Long = ??? //Cost.BooleanConstantDeclaration
+}
+object TrivialProof {
+  val TrueProof = TrivialProof(true)
+  val FalseProof = TrivialProof(false)
 }
 
 case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
