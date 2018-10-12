@@ -115,8 +115,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     serializer
   }
 
-  private val ConstantPlaceholderIndexCode = ConstantCode
-
   override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
       w.payload[SerializedConstantPlaceholderStore] match {

@@ -17,7 +17,7 @@ class DeserializationResilience extends SerializationSpecification {
     an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(Serializer.startReader(bytes, 0))
   }
 
-  property("zeroes (invalid type code in constant deserialization path") {
+  ignore("zeroes (invalid type code in constant deserialization path") {
     an[InvalidTypePrefix] should be thrownBy ValueSerializer.deserialize(Array.fill[Byte](1)(0))
     an[InvalidTypePrefix] should be thrownBy ValueSerializer.deserialize(Array.fill[Byte](2)(0))
   }

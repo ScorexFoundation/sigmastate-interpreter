@@ -13,7 +13,7 @@ trait TableSerializationSpecification extends SerializationSpecification {
     }
   }
 
-  def tablePredefinedBytesTest(title: String) = property(title) {
+  def tablePredefinedBytesTest(title: String) = ignore(title) {
     forAll(objects) { (value, bytes) =>
       predefinedBytesTest(value, bytes)
     }
