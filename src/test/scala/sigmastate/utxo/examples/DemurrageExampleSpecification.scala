@@ -36,6 +36,8 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //backer's prover with his private key
     val userProver = new ErgoLikeTestProvingInterpreter().withContextExtender(15, ShortConstant(0))
 
+    val minerProver = new ErgoLikeTestProvingInterpreter().withContextExtender(15, ShortConstant(0))
+
     val regScript = userProver.dlogSecrets.head.publicImage
 
     val env = Map(
@@ -103,6 +105,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx1, uProof1, fakeMessage).get._1 shouldBe true
 
     //miner can't spend any money
+    minerProver.prove(prop, ctx1, fakeMessage).isSuccess shouldBe false
     verifier.verify(prop, ctx1, NoProof, fakeMessage).get._1 shouldBe false
 
     //case 2: demurrage time has come
@@ -129,12 +132,12 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(b),
       spendingTransaction = tx3,
-      self = createBox(outValue, prop, outHeight),
-      extension = ce)
+      self = createBox(outValue, prop, outHeight))
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
-    verifier.verify(prop, ctx3, NoProof, fakeMessage).get._1 shouldBe true
+    val mProverRes1 = minerProver.prove(prop, ctx3, fakeMessage).get
+    verifier.verify(prop, ctx3.withExtension(mProverRes1.extension), mProverRes1.proof, fakeMessage).get._1 shouldBe true
 
     //miner can't spend more
     val currentHeight4 = outHeight + demurragePeriod
@@ -147,6 +150,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       self = createBox(outValue, prop, outHeight),
       extension = ce)
 
+    minerProver.prove(prop, ctx4, fakeMessage).isSuccess shouldBe false
     verifier.verify(prop, ctx4, NoProof, fakeMessage).get._1 shouldBe false
 
     //miner can spend less
@@ -161,6 +165,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       self = createBox(outValue, prop, outHeight),
       extension = ce)
 
-    verifier.verify(prop, ctx5, NoProof, fakeMessage).get._1 shouldBe true
+    val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get.proof
+    verifier.verify(prop, ctx5, mProof2, fakeMessage).get._1 shouldBe true
   }
 }

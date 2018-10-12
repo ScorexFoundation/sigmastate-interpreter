@@ -45,7 +45,6 @@ object ProverResult {
       w.putUShort(obj.proof.length)
       w.putBytes(obj.proof)
       ContextExtension.serializer.serializeBody(obj.extension, w)
-
     }
 
     override def parseBody(r: ByteReader): ProverResult = {
