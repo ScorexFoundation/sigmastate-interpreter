@@ -30,13 +30,15 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val demurragePeriod = 100L
     val demurrageCost = 2
 
+    val outIdxVarId = Byte.MaxValue
+
     //a blockchain node verifying a block containing a spending transaction
     val verifier = new ErgoLikeTestInterpreter()
 
     //backer's prover with his private key
-    val userProver = new ErgoLikeTestProvingInterpreter().withContextExtender(15, ShortConstant(0))
+    val userProver = new ErgoLikeTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
 
-    val minerProver = new ErgoLikeTestProvingInterpreter().withContextExtender(15, ShortConstant(0))
+    val minerProver = new ErgoLikeTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
 
     val regScript = userProver.dlogSecrets.head.publicImage
 
@@ -48,7 +50,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     val prop = compile(env,
       """{
-        | val outIdx = getVar[Short](15).get
+        | val outIdx = getVar[Short](127).get
         | val out = OUTPUTS(outIdx)
         |
         | val c2 = allOf(Array(
@@ -85,7 +87,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val outHeight = 100
     val outValue = 10
 
-    val ce = ContextExtension(Map(15.toByte -> ShortConstant(0)))
+    val ce = ContextExtension(Map(outIdxVarId -> ShortConstant(0)))
 
     //case 1: demurrage time hasn't come yet
     val currentHeight1 = outHeight + demurragePeriod - 1
