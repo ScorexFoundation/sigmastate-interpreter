@@ -115,9 +115,17 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     serializer
   }
 
+  private val ConstantPlaceholderIndexCode = ConstantCode
+
   override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
-      ConstantSerializer(builder).serialize(c, w)
+      w.payload[SerializedConstantPlaceholderStore] match {
+        case Some(store) =>
+          w.put(ConstantPlaceholderIndexCode)
+            .putUInt(store.getIndex(c))
+        case None =>
+          ConstantSerializer(builder).serialize(c, w)
+      }
     case _ =>
       val opCode = v.opCode
       w.put(opCode)
@@ -136,7 +144,16 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     val firstByte = r.peekByte()
     val v = if (firstByte.toUByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
-      ConstantSerializer(builder).deserialize(r)
+      r.payload[SerializedConstantPlaceholderStore] match {
+        case Some(store) =>
+          if (r.getByte() == ConstantPlaceholderIndexCode) {
+            store.getConstant(r.getUInt().toIntExact)
+          } else {
+            throw new IllegalStateException("Invalid constant placeholder code")
+          }
+        case None =>
+          ConstantSerializer(builder).deserialize(r)
+      }
     }
     else {
       val opCode = r.getByte()
@@ -146,13 +163,33 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     v
   }
 
+  private val SerializedConstantsStartCode = ConstantCode
+
   def serialize(v: Value[SType]): Array[Byte] = {
     val w = Serializer.startWriter()
+    val constantPlaceholderStore = new SerializedConstantPlaceholderStore(builder)
+    w.payload = constantPlaceholderStore
     serialize(v, w)
-    w.toBytes
+    val cw = Serializer.startWriter()
+    // start new writer and put serialized constant first
+    if (constantPlaceholderStore.nonEmpty) {
+      cw.put(SerializedConstantsStartCode)
+      constantPlaceholderStore.serialize(cw)
+    }
+    // add serialized tree
+    cw.putBytes(w.toBytes)
+    cw.toBytes
   }
 
-  def deserialize(bytes: Array[Byte], pos: Serializer.Position = 0): Value[SType] =
-    deserialize(Serializer.startReader(bytes, pos))
+  def deserialize(bytes: Array[Byte], pos: Serializer.Position = 0): Value[SType] = {
+    val r = Serializer.startReader(bytes, pos)
+    val firstByte = r.peekByte()
+    if (firstByte == SerializedConstantsStartCode) {
+      // consume
+      r.getByte()
+      r.payload = new SerializedConstantPlaceholderStore(builder).deserialize(r)
+    }
+    deserialize(r)
+  }
 
 }

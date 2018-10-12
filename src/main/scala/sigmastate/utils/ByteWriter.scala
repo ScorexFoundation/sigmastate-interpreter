@@ -70,6 +70,9 @@ trait ByteWriter {
   def putBits(xs: Array[Boolean]): ByteWriter
   def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter
   def toBytes: Array[Byte]
+
+  def payload[T]: Option[T]
+  def payload_=[T](v: T)
 }
 
 /**
@@ -189,6 +192,10 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
 
   @inline override def toBytes: Array[Byte] = b.toBytes
+
+  private var _payload: Any = _
+  @inline override def payload[T]: Option[T] = if (_payload == null) None else Some(_payload.asInstanceOf[T])
+  @inline override def payload_=[T](v: T): Unit = _payload = v
 }
 
 object ByteArrayWriter {
