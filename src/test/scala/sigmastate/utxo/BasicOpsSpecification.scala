@@ -13,8 +13,9 @@ import scalan.BaseCtxTests
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   lazy val scalanIR = new ScalanCtx {
-    override def onCostingResult[T](res: CostingResult[T]): Unit = {
-      emit(res)
+    override def onCostingResult[T](env: Map[String, Any], tree: SValue, res: CostingResult[T]): Unit = {
+      val name = env.get("scriptName").fold(testName)(_.toString)
+      emit(name, res)
     }
   }
 
@@ -126,53 +127,59 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("SigmaProp operations") {
-//    test(env, ext,
-//      "{ getVar[SigmaProp](proofVar1).get.isValid }",
-//      GetVarSigmaProp(propVar1).get.isValid
-//    )
-//    test(env, ext,
-//      "{ getVar[SigmaProp](proofVar1).get || getVar[SigmaProp](proofVar2).get }",
-//      BinOr(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
-//    )
-//    test(env, ext,
-//      "{ getVar[SigmaProp](proofVar1).get && getVar[SigmaProp](proofVar2).get }",
-//      BinAnd(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
-//    )
-//    test(env, ext,
-//      "{ getVar[SigmaProp](proofVar1).get.isValid && getVar[SigmaProp](proofVar2).get }",
-//      BinAnd(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
-//    )
-//    test(env, ext,
-//      "{ getVar[SigmaProp](proofVar1).get && getVar[Int](intVar1).get == 1 }",
-//      BinAnd(GetVarSigmaProp(propVar1).get.isValid, EQ(GetVarInt(intVar1).get, 1))
-//    )
-//    test(env, ext,
-//      "{ getVar[Int](intVar1).get == 1 || getVar[SigmaProp](proofVar1).get }",
-//      BinOr(EQ(GetVarInt(intVar1).get, 1), GetVarSigmaProp(propVar1).get.isValid)
-//    )
-//    test(env, ext,
-//      "{ SELF.R4[SigmaProp].get.isValid }",
-//      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
-//      true
-//    )
-//    test(env, ext,
-//      "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
-//      BinAnd(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
-//      true
-//    )
-//    test(env, ext,
-//      "{ allOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-//      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
-//      true
-//    )
-//    test(env, ext,
-//      "{ anyOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-//      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
-//      true
-//    )
     test(env, ext,
-      "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isValid }) }",
-      ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get),
+      "{ getVar[SigmaProp](proofVar1).get.isValid }",
+      GetVarSigmaProp(propVar1).get.isValid
+    )
+    test(env, ext,
+      "{ getVar[SigmaProp](proofVar1).get || getVar[SigmaProp](proofVar2).get }",
+      BinOr(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
+    )
+    test(env, ext,
+      "{ getVar[SigmaProp](proofVar1).get && getVar[SigmaProp](proofVar2).get }",
+      BinAnd(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
+    )
+    test(env, ext,
+      "{ getVar[SigmaProp](proofVar1).get.isValid && getVar[SigmaProp](proofVar2).get }",
+      BinAnd(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
+    )
+    test(env, ext,
+      "{ getVar[SigmaProp](proofVar1).get && getVar[Int](intVar1).get == 1 }",
+      BinAnd(GetVarSigmaProp(propVar1).get.isValid, EQ(GetVarInt(intVar1).get, 1))
+    )
+    test(env, ext,
+      "{ getVar[Int](intVar1).get == 1 || getVar[SigmaProp](proofVar1).get }",
+      BinOr(EQ(GetVarInt(intVar1).get, 1), GetVarSigmaProp(propVar1).get.isValid)
+    )
+    test(env, ext,
+      "{ SELF.R4[SigmaProp].get.isValid }",
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
+      true
+    )
+    test(env, ext,
+      "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
+      BinAnd(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+      true
+    )
+    test(env, ext,
+      "{ allOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
+      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+      true
+    )
+    test(env, ext,
+      "{ anyOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
+      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+      true
+    )
+    test(env, ext,
+        "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isValid }) }",
+        ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get),
+          21, SigmaPropIsValid(TaggedSigmaProp(21))),
+        true
+        )
+    test(env, ext,
+      "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).exists({ (p: SigmaProp) => p.isValid }) }",
+      Exists(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get),
         21, SigmaPropIsValid(TaggedSigmaProp(21))),
       true
     )

@@ -363,7 +363,7 @@ trait Interpreter extends ScorexLogging {
     }
     val env = Map[String, Any]()
     val costingRes @ IR.Pair(calcF, costF) = doCosting(env, substTree)
-    IR.onCostingResult(costingRes)
+    IR.onCostingResult(env, substTree, costingRes)
 
     IR.verifyCostFunc(costF).fold(t => throw t, x => x)
 //    if (!okCostF.isSuccess) Interpreter.error(s"Cost function has invalid operation")

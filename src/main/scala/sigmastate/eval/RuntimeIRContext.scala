@@ -24,6 +24,6 @@ trait RuntimeIRContext extends Evaluation with TreeBuilding {
   }
 
   /** Can be overriden to to do for example logging or saving of graphs */
-  private[sigmastate] def onCostingResult[T](result: CostingResult[T]) {
+  private[sigmastate] def onCostingResult[T](env: Map[String, Any], tree: SValue, result: CostingResult[T]) {
   }
 }

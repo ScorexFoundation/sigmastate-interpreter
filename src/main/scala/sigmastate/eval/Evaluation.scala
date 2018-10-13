@@ -61,10 +61,10 @@ trait Evaluation extends RuntimeCosting {
          ContextM.cost(_) | ContextM.dataSize(_) =>
     case SigmaM.propBytes(_) =>
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) | ColM.slice(_,_,_) =>
-    case CBM.replicate(_,_,_) =>
+    case CBM.replicate(_,_,_) | CBM.apply_apply_items(_,_) =>
     case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
     case OM.get(_) | OM.fold(_,_,_) | OM.isDefined(_) =>
-    case _: CostOf =>
+    case _: CostOf | _: SizeOf[_] =>
     case _: Apply[_,_] =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
   }
