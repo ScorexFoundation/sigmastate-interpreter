@@ -18,7 +18,7 @@ import sigmastate.lang.{Terms, TransformingSigmaBuilder}
 trait CompiletimeCosting extends RuntimeCosting {
   import builder._
 
-  override def evalNode[T <: SType](ctx: Rep[CostedContext], env: Map[String, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
+  override def evalNode[T <: SType](ctx: Rep[CostedContext], env: Map[Any, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     val res: Sym = node match {
       case Ident(n, _) =>

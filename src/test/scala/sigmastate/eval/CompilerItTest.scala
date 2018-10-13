@@ -39,7 +39,7 @@ class CompilerItTest extends BaseCtxTests
 
 
   def intConstCase = {
-    Case[Int](env, "intConst", "1", ergoCtx,
+    Case(env, "intConst", "1", ergoCtx,
       calc = {_ => 1 },
       cost = {_ => constCost[Int]},
       size = {_ => sizeOf(1)},
@@ -278,13 +278,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(2,SSigmaProp)
           ))))),
-      Result({
-        import sigmastate._
-        COR(Seq(
-          CAND(Seq(TrivialProof(false), backerPK)),
-          CAND(Seq(TrivialProof(false), projectPK))
-        ))
-      }, 36, 1L)
+      Result({ TrivialProof.FalseProof }, 36, 1L)
     )
   }
   test("crowdFunding_Case") {

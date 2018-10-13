@@ -154,7 +154,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
 
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
-    checkInEnv[SigmaProp](env, "CrowdFunding", crowdFundingScript,
+    checkInEnv(env, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
         val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
         val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
@@ -201,7 +201,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val prover = new ErgoLikeProvingInterpreter()
     val regScriptPK  @ DLogProtocol.ProveDlog(GroupElementConstant(script: ECPoint)) = prover.dlogSecrets(0).publicImage
     val env = envDem ++ Seq("regScript" -> regScriptPK)
-    checkInEnv[Boolean](env, "Demurrage", demurrageScript,
+    checkInEnv(env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
       val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp] //val regScript = ctx.getVar[SigmaProp](regScriptId).get
       val c2 = dsl.allOf(colBuilder(

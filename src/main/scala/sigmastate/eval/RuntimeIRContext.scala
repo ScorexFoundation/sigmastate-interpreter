@@ -18,9 +18,9 @@ trait RuntimeIRContext extends Evaluation with TreeBuilding {
 
   type CostingResult[T] = Rep[(Context => T, Context => Int)]
 
-  def doCosting[T](env: Map[String, Any], typed: SValue): CostingResult[T] = {
-    val costed = buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), typed)
-    split2(costed.asRep[Context => Costed[T]])
+  def doCosting(env: Map[String, Any], typed: SValue): CostingResult[Any] = {
+    val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
+    split2(asRep[Context => Costed[Any]](costed))
   }
 
   /** Can be overriden to to do for example logging or saving of graphs */

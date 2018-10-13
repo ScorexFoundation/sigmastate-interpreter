@@ -123,28 +123,28 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       3.toByte -> BigIntArrayConstant(bigIntArr1)
     )))
 
-  case class Result[+T](calc: Option[T], cost: Option[Int], size: Option[Long])
+  case class Result(calc: Option[Any], cost: Option[Int], size: Option[Long])
   object Result {
     def Ignore = Result(None, None, None)
-    def apply[T](calc: T): Result[T] = Result[T](Some(calc), None, None)
-    def apply[T](calc: T, cost: Int, size: Long): Result[T] = Result[T](Some(calc), Some(cost), Some(size))
+    def apply(calc: Any): Result = Result(Some(calc), None, None)
+    def apply(calc: Any, cost: Int, size: Long): Result = Result(Some(calc), Some(cost), Some(size))
   }
-  def NoResult[T] = Result[T](None, None, None)
-  case class EsTestCase[T](
+  def NoResult = Result(None, None, None)
+  case class EsTestCase(
       name: String,  // name of the test case, used in forming file names in test-out directory
       env: EsEnv,
       script: String,
       ergoCtx: Option[ErgoLikeContext] = None,
-      testContract: Option[DContext => T] = None,
-      expectedCalc: Option[Rep[Context] => Rep[T]] = None,
+      testContract: Option[DContext => Any] = None,
+      expectedCalc: Option[Rep[Context] => Rep[Any]] = None,
       expectedCost: Option[Rep[Context] => Rep[Int]] = None,
       expectedSize: Option[Rep[Context] => Rep[Long]] = None,
       expectedTree: Option[SValue] = None,
-      expectedResult: Result[T] = NoResult,
+      expectedResult: Result = NoResult,
       printGraphs: Boolean = true,
       measureTime: Boolean = false)
   {
-    lazy val expectedCalcF = expectedCalc.map(fun(_))
+    lazy val expectedCalcF = expectedCalc.map(f => fun(removeIsValid(f)))
     lazy val expectedCostF = expectedCost.map(fun(_))
     lazy val expectedSizeF = expectedSize.map(fun(_))
 
@@ -162,9 +162,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       case _ => Pair(xs.head, pairify(xs.tail))
     }
 
-    def doCosting: Rep[(Context => T, (Context => Int, Context => Long))] = {
+    def doCosting: Rep[(Context => Any, (Context => Int, Context => Long))] = {
       val costed = cost(env, script)
-      val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[T]])
+      val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
       if (printGraphs) {
         val str = struct(
           "calc" -> calcF,
@@ -218,7 +218,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
         // check calc
         val valueFun = IR.compile[SType](getDataEnv, calcF.asRep[Context => SType#WrappedType])
         val res = valueFun(calcCtx) match {
-          case Constant(res: T @unchecked, _) => res
+          case Constant(res: Any, _) => res
           case v => v
         }
         checkExpected(res, expectedResult.calc,
@@ -227,34 +227,34 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     }
   }
 
-  def Case[T](env: EsEnv, name: String, script: String, ctx: ErgoLikeContext,
-      calc: Rep[Context] => Rep[T],
+  def Case(env: EsEnv, name: String, script: String, ctx: ErgoLikeContext,
+      calc: Rep[Context] => Rep[Any],
       cost: Rep[Context] => Rep[Int],
       size: Rep[Context] => Rep[Long],
       tree: SValue,
-      result: Result[T]) =
-    EsTestCase[T](name, env, script, Option(ctx), None,
+      result: Result) =
+    EsTestCase(name, env, script, Option(ctx), None,
       Option(calc), Option(cost), Option(size),
       Option(tree), result)
 
-  def checkAll[T](env: EsEnv, name: String, script: String, ergoCtx: ErgoLikeContext,
-      calc: Rep[Context] => Rep[T],
+  def checkAll(env: EsEnv, name: String, script: String, ergoCtx: ErgoLikeContext,
+      calc: Rep[Context] => Rep[Any],
       cost: Rep[Context] => Rep[Int],
       size: Rep[Context] => Rep[Long],
       tree: SValue,
-      result: Result[T]): Unit =
+      result: Result): Unit =
   {
-    val tcase = Case[T](env, name, script, ergoCtx, calc, cost, size, tree, result)
+    val tcase = Case(env, name, script, ergoCtx, calc, cost, size, tree, result)
     tcase.doReduce()
   }
 
-  def checkInEnv[T](env: EsEnv, name: String, script: String,
-      expectedCalc: Rep[Context] => Rep[T],
+  def checkInEnv(env: EsEnv, name: String, script: String,
+      expectedCalc: Rep[Context] => Rep[Any],
       expectedCost: Rep[Context] => Rep[Int] = null,
       expectedSize: Rep[Context] => Rep[Long] = null
-  ): Rep[(Context => T, (Context => Int, Context => Long))] =
+  ): Rep[(Context => Any, (Context => Int, Context => Long))] =
   {
-    val tc = EsTestCase[T](name, env, script, None, None,
+    val tc = EsTestCase(name, env, script, None, None,
       Option(expectedCalc),
       Option(expectedCost),
       Option(expectedSize), expectedTree = None, expectedResult = NoResult, printGraphs = true )
@@ -262,17 +262,17 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     res
   }
 
-  def check[T](name: String, script: String,
-      expectedCalc: Rep[Context] => Rep[T],
+  def check(name: String, script: String,
+      expectedCalc: Rep[Context] => Rep[Any],
       expectedCost: Rep[Context] => Rep[Int] = null,
       expectedSize: Rep[Context] => Rep[Long] = null
-      ): Rep[(Context => T, (Context => Int, Context => Long))] =
+      ): Rep[(Context => Any, (Context => Int, Context => Long))] =
   {
     checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize)
   }
 
   def reduce(env: EsEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
-    val tcase = EsTestCase[SType#WrappedType](name, env, script, Some(ergoCtx), expectedResult = Result(expectedResult.asInstanceOf[SType#WrappedType]))
+    val tcase = EsTestCase(name, env, script, Some(ergoCtx), expectedResult = Result(expectedResult))
     tcase.doReduce()
   }
 

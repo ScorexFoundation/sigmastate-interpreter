@@ -150,26 +150,26 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 //      "{ getVar[Int](intVar1).get == 1 || getVar[SigmaProp](proofVar1).get }",
 //      BinOr(EQ(GetVarInt(intVar1).get, 1), GetVarSigmaProp(propVar1).get.isValid)
 //    )
-    test(env, ext,
-      "{ SELF.R4[SigmaProp].get.isValid }",
-      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
-      true
-    )
-    test(env, ext,
-      "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
-      BinAnd(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
-      true
-    )
-    test(env, ext,
-      "{ allOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
-      true
-    )
-    test(env, ext,
-      "{ anyOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
-      true
-    )
+//    test(env, ext,
+//      "{ SELF.R4[SigmaProp].get.isValid }",
+//      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
+//      true
+//    )
+//    test(env, ext,
+//      "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
+//      BinAnd(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+//      true
+//    )
+//    test(env, ext,
+//      "{ allOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
+//      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+//      true
+//    )
+//    test(env, ext,
+//      "{ anyOf(Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
+//      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+//      true
+//    )
     test(env, ext,
       "{ Array(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isValid }) }",
       ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get),

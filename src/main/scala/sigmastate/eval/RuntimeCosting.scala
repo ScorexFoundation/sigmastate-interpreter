@@ -292,30 +292,31 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
   val longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
   import Cost._
 
-  def split2[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Int)] = {
-    implicit val eT = f.elem.eDom
-    val calc = fun { x: Rep[T] =>
-      val y = f(x);
-      val res = y.value match {
-        case SigmaPropMethods.isValid(p) => p
-        case v => v
-      }
-      asRep[R](res)
+  def removeIsValid[T,R](f: Rep[T] => Rep[Any]): Rep[T] => Rep[Any] = { x: Rep[T] =>
+    val y = f(x);
+    val res = y match {
+      case SigmaPropMethods.isValid(p) => p
+      case v => v
     }
+    res
+  }
+
+  def split2[T,R](f: Rep[T => Costed[R]]): Rep[(T => Any, T => Int)] = {
+    implicit val eT = f.elem.eDom
+    val calc = fun(removeIsValid { x: Rep[T] =>
+      val y = f(x);
+      y.value
+    })
     val cost = fun { x: Rep[T] => f(x).cost }
     Pair(calc, cost)
   }
 
-  def split3[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, (T => Int, T => Long))] = {
+  def split3[T,R](f: Rep[T => Costed[R]]): Rep[(T => Any, (T => Int, T => Long))] = {
     implicit val eT = f.elem.eDom
-    val calc = fun { x: Rep[T] =>
+    val calc = fun(removeIsValid { x: Rep[T] =>
       val y = f(x);
-      val res = y.value match {
-        case SigmaPropMethods.isValid(p) => p
-        case v => v
-      }
-      asRep[R](res)
-    }
+      y.value
+    })
     val cost = fun { x: Rep[T] => f(x).cost }
     val size = fun { x: Rep[T] => f(x).dataSize }
     Tuple(calc, cost, size)
@@ -441,7 +442,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
   import sigmastate._
   import scapi.sigma.{DLogProtocol, DiffieHellmanTupleProtocol}
 
-  protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: Map[String, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
+  protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: Map[Any, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = CostedPrimRep(v, cost, sizeOf(v))
@@ -524,12 +525,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
 //        opt.getOrElse()
 
 
-      //      case sel @ Terms.Apply(Select(Select(Typed(box, SBox), regName, _), sigmastate.SOption.GetOrElseMethod.name, Some(_)), Seq(arg)) =>
-//        val reg = ErgoBox.registerByName.getOrElse(regName,
-//          error(s"Invalid register name $regName in expression $sel"))
-//        eval(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
-
-
+//      case ForAll(input @ In(col), id, body) =>
+//        val cond = body.asValue[SBoolean.type]
+//        val eIn = stypeToElem(input.tpe.elemType)
+//        val inputC = asRep[CostedCol[Any]](col)
+//        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+//        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
+//        val condC = fun { x: Rep[Costed[Any]] =>
+//          evalNode(ctx, env + (id -> x), cond)
+//        }
+//        val res = inputC.filterCosted(condC)
+//        res
 
       case op @ Slice(In(input), In(from), In(until)) =>
         val inputC = asRep[CostedCol[Any]](input)
@@ -568,8 +574,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         })
         val inputV = inputC.value
         val res = method match {
-          case SCollection.ExistsMethod.name => inputV.exists(condCalc)
-          case SCollection.ForallMethod.name => inputV.forall(condCalc)
+          // TODO don't remove isValid in split2 thus make sure the casts are ok
+          case SCollection.ExistsMethod.name => inputV.exists(asRep[Any => Boolean](condCalc))
+          case SCollection.ForallMethod.name => inputV.forall(asRep[Any => Boolean](condCalc))
         }
         val cost = inputC.cost + inputV.map(condCost).sum(costedBuilder.monoidBuilder.intPlusMonoid)
         withDefaultSize(res, cost)
@@ -769,7 +776,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
   }
 
 
-  def buildCostedGraph[T <: SType](envVals: Map[String, SValue], tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = {
+  def buildCostedGraph[T <: SType](envVals: Map[Any, SValue], tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = {
     fun { ctx: Rep[Context] =>
       val ctxC = RCostedContext(ctx)
       val env = envVals.mapValues(v => evalNode(ctxC, Map(), v))
@@ -790,7 +797,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
   }
 
   def cost(env: Map[String, Any], typed: SValue): Rep[Context => Costed[SType#WrappedType]] = {
-    val cg = buildCostedGraph[SType](env.mapValues(builder.liftAny(_).get), typed)
+    val cg = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
     cg
   }
 

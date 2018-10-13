@@ -235,7 +235,7 @@ trait TreeBuilding extends RuntimeCosting {
     res
   }
 
-  def buildTree[T <: SType](f: Rep[Context => T#WrappedType]): Value[T] = {
+  def buildTree[T <: SType](f: Rep[Context => Any]): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
     val mainG = new PGraph(lam.y)
     val block = processAstGraph(mainG, Map(), mainG, 0)
