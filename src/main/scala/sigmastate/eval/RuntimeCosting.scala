@@ -1,6 +1,7 @@
 package sigmastate.eval
 
 import java.math.BigInteger
+import java.util.IntSummaryStatistics
 
 import scala.language.implicitConversions
 import scala.language.existentials
@@ -97,6 +98,33 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         costOf(className, opTy)
     }
   }
+
+  trait CostedStruct extends Costed[Struct] { }
+  case class CostedStructCtor(costedFields: Rep[Struct], structCost: Rep[Int]) extends CostedStruct {
+    implicit val eVal: Elem[Struct] = {
+      val fields = costedFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[CostedElem[_, _]].eVal) }
+      structElement(fields)
+    }
+    val selfType: Elem[Costed[Struct]] = costedElement(eVal)
+
+    def builder: Rep[CostedBuilder] = costedBuilder
+
+    def value: Rep[Struct] = costedFields.mapFields { case cf: RCosted[a]@unchecked => cf.value }
+
+    def cost: Rep[Int] = {
+      val costs = costedFields.fields.map { case (_, cf: RCosted[a]@unchecked) => cf.cost }
+      val costsCol = colBuilder.apply(costs:_*)
+      costsCol.sum(intPlusMonoid)
+    }
+
+    def dataSize: Rep[Long] = {
+      val sizes = costedFields.fields.map { case (_, cf: RCosted[a]@unchecked) => cf.dataSize }
+      val sizesCol = colBuilder.apply(sizes:_*)
+      sizesCol.sum(longPlusMonoid)
+    }
+  }
+
+  def RCostedStruct(costedFields: Rep[Struct], structCost: Rep[Int]): Rep[Costed[Struct]] = CostedStructCtor(costedFields, structCost)
 
   object ConstantSizeType {
     def unapply(e: Elem[_]): Nullable[SType] = {
@@ -468,8 +496,22 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
   protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
-    def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = CostedPrimRep(v, cost, sizeOf(v))
+    def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = RCostedPrim(v, cost, sizeOf(v))
     object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(asRep[Costed[Any]](evalNode(ctx, env, v))) }
+    object InSeq { def unapply(items: Seq[SValue]): Nullable[Seq[RCosted[Any]]] = {
+      val res = items.map { x: SValue =>
+        val xC = eval(x)
+        asRep[Costed[Any]](xC)
+      }
+      Nullable(res)
+    }}
+    object InSeqUnzipped { def unapply(items: Seq[SValue]): Nullable[(Seq[Rep[Any]], Seq[Rep[Int]], Seq[Rep[Long]])] = {
+      val res = items.mapUnzip { x: SValue =>
+        val xC = eval(x)
+        (asRep[Any](xC.value), xC.cost, xC.dataSize)
+      }
+      Nullable(res)
+    }}
     val res: Rep[Any] = node match {
       case TaggedVariableNode(id, _) =>
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
@@ -549,6 +591,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
 //      case utxo.OptionGetOrElse(In(_opt), In(_default)) =>
 //        val opt = asRep[CostedOption[Any]](_opt)
 //        opt.getOrElse()
+
+      case SelectField(In(_tup), fieldIndex) =>
+        val tup = asRep[Costed[Struct]](_tup)
+        val fn = STuple.componentNames(fieldIndex - 1)
+        withDefaultSize(tup.value.getUntyped(fn), costedBuilder.SelectFieldCost)
+
+      case Values.Tuple(InSeq(items)) =>
+        val fields = items.zipWithIndex.map { case (x, i) => (s"_${i+1}", x)}
+        RCostedStruct(struct(fields), costedBuilder.ConstructTupleCost)
 
       case node: BooleanTransformer[_] =>
         val cond = node.condition.asValue[SBoolean.type]
@@ -807,11 +858,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         }
         RCostedFunc(RCostedPrim((), 0, 0L), f, costOf(node), l.tpe.dataSize(0.asWrappedType))
 
-      case col @ ConcreteCollection(items, elemTpe) =>
-        val (vs, cs, ss) = items.mapUnzip { x: SValue =>
-          val xC = eval(x)
-          (xC.value, xC.cost, xC.dataSize)
-        }
+      case col @ ConcreteCollection(InSeqUnzipped(vs, cs, ss), _) =>
         val values = colBuilder.apply(vs: _*)
         val costs = colBuilder.apply(cs: _*)
         val sizes = colBuilder.apply(ss: _*)
