@@ -54,8 +54,8 @@ trait Evaluation extends RuntimeCosting {
     case _: IntPlusMonoid =>
     case _: Lambda[_,_] =>
     case _: ThunkDef[_] =>
-    case ApplyUnOp(_: NumericToLong[_], _) =>
-    case ApplyBinOp(_: NumericPlus[_]| _: NumericTimes[_],_,_) =>
+    case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) =>
+    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] ,_,_) =>
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.LastBlockUtxoRootHash(_) |
          ContextM.getVar(_,_,_) | ContextM.deserialize(_,_,_) |
          ContextM.cost(_) | ContextM.dataSize(_) =>

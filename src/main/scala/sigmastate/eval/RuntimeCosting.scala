@@ -693,22 +693,29 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
 
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._
+        val x = asRep[Costed[WBigInteger]](eval(op.left))
+        val y = asRep[Costed[WBigInteger]](eval(op.right))
+        val opName = opcodeToArithOpName(op.opCode)
+        var v: Rep[WBigInteger] = null; var s: Rep[Long] = null
         op.opCode match {
           case PlusCode | MinusCode =>
-            val x = evalNode(ctx, env, op.left).asRep[Costed[WBigInteger]]
-            val y = evalNode(ctx, env, op.right).asRep[Costed[WBigInteger]]
-            val resSize = x.dataSize.max(y.dataSize) + 1L  // according to algorithm in BigInteger.add()
+            s = x.dataSize.max(y.dataSize) + 1L  // according to algorithm in BigInteger.add()
             val isPlus = op.opCode == PlusCode
-            val opName = if (isPlus) "+" else "-"
-            val cost = x.cost + y.cost + costOf(op) + costOf(opName + "_per_item", op.opType) * resSize.toInt
-            val resValue = if (isPlus) x.value.add(y.value) else x.value.subtract(y.value)
-            RCostedPrim(resValue, cost, resSize)
-//          case MinusCode => NumericMinus(elemToNumeric(eT))(eT)
-//          case MultiplyCode => NumericTimes(elemToNumeric(eT))(eT)
-//          case DivisionCode => IntegralDivide(elemToIntegral(eT))(eT)
-//          case ModuloCode => IntegralMod(elemToIntegral(eT))(eT)
+            v = if (isPlus) x.value.add(y.value) else x.value.subtract(y.value)
+          case MultiplyCode =>
+            s = x.dataSize + y.dataSize + 1L
+            v = x.value.multiply(y.value)
+          case DivisionCode =>
+            s = x.dataSize.max(y.dataSize)
+            v = x.value.divide(y.value)
+          case ModuloCode =>
+            s = y.dataSize
+            v = x.value.mod(y.value)
           case _ => error(s"Cannot perform Costing.evalNode($op)")
         }
+        val c = x.cost + y.cost + costOf(op) + costOf(opName + "_per_item", op.opType) * s.toInt
+        RCostedPrim(v, c, s)
+
       case op: ArithOp[t] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)
