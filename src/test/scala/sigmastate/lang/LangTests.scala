@@ -10,6 +10,7 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.Interpreter.ScriptEnv
 
 trait LangTests {
 
@@ -24,7 +25,7 @@ trait LangTests {
   def plus(l: SValue, r: SValue, tpe: SType = NoType): MethodCall =
     MethodCall(l, "+", IndexedSeq(r), tpe)
 
-  val EV: Map[String, Any] = Map()
+  val EV: ScriptEnv = Map()
 
   val dlog = CryptoConstants.dlogGroup
   val g1 = dlog.generator

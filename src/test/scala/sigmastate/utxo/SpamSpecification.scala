@@ -9,6 +9,7 @@ import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 
 
@@ -59,7 +60,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeInterpreter
-    val (res, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, fakeMessage))
+    val (res, terminated) = termination(() => verifier.verify(emptyEnv, spamScript, ctxv, pr.proof, fakeMessage))
 
     res.isFailure shouldBe true
     terminated shouldBe true
@@ -88,7 +89,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeInterpreter
-    val (_, terminated) = termination(() => verifier.verify(spamScript, ctxv, pr.proof, fakeMessage))
+    val (_, terminated) = termination(() => verifier.verify(emptyEnv, spamScript, ctxv, pr.proof, fakeMessage))
     terminated shouldBe true
   }
 

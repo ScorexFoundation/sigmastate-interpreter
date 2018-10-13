@@ -8,7 +8,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.Values.{LongConstant, FuncValue, FalseLeaf, TrueLeaf, BlockValue, SigmaPropConstant, IntConstant, ValDef, GroupElementConstant, ValUse, TaggedVariable}
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.serialization.OpCodes._
-
+import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
 import sigmastate.lang.Terms.Apply
@@ -18,27 +18,27 @@ class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
 
   test("constants") {
-    build(noEnv, "oneInt", "1", IntConstant(1))
-    build(noEnv, "oneLong", "1L", LongConstant(1L))
+    build(emptyEnv, "oneInt", "1", IntConstant(1))
+    build(emptyEnv, "oneLong", "1L", LongConstant(1L))
   }
 
   test("binary operations") {
-    build(noEnv, "one+one", "1 + 1", BlockValue(Vector(ValDef(1, IntConstant(1))), ArithOp(ValUse(1, SInt), ValUse(1, SInt), PlusCode)))
-    build(noEnv, "oneL-oneL", "1L - 1L", BlockValue(Vector(ValDef(1, LongConstant(1))), ArithOp(ValUse(1, SLong), ValUse(1, SLong), MinusCode)))
+    build(emptyEnv, "one+one", "1 + 1", BlockValue(Vector(ValDef(1, IntConstant(1))), ArithOp(ValUse(1, SInt), ValUse(1, SInt), PlusCode)))
+    build(emptyEnv, "oneL-oneL", "1L - 1L", BlockValue(Vector(ValDef(1, LongConstant(1))), ArithOp(ValUse(1, SLong), ValUse(1, SLong), MinusCode)))
     Seq((">", GT[SType] _), ("<", LT[SType] _), (">=", GE[SType] _), ("<=", LE[SType] _), ("==", EQ[SType] _), ("!=", NEQ[SType] _))
           .foreach { case (op, mk) =>
-            build(noEnv, s"one_${op}_one", s"1 $op 2", mk(IntConstant(1), IntConstant(2)))
+            build(emptyEnv, s"one_${op}_one", s"1 $op 2", mk(IntConstant(1), IntConstant(2)))
           }
-    build(noEnv, "logical", "1 > 1 || 2 < 1",
+    build(emptyEnv, "logical", "1 > 1 || 2 < 1",
       BlockValue(
         Vector(ValDef(1, IntConstant(1))),
         BinOr(GT(ValUse(1,SInt),ValUse(1,SInt)),LT(IntConstant(2),ValUse(1,SInt)))))
-    build(noEnv, "logical2", "1 > 1 && 2 < 1 || 2 > 1",
+    build(emptyEnv, "logical2", "1 > 1 && 2 < 1 || 2 > 1",
       BlockValue(Vector(
         ValDef(1,List(),IntConstant(1)),
         ValDef(2,List(),IntConstant(2))),
         BinOr(BinAnd(GT(ValUse(1,SInt),ValUse(1,SInt)),LT(ValUse(2,SInt),ValUse(1,SInt))),GT(ValUse(2,SInt),ValUse(1,SInt)))))
-    build(noEnv, "logical3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
+    build(emptyEnv, "logical3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
       BlockValue(Vector(
         ValDef(1,List(),SizeOf(Outputs)),
         ValDef(2,List(),IntConstant(1))),
@@ -47,22 +47,22 @@ class ErgoTreeBuildingTest extends BaseCtxTests
 
   test("context data") {
     import IR.builder._
-    build(noEnv, "height1", "HEIGHT + 1L", mkPlus(Height, LongConstant(1)))
-    build(noEnv, "size", "INPUTS.size + OUTPUTS.size", mkPlus(SizeOf(Inputs), SizeOf(Outputs)))
-    build(noEnv, "value", "SELF.value + 1L", mkPlus(ExtractAmount(Self), LongConstant(1)))
+    build(emptyEnv, "height1", "HEIGHT + 1L", mkPlus(Height, LongConstant(1)))
+    build(emptyEnv, "size", "INPUTS.size + OUTPUTS.size", mkPlus(SizeOf(Inputs), SizeOf(Outputs)))
+    build(emptyEnv, "value", "SELF.value + 1L", mkPlus(ExtractAmount(Self), LongConstant(1)))
   }
 
   test("simple lambdas") {
     import IR.builder._
-    build(noEnv, "lam1", "{ (x: Long) => HEIGHT + x }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
-    build(noEnv, "lam2", "{ val f = { (x: Long) => HEIGHT + x }; f }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
-    build(noEnv, "lam3", "{ OUTPUTS.exists { (x: Box) => HEIGHT == x.value } }",
+    build(emptyEnv, "lam1", "{ (x: Long) => HEIGHT + x }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
+    build(emptyEnv, "lam2", "{ val f = { (x: Long) => HEIGHT + x }; f }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
+    build(emptyEnv, "lam3", "{ OUTPUTS.exists { (x: Box) => HEIGHT == x.value } }",
       Exists1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
-    build(noEnv, "lam4", "{ OUTPUTS.forall { (x: Box) => HEIGHT == x.value } }",
+    build(emptyEnv, "lam4", "{ OUTPUTS.forall { (x: Box) => HEIGHT == x.value } }",
       ForAll1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
-    build(noEnv, "lam5", "{ val f = { (x: Long) => HEIGHT + x }; f(10L) }",
+    build(emptyEnv, "lam5", "{ val f = { (x: Long) => HEIGHT + x }; f(10L) }",
       Apply(FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))), Vector(LongConstant(10))))
-    build(noEnv, "lam6", "{ val f = { (x: Long) => HEIGHT + x }; f(10L) + f(20L) }",
+    build(emptyEnv, "lam6", "{ val f = { (x: Long) => HEIGHT + x }; f(10L) + f(20L) }",
       BlockValue(Vector(
         ValDef(1,List(),FuncValue(Vector((1,SLong)), Plus(Height, ValUse(1,SLong))))),
         Plus(Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(10))).asNumValue,

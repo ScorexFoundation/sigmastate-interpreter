@@ -9,17 +9,18 @@ import sigmastate._
 import Values._
 import org.ergoplatform._
 import scorex.util.encode.Base58
-import sigmastate.lang.exceptions.{BinderException, InvalidArguments, InvalidTypeArguments}
+import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.exceptions.{BinderException, InvalidTypeArguments, InvalidArguments}
 import sigmastate.serialization.ValueSerializer
 
-class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
+class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder) {
   import SigmaBinder._
   import SigmaPredef._
   import builder._
 
   /** Rewriting of AST with respect to environment to resolve all references to global names
     * and infer their types. */
-  private def eval(e: SValue, env: Map[String, Any]): SValue = rewrite(reduce(strategy[SValue]({
+  private def eval(e: SValue, env: ScriptEnv): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => liftAny(v)
       case None => predefinedEnv.get(n) match {

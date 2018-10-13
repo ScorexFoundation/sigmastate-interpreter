@@ -1,15 +1,15 @@
 package sigmastate
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import Interpreter._
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
-import org.ergoplatform.{ErgoBox, Height}
 import sigmastate.eval.Evaluation
 import special.sigma
 import org.ergoplatform.{Height, ErgoBox}
@@ -83,7 +83,7 @@ class TestingInterpreterSpecification extends PropSpec
   }
 
   val compiler = new SigmaCompiler(TransformingSigmaBuilder)
-  def compile(env: Map[String, Any], code: String): Value[SType] = {
+  def compile(env: ScriptEnv, code: String): Value[SType] = {
     compiler.compile(env, code)
   }
 
@@ -107,7 +107,7 @@ class TestingInterpreterSpecification extends PropSpec
     println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
-    verify(prop, ctx, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
+    verify(Interpreter.emptyEnv, prop, ctx, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 
   property("Evaluate array ops") {
@@ -231,9 +231,9 @@ class TestingInterpreterSpecification extends PropSpec
 
     val proof1 = TestingInterpreter.prove(prop, env1, challenge).get.proof
 
-    verify(prop, env1, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
+    verify(emptyEnv, prop, env1, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    verify(prop, env2, proof1, challenge).map(_._1).getOrElse(false) shouldBe false
+    verify(emptyEnv, prop, env2, proof1, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
   property("Evaluation - no real proving - true case") {

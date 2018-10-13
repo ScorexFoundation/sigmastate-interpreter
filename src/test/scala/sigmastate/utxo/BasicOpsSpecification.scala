@@ -6,6 +6,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
 
@@ -13,7 +14,7 @@ import scalan.BaseCtxTests
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   lazy val scalanIR = new ScalanCtx {
-    override def onCostingResult[T](env: Map[String, Any], tree: SValue, res: CostingResult[T]): Unit = {
+    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
       val name = env.get("scriptName").fold(testName)(_.toString)
       emit(name, res)
     }
@@ -48,7 +49,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     "proofVar2" -> propVar2
     )
 
-  def test(env: Map[String, Any],
+  def test(env: ScriptEnv,
            ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
            script: String, propExp: Value[SBoolean.type],
       onlyPositive: Boolean = false) = {
@@ -71,7 +72,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(outputToSpend)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
+    val pr = prover.prove(env, prop, ctx, fakeMessage).get
 
     val ctxExt = ctx.withExtension(pr.extension)
 
@@ -79,8 +80,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       override val IR = scalanIR
     }
     if (!onlyPositive)
-      verifier.verify(prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+      verifier.verify(env, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(env, prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
   property("Relation operations") {

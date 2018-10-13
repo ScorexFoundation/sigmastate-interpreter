@@ -33,8 +33,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
+    verifier.verify(env, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
   property("context enriching mixed w. crypto 2") {
@@ -65,8 +65,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeInterpreter
-    verifier.verify(prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
+    verifier.verify(env, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
   property("prover enriching context - xor") {
@@ -99,8 +99,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeInterpreter
     //context w/out extensions
-    an[OptionUnwrapNone] should be thrownBy verifier.verify(prop, ctx, pr.proof, fakeMessage).get
-    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
+    an[OptionUnwrapNone] should be thrownBy verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get
+    verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
   /**
@@ -127,8 +127,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeInterpreter
     //context w/out extensions
-    an[OptionUnwrapNone] should be thrownBy verifier.verify(prop, ctx, pr.proof, fakeMessage).get
-    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
+    an[OptionUnwrapNone] should be thrownBy verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get
+    verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
   property("prover enriching context 2") {
@@ -154,7 +154,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeInterpreter
     //context w/out extensions
-    an[OptionUnwrapNone] should be thrownBy verifier.verify(prop, ctx, pr.proof, fakeMessage).get
-    verifier.verify(prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
+    an[OptionUnwrapNone] should be thrownBy verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get
+    verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 }

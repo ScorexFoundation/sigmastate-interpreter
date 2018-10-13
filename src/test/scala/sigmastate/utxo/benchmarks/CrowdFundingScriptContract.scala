@@ -6,6 +6,7 @@ import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.Interpreter._
 
 import scala.util.Try
 
@@ -47,7 +48,7 @@ class CrowdFundingScriptContract(
   def verify(proof: Array[Byte],
              ctx: ErgoLikeContext,
              fakeMessage: Array[Byte]): Try[Interpreter.VerificationResult] = {
-    val res = verifier.verify(compiledProposition, ctx, proof, fakeMessage)
+    val res = verifier.verify(emptyEnv, compiledProposition, ctx, proof, fakeMessage)
     res
   }
 }

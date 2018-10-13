@@ -14,9 +14,8 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
-import sigmastate.eval.{Evaluation, RuntimeIRContext}
-import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.lang.TransformingSigmaBuilder
+import sigmastate.eval.RuntimeIRContext
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.lang.exceptions.{InvalidType, InterpreterException}
 import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
 import sigmastate.utils.Extensions._
@@ -352,7 +351,7 @@ trait Interpreter extends ScorexLogging {
     * @param context
     * @return
     */
-  def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]): Try[ReductionResult] = Try {
+  def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SBoolean.type]): Try[ReductionResult] = Try {
     // Substitute Deserialize* nodes with deserialized subtrees
     // We can estimate cost of the tree evaluation only after this step.
     val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
@@ -361,7 +360,6 @@ trait Interpreter extends ScorexLogging {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
     }
-    val env = Map[String, Any]()
     val costingRes @ IR.Pair(calcF, costF) = doCosting(env, substTree)
     IR.onCostingResult(env, substTree, costingRes)
 
@@ -383,11 +381,14 @@ trait Interpreter extends ScorexLogging {
     res -> estimatedCost
   }
 
-  def verify(exp: Value[SBoolean.type],
+  def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]): Try[ReductionResult] =
+    reduceToCrypto(context, Interpreter.emptyEnv, exp)
+
+  def verify(env: ScriptEnv, exp: Value[SBoolean.type],
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
-    val (cProp, cost) = reduceToCrypto(context, exp).get
+    val (cProp, cost) = reduceToCrypto(context, env, exp).get
 
     val checkingResult = cProp match {
       case TrueLeaf => true
@@ -442,7 +443,7 @@ trait Interpreter extends ScorexLogging {
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
-    verify(exp, ctxv, proverResult.proof, message)
+    verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
   }
 
 
@@ -451,13 +452,16 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proof: ProofT,
              message: Array[Byte]): Try[VerificationResult] = {
-    verify(exp, context, SigSerializer.toBytes(proof), message)
+    verify(Interpreter.emptyEnv, exp, context, SigSerializer.toBytes(proof), message)
   }
 }
 
 object Interpreter {
   type VerificationResult = (Boolean, Long)
   type ReductionResult = (Value[SBoolean.type], Long)
+
+  type ScriptEnv = Map[String, Any]
+  val emptyEnv: ScriptEnv = Map()
 
   implicit class InterpreterOps(I: Interpreter) {
     def eval[T <: SType](ctx: Context[_], ev: Value[T]): Value[T] = {

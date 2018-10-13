@@ -27,6 +27,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SigmaCompiler}
 
 trait RuntimeCosting extends SigmaLibrary with DataCosting {
@@ -457,12 +458,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     RCostedPrim(v, c, s)
   }
 
-  type Env = Map[String, Sym]
+  type CostingEnv = Map[Any, RCosted[_]]
 
   import sigmastate._
   import scapi.sigma.{DLogProtocol, DiffieHellmanTupleProtocol}
 
-  protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: Map[Any, RCosted[_]], node: Value[T]): RCosted[T#WrappedType] = {
+  protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = CostedPrimRep(v, cost, sizeOf(v))
@@ -828,12 +829,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     }
   }
 
-  def cost(env: Map[String, Any], code: String): Rep[Context => Costed[SType#WrappedType]] = {
+  def cost(env: ScriptEnv, code: String): Rep[Context => Costed[SType#WrappedType]] = {
     val typed = compiler.typecheck(env, code)
     cost(env, typed)
   }
 
-  def cost(env: Map[String, Any], typed: SValue): Rep[Context => Costed[SType#WrappedType]] = {
+  def cost(env: ScriptEnv, typed: SValue): Rep[Context => Costed[SType#WrappedType]] = {
     val cg = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
     cg
   }

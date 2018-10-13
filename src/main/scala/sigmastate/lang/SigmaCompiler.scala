@@ -4,7 +4,8 @@ import sigmastate.SType
 import sigmastate.lang.syntax.ParserException
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
-import sigmastate.Values.{Value, SValue, SigmaTree}
+import sigmastate.Values.{SigmaTree, Value, SValue}
+import sigmastate.interpreter.Interpreter.ScriptEnv
 
 class SigmaCompiler(builder: SigmaBuilder) {
 
@@ -16,7 +17,7 @@ class SigmaCompiler(builder: SigmaBuilder) {
     }
   }
 
-  def typecheck(env: Map[String, Any], parsed: SValue): Value[SType] = {
+  def typecheck(env: ScriptEnv, parsed: SValue): Value[SType] = {
     val binder = new SigmaBinder(env, builder)
     val bound = binder.bind(parsed)
     val typer = new SigmaTyper(builder)
@@ -24,12 +25,12 @@ class SigmaCompiler(builder: SigmaBuilder) {
     typed
   }
 
-  def typecheck(env: Map[String, Any], code: String): Value[SType] = {
+  def typecheck(env: ScriptEnv, code: String): Value[SType] = {
     val parsed = parse(code)
     typecheck(env, parsed)
   }
 
-  def compile(env: Map[String, Any], code: String): Value[SType] = {
+  def compile(env: ScriptEnv, code: String): Value[SType] = {
     val typed = typecheck(env, code)
     val spec = new SigmaSpecializer(builder)
     val ir = spec.specialize(typed)

@@ -7,8 +7,9 @@ import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Matchers}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{TrueLeaf, Value, GroupElementConstant, EvaluatedValue}
-import sigmastate.eval.{CompiletimeCosting, Evaluation, RuntimeIRContext}
+import sigmastate.eval.{RuntimeIRContext, CompiletimeCosting, Evaluation}
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.{SGroupElement, SBoolean, SType}
 
@@ -32,7 +33,7 @@ trait SigmaTestingCommons extends PropSpec
 
   val compiler = new SigmaCompiler(TransformingSigmaBuilder)
 
-  def compile(env: Map[String, Any], code: String): Value[SType] = {
+  def compile(env: ScriptEnv, code: String): Value[SType] = {
     compiler.compile(env, code)
   }
 

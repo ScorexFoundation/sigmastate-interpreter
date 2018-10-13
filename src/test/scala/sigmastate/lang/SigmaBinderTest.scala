@@ -1,20 +1,21 @@
 package sigmastate.lang
 
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{BinderException, InvalidArguments, InvalidTypeArguments}
+import sigmastate.lang.exceptions.{BinderException, InvalidTypeArguments, InvalidArguments}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
 
-  def bind(env: Map[String, Any], x: String): SValue = {
+  def bind(env: ScriptEnv, x: String): SValue = {
     val builder = TransformingSigmaBuilder
     val ast = SigmaParser(x, builder).get.value
     val binder = new SigmaBinder(env, builder)

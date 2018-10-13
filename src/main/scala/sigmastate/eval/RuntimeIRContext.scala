@@ -2,6 +2,7 @@ package sigmastate.eval
 
 import sigmastate.SType
 import sigmastate.Values.SValue
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
 
 trait RuntimeIRContext extends Evaluation with TreeBuilding {
@@ -18,12 +19,12 @@ trait RuntimeIRContext extends Evaluation with TreeBuilding {
 
   type CostingResult[T] = Rep[(Context => T, Context => Int)]
 
-  def doCosting(env: Map[String, Any], typed: SValue): CostingResult[Any] = {
+  def doCosting(env: ScriptEnv, typed: SValue): CostingResult[Any] = {
     val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
     split2(asRep[Context => Costed[Any]](costed))
   }
 
   /** Can be overriden to to do for example logging or saving of graphs */
-  private[sigmastate] def onCostingResult[T](env: Map[String, Any], tree: SValue, result: CostingResult[T]) {
+  private[sigmastate] def onCostingResult[T](env: ScriptEnv, tree: SValue, result: CostingResult[T]) {
   }
 }

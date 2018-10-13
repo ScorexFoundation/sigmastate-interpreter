@@ -120,9 +120,12 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     convertToUnchecked(step9)
   }
 
-  def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+  def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] =
+    prove(emptyEnv, exp, context, message)
+
+  def prove(env: ScriptEnv, exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
     import TrivialProof._
-    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions), exp).get
+    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions), env, exp).get
 
     def errorReducedToFalse = Interpreter.error("Script reduced to false")
 

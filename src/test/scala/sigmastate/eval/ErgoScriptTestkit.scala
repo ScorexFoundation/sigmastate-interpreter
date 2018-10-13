@@ -5,13 +5,13 @@ import sigmastate.{SInt, AvlTreeData, SLong, SType}
 import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, IntConstant, BigIntArrayConstant}
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import sigmastate.utxo.CostTable
-import special.sigma.{TestBox => DTestBox, ContractsTestkit, AnyValue, Box => DBox, TestContext => DTestContext, SigmaContract => DContract, Context => DContext}
+import special.sigma.{ContractsTestkit, Box => DBox, SigmaContract => DContract, Context => DContext, TestBox => DTestBox, TestContext => DTestContext}
 
 import scalan.BaseCtxTests
-import sigmastate.lang.{TransformingSigmaBuilder, LangTests}
-import org.scalatest.TryValues._
+import sigmastate.lang.LangTests
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.Interpreter.ScriptEnv
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxTests =>
 
@@ -19,25 +19,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     new TestContext with RuntimeIRContext with CompiletimeCosting
 
   import IR._
-  import Context._
   import Liftables._
-  import WArray._
-  import WOption._
-  import ColBuilder._
   import Context._
-  import Col._
-  import SigmaProp._
-  import CostedCol._
   import WBigInteger._
-  import WECPoint._
-  import ProveDlogEvidence._
-  import ProveDHTEvidence._
-  import sigmastate.serialization.OpCodes._
-  import SType.AnyOps
 
-  type EsEnv = Map[String, Any]
 
-  val noEnv: EsEnv = Map()
 
   def newErgoContext(height: Long, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())
@@ -132,7 +118,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def NoResult = Result(None, None, None)
   case class EsTestCase(
       name: String,  // name of the test case, used in forming file names in test-out directory
-      env: EsEnv,
+      env: ScriptEnv,
       script: String,
       ergoCtx: Option[ErgoLikeContext] = None,
       testContract: Option[DContext => Any] = None,
@@ -227,7 +213,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     }
   }
 
-  def Case(env: EsEnv, name: String, script: String, ctx: ErgoLikeContext,
+  def Case(env: ScriptEnv, name: String, script: String, ctx: ErgoLikeContext,
       calc: Rep[Context] => Rep[Any],
       cost: Rep[Context] => Rep[Int],
       size: Rep[Context] => Rep[Long],
@@ -237,7 +223,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       Option(calc), Option(cost), Option(size),
       Option(tree), result)
 
-  def checkAll(env: EsEnv, name: String, script: String, ergoCtx: ErgoLikeContext,
+  def checkAll(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext,
       calc: Rep[Context] => Rep[Any],
       cost: Rep[Context] => Rep[Int],
       size: Rep[Context] => Rep[Long],
@@ -248,7 +234,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     tcase.doReduce()
   }
 
-  def checkInEnv(env: EsEnv, name: String, script: String,
+  def checkInEnv(env: ScriptEnv, name: String, script: String,
       expectedCalc: Rep[Context] => Rep[Any],
       expectedCost: Rep[Context] => Rep[Int] = null,
       expectedSize: Rep[Context] => Rep[Long] = null
@@ -271,12 +257,12 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize)
   }
 
-  def reduce(env: EsEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
+  def reduce(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
     val tcase = EsTestCase(name, env, script, Some(ergoCtx), expectedResult = Result(expectedResult))
     tcase.doReduce()
   }
 
-  def build(env: Map[String, Any], name: String, script: String, expected: SValue): Unit = {
+  def build(env: ScriptEnv, name: String, script: String, expected: SValue): Unit = {
     val costed = cost(env, script)
     val Tuple(valueF, costF, sizeF) = split3(costed)
     emit(name, valueF, costF, sizeF)

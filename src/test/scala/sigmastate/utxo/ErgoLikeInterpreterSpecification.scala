@@ -10,6 +10,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
@@ -614,7 +615,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       self = ErgoBox(20, TrueLeaf, Seq(), Map()))
 
     val proof1 = prover.prove(prop1, ctx, fakeMessage).get.proof
-    verifier.verify(prop1, ctx, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe true
+    verifier.verify(emptyEnv, prop1, ctx, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe true
 
     val ctxMainnet = ErgoLikeContext(
       currentHeight = 50,
@@ -624,6 +625,6 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       self = ErgoBox(20, TrueLeaf, Seq(), Map()),
       metadata = Metadata(MainnetNetworkPrefix))
 
-    verifier.verify(prop1, ctxMainnet, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe false
+    verifier.verify(emptyEnv, prop1, ctxMainnet, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe false
   }
 }

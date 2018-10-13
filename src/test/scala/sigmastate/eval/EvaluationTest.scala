@@ -1,18 +1,12 @@
 package sigmastate.eval
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
-import sigmastate.{SInt, AvlTreeData}
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, SigmaPropConstant, IntConstant, BooleanConstant}
+import org.ergoplatform.ErgoBox
+import sigmastate.Values.IntConstant
 import sigmastate.helpers.ErgoLikeProvingInterpreter
-import sigmastate.interpreter.ContextExtension
-
+import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
-import sigmastate.lang.{LangTests, TransformingSigmaBuilder}
-import sigmastate.utxo.CostTable
-import special.sigma.{Box, ContractsTestkit, AnyValue, Context, TestBox, TestContext => DContext}
-
-import scala.collection.mutable
-import scala.util.Success
+import sigmastate.lang.LangTests
+import special.sigma.{TestContext => DContext}
 
 
 class EvaluationTest extends BaseCtxTests
@@ -20,22 +14,22 @@ class EvaluationTest extends BaseCtxTests
 
   test("constants") {
     val ctx = newErgoContext(height = 1, boxToSpend)
-    reduce(noEnv, "one", "1", ctx,  1)
-    reduce(noEnv, "oneL", "1L", ctx, 1L)
+    reduce(emptyEnv, "one", "1", ctx,  1)
+    reduce(emptyEnv, "oneL", "1L", ctx, 1L)
   }
 
   test("operations") {
     val ctx = newErgoContext(height = 1, boxToSpend)
-    reduce(noEnv, "one+one", "1 + 1", ctx, 2)
-    reduce(noEnv, "oneL+oneL", "1L - 1L", ctx, 0L)
-    reduce(noEnv, "one_gt_one", "1 > 1", ctx, false)
-    reduce(noEnv, "or", "1 > 1 || 2 < 1", ctx, false)
-    reduce(noEnv, "or2", "1 > 1 || 2 < 1 || 2 > 1", ctx, true)
-    reduce(noEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1", ctx, true)
-    reduce(noEnv, "and", "1 > 1 && 2 < 1", ctx, false)
-    reduce(noEnv, "and2", "1 > 1 && 2 < 1 && 2 > 1", ctx, false)
-    reduce(noEnv, "and3", "1 == 1 && (2 < 1 || 2 > 1)", ctx, true)
-    reduce(noEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size < 1", ctx, false)
+    reduce(emptyEnv, "one+one", "1 + 1", ctx, 2)
+    reduce(emptyEnv, "oneL+oneL", "1L - 1L", ctx, 0L)
+    reduce(emptyEnv, "one_gt_one", "1 > 1", ctx, false)
+    reduce(emptyEnv, "or", "1 > 1 || 2 < 1", ctx, false)
+    reduce(emptyEnv, "or2", "1 > 1 || 2 < 1 || 2 > 1", ctx, true)
+    reduce(emptyEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1", ctx, true)
+    reduce(emptyEnv, "and", "1 > 1 && 2 < 1", ctx, false)
+    reduce(emptyEnv, "and2", "1 > 1 && 2 < 1 && 2 > 1", ctx, false)
+    reduce(emptyEnv, "and3", "1 == 1 && (2 < 1 || 2 > 1)", ctx, true)
+    reduce(emptyEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size < 1", ctx, false)
   }
 
   test("lazy logical ops") {
@@ -44,36 +38,36 @@ class EvaluationTest extends BaseCtxTests
     val self = ErgoBox(1, pk, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
     val ctx = newErgoContext(height = 1, self)
     // guarded register access: existing reg
-    reduce(noEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].get == 10", ctx, true)
+    reduce(emptyEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].get == 10", ctx, true)
     // guarded register access: non-existing reg
-    reduce(noEnv, "lazy2", "SELF.R5[Int].isDefined && SELF.R5[Int].get == 10", ctx, false)
+    reduce(emptyEnv, "lazy2", "SELF.R5[Int].isDefined && SELF.R5[Int].get == 10", ctx, false)
 
     // guarded register access: reading register if it is defined and another one is undefined
-    reduce(noEnv, "lazy3", "SELF.R4[Int].isDefined && (SELF.R5[Int].isDefined || SELF.R4[Int].get == 10)", ctx, true)
+    reduce(emptyEnv, "lazy3", "SELF.R4[Int].isDefined && (SELF.R5[Int].isDefined || SELF.R4[Int].get == 10)", ctx, true)
   }
 
   test("context data") {
     val ctx = newErgoContext(height = 100, boxToSpend)
         .withTransaction(tx1)
-    reduce(noEnv, "height1", "HEIGHT + 1L", ctx, 101)
-    reduce(noEnv, "height2", "HEIGHT > 1L", ctx, true)
-    reduce(noEnv, "size", "INPUTS.size + OUTPUTS.size", ctx, 2)
-    reduce(noEnv, "value", "SELF.value + 1L", ctx, 11L)
+    reduce(emptyEnv, "height1", "HEIGHT + 1L", ctx, 101)
+    reduce(emptyEnv, "height2", "HEIGHT > 1L", ctx, true)
+    reduce(emptyEnv, "size", "INPUTS.size + OUTPUTS.size", ctx, 2)
+    reduce(emptyEnv, "value", "SELF.value + 1L", ctx, 11L)
   }
 
   test("lambdas") {
     val ctx = newErgoContext(height = 1, boxToSpend)
-    reduce(noEnv, "lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }", ctx, true)
+    reduce(emptyEnv, "lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }", ctx, true)
 
     // access R5 and call g only if f returns false
-    reduce(noEnv, "lam4",
+    reduce(emptyEnv, "lam4",
       """{
        |  val f = { (out: Box) => out.value >= 0L };
        |  val g = { (x: Int) => x < 0 };
        |  f(SELF) || g(SELF.R5[Int].get)
        | }""".stripMargin, ctx, true)
 
-    reduce(noEnv, "lam5",
+    reduce(emptyEnv, "lam5",
       """{
        |  val f = { (out: Box) => out.value >= 0L };
        |  val g = { (xs: Array[Int]) => xs.size > 0 };

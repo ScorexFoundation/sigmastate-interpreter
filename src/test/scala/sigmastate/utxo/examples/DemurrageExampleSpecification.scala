@@ -2,6 +2,7 @@ package sigmastate.utxo.examples
 
 import sigmastate.Values.{LongConstant, TaggedBox}
 import sigmastate._
+import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform._
 import sigmastate.utxo._
@@ -85,7 +86,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //user can spend all the money
     val uProof1 = userProver.prove(prop, ctx1, fakeMessage).get.proof
-    verifier.verify(prop, ctx1, uProof1, fakeMessage).get._1 shouldBe true
+    verifier.verify(emptyEnv, prop, ctx1, uProof1, fakeMessage).get._1 shouldBe true
 
     //miner can't spend any money
     verifier.verify(prop, ctx1, NoProof, fakeMessage).get._1 shouldBe false
@@ -100,7 +101,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //user can spend all the money
     val uProof2 = userProver.prove(prop, ctx1, fakeMessage).get.proof
-    verifier.verify(prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
+    verifier.verify(env, prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
 
     //miner can spend "demurrageCost" tokens
     val tx3 = ErgoLikeTransaction(IndexedSeq(),
