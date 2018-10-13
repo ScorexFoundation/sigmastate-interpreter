@@ -462,6 +462,7 @@ object Interpreter {
 
   type ScriptEnv = Map[String, Any]
   val emptyEnv: ScriptEnv = Map()
+  val ScriptNameProp = "ScriptName"
 
   implicit class InterpreterOps(I: Interpreter) {
     def eval[T <: SType](ctx: Context[_], ev: Value[T]): Value[T] = {

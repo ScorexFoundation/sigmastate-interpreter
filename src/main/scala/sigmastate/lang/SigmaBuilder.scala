@@ -16,6 +16,8 @@ import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
+import scalan.Nullable
+
 trait SigmaBuilder {
 
   def mkEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
@@ -185,25 +187,27 @@ trait SigmaBuilder {
   def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T]
   def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type]
 
-  def liftAny(v: Any): Option[SValue] = v match {
-    case arr: Array[Boolean] => Some(mkCollectionConstant[SBoolean.type](arr, SBoolean))
-    case arr: Array[Byte] => Some(mkCollectionConstant[SByte.type](arr, SByte))
-    case arr: Array[Short] => Some(mkCollectionConstant[SShort.type](arr, SShort))
-    case arr: Array[Int] => Some(mkCollectionConstant[SInt.type](arr, SInt))
-    case arr: Array[Long] => Some(mkCollectionConstant[SLong.type](arr, SLong))
-    case arr: Array[BigInteger] => Some(mkCollectionConstant[SBigInt.type](arr, SBigInt))
-    case v: Byte => Some(mkConstant[SByte.type](v, SByte))
-    case v: Short => Some(mkConstant[SShort.type](v, SShort))
-    case v: Int => Some(mkConstant[SInt.type](v, SInt))
-    case v: Long => Some(mkConstant[SLong.type](v, SLong))
-    case v: BigInteger => Some(mkConstant[SBigInt.type](v, SBigInt))
-    case v: CryptoConstants.EcPointType => Some(mkConstant[SGroupElement.type](v, SGroupElement))
-    case b: Boolean => Some(if(b) TrueLeaf else FalseLeaf)
-    case b: ErgoBox => Some(mkConstant[SBox.type](b, SBox))
-    case avl: AvlTreeData => Some(mkConstant[SAvlTree.type](avl, SAvlTree))
-    case sb: SigmaBoolean => Some(mkConstant[SSigmaProp.type](sb, SSigmaProp))
-    case v: SValue => Some(v)
-    case _ => None
+  def liftAny(v: Any): Nullable[SValue] = v match {
+    case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
+    case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
+    case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
+    case arr: Array[Int] => Nullable(mkCollectionConstant[SInt.type](arr, SInt))
+    case arr: Array[Long] => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
+    case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr, SBigInt))
+    case arr: Array[String] => Nullable(mkCollectionConstant[SString.type](arr, SString))
+    case v: Byte => Nullable(mkConstant[SByte.type](v, SByte))
+    case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
+    case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
+    case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
+    case v: BigInteger => Nullable(mkConstant[SBigInt.type](v, SBigInt))
+    case v: CryptoConstants.EcPointType => Nullable(mkConstant[SGroupElement.type](v, SGroupElement))
+    case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
+    case v: String => Nullable(mkConstant[SString.type](v, SString))
+    case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
+    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
+    case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](sb, SSigmaProp))
+    case v: SValue => Nullable(v)
+    case _ => Nullable.None
   }
 }
 

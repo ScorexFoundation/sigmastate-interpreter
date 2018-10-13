@@ -22,7 +22,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder) {
     * and infer their types. */
   private def eval(e: SValue, env: ScriptEnv): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, NoType) => env.get(n) match {
-      case Some(v) => liftAny(v)
+      case Some(v) => Option(liftAny(v).get)
       case None => predefinedEnv.get(n) match {
         case Some(v) => Some(Ident(n, v.tpe))
         case None => n match {

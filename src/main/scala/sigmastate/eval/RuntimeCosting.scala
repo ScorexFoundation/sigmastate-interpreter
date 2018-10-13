@@ -349,6 +349,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     case SShort => ShortElement
     case SInt => IntElement
     case SLong => LongElement
+    case SString => StringElement
     case SBigInt => wBigIntegerElement
     case SBox => boxElement
     case SGroupElement => wECPointElement
@@ -363,6 +364,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     case ShortElement => SShort
     case IntElement => SInt
     case LongElement => SLong
+    case StringElement => SString
     case _: WBigIntegerElem[_] => SBigInt
     case _: WECPointElem[_] => SGroupElement
     case oe: WOptionElem[_,_] => sigmastate.SOption(elemToSType(oe.eItem))
