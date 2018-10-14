@@ -378,30 +378,36 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     case SInt => IntElement
     case SLong => LongElement
     case SString => StringElement
+    case SAny => AnyElement
     case SBigInt => wBigIntegerElement
     case SBox => boxElement
     case SGroupElement => wECPointElement
     case SSigmaProp => sigmaPropElement
-    case c: SCollection[a] => colElement(stypeToElem(c.elemType))
+    case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
+    case c: SCollectionType[a] => colElement(stypeToElem(c.elemType))
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asElem[T#WrappedType]
 
-  def elemToSType[T](e: Elem[T]): SType = (e match {
+  def elemToSType[T](e: Elem[T]): SType = e match {
     case BooleanElement => SBoolean
     case ByteElement => SByte
     case ShortElement => SShort
     case IntElement => SInt
     case LongElement => SLong
     case StringElement => SString
+    case AnyElement => SAny
     case _: WBigIntegerElem[_] => SBigInt
     case _: WECPointElem[_] => SGroupElement
-    case oe: WOptionElem[_,_] => sigmastate.SOption(elemToSType(oe.eItem))
+    case oe: WOptionElem[_, _] => sigmastate.SOption(elemToSType(oe.eItem))
     case _: BoxElem[_] => SBox
     case _: SigmaPropElem[_] => SSigmaProp
-    case ce: ColElem[_,_] => SCollection(elemToSType(ce.eItem))
-    case fe: FuncElem[_,_] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
+    case se: StructElem[_] =>
+      assert(se.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
+      STuple(se.fieldElems.map(elemToSType(_)).toIndexedSeq)
+    case ce: ColElem[_, _] => SCollection(elemToSType(ce.eItem))
+    case fe: FuncElem[_, _] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
     case _ => error(s"Don't know how to convert Elem $e to SType")
-  })
+  }
 
   import Liftables._
   def liftableFromElem[WT](eWT: Elem[WT]): Liftable[_,WT] = (eWT match {
@@ -707,10 +713,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
       case opt: OptionValue[_] =>
         error(s"Option constructors are not supported: $opt")
 
-      case utxo.SizeOf(xs) =>
-        val xsC = evalNode(ctx, env, xs).asRep[Costed[Col[Any]]]
-        val v = xsC.value.length
-        withDefaultSize(v, xsC.cost + costOf(node))
+      case utxo.SizeOf(In(xs)) =>
+        xs.elem.eVal match {
+          case ce: ColElem[a,_] =>
+            val xsC = asRep[Costed[Col[a]]](xs)
+            val v = xsC.value.length
+            withDefaultSize(v, xsC.cost + costOf(node))
+          case se: StructElem[_] =>
+            val xsC = asRep[Costed[Struct]](xs)
+            withDefaultSize(se.fields.length, xsC.cost + costOf(node))
+        }
+
       case ByIndex(xs, i, None) =>
         val xsC = evalNode(ctx, env, xs).asRep[CostedCol[Any]]
         val iC = evalNode(ctx, env, i).asRep[Costed[Int]]

@@ -364,10 +364,8 @@ trait Interpreter extends ScorexLogging {
     IR.onCostingResult(env, substTree, costingRes)
 
     IR.verifyCostFunc(costF).fold(t => throw t, x => x)
-//    if (!okCostF.isSuccess) Interpreter.error(s"Cost function has invalid operation")
 
     IR.verifyIsValid(calcF).fold(t => throw t, x => x)
-//    if (!okCalcF.isSuccess) Interpreter.error(s"")
 
     // check cost
     val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)

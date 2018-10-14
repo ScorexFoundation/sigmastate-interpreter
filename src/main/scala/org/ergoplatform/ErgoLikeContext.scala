@@ -63,20 +63,28 @@ class ErgoLikeContext(val currentHeight: Height,
     val outputs =
       if (spendingTransaction == null) noOutputs
       else spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
-    val vars = contextVars(extension.values)
+    val vars = contextVars(extension.values.mapValues({
+      case Constant(x, tpe) => toTestData(x, tpe)
+      case v => v
+    }))
     val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
     val emptyAvlTree = new TestAvlTree(noBytes, 0, None, None, None)
     new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), emptyAvlTree, vars.arr, true)
   }
 
+  def toTestData(value: Any, tpe: SType)(implicit IR: Evaluation): Any = (value, tpe) match {
+    case (arr: Array[a], SCollection(elemType)) =>
+      val testArr = arr.map(x => toTestData(x, elemType))
+      IR.sigmaDslBuilderValue.Cols.fromArray(testArr)
+    case (x, _) => x
+  }
+
   implicit class ErgoBoxOps(ebox: ErgoBox) {
     def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
-      val rs = regs(ebox.additionalRegisters.map {
-        case (k, Constant(arr: Array[a], tpeA)) =>
-          (k.number -> IR.sigmaDslBuilderValue.Cols.fromArray(arr))
-        case (k,v) =>
-          (k.number -> v)
-      })
+      val rs = regs(ebox.additionalRegisters.map({
+        case (k, Constant(x, tpe)) => k.number -> toTestData(x, tpe)
+        case (k, v) => k.number -> v
+      }))
       val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
       new CostingBox(IR,
         IR.sigmaDslBuilderValue.Cols.fromArray(ebox.id),
