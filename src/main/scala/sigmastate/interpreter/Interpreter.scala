@@ -16,12 +16,13 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
 import sigmastate.eval.RuntimeIRContext
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.{InvalidType, InterpreterException}
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
 import sigmastate.{SType, _}
+import special.sigma.InvalidType
 
 import scala.util.{Success, Failure, Try}
 

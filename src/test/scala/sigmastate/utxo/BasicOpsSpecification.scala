@@ -8,7 +8,8 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
+import sigmastate.lang.exceptions.OptionUnwrapNone
+import special.sigma.InvalidType
 
 import scalan.BaseCtxTests
 
@@ -324,7 +325,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       EQ(GetVarInt(intVar2).get, IntConstant(2))
     )
     // wrong type
-    an[InvalidType] should be thrownBy test("GetVar2", env, ext,
+    an[scalanIR.StagingException] should be thrownBy test("GetVar2", env, ext,
       "{ getVar[Byte](intVar2).isDefined }",
       GetVarByte(intVar2).isDefined,
       true

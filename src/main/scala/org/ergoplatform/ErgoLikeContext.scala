@@ -33,29 +33,7 @@ class ErgoLikeContext(val currentHeight: Height,
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, newSpendingTransaction, self, metadata, extension)
 
-  val noInputs = Array[Box]()
-  val noOutputs = Array[Box]()
-
-
-  def regs(m: Map[Byte, Any])(implicit IR: Evaluation): Col[AnyValue] = {
-    val res = new Array[AnyValue](10)
-    for ((id, v) <- m) {
-      assert(res(id) == null, s"register $id is defined more then once")
-      res(id) = new TestValue(v)
-    }
-    IR.sigmaDslBuilderValue.Cols.fromArray(res)
-  }
-
-  def contextVars(m: Map[Byte, Any])(implicit IR: Evaluation): Col[AnyValue] = {
-    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
-    val res = new Array[AnyValue](maxKey)
-    for ((id, v) <- m) {
-      val i = id - 1
-      assert(res(i) == null, s"register $id is defined more then once")
-      res(i) = new TestValue(v)
-    }
-    IR.sigmaDslBuilderValue.Cols.fromArray(res)
-  }
+  import ErgoLikeContext._
 
   override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
     implicit val IRForBox = IR
@@ -63,36 +41,13 @@ class ErgoLikeContext(val currentHeight: Height,
     val outputs =
       if (spendingTransaction == null) noOutputs
       else spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
-    val vars = contextVars(extension.values.mapValues({
-      case Constant(x, tpe) => toTestData(x, tpe)
-      case v => v
-    }))
+    val vars = contextVars(extension.values)
     val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
     val emptyAvlTree = new TestAvlTree(noBytes, 0, None, None, None)
     new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), emptyAvlTree, vars.arr, true)
   }
 
-  def toTestData(value: Any, tpe: SType)(implicit IR: Evaluation): Any = (value, tpe) match {
-    case (arr: Array[a], SCollection(elemType)) =>
-      val testArr = arr.map(x => toTestData(x, elemType))
-      IR.sigmaDslBuilderValue.Cols.fromArray(testArr)
-    case (x, _) => x
-  }
 
-  implicit class ErgoBoxOps(ebox: ErgoBox) {
-    def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
-      val rs = regs(ebox.additionalRegisters.map({
-        case (k, Constant(x, tpe)) => k.number -> toTestData(x, tpe)
-        case (k, v) => k.number -> v
-      }))
-      val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
-      new CostingBox(IR,
-        IR.sigmaDslBuilderValue.Cols.fromArray(ebox.id),
-        ebox.value,
-        IR.sigmaDslBuilderValue.Cols.fromArray(ebox.propositionBytes),
-        noBytes, noBytes, rs, isCost)
-    }
-  }
 }
 
 object ErgoLikeContext {
@@ -137,6 +92,50 @@ object ErgoLikeContext {
       boxes(inputIndex),
       metadata,
       proverExtension)
+  }
+
+  val noInputs = Array[Box]()
+  val noOutputs = Array[Box]()
+
+  def toTestData(value: Any, tpe: SType)(implicit IR: Evaluation): Any = (value, tpe) match {
+    case (arr: Array[a], SCollection(elemType)) =>
+      val testArr = arr.map(x => toTestData(x, elemType))
+      IR.sigmaDslBuilderValue.Cols.fromArray(testArr)
+    case (x, _) => x
+  }
+
+  def regs(m: Map[Byte, Any])(implicit IR: Evaluation): Col[AnyValue] = {
+    val res = new Array[AnyValue](10)
+    for ((id, v) <- m) {
+      assert(res(id) == null, s"register $id is defined more then once")
+      res(id) = new TestValue(v)
+    }
+    IR.sigmaDslBuilderValue.Cols.fromArray(res)
+  }
+
+  def contextVars(m: Map[Byte, Any])(implicit IR: Evaluation): Col[AnyValue] = {
+    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
+    val res = new Array[AnyValue](maxKey + 1)
+    for ((id, v) <- m) {
+      assert(res(id) == null, s"register $id is defined more then once")
+      res(id) = new TestValue(v)
+    }
+    IR.sigmaDslBuilderValue.Cols.fromArray(res)
+  }
+
+  implicit class ErgoBoxOps(ebox: ErgoBox) {
+    def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
+      val rs = regs(ebox.additionalRegisters.map({
+        case (k, Constant(x, tpe)) => k.number -> toTestData(x, tpe)
+        case (k, v) => k.number -> v
+      }))
+      val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
+      new CostingBox(IR,
+        IR.sigmaDslBuilderValue.Cols.fromArray(ebox.id),
+        ebox.value,
+        IR.sigmaDslBuilderValue.Cols.fromArray(ebox.propositionBytes),
+        noBytes, noBytes, rs, isCost)
+    }
   }
 }
 

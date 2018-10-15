@@ -3,7 +3,7 @@ package sigmastate.eval
 import java.lang.reflect.Method
 import java.math.BigInteger
 
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform._
 import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
@@ -20,8 +20,9 @@ import SType._
 import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.sigma.InvalidType
 
-trait Evaluation extends RuntimeCosting {
+trait Evaluation extends RuntimeCosting { IR =>
   import Context._
   import SigmaProp._
   import Col._
@@ -142,6 +143,16 @@ trait Evaluation extends RuntimeCosting {
       def out(v: Any): (DataEnv, Sym) = { (dataEnv + (te.sym -> v.asInstanceOf[AnyRef]), te.sym) }
       try {
         val res: (DataEnv, Sym) = te.rhs match {
+          case d @ ContextM.getVar(ctx, _, elem) =>
+            val mc = d.asInstanceOf[MethodCall]
+            val declaredTpe = elemToSType(elem)
+            val valueInCtx = ctx.elem.invokeUnlifted(mc, dataEnv)
+            val data = valueInCtx match {
+              case Some(Constant(v, `declaredTpe`)) => Some(ErgoLikeContext.toTestData(v, declaredTpe)(IR))
+              case None => None
+              case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInCtx")
+            }
+            out(data)
           case Const(x) => out(x.asInstanceOf[AnyRef])
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
