@@ -28,7 +28,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     */
   property("Evaluation - Demurrage Example") {
     val demurragePeriod = 100L
-    val demurrageCost = 2
+    val demurrageCoeff = 2
 
     val outIdxVarId = Byte.MaxValue
 
@@ -44,7 +44,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     val env = Map(
       "demurragePeriod" -> demurragePeriod,
-      "demurrageCost" -> demurrageCost,
+      "demurrageCoeff" -> demurrageCoeff,
       "regScript" -> regScript
     )
 
@@ -53,14 +53,20 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         | val outIdx = getVar[Short](127).get
         | val out = OUTPUTS(outIdx)
         |
-        | val c2 = allOf(Array(
-        |     HEIGHT >= SELF.R3[(Long, Array[Byte])].get._1 + demurragePeriod,
-        |     out.value >= SELF.value - demurrageCost ,
-        |     out.propositionBytes == SELF.propositionBytes,
-        |     out.R3[(Long, Array[Byte])].get._1 <= HEIGHT,
-        |     out.R3[(Long, Array[Byte])].get._1 >= HEIGHT - 50L
+        | val c1 = allOf(Array(
+        |   HEIGHT >= SELF.R3[(Long, Array[Byte])].get._1 + demurragePeriod,
+        |   SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - out.R3[(Long, Array[Byte])].get._1) <= 0,
+        |   false
         | ))
-        | regScript || c2
+        |
+        | val c2 = allOf(Array(
+        |   HEIGHT >= SELF.R3[(Long, Array[Byte])].get._1 + demurragePeriod,
+        |   out.R3[(Long, Array[Byte])].get._1 == HEIGHT,
+        |   out.value >= SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Array[Byte])].get._1),
+        |   out.propositionBytes == SELF.propositionBytes
+        | ))
+        |
+        | anyOf(Array(regScript, c1, c2))
         | }
       """.stripMargin).asBoolValue
 
@@ -84,13 +90,15 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     prop shouldBe propTree
     */
 
-    val outHeight = 100
-    val outValue = 10
+    val inHeight = 0
+    val outValue = 100
+    val approxSize = createBox(outValue, prop, inHeight).bytes.length + 2
+    val inValue: Int = (outValue + demurrageCoeff * demurragePeriod * approxSize).toInt
 
     val ce = ContextExtension(Map(outIdxVarId -> ShortConstant(0)))
 
     //case 1: demurrage time hasn't come yet
-    val currentHeight1 = outHeight + demurragePeriod - 1
+    val currentHeight1 = inHeight + demurragePeriod - 1
 
     val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue, prop, currentHeight1)))
 
@@ -99,7 +107,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
-      self = createBox(outValue, prop, outHeight),
+      self = createBox(inValue, prop, inHeight),
       extension = ce)
 
     //user can spend all the money
@@ -111,30 +119,29 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx1, NoProof, fakeMessage).get._1 shouldBe false
 
     //case 2: demurrage time has come
-    val currentHeight2 = outHeight + demurragePeriod
+    val currentHeight2 = inHeight + demurragePeriod
     val tx2 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue, prop, currentHeight2)))
     val ctx2 = ErgoLikeContext(
       currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx2,
-      self = createBox(outValue, prop, outHeight),
+      self = createBox(inValue, prop, inHeight),
       extension = ce)
 
     //user can spend all the money
     val uProof2 = userProver.prove(prop, ctx2, fakeMessage).get.proof
     verifier.verify(prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
 
-    //miner can spend "demurrageCost" tokens
-    val currentHeight3 = outHeight + demurragePeriod
-    val b = createBox(outValue - demurrageCost, prop, currentHeight3)
+    //miner can spend "demurrageCoeff * demurragePeriod" tokens
+    val b = createBox(outValue, prop, currentHeight2)
     val tx3 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b))
     val ctx3 = ErgoLikeContext(
-      currentHeight = currentHeight3,
+      currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(b),
       spendingTransaction = tx3,
-      self = createBox(outValue, prop, outHeight))
+      self = createBox(inValue, prop, inHeight))
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
@@ -142,14 +149,14 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx3.withExtension(mProverRes1.extension), mProverRes1.proof, fakeMessage).get._1 shouldBe true
 
     //miner can't spend more
-    val currentHeight4 = outHeight + demurragePeriod
-    val tx4 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue - demurrageCost - 1, prop, currentHeight4)))
+    val b2 = createBox(outValue - 1, prop, currentHeight2)
+    val tx4 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b2))
     val ctx4 = ErgoLikeContext(
-      currentHeight = currentHeight4,
+      currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(b2),
       spendingTransaction = tx4,
-      self = createBox(outValue, prop, outHeight),
+      self = createBox(inValue, prop, inHeight),
       extension = ce)
 
     minerProver.prove(prop, ctx4, fakeMessage).isSuccess shouldBe false
@@ -157,14 +164,14 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //miner can spend less
     val tx5 = ErgoLikeTransaction(IndexedSeq(),
-      IndexedSeq(createBox(outValue - demurrageCost + 1, prop, currentHeight4)))
+      IndexedSeq(createBox(outValue + 1, prop, currentHeight2)))
 
     val ctx5 = ErgoLikeContext(
-      currentHeight = currentHeight4,
+      currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx5,
-      self = createBox(outValue, prop, outHeight),
+      self = createBox(inValue, prop, inHeight),
       extension = ce)
 
     val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get.proof
