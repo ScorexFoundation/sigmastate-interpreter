@@ -48,6 +48,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       "regScript" -> regScript
     )
 
+    //todo: add condition on
     val prop = compile(env,
       """{
         | val outIdx = getVar[Short](127).get
@@ -55,8 +56,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         |
         | val c1 = allOf(Array(
         |   HEIGHT >= SELF.R3[(Long, Array[Byte])].get._1 + demurragePeriod,
-        |   SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - out.R3[(Long, Array[Byte])].get._1) <= 0,
-        |   false
+        |   SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Array[Byte])].get._1) <= 0
         | ))
         |
         | val c2 = allOf(Array(
@@ -176,5 +176,22 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get.proof
     verifier.verify(prop, ctx5, mProof2, fakeMessage).get._1 shouldBe true
+
+    //miner can destroy a box if it contains less than the storage fee
+    val iv = inValue - outValue
+    val b3 = createBox(iv, Values.FalseLeaf, currentHeight2)
+    val tx6 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b3))
+
+    val ctx6 = ErgoLikeContext(
+      currentHeight = currentHeight2,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      boxesToSpend = IndexedSeq(b3),
+      spendingTransaction = tx6,
+      self = createBox(iv, prop, inHeight),
+      extension = ce)
+
+    val mProof3 = minerProver.prove(prop, ctx6, fakeMessage).get.proof
+    verifier.verify(prop, ctx6, mProof3, fakeMessage).get._1 shouldBe true
+
   }
 }
