@@ -194,7 +194,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     def sliceSize: Rep[Long => Long] = fun { x: Rep[Long] => f(RCostedPrim(variable[A], 0, x)).dataSize }
   }
 
-  implicit def extendCostedElem[A](e: Elem[Costed[A]]): CostedElem[A,_] = e.asInstanceOf[CostedElem[A,_]]
   implicit def extendCostedFuncElem[E,A,B](e: Elem[CostedFunc[E,A,B]]): CostedFuncElem[E,A,B] = e.asInstanceOf[CostedFuncElem[E,A,B]]
 
   def splitCostedFunc2[A,B](f: RCostedFunc[A,B]): (Rep[A=>B], Rep[((Int, Long)) => Int]) = {
