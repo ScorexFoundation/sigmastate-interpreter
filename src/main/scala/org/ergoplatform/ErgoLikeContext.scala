@@ -125,10 +125,7 @@ object ErgoLikeContext {
 
   implicit class ErgoBoxOps(ebox: ErgoBox) {
     def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
-      val rs = regs(ebox.additionalRegisters.map({
-        case (k, Constant(x, tpe)) => k.number -> toTestData(x, tpe)
-        case (k, v) => k.number -> v
-      }))
+      val rs = regs(ebox.additionalRegisters.map({ case (k, v) => k.number -> v }))
       val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
       new CostingBox(IR,
         IR.sigmaDslBuilderValue.Cols.fromArray(ebox.id),

@@ -339,7 +339,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
     // wrong type
-    an[InvalidType] should be thrownBy test("Extract2", env, ext,
+    an[scalanIR.StagingException] should be thrownBy test("Extract2", env, ext,
       "{ SELF.R4[Int].isDefined }",
       ExtractRegisterAs[SInt.type](Self, reg1).isDefined,
       true

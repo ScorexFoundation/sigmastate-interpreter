@@ -153,6 +153,16 @@ trait Evaluation extends RuntimeCosting { IR =>
               case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInCtx")
             }
             out(data)
+          case d @ BoxM.getReg(box, _, elem) =>
+            val mc = d.asInstanceOf[MethodCall]
+            val declaredTpe = elemToSType(elem)
+            val valueInReg = box.elem.invokeUnlifted(mc, dataEnv)
+            val data = valueInReg match {
+              case Some(Constant(v, `declaredTpe`)) => Some(ErgoLikeContext.toTestData(v, declaredTpe)(IR))
+              case None => None
+              case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInReg value of register")
+            }
+            out(data)
           case Const(x) => out(x.asInstanceOf[AnyRef])
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
