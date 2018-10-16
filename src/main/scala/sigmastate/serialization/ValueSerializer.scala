@@ -120,7 +120,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       w.payload[SerializedConstantPlaceholderStore] match {
         case Some(store) =>
           w.put(ConstantPlaceholderIndexCode)
-            .putUInt(store.getIndex(c))
+            .putUInt(store.put(c))
         case None =>
           ConstantSerializer(builder).serialize(c, w)
       }
@@ -145,7 +145,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       r.payload[SerializedConstantPlaceholderStore] match {
         case Some(store) =>
           if (r.getByte() == ConstantPlaceholderIndexCode) {
-            store.getConstant(r.getUInt().toIntExact)
+            store.get(r.getUInt().toIntExact)
           } else {
             throw new IllegalStateException("Invalid constant placeholder code")
           }
