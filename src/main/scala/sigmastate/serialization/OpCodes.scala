@@ -25,6 +25,8 @@ trait ValueCodes extends TypeCodes {
     * */
   val ConstantCode: Byte = 0
 
+  val ConstantPlaceholderIndexCode: Byte = 104
+
   /** The last constant code is equal to FirstFuncType which represent generic function type.
     * We use this single code to represent all functional constants, since we don't have enough space in single byte.
     * Subsequent bytes have to be read from ByteReader in order to decode the type of the function and the corresponding data. */
