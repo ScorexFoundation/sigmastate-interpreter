@@ -370,22 +370,22 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("OptionGetOrElse") {
-//    test("OptGet1", env, ext,
-//      "{ SELF.R5[Int].getOrElse(3) == 1 }",
-//      EQ(ExtractRegisterAs[SInt.type](Self, reg2).getOrElse(IntConstant(3)), IntConstant(1)),
-//      true
-//    )
-//    // register should be empty
-//    test("OptGet2", env, ext,
-//      "{ SELF.R6[Int].getOrElse(3) == 3 }",
-//      EQ(ExtractRegisterAs[SInt.type](Self, R6).getOrElse(IntConstant(3)), IntConstant(3)),
-//      true
-//    )
-//    test("OptGet3", env, ext,
-//      "{ getVar[Int](intVar2).getOrElse(3) == 2 }",
-//      EQ(GetVarInt(intVar2).getOrElse(IntConstant(3)), IntConstant(2)),
-//      true
-//    )
+    test("OptGet1", env, ext,
+      "{ SELF.R5[Int].getOrElse(3) == 1 }",
+      EQ(ExtractRegisterAs[SInt.type](Self, reg2).getOrElse(IntConstant(3)), IntConstant(1)),
+      true
+    )
+    // register should be empty
+    test("OptGet2", env, ext,
+      "{ SELF.R6[Int].getOrElse(3) == 3 }",
+      EQ(ExtractRegisterAs[SInt.type](Self, R6).getOrElse(IntConstant(3)), IntConstant(3)),
+      true
+    )
+    test("OptGet3", env, ext,
+      "{ getVar[Int](intVar2).getOrElse(3) == 2 }",
+      EQ(GetVarInt(intVar2).getOrElse(IntConstant(3)), IntConstant(2)),
+      true
+    )
     // there should be no variable with this id
     test("OptGet4", env, ext,
       "{ getVar[Int](99).getOrElse(3) == 3 }",

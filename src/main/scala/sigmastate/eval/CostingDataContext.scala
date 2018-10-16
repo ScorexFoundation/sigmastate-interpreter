@@ -3,6 +3,7 @@ package sigmastate.eval
 import special.collection.{ConcreteCostedBuilder, Col, Types}
 import special.sigma._
 
+import scala.reflect.ClassTag
 import scalan.meta.RType
 
 class CostingBox(
@@ -57,7 +58,20 @@ class CostingDataContext(
 
   override def getVar[T](id: Byte)(implicit cT: RType[T]) =
     if (isCost) {
-      val optV = super.getVar(id)(cT)
+      implicit val tag: ClassTag[T] = cT.classTag
+      val optV =
+        if (id < 0 || id >= vars.length) None
+        else {
+          val value = vars(id)
+          if (value != null ) {
+            // once the value is not null it should be of the right type
+            value match {
+              case value: TestValue[_] if value.value != null =>
+                Some(value.value.asInstanceOf[T])
+              case _ => None
+            }
+          } else None
+        }
       optV.orElse(Some(builder.Costing.defaultValue(cT)))
     } else
       super.getVar(id)(cT)
