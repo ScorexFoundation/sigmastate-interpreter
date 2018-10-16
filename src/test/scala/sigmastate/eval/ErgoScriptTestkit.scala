@@ -41,37 +41,6 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   val boxA1 = newAliceBox(1, 100)
   val boxA2 = newAliceBox(2, 200)
 
-  implicit class ErgoBoxOps(ebox: ErgoBox) {
-    def toTestBox(isCost: Boolean): DBox = {
-      val rs = regs(ebox.additionalRegisters.map {
-        case (k, Constant(arr: Array[a], tpeA)) =>
-          (k.number -> Cols.fromArray(arr))
-        case (k,v) =>
-          (k.number -> v)
-      })
-      new CostingBox(IR, Cols.fromArray(ebox.id), ebox.value, Cols.fromArray(ebox.propositionBytes), noBytes, noBytes, rs, isCost)
-    }
-  }
-
-  implicit class ErgoLikeContextOps(ergoCtx: ErgoLikeContext) {
-    def toTestContext(isCost: Boolean): DContext = {
-      val inputs = ergoCtx.boxesToSpend.toArray.map(_.toTestBox(isCost))
-      val outputs = ergoCtx.spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
-      val vars = contextVars(ergoCtx.extension.values)
-      new CostingDataContext(IR, inputs, outputs, ergoCtx.currentHeight, ergoCtx.self.toTestBox(isCost), emptyAvlTree, vars.arr, isCost)
-    }
-//    def withInputs(inputs: ErgoBox*) =
-//      new ErgoLikeContext(
-//        ergoCtx.currentHeight,
-//        ergoCtx.lastBlockUtxoRoot,
-//        ergoCtx.boxesToSpend, ergoCtx.spendingTransaction, ergoCtx.self, ergoCtx.extension)
-//    def withOutputs(outputs: ErgoBox*) =
-//      new ErgoLikeContext(
-//        ergoCtx.currentHeight,
-//        ergoCtx.lastBlockUtxoRoot,
-//        ergoCtx.boxesToSpend, ergoCtx.spendingTransaction, ergoCtx.self, ergoCtx.extension)
-  }
-
   def contract(canOpen: DContext => Boolean) = new NoEnvContract(canOpen)
 
   lazy val dsl = sigmaDslBuilder
@@ -180,14 +149,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
         "Compiled Tree actual: %s, expected: %s")
 
       if (ergoCtx.isDefined) {
-        val calcCtx = ergoCtx.get.toTestContext(isCost = false)
+        val calcCtx = ergoCtx.get.toSigmaContext(IR, isCost = false)
         val testContractRes = testContract.map(_(calcCtx))
         testContractRes.foreach { res =>
           checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")
         }
 
         // check cost
-        val costCtx = ergoCtx.get.toTestContext(isCost = true)
+        val costCtx = ergoCtx.get.toSigmaContext(IR, isCost = true)
         val costFun = IR.compile[SInt.type](getDataEnv, costF)
         val IntConstant(estimatedCost) = costFun(costCtx)
         checkExpected(estimatedCost, expectedResult.cost,

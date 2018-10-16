@@ -6,7 +6,7 @@ import java.math.BigInteger
 import org.ergoplatform._
 import scapi.sigma.DLogProtocol
 import sigmastate._
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
+import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, CollectionConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
@@ -168,7 +168,7 @@ trait Evaluation extends RuntimeCosting { IR =>
               case Some(Constant(v, `declaredTpe`)) => Some(ErgoLikeContext.toTestData(v, declaredTpe)(IR))
               case None => None
               case _ => throw new InvalidType(
-                s"Expected Constant($declaredTpe) but found $valueInReg value of register: $d")
+                s"Expected Some(Constant($declaredTpe)) but found $valueInReg value of register: $d")
             }
             out(data)
           case Const(x) => out(x.asInstanceOf[AnyRef])
@@ -304,7 +304,9 @@ trait Evaluation extends RuntimeCosting { IR =>
       fun(ctx) match {
         case sb: SigmaBoolean => builder.liftAny(sb).get
         case v: Value[_] => v
-        case col: special.collection.Col[_] => builder.liftAny(col.arr).get
+        case col: special.collection.Col[_] =>
+          val et = elemToSType(f.elem.eRange)
+          CollectionConstant(col.arr.asInstanceOf[Array[SType#WrappedType]], et)
         case x => builder.liftAny(x).get
       }
     }

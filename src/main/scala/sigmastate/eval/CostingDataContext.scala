@@ -1,5 +1,7 @@
 package sigmastate.eval
 
+import sigmastate.SType
+import sigmastate.Values.Constant
 import special.collection.{ConcreteCostedBuilder, Col, Types}
 import special.sigma._
 
@@ -19,8 +21,26 @@ class CostingBox(
 
   override def getReg[T](i: Int)(implicit cT: RType[T]): Option[T] =
     if (isCost) {
-      val optV = super.getReg(i)
-      optV.orElse(Some(builder.Costing.defaultValue(cT)))
+      val optV =
+        if (i < 0 || i >= registers.length) None
+        else {
+          val value = registers(i)
+          if (value != null ) {
+            // once the value is not null it should be of the right type
+            value match {
+              case value: TestValue[_] if value.value != null =>
+                Some(value.value.asInstanceOf[T])
+              case _ =>
+                None
+            }
+          } else None
+        }
+
+      optV.orElse {
+        val tpe = IR.elemToSType(cT.asInstanceOf[IR.Elem[_]])
+        val default = builder.Costing.defaultValue(cT).asInstanceOf[SType#WrappedType]
+        Some(Constant[SType](default, tpe).asInstanceOf[T])
+      }
     } else
       super.getReg(i)
 }
@@ -72,7 +92,11 @@ class CostingDataContext(
             }
           } else None
         }
-      optV.orElse(Some(builder.Costing.defaultValue(cT)))
+      optV.orElse {
+        val tpe = IR.elemToSType(cT.asInstanceOf[IR.Elem[_]])
+        val default = builder.Costing.defaultValue(cT).asInstanceOf[SType#WrappedType]
+        Some(Constant[SType](default, tpe).asInstanceOf[T])
+      }
     } else
       super.getVar(id)(cT)
 }
