@@ -314,6 +314,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val f = asRep[a => CostedOption[Any]](_f)
         f(opt.get).get
 
+      case CostedOptionM.getOrElse(WOptionM.fold(opt: RWOption[a], _, _f), _default) =>
+        implicit val eA = opt.elem.eItem
+        val f = asRep[a => CostedOption[a]](_f)
+        val default = asRep[Costed[a]](_default)
+        f(opt.getOrElse(Thunk(default.value))).getOrElse(default)
+
       case CostedOptionM.isDefined(WOptionM.fold(opt: RWOption[a], _, _f)) =>
         implicit val eA = opt.elem.eItem
         RCostedPrim(opt.isDefined, costedBuilder.SelectFieldCost, 1L)
@@ -592,10 +598,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val opt = asRep[CostedOption[Any]](_opt)
         opt.isDefined
 
-      // TODO opt.getOrElse =>
-//      case utxo.OptionGetOrElse(In(_opt), In(_default)) =>
-//        val opt = asRep[CostedOption[Any]](_opt)
-//        opt.getOrElse()
+      // opt.getOrElse =>
+      case utxo.OptionGetOrElse(In(_opt), In(_default)) =>
+        val opt = asRep[CostedOption[Any]](_opt)
+        opt.getOrElse(_default)
 
       case SelectField(In(_tup), fieldIndex) =>
         val tup = asRep[Costed[Struct]](_tup)
