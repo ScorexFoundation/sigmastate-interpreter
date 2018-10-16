@@ -1,6 +1,5 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R3, R4}
 import org.ergoplatform._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
