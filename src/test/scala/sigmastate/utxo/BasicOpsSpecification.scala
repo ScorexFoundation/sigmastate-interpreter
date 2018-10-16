@@ -244,20 +244,20 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("Tuple as Collection operations") {
-//    test("TupCol1", env, ext,
-//    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
-//     |  p.size == 2 }""".stripMargin,
-//    {
-//      val p = Tuple(GetVarInt(intVar1).get, GetVarByte(byteVar2).get)
-//      EQ(SizeOf(p), IntConstant(2))
-//    }, true)
-//    test("TupCol2", env, ext,
-//    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
-//     |  p(0) == 1 }""".stripMargin,
-//    {
-//      val p = Tuple(GetVarInt(intVar1).get, GetVarByte(byteVar2).get)
-//      EQ(SelectField(p, 1), IntConstant(1))
-//    })
+    test("TupCol1", env, ext,
+    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
+     |  p.size == 2 }""".stripMargin,
+    {
+      val p = Tuple(GetVarInt(intVar1).get, GetVarByte(byteVar2).get)
+      EQ(SizeOf(p), IntConstant(2))
+    }, true)
+    test("TupCol2", env, ext,
+    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
+     |  p(0) == 1 }""".stripMargin,
+    {
+      val p = Tuple(GetVarInt(intVar1).get, GetVarByte(byteVar2).get)
+      EQ(SelectField(p, 1), IntConstant(1))
+    })
 
     val dataVar = (lastExtVar + 1).toByte
     val Cols = scalanIR.sigmaDslBuilderValue.Cols
@@ -265,16 +265,16 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val env1 = env + ("dataVar" -> dataVar)
     val dataType = SCollection(STuple(SCollection(SByte), SLong))
     val ext1 = ext :+ ((dataVar, Constant[SCollection[STuple]](data, dataType)))
-//    test("TupCol3", env1, ext1,
-//      """{
-//        |  val data = getVar[Array[(Array[Byte], Long)]](dataVar).get
-//        |  data.size == 1
-//        |}""".stripMargin,
-//      {
-//        val data = GetVar(dataVar, dataType).get
-//        EQ(SizeOf(data), IntConstant(1))
-//      }
-//    )
+    test("TupCol3", env1, ext1,
+      """{
+        |  val data = getVar[Array[(Array[Byte], Long)]](dataVar).get
+        |  data.size == 1
+        |}""".stripMargin,
+      {
+        val data = GetVar(dataVar, dataType).get
+        EQ(SizeOf(data), IntConstant(1))
+      }
+    )
     test("TupCol4", env1, ext1,
       """{
         |  val data = getVar[Array[(Array[Byte], Long)]](dataVar).get

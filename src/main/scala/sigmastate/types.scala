@@ -2,7 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SType.TypeCode
@@ -16,6 +16,7 @@ import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
+import special.collection.Col
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -529,7 +530,7 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
     CollectionConstant(v, elemType).asValue[this.type]
 
   override def dataSize(v: SType#WrappedType): Long = {
-    val arr = v.asInstanceOf[Array[T#WrappedType]]
+    val arr = (v match { case col: Col[_] => col.arr case _ => v}).asInstanceOf[Array[T#WrappedType]]
     val header = 2
     val res =
       if (arr.isEmpty)
@@ -665,7 +666,7 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   override val typeCode = STuple.TupleTypeCode
 
   override def dataSize(v: SType#WrappedType) = {
-    val arr = v.asInstanceOf[Array[Any]]
+    val arr = (v match { case col: Col[_] => col.arr case _ => v}).asInstanceOf[Array[Any]]
     assert(arr.length == items.length)
     var sum: Long = 2 // header
     for (i <- arr.indices) {

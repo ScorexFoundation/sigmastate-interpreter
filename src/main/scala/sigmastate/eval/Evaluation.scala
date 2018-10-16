@@ -22,6 +22,8 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.sigma.InvalidType
 
+import scalan.Nullable
+
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
   import SigmaProp._
@@ -93,7 +95,12 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
     }
   }
-
+  object IsTupleFN {
+    def unapply(fn: String): Nullable[Byte] = {
+      if (fn.startsWith("_")) Nullable[Byte](fn.substring(1).toByte)
+      else Nullable.None.asInstanceOf[Nullable[Byte]]
+    }
+  }
   import sigmastate._
   import Values.{TrueLeaf, FalseLeaf}
   import special.sigma.{Context => SigmaContext}
@@ -160,13 +167,17 @@ trait Evaluation extends RuntimeCosting { IR =>
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) => Some(ErgoLikeContext.toTestData(v, declaredTpe)(IR))
               case None => None
-              case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInReg value of register")
+              case _ => throw new InvalidType(
+                s"Expected Constant($declaredTpe) but found $valueInReg value of register: $d")
             }
             out(data)
           case Const(x) => out(x.asInstanceOf[AnyRef])
+
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
           case Second(In(p: Tuple2[_,_])) => out(p._2)
+          case FieldApply(In(data: special.collection.Col[a]), IsTupleFN(i)) =>
+            out(data(i-1))
           case wc: LiftedConst[_,_] => out(wc.constValue)
           case _: DslBuilder | _: ColBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
             out(dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te")))

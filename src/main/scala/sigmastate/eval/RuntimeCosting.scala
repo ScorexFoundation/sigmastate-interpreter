@@ -632,6 +632,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         }
         withDefaultSize(value, cost)
 
+      case MapCollection(input, id, mapper) =>
+        val eIn = stypeToElem(input.tpe.elemType)
+        val xs = asRep[CostedCol[Any]](eval(input))
+        implicit val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
+        val mapperC = fun { x: Rep[Costed[Any]] =>
+          evalNode(ctx, env + (id -> x), mapper)
+        }
+        val res = xs.mapCosted(mapperC)
+        res
+
       case op @ Slice(In(input), In(from), In(until)) =>
         val inputC = asRep[CostedCol[Any]](input)
         val fromC = asRep[Costed[Int]](from)
