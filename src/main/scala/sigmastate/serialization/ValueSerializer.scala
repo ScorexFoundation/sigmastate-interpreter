@@ -185,7 +185,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     if (firstByte == SerializedConstantsStartCode) {
       // consume
       r.getByte()
-      r.payload = new SerializedConstantPlaceholderStore(builder).deserialize(r)
+      r.payload = SerializedConstantPlaceholderStore.deserialize(builder, r)
     }
     deserialize(r)
   }

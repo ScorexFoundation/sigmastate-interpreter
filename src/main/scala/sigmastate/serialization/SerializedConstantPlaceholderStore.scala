@@ -44,15 +44,8 @@ class SerializedConstantPlaceholderStore(builder: SigmaBuilder) {
     store.foreach { c => constantSerializer.serialize(c, w) }
   }
 
-  /**
-    * Deserializes constants.
-    * @param r reader
-    * @return self (with deserialized constants)
-    */
-  def deserialize(r: ByteReader): SerializedConstantPlaceholderStore = {
-    // todo Should we rather throw here? Or better, make it part of initialization.
-    // There is no scenario of loading constants in addition to already stored.
-    if (store.nonEmpty) store.clear()
+  protected def deserialize(r: ByteReader): SerializedConstantPlaceholderStore = {
+    require(store.isEmpty, "already have constants")
     val constantsCount = r.getUInt().toInt
     val constantSerializer = ConstantSerializer(builder)
     for (_ <- 0 until constantsCount) {
@@ -63,3 +56,13 @@ class SerializedConstantPlaceholderStore(builder: SigmaBuilder) {
   }
 }
 
+object SerializedConstantPlaceholderStore {
+
+  /**
+    * Deserializes constants.
+    * @param r reader
+    * @return store with deserialized constants
+    */
+  def deserialize(builder: SigmaBuilder, r: ByteReader): SerializedConstantPlaceholderStore =
+    new SerializedConstantPlaceholderStore(builder).deserialize(r)
+}
