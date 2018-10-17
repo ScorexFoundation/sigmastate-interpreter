@@ -19,9 +19,8 @@ import sigmastate.utils.Extensions._
   *
   */
 class Rule110Specification extends SigmaTestingCommons {
-
   import BlockchainSimulationSpecification.{Block, ValidationState}
-
+  implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
   private val reg3 = ErgoBox.nonMandatoryRegisters(2)

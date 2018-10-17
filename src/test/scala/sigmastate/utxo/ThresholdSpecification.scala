@@ -9,7 +9,7 @@ import sigmastate.lang.Terms._
 
 
 class ThresholdSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   property("basic threshold compilation/execution") {
     val proverA = new ErgoLikeProvingInterpreter
     val proverB = new ErgoLikeProvingInterpreter

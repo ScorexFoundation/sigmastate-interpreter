@@ -6,10 +6,10 @@ import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Matchers}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{TrueLeaf, Value, GroupElementConstant, EvaluatedValue}
-import sigmastate.eval.{RuntimeIRContext, CompiletimeCosting, Evaluation}
+import sigmastate.Values.{EvaluatedValue, SValue, TrueLeaf, Value, GroupElementConstant}
+import sigmastate.eval.{IRContext, CompiletimeCosting, Evaluation}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.{SGroupElement, SBoolean, SType}
 
@@ -43,5 +43,13 @@ trait SigmaTestingCommons extends PropSpec
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
     = ergoplatform.ErgoBox(value, proposition, additionalTokens, additionalRegisters)
 
-  class ScalanCtx extends TestContext with RuntimeIRContext with CompiletimeCosting
+  class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
+    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
+      env.get(ScriptNameProp) match {
+        case Some(name: String) =>
+          emit(name, res)
+        case _ =>
+      }
+    }
+  }
 }

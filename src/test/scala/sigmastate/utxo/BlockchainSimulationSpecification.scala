@@ -1,22 +1,22 @@
 package sigmastate.utxo
 
-import java.io.{File, FileWriter}
+import java.io.{FileWriter, File}
 
 import org.ergoplatform
 import org.ergoplatform.ErgoLikeContext.Metadata
 import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.Values.LongConstant
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import org.ergoplatform._
-import sigmastate.{AvlTreeData, GE}
+import sigmastate.{GE, AvlTreeData}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -24,13 +24,10 @@ import scala.collection.mutable
 import scala.util.Try
 
 
-class BlockchainSimulationSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
-
+class BlockchainSimulationSpecification extends SigmaTestingCommons {
   import BlockchainSimulationSpecification._
-
+  implicit lazy val IR = new TestingIRContext
+  
   def generateBlock(state: ValidationState, miner: ErgoLikeProvingInterpreter, height: Int): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
     val boxesToSpend = state.boxesReader.byHeightRegValue(height)

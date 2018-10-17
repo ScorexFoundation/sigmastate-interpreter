@@ -17,7 +17,7 @@ import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
   */
 class SpamSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   //we assume that verifier must finish verification of any script in less time than 3M hash calculations
   // (for the Blake2b256 hash function over a single block input)
   val Timeout: Long = {

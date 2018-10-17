@@ -10,7 +10,7 @@ import sigmastate.utxo.SizeOf
 import scorex.utils.Random
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   /**
     * Atomic cross-chain trading example:
     * Alice(A) has coins in chain 1, Bob(B) has coins in chain 2, they want to exchange them atomically and with no

@@ -14,12 +14,7 @@ import special.sigma.InvalidType
 import scalan.BaseCtxTests
 
 class BasicOpsSpecification extends SigmaTestingCommons {
-  lazy val scalanIR = new ScalanCtx {
-    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
-      val name = env.get(ScriptNameProp).fold(testName)(_.toString)
-      emit(name, res)
-    }
-  }
+  implicit lazy val IR = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters.tail.head
@@ -60,7 +55,6 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         val p2 = dlogSecrets(1).publicImage
         (ext ++ Seq(propVar1 -> SigmaPropConstant(p1), propVar2 -> SigmaPropConstant(p2))).toMap
       }
-      override val IR = scalanIR
     }
 
     val prop = compile(env, script).asBoolValue
@@ -78,9 +72,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val ctxExt = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeInterpreter {
-      override val IR = scalanIR
-    }
+    val verifier = new ErgoLikeInterpreter
     if (!onlyPositive)
       verifier.verify(namedEnv, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
     verifier.verify(namedEnv, prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
@@ -260,7 +252,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     })
 
     val dataVar = (lastExtVar + 1).toByte
-    val Cols = scalanIR.sigmaDslBuilderValue.Cols
+    val Cols = IR.sigmaDslBuilderValue.Cols
     val data = Array(Array[Any](Array[Byte](1,2,3), 10L))
     val env1 = env + ("dataVar" -> dataVar)
     val dataType = SCollection(STuple(SCollection(SByte), SLong))
@@ -325,7 +317,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       EQ(GetVarInt(intVar2).get, IntConstant(2))
     )
     // wrong type
-    an[scalanIR.StagingException] should be thrownBy test("GetVar2", env, ext,
+    an[IR.StagingException] should be thrownBy test("GetVar2", env, ext,
       "{ getVar[Byte](intVar2).isDefined }",
       GetVarByte(intVar2).isDefined,
       true
@@ -339,7 +331,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
     // wrong type
-    an[scalanIR.StagingException] should be thrownBy test("Extract2", env, ext,
+    an[IR.StagingException] should be thrownBy test("Extract2", env, ext,
       "{ SELF.R4[Int].isDefined }",
       ExtractRegisterAs[SInt.type](Self, reg1).isDefined,
       true
@@ -358,11 +350,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("OptionGet fail (NoneValue)") {
-    an[scalanIR.StagingException] should be thrownBy test("OptGet1", env, ext,
+    an[IR.StagingException] should be thrownBy test("OptGet1", env, ext,
       "{ getVar[Int](99).get == 2 }",
       EQ(GetVarInt(99).get, IntConstant(2))
     )
-    an[scalanIR.StagingException] should be thrownBy test("OptGet2", env, ext,
+    an[IR.StagingException] should be thrownBy test("OptGet2", env, ext,
       "{ SELF.R8[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
       NEQ(ExtractRegisterAs[SSigmaProp.type](Self, R8).get.propBytes, GetVarSigmaProp(propVar1).get.propBytes),
       true

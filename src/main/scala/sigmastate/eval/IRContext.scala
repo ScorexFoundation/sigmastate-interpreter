@@ -5,7 +5,7 @@ import sigmastate.Values.SValue
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
 
-trait RuntimeIRContext extends Evaluation with TreeBuilding {
+trait IRContext extends Evaluation with TreeBuilding {
   import TestSigmaDslBuilder._
 
   override val sigmaDslBuilder = RTestSigmaDslBuilder()
@@ -28,3 +28,10 @@ trait RuntimeIRContext extends Evaluation with TreeBuilding {
   private[sigmastate] def onCostingResult[T](env: ScriptEnv, tree: SValue, result: CostingResult[T]) {
   }
 }
+
+/** IR context to be used by blockchain nodes to validate transactions. */
+class RuntimeIRContext extends IRContext
+
+/** IR context to be used by script development tools to compile ErgoScript into ErgoTree bytecode. */
+class CompiletimeIRContext extends IRContext
+

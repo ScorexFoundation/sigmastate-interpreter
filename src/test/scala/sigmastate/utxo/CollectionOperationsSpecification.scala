@@ -9,7 +9,7 @@ import org.ergoplatform._
 import sigmastate.serialization.OpCodes._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),

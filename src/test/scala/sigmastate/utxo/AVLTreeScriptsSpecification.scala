@@ -13,7 +13,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OperationSerializer
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 

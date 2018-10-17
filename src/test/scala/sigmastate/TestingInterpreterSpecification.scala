@@ -10,23 +10,23 @@ import Interpreter._
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
-import sigmastate.eval.Evaluation
+import sigmastate.eval.{IRContext, Evaluation}
 import special.sigma
 import org.ergoplatform.{Height, ErgoBox}
 import scorex.util.encode.Base58
+import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.ValueSerializer
 
 import scala.util.Random
 
 
 
-class TestingInterpreterSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
+class TestingInterpreterSpecification extends SigmaTestingCommons {
+  implicit lazy val IR = new TestingIRContext
 
+  val TestingInterpreter = new TestingInterpreter
   import TestingInterpreter._
-
+  
   implicit val soundness = CryptoConstants.soundnessBits
 
   property("Reduction to crypto #1") {
@@ -80,11 +80,6 @@ class TestingInterpreterSpecification extends PropSpec
 
       }
     }
-  }
-
-  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
-  def compile(env: ScriptEnv, code: String): Value[SType] = {
-    compiler.compile(env, code)
   }
 
   def testEval(code: String) = {
@@ -338,7 +333,7 @@ case class TestingContext(height: Int,
 }
 
 /** An interpreter for tests with 2 random secrets*/
-object TestingInterpreter extends Interpreter with ProverInterpreter {
+class TestingInterpreter(implicit val IR: IRContext) extends Interpreter with ProverInterpreter {
   override type CTX = TestingContext
 
   override val maxCost = CostTable.ScriptLimit

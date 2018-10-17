@@ -18,7 +18,8 @@ import sigmastate.{SLong, _}
   * that controls emission rules
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
-
+  implicit lazy val IR = new TestingIRContext
+  
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   private val coinsInOneErgo: Long = 100000000

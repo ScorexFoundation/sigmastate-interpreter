@@ -9,7 +9,7 @@ import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.exceptions.OptionUnwrapNone
 
 class ContextEnrichingSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   property("context enriching mixed w. crypto") {
     val prover = new ErgoLikeProvingInterpreter
     val preimage = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]

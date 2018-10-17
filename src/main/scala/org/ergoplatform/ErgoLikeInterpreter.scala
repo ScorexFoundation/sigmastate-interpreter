@@ -2,12 +2,13 @@ package org.ergoplatform
 
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
+import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 
-class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends Interpreter {
+class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit val IR: IRContext) extends Interpreter {
   override type CTX = ErgoLikeContext
 
   override def evaluateNode(context: ErgoLikeContext, tree: SValue): SValue = tree match {

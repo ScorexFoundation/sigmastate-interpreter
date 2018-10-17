@@ -1,10 +1,12 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoLikeContext.Metadata
+import sigmastate.eval.RuntimeIRContext
 
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 
 object ErgoTransactionValidator {
+  implicit val IR = new RuntimeIRContext
   val verifier = new ErgoLikeInterpreter()
 
   //todo: check that outputs are well-formed?

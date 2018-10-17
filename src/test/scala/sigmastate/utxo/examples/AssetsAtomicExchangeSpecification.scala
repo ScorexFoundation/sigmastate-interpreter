@@ -33,7 +33,7 @@ import sigmastate.lang.Terms._
   * //todo: make an example of multiple orders being matched
   */
 class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   property("atomic exchange") {
     val tokenBuyer = new ErgoLikeProvingInterpreter
     val tokenSeller = new ErgoLikeProvingInterpreter

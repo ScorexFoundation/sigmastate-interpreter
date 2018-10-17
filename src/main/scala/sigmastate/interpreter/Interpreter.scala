@@ -14,7 +14,7 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
-import sigmastate.eval.RuntimeIRContext
+import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
@@ -340,7 +340,7 @@ trait Interpreter extends ScorexLogging {
     currTree
   }
 
-  val IR: RuntimeIRContext = new RuntimeIRContext {}
+  val IR: IRContext
   import IR._
 
   /**

@@ -17,7 +17,7 @@ import sigmastate.serialization.ValueSerializer
 import org.ergoplatform._
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   property("scripts EQ/NEQ") {

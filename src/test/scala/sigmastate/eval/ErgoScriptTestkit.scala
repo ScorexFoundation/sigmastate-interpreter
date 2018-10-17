@@ -15,8 +15,8 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxTests =>
 
-  lazy val IR: TestContext with RuntimeIRContext =
-    new TestContext with RuntimeIRContext with CompiletimeCosting
+  implicit lazy val IR: TestContext with IRContext =
+    new TestContext with IRContext with CompiletimeCosting
 
   import IR._
   import Liftables._

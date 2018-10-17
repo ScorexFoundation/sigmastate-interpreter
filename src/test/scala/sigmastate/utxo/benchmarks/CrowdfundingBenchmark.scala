@@ -8,7 +8,7 @@ import sigmastate.Values._
 
 
 class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   def createTestContext(contract: CrowdFundingContract): ErgoLikeContext = {
     val outputToSpend = ErgoBox(10, TrueLeaf)
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold

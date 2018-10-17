@@ -17,13 +17,8 @@ import sigmastate.utxo.Transformer
 
 import scala.util.Random
 
-class SigSerializerSpecification extends PropSpec
-  with ValueGenerators
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with SigmaTestingCommons
-  with Matchers {
-
+class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerators {
+  implicit lazy val IR = new TestingIRContext
   private implicit val arbExprGen: Arbitrary[Value[SBoolean.type]] = Arbitrary(exprTreeGen)
 
   private val prover = new ErgoLikeProvingInterpreter()

@@ -9,6 +9,7 @@ import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
 class DemurrageExampleSpecification extends SigmaTestingCommons {
+  implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   /**
