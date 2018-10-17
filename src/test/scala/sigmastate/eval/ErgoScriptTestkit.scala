@@ -51,11 +51,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   val minToRaise = 1000L
   val backerPubKeyId = 1.toByte
   val projectPubKeyId = 2.toByte
-  val backerProver = new ErgoLikeProvingInterpreter
-  val projectProver = new ErgoLikeProvingInterpreter
-  val backerPubKey = backerProver.dlogSecrets.head.publicImage
-  val projectPubKey = projectProver.dlogSecrets.head.publicImage
-  val ctxVars = contextVars(Map(
+  lazy val backerProver = new ErgoLikeProvingInterpreter
+  lazy val projectProver = new ErgoLikeProvingInterpreter
+  lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
+  lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
+  lazy val ctxVars = contextVars(Map(
     backerPubKeyId -> backerPubKey,
     projectPubKeyId -> projectPubKey,
     3.toByte -> bigIntArr1
@@ -63,10 +63,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
 
   val boxToSpend = ErgoBox(10, TrueLeaf,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntArr1)))
-  val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
-  val tx1Output2 = ErgoBox(1, projectPubKey)
-  val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
-  val ergoCtx = ErgoLikeContext(
+  lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
+  lazy val tx1Output2 = ErgoBox(1, projectPubKey)
+  lazy val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+  lazy val ergoCtx = ErgoLikeContext(
     currentHeight = timeout - 1,
     lastBlockUtxoRoot = AvlTreeData.dummy,
     boxesToSpend = IndexedSeq(),

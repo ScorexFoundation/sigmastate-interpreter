@@ -6,6 +6,7 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
+import sigmastate.interpreter.Interpreter._
 
 class CrowdfundingExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
@@ -34,6 +35,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val minToRaise = LongConstant(1000)
 
     val env = Map(
+      ScriptNameProp -> "CrowdFunding",
       "timeout" -> 100,
       "minToRaise" -> 1000,
       "backerPubKey" -> backerPubKey,
@@ -114,7 +116,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       self = outputToSpend)
 
     //project is generating a proof and it is passing verification
-    val proofP = projectProver.prove(compiledScript, ctx1, fakeMessage).get.proof
+    val proofP = projectProver.prove(env, compiledScript, ctx1, fakeMessage).get.proof
     verifier.verify(env, compiledScript, ctx1, proofP, fakeMessage).get._1 shouldBe true
 
     //backer can't generate a proof
