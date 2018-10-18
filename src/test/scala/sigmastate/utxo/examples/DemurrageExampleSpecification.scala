@@ -1,6 +1,6 @@
 package sigmastate.utxo.examples
 
-import sigmastate.Values.{LongConstant, TaggedBox}
+import sigmastate.Values.{LongConstant, TaggedBox, SigmaPropConstant}
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
@@ -40,6 +40,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val regScript = userProver.dlogSecrets.head.publicImage
 
     val env = Map(
+      ScriptNameProp -> "Demurrage",
       "demurragePeriod" -> demurragePeriod,
       "demurrageCost" -> demurrageCost,
       "regScript" -> regScript
@@ -55,12 +56,12 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         | regScript || c2
         | }
       """.stripMargin).asBoolValue
-    val propTree = OR(
-      regScript,
+    val propTree = BinOr(
+      SigmaPropConstant(regScript).isValid,
       AND(
         GE(Height, Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(demurragePeriod))),
         Exists(Outputs, 21,
-          AND(
+          BinAnd(
             GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),
             EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self))
           )
