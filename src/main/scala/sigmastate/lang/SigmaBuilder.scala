@@ -5,17 +5,16 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.{ProveDiffieHellmanTuple, DLogProtocol}
+import scapi.sigma.{DLogProtocol, ProveDiffieHellmanTuple}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, BoolValue, Value, SigmaPropValue, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
+import sigmastate.Values.{BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, Value}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
-
 import scalan.Nullable
 
 trait SigmaBuilder {
@@ -178,6 +177,7 @@ trait SigmaBuilder {
                body: Option[Value[SType]]): Value[SFunc]
 
   def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T]
+  def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType]
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
   def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type]
@@ -490,6 +490,10 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T] =
     ConstantNode[T](value, tpe)
+
+
+  override def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType] =
+    ConstantPlaceholder[T](id, tpe)
 
   override def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                                 elementType: T): Constant[SCollection[T]] =

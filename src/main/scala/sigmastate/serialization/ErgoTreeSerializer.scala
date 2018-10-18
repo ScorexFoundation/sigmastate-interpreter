@@ -4,6 +4,8 @@ import sigmastate.SType
 import sigmastate.Values.{Constant, Value}
 import sigmastate.eval.IRContext
 
+import scala.collection.mutable.ArrayBuffer
+
 class ErgoTreeSerializer(IR: IRContext) {
   import IR._
 
@@ -13,8 +15,9 @@ class ErgoTreeSerializer(IR: IRContext) {
   def extractConstants(tree: Value[SType]): (Seq[Constant[_]], Value[SType]) = {
     val env = Map[String, Any]()
     val Pair(calcF, _) = doCosting(env, tree)
-    val outTree = IR.buildTree(calcF)
-    (Seq(), outTree)
+    val constantsStore = new ArrayBuffer[Constant[_]]
+    val outTree = IR.buildTree(calcF, Some(constantsStore))
+    (constantsStore, outTree)
   }
 }
 
