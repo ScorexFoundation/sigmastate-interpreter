@@ -2,20 +2,19 @@ package sigmastate.eval
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate._
-import sigmastate.Values.{SValue, BlockValue, SigmaPropConstant, BoolValue, Value, ValDef, ValUse}
+import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.serialization.OpCodes._
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import java.lang.reflect.Method
 import java.math.BigInteger
 
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import scapi.sigma.DLogProtocol
 import sigmastate._
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{Exists1, CostTable, ExtractAmount, SizeOf}
+import sigmastate.utxo.{CostTable, Exists1, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -219,7 +218,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     }
   }
 
-  def processAstGraph(mainG: PGraph, env: DefEnv, subG: AstGraph, defId: Int): SValue = {
+  private def processAstGraph(mainG: PGraph, env: DefEnv, subG: AstGraph, defId: Int): SValue = {
     val valdefs = new ArrayBuffer[ValDef]
     var curId = defId
     var curEnv = env
