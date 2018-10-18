@@ -20,6 +20,7 @@ import SType._
 import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.interpreter.CryptoFunctions
 import special.sigma.InvalidType
 
 import scalan.Nullable
@@ -127,8 +128,8 @@ trait Evaluation extends RuntimeCosting { IR =>
     val (env, sym) = entry
     def show(x: Any) = x match {
       case arr: Array[_] => s"Array(${arr.mkString(",")})"
-      case p: ECPoint => showECPoint(p)
-      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${showECPoint(g)})"
+      case p: ECPoint => CryptoFunctions.showECPoint(p)
+      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${CryptoFunctions.showECPoint(g)})"
       case _ => x.toString
     }
     sym match {

@@ -4,6 +4,7 @@ import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate._
+import interpreter.Interpreter._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.utxo.SizeOf
@@ -37,6 +38,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val deadlineB = 500L
 
     val env = Map(
+      ScriptNameProp -> "atomic",
       "height1" -> height1, "height2" -> height2,
       "deadlineA" -> deadlineA, "deadlineB" -> deadlineB,
       "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
@@ -50,8 +52,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     //chain1 script
     val prop1Tree = OR(
-      AND(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))), pubkeyA),
-      AND(pubkeyB, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
+      BinAnd(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))), pubkeyA.isValid),
+      BinAnd(pubkeyB.isValid, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )
     prop1 shouldBe prop1Tree
 
@@ -71,8 +73,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     //chain2 script
     val prop2Tree = OR(
-      AND(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB),
-      AND(pubkeyA,
+      BinAnd(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB.isValid),
+      AND(pubkeyA.isValid,
         LT(SizeOf(GetVarByteArray(1).get), 33),
         EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )
@@ -88,17 +90,17 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
-    proverB.prove(prop1, ctxf1, fakeMessage).isSuccess shouldBe false
+    proverB.prove(env, prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //A can't withdraw her coins in chain1 (generate a valid proof)
-    proverA.prove(prop1, ctxf1, fakeMessage).isSuccess shouldBe false
+    proverA.prove(env, prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
     val ctxf2 = ErgoLikeContext(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(), spendingTransaction = null, self = fakeSelf)
-    proverB.prove(prop2, ctxf2, fakeMessage).isSuccess shouldBe false
+    proverB.prove(env, prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
     //Successful run below:
 
@@ -109,8 +111,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
-    val pr = proverA.prove(prop2, ctx1, fakeMessage).get
-    verifier.verify(prop2, ctx1, pr, fakeMessage).get._1 shouldBe true
+    val pr = proverA.prove(env, prop2, ctx1, fakeMessage).get
+    verifier.verify(env, prop2, ctx1, pr, fakeMessage).get._1 shouldBe true
 
     //B extracts preimage x of hx
     val t = pr.extension.values(1)
@@ -123,8 +125,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
-    val pr2 = proverB2.prove(prop1, ctx2, fakeMessage).get
-    verifier.verify(prop1, ctx2, pr2, fakeMessage).get._1 shouldBe true
+    val pr2 = proverB2.prove(env, prop1, ctx2, fakeMessage).get
+    verifier.verify(env, prop1, ctx2, pr2, fakeMessage).get._1 shouldBe true
 
     // Bad prover with x that is too long should fail
     // Replace x with a longer one and hx with the hash of this longer x in the script
@@ -135,6 +137,6 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val badEnv = env + ("hx"->badHx)
     val badProp2 = compile(badEnv, script2).asBoolValue
 
-    badProverA.prove(badProp2, ctx1, fakeMessage).isSuccess shouldBe false
+    badProverA.prove(badEnv, badProp2, ctx1, fakeMessage).isSuccess shouldBe false
   }
 }

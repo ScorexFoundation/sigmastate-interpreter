@@ -99,8 +99,13 @@ object ErgoLikeContext {
 
   def toTestData(value: Any, tpe: SType)(implicit IR: Evaluation): Any = (value, tpe) match {
     case (arr: Array[a], SCollectionType(elemType)) =>
-      val testArr = arr.map(x => toTestData(x, elemType))
-      IR.sigmaDslBuilderValue.Cols.fromArray(testArr)
+      elemType match {
+        case SCollectionType(_) | STuple(_) =>
+          val testArr = arr.map(x => toTestData(x, elemType))
+          IR.sigmaDslBuilderValue.Cols.fromArray(testArr)
+        case _ =>
+          IR.sigmaDslBuilderValue.Cols.fromArray(arr)
+      }
     case (arr: Array[a], STuple(items)) =>
       val res = arr.zip(items).map { case (x, t) => toTestData(x, t)}
       IR.sigmaDslBuilderValue.Cols.fromArray(res)

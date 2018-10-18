@@ -4,13 +4,14 @@ import java.math.BigInteger
 import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.bouncycastle.math.ec.ECPoint
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{Context, CryptoConstants}
+import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
@@ -117,6 +118,13 @@ object Values {
     }
 
     override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
+
+    override def toString: String = tpe.asInstanceOf[SType] match {
+      case SGroupElement =>
+        s"ConstantNode(${CryptoFunctions.showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
+      case _ =>
+        s"ConstantNode($value,$tpe)"
+    }
   }
 
   object Constant extends ValueCompanion {

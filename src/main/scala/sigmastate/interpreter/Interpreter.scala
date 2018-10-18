@@ -5,6 +5,7 @@ import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scapi.sigma._
@@ -46,6 +47,12 @@ object CryptoFunctions {
 
   def hashFn(input: Array[Byte]): Array[Byte] = {
     Blake2b256.hash(input).take(soundnessBytes)
+  }
+
+  def showECPoint(p: ECPoint) = {
+    val rawX = p.getRawXCoord.toString.substring(0, 6)
+    val rawY = p.getRawYCoord.toString.substring(0, 6)
+    s"ECPoint($rawX,$rawY,...)"
   }
 }
 
@@ -443,6 +450,14 @@ trait Interpreter extends ScorexLogging {
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
     verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
+  }
+
+  def verify(env: ScriptEnv, exp: Value[SBoolean.type],
+             context: CTX,
+             proverResult: ProverResult,
+             message: Array[Byte]): Try[VerificationResult] = {
+    val ctxv = context.withExtension(proverResult.extension)
+    verify(env, exp, ctxv, proverResult.proof, message)
   }
 
 

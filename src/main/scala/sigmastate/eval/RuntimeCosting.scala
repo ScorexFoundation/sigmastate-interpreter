@@ -16,7 +16,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
 import sigmastate.Values.{OptionValue, Constant, SValue, SigmaPropConstant, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ConcreteCollection}
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.exceptions.CosterException
@@ -28,6 +28,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
+import scorex.crypto.hash.{Blake2b256, Sha256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SigmaCompiler}
 
@@ -164,15 +165,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     typeSize(tpe)
   }
 
-  def showECPoint(p: ECPoint) = {
-    val rawX = p.getRawXCoord.toString.substring(0, 6)
-    val rawY = p.getRawYCoord.toString.substring(0, 6)
-    s"ECPoint($rawX,$rawY,...)"
-  }
-
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
     case CostOf(name, opType) => s"CostOf($name:$opType)"
-    case WECPointConst(p) => showECPoint(p)
+    case WECPointConst(p) => CryptoFunctions.showECPoint(p)
     case _ => super.formatDef(d)
   }
 
@@ -729,6 +724,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
       case opt: OptionValue[_] =>
         error(s"Option constructors are not supported: $opt")
 
+      case CalcBlake2b256(In(input)) =>
+        val bytesC = asRep[Costed[Col[Byte]]](input)
+        val res = sigmaDslBuilder.blake2b256(bytesC.value)
+        RCostedPrim(res, bytesC.cost + costOf(node), Blake2b256.DigestSize.toLong)
+      case CalcSha256(In(input)) =>
+        val bytesC = asRep[Costed[Col[Byte]]](input)
+        val res = sigmaDslBuilder.sha256(bytesC.value)
+        RCostedPrim(res, bytesC.cost + costOf(node), Sha256.DigestSize.toLong)
       case utxo.SizeOf(In(xs)) =>
         xs.elem.eVal match {
           case ce: ColElem[a,_] =>
