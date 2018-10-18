@@ -13,7 +13,7 @@ import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.{ConstantPlaceholderStore, ValueSerializer}
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{CostTable, Exists1, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
@@ -135,7 +135,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
           case Some(store) =>
             this.synchronized {
               store += mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
-              mkConstantPlaceholder[tpe.type](constants.size - 1, tpe)
+              mkConstantPlaceholder[tpe.type](store.size - 1, tpe)
             }
           case None =>
             mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
