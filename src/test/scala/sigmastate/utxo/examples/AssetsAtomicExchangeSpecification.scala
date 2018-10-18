@@ -3,9 +3,10 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ByteArrayConstant, Value, LongConstant, IntConstant}
+import sigmastate.Values.{LongConstant, SigmaPropConstant, Value, ByteArrayConstant, IntConstant}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -57,13 +58,13 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       SelectField(extractToken(box), 2).asInstanceOf[Value[SLong.type]]
 
     val rightProtectionBuyer =
-      EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(buyerKeyBytes))
+      EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), tokenBuyerKey.propBytes)
 
     val rightProtectionSeller =
-      EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.One)), ByteArrayConstant(sellerKeyBytes))
+      EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.One)), tokenSellerKey.propBytes)
 
-    val buyerProp = OR(
-      AND(GT(Height, deadline), tokenSellerKey),
+    val buyerProp = BinOr(
+      BinAnd(GT(Height, deadline), tokenSellerKey.isValid),
       AND(
         EQ(extractTokenId(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(tokenId)),
         GE(extractTokenAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(60)),
@@ -74,7 +75,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
 //    val x = OR(ConcreteCollection(Vector(AND(ConcreteCollection(Vector(GT(Height, Constant(70, SLong)), ProveDlog(Constant((???, ???, ???, ???), SGroupElement))), SBoolean)), AND(ConcreteCollection(Vector(EQ(SelectField(Apply(ExtractRegisterAs(ByIndex(Outputs, Constant(0, SInt), None), R2, Array[(Array[SByte], SLong)], None), Vector(Constant(0, SInt))), 1), Constant(???, Array[SByte])), GE(SelectField(Apply(ExtractRegisterAs(ByIndex(Outputs, Constant(0, SInt), None), R2, Array[(Array[SByte], SLong)], None), Vector(Constant(0, SInt))), 2), Constant(60, SLong)), EQ(ExtractScriptBytes(ByIndex(Outputs, Constant(0, SInt), None)), Constant(???, Array[SByte])), GE(ExtractAmount(ByIndex(Outputs, Constant(0, SInt), None)), Constant(1, SLong))), SBoolean))), SBoolean))
 
-    val buyerEnv = Map("pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
+    val buyerEnv = Map(
+      ScriptNameProp -> "buyer",
+      "pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
     val altBuyerProp = compile(buyerEnv,
       """(HEIGHT > deadline && pkA) || {
         |  val tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].get(0)
@@ -88,14 +91,16 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       """.stripMargin).asBoolValue
     altBuyerProp shouldBe buyerProp
 
-    val sellerProp = OR(
-      AND(GT(Height, deadline), tokenSellerKey),
+    val sellerProp = BinOr(
+      BinAnd(GT(Height, deadline), tokenSellerKey.isValid),
       AND(
         GE(ExtractAmount(ByIndex(Outputs, IntConstant.One)), LongConstant(100)),
         rightProtectionSeller
       )
     )
-    val sellerEnv = Map("pkB" -> tokenSellerKey, "deadline" -> deadline)
+    val sellerEnv = Map(
+      ScriptNameProp -> "seller",
+      "pkB" -> tokenSellerKey, "deadline" -> deadline)
     val altSellerProp = compile(sellerEnv,
       """ (HEIGHT > deadline && pkB) ||
         | allOf(Array(
@@ -104,7 +109,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         | ))
       """.stripMargin).asBoolValue
 
-    sellerProp shouldBe altSellerProp
+    altSellerProp shouldBe sellerProp
 
     val newBox1 = ErgoBox(1, tokenBuyerKey, Seq(tokenId -> 60))
     val newBox2 = ErgoBox(100, tokenSellerKey)

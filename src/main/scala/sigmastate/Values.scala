@@ -583,6 +583,11 @@ object Values {
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
 
+  implicit class SigmaBooleanOps(sb: SigmaBoolean) {
+    def isValid: Value[SBoolean.type] = SigmaPropIsValid(SigmaPropConstant(sb))
+    def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
+  }
+
   sealed trait BlockItem extends NotReadyValue[SType] {
     def id: Int
     def rhs: SValue
