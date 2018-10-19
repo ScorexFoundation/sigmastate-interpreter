@@ -904,6 +904,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val inputC = evalNode(ctx, env, input)
         withDefaultSize(inputC.value, inputC.cost + costOf(node))
 
+      case ErgoAddressToSigmaProp(input) =>
+        val inputC = evalNode(ctx, env, input)
+        withDefaultSize(inputC.value, inputC.cost + costOf(node))
+
       case _ =>
         error(s"Don't know how to evalNode($node)")
     }
