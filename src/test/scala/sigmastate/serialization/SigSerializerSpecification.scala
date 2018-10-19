@@ -21,12 +21,12 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
   implicit lazy val IR = new TestingIRContext
   private implicit val arbExprGen: Arbitrary[Value[SBoolean.type]] = Arbitrary(exprTreeGen)
 
-  private val prover = new ErgoLikeProvingInterpreter()
+  private lazy val prover = new ErgoLikeProvingInterpreter()
 
-  private val interpreterProveDlogGen: Gen[ProveDlog] =
+  private lazy val interpreterProveDlogGen: Gen[ProveDlog] =
     Gen.oneOf(prover.dlogSecrets.map(secret => ProveDlog(secret.publicImage.h)))
 
-  private val interpreterProveDHTGen =
+  private lazy val interpreterProveDHTGen =
     Gen.oneOf(
       prover.dhSecrets
         .map(_.commonInput)

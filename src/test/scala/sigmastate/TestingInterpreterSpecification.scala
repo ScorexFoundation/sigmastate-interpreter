@@ -24,7 +24,7 @@ import scala.util.Random
 class TestingInterpreterSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
 
-  val TestingInterpreter = new TestingInterpreter
+  lazy val TestingInterpreter = new TestingInterpreter
   import TestingInterpreter._
   
   implicit val soundness = CryptoConstants.soundnessBits
