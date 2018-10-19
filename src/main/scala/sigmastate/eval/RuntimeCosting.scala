@@ -743,12 +743,18 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
             withDefaultSize(se.fields.length, xsC.cost + costOf(node))
         }
 
-      case ByIndex(xs, i, None) =>
+      case ByIndex(xs, i, default) =>
         val xsC = evalNode(ctx, env, xs).asRep[CostedCol[Any]]
         val iC = evalNode(ctx, env, i).asRep[Costed[Int]]
         val iV = iC.value
         val size = xsC.sizes(iV)
-        CostedPrimRep(xsC.value(iV), xsC.cost + iC.cost + costOf(node), size)
+        default match {
+          case Some(defaultValue) =>
+            val defaultC = evalNode(ctx, env, defaultValue).asRep[Costed[Any]]
+            CostedPrimRep(xsC.value(iV), xsC.cost + iC.cost + defaultC.cost + costOf(node), size)
+          case None =>
+            CostedPrimRep(xsC.value(iV), xsC.cost + iC.cost + costOf(node), size)
+        }
 
       case SigmaPropIsValid(p) =>
         val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
