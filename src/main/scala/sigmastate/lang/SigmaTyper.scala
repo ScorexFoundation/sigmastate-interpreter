@@ -351,6 +351,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       SigmaPropBytes(p1.asSigmaProp)
 
     case SomeValue(x) => SomeValue(assignType(env, x))
+    case v: NoneValue[_] => v
 
     case Height => Height
     case Self => Self
