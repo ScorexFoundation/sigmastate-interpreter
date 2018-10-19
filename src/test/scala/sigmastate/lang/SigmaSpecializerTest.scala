@@ -114,13 +114,13 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("AND flattening predefined") {
-    spec("true && true") shouldBe AND(TrueLeaf, TrueLeaf)
-    spec("true && false") shouldBe AND(TrueLeaf, FalseLeaf)
+    spec("true && true") shouldBe BinAnd(TrueLeaf, TrueLeaf)
+    spec("true && false") shouldBe BinAnd(TrueLeaf, FalseLeaf)
     spec("true && (true && 10 == 10)") shouldBe
-      AND(TrueLeaf, TrueLeaf, EQ(IntConstant(10), IntConstant(10)))
-    spec("true && true && true") shouldBe AND(TrueLeaf, TrueLeaf, TrueLeaf)
+      BinAnd(TrueLeaf, BinAnd(TrueLeaf, EQ(IntConstant(10), IntConstant(10))))
+    spec("true && true && true") shouldBe BinAnd(BinAnd(TrueLeaf, TrueLeaf), TrueLeaf)
     spec("true && (true && (true && true)) && true") shouldBe
-      AND(TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf)
+      BinAnd(BinAnd(TrueLeaf, BinAnd(TrueLeaf, BinAnd(TrueLeaf, TrueLeaf))), TrueLeaf)
   }
 
   property("AND flattening, CAND/COR untouched") {
@@ -139,9 +139,9 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("OR flattening predefined") {
-    spec("true || true || true") shouldBe OR(TrueLeaf, TrueLeaf, TrueLeaf)
+    spec("true || true || true") shouldBe BinOr(BinOr(TrueLeaf, TrueLeaf), TrueLeaf)
     spec("true || (true || true) || true") shouldBe
-      OR(TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf)
+      BinOr(BinOr(TrueLeaf, BinOr(TrueLeaf, TrueLeaf)), TrueLeaf)
   }
 
   property("OR flattening, CAND/COR untouched") {
