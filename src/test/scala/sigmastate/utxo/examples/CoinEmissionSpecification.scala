@@ -71,7 +71,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(out)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
-    val prop = OR(AND(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule), AND(heightIncreased, lastCoins))
+    val prop = BinOr(AND(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule), BinAnd(heightIncreased, lastCoins))
 
     val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
       "epochLength" -> s.epochLength,
