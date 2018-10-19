@@ -67,13 +67,15 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   property("big byte array with a lot of operations") {
+    fail("fix the stack overflow in this test")
+
     val ba = Random.randomBytes(5000000)
 
     val id = 21: Byte
 
     val prover = new ErgoLikeProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
-    val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256(TaggedByteArray(id))) { case (script, _) =>
+    val bigSubScript = (1 to 289).foldLeft(CalcBlake2b256(GetVarByteArray(id).get)) { case (script, _) =>
       CalcBlake2b256(script)
     }
 
