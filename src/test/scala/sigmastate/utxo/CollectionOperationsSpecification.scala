@@ -210,7 +210,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val env = Map("pubkey" -> pubkey)
     val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asBoolValue
-    val propTree = AND(pubkey, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
+    val propTree = BinAnd(pubkey.isValid, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(11, pubkey)
@@ -320,7 +320,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         22,
         TrueLeaf,
         21,
-        AND(TaggedBoolean(21), LT(TaggedLong(22), LongConstant(0)))),
+        BinAnd(TaggedBoolean(21), LT(TaggedLong(22), LongConstant(0)))),
       FalseLeaf)
     assertProof(code, expectedPropTree, outputBoxValues)
   }
@@ -341,7 +341,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val indexId = 21.toByte
     val index = TaggedInt(indexId)
     val boundaryIndex = If(EQ(index, 0), 5, Minus(index, 1))
-    val elementRule = AND(GE(boundaryIndex, 0), LE(boundaryIndex, 5))
+    val elementRule = BinAnd(GE(boundaryIndex, 0), LE(boundaryIndex, 5))
     val expectedPropTree = ForAll(indexCollection, indexId, elementRule)
     assertProof(code, expectedPropTree, outputBoxValues)
 
@@ -366,7 +366,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val indexId = 21.toByte
     val index = TaggedInt(indexId)
     val element = ByIndex(string, If(LE(index, 0), 5, Minus(index, 1)))
-    val elementRule = OR(EQ(element, 0), EQ(element, 1))
+    val elementRule = BinOr(EQ(element, 0), EQ(element, 1))
     val expectedPropTree = ForAll(indexCollection, indexId, elementRule)
     assertProof(code, expectedPropTree, outputBoxValues)
   }
