@@ -44,6 +44,6 @@ trait TypeGenerators {
   } yield STuple(values.toIndexedSeq)
 
   val sTypeIdentGen: Gen[STypeIdent] = for {
-    name <- arbString.arbitrary.suchThat(_.length <= 100)
+    name <- arbString.arbitrary.suchThat(_.length <= 50)
   } yield STypeIdent(name)
 }
