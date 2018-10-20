@@ -914,17 +914,20 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val sizes = colBuilder.apply(ss: _*)
         RCostedCol(values, costs, sizes, costOf(col))
 
-      case sigmastate.Upcast(input, _) =>
-        val inputC = evalNode(ctx, env, input)
-        withDefaultSize(inputC.value, inputC.cost + costOf(node))
+      case sigmastate.Upcast(In(inputC), tpe) =>
+        val elem = stypeToElem(tpe.asNumType)
+        val res = upcast(inputC.value)(elem)
+        withDefaultSize(res, inputC.cost + costOf(node))
 
-      case sigmastate.Downcast(input, _) =>
-        val inputC = evalNode(ctx, env, input)
-        withDefaultSize(inputC.value, inputC.cost + costOf(node))
+      case sigmastate.Downcast(In(inputC), tpe) =>
+        val elem = stypeToElem(tpe.asNumType)
+        val res = downcast(inputC.value)(elem)
+        withDefaultSize(res, inputC.cost + costOf(node))
 
-      case ErgoAddressToSigmaProp(input) =>
-        val inputC = evalNode(ctx, env, input)
-        withDefaultSize(inputC.value, inputC.cost + costOf(node))
+// TODO should be 
+//      case ErgoAddressToSigmaProp(input) =>
+//        val inputC = evalNode(ctx, env, input)
+//        withDefaultSize(inputC.value, inputC.cost + costOf(node))
 
       case _ =>
         error(s"Don't know how to evalNode($node)")

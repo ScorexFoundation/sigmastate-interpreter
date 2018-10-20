@@ -283,7 +283,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
 
-    val hashEquals = EQ(CalcBlake2b256(TaggedByteArray(scriptId)), scriptHash)
+    val hashEquals = EQ(CalcBlake2b256(GetVarByteArray(scriptId).get), scriptHash)
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(hashEquals, scriptIsCorrect)
 
@@ -374,7 +374,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
 
-    val hashEquals = EQ(Slice(CalcBlake2b256(TaggedByteArray(scriptId)), IntConstant(0), IntConstant(bytesCount)),
+    val hashEquals = EQ(Slice(CalcBlake2b256(GetVarByteArray(scriptId).get), IntConstant(0), IntConstant(bytesCount)),
       scriptHash)
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(hashEquals, scriptIsCorrect)
