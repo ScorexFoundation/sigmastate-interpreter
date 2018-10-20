@@ -286,7 +286,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(size)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
-        println(printEnvEntry(res))
+//        println(printEnvEntry(res))
         res
       }
       catch {

@@ -88,7 +88,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubdhB" -> pubdhB)
     val compiledProp = compile(env, """pubkeyA || pubdhB""")
 
-    val prop = OR(pubkeyA, pubdhB)
+    val prop = BinOr(pubkeyA.isValid, pubdhB.isValid)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -114,7 +114,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubdhA" -> pubdhA)
     val compiledProp = compile(env, """pubkeyA && pubdhA""")
 
-    val prop = AND(pubkeyA, pubdhA)
+    val prop = BinAnd(pubkeyA.isValid, pubdhA.isValid)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -165,15 +165,15 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asBoolValue
 
-      val prop = OR(
-        AND(LE(Height, LongConstant(timeout)),
+      val prop = BinOr(
+        BinAnd(LE(Height, LongConstant(timeout)),
           EQ(CalcBlake2b256(
             Fold.concat[SByte.type](
               MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21)))
             ).asByteArray
           ),
             ByteArrayConstant(properHash))),
-        AND(GT(Height, LongConstant(timeout)), sender)
+        BinAnd(GT(Height, LongConstant(timeout)), sender.isValid)
       )
       compiledProp shouldBe prop
       compiledProp
@@ -211,8 +211,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  pubkey && outValues.fold(0L, { (x: Long, y: Long) => x + y }) > 20
          }""".stripMargin).asBoolValue
 
-    val propExp = AND(
-      pubkey,
+    val propExp = BinAnd(
+      pubkey.isValid,
       GT(
         Fold.sum[SLong.type](MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))),
         LongConstant(20))
@@ -245,7 +245,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val env = Map("pubkey" -> pubkey)
     val compiledProp = compile(env, """pubkey && OUTPUTS(0).value > 10""")
 
-    val prop = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(10)))
+    val prop = BinAnd(pubkey.isValid, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(10)))
     compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(11, pubkey)
@@ -318,7 +318,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  proveDlog(pubkey1) && proveDlog(pubkey2)
         |}""".stripMargin).asBoolValue
 
-    val propTree = AND(
+    val propTree = BinAnd(
       new ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, reg1).get),
       new ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, reg2).get))
     prop shouldBe propTree
@@ -420,7 +420,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  okInputs && okIds
          }""".stripMargin).asBoolValue
 
-    val propExpected = AND(
+    val propExpected = BinAnd(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ExtractId(BoxConstant(brother))))
     prop shouldBe propExpected
