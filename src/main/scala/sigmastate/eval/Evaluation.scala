@@ -221,6 +221,8 @@ trait Evaluation extends RuntimeCosting { IR =>
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
             out(b.replicate(n, x)(xSym.elem.classTag))
+
+          // NOTE: This is a fallback rule which should be places AFTER all other MethodCall patterns
           case mc @ MethodCall(obj, m, args, _) =>
             val dataRes = obj.elem.invokeUnlifted(mc, dataEnv)
             val res = dataRes match {
@@ -244,6 +246,15 @@ trait Evaluation extends RuntimeCosting { IR =>
               out(th())
             } else
               out(false)
+          case IfThenElseLazy(In(cond: Boolean), In(t), In(e)) =>
+            if (cond) {
+              val th = t.asInstanceOf[() => Any]
+              out(th())
+            } else {
+              val th = e.asInstanceOf[() => Any]
+              out(th())
+            }
+
           case Lambda(l, _, x, y) =>
             val f = (ctx: AnyRef) => {
               val resEnv = l.schedule.foldLeft(dataEnv + (x -> ctx)) { (env, te) =>

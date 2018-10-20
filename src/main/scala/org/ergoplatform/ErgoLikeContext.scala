@@ -4,16 +4,14 @@ import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform.ErgoLikeContext.{Height, Metadata}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.{CostingBox, CostingDataContext, Evaluation}
-import sigmastate.interpreter.{Context, ContextExtension}
+import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingBox}
+import sigmastate.interpreter.{ContextExtension, Context}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
-import special.collection.{Col, ColOverArrayBuilder}
+import special.collection.Col
 import special.sigma
-import special.sigma.{AnyValue, Box, TestAvlTree, TestValue}
-
-import scala.reflect.ClassTag
+import special.sigma.{AnyValue, TestValue, Box}
 import scala.util.Try
 
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
@@ -43,8 +41,8 @@ class ErgoLikeContext(val currentHeight: Height,
       else spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
     val vars = contextVars(extension.values)
     val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
-    val emptyAvlTree = new TestAvlTree(noBytes, 0, None, None, None)
-    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), emptyAvlTree, vars.arr, isCost)
+    val avlTree = CostingAvlTree(IR, lastBlockUtxoRoot)
+    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree, vars.arr, isCost)
   }
 
 
@@ -109,6 +107,7 @@ object ErgoLikeContext {
     case (arr: Array[a], STuple(items)) =>
       val res = arr.zip(items).map { case (x, t) => toTestData(x, t)}
       IR.sigmaDslBuilderValue.Cols.fromArray(res)
+    case (t: AvlTreeData, SAvlTree) => CostingAvlTree(IR, t)
     case (x, _) => x
   }
 

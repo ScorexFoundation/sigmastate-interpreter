@@ -1,12 +1,35 @@
 package sigmastate.eval
 
-import sigmastate.SType
-import sigmastate.Values.Constant
+import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
+import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import sigmastate.SCollection.SByteArray
+import sigmastate.{AvlTreeData, SType, SAvlTree}
+import sigmastate.Values.{Constant, EvaluatedValue, AvlTreeConstant, SomeValue, NoneValue}
+import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.{Serializer, OperationSerializer}
 import special.collection.{ConcreteCostedBuilder, Col, Types}
 import special.sigma._
 
 import scala.reflect.ClassTag
+import scala.util.{Success, Failure}
 import scalan.meta.RType
+
+case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree {
+  override val builder = new CostingSigmaDslBuilder(IR)
+  def startingDigest: Col[Byte] = builder.Cols.fromArray(treeData.startingDigest)
+
+  def keyLength: Int = treeData.keyLength
+
+  def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
+
+  def maxNumOperations: Option[Int] = treeData.maxNumOperations
+
+  def maxDeletes: Option[Int] = treeData.maxDeletes
+
+  def cost: Int = 1
+
+  def dataSize: Long = SAvlTree.dataSize(treeData.asInstanceOf[SType#WrappedType])
+}
 
 class CostingBox(
     val IR: Evaluation,
@@ -60,6 +83,34 @@ class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { d
       case col: IR.Col.ColElem[a,_] => dsl.Cols.fromArray(Array[a]()(col.eItem.classTag))
       case _ => sys.error(s"Cannot create defaultValue($valueType)")
     }).asInstanceOf[T]
+  }
+
+  override def treeLookup(tree: AvlTree, key: Col[Byte], proof: Col[Byte]) = {
+    val keyBytes = key.arr
+    val proofBytes = proof.arr
+    val treeData = tree.asInstanceOf[CostingAvlTree].treeData
+    val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
+    bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+      case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
+      case Success(r) => r match {
+        case Some(v) => Some(Cols.fromArray(v))
+        case _ => None
+      }
+    }
+  }
+
+  override def treeModifications(tree: AvlTree, operations: Col[Byte], proof: Col[Byte]) = {
+    val operationsBytes = operations.arr
+    val proofBytes = proof.arr
+    val treeData = tree.asInstanceOf[CostingAvlTree].treeData
+    val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
+    val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
+    val ops: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
+    ops.foreach(o => bv.performOneOperation(o))
+    bv.digest match {
+      case Some(v) => Some(Cols.fromArray(v))
+      case _ => None
+    }
   }
 }
 

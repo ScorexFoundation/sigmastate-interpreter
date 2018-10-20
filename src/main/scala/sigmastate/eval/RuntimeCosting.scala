@@ -59,7 +59,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
   import SigmaDslBuilder._
   import TrivialSigma._
   import MonoidBuilderInst._
-
+  import AvlTree._
   def opcodeToArithOpName(opCode: Byte): String = opCode match {
     case OpCodes.PlusCode     => "+"
     case OpCodes.MinusCode    => "-"
@@ -382,6 +382,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     case SBigInt => wBigIntegerElement
     case SBox => boxElement
     case SGroupElement => wECPointElement
+    case SAvlTree => avlTreeElement
     case SSigmaProp => sigmaPropElement
     case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
     case c: SCollectionType[a] => colElement(stypeToElem(c.elemType))
@@ -398,6 +399,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     case AnyElement => SAny
     case _: WBigIntegerElem[_] => SBigInt
     case _: WECPointElem[_] => SGroupElement
+    case _: AvlTreeElem[_] => SAvlTree
     case oe: WOptionElem[_, _] => sigmastate.SOption(elemToSType(oe.eItem))
     case _: BoxElem[_] => SBox
     case _: SigmaPropElem[_] => SSigmaProp
@@ -504,6 +506,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = RCostedPrim(v, cost, sizeOf(v))
     object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(asRep[Costed[Any]](evalNode(ctx, env, v))) }
+    class InCol[T] { def unapply(v: SValue): Nullable[Rep[CostedCol[T]]] = Nullable(asRep[CostedCol[T]](evalNode(ctx, env, v))) }
+    val InColByte = new InCol[Byte]; val InColAny = new InCol[Any]
     object InSeq { def unapply(items: Seq[SValue]): Nullable[Seq[RCosted[Any]]] = {
       val res = items.map { x: SValue =>
         val xC = eval(x)
@@ -582,6 +586,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         }
         val res1 = evalNode(ctx, curEnv, res)
         res1
+
+      case TreeLookup(In(_tree), InColByte(key), InColByte(proof)) =>
+        val tree = asRep[CostedAvlTree](_tree)
+        val value = sigmaDslBuilder.treeLookup(tree.value, key.value, proof.value)
+        val cost = tree.cost + key.cost + proof.cost + costOf(node)
+        value.fold[CostedOption[Col[Byte]]](
+          Thunk(RCostedNone(cost)),
+          fun { x: Rep[Col[Byte]] => RCostedSome(RCostedPrim(x, cost, sizeOf(x))) })
 
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>

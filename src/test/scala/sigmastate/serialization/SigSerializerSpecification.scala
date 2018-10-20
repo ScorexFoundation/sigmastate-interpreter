@@ -19,7 +19,7 @@ import scala.util.Random
 
 class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerators {
   implicit lazy val IR = new TestingIRContext
-  private implicit val arbExprGen: Arbitrary[Value[SBoolean.type]] = Arbitrary(exprTreeGen)
+  private lazy implicit val arbExprGen: Arbitrary[Value[SBoolean.type]] = Arbitrary(exprTreeGen)
 
   private lazy val prover = new ErgoLikeProvingInterpreter()
 
