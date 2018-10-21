@@ -66,6 +66,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     case OpCodes.MultiplyCode => "*"
     case OpCodes.DivisionCode => "/"
     case OpCodes.ModuloCode   => "%"
+    case OpCodes.MinCode      => "min"
+    case OpCodes.MaxCode      => "max"
     case _ => error(s"Cannot find ArithOpName for opcode $opCode")
   }
 
@@ -470,6 +472,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     case OpCodes.MultiplyCode => NumericTimes(elemToNumeric(eT))(eT)
     case OpCodes.DivisionCode => IntegralDivide(elemToIntegral(eT))(eT)
     case OpCodes.ModuloCode => IntegralMod(elemToIntegral(eT))(eT)
+    case OpCodes.MinCode => OrderingMin(elemToOrdering(eT))(eT)
+    case OpCodes.MaxCode => OrderingMax(elemToOrdering(eT))(eT)
     case _ => error(s"Cannot find EndoBinOp for opcode $opCode")
   }
 
@@ -685,6 +689,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val sizes = col1.sizes.append(col2.sizes)
         RCostedCol(values, costs, sizes, costOf(node))
 
+      case sigmastate.StringConcat(In(_s1), In(_s2)) =>
+        val s1 = asRep[Costed[String]](_s1)
+        val s2 = asRep[Costed[String]](_s2)
+        val value = s1.value + s2.value
+        val cost = s1.cost + s2.cost + costOf(node)
+        val size = s1.dataSize + s2.dataSize
+        RCostedPrim(value, cost, size)
+
       case Terms.Apply(Select(col, "where", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(body)))) =>
         val input = col.asValue[SCollection[SType]]
         val cond = body.asValue[SBoolean.type]
@@ -764,6 +776,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val res = sigmaDslBuilder.sha256(bytesC.value)
         val cost = bytesC.cost + perKbCostOf(node, bytesC.dataSize)
         RCostedPrim(res, cost, Sha256.DigestSize.toLong)
+
       case utxo.SizeOf(In(xs)) =>
         xs.elem.eVal match {
           case ce: ColElem[a,_] =>

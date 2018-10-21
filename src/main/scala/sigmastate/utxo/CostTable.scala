@@ -6,7 +6,8 @@ import sigmastate.lang.Terms.OperationId
 case class CostTable(operCosts: Map[OperationId, Double]) extends (OperationId => Int) {
   import CostTable._
   override def apply(operId: OperationId) = {
-    operCosts.get(operId) match {
+    val cleannedOperId = operId.copy(opType = operId.opType.copy(tpeParams = Nil))
+    operCosts.get(cleannedOperId) match {
       case Some(cost) => costToInt(cost)
       case None => //costToInt(MinimalCost)
         sys.error(s"Cannot find cost in CostTable for $operId")
@@ -30,6 +31,8 @@ object CostTable {
     ("Const", "() => GroupElement", MinimalCost),
     ("Const", "() => SigmaProp", MinimalCost),
     ("Const", "() => Array[IV]", MinimalCost),
+    ("ConcreteCollection", "() => Array[IV]", MinimalCost),
+    ("If", "(Boolean, Boolean, Boolean) => Boolean", MinimalCost),
     ("Self$", "Context => Box", MinimalCost),
     ("AccessBox", "Context => Box", MinimalCost),
     ("GetVar", "(Context, Byte) => Option[T]", MinimalCost),
@@ -38,6 +41,7 @@ object CostTable {
     ("ExtractScriptBytes", "(Box) => Array[Byte]", MinimalCost),
     ("ExtractRegisterAs", "(Box,Byte) => Array[BigInt]", MinimalCost),
     ("Slice", "(Array[IV],Int,Int) => Array[IV]", MinimalCost),
+    ("Append", "(Array[IV],Array[IV]) => Array[IV]", MinimalCost),
     ("SizeOf", "(Array[IV]) => Int", MinimalCost),
     ("SigmaPropIsValid", "SigmaProp => Boolean", MinimalCost),
     ("SigmaPropBytes", "SigmaProp => Array[Byte]", MinimalCost),
@@ -56,12 +60,37 @@ object CostTable {
     ("NEQ_per_kb", "(T,T) => Boolean", MinimalCost),
     ("GT", "(BigInt,BigInt) => Boolean", 0.0001),
     (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+    ("+", "(Byte, Byte) => Byte", 0.0001),
     ("+", "(Int, Int) => Int", 0.0001),
     ("+", "(Long, Long) => Long", 0.0001),
-    ("+", "(BigInt, BigInt) => BigInt", 0.0001),
-    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+
+    ("-", "(Byte, Byte) => Byte", 0.0001),
     ("-", "(Int, Int) => Int", 0.0001),
     ("-", "(Long, Long) => Long", 0.0001),
+
+    ("*", "(Byte, Byte) => Byte", 0.0001),
+    ("*", "(Int, Int) => Int", 0.0001),
+    ("*", "(Long, Long) => Long", 0.0001),
+
+    ("/", "(Byte, Byte) => Byte", 0.0001),
+    ("/", "(Int, Int) => Int", 0.0001),
+    ("/", "(Long, Long) => Long", 0.0001),
+
+    ("%", "(Byte, Byte) => Byte", 0.0001),
+    ("%", "(Int, Int) => Int", 0.0001),
+    ("%", "(Long, Long) => Long", 0.0001),
+
+    ("+", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+
+    ("*", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("*_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+    
+    ("/", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("/_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+
+    ("%", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Double)]): CostTable = {

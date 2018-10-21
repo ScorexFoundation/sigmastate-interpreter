@@ -17,7 +17,7 @@ import scorex.util.encode.Base58
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.ValueSerializer
 import special.sigma.{AnyValue, Box, TestAvlTree}
-
+import TrivialProof._
 import scala.util.Random
 
 
@@ -33,16 +33,30 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
-        val dk1 = DLogProverInput.random().publicImage
+        val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isValid
 
         val ctx = TestingContext(h)
-        assert(reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(ctx, AND(GE(Height, LongConstant(h)), dk1)).get._1.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1.isInstanceOf[FalseLeaf.type])
+        reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1 should(
+          matchPattern { case SigmaPropConstant(sb: SigmaBoolean) => })
+        reduceToCrypto(ctx, AND(GE(Height, LongConstant(h)), dk1)).get._1 should (
+          matchPattern { case SigmaPropConstant(sb: SigmaBoolean) => })
 
-        assert(reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1.isInstanceOf[ProveDlog])
+        {
+          val res = reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1
+          res should matchPattern { case SigmaPropConstant(FalseProof) => }
+        }
+
+        {
+          val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1
+          res should matchPattern { case SigmaPropConstant(TrueProof) => }
+        }
+
+        {
+          val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1
+          res should matchPattern { case SigmaPropConstant(TrueProof) => }
+        }
+        reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1 should(
+          matchPattern { case SigmaPropConstant(sb: SigmaBoolean) => })
       }
     }
   }
