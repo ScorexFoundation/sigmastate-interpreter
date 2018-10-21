@@ -667,6 +667,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val sizes = inputC.sizes.slice(f, u)
         RCostedCol(vals, costs, sizes, inputC.valuesCost + costOf(op))
 
+      case Append(In(_col1), In(_col2)) =>
+        val col1 = asRep[CostedCol[Any]](_col1)
+        val col2 = asRep[CostedCol[Any]](_col2)
+        val values = col1.values.append(col2.values)
+        val costs = col1.costs.append(col2.costs)
+        val sizes = col1.sizes.append(col2.sizes)
+        RCostedCol(values, costs, sizes, costOf(node))
+
       case Terms.Apply(Select(col, "where", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(body)))) =>
         val input = col.asValue[SCollection[SType]]
         val cond = body.asValue[SBoolean.type]
@@ -778,11 +786,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
         val v = pC.value.propBytes
         withDefaultSize(v, pC.cost + costOf(node))
-      case utxo.ExtractAmount(box) =>
-        val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
+      case utxo.ExtractId(In(box)) =>
+        val boxC = asRep[Costed[Box]](box)
+        withDefaultSize(boxC.value.id, boxC.cost + costOf(node))
+      case utxo.ExtractBytesWithNoRef(In(box)) =>
+        val boxC = asRep[Costed[Box]](box)
+        withDefaultSize(boxC.value.bytesWithoutRef, boxC.cost + costOf(node))
+      case utxo.ExtractAmount(In(box)) =>
+        val boxC = asRep[Costed[Box]](box)
         withDefaultSize(boxC.value.value, boxC.cost + costOf(node))
-      case utxo.ExtractScriptBytes(box) =>
-        val boxC = evalNode(ctx, env, box).asRep[Costed[Box]]
+      case utxo.ExtractScriptBytes(In(box)) =>
+        val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.propositionBytes
         withDefaultSize(bytes, boxC.cost + costOf(node))
 

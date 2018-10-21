@@ -113,7 +113,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
     def extract[T <: SType](Rn: RegisterId)(implicit tT: T) =
-      ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)(tT).get
+      ExtractRegisterAs[T](GetVarBox(22: Byte).get, Rn)(tT).get
 
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
@@ -124,7 +124,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey),
       AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey))
 
-    val oracleProp = AND(OptionIsDefined(TreeLookup(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte))),
+    val oracleProp = AND(OptionIsDefined(TreeLookup(LastBlockUtxoRootHash, ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)),
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(oraclePubKey.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),

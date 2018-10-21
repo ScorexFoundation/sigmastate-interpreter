@@ -124,8 +124,9 @@ trait Evaluation extends RuntimeCosting { IR =>
     env
   }
 
-  def printEnvEntry(entry: (DataEnv, Sym)) = {
-    val (env, sym) = entry
+  case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef)
+
+  def printEnvEntry(sym: Sym, value: AnyRef) = {
     def show(x: Any) = x match {
       case arr: Array[_] => s"Array(${arr.mkString(",")})"
       case p: ECPoint => CryptoFunctions.showECPoint(p)
@@ -133,22 +134,24 @@ trait Evaluation extends RuntimeCosting { IR =>
       case _ => x.toString
     }
     sym match {
-      case x if x.isVar => s"Var($sym -> ${show(env(sym))})"
+      case x if x.isVar => s"Var($sym -> ${show(value)})"
       case Def(Lambda(_, _, x, y)) => s"Lam($x => $y)"
-      case _ => s"$sym -> ${show(env(sym))}"
+      case _ => s"$sym -> ${show(value)}"
     }
+  }
+
+  val okPrintEvaluatedEntries: Boolean = true
+
+  def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
+    if (okPrintEvaluatedEntries)
+      printEnvEntry(sym, value)
   }
 
   def compile[T <: SType](dataEnv: Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
 
     def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
       object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
-//      object InTyped { def unapply[T:ClassTag](s: Sym): Option[T] = {
-//        val v = dataEnv(s)
-//        assert(v.isInstanceOf[T])
-//        Some(v.asInstanceOf[T])
-//      }}
-      def out(v: Any): (DataEnv, Sym) = { (dataEnv + (te.sym -> v.asInstanceOf[AnyRef]), te.sym) }
+      def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
       try {
         val res: (DataEnv, Sym) = te.rhs match {
           case d @ ContextM.getVar(ctx, _, elem) =>
@@ -297,7 +300,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(size)
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
-        println(printEnvEntry(res))
+        onEvaluatedGraphNode(res._1, res._2, res._1(res._2))
         res
       }
       catch {

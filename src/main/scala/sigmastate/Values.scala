@@ -674,6 +674,7 @@ object Values {
   def GetVarInt(varId: Byte): GetVar[SInt.type] = GetVar(varId, SInt)
   def GetVarLong(varId: Byte): GetVar[SLong.type] = GetVar(varId, SLong)
   def GetVarBigInt(varId: Byte): GetVar[SBigInt.type] = GetVar(varId, SBigInt)
+  def GetVarBox(varId: Byte): GetVar[SBox.type] = GetVar(varId, SBox)
   def GetVarSigmaProp(varId: Byte): GetVar[SSigmaProp.type] = GetVar(varId, SSigmaProp)
   def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
 

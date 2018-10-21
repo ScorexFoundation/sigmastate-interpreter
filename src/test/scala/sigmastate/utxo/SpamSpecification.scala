@@ -153,6 +153,7 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   property("transaction with many inputs and outputs") {
+    implicit lazy val IR = new TestingIRContext { override val okPrintEvaluatedEntries = false }
     val prover = new ErgoLikeProvingInterpreter(maxCost = Long.MaxValue)
 
     val prop = Exists(Inputs, 21, Exists(Outputs, 22,
