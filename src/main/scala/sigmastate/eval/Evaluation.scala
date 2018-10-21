@@ -59,7 +59,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     case _: Lambda[_,_] =>
     case _: ThunkDef[_] =>
     case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) =>
-    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] ,_,_) =>
+    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) =>
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.LastBlockUtxoRootHash(_) |
          ContextM.getVar(_,_,_) | ContextM.deserialize(_,_,_) |
          ContextM.cost(_) | ContextM.dataSize(_) =>
@@ -127,8 +127,10 @@ trait Evaluation extends RuntimeCosting { IR =>
   case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef)
 
   def printEnvEntry(sym: Sym, value: AnyRef) = {
+    def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
     def show(x: Any) = x match {
-      case arr: Array[_] => s"Array(${arr.mkString(",")})"
+      case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
+      case col: special.collection.Col[_] => s"Col(${trim(col.arr).mkString(",")})"
       case p: ECPoint => CryptoFunctions.showECPoint(p)
       case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${CryptoFunctions.showECPoint(g)})"
       case _ => x.toString
@@ -144,7 +146,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
     if (okPrintEvaluatedEntries)
-      printEnvEntry(sym, value)
+      println(printEnvEntry(sym, value))
   }
 
   def compile[T <: SType](dataEnv: Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {

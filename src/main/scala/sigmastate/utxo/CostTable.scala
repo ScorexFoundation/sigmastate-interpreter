@@ -8,8 +8,8 @@ case class CostTable(operCosts: Map[OperationId, Double]) extends (OperationId =
   override def apply(operId: OperationId) = {
     operCosts.get(operId) match {
       case Some(cost) => costToInt(cost)
-      case None => costToInt(MinimalCost)
-//      sys.error(s"Cannot find cost in CostTable for $operId")
+      case None => //costToInt(MinimalCost)
+        sys.error(s"Cannot find cost in CostTable for $operId")
     }
   }
 }
@@ -34,17 +34,34 @@ object CostTable {
     ("AccessBox", "Context => Box", MinimalCost),
     ("GetVar", "(Context, Byte) => Option[T]", MinimalCost),
     ("AccessRegister", "Box => Option[T]", MinimalCost),
+    ("ExtractAmount", "(Box) => Long", MinimalCost),
+    ("ExtractScriptBytes", "(Box) => Array[Byte]", MinimalCost),
     ("ExtractRegisterAs", "(Box,Byte) => Array[BigInt]", MinimalCost),
     ("Slice", "(Array[IV],Int,Int) => Array[IV]", MinimalCost),
+    ("SizeOf", "(Array[IV]) => Int", MinimalCost),
     ("SigmaPropIsValid", "SigmaProp => Boolean", MinimalCost),
     ("SigmaPropBytes", "SigmaProp => Array[Byte]", MinimalCost),
     ("BinAnd", "(Boolean, Boolean) => Boolean", MinimalCost),
     ("BinOr", "(Boolean, Boolean) => Boolean", MinimalCost),
+    ("AND", "(Array[Boolean]) => Boolean", MinimalCost),
+    ("OR_per_item", "(Array[Boolean]) => Boolean", 0.0001),
+    ("AND_per_item", "(Array[Boolean]) => Boolean", MinimalCost),
+    ("CalcBlake2b256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
+    ("CalcSha256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
+    ("GT_per_kb", "(T,T) => Boolean", MinimalCost),
+    ("GE_per_kb", "(T,T) => Boolean", MinimalCost),
+    ("LE_per_kb", "(T,T) => Boolean", MinimalCost),
+    ("LT_per_kb", "(T,T) => Boolean", MinimalCost),
+    ("EQ_per_kb", "(T,T) => Boolean", MinimalCost),
+    ("NEQ_per_kb", "(T,T) => Boolean", MinimalCost),
     ("GT", "(BigInt,BigInt) => Boolean", 0.0001),
     (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
     ("+", "(Int, Int) => Int", 0.0001),
+    ("+", "(Long, Long) => Long", 0.0001),
     ("+", "(BigInt, BigInt) => BigInt", 0.0001),
-    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost)
+    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+    ("-", "(Int, Int) => Int", 0.0001),
+    ("-", "(Long, Long) => Long", 0.0001),
   ))
 
   def fromSeq(items: Seq[(String, String, Double)]): CostTable = {

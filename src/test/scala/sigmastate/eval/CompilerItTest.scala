@@ -278,7 +278,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(2,SSigmaProp)
           ))))),
-      Result({ TrivialProof.FalseProof }, 36, 1L)
+      Result({ TrivialProof.FalseProof }, 30, 1L)
     )
   }
   test("crowdFunding_Case") {

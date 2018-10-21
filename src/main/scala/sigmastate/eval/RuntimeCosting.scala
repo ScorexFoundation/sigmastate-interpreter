@@ -73,6 +73,16 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
 
   def costOf(opName: String, opType: SFunc): Rep[Int] = CostOf(opName, opType)
 
+  def perKbCostOf(node: SValue, dataSize: Rep[Long]) = {
+    val opName = s"${node.getClass.getSimpleName}_per_kb"
+    dataSize.div(1024L).toInt * costOf(opName, node.opType)
+  }
+
+  def perItemCostOf(node: SValue, arrLength: Rep[Int]) = {
+    val opName = s"${node.getClass.getSimpleName}_per_item"
+    costOf(opName, node.opType) * arrLength
+  }
+
   def constCost(tpe: SType): Rep[Int] = tpe match {
     case f: SFunc =>
       costOf(s"Lambda", Constant[SType](0.asWrappedType, tpe).opType)
@@ -747,11 +757,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
       case CalcBlake2b256(In(input)) =>
         val bytesC = asRep[Costed[Col[Byte]]](input)
         val res = sigmaDslBuilder.blake2b256(bytesC.value)
-        RCostedPrim(res, bytesC.cost + costOf(node), Blake2b256.DigestSize.toLong)
+        val cost = bytesC.cost + perKbCostOf(node, bytesC.dataSize)
+        RCostedPrim(res, cost, Blake2b256.DigestSize.toLong)
       case CalcSha256(In(input)) =>
         val bytesC = asRep[Costed[Col[Byte]]](input)
         val res = sigmaDslBuilder.sha256(bytesC.value)
-        RCostedPrim(res, bytesC.cost + costOf(node), Sha256.DigestSize.toLong)
+        val cost = bytesC.cost + perKbCostOf(node, bytesC.dataSize)
+        RCostedPrim(res, cost, Sha256.DigestSize.toLong)
       case utxo.SizeOf(In(xs)) =>
         xs.elem.eVal match {
           case ce: ColElem[a,_] =>
@@ -844,7 +856,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         cc => {
           val itemsC = cc.items.map(evalNode(ctx, env, _))
           val res = sigmaDslBuilder.anyOf(colBuilder.apply(itemsC.map(_.value): _*))
-          val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + costOf(node)
+          val costs = colBuilder.apply(itemsC.map(_.cost): _*)
+          val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
           withDefaultSize(res, cost)
 //          val headC = evalNode(ctx, env, cc.items(0))
 //          val tailC = cc.items.iterator.drop(1).map(x => evalCostedBlock(evalNode(ctx, env, x)))
@@ -898,13 +911,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val tpe = rel.left.tpe
         val et = stypeToElem(tpe)
         val binop = opcodeToBinOp(rel.opCode, et)
-        val x = evalNode(ctx, env, rel.left)
-        val y = evalNode(ctx, env, rel.right)
+        val x = eval(rel.left)
+        val y = eval(rel.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
-          withDefaultSize(
-            binop.apply(x.value, y.value.asRep[t#WrappedType]),
-            x.cost + y.cost + costOf(rel)
+          val res = withDefaultSize(
+            binop.apply(x.value, asRep[t#WrappedType](y.value)),
+            x.cost + y.cost + perKbCostOf(node, x.dataSize + y.dataSize)
           )
+          res
         }
 
       case If(c, t, e) =>
