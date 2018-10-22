@@ -55,7 +55,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
-  property("emission specification") {
+  ignore("emission specification") {
     val register = reg1
     val prover = new ErgoLikeProvingInterpreter()
 

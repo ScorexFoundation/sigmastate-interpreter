@@ -67,7 +67,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
     updStateTry.isSuccess shouldBe false
   }
 
-  property("apply many blocks") {
+  ignore("apply many blocks") {
     val state = ValidationState.initialState()
     val miner = new ErgoLikeProvingInterpreter()
 
@@ -88,7 +88,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
     checkState(state, miner, 0, randomDeepness)
   }
 
-  ignore(s"benchmarking applying many blocks") {
+  ignore(s"benchmarking applying many blocks (!!! ignored)") {
     val results = new TrieMap[Int, Long]
 
     def bench(numberOfBlocks: Int): Unit = {

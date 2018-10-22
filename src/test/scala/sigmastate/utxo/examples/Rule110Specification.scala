@@ -34,7 +34,7 @@ class Rule110Specification extends SigmaTestingCommons {
     * - register R3 first output contains correct updated layer based on rule 110 with boundary conditions
     * - first output contains the same protecting script, allowing to calculate further layers
     */
-  property("rule110 - one layer in register") {
+  ignore("rule110 - one layer in register") {
     val prover = new ErgoLikeProvingInterpreter {
       override val maxCost: Long = 2000000
     }
@@ -96,7 +96,7 @@ class Rule110Specification extends SigmaTestingCommons {
     * inputs are emulated to have zero bit values. This cases are implemented as
     * a separate scripts in a MAST.
     */
-  property("rule110 - one bit in register") {
+  ignore("rule110 - one bit in register") {
     val t = ByteConstant(1)
     val f = ByteConstant(0)
 
@@ -303,7 +303,7 @@ class Rule110Specification extends SigmaTestingCommons {
     * Each transaction have 3 inputs and 4 outputs. 3 outputs are just copies of inputs, 1 output is a bit on
     * new layer of rule 110
     */
-  property("rule110 - one bit per output (old version)") {
+  ignore("rule110 - one bit per output (old version)") {
     val prover = new ErgoLikeProvingInterpreter()
 
     val RowReg = reg1

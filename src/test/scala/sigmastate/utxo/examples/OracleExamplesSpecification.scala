@@ -66,7 +66,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     *
     */
-  property("oracle example") {
+  ignore("oracle example") {
     val oracle = new ErgoLikeProvingInterpreter
     val aliceTemplate = new ErgoLikeProvingInterpreter
     val bob = new ErgoLikeProvingInterpreter
@@ -190,7 +190,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     * Heavyweight authentication from the previous example is not needed then.
     *
     */
-  property("lightweight oracle example") {
+  ignore("lightweight oracle example") {
     val oracle = new ErgoLikeProvingInterpreter
     val alice = new ErgoLikeProvingInterpreter
     val bob = new ErgoLikeProvingInterpreter

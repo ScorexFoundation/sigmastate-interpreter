@@ -17,7 +17,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     * transaction creates an output to project's public key with amount >= minToRaise
     * after the timeout output could be spent by backer only
     */
-  property("Evaluation - Crowdfunding Example") {
+  ignore("Evaluation - Crowdfunding Example") {
 
     //a blockchain node verifying a block containing a spending transaction
     val verifier = new ErgoLikeInterpreter

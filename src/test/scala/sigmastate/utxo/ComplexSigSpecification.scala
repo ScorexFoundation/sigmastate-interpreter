@@ -546,7 +546,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx2, prC2, fakeMessage).get._1 shouldBe true
   }
 
-  property("complex sig scheme - k-out-of-n threshold") {
+  ignore("complex sig scheme - k-out-of-n threshold") {
 
     // disable scalacheck shrinking otherwise other constraints start to fail
     import org.scalacheck.Shrink

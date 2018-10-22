@@ -35,7 +35,8 @@ import sigmastate.lang.Terms._
   */
 class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-  property("atomic exchange") {
+
+  ignore("atomic exchange") {
     val tokenBuyer = new ErgoLikeProvingInterpreter
     val tokenSeller = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter

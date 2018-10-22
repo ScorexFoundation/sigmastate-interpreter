@@ -38,7 +38,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     * a proof for a corresponding transition description in the tree, and show a proof for transition script (e.g. a
     * signature). Thus the FSM is being revealed on the run, and the states not visited yet are not visible (on chain).
     */
-  property("simple FSM example"){
+  ignore("simple FSM example"){
 
     val prover = new ErgoLikeProvingInterpreter
 

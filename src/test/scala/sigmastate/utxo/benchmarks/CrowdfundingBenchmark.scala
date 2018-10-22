@@ -30,7 +30,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
   val nIters = 10000
   val nTasks = 1
 
-  ignore("Evaluation by Precompiled Kernel") {
+  ignore("Evaluation by Precompiled Kernel(!!! ignore)") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
       val backerProver = new ErgoLikeProvingInterpreter
@@ -53,7 +53,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
     }
   }
 
-  ignore("Evaluation by Script Interpretation") {
+  ignore("Evaluation by Script Interpretation(!!! ignore)") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
       val backerProver = new ErgoLikeProvingInterpreter

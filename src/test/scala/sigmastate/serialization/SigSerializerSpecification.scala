@@ -70,7 +70,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
     roundTrip(NoProof, TrueLeaf)
   }
 
-  property("SigSerializer round trip") {
+  ignore("SigSerializer round trip") {
     forAll { expr: Value[SBoolean.type] =>
       val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 

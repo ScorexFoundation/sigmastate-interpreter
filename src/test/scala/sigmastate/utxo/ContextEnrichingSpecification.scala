@@ -37,7 +37,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  property("context enriching mixed w. crypto 2") {
+  ignore("context enriching mixed w. crypto 2") {
     val prover = new ErgoLikeProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
@@ -69,7 +69,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  property("prover enriching context - xor") {
+  ignore("prover enriching context - xor") {
     val v1 = Base16.decode("abcdef7865").get
     val k1 = 21: Byte
 
@@ -106,7 +106,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
   /**
     * The script is asking for a hash function preimage. The "proof" could be replayed, so not really a proof.
     */
-  ignore("prover enriching context") {
+  ignore("prover enriching context(!!! ignored)") {
     val prover = new ErgoLikeProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
 
@@ -132,7 +132,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  property("prover enriching context 2") {
+  ignore("prover enriching context 2") {
     val prover = new ErgoLikeProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
