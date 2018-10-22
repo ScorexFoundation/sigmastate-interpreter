@@ -300,6 +300,13 @@ trait Evaluation extends RuntimeCosting { IR =>
           case TypeSize(tpe) =>
             val size = tpe.dataSize(0.asWrappedType)
             out(size)
+          case Downcast(In(from), eTo) =>
+            val tpe = elemToSType(eTo).asNumType
+            out(tpe.downcast(from.asInstanceOf[AnyVal]))
+          case Upcast(In(from), eTo) =>
+            val tpe = elemToSType(eTo).asNumType
+            out(tpe.upcast(from.asInstanceOf[AnyVal]))
+
           case _ => !!!(s"Don't know how to evaluate($te)")
         }
         onEvaluatedGraphNode(res._1, res._2, res._1(res._2))
