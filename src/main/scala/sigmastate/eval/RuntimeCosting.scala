@@ -872,6 +872,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
           case ModuloCode =>
             s = y.dataSize
             v = x.value.mod(y.value)
+          case MinCode =>
+            s = y.dataSize
+            v = x.value.min(y.value)
+          case MaxCode =>
+            s = y.dataSize
+            v = x.value.max(y.value)
           case _ => error(s"Cannot perform Costing.evalNode($op)")
         }
         val c = x.cost + y.cost + costOf(op) + costOf(opName + "_per_item", op.opType) * s.toInt

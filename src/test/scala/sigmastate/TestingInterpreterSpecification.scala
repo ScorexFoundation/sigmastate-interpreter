@@ -18,6 +18,7 @@ import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.ValueSerializer
 import special.sigma.{AnyValue, Box, TestAvlTree}
 import TrivialProof._
+
 import scala.util.Random
 
 
@@ -170,6 +171,20 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 //              |}""".stripMargin)
 //  }
 
+  property("Evaluate numeric casting ops") {
+    def testWithCasting(castSuffix: String): Unit = {
+      testEval(s"Array(1).size.toByte.$castSuffix == 1.$castSuffix")
+      testEval(s"Array(1).size.toShort.$castSuffix == 1.$castSuffix")
+      testEval(s"Array(1).size.toInt.$castSuffix == 1.$castSuffix")
+      testEval(s"Array(1).size.toLong.$castSuffix == 1.$castSuffix")
+    }
+    testWithCasting("toByte")
+    testWithCasting("toShort")
+    testWithCasting("toInt")
+    testWithCasting("toLong")
+    testWithCasting("toBigInt")
+  }
+
   property("Evaluate arithmetic ops") {
     def testWithCasting(castSuffix: String): Unit = {
       testEval(s"1.$castSuffix + 2.$castSuffix == 3.$castSuffix")
@@ -187,18 +202,15 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     testWithCasting("toBigInt")
   }
 
-  property("numeric casts") {
-    // downcast
-    testEval("Array(1).size.toByte > 0")
-    // upcast
-    testEval("Array(1).size.toLong > 0")
-  }
-
   property("failed numeric downcast (overflow)") {
-    an[ArithmeticException] should be thrownBy testEval("Array(999)(0).toByte > 0")
-    an[ArithmeticException] should be thrownBy testEval("Array(999)(0).toShort.toByte > 0")
-    an[ArithmeticException] should be thrownBy testEval(s"Array(${Int.MaxValue})(0).toShort > 0")
-    an[ArithmeticException] should be thrownBy testEval(s"Array(${Long.MaxValue}L)(0).toInt > 0")
+    assertExceptionThrown(testEval("Array(999)(0).toByte > 0"),
+      _.getCause.isInstanceOf[ArithmeticException])
+    assertExceptionThrown(testEval("Array(999)(0).toShort.toByte > 0"),
+      _.getCause.isInstanceOf[ArithmeticException])
+    assertExceptionThrown(testEval(s"Array(${Int.MaxValue})(0).toShort > 0"),
+      _.getCause.isInstanceOf[ArithmeticException])
+    assertExceptionThrown(testEval(s"Array(${Long.MaxValue}L)(0).toInt > 0"),
+      _.getCause.isInstanceOf[ArithmeticException])
   }
 
   property("string concat") {

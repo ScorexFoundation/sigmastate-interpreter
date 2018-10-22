@@ -1,7 +1,9 @@
 package sigmastate.utxo
 
+import java.lang.reflect.InvocationTargetException
+
 import org.ergoplatform.ErgoBox.{R6, R8}
-import org.ergoplatform.{ErgoLikeContext, ErgoBox, Self, ErgoLikeInterpreter}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, Self}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
@@ -10,7 +12,6 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.OptionUnwrapNone
 import special.sigma.InvalidType
-
 import scalan.BaseCtxTests
 
 class BasicOpsSpecification extends SigmaTestingCommons {
@@ -317,11 +318,13 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       EQ(GetVarInt(intVar2).get, IntConstant(2))
     )
     // wrong type
-    an[IR.StagingException] should be thrownBy test("GetVar2", env, ext,
+    assertExceptionThrown(
+      test("GetVar2", env, ext,
       "{ getVar[Byte](intVar2).isDefined }",
       GetVarByte(intVar2).isDefined,
       true
-    )
+      ),
+      _.getCause.isInstanceOf[InvalidType])
   }
 
   property("ExtractRegisterAs") {
@@ -331,11 +334,13 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
     // wrong type
-    an[IR.StagingException] should be thrownBy test("Extract2", env, ext,
-      "{ SELF.R4[Int].isDefined }",
-      ExtractRegisterAs[SInt.type](Self, reg1).isDefined,
-      true
-    )
+    assertExceptionThrown(
+      test("Extract2", env, ext,
+        "{ SELF.R4[Int].isDefined }",
+        ExtractRegisterAs[SInt.type](Self, reg1).isDefined,
+        true
+      ),
+      _.getCause.isInstanceOf[InvalidType])
   }
 
   property("OptionGet success (SomeValue)") {
@@ -350,15 +355,19 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("OptionGet fail (NoneValue)") {
-    an[IR.StagingException] should be thrownBy test("OptGet1", env, ext,
-      "{ getVar[Int](99).get == 2 }",
-      EQ(GetVarInt(99).get, IntConstant(2))
-    )
-    an[IR.StagingException] should be thrownBy test("OptGet2", env, ext,
-      "{ SELF.R8[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
-      NEQ(ExtractRegisterAs[SSigmaProp.type](Self, R8).get.propBytes, GetVarSigmaProp(propVar1).get.propBytes),
-      true
-    )
+    assertExceptionThrown(
+      test("OptGet1", env, ext,
+        "{ getVar[Int](99).get == 2 }",
+        EQ(GetVarInt(99).get, IntConstant(2))
+      ),
+      _.getCause.isInstanceOf[InvocationTargetException])
+    assertExceptionThrown(
+      test("OptGet2", env, ext,
+        "{ SELF.R8[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
+        NEQ(ExtractRegisterAs[SSigmaProp.type](Self, R8).get.propBytes, GetVarSigmaProp(propVar1).get.propBytes),
+        true
+      ),
+      _.getCause.isInstanceOf[InvocationTargetException])
   }
 
   property("OptionGetOrElse") {

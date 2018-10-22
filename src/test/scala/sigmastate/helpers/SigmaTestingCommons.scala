@@ -52,4 +52,16 @@ trait SigmaTestingCommons extends PropSpec
       }
     }
   }
+
+  def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean): Unit = {
+    try {
+      fun
+      fail("exception is expected")
+    }
+    catch {
+      case e: Throwable =>
+        if (!assertion(e))
+          fail(s"exception check failed on $e (caused by: ${e.getCause}")
+    }
+  }
 }
