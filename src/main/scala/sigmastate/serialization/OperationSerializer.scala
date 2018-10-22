@@ -39,7 +39,7 @@ class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends S
       case 4 => Insert(ADKey @@ r.getBytes(keyLength), parseValue())
       case 5 => Update(ADKey @@ r.getBytes(keyLength), parseValue())
       case 6 => InsertOrUpdate(ADKey @@ r.getBytes(keyLength), parseValue())
-      case _ => UnknownModification
+      case _ => throw new Exception("Unknown operation")
     }
   }
 

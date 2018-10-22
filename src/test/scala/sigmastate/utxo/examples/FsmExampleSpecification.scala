@@ -37,14 +37,14 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     * a proof for a corresponding transition description in the tree, and show a proof for transition script (e.g. a
     * signature). Thus the FSM is being revealed on the run, and the states not visited yet are not visible (on chain).
     */
-  property("simple FSM example"){
+  property("simple FSM example") {
 
     val prover = new ErgoLikeTestProvingInterpreter
 
     val script1 = prover.dlogSecrets.head.publicImage
     val script2 = prover.dhSecrets.head.publicImage
     val script3 = AND(script1, script2)
-    val script4 = prover.dlogSecrets.tail.head.publicImage  //a script to leave FSM
+    val script4 = prover.dlogSecrets.tail.head.publicImage //a script to leave FSM
 
     val script1Hash = hash.Blake2b256(ValueSerializer.serialize(script1))
     val script2Hash = hash.Blake2b256(ValueSerializer.serialize(script2))
@@ -79,41 +79,45 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val scriptVarId = 2: Byte
     val transitionProofId = 3: Byte
 
-    val isMember = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get,
-        Append(
-          ConcreteCollection[SByte.type](
-            ExtractRegisterAs[SByte.type](Self, currentStateRegister).get,
-            ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
-                                          currentStateRegister).getOrElse(ByteConstant(-1))),
-          CalcBlake2b256(TaggedByteArray(scriptVarId))
-        ),
-        TaggedByteArray(transitionProofId)))
+    val isMember = OptionIsDefined(TreeLookup(OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
+      Append(
+        ConcreteCollection[SByte.type](
+          OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
+          OptionGetOrElse(ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
+            currentStateRegister), ByteConstant(-1))),
+        CalcBlake2b256(TaggedByteArray(scriptVarId))
+      ),
+      TaggedByteArray(transitionProofId)))
 
     val scriptPreservation = EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), ExtractScriptBytes(Self))
 
     val treePreservation = EQ(
       ExtractRegisterAs[SAvlTree.type](ByIndex(Outputs, IntConstant.Zero),
-                                        fsmDescRegister).getOrElse(AvlTreeConstant(AvlTreeData.dummy)),
+        fsmDescRegister).getOrElse(AvlTreeConstant(AvlTreeData.dummy)),
       ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get)
 
     val preservation = AND(scriptPreservation, treePreservation)
 
     val finalStateCheck = EQ(ExtractRegisterAs[SByte.type](Self, currentStateRegister).get, ByteConstant(state3Id))
-/*
-    TODO uncomment when OR will be lazy
-    val finalScriptCorrect = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get,
-      Append(
-        ConcreteCollection[SByte.type](ExtractRegisterAs[SByte.type](Self, currentStateRegister).get,
-                                       ByteConstant(leaveFsmStateId)),
-        CalcBlake2b256(TaggedByteArray(scriptVarId))
-      ),
-      TaggedByteArray(transitionProofId)))
-*/
+
+    /*
+    val finalScriptCorrect = OptionIsDefined(
+      TreeLookup(
+        OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
+        Append(
+          ConcreteCollection[SByte.type](
+            OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
+            ByteConstant(leaveFsmStateId)),
+          CalcBlake2b256(TaggedByteArray(scriptVarId))
+        ),
+        TaggedByteArray(transitionProofId))
+    )*/
+
     val finalScriptCorrect = TrueLeaf
 
 
     val fsmScript = OR(
-      AND(isMember, DeserializeContext(scriptVarId, SBoolean), preservation),             //going through FSM
+      AND(isMember, DeserializeContext(scriptVarId, SBoolean), preservation), //going through FSM
       AND(finalStateCheck, finalScriptCorrect, DeserializeContext(scriptVarId, SBoolean)) //leaving FSM
     )
 
@@ -121,11 +125,11 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     //creating a box in an initial state
 
     val fsmBox1 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
-                                             currentStateRegister -> ByteConstant(state1Id)))
+      currentStateRegister -> ByteConstant(state1Id)))
 
     //successful transition from state1 to state2
     val fsmBox2 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
-                                             currentStateRegister -> ByteConstant(state2Id)))
+      currentStateRegister -> ByteConstant(state2Id)))
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition12 ++ script1Hash)))
     val transition12Proof = avlProver.generateProof()
