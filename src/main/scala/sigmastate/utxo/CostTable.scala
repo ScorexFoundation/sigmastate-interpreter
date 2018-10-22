@@ -64,27 +64,35 @@ object CostTable {
     ("GT", "(BigInt,BigInt) => Boolean", 0.0001),
     (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
     ("+", "(Byte, Byte) => Byte", 0.0001),
+    ("+", "(Short, Short) => Short", 0.0001),
     ("+", "(Int, Int) => Int", 0.0001),
     ("+", "(Long, Long) => Long", 0.0001),
 
     ("-", "(Byte, Byte) => Byte", 0.0001),
+    ("-", "(Short, Short) => Short", 0.0001),
     ("-", "(Int, Int) => Int", 0.0001),
     ("-", "(Long, Long) => Long", 0.0001),
 
     ("*", "(Byte, Byte) => Byte", 0.0001),
+    ("*", "(Short, Short) => Short", 0.0001),
     ("*", "(Int, Int) => Int", 0.0001),
     ("*", "(Long, Long) => Long", 0.0001),
 
     ("/", "(Byte, Byte) => Byte", 0.0001),
+    ("/", "(Short, Short) => Short", 0.0001),
     ("/", "(Int, Int) => Int", 0.0001),
     ("/", "(Long, Long) => Long", 0.0001),
 
     ("%", "(Byte, Byte) => Byte", 0.0001),
+    ("%", "(Short, Short) => Short", 0.0001),
     ("%", "(Int, Int) => Int", 0.0001),
     ("%", "(Long, Long) => Long", 0.0001),
 
     ("+", "(BigInt, BigInt) => BigInt", 0.0001),
     ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+
+    ("-", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("-_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("*", "(BigInt, BigInt) => BigInt", 0.0001),
     ("*_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
@@ -94,6 +102,38 @@ object CostTable {
 
     ("%", "(BigInt, BigInt) => BigInt", 0.0001),
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+
+    ("Downcast", "(Short) => Byte", MinimalCost),
+    ("Downcast", "(Int) => Byte", MinimalCost),
+    ("Downcast", "(Int) => Short", MinimalCost),
+    ("Downcast", "(Long) => Byte", MinimalCost),
+    ("Downcast", "(Long) => Short", MinimalCost),
+    ("Downcast", "(Long) => Int", MinimalCost),
+
+    ("Upcast", "(Byte) => Short", MinimalCost),
+    ("Upcast", "(Byte) => Int", MinimalCost),
+    ("Upcast", "(Byte) => Long", MinimalCost),
+    ("Upcast", "(Byte) => BigInt", MinimalCost),
+    ("Upcast", "(Short) => Int", MinimalCost),
+    ("Upcast", "(Short) => Long", MinimalCost),
+    ("Upcast", "(Short) => BigInt", MinimalCost),
+    ("Upcast", "(Int) => Long", MinimalCost),
+    ("Upcast", "(Int) => BigInt", MinimalCost),
+    ("Upcast", "(Long) => BigInt", MinimalCost),
+
+    ("min", "(Byte, Byte) => Byte", MinimalCost),
+    ("min", "(Short, Short) => Short", MinimalCost),
+    ("min", "(Int, Int) => Int", MinimalCost),
+    ("min", "(Long, Long) => Long", MinimalCost),
+    ("min", "(BigInt, BigInt) => BigInt", MinimalCost),
+    ("min_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+
+    ("max", "(Byte, Byte) => Byte", MinimalCost),
+    ("max", "(Short, Short) => Short", MinimalCost),
+    ("max", "(Int, Int) => Int", MinimalCost),
+    ("max", "(Long, Long) => Long", MinimalCost),
+    ("max", "(BigInt, BigInt) => BigInt", MinimalCost),
+    ("max_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Double)]): CostTable = {

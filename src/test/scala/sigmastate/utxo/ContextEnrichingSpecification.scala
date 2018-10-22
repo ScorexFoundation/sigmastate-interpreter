@@ -106,7 +106,6 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
   /**
     * The script is asking for a hash function preimage. The "proof" could be replayed, so not really a proof.
     */
-    // TODO check StagingException is caused by the expected correct exception
   ignore("prover enriching context") {
     val prover = new ErgoLikeProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
@@ -128,7 +127,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeInterpreter
     //context w/out extensions
-    an[OptionUnwrapNone] should be thrownBy verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get
+    assertExceptionThrown(verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
+      _.getCause.isInstanceOf[OptionUnwrapNone])
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
