@@ -56,6 +56,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
   import CostedNone._
   import CostedSome._
   import ProveDlogEvidence._
+  import ProveDHTEvidence._
   import SigmaDslBuilder._
   import TrivialSigma._
   import MonoidBuilderInst._
@@ -513,7 +514,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
   type CostingEnv = Map[Any, RCosted[_]]
 
   import sigmastate._
-  import scapi.sigma.{DLogProtocol, DiffieHellmanTupleProtocol}
+  import scapi.sigma.{DLogProtocol}
 
   protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
@@ -542,9 +543,16 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
 
       case c @ Constant(v, tpe) => v match {
         case p: DLogProtocol.ProveDlog =>
-          val ge = asRep[Costed[WECPoint]](evalNode(ctx, env, p.value))
+          val ge = asRep[Costed[WECPoint]](eval(p.value))
           val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
           withDefaultSize(resV, ge.cost + costOf(SigmaPropConstant(p)))
+//        case p @ ProveDiffieHellmanTuple(gv, hv, uv, vv) =>
+//          val gvC = asRep[Costed[WECPoint]](eval(gv))
+//          val hvC = asRep[Costed[WECPoint]](eval(hv))
+//          val uvC = asRep[Costed[WECPoint]](eval(uv))
+//          val vvC = asRep[Costed[WECPoint]](eval(vv))
+//          val resV: Rep[SigmaProp] = RProveDHTEvidence(gvC.value, hvC.value, uvC.value, vvC.value)
+//          withDefaultSize(resV, gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOf(SigmaPropConstant(p)))
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)
@@ -669,6 +677,19 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         }
         val res = xs.mapCosted(mapperC)
         res
+
+//      case Fold(input, id, zero, accId, foldOp) =>
+//        val eItem = stypeToElem(input.tpe.elemType)
+//        val eState = stypeToElem(zero.tpe)
+//        val xs = asRep[CostedCol[Any]](eval(input))
+//        implicit val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+//        assert(eItem == eAny, s"Types should be equal: but $eItem != $eAny")
+//
+//        val mapperC = fun { x: Rep[Costed[(Any, Any)]] =>
+//          evalNode(ctx, env + (id -> x), mapper)
+//        }
+//        val res = xs.mapCosted(mapperC)
+//        res
 
       case op @ Slice(In(input), In(from), In(until)) =>
         val inputC = asRep[CostedCol[Any]](input)

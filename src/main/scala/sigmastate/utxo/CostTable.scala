@@ -40,9 +40,12 @@ object CostTable {
     ("ExtractAmount", "(Box) => Long", MinimalCost),
     ("ExtractScriptBytes", "(Box) => Array[Byte]", MinimalCost),
     ("ExtractRegisterAs", "(Box,Byte) => Array[BigInt]", MinimalCost),
+
     ("Slice", "(Array[IV],Int,Int) => Array[IV]", MinimalCost),
     ("Append", "(Array[IV],Array[IV]) => Array[IV]", MinimalCost),
     ("SizeOf", "(Array[IV]) => Int", MinimalCost),
+    ("ByIndex", "(Array[IV],Int) => IV", MinimalCost),
+
     ("SigmaPropIsValid", "SigmaProp => Boolean", MinimalCost),
     ("SigmaPropBytes", "SigmaProp => Array[Byte]", MinimalCost),
     ("BinAnd", "(Boolean, Boolean) => Boolean", MinimalCost),

@@ -277,17 +277,17 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prover0 = new ErgoLikeProvingInterpreter()
 
-    val customScript = prover0.dlogSecrets.head.publicImage
-    val scriptBytes = ValueSerializer.serialize(customScript)
+    val script = SigmaPropConstant(prover0.dlogSecrets.head.publicImage)
+    val scriptBytes = ValueSerializer.serialize(script)
     val scriptHash = Blake2b256(scriptBytes)
 
     val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
 
     val hashEquals = EQ(CalcBlake2b256(GetVarByteArray(scriptId).get), scriptHash)
-    val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
+    val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp).isValid
     val prop = AND(hashEquals, scriptIsCorrect)
 
-    val recipientProposition = new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage
+    val recipientProposition = SigmaPropConstant(new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage).isValid
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -319,8 +319,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |}""".stripMargin).asBoolValue
 
     val propTree = BinAnd(
-      new ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, reg1).get),
-      new ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, reg2).get))
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, reg1).get).isValid,
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, reg2).get).isValid)
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey3)
@@ -338,8 +338,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = s1)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).success.value
-    verifier.verify(prop, ctx, pr, fakeMessage).success.value._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).fold(t => throw t, x => x)._1 shouldBe true
 
 
     //make sure that wrong case couldn't be proved
@@ -394,10 +394,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
 
   /**
-    * An example script where an output could be spent only along with an output with given id
-    * (and no more outputs could be provided as an input of a spending transaction).
+    * An example script where a box could be spent only along with a box with given id
+    * (and no more boxes could be provided as an input of a spending transaction).
     */
-  property("Along with a brother") {
+  ignore("Along with a brother (!!! Box constant in environment)") {
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 
@@ -430,8 +430,6 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val altProp = compile(altEnv, """INPUTS.size == 2 && INPUTS(0).id == friend.id""")
     altProp shouldBe prop
 
-
-
     val s = ErgoBox(10, prop, Seq(), Map())
 
     val ctx = ErgoLikeContext(
@@ -441,8 +439,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = s)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).success.value
-    verifier.verify(prop, ctx, pr, fakeMessage).success.value._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove_prop"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify_prop"), prop, ctx, pr, fakeMessage).fold(t => throw t, x => x)._1 shouldBe true
 
     val wrongCtx = ErgoLikeContext(
       currentHeight = 50,
@@ -452,7 +450,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       self = s)
 
     prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
-    verifier.verify(prop, wrongCtx, pr, fakeMessage).success.value._1 shouldBe false
+    verifier.verify(prop, wrongCtx, pr, fakeMessage).fold(t => throw t, x => x)._1 shouldBe false
 
     val prop2 = compile(env,
       """{
@@ -461,15 +459,17 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  okInputs && okIds
          }""".stripMargin).asBoolValue
 
-    prover.prove(prop2, ctx, fakeMessage).isFailure shouldBe true
-    verifier.verify(prop2, ctx, pr, fakeMessage).success.value._1 shouldBe false
+    prover.prove(emptyEnv + (ScriptNameProp -> "prove_prop2"), prop2, ctx, fakeMessage).isFailure shouldBe true
+    verifier
+      .verify(emptyEnv + (ScriptNameProp -> "verify_prop2"), prop2, ctx, pr, fakeMessage)
+      .fold(t => throw t, x => x)._1 shouldBe false
   }
 
   /**
     * An example script where an output could be spent only along with an output with given id
     * (and possibly others, too).
     */
-  property("Along with a friend and maybe others") {
+  ignore("Along with a friend and maybe others (!!! Box constant in environment)") {
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 

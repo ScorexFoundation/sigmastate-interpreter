@@ -34,7 +34,7 @@ object SigmaPredef {
 
     "proveDHTuple" -> mkLambda(Vector(
       "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
-    "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SBoolean, None),
+    "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SSigmaProp, None),
     "isMember" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
     "treeLookup" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
     "treeModifications" -> mkLambda(Vector("tree" -> SAvlTree, "ops" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),

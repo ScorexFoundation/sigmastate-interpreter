@@ -65,7 +65,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       Some(mkTreeModifications(tree, operations, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
-      Some(mkProveDlog(g))
+      Some(SigmaPropConstant(mkProveDlog(g)))
 
     case Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
       Some(SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)))
@@ -153,10 +153,10 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
       }
 
-    case Select(obj: SigmaBoolean, field, _) =>
+    case node @ Select(obj: SigmaBoolean, field, _) =>
       field match {
         case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.bytes))
-        case SigmaBoolean.IsValid => Some(obj)
+        case _ => None
       }
 
     case Select(obj, "value", Some(SLong)) if obj.tpe == SBox =>

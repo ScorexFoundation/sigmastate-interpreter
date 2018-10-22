@@ -160,8 +160,8 @@ def intToByteArray(input: Int): Array[Byte]
 def getVar[T](tag: Int): Option[T]
 
 def proveDHTuple(g: GroupElement, h: GroupElement, 
-                 u: GroupElement, v: GroupElement): Boolean
-def proveDlog(value: GroupElement): Boolean
+                 u: GroupElement, v: GroupElement): SigmaProp
+def proveDlog(value: GroupElement): SigmaProp
 
 /** Predicate which checks whether a key is in a tree, by using a membership proof. */
 def isMember(tree: AvlTree, key: Array[Byte], proof: Array[Byte]): Boolean
