@@ -69,7 +69,7 @@ object ErgoBoxCandidate {
                                         w: ByteWriter): Unit = {
       w.putULong(obj.value)
       w.putValue(obj.proposition)
-      w.putUInt(obj.creationHeight)
+      w.putULong(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
         if (digestsInTx.isDefined) {
@@ -108,7 +108,7 @@ object ErgoBoxCandidate {
     def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: ByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
       val prop = r.getValue().asBoolValue
-      val creationHeight = r.getUInt()
+      val creationHeight = r.getULong()
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
         val tokenId = if (digestsInTx.isDefined) {
