@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import org.ergoplatform.ErgoLikeContext.Metadata
 import sigmastate.eval.RuntimeIRContext
 
 import scala.util.{Success, Failure}
@@ -12,8 +11,7 @@ object ErgoTransactionValidator {
   //todo: check that outputs are well-formed?
   def validate(tx: ErgoLikeTransaction,
                blockchainState: BlockchainState,
-               boxesReader: ErgoBoxReader,
-               metadata: Metadata): Either[Throwable, Long] = {
+               boxesReader: ErgoBoxReader): Either[Throwable, Long] = {
 
     val msg = tx.messageToSign
     val inputs = tx.inputs
@@ -33,7 +31,7 @@ object ErgoTransactionValidator {
 
       val context =
         ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, boxes,
-          tx, box, metadata, proverExtension)
+          tx, box, proverExtension)
 
       val scriptCost: Long = verifier.verify(box.proposition, context, proof, msg) match {
         case Success((res, cost)) =>

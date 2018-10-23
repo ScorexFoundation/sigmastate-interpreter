@@ -1,8 +1,6 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
-import org.ergoplatform.ErgoLikeContext.Metadata
-import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
