@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
 
@@ -103,23 +104,9 @@ object CostTable {
     ("%", "(BigInt, BigInt) => BigInt", 0.0001),
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    ("Downcast", "(Short) => Byte", MinimalCost),
-    ("Downcast", "(Int) => Byte", MinimalCost),
-    ("Downcast", "(Int) => Short", MinimalCost),
-    ("Downcast", "(Long) => Byte", MinimalCost),
-    ("Downcast", "(Long) => Short", MinimalCost),
-    ("Downcast", "(Long) => Int", MinimalCost),
+    ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", MinimalCost),
 
-    ("Upcast", "(Byte) => Short", MinimalCost),
-    ("Upcast", "(Byte) => Int", MinimalCost),
-    ("Upcast", "(Byte) => Long", MinimalCost),
-    ("Upcast", "(Byte) => BigInt", MinimalCost),
-    ("Upcast", "(Short) => Int", MinimalCost),
-    ("Upcast", "(Short) => Long", MinimalCost),
-    ("Upcast", "(Short) => BigInt", MinimalCost),
-    ("Upcast", "(Int) => Long", MinimalCost),
-    ("Upcast", "(Int) => BigInt", MinimalCost),
-    ("Upcast", "(Long) => BigInt", MinimalCost),
+    ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", MinimalCost),
 
     ("min", "(Byte, Byte) => Byte", MinimalCost),
     ("min", "(Short, Short) => Short", MinimalCost),
