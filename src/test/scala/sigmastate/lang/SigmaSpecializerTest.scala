@@ -207,4 +207,8 @@ class SigmaSpecializerTest extends PropSpec
     spec("SELF.R4[Int].getOrElse(0)") shouldBe ExtractRegisterAs[SInt.type](Self, R4).getOrElse(IntConstant(0))
     spec("getVar[Int](1).getOrElse(0)") shouldBe GetVarInt(1).getOrElse(IntConstant(0))
   }
+
+  property("string concat") {
+    spec(""" "a" + "b" """) shouldBe StringConstant("ab")
+  }
 }

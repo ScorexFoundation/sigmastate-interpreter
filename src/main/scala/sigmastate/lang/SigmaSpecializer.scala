@@ -222,6 +222,9 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
             case v => IndexedSeq(v)
           }, SBoolean)))
 
+    case StringConcat(StringConstant(l), StringConstant(r)) =>
+      Some(StringConstant(l + r))
+
   })))(e)
 
   def specialize(typed: SValue): SValue = {

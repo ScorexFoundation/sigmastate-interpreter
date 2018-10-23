@@ -214,12 +214,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   // TODO LHF
-  ignore("string concat") {
-    testEval(""" "a" + "b" == "ab" """)
-    testEval(""" "a" + "b" != "cb" """)
-  }
-
-  // TODO LHF
   ignore("fromBaseX") {
     testEval(""" fromBase58("r") == Array[Byte](49.toByte) """)
     testEval(""" fromBase64("MQ") == Array[Byte](49.toByte) """)
