@@ -389,33 +389,6 @@ case class LongToByteArray(input: Value[SLong.type])
 }
 
 /**
-  * Decode Base58-encoded string into SByteArray
-  */
-case class Base58ToByteArray(input: Value[SString.type])
-  extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
-  override val opCode: OpCode = OpCodes.Base58ToByteArrayCode
-  val opType: SFunc = SFunc(SString, SByteArray)
-
-  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SByteArray] =
-    ByteArrayConstant(Base58.decode(bal.value).get)
-
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context)
-}
-
-/**
-  * Decode Base64-encoded string into SByteArray
-  */
-case class Base64ToByteArray(input: Value[SString.type])
-  extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
-  override val opCode: OpCode = OpCodes.Base64ToByteArrayCode
-  val opType: SFunc = SFunc(SString, SByteArray)
-  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SByteArray] =
-    ByteArrayConstant(Base64.decode(bal.value).get)
-
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context)
-}
-
-/**
   * Cast SByteArray to SBigInt
   */
 case class ByteArrayToBigInt(input: Value[SByteArray])

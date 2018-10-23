@@ -143,14 +143,6 @@ class TransformersSerializationSpec extends SerializationSpecification {
     forAll(downcastGen) { v => roundTripTest(v) }
   }
 
-  property("Base58ToByteArray: Serializer round trip") {
-    forAll(base58ToByteArrayGen) { v => roundTripTest(v) }
-  }
-
-  property("Base64ToByteArray: Serializer round trip") {
-    forAll(base64ToByteArrayGen) { v => roundTripTest(v) }
-  }
-
   property("PK(P2PK): Serializer round trip") {
     forAll(p2pkAddressGen(ErgoLikeContext.Metadata.TestnetNetworkPrefix)) { p2pk =>
       roundTripTest(ErgoAddressToSigmaProp(StringConstant(p2pk.toString)))

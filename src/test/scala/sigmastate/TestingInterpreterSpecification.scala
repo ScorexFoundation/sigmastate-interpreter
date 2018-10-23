@@ -213,19 +213,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       _.getCause.isInstanceOf[ArithmeticException])
   }
 
-  // TODO LHF
-  ignore("fromBaseX") {
-    testEval(""" fromBase58("r") == Array[Byte](49.toByte) """)
-    testEval(""" fromBase64("MQ") == Array[Byte](49.toByte) """)
-    testEval(""" fromBase64("M" + "Q") == Array[Byte](49.toByte) """)
-  }
-
-  // TODO LHF
-  ignore("failed fromBaseX (invalid input)") {
-    an[AssertionError] should be thrownBy testEval(""" fromBase58("^%$#@").size == 3 """)
-    an[IllegalArgumentException] should be thrownBy testEval(""" fromBase64("^%$#@").size == 3 """)
-  }
-
   ignore("Array indexing (out of bounds with const default value)") {
     testEval("Array(1, 2).getOrElse(3, 0) == 0")
   }

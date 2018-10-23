@@ -181,8 +181,14 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("fromBaseX") {
-    spec("""fromBase58("111")""") shouldBe Base58ToByteArray(StringConstant("111"))
-    spec("""fromBase64("111")""") shouldBe Base64ToByteArray(StringConstant("111"))
+    spec(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array(49))
+    spec(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array(49))
+    spec(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array(49))
+  }
+
+  property("failed fromBaseX (invalid input)") {
+    an[AssertionError] should be thrownBy spec(""" fromBase58("^%$#@")""")
+    an[IllegalArgumentException] should be thrownBy spec(""" fromBase64("^%$#@")""")
   }
 
   property("PK") {
