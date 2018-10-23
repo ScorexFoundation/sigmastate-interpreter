@@ -710,14 +710,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val sizes = col1.sizes.append(col2.sizes)
         RCostedCol(values, costs, sizes, costOf(node))
 
-      case sigmastate.StringConcat(In(_s1), In(_s2)) =>
-        val s1 = asRep[Costed[String]](_s1)
-        val s2 = asRep[Costed[String]](_s2)
-        val value = s1.value + s2.value
-        val cost = s1.cost + s2.cost + costOf(node)
-        val size = s1.dataSize + s2.dataSize
-        RCostedPrim(value, cost, size)
-
       case Terms.Apply(Select(col, "where", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(body)))) =>
         val input = col.asValue[SCollection[SType]]
         val cond = body.asValue[SBoolean.type]

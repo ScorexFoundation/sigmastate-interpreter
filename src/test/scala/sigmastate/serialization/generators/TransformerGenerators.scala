@@ -194,17 +194,9 @@ trait TransformerGenerators {
     s <- Gen.someOf(Base58.Alphabet).suchThat(_.nonEmpty)
   } yield s.toString
 
-  val base58ToByteArrayGen: Gen[Base58ToByteArray] = for {
-    s <- base58StringGen
-  } yield mkBase58ToByteArray(StringConstant(s)).asInstanceOf[Base58ToByteArray]
-
   val base64StringGen: Gen[String] = for {
     s <- Gen.someOf(Base64.Alphabet).suchThat(_.length > 1)
   } yield s.toString
-
-  val base64ToByteArrayGen: Gen[Base64ToByteArray] = for {
-    s <- base64StringGen
-  } yield mkBase64ToByteArray(StringConstant(s)).asInstanceOf[Base64ToByteArray]
 
   def p2pkAddressGen(networkPrefix: Byte): Gen[P2PKAddress] = for {
     pd <- proveDlogGen

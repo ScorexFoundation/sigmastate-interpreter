@@ -287,9 +287,6 @@ trait Interpreter extends ScorexLogging {
     case LE(BigIntConstant(l), BigIntConstant(r)) =>
       BooleanConstant.fromBoolean(l.compareTo(r) <= 0)
 
-    case StringConcat(StringConstant(l), StringConstant(r)) =>
-      StringConstant(l + r)
-
     case TreeModifications(tree: EvaluatedValue[AvlTreeData]@unchecked, ops: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
       def invalidArg(value: EvaluatedValue[SByteArray]) = Interpreter.error(s"Collection expected but found $value")
 

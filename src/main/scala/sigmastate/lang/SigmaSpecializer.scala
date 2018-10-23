@@ -1,13 +1,14 @@
 package sigmastate.lang
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rewrite, reduce}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
 import org.ergoplatform.ErgoBox
+import scorex.util.encode.{Base58, Base64}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Lambda, ApplyTypes, Apply, Val, ValueOps, Select, Block, Ident}
+import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, Select, Val, ValueOps}
 import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 import sigmastate.utils.Extensions._
@@ -73,11 +74,11 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))
 
-    case Apply(FromBase58Sym, Seq(arg: Value[SString.type]@unchecked)) =>
-      Some(mkBase58ToByteArray(arg))
+    case Apply(FromBase58Sym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+      Some(ByteArrayConstant(Base58.decode(arg.value).get))
 
-    case Apply(FromBase64Sym, Seq(arg: Value[SString.type]@unchecked)) =>
-      Some(mkBase64ToByteArray(arg))
+    case Apply(FromBase64Sym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+      Some(ByteArrayConstant(Base64.decode(arg.value).get))
 
     case Apply(ByteArrayToBigIntSym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(mkByteArrayToBigInt(arg))
@@ -221,6 +222,9 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
             case OR(ConcreteCollection(innerItems, SBoolean)) => innerItems
             case v => IndexedSeq(v)
           }, SBoolean)))
+
+    case StringConcat(StringConstant(l), StringConstant(r)) =>
+      Some(StringConstant(l + r))
 
   })))(e)
 
