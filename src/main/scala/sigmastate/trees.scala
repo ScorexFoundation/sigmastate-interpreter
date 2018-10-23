@@ -346,6 +346,7 @@ object AtLeast {
   */
 case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   extends Transformer[T, R] {
+  import Upcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.UpcastCode
 
@@ -354,7 +355,12 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
 
-  val opType = SFunc(input.tpe, tpe)
+  override val opType = SFunc(Vector(tT), tR)
+}
+
+object Upcast {
+  val tT = STypeIdent("T")
+  val tR = STypeIdent("R")
 }
 
 /**
@@ -362,6 +368,7 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   */
 case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   extends Transformer[T, R] {
+  import Downcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Downcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.DowncastCode
 
@@ -370,7 +377,12 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
 
   override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
 
-  val opType = SFunc(input.tpe, tpe)
+  override val opType = SFunc(Vector(tT), tR)
+}
+
+object Downcast {
+  val tT = STypeIdent("T")
+  val tR = STypeIdent("R")
 }
 
 /**
