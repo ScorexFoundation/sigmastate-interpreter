@@ -1,9 +1,11 @@
 package sigmastate.lang
 
+import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.ErgoBox.R4
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
+import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms.Ident
@@ -191,8 +193,21 @@ class SigmaSpecializerTest extends PropSpec
     an[IllegalArgumentException] should be thrownBy spec(""" fromBase64("^%$#@")""")
   }
 
-  property("PK") {
-    spec("""PK("111")""") shouldBe ErgoAddressToSigmaProp(StringConstant("111"))
+  private def testPK(networkPrefix: NetworkPrefix) = {
+    implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(networkPrefix)
+    val dk1 = proveDlogGen.sample.get
+    val encodedP2PK = P2PKAddress(dk1).toString
+    val code = s"""PK("$encodedP2PK")"""
+    val env = Map[String, SValue](SigmaSpecializer.NetworkPrefixEnvKey -> networkPrefix)
+    spec(env, typed(Map(), code)) shouldEqual dk1
+  }
+
+  property("PK (testnet network prefix)") {
+    testPK(ErgoAddressEncoder.TestnetNetworkPrefix)
+  }
+
+  property("PK (mainnet network prefix)") {
+    testPK(ErgoAddressEncoder.MainnetNetworkPrefix)
   }
 
   property("ExtractRegisterAs") {

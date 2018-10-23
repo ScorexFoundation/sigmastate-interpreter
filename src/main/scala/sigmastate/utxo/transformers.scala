@@ -311,29 +311,6 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
     input.cost(context) + Cost.SigmaPropBytesDeclaration
 }
 
-/** Decode a SigmaProp(ProveDlog) from an ergo address */
-case class ErgoAddressToSigmaProp(input: Value[SString.type])
-  extends Transformer[SString.type, SSigmaProp.type] with NotReadyValue[SSigmaProp.type] {
-  override val opCode: OpCode = OpCodes.ErgoAddressToSigmaPropCode
-  val opType: SFunc = SFunc(SString, SSigmaProp)
-  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SString.type]): Value[SSigmaProp.type] =
-    intr match {
-      case _: ErgoLikeInterpreter if ctx.isInstanceOf[ErgoLikeContext] =>
-        ErgoAddressEncoder(ctx.asInstanceOf[ErgoLikeContext].metadata.networkPrefix)
-          .fromString(bal.value)
-          .get match {
-          case a: P2PKAddress => a.pubkey
-          case a@_ => Interpreter.error(s"unsupported address $a")
-        }
-      case i => Interpreter.error(s"unsupported interpreter $i")
-    }
-
-  override def cost[C <: Context[C]](context: C): Long =
-    input.cost(context) + Cost.ParseSigmaProp
-
-  override def tpe: SSigmaProp.type = SSigmaProp
-}
-
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
     extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override val opCode: OpCode = OpCodes.SizeOfCode

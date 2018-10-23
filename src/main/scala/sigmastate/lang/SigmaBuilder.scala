@@ -178,7 +178,6 @@ trait SigmaBuilder {
                                        elementType: T): Constant[SCollection[T]]
   def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type]
 
-  def mkPK(input: Value[SString.type]): Value[SSigmaProp.type]
   def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]]
   def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T]
   def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T]
@@ -491,9 +490,6 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type] =
     StringConcat(left, right)
-
-  override def mkPK(input: Value[SString.type]): Value[SSigmaProp.type] =
-    ErgoAddressToSigmaProp(input)
 
   override def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]] =
     GetVar(varId, tpe)
