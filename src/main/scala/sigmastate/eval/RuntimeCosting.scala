@@ -609,6 +609,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val res1 = evalNode(ctx, curEnv, res)
         res1
 
+      case sigmastate.Exponentiate(In(_l), In(_r)) =>
+        val l = asRep[Costed[WECPoint]](_l)
+        val r = asRep[Costed[WBigInteger]](_r)
+        val value = sigmaDslBuilder.exponentiate(l.value, r.value)
+        val cost = l.cost + r.cost + costOf(node)
+        RCostedPrim(value, cost, CryptoConstants.groupSize.toLong)
+
+      case Values.GroupGenerator =>
+        val value = sigmaDslBuilder.groupGenerator
+        RCostedPrim(value, costOf(node), CryptoConstants.groupSize.toLong)
+
       case TreeLookup(In(_tree), InColByte(key), InColByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
         val value = sigmaDslBuilder.treeLookup(tree.value, key.value, proof.value)

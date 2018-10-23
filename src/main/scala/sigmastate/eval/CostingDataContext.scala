@@ -1,11 +1,15 @@
 package sigmastate.eval
 
+import java.math.BigInteger
+
+import org.bouncycastle.math.ec.ECPoint
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{AvlTreeData, SType, SAvlTree}
 import sigmastate.Values.{Constant, EvaluatedValue, AvlTreeConstant, SomeValue, NoneValue}
-import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{Serializer, OperationSerializer}
 import special.collection.{ConcreteCostedBuilder, Col, Types}
 import special.sigma._
@@ -111,6 +115,10 @@ class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { d
       case Some(v) => Some(Cols.fromArray(v))
       case _ => None
     }
+  }
+
+  override def exponentiate(base: ECPoint, exponent: BigInteger) = {
+    CryptoConstants.dlogGroup.exponentiate(base.asInstanceOf[EcPointType], exponent)
   }
 }
 

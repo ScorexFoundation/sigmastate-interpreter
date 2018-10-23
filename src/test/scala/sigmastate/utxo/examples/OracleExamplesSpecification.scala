@@ -66,7 +66,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     *
     */
-  ignore("oracle example") {
+  property("oracle example") {
     val oracle = new ErgoLikeProvingInterpreter
     val aliceTemplate = new ErgoLikeProvingInterpreter
     val bob = new ErgoLikeProvingInterpreter
@@ -76,8 +76,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
 
-    val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage
-    val bobPubKey = bob.dlogSecrets.head.publicImage
+    val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage.isValid
+    val bobPubKey = bob.dlogSecrets.head.publicImage.isValid
 
     val group = CryptoConstants.dlogGroup
 
