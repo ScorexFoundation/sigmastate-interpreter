@@ -91,5 +91,9 @@ object CostTable {
     val Exponentiate = 5000
 
     val MultiplyGroup = 50
+
+    val OptionGet = 1
+    val OptionGetOrElse = 1
+    val OptionIsDefined = 1
   }
 }

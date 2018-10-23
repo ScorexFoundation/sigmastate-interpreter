@@ -144,8 +144,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  box.R4[Long].get == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue
 
-    val propTree = Exists(Outputs, 21, EQ(ExtractRegisterAs(TaggedBox(21), reg1)(SLong),
-      Plus(ExtractRegisterAs(Self, reg1)(SLong), LongConstant(1))))
+    val propTree = Exists(Outputs, 21, EQ(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).get,
+      Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, Seq(), Map(reg1 -> LongConstant(3)))
@@ -179,8 +179,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
          }""".stripMargin).asBoolValue
 
     val propTree = Exists(Outputs, 21,
-      EQ(ExtractRegisterAs(TaggedBox(21), reg1, default = Some(LongConstant(0L))),
-        Plus(ExtractRegisterAs[SLong.type](Self, reg1), LongConstant(1))))
+      EQ(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).getOrElse(LongConstant(0L)),
+        Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey)

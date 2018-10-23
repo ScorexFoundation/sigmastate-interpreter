@@ -1,10 +1,11 @@
+import scala.util.Try
+
 organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  version := "0.10.0",
   scalaVersion := "2.12.4",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
@@ -22,6 +23,37 @@ lazy val commonSettings = Seq(
         </developer>
       </developers>
 )
+
+enablePlugins(GitVersioning)
+
+version in ThisBuild := {
+  if (git.gitCurrentTags.value.nonEmpty) {
+    git.gitDescribedVersion.value.get
+  } else {
+    if (git.gitHeadCommit.value.contains(git.gitCurrentBranch.value)) {
+      // see https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+      if (Try(sys.env("TRAVIS")).getOrElse("false") == "true") {
+        // pull request number, "false" if not a pull request
+        if (Try(sys.env("TRAVIS_PULL_REQUEST")).getOrElse("false") != "false") {
+          // build is triggered by a pull request
+          val prBranchName = Try(sys.env("TRAVIS_PULL_REQUEST_BRANCH")).get
+          val prHeadCommitSha = Try(sys.env("TRAVIS_PULL_REQUEST_SHA")).get
+          prBranchName + "-" + prHeadCommitSha.take(8) + "-SNAPSHOT"
+        } else {
+          // build is triggered by a push
+          val branchName = Try(sys.env("TRAVIS_BRANCH")).get
+          branchName + "-" + git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
+        }
+      } else {
+        git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
+      }
+    } else {
+      git.gitCurrentBranch.value + "-" + git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
+    }
+  }
+}
+
+git.gitUncommittedChanges in ThisBuild := true
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
@@ -59,5 +91,12 @@ publishTo := {
 }
 
 pomIncludeRepository := { _ => false }
+
+credentials += Credentials(Path.userHome / ".sbt" / ".sigma-sonatype-credentials")
+
+credentials ++= (for {
+  username <- Option(System.getenv().get("SONATYPE_USERNAME"))
+  password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
+} yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 
 lazy val sigma = (project in file(".")).settings(commonSettings: _*)

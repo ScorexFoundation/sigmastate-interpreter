@@ -1,14 +1,14 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
+import org.ergoplatform.ErgoBox
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
-import sigmastate._
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Val, Select, ValueOps}
-import sigmastate.lang.exceptions.{MethodNotFound, SpecializerException}
+import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Select, Val, ValueOps}
+import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 
 class SigmaSpecializer(val builder: SigmaBuilder) {
@@ -56,6 +56,12 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
       Some(mkIsMember(tree, key, proof))
+
+    case Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
+      Some(mkTreeLookup(tree, key, proof))
+
+    case Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
+      Some(mkTreeModifications(tree, operations, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(mkProveDlog(g))
@@ -110,15 +116,19 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(PKSym, Seq(arg: Value[SString.type]@unchecked)) =>
       Some(mkPK(arg))
 
-    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "getOrElse", Some(_)), Seq(arg)) =>
+    case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
-      Some(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
+      Some(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
 
-    case sel @ Select(Select(Typed(box, SBox), regName, _), "get", Some(regType)) =>
-      val reg = ErgoBox.registerByName.getOrElse(regName,
-        error(s"Invalid register name $regName in expression $sel"))
-      Some(mkExtractRegisterAs(box.asBox, reg, regType, None))
+    case Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.Get, _) =>
+      Some(mkOptionGet(nrv))
+
+    case Apply(Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.GetOrElse, _), Seq(arg)) =>
+      Some(mkOptionGetOrElse(nrv, arg))
+
+    case Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.IsDefined, _) =>
+      Some(mkOptionIsDefined(nrv))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {
