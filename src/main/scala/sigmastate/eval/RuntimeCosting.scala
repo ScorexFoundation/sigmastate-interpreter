@@ -616,9 +616,32 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val cost = l.cost + r.cost + costOf(node)
         RCostedPrim(value, cost, CryptoConstants.groupSize.toLong)
 
+      case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
+        val l = asRep[Costed[WECPoint]](_l)
+        val r = asRep[Costed[WECPoint]](_r)
+        val value = l.value.add(r.value)
+        val cost = l.cost + r.cost + costOf(node)
+        RCostedPrim(value, cost, CryptoConstants.groupSize.toLong)
+
       case Values.GroupGenerator =>
         val value = sigmaDslBuilder.groupGenerator
         RCostedPrim(value, costOf(node), CryptoConstants.groupSize.toLong)
+
+      case sigmastate.ByteArrayToBigInt(In(_arr)) =>
+        val arrC = asRep[Costed[Col[Byte]]](_arr)
+        val arr = arrC.value
+        val value = sigmaDslBuilder.byteArrayToBigInt(arr)
+        val size = arrC.dataSize
+        val cost = arrC.cost + costOf(node) + costOf("new_BigInteger_per_item", node.opType) * size.toInt
+        RCostedPrim(value, cost, size)
+
+      case sigmastate.LongToByteArray(In(_x)) =>
+        val xC = asRep[Costed[Long]](_x)
+        val x = xC.value
+        val col = sigmaDslBuilder.longToByteArray(x) // below we assume col.length == typeSize[Long]
+        val cost = xC.cost + costOf(node)
+        val len = typeSize[Long].toInt
+        RCostedCol(col, colBuilder.replicate(len, 0), colBuilder.replicate(len, 1L), cost)
 
       case TreeLookup(In(_tree), InColByte(key), InColByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
@@ -844,9 +867,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
         val v = pC.value.propBytes
         withDefaultSize(v, pC.cost + costOf(node))
-      case utxo.ExtractId(In(box)) =>
+      case utxo.ExtractId(In(box)) =>  // TODO costing: use special CostedColFixed for fixed-size collections
         val boxC = asRep[Costed[Box]](box)
-        withDefaultSize(boxC.value.id, boxC.cost + costOf(node))
+        RCostedPrim(boxC.value.id, boxC.cost + costOf(node), Blake2b256.DigestSize.toLong)
       case utxo.ExtractBytesWithNoRef(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         withDefaultSize(boxC.value.bytesWithoutRef, boxC.cost + costOf(node))

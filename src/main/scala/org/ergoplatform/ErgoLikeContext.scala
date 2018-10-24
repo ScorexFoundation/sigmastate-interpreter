@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import org.ergoplatform.ErgoBox.ReferenceRegId
 import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform.ErgoLikeContext.{Height, Metadata}
 import sigmastate.Values._
@@ -12,6 +13,7 @@ import sigmastate.utxo.CostTable.Cost
 import special.collection.Col
 import special.sigma
 import special.sigma.{AnyValue, TestValue, Box}
+
 import scala.util.Try
 
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
@@ -95,18 +97,19 @@ object ErgoLikeContext {
   val noInputs = Array[Box]()
   val noOutputs = Array[Box]()
 
-  def toTestData(value: Any, tpe: SType)(implicit IR: Evaluation): Any = (value, tpe) match {
+  def toTestData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = (value, tpe) match {
     case (arr: Array[a], SCollectionType(elemType)) =>
       elemType match {
         case SCollectionType(_) | STuple(_) =>
-          val testArr = arr.map(x => toTestData(x, elemType))
+          val testArr = arr.map(x => toTestData(x, elemType, isCost))
           IR.sigmaDslBuilderValue.Cols.fromArray(testArr)
         case _ =>
           IR.sigmaDslBuilderValue.Cols.fromArray(arr)
       }
     case (arr: Array[a], STuple(items)) =>
-      val res = arr.zip(items).map { case (x, t) => toTestData(x, t)}
+      val res = arr.zip(items).map { case (x, t) => toTestData(x, t, isCost)}
       IR.sigmaDslBuilderValue.Cols.fromArray(res)
+    case (b: ErgoBox, SBox) => b.toTestBox(isCost)
     case (t: AvlTreeData, SAvlTree) => CostingAvlTree(IR, t)
     case (x, _) => x
   }
@@ -132,7 +135,9 @@ object ErgoLikeContext {
 
   implicit class ErgoBoxOps(ebox: ErgoBox) {
     def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
-      val rs = regs(ebox.additionalRegisters.map({ case (k, v) => k.number -> v }))
+      if (ebox == null) return null
+      val givenRegs = ebox.additionalRegisters ++ ErgoBox.mandatoryRegisters.map(id => (id, ebox.get(id).get))
+      val rs = regs(givenRegs.map({ case (k, v) => k.number -> v }))
       new CostingBox(IR,
         IR.sigmaDslBuilderValue.Cols.fromArray(ebox.id),
         ebox.value,

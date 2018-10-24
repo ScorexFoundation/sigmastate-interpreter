@@ -152,27 +152,30 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   def compile[T <: SType](dataEnv: Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
 
-    def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
+    def evaluate(ctxSym: Rep[Context], te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
       object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
       try {
         val res: (DataEnv, Sym) = te.rhs match {
-          case d @ ContextM.getVar(ctx, _, elem) =>
+          case d @ ContextM.getVar(ctx @ In(ctxObj: CostingDataContext), _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
             val valueInCtx = ctx.elem.invokeUnlifted(mc, dataEnv)
             val data = valueInCtx match {
-              case Some(Constant(v, `declaredTpe`)) => Some(ErgoLikeContext.toTestData(v, declaredTpe)(IR))
+              case Some(Constant(v, `declaredTpe`)) =>
+                Some(ErgoLikeContext.toTestData(v, declaredTpe, ctxObj.isCost)(IR))
               case None => None
               case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInCtx")
             }
             out(data)
           case d @ BoxM.getReg(box, _, elem) =>
+            val ctxObj = dataEnv(ctxSym).asInstanceOf[CostingDataContext]
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
             val valueInReg = box.elem.invokeUnlifted(mc, dataEnv)
             val data = valueInReg match {
-              case Some(Constant(v, `declaredTpe`)) => Some(ErgoLikeContext.toTestData(v, declaredTpe)(IR))
+              case Some(Constant(v, `declaredTpe`)) =>
+                Some(ErgoLikeContext.toTestData(v, declaredTpe, ctxObj.isCost)(IR))
               case None => None
               case _ => throw new InvalidType(
                 s"Expected Some(Constant($declaredTpe)) but found $valueInReg value of register: $d")
@@ -264,7 +267,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case Lambda(l, _, x, y) =>
             val f = (ctx: AnyRef) => {
               val resEnv = l.schedule.foldLeft(dataEnv + (x -> ctx)) { (env, te) =>
-                val (e, _) = evaluate(te).run(env)
+                val (e, _) = evaluate(ctxSym, te).run(env)
                 e
               }
               resEnv(y)
@@ -278,7 +281,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case ThunkDef(y, schedule) =>
             val th = () => {
               val resEnv = schedule.foldLeft(dataEnv) { (env, te) =>
-                val (e, _) = evaluate(te).run(env)
+                val (e, _) = evaluate(ctxSym, te).run(env)
                 e
               }
               resEnv(y)
@@ -320,8 +323,9 @@ trait Evaluation extends RuntimeCosting { IR =>
     }
 
     val g = new PGraph(f)
+    val ctxSym = f.getLambda.x
     val resEnv = g.schedule.foldLeft(dataEnv) { (env, te) =>
-      val (e, _) = evaluate(te).run(env)
+      val (e, _) = evaluate(ctxSym, te).run(env)
       e
     }
     val fun = resEnv(f).asInstanceOf[SigmaContext => Any]

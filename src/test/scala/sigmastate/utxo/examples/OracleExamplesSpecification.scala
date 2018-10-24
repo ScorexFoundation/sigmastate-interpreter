@@ -3,16 +3,17 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
-import org.ergoplatform.ErgoBox.{MandatoryRegisterId, R1, RegisterId}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import org.ergoplatform.ErgoBox.{RegisterId, R1, MandatoryRegisterId}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import org.ergoplatform._
+import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptNameProp}
 import sigmastate.utxo._
 
 
@@ -74,7 +75,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
-    val oraclePubKey = oraclePrivKey.publicImage
+    val oraclePubImage = oraclePrivKey.publicImage
+    val oraclePubKey = oraclePubImage.isValid
 
     val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage.isValid
     val bobPubKey = bob.dlogSecrets.head.publicImage.isValid
@@ -128,7 +130,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(oraclePubKey.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
-          Exponentiate(oraclePubKey.value,
+          Exponentiate(oraclePubImage.value,
             ByteArrayToBigInt(CalcBlake2b256(
               Append(LongToByteArray(extract[SLong.type](reg1)), LongToByteArray(extract[SLong.type](reg4)))))))
       ),
@@ -165,14 +167,14 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val alice = aliceTemplate
       .withContextExtender(22: Byte, BoxConstant(oracleBox))
       .withContextExtender(23: Byte, ByteArrayConstant(proof))
-    val prA = alice.prove(propAlice, ctx, fakeMessage).get
+    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), propAlice, ctx, fakeMessage).fold(t => throw t, x => x)
 
-    val prB = bob.prove(propBob, ctx, fakeMessage).get
+    val prB = bob.prove(emptyEnv + (ScriptNameProp -> "bob_prove"), propBob, ctx, fakeMessage).fold(t => throw t, x => x)
 
     val ctxv = ctx.withExtension(prA.extension)
-    verifier.verify(propAlice, ctxv, prA, fakeMessage).get._1 shouldBe true
+    verifier.verify(emptyEnv + (ScriptNameProp -> "alice_verify"), propAlice, ctxv, prA, fakeMessage).get._1 shouldBe true
 
-    verifier.verify(propBob, ctx, prB, fakeMessage).get._1 shouldBe true
+    verifier.verify(emptyEnv + (ScriptNameProp -> "bob_verify"), propBob, ctx, prB, fakeMessage).get._1 shouldBe true
 
     //todo: check timing conditions - write tests for height  < 40 and >= 60
   }
@@ -190,7 +192,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     * Heavyweight authentication from the previous example is not needed then.
     *
     */
-  ignore("lightweight oracle example") {
+  property("lightweight oracle example") {
     val oracle = new ErgoLikeProvingInterpreter
     val alice = new ErgoLikeProvingInterpreter
     val bob = new ErgoLikeProvingInterpreter
