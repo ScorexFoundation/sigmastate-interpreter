@@ -809,7 +809,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         default match {
           case Some(defaultValue) =>
             val defaultC = evalNode(ctx, env, defaultValue).asRep[Costed[Any]]
-            CostedPrimRep(xsC.value(iV), xsC.cost + iC.cost + defaultC.cost + costOf(node), size)
+            CostedPrimRep(xsC.value.getOrElse(iV, Thunk(defaultC.value)),
+              xsC.cost + iC.cost + defaultC.cost + costOf(node), size)
           case None =>
             CostedPrimRep(xsC.value(iV), xsC.cost + iC.cost + costOf(node), size)
         }

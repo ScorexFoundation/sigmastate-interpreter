@@ -301,8 +301,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
-  // TODO LHF
-  ignore("passing a lambda argument") {
+  property("passing a lambda argument") {
     // single expression
     testEval(
       """ Array[Int](1,2,3).map { (a: Int) =>
@@ -314,6 +313,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |   val b = a - 1
         |   b + 2
         | } == Array[Int](2,3,4) """.stripMargin)
+  }
+
+  // TODO: LHF (or not, ReplColCtor is missing in data env on evaluation)
+  ignore("nested lambdas argument") {
     // block with nested lambda
     testEval(
       """ Array[Int](1,2,3).exists { (a: Int) =>
