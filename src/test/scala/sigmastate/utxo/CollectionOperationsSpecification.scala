@@ -281,8 +281,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
-  // TODO LHF
-  ignore("by index with default value") {
+  property("by index with default value") {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """OUTPUTS
@@ -297,8 +296,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
-  // TODO LHF
-  ignore("by index with evaluated default value") {
+  property("by index with evaluated default value") {
     val outputBoxValues = IndexedSeq(20L, 0L)
     val code = "OUTPUTS.getOrElse(3, OUTPUTS(0)).value == 20"
     val expectedPropTree = EQ(
