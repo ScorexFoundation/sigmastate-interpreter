@@ -54,7 +54,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage
+    val pubkey = prover.dlogSecrets.head.publicImage.isValid
 
     val prop = compile(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue
 

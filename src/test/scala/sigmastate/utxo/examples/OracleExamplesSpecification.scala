@@ -67,7 +67,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     *
     */
-  property("oracle example") {
+  ignore("oracle example") {
     val oracle = new ErgoLikeProvingInterpreter
     val aliceTemplate = new ErgoLikeProvingInterpreter
     val bob = new ErgoLikeProvingInterpreter

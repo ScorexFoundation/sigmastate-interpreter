@@ -332,7 +332,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         implicit val eA = opt.elem.eItem
         RCostedPrim(opt.isDefined, costedBuilder.SelectFieldCost, 1L)
 
-      case CostedPrimCtor(v, c, s) if v.elem.isInstanceOf[BoxElem[_]] =>
+      case CostedPrimCtor(v, c, s) if !v.isVar && v.elem.isInstanceOf[BoxElem[_]] =>
         RCostedBox(asRep[Box](v))
 
       case _ => super.rewriteDef(d)
