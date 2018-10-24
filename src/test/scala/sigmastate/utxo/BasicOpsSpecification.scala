@@ -360,14 +360,14 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         "{ getVar[Int](99).get == 2 }",
         EQ(GetVarInt(99).get, IntConstant(2))
       ),
-      _.getCause.isInstanceOf[InvocationTargetException])
+      _.getCause.getCause.isInstanceOf[InvocationTargetException])
     assertExceptionThrown(
       test("OptGet2", env, ext,
         "{ SELF.R8[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
         NEQ(ExtractRegisterAs[SSigmaProp.type](Self, R8).get.propBytes, GetVarSigmaProp(propVar1).get.propBytes),
         true
       ),
-      _.getCause.isInstanceOf[InvocationTargetException])
+      _.getCause.getCause.isInstanceOf[InvocationTargetException])
   }
 
   property("OptionGetOrElse") {
