@@ -256,8 +256,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProverFail(code, expectedPropTree, outputBoxValues)
   }
 
-  // TODO LHF
-  ignore("append") {
+  property("append") {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code = "(OUTPUTS ++ OUTPUTS).size == 4"
     val expectedPropTree = EQ(SizeOf(Append(Outputs, Outputs)), IntConstant(4))
