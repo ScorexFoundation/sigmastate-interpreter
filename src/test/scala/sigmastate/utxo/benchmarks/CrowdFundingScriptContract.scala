@@ -1,12 +1,13 @@
 package sigmastate.utxo.benchmarks
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoLikeContext
 import sigmastate.SBoolean
 import sigmastate.Values.Value
-import sigmastate.lang.Terms._
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter._
+import sigmastate.lang.Terms._
 
 import scala.util.Try
 
@@ -36,7 +37,8 @@ class CrowdFundingScriptContract(
        | ))
        | c1 || c2
        | }
-      """.stripMargin).asBoolValue
+      """.stripMargin,
+      TestnetNetworkPrefix).asBoolValue
     compiledScript
   }
 

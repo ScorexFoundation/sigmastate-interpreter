@@ -14,7 +14,7 @@ import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 
-class SigmaSpecializer(val builder: SigmaBuilder) {
+class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPrefix) {
   import SigmaSpecializer._
   import builder._
 
@@ -117,10 +117,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       Some(SigmaPropBytes(p.asSigmaProp))
 
     case Apply(PKSym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-      val networkPrefix: NetworkPrefix = env
-        .get(NetworkPrefixEnvKey)
-        .map(_.asInstanceOf[ByteConstant].value)
-        .getOrElse(TestnetNetworkPrefix)
       Some(
         ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
           case a: P2PKAddress => a.pubkey
@@ -249,8 +245,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 }
 
 object SigmaSpecializer {
-
-  val NetworkPrefixEnvKey = "NetworkPrefix"
 
   def error(msg: String) = throw new SpecializerException(msg, None)
 }

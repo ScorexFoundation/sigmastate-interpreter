@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
+import org.ergoplatform.ErgoAddressEncoder.{NetworkPrefix, TestnetNetworkPrefix}
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
@@ -39,8 +39,8 @@ class SigmaSpecializerTest extends PropSpec
     val typed = typer.typecheck(bound)
     typed
   }
-  def spec(env: Map[String, SValue], typed: SValue): SValue = {
-    val spec = new SigmaSpecializer(TransformingSigmaBuilder)
+  def spec(env: Map[String, SValue], typed: SValue, networkPrefix: NetworkPrefix = TestnetNetworkPrefix): SValue = {
+    val spec = new SigmaSpecializer(TransformingSigmaBuilder, networkPrefix)
     spec.specialize(env, typed)
   }
   def spec(code: String): SValue = {
@@ -198,12 +198,11 @@ class SigmaSpecializerTest extends PropSpec
     val dk1 = proveDlogGen.sample.get
     val encodedP2PK = P2PKAddress(dk1).toString
     val code = s"""PK("$encodedP2PK")"""
-    val env = Map[String, SValue](SigmaSpecializer.NetworkPrefixEnvKey -> networkPrefix)
-    spec(env, typed(Map(), code)) shouldEqual dk1
+    spec(Map(), typed(Map(), code), networkPrefix) shouldEqual dk1
   }
 
   property("PK (testnet network prefix)") {
-    testPK(ErgoAddressEncoder.TestnetNetworkPrefix)
+    testPK(TestnetNetworkPrefix)
   }
 
   property("PK (mainnet network prefix)") {
