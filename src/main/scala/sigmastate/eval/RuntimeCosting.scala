@@ -332,6 +332,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         implicit val eA = opt.elem.eItem
         RCostedPrim(opt.isDefined, costedBuilder.SelectFieldCost, 1L)
 
+      case CostedPrimCtor(v, c, s) if v.elem.isInstanceOf[BoxElem[_]] =>
+        RCostedBox(asRep[Box](v))
+
       case _ => super.rewriteDef(d)
     }
   }
@@ -844,8 +847,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         }
 
       case ByIndex(xs, i, default) =>
-        val xsC = evalNode(ctx, env, xs).asRep[CostedCol[Any]]
-        val iC = evalNode(ctx, env, i).asRep[Costed[Int]]
+        val xsC = asRep[CostedCol[Any]](eval(xs))
+        val iC = asRep[Costed[Int]](eval(i))
         val iV = iC.value
         val size = xsC.sizes(iV)
         default match {

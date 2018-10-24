@@ -200,10 +200,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
-    val oraclePubKey = oraclePrivKey.publicImage
+    val oraclePubKey = oraclePrivKey.publicImage.isValid
 
-    val alicePubKey = alice.dlogSecrets.head.publicImage
-    val bobPubKey = bob.dlogSecrets.head.publicImage
+    val alicePubKey = alice.dlogSecrets.head.publicImage.isValid
+    val bobPubKey = bob.dlogSecrets.head.publicImage.isValid
 
     val temperature: Long = 18
 
@@ -236,7 +236,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = null)
 
-    val prA = alice.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, prA, fakeMessage).get._1 shouldBe true
   }
 }
