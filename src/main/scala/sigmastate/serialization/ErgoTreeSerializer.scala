@@ -3,19 +3,48 @@ package sigmastate.serialization
 import sigmastate.SType
 import sigmastate.Values.{Constant, Value}
 import sigmastate.eval.IRContext
+import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.utils.Extensions._
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class ErgoTreeSerializer(IR: IRContext) {
   import IR._
 
-  def serialize(tree: Value[SType]): Array[Byte] = ???
-  def deserialize(bytes: Array[Byte]): Value[SType] = ???
+  def serialize(tree: Value[SType]): Array[Byte] = {
+    val (extractedConstants, treeWithPlaceholders) = extractConstants(tree)
+    val w = Serializer.startWriter()
+    val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+    w.putUInt(extractedConstants.length)
+    extractedConstants.foreach(c => constantSerializer.serialize(c, w))
+    ValueSerializer.serialize(treeWithPlaceholders, w)
+    w.toBytes
+  }
 
-  def extractConstants(tree: Value[SType]): (Seq[Constant[_]], Value[SType]) = {
+  def deserializeRaw(bytes: Array[Byte]): (Seq[Constant[SType]], Value[SType]) = {
+    val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+    val r = Serializer.startReader(bytes)
+    val constantCount = r.getUInt().toInt
+    val constantsBuilder = mutable.ArrayBuilder.make[Constant[SType]]()
+    for (_ <- 0 until constantCount) {
+      constantsBuilder += constantSerializer.deserialize(r)
+    }
+    val constants = constantsBuilder.result
+    val tree = r.getValue()
+    (constants, tree)
+  }
+
+  def deserialize(bytes: Array[Byte]): Value[SType] = {
+    val (constants, tree) = deserializeRaw(bytes)
+    // todo swap placeholders with constants
+    tree
+  }
+
+  def extractConstants(tree: Value[SType]): (Seq[Constant[SType]], Value[SType]) = {
     val env = Map[String, Any]()
     val Pair(calcF, _) = doCosting(env, tree)
-    val constantsStore = new ArrayBuffer[Constant[_]]
+    val constantsStore = new ArrayBuffer[Constant[SType]]
     val outTree = IR.buildTree(calcF, Some(constantsStore))
     (constantsStore, outTree)
   }

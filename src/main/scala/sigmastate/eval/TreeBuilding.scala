@@ -109,7 +109,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
                  env: DefEnv,
                  s: Sym,
                  defId: Int,
-                 constants: Option[ArrayBuffer[Constant[_]]]): SValue = {
+                 constants: Option[ArrayBuffer[Constant[SType]]]): SValue = {
     import builder._
     def recurse[T <: SType](s: Sym) = buildValue(mainG, env, s, defId, constants).asValue[T]
     object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(mainG, env, s, defId, constants)) }
@@ -134,7 +134,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         constants match {
           case Some(store) =>
             this.synchronized {
-              store += mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+              store += mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe).asInstanceOf[Constant[SType]]
               mkConstantPlaceholder[tpe.type](store.size - 1, tpe)
             }
           case None =>
@@ -234,7 +234,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
                               env: DefEnv,
                               subG: AstGraph,
                               defId: Int,
-                              constants: Option[ArrayBuffer[Constant[_]]]): SValue = {
+                              constants: Option[ArrayBuffer[Constant[SType]]]): SValue = {
     val valdefs = new ArrayBuffer[ValDef]
     var curId = defId
     var curEnv = env
@@ -254,7 +254,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   }
 
   def buildTree[T <: SType](f: Rep[Context => Any],
-                            constantsStore: Option[ArrayBuffer[Constant[_]]] = None): Value[T] = {
+                            constantsStore: Option[ArrayBuffer[Constant[SType]]] = None): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
     val mainG = new PGraph(lam.y)
     val block = processAstGraph(mainG, Map(), mainG, 0, constantsStore)
