@@ -10,7 +10,7 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.Values.{TrueLeaf, Value}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utils.Helpers
 import sigmastate.utxo.Transformer
@@ -26,7 +26,7 @@ class SigSerializerSpecification extends PropSpec
 
   private implicit val arbExprGen: Arbitrary[Value[SBoolean.type]] = Arbitrary(exprTreeGen)
 
-  private val prover = new ErgoLikeProvingInterpreter()
+  private val prover = new ErgoLikeTestProvingInterpreter()
 
   private val interpreterProveDlogGen: Gen[ProveDlog] =
     Gen.oneOf(prover.dlogSecrets.map(secret => ProveDlog(secret.publicImage.h)))

@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import sigmastate.Values.{ByteArrayConstant, LongConstant, TaggedBox}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -19,13 +19,13 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
   property("Evaluation - Crowdfunding Example") {
 
     //a blockchain node verifying a block containing a spending transaction
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     //backer's prover with his private key
-    val backerProver = new ErgoLikeProvingInterpreter
+    val backerProver = new ErgoLikeTestProvingInterpreter
 
     //project's prover with his private key
-    val projectProver = new ErgoLikeProvingInterpreter
+    val projectProver = new ErgoLikeTestProvingInterpreter
 
     val backerPubKey = backerProver.dlogSecrets.head.publicImage
     val projectPubKey = projectProver.dlogSecrets.head.publicImage

@@ -3,7 +3,7 @@ package sigmastate.utxo.benchmarks
 
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.Values._
 
 
@@ -33,9 +33,9 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
   ignore("Evaluation by Precompiled Kernel") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
-      val backerProver = new ErgoLikeProvingInterpreter
+      val backerProver = new ErgoLikeTestProvingInterpreter
       //project's prover with his private key
-      val projectProver = new ErgoLikeProvingInterpreter
+      val projectProver = new ErgoLikeTestProvingInterpreter
       val contract = new CrowdFundingKernelContract(timeout, minToRaise, backerProver, projectProver)
       val ctx = createTestContext(contract)
 
@@ -56,9 +56,9 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
   ignore("Evaluation by Script Interpretation") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
-      val backerProver = new ErgoLikeProvingInterpreter
+      val backerProver = new ErgoLikeTestProvingInterpreter
       //project's prover with his private key
-      val projectProver = new ErgoLikeProvingInterpreter
+      val projectProver = new ErgoLikeTestProvingInterpreter
       val contract = new CrowdFundingScriptContract(timeout, minToRaise, backerProver, projectProver)
       val ctx = createTestContext(contract)
 
