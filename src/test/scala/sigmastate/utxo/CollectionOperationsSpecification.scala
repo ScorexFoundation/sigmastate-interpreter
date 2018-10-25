@@ -325,8 +325,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
-  // TODO LHF
-  ignore("forall for custom collection") {
+  property("forall for custom collection") {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """{
