@@ -1,20 +1,17 @@
 package org.ergoplatform
 
-import java.nio.ByteBuffer
 import java.util
 
 import com.google.common.primitives.Ints
 import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
+import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, TaggedByteArray, Value}
 import sigmastate._
-import sigmastate.Values.{IntConstant, TaggedByteArray, Value}
-import sigmastate.serialization.{DataSerializer, ValueSerializer}
-import sigmastate.utils.ByteBufferReader
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{DeserializeContext, Slice}
 
-import scala.util.{Failure, Success, Try}
-
+import scala.util.Try
 
 /**
   * An address is a short string corresponding to some script used to protect a box. Unlike (string-encoded) binary
@@ -128,7 +125,6 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
 }
 
 object Pay2SHAddress {
-  def apply(pubkey: ProveDlog)(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = apply(pubkey)
 
   def apply(script: Value[SBoolean.type])(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = {
     val sb = ValueSerializer.serialize(script)
@@ -204,6 +200,16 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
           new Pay2SAddress(ValueSerializer.deserialize(bs).asInstanceOf[Value[SBoolean.type]], bs)
         case _ => throw new Exception("Unsupported address type: " + addressType)
       }
+    }
+  }
+
+  def fromProposition(proposition: Value[SType]): Try[ErgoAddress] = Try {
+    proposition match {
+      case d @ ProveDlog(_) => P2PKAddress(d)
+      case a @ AND(ConcreteCollection(Vector(EQ(Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)), _), _), _)) =>
+        Pay2SHAddress(a)
+      case b: Value[SBoolean.type]@unchecked if b.tpe == SBoolean => Pay2SAddress(b)
+      case other => throw new RuntimeException(s"Invalid proposition type: ${other.tpe}")
     }
   }
 }

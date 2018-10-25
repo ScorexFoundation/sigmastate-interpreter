@@ -1,19 +1,20 @@
 package sigmastate.serialization.generators
 
 import org.scalacheck.{Arbitrary, Gen}
-import sigmastate.Values.{TrueLeaf, FalseLeaf}
-import sigmastate.{SInt, IsMember, If}
+import sigmastate.Values.{FalseLeaf, TrueLeaf}
+import sigmastate.{If, SInt, TreeLookup}
 
-trait RelationGenerators { this: ValueGenerators with ConcreteCollectionGenerators =>
+trait RelationGenerators {
+  this: ValueGenerators with ConcreteCollectionGenerators =>
 
-  implicit val arbIsMember: Arbitrary[IsMember] = Arbitrary(isMemberGen)
+  implicit val arbTreeLookup: Arbitrary[TreeLookup] = Arbitrary(treeLookupGen)
   implicit val arbIf: Arbitrary[If[SInt.type]] = Arbitrary(ifGen)
 
-  val isMemberGen: Gen[IsMember] = for {
+  val treeLookupGen: Gen[TreeLookup] = for {
     t <- arbTaggedAvlTree.arbitrary
     b1 <- arbByteArrayConstant.arbitrary
     b2 <- arbByteArrayConstant.arbitrary
-  } yield IsMember(t, b1, b2)
+  } yield TreeLookup(t, b1, b2)
 
   val ifGen: Gen[If[SInt.type]] = for {
     c <- Gen.oneOf(TrueLeaf, FalseLeaf)

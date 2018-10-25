@@ -509,7 +509,7 @@ public class GF2_192 {
             // so that's what we compute.
             // Note that we have no precomputed table for k=7 (i.e., 2^128), because we don't expect
             // this to be needed -- only up to k=6 is used in inversion.
-            // Here's the proof: val m = 64. 2^{2^k} mod (2^{192}-1) = 2^{mn} mod (2^{3m}-1) for n = 2^{k-6}.
+            // Here's the proof: let m = 64. 2^{2^k} mod (2^{192}-1) = 2^{mn} mod (2^{3m}-1) for n = 2^{k-6}.
             // Let d = n div 3 and r = n mod 3.
             // Then 2^{mn} = (2^{3m}-1) (2^{m(n-3}}+2^{m(n-6)}+...+2^{m-nd})+2^{nr}
             // So the remainder is 2^{nr}. r is 2 when k is odd and 1 when k is even.

@@ -506,4 +506,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   property("PK") {
     parse("""PK("111")""") shouldBe Apply(Ident("PK"), IndexedSeq(StringConstant("111")))
   }
+
+  property("deserialize") {
+    parse("""deserialize[GroupElement]("12345")""") shouldBe
+      Apply(ApplyTypes(Ident("deserialize"), Seq(SGroupElement)), IndexedSeq(StringConstant("12345")))
+    parse("""deserialize[(GroupElement, Array[(Int, Byte)])]("12345")""") shouldBe
+      Apply(ApplyTypes(Ident("deserialize"), Seq(STuple(SGroupElement, SCollection(STuple(SInt, SByte))))), IndexedSeq(StringConstant("12345")))
+  }
 }

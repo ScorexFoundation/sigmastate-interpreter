@@ -156,4 +156,20 @@ class TransformersSerializationSpec extends SerializationSpecification {
       roundTripTest(ErgoAddressToSigmaProp(StringConstant(p2pk.toString)))
     }
   }
+
+  property("GetVar: Serializer round trip") {
+    forAll(getVarIntGen) { v => roundTripTest(v) }
+  }
+
+  property("OptionGet: Serializer round trip") {
+    forAll(optionGetGen) { v => roundTripTest(v) }
+  }
+
+  property("OptionGetOrElse: Serializer round trip") {
+    forAll(optionGetOrElseGen) { v => roundTripTest(v) }
+  }
+
+  property("OptionIsDefined: Serializer round trip") {
+    forAll(optionIsDefinedGen) { v => roundTripTest(v) }
+  }
 }

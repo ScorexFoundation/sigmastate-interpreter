@@ -19,3 +19,6 @@ class SerializerException(message: String, source: Option[SourceContext] = None)
 
 class BuilderException(message: String, source: Option[SourceContext] = None)
   extends SigmaException(message, source)
+
+class InterpreterException(message: String, source: Option[SourceContext] = None)
+  extends SigmaException(message, source)

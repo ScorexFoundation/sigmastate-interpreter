@@ -112,7 +112,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
-    def extract[T <: SType](Rn: RegisterId)(implicit tT: T) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
+    def extract[T <: SType](Rn: RegisterId)(implicit tT: T) =
+      ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)(tT).get
 
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
@@ -123,7 +124,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey),
       AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey))
 
-    val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
+    val oracleProp = AND(OptionIsDefined(TreeLookup(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte))),
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(oraclePubKey.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
@@ -210,8 +211,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       additionalRegisters = Map(reg1 -> LongConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1), LongConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1), LongConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
       EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),
