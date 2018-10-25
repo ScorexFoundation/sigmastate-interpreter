@@ -63,6 +63,7 @@ object CostTable {
     ("AND", "(Array[Boolean]) => Boolean", MinimalCost),
     ("OR_per_item", "(Array[Boolean]) => Boolean", 0.0001),
     ("AND_per_item", "(Array[Boolean]) => Boolean", MinimalCost),
+    ("AtLeast", "(Int, Array[Boolean]) => Boolean", MinimalCost),
     ("CalcBlake2b256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
     ("CalcSha256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
     ("GT_per_kb", "(T,T) => Boolean", MinimalCost),
@@ -130,6 +131,9 @@ object CostTable {
     ("max", "(Long, Long) => Long", MinimalCost),
     ("max", "(BigInt, BigInt) => BigInt", MinimalCost),
     ("max_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+
+    ("TreeModifications", "(AvlTree, Array[Byte], Array[Byte]) => Option[Array[Byte]]", MinimalCost),
+    ("TreeLookup", "(AvlTree, Array[Byte], Array[Byte]) => Option[Array[Byte]]", MinimalCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Double)]): CostTable = {

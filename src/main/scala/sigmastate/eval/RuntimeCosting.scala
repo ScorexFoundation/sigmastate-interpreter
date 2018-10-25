@@ -617,6 +617,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
           Thunk(RCostedNone(cost)),
           fun { x: Rep[Col[Byte]] => RCostedSome(RCostedPrim(x, cost, sizeOf(x))) })
 
+      case TreeModifications(In(_tree), InColByte(operations), InColByte(proof)) =>
+        val tree = asRep[CostedAvlTree](_tree)
+        val value = sigmaDslBuilder.treeModifications(tree.value, operations.value, proof.value)
+        val cost = tree.cost + operations.cost + proof.cost + costOf(node)
+        value.fold[CostedOption[Col[Byte]]](
+          Thunk(RCostedNone(cost)),
+          fun { x: Rep[Col[Byte]] => RCostedSome(RCostedPrim(x, cost, sizeOf(x))) })
+
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>
         val opt = asRep[CostedOption[Any]](_opt)
@@ -985,7 +993,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val res = downcast(inputC.value)(elem)
         withDefaultSize(res, inputC.cost + costOf(node))
 
-// TODO should be 
+      case LongToByteArray(In(input)) =>
+        val inputC = asRep[Costed[Long]](input)
+        val res = sigmaDslBuilder.longToByteArray(inputC.value)
+        val cost = inputC.cost + costOf(node)
+        withDefaultSize(res, cost)
+
+// TODO should be
 //      case ErgoAddressToSigmaProp(input) =>
 //        val inputC = evalNode(ctx, env, input)
 //        withDefaultSize(inputC.value, inputC.cost + costOf(node))

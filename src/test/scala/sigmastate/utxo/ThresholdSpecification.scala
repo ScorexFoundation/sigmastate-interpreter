@@ -43,7 +43,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
     // Basic compilation
     val compiledProp1 = compile(env, """atLeast(2, Array(pubkeyA, pubkeyB, pubkeyC))""")
-    val prop1 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
+    val prop1 = AtLeast(2, pubkeyA.isValid, pubkeyB.isValid, pubkeyC.isValid)
     compiledProp1 shouldBe prop1
 
     // this example is from the white paper
@@ -54,7 +54,11 @@ class ThresholdSpecification extends SigmaTestingCommons {
         |}""".stripMargin).asBoolValue
 
 
-    val prop2 = AtLeast(SizeOf(ConcreteCollection(Vector(pubkeyA, pubkeyB, pubkeyC))), pubkeyA, pubkeyB, pubkeyC)
+    val prop2 = AtLeast(
+      SizeOf(
+        ConcreteCollection(Vector(pubkeyA.isValid, pubkeyB.isValid, pubkeyC.isValid))
+      ),
+      pubkeyA.isValid, pubkeyB.isValid, pubkeyC.isValid)
     compiledProp2 shouldBe prop2
 
     val proof = proverABC.prove(compiledProp2, ctx, fakeMessage).get
@@ -65,7 +69,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       prover.prove(compiledProp2, ctx, fakeMessage).isFailure shouldBe true
     }
 
-    val prop2And = AND(pubkeyA, pubkeyB, pubkeyC)
+    val prop2And = AND(pubkeyA.isValid, pubkeyB.isValid, pubkeyC.isValid)
     proverA.reduceToCrypto(ctx, compiledProp2).get._1 shouldBe proverA.reduceToCrypto(ctx, prop2And).get._1
 
     // this example is from the white paper
@@ -74,7 +78,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
         |    val array = Array(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(1, array)
         |}""".stripMargin).asBoolValue
-    val prop3 = AtLeast(1, pubkeyA, pubkeyB, pubkeyC)
+    val prop3 = AtLeast(1, pubkeyA.isValid, pubkeyB.isValid, pubkeyC.isValid)
     compiledProp3 shouldBe prop3
 
     val workingProvers3 = Seq(proverA, proverB, proverC, proverAB, proverBC, proverAC, proverABC)
@@ -84,7 +88,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     }
     proverD.prove(compiledProp3, ctx, fakeMessage).isFailure shouldBe true
 
-    val prop3Or = OR(pubkeyA, pubkeyB, pubkeyC)
+    val prop3Or = OR(pubkeyA.isValid, pubkeyB.isValid, pubkeyC.isValid)
     proverA.reduceToCrypto(ctx, compiledProp3).get._1 shouldBe proverA.reduceToCrypto(ctx, prop3Or).get._1
 
     val compiledProp4 = compile(env,
@@ -92,7 +96,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
         |    val array = Array(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(2, array)
         |}""".stripMargin).asBoolValue
-    val prop4 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
+    val prop4 = AtLeast(2, pubkeyA.isValid, pubkeyB.isValid, pubkeyC.isValid)
     compiledProp4 shouldBe prop4
 
     val workingProvers4 = Seq(proverAB, proverBC, proverAC, proverABC)
