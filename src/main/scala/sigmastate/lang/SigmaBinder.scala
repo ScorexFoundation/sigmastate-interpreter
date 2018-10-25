@@ -44,6 +44,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         case Some(v) => Some(Ident(n, v.tpe))
         case None => n match {
           case "HEIGHT" => Some(Height)
+          case "MinerPubkey" => Some(MinerPubkey)
           case "INPUTS" => Some(Inputs)
           case "OUTPUTS" => Some(Outputs)
           case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)

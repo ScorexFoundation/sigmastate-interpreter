@@ -84,20 +84,25 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       "epochLength" -> s.epochLength,
       "fixedRate" -> s.fixedRate,
       "oneEpochReduction" -> s.oneEpochReduction)
-    val prop1 = compile(env,
+ /*
+   val prop1 = compile(env,
       """{
         |    val epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
         |    val out = OUTPUTS(0)
+        |    val minerOut = OUTPUTS(1)
         |    val coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
         |    val correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
         |    val sameScriptRule = SELF.propositionBytes == out.propositionBytes
         |    val heightIncreased = HEIGHT > SELF.R4[Long].get
         |    val heightCorrect = out.R4[Long].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
-        |    allOf(Array(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule)) || (heightIncreased && lastCoins)
+        |    val outputsNum = OUTPUTS.size
+        |    val correctMinerProposition = minerOut.propositionBytes == Array[Byte](-51, 7) ++ MinerPubkey
+        |    allOf(Array(heightIncreased, correctMinerProposition, allOf(Array(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect)) || lastCoins))
         |}""".stripMargin).asBoolValue
 
-    // todo    prop1 shouldEqual prop
+    prop1 shouldEqual prop
+    */
 
     val minerProp = prover.dlogSecrets.head.publicImage
     val minerPubkey = minerProp.pkBytes
