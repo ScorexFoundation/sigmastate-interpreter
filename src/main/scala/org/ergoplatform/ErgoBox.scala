@@ -16,27 +16,30 @@ import sigmastate.utxo.CostTable.Cost
 import scala.runtime.ScalaRunTime
 
 /**
-  * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In bitcoin, such an object
+  * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In Bitcoin, such an object
   * is associated with some monetary value (arbitrary, but with predefined precision, so we use integer arithmetic to
-  * work with the value), guarding script (aka proposition) to protect the box from unauthorized opening.
+  * work with the value), and also a guarding script (aka proposition) to protect the box from unauthorized opening.
   *
   * In other way, a box is a state element locked by some proposition.
   *
-  * We add two additional fields to the box. In the first place, for carrying data along we use registers.
-  * Corresponding field is called "additional registers", as we consider that amount and proposition are also stored
-  * in the registers R1 and R2. In the second place, we have a "nonce" field to guarantee unique id. For a real
-  * implementation, nonce should be an output of cryptographic hash function, which inputs prevents identifier collision
-  * to happen, even for otherwise identical boxes. For example, a transaction could set
-  * nonce = hash(n + box_index + box_input_id_1 + ... + box_input_id_n), where n is number of transaction inputs.
+  * In Ergo, box is just a collection of registers, some with mandatory types and semantics, others could be used by
+  * applications in any way.
+  * We add additional fields in addition to amount and proposition~(which stored in the registers R0 and R1). Namely,
+  * register R2 contains additional tokens (a sequence of pairs (token identifier, value)). Register R3 contains height
+  * when block got included into the blockchain and also transaction identifier and box index in the transaction outputs.
+  * Registers R4-R9 are free for abritrary usage. 
   *
-  * A transaction is unsealing a box. As a box can not be open twice, any further valid transaction can not link to the
-  * same box.
+  *
+  * A transaction is unsealing a box. As a box can not be open twice, any further valid transaction can not be linked
+  * to the same box.
   *
   * @param value         - amount of money associated with the box
   * @param proposition   guarding script, which should be evaluated to true in order to open this box
+  * @param additionalTokens - secondary tokens the box contains
+  * @param additionalRegisters - additional registers the box can carry over
   * @param transactionId - id of transaction which created the box
   * @param index         - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
-  * @param additionalRegisters
+  * @param creationHeight - height when a transaction containing the box was included into the blockchain
   */
 class ErgoBox private(
                        override val value: Long,
