@@ -7,8 +7,7 @@ import scala.language.implicitConversions
 import scala.language.existentials
 import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
-
-import scalan.{Lazy, SigmaLibrary, Nullable}
+import scalan.{Lazy, Nullable, SigmaLibrary}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import scapi.sigma.ProveDiffieHellmanTuple
@@ -32,7 +31,7 @@ import SType._
 import scorex.crypto.hash.Blake2b256.DigestSize
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{Terms, SigmaCompiler}
+import sigmastate.lang.{SigmaCompiler, Terms}
 import scalan.staged.Slicing
 
 trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Evaluation =>
@@ -1303,6 +1302,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //      case ErgoAddressToSigmaProp(input) =>
 //        val inputC = evalNode(ctx, env, input)
 //        withDefaultSize(inputC.value, inputC.cost + costOf(node))
+
+      case ConstantPlaceholder(_, tpe) =>
+        // todo make a proper Rep type
+        val res = toRep(null)(NothingElement.asElem[Null])
+        withDefaultSize(res, costOf(node))
 
       case _ =>
         error(s"Don't know how to evalNode($node)")

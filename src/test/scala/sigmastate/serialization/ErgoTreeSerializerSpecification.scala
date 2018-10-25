@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{ConstantPlaceholder, IntConstant}
+import sigmastate.Values.{Constant, ConstantPlaceholder, IntConstant}
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 
@@ -13,6 +13,13 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val extractedConstants = Seq(IntConstant(10), IntConstant(20))
     val scriptWithPlaceholders = Plus(ConstantPlaceholder(0, SInt), ConstantPlaceholder(1, SInt))
     ErgoTreeSerializer(IR).extractConstants(script) shouldEqual (extractedConstants, scriptWithPlaceholders)
+  }
+
+  property("inject constants") {
+    val script = Plus(10, 20)
+    val extractedConstants = Seq(IntConstant(10), IntConstant(20)).asInstanceOf[Seq[Constant[SType]]]
+    val scriptWithPlaceholders = Plus(ConstantPlaceholder(0, SInt), ConstantPlaceholder(1, SInt))
+    ErgoTreeSerializer(IR).injectConstants(extractedConstants, scriptWithPlaceholders) shouldEqual script
   }
 
   property("deserializeRaw") {
