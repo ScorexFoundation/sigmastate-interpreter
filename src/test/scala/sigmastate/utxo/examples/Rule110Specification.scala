@@ -12,7 +12,6 @@ import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
-import sigmastate.utils.Extensions._
 
 /**
   * Wolfram's Rule110 implementations
@@ -62,6 +61,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(output),
       tx,
       self = input)
@@ -223,6 +223,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val nCtx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(nIn0, nIn1, nIn2),
       nTx,
       self = nIn0)
@@ -244,6 +245,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val rCtx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(rIn0, rIn1),
       rTx,
       self = rIn0)
@@ -265,6 +267,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val lnCtx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(lnIn0, lnIn1),
       lnTx,
       self = lnIn0)
@@ -285,6 +288,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val lCtx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(lIn0),
       lTx,
       self = lIn0)
@@ -438,6 +442,7 @@ class Rule110Specification extends SigmaTestingCommons {
 
         val contextLeft = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
+          ErgoLikeContext.dummyPubkey,
           IndexedSeq(left, center, right),
           ut,
           left,
@@ -447,6 +452,7 @@ class Rule110Specification extends SigmaTestingCommons {
 
         val contextCenter = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
+          ErgoLikeContext.dummyPubkey,
           IndexedSeq(left, center, right),
           ut,
           center,
@@ -456,6 +462,7 @@ class Rule110Specification extends SigmaTestingCommons {
 
         val contextRight = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
+          ErgoLikeContext.dummyPubkey,
           IndexedSeq(left, center, right),
           ut,
           right,

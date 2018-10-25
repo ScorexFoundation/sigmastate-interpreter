@@ -2,9 +2,9 @@ package sigmastate.utxo.benchmarks
 
 
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
-import sigmastate.Values._
 
 
 class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons {
@@ -19,6 +19,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
     val ctx = ErgoLikeContext(
       currentHeight = contract.timeout - 1, // HEIGHT < timeout,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx,
       self = outputToSpend)
@@ -41,7 +42,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
 
       val (ok, time) = measureTime {
         var res = true
-        for ( i <- 1 to nIters ) {
+        for (i <- 1 to nIters) {
           val proof = contract.prove(ctx, fakeMessage)
           res = contract.verify(proof, ctx, fakeMessage).get._1
           res shouldBe true
@@ -64,7 +65,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
 
       val (ok, time) = measureTime {
         var res = true
-        for ( i <- 1 to nIters ) {
+        for (i <- 1 to nIters) {
           val proof = contract.prove(ctx, fakeMessage)
           res = contract.verify(proof, ctx, fakeMessage).get._1
           res shouldBe true

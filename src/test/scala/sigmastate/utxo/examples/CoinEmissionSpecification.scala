@@ -131,6 +131,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
       val context = ErgoLikeContext(height,
         state.state.lastBlockUtxoRoot,
+        ErgoLikeContext.dummyPubkey,
         IndexedSeq(emissionBox),
         ut,
         emissionBox,

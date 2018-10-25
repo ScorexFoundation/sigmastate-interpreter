@@ -4,8 +4,8 @@ import org.ergoplatform._
 import sigmastate.Values.{ByteArrayConstant, LongConstant, TaggedBox}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo._
 import sigmastate.lang.Terms._
+import sigmastate.utxo._
 
 class CrowdfundingExampleSpecification extends SigmaTestingCommons {
 
@@ -109,6 +109,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
       self = outputToSpend)
@@ -130,6 +131,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx2,
       self = outputToSpend)
@@ -152,6 +154,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val ctx3 = ErgoLikeContext(
       currentHeight = timeout.value,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx3,
       self = outputToSpend)

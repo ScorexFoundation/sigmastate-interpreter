@@ -41,6 +41,7 @@ class BlockchainSimulationSpecification extends PropSpec
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContext(height + 1,
         state.state.lastBlockUtxoRoot,
+        ErgoLikeContext.dummyPubkey,
         IndexedSeq(box),
         tx,
         box,
@@ -188,7 +189,9 @@ object BlockchainSimulationSpecification {
       val height = state.currentHeight + 1
 
       val blockCost = block.txs.foldLeft(0L) {case (accCost, tx) =>
-        ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader,
+        ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height),
+          ErgoLikeContext.dummyPubkey,
+          boxesReader,
           Metadata(TestnetNetworkPrefix)) match {
           case Left(throwable) => throw throwable
           case Right(cost) => accCost + cost

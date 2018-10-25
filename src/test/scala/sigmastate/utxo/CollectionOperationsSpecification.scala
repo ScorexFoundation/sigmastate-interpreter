@@ -1,11 +1,11 @@
 package sigmastate.utxo
 
 import org.ergoplatform
+import org.ergoplatform._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import org.ergoplatform._
 import sigmastate.serialization.OpCodes._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
@@ -17,6 +17,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     ergoplatform.ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = boxesToSpend,
       spendingTransaction = ErgoLikeTransaction(IndexedSeq(), outputs),
       self = fakeSelf)
@@ -70,6 +71,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = fakeSelf)
@@ -98,6 +100,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = fakeSelf)
@@ -126,6 +129,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = fakeSelf)
@@ -159,6 +163,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = s)
@@ -194,6 +199,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = s)
@@ -224,6 +230,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
@@ -289,7 +296,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |.getOrElse(3, 0L)== 0""".stripMargin
     val expectedPropTree = EQ(
       ByIndex(
-        MapCollection(Outputs,21,ExtractAmount(TaggedBox(21))),
+        MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21))),
         IntConstant(3),
         Some(LongConstant(0))),
       LongConstant(0))

@@ -165,6 +165,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctx = new ErgoLikeContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = inputs,
       spendingTransaction = tx,
       self = ErgoBox(11, prop),

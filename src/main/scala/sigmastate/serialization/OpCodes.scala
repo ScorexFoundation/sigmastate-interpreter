@@ -91,7 +91,8 @@ object OpCodes extends ValueCodes {
   val InputsCode               : OpCode = (LastConstantCode + 52).toByte
   val OutputsCode              : OpCode = (LastConstantCode + 53).toByte
   val LastBlockUtxoRootHashCode: OpCode = (LastConstantCode + 54).toByte
-  val SelfCode                 : OpCode = (LastConstantCode + 55).toByte // reserved 56 - 60
+  val SelfCode                 : OpCode = (LastConstantCode + 55).toByte
+  val MinerPubkeyCode          : OpCode = (LastConstantCode + 56).toByte // reserved 57 - 60
 
   // Collection and tree operations codes
   val MapCollectionCode    : OpCode = (LastConstantCode + 61).toByte
