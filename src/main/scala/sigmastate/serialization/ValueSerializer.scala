@@ -60,6 +60,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SigmaPropBytesSerializer,
     ConcreteCollectionBooleanConstantSerializer(mkConcreteCollection),
     CaseObjectSerialization(HeightCode, Height),
+    CaseObjectSerialization(MinerPubkeyCode, MinerPubkey),
     CaseObjectSerialization(InputsCode, Inputs),
     CaseObjectSerialization(OutputsCode, Outputs),
     CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),

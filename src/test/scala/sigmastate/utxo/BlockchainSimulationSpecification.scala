@@ -5,6 +5,7 @@ import java.io.{File, FileWriter}
 import org.ergoplatform
 import org.ergoplatform.ErgoLikeContext.Metadata
 import org.ergoplatform.ErgoLikeContext.Metadata._
+import org.ergoplatform._
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
@@ -15,7 +16,6 @@ import scorex.util._
 import sigmastate.Values.LongConstant
 import sigmastate.helpers.ErgoLikeProvingInterpreter
 import sigmastate.interpreter.ContextExtension
-import org.ergoplatform._
 import sigmastate.{AvlTreeData, GE}
 
 import scala.annotation.tailrec
@@ -52,7 +52,7 @@ class BlockchainSimulationSpecification extends PropSpec
       tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq.ensuring(_.nonEmpty, s"Failed to create txs from boxes $boxesToSpend at height $height")
 
-    Block(txs)
+    Block(txs, minerPubKey.pkBytes)
   }
 
   property("apply one valid block") {
@@ -146,14 +146,17 @@ object BlockchainSimulationSpecification {
 
   val MaxBlockCost = 700000
 
-  case class Block(txs: IndexedSeq[ErgoLikeTransaction])
+  case class Block(txs: IndexedSeq[ErgoLikeTransaction], minerPubkey: Array[Byte])
 
   class InMemoryErgoBoxReader(prover: ValidationState.BatchProver) extends ErgoBoxReader {
     private type KeyType = mutable.WrappedArray.ofByte
+
     private def getKey(id: Array[Byte]): KeyType = new mutable.WrappedArray.ofByte(id)
+
     private val boxes = mutable.Map[KeyType, ErgoBox]()
 
     override def byId(boxId: ADKey): Try[ErgoBox] = byId(getKey(boxId))
+
     def byId(boxId: KeyType): Try[ErgoBox] = Try(boxes(boxId))
 
     def byHeightRegValue(i: Int): Iterable[ErgoBox] =
@@ -188,9 +191,9 @@ object BlockchainSimulationSpecification {
     def applyBlock(block: Block, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
 
-      val blockCost = block.txs.foldLeft(0L) {case (accCost, tx) =>
+      val blockCost = block.txs.foldLeft(0L) { case (accCost, tx) =>
         ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height),
-          ErgoLikeContext.dummyPubkey,
+          block.minerPubkey,
           boxesReader,
           Metadata(TestnetNetworkPrefix)) match {
           case Left(throwable) => throw throwable
@@ -209,13 +212,14 @@ object BlockchainSimulationSpecification {
   object ValidationState {
     type BatchProver = BatchAVLProver[Digest32, Blake2b256.type]
 
-    val initBlock = Block {
+    val initBlock = Block(
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
         val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Seq(), Map(heightReg -> LongConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
-      }
-    }
+      },
+      ErgoLikeContext.dummyPubkey
+    )
 
     def initialState(block: Block = initBlock): ValidationState = {
       val keySize = 32
@@ -231,4 +235,5 @@ object BlockchainSimulationSpecification {
       ValidationState(bs, boxReader).applyBlock(block).get
     }
   }
+
 }

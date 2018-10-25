@@ -33,7 +33,7 @@ class ErgoLikeContext(val currentHeight: Height,
 object ErgoLikeContext {
   type Height = Long
 
-  val dummyPubkey: Array[Byte] = Array.fill(33)(0: Byte)
+  val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
 
   case class Metadata(networkPrefix: NetworkPrefix)
 

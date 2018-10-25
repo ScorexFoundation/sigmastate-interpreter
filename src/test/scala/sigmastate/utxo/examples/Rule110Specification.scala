@@ -406,9 +406,10 @@ class Rule110Specification extends SigmaTestingCommons {
       ErgoBox(0L, prop, Seq(), Map(row, column, value), txId.toModifierId, col.toShort)
     }
 
-    val initBlock = BlockchainSimulationSpecification.Block {
-      IndexedSeq(ErgoLikeTransaction(IndexedSeq(), coins))
-    }
+    val initBlock = BlockchainSimulationSpecification.Block(
+      IndexedSeq(ErgoLikeTransaction(IndexedSeq(), coins)),
+      ErgoLikeContext.dummyPubkey
+    )
 
     val genesisState = ValidationState.initialState(initBlock)
 
@@ -473,7 +474,7 @@ class Rule110Specification extends SigmaTestingCommons {
       }
     }
 
-    val firstRowBlock = Block(generateTransactionsForRow(genesisState, 1))
+    val firstRowBlock = Block(generateTransactionsForRow(genesisState, 1), ErgoLikeContext.dummyPubkey)
 
     val t0 = System.currentTimeMillis()
     val firstRowState = genesisState.applyBlock(firstRowBlock, 10000000).get
