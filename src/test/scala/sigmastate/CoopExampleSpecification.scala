@@ -294,9 +294,9 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     val thresholdProp = compile(thresholdEnv,
       s""" {
          | val votingSuccess = atLeast(3, Array(pubkeyA, pubkeyB, pubkeyC, pubkeyD))
-         | val properSpending = OUTPUTS(0).value == ${toolValue}L &&
+         | val properSpending = OUTPUTS(0).value >= ${toolValue}L &&
          |                      blake2b256(OUTPUTS(0).propositionBytes) == spendingContract1Hash &&
-         |                      OUTPUTS(1).value == ${constructionValue}L &&
+         |                      OUTPUTS(1).value >= ${constructionValue}L &&
          |                      blake2b256(OUTPUTS(1).propositionBytes) == spendingContract2Hash &&
          |                      OUTPUTS(2).value == ${totalValue - toolValue - constructionValue}L &&
          |                      blake2b256(OUTPUTS(2).propositionBytes) == spendingContract3Hash
