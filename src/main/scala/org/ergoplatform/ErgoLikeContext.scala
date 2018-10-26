@@ -1,8 +1,7 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.ReferenceRegId
-import org.ergoplatform.ErgoLikeContext.Metadata._
-import org.ergoplatform.ErgoLikeContext.{Height, Metadata}
+import org.ergoplatform.ErgoLikeContext.Height
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingBox}
