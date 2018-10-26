@@ -103,7 +103,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyB" -> pubkeyB,
       "pubkeyC" -> pubkeyC,
       "pubkeyD" -> pubkeyD,
-      "business" -> businessKey,
+      "businessKey" -> businessKey,
       "pubkeyTool1" -> (toolRing(0) : ProveDlog),
       "pubkeyTool2" -> (toolRing(1) : ProveDlog),
       "pubkeyTool3" -> (toolRing(2) : ProveDlog),
@@ -116,7 +116,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
      val spendingProp1 = compile(spendingEnv,
       s"""
          |{
-         | val spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && business
+         | val spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && businessKey
          |
          | ${withdraw(5000, toolValue)}
          |
@@ -140,7 +140,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyB" -> pubkeyB,
       "pubkeyC" -> pubkeyC,
       "pubkeyD" -> pubkeyD,
-      "business" -> businessKey,
+      "businessKey" -> businessKey,
       "pubkeyTool1" -> SBoolean.mkConstant(false),
       "pubkeyTool2" -> SBoolean.mkConstant(false),
       "pubkeyTool3" -> SBoolean.mkConstant(false),
@@ -153,7 +153,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     val spendingProp2 = compile(spendingEnv2,
       s"""
          |{
-         | val spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && business
+         | val spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && businessKey
          |
          | ${withdraw(5000, toolValue)}
          |
@@ -206,7 +206,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       s"""
          | {
          |
-         |  val spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && business
+         |  val spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && businessKey
          |
          |  ${withdraw(5000, constructionValue)}
          |
@@ -233,7 +233,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyB" -> pubkeyB,
       "pubkeyC" -> pubkeyC,
       "pubkeyD" -> pubkeyD,
-      "business" -> businessKey,
+      "businessKey" -> businessKey,
       "pubkeyTool1" -> SBoolean.mkConstant(false),
       "pubkeyTool2" -> SBoolean.mkConstant(false),
       "pubkeyTool3" -> SBoolean.mkConstant(false),
@@ -247,7 +247,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       s"""
          | {
          |
-         |  val spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && business
+         |  val spendingSuccess = (pubkeyConstr1 || pubkeyConstr2 || pubkeyConstr3) && businessKey
          |
          |  ${withdraw(5000, constructionValue)}
          |
@@ -266,7 +266,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       successProofTest(spendingProp4, ctx, coopA, verifier)
     }
 
-    val spendingProp5 = compile(spendingEnv, "business").asBoolValue
+    val spendingProp5 = compile(spendingEnv, "businessKey").asBoolValue
 
     {
       val self = ErgoBox(totalValue, spendingProp5)
