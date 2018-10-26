@@ -7,6 +7,7 @@ import scorex.util.ScorexLogging
 import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
+import sigmastate.serialization.OpCodes
 import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
@@ -71,7 +72,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(rewardOut)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
     val outputsNum = EQ(SizeOf(Outputs), 2)
-    val correctMinerProposition = EQ(ExtractScriptBytes(minerOut), Append(ByteArrayConstant(Array(-51: Byte, 7: Byte)), MinerPubkey))
+    val correctMinerProposition = EQ(ExtractScriptBytes(minerOut),
+      Append(ByteArrayConstant(Array(OpCodes.ProveDlogCode, SGroupElement.typeCode)), MinerPubkey))
 
     val prop = AND(
       heightIncreased,
