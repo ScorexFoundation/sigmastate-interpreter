@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import com.google.common.primitives.Shorts
 import org.ergoplatform._
 import sigmastate.SCollection.{SBooleanArray, SByteArray}
 import sigmastate.Values._
@@ -9,7 +10,7 @@ import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
-import org.ergoplatform.ErgoBox.RegisterId
+import org.ergoplatform.ErgoBox.{R3, RegisterId}
 import sigmastate.lang.exceptions.{InvalidType, OptionUnwrapNone}
 
 
@@ -418,6 +419,17 @@ object ExtractRegisterAs {
   def apply[V <: SType](input: Value[SBox.type],
                         registerId: RegisterId)(implicit tpe: V): ExtractRegisterAs[V] =
     ExtractRegisterAs(input, registerId, SOption(tpe))
+}
+
+case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] with NotReadyValue[STuple] {
+
+  override def tpe: STuple = STuple(SLong, SByteArray)
+  override val opCode: OpCode = OpCodes.ExtractCreationInfo
+
+  override def cost[C <: Context](context: C) = 10
+
+  override def function(intr: Interpreter, ctx: Context, box: EvaluatedValue[SBox.type]): Value[STuple] =
+      box.value.get(ErgoBox.ReferenceRegId).get.asValue[STuple]
 }
 
 trait Deserialize[V <: SType] extends NotReadyValue[V]

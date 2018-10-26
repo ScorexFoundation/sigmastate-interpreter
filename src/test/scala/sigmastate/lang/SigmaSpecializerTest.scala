@@ -207,4 +207,10 @@ class SigmaSpecializerTest extends PropSpec
     spec("SELF.R4[Int].getOrElse(0)") shouldBe ExtractRegisterAs[SInt.type](Self, R4).getOrElse(IntConstant(0))
     spec("getVar[Int](1).getOrElse(0)") shouldBe GetVarInt(1).getOrElse(IntConstant(0))
   }
+
+  property("ExtractCreationInfo") {
+    spec("SELF.creationInfo") shouldBe ExtractCreationInfo(Self)
+    spec("SELF.creationInfo._1") shouldBe SelectField(ExtractCreationInfo(Self), 1)
+    spec("SELF.creationInfo._2") shouldBe SelectField(ExtractCreationInfo(Self), 2)
+  }
 }
