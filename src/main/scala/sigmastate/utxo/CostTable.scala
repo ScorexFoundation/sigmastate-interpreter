@@ -34,6 +34,15 @@ object CostTable {
     ("Const", "() => Array[IV]", MinimalCost),
     ("ConcreteCollection", "() => Array[IV]", MinimalCost),
     ("If", "(Boolean, Boolean, Boolean) => Boolean", MinimalCost),
+    ("If", "(Boolean, Unit, Unit) => Unit", MinimalCost),
+    ("If", "(Boolean, Byte, Byte) => Byte", MinimalCost),
+    ("If", "(Boolean, Short, Short) => Short", MinimalCost),
+    ("If", "(Boolean, Int, Int) => Int", MinimalCost),
+    ("If", "(Boolean, Long, Long) => Long", MinimalCost),
+    ("If", "(Boolean, BigInt, BigInt) => BigInt", MinimalCost),
+    ("If", "(Boolean, GroupElement, GroupElement) => GroupElement", MinimalCost),
+    ("If", "(Boolean, SigmaProp, SigmaProp) => SigmaProp", MinimalCost),
+    ("If", "(Boolean, Array[IV], Array[IV]) => Array[IV]", MinimalCost),
     ("Self$", "Context => Box", MinimalCost),
     ("AccessBox", "Context => Box", MinimalCost),
     ("GetVar", "(Context, Byte) => Option[T]", MinimalCost),
@@ -54,6 +63,7 @@ object CostTable {
     ("AND", "(Array[Boolean]) => Boolean", MinimalCost),
     ("OR_per_item", "(Array[Boolean]) => Boolean", 0.0001),
     ("AND_per_item", "(Array[Boolean]) => Boolean", MinimalCost),
+    ("AtLeast", "(Int, Array[Boolean]) => Boolean", MinimalCost),
     ("CalcBlake2b256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
     ("CalcSha256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
     ("GT_per_kb", "(T,T) => Boolean", MinimalCost),
@@ -121,6 +131,9 @@ object CostTable {
     ("max", "(Long, Long) => Long", MinimalCost),
     ("max", "(BigInt, BigInt) => BigInt", MinimalCost),
     ("max_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+
+    ("TreeModifications", "(AvlTree, Array[Byte], Array[Byte]) => Option[Array[Byte]]", MinimalCost),
+    ("TreeLookup", "(AvlTree, Array[Byte], Array[Byte]) => Option[Array[Byte]]", MinimalCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Double)]): CostTable = {
