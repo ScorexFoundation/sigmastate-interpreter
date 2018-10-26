@@ -38,7 +38,7 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
   def dataCost[T](x: Rep[T], optCost: Option[Rep[Int]]): Rep[Costed[T]] = {
     val res: Rep[Any] = x.elem match {
       case box: BoxElem[_] =>
-        RCostedBox(asRep[Box](x))
+        RCostedBox(asRep[Box](x), optCost.getOrElse(0))
       case pe: PairElem[a,b] =>
         val l = dataCost(asRep[(a,b)](x)._1, None)
         val r = dataCost(asRep[(a,b)](x)._2, optCost)

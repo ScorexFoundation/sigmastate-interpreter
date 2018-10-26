@@ -333,7 +333,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         RCostedPrim(opt.isDefined, costedBuilder.SelectFieldCost, 1L)
 
       case CostedPrimCtor(v, c, s) if !v.isVar && v.elem.isInstanceOf[BoxElem[_]] =>
-        RCostedBox(asRep[Box](v))
+        RCostedBox(asRep[Box](v), c)
 
       case _ => super.rewriteDef(d)
     }
@@ -854,8 +854,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         default match {
           case Some(defaultValue) =>
             val defaultC = evalNode(ctx, env, defaultValue).asRep[Costed[Any]]
-            CostedPrimRep(xsC.value.getOrElse(iV, Thunk(defaultC.value)),
-              xsC.cost + iC.cost + defaultC.cost + costOf(node), size)
+            val defaultTh = Thunk(defaultC.value)
+            val value = xsC.value.getOrElse(iV, defaultTh)
+            val cost = xsC.cost + iC.cost + defaultC.cost + costOf(node)
+            CostedPrimRep(value, cost, size)
           case None =>
             CostedPrimRep(xsC.value(iV), xsC.cost + iC.cost + costOf(node), size)
         }

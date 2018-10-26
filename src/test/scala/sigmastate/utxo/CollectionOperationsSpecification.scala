@@ -6,6 +6,7 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.ergoplatform._
+import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptNameProp}
 import sigmastate.serialization.OpCodes._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
@@ -27,8 +28,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
                           boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
     val (prover, verifier, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues,
       boxesToSpendValues)
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   private def assertProverFail(code: String,
