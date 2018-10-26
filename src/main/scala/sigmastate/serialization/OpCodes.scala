@@ -115,7 +115,7 @@ object OpCodes extends ValueCodes {
   val ExtractBytesWithNoRefCode: OpCode = (LastConstantCode + 84).toByte
   val ExtractIdCode            : OpCode = (LastConstantCode + 85).toByte
   val ExtractRegisterAs        : OpCode = (LastConstantCode + 86).toByte
-  val ExtractCreationInfo      : OpCode = (LastConstantCode + 87).toByte // reserved 88 - 90
+  val ExtractCreationInfoCode  : OpCode = (LastConstantCode + 87).toByte // reserved 88 - 90
 
   // Cryptographic operations codes
   val CalcBlake2b256Code         : OpCode = (LastConstantCode + 91).toByte

@@ -424,7 +424,7 @@ object ExtractRegisterAs {
 case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] with NotReadyValue[STuple] {
 
   override def tpe: STuple = STuple(SLong, SByteArray)
-  override val opCode: OpCode = OpCodes.ExtractCreationInfo
+  override val opCode: OpCode = OpCodes.ExtractCreationInfoCode
 
   override def cost[C <: Context](context: C) = 10
 
