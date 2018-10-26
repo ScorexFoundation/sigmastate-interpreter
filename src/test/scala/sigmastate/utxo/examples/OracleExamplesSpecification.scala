@@ -11,7 +11,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utxo._
 
@@ -67,11 +67,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("oracle example") {
-    val oracle = new ErgoLikeProvingInterpreter
-    val aliceTemplate = new ErgoLikeProvingInterpreter
-    val bob = new ErgoLikeProvingInterpreter
+    val oracle = new ErgoLikeTestProvingInterpreter
+    val aliceTemplate = new ErgoLikeTestProvingInterpreter
+    val bob = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
@@ -192,11 +192,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("lightweight oracle example") {
-    val oracle = new ErgoLikeProvingInterpreter
-    val alice = new ErgoLikeProvingInterpreter
-    val bob = new ErgoLikeProvingInterpreter
+    val oracle = new ErgoLikeTestProvingInterpreter
+    val alice = new ErgoLikeTestProvingInterpreter
+    val bob = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage

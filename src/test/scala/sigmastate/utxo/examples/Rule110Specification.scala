@@ -7,7 +7,7 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, TaggedByteArray, TrueLeaf, Value}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
@@ -35,10 +35,10 @@ class Rule110Specification extends SigmaTestingCommons {
     * - first output contains the same protecting script, allowing to calculate further layers
     */
   property("rule110 - one layer in register") {
-    val prover = new ErgoLikeProvingInterpreter {
+    val prover = new ErgoLikeTestProvingInterpreter {
       override val maxCost: Long = 2000000
     }
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val prop = compile(Map(),
       """{
@@ -128,7 +128,7 @@ class Rule110Specification extends SigmaTestingCommons {
       AND(inValCorrect, inYCorrect, inXCorrect, inMidCorrect, outPosCorrect, sizesCorrect)
     }
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val MidReg = reg1
     val XReg = reg2
@@ -217,7 +217,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val nOut2 = ErgoBox(1, prop, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
 
     val nTx = UnsignedErgoLikeTransaction(IndexedSeq(nIn0, nIn1, nIn2).map(i => new UnsignedInput(i.id)), IndexedSeq(nOut0, nOut1, nOut2))
-    val nProver = new ErgoLikeProvingInterpreter()
+    val nProver = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(normalCaseBytes))
 
     val nCtx = ErgoLikeContext(
@@ -239,7 +239,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val rOut2 = ErgoBox(1, prop, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
 
     val rTx = UnsignedErgoLikeTransaction(IndexedSeq(rIn0, rIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(rOut0, rOut1, rOut2))
-    val rProver = new ErgoLikeProvingInterpreter()
+    val rProver = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(rightmostBytes))
 
     val rCtx = ErgoLikeContext(
@@ -261,7 +261,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val lnOut2 = ErgoBox(1, prop, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lnTx = UnsignedErgoLikeTransaction(IndexedSeq(lnIn0, lnIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(lnOut0, lnOut1, lnOut2))
-    val lnProver = new ErgoLikeProvingInterpreter()
+    val lnProver = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(nLeftmostBytes))
 
     val lnCtx = ErgoLikeContext(
@@ -282,7 +282,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val lOut2 = ErgoBox(1, prop, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lTx = UnsignedErgoLikeTransaction(IndexedSeq(lIn0).map(i => new UnsignedInput(i.id)), IndexedSeq(lOut0, lOut1, lOut2))
-    val lProver = new ErgoLikeProvingInterpreter()
+    val lProver = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(leftmostBytes))
 
     val lCtx = ErgoLikeContext(
@@ -309,7 +309,7 @@ class Rule110Specification extends SigmaTestingCommons {
     * new layer of rule 110
     */
   property("rule110 - one bit per output (old version)") {
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
 
     val RowReg = reg1
     val ColumnReg = reg2

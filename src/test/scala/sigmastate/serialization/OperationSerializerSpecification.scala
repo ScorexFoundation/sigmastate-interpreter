@@ -38,7 +38,7 @@ class OperationSerializerSpecification extends SerializationSpecification {
   }
 
   lazy val operationGen: Gen[Operation] = for {
-    tp <- Gen.choose(0, 6)
+    tp <- Gen.choose(1, 6)
     key <- Gen.listOfN(keyLength, Arbitrary.arbitrary[Byte]).map(_.toArray).map(k => ADKey @@ k)
     value <- Arbitrary.arbitrary[Array[Byte]].map(k => ADValue @@ k)
   } yield {
@@ -49,7 +49,7 @@ class OperationSerializerSpecification extends SerializationSpecification {
       case 4 => Insert(key, value)
       case 5 => Update(key, value)
       case 6 => InsertOrUpdate(key, value)
-      case _ => UnknownModification
+      case _ => ???
     }
   }
 }

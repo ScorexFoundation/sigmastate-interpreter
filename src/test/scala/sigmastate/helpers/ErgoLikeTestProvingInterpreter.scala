@@ -1,16 +1,15 @@
 package sigmastate.helpers
 
-import org.ergoplatform.ErgoLikeInterpreter
 import scapi.sigma.DLogProtocol.DLogProverInput
 import scapi.sigma.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import scorex.utils.Random
 import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.interpreter.ProverInterpreter
-import sigmastate.utxo.CostTable
+import sigmastate.utxo.{CostTable, ErgoLikeTestInterpreter}
 
-class ErgoLikeProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)
-  extends ErgoLikeInterpreter(maxCost) with ProverInterpreter {
+class ErgoLikeTestProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)
+  extends ErgoLikeTestInterpreter(maxCost) with ProverInterpreter {
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
     (1 to 4).map(_ => DLogProverInput.random()) ++
@@ -28,21 +27,21 @@ class ErgoLikeProvingInterpreter(override val maxCost: Long = CostTable.ScriptLi
     i.toByte -> ByteArrayConstant(ba)
   }.toMap
 
-  def withContextExtender(tag: Byte, value: EvaluatedValue[_ <: SType]): ErgoLikeProvingInterpreter = {
+  def withContextExtender(tag: Byte, value: EvaluatedValue[_ <: SType]): ErgoLikeTestProvingInterpreter = {
     val s = secrets
     val ce = contextExtenders
 
-    new ErgoLikeProvingInterpreter(maxCost) {
+    new ErgoLikeTestProvingInterpreter(maxCost) {
       override lazy val secrets = s
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce + (tag -> value)
     }
   }
 
-  def withSecrets(additionalSecrets: Seq[DLogProverInput]): ErgoLikeProvingInterpreter = {
+  def withSecrets(additionalSecrets: Seq[DLogProverInput]): ErgoLikeTestProvingInterpreter = {
     val ce = contextExtenders
     val s = secrets ++ additionalSecrets
 
-    new ErgoLikeProvingInterpreter(maxCost) {
+    new ErgoLikeTestProvingInterpreter(maxCost) {
       override lazy val secrets = s
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
     }

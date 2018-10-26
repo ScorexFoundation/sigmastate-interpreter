@@ -5,9 +5,8 @@ import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.util.ScorexLogging
 import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant}
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.lang.Terms._
 import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
@@ -56,7 +55,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
   property("emission specification") {
     val register = reg1
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
 
     val rewardOut = ByIndex(Outputs, IntConstant(0))
     val minerOut = ByIndex(Outputs, IntConstant(1))

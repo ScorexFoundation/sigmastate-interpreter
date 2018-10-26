@@ -1,11 +1,17 @@
-package org.ergoplatform
+package sigmastate.utxo
 
 import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform._
 
 import scala.util.{Failure, Success}
 
+class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends ErgoLikeInterpreter(maxCost) {
+  override type CTX = ErgoLikeContext
+}
+
+
 object ErgoTransactionValidator {
-  val verifier = new ErgoLikeInterpreter()
+  val verifier: ErgoLikeTestInterpreter = new ErgoLikeTestInterpreter()
 
   //todo: check that outputs are well-formed?
   def validate(tx: ErgoLikeTransaction,

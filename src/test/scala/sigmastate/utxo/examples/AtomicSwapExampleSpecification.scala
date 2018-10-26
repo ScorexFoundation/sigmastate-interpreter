@@ -1,13 +1,13 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
+import org.ergoplatform.{ErgoLikeContext, Height}
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.SizeOf
+import sigmastate.utxo.{ErgoLikeTestInterpreter, SizeOf}
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
@@ -22,11 +22,11 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     */
   property("atomic cross-chain trading") {
     val x = Random.randomBytes(32)
-    val proverA = (new ErgoLikeProvingInterpreter).withContextExtender(1, ByteArrayConstant(x))
-    val proverB = new ErgoLikeProvingInterpreter
+    val proverA = (new ErgoLikeTestProvingInterpreter).withContextExtender(1, ByteArrayConstant(x))
+    val proverB = new ErgoLikeTestProvingInterpreter
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val hx = ByteArrayConstant(Blake2b256(x))
 

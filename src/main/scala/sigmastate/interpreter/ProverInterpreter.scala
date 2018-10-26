@@ -45,7 +45,6 @@ object ProverResult {
       w.putUShort(obj.proof.length)
       w.putBytes(obj.proof)
       ContextExtension.serializer.serializeBody(obj.extension, w)
-
     }
 
     override def parseBody(r: ByteReader): ProverResult = {
@@ -122,7 +121,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
 
-    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions), exp).get
+    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions).asInstanceOf[CTX], exp).get
 
     val proofTree = reducedProp match {
       case bool: BooleanConstant =>

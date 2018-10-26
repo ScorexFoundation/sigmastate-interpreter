@@ -5,7 +5,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant, Value}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 
@@ -35,9 +35,9 @@ import sigmastate.utxo._
 class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
   property("atomic exchange") {
-    val tokenBuyer = new ErgoLikeProvingInterpreter
-    val tokenSeller = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val tokenBuyer = new ErgoLikeTestProvingInterpreter
+    val tokenSeller = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val tokenId = Blake2b256("token1")
     val deadline = 70L

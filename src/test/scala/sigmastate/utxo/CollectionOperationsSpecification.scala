@@ -4,7 +4,7 @@ import org.ergoplatform
 import org.ergoplatform._
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 
@@ -40,9 +40,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  private def buildEnv(code: String, expectedComp: Value[SType], outputBoxValues: IndexedSeq[Long], boxesToSpendValues: IndexedSeq[Long]) = {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+  private def buildEnv(code: String,
+                       expectedComp: Value[SType],
+                       outputBoxValues: IndexedSeq[Long],
+                       boxesToSpendValues: IndexedSeq[Long]) = {
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
     val prop = compile(Map(), code).asBoolValue
     prop shouldBe expectedComp
@@ -52,8 +55,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("exists") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -82,8 +85,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("forall") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue
@@ -112,7 +115,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
 
   property("forall - fail") {
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -138,8 +141,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("counter") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -173,8 +176,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("counter - no register in outputs") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -209,8 +212,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("sizeof - num of outputs = num of inputs + 1") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
