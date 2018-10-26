@@ -37,8 +37,10 @@ class ErgoTreeSerializer(IR: IRContext) {
 
   def deserialize(bytes: Array[Byte]): Value[SType] = {
     val (constants, tree) = deserializeRaw(bytes)
-    val out = injectConstants(constants, tree)
-    out
+    if (constants.nonEmpty)
+      injectConstants(constants, tree)
+    else
+      tree
   }
 
   def extractConstants(tree: Value[SType]): (Seq[Constant[SType]], Value[SType]) = {

@@ -4,7 +4,7 @@ import org.ergoplatform.Self
 import sigmastate.Values.{BlockValue, Constant, ConstantPlaceholder, IntConstant, ValDef, ValUse}
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.utxo.{ExtractAmount, ExtractBytes, SizeOf}
+import sigmastate.utxo.ExtractAmount
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification with SigmaTestingCommons {
 
@@ -39,8 +39,14 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     ErgoTreeSerializer(IR).deserializeRaw(bytes) shouldEqual (extractedConstants, scriptWithPlaceholders)
   }
 
-  property("(de)serialize round trip") {
+  property("(de)serialize round trip (with constants)") {
     val script = Plus(10, 20)
+    val bytes = ErgoTreeSerializer(IR).serialize(script)
+    ErgoTreeSerializer(IR).deserialize(bytes) shouldEqual script
+  }
+
+  property("(de)serialize round trip (without constants)") {
+    val script = ExtractAmount(Self)
     val bytes = ErgoTreeSerializer(IR).serialize(script)
     ErgoTreeSerializer(IR).deserialize(bytes) shouldEqual script
   }

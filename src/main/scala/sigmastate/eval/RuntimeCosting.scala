@@ -114,6 +114,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def costOf(opName: String, opType: SFunc): Rep[Int] = CostOf(opName, opType)
 
+  case class ConstantPlaceholder[T](index: Int)(implicit eT: LElem[T]) extends Def[T] {
+    def selfType: Elem[T] = eT.value
+  }
+
+  def constantPlaceholder[T](index: Int)(implicit eT: LElem[T]): Rep[T] = ConstantPlaceholder[T](index)
+
   def perKbCostOf(node: SValue, dataSize: Rep[Long]) = {
     val opName = s"${node.getClass.getSimpleName}_per_kb"
     dataSize.div(1024L).toInt * costOf(opName, node.opType)
@@ -1303,9 +1309,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //        val inputC = evalNode(ctx, env, input)
 //        withDefaultSize(inputC.value, inputC.cost + costOf(node))
 
-      case ConstantPlaceholder(_, tpe) =>
-        // todo make a proper Rep type
-        val res = toRep(null)(NothingElement.asElem[Null])
+      case sigmastate.Values.ConstantPlaceholder(index, tpe) =>
+        val elem = toLazyElem(stypeToElem(tpe))
+        val res = constantPlaceholder(index)(elem)
         withDefaultSize(res, costOf(node))
 
       case _ =>

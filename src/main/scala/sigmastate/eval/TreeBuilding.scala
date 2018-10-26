@@ -138,9 +138,19 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
               mkConstantPlaceholder[tpe.type](store.size - 1, tpe)
             }
           case Some(InjectConstants(constants)) =>
-            error("unsupported state: cannot inject constant in constract extraction phase")
+            error("unsupported state: cannot inject constant in constant extraction phase")
           case None =>
             mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+        }
+      case Def(ConstantPlaceholder(index)) =>
+        val tpe = elemToSType(s.elem)
+        constantsProcessing match {
+          case Some(ExtractConstants(_)) =>
+            error("unsupported state: cannot extract constant in constant injection phase")
+          case Some(InjectConstants(constants)) =>
+            constants(index)
+          case None =>
+            mkConstantPlaceholder(index, tpe)
         }
       case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
         val colTpe = elemToSType(s.elem)
