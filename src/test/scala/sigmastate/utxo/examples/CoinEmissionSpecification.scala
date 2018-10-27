@@ -2,11 +2,12 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.util.ScorexLogging
-import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.Values.{LongConstant, IntConstant, SValue}
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv, ScriptEnv}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
+import sigmastate.utxo.BlockchainSimulationSpecification.{ValidationState, Block}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
 
@@ -16,7 +17,12 @@ import sigmastate.{SLong, _}
   * that controls emission rules
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR = new TestingIRContext {
+    override val okPrintEvaluatedEntries: Boolean = false
+    // overrided to avoid outputing intermediate graphs in files (too many of them)
+    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
+    }
+  }
   
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
@@ -53,7 +59,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
-  ignore("emission specification") {
+  property("emission specification") {
     val register = reg1
     val prover = new ErgoLikeProvingInterpreter()
 
@@ -90,7 +96,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
     prop1 shouldEqual prop
 
-    val minerProp = prover.dlogSecrets.head.publicImage
+    val minerProp = prover.dlogSecrets.head.publicImage.isValid
 
     val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Seq(), Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block {
@@ -134,7 +140,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         ut,
         emissionBox,
         ContextExtension.empty)
-      val proverResult = prover.prove(prop, context, ut.messageToSign).get
+      val proverResult = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, context, ut.messageToSign).get
       ut.toSigned(IndexedSeq(proverResult))
     }
 
@@ -158,6 +164,6 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       }
     }
 
-    chainGen(genesisState, initialBox, 0, 100000000)
+    chainGen(genesisState, initialBox, 0, 1000000)
   }
 }

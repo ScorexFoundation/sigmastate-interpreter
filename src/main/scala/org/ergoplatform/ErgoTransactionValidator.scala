@@ -1,11 +1,11 @@
 package org.ergoplatform
 
-import sigmastate.eval.RuntimeIRContext
+import sigmastate.eval.{RuntimeIRContext, IRContext}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 
 import scala.util.{Success, Failure}
 
-object ErgoTransactionValidator {
-  implicit val IR = new RuntimeIRContext
+class ErgoTransactionValidator(implicit IR: IRContext) {
   val verifier = new ErgoLikeInterpreter()
 
   //todo: check that outputs are well-formed?
@@ -32,8 +32,10 @@ object ErgoTransactionValidator {
       val context =
         ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, boxes,
           tx, box, proverExtension)
-
-      val scriptCost: Long = verifier.verify(box.proposition, context, proof, msg) match {
+      val verificationResult = verifier.verify(
+        emptyEnv + (ScriptNameProp -> s"height_${blockchainState.currentHeight }_verify"),
+        box.proposition, context, proof, msg)
+      val scriptCost: Long = verificationResult match {
         case Success((res, cost)) =>
           if(!res) return Left[Throwable, Long](new Exception(s"Validation failed for input #$idx"))
           else cost

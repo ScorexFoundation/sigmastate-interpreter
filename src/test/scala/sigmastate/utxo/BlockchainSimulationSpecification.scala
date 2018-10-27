@@ -14,6 +14,8 @@ import sigmastate.Values.LongConstant
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import org.ergoplatform._
+import sigmastate.eval.IRContext
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.{GE, AvlTreeData}
 
 import scala.annotation.tailrec
@@ -40,7 +42,8 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
         tx,
         box,
         ContextExtension.empty)
-      val proverResult = miner.prove(box.proposition, context, tx.messageToSign).get
+      val env = emptyEnv + (ScriptNameProp -> s"height_${state.state.currentHeight}_prove")
+      val proverResult = miner.prove(env, box.proposition, context, tx.messageToSign).get
 
       tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq.ensuring(_.nonEmpty, s"Failed to create txs from boxes $boxesToSpend at height $height")
@@ -177,12 +180,13 @@ object BlockchainSimulationSpecification {
   }
 
 
-  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader) {
+  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader)(implicit IR: IRContext) {
+    val validator = new ErgoTransactionValidator
     def applyBlock(block: Block, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
 
       val blockCost = block.txs.foldLeft(0L) {case (accCost, tx) =>
-        ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height), boxesReader) match {
+        validator.validate(tx, state.copy(currentHeight = height), boxesReader) match {
           case Left(throwable) => throw throwable
           case Right(cost) => accCost + cost
         }
@@ -207,7 +211,7 @@ object BlockchainSimulationSpecification {
       }
     }
 
-    def initialState(block: Block = initBlock): ValidationState = {
+    def initialState(block: Block = initBlock)(implicit IR: IRContext): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 
