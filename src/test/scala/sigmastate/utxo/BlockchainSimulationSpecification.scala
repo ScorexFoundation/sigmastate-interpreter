@@ -67,7 +67,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
     updStateTry.isSuccess shouldBe false
   }
 
-  ignore("apply many blocks") {
+  property("apply many blocks") {
     val state = ValidationState.initialState()
     val miner = new ErgoLikeProvingInterpreter()
 
