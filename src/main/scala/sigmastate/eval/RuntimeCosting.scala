@@ -652,7 +652,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val cost = tree.cost + key.cost + proof.cost + costOf(node)
         value.fold[CostedOption[Col[Byte]]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Col[Byte]] => RCostedSome(RCostedPrim(x, cost, sizeOf(x))) })
+          fun { x: Rep[Col[Byte]] => RCostedSome(RCostedPrim(x, cost, Blake2b256.DigestSize.toLong)) })
 
       case TreeModifications(In(_tree), InColByte(operations), InColByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
@@ -660,7 +660,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val cost = tree.cost + operations.cost + proof.cost + costOf(node)
         value.fold[CostedOption[Col[Byte]]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Col[Byte]] => RCostedSome(RCostedPrim(x, cost, sizeOf(x))) })
+          fun { x: Rep[Col[Byte]] => RCostedSome(RCostedPrim(x, cost, Blake2b256.DigestSize.toLong)) })
 
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>

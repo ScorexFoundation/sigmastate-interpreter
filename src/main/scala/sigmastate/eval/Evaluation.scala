@@ -68,7 +68,6 @@ trait Evaluation extends RuntimeCosting { IR =>
     case CBM.replicate(_,_,_) | CBM.apply_apply_items(_,_) =>
     case BoxM.propositionBytes(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
     case OM.get(_) | OM.fold(_,_,_) | OM.isDefined(_) =>
-    case SDBM.treeModifications(_,_,_,_) | SDBM.treeLookup(_,_,_,_) =>
     case _: CostOf | _: SizeOf[_] =>
     case _: Apply[_,_] =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
