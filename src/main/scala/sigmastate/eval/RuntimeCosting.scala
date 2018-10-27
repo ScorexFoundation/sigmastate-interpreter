@@ -198,25 +198,28 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     }
 
     def sliceCalc: Rep[A => B] = fun { x: Rep[A] => f(RCostedPrim(x, 0, 0L)).value }
-    def sliceCost: Rep[((Int,Long)) => Int] = fun { x: Rep[(Int, Long)] => f(RCostedPrim(variable[A], x._1, x._2)).cost }
+    def sliceCost: Rep[((A, (Int,Long))) => Int] = fun { in: Rep[(A, (Int, Long))] =>
+      val Pair(x, Pair(c, s)) = in
+      f(RCostedPrim(x, c, s)).cost
+    }
     def sliceSize: Rep[Long => Long] = fun { x: Rep[Long] => f(RCostedPrim(variable[A], 0, x)).dataSize }
   }
 
   implicit def extendCostedFuncElem[E,A,B](e: Elem[CostedFunc[E,A,B]]): CostedFuncElem[E,A,B] = e.asInstanceOf[CostedFuncElem[E,A,B]]
 
-  def splitCostedFunc2[A,B](f: RCostedFunc[A,B]): (Rep[A=>B], Rep[((Int, Long)) => Int]) = {
+  def splitCostedFunc2[A,B](f: RCostedFunc[A,B]): (Rep[A=>B], Rep[((A, (Int, Long))) => Int]) = {
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceCalc
     val costF = f.sliceCost
     (calcF, costF)
   }
-  def splitCostedFunc2[A, B](f: RCostedFunc[A,B], okRemoveIsValid: Boolean): (Rep[A=>Any], Rep[((Int, Long)) => Int]) = {
+  def splitCostedFunc2[A, B](f: RCostedFunc[A,B], okRemoveIsValid: Boolean): (Rep[A=>Any], Rep[((A, (Int, Long))) => Int]) = {
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceCalc(okRemoveIsValid)
     val costF = f.sliceCost
     (calcF, costF)
   }
-  def splitCostedFunc[A,B](f: RCostedFunc[A,B]): (Rep[A=>B], Rep[((Int, Long)) => Int], Rep[Long => Long]) = {
+  def splitCostedFunc[A,B](f: RCostedFunc[A,B]): (Rep[A=>B], Rep[((A, (Int, Long))) => Int], Rep[Long => Long]) = {
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceCalc
     val costF = f.sliceCost
@@ -294,7 +297,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val f = asRep[Costed[a] => Costed[b]](_f)
         val (calcF, costF, sizeF) = splitCostedFunc[a, b](f)
         val vals = xs.values.map(calcF)
-        val costs = xs.costs.zip(xs.sizes).map(costF)
+        val costs = xs.values.zip(xs.costs.zip(xs.sizes)).map(costF)
         val sizes = xs.sizes.map(sizeF)
         RCostedCol(vals, costs, sizes, xs.valuesCost)
 
@@ -702,7 +705,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         }
         val (calcF, costF) = splitCostedFunc2(condC, okRemoveIsValid = true)
         val values = xs.values.map(calcF)
-        val cost = xs.costs.zip(xs.sizes).map(costF).sum(intPlusMonoid)
+        val cost = xs.values.zip(xs.costs.zip(xs.sizes)).map(costF).sum(intPlusMonoid)
         val value = calcF.elem.eRange match {
           case e if e == BooleanElement =>
             if (node.isInstanceOf[ForAll[_]])
@@ -820,8 +823,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         }
         else {
           val (calcF, costF, sizeF) = splitCostedFunc(fC.func)
-          val y: Rep[Any] = Apply(calcF, xC.value, false)
-          val c: Rep[Int] = Apply(costF, Pair(xC.cost, xC.dataSize), false)
+          val value = xC.value
+          val y: Rep[Any] = Apply(calcF, value, false)
+          val c: Rep[Int] = Apply(costF, Pair(value, Pair(xC.cost, xC.dataSize)), false)
           val s: Rep[Long]= Apply(sizeF, xC.dataSize, false)
           RCostedPrim(y, c, s)
         }

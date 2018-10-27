@@ -51,6 +51,7 @@ object CostTable {
     ("ExtractAmount", "(Box) => Long", MinimalCost),
     ("ExtractId", "(SBox) => Array[SByte]", MinimalCost),
     ("ExtractScriptBytes", "(Box) => Array[Byte]", MinimalCost),
+    ("ExtractBytesWithNoRef", "(Box) => Array[Byte]", MinimalCost),
     ("ExtractRegisterAs", "(Box,Byte) => Array[BigInt]", MinimalCost),
 
     ("Exponentiate", "(GroupElement,BigInt) => GroupElement", MinimalCost),
