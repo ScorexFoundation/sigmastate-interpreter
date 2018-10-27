@@ -8,6 +8,7 @@ import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{ByteReader, ByteWriter}
@@ -36,9 +37,9 @@ class ErgoBoxCandidate(val value: Long,
       case ScriptRegId => Some(ByteArrayConstant(propositionBytes))
       case TokensRegId =>
         val tokenTuples = additionalTokens.map { case (id, amount) =>
-          Tuple(ByteArrayConstant(id), LongConstant(amount))
-        }.toIndexedSeq
-        Some(ConcreteCollection(tokenTuples, STokenType))
+          Array(id, amount)
+        }.toArray
+        Some(Constant(tokenTuples.asWrappedType, SCollection(STokenType)))
       case ReferenceRegId => None
       case n: NonMandatoryRegisterId => additionalRegisters.get(n)
     }

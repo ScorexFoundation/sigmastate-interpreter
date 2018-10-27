@@ -55,6 +55,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
     case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] =>
+    case _: FieldApply[_] =>
     case _: IntPlusMonoid =>
     case _: Lambda[_,_] =>
     case _: ThunkDef[_] =>

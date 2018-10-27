@@ -6,7 +6,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{LongConstant, SigmaPropConstant, Value, ByteArrayConstant, IntConstant}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.Interpreter.ScriptNameProp
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -36,7 +36,7 @@ import sigmastate.lang.Terms._
 class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
 
-  ignore("atomic exchange") {
+  property("atomic exchange") {
     val tokenBuyer = new ErgoLikeProvingInterpreter
     val tokenSeller = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
@@ -131,8 +131,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
     //Though we use separate provers below, both inputs do not contain any secrets, thus
     //a spending transaction could be created and posted by anyone.
-    val pr = tokenBuyer.prove(buyerProp, buyerCtx, fakeMessage).get
-    verifier.verify(buyerProp, buyerCtx, pr, fakeMessage).get._1 shouldBe true
+    val pr = tokenBuyer.prove(emptyEnv + (ScriptNameProp -> "tokenBuyer_prove"), buyerProp, buyerCtx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "tokenBuyer_verify"), buyerProp, buyerCtx, pr, fakeMessage).get._1 shouldBe true
 
     val sellerCtx = ErgoLikeContext(
       currentHeight = 50,
