@@ -897,6 +897,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val valueOpt = boxC.getReg(regId.number.toInt)(elem)
         valueOpt
 
+      case AtLeast(bound, ConcreteCollection(InSeqUnzipped(vs, cs, ss), _)) =>
+        val boundC = eval(bound)
+        val values = colBuilder.apply(vs: _*)
+        val costs = colBuilder.apply(cs: _*)
+        val res = sigmaDslBuilder.atLeast( boundC.value, asRep[Col[SigmaProp]](values))
+        val cost = boundC.cost + costs.sum(intPlusMonoid) + costOf(node)
+        RCostedPrim(res, cost, CryptoConstants.groupSize.toLong)
+
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._
         val x = asRep[Costed[WBigInteger]](eval(op.left))
