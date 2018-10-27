@@ -77,6 +77,7 @@ Every box has the following properties:
 - `id: ByteArray` - Blake2b256 hash of this box's content 
 - `value: Int` - boxed value
 - `propositionBytes: ByteArray` - guarding script, which should be evaluated to true in order to open this box 
+- `creationInfo: (Long, ByteArray)` - height when block got included into the blockchain and also transaction identifier and box index in the transaction outputs
 
 Besides properties, every box can have up to 10 numbered registers.
 The following syntax is supported to access registers on box objects:

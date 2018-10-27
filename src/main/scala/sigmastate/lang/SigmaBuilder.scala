@@ -103,6 +103,7 @@ trait SigmaBuilder {
   def mkExtractBytes(input: Value[SBox.type]): Value[SByteArray]
   def mkExtractBytesWithNoRef(input: Value[SBox.type]): Value[SByteArray]
   def mkExtractId(input: Value[SBox.type]): Value[SByteArray]
+  def mkExtractCreationInfo(input: Value[SBox.type]): Value[STuple]
 
   def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
                                       registerId: RegisterId,
@@ -332,6 +333,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkExtractId(input: Value[SBox.type]): Value[SByteArray] =
     ExtractId(input)
+
+  override def mkExtractCreationInfo(input: Value[SBox.type]): Value[STuple] =
+    ExtractCreationInfo(input)
 
   override def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
                                                 registerId: RegisterId,
