@@ -297,9 +297,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          | val properSpending = OUTPUTS(0).value >= ${toolValue}L &&
          |                      blake2b256(OUTPUTS(0).propositionBytes) == spendingContract1Hash &&
          |                      OUTPUTS(1).value >= ${constructionValue}L &&
-         |                      blake2b256(OUTPUTS(1).propositionBytes) == spendingContract2Hash &&
-         |                      OUTPUTS(2).value == ${totalValue - toolValue - constructionValue}L &&
-         |                      blake2b256(OUTPUTS(2).propositionBytes) == spendingContract3Hash
+         |                      blake2b256(OUTPUTS(1).propositionBytes) == spendingContract2Hash
          |
          | ${withdraw(1000, totalValue)}
          |
