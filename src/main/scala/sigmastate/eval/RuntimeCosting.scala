@@ -690,8 +690,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val cond = node.condition.asValue[SBoolean.type]
         val eIn = stypeToElem(node.input.tpe.elemType)
         val xs = asRep[CostedCol[Any]](eval(node.input))
-        implicit val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+        val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
+        implicit val eArg: Elem[Costed[Any]] = eAny match {
+          case _: BoxElem[_] => element[CostedBox].asElem[Costed[Any]]
+          case _ => costedElement(eAny)
+        }
+
         val condC = fun { x: Rep[Costed[Any]] =>
           evalNode(ctx, env + (node.id -> x), cond)
         }
@@ -994,10 +999,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val x = eval(rel.left)
         val y = eval(rel.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
-          val res = withDefaultSize(
-            binop.apply(x.value, asRep[t#WrappedType](y.value)),
-            x.cost + y.cost + perKbCostOf(node, x.dataSize + y.dataSize)
-          )
+          val value = binop.apply(x.value, asRep[t#WrappedType](y.value))
+          val cost =
+            if (tpe.isConstantSize) x.cost + y.cost
+            else x.cost + y.cost + perKbCostOf(node, x.dataSize + y.dataSize)
+          val res = withDefaultSize(value, cost)
           res
         }
 

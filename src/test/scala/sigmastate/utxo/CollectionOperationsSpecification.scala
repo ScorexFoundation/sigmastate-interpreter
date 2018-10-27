@@ -134,7 +134,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  ignore("counter") {
+  ignore("counter") { // TODO getResultElem for (s98:CostedPrim[Box]).getReg(s41, anon$8<Long>) failed
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 
@@ -309,7 +309,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
-  ignore("map fold") {
+  ignore("map fold") { // TODO Don't know how to evalNode(Fold(MapCollection(Outputs,...
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """OUTPUTS
@@ -348,7 +348,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   }
 
-  ignore("ByIndex for non-evaluated index") {
+  property("ByIndex for non-evaluated index") {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """{
