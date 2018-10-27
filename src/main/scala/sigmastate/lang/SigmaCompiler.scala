@@ -4,7 +4,8 @@ import sigmastate.SType
 import sigmastate.lang.syntax.ParserException
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
-import sigmastate.Values.{SigmaTree, Value, SValue}
+import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
+import sigmastate.Values.{SValue, SigmaTree, Value}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
 class SigmaCompiler(builder: SigmaBuilder) {
@@ -30,9 +31,9 @@ class SigmaCompiler(builder: SigmaBuilder) {
     typecheck(env, parsed)
   }
 
-  def compile(env: ScriptEnv, code: String): Value[SType] = {
+  def compile(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix): Value[SType] = {
     val typed = typecheck(env, code)
-    val spec = new SigmaSpecializer(builder)
+    val spec = new SigmaSpecializer(builder, networkPrefix)
     val ir = spec.specialize(typed)
     ir
   }

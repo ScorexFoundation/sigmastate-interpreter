@@ -1,8 +1,6 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
-import org.ergoplatform.ErgoLikeContext.Metadata
-import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
@@ -592,40 +590,5 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     //todo: check failing branches
-  }
-
-  //TODO LHF
-  ignore("PK - P2PK address type") {
-    implicit val ergoAddressEncoder: ErgoAddressEncoder =
-      new ErgoAddressEncoder(TestnetNetworkPrefix)
-
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
-
-    val dk1 = ProveDlog(prover.dlogSecrets.head.publicImage.h)
-    val p2pk = P2PKAddress(dk1)
-    val encodedP2PK = p2pk.toString
-
-    val prop1 = ErgoAddressToSigmaProp(StringConstant(encodedP2PK)).isValid
-
-    val ctx = ErgoLikeContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq()),
-      self = ErgoBox(20, TrueLeaf, Seq(), Map()))
-
-    val proof1 = prover.prove(prop1, ctx, fakeMessage).get.proof
-    verifier.verify(emptyEnv, prop1, ctx, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe true
-
-    val ctxMainnet = ErgoLikeContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      boxesToSpend = IndexedSeq(),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq()),
-      self = ErgoBox(20, TrueLeaf, Seq(), Map()),
-      metadata = Metadata(MainnetNetworkPrefix))
-
-    verifier.verify(emptyEnv, prop1, ctxMainnet, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe false
   }
 }

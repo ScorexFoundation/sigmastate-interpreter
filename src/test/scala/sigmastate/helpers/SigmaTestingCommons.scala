@@ -1,20 +1,21 @@
 package sigmastate.helpers
 
 import org.ergoplatform
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{EvaluatedValue, SValue, TrueLeaf, Value, GroupElementConstant}
-import sigmastate.eval.{IRContext, CompiletimeCosting, Evaluation}
+import sigmastate.Values.{EvaluatedValue, GroupElementConstant, SValue, TrueLeaf, Value}
+import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.{SGroupElement, SBoolean, SType}
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.{SBoolean, SGroupElement, SType}
 
 import scala.language.implicitConversions
-import scalan.{TestUtils, TestContexts}
+import scalan.{TestContexts, TestUtils}
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -34,7 +35,7 @@ trait SigmaTestingCommons extends PropSpec
   val compiler = new SigmaCompiler(TransformingSigmaBuilder)
 
   def compile(env: ScriptEnv, code: String): Value[SType] = {
-    compiler.compile(env, code)
+    compiler.compile(env, code, TestnetNetworkPrefix)
   }
 
   def createBox(value: Int,

@@ -1,7 +1,8 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoAddressEncoder.{NetworkPrefix, TestnetNetworkPrefix}
+import org.ergoplatform._
 import scorex.util.encode.{Base58, Base64}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
@@ -13,7 +14,7 @@ import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 import sigmastate.utils.Extensions._
 
-class SigmaSpecializer(val builder: SigmaBuilder) {
+class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPrefix) {
   import SigmaSpecializer._
   import builder._
 
@@ -115,8 +116,13 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
       Some(SigmaPropBytes(p.asSigmaProp))
 
-    case Apply(PKSym, Seq(arg: Value[SString.type]@unchecked)) =>
-      Some(mkPK(arg))
+    case Apply(PKSym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+      Some(
+        ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
+          case a: P2PKAddress => a.pubkey
+          case a@_ => error(s"unsupported address $a")
+        }
+      )
 
     case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
@@ -239,5 +245,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 }
 
 object SigmaSpecializer {
+
   def error(msg: String) = throw new SpecializerException(msg, None)
 }

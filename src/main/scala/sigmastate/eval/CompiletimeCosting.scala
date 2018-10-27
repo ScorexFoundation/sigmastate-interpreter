@@ -68,9 +68,6 @@ trait CompiletimeCosting extends RuntimeCosting {
       case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropBytes(p.asSigmaProp))
 
-      case Terms.Apply(PKSym, Seq(arg: Value[SString.type]@unchecked)) =>
-        eval(mkPK(arg))
-
       // box.R$i[valType] =>
       case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
         val reg = ErgoBox.registerByName.getOrElse(regName,

@@ -1,7 +1,8 @@
 package sigmastate.lang
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
@@ -12,11 +13,11 @@ import sigmastate.utxo.ByIndex
 class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   val compiler = new SigmaCompiler(TransformingSigmaBuilder)
 
-  def comp(env: ScriptEnv, x: String) = compiler.compile(env, x)
+  def comp(env: ScriptEnv, x: String) = compiler.compile(env, x, TestnetNetworkPrefix)
 
   def fail(env: ScriptEnv, x: String, index: Int, expected: Any): Unit = {
     try {
-      val res = compiler.compile(env, x)
+      val res = compiler.compile(env, x, TestnetNetworkPrefix)
       assert(false, s"Error expected")
     } catch {
       case e: TestFailedException =>

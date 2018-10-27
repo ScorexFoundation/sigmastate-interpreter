@@ -142,8 +142,6 @@ object OpCodes extends ValueCodes {
   val SomeValueCode: OpCode = (LastConstantCode + 110).toByte
   val NoneValueCode: OpCode = (LastConstantCode + 111).toByte
 
-  val ErgoAddressToSigmaPropCode: OpCode = (LastConstantCode + 114).toByte
-
   val GetVarCode         : OpCode = (LastConstantCode + 115).toByte
   val OptionGetCode      : OpCode = (LastConstantCode + 116).toByte
   val OptionGetOrElseCode: OpCode = (LastConstantCode + 117).toByte
