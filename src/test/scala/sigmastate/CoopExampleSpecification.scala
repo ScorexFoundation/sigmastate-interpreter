@@ -286,8 +286,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyC" -> pubkeyC,
       "pubkeyD" -> pubkeyD,
       "spendingContract1Hash" -> ByteArrayConstant(Blake2b256(spendingProp1.bytes)),
-      "spendingContract2Hash" -> ByteArrayConstant(Blake2b256(spendingProp3.bytes)),
-      "spendingContract3Hash" -> ByteArrayConstant(Blake2b256(spendingProp5.bytes))
+      "spendingContract2Hash" -> ByteArrayConstant(Blake2b256(spendingProp3.bytes))
     )
 
     // Basic compilation
