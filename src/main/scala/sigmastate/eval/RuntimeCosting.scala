@@ -23,16 +23,17 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
-
+import ErgoLikeContext._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
-import scorex.crypto.hash.{Blake2b256, Sha256}
+import scorex.crypto.hash.Blake2b256.DigestSize
+import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SigmaCompiler}
 
-trait RuntimeCosting extends SigmaLibrary with DataCosting {
+trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
   import Context._;
   import WArray._;
   import WECPoint._;
@@ -517,6 +518,24 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
     RCostedPrim(v, c, s)
   }
 
+    /** Helper to create costed collection of bytes */
+  def mkCostedCol[T](col: Rep[Col[T]], len: Rep[Int], cost: Rep[Int]): Rep[CostedCol[T]] = {
+    val costs = colBuilder.replicate(len, 0)
+    val sizes = colBuilder.replicate(len, typeSize(col.elem.eItem))
+    RCostedCol(col, costs, sizes, cost)
+  }
+
+  def mkCosted[T](v: Rep[T], cost: Rep[Int], size: Rep[Long]): Rep[Costed[T]] = {
+    val res = v.elem match {
+      case colE: ColElem[a,_] =>
+        val xs = asRep[Col[a]](v)
+        mkCostedCol(xs, xs.length, cost)
+      case _ =>
+        RCostedPrim(v, cost, size)
+    }
+    asRep[Costed[T]](res)
+  }
+
   type CostingEnv = Map[Any, RCosted[_]]
 
   import sigmastate._
@@ -552,13 +571,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
           val ge = asRep[Costed[WECPoint]](eval(p.value))
           val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
           withDefaultSize(resV, ge.cost + costOf(SigmaPropConstant(p)))
-//        case p @ ProveDiffieHellmanTuple(gv, hv, uv, vv) =>
-//          val gvC = asRep[Costed[WECPoint]](eval(gv))
-//          val hvC = asRep[Costed[WECPoint]](eval(hv))
-//          val uvC = asRep[Costed[WECPoint]](eval(uv))
-//          val vvC = asRep[Costed[WECPoint]](eval(vv))
-//          val resV: Rep[SigmaProp] = RProveDHTEvidence(gvC.value, hvC.value, uvC.value, vvC.value)
-//          withDefaultSize(resV, gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOf(SigmaPropConstant(p)))
+        case p @ ProveDiffieHellmanTuple(gv, hv, uv, vv) =>
+          val gvC = asRep[Costed[WECPoint]](eval(gv))
+          val hvC = asRep[Costed[WECPoint]](eval(hv))
+          val uvC = asRep[Costed[WECPoint]](eval(uv))
+          val vvC = asRep[Costed[WECPoint]](eval(vv))
+          val resV: Rep[SigmaProp] = RProveDHTEvidence(gvC.value, hvC.value, uvC.value, vvC.value)
+          val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOf(SigmaPropConstant(p))
+          RCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)
@@ -586,6 +606,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
                 }
               RCostedCol(resVals, resCosts, resSizes, costOf(c))
           }
+        case box: ErgoBox =>
+          val boxV = liftConst(box.toTestBox(false)(IR))
+          RCostedBox(boxV, costOf(c))
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
           withDefaultSize(resV, costOf(c))
@@ -647,7 +670,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val col = sigmaDslBuilder.longToByteArray(x) // below we assume col.length == typeSize[Long]
         val cost = xC.cost + costOf(node)
         val len = typeSize[Long].toInt
-        RCostedCol(col, colBuilder.replicate(len, 0), colBuilder.replicate(len, 1L), cost)
+        mkCostedCol(col, len, cost)
 
       case TreeLookup(In(_tree), InColByte(key), InColByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
@@ -837,12 +860,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         val bytesC = asRep[Costed[Col[Byte]]](input)
         val res = sigmaDslBuilder.blake2b256(bytesC.value)
         val cost = bytesC.cost + perKbCostOf(node, bytesC.dataSize)
-        RCostedPrim(res, cost, Blake2b256.DigestSize.toLong)
+        mkCostedCol(res, Blake2b256.DigestSize, cost)
       case CalcSha256(In(input)) =>
         val bytesC = asRep[Costed[Col[Byte]]](input)
         val res = sigmaDslBuilder.sha256(bytesC.value)
         val cost = bytesC.cost + perKbCostOf(node, bytesC.dataSize)
-        RCostedPrim(res, cost, Sha256.DigestSize.toLong)
+        mkCostedCol(res, Sha256.DigestSize, cost)
 
       case utxo.SizeOf(In(xs)) =>
         xs.elem.eVal match {
@@ -1025,7 +1048,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting {
         def eC = evalNode(ctx, env, e)
         val resV = IF (cC.value) THEN tC.value ELSE eC.value
         val resCost = cC.cost + (tC.cost max eC.cost) + costOf(node)
-        withDefaultSize(resV, resCost)
+        mkCosted(resV, resCost, tC.dataSize max eC.dataSize)
 
       case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
         implicit val eAny = stypeToElem(argTpe).asElem[Any]

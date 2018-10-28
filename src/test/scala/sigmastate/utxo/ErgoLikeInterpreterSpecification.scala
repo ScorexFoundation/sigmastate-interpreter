@@ -40,7 +40,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       .get._1.isInstanceOf[FalseLeaf.type] shouldBe true
   }
 
-  ignore("DH tuple") {
+  property("DH tuple") {
     val prover = new ErgoLikeProvingInterpreter
     val fakeProver = new ErgoLikeProvingInterpreter
 
@@ -74,7 +74,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     prover.prove(wrongProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  ignore("DH tuple - simulation") {
+  property("DH tuple - simulation") {
     val proverA = new ErgoLikeProvingInterpreter
     val proverB = new ErgoLikeProvingInterpreter
 
@@ -100,7 +100,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
   }
 
-  ignore("DH tuple and DLOG") {
+  property("DH tuple and DLOG") {
     val proverA = new ErgoLikeProvingInterpreter
     val proverB = new ErgoLikeProvingInterpreter
 
@@ -129,7 +129,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  ignore("mixing scenario w. timeout") {
+  ignore("mixing scenario w. timeout") {  // TODO Don't know how to evalNode(Fold(MapCollection
     val proverA = new ErgoLikeProvingInterpreter
     val proverB = new ErgoLikeProvingInterpreter
 
@@ -196,7 +196,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).map(_._1).getOrElse(false) shouldBe false
   }
 
-  ignore("map + sum") {
+  property("map + sum") { // TODO Don't know how to evalNode(Fold(MapCollection(...
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 
@@ -358,7 +358,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   //p2sh with 160-bit hash function (which is about just cutting first 160 bits from 256-bit hash)
-  ignore("P2SH - 160 bits") {
+  property("P2SH - 160 bits") {
     val scriptId = 21.toByte
 
     val bitsCount = 160
@@ -366,7 +366,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prover0 = new ErgoLikeProvingInterpreter()
 
-    val customScript = prover0.dlogSecrets.head.publicImage
+    val customScript = prover0.dlogSecrets.head.publicImage.isValid
     val scriptBytes = ValueSerializer.serialize(customScript)
     val scriptHash = Blake2b256(scriptBytes).take(bytesCount)
 
@@ -377,7 +377,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(hashEquals, scriptIsCorrect)
 
-    val recipientProposition = new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage
+    val recipientProposition = new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage.isValid
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -395,7 +395,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     * An example script where a box could be spent only along with a box with given id
     * (and no more boxes could be provided as an input of a spending transaction).
     */
-  ignore("Along with a brother (!!! Box constant in environment)") {
+  property("Along with a brother (using Box constant in environment)") {
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 
@@ -467,7 +467,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     * An example script where an output could be spent only along with an output with given id
     * (and possibly others, too).
     */
-  ignore("Along with a friend and maybe others (!!! Box constant in environment)") {
+  property("Along with a friend and maybe others (!!! Box constant in environment)") {
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 
@@ -541,11 +541,11 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
 
-  ignore("If") {
+  property("If") { // TODO Invalid primitive in Cost function: Box.value()
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage
+    val pubkey = prover.dlogSecrets.head.publicImage.isValid
 
     val preimageHello = "hello world".getBytes("UTF-8")
     val preimageWrong = "wrong".getBytes("UTF-8")
@@ -586,8 +586,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = input3)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     //todo: check failing branches
   }

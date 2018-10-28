@@ -133,7 +133,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       case BooleanConstant(boolResult) =>
         if (boolResult) NoProof
         else errorReducedToFalse
-      case SigmaPropConstant(sigmaBoolean) =>
+      case sigmaBoolean: SigmaBoolean =>
         sigmaBoolean match {
           case TrueProof => NoProof
           case FalseProof => errorReducedToFalse

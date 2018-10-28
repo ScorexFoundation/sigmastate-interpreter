@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 import java.math.BigInteger
 
 import org.ergoplatform._
-import scapi.sigma.DLogProtocol
+import scapi.sigma.{DLogProtocol, ProveDiffieHellmanTuple}
 import sigmastate._
 import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, CollectionConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
@@ -36,6 +36,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import MonoidBuilderInst._
   import TrivialSigma._
   import ProveDlogEvidence._
+  import ProveDHTEvidence._
   import WBigInteger._
   import WArray._
   import WOption._
@@ -134,6 +135,9 @@ trait Evaluation extends RuntimeCosting { IR =>
       case col: special.collection.Col[_] => s"Col(${trim(col.arr).mkString(",")})"
       case p: ECPoint => CryptoFunctions.showECPoint(p)
       case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${CryptoFunctions.showECPoint(g)})"
+      case ProveDiffieHellmanTuple(
+              GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)) =>
+        s"ProveDHT(${CryptoFunctions.showECPoint(g)},${CryptoFunctions.showECPoint(h)},${CryptoFunctions.showECPoint(u)},${CryptoFunctions.showECPoint(v)})"
       case _ => x.toString
     }
     sym match {
@@ -290,8 +294,11 @@ trait Evaluation extends RuntimeCosting { IR =>
           case TrivialSigmaCtor(In(isValid: Boolean)) =>
             val res = sigmastate.TrivialProof(isValid)
             out(res)
-          case ProveDlogEvidenceCtor(In(g: ECPoint)) =>
-            val res = DLogProtocol.ProveDlog(GroupElementConstant(g.asInstanceOf[EcPointType]))
+          case ProveDlogEvidenceCtor(In(g: EcPointType)) =>
+            val res = DLogProtocol.ProveDlog(GroupElementConstant(g))
+            out(res)
+          case ProveDHTEvidenceCtor(In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
+            val res = ProveDiffieHellmanTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
             out(res)
           case CostOf(opName, tpe) =>
             val operId = OperationId(opName, tpe)

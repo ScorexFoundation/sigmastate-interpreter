@@ -38,26 +38,26 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
         val ctx = TestingContext(h)
         reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1 should(
-          matchPattern { case SigmaPropConstant(sb: SigmaBoolean) => })
+          matchPattern { case sb: SigmaBoolean => })
         reduceToCrypto(ctx, AND(GE(Height, LongConstant(h)), dk1)).get._1 should (
-          matchPattern { case SigmaPropConstant(sb: SigmaBoolean) => })
+          matchPattern { case sb: SigmaBoolean => })
 
         {
           val res = reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1
-          res should matchPattern { case SigmaPropConstant(FalseProof) => }
+          res should matchPattern { case FalseProof => }
         }
 
         {
           val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1
-          res should matchPattern { case SigmaPropConstant(TrueProof) => }
+          res should matchPattern { case TrueProof => }
         }
 
         {
           val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1
-          res should matchPattern { case SigmaPropConstant(TrueProof) => }
+          res should matchPattern { case TrueProof => }
         }
         reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1 should(
-          matchPattern { case SigmaPropConstant(sb: SigmaBoolean) => })
+          matchPattern { case sb: SigmaBoolean => })
       }
     }
   }

@@ -128,10 +128,9 @@ class SpamSpecification extends SigmaTestingCommons {
     terminated shouldBe true
   }
 
-  // TODO solve: key not found: s4501
-  ignore("transaction with many outputs") {
-//    forAll(Gen.choose(10, 200), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
-//      whenever(orCnt > 10 && outCnt > 200) {
+  property("transaction with many outputs") {
+    forAll(Gen.choose(10, 200), Gen.choose(200, 5000)) { case (orCnt, outCnt) =>
+      whenever(orCnt > 10 && outCnt > 200) {
     val orCnt = 10
     val outCnt = 5
     val prover = new ErgoLikeProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
@@ -163,13 +162,18 @@ class SpamSpecification extends SigmaTestingCommons {
     val (_, terminated) = termination(() =>
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, proof, fakeMessage))
     terminated shouldBe true
-//      }
-//    }
+      }
+    }
   }
 
-  // TODO solve: key not found: s718
-  ignore("transaction with many inputs and outputs") {
-    implicit lazy val IR = new TestingIRContext { override val okPrintEvaluatedEntries = false }
+  ignore("transaction with many inputs and outputs") { // TODO avoid too complex cost function by approximating INPUT and OUTPUT sizes
+    implicit lazy val IR = new TestingIRContext {
+      override val okPrintEvaluatedEntries = false
+      override def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
+        if (okPrintEvaluatedEntries)
+          println(printEnvEntry(sym, value))
+      }
+    }
     val prover = new ErgoLikeProvingInterpreter(maxCost = Long.MaxValue)
 
     val prop = Exists(Inputs, 21, Exists(Outputs, 22,
@@ -190,12 +194,12 @@ class SpamSpecification extends SigmaTestingCommons {
       self = ErgoBox(11, prop))
 
     val pt0 = System.currentTimeMillis()
-    val proof = prover.prove(prop, ctx, fakeMessage).get
+    val proof = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
     val pt = System.currentTimeMillis()
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
 
     val verifier = new ErgoLikeInterpreter
-    val (res, terminated) = termination(() => verifier.verify(prop, ctx, proof, fakeMessage))
+    val (res, terminated) = termination(() => verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, proof, fakeMessage))
     terminated shouldBe true
     res.isFailure shouldBe true
   }

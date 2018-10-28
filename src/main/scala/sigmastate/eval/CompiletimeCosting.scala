@@ -15,7 +15,7 @@ import sigmastate.Values.Value.Typed
 import sigmastate.lang.SigmaSpecializer.error
 import sigmastate.lang.{Terms, TransformingSigmaBuilder}
 
-trait CompiletimeCosting extends RuntimeCosting {
+trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
   import builder._
 
   override def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {

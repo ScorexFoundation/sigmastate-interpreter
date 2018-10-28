@@ -26,7 +26,7 @@ import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
-trait TreeBuilding extends RuntimeCosting {
+trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import Liftables._
   import Context._
   import SigmaProp._
@@ -38,6 +38,7 @@ trait TreeBuilding extends RuntimeCosting {
   import MonoidBuilderInst._
   import TrivialSigma._
   import ProveDlogEvidence._
+  import ProveDHTEvidence._
   import WBigInteger._
   import WArray._
   import WOption._
@@ -211,6 +212,8 @@ trait TreeBuilding extends RuntimeCosting {
         mkTrivialSigma(cond.asBoolValue)
       case Def(ProveDlogEvidenceCtor(In(g))) =>
         SigmaPropConstant(mkProveDlog(g.asGroupElement))
+      case Def(ProveDHTEvidenceCtor(In(g), In(h), In(u), In(v))) =>
+        SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement))
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
     }
