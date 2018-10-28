@@ -546,7 +546,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx2, prC2, fakeMessage).get._1 shouldBe true
   }
 
-  ignore("complex sig scheme - k-out-of-n threshold") {
+  property("complex sig scheme - k-out-of-n threshold") {
 
     // disable scalacheck shrinking otherwise other constraints start to fail
     import org.scalacheck.Shrink
@@ -562,7 +562,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
         .filter(_.length == k)
 
       val prop = OR(
-        kNumKeysCombinations.map(combs => AND(combs.map(_.publicImage)))
+        kNumKeysCombinations.map(combs => AND(combs.map(_.publicImage.isValid)))
       )
 
       val ctx = ErgoLikeContext(
