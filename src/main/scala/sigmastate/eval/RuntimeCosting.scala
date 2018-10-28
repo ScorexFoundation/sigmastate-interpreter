@@ -62,6 +62,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
   import TrivialSigma._
   import MonoidBuilderInst._
   import AvlTree._
+  import CostedAvlTree._
+
   def opcodeToArithOpName(opCode: Byte): String = opCode match {
     case OpCodes.PlusCode     => "+"
     case OpCodes.MinusCode    => "-"
@@ -609,6 +611,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         case box: ErgoBox =>
           val boxV = liftConst(box.toTestBox(false)(IR))
           RCostedBox(boxV, costOf(c))
+        case treeData: AvlTreeData =>
+          val tree: special.sigma.AvlTree = CostingAvlTree(IR, treeData)
+          val treeV = liftConst(tree)
+          RCostedAvlTree(treeV)
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
           withDefaultSize(resV, costOf(c))

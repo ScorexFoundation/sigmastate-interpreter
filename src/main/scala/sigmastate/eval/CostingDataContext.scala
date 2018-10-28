@@ -85,6 +85,7 @@ class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { d
       case col: Types.ColRType[a] => dsl.Cols.fromArray(Array[a]()(col.tA.classTag))
       case p: IR.PairElem[a, b] => (defaultValue(p.eFst), defaultValue(p.eSnd))
       case col: IR.Col.ColElem[a,_] => dsl.Cols.fromArray(Array[a]()(col.eItem.classTag))
+      case avl: IR.AvlTree.AvlTreeElem[_] => CostingAvlTree(IR, AvlTreeData.dummy)
       case _ => sys.error(s"Cannot create defaultValue($valueType)")
     }).asInstanceOf[T]
   }

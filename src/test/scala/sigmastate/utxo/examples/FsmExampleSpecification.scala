@@ -38,14 +38,14 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     * a proof for a corresponding transition description in the tree, and show a proof for transition script (e.g. a
     * signature). Thus the FSM is being revealed on the run, and the states not visited yet are not visible (on chain).
     */
-  ignore("simple FSM example"){
+  property("simple FSM example"){
 
     val prover = new ErgoLikeProvingInterpreter
 
-    val script1 = prover.dlogSecrets.head.publicImage
-    val script2 = prover.dhSecrets.head.publicImage
+    val script1 = prover.dlogSecrets.head.publicImage.isValid
+    val script2 = prover.dhSecrets.head.publicImage.isValid
     val script3 = AND(script1, script2)
-    val script4 = prover.dlogSecrets.tail.head.publicImage  //a script to leave FSM
+    val script4 = prover.dlogSecrets.tail.head.publicImage.isValid  //a script to leave FSM
 
     val script1Hash = hash.Blake2b256(ValueSerializer.serialize(script1))
     val script2Hash = hash.Blake2b256(ValueSerializer.serialize(script2))
@@ -86,9 +86,9 @@ class FsmExampleSpecification extends SigmaTestingCommons {
             ExtractRegisterAs[SByte.type](Self, currentStateRegister).get,
             ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
                                           currentStateRegister).getOrElse(ByteConstant(-1))),
-          CalcBlake2b256(TaggedByteArray(scriptVarId))
+          CalcBlake2b256(GetVarByteArray(scriptVarId).get)
         ),
-        TaggedByteArray(transitionProofId)))
+        GetVarByteArray(transitionProofId).get))
 
     val scriptPreservation = EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), ExtractScriptBytes(Self))
 

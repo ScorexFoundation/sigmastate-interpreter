@@ -69,7 +69,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) | ColM.slice(_,_,_) | ColM.apply(_,_) | ColM.append(_,_) =>
     case CBM.replicate(_,_,_) | CBM.apply_apply_items(_,_) =>
     case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
-    case OM.get(_) | OM.fold(_,_,_) | OM.isDefined(_) =>
+    case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) =>
     case _: CostOf | _: SizeOf[_] =>
     case _: Apply[_,_] =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
@@ -306,7 +306,10 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(cost)
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
-            val size = tpe.dataSize(data.asWrappedType)
+            val size = tpe match {
+              case SAvlTree => data.asInstanceOf[special.sigma.AvlTree].dataSize
+              case _ => tpe.dataSize(data.asWrappedType)
+            }
             out(size)
           case TypeSize(tpe) =>
             val size = tpe.dataSize(0.asWrappedType)
