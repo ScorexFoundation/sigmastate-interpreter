@@ -373,14 +373,16 @@ trait Interpreter extends ScorexLogging {
     IR.verifyIsValid(calcF).fold(t => throw t, x => x)
 
     // check cost
+    val costingCtx = context.toSigmaContext(IR, isCost = true)
     val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
-    val IntConstant(estimatedCost) = costFun(context.toSigmaContext(IR, isCost = true))
+    val IntConstant(estimatedCost) = costFun(costingCtx)
     if (estimatedCost > maxCost) {
       throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $substTree")
     }
     // check calc
+    val calcCtx = context.toSigmaContext(IR, isCost = false)
     val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, calcF.asRep[IR.Context => SBoolean.WrappedType])
-    val res = valueFun(context.toSigmaContext(IR, isCost = false))
+    val res = valueFun(calcCtx)
     val resValue = res match {
       case SigmaPropConstant(sb) => sb
       case _ => res

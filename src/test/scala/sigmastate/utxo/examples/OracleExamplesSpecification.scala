@@ -67,7 +67,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     *
     */
-  ignore("oracle example") { // TODO LHF InterpreterException: Script reduced to false
+  property("oracle example") { // TODO LHF InterpreterException: Script reduced to false
     val oracle = new ErgoLikeProvingInterpreter
     val aliceTemplate = new ErgoLikeProvingInterpreter
     val bob = new ErgoLikeProvingInterpreter

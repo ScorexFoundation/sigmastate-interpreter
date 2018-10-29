@@ -168,7 +168,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
-  ignore("counter - no register in outputs") {
+  ignore("counter - no register in outputs") { // TODO getResultElem for (s91:CostedPrim[Box]).getReg(s41, anon$8<Long>) failed
     val prover = new ErgoLikeProvingInterpreter
     val verifier = new ErgoLikeInterpreter
 

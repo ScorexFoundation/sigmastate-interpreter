@@ -978,33 +978,33 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
           withDefaultSize(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + costOf(op))
         }
-      case OR(input) => input.matchCase(
-        cc => {
-          val itemsC = cc.items.map(evalNode(ctx, env, _))
+      case OR(input) => input match {
+        case ConcreteCollection(items, tpe) =>
+          val itemsC = items.map(eval)
           val res = sigmaDslBuilder.anyOf(colBuilder.apply(itemsC.map(_.value): _*))
           val costs = colBuilder.apply(itemsC.map(_.cost): _*)
           val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
           withDefaultSize(res, cost)
-//          val headC = evalNode(ctx, env, cc.items(0))
-//          val tailC = cc.items.iterator.drop(1).map(x => evalCostedBlock(evalNode(ctx, env, x)))
-//          val itemsC = (Iterator.single(headC) ++ tailC).toIndexedSeq
-//          val res = sigmaDslBuilder.anyOf(colBuilder.apply(new mutable.WrappedArray.ofRef(itemsC.map(_.value).toArray):_*))
-//          val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + OrDeclaration
-//          CostedPrimRep(res, cost)
-        },
-        const => ???,
-        tup => ???
-      )
-      case AND(input) => input.matchCase(
-        cc => {
-          val itemsC = cc.items.map(evalNode(ctx, env, _))
-          val res = sigmaDslBuilder.allOf(colBuilder.apply(itemsC.map(_.value): _*))
-          val cost = itemsC.map(_.cost).reduce((x, y) => x + y) + costOf(node)
+        case _ =>
+          val inputC = asRep[CostedCol[Boolean]](eval(input))
+          val res = sigmaDslBuilder.anyOf(inputC.value)
+          val cost = inputC.cost + perItemCostOf(node, inputC.sizes.length)
           withDefaultSize(res, cost)
-        },
-        const => ???,
-        tup => ???
-      )
+      }
+
+      case AND(input) => input match {
+        case ConcreteCollection(items, tpe) =>
+          val itemsC = items.map(eval)
+          val res = sigmaDslBuilder.allOf(colBuilder.apply(itemsC.map(_.value): _*))
+          val costs = colBuilder.apply(itemsC.map(_.cost): _*)
+          val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
+          withDefaultSize(res, cost)
+        case _ =>
+          val inputC = asRep[CostedCol[Boolean]](eval(input))
+          val res = sigmaDslBuilder.allOf(inputC.value)
+          val cost = inputC.cost + perItemCostOf(node, inputC.sizes.length)
+          withDefaultSize(res, cost)
+      }
 
       case BinOr(l, r) =>
         val lC = evalNode(ctx, env, l)

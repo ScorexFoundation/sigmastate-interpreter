@@ -27,7 +27,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     * (regular_script) ∨
     * (height > (self.R3 + demurrage_period ) ∧ has_output(value >= self.value − demurrage_cost, script = self.script))
     */
-  ignore("Evaluation - Demurrage Example") {
+  property("Evaluation - Demurrage Example") {
     val demurragePeriod = 100L
     val demurrageCost = 2
 

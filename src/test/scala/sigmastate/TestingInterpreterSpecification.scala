@@ -62,13 +62,13 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     }
   }
 
-  ignore("Reduction to crypto #2") {
+  property("Reduction to crypto #2") {
     forAll() { (h: Int) =>
 
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
-        val dk1 = DLogProverInput.random().publicImage
-        val dk2 = DLogProverInput.random().publicImage
+        val dk1 = DLogProverInput.random().publicImage.isValid
+        val dk2 = DLogProverInput.random().publicImage.isValid
 
         val ctx = TestingContext(h)
 
@@ -83,16 +83,20 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
                   AND(GT(Height, LongConstant(h - 1)), dk1)
                 )).get._1.isInstanceOf[ProveDlog])
 
+        reduceToCrypto(ctx, OR(
+          AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, LongConstant(h + 1)), dk1)
+        )).get._1 shouldBe FalseProof
 
-        assert(reduceToCrypto(ctx, OR(
-                  AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, LongConstant(h + 1)), dk1)
-                )).get._1.isInstanceOf[FalseLeaf.type])
-
-        assert(reduceToCrypto(ctx, OR(OR(
-                  AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, LongConstant(h + 1)), dk1)
-                ), AND(GT(Height, LongConstant(h - 1)), LE(Height, LongConstant(h + 1))))).get._1.isInstanceOf[TrueLeaf.type])
+        reduceToCrypto(ctx,
+          OR(
+            OR(
+              AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
+              AND(GT(Height, LongConstant(h + 1)), dk1)
+            ),
+            AND(GT(Height, LongConstant(h - 1)), LE(Height, LongConstant(h + 1)))
+          )
+        ).get._1 shouldBe TrueProof
 
       }
     }
@@ -121,27 +125,30 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     verify(Interpreter.emptyEnv, prop, ctx, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 
-  ignore("Evaluate array ops") {
-    testEval("""{
-              |  val arr = Array(1, 2) ++ Array(3, 4)
-              |  arr.size == 4
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = Array(1, 2, 3)
-              |  arr.slice(1, 3) == Array(2, 3)
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = bytes1 ++ bytes2
-              |  arr.size == 6
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = bytes1 ++ Array[Byte]()
-              |  arr.size == 3
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = Array[Byte]() ++ bytes1
-              |  arr.size == 3
-              |}""".stripMargin)
+  property("Evaluate array ops") {
+//    testEval("""{
+//              |  val arr = Array(1, 2) ++ Array(3, 4)
+//              |  arr.size == 4
+//              |}""".stripMargin)
+//    testEval("""{
+//              |  val arr = Array(1, 2, 3)
+//              |  arr.slice(1, 3) == Array(2, 3)
+//              |}""".stripMargin)
+//    testEval("""{
+//              |  val arr = bytes1 ++ bytes2
+//              |  arr.size == 6
+//              |}""".stripMargin)
+
+//    // TODO IndexOutOfBoundsException in ColsOverArraysDefs$ColOverArrayBuilder$ColOverArrayBuilderCtor.apply(...
+//    testEval("""{
+//              |  val arr = bytes1 ++ Array[Byte]()
+//              |  arr.size == 3
+//              |}""".stripMargin)
+//    testEval("""{
+//              |  val arr = Array[Byte]() ++ bytes1
+//              |  arr.size == 3
+//              |}""".stripMargin)
+
     testEval("""{
               |  val arr = box1.R4[Array[Int]].get
               |  arr.size == 3
@@ -158,10 +165,11 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
               |  val arr = Array(1, 2, 3)
               |  arr.map {(i: Int) => i + 1} == Array(2, 3, 4)
               |}""".stripMargin)
-    testEval("""{
-              |  val arr = Array(1, 2, 3)
-              |  arr.where {(i: Int) => i < 3} == Array(1, 2)
-              |}""".stripMargin)
+//    // TODO uncomment when Costing for where is implemented
+//    testEval("""{
+//              |  val arr = Array(1, 2, 3)
+//              |  arr.where {(i: Int) => i < 3} == Array(1, 2)
+//              |}""".stripMargin)
   }
 
 //  property("Evaluate sigma in lambdas") {
@@ -213,17 +221,17 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       _.getCause.isInstanceOf[ArithmeticException])
   }
 
-  ignore("Array indexing (out of bounds with const default value)") {
+  property("Array indexing (out of bounds with const default value)") {
     testEval("Array(1, 2).getOrElse(3, 0) == 0")
   }
 
-  ignore("Array indexing (out of bounds with evaluated default value)") {
+  property("Array indexing (out of bounds with evaluated default value)") {
     testEval("Array(1, 1).getOrElse(3, 1 + 1) == 2")
   }
 
-  ignore("Evaluation example #1") {
-    val dk1 = ProveDlog(secrets(0).publicImage.h)
-    val dk2 = ProveDlog(secrets(1).publicImage.h)
+  property("Evaluation example #1") {
+    val dk1 = ProveDlog(secrets(0).publicImage.h).isValid
+    val dk2 = ProveDlog(secrets(1).publicImage.h).isValid
 
     val env1 = TestingContext(99)
     val env2 = TestingContext(101)
@@ -315,8 +323,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         | } == Array[Int](2,3,4) """.stripMargin)
   }
 
-  // TODO: LHF (or not, ReplColCtor is missing in data env on evaluation)
-  ignore("nested lambdas argument") {
+  property("nested lambdas argument") {
     // block with nested lambda
     testEval(
       """ Array[Int](1,2,3).exists { (a: Int) =>

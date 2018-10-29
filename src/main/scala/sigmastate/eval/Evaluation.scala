@@ -29,6 +29,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import Context._
   import SigmaProp._
   import Col._
+  import ReplCol._
   import Box._
   import ColBuilder._
   import SigmaDslBuilder._
@@ -300,6 +301,9 @@ trait Evaluation extends RuntimeCosting { IR =>
           case ProveDHTEvidenceCtor(In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
             val res = ProveDiffieHellmanTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
             out(res)
+          case ReplColCtor(In(value), In(len: Int)) =>
+            val res = sigmaDslBuilderValue.Cols.replicate(len, value)
+            out(res)
           case CostOf(opName, tpe) =>
             val operId = OperationId(opName, tpe)
             val cost = CostTable.DefaultCosts(operId)
@@ -332,14 +336,14 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
     }
 
-    val g = new PGraph(f)
-    val ctxSym = f.getLambda.x
-    val resEnv = g.schedule.foldLeft(dataEnv) { (env, te) =>
-      val (e, _) = evaluate(ctxSym, te).run(env)
-      e
-    }
-    val fun = resEnv(f).asInstanceOf[SigmaContext => Any]
     val res = (ctx: SContext) => {
+      val g = new PGraph(f)
+      val ctxSym = f.getLambda.x
+      val resEnv = g.schedule.foldLeft(dataEnv + (ctxSym -> ctx)) { (env, te) =>
+        val (e, _) = evaluate(ctxSym, te).run(env)
+        e
+      }
+      val fun = resEnv(f).asInstanceOf[SigmaContext => Any]
       fun(ctx) match {
         case sb: SigmaBoolean => builder.liftAny(sb).get
         case v: Value[_] => v
