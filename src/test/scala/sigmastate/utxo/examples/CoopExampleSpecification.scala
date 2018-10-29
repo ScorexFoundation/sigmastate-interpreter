@@ -1,4 +1,4 @@
-package sigmastate
+package sigmastate.utxo.examples
 
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import org.scalatest.Assertion
@@ -9,6 +9,7 @@ import sigmastate.Values.{ByteArrayConstant, Value}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.utxo.ErgoLikeTestInterpreter
+import sigmastate.{AvlTreeData, SBoolean}
 
 class CoopExampleSpecification extends SigmaTestingCommons {
   
