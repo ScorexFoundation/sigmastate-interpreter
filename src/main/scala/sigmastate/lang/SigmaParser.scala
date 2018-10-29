@@ -45,7 +45,15 @@ object SigmaParser extends Exprs with Types with Core {
   implicit val logger = Logger(m => this.synchronized { logged.append(m) })
 
   def mkUnaryOp(opName: String, arg: Value[SType]) = opName match {
-    case _ => error(s"Unknown prefix operation $opName")
+    case "-" if arg.isInstanceOf[Constant[_]] && arg.tpe.isNumType =>
+      arg match {
+        case IntConstant(value) =>
+          builder.mkConstant[SInt.type](-value, SInt)
+        case LongConstant(value) =>
+          builder.mkConstant[SLong.type](-value, SLong)
+        case _ => error(s"cannot prefix $arg with op $opName")
+      }
+    case _ => error(s"Unknown prefix operation $opName for $arg")
   }
 
   val parseAsMethods = Set("*", "++", "||", "&&", "+")

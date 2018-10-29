@@ -8,7 +8,7 @@ import scapi.sigma.DLogProtocol.{DLogInteractiveProver, DLogProverInput, FirstDL
 import scapi.sigma.VerifierMessage.Challenge
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.utils.Helpers
 
@@ -17,8 +17,8 @@ import scala.util.Try
 class CrowdFundingKernelContract(
                                   timeout: Long,
                                   minToRaise: Long,
-                                  override val backerProver: ErgoLikeProvingInterpreter,
-                                  override val projectProver: ErgoLikeProvingInterpreter
+                                  override val backerProver: ErgoLikeTestProvingInterpreter,
+                                  override val projectProver: ErgoLikeTestProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
   def isValid(pubKey: ProveDlog, message: Array[Byte]): projectProver.ProofT = {

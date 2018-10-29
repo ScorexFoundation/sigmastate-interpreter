@@ -1,21 +1,21 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
+import org.ergoplatform.ErgoLikeContext
 import sigmastate.Values.{ConcreteCollection, Value}
 import scapi.sigma.DLogProtocol.DLogProverInput
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 
 
 class ThresholdSpecification extends SigmaTestingCommons {
 
   property("basic threshold compilation/execution") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val proverD = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val skA = proverA.dlogSecrets.head
     val skB = proverB.dlogSecrets.head
@@ -106,7 +106,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
 
   property("threshold reduce to crypto") {
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -228,15 +228,15 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   property("3-out-of-6 threshold") {
     // This example is from the white paper
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val proverD = new ErgoLikeProvingInterpreter
-    val proverE = new ErgoLikeProvingInterpreter
-    val proverF = new ErgoLikeProvingInterpreter
-    val proverG = new ErgoLikeProvingInterpreter
-    val proverH = new ErgoLikeProvingInterpreter
-    val proverI = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverE = new ErgoLikeTestProvingInterpreter
+    val proverF = new ErgoLikeTestProvingInterpreter
+    val proverG = new ErgoLikeTestProvingInterpreter
+    val proverH = new ErgoLikeTestProvingInterpreter
+    val proverI = new ErgoLikeTestProvingInterpreter
 
     val skA = proverA.dlogSecrets.head
     val skB = proverB.dlogSecrets.head
@@ -282,7 +282,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
 
     for (prover <- goodProvers) {
@@ -316,7 +316,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
 
     // the integer indicates how many subpropositions the prover can prove
-    var provers = Seq[(Int, ErgoLikeProvingInterpreter)]((0, new ErgoLikeProvingInterpreter))
+    var provers = Seq[(Int, ErgoLikeTestProvingInterpreter)]((0, new ErgoLikeTestProvingInterpreter))
     // create 32 different provers
     for (i <- secrets.indices) {
       provers = provers ++ provers.map(p => (p._1 + 1, p._2.withSecrets(secrets(i))))
@@ -328,14 +328,14 @@ class ThresholdSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
-    def canProve(prover: ErgoLikeProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
+    def canProve(prover: ErgoLikeTestProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
       val proof = prover.prove(proposition, ctx, fakeMessage).get
       verifier.verify(proposition, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    def cannotProve(prover: ErgoLikeProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
+    def cannotProve(prover: ErgoLikeTestProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
       prover.prove(proposition, ctx, fakeMessage).isFailure shouldBe true
     }
 
