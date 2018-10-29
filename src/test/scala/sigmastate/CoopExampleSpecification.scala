@@ -1,13 +1,14 @@
 package sigmastate
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import org.scalatest.Assertion
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{ByteArrayConstant, Value}
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
+import sigmastate.utxo.ErgoLikeTestInterpreter
 
 class CoopExampleSpecification extends SigmaTestingCommons {
   
@@ -29,8 +30,8 @@ class CoopExampleSpecification extends SigmaTestingCommons {
 
   def successProofTest(exp: Value[SBoolean.type],
                        ctx: ErgoLikeContext,
-                       prover: ErgoLikeProvingInterpreter,
-                       verifier: ErgoLikeInterpreter): Assertion = {
+                       prover: ErgoLikeTestProvingInterpreter,
+                       verifier: ErgoLikeTestInterpreter): Assertion = {
     val proofResult = prover.prove(exp, ctx, fakeMessage)
     proofResult should be a 'success
     verifier.verify(exp, ctx, proofResult.success.value, fakeMessage) should be a 'success
@@ -38,17 +39,17 @@ class CoopExampleSpecification extends SigmaTestingCommons {
 
   def failingProofTest(exp: Value[SBoolean.type],
                        ctx: ErgoLikeContext,
-                       prover: ErgoLikeProvingInterpreter): Assertion = {
+                       prover: ErgoLikeTestProvingInterpreter): Assertion = {
     prover.prove(exp, ctx, fakeMessage) should be a 'failure
   }
 
   property("commit to the threshold sig") {
 
-    val coopA = new ErgoLikeProvingInterpreter
-    val coopB = new ErgoLikeProvingInterpreter
-    val coopC = new ErgoLikeProvingInterpreter
-    val coopD = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val coopA = new ErgoLikeTestProvingInterpreter
+    val coopB = new ErgoLikeTestProvingInterpreter
+    val coopC = new ErgoLikeTestProvingInterpreter
+    val coopD = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val totalValue = 10000L
     val toolValue = 5000L
@@ -64,10 +65,10 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     val pubkeyC = skC.publicImage
     val pubkeyD = skD.publicImage
 
-    val toolA = new ErgoLikeProvingInterpreter
-    val toolB = new ErgoLikeProvingInterpreter
-    val toolC = new ErgoLikeProvingInterpreter
-    val toolD = new ErgoLikeProvingInterpreter
+    val toolA = new ErgoLikeTestProvingInterpreter
+    val toolB = new ErgoLikeTestProvingInterpreter
+    val toolC = new ErgoLikeTestProvingInterpreter
+    val toolD = new ErgoLikeTestProvingInterpreter
 
 
     val toolRing = Seq(
@@ -76,16 +77,16 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       toolC.dlogSecrets.head.publicImage,
       toolD.dlogSecrets.head.publicImage)
 
-    val constrA = new ErgoLikeProvingInterpreter
-    val constrB = new ErgoLikeProvingInterpreter
-    val constrC = new ErgoLikeProvingInterpreter
+    val constrA = new ErgoLikeTestProvingInterpreter
+    val constrB = new ErgoLikeTestProvingInterpreter
+    val constrC = new ErgoLikeTestProvingInterpreter
 
     val constructionRing = Seq(
       constrA.dlogSecrets.head.publicImage,
       constrB.dlogSecrets.head.publicImage,
       constrC.dlogSecrets.head.publicImage)
 
-    val business = new ErgoLikeProvingInterpreter
+    val business = new ErgoLikeTestProvingInterpreter
     val businessKey = business.dlogSecrets.head.publicImage
 
     def withdraw(minHeight: Long, totalValue: Long) = {
