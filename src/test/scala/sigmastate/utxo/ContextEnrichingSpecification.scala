@@ -69,8 +69,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  // FIXME
-  property("prover enriching context - xor") { // TODO Don't know how to evalNode(Xor(OptionGet(
+  property("prover enriching context - xor") {
     val v1 = Base16.decode("abcdef7865").get
     val k1 = 21: Byte
 
