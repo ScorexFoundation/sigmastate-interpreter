@@ -41,8 +41,11 @@ class ErgoBoxCandidate(val value: Long,
           Array(id, amount)
         }.toArray
         Some(Constant(tokenTuples.asWrappedType, SCollection(STokenType)))
-      case ReferenceRegId => Some(Tuple(LongConstant(creationHeight), ByteArrayConstant(Array.fill(34)(0: Byte))))
-      case n: NonMandatoryRegisterId => additionalRegisters.get(n)
+      case ReferenceRegId =>
+        val tupleVal = Array(creationHeight, Array.fill(34)(0: Byte))
+        Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
+      case n: NonMandatoryRegisterId =>
+        additionalRegisters.get(n)
     }
   }
 

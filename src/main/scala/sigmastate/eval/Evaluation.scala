@@ -72,6 +72,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
     case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) =>
     case _: CostOf | _: SizeOf[_] =>
+    case _: Upcast[_,_] =>
     case _: Apply[_,_] =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
   }

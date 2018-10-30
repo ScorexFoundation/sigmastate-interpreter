@@ -51,6 +51,7 @@ object CostTable {
     ("AccessRegister", "Box => Option[T]", MinimalCost),
     ("ExtractAmount", "(Box) => Long", MinimalCost),
     ("ExtractId", "(Box) => Array[Byte]", MinimalCost),
+    ("ExtractBytes", "(Box) => Array[Byte]", MinimalCost),
     ("ExtractScriptBytes", "(Box) => Array[Byte]", MinimalCost),
     ("ExtractBytesWithNoRef", "(Box) => Array[Byte]", MinimalCost),
     ("ExtractRegisterAs", "(Box,Byte) => Array[BigInt]", MinimalCost),

@@ -4,13 +4,14 @@ import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.Values._
+import sigmastate.SType.AnyOps
 import sigmastate._
 import sigmastate.serialization.Serializer
 import sigmastate.SCollection.SByteArray
-import sigmastate.utils.{ByteWriter, ByteReader}
+import sigmastate.utils.{ByteWriter, ByteReader, Helpers}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -60,7 +61,8 @@ class ErgoBox private(
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ReferenceRegId =>
-        Some(Tuple(LongConstant(creationHeight), ByteArrayConstant(transactionId.toBytes ++ Shorts.toByteArray(index))))
+        val tupleVal = Array(creationHeight, Helpers.concatArrays(Seq(transactionId.toBytes, Shorts.toByteArray(index))))
+        Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
       case _ => super.get(identifier)
     }
   }
@@ -95,6 +97,7 @@ object ErgoBox {
   }
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
+  val SReferenceRegType = STuple(SLong, SCollection.SByteArray)
 
   type Amount = Long
 

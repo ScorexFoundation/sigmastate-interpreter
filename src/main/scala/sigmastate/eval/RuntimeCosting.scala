@@ -944,6 +944,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
         val v = pC.value.propBytes
         withDefaultSize(v, pC.cost + costOf(node))
+
       case utxo.ExtractId(In(box)) =>  // TODO costing: use special CostedColFixed for fixed-size collections
         val boxC = asRep[Costed[Box]](box)
         RCostedPrim(boxC.value.id, boxC.cost + costOf(node), Blake2b256.DigestSize.toLong)
@@ -956,6 +957,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
       case utxo.ExtractScriptBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.propositionBytes
+        withDefaultSize(bytes, boxC.cost + costOf(node))
+      case utxo.ExtractBytes(In(box)) =>
+        val boxC = asRep[Costed[Box]](box)
+        val bytes = boxC.value.bytes
         withDefaultSize(bytes, boxC.cost + costOf(node))
 
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
