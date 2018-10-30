@@ -1,7 +1,6 @@
 package scapi.sigma
 
 import java.math.BigInteger
-import java.security.SecureRandom
 
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
@@ -15,8 +14,6 @@ import scala.util.Try
 
 
 abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) extends DlogGroup[ElemType] {
-
-  private val secureRandom = new SecureRandom()
 
   lazy val curve = x9params.getCurve
 
@@ -404,7 +401,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     val one = BigInteger.ONE
     val qMinusOne = x9params.getN.subtract(one)
     // choose a random number x in Zq*
-    val randNum = BigIntegers.createRandomInRange(one, qMinusOne, random)
+    val randNum = BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
     // compute g^x to get a new element
     exponentiate(generator, randNum)
   }
@@ -677,7 +674,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     val one = BigInteger.ONE
     val qMinusOne = x9params.getN.subtract(one)
     // choose a random number x in Zq*
-    BigIntegers.createRandomInRange(one, qMinusOne, random)
+    BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
   }.toArray
 
   println(exps.map(e => exponentiateWithPreComputedValues(base, e) == exponentiate(base, e)).forall(_ == true))
@@ -699,7 +696,7 @@ object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("s
     val one = BigInteger.ONE
     val qMinusOne = x9params.getN.subtract(one)
     // choose a random number x in Zq*
-    BigIntegers.createRandomInRange(one, qMinusOne, random)
+    BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
   }.toArray
 
   var t0 = System.currentTimeMillis()
