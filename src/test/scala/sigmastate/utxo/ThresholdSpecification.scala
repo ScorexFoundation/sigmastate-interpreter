@@ -1,8 +1,8 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.Values.{ConcreteCollection, Value}
 import scapi.sigma.DLogProtocol.DLogProverInput
+import sigmastate.Values.{ConcreteCollection, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
@@ -33,6 +33,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -110,6 +111,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -164,7 +166,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
         val pReduced = prover.reduceToCrypto(ctx, AtLeast(bound, t.vector))
         pReduced.isSuccess shouldBe true
         if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
-          if (t.numTrue >= bound)  {
+          if (t.numTrue >= bound) {
             pReduced.get._1 shouldBe tr
             case0TrueHit = true
           }
@@ -278,6 +280,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -290,7 +293,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       verifier.verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    badProver.prove(prop,ctx,fakeMessage).isFailure shouldBe true
+    badProver.prove(prop, ctx, fakeMessage).isFailure shouldBe true
 
   }
 
@@ -324,6 +327,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)

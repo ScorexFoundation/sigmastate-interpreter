@@ -353,6 +353,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
     case SomeValue(x) => SomeValue(assignType(env, x))
 
     case Height => Height
+    case MinerPubkey => MinerPubkey
     case Self => Self
     case Inputs => Inputs
     case Outputs => Outputs

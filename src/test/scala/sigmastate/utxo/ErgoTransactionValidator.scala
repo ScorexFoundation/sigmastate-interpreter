@@ -16,6 +16,7 @@ object ErgoTransactionValidator {
   //todo: check that outputs are well-formed?
   def validate(tx: ErgoLikeTransaction,
                blockchainState: BlockchainState,
+               minerPubkey: Array[Byte],
                boxesReader: ErgoBoxReader,
                metadata: Metadata): Either[Throwable, Long] = {
 
@@ -36,7 +37,7 @@ object ErgoTransactionValidator {
       val proverExtension = tx.inputs(idx).spendingProof.extension
 
       val context =
-        ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, boxes,
+        ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, minerPubkey, boxes,
           tx, box, metadata, proverExtension)
 
       val scriptCost: Long = verifier.verify(box.proposition, context, proof, msg) match {

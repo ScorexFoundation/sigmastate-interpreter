@@ -2,12 +2,12 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.{ErgoLikeContext, Height}
 import scorex.crypto.hash.Blake2b256
+import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.utxo.{ErgoLikeTestInterpreter, SizeOf}
-import scorex.utils.Random
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
@@ -85,6 +85,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val ctxf1 = ErgoLikeContext(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -97,6 +98,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val ctxf2 = ErgoLikeContext(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(), spendingTransaction = null, self = fakeSelf)
     proverB.prove(prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
@@ -106,6 +108,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -120,6 +123,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -132,7 +136,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val badX = Random.randomBytes(33)
     val badProverA = proverA.withContextExtender(1, ByteArrayConstant(badX))
     val badHx = ByteArrayConstant(Blake2b256(badX))
-    val badEnv = env + ("hx"->badHx)
+    val badEnv = env + ("hx" -> badHx)
     val badProp2 = compile(badEnv, script2).asBoolValue
 
     badProverA.prove(badProp2, ctx1, fakeMessage).isSuccess shouldBe false

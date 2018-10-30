@@ -24,6 +24,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     ErgoLikeContext(
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx,
       self = self)
