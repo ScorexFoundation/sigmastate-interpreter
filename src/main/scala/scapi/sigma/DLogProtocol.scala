@@ -1,7 +1,6 @@
 package scapi.sigma
 
 import java.math.BigInteger
-import java.security.SecureRandom
 
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
@@ -13,9 +12,6 @@ import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-
-import scala.concurrent.Future
-import scala.util.Try
 
 object DLogProtocol {
 
@@ -70,7 +66,7 @@ object DLogProtocol {
     /** Create random secret in a range 0..q-1, where q - an order of DLog group. */
     def random(): DLogProverInput = {
       val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
-      val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+      val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
       DLogProverInput(w)
     }
   }
@@ -121,11 +117,13 @@ object DLogProtocol {
   }
 
   object DLogInteractiveProver {
+    import CryptoConstants.secureRandom
+
     def firstMessage(publicInput: ProveDlog): (BigInteger, FirstDLogProverMessage) = {
       import CryptoConstants.dlogGroup
 
       val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
-      val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+      val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, secureRandom)
       val a = dlogGroup.exponentiate(dlogGroup.generator, r)
       r -> FirstDLogProverMessage(a)
     }
@@ -144,7 +142,7 @@ object DLogProtocol {
       val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
 
       //SAMPLE a random z <- Zq
-      val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+      val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, secureRandom)
 
       //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
       val e: BigInteger = new BigInteger(1, challenge)
