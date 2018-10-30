@@ -7,7 +7,6 @@ import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.Extensions._
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 class ErgoTreeSerializer(IR: IRContext) {
   import IR._
@@ -46,15 +45,15 @@ class ErgoTreeSerializer(IR: IRContext) {
   def extractConstants(tree: Value[SType]): (Seq[Constant[SType]], Value[SType]) = {
     val env = Map[String, Any]()
     val Pair(calcF, _) = doCosting(env, tree)
-    val constantsStore = new ArrayBuffer[Constant[SType]]
-    val outTree = IR.buildTree(calcF, Some(ExtractConstants(constantsStore)))
-    (constantsStore, outTree)
+    val extractConstants = new ExtractConstants()
+    val outTree = IR.buildTree(calcF, Some(extractConstants))
+    (extractConstants.extractedConstants(), outTree)
   }
 
   def injectConstants(constants: Seq[Constant[SType]], tree: Value[SType]): Value[SType] = {
     val env = Map[String, Any]()
     val Pair(calcF, _) = doCosting(env, tree)
-    val outTree = IR.buildTree(calcF, Some(InjectConstants(constants)))
+    val outTree = IR.buildTree(calcF, Some(new InjectConstants(constants)))
     outTree
   }
 }

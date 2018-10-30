@@ -24,6 +24,7 @@ import SType._
 import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.lang.SigmaBuilder
 
 trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import Liftables._
@@ -132,12 +133,11 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
         constantsProcessing match {
-          case Some(ExtractConstants(store)) =>
-            this.synchronized {
-              store += mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe).asInstanceOf[Constant[SType]]
-              mkConstantPlaceholder[tpe.type](store.size - 1, tpe)
-            }
-          case Some(InjectConstants(constants)) =>
+          case Some(s: ExtractConstants) =>
+            val constant = mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+              .asInstanceOf[ConstantNode[SType]]
+            s.extract(constant)(builder)
+          case Some(_: InjectConstants) =>
             error("unsupported state: cannot inject constant in constant extraction phase")
           case None =>
             mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
@@ -145,10 +145,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(ConstantPlaceholder(index)) =>
         val tpe = elemToSType(s.elem)
         constantsProcessing match {
-          case Some(ExtractConstants(_)) =>
+          case Some(_: ExtractConstants) =>
             error("unsupported state: cannot extract constant in constant injection phase")
-          case Some(InjectConstants(constants)) =>
-            constants(index)
+          case Some(s: InjectConstants) =>
+            s.get(mkConstantPlaceholder(index, tpe).asInstanceOf[sigmastate.Values.ConstantPlaceholder[SType]])
           case None =>
             mkConstantPlaceholder(index, tpe)
         }
@@ -265,11 +265,30 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     res
   }
 
-  // todo extract
   sealed trait ConstantsProcessing
-  case class ExtractConstants(store: ArrayBuffer[Constant[SType]]) extends ConstantsProcessing
-  case class InjectConstants(constants: Seq[Constant[SType]]) extends ConstantsProcessing
 
+  class ExtractConstants() extends ConstantsProcessing {
+
+    private val store: ArrayBuffer[Constant[SType]] = new ArrayBuffer[Constant[SType]]
+
+    def extract(c: ConstantNode[SType])(implicit builder: SigmaBuilder): sigmastate.Values.ConstantPlaceholder[SType] =
+      this.synchronized {
+        store += c
+        builder.mkConstantPlaceholder[c.tpe.type](store.size - 1, c.tpe)
+          .asInstanceOf[sigmastate.Values.ConstantPlaceholder[SType]]
+      }
+
+    def extractedConstants(): Seq[Constant[SType]] = store
+  }
+
+  class InjectConstants(private val constants: Seq[Constant[SType]]) extends ConstantsProcessing {
+
+    def get(cp: sigmastate.Values.ConstantPlaceholder[SType]): Constant[SType] = {
+      val c = constants(cp.id)
+      if (cp.tpe != c.tpe) error(s"expected to find constant with type ${cp.tpe}, found: ${c.tpe}")
+      c
+    }
+  }
 
   def buildTree[T <: SType](f: Rep[Context => Any],
                             constantsProcessing: Option[ConstantsProcessing] = None): Value[T] = {
