@@ -11,6 +11,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
+import sigmastate.lang.Terms._
 
 /**
   * Coin emission specification.
@@ -85,8 +86,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       "epochLength" -> s.epochLength,
       "fixedRate" -> s.fixedRate,
       "oneEpochReduction" -> s.oneEpochReduction)
- /*
-   val prop1 = compile(env,
+
+    val prop1 = compile(env,
       """{
         |    val epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
         |    val out = OUTPUTS(0)
@@ -98,12 +99,11 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    val heightCorrect = out.R4[Long].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
         |    val outputsNum = OUTPUTS.size
-        |    val correctMinerProposition = minerOut.propositionBytes == Array[Byte](-51, 7) ++ MinerPubkey
+        |    val correctMinerProposition = minerOut.propositionBytes == Array[Byte](-51.toByte, 7.toByte) ++ MinerPubkey
         |    allOf(Array(heightIncreased, correctMinerProposition, allOf(Array(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect)) || lastCoins))
         |}""".stripMargin).asBoolValue
 
     prop1 shouldEqual prop
-    */
 
     val minerProp = prover.dlogSecrets.head.publicImage
     val minerPubkey = minerProp.pkBytes
