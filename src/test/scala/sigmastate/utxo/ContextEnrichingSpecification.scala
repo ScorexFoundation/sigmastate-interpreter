@@ -135,8 +135,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  // TODO LHF
-  property("prover enriching context 2") { // TODO Expected exception sigmastate.lang.exceptions.OptionUnwrapNone to be thrown,
+  property("prover enriching context 2") {
     val prover = new ErgoLikeProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
@@ -159,7 +158,10 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeInterpreter
     //context w/out extensions
-    an[OptionUnwrapNone] should be thrownBy verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get
+    assertExceptionThrown(
+      verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
+      rootCause(_).isInstanceOf[NoSuchElementException]
+    )
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 }
