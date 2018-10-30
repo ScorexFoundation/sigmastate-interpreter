@@ -20,6 +20,8 @@ class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit) ex
 
     case Height => LongConstant(context.currentHeight)
 
+    case MinerPubkey => ByteArrayConstant(context.minerPubkey)
+
     case LastBlockUtxoRootHash => AvlTreeConstant(context.lastBlockUtxoRoot)
 
     case _ =>

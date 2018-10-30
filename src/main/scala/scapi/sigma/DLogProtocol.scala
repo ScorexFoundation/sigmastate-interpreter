@@ -29,6 +29,7 @@ object DLogProtocol {
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
+    lazy val pkBytes: Array[Byte] = h.getEncoded(true)
   }
 
   object ProveDlog {

@@ -7,9 +7,9 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
-import sigmastate.lang.Terms._
 
 import scala.util.Random
 
@@ -48,6 +48,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(input1),
       tx,
       self = input1)
@@ -93,6 +94,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
       self = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))

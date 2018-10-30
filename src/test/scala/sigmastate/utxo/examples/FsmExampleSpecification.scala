@@ -1,8 +1,8 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
@@ -137,6 +137,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox2)),
       self = fsmBox1)
@@ -156,6 +157,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = 51,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox1)),
       self = fsmBox2)
@@ -183,6 +185,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx3 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
       self = fsmBox1)
@@ -209,6 +212,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx23 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
       self = fsmBox2)
@@ -230,6 +234,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx30 = ErgoLikeContext(
       currentHeight = 52,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox3),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(freeBox)),
       self = fsmBox3)
@@ -245,6 +250,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx20 = ErgoLikeContext(
       currentHeight = 52,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(freeBox)),
       self = fsmBox2)

@@ -3,7 +3,8 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
-import org.ergoplatform.ErgoBox.{MandatoryRegisterId, R1, RegisterId}
+import org.ergoplatform.ErgoBox.RegisterId
+import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -12,7 +13,6 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
-import org.ergoplatform._
 import sigmastate.utxo._
 
 
@@ -158,6 +158,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
+      ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
       self = null)
@@ -230,6 +231,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),
       spendingTransaction,
       self = null)

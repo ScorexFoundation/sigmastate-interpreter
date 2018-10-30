@@ -38,6 +38,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -70,6 +71,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -103,6 +105,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -137,6 +140,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -167,6 +171,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -207,6 +212,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -243,6 +249,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -253,7 +260,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
     val pr = proverAB.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
- }
+  }
 
   property("complex sig scheme - OR of AND and DLOG") {
     val proverA = new ErgoLikeTestProvingInterpreter
@@ -275,6 +282,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -314,6 +322,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -354,6 +363,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -397,6 +407,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -433,6 +444,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -445,6 +457,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -472,6 +485,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -486,6 +500,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -518,6 +533,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -532,6 +548,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -566,6 +583,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       val ctx = ErgoLikeContext(
         currentHeight = 1,
         lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = IndexedSeq(),
         spendingTransaction = null,
         self = fakeSelf)

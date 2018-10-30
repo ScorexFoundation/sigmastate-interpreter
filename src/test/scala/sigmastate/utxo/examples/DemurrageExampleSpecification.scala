@@ -1,9 +1,9 @@
 package sigmastate.utxo.examples
 
-import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform._
 import sigmastate.Values.ShortConstant
+import sigmastate._
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.utxo.ErgoLikeTestInterpreter
@@ -105,6 +105,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
       self = createBox(inValue, prop, inHeight),
@@ -124,6 +125,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx2,
       self = createBox(inValue, prop, inHeight),
@@ -139,6 +141,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val ctx3 = ErgoLikeContext(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(b),
       spendingTransaction = tx3,
       self = createBox(inValue, prop, inHeight))
@@ -154,6 +157,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val ctx4 = ErgoLikeContext(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(b2),
       spendingTransaction = tx4,
       self = createBox(inValue, prop, inHeight),
@@ -169,6 +173,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val ctx5 = ErgoLikeContext(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx5,
       self = createBox(inValue, prop, inHeight),
@@ -185,6 +190,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val ctx6 = ErgoLikeContext(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(b3),
       spendingTransaction = tx6,
       self = createBox(iv, prop, inHeight),
