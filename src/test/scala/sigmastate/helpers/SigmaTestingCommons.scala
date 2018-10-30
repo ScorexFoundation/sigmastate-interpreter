@@ -4,18 +4,19 @@ import org.ergoplatform
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{EvaluatedValue, GroupElementConstant, SValue, TrueLeaf, Value}
-import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext}
+import sigmastate.Values.{EvaluatedValue, SValue, TrueLeaf, Value, GroupElementConstant}
+import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
-import sigmastate.{SBoolean, SGroupElement, SType}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
+import sigmastate.{SGroupElement, SBoolean, SType}
 
+import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scalan.{TestContexts, TestUtils}
+import scalan.{TestUtils, TestContexts}
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -65,4 +66,9 @@ trait SigmaTestingCommons extends PropSpec
           fail(s"exception check failed on $e (caused by: ${e.getCause}")
     }
   }
+
+  @tailrec
+  final def rootCause(t: Throwable): Throwable =
+    if (t.getCause == null) t
+    else rootCause(t.getCause)
 }

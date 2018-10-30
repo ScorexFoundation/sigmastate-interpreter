@@ -75,6 +75,7 @@ object CostTable {
     ("AtLeast", "(Int, Array[Boolean]) => Boolean", MinimalCost),
     ("CalcBlake2b256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
     ("CalcSha256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
+    ("Xor_per_kb", "(Array[Byte],Array[Byte]) => Array[Byte]", MinimalCost),
     ("GT_per_kb", "(T,T) => Boolean", MinimalCost),
     ("GE_per_kb", "(T,T) => Boolean", MinimalCost),
     ("LE_per_kb", "(T,T) => Boolean", MinimalCost),

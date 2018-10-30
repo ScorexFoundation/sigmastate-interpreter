@@ -100,7 +100,10 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeInterpreter
     //context w/out extensions
-    an[OptionUnwrapNone] should be thrownBy verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get
+    assertExceptionThrown(
+      verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
+      rootCause(_).isInstanceOf[NoSuchElementException]
+    )
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 

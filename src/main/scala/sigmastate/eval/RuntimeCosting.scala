@@ -346,7 +346,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
       case _ if isCostingProcess =>
         // apply special rules for costing function
         d match {
-          case CM.length(Def(IfThenElseLazy(_, Def(ThunkDef(t: RCol[a],_)), Def(ThunkDef(_e,_)))))  =>
+          case CM.length(Def(IfThenElseLazy(_, Def(ThunkDef(t: RCol[a]@unchecked,_)), Def(ThunkDef(_e,_)))))  =>
             val e = asRep[Col[a]](_e)
             t.length max e.length
           case _ => super.rewriteDef(d)
@@ -1118,6 +1118,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         val res = sigmaDslBuilder.longToByteArray(inputC.value)
         val cost = inputC.cost + costOf(node)
         withDefaultSize(res, cost)
+
+      case Xor(InColByte(l), InColByte(r)) =>
+        val values = colBuilder.xor(l.value, r.value)
+        val sizes = r.sizes
+        val len = sizes.length
+        val costs = colBuilder.replicate(len, 0)
+        val cost = perKbCostOf(node, len.toLong)
+        RCostedCol(values, costs, sizes, cost)
 
 // TODO should be
 //      case ErgoAddressToSigmaProp(input) =>
