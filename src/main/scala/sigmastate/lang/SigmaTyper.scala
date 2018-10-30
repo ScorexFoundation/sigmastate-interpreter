@@ -354,6 +354,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
     case v: NoneValue[_] => v
 
     case Height => Height
+    case MinerPubkey => MinerPubkey
     case Self => Self
     case Inputs => Inputs
     case Outputs => Outputs

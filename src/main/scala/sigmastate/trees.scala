@@ -27,7 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.Undefined
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 }
 object CAND {
@@ -54,7 +54,7 @@ object CAND {
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.Undefined
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
 }
 object COR {
@@ -84,7 +84,7 @@ case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoo
 
   override val opCode: OpCode = OpCodes.AtLeastCode
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.AtLeastPerChild + Cost.AtLeastDeclaration
 }
 
@@ -139,7 +139,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
   override val opCode: OpCode = OrCode
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context](context: C): Long =
     input.cost(context) + Cost.AndDeclaration
 
   val opType = SFunc(SCollection.SBooleanArray, SBoolean)
@@ -152,7 +152,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
       _.items.forall(_.evaluated)
     )
 
-  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
+  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
     def iterChildren(children: Seq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
@@ -199,7 +199,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
   override val opCode: OpCode = AndCode
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context](context: C): Long =
     input.cost(context) + Cost.AndDeclaration
 
   val opType = SFunc(SCollection.SBooleanArray, SBoolean)
@@ -212,7 +212,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
       _.items.forall(_.evaluated)
     )
 
-  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
+  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     @tailrec
     def iterChildren(children: IndexedSeq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
@@ -265,7 +265,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.ty
   override val opCode: OpCode = AtLeastCode
   override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context](context: C): Long =
     bound.cost(context) + input.cost(context) + Cost.AtLeastDeclaration
 
   override def transformationReady: Boolean =
@@ -319,7 +319,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.ty
     CTHRESHOLD(curBound, sigmas)
   }
 
-  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
+  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
     val k = bound.asInstanceOf[EvaluatedValue[SInt.type]].value
     input.matchCase(
       cc => {
@@ -350,10 +350,10 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.UpcastCode
 
-  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[T]): Value[R] =
+  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[T]): Value[R] =
     Constant(this.tpe.upcast(input.value.asInstanceOf[AnyVal]), this.tpe)
 
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+  override def cost[C <: Context](context: C): Long = input.cost(context) + 1
 
   override val opType = SFunc(Vector(tT), tR)
 }
@@ -372,10 +372,10 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Downcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.DowncastCode
 
-  override def function(intr: Interpreter, ctx: Context[_], input: EvaluatedValue[T]): Value[R] =
+  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[T]): Value[R] =
     Constant(this.tpe.downcast(input.value.asInstanceOf[AnyVal]), this.tpe)
 
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1
+  override def cost[C <: Context](context: C): Long = input.cost(context) + 1
 
   override val opType = SFunc(Vector(tT), tR)
 }
@@ -392,10 +392,10 @@ case class LongToByteArray(input: Value[SLong.type])
   extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.LongToByteArrayCode
 
-  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SLong.type]): Value[SByteArray] =
+  override def function(intr: Interpreter, ctx: Context, bal: EvaluatedValue[SLong.type]): Value[SByteArray] =
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
+  override def cost[C <: Context](context: C): Long = input.cost(context) + 1 //todo: externalize cost
 
   val opType = SFunc(SLong, SByteArray)
 }
@@ -408,10 +408,10 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
 
   override val opCode: OpCode = OpCodes.ByteArrayToBigIntCode
 
-  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SByteArray]): Value[SBigInt.type] =
+  override def function(intr: Interpreter, ctx: Context, bal: EvaluatedValue[SByteArray]): Value[SBigInt.type] =
     BigIntConstant(new BigInteger(1, bal.value))
 
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + 1 //todo: externalize cost
+  override def cost[C <: Context](context: C): Long = input.cost(context) + 1 //todo: externalize cost
   val opType = SFunc(SByteArray, SBigInt)
 }
 
@@ -420,10 +420,10 @@ trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByt
 
   val hashFn: CryptographicHash32
 
-  override def function(intr: Interpreter, ctx: Context[_], bal: EvaluatedValue[SByteArray]): Value[SByteArray] =
+  override def function(intr: Interpreter, ctx: Context, bal: EvaluatedValue[SByteArray]): Value[SByteArray] =
     ByteArrayConstant(hashFn.apply(bal.value))
 
-  override def cost[C <: Context[C]](context: C): Long = input.cost(context) + Cost.Blake256bDeclaration
+  override def cost[C <: Context](context: C): Long = input.cost(context) + Cost.Blake256bDeclaration
   val opType = SFunc(SByteArray, SByteArray)
 }
 
@@ -453,7 +453,7 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
   val left: Value[LIV]
   val right: Value[RIV]
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context](context: C): Long =
     left.cost(context) + right.cost(context) + Cost.TripleDeclaration
 
   def opType = SFunc(Vector(left.tpe, right.tpe), tpe)
@@ -487,7 +487,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
 
   override val opCode: OpCode = ExponentiateCode
 
-  override def cost[C <: Context[C]](context: C) = Cost.Exponentiate + left.cost(context) + right.cost(context)
+  override def cost[C <: Context](context: C) = Cost.Exponentiate + left.cost(context) + right.cost(context)
 }
 
 case class MultiplyGroup(override val left: Value[SGroupElement.type],
@@ -497,7 +497,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
 
   override val opCode: OpCode = MultiplyGroupCode
 
-  override def cost[C <: Context[C]](context: C) = Cost.MultiplyGroup + left.cost(context) + right.cost(context)
+  override def cost[C <: Context](context: C) = Cost.MultiplyGroup + left.cost(context) + right.cost(context)
 }
 
 case class StringConcat(left: Value[SString.type], right: Value[SString.type])
@@ -589,7 +589,7 @@ sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] ex
   val second: Value[IV2]
   val third: Value[IV3]
 
-  override def cost[C <: Context[C]](context: C): Long =
+  override def cost[C <: Context](context: C): Long =
     first.cost(context) + second.cost(context) + third.cost(context) + Cost.QuadrupleDeclaration
   val opType = SFunc(Vector(first.tpe, second.tpe, third.tpe), tpe)
 }

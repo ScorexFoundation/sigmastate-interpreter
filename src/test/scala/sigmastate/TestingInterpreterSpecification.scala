@@ -348,7 +348,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
 case class TestingContext(height: Int,
                           override val extension: ContextExtension = ContextExtension(values = Map())
-                         ) extends Context[TestingContext] {
+                         ) extends Context {
   override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
 
   override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {

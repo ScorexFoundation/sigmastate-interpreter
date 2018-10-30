@@ -61,7 +61,7 @@ trait Interpreter extends ScorexLogging {
   import CryptoConstants._
   import Interpreter.ReductionResult
 
-  type CTX <: Context[CTX]
+  type CTX <: Context
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
 
@@ -450,8 +450,8 @@ trait Interpreter extends ScorexLogging {
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proverResult: ProverResult,
-             message: Array[Byte]): Try[VerificationResult] = {
-    val ctxv = context.withExtension(proverResult.extension)
+             message: Array[Byte]): Try[VerificationResult] = Try {
+    val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
     verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
   }
 
@@ -461,7 +461,7 @@ trait Interpreter extends ScorexLogging {
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension)
     verify(env, exp, ctxv, proverResult.proof, message)
-  }
+  }.flatten
 
 
   //todo: do we need the method below?
@@ -482,7 +482,7 @@ object Interpreter {
   val ScriptNameProp = "ScriptName"
 
   implicit class InterpreterOps(I: Interpreter) {
-    def eval[T <: SType](ctx: Context[_], ev: Value[T]): Value[T] = {
+    def eval[T <: SType](ctx: Context, ev: Value[T]): Value[T] = {
       val reduced = I.reduceUntilConverged(ctx.asInstanceOf[I.CTX], ev)
       reduced
     }

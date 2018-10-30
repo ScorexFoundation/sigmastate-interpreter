@@ -8,7 +8,7 @@ lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.7",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -69,7 +69,7 @@ val testingDependencies = Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.scorexfoundation" %% "scrypto" % "2.1.3",
+  "org.scorexfoundation" %% "scrypto" % "2.1.4",
   "org.scorexfoundation" %% "scorex-util" % "0.1.1",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",

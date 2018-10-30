@@ -231,4 +231,10 @@ class SigmaSpecializerTest extends PropSpec
   property("string concat") {
     spec(""" "a" + "b" """) shouldBe StringConstant("ab")
   }
+
+  property("ExtractCreationInfo") {
+    spec("SELF.creationInfo") shouldBe ExtractCreationInfo(Self)
+    spec("SELF.creationInfo._1") shouldBe SelectField(ExtractCreationInfo(Self), 1)
+    spec("SELF.creationInfo._2") shouldBe SelectField(ExtractCreationInfo(Self), 2)
+  }
 }

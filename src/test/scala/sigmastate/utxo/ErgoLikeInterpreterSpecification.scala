@@ -1,6 +1,9 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
+import org.ergoplatform._
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
@@ -9,20 +12,19 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import org.ergoplatform._
 
-class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
+class ErgoLikeTestInterpreterSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   property("scripts EQ/NEQ") {
-    val prover1 = new ErgoLikeProvingInterpreter
-    val prover2 = new ErgoLikeProvingInterpreter
+    val prover1 = new ErgoLikeTestProvingInterpreter
+    val prover2 = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val h1 = prover1.dlogSecrets.head.publicImage
     val h2 = prover2.dlogSecrets.head.publicImage
@@ -41,10 +43,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("DH tuple") {
-    val prover = new ErgoLikeProvingInterpreter
-    val fakeProver = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val fakeProver = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val secret = prover.dhSecrets.head
 
@@ -53,7 +55,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = SigmaPropConstant(ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)).isValid
     val wrongProp = SigmaPropConstant(ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.u)).isValid
 
-    val env = Map("g"->ci.g, "h"->ci.h, "u"->ci.u, "v"->ci.v, "s"->secret.publicImage)
+    val env = Map("g" -> ci.g, "h" -> ci.h, "u" -> ci.u, "v" -> ci.v, "s" -> secret.publicImage)
     val compiledProp1 = compile(env, "s.isValid").asBoolValue
     val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v).isValid").asBoolValue
     compiledProp1 shouldBe prop
@@ -63,6 +65,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -75,10 +78,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("DH tuple - simulation") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubdhB = proverB.dhSecrets.head.publicImage
@@ -92,6 +95,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -101,10 +105,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("DH tuple and DLOG") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubdhA = proverA.dhSecrets.head.publicImage
@@ -118,6 +122,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -130,10 +135,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   ignore("mixing scenario w. timeout") {  // TODO Don't know how to evalNode(Fold(MapCollection
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyA2 = proverA.dlogSecrets.head.publicImage
@@ -180,6 +185,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = fakeSelf)
@@ -197,8 +203,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   ignore("map + sum") { // TODO Don't know how to evalNode(Fold(MapCollection(...
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -226,6 +232,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = fakeSelf)
@@ -235,8 +242,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("byindex") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -255,6 +262,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = fakeSelf)
@@ -273,7 +281,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   property("P2SH") {
     val scriptId = 21.toByte
 
-    val prover0 = new ErgoLikeProvingInterpreter()
+    val prover0 = new ErgoLikeTestProvingInterpreter()
 
     val script = SigmaPropConstant(prover0.dlogSecrets.head.publicImage)
     val scriptBytes = ValueSerializer.serialize(script)
@@ -285,22 +293,23 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp).isValid
     val prop = AND(hashEquals, scriptIsCorrect)
 
-    val recipientProposition = SigmaPropConstant(new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage).isValid
+    val recipientProposition = SigmaPropConstant(new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage).isValid
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
       self = ErgoBox(20, TrueLeaf, Seq(), Map()))
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
   }
 
   property("Prove keys from registers") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey1 = prover.dlogSecrets.head.publicImage
     val pubkey2 = prover.dlogSecrets(1).publicImage
@@ -327,11 +336,12 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val s1 = ErgoBox(20, TrueLeaf, Seq(),
       Map(reg1 -> pubkey1.value.asInstanceOf[GroupElementConstant],
-          reg2 -> pubkey2.value.asInstanceOf[GroupElementConstant]))
+        reg2 -> pubkey2.value.asInstanceOf[GroupElementConstant]))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = s1)
@@ -345,10 +355,11 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val reg4 = ErgoBox.nonMandatoryRegisters(3)
 
     val s2 = ErgoBox(20, TrueLeaf, Seq(), Map(reg3 -> pubkey2.value.asInstanceOf[GroupElementConstant],
-                                              reg4 -> pubkey1.value.asInstanceOf[GroupElementConstant]))
+      reg4 -> pubkey1.value.asInstanceOf[GroupElementConstant]))
     val wrongCtx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction,
       self = s2)
@@ -362,9 +373,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val scriptId = 21.toByte
 
     val bitsCount = 160
-    val bytesCount= bitsCount / 8
+    val bytesCount = bitsCount / 8
 
-    val prover0 = new ErgoLikeProvingInterpreter()
+    val prover0 = new ErgoLikeTestProvingInterpreter()
 
     val customScript = prover0.dlogSecrets.head.publicImage.isValid
     val scriptBytes = ValueSerializer.serialize(customScript)
@@ -377,17 +388,18 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(hashEquals, scriptIsCorrect)
 
-    val recipientProposition = new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage.isValid
+    val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage.isValid
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
       self = ErgoBox(20, TrueLeaf, Seq(), Map()))
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
   }
 
 
@@ -396,8 +408,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     * (and no more boxes could be provided as an input of a spending transaction).
     */
   property("Along with a brother (using Box constant in environment)") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey1 = prover.dlogSecrets.head.publicImage
     val pubkey2 = prover.dlogSecrets(1).publicImage
@@ -433,6 +445,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(brother, s),
       spendingTransaction,
       self = s)
@@ -443,6 +456,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val wrongCtx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(brotherWithWrongId, s),
       spendingTransaction,
       self = s)
@@ -468,8 +482,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     * (and possibly others, too).
     */
   property("Along with a friend and maybe others (!!! Box constant in environment)") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey1 = prover.dlogSecrets.head.publicImage
     val pubkey2 = prover.dlogSecrets(1).publicImage
@@ -502,6 +516,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(friend, s),
       spendingTransaction,
       self = s)
@@ -512,6 +527,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(s, friend),
       spendingTransaction,
       self = s)
@@ -522,6 +538,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx3 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(friend, s, friendWithWrongId),
       spendingTransaction,
       self = s)
@@ -532,6 +549,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val wrongCtx1 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(friendWithWrongId, s),
       spendingTransaction,
       self = s)
@@ -541,8 +559,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("If") {
-    val prover = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage.isValid
 
@@ -581,6 +599,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(input0, input1, input2, input3),
       spendingTransaction,
       self = input3)
@@ -589,5 +608,41 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     //todo: check failing branches
+  }
+
+  property("PK - P2PK address type") {
+    implicit val ergoAddressEncoder: ErgoAddressEncoder =
+      new ErgoAddressEncoder(TestnetNetworkPrefix)
+
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
+
+    val dk1 = ProveDlog(prover.dlogSecrets.head.publicImage.h)
+    val p2pk = P2PKAddress(dk1)
+    val encodedP2PK = p2pk.toString
+
+    val prop1 = ErgoAddressToSigmaProp(StringConstant(encodedP2PK)).isValid
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq()),
+      self = ErgoBox(20, TrueLeaf, Seq(), Map()))
+
+    val proof1 = prover.prove(prop1, ctx, fakeMessage).get.proof
+    verifier.verify(prop1, ctx, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe true
+
+    val ctxMainnet = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq()),
+      self = ErgoBox(20, TrueLeaf, Seq(), Map()),
+      metadata = Metadata(MainnetNetworkPrefix))
+
+    verifier.verify(prop1, ctxMainnet, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe false
   }
 }

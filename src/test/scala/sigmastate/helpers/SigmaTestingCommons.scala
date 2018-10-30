@@ -1,12 +1,12 @@
 package sigmastate.helpers
 
-import org.ergoplatform
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Matchers}
 import scorex.crypto.hash.Blake2b256
+import scorex.util._
 import sigmastate.Values.{EvaluatedValue, SValue, TrueLeaf, Value, GroupElementConstant}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
 import sigmastate.interpreter.CryptoConstants
@@ -43,8 +43,12 @@ trait SigmaTestingCommons extends PropSpec
                 proposition: Value[SBoolean.type],
                 additionalTokens: Seq[(TokenId, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
-    = ergoplatform.ErgoBox(value, proposition, additionalTokens, additionalRegisters)
+    = ErgoBox(value, proposition, additionalTokens, additionalRegisters)
 
+  def createBox(value: Int,
+                proposition: Value[SBoolean.type],
+                creationHeight: Long)
+    = ErgoBox(value, proposition, Seq(), Map(), Array.fill[Byte](32)(0.toByte).toModifierId, 0, creationHeight)
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
       env.get(ScriptNameProp) match {

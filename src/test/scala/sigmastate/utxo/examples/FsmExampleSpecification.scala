@@ -1,14 +1,13 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R3, R4}
 import org.ergoplatform._
-import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -38,14 +37,14 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     * a proof for a corresponding transition description in the tree, and show a proof for transition script (e.g. a
     * signature). Thus the FSM is being revealed on the run, and the states not visited yet are not visible (on chain).
     */
-  property("simple FSM example"){
+  property("simple FSM example") {
 
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
 
     val script1 = prover.dlogSecrets.head.publicImage.isValid
     val script2 = prover.dhSecrets.head.publicImage.isValid
     val script3 = AND(script1, script2)
-    val script4 = prover.dlogSecrets.tail.head.publicImage.isValid  //a script to leave FSM
+    val script4 = prover.dlogSecrets.tail.head.publicImage .isValid //a script to leave FSM
 
     val script1Hash = hash.Blake2b256(ValueSerializer.serialize(script1))
     val script2Hash = hash.Blake2b256(ValueSerializer.serialize(script2))
@@ -80,12 +79,12 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val scriptVarId = 2: Byte
     val transitionProofId = 3: Byte
 
-    val isMember = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get,
+    val isMember = OptionIsDefined(TreeLookup(OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
         Append(
           ConcreteCollection[SByte.type](
-            ExtractRegisterAs[SByte.type](Self, currentStateRegister).get,
-            ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
-                                          currentStateRegister).getOrElse(ByteConstant(-1))),
+            OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
+            OptionGetOrElse(ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
+                                          currentStateRegister),ByteConstant(-1))),
           CalcBlake2b256(GetVarByteArray(scriptVarId).get)
         ),
         GetVarByteArray(transitionProofId).get))
@@ -94,27 +93,31 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     val treePreservation = EQ(
       ExtractRegisterAs[SAvlTree.type](ByIndex(Outputs, IntConstant.Zero),
-                                        fsmDescRegister).getOrElse(AvlTreeConstant(AvlTreeData.dummy)),
+        fsmDescRegister).getOrElse(AvlTreeConstant(AvlTreeData.dummy)),
       ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get)
 
     val preservation = AND(scriptPreservation, treePreservation)
 
     val finalStateCheck = EQ(ExtractRegisterAs[SByte.type](Self, currentStateRegister).get, ByteConstant(state3Id))
-/*
-    TODO uncomment when OR will be lazy
-    val finalScriptCorrect = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get,
-      Append(
-        ConcreteCollection[SByte.type](ExtractRegisterAs[SByte.type](Self, currentStateRegister).get,
-                                       ByteConstant(leaveFsmStateId)),
-        CalcBlake2b256(TaggedByteArray(scriptVarId))
-      ),
-      TaggedByteArray(transitionProofId)))
-*/
+
+    /*
+    val finalScriptCorrect = OptionIsDefined(
+      TreeLookup(
+        OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
+        Append(
+          ConcreteCollection[SByte.type](
+            OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
+            ByteConstant(leaveFsmStateId)),
+          CalcBlake2b256(TaggedByteArray(scriptVarId))
+        ),
+        TaggedByteArray(transitionProofId))
+    )*/
+
     val finalScriptCorrect = TrueLeaf
 
 
     val fsmScript = OR(
-      AND(isMember, DeserializeContext(scriptVarId, SBoolean), preservation),             //going through FSM
+      AND(isMember, DeserializeContext(scriptVarId, SBoolean), preservation), //going through FSM
       AND(finalStateCheck, finalScriptCorrect, DeserializeContext(scriptVarId, SBoolean)) //leaving FSM
     )
 
@@ -122,11 +125,11 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     //creating a box in an initial state
 
     val fsmBox1 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
-                                             currentStateRegister -> ByteConstant(state1Id)))
+      currentStateRegister -> ByteConstant(state1Id)))
 
     //successful transition from state1 to state2
     val fsmBox2 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
-                                             currentStateRegister -> ByteConstant(state2Id)))
+      currentStateRegister -> ByteConstant(state2Id)))
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition12 ++ script1Hash)))
     val transition12Proof = avlProver.generateProof()
@@ -134,6 +137,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox2)),
       self = fsmBox1)
@@ -143,7 +147,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       .withContextExtender(transitionProofId, ByteArrayConstant(transition12Proof))
       .prove(fsmScript, ctx, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(fsmScript, ctx, spendingProof, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(fsmScript, ctx, spendingProof, fakeMessage).get._1 shouldBe true
 
     //successful transition back from state2 to state1
 
@@ -153,6 +157,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = 51,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox1)),
       self = fsmBox2)
@@ -162,7 +167,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       .withContextExtender(transitionProofId, ByteArrayConstant(transition21Proof))
       .prove(fsmScript, ctx2, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(fsmScript, ctx2, spendingProof2, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(fsmScript, ctx2, spendingProof2, fakeMessage).get._1 shouldBe true
 
 
     //Box for state3
@@ -180,6 +185,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx3 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
       self = fsmBox1)
@@ -206,6 +212,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx23 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
       self = fsmBox2)
@@ -215,7 +222,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       .withContextExtender(transitionProofId, ByteArrayConstant(transition23Proof))
       .prove(fsmScript, ctx23, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(fsmScript, ctx23, spendingProof23, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(fsmScript, ctx23, spendingProof23, fakeMessage).get._1 shouldBe true
 
     //clearing FSM out of the box in the final state
 
@@ -227,6 +234,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val ctx30 = ErgoLikeContext(
       currentHeight = 52,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox3),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(freeBox)),
       self = fsmBox3)
@@ -236,12 +244,13 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       .withContextExtender(transitionProofId, ByteArrayConstant(transition30Proof))
       .prove(fsmScript, ctx30, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(fsmScript, ctx30, spendingProof30, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(fsmScript, ctx30, spendingProof30, fakeMessage).get._1 shouldBe true
 
     //it is impossible to leave FSM at state2
     val ctx20 = ErgoLikeContext(
       currentHeight = 52,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(freeBox)),
       self = fsmBox2)

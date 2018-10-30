@@ -41,12 +41,12 @@ object ContextExtension {
 }
 
 
-trait Context[C <: Context[C]] {
+trait Context{
   val extension: ContextExtension
 
-  def withExtension(newExtension: ContextExtension): C
+  def withExtension(newExtension: ContextExtension): Context
 
-  def withBindings(bindings: (Byte, EvaluatedValue[_ <: SType])*): Context[_] = {
+  def withBindings(bindings: (Byte, EvaluatedValue[_ <: SType])*): Context = {
     val ext = extension.add(bindings:_*)
     withExtension(ext)
   }

@@ -1,10 +1,10 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
-import sigmastate.Values.{ConcreteCollection, Value}
+import org.ergoplatform.ErgoLikeContext
 import scapi.sigma.DLogProtocol.DLogProverInput
+import sigmastate.Values.{ConcreteCollection, Value}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 
 
@@ -12,11 +12,11 @@ class ThresholdSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
 
   ignore("basic threshold compilation/execution") { // TODO Error in evaluate( ... SigmaDslBuilder.atLeast(...
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val proverD = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val skA = proverA.dlogSecrets.head
     val skB = proverB.dlogSecrets.head
@@ -34,6 +34,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -110,10 +111,11 @@ class ThresholdSpecification extends SigmaTestingCommons {
   }
 
   ignore("threshold reduce to crypto") {
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -168,7 +170,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
         val pReduced = prover.reduceToCrypto(ctx, AtLeast(bound, t.vector))
         pReduced.isSuccess shouldBe true
         if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
-          if (t.numTrue >= bound)  {
+          if (t.numTrue >= bound) {
             pReduced.get._1 shouldBe tr
             case0TrueHit = true
           }
@@ -233,15 +235,15 @@ class ThresholdSpecification extends SigmaTestingCommons {
   // TODO LHF
   ignore("3-out-of-6 threshold") {
     // This example is from the white paper
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val proverD = new ErgoLikeProvingInterpreter
-    val proverE = new ErgoLikeProvingInterpreter
-    val proverF = new ErgoLikeProvingInterpreter
-    val proverG = new ErgoLikeProvingInterpreter
-    val proverH = new ErgoLikeProvingInterpreter
-    val proverI = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverE = new ErgoLikeTestProvingInterpreter
+    val proverF = new ErgoLikeTestProvingInterpreter
+    val proverG = new ErgoLikeTestProvingInterpreter
+    val proverH = new ErgoLikeTestProvingInterpreter
+    val proverI = new ErgoLikeTestProvingInterpreter
 
     val skA = proverA.dlogSecrets.head
     val skB = proverB.dlogSecrets.head
@@ -283,11 +285,12 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
 
     for (prover <- goodProvers) {
@@ -295,7 +298,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       verifier.verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    badProver.prove(prop,ctx,fakeMessage).isFailure shouldBe true
+    badProver.prove(prop, ctx, fakeMessage).isFailure shouldBe true
 
   }
 
@@ -322,7 +325,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
 
     // the integer indicates how many subpropositions the prover can prove
-    var provers = Seq[(Int, ErgoLikeProvingInterpreter)]((0, new ErgoLikeProvingInterpreter))
+    var provers = Seq[(Int, ErgoLikeTestProvingInterpreter)]((0, new ErgoLikeTestProvingInterpreter))
     // create 32 different provers
     for (i <- secrets.indices) {
       provers = provers ++ provers.map(p => (p._1 + 1, p._2.withSecrets(secrets(i))))
@@ -330,18 +333,19 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
-    def canProve(prover: ErgoLikeProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
+    def canProve(prover: ErgoLikeTestProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
       val proof = prover.prove(proposition, ctx, fakeMessage).get
       verifier.verify(proposition, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    def cannotProve(prover: ErgoLikeProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
+    def cannotProve(prover: ErgoLikeTestProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
       prover.prove(proposition, ctx, fakeMessage).isFailure shouldBe true
     }
 

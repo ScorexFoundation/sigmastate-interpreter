@@ -3,11 +3,11 @@ package sigmastate.utxo
 import java.lang.reflect.InvocationTargetException
 
 import org.ergoplatform.ErgoBox.{R6, R8}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, Self}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, Self}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.OptionUnwrapNone
@@ -50,7 +50,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
            ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
            script: String, propExp: Value[SBoolean.type],
       onlyPositive: Boolean = false) = {
-    val prover = new ErgoLikeProvingInterpreter() {
+    val prover = new ErgoLikeTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
         val p2 = dlogSecrets(1).publicImage
@@ -64,7 +64,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val p3 = prover.dlogSecrets(2).publicImage
     val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(
       reg1 -> SigmaPropConstant(p3),
-      reg2 -> IntConstant(1)))
+      reg2 -> IntConstant(1)),
+      creationHeight = 5L)
 
     val ctx = ErgoLikeContext.dummy(outputToSpend)
 
@@ -73,7 +74,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val ctxExt = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
     if (!onlyPositive)
       verifier.verify(namedEnv, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
     verifier.verify(namedEnv, prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
@@ -417,6 +418,20 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test("Def4", env, ext,
       "{ getVar[Int](99).isDefined == false }",
       EQ(GetVarInt(99).isDefined, FalseLeaf),
+      true
+    )
+  }
+
+  property("ExtractCreationInfo") {
+    test(env, ext,
+      "SELF.creationInfo._1 == 5L",
+      EQ(SelectField(ExtractCreationInfo(Self),1),LongConstant(5)),
+      true
+    )
+    // suppose to be tx.id + box index
+    test(env, ext,
+      "SELF.creationInfo._2.size == 34",
+      EQ(SizeOf(SelectField(ExtractCreationInfo(Self),2).asValue[SByteArray]),IntConstant(34)),
       true
     )
   }

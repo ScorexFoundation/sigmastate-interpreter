@@ -96,7 +96,8 @@ object OpCodes extends ValueCodes {
   val SigmaAndCode             : OpCode = (LastConstantCode + 56).toByte
   val SigmaOrCode              : OpCode = (LastConstantCode + 57).toByte
   val BinOrCode                : OpCode = (LastConstantCode + 58).toByte
-  val BinAndCode               : OpCode = (LastConstantCode + 59).toByte // reserved 60
+  val BinAndCode               : OpCode = (LastConstantCode + 59).toByte
+  val MinerPubkeyCode          : OpCode = (LastConstantCode + 60).toByte
 
   // Collection and tree operations codes
   val MapCollectionCode    : OpCode = (LastConstantCode + 61).toByte
@@ -119,7 +120,8 @@ object OpCodes extends ValueCodes {
   val ExtractBytesCode         : OpCode = (LastConstantCode + 83).toByte
   val ExtractBytesWithNoRefCode: OpCode = (LastConstantCode + 84).toByte
   val ExtractIdCode            : OpCode = (LastConstantCode + 85).toByte
-  val ExtractRegisterAs        : OpCode = (LastConstantCode + 86).toByte // reserved 87 - 90
+  val ExtractRegisterAs        : OpCode = (LastConstantCode + 86).toByte
+  val ExtractCreationInfoCode  : OpCode = (LastConstantCode + 87).toByte // reserved 88 - 90
 
   // Cryptographic operations codes
   val CalcBlake2b256Code         : OpCode = (LastConstantCode + 91).toByte

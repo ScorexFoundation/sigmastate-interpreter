@@ -3,10 +3,10 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import sigmastate.Values.{ByteArrayConstant, LongConstant, TaggedBox, SigmaPropConstant}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo._
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.interpreter.Interpreter._
+import sigmastate.utxo._
 
 class CrowdfundingExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
@@ -20,13 +20,13 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
   property("Evaluation - Crowdfunding Example") {
 
     //a blockchain node verifying a block containing a spending transaction
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     //backer's prover with his private key
-    val backerProver = new ErgoLikeProvingInterpreter
+    val backerProver = new ErgoLikeTestProvingInterpreter
 
     //project's prover with his private key
-    val projectProver = new ErgoLikeProvingInterpreter
+    val projectProver = new ErgoLikeTestProvingInterpreter
 
     val backerPubKey = backerProver.dlogSecrets.head.publicImage
     val projectPubKey = projectProver.dlogSecrets.head.publicImage
@@ -111,6 +111,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
       self = outputToSpend)
@@ -132,6 +133,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx2,
       self = outputToSpend)
@@ -154,6 +156,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val ctx3 = ErgoLikeContext(
       currentHeight = timeout.value,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx3,
       self = outputToSpend)

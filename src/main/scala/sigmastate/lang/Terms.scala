@@ -17,7 +17,7 @@ object Terms {
   case class Block(bindings: Seq[Val], result: SValue) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
 
-    override def cost[C <: Context[C]](context: C): Long = ???
+    override def cost[C <: Context](context: C): Long = ???
 
     override def evaluated: Boolean = false
     def tpe: SType = result.tpe
@@ -39,7 +39,7 @@ object Terms {
   case class ValNode(name: String, givenType: SType, body: SValue) extends Val {
     override val opCode: OpCode = OpCodes.Undefined
 
-    override def cost[C <: Context[C]](context: C): Long = ???
+    override def cost[C <: Context](context: C): Long = ???
 
     override def evaluated: Boolean = ???
     def tpe: SType = givenType ?: body.tpe
@@ -58,7 +58,7 @@ object Terms {
   case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
 
-    override def cost[C <: Context[C]](context: C): Long = obj.cost(context) + Cost.SelectFieldDeclaration
+    override def cost[C <: Context](context: C): Long = obj.cost(context) + Cost.SelectFieldDeclaration
 
     override def evaluated: Boolean = ???
     val tpe: SType = resType.getOrElse(obj.tpe match {
@@ -75,7 +75,7 @@ object Terms {
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
 
-    override def cost[C <: Context[C]](context: C): Long = ???
+    override def cost[C <: Context](context: C): Long = ???
 
     override def evaluated: Boolean = ???
 
@@ -88,7 +88,7 @@ object Terms {
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
 
-    override def cost[C <: Context[C]](context: C): Long = ???
+    override def cost[C <: Context](context: C): Long = ???
 
     override def evaluated: Boolean = false
     lazy val tpe: SType = func.tpe match {
@@ -108,7 +108,7 @@ object Terms {
 //    )
     override val opCode: OpCode = OpCodes.Undefined
 
-    override def cost[C <: Context[C]](context: C): Long = ???
+    override def cost[C <: Context](context: C): Long = ???
 
     override def evaluated: Boolean = false
     lazy val tpe: SType = input.tpe match {
@@ -126,7 +126,7 @@ object Terms {
 
     override val opCode: OpCode = OpCodes.Undefined
 
-    override def cost[C <: Context[C]](context: C): Long = ???
+    override def cost[C <: Context](context: C): Long = ???
 
     override def evaluated: Boolean = false
 
@@ -146,7 +146,7 @@ object Terms {
   {
     require(!(tpeParams.nonEmpty && body.nonEmpty), s"Generic function definitions are not supported, but found $this")
     override val opCode: OpCode = OpCodes.Undefined
-    override def cost[C <: Context[C]](context: C): Long = ???
+    override def cost[C <: Context](context: C): Long = ???
     override def evaluated: Boolean = false
     lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe), tpeParams)
     /** This is not used as operation, but rather to form a program structure */

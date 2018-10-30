@@ -1,14 +1,15 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
+import org.ergoplatform.{ErgoLikeContext, Height}
 import scorex.crypto.hash.Blake2b256
+import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import interpreter.Interpreter._
 import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.SizeOf
-import scorex.utils.Random
+import sigmastate.utxo.{ErgoLikeTestInterpreter, SizeOf}
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
@@ -23,11 +24,11 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     */
   property("atomic cross-chain trading") {
     val x = Random.randomBytes(32)
-    val proverA = (new ErgoLikeProvingInterpreter).withContextExtender(1, ByteArrayConstant(x))
-    val proverB = new ErgoLikeProvingInterpreter
+    val proverA = (new ErgoLikeTestProvingInterpreter).withContextExtender(1, ByteArrayConstant(x))
+    val proverB = new ErgoLikeTestProvingInterpreter
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val hx = ByteArrayConstant(Blake2b256(x))
 
@@ -87,6 +88,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val ctxf1 = ErgoLikeContext(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -99,6 +101,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val ctxf2 = ErgoLikeContext(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(), spendingTransaction = null, self = fakeSelf)
     proverB.prove(env, prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
@@ -108,6 +111,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -122,6 +126,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -134,7 +139,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val badX = Random.randomBytes(33)
     val badProverA = proverA.withContextExtender(1, ByteArrayConstant(badX))
     val badHx = ByteArrayConstant(Blake2b256(badX))
-    val badEnv = env + ("hx"->badHx)
+    val badEnv = env + ("hx" -> badHx)
     val badProp2 = compile(badEnv, script2).asBoolValue
 
     badProverA.prove(badEnv, badProp2, ctx1, fakeMessage).isSuccess shouldBe false

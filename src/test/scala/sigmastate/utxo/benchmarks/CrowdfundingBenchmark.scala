@@ -2,9 +2,9 @@ package sigmastate.utxo.benchmarks
 
 
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
-import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.Values._
+import sigmastate._
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 
 
 class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons {
@@ -19,6 +19,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
     val ctx = ErgoLikeContext(
       currentHeight = contract.timeout - 1, // HEIGHT < timeout,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx,
       self = outputToSpend)
@@ -33,15 +34,15 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
   ignore("Evaluation by Precompiled Kernel(!!! ignore)") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
-      val backerProver = new ErgoLikeProvingInterpreter
+      val backerProver = new ErgoLikeTestProvingInterpreter
       //project's prover with his private key
-      val projectProver = new ErgoLikeProvingInterpreter
+      val projectProver = new ErgoLikeTestProvingInterpreter
       val contract = new CrowdFundingKernelContract(timeout, minToRaise, backerProver, projectProver)
       val ctx = createTestContext(contract)
 
       val (ok, time) = measureTime {
         var res = true
-        for ( i <- 1 to nIters ) {
+        for (i <- 1 to nIters) {
           val proof = contract.prove(ctx, fakeMessage)
           res = contract.verify(proof, ctx, fakeMessage).get._1
           res shouldBe true
@@ -56,15 +57,15 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
   ignore("Evaluation by Script Interpretation(!!! ignore)") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
-      val backerProver = new ErgoLikeProvingInterpreter
+      val backerProver = new ErgoLikeTestProvingInterpreter
       //project's prover with his private key
-      val projectProver = new ErgoLikeProvingInterpreter
+      val projectProver = new ErgoLikeTestProvingInterpreter
       val contract = new CrowdFundingScriptContract(timeout, minToRaise, backerProver, projectProver)
       val ctx = createTestContext(contract)
 
       val (ok, time) = measureTime {
         var res = true
-        for ( i <- 1 to nIters ) {
+        for (i <- 1 to nIters) {
           val proof = contract.prove(ctx, fakeMessage)
           res = contract.verify(proof, ctx, fakeMessage).get._1
           res shouldBe true

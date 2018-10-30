@@ -35,10 +35,11 @@ object DLogProtocol {
 
     override val opCode: OpCode = OpCodes.ProveDlogCode
 
-    override def cost[C <: Context[C]](context: C): Long = Cost.DlogDeclaration
+    override def cost[C <: Context](context: C): Long = Cost.DlogDeclaration
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
+    lazy val pkBytes: Array[Byte] = h.getEncoded(true)
   }
 
   object ProveDlog {

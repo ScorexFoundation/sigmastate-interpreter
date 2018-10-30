@@ -45,7 +45,6 @@ object ProverResult {
       w.putUShort(obj.proof.length)
       w.putBytes(obj.proof)
       ContextExtension.serializer.serializeBody(obj.extension, w)
-
     }
 
     override def parseBody(r: ByteReader): ProverResult = {
@@ -125,7 +124,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   def prove(env: ScriptEnv, exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
     import TrivialProof._
-    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions), env, exp).get
+    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions).asInstanceOf[CTX], env, exp).get
 
     def errorReducedToFalse = Interpreter.error("Script reduced to false")
 

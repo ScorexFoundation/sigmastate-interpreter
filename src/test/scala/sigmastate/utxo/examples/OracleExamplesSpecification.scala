@@ -3,6 +3,9 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
+import org.ergoplatform.ErgoBox.RegisterId
+import org.ergoplatform._
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import org.ergoplatform.ErgoBox.{RegisterId, R1, MandatoryRegisterId}
 import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -10,7 +13,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import org.ergoplatform._
 import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptNameProp}
@@ -68,11 +71,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("oracle example") { // TODO LHF InterpreterException: Script reduced to false
-    val oracle = new ErgoLikeProvingInterpreter
-    val aliceTemplate = new ErgoLikeProvingInterpreter
-    val bob = new ErgoLikeProvingInterpreter
+    val oracle = new ErgoLikeTestProvingInterpreter
+    val aliceTemplate = new ErgoLikeTestProvingInterpreter
+    val bob = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubImage = oraclePrivKey.publicImage
@@ -160,6 +163,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
+      ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
       self = null)
@@ -193,11 +197,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("lightweight oracle example") {
-    val oracle = new ErgoLikeProvingInterpreter
-    val alice = new ErgoLikeProvingInterpreter
-    val bob = new ErgoLikeProvingInterpreter
+    val oracle = new ErgoLikeTestProvingInterpreter
+    val alice = new ErgoLikeTestProvingInterpreter
+    val bob = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage.isValid
@@ -232,6 +236,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),
       spendingTransaction,
       self = null)

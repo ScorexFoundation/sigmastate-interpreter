@@ -25,6 +25,7 @@ trait TransformerGenerators {
   implicit val arbWhere: Arbitrary[Where[SInt.type]] = Arbitrary(whereGen)
   implicit val sizeOf: Arbitrary[SizeOf[SInt.type]] = Arbitrary(sizeOfGen)
   implicit val arbExtractAmount: Arbitrary[ExtractAmount] = Arbitrary(extractAmountGen)
+  implicit val arbExtractCreationInfo: Arbitrary[ExtractCreationInfo] = Arbitrary(extractCreationInfoGen)
   implicit val arbExtractScriptBytes: Arbitrary[ExtractScriptBytes] = Arbitrary(extractScriptBytesGen)
   implicit val arbExtractBytes: Arbitrary[ExtractBytes] = Arbitrary(extractBytesGen)
   implicit val arbExtractBytesWithNoRef: Arbitrary[ExtractBytesWithNoRef] = Arbitrary(extractBytesWithNoRefGen)
@@ -104,6 +105,8 @@ trait TransformerGenerators {
     r <- arbRegisterIdentifier.arbitrary
     dvInt <- arbIntConstants.arbitrary
   } yield ExtractRegisterAs(input, r)(SInt)
+  val extractCreationInfoGen: Gen[ExtractCreationInfo] =
+    arbTaggedBox.arbitrary.map { b => mkExtractCreationInfo(b).asInstanceOf[ExtractCreationInfo] }
 
   val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] =
     Arbitrary.arbitrary[Byte].map(b =>

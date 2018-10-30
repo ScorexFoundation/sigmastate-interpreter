@@ -41,7 +41,7 @@ object Values {
 
     def typeCode: SType.TypeCode = tpe.typeCode
 
-    def cost[C <: Context[C]](context: C): Long
+    def cost[C <: Context](context: C): Long
 
     /** Returns true if this value represent some constant or sigma statement, false otherwise */
     def evaluated: Boolean
@@ -110,7 +110,7 @@ object Values {
     override def companion: ValueCompanion = Constant
 
     override val opCode: OpCode = ConstantCode
-    override def cost[C <: Context[C]](context: C) = tpe.dataSize(value)
+    override def cost[C <: Context](context: C) = tpe.dataSize(value)
 
     override def equals(obj: scala.Any): Boolean = obj match {
       case c: Constant[_] => Objects.deepEquals(value, c.value) && tpe == c.tpe
@@ -151,7 +151,7 @@ object Values {
   case class TaggedVariableNode[T <: SType](varId: Byte, override val tpe: T)
     extends TaggedVariable[T] {
     override val opCode: OpCode = TaggedVariableCode
-    override def cost[C <: Context[C]](context: C): Long = context.extension.cost(varId) + 1
+    override def cost[C <: Context](context: C): Long = context.extension.cost(varId) + 1
     def opType: SFunc = ???
   }
 
@@ -162,7 +162,7 @@ object Values {
 
   case object UnitConstant extends EvaluatedValue[SUnit.type] {
     override val opCode = UnitConstantCode
-    override def cost[C <: Context[C]](context: C) = 1
+    override def cost[C <: Context](context: C) = 1
 
     override def tpe = SUnit
 
@@ -448,7 +448,7 @@ object Values {
 
     import CryptoConstants.dlogGroup
 
-    override def cost[C <: Context[C]](context: C) = 10
+    override def cost[C <: Context](context: C) = 10
 
     override def tpe = SGroupElement
 
@@ -511,7 +511,7 @@ object Values {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]])
     }
-    override def cost[C <: Context[C]](context: C) = Cost.TupleDeclaration + items.map(_.cost(context)).sum
+    override def cost[C <: Context](context: C) = Cost.TupleDeclaration + items.map(_.cost(context)).sum
   }
 
   object Tuple {
@@ -524,14 +524,14 @@ object Values {
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override val opCode = SomeValueCode
-    def cost[C <: Context[C]](context: C): Long = x.cost(context) + 1
+    def cost[C <: Context](context: C): Long = x.cost(context) + 1
     val tpe = SOption(x.tpe)
     def opType = SFunc(x.tpe, tpe)
   }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
     override val opCode = NoneValueCode
-    def cost[C <: Context[C]](context: C): Long = 1
+    def cost[C <: Context](context: C): Long = 1
     val tpe = SOption(elemType)
     def opType = SFunc(elemType, tpe)
   }
@@ -544,7 +544,7 @@ object Values {
       else
         ConcreteCollectionCode
 
-    def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollectionDeclaration + items.map(_.cost(context)).sum
+    def cost[C <: Context](context: C): Long = Cost.ConcreteCollectionDeclaration + items.map(_.cost(context)).sum
 
     val tpe = SCollection[V](elementType)
 

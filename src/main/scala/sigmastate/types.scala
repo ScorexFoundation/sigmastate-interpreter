@@ -492,12 +492,14 @@ case object SBox extends SProduct with SPredefType {
   val Id = "id"
   val Bytes = "bytes"
   val BytesWithNoRef = "bytesWithNoRef"
+  val CreationInfo = "creationInfo"
   val methods = Vector(
     SMethod(Value, SLong), // see ExtractAmount
     SMethod(PropositionBytes, SCollectionType(SByte)), // see ExtractScriptBytes
     SMethod(Bytes, SCollectionType(SByte)), // see ExtractBytes
     SMethod(BytesWithNoRef, SCollectionType(SByte)), // see ExtractBytesWithNoRef
-    SMethod(Id, SCollectionType(SByte)) // see ExtractId
+    SMethod(Id, SCollectionType(SByte)), // see ExtractId
+    SMethod(CreationInfo, STuple(SLong, SCollectionType(SByte))) // see ExtractCreationInfo
   ) ++ registers()
 }
 

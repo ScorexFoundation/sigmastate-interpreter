@@ -1,16 +1,23 @@
-package org.ergoplatform
+package sigmastate.utxo
 
 import sigmastate.eval.{RuntimeIRContext, IRContext}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform._
 
 import scala.util.{Success, Failure}
 
+class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends ErgoLikeInterpreter(maxCost) {
+  override type CTX = ErgoLikeContext
+}
+
 class ErgoTransactionValidator(implicit IR: IRContext) {
-  val verifier = new ErgoLikeInterpreter()
+  val verifier = new ErgoLikeTestInterpreter()
 
   //todo: check that outputs are well-formed?
   def validate(tx: ErgoLikeTransaction,
                blockchainState: BlockchainState,
+               minerPubkey: Array[Byte],
                boxesReader: ErgoBoxReader): Either[Throwable, Long] = {
 
     val msg = tx.messageToSign
@@ -30,7 +37,7 @@ class ErgoTransactionValidator(implicit IR: IRContext) {
       val proverExtension = tx.inputs(idx).spendingProof.extension
 
       val context =
-        ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, boxes,
+        ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, minerPubkey, boxes,
           tx, box, proverExtension)
       val verificationResult = verifier.verify(
         emptyEnv + (ScriptNameProp -> s"height_${blockchainState.currentHeight }_verify"),

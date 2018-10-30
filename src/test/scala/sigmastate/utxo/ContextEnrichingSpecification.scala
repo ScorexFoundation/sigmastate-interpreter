@@ -1,17 +1,17 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
+import org.ergoplatform.ErgoLikeContext
 import scorex.util.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.exceptions.OptionUnwrapNone
 
 class ContextEnrichingSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
   property("context enriching mixed w. crypto") {
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
     val preimage = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -32,13 +32,13 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
     verifier.verify(env, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
   property("context enriching mixed w. crypto 2") {
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
@@ -64,7 +64,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
     verifier.verify(env, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
@@ -78,7 +78,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val r = Base16.decode("bb6633db20").get
 
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(k1, ByteArrayConstant(v1))
       .withContextExtender(k2, ByteArrayConstant(v2))
 
@@ -97,7 +97,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
     //context w/out extensions
     assertExceptionThrown(
       verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
@@ -110,7 +110,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     * The script is asking for a hash function preimage. The "proof" could be replayed, so not really a proof.
     */
   ignore("prover enriching context(!!! ignored)") {
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
 
     val env = Map("blake" -> Blake2b256(preimage))
@@ -128,7 +128,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
     //context w/out extensions
     assertExceptionThrown(verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
       _.getCause.isInstanceOf[OptionUnwrapNone])
@@ -136,7 +136,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
   }
 
   property("prover enriching context 2") {
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
 
@@ -156,7 +156,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val ctxv = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
     //context w/out extensions
     assertExceptionThrown(
       verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,

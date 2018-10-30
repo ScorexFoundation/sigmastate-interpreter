@@ -155,6 +155,7 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
         case (box, SBox.Id) => Some(mkExtractId(box))
         case (box, SBox.Bytes) => Some(mkExtractBytes(box))
         case (box, SBox.BytesWithNoRef) => Some(mkExtractBytesWithNoRef(box))
+        case (box, SBox.CreationInfo) => Some(mkExtractCreationInfo(box))
         case (box, _) if box.tpe.hasMethod(field) =>
           None  // leave it as it is and handle on a level of parent node
         case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
@@ -165,9 +166,6 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
         case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.bytes))
         case _ => None
       }
-
-    case Select(obj, "value", Some(SLong)) if obj.tpe == SBox =>
-      Some(mkExtractAmount(obj.asValue[SBox.type]))
 
     case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
       val index = fn.substring(1).toByte

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoLikeContext
 import sigmastate.SBoolean
 import sigmastate.Values.Value
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
@@ -14,8 +14,8 @@ import scala.util.Try
 class CrowdFundingScriptContract(
                                   timeout: Long,
                                   minToRaise: Long,
-                                  override val backerProver: ErgoLikeProvingInterpreter,
-                                  override val projectProver: ErgoLikeProvingInterpreter
+                                  override val backerProver: ErgoLikeTestProvingInterpreter,
+                                  override val projectProver: ErgoLikeTestProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
   val compiledProposition: Value[SBoolean.type] = {
