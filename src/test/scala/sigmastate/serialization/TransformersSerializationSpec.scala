@@ -91,6 +91,12 @@ class TransformersSerializationSpec extends SerializationSpecification {
     }
   }
 
+  property("ExtractCreationInfo: Serializer round trip") {
+    forAll() { e: ExtractCreationInfo =>
+      roundTripTest(e)
+    }
+  }
+
   property("ExtractRegisterAs: Serializer round trip") {
     forAll { e: ExtractRegisterAs[SInt.type ] =>
       roundTripTest(e)
