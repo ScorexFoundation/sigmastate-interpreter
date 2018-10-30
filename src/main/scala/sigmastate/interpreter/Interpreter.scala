@@ -450,7 +450,7 @@ trait Interpreter extends ScorexLogging {
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proverResult: ProverResult,
-             message: Array[Byte]): Try[VerificationResult] = Try {
+             message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
     verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
   }
@@ -459,9 +459,9 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
-    val ctxv = context.withExtension(proverResult.extension)
+    val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
     verify(env, exp, ctxv, proverResult.proof, message)
-  }.flatten
+  }
 
 
   //todo: do we need the method below?

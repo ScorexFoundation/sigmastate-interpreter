@@ -93,7 +93,7 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 
 case class TrivialProof(condition: Boolean) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.TrivialProofCode
-  override def cost[C <: Context[C]](context: C): Long = ??? //Cost.BooleanConstantDeclaration
+  override def cost[C <: Context](context: C): Long = ??? //Cost.BooleanConstantDeclaration
 }
 object TrivialProof {
   val TrueProof = TrivialProof(true)
@@ -102,7 +102,7 @@ object TrivialProof {
 
 case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
-  override def cost[C <: Context[C]](context: C): Long = ??? //Cost.BooleanConstantDeclaration
+  override def cost[C <: Context](context: C): Long = ??? //Cost.BooleanConstantDeclaration
   def tpe = SSigmaProp
   def evaluated = false
   val opType = SFunc(SBoolean, SSigmaProp)
@@ -113,7 +113,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   */
 case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaPropValue {
   override val opCode: OpCode = OpCodes.SigmaAndCode
-  override def cost[C <: Context[C]](context: C): Long = ???
+  override def cost[C <: Context](context: C): Long = ???
   def tpe = SSigmaProp
   def evaluated = false
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
@@ -124,7 +124,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaPropValue {
   */
 case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaPropValue {
   override val opCode: OpCode = OpCodes.SigmaOrCode
-  override def cost[C <: Context[C]](context: C): Long = ???
+  override def cost[C <: Context](context: C): Long = ???
   def tpe = SSigmaProp
   def evaluated = false
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)

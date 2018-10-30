@@ -423,13 +423,13 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("ExtractCreationInfo") {
-    test(env, ext,
+    test("Info1", env, ext,
       "SELF.creationInfo._1 == 5L",
       EQ(SelectField(ExtractCreationInfo(Self),1),LongConstant(5)),
       true
     )
     // suppose to be tx.id + box index
-    test(env, ext,
+    test("Info2", env, ext,
       "SELF.creationInfo._2.size == 34",
       EQ(SizeOf(SelectField(ExtractCreationInfo(Self),2).asValue[SByteArray]),IntConstant(34)),
       true

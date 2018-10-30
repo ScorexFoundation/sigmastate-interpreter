@@ -9,7 +9,7 @@ import special.sigma.{ContractsTestkit, Box => DBox, SigmaContract => DContract,
 
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
@@ -30,6 +30,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     val ergoCtx = ErgoLikeContext(
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx1,
       self = boxToSpend,
@@ -51,8 +52,8 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   val minToRaise = 1000L
   val backerPubKeyId = 1.toByte
   val projectPubKeyId = 2.toByte
-  lazy val backerProver = new ErgoLikeProvingInterpreter
-  lazy val projectProver = new ErgoLikeProvingInterpreter
+  lazy val backerProver = new ErgoLikeTestProvingInterpreter
+  lazy val projectProver = new ErgoLikeTestProvingInterpreter
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
   lazy val ctxVars = contextVars(Map(
@@ -69,6 +70,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   lazy val ergoCtx = ErgoLikeContext(
     currentHeight = timeout - 1,
     lastBlockUtxoRoot = AvlTreeData.dummy,
+    minerPubkey = ErgoLikeContext.dummyPubkey,
     boxesToSpend = IndexedSeq(),
     spendingTransaction = tx1,
     self = boxToSpend,

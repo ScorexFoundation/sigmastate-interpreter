@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.IntConstant
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
@@ -33,7 +33,7 @@ class EvaluationTest extends BaseCtxTests
   }
 
   test("lazy logical ops") {
-    val prover = new ErgoLikeProvingInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
     val pk = prover.dlogSecrets.head.publicImage
     val self = ErgoBox(1, pk, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
     val ctx = newErgoContext(height = 1, self)

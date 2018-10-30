@@ -612,7 +612,7 @@ object Values {
     require(id >= 0, "id must be >= 0")
     val opCode: OpCode = if (tpeArgs.isEmpty) ValDefCode else FunDefCode
     def tpe: SType = rhs.tpe
-    def cost[C <: Context[C]](ctx: C): Long = rhs.cost(ctx)
+    def cost[C <: Context](ctx: C): Long = rhs.cost(ctx)
     def isValDef: Boolean = tpeArgs.isEmpty
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
@@ -630,7 +630,7 @@ object Values {
   /** Special node which represents a reference to ValDef in was introduced as result of CSE. */
   case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
     override val opCode: OpCode = ValUseCode
-    override def cost[C <: Context[C]](context: C): Long = 1
+    override def cost[C <: Context](context: C): Long = 1
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
@@ -645,7 +645,7 @@ object Values {
   case class BlockValue(items: IndexedSeq[BlockItem], result: SValue) extends NotReadyValue[SType] {
     val opCode: OpCode = BlockValueCode
     def tpe: SType = result.tpe
-    def cost[C <: Context[C]](ctx: C): Long = items.map(_.cost(ctx)).sum + result.cost(ctx)
+    def cost[C <: Context](ctx: C): Long = items.map(_.cost(ctx)).sum + result.cost(ctx)
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
@@ -653,7 +653,7 @@ object Values {
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
     lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
     val opCode: OpCode = FuncValueCode
-    def cost[C <: Context[C]](context: C): Long = 1
+    def cost[C <: Context](context: C): Long = 1
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }

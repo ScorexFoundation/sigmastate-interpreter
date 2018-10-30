@@ -8,7 +8,7 @@ import scapi.sigma.DLogProtocol
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean, GroupElementConstant, ValUse}
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
 import sigmastate.lang.LangTests
@@ -244,7 +244,7 @@ class CompilerItTest extends BaseCtxTests
     import SigmaDslBuilder._
     import Box._
     import Values._
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
     val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
     val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
 

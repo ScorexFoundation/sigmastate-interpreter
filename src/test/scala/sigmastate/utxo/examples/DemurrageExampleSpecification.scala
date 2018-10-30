@@ -3,7 +3,6 @@ package sigmastate.utxo.examples
 import sigmastate.Values.{LongConstant, TaggedBox, SigmaPropConstant}
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import org.ergoplatform._
 import sigmastate.Values.ShortConstant
 import sigmastate._
@@ -157,7 +156,8 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
     val mProverRes1 = minerProver.prove(prop, ctx3, fakeMessage).get
-    verifier.verify(prop, ctx3.withExtension(mProverRes1.extension), mProverRes1.proof, fakeMessage).get._1 shouldBe true
+    val _ctx3: ErgoLikeContext = ctx3.withExtension(mProverRes1.extension)
+    verifier.verify(prop, _ctx3, mProverRes1, fakeMessage: Array[Byte]).get._1 shouldBe true
 
     //miner can't spend more
     val b2 = createBox(outValue - 1, prop, currentHeight2)
@@ -187,7 +187,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       self = createBox(inValue, prop, inHeight),
       extension = ce)
 
-    val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get.proof
+    val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get
     verifier.verify(prop, ctx5, mProof2, fakeMessage).get._1 shouldBe true
 
     //miner can destroy a box if it contains less than the storage fee
@@ -204,7 +204,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       self = createBox(iv, prop, inHeight),
       extension = ce)
 
-    val mProof3 = minerProver.prove(prop, ctx6, fakeMessage).get.proof
+    val mProof3 = minerProver.prove(prop, ctx6, fakeMessage).get
     verifier.verify(prop, ctx6, mProof3, fakeMessage).get._1 shouldBe true
 
   }

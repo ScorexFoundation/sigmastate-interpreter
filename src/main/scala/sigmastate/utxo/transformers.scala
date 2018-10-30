@@ -416,14 +416,18 @@ object ExtractRegisterAs {
 }
 
 case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] with NotReadyValue[STuple] {
-
-  override def tpe: STuple = STuple(SLong, SByteArray)
+  import ExtractCreationInfo._
+  @inline def tpe: STuple = ResultType
   override val opCode: OpCode = OpCodes.ExtractCreationInfoCode
-
+  @inline def opType = OpType
   override def cost[C <: Context](context: C) = 10
 
   override def function(intr: Interpreter, ctx: Context, box: EvaluatedValue[SBox.type]): Value[STuple] =
       box.value.get(ErgoBox.ReferenceRegId).get.asValue[STuple]
+}
+object ExtractCreationInfo {
+  val ResultType = STuple(SLong, SByteArray)
+  val OpType = SFunc(SBox, ResultType)
 }
 
 trait Deserialize[V <: SType] extends NotReadyValue[V]
@@ -447,7 +451,8 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
 
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override val opCode: OpCode = OpCodes.GetVarCode
-val opType = SFunc(Vector(SContext, SByte), tpe)  override def cost[C <: Context](context: C): Long = context.extension.cost(varId) + 1
+  val opType = SFunc(Vector(SContext, SByte), tpe)
+  override def cost[C <: Context](context: C): Long = context.extension.cost(varId) + 1
 }
 
 object GetVar {
@@ -487,8 +492,9 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
 case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
   extends Transformer[SOption[V], SBoolean.type] {
   override val opCode: OpCode = OpCodes.OptionIsDefinedCode
-val opType = SFunc(input.tpe, SBoolean)  override def tpe= SBoolean
-  override def function(int: Interpreter, ctx: Context, input: EvaluatedValue[SOption[V]]): Value[SBoolean.type] =???
+  val opType = SFunc(input.tpe, SBoolean)
+  override def tpe= SBoolean
+  override def function(int: Interpreter, ctx: Context, input: EvaluatedValue[SOption[V]]): Value[SBoolean.type] = ???
 //    input match {
 //      case SomeValue(_) => TrueLeaf
 //      case NoneValue(_) => FalseLeaf
@@ -502,7 +508,7 @@ case class MapCollection1[IV <: SType, OV <: SType](
     extends NotReadyValue[SCollection[OV]] {
   override val opCode: OpCode = OpCodes.MapCollectionCode
   val tpe = SCollection[OV](mapper.tpe.tRange.asInstanceOf[OV])
-  def cost[C <: Context[C]](context: C) = ???
+  def cost[C <: Context](context: C) = ???
   val opType = SCollection.MapMethod.stype.asFunc
 }
 
@@ -510,7 +516,7 @@ case class Exists1[IV <: SType](input: Value[SCollection[IV]], condition: Value[
     extends NotReadyValue[SBoolean.type] {
   override val opCode: OpCode = OpCodes.ExistsCode
   override def tpe = SBoolean
-  override def cost[C <: Context[C]](context: C): Long = ???
+  override def cost[C <: Context](context: C): Long = ???
   val opType = SCollection.ExistsMethod.stype.asFunc
 }
 
@@ -518,7 +524,7 @@ case class ForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[
     extends NotReadyValue[SBoolean.type] {
   override val opCode: OpCode = OpCodes.ForAllCode
   override def tpe = SBoolean
-  override def cost[C <: Context[C]](context: C) = ???
+  override def cost[C <: Context](context: C) = ???
   val opType = SCollection.ForallMethod.stype.asFunc
 }
 

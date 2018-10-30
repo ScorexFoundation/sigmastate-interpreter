@@ -7,7 +7,7 @@ import org.ergoplatform._
 
 import scala.util.{Success, Failure}
 
-class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends ErgoLikeInterpreter(maxCost) {
+class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit override val IR: IRContext) extends ErgoLikeInterpreter(maxCost) {
   override type CTX = ErgoLikeContext
 }
 

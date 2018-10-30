@@ -3,7 +3,6 @@ package sigmastate.utxo.examples
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.util.ScorexLogging
 import sigmastate.Values.{LongConstant, IntConstant, SValue}
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.Values.{ConcreteCollection, IntConstant, LongConstant}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -86,9 +85,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val prop = AND(
       heightIncreased,
       correctMinerProposition,
-      OR(AND(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins)
+      BinOr(AND(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins)
     )
-    val prop = BinOr(AND(correctCoinsConsumed, heightCorrect, heightIncreased, sameScriptRule), BinAnd(heightIncreased, lastCoins))
 
     val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
       "epochLength" -> s.epochLength,
@@ -113,9 +111,9 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
     prop1 shouldEqual prop
 
-    val minerProp = prover.dlogSecrets.head.publicImage
-    val minerPubkey = minerProp.pkBytes
-    val minerProp = prover.dlogSecrets.head.publicImage.isValid
+    val minerImage = prover.dlogSecrets.head.publicImage
+    val minerPubkey = minerImage.pkBytes
+    val minerProp = minerImage.isValid
 
     val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Seq(), Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block(

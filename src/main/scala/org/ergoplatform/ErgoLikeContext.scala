@@ -2,6 +2,7 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.ReferenceRegId
 import org.ergoplatform.ErgoLikeContext.Height
+import org.ergoplatform.ErgoLikeContext.Metadata.NetworkPrefix
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingBox}
@@ -86,6 +87,7 @@ object ErgoLikeContext {
 
     ErgoLikeContext(blockchainState.currentHeight,
       blockchainState.lastBlockUtxoRoot,
+      dummyPubkey,
       boxes,
       tx,
       boxes(inputIndex),
@@ -152,6 +154,7 @@ case object MinerPubkey extends NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.MinerPubkeyCode
 
   override def cost[C <: Context](context: C): Long = Cost.ByteArrayDeclaration // todo: ???
+  def opType = SFunc(SContext, SCollection.SByteArray)
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */

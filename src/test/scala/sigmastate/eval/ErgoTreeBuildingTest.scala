@@ -6,7 +6,7 @@ import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.Values.{LongConstant, FuncValue, FalseLeaf, TrueLeaf, BlockValue, SigmaPropConstant, IntConstant, ValDef, GroupElementConstant, ValUse, TaggedVariable}
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.serialization.OpCodes._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
@@ -70,7 +70,7 @@ class ErgoTreeBuildingTest extends BaseCtxTests
   }
 
   test("Crowd Funding") {
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
     val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
     val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)

@@ -5,9 +5,8 @@ import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import interpreter.Interpreter._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.utxo.{ErgoLikeTestInterpreter, SizeOf}
 

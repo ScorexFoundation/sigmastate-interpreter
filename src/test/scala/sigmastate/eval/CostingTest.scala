@@ -7,7 +7,7 @@ import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
@@ -152,7 +152,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("Crowd Funding") {
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
     val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
     val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
 
@@ -174,7 +174,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("Crowd Funding: measure") {
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
     val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
     val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
@@ -201,7 +201,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("Demurrage") {
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
     val regScriptPK  @ DLogProtocol.ProveDlog(GroupElementConstant(script: ECPoint)) = prover.dlogSecrets(0).publicImage
     val env = envDem ++ Seq("regScript" -> regScriptPK)
     checkInEnv(env, "Demurrage", demurrageScript,

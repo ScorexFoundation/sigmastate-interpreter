@@ -5,7 +5,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{LongConstant, SigmaPropConstant, Value, ByteArrayConstant, IntConstant}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._

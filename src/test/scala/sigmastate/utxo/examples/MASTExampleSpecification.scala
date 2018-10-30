@@ -8,7 +8,6 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
