@@ -187,6 +187,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
     case _ => super.formatDef(d)
   }
 
+  type RCol[T] = Rep[Col[T]]
   type RCostedCol[T] = Rep[CostedCol[T]]
   type RCostedFunc[A,B] = Rep[Costed[A] => Costed[B]]
 
@@ -274,6 +275,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
     val CostedM = CostedMethods
     val CostedOptionM = CostedOptionMethods
     val WOptionM = WOptionMethods
+    val CM = ColMethods
 
     d match {
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
@@ -341,9 +343,31 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
       case CostedPrimCtor(v, c, s) if !v.isVar && v.elem.isInstanceOf[BoxElem[_]] =>
         RCostedBox(asRep[Box](v), c)
 
+      case _ if isCostingProcess =>
+        // apply special rules for costing function
+        d match {
+          case CM.length(Def(IfThenElseLazy(_, Def(ThunkDef(t: RCol[a],_)), Def(ThunkDef(_e,_)))))  =>
+            val e = asRep[Col[a]](_e)
+            t.length max e.length
+          case _ => super.rewriteDef(d)
+        }
       case _ => super.rewriteDef(d)
     }
   }
+
+    // these rules are applied only when isCostingProcess == true
+//  def rewriteCostingDef[T](d: Def[T]): Rep[_] = {
+//    val CBM = ColBuilderMethods
+//    val SigmaM = SigmaPropMethods
+//    val CCM = CostedColMethods
+//    val CostedM = CostedMethods
+//    val CostedOptionM = CostedOptionMethods
+//    val WOptionM = WOptionMethods
+//    val CM = ColMethods
+//    d match {
+//
+//    }
+//  }
 
   lazy val BigIntegerElement: Elem[WBigInteger] = wBigIntegerElement
 
@@ -372,13 +396,23 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
     res
   }
 
+  private[sigmastate] var funUnderCosting: Sym = null
+  def isCostingProcess: Boolean = funUnderCosting != null
+
+  def costingOf[T,R](f: Rep[T => Costed[R]]): Rep[T] => Rep[Int] = { x: Rep[T] =>
+    funUnderCosting = f
+    val c = f(x).cost;
+    funUnderCosting = null
+    c
+  }
+
   def split2[T,R](f: Rep[T => Costed[R]]): Rep[(T => Any, T => Int)] = {
     implicit val eT = f.elem.eDom
     val calc = fun(removeIsValid { x: Rep[T] =>
       val y = f(x);
       y.value
     })
-    val cost = fun { x: Rep[T] => f(x).cost }
+    val cost = fun(costingOf(f))
     Pair(calc, cost)
   }
 
@@ -1053,7 +1087,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         def tC = evalNode(ctx, env, t)
         def eC = evalNode(ctx, env, e)
         val resV = IF (cC.value) THEN tC.value ELSE eC.value
-        val resCost = cC.cost + (tC.cost max eC.cost) + costOf(node)
+        val resCost = cC.cost + (tC.cost max eC.cost) + costOf("If", SFunc(Vector(SBoolean, If.tT, If.tT), If.tT))
         mkCosted(resV, resCost, tC.dataSize max eC.dataSize)
 
       case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>

@@ -81,7 +81,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { _ => RProveDlogEvidence(g1Sym).asRep[SigmaProp].propBytes },
       { _ => constCost[WECPoint] + constCost[SigmaProp] + costOf("SigmaPropBytes", SFunc(SSigmaProp, SCollection.SByteArray))})
   }
-  
+
+  // FIXME
   test("operations") {
     import NumericOps._
     import builder._

@@ -161,6 +161,7 @@ class CompilerItTest extends BaseCtxTests
       ),
       Result(res, 207, 4))
   }
+  // FIXME
   test("bigIntArray_Map_Case") {
     bigIntArray_Map_Case.doReduce()
   }
@@ -281,7 +282,7 @@ class CompilerItTest extends BaseCtxTests
       Result({ TrivialProof.FalseProof }, 30, 1L)
     )
   }
-  test("crowdFunding_Case") {
+  test("crowdFunding_Case") { // FIXME
     crowdFunding_Case.doReduce()
   }
 

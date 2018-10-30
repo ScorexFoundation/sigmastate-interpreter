@@ -647,3 +647,6 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val second = trueBranch
   override lazy val third = falseBranch
 }
+object If {
+  val tT = STypeIdent("T")
+}

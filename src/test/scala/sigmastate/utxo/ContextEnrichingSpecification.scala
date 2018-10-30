@@ -69,6 +69,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
+  // FIXME
   property("prover enriching context - xor") { // TODO Don't know how to evalNode(Xor(OptionGet(
     val v1 = Base16.decode("abcdef7865").get
     val k1 = 21: Byte
@@ -132,6 +133,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
+  // TODO LHF
   property("prover enriching context 2") { // TODO Expected exception sigmastate.lang.exceptions.OptionUnwrapNone to be thrown,
     val prover = new ErgoLikeProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
