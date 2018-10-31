@@ -29,7 +29,7 @@ import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
 import scorex.crypto.hash.Blake2b256.DigestSize
-import scorex.crypto.hash.{Sha256, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Sha256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{SigmaCompiler, Terms}
 import scalan.staged.Slicing
@@ -812,6 +812,19 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
         val res1 = evalNode(ctx, curEnv, res)
         res1
+
+      case BlockValue(binds, res) =>
+        var curEnv = env
+        for (ValDef(n, _, b) <- binds) {
+          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
+          val bC = evalNode(ctx, curEnv, b)
+          curEnv = curEnv + (n -> bC)
+        }
+        val res1 = evalNode(ctx, curEnv, res)
+        res1
+
+      case ValUse(valId, _) =>
+        env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
 
       case sigmastate.Exponentiate(In(_l), In(_r)) =>
         val l = asRep[Costed[WECPoint]](_l)

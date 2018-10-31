@@ -139,8 +139,7 @@ trait TransformerGenerators {
         EQ(IntConstant(1), IntConstant(1)), // true
         EQ(IntConstant(1), IntConstant(2))  // false
       ),
-      proveDlogGen,
-      proveDHTGen
+      booleanConstGen
     )
 
   private type LogicalTransformerCons =

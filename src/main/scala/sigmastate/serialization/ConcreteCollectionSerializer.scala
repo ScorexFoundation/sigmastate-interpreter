@@ -21,7 +21,7 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
     val size = r.getUShort()
     val tItem = r.getType()
     val values =  (1 to size).map(_ => r.getValue())
-    assert(values.forall(_.tpe == tItem), s"Invalid type of collection value")
+    assert(values.forall(_.tpe == tItem), s"Invalid type of collection value in $values")
     cons(values, tItem)
   }
 }

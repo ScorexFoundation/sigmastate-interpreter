@@ -1,15 +1,21 @@
 package sigmastate.serialization
 
 import org.ergoplatform.Self
-import sigmastate.Values.{BlockValue, Constant, ConstantPlaceholder, IntConstant, ValDef, ValUse}
+import sigmastate.Values.{BlockValue, Constant, ConstantPlaceholder, IntConstant, ValDef, ValUse, Value}
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.utxo.ExtractAmount
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification with SigmaTestingCommons {
 
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
 
+  private def passThroughTreeBuilder(tree: Value[SType]): Value[SType] = {
+    val env = Map[String, Any]()
+    val IR.Pair(calcF, _) = IR.doCosting(env, tree)
+    val outTree = IR.buildTree(calcF, None)
+    outTree
+  }
   property("extract constants") {
     val script = Plus(10, 20)
     val extractedConstants = Seq(IntConstant(10), IntConstant(20))
@@ -49,5 +55,23 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val script = ExtractAmount(Self)
     val bytes = ErgoTreeSerializer(IR).serialize(script)
     ErgoTreeSerializer(IR).deserialize(bytes) shouldEqual script
+  }
+
+  property("AND expr gen: extract/inject constants round trip") {
+    forAll(logicalExprTreeNodeGen(Seq(AND.apply))) { tree =>
+      val processedTree = passThroughTreeBuilder(tree)
+//      println(s"processed tree: $processedTree")
+      val (constants, treeWithPlaceholders) = ErgoTreeSerializer(IR).extractConstants(processedTree)
+//      println(s"processed tree with placeholders: $treeWithPlaceholders")
+      ErgoTreeSerializer(IR).injectConstants(constants, treeWithPlaceholders) shouldEqual processedTree
+    }
+  }
+
+  property("AND expr gen: Serializer round trip") {
+    forAll(logicalExprTreeNodeGen(Seq(AND.apply))) { tree =>
+      val processedTree = passThroughTreeBuilder(tree)
+      val bytes = ErgoTreeSerializer(IR).serialize(processedTree)
+      ErgoTreeSerializer(IR).deserialize(bytes) shouldEqual processedTree
+    }
   }
 }
