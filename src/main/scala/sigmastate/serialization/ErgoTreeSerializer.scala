@@ -15,6 +15,7 @@ class ErgoTreeSerializer(IR: IRContext) {
     val (extractedConstants, treeWithPlaceholders) = extractConstants(tree)
     val w = Serializer.startWriter()
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+    w.put(0) // header: reserved for future flags
     w.putUInt(extractedConstants.length)
     extractedConstants.foreach(c => constantSerializer.serialize(c, w))
     ValueSerializer.serialize(treeWithPlaceholders, w)
@@ -24,6 +25,7 @@ class ErgoTreeSerializer(IR: IRContext) {
   def deserializeRaw(bytes: Array[Byte]): (IndexedSeq[Constant[SType]], Value[SType]) = {
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
     val r = Serializer.startReader(bytes)
+    r.getByte() // skip the header
     val constantCount = r.getUInt().toInt
     val constantsBuilder = mutable.ArrayBuilder.make[Constant[SType]]()
     for (_ <- 0 until constantCount) {
