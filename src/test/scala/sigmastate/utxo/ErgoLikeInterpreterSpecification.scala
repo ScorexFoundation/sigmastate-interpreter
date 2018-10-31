@@ -15,7 +15,7 @@ import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 
-class ErgoLikeTestInterpreterSpecification extends SigmaTestingCommons {
+class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
