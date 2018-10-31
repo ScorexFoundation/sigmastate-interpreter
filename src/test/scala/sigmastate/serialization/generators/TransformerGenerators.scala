@@ -234,4 +234,14 @@ trait TransformerGenerators {
   val valOrFunDefGen: Gen[ValDef] = for {
     v <- Gen.oneOf(valDefGen, funDefGen)
   } yield v
+
+  val valUseGen: Gen[ValUse[SType]] = for {
+    id <- unsignedIntGen
+    tpe <- predefTypeGen
+  } yield ValUse(id, tpe)
+
+  val blockValueGen: Gen[BlockValue] = for {
+    items <- Gen.nonEmptyListOf(valDefGen)
+    result <- Gen.oneOf(logicalExprTreeNodeGen(Seq(AND.apply)), valUseGen)
+  } yield BlockValue(items.toIndexedSeq, result)
 }

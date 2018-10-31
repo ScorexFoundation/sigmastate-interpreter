@@ -278,10 +278,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
           .asInstanceOf[sigmastate.Values.ConstantPlaceholder[SType]]
       }
 
-    def extractedConstants(): Seq[Constant[SType]] = store
+    def extractedConstants(): IndexedSeq[Constant[SType]] = store
   }
 
-  class InjectConstants(private val constants: Seq[Constant[SType]]) extends ConstantsProcessing {
+  class InjectConstants(private val constants: IndexedSeq[Constant[SType]]) extends ConstantsProcessing {
 
     def get(cp: sigmastate.Values.ConstantPlaceholder[SType]): Constant[SType] = {
       val c = constants(cp.id)

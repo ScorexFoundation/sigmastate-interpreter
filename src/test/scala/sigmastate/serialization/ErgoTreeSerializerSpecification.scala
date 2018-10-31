@@ -32,7 +32,8 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
 
   property("inject constants") {
     val script = Plus(10, 20)
-    val extractedConstants = Seq(IntConstant(10), IntConstant(20)).asInstanceOf[Seq[Constant[SType]]]
+    val extractedConstants = IndexedSeq(IntConstant(10), IntConstant(20))
+      .asInstanceOf[IndexedSeq[Constant[SType]]]
     val scriptWithPlaceholders = Plus(ConstantPlaceholder(0, SInt), ConstantPlaceholder(1, SInt))
     ErgoTreeSerializer(IR).injectConstants(extractedConstants, scriptWithPlaceholders) shouldEqual script
   }

@@ -7,7 +7,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.{DLogProtocol, ProveDiffieHellmanTuple}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, Value}
+import sigmastate.Values.{BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
@@ -160,6 +160,8 @@ trait SigmaBuilder {
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
 
   def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType]
+  def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType]
+  def mkValUse(valId: Int, tpe: SType): Value[SType]
   def mkVal(name: String, givenType: SType, body: Value[SType]): Val
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
   def mkIdent(name: String, tpe: SType): Value[SType]
@@ -454,6 +456,12 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType] =
     Block(bindings, result)
+
+  override def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType] =
+    BlockValue(items, result)
+
+  override def mkValUse(valId: Int, tpe: SType): Value[SType] =
+    ValUse(valId, tpe)
 
   override def mkVal(name: String, givenType: SType, body: Value[SType]): Val =
     ValNode(name, givenType, body)

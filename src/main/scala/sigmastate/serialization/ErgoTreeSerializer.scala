@@ -21,7 +21,7 @@ class ErgoTreeSerializer(IR: IRContext) {
     w.toBytes
   }
 
-  def deserializeRaw(bytes: Array[Byte]): (Seq[Constant[SType]], Value[SType]) = {
+  def deserializeRaw(bytes: Array[Byte]): (IndexedSeq[Constant[SType]], Value[SType]) = {
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
     val r = Serializer.startReader(bytes)
     val constantCount = r.getUInt().toInt
@@ -42,7 +42,7 @@ class ErgoTreeSerializer(IR: IRContext) {
       tree
   }
 
-  def extractConstants(tree: Value[SType]): (Seq[Constant[SType]], Value[SType]) = {
+  def extractConstants(tree: Value[SType]): (IndexedSeq[Constant[SType]], Value[SType]) = {
     val env = Map[String, Any]()
     val Pair(calcF, _) = doCosting(env, tree)
     val extractConstants = new ExtractConstants()
@@ -50,7 +50,7 @@ class ErgoTreeSerializer(IR: IRContext) {
     (extractConstants.extractedConstants(), outTree)
   }
 
-  def injectConstants(constants: Seq[Constant[SType]], tree: Value[SType]): Value[SType] = {
+  def injectConstants(constants: IndexedSeq[Constant[SType]], tree: Value[SType]): Value[SType] = {
     val env = Map[String, Any]()
     val Pair(calcF, _) = doCosting(env, tree)
     val outTree = IR.buildTree(calcF, Some(new InjectConstants(constants)))
