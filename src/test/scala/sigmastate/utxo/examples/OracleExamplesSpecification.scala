@@ -95,6 +95,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val oracleBox = ErgoBox(
       value = 1L,
       proposition = oraclePubKey,
+      creationHeight = 0,
       additionalRegisters = Map(
         reg1 -> LongConstant(temperature),
         reg2 -> GroupElementConstant(a),
@@ -137,7 +138,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
     val proof = avlProver.generateProof()
 
-    val newBox1 = ErgoBox(20, alicePubKey, boxId = 2)
+    val newBox1 = ErgoBox(20, alicePubKey, 0, boxId = 2)
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
@@ -146,14 +147,14 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp)
 
-    val sAlice = ErgoBox(10, propAlice, Seq(), Map(), boxId = 3)
+    val sAlice = ErgoBox(10, propAlice, 0, Seq(), Map(), boxId = 3)
 
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
-    val sBob = ErgoBox(10, propBob, Seq(), Map(), boxId = 4)
+    val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxId = 4)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -209,6 +210,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val oracleBox = ErgoBox(
       value = 1L,
       proposition = oraclePubKey,
+      creationHeight = 0,
       additionalRegisters = Map(reg1 -> LongConstant(temperature))
     )
 
@@ -221,10 +223,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     )
 
     val sOracle = oracleBox
-    val sAlice = ErgoBox(10, prop, Seq(), Map())
-    val sBob = ErgoBox(10, prop, Seq(), Map())
+    val sAlice = ErgoBox(10, prop, 0, Seq(), Map())
+    val sBob = ErgoBox(10, prop, 0, Seq(), Map())
 
-    val newBox1 = ErgoBox(20, alicePubKey)
+    val newBox1 = ErgoBox(20, alicePubKey, 0)
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 

@@ -216,7 +216,7 @@ object BlockchainSimulationSpecification {
     val initBlock = Block(
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), Seq(), Map(heightReg -> LongConstant(i)), txId))
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), 0, Seq(), Map(heightReg -> LongConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       },
       ErgoLikeContext.dummyPubkey

@@ -29,7 +29,7 @@ class ErgoBoxCandidate(val value: Long,
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   def toBox(txId: ModifierId, boxId: Short) =
-    ErgoBox(value, proposition, additionalTokens, additionalRegisters, txId, boxId, creationHeight)
+    ErgoBox(value, proposition, creationHeight, additionalTokens, additionalRegisters, txId, boxId)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {

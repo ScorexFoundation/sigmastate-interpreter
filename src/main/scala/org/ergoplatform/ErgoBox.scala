@@ -137,11 +137,11 @@ object ErgoBox {
 
   def apply(value: Long,
             proposition: Value[SBoolean.type],
+            creationHeight: Long,
             additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId,
-            boxId: Short = 0,
-            creationHeight: Long = 0): ErgoBox =
+            boxId: Short = 0): ErgoBox =
     new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId, creationHeight)
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {

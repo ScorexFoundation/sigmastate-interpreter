@@ -48,12 +48,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val propCompiled = compile(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue
     prop shouldBe propCompiled
 
-    val newBox1 = ErgoBox(10, pubkey)
+    val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -97,12 +97,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val propCompiled = compile(env, """treeLookup(SELF.R4[AvlTree].get, key, proof).get == value""").asBoolValue
     prop shouldBe propCompiled
 
-    val newBox1 = ErgoBox(10, pubkey)
+    val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -143,12 +143,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       ByteArrayConstant(proof)))
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey)
+    val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -196,8 +196,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
-      new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))
+      new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      self = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
     val bigLeafProof = avlProver.generateProof()
@@ -253,12 +253,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       GetVarByteArray(proofId).get))
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey)
+    val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
+    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,

@@ -108,7 +108,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val minerProp = prover.dlogSecrets.head.publicImage
     val minerPubkey = minerProp.pkBytes
 
-    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Seq(), Map(register -> LongConstant(-1)))
+    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, 0, Seq(), Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block(
       IndexedSeq(
         ErgoLikeTransaction(
@@ -120,7 +120,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     )
     val genesisState = ValidationState.initialState(initBlock)
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get
-    val initialBox = ErgoBox(initialBoxCandidate.value, initialBoxCandidate.proposition,
+    val initialBox = ErgoBox(initialBoxCandidate.value, initialBoxCandidate.proposition, 0,
       initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters, initBlock.txs.head.id, 0)
     initialBox shouldBe fromState
 

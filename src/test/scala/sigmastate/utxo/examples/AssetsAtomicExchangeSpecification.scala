@@ -106,13 +106,13 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
     sellerProp shouldBe altSellerProp
 
-    val newBox1 = ErgoBox(1, tokenBuyerKey, Seq(tokenId -> 60))
-    val newBox2 = ErgoBox(100, tokenSellerKey)
+    val newBox1 = ErgoBox(1, tokenBuyerKey, 0, Seq(tokenId -> 60))
+    val newBox2 = ErgoBox(100, tokenSellerKey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val input1 = ErgoBox(100, buyerProp)
+    val input1 = ErgoBox(100, buyerProp, 0)
 
-    val input2 = ErgoBox(1, sellerProp, Seq(tokenId -> 60))
+    val input2 = ErgoBox(1, sellerProp, 0, Seq(tokenId -> 60))
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
