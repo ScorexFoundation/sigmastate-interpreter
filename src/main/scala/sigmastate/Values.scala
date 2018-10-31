@@ -139,7 +139,7 @@ object Values {
     override def evaluated: Boolean = false
     def opType = SFunc(SInt, tpe)
     override val opCode: OpCode = ConstantPlaceholderIndexCode
-    override def cost[C <: Context[C]](context: C): Long = 0
+    override def cost[C <: Context](context: C): Long = 0
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
