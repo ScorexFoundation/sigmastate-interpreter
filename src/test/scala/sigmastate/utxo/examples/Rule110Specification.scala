@@ -434,7 +434,7 @@ class Rule110Specification extends SigmaTestingCommons {
 
         val value = ValueReg -> BooleanConstant.fromBoolean(calcRule110(lv, cv, rv))
 
-        val c = new ErgoBoxCandidate(0L, prop, Seq(), Map(RowReg -> LongConstant(row), ColumnReg -> LongConstant(col), value))
+        val c = new ErgoBoxCandidate(0L, prop, row,  Seq(), Map(RowReg -> LongConstant(row), ColumnReg -> LongConstant(col), value))
 
         val ut = UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(left.id), new UnsignedInput(center.id), new UnsignedInput(right.id)),

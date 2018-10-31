@@ -49,7 +49,7 @@ class ErgoBox private(
                        val transactionId: ModifierId,
                        val index: Short,
                        override val creationHeight: Long
-) extends ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters, creationHeight) {
+) extends ErgoBoxCandidate(value, proposition, creationHeight, additionalTokens, additionalRegisters) {
 
   import ErgoBox._
 
@@ -76,7 +76,7 @@ class ErgoBox private(
     ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters, index, creationHeight))
 
   def toCandidate: ErgoBoxCandidate =
-    new ErgoBoxCandidate(value, proposition, additionalTokens, additionalRegisters, creationHeight)
+    new ErgoBoxCandidate(value, proposition, creationHeight, additionalTokens, additionalRegisters)
 
   override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$proposition," +
     s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2)}), $transactionId, " +

@@ -134,6 +134,7 @@ class ErgoLikeTestInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("mixing scenario w. timeout") {
+    val height = 50
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
 
@@ -145,8 +146,8 @@ class ErgoLikeTestInterpreterSpecification extends SigmaTestingCommons {
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val pubkeyB2 = proverB.dlogSecrets.head.publicImage
 
-    val newBox1 = new ErgoBoxCandidate(10, pubkeyB2)
-    val newBox2 = new ErgoBoxCandidate(10, pubkeyA2)
+    val newBox1 = new ErgoBoxCandidate(10, pubkeyB2, height)
+    val newBox2 = new ErgoBoxCandidate(10, pubkeyA2, height)
 
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
@@ -182,7 +183,7 @@ class ErgoLikeTestInterpreterSpecification extends SigmaTestingCommons {
     }
 
     val ctx = ErgoLikeContext(
-      currentHeight = 50,
+      currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),

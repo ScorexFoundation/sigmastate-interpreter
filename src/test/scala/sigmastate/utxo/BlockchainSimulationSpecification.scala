@@ -37,7 +37,7 @@ class BlockchainSimulationSpecification extends PropSpec
 
     val txs = boxesToSpend.map { box =>
       val newBoxCandidate =
-        new ErgoBoxCandidate(10, minerPubKey, Seq(), Map(heightReg -> LongConstant(height + windowSize)), height)
+        new ErgoBoxCandidate(10, minerPubKey, height, Seq(), Map(heightReg -> LongConstant(height + windowSize)))
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContext(height + 1,
