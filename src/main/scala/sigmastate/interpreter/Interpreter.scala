@@ -18,6 +18,7 @@ import sigmastate.Values.{ByteArrayConstant, _}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
@@ -363,6 +364,7 @@ trait Interpreter extends ScorexLogging {
 
     val substTree = everywherebu(substRule)(exp) match {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
+      case Some(p @ SigmaPropConstant(_)) => p.asSigmaProp.isValid
       case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean but was $x")
     }
     val costingRes @ IR.Pair(calcF, costF) = doCosting(env, substTree)
