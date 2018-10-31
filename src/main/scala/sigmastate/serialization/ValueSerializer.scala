@@ -32,8 +32,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   private val builder: DeserializationSigmaBuilder.type = DeserializationSigmaBuilder
   import builder._
 
+  private val constantSerializer = ConstantSerializer(builder)
+  private val constantPlaceholderSerializer = ConstantPlaceholderSerializer(mkConstantPlaceholder)
+
   private val serializers = SparseArrayContainer.buildForSerializers(Seq[ValueSerializer[_ <: Value[SType]]](
-    ConstantSerializer(builder),
+    constantSerializer,
+    constantPlaceholderSerializer,
     TupleSerializer(mkTuple),
     SelectFieldSerializer(mkSelectField),
     Relation2Serializer(GtCode, mkGT[SType]),
@@ -126,12 +130,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
-      ConstantSerializer(builder).serialize(c, w)
-    case cp: ConstantPlaceholder[SType] =>
-      // todo extract into separate serializer
-      w.put(cp.opCode)
-      w.putType(cp.tpe)
-      w.putUInt(cp.id)
+      constantSerializer.serialize(c, w)
     case _ =>
       val opCode = v.opCode
       w.put(opCode)
@@ -152,12 +151,10 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       if (firstByte == ConstantPlaceholderIndexCode) {
         // skip opcode
         r.getByte()
-        val tpe = r.getType()
-        val id = r.getUInt().toInt
-        ConstantPlaceholder(id, tpe)
+        constantPlaceholderSerializer.parseBody(r)
       } else {
         // look ahead byte tell us this is going to be a Constant
-        ConstantSerializer(builder).deserialize(r)
+        constantSerializer.deserialize(r)
       }
     }
     else {

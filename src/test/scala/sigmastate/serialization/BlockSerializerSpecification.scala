@@ -19,4 +19,10 @@ class BlockSerializerSpecification extends SerializationSpecification {
       roundTripTest(v)
     }
   }
+
+  property("ConstantPlaceholder: serializer round trip") {
+    forAll(constantPlaceholderGen) { v =>
+      roundTripTest(v)
+    }
+  }
 }

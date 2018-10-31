@@ -244,4 +244,9 @@ trait TransformerGenerators {
     items <- Gen.nonEmptyListOf(valDefGen)
     result <- Gen.oneOf(logicalExprTreeNodeGen(Seq(AND.apply)), valUseGen)
   } yield BlockValue(items.toIndexedSeq, result)
+
+  val constantPlaceholderGen: Gen[ConstantPlaceholder[SType]] = for {
+    id <- unsignedIntGen
+    tpe <- predefTypeGen
+  } yield ConstantPlaceholder(id, tpe)
 }
