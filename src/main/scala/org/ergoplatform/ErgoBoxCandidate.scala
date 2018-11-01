@@ -11,7 +11,6 @@ import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{ByteReader, ByteWriter}
-import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 
 import scala.runtime.ScalaRunTime
@@ -21,8 +20,6 @@ class ErgoBoxCandidate(val value: Long,
                        val additionalTokens: Seq[(TokenId, Long)] = Seq(),
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
                        val creationHeight: Long = 0) {
-
-  lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
 
   val propositionBytes: Array[Byte] = proposition.bytes
 
