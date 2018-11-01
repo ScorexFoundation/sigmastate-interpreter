@@ -110,7 +110,7 @@ class SigmaSpecializerTest extends PropSpec
     spec("OUTPUTS.slice(0, 10)") shouldBe
         Slice(Outputs, IntConstant(0), IntConstant(10))
     spec("OUTPUTS.filter({ (out: Box) => out.value >= 10 })") shouldBe
-        Where(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+        Filter(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
   }
 
   property("AND flattening predefined") {
