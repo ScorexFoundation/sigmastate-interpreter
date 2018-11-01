@@ -30,6 +30,14 @@ object CryptoConstants {
   type EcPointType = Curve25519Point
 
   val dlogGroup: BcDlogFp[EcPointType] = Curve25519
+  lazy val secureRandom = dlogGroup.secureRandom
+
+  def secureRandomBytes(howMany: Int) = {
+    val bytes = new Array[Byte](howMany)
+    secureRandom.nextBytes(bytes)
+    bytes
+  }
+
   val groupSizeBits: Int = 256
   val groupSize: Int = 256 / 8 //32 bytes
 
