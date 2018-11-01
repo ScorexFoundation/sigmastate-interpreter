@@ -357,7 +357,7 @@ case class TestingContext(height: Int,
     val vars = Array[AnyValue]()
     val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
     val emptyAvlTree = TestAvlTree(noBytes, 0, None, None, None)
-    val selfBox = new CostingBox(IR, noBytes, 0L, noBytes, noBytes, noBytes,
+    val selfBox = new CostingBox(IR, noBytes, 0L, noBytes, noBytes, noBytes, (0, noBytes),
       IR.sigmaDslBuilderValue.Cols.fromArray(new Array[AnyValue](10)), isCost)
     new CostingDataContext(IR, inputs, outputs, height, selfBox, emptyAvlTree, vars, isCost)
   }

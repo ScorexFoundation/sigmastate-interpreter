@@ -1,18 +1,19 @@
 package org.ergoplatform
 
+import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.ReferenceRegId
 import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.ErgoLikeContext.Metadata.NetworkPrefix
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingBox}
-import sigmastate.interpreter.{ContextExtension, Context}
+import sigmastate.eval.{CostingAvlTree, CostingBox, CostingDataContext, Evaluation}
+import sigmastate.interpreter.{Context, ContextExtension}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
 import special.collection.Col
 import special.sigma
-import special.sigma.{AnyValue, TestValue, Box}
+import special.sigma.{AnyValue, Box, TestValue}
 
 import scala.util.Try
 
@@ -144,6 +145,8 @@ object ErgoLikeContext {
         IR.sigmaDslBuilderValue.Cols.fromArray(ebox.bytes),
         IR.sigmaDslBuilderValue.Cols.fromArray(ebox.bytesWithNoRef),
         IR.sigmaDslBuilderValue.Cols.fromArray(ebox.propositionBytes),
+        (ebox.creationHeight,
+          IR.sigmaDslBuilderValue.Cols.fromArray(ebox.transactionId.toBytes ++ Shorts.toByteArray(ebox.index))),
         rs, isCost)
     }
   }

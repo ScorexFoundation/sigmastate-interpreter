@@ -119,7 +119,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
   trait CostedStruct extends Costed[Struct] { }
   case class CostedStructCtor(costedFields: Rep[Struct], structCost: Rep[Int]) extends CostedStruct {
     implicit val eVal: Elem[Struct] = {
-      val fields = costedFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[CostedElem[_, _]].eVal) }
+      val fields = costedFields.elem.fields.map {
+        case (fn, cE: CostedElem[_, _]) => (fn, cE.eVal)
+        case (fn, pE: PairElem[_, _]) => (fn, tupleStructElement(pE.eFst, pE.eSnd))
+      }
       structElement(fields)
     }
     val selfType: Elem[Costed[Struct]] = costedElement(eVal)
@@ -464,6 +467,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
       STuple(se.fieldElems.map(elemToSType(_)).toIndexedSeq)
     case ce: ColElem[_, _] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_, _] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
+    case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
     case _ => error(s"Don't know how to convert Elem $e to SType")
   }
 
@@ -962,6 +966,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.bytes
         withDefaultSize(bytes, boxC.cost + costOf(node))
+
+      case utxo.ExtractCreationInfo(In(box)) =>
+        val boxC = asRep[Costed[Box]](box)
+//        RCostedStruct(tupleStruct(boxC.value.creationInfo), costedBuilder.ConstructTupleCost)
+        withDefaultSize(boxC.value.creationInfo, boxC.cost + costOf(node))
 
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
         val boxC = asRep[CostedBox](box)

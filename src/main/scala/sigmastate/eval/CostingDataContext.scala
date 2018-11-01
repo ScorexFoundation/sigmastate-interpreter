@@ -42,8 +42,9 @@ class CostingBox(
     bytes: Col[Byte],
     bytesWithoutRef: Col[Byte],
     propositionBytes: Col[Byte],
+    creationInfo: (Long, Col[Byte]),
     registers: Col[AnyValue],
-    var isCost: Boolean) extends TestBox(id, value, bytes, bytesWithoutRef, propositionBytes, registers) {
+    var isCost: Boolean) extends TestBox(id, value, bytes, bytesWithoutRef, propositionBytes, creationInfo, registers) {
   override val builder = new CostingSigmaDslBuilder(IR)
 
   override def getReg[T](i: Int)(implicit cT: RType[T]): Option[T] =
