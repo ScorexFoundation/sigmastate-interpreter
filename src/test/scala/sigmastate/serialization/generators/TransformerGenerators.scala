@@ -249,4 +249,16 @@ trait TransformerGenerators {
     id <- unsignedIntGen
     tpe <- predefTypeGen
   } yield ConstantPlaceholder(id, tpe)
+
+  val funcValueArgsGen: Gen[IndexedSeq[(Int, SType)]] = for {
+    num <- Gen.chooseNum(1, 10)
+    indices <- Gen.listOfN(num, unsignedIntGen)
+    tpes <- Gen.listOfN(num, predefTypeGen)
+  } yield indices.zip(tpes).toIndexedSeq
+
+  val funcValueGen: Gen[FuncValue] = for {
+    args <- funcValueArgsGen
+    body <- Gen.oneOf(logicalExprTreeNodeGen(Seq(AND.apply)), valUseGen)
+  } yield FuncValue(args, body)
+
 }

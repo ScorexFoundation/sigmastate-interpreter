@@ -25,4 +25,10 @@ class BlockSerializerSpecification extends SerializationSpecification {
       roundTripTest(v)
     }
   }
+
+  property("FuncValue: serializer round trip") {
+    forAll(funcValueGen) { v =>
+      roundTripTest(v)
+    }
+  }
 }
