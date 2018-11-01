@@ -2,7 +2,7 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
 import org.ergoplatform.ErgoBox
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection._
 import sigmastate.Values.Value.Typed
 import sigmastate.Values._
 import sigmastate._
@@ -99,7 +99,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         Some(mkUpcast(numValue, tRes))
 
     // Rule: col.size --> SizeOf(col)
-    case Select(obj, "size", _) =>
+    case Select(obj, SizeMethodName, _) =>
       if (obj.tpe.isCollectionLike)
         Some(mkSizeOf(obj.asValue[SCollection[SType]]))
       else
@@ -153,36 +153,36 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       val index = fn.substring(1).toByte
       Some(mkSelectField(tuple.asTuple, index))
 
-    case Apply(Select(col, "slice", _), Seq(from, until)) =>
+    case Apply(Select(col, SliceMethodName, _), Seq(from, until)) =>
       Some(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
 
-    case Apply(Select(col, "where", _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, FilterMethodName, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(mkWhere(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
+      Some(mkFilter(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col,"exists", _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, ExistsMethodName, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkExists(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col,"forall", _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, ForallMethodName, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkForAll(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col,"map", _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, MapMethodName, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkMapCollection(col.asValue[SCollection[SType]], tagged.varId, body1))
 
-    case Apply(Select(col,"fold", _), Seq(zero, Lambda(_, Seq((accArg, tAccArg), (opArg, tOpArg)), _, Some(body)))) =>
+    case Apply(Select(col, FoldMethodName, _), Seq(zero, Lambda(_, Seq((accArg, tAccArg), (opArg, tOpArg)), _, Some(body)))) =>
       val taggedAcc = mkTagged(accArg, tAccArg, 21)
       val taggedOp = mkTagged(opArg, tOpArg, 22)
       val body1 = eval(env ++ Seq(accArg -> taggedAcc, opArg -> taggedOp), body)
       Some(mkFold(col.asValue[SCollection[SType]], taggedOp.varId, zero, taggedAcc.varId, body1))
 
-    case Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
+    case Apply(Select(col, GetOrElseMethodName, _), Seq(index, defaultValue)) =>
       val index1 = eval(env, index).asValue[SInt.type]
       val defaultValue1 = eval(env, defaultValue).asValue[SType]
       Some(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))

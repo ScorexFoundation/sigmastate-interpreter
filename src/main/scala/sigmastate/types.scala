@@ -462,18 +462,32 @@ object SCollectionType {
 object SCollection {
   val tIV = STypeIdent("IV")
   val tOV = STypeIdent("OV")
+  val SizeMethodName = "size"
+  val GetOrElseMethodName = "getOrElse"
+  val MapMethodName = "map"
+  val ExistsMethodName = "exists"
+  val FoldMethodName = "fold"
+  val ForallMethodName = "forall"
+  val SliceMethodName = "slice"
+  val FilterMethodName = "filter"
   val methods = Seq(
-    SMethod("size", SInt),
-    SMethod("getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(STypeParam(tIV)))),
-    SMethod("map", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)),
-                         SCollection(tOV),
-                         Seq(STypeParam(tIV), STypeParam(tOV)))),
-    SMethod("exists", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV)))),
-    SMethod("fold", SFunc(IndexedSeq(SCollection(tIV), tOV, SFunc(IndexedSeq(tOV, tIV), tOV)),
-                          tOV, Seq(STypeParam(tIV), STypeParam(tOV)))),
-    SMethod("forall", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV)))),
-    SMethod("slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(STypeParam(tIV)))),
-    SMethod("where", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(STypeParam(tIV))))
+    SMethod(SizeMethodName, SInt),
+    SMethod(GetOrElseMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(STypeParam(tIV)))),
+    SMethod(MapMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV),
+        Seq(STypeParam(tIV), STypeParam(tOV)))),
+    SMethod(ExistsMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV)))),
+    SMethod(FoldMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV,
+        Seq(STypeParam(tIV), STypeParam(tOV)))),
+    SMethod(ForallMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV)))),
+    SMethod(SliceMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(STypeParam(tIV)))),
+    SMethod(FilterMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(STypeParam(tIV))))
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)

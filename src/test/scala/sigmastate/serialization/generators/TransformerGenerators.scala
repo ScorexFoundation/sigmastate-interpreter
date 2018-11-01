@@ -22,7 +22,7 @@ trait TransformerGenerators {
   implicit val arbAppend: Arbitrary[Append[SInt.type]] = Arbitrary(appendGen)
   implicit val arbSlice: Arbitrary[Slice[SInt.type]] = Arbitrary(sliceGen)
   implicit val arbAtLeast: Arbitrary[AtLeast] = Arbitrary(atLeastGen)
-  implicit val arbWhere: Arbitrary[Where[SInt.type]] = Arbitrary(whereGen)
+  implicit val arbFilter: Arbitrary[Filter[SInt.type]] = Arbitrary(filterGen)
   implicit val sizeOf: Arbitrary[SizeOf[SInt.type]] = Arbitrary(sizeOfGen)
   implicit val arbExtractAmount: Arbitrary[ExtractAmount] = Arbitrary(extractAmountGen)
   implicit val arbExtractCreationInfo: Arbitrary[ExtractCreationInfo] = Arbitrary(extractCreationInfoGen)
@@ -73,11 +73,11 @@ trait TransformerGenerators {
     input <- arbCCOfBoolConstant.arbitrary
   } yield mkAtLeast(bound, input).asInstanceOf[AtLeast]
 
-  val whereGen: Gen[Where[SInt.type]] = for {
+  val filterGen: Gen[Filter[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
     id <- Arbitrary.arbitrary[Byte]
     condition <- booleanConstGen
-  } yield mkWhere(col1, id, condition).asInstanceOf[Where[SInt.type]]
+  } yield mkFilter(col1, id, condition).asInstanceOf[Filter[SInt.type]]
 
   val appendGen: Gen[Append[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary

@@ -74,9 +74,9 @@ trait SigmaBuilder {
                            from: Value[SInt.type],
                            until: Value[SInt.type]): Value[SCollection[IV]]
 
-  def mkWhere[IV <: SType](input: Value[SCollection[IV]],
-                           id: Byte,
-                           condition: Value[SBoolean.type]): Value[SCollection[IV]]
+  def mkFilter[IV <: SType](input: Value[SCollection[IV]],
+                            id: Byte,
+                            condition: Value[SBoolean.type]): Value[SCollection[IV]]
 
   def mkExists[IV <: SType](input: Value[SCollection[IV]],
                             id: Byte,
@@ -286,10 +286,10 @@ class StdSigmaBuilder extends SigmaBuilder {
                                     until: Value[SInt.type]): Value[SCollection[IV]] =
     Slice(input, from, until)
 
-  override def mkWhere[IV <: SType](input: Value[SCollection[IV]],
-                                    id: Byte,
-                                    condition: Value[SBoolean.type]): Value[SCollection[IV]] =
-    Where(input, id, condition)
+  override def mkFilter[IV <: SType](input: Value[SCollection[IV]],
+                                     id: Byte,
+                                     condition: Value[SBoolean.type]): Value[SCollection[IV]] =
+    Filter(input, id, condition)
 
   override def mkExists[IV <: SType](input: Value[SCollection[IV]],
                                      id: Byte,
