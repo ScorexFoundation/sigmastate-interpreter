@@ -11,6 +11,14 @@ object CostTable {
   val MaxExpressions = 300
 
   object Cost {
+    //Cost of multiply two group elements
+    val MultiplyGroup = 50
+
+    //Cost of one exponentiation
+    val Exponentiate = 3000
+
+    val ByteArrayPerKilobyte = 200
+
     //Node which holds true/false
     val ConstantNode = 1
 
@@ -20,9 +28,7 @@ object CostTable {
     //(and CustomByteArray being converted to ByteArrayLeaf)
     val ByteArrayDeclaration = 1
 
-    val ByteArrayPerKilobyte = 200
 
-    val BoxPerKilobyte = 50
 
     val TripleDeclaration = 3
 
@@ -55,8 +61,6 @@ object CostTable {
     //Cost of Blake256 declaration
     val Blake256bDeclaration = 20
 
-    val Dlog = 10000
-
     val TxHasOutputDeclaration = 100
     val TxOutputDeclaration = 100
 
@@ -88,9 +92,9 @@ object CostTable {
     val ConcreteCollection = 20
     val Tuple = 20
 
-    val Exponentiate = 5000
+    //Checking Shnorr signature is about 2 exponentiations and one multiplication
+    val Dlog = 2 * Exponentiate + MultiplyGroup
 
-    val MultiplyGroup = 50
 
     val OptionGet = 1
     val OptionGetOrElse = 1
