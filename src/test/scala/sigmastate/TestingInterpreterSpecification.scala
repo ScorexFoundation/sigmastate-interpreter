@@ -146,7 +146,7 @@ class TestingInterpreterSpecification extends PropSpec
               |}""".stripMargin)
     testEval("""{
               |  val arr = Array(1, 2, 3)
-              |  arr.where {(i: Int) => i < 3} == Array(1, 2)
+              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
               |}""".stripMargin)
   }
 

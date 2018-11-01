@@ -120,7 +120,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "OUTPUTS.forall({ (out: Box) => out.value >= minToRaise })") shouldBe SBoolean
     typecheck(env, "{ val arr = Array(1,2,3); arr.fold(0, { (i1: Int, i2: Int) => i1 + i2 })}") shouldBe SInt
     typecheck(env, "OUTPUTS.slice(0, 10)") shouldBe ty("Array[Box]")
-    typecheck(env, "OUTPUTS.where({ (out: Box) => out.value >= minToRaise })") shouldBe ty("Array[Box]")
+    typecheck(env, "OUTPUTS.filter({ (out: Box) => out.value >= minToRaise })") shouldBe ty("Array[Box]")
   }
 
   property("tuple constructor") {
