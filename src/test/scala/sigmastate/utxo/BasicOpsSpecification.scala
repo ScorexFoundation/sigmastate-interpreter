@@ -422,6 +422,14 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
+  property("ByteArrayToBigInt: big int should always be positive") {
+    test("BATBI1", env, ext,
+      "{ byteArrayToBigInt(Array[Byte](-1.toByte)) > 0 }",
+      GT(ByteArrayToBigInt(ConcreteCollection(ByteConstant(-1))), BigIntConstant(0)),
+      onlyPositive = true
+    )
+  }
+
   property("ExtractCreationInfo") {
     test("Info1", env, ext,
       "SELF.creationInfo._1 == 5L",
