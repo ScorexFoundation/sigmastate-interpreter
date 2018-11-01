@@ -40,7 +40,7 @@ import scala.util.Try
   */
 trait DlogGroup[ElemType <: ECPoint] {
 
-  val random = new SecureRandom()
+  val secureRandom = new SecureRandom()
 
   /**
     * The generator g of the group is an element of the group such that, when written multiplicatively, every element of the group is a power of g.
