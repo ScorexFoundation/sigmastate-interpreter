@@ -168,7 +168,7 @@ object CostTable extends App {
     val MultiplyGroup = 50
 
     //Cost of one exponentiation
-    val Exponentiate = 3000
+    val Exponentiation = 3000
 
     val ByteArrayPerKilobyte = 200
 
@@ -188,8 +188,6 @@ object CostTable extends App {
     /** The cost for CustomByteArray declaration. Additional cost to be calculated when data is known
      (and CustomByteArray being converted to ByteArrayLeaf) */
     val ByteArrayDeclaration = 1
-
-
 
     val TripleDeclaration = 3
 
@@ -247,7 +245,7 @@ object CostTable extends App {
     val LambdaDeclaration = 1
 
     //Checking Shnorr signature is about 2 exponentiations and one multiplication
-    val DlogDeclaration = 2 * Exponentiate + MultiplyGroup
+    val DlogDeclaration = 2 * Exponentiation + MultiplyGroup
 
     val OptionGet = 1
     val OptionGetOrElse = 1
