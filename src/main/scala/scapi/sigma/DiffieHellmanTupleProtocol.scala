@@ -1,7 +1,6 @@
 package scapi.sigma
 
 import java.math.BigInteger
-import java.security.SecureRandom
 
 import org.bouncycastle.util.BigIntegers
 import sigmastate._
@@ -33,7 +32,7 @@ object DiffieHellmanTupleProverInput {
     val h = dlogGroup.createRandomGenerator()
 
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
-    val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+    val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
     val u = dlogGroup.exponentiate(g, w)
     val v = dlogGroup.exponentiate(h, w)
     val ci = ProveDiffieHellmanTuple(
@@ -71,7 +70,7 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
 
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 
-  override def cost[C <: Context[C]](context: C): Long = Cost.Dlog * 2
+  override def cost[C <: Context](context: C): Long = Cost.Dlog * 2
 
   //todo: fix code below , we should consider that class parameters could be not evaluated
   lazy val g = gv.asInstanceOf[GroupElementConstant].value
@@ -88,8 +87,6 @@ object ProveDiffieHellmanTuple {
 class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieHellmanTuple,
                                           override val privateInputOpt: Option[DiffieHellmanTupleProverInput])
   extends InteractiveProver[DiffieHellmanTupleProtocol, ProveDiffieHellmanTuple, DiffieHellmanTupleProverInput] {
-
-  import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   var rOpt: Option[BigInteger] = None
 
@@ -127,7 +124,7 @@ object DiffieHellmanTupleInteractiveProver {
 
   def firstMessage(publicInput: ProveDiffieHellmanTuple): (BigInteger, FirstDiffieHellmanTupleProverMessage) = {
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
-    val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+    val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
     val a = dlogGroup.exponentiate(publicInput.g, r)
     val b = dlogGroup.exponentiate(publicInput.h, r)
     r -> FirstDiffieHellmanTupleProverMessage(a, b)
@@ -149,7 +146,7 @@ object DiffieHellmanTupleInteractiveProver {
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
 
     //SAMPLE a random z <- Zq
-    val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, new SecureRandom)
+    val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
 
     // COMPUTE a = g^z*u^(-e) and b = h^z*v^{-e}  (where -e here means -e mod q)
     val e: BigInteger = new BigInteger(1, challenge)

@@ -37,5 +37,4 @@ trait SerializationSpecification extends PropSpec
     val parsedVal = ValueSerializer.deserialize(randomBytes ++ bytes, randomInt)
     parsedVal shouldEqual v
   }
-
 }

@@ -403,19 +403,21 @@ case object SBox extends SProduct with SPredefType {
 
   private val tT = STypeIdent("T")
   def registers(): Seq[SMethod] = {
-    (1 to 10).map(i => SMethod(s"R$i", SFunc(IndexedSeq(), SOption(tT), Seq(tT))))
+    (1 to 10).map(i => SMethod(s"R$i", SFunc(IndexedSeq(), SOption(tT), Seq(STypeParam(tT)))))
   }
   val PropositionBytes = "propositionBytes"
   val Value = "value"
   val Id = "id"
   val Bytes = "bytes"
   val BytesWithNoRef = "bytesWithNoRef"
+  val CreationInfo = "creationInfo"
   val methods = Vector(
     SMethod(Value, SLong), // see ExtractAmount
     SMethod(PropositionBytes, SCollectionType(SByte)), // see ExtractScriptBytes
     SMethod(Bytes, SCollectionType(SByte)), // see ExtractBytes
     SMethod(BytesWithNoRef, SCollectionType(SByte)), // see ExtractBytesWithNoRef
-    SMethod(Id, SCollectionType(SByte)) // see ExtractId
+    SMethod(Id, SCollectionType(SByte)), // see ExtractId
+    SMethod(CreationInfo, STuple(SLong, SCollectionType(SByte))) // see ExtractCreationInfo
   ) ++ registers()
 }
 
@@ -460,15 +462,32 @@ object SCollectionType {
 object SCollection {
   val tIV = STypeIdent("IV")
   val tOV = STypeIdent("OV")
+  val SizeMethodName = "size"
+  val GetOrElseMethodName = "getOrElse"
+  val MapMethodName = "map"
+  val ExistsMethodName = "exists"
+  val FoldMethodName = "fold"
+  val ForallMethodName = "forall"
+  val SliceMethodName = "slice"
+  val FilterMethodName = "filter"
   val methods = Seq(
-    SMethod("size", SInt),
-    SMethod("getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(tIV))),
-    SMethod("map", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(tIV, tOV))),
-    SMethod("exists", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV))),
-    SMethod("fold", SFunc(IndexedSeq(SCollection(tIV), tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV, Seq(tIV, tOV))),
-    SMethod("forall", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(tIV))),
-    SMethod("slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(tIV))),
-    SMethod("where", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(tIV)))
+    SMethod(SizeMethodName, SInt),
+    SMethod(GetOrElseMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(STypeParam(tIV)))),
+    SMethod(MapMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV),
+        Seq(STypeParam(tIV), STypeParam(tOV)))),
+    SMethod(ExistsMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV)))),
+    SMethod(FoldMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV,
+        Seq(STypeParam(tIV), STypeParam(tOV)))),
+    SMethod(ForallMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV)))),
+    SMethod(SliceMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(STypeParam(tIV)))),
+    SMethod(FilterMethodName,
+      SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(STypeParam(tIV))))
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
@@ -476,9 +495,9 @@ object SCollection {
 
   type SBooleanArray      = SCollection[SBoolean.type]
   type SByteArray         = SCollection[SByte.type]
-  type SShortArray          = SCollection[SShort.type]
+  type SShortArray        = SCollection[SShort.type]
   type SIntArray          = SCollection[SInt.type]
-  type SLongArray          = SCollection[SLong.type]
+  type SLongArray         = SCollection[SLong.type]
   type SBigIntArray       = SCollection[SBigInt.type]
   type SGroupElementArray = SCollection[SGroupElement.type]
   type SBoxArray          = SCollection[SBox.type]
@@ -491,7 +510,7 @@ object SCollection {
   val SLongArray         = SCollection(SLong)
   val SBigIntArray       = SCollection(SBigInt)
   val SGroupElementArray = SCollection(SGroupElement)
-  val SSigmaPropArray        = SCollection(SSigmaProp)
+  val SSigmaPropArray    = SCollection(SSigmaProp)
   val SBoxArray          = SCollection(SBox)
   val SAvlTreeArray      = SCollection(SAvlTree)
 }
@@ -517,11 +536,31 @@ object SOption {
   val OptionCollectionTypeConstrId = 4
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
+  implicit val optionTypeByte = SOption(SByte)
+  implicit val optionTypeByteArray = SOption(SByteArray)
+  implicit val optionTypeShort = SOption(SShort)
+  implicit val optionTypeInt = SOption(SInt)
+  implicit val optionTypeLong = SOption(SLong)
+  implicit val optionTypeBigInt = SOption(SBigInt)
+  implicit val optionTypeBoolean = SOption(SBoolean)
+  implicit val optionTypeAvlTree = SOption(SAvlTree)
+  implicit val optionTypeGroupElement = SOption(SGroupElement)
+  implicit val optionTypeSigmaProp = SOption(SSigmaProp)
+  implicit val optionTypeBox = SOption(SBox)
+
+  implicit def optionTypeCollection[V <: SType](implicit tV: V): SOption[SCollection[V]] = SOption(SCollection[V])
+
+  val IsEmpty = "isEmpty"
+  val IsDefined = "isDefined"
+  val Get = "get"
+  val GetOrElse = "getOrElse"
+
   private[sigmastate] def createMethods(tArg: STypeIdent): Seq[SMethod] =
     Seq(
-      SMethod("isDefined", SBoolean),
-      SMethod("value", tArg),
-      SMethod("valueOrElse", SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(tT)))
+      SMethod(IsEmpty, SBoolean),
+      SMethod(IsDefined, SBoolean),
+      SMethod(Get, tArg),
+      SMethod(GetOrElse, SFunc(IndexedSeq(SOption(tArg), tArg), tArg, Seq(STypeParam(tT))))
     )
   private val tT = STypeIdent("T")
   val methods: Seq[SMethod] = createMethods(tT)
@@ -575,11 +614,11 @@ object STuple {
   val componentNames = Range(1, 31).map(i => s"_$i")
 }
 
-case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeArgs: Seq[STypeIdent] = Nil) extends SType {
+case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypeParam] = Nil) extends SType {
   override type WrappedType = Seq[Any] => tRange.WrappedType
   override val typeCode = SFunc.FuncTypeCode
   override def toString = {
-    val args = if (tpeArgs.isEmpty) "" else tpeArgs.mkString("[", ",", "]")
+    val args = if (tpeParams.isEmpty) "" else tpeParams.mkString("[", ",", "]")
     s"$args(${tDom.mkString(",")}) => $tRange"
   }
 }

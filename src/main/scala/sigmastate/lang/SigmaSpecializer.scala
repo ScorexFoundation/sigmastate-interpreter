@@ -2,13 +2,13 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
 import org.ergoplatform.ErgoBox
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection._
 import sigmastate.Values.Value.Typed
-import sigmastate._
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Let, Select, ValueOps}
-import sigmastate.lang.exceptions.{MethodNotFound, SpecializerException}
+import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Select, Val, ValueOps}
+import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 
 class SigmaSpecializer(val builder: SigmaBuilder) {
@@ -28,7 +28,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case _ @ Block(binds, res) =>
       var curEnv = env
-      for (Let(n, _, b) <- binds) {
+      for (Val(n, _, b) <- binds) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = eval(curEnv, b)
         curEnv = curEnv + (n -> b1)
@@ -57,6 +57,12 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
       Some(mkIsMember(tree, key, proof))
 
+    case Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
+      Some(mkTreeLookup(tree, key, proof))
+
+    case Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
+      Some(mkTreeModifications(tree, operations, proof))
+
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(mkProveDlog(g))
 
@@ -65,6 +71,12 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))
+
+    case Apply(FromBase58Sym, Seq(arg: Value[SString.type]@unchecked)) =>
+      Some(mkBase58ToByteArray(arg))
+
+    case Apply(FromBase64Sym, Seq(arg: Value[SString.type]@unchecked)) =>
+      Some(mkBase64ToByteArray(arg))
 
     case Apply(ByteArrayToBigIntSym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(mkByteArrayToBigInt(arg))
@@ -87,7 +99,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         Some(mkUpcast(numValue, tRes))
 
     // Rule: col.size --> SizeOf(col)
-    case Select(obj, "size", _) =>
+    case Select(obj, SizeMethodName, _) =>
       if (obj.tpe.isCollectionLike)
         Some(mkSizeOf(obj.asValue[SCollection[SType]]))
       else
@@ -101,15 +113,22 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
       Some(SigmaPropBytes(p.asSigmaProp))
 
-    case sel @ Apply(Select(Select(Typed(box, SBox), regName, _), "valueOrElse", Some(_)), Seq(arg)) =>
-      val reg = ErgoBox.registerByName.getOrElse(regName,
-        error(s"Invalid register name $regName in expression $sel"))
-      Some(mkExtractRegisterAs(box.asBox, reg, arg.tpe, Some(arg)))
+    case Apply(PKSym, Seq(arg: Value[SString.type]@unchecked)) =>
+      Some(mkPK(arg))
 
-    case sel @ Select(Select(Typed(box, SBox), regName, _), "value", Some(regType)) =>
+    case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
-      Some(mkExtractRegisterAs(box.asBox, reg, regType, None))
+      Some(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
+
+    case Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.Get, _) =>
+      Some(mkOptionGet(nrv))
+
+    case Apply(Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.GetOrElse, _), Seq(arg)) =>
+      Some(mkOptionGetOrElse(nrv, arg))
+
+    case Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.IsDefined, _) =>
+      Some(mkOptionIsDefined(nrv))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {
@@ -118,6 +137,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         case (box, SBox.Id) => Some(mkExtractId(box))
         case (box, SBox.Bytes) => Some(mkExtractBytes(box))
         case (box, SBox.BytesWithNoRef) => Some(mkExtractBytesWithNoRef(box))
+        case (box, SBox.CreationInfo) => Some(mkExtractCreationInfo(box))
         case (box, _) if box.tpe.hasMethod(field) =>
           None  // leave it as it is and handle on a level of parent node
         case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
@@ -129,43 +149,40 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         case SigmaBoolean.IsValid => Some(obj)
       }
 
-    case Select(obj, "value", Some(SLong)) if obj.tpe == SBox =>
-      Some(mkExtractAmount(obj.asValue[SBox.type]))
-
     case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
       val index = fn.substring(1).toByte
       Some(mkSelectField(tuple.asTuple, index))
 
-    case Apply(Select(col, "slice", _), Seq(from, until)) =>
+    case Apply(Select(col, SliceMethodName, _), Seq(from, until)) =>
       Some(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
 
-    case Apply(Select(col, "where", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, FilterMethodName, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
-      Some(mkWhere(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
+      Some(mkFilter(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col,"exists", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, ExistsMethodName, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkExists(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col,"forall", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, ForallMethodName, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkForAll(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col,"map", _), Seq(Lambda(Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, MapMethodName, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
       val tagged = mkTagged(n, t, 21)
       val body1 = eval(env + (n -> tagged), body)
       Some(mkMapCollection(col.asValue[SCollection[SType]], tagged.varId, body1))
 
-    case Apply(Select(col,"fold", _), Seq(zero, Lambda(Seq((accArg, tAccArg), (opArg, tOpArg)), _, Some(body)))) =>
+    case Apply(Select(col, FoldMethodName, _), Seq(zero, Lambda(_, Seq((accArg, tAccArg), (opArg, tOpArg)), _, Some(body)))) =>
       val taggedAcc = mkTagged(accArg, tAccArg, 21)
       val taggedOp = mkTagged(opArg, tOpArg, 22)
       val body1 = eval(env ++ Seq(accArg -> taggedAcc, opArg -> taggedOp), body)
       Some(mkFold(col.asValue[SCollection[SType]], taggedOp.varId, zero, taggedAcc.varId, body1))
 
-    case Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
+    case Apply(Select(col, GetOrElseMethodName, _), Seq(index, defaultValue)) =>
       val index1 = eval(env, index).asValue[SInt.type]
       val defaultValue1 = eval(env, defaultValue).asValue[SType]
       Some(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))

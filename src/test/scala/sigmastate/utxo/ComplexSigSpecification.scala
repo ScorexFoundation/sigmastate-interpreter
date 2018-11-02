@@ -1,30 +1,30 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter, Height}
+import org.ergoplatform.{ErgoLikeContext, Height}
 import org.scalacheck.Gen
 import sigmastate.Values.LongConstant
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 
 import scala.util.Random
 
 class ComplexSigSpecification extends SigmaTestingCommons {
 
-  private def proverGen: Gen[ErgoLikeProvingInterpreter] = for {
+  private def proverGen: Gen[ErgoLikeTestProvingInterpreter] = for {
     _ <- Gen.const(1)
-  } yield new ErgoLikeProvingInterpreter()
+  } yield new ErgoLikeTestProvingInterpreter()
 
-  private def proversGen(min: Int, max: Int): Gen[Seq[ErgoLikeProvingInterpreter]] =
+  private def proversGen(min: Int, max: Int): Gen[Seq[ErgoLikeTestProvingInterpreter]] =
     Gen.listOfN(Gen.chooseNum(min, max).sample.get, proverGen)
 
   /**
     * Whether A or B, or both are able to sign a transaction
     */
   property("simplest linear-sized ring signature (1-out-of-2 OR)") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -38,6 +38,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -52,10 +53,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("simplest linear-sized ring signature (1-out-of-3 OR), with anyOf syntax") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -70,6 +71,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -85,10 +87,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("simplest linear-sized ring signature (1-out-of-3 OR), with || syntax") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val verifier = new ErgoLikeInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -103,6 +105,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -119,9 +122,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
   //two secrets are known, nevertheless, one will be simulated
   property("simplest linear-sized ring signature (1-out-of-4 OR), all secrets are known") {
-    val proverA = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA1 = proverA.dlogSecrets(0).publicImage
     val pubkeyA2 = proverA.dlogSecrets(1).publicImage
@@ -137,6 +140,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -146,12 +150,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of two ANDs") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val proverD = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -167,6 +171,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -186,12 +191,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of AND and OR") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val proverD = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -207,6 +212,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -226,10 +232,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("simple sig scheme - AND of two") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -243,6 +249,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -252,16 +259,15 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
     val pr = proverAB.prove(prop, ctx, fakeMessage).get
-    println("proof size: " + pr.proof.length)
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
- }
+  }
 
   property("complex sig scheme - OR of AND and DLOG") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -276,6 +282,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -294,12 +301,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - AND of two ORs") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val proverD = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -315,6 +322,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -326,7 +334,6 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val proverAC = proverA.withSecrets(Seq(proverC.dlogSecrets.head))
     val pr = proverAC.prove(prop, ctx, fakeMessage).get
-    println("proof size: " + pr.proof.length)
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val proverBD = proverB.withSecrets(Seq(proverD.dlogSecrets.head))
@@ -335,12 +342,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - AND of AND and OR") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val proverD = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -356,6 +363,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -378,12 +386,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of two ORs") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
-    val proverD = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -399,6 +407,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -417,11 +426,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR w. predicate") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -435,6 +444,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -447,6 +457,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -455,11 +466,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate, parentheses") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -474,6 +485,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -488,6 +500,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -501,11 +514,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate, no parentheses") {
-    val proverA = new ErgoLikeProvingInterpreter
-    val proverB = new ErgoLikeProvingInterpreter
-    val proverC = new ErgoLikeProvingInterpreter
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
@@ -520,6 +533,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx1 = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -534,6 +548,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val ctx2 = ErgoLikeContext(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = null,
       self = fakeSelf)
@@ -550,10 +565,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     // disable scalacheck shrinking otherwise other constraints start to fail
     import org.scalacheck.Shrink
-    implicit val noShrink: Shrink[Seq[ErgoLikeProvingInterpreter]] = Shrink.shrinkAny
+    implicit val noShrink: Shrink[Seq[ErgoLikeTestProvingInterpreter]] = Shrink.shrinkAny
 
     forAll(proversGen(3, 6), minSuccessful(10 /*test is heavy*/)) { allProvers =>
-      val verifier = new ErgoLikeInterpreter
+      val verifier = new ErgoLikeTestInterpreter
       val k = Gen.chooseNum(2, allProvers.length - 1).sample.get
       val kNumKeysCombinations = allProvers.map(_.dlogSecrets.head).toSet
         .subsets
@@ -568,6 +583,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       val ctx = ErgoLikeContext(
         currentHeight = 1,
         lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = IndexedSeq(),
         spendingTransaction = null,
         self = fakeSelf)

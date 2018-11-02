@@ -36,12 +36,12 @@ class SigmaTyper(val builder: SigmaBuilder) {
                  expected: Option[SType] = None): SValue = bound match {
     case Block(bs, res) =>
       var curEnv = env
-      val bs1 = ArrayBuffer[Let]()
-      for (Let(n, _, b) <- bs) {
+      val bs1 = ArrayBuffer[Val]()
+      for (Val(n, _, b) <- bs) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
-        bs1 += mkLet(n, b1.tpe, b1)
+        bs1 += mkVal(n, b1.tpe, b1)
       }
       val res1 = assignType(curEnv, res)
       mkBlock(bs1, res1)
@@ -83,7 +83,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t")
       }
 
-    case lam @ Lambda(args, t, body) =>
+    case lam @ Lambda(tparams, args, t, body) =>
       for ((name, t) <- args)
         if (t == NoType)
           error(s"Invalid function $lam: undefined type of argument $name")
@@ -93,7 +93,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
         if (newBody.isDefined && t != newBody.get.tpe)
           error(s"Invalid function $lam: resulting expression type ${newBody.get.tpe} doesn't equal declared type $t")
       }
-      val res = mkLambda(args, newBody.fold(t)(_.tpe), newBody)
+      val res = mkGenLambda(tparams, args, newBody.fold(t)(_.tpe), newBody)
       res
 
     case app @ Apply(sel @ Select(obj, n, _), args) =>
@@ -257,21 +257,22 @@ class SigmaTyper(val builder: SigmaBuilder) {
           error(s"Invalid operation $mc on type $t")
       }
 
-    case app @ ApplyTypes(sel: Select, targs) =>
-      val newSel @ Select(obj, n, _) = assignType(env, sel)
-      newSel.tpe match {
-        case genFunTpe @ SFunc(_, _, tyVars) =>
-          if (tyVars.lengthCompare(targs.length) != 0)
-            error(s"Wrong number of type arguments $app: expected $tyVars but provided $targs")
-          val subst = tyVars.zip(targs).toMap
-          val concrFunTpe = applySubst(genFunTpe, subst).asFunc
-          mkSelect(obj, n, Some(concrFunTpe.tRange))
-        case _ =>
-          error(s"Invalid application of type arguments $app: function $sel doesn't have type parameters")
+    case app @ ApplyTypes(input, targs) =>
+      def update(input: SValue, newTpe: SType) = input match {
+        case Select(obj, n, _) => mkSelect(obj, n, Some(newTpe))
       }
-
-    case app @ ApplyTypes(in, targs) =>
-      error(s"Invalid application of type arguments $app: expression doesn't have type parameters")
+      val newInput = assignType(env, input)
+      newInput.tpe match {
+        case genFunTpe @ SFunc(_, _, tpeParams) =>
+          if (tpeParams.lengthCompare(targs.length) != 0)
+            error(s"Wrong number of type arguments $app: expected $tpeParams but provided $targs. " +
+                  s"Note that partial application of type parameters is not supported.")
+          val subst = tpeParams.map(_.ident).zip(targs).toMap
+          val concrFunTpe = applySubst(genFunTpe, subst).asFunc
+          update(newInput, concrFunTpe.tRange)
+        case _ =>
+          error(s"Invalid application of type arguments $app: function $input doesn't have type parameters")
+      }
 
     case If(c, t, e) =>
       val c1 = assignType(env, c).asValue[SBoolean.type]
@@ -352,6 +353,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
     case SomeValue(x) => SomeValue(assignType(env, x))
 
     case Height => Height
+    case MinerPubkey => MinerPubkey
     case Self => Self
     case Inputs => Inputs
     case Outputs => Outputs
@@ -360,6 +362,8 @@ class SigmaTyper(val builder: SigmaBuilder) {
       if (i >= 0 && i <= Byte.MaxValue) ByteConstant(i.toByte)
       else error(s"Value $i of type Long cannot be converted to Byte.")
     case v: ContextVariable[_] => v
+    case v: GetVar[_] => v
+    case v: OptionGet[_] => v
     case v: EvaluatedValue[_] => v
     case v: SigmaBoolean => v
     case v: Upcast[_, _] => v
@@ -509,8 +513,8 @@ object SigmaTyper {
   }
 
   def applySubst(tpe: SType, subst: STypeSubst): SType = tpe match {
-    case SFunc(args, res, tvars) =>
-      val remainingVars = tvars.filterNot(subst.contains)
+    case SFunc(args, res, tparams) =>
+      val remainingVars = tparams.filterNot { p => subst.contains(p.ident) }
       SFunc(args.map(applySubst(_, subst)), applySubst(res, subst), remainingVars)
     case _ =>
       val substRule = rule[SType] {

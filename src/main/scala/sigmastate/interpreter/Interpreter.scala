@@ -4,32 +4,40 @@ import java.util
 import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import sigmastate.Values.{ByteArrayConstant, _}
-import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
-import scorex.crypto.authds.avltree.batch.Lookup
-import sigmastate.SCollection.SByteArray
+import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
-import scorex.utils.ScryptoLogging
-import sigmastate.Values._
+import scorex.util.ScorexLogging
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{ByteArrayConstant, _}
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.Helpers
+import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
+import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.Extensions._
-import sigmastate.utxo.{CostTable, DeserializeContext, Transformer}
+import sigmastate.utils.Helpers
+import sigmastate.utxo.{CostTable, DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 
 object CryptoConstants {
   type EcPointType = Curve25519Point
 
   val dlogGroup: BcDlogFp[EcPointType] = Curve25519
+  lazy val secureRandom = dlogGroup.secureRandom
+
+  def secureRandomBytes(howMany: Int) = {
+    val bytes = new Array[Byte](howMany)
+    secureRandom.nextBytes(bytes)
+    bytes
+  }
+
   val groupSizeBits: Int = 256
   val groupSize: Int = 256 / 8 //32 bytes
 
@@ -48,12 +56,12 @@ object CryptoFunctions {
   }
 }
 
-trait Interpreter extends ScryptoLogging {
+trait Interpreter extends ScorexLogging {
 
   import CryptoConstants._
   import Interpreter.ReductionResult
 
-  type CTX <: Context[CTX]
+  type CTX <: Context
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
 
@@ -92,6 +100,17 @@ trait Interpreter extends ScryptoLogging {
         context.extension.values(t.varId)
       else
         null
+
+    case t: GetVar[_] =>
+      if (context.extension.values.contains(t.varId)) {
+        val v = context.extension.values(t.varId)
+        if (v.tpe != t.tpe.elemType)
+          throw new InvalidType(s"Invalid value type ${v.tpe} in context variable with id ${t.varId}, expected ${t.tpe.elemType}")
+        else
+          SomeValue(v)
+      }
+      else
+        NoneValue(t.tpe.elemType)
 
     case GroupGenerator =>
       GroupElementConstant(GroupGenerator.value)
@@ -270,13 +289,33 @@ trait Interpreter extends ScryptoLogging {
     case StringConcat(StringConstant(l), StringConstant(r)) =>
       StringConstant(l + r)
 
-    case IsMember(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
-      def invalidArg = Interpreter.error(s"Collection expected but found $key")
-      val keyBytes = key.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
-      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg)
+    case TreeModifications(tree: EvaluatedValue[AvlTreeData]@unchecked, ops: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
+      def invalidArg(value: EvaluatedValue[SByteArray]) = Interpreter.error(s"Collection expected but found $value")
+
+      val operationsBytes = ops.matchCase(cc => cc.value, c => c.value, _ => invalidArg(ops))
+      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg(proof))
       val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
-      val res = bv.performOneOperation(Lookup(ADKey @@ keyBytes))
-      BooleanConstant.fromBoolean(res.isSuccess && res.get.isDefined)
+      val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
+      val operations: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
+      operations.foreach(o => bv.performOneOperation(o))
+      bv.digest match {
+        case Some(v) => SomeValue(v)
+        case _ => NoneValue[SByteArray](SByteArray)
+      }
+
+    case TreeLookup(tree: EvaluatedValue[AvlTreeData]@unchecked, key: EvaluatedValue[SByteArray], proof: EvaluatedValue[SByteArray]) =>
+      def invalidArg(value: EvaluatedValue[SByteArray]) = Interpreter.error(s"Collection expected but found $value")
+
+      val keyBytes = key.matchCase(cc => cc.value, c => c.value, _ => invalidArg(key))
+      val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg(proof))
+      val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
+      bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect")
+        case Success(r) => r match {
+          case Some(v) => SomeValue(v)
+          case _ => NoneValue[SByteArray](SByteArray)
+        }
+      }
 
     case If(cond: EvaluatedValue[SBoolean.type], trueBranch, falseBranch) =>
       if (cond.value) trueBranch else falseBranch
@@ -396,10 +435,10 @@ trait Interpreter extends ScryptoLogging {
   def verify(exp: Value[SBoolean.type],
              context: CTX,
              proverResult: ProverResult,
-             message: Array[Byte]): Try[VerificationResult] = {
-    val ctxv = context.withExtension(proverResult.extension)
+             message: Array[Byte]): Try[VerificationResult] = Try {
+    val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
     verify(exp, ctxv, proverResult.proof, message)
-  }
+  }.flatten
 
 
   //todo: do we need the method below?
@@ -416,7 +455,7 @@ object Interpreter {
   type ReductionResult = (Value[SBoolean.type], Long)
 
   implicit class InterpreterOps(I: Interpreter) {
-    def eval[T <: SType](ctx: Context[_], ev: Value[T]): Value[T] = {
+    def eval[T <: SType](ctx: Context, ev: Value[T]): Value[T] = {
       val reduced = I.reduceUntilConverged(ctx.asInstanceOf[I.CTX], ev)
       reduced
     }
@@ -424,5 +463,3 @@ object Interpreter {
 
   def error(msg: String) = throw new InterpreterException(msg)
 }
-
-class InterpreterException(msg: String) extends Exception(msg)

@@ -1,16 +1,17 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, TaggedByteArray, TrueLeaf, Value}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
-import sigmastate.utils.Extensions._
 
 /**
   * Wolfram's Rule110 implementations
@@ -34,22 +35,22 @@ class Rule110Specification extends SigmaTestingCommons {
     * - first output contains the same protecting script, allowing to calculate further layers
     */
   property("rule110 - one layer in register") {
-    val prover = new ErgoLikeProvingInterpreter {
+    val prover = new ErgoLikeTestProvingInterpreter {
       override val maxCost: Long = 2000000
     }
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val prop = compile(Map(),
       """{
-        |  let indices: Array[Int] = Array(0, 1, 2, 3, 4, 5)
-        |  let inLayer: Array[Byte] = SELF.R4[Array[Byte]].value
-        |  fun procCell(i: Int): Byte = {
-        |    let l = inLayer((if (i == 0) 5 else (i - 1)))
-        |    let c = inLayer(i)
-        |    let r = inLayer((i + 1) % 6)
+        |  val indices: Array[Int] = Array(0, 1, 2, 3, 4, 5)
+        |  val inLayer: Array[Byte] = SELF.R4[Array[Byte]].get
+        |  val procCell = {(i: Int) =>
+        |    val l = inLayer((if (i == 0) 5 else (i - 1)))
+        |    val c = inLayer(i)
+        |    val r = inLayer((i + 1) % 6)
         |    ((l * c * r + c * r + c + r) % 2).toByte
         |  }
-        |  (OUTPUTS(0).R4[Array[Byte]].value == indices.map(procCell)) &&
+        |  (OUTPUTS(0).R4[Array[Byte]].get == indices.map(procCell)) &&
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
          }""".stripMargin).asBoolValue
 
@@ -60,6 +61,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(output),
       tx,
       self = input)
@@ -126,7 +128,7 @@ class Rule110Specification extends SigmaTestingCommons {
       AND(inValCorrect, inYCorrect, inXCorrect, inMidCorrect, outPosCorrect, sizesCorrect)
     }
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val MidReg = reg1
     val XReg = reg2
@@ -136,33 +138,33 @@ class Rule110Specification extends SigmaTestingCommons {
     val scriptHash = CalcBlake2b256(TaggedByteArray(scriptId))
 
     // extract required values of for all outputs
-    val in0Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), MidReg)
-    val in1Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), MidReg)
-    val in2Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), MidReg)
-    val out0Mid = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), MidReg)
-    val out1Mid = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 1), MidReg)
-    val out2Mid = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 2), MidReg)
+    val in0Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), MidReg).get
+    val in1Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), MidReg).get
+    val in2Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), MidReg).get
+    val out0Mid = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), MidReg).get
+    val out1Mid = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 1), MidReg).get
+    val out2Mid = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 2), MidReg).get
 
-    val in0X = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), XReg)
-    val in1X = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), XReg)
-    val in2X = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), XReg)
-    val out0X = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), XReg)
-    val out1X = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 1), XReg)
-    val out2X = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 2), XReg)
+    val in0X = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), XReg).get
+    val in1X = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), XReg).get
+    val in2X = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), XReg).get
+    val out0X = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), XReg).get
+    val out1X = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 1), XReg).get
+    val out2X = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 2), XReg).get
 
-    val in0Y = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), YReg)
-    val in1Y = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), YReg)
-    val in2Y = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), YReg)
-    val out0Y = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), YReg)
-    val out1Y = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 1), YReg)
-    val out2Y = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 2), YReg)
+    val in0Y = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), YReg).get
+    val in1Y = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), YReg).get
+    val in2Y = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), YReg).get
+    val out0Y = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), YReg).get
+    val out1Y = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 1), YReg).get
+    val out2Y = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 2), YReg).get
 
-    val in0Val = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), ValReg)
-    val in1Val = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), ValReg)
-    val in2Val = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), ValReg)
-    val out0V = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), ValReg)
-    val out1V = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), ValReg)
-    val out2V = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), ValReg)
+    val in0Val = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), ValReg).get
+    val in1Val = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 1), ValReg).get
+    val in2Val = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 2), ValReg).get
+    val out0V = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), ValReg).get
+    val out1V = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), ValReg).get
+    val out2V = ExtractRegisterAs[SByte.type](ByIndex(Outputs, 0), ValReg).get
 
     val in0Script = ExtractScriptBytes(ByIndex(Inputs, 0))
     val out0Script = ExtractScriptBytes(ByIndex(Outputs, 0))
@@ -215,12 +217,13 @@ class Rule110Specification extends SigmaTestingCommons {
     val nOut2 = ErgoBox(1, prop, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
 
     val nTx = UnsignedErgoLikeTransaction(IndexedSeq(nIn0, nIn1, nIn2).map(i => new UnsignedInput(i.id)), IndexedSeq(nOut0, nOut1, nOut2))
-    val nProver = new ErgoLikeProvingInterpreter()
+    val nProver = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(normalCaseBytes))
 
     val nCtx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(nIn0, nIn1, nIn2),
       nTx,
       self = nIn0)
@@ -236,12 +239,13 @@ class Rule110Specification extends SigmaTestingCommons {
     val rOut2 = ErgoBox(1, prop, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
 
     val rTx = UnsignedErgoLikeTransaction(IndexedSeq(rIn0, rIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(rOut0, rOut1, rOut2))
-    val rProver = new ErgoLikeProvingInterpreter()
+    val rProver = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(rightmostBytes))
 
     val rCtx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(rIn0, rIn1),
       rTx,
       self = rIn0)
@@ -257,12 +261,13 @@ class Rule110Specification extends SigmaTestingCommons {
     val lnOut2 = ErgoBox(1, prop, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lnTx = UnsignedErgoLikeTransaction(IndexedSeq(lnIn0, lnIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(lnOut0, lnOut1, lnOut2))
-    val lnProver = new ErgoLikeProvingInterpreter()
+    val lnProver = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(nLeftmostBytes))
 
     val lnCtx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(lnIn0, lnIn1),
       lnTx,
       self = lnIn0)
@@ -277,12 +282,13 @@ class Rule110Specification extends SigmaTestingCommons {
     val lOut2 = ErgoBox(1, prop, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lTx = UnsignedErgoLikeTransaction(IndexedSeq(lIn0).map(i => new UnsignedInput(i.id)), IndexedSeq(lOut0, lOut1, lOut2))
-    val lProver = new ErgoLikeProvingInterpreter()
+    val lProver = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(leftmostBytes))
 
     val lCtx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(lIn0),
       lTx,
       self = lIn0)
@@ -303,7 +309,7 @@ class Rule110Specification extends SigmaTestingCommons {
     * new layer of rule 110
     */
   property("rule110 - one bit per output (old version)") {
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
 
     val RowReg = reg1
     val ColumnReg = reg2
@@ -311,43 +317,43 @@ class Rule110Specification extends SigmaTestingCommons {
     val bitsInString = 31
     val lastBitIndex = bitsInString - 1
 
-    val midBitColumn = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg),
-      ExtractRegisterAs[SLong.type](ByIndex(Inputs, 1), ColumnReg))
+    val midBitColumn = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg).get,
+      ExtractRegisterAs[SLong.type](ByIndex(Inputs, 1), ColumnReg).get)
 
     val leftBitColumn =
       OR(
         AND(
-          EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg), LongConstant(0)),
-          EQ(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), ColumnReg), LongConstant(lastBitIndex))
+          EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg).get, LongConstant(0)),
+          EQ(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), ColumnReg).get, LongConstant(lastBitIndex))
         ),
-        EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg),
-          Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), ColumnReg), LongConstant(1)))
+        EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg).get,
+          Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), ColumnReg).get, LongConstant(1)))
       )
 
     val rightBitColumn =
       OR(
         AND(
-          EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg), LongConstant(lastBitIndex)),
-          EQ(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 2), ColumnReg), LongConstant(0))
+          EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg).get, LongConstant(lastBitIndex)),
+          EQ(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 2), ColumnReg).get, LongConstant(0))
         ),
-        EQ(Plus(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg), LongConstant(1)),
-          ExtractRegisterAs[SLong.type](ByIndex(Inputs, 2), ColumnReg))
+        EQ(Plus(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), ColumnReg).get, LongConstant(1)),
+          ExtractRegisterAs[SLong.type](ByIndex(Inputs, 2), ColumnReg).get)
       )
 
-    val row0 = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), RowReg),
-      Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), RowReg), LongConstant(1)))
+    val row0 = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), RowReg).get,
+      Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), RowReg).get, LongConstant(1)))
 
-    val row1 = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), RowReg),
-      Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 1), RowReg), LongConstant(1)))
+    val row1 = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), RowReg).get,
+      Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 1), RowReg).get, LongConstant(1)))
 
-    val row2 = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), RowReg),
-      Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 2), RowReg), LongConstant(1)))
+    val row2 = EQ(ExtractRegisterAs[SLong.type](ByIndex(Outputs, 0), RowReg).get,
+      Plus(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 2), RowReg).get, LongConstant(1)))
 
-    val input0 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 0), ValueReg)
-    val input1 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 1), ValueReg)
-    val input2 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 2), ValueReg)
+    val input0 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 0), ValueReg).get
+    val input1 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 1), ValueReg).get
+    val input2 = ExtractRegisterAs[SBoolean.type](ByIndex(Inputs, 2), ValueReg).get
 
-    val output = ExtractRegisterAs[SBoolean.type](ByIndex(Outputs, 0), ValueReg)
+    val output = ExtractRegisterAs[SBoolean.type](ByIndex(Outputs, 0), ValueReg).get
 
     val t = TrueLeaf
     val f = FalseLeaf
@@ -400,9 +406,10 @@ class Rule110Specification extends SigmaTestingCommons {
       ErgoBox(0L, prop, Seq(), Map(row, column, value), txId.toModifierId, col.toShort)
     }
 
-    val initBlock = BlockchainSimulationSpecification.Block {
-      IndexedSeq(ErgoLikeTransaction(IndexedSeq(), coins))
-    }
+    val initBlock = BlockchainSimulationSpecification.Block(
+      IndexedSeq(ErgoLikeTransaction(IndexedSeq(), coins)),
+      ErgoLikeContext.dummyPubkey
+    )
 
     val genesisState = ValidationState.initialState(initBlock)
 
@@ -436,32 +443,38 @@ class Rule110Specification extends SigmaTestingCommons {
 
         val contextLeft = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
+          ErgoLikeContext.dummyPubkey,
           IndexedSeq(left, center, right),
           ut,
           left,
+          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultLeft = prover.prove(left.proposition, contextLeft, ut.messageToSign).get
 
         val contextCenter = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
+          ErgoLikeContext.dummyPubkey,
           IndexedSeq(left, center, right),
           ut,
           center,
+          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultCenter = prover.prove(center.proposition, contextCenter, ut.messageToSign).get
 
         val contextRight = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
+          ErgoLikeContext.dummyPubkey,
           IndexedSeq(left, center, right),
           ut,
           right,
+          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultRight = prover.prove(right.proposition, contextRight, ut.messageToSign).get
         ut.toSigned(IndexedSeq(proverResultLeft, proverResultCenter, proverResultRight))
       }
     }
 
-    val firstRowBlock = Block(generateTransactionsForRow(genesisState, 1))
+    val firstRowBlock = Block(generateTransactionsForRow(genesisState, 1), ErgoLikeContext.dummyPubkey)
 
     val t0 = System.currentTimeMillis()
     val firstRowState = genesisState.applyBlock(firstRowBlock, 10000000).get

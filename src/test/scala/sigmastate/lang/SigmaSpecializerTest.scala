@@ -1,6 +1,7 @@
 package sigmastate.lang
 
-import org.ergoplatform.{Height, Inputs, Outputs}
+import org.ergoplatform.ErgoBox.R4
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values._
@@ -63,14 +64,14 @@ class SigmaSpecializerTest extends PropSpec
          Plus(Ident("X", SLong).asValue[SLong.type], LongConstant(1))) shouldBe Plus(10L, 1L)
   }
 
-  property("substitute all let expressions in block result") {
-    spec("{ let X = 10; X }") shouldBe IntConstant(10)
-    spec("{ let X = 10; let Y = 20; X + Y }") shouldBe Plus(10, 20)
-    spec("{ let X = 10; let Y = 20; X + Y + X }") shouldBe Plus(Plus(10, 20), 10)
-    spec("{ let X = 10 + 1; X + X}") shouldBe Plus(Plus(10, 1), Plus(10, 1))
-    spec("{ let X = 10; let Y = X; Y}") shouldBe IntConstant(10)
-    spec("{ let X = 10; let Y = X; let Z = Y; Z }") shouldBe IntConstant(10)
-    spec("{ let X = 10; let Y = X + 1; let Z = Y + X; Z + Y + X }") shouldBe
+  property("substitute all val expressions in block result") {
+    spec("{ val X = 10; X }") shouldBe IntConstant(10)
+    spec("{ val X = 10; val Y = 20; X + Y }") shouldBe Plus(10, 20)
+    spec("{ val X = 10; val Y = 20; X + Y + X }") shouldBe Plus(Plus(10, 20), 10)
+    spec("{ val X = 10 + 1; X + X}") shouldBe Plus(Plus(10, 1), Plus(10, 1))
+    spec("{ val X = 10; val Y = X; Y}") shouldBe IntConstant(10)
+    spec("{ val X = 10; val Y = X; val Z = Y; Z }") shouldBe IntConstant(10)
+    spec("{ val X = 10; val Y = X + 1; val Z = Y + X; Z + Y + X }") shouldBe
       Plus(Plus(/*Z=*/Plus(/*Y=*/Plus(10, 1), 10), /*Y=*/Plus(10, 1)), 10)
   }
 
@@ -94,22 +95,22 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("generic methods of arrays") {
-    spec("OUTPUTS.map(fun (out: Box) = { out.value >= 10 })") shouldBe
+    spec("OUTPUTS.map({ (out: Box) => out.value >= 10 })") shouldBe
       MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
-    spec("OUTPUTS.exists(fun (out: Box) = { out.value >= 10 })") shouldBe
+    spec("OUTPUTS.exists({ (out: Box) => out.value >= 10 })") shouldBe
         Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
-    spec("OUTPUTS.forall(fun (out: Box) = { out.value >= 10 })") shouldBe
+    spec("OUTPUTS.forall({ (out: Box) => out.value >= 10 })") shouldBe
         ForAll(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
-    spec("{ let arr = Array(1,2); arr.fold(0, fun (n1: Int, n2: Int) = n1 + n2)}") shouldBe
+    spec("{ val arr = Array(1,2); arr.fold(0, { (n1: Int, n2: Int) => n1 + n2 })}") shouldBe
         Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
              22, IntConstant(0), 21, Plus(TaggedInt(21), TaggedInt(22)))
-    spec("{ let arr = Array(1,2); arr.fold(true, fun (n1: Boolean, n2: Int) = n1 && (n2 > 1))}") shouldBe
+    spec("{ val arr = Array(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
       Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
         22, TrueLeaf, 21, AND(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
     spec("OUTPUTS.slice(0, 10)") shouldBe
         Slice(Outputs, IntConstant(0), IntConstant(10))
-    spec("OUTPUTS.where(fun (out: Box) = { out.value >= 10 })") shouldBe
-        Where(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+    spec("OUTPUTS.filter({ (out: Box) => out.value >= 10 })") shouldBe
+        Filter(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
   }
 
   property("AND flattening predefined") {
@@ -179,4 +180,37 @@ class SigmaSpecializerTest extends PropSpec
     spec("byteArrayToBigInt(longToByteArray(1L))") shouldBe ByteArrayToBigInt(LongToByteArray(LongConstant(1)))
   }
 
+  property("fromBaseX") {
+    spec("""fromBase58("111")""") shouldBe Base58ToByteArray(StringConstant("111"))
+    spec("""fromBase64("111")""") shouldBe Base64ToByteArray(StringConstant("111"))
+  }
+
+  property("PK") {
+    spec("""PK("111")""") shouldBe ErgoAddressToSigmaProp(StringConstant("111"))
+  }
+
+  property("ExtractRegisterAs") {
+    spec("SELF.R4[Int]") shouldBe ExtractRegisterAs[SInt.type](Self, R4)
+  }
+
+  property("OptionIsDefined") {
+    spec("SELF.R4[Int].isDefined") shouldBe ExtractRegisterAs[SInt.type](Self, R4).isDefined
+    spec("getVar[Int](1).isDefined") shouldBe GetVarInt(1).isDefined
+  }
+
+  property("OptionGet") {
+    spec("SELF.R4[Int].get") shouldBe ExtractRegisterAs[SInt.type](Self, R4).get
+    spec("getVar[Int](1).get") shouldBe GetVarInt(1).get
+  }
+
+  property("OptionGetOrElse") {
+    spec("SELF.R4[Int].getOrElse(0)") shouldBe ExtractRegisterAs[SInt.type](Self, R4).getOrElse(IntConstant(0))
+    spec("getVar[Int](1).getOrElse(0)") shouldBe GetVarInt(1).getOrElse(IntConstant(0))
+  }
+
+  property("ExtractCreationInfo") {
+    spec("SELF.creationInfo") shouldBe ExtractCreationInfo(Self)
+    spec("SELF.creationInfo._1") shouldBe SelectField(ExtractCreationInfo(Self), 1)
+    spec("SELF.creationInfo._2") shouldBe SelectField(ExtractCreationInfo(Self), 2)
+  }
 }

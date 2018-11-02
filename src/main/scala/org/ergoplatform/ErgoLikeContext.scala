@@ -1,6 +1,7 @@
 package org.ergoplatform
 
-import org.ergoplatform.ErgoLikeContext.Height
+import org.ergoplatform.ErgoLikeContext.Metadata._
+import org.ergoplatform.ErgoLikeContext.{Height, Metadata}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.{Context, ContextExtension}
@@ -15,64 +16,69 @@ case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData
 // todo: write description
 class ErgoLikeContext(val currentHeight: Height,
                       val lastBlockUtxoRoot: AvlTreeData,
+                      val minerPubkey: Array[Byte],
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
-                      val extension: ContextExtension = ContextExtension(Map())
-                 ) extends Context[ErgoLikeContext] {
+                      val metadata: Metadata,
+                      override val extension: ContextExtension = ContextExtension(Map())
+                 ) extends Context {
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
-    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, self, newExtension)
+    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, spendingTransaction, self, metadata, newExtension)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
-    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, newSpendingTransaction, self, extension)
+    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, newSpendingTransaction, self, metadata, extension)
 }
 
 object ErgoLikeContext {
   type Height = Long
 
+  val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
+
+  case class Metadata(networkPrefix: NetworkPrefix)
+
+  object Metadata {
+    type NetworkPrefix = Byte
+    val MainnetNetworkPrefix: NetworkPrefix = 0.toByte
+    val TestnetNetworkPrefix: NetworkPrefix = 16.toByte
+  }
+
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
+            minerPubkey: Array[Byte],
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
+            metadata: Metadata = Metadata(TestnetNetworkPrefix),
             extension: ContextExtension = ContextExtension(Map())) =
-    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, boxesToSpend, spendingTransaction, self, extension)
+    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, spendingTransaction, self, metadata, extension)
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,
-    lastBlockUtxoRoot = AvlTreeData.dummy, boxesToSpend = IndexedSeq(),
-    spendingTransaction = null, self = selfDesc)
+    lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(),
+    spendingTransaction = null, self = selfDesc, metadata = Metadata(networkPrefix = TestnetNetworkPrefix))
 
-  def fromTransaction(tx: ErgoLikeTransaction,
-                      blockchainState: BlockchainState,
-                      boxesReader: ErgoBoxReader,
-                      inputIndex: Int): Try[ErgoLikeContext] = Try {
+}
 
-    val boxes = tx.inputs.map(_.boxId).map(id => boxesReader.byId(id).get)
+/** When interpreted evaluates to a IntConstant built from Context.currentHeight */
+case object MinerPubkey extends NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.MinerPubkeyCode
 
-    val proverExtension = tx.inputs(inputIndex).spendingProof.extension
-
-    ErgoLikeContext(blockchainState.currentHeight,
-      blockchainState.lastBlockUtxoRoot,
-      boxes,
-      tx,
-      boxes(inputIndex),
-      proverExtension)
-  }
+  override def cost[C <: Context](context: C): Long = Cost.ByteArrayDeclaration // todo: ???
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
 case object Height extends NotReadyValueLong {
   override val opCode: OpCode = OpCodes.HeightCode
 
-  override def cost[C <: Context[C]](context: C): Long = 2 * Cost.IntConstantDeclaration
+  override def cost[C <: Context](context: C): Long = 2 * Cost.IntConstantDeclaration
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
 case object Inputs extends LazyCollection[SBox.type] {
   override val opCode: OpCode = OpCodes.InputsCode
 
-  override def cost[C <: Context[C]](context: C) =
+  override def cost[C <: Context](context: C) =
     context.asInstanceOf[ErgoLikeContext].boxesToSpend.map(_.cost).sum + Cost.ConcreteCollection
 
   val tpe = SCollection(SBox)
@@ -82,7 +88,7 @@ case object Inputs extends LazyCollection[SBox.type] {
 case object Outputs extends LazyCollection[SBox.type] {
   override val opCode: OpCode = OpCodes.OutputsCode
 
-  override def cost[C <: Context[C]](context: C) =
+  override def cost[C <: Context](context: C) =
     context.asInstanceOf[ErgoLikeContext].spendingTransaction.outputs.map(_.cost).sum + Cost.ConcreteCollection
 
   val tpe = SCollection(SBox)
@@ -92,7 +98,7 @@ case object Outputs extends LazyCollection[SBox.type] {
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree {
   override val opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
 
-  override def cost[C <: Context[C]](context: C) = Cost.AvlTreeConstantDeclaration + 1
+  override def cost[C <: Context](context: C) = Cost.AvlTreeConstantDeclaration + 1
 }
 
 
@@ -100,5 +106,5 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree {
 case object Self extends NotReadyValueBox {
   override val opCode: OpCode = OpCodes.SelfCode
 
-  override def cost[C <: Context[C]](context: C) = context.asInstanceOf[ErgoLikeContext].self.cost
+  override def cost[C <: Context](context: C) = context.asInstanceOf[ErgoLikeContext].self.cost
 }

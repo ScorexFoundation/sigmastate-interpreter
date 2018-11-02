@@ -1,5 +1,7 @@
 package sigmastate.serialization
 
+import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeContext}
+import sigmastate.Values.StringConstant
 import sigmastate._
 import sigmastate.utxo._
 
@@ -47,8 +49,8 @@ class TransformersSerializationSpec extends SerializationSpecification {
     }
   }
 
-  property("Where: Serializer round trip") {
-    forAll { f: Where[SInt.type] =>
+  property("Filter: Serializer round trip") {
+    forAll { f: Filter[SInt.type] =>
       roundTripTest(f)
     }
   }
@@ -85,6 +87,12 @@ class TransformersSerializationSpec extends SerializationSpecification {
 
   property("ExtractId: Serializer round trip") {
     forAll { e: ExtractId =>
+      roundTripTest(e)
+    }
+  }
+
+  property("ExtractCreationInfo: Serializer round trip") {
+    forAll() { e: ExtractCreationInfo =>
       roundTripTest(e)
     }
   }
@@ -141,4 +149,33 @@ class TransformersSerializationSpec extends SerializationSpecification {
     forAll(downcastGen) { v => roundTripTest(v) }
   }
 
+  property("Base58ToByteArray: Serializer round trip") {
+    forAll(base58ToByteArrayGen) { v => roundTripTest(v) }
+  }
+
+  property("Base64ToByteArray: Serializer round trip") {
+    forAll(base64ToByteArrayGen) { v => roundTripTest(v) }
+  }
+
+  property("PK(P2PK): Serializer round trip") {
+    forAll(p2pkAddressGen(ErgoLikeContext.Metadata.TestnetNetworkPrefix)) { p2pk =>
+      roundTripTest(ErgoAddressToSigmaProp(StringConstant(p2pk.toString)))
+    }
+  }
+
+  property("GetVar: Serializer round trip") {
+    forAll(getVarIntGen) { v => roundTripTest(v) }
+  }
+
+  property("OptionGet: Serializer round trip") {
+    forAll(optionGetGen) { v => roundTripTest(v) }
+  }
+
+  property("OptionGetOrElse: Serializer round trip") {
+    forAll(optionGetOrElseGen) { v => roundTripTest(v) }
+  }
+
+  property("OptionIsDefined: Serializer round trip") {
+    forAll(optionIsDefinedGen) { v => roundTripTest(v) }
+  }
 }

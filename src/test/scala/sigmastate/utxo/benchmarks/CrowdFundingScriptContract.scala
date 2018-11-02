@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext
 import sigmastate.SBoolean
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
-import sigmastate.helpers.ErgoLikeProvingInterpreter
+import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.Interpreter
 
 import scala.util.Try
@@ -12,8 +12,8 @@ import scala.util.Try
 class CrowdFundingScriptContract(
                                   timeout: Long,
                                   minToRaise: Long,
-                                  override val backerProver: ErgoLikeProvingInterpreter,
-                                  override val projectProver: ErgoLikeProvingInterpreter
+                                  override val backerProver: ErgoLikeTestProvingInterpreter,
+                                  override val projectProver: ErgoLikeTestProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
   val compiledProposition: Value[SBoolean.type] = {
@@ -25,11 +25,11 @@ class CrowdFundingScriptContract(
     )
     val compiledScript = compiler.compile(env,
       """{
-       | let c1 = HEIGHT >= timeout && backerPubKey
-       | let c2 = allOf(Array(
+       | val c1 = HEIGHT >= timeout && backerPubKey
+       | val c2 = allOf(Array(
        |   HEIGHT < timeout,
        |   projectPubKey,
-       |   OUTPUTS.exists(fun (out: Box) = {
+       |   OUTPUTS.exists({ (out: Box) =>
        |     out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
        |   })
        | ))

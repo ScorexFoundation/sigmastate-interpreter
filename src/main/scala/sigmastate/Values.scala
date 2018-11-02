@@ -16,8 +16,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{SigmaPropIsValid, SigmaPropBytes}
-
+import sigmastate.utxo._
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -38,7 +37,7 @@ object Values {
 
     def typeCode: SType.TypeCode = tpe.typeCode
 
-    def cost[C <: Context[C]](context: C): Long
+    def cost[C <: Context](context: C): Long
 
     /** Returns true if this value represent some constant or sigma statement, false otherwise */
     def evaluated: Boolean
@@ -79,7 +78,7 @@ object Values {
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     override val opCode: OpCode = (ConstantCode + tpe.typeCode).toByte
-    override def cost[C <: Context[C]](context: C) = tpe.dataCost(value)
+    override def cost[C <: Context](context: C) = tpe.dataCost(value)
 
     override def equals(obj: scala.Any): Boolean = obj match {
       case c: Constant[_] => Objects.deepEquals(value, c.value) && tpe == c.tpe
@@ -113,7 +112,7 @@ object Values {
   case class TaggedVariableNode[T <: SType](varId: Byte, override val tpe: T)
     extends TaggedVariable[T] {
     override val opCode: OpCode = TaggedVariableCode
-    override def cost[C <: Context[C]](context: C): Long = context.extension.cost(varId) + 1
+    override def cost[C <: Context](context: C): Long = context.extension.cost(varId) + 1
   }
 
   object TaggedVariable {
@@ -123,7 +122,7 @@ object Values {
 
   case object UnitConstant extends EvaluatedValue[SUnit.type] {
     override val opCode = UnitConstantCode
-    override def cost[C <: Context[C]](context: C) = 1
+    override def cost[C <: Context](context: C) = 1
 
     override def tpe = SUnit
 
@@ -378,7 +377,7 @@ object Values {
 
     import CryptoConstants.dlogGroup
 
-    override def cost[C <: Context[C]](context: C) = 10
+    override def cost[C <: Context](context: C) = 10
 
     override def tpe = SGroupElement
 
@@ -434,7 +433,7 @@ object Values {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]])
     }
-    override def cost[C <: Context[C]](context: C) = Cost.Tuple + items.map(_.cost(context)).sum
+    override def cost[C <: Context](context: C) = Cost.Tuple + items.map(_.cost(context)).sum
   }
 
   object Tuple {
@@ -447,7 +446,7 @@ object Values {
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override val opCode = SomeValueCode
 
-    def cost[C <: Context[C]](context: C): Long = x.cost(context) + 1
+    def cost[C <: Context](context: C): Long = x.cost(context) + 1
 
     val tpe = SOption(x.tpe)
     lazy val value = Some(x)
@@ -456,7 +455,7 @@ object Values {
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
     override val opCode = NoneValueCode
 
-    def cost[C <: Context[C]](context: C): Long = 1
+    def cost[C <: Context](context: C): Long = 1
 
     val tpe = SOption(elemType)
     lazy val value = None
@@ -470,7 +469,7 @@ object Values {
       else
         ConcreteCollectionCode
 
-    def cost[C <: Context[C]](context: C): Long = Cost.ConcreteCollection + items.map(_.cost(context)).sum
+    def cost[C <: Context](context: C): Long = Cost.ConcreteCollection + items.map(_.cost(context)).sum
 
     val tpe = SCollection[V](elementType)
 
@@ -516,4 +515,20 @@ object Values {
     def isValid: Value[SBoolean.type] = SigmaPropIsValid(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
+
+  implicit class OptionValueOps[T <: SType](p: Value[SOption[T]]) {
+    def get: Value[T] = OptionGet(p)
+    def getOrElse(default: Value[T]): Value[T] = OptionGetOrElse(p, default)
+    def isDefined: Value[SBoolean.type] = OptionIsDefined(p)
+  }
+
+  def GetVarBoolean(varId: Byte): GetVar[SBoolean.type] = GetVar(varId, SBoolean)
+  def GetVarByte(varId: Byte): GetVar[SByte.type] = GetVar(varId, SByte)
+  def GetVarShort(varId: Byte): GetVar[SShort.type] = GetVar(varId, SShort)
+  def GetVarInt(varId: Byte): GetVar[SInt.type] = GetVar(varId, SInt)
+  def GetVarLong(varId: Byte): GetVar[SLong.type] = GetVar(varId, SLong)
+  def GetVarBigInt(varId: Byte): GetVar[SBigInt.type] = GetVar(varId, SBigInt)
+  def GetVarSigmaProp(varId: Byte): GetVar[SSigmaProp.type] = GetVar(varId, SSigmaProp)
+  def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
+
 }

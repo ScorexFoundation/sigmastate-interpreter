@@ -10,6 +10,8 @@ import sigmastate.lang.SigmaCompiler
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
 import org.ergoplatform.{ErgoBox, Height}
+import scorex.util.encode.Base58
+import sigmastate.serialization.ValueSerializer
 
 import scala.util.Random
 
@@ -107,50 +109,50 @@ class TestingInterpreterSpecification extends PropSpec
 
   property("Evaluate array ops") {
     testEval("""{
-              |  let arr = Array(1, 2) ++ Array(3, 4)
+              |  val arr = Array(1, 2) ++ Array(3, 4)
               |  arr.size == 4
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array(1, 2, 3)
+              |  val arr = Array(1, 2, 3)
               |  arr.slice(1, 3) == Array(2, 3)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = bytes1 ++ bytes2
+              |  val arr = bytes1 ++ bytes2
               |  arr.size == 6
               |}""".stripMargin)
     testEval("""{
-              |  let arr = bytes1 ++ Array[Byte]()
+              |  val arr = bytes1 ++ Array[Byte]()
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array[Byte]() ++ bytes1
+              |  val arr = Array[Byte]() ++ bytes1
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R4[Array[Int]].value
+              |  val arr = box1.R4[Array[Int]].get
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R5[Array[Boolean]].value
+              |  val arr = box1.R5[Array[Boolean]].get
               |  anyOf(arr)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = box1.R5[Array[Boolean]].value
+              |  val arr = box1.R5[Array[Boolean]].get
               |  allOf(arr) == false
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array(1, 2, 3)
-              |  arr.map(fun (i: Int) = i + 1) == Array(2, 3, 4)
+              |  val arr = Array(1, 2, 3)
+              |  arr.map {(i: Int) => i + 1} == Array(2, 3, 4)
               |}""".stripMargin)
     testEval("""{
-              |  let arr = Array(1, 2, 3)
-              |  arr.where(fun (i: Int) = i < 3) == Array(1, 2)
+              |  val arr = Array(1, 2, 3)
+              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
               |}""".stripMargin)
   }
 
 //  property("Evaluate sigma in lambdas") {
 //    testeval("""{
-//              |  let arr = Array(dk1, dk2)
+//              |  val arr = Array(dk1, dk2)
 //              |  allOf(arr.map(fun (d: Boolean) = d && true))
 //              |}""".stripMargin)
 //  }
@@ -189,6 +191,17 @@ class TestingInterpreterSpecification extends PropSpec
   property("string concat") {
     testEval(""" "a" + "b" == "ab" """)
     testEval(""" "a" + "b" != "cb" """)
+  }
+
+  property("fromBaseX") {
+    testEval(""" fromBase58("r") == Array[Byte](49.toByte) """)
+    testEval(""" fromBase64("MQ") == Array[Byte](49.toByte) """)
+    testEval(""" fromBase64("M" + "Q") == Array[Byte](49.toByte) """)
+  }
+
+  property("failed fromBaseX (invalid input)") {
+    an[AssertionError] should be thrownBy testEval(""" fromBase58("^%$#@").size == 3 """)
+    an[IllegalArgumentException] should be thrownBy testEval(""" fromBase64("^%$#@").size == 3 """)
   }
 
   property("Array indexing (out of bounds with const default value)") {
@@ -278,12 +291,44 @@ class TestingInterpreterSpecification extends PropSpec
 
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
+
+  property("passing a lambda argument") {
+    // single expression
+    testEval(
+      """ Array[Int](1,2,3).map { (a: Int) =>
+        |   a + 1
+        | } == Array[Int](2,3,4) """.stripMargin)
+    // block
+    testEval(
+      """ Array[Int](1,2,3).map { (a: Int) =>
+        |   val b = a - 1
+        |   b + 2
+        | } == Array[Int](2,3,4) """.stripMargin)
+    // block with nested lambda
+    testEval(
+      """ Array[Int](1,2,3).exists { (a: Int) =>
+        |   Array[Int](1).exists{ (c: Int) => c == 1 }
+        | } == true """.stripMargin)
+
+    // block with nested lambda (assigned to a val)
+    testEval(
+      """ Array[Int](1,2,3).exists { (a: Int) =>
+        |   val g = { (c: Int) => c == 1 }
+        |   Array[Int](1).exists(g)
+        | } == true """.stripMargin)
+  }
+
+  property("deserialize") {
+    val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
+    testEval(s"""deserialize[Array[Byte]]("$str").size == 1""")
+    testEval(s"""deserialize[Array[Byte]]("$str")(0) == 2""")
+  }
 }
 
 
 case class TestingContext(height: Int,
                           override val extension: ContextExtension = ContextExtension(values = Map())
-                         ) extends Context[TestingContext] {
+                         ) extends Context {
   override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
 }
 

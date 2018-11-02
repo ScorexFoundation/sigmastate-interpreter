@@ -33,7 +33,7 @@ class SigmaPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
     t match {
       case LongConstant(d) => value(d)
       case Ident(i,_) => i
-      case Lambda(args, tLam, Some(e)) =>
+      case Lambda(_, args, tLam, Some(e)) =>
         parens('\\' <> parens(lsep(args.map { case (n, targ) => n <+> ": " <+> typedeclToDoc(targ) }.to, comma)) <>
           typedeclToDoc(tLam) <+> '.' <+>
           group(nest(toDoc(e))))
@@ -42,11 +42,11 @@ class SigmaPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
 //      case Opn(l, AddOp(), r) => binToDoc(l, "+", r)
 //      case Opn(l, SubOp(), r) => binToDoc(l, "-", r)
 
-//      case Let(i, t, e1, e2) =>
+//      case Val(i, t, e1, e2) =>
 //        parens("let" <+> i <> typedeclToDoc(t) <+> '=' <>
 //            nest(line <> toDoc(e1)) <+> "in" <>
 //            nest(line <> toDoc(e2)))
-//      case Letp(bs, e) =>
+//      case Valp(bs, e) =>
 //        parens("letp" <>
 //            nest(line <> vsep(bs.map(b => b.i <+> '=' <+> toDoc(b.e)))) <+>
 //            "in" <>

@@ -3,16 +3,16 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
-import org.ergoplatform.ErgoBox.{MandatoryRegisterId, R1, RegisterId}
+import org.ergoplatform.ErgoBox.RegisterId
+import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
-import org.ergoplatform._
 import sigmastate.utxo._
 
 
@@ -67,11 +67,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("oracle example") {
-    val oracle = new ErgoLikeProvingInterpreter
-    val aliceTemplate = new ErgoLikeProvingInterpreter
-    val bob = new ErgoLikeProvingInterpreter
+    val oracle = new ErgoLikeTestProvingInterpreter
+    val aliceTemplate = new ErgoLikeTestProvingInterpreter
+    val bob = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
@@ -112,7 +112,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
-    def extract[T <: SType](Rn: RegisterId)(implicit tT: T) = ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)
+    def extract[T <: SType](Rn: RegisterId)(implicit tT: T) =
+      ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)(tT).get
 
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
@@ -123,7 +124,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey),
       AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey))
 
-    val oracleProp = AND(IsMember(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte)),
+    val oracleProp = AND(OptionIsDefined(TreeLookup(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte))),
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(oraclePubKey.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
@@ -157,6 +158,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
+      ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
       self = null)
@@ -190,11 +192,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     */
   property("lightweight oracle example") {
-    val oracle = new ErgoLikeProvingInterpreter
-    val alice = new ErgoLikeProvingInterpreter
-    val bob = new ErgoLikeProvingInterpreter
+    val oracle = new ErgoLikeTestProvingInterpreter
+    val alice = new ErgoLikeTestProvingInterpreter
+    val bob = new ErgoLikeTestProvingInterpreter
 
-    val verifier = new ErgoLikeInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubKey = oraclePrivKey.publicImage
@@ -210,8 +212,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       additionalRegisters = Map(reg1 -> LongConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1), LongConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1), LongConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), alicePubKey),
+      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), bobPubKey))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
       EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),
@@ -229,6 +231,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),
       spendingTransaction,
       self = null)

@@ -22,9 +22,9 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.rogach" % "scallop_2.12" % "2.1.1",
   "org.rudogma" % "supertagged_2.12" % "1.4",
   "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
-  "org.scorexfoundation" % "scorex-util_2.12" % "0.1.1-SNAPSHOT",
-  "org.scorexfoundation" % "scrypto_2.12" % "2.1.3",
+  "org.scorexfoundation" % "scorex-util_2.12" % "0.1.1",
+  "org.scorexfoundation" % "scrypto_2.12" % "2.1.4",
   "org.slf4j" % "slf4j-api" % "1.8.0-beta1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 31231c79b513412fde91afb05abca7fa4d6e7a6b
+// LIBRARY_DEPENDENCIES_HASH 96d7f69b55461b2eb692364865e0d2c20d09c208

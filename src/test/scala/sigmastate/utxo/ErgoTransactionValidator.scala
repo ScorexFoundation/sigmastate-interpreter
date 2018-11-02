@@ -1,14 +1,24 @@
-package org.ergoplatform
+package sigmastate.utxo
+
+import org.ergoplatform.ErgoLikeContext.Metadata
+import org.ergoplatform._
 
 import scala.util.{Failure, Success}
 
+class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends ErgoLikeInterpreter(maxCost) {
+  override type CTX = ErgoLikeContext
+}
+
+
 object ErgoTransactionValidator {
-  val verifier = new ErgoLikeInterpreter()
+  val verifier: ErgoLikeTestInterpreter = new ErgoLikeTestInterpreter()
 
   //todo: check that outputs are well-formed?
   def validate(tx: ErgoLikeTransaction,
                blockchainState: BlockchainState,
-               boxesReader: ErgoBoxReader): Either[Throwable, Long] = {
+               minerPubkey: Array[Byte],
+               boxesReader: ErgoBoxReader,
+               metadata: Metadata): Either[Throwable, Long] = {
 
     val msg = tx.messageToSign
     val inputs = tx.inputs
@@ -27,7 +37,8 @@ object ErgoTransactionValidator {
       val proverExtension = tx.inputs(idx).spendingProof.extension
 
       val context =
-        ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, boxes, tx, box, proverExtension)
+        ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, minerPubkey, boxes,
+          tx, box, metadata, proverExtension)
 
       val scriptCost: Long = verifier.verify(box.proposition, context, proof, msg) match {
         case Success((res, cost)) =>

@@ -1,5 +1,6 @@
 package sigmastate.lang
 
+import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
@@ -7,9 +8,10 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import Values._
 import org.ergoplatform._
-import sigmastate.utils.Extensions._
+import scorex.util.encode.Base58
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
+import sigmastate.lang.exceptions.{BinderException, InvalidArguments, InvalidTypeArguments}
+import sigmastate.serialization.ValueSerializer
 
 class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
   import SigmaBinder._
@@ -42,6 +44,7 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         case Some(v) => Some(Ident(n, v.tpe))
         case None => n match {
           case "HEIGHT" => Some(Height)
+          case "MinerPubkey" => Some(MinerPubkey)
           case "INPUTS" => Some(Inputs)
           case "OUTPUTS" => Some(Outputs)
           case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
@@ -92,18 +95,22 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         throw new InvalidArguments(s"Invalid arguments for max: $args")
     }
 
-    case e @ Apply(ApplyTypes(f @ GetVarSym, targs), args) =>
+    // Rule getVar[T](id) --> GetVar(id)
+    case e @ Apply(ApplyTypes(GetVarSym, targs), args) =>
       if (targs.length != 1 || args.length != 1)
         error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
       val id = args.head match {
-        case LongConstant(i) => i.toByteExact  //TODO use SByte.downcast once it is implemented
-        case IntConstant(i) => i.toByteExact
+        case LongConstant(i) => SByte.downcast(i)
+        case IntConstant(i) => SByte.downcast(i)
+        case ShortConstant(i) => SByte.downcast(i)
         case ByteConstant(i) => i
+        case v => error(s"invalid type for var id, expected numeric, got $v")
       }
-      Some(mkTaggedVariable(id, targs.head))
+      Some(mkGetVar(id, targs.head))
 
-    // Rule: fun (...) = ... --> fun (...): T = ...
-    case lam @ Lambda(args, t, Some(body)) =>
+    // Rule: lambda (...) = ... --> lambda (...): T = ...
+    case lam @ Lambda(params, args, t, Some(body)) =>
+      require(params.isEmpty)
       val b1 = eval(body, env)
       val newLam = mkLambda(args, t, Some(b1))
       if (newLam != lam) Some(newLam) else None
@@ -112,10 +119,10 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
     case Block(Seq(), body) => Some(body)
 
     case block @ Block(binds, t) =>
-      val newBinds = for (Let(n, t, b) <- binds) yield {
+      val newBinds = for (Val(n, t, b) <- binds) yield {
         if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}")
         val b1 = eval(b, env)
-        mkLet(n, if (t != NoType) t else b1.tpe, b1)
+        mkVal(n, if (t != NoType) t else b1.tpe, b1)
       }
       val t1 = eval(t, env)
       val newBlock = mkBlock(newBinds, t1)
@@ -123,9 +130,24 @@ class SigmaBinder(env: Map[String, Any], builder: SigmaBuilder) {
         Some(newBlock)
       else
         None
+    case e @ Apply(ApplyTypes(DeserializeSym, targs), args) =>
+      if (targs.length != 1)
+        throw new InvalidTypeArguments(s"Wrong number of type arguments in $e: expected one type argument")
+      if (args.length != 1)
+        throw new InvalidArguments(s"Wrong number of arguments in $e: expected one argument")
+      val str = args.head match {
+        case StringConstant(s) => s
+        case _ =>
+          throw new InvalidArguments(s"invalid argument in $e: expected a string constant")
+      }
+      val bytes = Base58.decode(str).get
+      Some(
+        ValueSerializer.deserialize(bytes))
   })))(e)
 
-  def bind(e: SValue): SValue = eval(e, env)
+  def bind(e: SValue): SValue =
+    try eval(e, env)
+    catch { case e: InvocationTargetException => throw e.getCause }
 }
 
 object SigmaBinder {

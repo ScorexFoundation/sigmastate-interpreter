@@ -8,9 +8,10 @@ import sigmastate.utxo._
 
 
 class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends Interpreter {
-  override type CTX = ErgoLikeContext
 
-  override def evaluateNode(context: ErgoLikeContext, tree: SValue): SValue = tree match {
+  override type CTX <: ErgoLikeContext
+
+  override def evaluateNode(context: CTX, tree: SValue): SValue = tree match {
     case Inputs => ConcreteCollection(context.boxesToSpend.map(BoxConstant.apply))
 
     case Outputs => ConcreteCollection(context.spendingTransaction.outputs.map(BoxConstant.apply))
@@ -18,6 +19,8 @@ class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit) ex
     case Self => BoxConstant(context.self)
 
     case Height => LongConstant(context.currentHeight)
+
+    case MinerPubkey => ByteArrayConstant(context.minerPubkey)
 
     case LastBlockUtxoRootHash => AvlTreeConstant(context.lastBlockUtxoRoot)
 

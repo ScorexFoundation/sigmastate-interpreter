@@ -6,10 +6,10 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
-import sigmastate.lang.Terms._
 
 import scala.util.Random
 
@@ -48,17 +48,18 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(input1),
       tx,
       self = input1)
 
 
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(script1Bytes))
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
   }
 
 
@@ -83,16 +84,17 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     avlProver.generateProof()
     val treeData = new AvlTreeData(avlProver.digest, 32, None)
 
-    val merklePathToScript = IsMember(ExtractRegisterAs(Self, reg1),
+    val merklePathToScript = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       CalcBlake2b256(TaggedByteArray(scriptId)),
-      TaggedByteArray(proofId))
+      TaggedByteArray(proofId)))
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(merklePathToScript, scriptIsCorrect)
 
-    val recipientProposition = new ErgoLikeProvingInterpreter().dlogSecrets.head.publicImage
+    val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
       self = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))
@@ -100,12 +102,12 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))
     val knownSecretPathProof = avlProver.generateProof()
     val usedBranch = scriptBranchesBytes.head
-    val prover = new ErgoLikeProvingInterpreter()
+    val prover = new ErgoLikeTestProvingInterpreter()
       .withContextExtender(secretId, knownSecret)
       .withContextExtender(scriptId, ByteArrayConstant(usedBranch))
       .withContextExtender(proofId, ByteArrayConstant(knownSecretPathProof))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoLikeInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+    (new ErgoLikeTestInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
   }
 }

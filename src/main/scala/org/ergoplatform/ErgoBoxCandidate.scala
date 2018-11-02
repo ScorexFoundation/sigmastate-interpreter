@@ -19,16 +19,17 @@ import scala.runtime.ScalaRunTime
 class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
                        val additionalTokens: Seq[(TokenId, Long)] = Seq(),
-                       val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
+                       val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
+                       val creationHeight: Long = 0) {
 
-  lazy val cost = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
+  lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
 
   val propositionBytes: Array[Byte] = proposition.bytes
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   def toBox(txId: ModifierId, boxId: Short) =
-    ErgoBox(value, proposition, additionalTokens, additionalRegisters, txId, boxId)
+    ErgoBox(value, proposition, additionalTokens, additionalRegisters, txId, boxId, creationHeight)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
@@ -39,7 +40,7 @@ class ErgoBoxCandidate(val value: Long,
           Tuple(ByteArrayConstant(id), LongConstant(amount))
         }.toIndexedSeq
         Some(ConcreteCollection(tokenTuples, STokenType))
-      case ReferenceRegId => None
+      case ReferenceRegId => Some(Tuple(LongConstant(creationHeight), ByteArrayConstant(Array.fill(34)(0: Byte))))
       case n: NonMandatoryRegisterId => additionalRegisters.get(n)
     }
   }
@@ -51,11 +52,12 @@ class ErgoBoxCandidate(val value: Long,
     }
   }
 
-  override def hashCode() = ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters))
-
+  override def hashCode(): Int =
+    ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters, creationHeight))
 
   override def toString: Idn = s"ErgoBoxCandidate($value, $proposition," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2).mkString(", ")}), $additionalRegisters)"
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2).mkString(", ")}), " +
+    s"$additionalRegisters, creationHeight: $creationHeight)"
 }
 
 object ErgoBoxCandidate {
@@ -67,6 +69,7 @@ object ErgoBoxCandidate {
                                         w: ByteWriter): Unit = {
       w.putULong(obj.value)
       w.putValue(obj.proposition)
+      w.putULong(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
         if (digestsInTx.isDefined) {
@@ -105,6 +108,7 @@ object ErgoBoxCandidate {
     def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: ByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
       val prop = r.getValue().asBoolValue
+      val creationHeight = r.getULong()
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
         val tokenId = if (digestsInTx.isDefined) {
@@ -124,7 +128,7 @@ object ErgoBoxCandidate {
         val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
         (reg, v)
       }.toMap
-      new ErgoBoxCandidate(value, prop, addTokens, regs)
+      new ErgoBoxCandidate(value, prop, addTokens, regs, creationHeight)
     }
 
     override def parseBody(r: ByteReader): ErgoBoxCandidate = {

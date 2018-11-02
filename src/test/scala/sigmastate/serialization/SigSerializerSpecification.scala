@@ -10,9 +10,8 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.Values.{TrueLeaf, Value}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utils.Helpers
 import sigmastate.utxo.Transformer
 
 import scala.util.Random
@@ -26,7 +25,7 @@ class SigSerializerSpecification extends PropSpec
 
   private implicit val arbExprGen: Arbitrary[Value[SBoolean.type]] = Arbitrary(exprTreeGen)
 
-  private val prover = new ErgoLikeProvingInterpreter()
+  private val prover = new ErgoLikeTestProvingInterpreter()
 
   private val interpreterProveDlogGen: Gen[ProveDlog] =
     Gen.oneOf(prover.dlogSecrets.map(secret => ProveDlog(secret.publicImage.h)))
@@ -50,7 +49,7 @@ class SigSerializerSpecification extends PropSpec
     Gen.oneOf(interpreterProveDlogGen, interpreterProveDHTGen, Gen.delay(exprTreeNodeGen))
 
   private def isEquivalent(expected: ProofTree,
-                           actual: ProofTree): Boolean =  (expected, actual) match {
+                           actual: ProofTree): Boolean = (expected, actual) match {
     case (NoProof, NoProof) => true
     case (dht1: UncheckedDiffieHellmanTuple, dht2: UncheckedDiffieHellmanTuple) =>
       // `firstMessageOpt` is not serialized
@@ -82,6 +81,7 @@ class SigSerializerSpecification extends PropSpec
       val ctx = ErgoLikeContext(
         currentHeight = 1,
         lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = IndexedSeq(),
         spendingTransaction = null,
         self = fakeSelf)
