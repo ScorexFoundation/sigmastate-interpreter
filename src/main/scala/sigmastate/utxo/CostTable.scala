@@ -67,6 +67,7 @@ object CostTable {
     ("ByIndex", "(Array[IV],Int) => IV", MinimalCost),
 
     ("SigmaPropIsValid", "SigmaProp => Boolean", MinimalCost),
+    ("BoolToSigmaProp", "Boolean => SigmaProp", MinimalCost),
     ("SigmaPropBytes", "SigmaProp => Array[Byte]", MinimalCost),
     ("BinAnd", "(Boolean, Boolean) => Boolean", MinimalCost),
     ("BinOr", "(Boolean, Boolean) => Boolean", MinimalCost),

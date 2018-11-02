@@ -275,9 +275,32 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.ty
       _.items.forall(_.evaluated)
     )
 
-  private def reduce(bound: Int, children: Seq[Value[SBoolean.type]]): Value[SBoolean.type] = {
-    if (bound <= 0) return TrueLeaf
-    if (bound > children.length) return FalseLeaf
+  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
+    ???
+//    val k = bound.asInstanceOf[EvaluatedValue[SInt.type]].value
+//    input.matchCase(
+//      cc => {
+//        AtLeast.reduce(k, cc.items)
+//      },
+//      c => if (c.value.filter(_ == true).length >= k) TrueLeaf else FalseLeaf,
+//      _ => ???
+//    )
+  }
+}
+
+/**
+  * Logical threshold
+  */
+object AtLeast {
+  def apply(bound: Value[SInt.type], children: Seq[Value[SBoolean.type]]): AtLeast =
+    AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
+
+  def apply(bound: Value[SInt.type], head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AtLeast = apply(bound, head +: tail)
+
+  def reduce(bound: Int, children: Seq[SigmaBoolean]): SigmaBoolean = {
+    import sigmastate.TrivialProof._
+    if (bound <= 0) return TrueProof
+    if (bound > children.length) return FalseProof
 
     var curBound = bound
     var childrenLeft = children.length
@@ -294,51 +317,30 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.ty
     require(children.length <= 255)
     // My preferred method: if (children.length>=255) return FalseLeaf
 
-
     // TODO: this constraint on the number of children of atLeast should also be ensured at ErgoScript compile time
+    // remove this todo once issue #291 is resolved
 
     for (iChild <- children.indices) {
       if (curBound == 1)
-        return OR(sigmas ++ children.slice(iChild, children.length))
+        return COR(sigmas ++ children.slice(iChild, children.length))
       // If at any point bound == number of children, convert to AND.
       if (curBound == childrenLeft)
-        return AND(sigmas ++ children.slice(iChild, children.length))
+        return CAND(sigmas ++ children.slice(iChild, children.length))
       // at this point 1<curBound<childrenLeft
       children(iChild) match {
-        case TrueLeaf => // If child is true, remove child and reduce bound.
+        case TrueProof => // If child is true, remove child and reduce bound.
           childrenLeft -= 1
           curBound -= 1
-        case FalseLeaf => // If child is false, remove child, leave bound unchanged.
+        case FalseProof => // If child is false, remove child, leave bound unchanged.
           childrenLeft -= 1
-        case sigma: SigmaBoolean => sigmas += sigma
+        case sigma => sigmas += sigma
       }
       // at this point 1<=curBound<=childrenLeft
     }
-    if (curBound == 1) return OR(sigmas)
-    if (curBound == childrenLeft) return AND(sigmas)
+    if (curBound == 1) return COR(sigmas)
+    if (curBound == childrenLeft) return CAND(sigmas)
     CTHRESHOLD(curBound, sigmas)
   }
-
-  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
-    val k = bound.asInstanceOf[EvaluatedValue[SInt.type]].value
-    input.matchCase(
-      cc => {
-        reduce(k, cc.items)
-      },
-      c => if (c.value.filter(_ == true).length >= k) TrueLeaf else FalseLeaf,
-      _ => ???
-    )
-  }
-}
-
-/**
-  * Logical threshold
-  */
-object AtLeast {
-  def apply(bound: Value[SInt.type], children: Seq[Value[SBoolean.type]]): AtLeast =
-    AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
-
-  def apply(bound: Value[SInt.type], head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AtLeast = apply(bound, head +: tail)
 }
 
 /**

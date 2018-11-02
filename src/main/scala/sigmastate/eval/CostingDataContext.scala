@@ -121,6 +121,10 @@ class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { d
   override def exponentiate(base: ECPoint, exponent: BigInteger) = {
     CryptoConstants.dlogGroup.exponentiate(base.asInstanceOf[EcPointType], exponent)
   }
+
+  override def atLeast(bound: Int, children: Col[SigmaProp]): SigmaProp = {
+    Interpreter.error("Should not be called. Method calls of atLeast should be handled in Evaluation.compile.evaluate rule")
+  }
 }
 
 class CostingDataContext(

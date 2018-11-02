@@ -232,6 +232,8 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(COR.normalized(items.arr.toSeq))
           case SDBM.allZK(_, In(items: special.collection.Col[SigmaBoolean]@unchecked)) =>
             out(CAND.normalized(items.arr.toSeq))
+          case SDBM.atLeast(dsl, In(bound: Int), In(children: special.collection.Col[SigmaBoolean]@unchecked)) =>
+            out(AtLeast.reduce(bound, children.arr.toSeq))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
@@ -293,6 +295,7 @@ trait Evaluation extends RuntimeCosting { IR =>
               resEnv(y)
             }
             out(th)
+
           case TrivialSigmaCtor(In(isValid: Boolean)) =>
             val res = sigmastate.TrivialProof(isValid)
             out(res)
@@ -302,6 +305,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case ProveDHTEvidenceCtor(In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
             val res = ProveDiffieHellmanTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
             out(res)
+
           case ReplColCtor(In(value), In(len: Int)) =>
             val res = sigmaDslBuilderValue.Cols.replicate(len, value)
             out(res)

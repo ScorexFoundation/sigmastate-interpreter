@@ -11,7 +11,7 @@ import sigmastate.lang.Terms._
 class ThresholdSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
 
-  ignore("basic threshold compilation/execution") { // TODO Error in evaluate( ... SigmaDslBuilder.atLeast(...
+  property("basic threshold compilation/execution") {
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val proverC = new ErgoLikeTestProvingInterpreter
