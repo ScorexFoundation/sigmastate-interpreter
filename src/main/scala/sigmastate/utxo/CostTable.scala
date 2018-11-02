@@ -4,7 +4,7 @@ import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
 
-case class CostTable(operCosts: Map[OperationId, Double]) extends (OperationId => Int) {
+case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
   import CostTable._
 
   override def apply(operId: OperationId): ExpressionCost = {
@@ -245,7 +245,7 @@ object CostTable extends App {
     val ConcreteCollectionDeclaration = 20
     val TupleDeclaration = 20
     val LambdaDeclaration = 1
-    
+
     //Checking Shnorr signature is about 2 exponentiations and one multiplication
     val DlogDeclaration = 2 * Exponentiate + MultiplyGroup
 
