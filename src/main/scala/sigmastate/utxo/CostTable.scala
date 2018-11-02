@@ -6,20 +6,22 @@ import sigmastate.lang.Terms.OperationId
 
 case class CostTable(operCosts: Map[OperationId, Double]) extends (OperationId => Int) {
   import CostTable._
-  override def apply(operId: OperationId) = {
+
+  override def apply(operId: OperationId): ExpressionCost = {
     val cleannedOperId = operId.copy(opType = operId.opType.copy(tpeParams = Nil))
     operCosts.get(cleannedOperId) match {
-      case Some(cost) => costToInt(cost)
+      case Some(cost) => cost
       case None => //costToInt(MinimalCost)
         sys.error(s"Cannot find cost in CostTable for $operId")
     }
   }
 }
 
-object CostTable {
+object CostTable extends App {
   type ExpressionCost = Int
-  def costToInt(cost: Double): Int = (cost * 1000000).toInt
-  val MinimalCost = 0.000001
+
+  val MinimalCost = 1
+
   val DefaultCosts = CostTable.fromSeq(Seq(
     ("Const", "() => Unit",    MinimalCost),
     ("Const", "() => Boolean", MinimalCost),
@@ -71,11 +73,11 @@ object CostTable {
     ("BinAnd", "(Boolean, Boolean) => Boolean", MinimalCost),
     ("BinOr", "(Boolean, Boolean) => Boolean", MinimalCost),
     ("AND", "(Array[Boolean]) => Boolean", MinimalCost),
-    ("OR_per_item", "(Array[Boolean]) => Boolean", 0.0001),
+    ("OR_per_item", "(Array[Boolean]) => Boolean", 100),
     ("AND_per_item", "(Array[Boolean]) => Boolean", MinimalCost),
     ("AtLeast", "(Int, Array[Boolean]) => Boolean", MinimalCost),
-    ("CalcBlake2b256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
-    ("CalcSha256_per_kb", "(Array[Byte]) => Array[Byte]", 0.0001),
+    ("CalcBlake2b256_per_kb", "(Array[Byte]) => Array[Byte]", 100),
+    ("CalcSha256_per_kb", "(Array[Byte]) => Array[Byte]", 100),
     ("Xor_per_kb", "(Array[Byte],Array[Byte]) => Array[Byte]", MinimalCost),
     ("GT_per_kb", "(T,T) => Boolean", MinimalCost),
     ("GE_per_kb", "(T,T) => Boolean", MinimalCost),
@@ -83,46 +85,46 @@ object CostTable {
     ("LT_per_kb", "(T,T) => Boolean", MinimalCost),
     ("EQ_per_kb", "(T,T) => Boolean", MinimalCost),
     ("NEQ_per_kb", "(T,T) => Boolean", MinimalCost),
-    ("GT", "(BigInt,BigInt) => Boolean", 0.0001),
+    ("GT", "(BigInt,BigInt) => Boolean", 100),
     (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
-    ("+", "(Byte, Byte) => Byte", 0.0001),
-    ("+", "(Short, Short) => Short", 0.0001),
-    ("+", "(Int, Int) => Int", 0.0001),
-    ("+", "(Long, Long) => Long", 0.0001),
+    ("+", "(Byte, Byte) => Byte", 100),
+    ("+", "(Short, Short) => Short", 100),
+    ("+", "(Int, Int) => Int", 100),
+    ("+", "(Long, Long) => Long", 100),
 
-    ("-", "(Byte, Byte) => Byte", 0.0001),
-    ("-", "(Short, Short) => Short", 0.0001),
-    ("-", "(Int, Int) => Int", 0.0001),
-    ("-", "(Long, Long) => Long", 0.0001),
+    ("-", "(Byte, Byte) => Byte", 100),
+    ("-", "(Short, Short) => Short", 100),
+    ("-", "(Int, Int) => Int", 100),
+    ("-", "(Long, Long) => Long", 100),
 
-    ("*", "(Byte, Byte) => Byte", 0.0001),
-    ("*", "(Short, Short) => Short", 0.0001),
-    ("*", "(Int, Int) => Int", 0.0001),
-    ("*", "(Long, Long) => Long", 0.0001),
+    ("*", "(Byte, Byte) => Byte", 100),
+    ("*", "(Short, Short) => Short", 100),
+    ("*", "(Int, Int) => Int", 100),
+    ("*", "(Long, Long) => Long", 100),
 
-    ("/", "(Byte, Byte) => Byte", 0.0001),
-    ("/", "(Short, Short) => Short", 0.0001),
-    ("/", "(Int, Int) => Int", 0.0001),
-    ("/", "(Long, Long) => Long", 0.0001),
+    ("/", "(Byte, Byte) => Byte", 100),
+    ("/", "(Short, Short) => Short", 100),
+    ("/", "(Int, Int) => Int", 100),
+    ("/", "(Long, Long) => Long", 100),
 
-    ("%", "(Byte, Byte) => Byte", 0.0001),
-    ("%", "(Short, Short) => Short", 0.0001),
-    ("%", "(Int, Int) => Int", 0.0001),
-    ("%", "(Long, Long) => Long", 0.0001),
+    ("%", "(Byte, Byte) => Byte", 100),
+    ("%", "(Short, Short) => Short", 100),
+    ("%", "(Int, Int) => Int", 100),
+    ("%", "(Long, Long) => Long", 100),
 
-    ("+", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("+", "(BigInt, BigInt) => BigInt", 100),
     ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    ("-", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("-", "(BigInt, BigInt) => BigInt", 100),
     ("-_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    ("*", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("*", "(BigInt, BigInt) => BigInt", 100),
     ("*_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    ("/", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("/", "(BigInt, BigInt) => BigInt", 100),
     ("/_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    ("%", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("%", "(BigInt, BigInt) => BigInt", 100),
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", MinimalCost),
@@ -147,7 +149,7 @@ object CostTable {
     ("TreeLookup", "(AvlTree, Array[Byte], Array[Byte]) => Option[Array[Byte]]", MinimalCost),
   ))
 
-  def fromSeq(items: Seq[(String, String, Double)]): CostTable = {
+  def fromSeq(items: Seq[(String, String, Int)]): CostTable = {
     val parsed = for ((name, ts, cost) <- items) yield {
       val ty = SigmaParser.parseType(ts).asFunc
       (OperationId(name, ty), cost)
@@ -243,11 +245,9 @@ object CostTable {
     val ConcreteCollectionDeclaration = 20
     val TupleDeclaration = 20
     val LambdaDeclaration = 1
-
-
+    
     //Checking Shnorr signature is about 2 exponentiations and one multiplication
     val DlogDeclaration = 2 * Exponentiate + MultiplyGroup
-
 
     val OptionGet = 1
     val OptionGetOrElse = 1
