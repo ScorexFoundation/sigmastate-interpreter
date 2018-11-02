@@ -110,7 +110,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     }
   }
 
-  ignore("threshold reduce to crypto") {
+  ignore("threshold reduce to crypto") { // TODO IndexOutOfBoundsException in def apply[T](items: Rep[T]*)
     val prover = new ErgoLikeTestProvingInterpreter
     val ctx = ErgoLikeContext(
       currentHeight = 1,
@@ -139,7 +139,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       TestCase(0, Seq(fls), emptyDlogOnlyVector),
       TestCase(1, Seq(tr), emptyDlogOnlyVector))
     for (sk <- secrets) {
-      val pk = sk.publicImage
+      val pk = sk.publicImage.isValid
       var newTestCaseSeq = Seq[TestCase]()
       for (t <- testCaseSeq) {
         val dlogOnly = DlogOnlyVector(t.dlogOnlyVector.v :+ pk)
@@ -168,7 +168,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     for (t <- testCaseSeq) {
       for (bound <- 0 to testCaseSeq.length + 1) {
         val pReduced = prover.reduceToCrypto(ctx, AtLeast(bound, t.vector))
-        pReduced.isSuccess shouldBe true
+        pReduced.fold(t => throw t, x => x) shouldBe true
         if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
           if (t.numTrue >= bound) {
             pReduced.get._1 shouldBe tr
@@ -232,8 +232,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     case2FalseHit && case2TrueHit && case2AndHit && case2OrHit && case2AtLeastHit shouldBe true
   }
 
-  // TODO LHF
-  ignore("3-out-of-6 threshold") {
+  property("3-out-of-6 threshold") {
     // This example is from the white paper
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
@@ -255,22 +254,22 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val skH = proverH.dlogSecrets.head
     val skI = proverI.dlogSecrets.head
 
-    val pkA = skA.publicImage
-    val pkB = skB.publicImage
-    val pkC = skC.publicImage
-    val pkD = skD.publicImage
-    val pkE = skE.publicImage
-    val pkF = skF.publicImage
-    val pkG = skG.publicImage
-    val pkH = skH.publicImage
-    val pkI = skI.publicImage
+    val pkA = skA.publicImage.isValid
+    val pkB = skB.publicImage.isValid
+    val pkC = skC.publicImage.isValid
+    val pkD = skD.publicImage.isValid
+    val pkE = skE.publicImage.isValid
+    val pkF = skF.publicImage.isValid
+    val pkG = skG.publicImage.isValid
+    val pkH = skH.publicImage.isValid
+    val pkI = skI.publicImage.isValid
 
 
     val env = Map("pkA" -> pkA, "pkB" -> pkB, "pkC" -> pkC,
       "pkD" -> pkD, "pkE" -> pkE, "pkF" -> pkF,
       "pkG" -> pkG, "pkH" -> pkH, "pkI" -> pkI)
     val compiledProp = compile(env, """atLeast(3, Array (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""")
-    val prop = AtLeast(3, pkA, pkB, pkC, AND(pkD, pkE), AND(pkF, pkG), AND(pkH, pkI))
+    val prop = AtLeast(3, pkA, pkB, pkC, BinAnd(pkD, pkE), BinAnd(pkF, pkG), BinAnd(pkH, pkI))
 
     compiledProp shouldBe prop
 
