@@ -1,9 +1,11 @@
 package sigmastate.lang
 
+import org.ergoplatform.ErgoAddressEncoder.{NetworkPrefix, TestnetNetworkPrefix}
 import org.ergoplatform.ErgoBox.R4
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
+import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms.Ident
@@ -37,8 +39,8 @@ class SigmaSpecializerTest extends PropSpec
     val typed = typer.typecheck(bound)
     typed
   }
-  def spec(env: Map[String, SValue], typed: SValue): SValue = {
-    val spec = new SigmaSpecializer(TransformingSigmaBuilder)
+  def spec(env: Map[String, SValue], typed: SValue, networkPrefix: NetworkPrefix = TestnetNetworkPrefix): SValue = {
+    val spec = new SigmaSpecializer(TransformingSigmaBuilder, networkPrefix)
     spec.specialize(env, typed)
   }
   def spec(code: String): SValue = {
@@ -106,7 +108,7 @@ class SigmaSpecializerTest extends PropSpec
              22, IntConstant(0), 21, Plus(TaggedInt(21), TaggedInt(22)))
     spec("{ val arr = Array(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
       Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
-        22, TrueLeaf, 21, AND(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
+        22, TrueLeaf, 21, BinAnd(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
     spec("OUTPUTS.slice(0, 10)") shouldBe
         Slice(Outputs, IntConstant(0), IntConstant(10))
     spec("OUTPUTS.where({ (out: Box) => out.value >= 10 })") shouldBe
@@ -114,13 +116,13 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("AND flattening predefined") {
-    spec("true && true") shouldBe AND(TrueLeaf, TrueLeaf)
-    spec("true && false") shouldBe AND(TrueLeaf, FalseLeaf)
+    spec("true && true") shouldBe BinAnd(TrueLeaf, TrueLeaf)
+    spec("true && false") shouldBe BinAnd(TrueLeaf, FalseLeaf)
     spec("true && (true && 10 == 10)") shouldBe
-      AND(TrueLeaf, TrueLeaf, EQ(IntConstant(10), IntConstant(10)))
-    spec("true && true && true") shouldBe AND(TrueLeaf, TrueLeaf, TrueLeaf)
+      BinAnd(TrueLeaf, BinAnd(TrueLeaf, EQ(IntConstant(10), IntConstant(10))))
+    spec("true && true && true") shouldBe BinAnd(BinAnd(TrueLeaf, TrueLeaf), TrueLeaf)
     spec("true && (true && (true && true)) && true") shouldBe
-      AND(TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf)
+      BinAnd(BinAnd(TrueLeaf, BinAnd(TrueLeaf, BinAnd(TrueLeaf, TrueLeaf))), TrueLeaf)
   }
 
   property("AND flattening, CAND/COR untouched") {
@@ -139,9 +141,9 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("OR flattening predefined") {
-    spec("true || true || true") shouldBe OR(TrueLeaf, TrueLeaf, TrueLeaf)
+    spec("true || true || true") shouldBe BinOr(BinOr(TrueLeaf, TrueLeaf), TrueLeaf)
     spec("true || (true || true) || true") shouldBe
-      OR(TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf)
+      BinOr(BinOr(TrueLeaf, BinOr(TrueLeaf, TrueLeaf)), TrueLeaf)
   }
 
   property("OR flattening, CAND/COR untouched") {
@@ -181,12 +183,30 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("fromBaseX") {
-    spec("""fromBase58("111")""") shouldBe Base58ToByteArray(StringConstant("111"))
-    spec("""fromBase64("111")""") shouldBe Base64ToByteArray(StringConstant("111"))
+    spec(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array(49))
+    spec(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array(49))
+    spec(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array(49))
   }
 
-  property("PK") {
-    spec("""PK("111")""") shouldBe ErgoAddressToSigmaProp(StringConstant("111"))
+  property("failed fromBaseX (invalid input)") {
+    an[AssertionError] should be thrownBy spec(""" fromBase58("^%$#@")""")
+    an[IllegalArgumentException] should be thrownBy spec(""" fromBase64("^%$#@")""")
+  }
+
+  private def testPK(networkPrefix: NetworkPrefix) = {
+    implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(networkPrefix)
+    val dk1 = proveDlogGen.sample.get
+    val encodedP2PK = P2PKAddress(dk1).toString
+    val code = s"""PK("$encodedP2PK")"""
+    spec(Map(), typed(Map(), code), networkPrefix) shouldEqual dk1
+  }
+
+  property("PK (testnet network prefix)") {
+    testPK(TestnetNetworkPrefix)
+  }
+
+  property("PK (mainnet network prefix)") {
+    testPK(ErgoAddressEncoder.MainnetNetworkPrefix)
   }
 
   property("ExtractRegisterAs") {
@@ -206,6 +226,10 @@ class SigmaSpecializerTest extends PropSpec
   property("OptionGetOrElse") {
     spec("SELF.R4[Int].getOrElse(0)") shouldBe ExtractRegisterAs[SInt.type](Self, R4).getOrElse(IntConstant(0))
     spec("getVar[Int](1).getOrElse(0)") shouldBe GetVarInt(1).getOrElse(IntConstant(0))
+  }
+
+  property("string concat") {
+    spec(""" "a" + "b" """) shouldBe StringConstant("ab")
   }
 
   property("ExtractCreationInfo") {

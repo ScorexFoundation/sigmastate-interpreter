@@ -2,7 +2,6 @@ package org.ergoplatform
 
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoLikeContext.Metadata
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Assertion, Matchers, PropSpec, TryValues}
 import scapi.sigma.DLogProtocol
@@ -17,7 +16,8 @@ class ErgoAddressSpecification extends PropSpec
   with Matchers
   with TryValues {
 
-  private implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(Metadata.TestnetNetworkPrefix)
+  private implicit val ergoAddressEncoder: ErgoAddressEncoder =
+    new ErgoAddressEncoder(ErgoAddressEncoder.TestnetNetworkPrefix)
 
   def addressRoundtrip(addr: ErgoAddress): Assertion = {
     ergoAddressEncoder.fromString(ergoAddressEncoder.toString(addr)).get shouldBe addr

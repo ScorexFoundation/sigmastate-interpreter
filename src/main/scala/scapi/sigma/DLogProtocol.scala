@@ -20,12 +20,18 @@ object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
+//  case class TrivialSigma(value: BoolValue)
+//    extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
+//    override val opCode: OpCode = OpCodes.TrivialSigmaCode
+//    override def cost[C <: Context[C]](context: C): Long = Cost.BooleanConstantDeclaration
+//  }
+
   case class ProveDlog(value: Value[SGroupElement.type])
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
     override val opCode: OpCode = OpCodes.ProveDlogCode
 
-    override def cost[C <: Context](context: C): Long = Cost.Dlog
+    override def cost[C <: Context](context: C): Long = Cost.DlogDeclaration
 
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value

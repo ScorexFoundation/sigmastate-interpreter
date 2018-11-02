@@ -1,14 +1,15 @@
 package sigmastate.helpers
 
 import scapi.sigma.DLogProtocol.DLogProverInput
-import scapi.sigma.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
+import scapi.sigma.{SigmaProtocolPrivateInput, DiffieHellmanTupleProverInput}
 import scorex.utils.Random
 import sigmastate.SType
 import sigmastate.Values._
+import sigmastate.eval.IRContext
 import sigmastate.interpreter.ProverInterpreter
 import sigmastate.utxo.{CostTable, ErgoLikeTestInterpreter}
 
-class ErgoLikeTestProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)
+class ErgoLikeTestProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit override val IR: IRContext)
   extends ErgoLikeTestInterpreter(maxCost) with ProverInterpreter {
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {

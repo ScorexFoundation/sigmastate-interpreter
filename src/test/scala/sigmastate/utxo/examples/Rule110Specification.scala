@@ -1,11 +1,9 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoLikeContext.Metadata
-import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, TaggedByteArray, TrueLeaf, Value}
+import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, GetVarByteArray, TrueLeaf, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -18,9 +16,8 @@ import sigmastate.utxo._
   *
   */
 class Rule110Specification extends SigmaTestingCommons {
-
   import BlockchainSimulationSpecification.{Block, ValidationState}
-
+  implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
   private val reg3 = ErgoBox.nonMandatoryRegisters(2)
@@ -135,7 +132,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val YReg = reg3
     val ValReg = reg4
     val scriptId = 21.toByte
-    val scriptHash = CalcBlake2b256(TaggedByteArray(scriptId))
+    val scriptHash = CalcBlake2b256(GetVarByteArray(scriptId).get)
 
     // extract required values of for all outputs
     val in0Mid = ExtractRegisterAs[SByte.type](ByIndex(Inputs, 0), MidReg).get
@@ -447,7 +444,6 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           left,
-          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultLeft = prover.prove(left.proposition, contextLeft, ut.messageToSign).get
 
@@ -457,7 +453,6 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           center,
-          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultCenter = prover.prove(center.proposition, contextCenter, ut.messageToSign).get
 
@@ -467,7 +462,6 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           right,
-          Metadata(TestnetNetworkPrefix),
           ContextExtension.empty)
         val proverResultRight = prover.prove(right.proposition, contextRight, ut.messageToSign).get
         ut.toSigned(IndexedSeq(proverResultLeft, proverResultCenter, proverResultRight))

@@ -13,7 +13,7 @@ import sigmastate.utxo._
 
 
 class FsmExampleSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   /**
     * Similarly to the MAST-like example (in the MASTExampleSpecification class), we can do more complex contracts,
     * e.g. ones with cycles. For example, we can do a contract described as a finite state machine.
@@ -41,10 +41,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     val prover = new ErgoLikeTestProvingInterpreter
 
-    val script1 = prover.dlogSecrets.head.publicImage
-    val script2 = prover.dhSecrets.head.publicImage
+    val script1 = prover.dlogSecrets.head.publicImage.isValid
+    val script2 = prover.dhSecrets.head.publicImage.isValid
     val script3 = AND(script1, script2)
-    val script4 = prover.dlogSecrets.tail.head.publicImage //a script to leave FSM
+    val script4 = prover.dlogSecrets.tail.head.publicImage .isValid //a script to leave FSM
 
     val script1Hash = hash.Blake2b256(ValueSerializer.serialize(script1))
     val script2Hash = hash.Blake2b256(ValueSerializer.serialize(script2))
@@ -80,14 +80,14 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val transitionProofId = 3: Byte
 
     val isMember = OptionIsDefined(TreeLookup(OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
-      Append(
-        ConcreteCollection[SByte.type](
-          OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
-          OptionGetOrElse(ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
-            currentStateRegister), ByteConstant(-1))),
-        CalcBlake2b256(TaggedByteArray(scriptVarId))
-      ),
-      TaggedByteArray(transitionProofId)))
+        Append(
+          ConcreteCollection[SByte.type](
+            OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
+            OptionGetOrElse(ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
+                                          currentStateRegister),ByteConstant(-1))),
+          CalcBlake2b256(GetVarByteArray(scriptVarId).get)
+        ),
+        GetVarByteArray(transitionProofId).get))
 
     val scriptPreservation = EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), ExtractScriptBytes(Self))
 

@@ -197,17 +197,9 @@ trait TransformerGenerators {
     s <- Gen.someOf(Base58.Alphabet).suchThat(_.nonEmpty)
   } yield s.toString
 
-  val base58ToByteArrayGen: Gen[Base58ToByteArray] = for {
-    s <- base58StringGen
-  } yield mkBase58ToByteArray(StringConstant(s)).asInstanceOf[Base58ToByteArray]
-
   val base64StringGen: Gen[String] = for {
     s <- Gen.someOf(Base64.Alphabet).suchThat(_.length > 1)
   } yield s.toString
-
-  val base64ToByteArrayGen: Gen[Base64ToByteArray] = for {
-    s <- base64StringGen
-  } yield mkBase64ToByteArray(StringConstant(s)).asInstanceOf[Base64ToByteArray]
 
   def p2pkAddressGen(networkPrefix: Byte): Gen[P2PKAddress] = for {
     pd <- proveDlogGen
@@ -228,4 +220,19 @@ trait TransformerGenerators {
   val optionIsDefinedGen: Gen[OptionIsDefined[SInt.type]] = for {
     getVar <- getVarIntGen
   } yield OptionIsDefined(getVar)
+
+  val valDefGen: Gen[ValDef] = for {
+    id <- unsignedIntGen
+    rhs <- booleanExprGen
+  } yield ValDef(id, Seq(), rhs)
+
+  val funDefGen: Gen[ValDef] = for {
+    id <- unsignedIntGen
+    tpeArgs <- Gen.nonEmptyListOf(sTypeIdentGen)
+    rhs <- booleanExprGen
+  } yield ValDef(id, tpeArgs, rhs)
+
+  val valOrFunDefGen: Gen[ValDef] = for {
+    v <- Gen.oneOf(valDefGen, funDefGen)
+  } yield v
 }

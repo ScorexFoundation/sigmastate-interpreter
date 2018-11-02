@@ -1,11 +1,13 @@
 package sigmastate.utxo.benchmarks
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoLikeContext
 import sigmastate.SBoolean
 import sigmastate.Values.Value
-import sigmastate.lang.Terms._
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.Interpreter._
+import sigmastate.lang.Terms._
 
 import scala.util.Try
 
@@ -35,7 +37,8 @@ class CrowdFundingScriptContract(
        | ))
        | c1 || c2
        | }
-      """.stripMargin).asBoolValue
+      """.stripMargin,
+      TestnetNetworkPrefix).asBoolValue
     compiledScript
   }
 
@@ -47,7 +50,7 @@ class CrowdFundingScriptContract(
   def verify(proof: Array[Byte],
              ctx: ErgoLikeContext,
              fakeMessage: Array[Byte]): Try[Interpreter.VerificationResult] = {
-    val res = verifier.verify(compiledProposition, ctx, proof, fakeMessage)
+    val res = verifier.verify(emptyEnv, compiledProposition, ctx, proof, fakeMessage)
     res
   }
 }

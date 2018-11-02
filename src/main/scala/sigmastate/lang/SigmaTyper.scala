@@ -15,11 +15,7 @@ import sigmastate.utxo._
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * Analyses for typed lambda calculus expressions.  A simple free variable
-  * analysis plus name and type analysis.  There are two versions of the
-  * latter here: one (tipe) that constructs an explicit environment separate
-  * from the AST, and one (tipe2) that represents names by references to the
-  * nodes of their binding lambda expressions.
+  * Type inference and analysis for Sigma expressions.
   */
 class SigmaTyper(val builder: SigmaBuilder) {
   import SigmaTyper._
@@ -60,7 +56,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       }
 
     case sel @ Select(obj: SigmaBoolean, n, None) =>
-      val newObj = assignType(env, obj).asSigmaValue
+      val newObj = assignType(env, obj).asSigmaBoolean
       val iField = newObj.fields.indexWhere(_._1 == n)
       val tRes = if (iField != -1) {
         obj.fields(iField)._2
@@ -197,23 +193,6 @@ class SigmaTyper(val builder: SigmaBuilder) {
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
-        case SSigmaProp => (m, newArgs) match {
-          case ("||" | "&&", Seq(r)) => r.tpe match {
-            case SBoolean =>
-              val (a,b) = (Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
-              val res = if (m == "||") OR(a,b) else AND(a,b)
-              res
-            case SSigmaProp =>
-              val a = Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
-              val b = Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
-              val res = if (m == "||") OR(a,b) else AND(a,b)
-              res
-            case _ =>
-              error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}")
-          }
-          case _ =>
-            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
-        }
         case _: SNumericType => (m, newArgs) match {
           case("+" | "*", Seq(r)) => r.tpe match {
             case _: SNumericType => m match {
@@ -227,19 +206,35 @@ class SigmaTyper(val builder: SigmaBuilder) {
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
 
+        case SSigmaProp => (m, newArgs) match {
+          case ("||" | "&&", Seq(r)) => r.tpe match {
+            case SBoolean =>
+              val (a,b) = (Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              res
+            case SSigmaProp =>
+              val a = Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
+              val b = Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
+              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              res
+            case _ =>
+              error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}")
+          }
+          case _ =>
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+        }
         case SBoolean => (m, newArgs) match {
           case ("||" | "&&", Seq(r)) => r.tpe match {
             case SBoolean =>
-              val res = if (m == "||") OR(newObj.asBoolValue, r.asBoolValue) else AND(newObj.asBoolValue, r.asBoolValue)
+              val res = if (m == "||") mkBinOr(newObj.asBoolValue, r.asBoolValue) else mkBinAnd(newObj.asBoolValue, r.asBoolValue)
               res
             case SSigmaProp =>
               val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue)
-              val res = if (m == "||") OR(a,b) else AND(a,b)
+              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
               res
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }
-
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
@@ -273,6 +268,11 @@ class SigmaTyper(val builder: SigmaBuilder) {
         case _ =>
           error(s"Invalid application of type arguments $app: function $input doesn't have type parameters")
       }
+
+//    case app @ ApplyTypes(in, targs) =>
+//      val newIn = assignType(env, in)
+//      ApplyTypes(newIn, targs)
+//      error(s"Invalid application of type arguments $app: expression doesn't have type parameters")
 
     case If(c, t, e) =>
       val c1 = assignType(env, c).asValue[SBoolean.type]
@@ -351,6 +351,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       SigmaPropBytes(p1.asSigmaProp)
 
     case SomeValue(x) => SomeValue(assignType(env, x))
+    case v: NoneValue[_] => v
 
     case Height => Height
     case MinerPubkey => MinerPubkey

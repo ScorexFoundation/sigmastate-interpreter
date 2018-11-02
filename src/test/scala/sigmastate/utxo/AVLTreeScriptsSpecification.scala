@@ -4,16 +4,17 @@ import com.google.common.primitives.Longs
 import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OperationSerializer
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
@@ -112,8 +113,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = s)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("avl tree - simplest case") {

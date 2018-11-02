@@ -9,7 +9,7 @@ import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import scala.util.Random
 
 class ComplexSigSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
   private def proverGen: Gen[ErgoLikeTestProvingInterpreter] = for {
     _ <- Gen.const(1)
   } yield new ErgoLikeTestProvingInterpreter()
@@ -32,7 +32,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
     val compiledProp = compile(env, """pubkeyA || pubkeyB""")
 
-    val prop = OR(pubkeyA, pubkeyB)
+    val prop = BinOr(pubkeyA.isValid, pubkeyB.isValid)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -65,7 +65,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, pubkeyC))""")
 
-    val prop = OR(pubkeyA, pubkeyB, pubkeyC)
+    val prop = OR(pubkeyA.isValid, pubkeyB.isValid, pubkeyC.isValid)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -99,7 +99,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compile(env, """pubkeyA || pubkeyB || pubkeyC""")
 
-    val prop = OR(pubkeyA, pubkeyB, pubkeyC)
+    val prop = BinOr(BinOr(pubkeyA.isValid, pubkeyB.isValid), pubkeyC.isValid)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -134,7 +134,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA1" -> pubkeyA1, "pubkeyA2" -> pubkeyA2, "pubkeyA3" -> pubkeyA3, "pubkeyA4" -> pubkeyA4)
     val compiledProp = compile(env, """anyOf(Array(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""")
 
-    val prop = OR(Seq(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))
+    val prop = OR(Seq(pubkeyA1.isValid, pubkeyA2.isValid, pubkeyA3.isValid, pubkeyA4.isValid))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -165,7 +165,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """pubkeyA && pubkeyB || pubkeyC && pubkeyD""")
 
-    val prop = OR(AND(pubkeyA, pubkeyB), AND(pubkeyC, pubkeyD))
+    val prop = BinOr(BinAnd(pubkeyA.isValid, pubkeyB.isValid), BinAnd(pubkeyC.isValid, pubkeyD.isValid))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -206,7 +206,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""")
 
-    val prop = OR(AND(pubkeyA, pubkeyB), pubkeyC, pubkeyD)
+    val prop = BinOr(BinAnd(pubkeyA.isValid, pubkeyB.isValid), BinOr(pubkeyC.isValid, pubkeyD.isValid))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -243,7 +243,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
     val compiledProp = compile(env, """pubkeyA && pubkeyB""")
 
-    val prop = AND(pubkeyA, pubkeyB)
+    val prop = BinAnd(pubkeyA.isValid, pubkeyB.isValid)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -276,7 +276,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compile(env, """(pubkeyA && pubkeyB) || pubkeyC""")
 
-    val prop = OR(AND(pubkeyA, pubkeyB), pubkeyC)
+    val prop = BinOr(BinAnd(pubkeyA.isValid, pubkeyB.isValid), pubkeyC.isValid)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -316,7 +316,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """(pubkeyA || pubkeyB) && (pubkeyC || pubkeyD)""")
 
-    val prop = AND(OR(pubkeyA, pubkeyB), OR(pubkeyC, pubkeyD))
+    val prop = BinAnd(BinOr(pubkeyA.isValid, pubkeyB.isValid), BinOr(pubkeyC.isValid, pubkeyD.isValid))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -357,7 +357,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""")
 
-    val prop = AND(pubkeyA, pubkeyB, OR(pubkeyC, pubkeyD))
+    val prop = BinAnd(BinAnd(pubkeyA.isValid, pubkeyB.isValid), BinOr(pubkeyC.isValid, pubkeyD.isValid))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -401,7 +401,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
     val compiledProp = compile(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""")
 
-    val prop = OR(pubkeyA, pubkeyB, pubkeyC, pubkeyD)
+    val prop = BinOr(BinOr(pubkeyA.isValid, pubkeyB.isValid), BinOr(pubkeyC.isValid, pubkeyD.isValid))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -438,7 +438,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
     val compiledProp = compile(env, """anyOf(Array(pubkeyA, pubkeyB, HEIGHT > 500))""")
 
-    val prop = OR(pubkeyA, pubkeyB, GT(Height, LongConstant(500)))
+    val prop = OR(pubkeyA.isValid, pubkeyB.isValid, GT(Height, LongConstant(500)))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
@@ -479,7 +479,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compile(env, """anyOf(Array(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
 
-    val prop = OR(pubkeyA, pubkeyB, AND(pubkeyC, GT(Height, LongConstant(500))))
+    val prop = OR(BinOr(pubkeyA.isValid, pubkeyB.isValid), BinAnd(pubkeyC.isValid, GT(Height, LongConstant(500))))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
@@ -527,7 +527,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compile(env, """pubkeyA || pubkeyB ||  (pubkeyC && HEIGHT > 500)""")
 
-    val prop = OR(pubkeyA, pubkeyB, AND(pubkeyC, GT(Height, LongConstant(500))))
+    val prop = BinOr(BinOr(pubkeyA.isValid, pubkeyB.isValid), BinAnd(pubkeyC.isValid, GT(Height, LongConstant(500))))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
@@ -577,7 +577,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
         .filter(_.length == k)
 
       val prop = OR(
-        kNumKeysCombinations.map(combs => AND(combs.map(_.publicImage)))
+        kNumKeysCombinations.map(combs => AND(combs.map(_.publicImage.isValid)))
       )
 
       val ctx = ErgoLikeContext(

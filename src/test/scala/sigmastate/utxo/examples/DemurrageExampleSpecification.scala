@@ -1,5 +1,8 @@
 package sigmastate.utxo.examples
 
+import sigmastate.Values.{LongConstant, TaggedBox, SigmaPropConstant}
+import sigmastate._
+import sigmastate.interpreter.Interpreter._
 import org.ergoplatform._
 import sigmastate.Values.ShortConstant
 import sigmastate._
@@ -9,6 +12,9 @@ import sigmastate.lang.Terms._
 import sigmastate.utxo.ErgoLikeTestInterpreter
 
 class DemurrageExampleSpecification extends SigmaTestingCommons {
+  implicit lazy val IR = new TestingIRContext
+  private val reg1 = ErgoBox.nonMandatoryRegisters.head
+
   /**
     * Demurrage currency example.
     *
@@ -43,6 +49,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val regScript = userProver.dlogSecrets.head.publicImage
 
     val env = Map(
+      ScriptNameProp -> "Demurrage",
       "demurragePeriod" -> demurragePeriod,
       "demurrageCoeff" -> demurrageCoeff,
       "regScript" -> regScript
@@ -73,12 +80,12 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     /*
     todo: fix / uncomment
     val reg1 = ErgoBox.nonMandatoryRegisters.head
-    val propTree = OR(
-      regScript,
+    val propTree = BinOr(
+      SigmaPropConstant(regScript).isValid,
       AND(
         GE(Height, Plus(ExtractRegisterAs[STuple](Self, reg1).get.asTuple. , LongConstant(demurragePeriod))),
         Exists(Outputs, 21,
-          AND(
+          BinAnd(
             GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),
             EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self)),
             LE(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).get, Height),
@@ -113,7 +120,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //user can spend all the money
     val uProof1 = userProver.prove(prop, ctx1, fakeMessage).get.proof
-    verifier.verify(prop, ctx1, uProof1, fakeMessage).get._1 shouldBe true
+    verifier.verify(emptyEnv, prop, ctx1, uProof1, fakeMessage).get._1 shouldBe true
 
     //miner can't spend any money
     minerProver.prove(prop, ctx1, fakeMessage).isSuccess shouldBe false
@@ -133,7 +140,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //user can spend all the money
     val uProof2 = userProver.prove(prop, ctx2, fakeMessage).get.proof
-    verifier.verify(prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
+    verifier.verify(env, prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
 
     //miner can spend "demurrageCoeff * demurragePeriod" tokens
     val b = createBox(outValue, prop, currentHeight2)
@@ -149,7 +156,8 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
     val mProverRes1 = minerProver.prove(prop, ctx3, fakeMessage).get
-    verifier.verify(prop, ctx3.withExtension(mProverRes1.extension), mProverRes1.proof, fakeMessage).get._1 shouldBe true
+    val _ctx3: ErgoLikeContext = ctx3.withExtension(mProverRes1.extension)
+    verifier.verify(prop, _ctx3, mProverRes1, fakeMessage: Array[Byte]).get._1 shouldBe true
 
     //miner can't spend more
     val b2 = createBox(outValue - 1, prop, currentHeight2)
@@ -179,7 +187,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       self = createBox(inValue, prop, inHeight),
       extension = ce)
 
-    val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get.proof
+    val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get
     verifier.verify(prop, ctx5, mProof2, fakeMessage).get._1 shouldBe true
 
     //miner can destroy a box if it contains less than the storage fee
@@ -196,7 +204,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       self = createBox(iv, prop, inHeight),
       extension = ce)
 
-    val mProof3 = minerProver.prove(prop, ctx6, fakeMessage).get.proof
+    val mProof3 = minerProver.prove(prop, ctx6, fakeMessage).get
     verifier.verify(prop, ctx6, mProof3, fakeMessage).get._1 shouldBe true
 
   }

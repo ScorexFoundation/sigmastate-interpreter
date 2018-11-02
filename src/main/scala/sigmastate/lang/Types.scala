@@ -22,14 +22,19 @@ trait Types extends Core {
   /** This map should be in sync with SType.allPredefTypes*/
   val predefTypes = Map(
     "Boolean" -> SBoolean, "Byte" -> SByte, "Short" -> SShort, "Int" -> SInt,"Long" -> SLong, "BigInt" -> SBigInt,  "ByteArray" -> SByteArray,
-    "AvlTree" -> SAvlTree, "GroupElement" -> SGroupElement, "SigmaProp" -> SSigmaProp, "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
+    "AvlTree" -> SAvlTree, "Context" -> SContext, "GroupElement" -> SGroupElement, "SigmaProp" -> SSigmaProp, "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
   )
 
   def typeFromName(tn: String): Option[SType] = predefTypes.get(tn)
 
   val PostfixType = P( InfixType ~ (`=>` ~/ Type ).? ).map {
     case (t, None) => t
-    case (d, Some(r)) => SFunc(IndexedSeq(d), r)
+    case (d, Some(r)) => d match {
+      case STuple(items) =>
+        SFunc(items, r)
+      case _ =>
+        SFunc(IndexedSeq(d), r)
+    }
   }
   val Type: P[SType] = P( `=>`.? ~~ PostfixType ~ TypeBounds ~ `*`.? )
 

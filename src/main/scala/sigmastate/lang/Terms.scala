@@ -1,5 +1,6 @@
 package sigmastate.lang
 
+import org.ergoplatform.Self
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
@@ -9,6 +10,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsValid, Slice}
 
 object Terms {
 
@@ -19,6 +21,9 @@ object Terms {
 
     override def evaluated: Boolean = false
     def tpe: SType = result.tpe
+
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Block {
     def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
@@ -38,6 +43,8 @@ object Terms {
 
     override def evaluated: Boolean = ???
     def tpe: SType = givenType ?: body.tpe
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Val {
     def apply(name: String, body: SValue): Val = ValNode(name, NoType, body)
@@ -61,6 +68,8 @@ object Terms {
         else p.methods(i).stype
       case _ => NoType
     })
+
+    def opType: SFunc = SFunc(obj.tpe, tpe)
   }
 
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
@@ -69,6 +78,8 @@ object Terms {
     override def cost[C <: Context](context: C): Long = ???
 
     override def evaluated: Boolean = ???
+
+    def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Ident {
     def apply(name: String): Ident = Ident(name, NoType)
@@ -85,11 +96,16 @@ object Terms {
       case tCol: SCollectionType[_] => tCol.elemType
       case _ => NoType
     }
+
+    def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
   }
 
   /** Apply types for type parameters of input value. */
   case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] { node =>
-
+//    input.tpe.whenFunc(funcType =>
+//      assert(funcType.tpeArgs.length == tpeArgs.length,
+//        s"Invalid number of tpeArgs in $node: expected ${funcType.tpeArgs} but found $tpeArgs")
+//    )
     override val opCode: OpCode = OpCodes.Undefined
 
     override def cost[C <: Context](context: C): Long = ???
@@ -102,6 +118,8 @@ object Terms {
         SigmaTyper.applySubst(input.tpe, subst)
       case _ => input.tpe
     }
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = ???
   }
 
   case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
@@ -111,13 +129,15 @@ object Terms {
     override def cost[C <: Context](context: C): Long = ???
 
     override def evaluated: Boolean = false
+
+    def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
   }
 
   case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
     assert(upperBound.isEmpty && lowerBound.isEmpty, s"Type parameters with bounds are not supported, but found $this")
     override def toString = ident.toString + upperBound.fold("")(u => s" <: $u") + lowerBound.fold("")(l => s" >: $l")
   }
-  
+
   case class Lambda(
         tpeParams: Seq[STypeParam],
         args: IndexedSeq[(String,SType)],
@@ -129,6 +149,8 @@ object Terms {
     override def cost[C <: Context](context: C): Long = ???
     override def evaluated: Boolean = false
     lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe), tpeParams)
+    /** This is not used as operation, but rather to form a program structure */
+    def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
@@ -136,14 +158,16 @@ object Terms {
     def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(Nil, args, NoType, Some(body))
   }
 
-  implicit class ValueOps(v: Value[SType]) {
+  case class OperationId(name: String, opType: SFunc)
+
+  implicit class ValueOps(val v: Value[SType]) extends AnyVal {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
     def asNumValue: Value[SNumericType] = v.asInstanceOf[Value[SNumericType]]
     def asStringValue: Value[SString.type] = v.asInstanceOf[Value[SString.type]]
     def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
     def asIntValue: Value[SInt.type] = v.asInstanceOf[Value[SInt.type]]
     def asLongValue: Value[SLong.type] = v.asInstanceOf[Value[SLong.type]]
-    def asSigmaValue: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
+    def asSigmaBoolean: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
     def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
     def asSigmaProp: Value[SSigmaProp.type] = v.asInstanceOf[Value[SSigmaProp.type]]
@@ -151,6 +175,7 @@ object Terms {
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
     def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]
     def asTuple: Value[STuple] = v.asInstanceOf[Value[STuple]]
+    def asFunc: Value[SFunc] = v.asInstanceOf[Value[SFunc]]
     def asConcreteCollection[T <: SType]: ConcreteCollection[T] = v.asInstanceOf[ConcreteCollection[T]]
     def upcastTo[T <: SNumericType](targetType: T): Value[T] = {
       assert(v.tpe.isInstanceOf[SNumericType],

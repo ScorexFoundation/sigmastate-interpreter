@@ -1,17 +1,20 @@
 package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoAddressEncoder.{NetworkPrefix, TestnetNetworkPrefix}
+import org.ergoplatform._
+import scorex.util.encode.{Base58, Base64}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Apply, Block, Ident, Lambda, Select, Val, ValueOps}
+import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, Select, Val, ValueOps}
 import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
+import sigmastate.utils.Extensions._
 
-class SigmaSpecializer(val builder: SigmaBuilder) {
+class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPrefix) {
   import SigmaSpecializer._
   import builder._
 
@@ -64,19 +67,19 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       Some(mkTreeModifications(tree, operations, proof))
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
-      Some(mkProveDlog(g))
+      Some(SigmaPropConstant(mkProveDlog(g)))
 
     case Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
-      Some(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement))
+      Some(SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)))
 
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))
 
-    case Apply(FromBase58Sym, Seq(arg: Value[SString.type]@unchecked)) =>
-      Some(mkBase58ToByteArray(arg))
+    case Apply(FromBase58Sym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+      Some(ByteArrayConstant(Base58.decode(arg.value).get))
 
-    case Apply(FromBase64Sym, Seq(arg: Value[SString.type]@unchecked)) =>
-      Some(mkBase64ToByteArray(arg))
+    case Apply(FromBase64Sym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+      Some(ByteArrayConstant(Base64.decode(arg.value).get))
 
     case Apply(ByteArrayToBigIntSym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(mkByteArrayToBigInt(arg))
@@ -113,8 +116,13 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
       Some(SigmaPropBytes(p.asSigmaProp))
 
-    case Apply(PKSym, Seq(arg: Value[SString.type]@unchecked)) =>
-      Some(mkPK(arg))
+    case Apply(PKSym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+      Some(
+        ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
+          case a: P2PKAddress => a.pubkey
+          case a@_ => error(s"unsupported address $a")
+        }
+      )
 
     case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
@@ -130,6 +138,16 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.IsDefined, _) =>
       Some(mkOptionIsDefined(nrv))
 
+    case sel @ Select(e @ Apply(ApplyTypes(f @ GetVarSym, targs), args), "get", Some(regType)) =>
+      if (targs.length != 1 || args.length != 1)
+        error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
+      val id = args.head match {
+        case LongConstant(i) => i.toByteExact  //TODO use SByte.downcast once it is implemented
+        case IntConstant(i) => i.toByteExact
+        case ByteConstant(i) => i
+      }
+      Some(mkTaggedVariable(id, targs.head))
+
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {
         case (box, SBox.Value) => Some(mkExtractAmount(box))
@@ -143,10 +161,10 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
       }
 
-    case Select(obj: SigmaBoolean, field, _) =>
+    case node @ Select(obj: SigmaBoolean, field, _) =>
       field match {
         case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.bytes))
-        case SigmaBoolean.IsValid => Some(obj)
+        case _ => None
       }
 
     case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
@@ -209,6 +227,9 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
             case v => IndexedSeq(v)
           }, SBoolean)))
 
+    case StringConcat(StringConstant(l), StringConstant(r)) =>
+      Some(StringConstant(l + r))
+
   })))(e)
 
   def specialize(typed: SValue): SValue = {
@@ -222,5 +243,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 }
 
 object SigmaSpecializer {
+
   def error(msg: String) = throw new SpecializerException(msg, None)
 }

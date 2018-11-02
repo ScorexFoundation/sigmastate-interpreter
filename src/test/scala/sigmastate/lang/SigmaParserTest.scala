@@ -24,8 +24,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   def parseType(x: String): SType = {
-    val res = SigmaParser.parseType(x).get.value
-    res
+    SigmaParser.parseType(x)
   }
 
   def fail(x: String, index: Int): Unit = {

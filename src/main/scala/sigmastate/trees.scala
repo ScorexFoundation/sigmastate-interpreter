@@ -3,9 +3,11 @@ package sigmastate
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
-import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
-import scorex.util.encode.{Base58, Base64}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
+import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import scorex.util.encode.{Base64, Base58}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
+import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.{Context, Interpreter}
@@ -17,6 +19,7 @@ import sigmastate.utxo.Transformer
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * AND conjunction for sigma propositions
@@ -27,6 +30,23 @@ case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override def cost[C <: Context](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.AndPerChild + Cost.AndDeclaration
 }
+object CAND {
+  import TrivialProof._
+  def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
+    require(items.nonEmpty)
+    val res = new ArrayBuffer[SigmaBoolean]()
+    for (x <- items) {
+      x match {
+        case FalseProof => return FalseProof
+        case TrueProof => // skip
+        case _ => res += x
+      }
+    }
+    if (res.isEmpty) TrueProof
+    else if (res.length == 1) res(0)
+    else CAND(res)
+  }
+}
 
 /**
   * OR disjunction for sigma propositions
@@ -36,6 +56,23 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
 
   override def cost[C <: Context](context: C): Long =
     sigmaBooleans.map(_.cost(context)).sum + sigmaBooleans.length * Cost.OrPerChild + Cost.OrDeclaration
+}
+object COR {
+  import TrivialProof._
+  def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
+    require(items.nonEmpty)
+    val res = new ArrayBuffer[SigmaBoolean]()
+    for (x <- items) {
+      x match {
+        case FalseProof => // skip
+        case TrueProof => return TrueProof
+        case _ => res += x
+      }
+    }
+    if (res.isEmpty) FalseProof
+    else if (res.length == 1) res(0)
+    else COR(res)
+  }
 }
 
 /**
@@ -54,6 +91,44 @@ case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoo
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
   extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
+case class TrivialProof(condition: Boolean) extends SigmaBoolean {
+  override val opCode: OpCode = OpCodes.TrivialProofCode
+  override def cost[C <: Context](context: C): Long = ??? //Cost.BooleanConstantDeclaration
+}
+object TrivialProof {
+  val TrueProof = TrivialProof(true)
+  val FalseProof = TrivialProof(false)
+}
+
+case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
+  override def cost[C <: Context](context: C): Long = ??? //Cost.BooleanConstantDeclaration
+  def tpe = SSigmaProp
+  def evaluated = false
+  val opType = SFunc(SBoolean, SSigmaProp)
+}
+
+/**
+  * AND conjunction for sigma propositions
+  */
+case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.SigmaAndCode
+  override def cost[C <: Context](context: C): Long = ???
+  def tpe = SSigmaProp
+  def evaluated = false
+  val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
+}
+
+/**
+  * OR disjunction for sigma propositions
+  */
+case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.SigmaOrCode
+  override def cost[C <: Context](context: C): Long = ???
+  def tpe = SSigmaProp
+  def evaluated = false
+  val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
+}
 
 /**
   * OR logical conjunction
@@ -67,6 +142,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   override def cost[C <: Context](context: C): Long =
     input.cost(context) + Cost.AndDeclaration
 
+  val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
@@ -81,8 +157,8 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     def iterChildren(children: Seq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
       if (children.isEmpty) currentBuffer else children.head match {
-        case TrueLeaf => mutable.Buffer(TrueLeaf)
-        case FalseLeaf => iterChildren(children.tail, currentBuffer)
+        case TrueLeaf  => mutable.Buffer(TrueLeaf)
+        case FalseLeaf  => iterChildren(children.tail, currentBuffer)
         case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }
     }
@@ -126,6 +202,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   override def cost[C <: Context](context: C): Long =
     input.cost(context) + Cost.AndDeclaration
 
+  val opType = SFunc(SCollection.SBooleanArray, SBoolean)
+
   //todo: reduce such boilerplate around AND/OR, folders, map etc
   override def transformationReady: Boolean =
     input.evaluated && input.matchCase(
@@ -139,8 +217,8 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     def iterChildren(children: IndexedSeq[Value[SBoolean.type]],
                      currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
       if (children.isEmpty) currentBuffer else children.head match {
-        case FalseLeaf => mutable.Buffer(FalseLeaf)
-        case TrueLeaf => iterChildren(children.tail, currentBuffer)
+        case FalseLeaf  => mutable.Buffer(FalseLeaf)
+        case TrueLeaf  => iterChildren(children.tail, currentBuffer)
         case and: CAND => iterChildren(and.sigmaBooleans.toIndexedSeq ++ children.tail, currentBuffer)
         case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
       }
@@ -185,6 +263,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.ty
   extends Transformer[SCollection[SBoolean.type], SBoolean.type]
     with NotReadyValueBoolean {
   override val opCode: OpCode = AtLeastCode
+  override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
 
   override def cost[C <: Context](context: C): Long =
     bound.cost(context) + input.cost(context) + Cost.AtLeastDeclaration
@@ -267,6 +346,7 @@ object AtLeast {
   */
 case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   extends Transformer[T, R] {
+  import Upcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.UpcastCode
 
@@ -274,6 +354,13 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
     Constant(this.tpe.upcast(input.value.asInstanceOf[AnyVal]), this.tpe)
 
   override def cost[C <: Context](context: C): Long = input.cost(context) + 1
+
+  override val opType = SFunc(Vector(tT), tR)
+}
+
+object Upcast {
+  val tT = STypeIdent("T")
+  val tR = STypeIdent("R")
 }
 
 /**
@@ -281,6 +368,7 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   */
 case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   extends Transformer[T, R] {
+  import Downcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Downcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.DowncastCode
 
@@ -288,6 +376,13 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
     Constant(this.tpe.downcast(input.value.asInstanceOf[AnyVal]), this.tpe)
 
   override def cost[C <: Context](context: C): Long = input.cost(context) + 1
+
+  override val opType = SFunc(Vector(tT), tR)
+}
+
+object Downcast {
+  val tT = STypeIdent("T")
+  val tR = STypeIdent("R")
 }
 
 /**
@@ -301,32 +396,8 @@ case class LongToByteArray(input: Value[SLong.type])
     ByteArrayConstant(Longs.toByteArray(bal.value))
 
   override def cost[C <: Context](context: C): Long = input.cost(context) + 1 //todo: externalize cost
-}
 
-/**
-  * Decode Base58-encoded string into SByteArray
-  */
-case class Base58ToByteArray(input: Value[SString.type])
-  extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
-  override val opCode: OpCode = OpCodes.Base58ToByteArrayCode
-
-  override def function(intr: Interpreter, ctx: Context, bal: EvaluatedValue[SString.type]): Value[SByteArray] =
-    ByteArrayConstant(Base58.decode(bal.value).get)
-
-  override def cost[C <: Context](context: C): Long = input.cost(context)
-}
-
-/**
-  * Decode Base64-encoded string into SByteArray
-  */
-case class Base64ToByteArray(input: Value[SString.type])
-  extends Transformer[SString.type, SByteArray] with NotReadyValueByteArray {
-  override val opCode: OpCode = OpCodes.Base64ToByteArrayCode
-
-  override def function(intr: Interpreter, ctx: Context, bal: EvaluatedValue[SString.type]): Value[SByteArray] =
-    ByteArrayConstant(Base64.decode(bal.value).get)
-
-  override def cost[C <: Context](context: C): Long = input.cost(context)
+  val opType = SFunc(SLong, SByteArray)
 }
 
 /**
@@ -341,6 +412,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
     BigIntConstant(new BigInteger(1, bal.value))
 
   override def cost[C <: Context](context: C): Long = input.cost(context) + 1 //todo: externalize cost
+  val opType = SFunc(SByteArray, SBigInt)
 }
 
 trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByteArray {
@@ -352,6 +424,7 @@ trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByt
     ByteArrayConstant(hashFn.apply(bal.value))
 
   override def cost[C <: Context](context: C): Long = input.cost(context) + Cost.Blake256bDeclaration
+  val opType = SFunc(SByteArray, SByteArray)
 }
 
 /**
@@ -382,6 +455,8 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
 
   override def cost[C <: Context](context: C): Long =
     left.cost(context) + right.cost(context) + Cost.TripleDeclaration
+
+  def opType = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
 
 // TwoArgumentsOperation
@@ -437,32 +512,36 @@ case class StringConcat(left: Value[SString.type], right: Value[SString.type])
 sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBoolean.type]
   with NotReadyValueBoolean
 
+trait SimpleRelation[T <: SType] extends Relation[T, T] {
+  val tT = STypeIdent("T")
+  override val opType = SFunc(Vector(tT, tT), SBoolean)
+}
 
 /**
   * Less operation for SInt
   */
-case class LT[T <: SType](override val left: Value[T], override val right: Value[T]) extends Relation[T, T] {
+case class LT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override val opCode: OpCode = LtCode
 }
 
 /**
   * Less or equals operation for SInt
   */
-case class LE[T <: SType](override val left: Value[T], override val right: Value[T]) extends Relation[T, T] {
+case class LE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override val opCode: OpCode = LeCode
 }
 
 /**
   * Greater operation for SInt
   */
-case class GT[T <: SType](override val left: Value[T], override val right: Value[T]) extends Relation[T, T] {
+case class GT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override val opCode: OpCode = GtCode
 }
 
 /**
   * Greater or equals operation for SInt
   */
-case class GE[T <: SType](override val left: Value[T], override val right: Value[T]) extends Relation[T, T] {
+case class GE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override val opCode: OpCode = GeCode
 }
 
@@ -471,7 +550,7 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
   * todo: make EQ to really accept only values of the same type, now EQ(TrueLeaf, IntConstant(5)) is valid
   */
 case class EQ[S <: SType](override val left: Value[S], override val right: Value[S])
-  extends Relation[S, S] {
+  extends SimpleRelation[S] {
   override val opCode: OpCode = EqCode
 }
 
@@ -479,10 +558,27 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
   * Non-Equals operation for SType
   */
 case class NEQ[S <: SType](override val left: Value[S], override val right: Value[S])
-  extends Relation[S, S] {
+  extends SimpleRelation[S] {
   override val opCode: OpCode = NeqCode
 }
 
+/**
+  * Logical OR with lazy right argument which is evaluated only if left == false.
+  * If left argument is true, the right is guaranteed to NOT be evaluated
+  */
+case class BinOr(override val left: BoolValue, override val right: BoolValue)
+  extends Relation[SBoolean.type, SBoolean.type] {
+  override val opCode: OpCode = BinOrCode
+}
+
+/**
+  * Logical AND with lazy right argument which is evaluated only if left == true.
+  * If left argument is false, the right is guaranteed to NOT be evaluated
+  */
+case class BinAnd(override val left: BoolValue, override val right: BoolValue)
+  extends Relation[SBoolean.type, SBoolean.type] {
+  override val opCode: OpCode = BinAndCode
+}
 
 /**
   * A tree node with three descendants
@@ -495,6 +591,7 @@ sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] ex
 
   override def cost[C <: Context](context: C): Long =
     first.cost(context) + second.cost(context) + third.cost(context) + Cost.QuadrupleDeclaration
+  val opType = SFunc(Vector(first.tpe, second.tpe, third.tpe), tpe)
 }
 
 sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
@@ -549,4 +646,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val first = condition
   override lazy val second = trueBranch
   override lazy val third = falseBranch
+}
+object If {
+  val tT = STypeIdent("T")
 }

@@ -1,17 +1,18 @@
 package sigmastate.lang
 
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, NonApplicableMethod, TyperException}
+import sigmastate.lang.exceptions.{NonApplicableMethod, TyperException, InvalidBinaryOperationParameters, MethodNotFound}
 import sigmastate.serialization.generators.ValueGenerators
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
-  def typecheck(env: Map[String, Any], x: String): SType = {
+  def typecheck(env: ScriptEnv, x: String): SType = {
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
@@ -26,7 +27,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     }
   }
 
-  def typefail(env: Map[String, Any], x: String, messageSubstr: String = ""): Unit = {
+  def typefail(env: ScriptEnv, x: String, messageSubstr: String = ""): Unit = {
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value

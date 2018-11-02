@@ -38,8 +38,9 @@ object OpCodes extends ValueCodes {
   // serialization is not required
   val Undefined: OpCode = 0: Byte
 
-  // variable
+  // variables
   val TaggedVariableCode: OpCode = (LastConstantCode + 1).toByte
+  val ValUseCode: OpCode = (LastConstantCode + 2).toByte   // reserved 3 - 9
 
   val LongToByteArrayCode  : OpCode = (LastConstantCode + 10).toByte
   val ByteArrayToBigIntCode: OpCode = (LastConstantCode + 11).toByte
@@ -60,7 +61,7 @@ object OpCodes extends ValueCodes {
   val Select3Code    : OpCode = (LastConstantCode + 25).toByte
   val Select4Code    : OpCode = (LastConstantCode + 26).toByte
   val Select5Code    : OpCode = (LastConstantCode + 27).toByte
-  val SelectFieldCode: OpCode = (LastConstantCode + 28).toByte // reserved 29, 30
+  val SelectFieldCode: OpCode = (LastConstantCode + 28).toByte // reserved 29
 
   // Relation descendants
   val LtCode     : OpCode = (LastConstantCode + 31).toByte
@@ -92,7 +93,11 @@ object OpCodes extends ValueCodes {
   val OutputsCode              : OpCode = (LastConstantCode + 53).toByte
   val LastBlockUtxoRootHashCode: OpCode = (LastConstantCode + 54).toByte
   val SelfCode                 : OpCode = (LastConstantCode + 55).toByte
-  val MinerPubkeyCode          : OpCode = (LastConstantCode + 56).toByte // reserved 57 - 60
+  val SigmaAndCode             : OpCode = (LastConstantCode + 56).toByte
+  val SigmaOrCode              : OpCode = (LastConstantCode + 57).toByte
+  val BinOrCode                : OpCode = (LastConstantCode + 58).toByte
+  val BinAndCode               : OpCode = (LastConstantCode + 59).toByte
+  val MinerPubkeyCode          : OpCode = (LastConstantCode + 60).toByte
 
   // Collection and tree operations codes
   val MapCollectionCode    : OpCode = (LastConstantCode + 61).toByte
@@ -124,19 +129,20 @@ object OpCodes extends ValueCodes {
   val ProveDlogCode              : OpCode = (LastConstantCode + 93).toByte
   val ProveDiffieHellmanTupleCode: OpCode = (LastConstantCode + 94).toByte
   val SigmaPropIsValidCode       : OpCode = (LastConstantCode + 95).toByte
-  val SigmaPropBytesCode         : OpCode = (LastConstantCode + 96).toByte // reserved 97 - 99
+  val SigmaPropBytesCode         : OpCode = (LastConstantCode + 96).toByte
+  val BoolToSigmaPropCode        : OpCode = (LastConstantCode + 97 ).toByte
+  val TrivialProofCode           : OpCode = (LastConstantCode + 98).toByte  // reserved 99
 
   // Deserialization codes
   val DeserializeContextCode : OpCode = (LastConstantCode + 100).toByte
-  val DeserializeRegisterCode: OpCode = (LastConstantCode + 101).toByte // reserved 102 - 109
+  val DeserializeRegisterCode: OpCode = (LastConstantCode + 101).toByte  // Block codes
+  val ValDefCode: OpCode = (LastConstantCode + 102).toByte
+  val FunDefCode: OpCode = (LastConstantCode + 103).toByte
+  val BlockValueCode: OpCode = (LastConstantCode + 104).toByte
+  val FuncValueCode: OpCode = (LastConstantCode + 105).toByte // reserved 106 - 109
 
   val SomeValueCode: OpCode = (LastConstantCode + 110).toByte
   val NoneValueCode: OpCode = (LastConstantCode + 111).toByte
-
-  val Base58ToByteArrayCode: OpCode = (LastConstantCode + 112).toByte
-  val Base64ToByteArrayCode: OpCode = (LastConstantCode + 113).toByte
-
-  val ErgoAddressToSigmaPropCode: OpCode = (LastConstantCode + 114).toByte
 
   val GetVarCode         : OpCode = (LastConstantCode + 115).toByte
   val OptionGetCode      : OpCode = (LastConstantCode + 116).toByte

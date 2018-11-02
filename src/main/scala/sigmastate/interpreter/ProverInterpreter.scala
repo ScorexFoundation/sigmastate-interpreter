@@ -119,17 +119,29 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     convertToUnchecked(step9)
   }
 
-  def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+  def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] =
+    prove(emptyEnv, exp, context, message)
 
-    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions).asInstanceOf[CTX], exp).get
+  def prove(env: ScriptEnv, exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+    import TrivialProof._
+    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions).asInstanceOf[CTX], env, exp).get
+
+    def errorReducedToFalse = Interpreter.error("Script reduced to false")
 
     val proofTree = reducedProp match {
-      case bool: BooleanConstant =>
-        bool match {
-          case TrueLeaf => NoProof
-          case _ => ???
+      case BooleanConstant(boolResult) =>
+        if (boolResult) NoProof
+        else errorReducedToFalse
+      case sigmaBoolean: SigmaBoolean =>
+        sigmaBoolean match {
+          case TrueProof => NoProof
+          case FalseProof => errorReducedToFalse
+          case _ =>
+            val ct = convertToUnproven(sigmaBoolean)
+            prove(ct, message)
         }
       case _ =>
+        // TODO this case should be removed, because above cases should cover all possible variants
         val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }
           .recover { case _ => throw new InterpreterException(s"failed to cast to SigmaBoolean: $reducedProp") }
           .get

@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
-import sigmastate.lang.SigmaCompiler
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
 
 abstract class SigmaContract {
-  val compiler = new SigmaCompiler
+  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
 }

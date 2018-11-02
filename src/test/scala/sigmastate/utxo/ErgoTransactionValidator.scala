@@ -1,24 +1,24 @@
 package sigmastate.utxo
 
+import sigmastate.eval.{RuntimeIRContext, IRContext}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import org.ergoplatform.ErgoLikeContext.Metadata
 import org.ergoplatform._
 
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 
-class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit) extends ErgoLikeInterpreter(maxCost) {
+class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit override val IR: IRContext) extends ErgoLikeInterpreter(maxCost) {
   override type CTX = ErgoLikeContext
 }
 
-
-object ErgoTransactionValidator {
-  val verifier: ErgoLikeTestInterpreter = new ErgoLikeTestInterpreter()
+class ErgoTransactionValidator(implicit IR: IRContext) {
+  val verifier = new ErgoLikeTestInterpreter()
 
   //todo: check that outputs are well-formed?
   def validate(tx: ErgoLikeTransaction,
                blockchainState: BlockchainState,
                minerPubkey: Array[Byte],
-               boxesReader: ErgoBoxReader,
-               metadata: Metadata): Either[Throwable, Long] = {
+               boxesReader: ErgoBoxReader): Either[Throwable, Long] = {
 
     val msg = tx.messageToSign
     val inputs = tx.inputs
@@ -38,9 +38,11 @@ object ErgoTransactionValidator {
 
       val context =
         ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, minerPubkey, boxes,
-          tx, box, metadata, proverExtension)
-
-      val scriptCost: Long = verifier.verify(box.proposition, context, proof, msg) match {
+          tx, box, proverExtension)
+      val verificationResult = verifier.verify(
+        emptyEnv + (ScriptNameProp -> s"height_${blockchainState.currentHeight }_verify"),
+        box.proposition, context, proof, msg)
+      val scriptCost: Long = verificationResult match {
         case Success((res, cost)) =>
           if(!res) return Left[Throwable, Long](new Exception(s"Validation failed for input #$idx"))
           else cost

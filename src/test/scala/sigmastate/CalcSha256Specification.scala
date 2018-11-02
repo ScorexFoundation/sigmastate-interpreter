@@ -7,10 +7,8 @@ import scorex.util.encode.Base16
 import sigmastate.Values.{CollectionConstant, ByteArrayConstant}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 
-class CalcSha256Specification extends SigmaTestingCommons
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
+class CalcSha256Specification extends SigmaTestingCommons {
+  implicit lazy val IR = new TestingIRContext
 
   def stringToByteConstant(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(in.getBytes("UTF-8"))
   def decodeString(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(Base16.decode(in).get)

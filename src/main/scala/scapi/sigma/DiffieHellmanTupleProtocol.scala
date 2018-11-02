@@ -70,7 +70,7 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
 
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 
-  override def cost[C <: Context](context: C): Long = Cost.Dlog * 2
+  override def cost[C <: Context](context: C): Long = Cost.DlogDeclaration * 2
 
   //todo: fix code below , we should consider that class parameters could be not evaluated
   lazy val g = gv.asInstanceOf[GroupElementConstant].value

@@ -1,16 +1,22 @@
 package sigmastate.lang
 
+import java.math.BigInteger
+
+import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.{ProveDiffieHellmanTuple, DLogProtocol}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ConcreteCollection, Constant, ConstantNode, NoneValue, SValue, SigmaBoolean, SomeValue, TaggedVariable, TaggedVariableNode, Tuple, Value}
+import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, BoolValue, Value, SigmaPropValue, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
 import sigmastate._
-import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
+
+import scalan.Nullable
 
 trait SigmaBuilder {
 
@@ -22,6 +28,7 @@ trait SigmaBuilder {
   def mkLT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
   def mkLE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
 
+  def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: Byte): Value[T]
   def mkPlus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkMinus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
@@ -30,8 +37,14 @@ trait SigmaBuilder {
   def mkMin[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkMax[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
 
-  def mkOR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
-  def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
+  def mkOR(input: Value[SCollection[SBoolean.type]]): BoolValue
+  def mkAND(input: Value[SCollection[SBoolean.type]]): BoolValue
+
+  def mkAnyOf(input: Seq[Value[SBoolean.type]]): BoolValue
+  def mkAllOf(input: Seq[Value[SBoolean.type]]): BoolValue
+
+  def mkBinOr(left: BoolValue, right: BoolValue): BoolValue
+  def mkBinAnd(left: BoolValue, right: BoolValue): BoolValue
   def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
 
   def mkExponentiate(left: Value[SGroupElement.type],
@@ -64,15 +77,16 @@ trait SigmaBuilder {
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
 
-  def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                                                id: Byte,
-                                                mapper: SValue): Value[SCollection[OV]]
   def mkAppend[IV <: SType](input: Value[SCollection[IV]],
                             col2: Value[SCollection[IV]]): Value[SCollection[IV]]
 
   def mkSlice[IV <: SType](input: Value[SCollection[IV]],
                            from: Value[SInt.type],
                            until: Value[SInt.type]): Value[SCollection[IV]]
+
+  def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
+      id: Byte,
+      mapper: SValue): Value[SCollection[OV]]
 
   def mkWhere[IV <: SType](input: Value[SCollection[IV]],
                            id: Byte,
@@ -83,8 +97,17 @@ trait SigmaBuilder {
                             condition: Value[SBoolean.type]): Value[SBoolean.type]
 
   def mkForAll[IV <: SType](input: Value[SCollection[IV]],
-                               id: Byte,
-                               condition: Value[SBoolean.type]): Value[SBoolean.type]
+                            id: Byte,
+                            condition: Value[SBoolean.type]): Value[SBoolean.type]
+
+  def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc]
+
+  def mkMapCollection1[IV <: SType, OV <: SType](
+      input: Value[SCollection[IV]], mapper: Value[SFunc]): Value[SCollection[OV]]
+
+  def mkExists1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
+
+  def mkForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
 
   def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                           id: Byte,
@@ -121,6 +144,10 @@ trait SigmaBuilder {
                                 uv: Value[SGroupElement.type],
                                 vv: Value[SGroupElement.type]): SigmaBoolean
   def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
+  def mkTrivialSigma(value: BoolValue): SigmaPropValue
+
+  def mkSigmaPropIsValid(value: Value[SSigmaProp.type]): BoolValue
+  def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray]
 
   def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                        elementType: T): Value[SCollection[T]]
@@ -152,14 +179,33 @@ trait SigmaBuilder {
                                        elementType: T): Constant[SCollection[T]]
   def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type]
 
-  def mkBase58ToByteArray(input: Value[SString.type]): Value[SByteArray]
-  def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray]
-
-  def mkPK(input: Value[SString.type]): Value[SSigmaProp.type]
   def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]]
   def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T]
   def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T]
   def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type]
+
+  def liftAny(v: Any): Nullable[SValue] = v match {
+    case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
+    case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
+    case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
+    case arr: Array[Int] => Nullable(mkCollectionConstant[SInt.type](arr, SInt))
+    case arr: Array[Long] => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
+    case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr, SBigInt))
+    case arr: Array[String] => Nullable(mkCollectionConstant[SString.type](arr, SString))
+    case v: Byte => Nullable(mkConstant[SByte.type](v, SByte))
+    case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
+    case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
+    case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
+    case v: BigInteger => Nullable(mkConstant[SBigInt.type](v, SBigInt))
+    case v: CryptoConstants.EcPointType => Nullable(mkConstant[SGroupElement.type](v, SGroupElement))
+    case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
+    case v: String => Nullable(mkConstant[SString.type](v, SString))
+    case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
+    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
+    case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](sb, SSigmaProp))
+    case v: SValue => Nullable(v)
+    case _ => Nullable.None
+  }
 }
 
 class StdSigmaBuilder extends SigmaBuilder {
@@ -194,32 +240,42 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkLE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
     comparisonOp(left, right, LE.apply[T])
 
+  override def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: Byte): Value[T] =
+    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, opCode) })
+
   override def mkPlus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.PlusCode) })
+    mkArith(left, right, OpCodes.PlusCode)
 
   override def mkMinus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MinusCode) })
+    mkArith(left, right, OpCodes.MinusCode)
 
   override def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MultiplyCode) })
+    mkArith(left, right, OpCodes.MultiplyCode)
 
   override def mkDivide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.DivisionCode) })
+    mkArith(left, right, OpCodes.DivisionCode)
 
   override def mkModulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.ModuloCode) })
+    mkArith(left, right, OpCodes.ModuloCode)
 
   override def mkMin[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MinCode)})
+    mkArith(left, right, OpCodes.MinCode)
 
   override def mkMax[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, OpCodes.MaxCode)})
+    mkArith(left, right, OpCodes.MaxCode)
 
   override def mkOR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     OR(input)
 
   override def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     AND(input)
+
+  override def mkAnyOf(input: Seq[Value[SBoolean.type]]) = OR(input)
+  override def mkAllOf(input: Seq[Value[SBoolean.type]]) = AND(input)
+
+  override def mkBinOr(left: BoolValue, right: BoolValue) = BinOr(left, right)
+
+  override def mkBinAnd(left: BoolValue, right: BoolValue) = BinAnd(left, right)
 
   override def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     AtLeast(bound, input)
@@ -301,6 +357,21 @@ class StdSigmaBuilder extends SigmaBuilder {
                                      condition: Value[SBoolean.type]): Value[SBoolean.type] =
     ForAll(input, id, condition)
 
+  def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc] =
+    FuncValue(args, body)
+
+  def mkMapCollection1[IV <: SType, OV <: SType](
+        input: Value[SCollection[IV]], mapper: Value[SFunc]) =
+    MapCollection1(input, mapper)
+
+  override def mkExists1[IV <: SType](input: Value[SCollection[IV]],
+                                     condition: Value[SFunc]): BoolValue =
+    Exists1(input, condition)
+
+  override def mkForAll1[IV <: SType](input: Value[SCollection[IV]],
+                                     condition: Value[SFunc]): BoolValue =
+    ForAll1(input, condition)
+
   override def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                    id: Byte,
                                    zero: Value[OV],
@@ -362,6 +433,12 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean =
     ProveDlog(value)
 
+  override def mkTrivialSigma(value: BoolValue) = BoolToSigmaProp(value)
+
+  override def mkSigmaPropIsValid(value: Value[SSigmaProp.type]) = SigmaPropIsValid(value)
+
+  override def mkSigmaPropBytes(value: Value[SSigmaProp.type]) = SigmaPropBytes(value)
+
   override def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                                 elementType: T): Value[SCollection[T]] =
     ConcreteCollection(items, elementType)
@@ -417,15 +494,6 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type] =
     StringConcat(left, right)
-
-  override def mkBase58ToByteArray(input: Value[SString.type]): Value[SByteArray] =
-    Base58ToByteArray(input)
-
-  override def mkBase64ToByteArray(input: Value[SString.type]): Value[SByteArray] =
-    Base64ToByteArray(input)
-
-  override def mkPK(input: Value[SString.type]): Value[SSigmaProp.type] =
-    ErgoAddressToSigmaProp(input)
 
   override def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]] =
     GetVar(varId, tpe)

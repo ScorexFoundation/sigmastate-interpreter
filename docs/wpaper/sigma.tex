@@ -100,7 +100,7 @@ In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is pop
 \item A proof of knowledge of discrete logarithm with respect to a fixed group generator: given a group element $h$, the proof convinces a verifier that the prover knows $w$ such that $h=g^w$, where $g$ is the group generator (also known as base point), without revealing $w$. This is the same as a Schnorr signature with public key $h$.
 \item A proof that of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g_1, g_2, u_1, u_2$, the proof convinces a verifier that the prover knows $w$ such that $u_1=g_1^w$ and $u_2=g_2^w$, without revealing $w$
 \end{itemize}
-\lnote{This is not the notation used in the code, but in the code, $g$ is overloaded verloaded because it's the base point in item 1 and an arbitrary point in item 2; $h$ is also overloaded. Perhaps we should change the code to better notation and then make this text match it.}
+\lnote{This is not the notation used in the code, but in the code, $g$ is overloaded because it's the base point in item 1 and an arbitrary point in item 2; $h$ is also overloaded. Perhaps we should change the code to better notation and then make this text match it.}
 
 
 \langname also provides the ability to build more sophisticated $\Sigma$-protocols by using connectives $\andnode$, $\ornode$, and $\tnode$ (also known as $k$-out-of-$n$).

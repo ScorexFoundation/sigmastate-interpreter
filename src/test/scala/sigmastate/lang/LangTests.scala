@@ -1,13 +1,16 @@
 package sigmastate.lang
 
-import sigmastate.lang.Terms.{Ident, MethodCall}
-import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, SigmaBoolean, Value}
+import sigmastate.lang.Terms.{MethodCall, Ident}
+import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, GroupElementConstant, ConcreteCollection}
 import sigmastate._
 import java.math.BigInteger
 
+import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
+import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.Interpreter.ScriptEnv
 
 trait LangTests {
 
@@ -22,18 +25,26 @@ trait LangTests {
   def plus(l: SValue, r: SValue, tpe: SType = NoType): MethodCall =
     MethodCall(l, "+", IndexedSeq(r), tpe)
 
-  val EV: Map[String, Any] = Map()
+  val EV: ScriptEnv = Map()
 
   val dlog = CryptoConstants.dlogGroup
   val g1 = dlog.generator
   val g2 = dlog.multiplyGroupElements(g1, g1)
+  val g3 = dlog.multiplyGroupElements(g2, g2)
+  val g4 = dlog.multiplyGroupElements(g3, g3)
+
   protected val n1: BigInteger = BigInt(10).underlying()
   protected val n2: BigInteger = BigInt(20).underlying()
-  protected val p1: SigmaBoolean = ProveDlog(g1)
-  protected val p2: SigmaBoolean = ProveDlog(g2)
+  protected val bigIntArr1: Array[BigInteger] = Array(n1, n2)
+  protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
+  protected val p1: SigmaBoolean = ProveDlog(GroupElementConstant(g1))
+  protected val p2: SigmaBoolean = ProveDlog(GroupElementConstant(g2))
+  protected val dht1: SigmaBoolean = ProveDiffieHellmanTuple(
+      GroupElementConstant(g1), GroupElementConstant(g2), GroupElementConstant(g3), GroupElementConstant(g4))
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
+    "height1" -> 100L, "height2" -> 200L,
     "b1" -> 1.toByte,
     "b2" -> 2.toByte,
     "arr1" -> Array[Byte](1, 2),
@@ -45,9 +56,11 @@ trait LangTests {
     "p1" -> p1,
     "p2" -> p2,
     "n1" -> n1,
-    "n2" -> n2
+    "n2" -> n2,
+    "big" -> big,
+    "bigIntArr1" -> bigIntArr1
   )
 
   /** Parses string to SType tree */
-  def ty(s: String): SType = SigmaParser.parseType(s).get.value
+  def ty(s: String): SType = SigmaParser.parseType(s)
 }
