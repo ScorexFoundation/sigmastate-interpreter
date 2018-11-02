@@ -15,7 +15,7 @@ case class ConstantSerializer(builder: SigmaBuilder)
 
   val opCode: OpCode = OpCodes.ConstantCode
 
-  override def opCost(opId: OperationId) = Cost.ConstantNode
+  override def opCost(opId: OperationId) = Cost.BooleanConstant
 
   def parseBody(r: ByteReader): Value[SType] = deserialize(r)
 

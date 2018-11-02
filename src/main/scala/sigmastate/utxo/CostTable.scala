@@ -164,7 +164,7 @@ object CostTable extends App {
   val MaxExpressions = 300
 
   object Cost {
-    //Cost of multiply two group elements
+    //Cost of two group elements multiplication
     val MultiplyGroup = 50
 
     //Cost of one exponentiation
@@ -173,7 +173,8 @@ object CostTable extends App {
     val ByteArrayPerKilobyte = 200
 
     //Node which holds true/false
-    val ConstantNode = 1
+    val BooleanConstant = 1
+    val OptionGet = 1
 
     val HeightAccess = 1
     val InputsAccess = 1
@@ -190,10 +191,8 @@ object CostTable extends App {
     val ByteArrayDeclaration = 1
 
     val TripleDeclaration = 3
-
     val QuadrupleDeclaration = 4
 
-    val BooleanConstantDeclaration = 1
     val ByteConstantDeclaration = 1
     val ShortConstantDeclaration = 1
     val IntConstantDeclaration = 1
@@ -247,8 +246,7 @@ object CostTable extends App {
     //Checking Shnorr signature is about 2 exponentiations and one multiplication
     val DlogDeclaration = 2 * Exponentiation + MultiplyGroup
 
-    val OptionGet = 1
-    val OptionGetOrElse = 1
-    val OptionIsDefined = 1
+    val OptionGetOrElse = OptionGet
+    val OptionIsDefined = OptionGet
   }
 }

@@ -9,7 +9,7 @@ import sigmastate.lang.Terms.OperationId
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{Relation3Serializer, QuadrupleSerializer, Relation2Serializer}
+import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.{ByteWriter, SparseArrayContainer, ByteReader}
 import sigmastate.utxo.CostTable._
