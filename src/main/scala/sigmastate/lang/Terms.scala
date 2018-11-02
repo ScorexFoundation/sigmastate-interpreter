@@ -30,6 +30,14 @@ object Terms {
       Block(Seq(let), result)
   }
 
+  case class ZKProofBlock(body: Value[SType]) extends Value[SType] {
+    override val opCode: OpCode = OpCodes.Undefined
+    override def tpe: SType = body.tpe
+    override def cost[C <: Context](context: C): Long = ???
+    override def evaluated: Boolean = false
+    override def opType: SFunc = SFunc(Vector(), tpe)
+  }
+
   trait Val extends Value[SType] {
     val name: String
     val givenType: SType

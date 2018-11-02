@@ -514,4 +514,12 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("""deserialize[(GroupElement, Array[(Int, Byte)])]("12345")""") shouldBe
       Apply(ApplyTypes(Ident("deserialize"), Seq(STuple(SGroupElement, SCollection(STuple(SInt, SByte))))), IndexedSeq(StringConstant("12345")))
   }
+
+  property("ZKProof") {
+    parse("ZKProof { HEIGHT > 1000 }") shouldBe ZKProofBlock(GT(Ident("HEIGHT"), IntConstant(1000)))
+  }
+
+  property("invalid ZKProof (non block parameter)") {
+    an[ParserException] should be thrownBy  parse("ZKProof HEIGHT > 1000 ")
+  }
 }

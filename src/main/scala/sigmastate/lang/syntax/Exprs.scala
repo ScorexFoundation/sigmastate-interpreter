@@ -189,7 +189,13 @@ trait Exprs extends Core with Types {
       case UnitConstant => mkApply(acc, IndexedSeq.empty)
       case Tuple(xs) => mkApply(acc, xs)
       case STypeApply("", targs) => mkApplyTypes(acc, targs)
-      case arg: SValue => mkApply(acc, IndexedSeq(arg))
+      case arg: SValue => acc match {
+        case Ident(name, _) if name == "ZKProof" => arg match {
+          case Terms.Block(_, body) => builder.mkZKProofBlock(body)
+          case nonBlock => error(s"expected block parameter for ZKProof, got $nonBlock")
+        }
+        case _ => mkApply(acc, IndexedSeq (arg) )
+      }
       case _ => error(s"Error after expression $f: invalid suffixes $args")
     })
     rhs
