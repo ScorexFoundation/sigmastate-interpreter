@@ -986,7 +986,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         val boundC = eval(bound)
         val values = colBuilder.apply(vs: _*)
         val costs = colBuilder.apply(cs: _*)
-        val res = sigmaDslBuilder.atLeast(boundC.value, asRep[Col[SigmaProp]](values))
+        val res = sigmaDslBuilder.atLeast(boundC.value, asRep[Col[SigmaProp]](values)).isValid
         val cost = boundC.cost + costs.sum(intPlusMonoid) + costOf(node)
         RCostedPrim(res, cost, CryptoConstants.groupSize.toLong)
 

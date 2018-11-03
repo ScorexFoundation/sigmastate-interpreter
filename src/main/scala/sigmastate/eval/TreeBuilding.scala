@@ -193,9 +193,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkAllOf(col)
 
       case SigmaM.and_bool_&&(In(prop), In(cond)) =>
-        SigmaAnd(Seq(prop.asSigmaProp, mkTrivialSigma(cond.asBoolValue)))
+        SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
       case SigmaM.or_bool_||(In(prop), In(cond)) =>
-        SigmaOr(Seq(prop.asSigmaProp, mkTrivialSigma(cond.asBoolValue)))
+        SigmaOr(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
       case SigmaM.and_sigma_&&(In(p1), In(p2)) =>
         SigmaAnd(Seq(p1.asSigmaProp, p2.asSigmaProp))
       case SigmaM.or_sigma_||(In(p1), In(p2)) =>
@@ -209,7 +209,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case SigmaM.propBytes(In(prop)) =>
         mkSigmaPropBytes(prop.asSigmaProp)
       case Def(TrivialSigmaCtor(In(cond))) =>
-        mkTrivialSigma(cond.asBoolValue)
+        mkBoolToSigmaProp(cond.asBoolValue)
       case Def(ProveDlogEvidenceCtor(In(g))) =>
         SigmaPropConstant(mkProveDlog(g.asGroupElement))
       case Def(ProveDHTEvidenceCtor(In(g), In(h), In(u), In(v))) =>

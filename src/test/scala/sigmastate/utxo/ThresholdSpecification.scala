@@ -9,7 +9,9 @@ import sigmastate.lang.Terms._
 
 
 class ThresholdSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR = new TestingIRContext {
+    override val okPrintEvaluatedEntries: Boolean = false
+  }
 
   property("basic threshold compilation/execution") {
     val proverA = new ErgoLikeTestProvingInterpreter
@@ -301,22 +303,21 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   }
 
-  // TODO LHF
-  ignore("threshold proving of different trees") {
+  property("threshold proving of different trees") {
     val secret1 = DLogProverInput.random()
-    val subProp1 = secret1.publicImage
+    val subProp1 = secret1.publicImage.isValid
     val secret2 = DLogProverInput.random()
-    val subProp2 = secret2.publicImage
+    val subProp2 = secret2.publicImage.isValid
     val secret31 = DLogProverInput.random()
     val secret32 = DLogProverInput.random()
-    val subProp3 = OR(secret31.publicImage, secret32.publicImage)
+    val subProp3 = OR(secret31.publicImage.isValid, secret32.publicImage.isValid)
     val secret41 = DLogProverInput.random()
     val secret42 = DLogProverInput.random()
-    val subProp4 = AND(secret41.publicImage, secret42.publicImage)
+    val subProp4 = AND(secret41.publicImage.isValid, secret42.publicImage.isValid)
     val secret51 = DLogProverInput.random()
     val secret52 = DLogProverInput.random()
     val secret53 = DLogProverInput.random()
-    val subProp5 = AtLeast(2, secret51.publicImage, secret52.publicImage, secret53.publicImage)
+    val subProp5 = AtLeast(2, secret51.publicImage.isValid, secret52.publicImage.isValid, secret53.publicImage.isValid)
     val secret6 = DLogProverInput.random()
 
     val propComponents = Seq(subProp1, subProp2, subProp3, subProp4, subProp5)
@@ -355,10 +356,10 @@ class ThresholdSpecification extends SigmaTestingCommons {
         // don't go beyond i -- "threshold reduce to crypto" tests that atLeast then becomes false
         // don't test bound 0 -- "threshold reduce to crypto" tests that atLeast then becomes true
         val pureAtLeastProp = AtLeast(bound, propComponents.slice(0, i))
-        val OrPlusAtLeastOnRightProp = OR(secret6.publicImage, pureAtLeastProp)
-        val OrPlusAtLeastOnLeftProp = OR(pureAtLeastProp, secret6.publicImage)
-        val AndPlusAtLeastOnLeftProp = AND(pureAtLeastProp, secret6.publicImage)
-        val AndPlusAtLeastOnRightProp = AND(secret6.publicImage, pureAtLeastProp)
+        val OrPlusAtLeastOnRightProp = OR(secret6.publicImage.isValid, pureAtLeastProp)
+        val OrPlusAtLeastOnLeftProp = OR(pureAtLeastProp, secret6.publicImage.isValid)
+        val AndPlusAtLeastOnLeftProp = AND(pureAtLeastProp, secret6.publicImage.isValid)
+        val AndPlusAtLeastOnRightProp = AND(secret6.publicImage.isValid, pureAtLeastProp)
 
         for (p <- provers.slice(0, twoToi)) {
           val pWithSecret6 = p._2.withSecrets(Seq(secret6))
