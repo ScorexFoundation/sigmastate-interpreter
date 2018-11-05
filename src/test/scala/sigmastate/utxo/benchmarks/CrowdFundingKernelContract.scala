@@ -4,8 +4,8 @@ import java.math.BigInteger
 import java.util
 
 import org.ergoplatform.ErgoLikeContext
-import scapi.sigma.DLogProtocol.{DLogInteractiveProver, DLogProverInput, FirstDLogProverMessage, ProveDlog}
-import scapi.sigma.VerifierMessage.Challenge
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, DLogProverInput, FirstDLogProverMessage, ProveDlog}
+import sigmastate.basics.VerifierMessage.Challenge
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter

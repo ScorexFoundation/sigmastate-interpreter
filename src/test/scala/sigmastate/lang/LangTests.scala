@@ -5,7 +5,7 @@ import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, SigmaBoolean
 import sigmastate._
 import java.math.BigInteger
 
-import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants
 

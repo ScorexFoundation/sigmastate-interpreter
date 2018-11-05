@@ -1,17 +1,17 @@
-package scapi.sigma
+package sigmastate.basics
 
 import java.math.BigInteger
 
 import org.bouncycastle.util.BigIntegers
+import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
-import Value.PropositionCode
-import scapi.sigma.VerifierMessage.Challenge
-import sigmastate.utxo.CostTable.Cost
 import sigmastate._
-import sigmastate.interpreter.{Context, CryptoConstants}
+import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
+import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.utxo.CostTable.Cost
 
 object DLogProtocol {
 

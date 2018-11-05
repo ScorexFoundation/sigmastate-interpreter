@@ -5,12 +5,12 @@ import org.ergoplatform.ErgoLikeContext.Metadata
 import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import org.scalatest.TryValues._
-import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDiffieHellmanTuple
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDiffieHellmanTuple
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer

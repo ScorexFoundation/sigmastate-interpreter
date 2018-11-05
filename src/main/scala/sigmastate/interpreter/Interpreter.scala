@@ -7,14 +7,14 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
-import scapi.sigma._
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
+import sigmastate.basics.{BcDlogFp, Curve25519, DiffieHellmanTupleInteractiveProver, FirstDiffieHellmanTupleProverMessage}
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
 import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}

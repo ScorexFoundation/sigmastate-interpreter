@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.basics.DLogProtocol.ProveDlog
 
 class ProveDlogSerializerSpec extends SerializationSpecification {
 

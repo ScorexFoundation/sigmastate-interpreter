@@ -5,9 +5,9 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoLikeContext.Metadata
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Assertion, Matchers, PropSpec, TryValues}
-import scapi.sigma.DLogProtocol
-import scapi.sigma.DLogProtocol.DLogProverInput
 import sigmastate.Values
+import sigmastate.basics.DLogProtocol
+import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
 

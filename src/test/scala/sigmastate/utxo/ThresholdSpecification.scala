@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoLikeContext
-import scapi.sigma.DLogProtocol.DLogProverInput
+import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.Values.{ConcreteCollection, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}

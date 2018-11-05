@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import scapi.sigma.ProveDiffieHellmanTuple
+import sigmastate.basics.ProveDiffieHellmanTuple
 
 class PDHTSerializerSpecification extends SerializationSpecification {
 
