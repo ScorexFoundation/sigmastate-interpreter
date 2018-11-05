@@ -95,6 +95,9 @@ object ErgoBox {
   object TokenId {
     val size: Short = 32
   }
+
+  val MaxBoxSize: Int = 64 * 1024
+
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
   val SReferenceRegType = STuple(SLong, SCollection.SByteArray)

@@ -349,8 +349,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         implicit val eA = opt.elem.eItem
         RCCostedPrim(opt.isDefined, costedBuilder.SelectFieldCost, 1L)
 
-      case CCostedPrimCtor(v, c, s) if !v.isVar && v.elem.isInstanceOf[BoxElem[_]] =>
-        RCCostedBox(asRep[Box](v), c)
+      case CCostedPrimCtor(v, c, s) if !v.isVar =>
+        v.elem match {
+          case be: BoxElem[_] => RCCostedBox(asRep[Box](v), c)
+          case be: AvlTreeElem[_] => RCCostedAvlTree(asRep[AvlTree](v), c)
+          case _ => super.rewriteDef(d)
+        }
 
       case _ if isCostingProcess =>
         // apply special rules for costing function
@@ -934,9 +938,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         val size = xsC.sizes(iV)
         default match {
           case Some(defaultValue) =>
-            val defaultC = evalNode(ctx, env, defaultValue).asRep[Costed[Any]]
-            val defaultTh = Thunk(defaultC.value)
-            val value = xsC.value.getOrElse(iV, defaultTh)
+            val defaultC = asRep[Costed[Any]](eval(defaultValue))
+            val default = defaultC.value
+            val value = xsC.value.getOrElse(iV, default)
             val cost = xsC.cost + iC.cost + defaultC.cost + costOf(node)
             RCCostedPrim(value, cost, size)
           case None =>
@@ -944,33 +948,34 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         }
 
       case SigmaPropIsValid(p) =>
-        val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
+        val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.isValid
         val c = pC.cost + costOf(node)
         val s = pC.dataSize // NOTE: we pass SigmaProp's size, this is handled in buildCostedGraph
         RCCostedPrim(v, c, s)
       case SigmaPropBytes(p) =>
-        val pC = evalNode(ctx, env, p).asRep[Costed[SigmaProp]]
+        val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.propBytes
         withDefaultSize(v, pC.cost + costOf(node))
 
       case utxo.ExtractId(In(box)) =>  // TODO costing: use special CostedColFixed for fixed-size collections
         val boxC = asRep[Costed[Box]](box)
-        RCCostedPrim(boxC.value.id, boxC.cost + costOf(node), Blake2b256.DigestSize.toLong)
+        val id = boxC.value.id
+        mkCostedCol(id, Blake2b256.DigestSize, boxC.cost + costOf(node))
       case utxo.ExtractBytesWithNoRef(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
-        withDefaultSize(boxC.value.bytesWithoutRef, boxC.cost + costOf(node))
+        mkCostedCol(boxC.value.bytesWithoutRef, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
       case utxo.ExtractAmount(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         withDefaultSize(boxC.value.value, boxC.cost + costOf(node))
       case utxo.ExtractScriptBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.propositionBytes
-        withDefaultSize(bytes, boxC.cost + costOf(node))
+        mkCostedCol(bytes, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
       case utxo.ExtractBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.bytes
-        withDefaultSize(bytes, boxC.cost + costOf(node))
+        mkCostedCol(bytes, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
 
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
         val boxC = asRep[CostedBox](box)
