@@ -1,5 +1,6 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
@@ -68,7 +69,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         EQ(extractTokenId(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(tokenId)),
         GE(extractTokenAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(60)),
         rightProtectionBuyer,
-        GE(ExtractAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(1))
+        EQ(OptionGet(ExtractRegisterAs[SByteArray](ByIndex(Outputs, IntConstant.Zero), R4)), ExtractId(Self))
       )
     )
 
@@ -82,16 +83,17 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |      tokenData._1 == token1,
         |      tokenData._2 >= 60L,
         |      OUTPUTS(0).propositionBytes == pkA.propBytes,
-        |      OUTPUTS(0).value >= 1L
+        |      OUTPUTS(0).R4[Array[Byte]].get == SELF.id
         |  ))
         |}
       """.stripMargin).asBoolValue
-    altBuyerProp shouldBe buyerProp
+   altBuyerProp shouldBe buyerProp
 
     val sellerProp = OR(
       AND(GT(Height, deadline), tokenSellerKey),
       AND(
         GE(ExtractAmount(ByIndex(Outputs, IntConstant.One)), LongConstant(100)),
+        EQ(OptionGet(ExtractRegisterAs[SByteArray](ByIndex(Outputs, IntConstant.One), R4)), ExtractId(Self)),
         rightProtectionSeller
       )
     )
@@ -100,19 +102,21 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       """ (HEIGHT > deadline && pkB) ||
         | allOf(Array(
         |        OUTPUTS(1).value >= 100,
+        |        OUTPUTS(1).R4[Array[Byte]].get == SELF.id,
         |        OUTPUTS(1).propositionBytes == pkB.propBytes
         | ))
       """.stripMargin).asBoolValue
 
     sellerProp shouldBe altSellerProp
 
-    val newBox1 = ErgoBox(1, tokenBuyerKey, Seq(tokenId -> 60))
-    val newBox2 = ErgoBox(100, tokenSellerKey)
+    //tx inputs
+    val input0 = ErgoBox(100, buyerProp)
+    val input1 = ErgoBox(1, sellerProp, Seq(tokenId -> 60))
+
+    //tx ouputs
+    val newBox1 = ErgoBox(1, tokenBuyerKey, Seq(tokenId -> 60), Map(R4 -> ByteArrayConstant(input0.id)))
+    val newBox2 = ErgoBox(100, tokenSellerKey, Seq(), Map(R4 -> ByteArrayConstant(input1.id)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
-
-    val input1 = ErgoBox(100, buyerProp)
-
-    val input2 = ErgoBox(1, sellerProp, Seq(tokenId -> 60))
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
@@ -120,9 +124,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(input1, input2),
+      boxesToSpend = IndexedSeq(input0, input1),
       spendingTransaction,
-      self = input1)
+      self = input0)
 
     //Though we use separate provers below, both inputs do not contain any secrets, thus
     //a spending transaction could be created and posted by anyone.
@@ -133,9 +137,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(input1, input2),
+      boxesToSpend = IndexedSeq(input0, input1),
       spendingTransaction,
-      self = input2)
+      self = input1)
 
     val pr2 = tokenSeller.prove(sellerProp, sellerCtx, fakeMessage).get
     verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
