@@ -30,10 +30,11 @@ trait Evaluation extends RuntimeCosting { IR =>
   import SigmaProp._
   import Col._
   import ReplCol._
+  import CReplCol._
   import Box._
   import ColBuilder._
   import SigmaDslBuilder._
-  import ConcreteCostedBuilder._
+  import CCostedBuilder._
   import MonoidBuilderInst._
   import TrivialSigma._
   import ProveDlogEvidence._
@@ -64,11 +65,11 @@ trait Evaluation extends RuntimeCosting { IR =>
     case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) =>
     case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) =>
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.LastBlockUtxoRootHash(_) |
-         ContextM.getVar(_,_,_) | ContextM.deserialize(_,_,_) |
+         ContextM.getVar(_,_,_) |
          ContextM.cost(_) | ContextM.dataSize(_) =>
     case SigmaM.propBytes(_) =>
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) | ColM.slice(_,_,_) | ColM.apply(_,_) | ColM.append(_,_) =>
-    case CBM.replicate(_,_,_) | CBM.apply_apply_items(_,_) =>
+    case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) =>
     case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
     case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) =>
     case _: CostOf | _: SizeOf[_] =>
@@ -113,7 +114,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   type ContextFunc[T <: SType] = SigmaContext => Value[T]
 
   val sigmaDslBuilderValue: special.sigma.SigmaDslBuilder
-  val costedBuilderValue: special.collection.ConcreteCostedBuilder
+  val costedBuilderValue: special.collection.CCostedBuilder
   val monoidBuilderValue: special.collection.MonoidBuilder
 
   def getDataEnv: DataEnv = {
@@ -306,7 +307,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val res = ProveDiffieHellmanTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
             out(res)
 
-          case ReplColCtor(In(value), In(len: Int)) =>
+          case CReplColCtor(In(value), In(len: Int)) =>
             val res = sigmaDslBuilderValue.Cols.replicate(len, value)
             out(res)
           case CostOf(opName, tpe) =>

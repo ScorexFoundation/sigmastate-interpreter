@@ -14,19 +14,20 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
   import ReplCol._;
   import Costed._;
   import CostedPrim._;
+  import CCostedPrim._;
   import CostedBox._;
+  import CCostedBox._;
   import CostedPair._;
+  import CCostedPair._;
   import CostedOption._;
-  import CostedArray._;
-  import CostedNestedArray._;
-  import CostedPairArray._
   import CostedCol._;
+  import CCostedCol._;
   import CostedNestedCol._; import CostedPairCol._
-  import ConcreteCostedBuilder._
+  import CCostedBuilder._
   import WSpecialPredef._
 
   override def rewriteDef[T](d: Def[T]): Rep[_] = {
-    val CCB = ConcreteCostedBuilderMethods
+    val CCB = CCostedBuilderMethods
     val SPCM = WSpecialPredefCompanionMethods
     d match {
       case CCB.costedValue(b, x, SPCM.some(cost)) =>
@@ -38,11 +39,11 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
   def dataCost[T](x: Rep[T], optCost: Option[Rep[Int]]): Rep[Costed[T]] = {
     val res: Rep[Any] = x.elem match {
       case box: BoxElem[_] =>
-        RCostedBox(asRep[Box](x), optCost.getOrElse(0))
+        RCCostedBox(asRep[Box](x), optCost.getOrElse(0))
       case pe: PairElem[a,b] =>
         val l = dataCost(asRep[(a,b)](x)._1, None)
         val r = dataCost(asRep[(a,b)](x)._2, optCost)
-        RCostedPair(l, r)
+        RCCostedPair(l, r)
 //      case optE: WOptionElem[a,_] =>
 //        val optX = asRep[WOption[a]](x)
 //        val cost = optX.getOrElse()
@@ -59,7 +60,7 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
             else
               xs.map(fun(sizeOf(_)))
             val colCost = costOf(CollectionConstant(null, tpe))
-            RCostedCol(xs, costs, sizes, optCost.fold(colCost)(c => c + colCost))
+            RCCostedCol(xs, costs, sizes, optCost.fold(colCost)(c => c + colCost))
 //          case pe: PairElem[a,b] =>
 //            val arr = asRep[Col[(a,b)]](x)
 //            implicit val ea = pe.eFst
@@ -78,7 +79,7 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
 //            CostedColRep(col, costs)
         }
       case _ =>
-        CostedPrimRep(x, optCost.getOrElse(0), sizeOf(x))
+        RCCostedPrim(x, optCost.getOrElse(0), sizeOf(x))
     }
     asRep[Costed[T]](res)
   }

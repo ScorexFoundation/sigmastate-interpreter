@@ -11,7 +11,7 @@ import sigmastate.Values.{Constant, EvaluatedValue, AvlTreeConstant, SomeValue, 
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{Serializer, OperationSerializer}
-import special.collection.{ConcreteCostedBuilder, Col, Types}
+import special.collection.{CCostedBuilder, Col, Types}
 import special.sigma._
 
 import scala.reflect.ClassTag
@@ -73,7 +73,7 @@ class CostingBox(
 }
 
 class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { dsl =>
-  override val Costing = new ConcreteCostedBuilder {
+  override val Costing = new CCostedBuilder {
     import RType._
     override def defaultValue[T](valueType: RType[T]): T = (valueType match {
       case ByteType | IR.ByteElement  => 0.toByte
@@ -134,9 +134,10 @@ class CostingDataContext(
     height: Long,
     selfBox: Box,
     lastBlockUtxoRootHash: AvlTree,
+    minerPubKey: Array[Byte],
     vars: Array[AnyValue],
     var isCost: Boolean)
-    extends TestContext(inputs, outputs, height, selfBox, lastBlockUtxoRootHash, vars)
+    extends TestContext(inputs, outputs, height, selfBox, lastBlockUtxoRootHash, minerPubKey, vars)
 {
   override val builder = new CostingSigmaDslBuilder(IR)
 

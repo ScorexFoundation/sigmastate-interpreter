@@ -23,7 +23,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import WBigInteger._
   import ProveDlogEvidence._
   import Context._; import SigmaContract._
-  import Cost._; import ColBuilder._; import Col._; import Box._; import SigmaProp._; import CrowdFunding._
+  import Cost._; import ColBuilder._; import Col._; import Box._; import SigmaProp._;
   import SigmaDslBuilder._; import WOption._
   import TrivialSigma._
   import Liftables._
@@ -162,7 +162,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
         val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
         val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
         val c1 = RTrivialSigma(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
-        val c2 = RTrivialSigma(dsl.allOf(colBuilder(
+        val c2 = RTrivialSigma(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),
           ctx.OUTPUTS.exists(fun { out =>
             out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectPubKey.propBytes)
@@ -206,8 +206,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val env = envDem ++ Seq("regScript" -> regScriptPK)
     checkInEnv(env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
-      val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp] //val regScript = ctx.getVar[SigmaProp](regScriptId).get
-      val c2 = dsl.allOf(colBuilder(
+      val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp]
+      val c2 = dsl.allOf(colBuilder.fromItems(
         ctx.HEIGHT >= ctx.SELF.getReg[Long](4).get + demurragePeriod,
         ctx.OUTPUTS.exists(fun { out =>
           val selfBytes = ctx.SELF.propositionBytes

@@ -44,7 +44,7 @@ class ErgoLikeContext(val currentHeight: Height,
     val vars = contextVars(extension.values)
     val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
     val avlTree = CostingAvlTree(IR, lastBlockUtxoRoot)
-    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree, vars.arr, isCost)
+    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree, minerPubkey, vars.arr, isCost)
   }
 
 }

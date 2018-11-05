@@ -34,7 +34,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import Box._
   import ColBuilder._
   import SigmaDslBuilder._
-  import ConcreteCostedBuilder._
+  import CCostedBuilder._
   import MonoidBuilderInst._
   import TrivialSigma._
   import ProveDlogEvidence._
@@ -178,17 +178,17 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case BoxM.propositionBytes(In(box)) =>
         mkExtractScriptBytes(box.asBox)
 
-      case Def(AnyZk(_, colSyms)) =>
+      case Def(AnyZk(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asSigmaProp)
         SigmaOr(col)
-      case Def(AllZk(_, colSyms)) =>
+      case Def(AllZk(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asSigmaProp)
         SigmaAnd(col)
 
-      case Def(AnyOf(_, colSyms)) =>
+      case Def(AnyOf(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asBoolValue)
         mkAnyOf(col)
-      case Def(AllOf(_, colSyms)) =>
+      case Def(AllOf(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asBoolValue)
         mkAllOf(col)
 

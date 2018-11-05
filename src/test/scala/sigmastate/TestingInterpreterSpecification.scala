@@ -1,18 +1,18 @@
 package sigmastate
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
 import Interpreter._
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
-import sigmastate.eval.{CostingBox, CostingDataContext, Evaluation, IRContext}
+import sigmastate.eval.{IRContext, CostingDataContext, Evaluation, CostingBox}
 import special.sigma
-import org.ergoplatform.{ErgoBox, Height}
+import org.ergoplatform.{Height, ErgoBox, ErgoLikeContext}
 import scorex.util.encode.Base58
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.ValueSerializer
@@ -359,7 +359,7 @@ case class TestingContext(height: Int,
     val emptyAvlTree = TestAvlTree(noBytes, 0, None, None, None)
     val selfBox = new CostingBox(IR, noBytes, 0L, noBytes, noBytes, noBytes,
       IR.sigmaDslBuilderValue.Cols.fromArray(new Array[AnyValue](10)), isCost)
-    new CostingDataContext(IR, inputs, outputs, height, selfBox, emptyAvlTree, vars, isCost)
+    new CostingDataContext(IR, inputs, outputs, height, selfBox, emptyAvlTree, ErgoLikeContext.dummyPubkey, vars, isCost)
   }
 
 }

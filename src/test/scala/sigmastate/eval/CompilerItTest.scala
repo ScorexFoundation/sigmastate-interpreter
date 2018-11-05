@@ -29,6 +29,7 @@ class CompilerItTest extends BaseCtxTests
   import Col._
   import SigmaProp._
   import CostedCol._
+  import CCostedCol._
   import WBigInteger._
   import WECPoint._
   import ProveDlogEvidence._
@@ -134,7 +135,7 @@ class CompilerItTest extends BaseCtxTests
         val vals = colBuilder.fromArray(arr)
         val costs = colBuilder.replicate(arr.length, constCost[WBigInteger])
         val sizes = colBuilder.fromArray(liftConst(bigIntArr1.map(x => SBigInt.dataSize(x.asWrappedType))))
-        val arrC = RCostedCol(vals, costs, sizes, constCost[Col[WBigInteger]])
+        val arrC = RCCostedCol(vals, costs, sizes, constCost[Col[WBigInteger]])
         vals.map(fun(n => n.add(liftConst(n1))))
       },
       cost = null,
@@ -254,7 +255,7 @@ class CompilerItTest extends BaseCtxTests
         val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
         val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
         val c1 = RTrivialSigma(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
-        val c2 = RTrivialSigma(dsl.allOf(colBuilder(
+        val c2 = RTrivialSigma(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),
           ctx.OUTPUTS.exists(fun { out =>
             out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectPubKey.propBytes)

@@ -14,7 +14,7 @@ trait IRContext extends Evaluation with TreeBuilding {
   beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
 
   override val sigmaDslBuilderValue = new CostingSigmaDslBuilder(this)
-  override val costedBuilderValue = new special.collection.ConcreteCostedBuilder()
+  override val costedBuilderValue = new special.collection.CCostedBuilder()
   override val monoidBuilderValue = new special.collection.MonoidBuilderInst()
 
   type CostingResult[T] = Rep[(Context => T, Context => Int)]
