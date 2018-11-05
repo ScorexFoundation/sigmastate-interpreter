@@ -2,27 +2,23 @@ package sigmastate.serialization
 
 import sigmastate.SType
 import sigmastate.Values.{Constant, Value}
-import sigmastate.eval.IRContext
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.utils.Extensions._
 
 import scala.collection.mutable
 
-class ErgoTreeSerializer(IR: IRContext) {
-  import IR._
+object ErgoTreeSerializer {
 
-  def serialize(tree: Value[SType]): Array[Byte] = {
-    val (extractedConstants, treeWithPlaceholders) = extractConstants(tree)
+  def serialize(constants: IndexedSeq[Constant[SType]], tree: Value[SType]): Array[Byte] = {
     val w = Serializer.startWriter()
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
     w.put(0) // header: reserved for future flags
-    w.putUInt(extractedConstants.length)
-    extractedConstants.foreach(c => constantSerializer.serialize(c, w))
-    ValueSerializer.serialize(treeWithPlaceholders, w)
+    w.putUInt(constants.length)
+    constants.foreach(c => constantSerializer.serialize(c, w))
+    ValueSerializer.serialize(tree, w)
     w.toBytes
   }
 
-  def deserializeRaw(bytes: Array[Byte]): (IndexedSeq[Constant[SType]], Value[SType]) = {
+  def treeWithPlaceholdersBytes(bytes: Array[Byte]): (IndexedSeq[Constant[SType]], Array[Byte]) = {
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
     val r = Serializer.startReader(bytes)
     r.getByte() // skip the header
@@ -32,34 +28,21 @@ class ErgoTreeSerializer(IR: IRContext) {
       constantsBuilder += constantSerializer.deserialize(r)
     }
     val constants = constantsBuilder.result
-    val tree = r.getValue()
+    val treeBytes = r.getBytes(r.remaining)
+    (constants, treeBytes)
+  }
+
+  def deserialize(bytes: Array[Byte]): (IndexedSeq[Constant[SType]], Value[SType]) = {
+    val (constants, treeBytesArray) = treeWithPlaceholdersBytes(bytes)
+    val tree = ValueSerializer.deserialize(treeBytesArray)
     (constants, tree)
   }
 
-  def deserialize(bytes: Array[Byte]): Value[SType] = {
-    val (constants, tree) = deserializeRaw(bytes)
-    if (constants.nonEmpty)
-      injectConstants(constants, tree)
-    else
-      tree
-  }
-
-  def extractConstants(tree: Value[SType]): (IndexedSeq[Constant[SType]], Value[SType]) = {
-    val env = Map[String, Any]()
-    val Pair(calcF, _) = doCosting(env, tree)
-    val extractConstants = new ExtractConstants()
-    val outTree = IR.buildTree(calcF, Some(extractConstants))
-    (extractConstants.extractedConstants(), outTree)
-  }
-
-  def injectConstants(constants: IndexedSeq[Constant[SType]], tree: Value[SType]): Value[SType] = {
-    val env = Map[String, Any]()
-    val Pair(calcF, _) = doCosting(env, tree)
-    val outTree = IR.buildTree(calcF, Some(new InjectConstants(constants)))
-    outTree
+  def deserializeWithConstantInjection(constantStore: ConstantStore, treeBytes: Array[Byte]): Value[SType] = {
+    val r = Serializer.startReader(treeBytes)
+    r.payload = constantStore
+    val tree = ValueSerializer.deserialize(r)
+    tree
   }
 }
 
-object ErgoTreeSerializer {
-  def apply(IR: IRContext): ErgoTreeSerializer = new ErgoTreeSerializer(IR)
-}

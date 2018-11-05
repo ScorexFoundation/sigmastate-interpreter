@@ -152,7 +152,13 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       if (firstByte == ConstantPlaceholderIndexCode) {
         // skip opcode
         r.getByte()
-        constantPlaceholderSerializer.parseBody(r)
+        val constantPlaceholder = constantPlaceholderSerializer.parseBody(r).asInstanceOf[ConstantPlaceholder[SType]]
+        r.payload[ConstantStore] match {
+          case Some(store) =>
+            store.get(constantPlaceholder)
+          case None =>
+            constantPlaceholder
+        }
       } else {
         // look ahead byte tell us this is going to be a Constant
         constantSerializer.deserialize(r)

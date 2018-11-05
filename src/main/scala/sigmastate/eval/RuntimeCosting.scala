@@ -14,7 +14,7 @@ import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
-import sigmastate.Values.{OptionValue, Constant, SValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ConcreteCollection}
+import sigmastate.Values.{BlockValue, BoolValue, ByteArrayConstant, ConcreteCollection, Constant, OptionValue, SValue, SigmaBoolean, SigmaPropConstant, TaggedVariableNode, ValDef, ValUse, Value}
 import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._

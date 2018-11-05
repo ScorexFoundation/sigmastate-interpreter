@@ -13,7 +13,7 @@ import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{ConstantStore, ValueSerializer}
 import sigmastate.utxo.{CostTable, Exists1, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
@@ -110,7 +110,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
                  env: DefEnv,
                  s: Sym,
                  defId: Int,
-                 constantsProcessing: Option[ConstantsProcessing]): SValue = {
+                 constantsProcessing: Option[ConstantStore]): SValue = {
     import builder._
     def recurse[T <: SType](s: Sym) = buildValue(mainG, env, s, defId, constantsProcessing).asValue[T]
     object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(mainG, env, s, defId, constantsProcessing)) }
@@ -133,24 +133,12 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
         constantsProcessing match {
-          case Some(s: ExtractConstants) =>
+          case Some(s) =>
             val constant = mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
               .asInstanceOf[ConstantNode[SType]]
-            s.extract(constant)(builder)
-          case Some(_: InjectConstants) =>
-            error("unsupported state: cannot inject constant in constant extraction phase")
+            s.put(constant)(builder)
           case None =>
             mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
-        }
-      case Def(ConstantPlaceholder(index)) =>
-        val tpe = elemToSType(s.elem)
-        constantsProcessing match {
-          case Some(_: ExtractConstants) =>
-            error("unsupported state: cannot extract constant in constant injection phase")
-          case Some(s: InjectConstants) =>
-            s.get(mkConstantPlaceholder(index, tpe).asInstanceOf[sigmastate.Values.ConstantPlaceholder[SType]])
-          case None =>
-            mkConstantPlaceholder(index, tpe)
         }
       case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
         val colTpe = elemToSType(s.elem)
@@ -246,7 +234,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
                               env: DefEnv,
                               subG: AstGraph,
                               defId: Int,
-                              constantsProcessing: Option[ConstantsProcessing]): SValue = {
+                              constantsProcessing: Option[ConstantStore]): SValue = {
     val valdefs = new ArrayBuffer[ValDef]
     var curId = defId
     var curEnv = env
@@ -265,33 +253,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     res
   }
 
-  sealed trait ConstantsProcessing
-
-  class ExtractConstants() extends ConstantsProcessing {
-
-    private val store: ArrayBuffer[Constant[SType]] = new ArrayBuffer[Constant[SType]]
-
-    def extract(c: ConstantNode[SType])(implicit builder: SigmaBuilder): sigmastate.Values.ConstantPlaceholder[SType] =
-      this.synchronized {
-        store += c
-        builder.mkConstantPlaceholder[c.tpe.type](store.size - 1, c.tpe)
-          .asInstanceOf[sigmastate.Values.ConstantPlaceholder[SType]]
-      }
-
-    def extractedConstants(): IndexedSeq[Constant[SType]] = store
-  }
-
-  class InjectConstants(private val constants: IndexedSeq[Constant[SType]]) extends ConstantsProcessing {
-
-    def get(cp: sigmastate.Values.ConstantPlaceholder[SType]): Constant[SType] = {
-      val c = constants(cp.id)
-      if (cp.tpe != c.tpe) error(s"expected to find constant with type ${cp.tpe}, found: ${c.tpe}")
-      c
-    }
-  }
-
   def buildTree[T <: SType](f: Rep[Context => Any],
-                            constantsProcessing: Option[ConstantsProcessing] = None): Value[T] = {
+                            constantsProcessing: Option[ConstantStore] = None): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
     val mainG = new PGraph(lam.y)
     val block = processAstGraph(mainG, Map(), mainG, 0, constantsProcessing)
