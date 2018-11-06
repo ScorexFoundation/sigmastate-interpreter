@@ -45,7 +45,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     prover.prove(exp, ctx, fakeMessage) should be a 'failure
   }
 
-  ignore("commit to the threshold sig") { // TODO SigmaDslBuilder.atLeast(scalan.Base$Exp,scalan.Base$Exp) was not a success
+  property("commit to the threshold sig") {
 
     val coopA = new ErgoLikeTestProvingInterpreter
     val coopB = new ErgoLikeTestProvingInterpreter

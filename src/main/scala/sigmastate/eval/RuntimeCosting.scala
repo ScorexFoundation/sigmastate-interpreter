@@ -15,7 +15,7 @@ import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
-import sigmastate.Values.{OptionValue, Constant, SValue, SigmaPropConstant, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ConcreteCollection}
+import sigmastate.Values.{OptionValue, Constant, SValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ConcreteCollection}
 import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._
@@ -24,6 +24,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 import ErgoLikeContext._
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
@@ -567,6 +568,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
     RCCostedPrim(v, c, s)
   }
 
+  def adaptSigmaBoolean(v: BoolValue) = v match {
+    case sb: SigmaBoolean => sb.isValid
+    case _ => v
+  }
+
     /** Helper to create costed collection of bytes */
   def mkCostedCol[T](col: Rep[Col[T]], len: Rep[Int], cost: Rep[Int]): Rep[CostedCol[T]] = {
     val costs = colBuilder.replicate(len, 0)
@@ -1048,7 +1054,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         }
       case OR(input) => input match {
         case ConcreteCollection(items, tpe) =>
-          val itemsC = items.map(eval)
+          val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))
           val res = sigmaDslBuilder.anyOf(colBuilder.fromItems(itemsC.map(_.value): _*))
           val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
           val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
@@ -1062,7 +1068,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
 
       case AND(input) => input match {
         case ConcreteCollection(items, tpe) =>
-          val itemsC = items.map(eval)
+          val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))
           val res = sigmaDslBuilder.allOf(colBuilder.fromItems(itemsC.map(_.value): _*))
           val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
           val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
