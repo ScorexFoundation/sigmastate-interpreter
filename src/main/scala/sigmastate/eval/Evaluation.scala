@@ -235,6 +235,9 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(CAND.normalized(items.arr.toSeq))
           case SDBM.atLeast(dsl, In(bound: Int), In(children: special.collection.Col[SigmaBoolean]@unchecked)) =>
             out(AtLeast.reduce(bound, children.arr.toSeq))
+          case SDBM.sigmaProp(_, In(b: Boolean)) =>
+            val res = sigmastate.TrivialProof(b)
+            out(res)
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>

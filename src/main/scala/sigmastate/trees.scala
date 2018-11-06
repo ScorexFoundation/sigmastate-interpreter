@@ -322,10 +322,10 @@ object AtLeast {
 
     for (iChild <- children.indices) {
       if (curBound == 1)
-        return COR(sigmas ++ children.slice(iChild, children.length))
+        return COR.normalized(sigmas ++ children.slice(iChild, children.length))
       // If at any point bound == number of children, convert to AND.
       if (curBound == childrenLeft)
-        return CAND(sigmas ++ children.slice(iChild, children.length))
+        return CAND.normalized(sigmas ++ children.slice(iChild, children.length))
       // at this point 1<curBound<childrenLeft
       children(iChild) match {
         case TrueProof => // If child is true, remove child and reduce bound.
@@ -337,8 +337,8 @@ object AtLeast {
       }
       // at this point 1<=curBound<=childrenLeft
     }
-    if (curBound == 1) return COR(sigmas)
-    if (curBound == childrenLeft) return CAND(sigmas)
+    if (curBound == 1) return COR.normalized(sigmas)
+    if (curBound == childrenLeft) return CAND.normalized(sigmas)
     CTHRESHOLD(curBound, sigmas)
   }
 }

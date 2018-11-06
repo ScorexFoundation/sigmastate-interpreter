@@ -386,7 +386,6 @@ trait Interpreter extends ScorexLogging {
     val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, calcF.asRep[IR.Context => SBoolean.WrappedType])
     val res = valueFun(calcCtx)
     val resValue = res match {
-      case SigmaPropConstant(COR()) => sb
       case SigmaPropConstant(sb) => sb
       case _ => res
     }
