@@ -33,8 +33,9 @@ import scorex.crypto.hash.Blake2b256.DigestSize
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SigmaCompiler}
+import scalan.staged.Slicing
 
-trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
+trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Evaluation =>
   import Context._;
   import WArray._;
   import WECPoint._;
@@ -52,6 +53,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
   import CCostedContext._
   import CostedPrim._;
   import CCostedPrim._;
+  import CostedPair._;
+  import CCostedPair._;
   import CostedFunc._;
   import CCostedFunc._;
   import CostedCol._;
@@ -70,6 +73,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
   import AvlTree._
   import CostedAvlTree._
   import CCostedAvlTree._
+
+  def createSliceAnalyzer = new SliceAnalyzer
 
   def opcodeToArithOpName(opCode: Byte): String = opCode match {
     case OpCodes.PlusCode     => "+"
@@ -316,6 +321,22 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         val sizes = xs.sizes.map(sizeF)
         RCCostedCol(vals, costs, sizes, xs.valuesCost)
 
+      case CCM.foldCosted(xs: RCostedCol[a], zero: RCosted[b], _f) =>
+        val f = asRep[Costed[(b,a)] => Costed[b]](_f)
+        val (calcF, costF, sizeF) = splitCostedFunc[(b,a), b](f)
+        val resV = xs.values.fold(zero.value, calcF)
+        val mRes = AllMarking(element[Int])
+        val mCostF = sliceAnalyzer.analyzeFunc(costF, mRes)
+
+        mCostF.mDom match {
+          case PairMarking(markA,_) if markA.isEmpty =>
+            val sliced = sliceFunc(costF, mCostF)
+            // TODO costing: make more accurate cost estimation
+            RCCostedPrim(resV, zero.cost, zero.dataSize)
+          case _ =>
+            error(s"Cost of the folded function depends on data: $d")
+        }
+
 //      case CCM.filterCosted(xs: RCostedCol[a], _f: RCostedFunc[_,_]) =>
 //        val f = asRep[Costed[a] => Costed[Boolean]](_f)
 //        val (calcF, costF, _) = splitCostedFunc[a, Boolean](f)
@@ -351,9 +372,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         RCCostedPrim(opt.isDefined, costedBuilder.SelectFieldCost, 1L)
 
       case CCostedPrimCtor(v, c, s) =>
-        v.elem match {
+        v.elem.asInstanceOf[Elem[_]] match {
           case be: BoxElem[_] => RCCostedBox(asRep[Box](v), c)
           case be: AvlTreeElem[_] => RCCostedAvlTree(asRep[AvlTree](v), c)
+          case pe: PairElem[a,b] =>
+            val p = asRep[(a,b)](v)
+            // TODO costing: this is approximation (we essentially double the cost and size)
+            RCCostedPair(RCCostedPrim(p._1, c, s), RCCostedPrim(p._2, c, s))
           case _ => super.rewriteDef(d)
         }
 
@@ -813,18 +838,26 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         val res = xs.mapCosted(mapperC)
         res
 
-//      case Fold(input, id, zero, accId, foldOp) =>
-//        val eItem = stypeToElem(input.tpe.elemType)
-//        val eState = stypeToElem(zero.tpe)
-//        val xs = asRep[CostedCol[Any]](eval(input))
-//        implicit val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
-//        assert(eItem == eAny, s"Types should be equal: but $eItem != $eAny")
-//
-//        val mapperC = fun { x: Rep[Costed[(Any, Any)]] =>
-//          evalNode(ctx, env + (id -> x), mapper)
-//        }
-//        val res = xs.mapCosted(mapperC)
-//        res
+      case Fold(input, id, zero, accId, foldOp) =>
+        val eItem = stypeToElem(input.tpe.elemType)
+        val eState = stypeToElem(zero.tpe)
+        (eItem, eState) match { case (eItem: Elem[a], eState: Elem[s]) =>
+          val inputC = asRep[CostedCol[a]](eval(input))
+          implicit val eA = inputC.elem.asInstanceOf[CostedElem[Col[a],_]].eVal.eA
+          assert(eItem == eA, s"Types should be equal: but $eItem != $eA")
+
+          val zeroC = asRep[Costed[s]](eval(zero))
+          implicit val eS = zeroC.elem.eVal
+          assert(eState == eS, s"Types should be equal: but $eState != $eS")
+
+          val foldOpC = fun { in: Rep[CostedPair[s, a]] =>
+            val acc = in.l; val item = in.r
+            val out = evalNode(ctx, env + (id -> item, accId -> acc), foldOp)
+            asRep[Costed[s]](out)
+          }
+          val res = inputC.foldCosted(zeroC, asRep[Costed[(s,a)] => Costed[s]](foldOpC))
+          res
+        }
 
       case op @ Slice(In(input), In(from), In(until)) =>
         val inputC = asRep[CostedCol[Any]](input)
