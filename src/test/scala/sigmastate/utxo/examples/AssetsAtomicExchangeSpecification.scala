@@ -163,6 +163,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val tokenSellerKey = tokenBuyer.dlogSecrets.head.publicImage
 
     val buyerEnv = Map("pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
+
+    //the contract assumes no tokens in the input box
     val buyerProp = compile(buyerEnv,
       """(HEIGHT > deadline && pkA) || {
         |
@@ -171,13 +173,13 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |  val tokenData = out.R2[Array[(Array[Byte], Long)]].get(0)
         |  val tokenId = tokenData._1
         |  val tokenValue = tokenData._2
-        |  val ergoValue = out.value
+        |  val outValue = out.value
         |  val price = 500
         |
         |  allOf(Array(
         |      tokenId == token1,
         |      tokenValue >= 1,
-        |      (SELF.value - ergoValue) <= tokenValue * price,
+        |      (SELF.value - outValue) <= tokenValue * price,
         |      out.propositionBytes == pkA.propBytes,
         |      out.R4[Array[Byte]].get == SELF.id
         |  ))
@@ -198,7 +200,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |   val selfTokenValue = selfTokenData._2
         |
         |   val selfValue = SELF.value
-        |   val ergoValue = out.value
+        |   val outValue = out.value
         |
         |   val sold = selfTokenValue - tokenValue
         |
@@ -206,7 +208,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |
         |   allOf(Array(
         |        sold >= 1,
-        |        (ergoValue - selfValue) >= sold*price,
+        |        (outValue - selfValue) >= sold*price,
         |        out.R4[Array[Byte]].get == SELF.id,
         |        out.propositionBytes == pkB.propBytes
         |   ))
