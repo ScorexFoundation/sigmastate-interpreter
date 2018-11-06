@@ -36,6 +36,9 @@ import sigmastate.utxo._
   */
 class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
+  /**
+    * A simpler example with single-chain atomic exchange contracts.
+    */
   property("atomic exchange") {
     val tokenBuyer = new ErgoLikeTestProvingInterpreter
     val tokenSeller = new ErgoLikeTestProvingInterpreter
@@ -146,7 +149,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     println("total cost: " + (buyerProp.cost(buyerCtx) + sellerProp.cost(sellerCtx)))
   }
 
-  //1 token = 500 nanoErgs
+  /**
+    * An example with order contracts which could be only partially filled
+    */
   property("partial filling") {
     val tokenBuyer = new ErgoLikeTestProvingInterpreter
     val tokenSeller = new ErgoLikeTestProvingInterpreter
@@ -156,35 +161,6 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val deadline = 70L
     val tokenBuyerKey = tokenBuyer.dlogSecrets.head.publicImage
     val tokenSellerKey = tokenBuyer.dlogSecrets.head.publicImage
-
-    val buyerKeyBytes = tokenBuyerKey.bytes
-    val sellerKeyBytes = tokenSellerKey.bytes
-
-    def extractToken(box: Value[SBox.type]) = ByIndex(
-      ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType).get, 0)
-
-    def extractTokenId(box: Value[SBox.type]) =
-      SelectField(extractToken(box), 1).asInstanceOf[Value[SByteArray]]
-
-    def extractTokenAmount(box: Value[SBox.type]) =
-      SelectField(extractToken(box), 2).asInstanceOf[Value[SLong.type]]
-
-    val rightProtectionBuyer =
-      EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(buyerKeyBytes))
-
-    val rightProtectionSeller =
-      EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.One)), ByteArrayConstant(sellerKeyBytes))
-
-    /*
-    val buyerProp = OR(
-      AND(GT(Height, deadline), tokenSellerKey),
-      AND(
-        EQ(extractTokenId(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(tokenId)),
-        GE(extractTokenAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(60)),
-        rightProtectionBuyer,
-        EQ(OptionGet(ExtractRegisterAs[SByteArray](ByIndex(Outputs, IntConstant.Zero), R4)), ExtractId(Self))
-      )
-    )*/
 
     val buyerEnv = Map("pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
     val buyerProp = compile(buyerEnv,
@@ -207,17 +183,6 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |  ))
         |}
       """.stripMargin).asBoolValue
-//    altBuyerProp shouldBe buyerProp
-
-      /*
-    val sellerProp = OR(
-      AND(GT(Height, deadline), tokenSellerKey),
-      AND(
-        GE(ExtractAmount(ByIndex(Outputs, IntConstant.One)), LongConstant(100)),
-        EQ(OptionGet(ExtractRegisterAs[SByteArray](ByIndex(Outputs, IntConstant.One), R4)), ExtractId(Self)),
-        rightProtectionSeller
-      )
-    )*/
 
     val sellerEnv = Map("pkB" -> tokenSellerKey, "deadline" -> deadline)
     val sellerProp = compile(sellerEnv,
@@ -229,7 +194,6 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |   val tokenId = tokenData._1
         |   val selfTokenData = SELF.R2[Array[(Array[Byte], Long)]].get(0)
         |   val selfTokenId = selfTokenData._1
-        |
         |   val tokenValue = tokenData._2
         |   val selfTokenValue = selfTokenData._2
         |
@@ -249,15 +213,13 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         | }
       """.stripMargin).asBoolValue
 
-  //  sellerProp shouldBe altSellerProp
-
     //tx inputs
     val input0 = ErgoBox(10000, buyerProp)
-    val input1 = ErgoBox(1, sellerProp, Seq(tokenId -> 60))
+    val input1 = ErgoBox(0, sellerProp, Seq(tokenId -> 60))
 
-    //tx ouputs
-    val newBox1 = ErgoBox(5000, tokenBuyerKey, Seq(tokenId -> 10), Map(R4 -> ByteArrayConstant(input0.id)))
-    val newBox2 = ErgoBox(5000, tokenSellerKey, Seq(tokenId -> 50), Map(R4 -> ByteArrayConstant(input1.id)))
+    //tx outputs
+    val newBox1 = ErgoBox(5050, tokenBuyerKey, Seq(tokenId -> 10), Map(R4 -> ByteArrayConstant(input0.id)))
+    val newBox2 = ErgoBox(4950, tokenSellerKey, Seq(tokenId -> 50), Map(R4 -> ByteArrayConstant(input1.id)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
