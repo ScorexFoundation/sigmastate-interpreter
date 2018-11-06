@@ -32,10 +32,12 @@ object ErgoTreeSerializer {
     (constants, treeBytes)
   }
 
-  def deserialize(bytes: Array[Byte]): (IndexedSeq[Constant[SType]], Value[SType]) = {
+  def deserialize(bytes: Array[Byte]): Value[SType] = {
     val (constants, treeBytesArray) = treeWithPlaceholdersBytes(bytes)
-    val tree = ValueSerializer.deserialize(treeBytesArray)
-    (constants, tree)
+    val r = Serializer.startReader(treeBytesArray)
+    r.payload = new ConstantStore(constants)
+    val tree = ValueSerializer.deserialize(r)
+    tree
   }
 
   def deserializeWithConstantInjection(constantStore: ConstantStore, treeBytes: Array[Byte]): Value[SType] = {

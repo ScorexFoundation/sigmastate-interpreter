@@ -19,11 +19,7 @@ class ConstantStore(private val constants: IndexedSeq[Constant[SType]] = Indexed
       .asInstanceOf[sigmastate.Values.ConstantPlaceholder[T]]
   }
 
-  def get[T <: SType](cp: ConstantPlaceholder[T]): Constant[T] = {
-    val c = store(cp.id)
-    if (cp.tpe != c.tpe) sys.error(s"expected to find constant with type ${cp.tpe}, found: ${c.tpe}")
-    c.asInstanceOf[Constant[T]]
-  }
+  def get(index: Int): Constant[SType] = store(index)
 
   def getAll: IndexedSeq[Constant[SType]] = store.toIndexedSeq
 }

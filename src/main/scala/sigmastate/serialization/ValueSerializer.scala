@@ -152,12 +152,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       if (firstByte == ConstantPlaceholderIndexCode) {
         // skip opcode
         r.getByte()
-        val constantPlaceholder = constantPlaceholderSerializer.parseBody(r).asInstanceOf[ConstantPlaceholder[SType]]
+        val placeholderIndex = r.getUInt().toInt
         r.payload[ConstantStore] match {
           case Some(store) =>
-            store.get(constantPlaceholder)
+            store.get(placeholderIndex)
           case None =>
-            constantPlaceholder
+            sys.error("missing ConstantStore in ByteReader.payload")
         }
       } else {
         // look ahead byte tell us this is going to be a Constant

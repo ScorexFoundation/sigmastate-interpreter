@@ -13,12 +13,14 @@ case class ConstantPlaceholderSerializer(cons: (Int, SType) => Value[SType])
 
   override def serializeBody(obj: ConstantPlaceholder[SType], w: ByteWriter): Unit = {
     w.putUInt(obj.id)
-    w.putType(obj.tpe)
   }
 
   override def parseBody(r: ByteReader): Value[SType] = {
     val id = r.getUInt().toInt
-    val tpe = r.getType()
+    val tpe = r.payload[ConstantStore] match {
+      case Some(store) => store.get(id).tpe
+      case None => error("missing constant store in ByteReader.payload")
+    }
     cons(id, tpe)
   }
 }

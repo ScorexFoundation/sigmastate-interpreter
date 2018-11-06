@@ -22,40 +22,42 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val (constants, treeWithPlaceholders) = ConstantStore.extractConstants(tree)
     val bytes = ErgoTreeSerializer.serialize(constants, treeWithPlaceholders)
     val (deserializedConstants, treeBytes) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes)
-    val deserializedTreeWithPlaceholders = ValueSerializer.deserialize(treeBytes)
-    deserializedTreeWithPlaceholders shouldEqual treeWithPlaceholders
     deserializedConstants shouldEqual constants
+    val r = Serializer.startReader(treeBytes)
+    r.payload = new ConstantStore(deserializedConstants)
+    val deserializedTree = ValueSerializer.deserialize(r)
+    deserializedTree shouldEqual tree
   }
 
   property("(de)serialization round trip using deserialize()") {
     val tree = Plus(10, 20)
     val (constants, treeWithPlaceholders) = ConstantStore.extractConstants(tree)
     val bytes = ErgoTreeSerializer.serialize(constants, treeWithPlaceholders)
-    val (deserializedConstants, deserializedTreeWithPlaceholders) = ErgoTreeSerializer.deserialize(bytes)
-    deserializedTreeWithPlaceholders shouldEqual treeWithPlaceholders
-    deserializedConstants shouldEqual constants
+    val deserializedTree = ErgoTreeSerializer.deserialize(bytes)
+    deserializedTree shouldEqual tree
   }
 
   property("extract constants") {
-    val script = Plus(10, 20)
+    val tree = Plus(10, 20)
     val extractedConstants = Seq(IntConstant(10), IntConstant(20))
-    val scriptWithPlaceholders = Plus(ConstantPlaceholder(0, SInt), ConstantPlaceholder(1, SInt))
-    ConstantStore.extractConstants(script) shouldEqual (extractedConstants, scriptWithPlaceholders)
+    val treeWithPlaceholders = Plus(ConstantPlaceholder(0, SInt), ConstantPlaceholder(1, SInt))
+    ConstantStore.extractConstants(tree) shouldEqual (extractedConstants, treeWithPlaceholders)
   }
 
   property("no constants to extract") {
-    val script = Plus(ExtractAmount(Self), ExtractAmount(Self))
+    val tree = Plus(ExtractAmount(Self), ExtractAmount(Self))
     val extractedConstants = Seq()
-    val scriptWithPlaceholders = BlockValue(Vector(ValDef(1,List(),ExtractAmount(Self))),Plus(ValUse(1,SLong),ValUse(1,SLong)))
-    ConstantStore.extractConstants(script) shouldEqual (extractedConstants, scriptWithPlaceholders)
+    val treeWithPlaceholders = BlockValue(
+      Vector(ValDef(1,List(),ExtractAmount(Self))),
+      Plus(ValUse(1,SLong),ValUse(1,SLong)))
+    ConstantStore.extractConstants(tree) shouldEqual (extractedConstants, treeWithPlaceholders)
   }
 
   property("(de)serialize round trip (without constants)") {
-    val script = ExtractAmount(Self)
-    val bytes = ErgoTreeSerializer.serialize(IndexedSeq(), script)
-    val (deserializedConstants, deserializedTreeWithPlaceholders) = ErgoTreeSerializer.deserialize(bytes)
-    deserializedTreeWithPlaceholders shouldEqual script
-    deserializedConstants shouldBe empty
+    val tree = ExtractAmount(Self)
+    val bytes = ErgoTreeSerializer.serialize(IndexedSeq(), tree)
+    val deserializedTree = ErgoTreeSerializer.deserialize(bytes)
+    deserializedTree shouldEqual tree
   }
 
   property("AND expr gen: (de)serializer round trip") {
@@ -63,9 +65,8 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
       val processedTree = passThroughTreeBuilder(tree)
       val (constants, treeWithPlaceholders) = ConstantStore.extractConstants(processedTree)
       val bytes = ErgoTreeSerializer.serialize(constants, treeWithPlaceholders)
-      val (deserializedConstants, deserializedTree) = ErgoTreeSerializer.deserialize(bytes)
-      deserializedConstants shouldEqual constants
-      deserializedTree shouldEqual treeWithPlaceholders
+      val deserializedTree = ErgoTreeSerializer.deserialize(bytes)
+      deserializedTree shouldEqual processedTree
     }
   }
 

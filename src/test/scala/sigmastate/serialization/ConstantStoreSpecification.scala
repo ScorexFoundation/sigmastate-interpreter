@@ -36,7 +36,7 @@ class ConstantStoreSpecification extends SerializationSpecification with SigmaTe
     val c = IntConstant(1)
     val ph = s.put(c)
     ph.tpe shouldEqual c.tpe
-    s.get(ph) shouldEqual c
+    s.get(ph.id) shouldEqual c
     s.getAll.size shouldBe 1
     s.getAll.head shouldEqual c
   }
@@ -49,8 +49,8 @@ class ConstantStoreSpecification extends SerializationSpecification with SigmaTe
     val ph2 = s.put(c)
     ph1 should not equal ph2
     s.getAll.size shouldBe 2
-    s.get(ph1) shouldEqual c
-    s.get(ph2) shouldEqual c
+    s.get(ph1.id) shouldEqual c
+    s.get(ph2.id) shouldEqual c
   }
 
   property("pass constants on instantiation, should be accessible by index") {
@@ -59,14 +59,8 @@ class ConstantStoreSpecification extends SerializationSpecification with SigmaTe
     val constants = IndexedSeq(c1, c2)
     val s = new ConstantStore(constants)
     s.getAll.size shouldBe 2
-    s.get(ConstantPlaceholder(0, SInt)) shouldEqual c1
-    s.get(ConstantPlaceholder(1, SInt)) shouldEqual c2
+    s.get(0) shouldEqual c1
+    s.get(1) shouldEqual c2
   }
 
-  property("fail if stored constant have the same tpe as placeholder") {
-    val c = IntConstant(1).asInstanceOf[Constant[SType]]
-    val constants = IndexedSeq(c)
-    val s = new ConstantStore(constants)
-    an[RuntimeException] should be thrownBy s.get(ConstantPlaceholder(0, SLong))
-  }
 }
