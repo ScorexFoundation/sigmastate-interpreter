@@ -350,7 +350,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting { IR: Evaluation =>
         implicit val eA = opt.elem.eItem
         RCCostedPrim(opt.isDefined, costedBuilder.SelectFieldCost, 1L)
 
-      case CCostedPrimCtor(v, c, s) if !v.isVar =>
+      case CCostedPrimCtor(v, c, s) =>
         v.elem match {
           case be: BoxElem[_] => RCCostedBox(asRep[Box](v), c)
           case be: AvlTreeElem[_] => RCCostedAvlTree(asRep[AvlTree](v), c)

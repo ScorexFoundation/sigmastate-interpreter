@@ -142,11 +142,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  ignore("counter") { // TODO getResultElem for (s98:CostedPrim[Box]).getReg(s41, anon$8<Long>) failed
+  property("counter") {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage
+    val pubkey = prover.dlogSecrets.head.publicImage.isValid
 
     val prop = compile(Map(),
       """OUTPUTS.exists { (box: Box) =>
@@ -173,11 +173,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = s)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
-  ignore("counter - no register in outputs") { // TODO getResultElem for (s91:CostedPrim[Box]).getReg(s41, anon$8<Long>) failed
+  property("counter - no register in outputs") {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
