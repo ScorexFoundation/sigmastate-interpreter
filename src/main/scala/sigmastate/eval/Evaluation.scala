@@ -32,6 +32,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import ReplCol._
   import CReplCol._
   import Box._
+  import AvlTree._
   import ColBuilder._
   import SigmaDslBuilder._
   import CCostedBuilder._
@@ -49,6 +50,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   private val SigmaM = SigmaPropMethods
   private val ColM = ColMethods
   private val BoxM = BoxMethods
+  private val AvlM = AvlTreeMethods
   private val CBM = ColBuilderMethods
   private val SDBM = SigmaDslBuilderMethods
   private val AM = WArrayMethods
@@ -71,6 +73,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) | ColM.slice(_,_,_) | ColM.apply(_,_) | ColM.append(_,_) =>
     case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) =>
     case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
+    case AvlM.dataSize(_) =>
     case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) =>
     case _: CostOf | _: SizeOf[_] =>
     case _: Upcast[_,_] =>
