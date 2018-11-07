@@ -80,7 +80,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   val ColMarking = new TraversableMarkingFor[Col]
 
   override def createEmptyMarking[T](eT: Elem[T]): SliceMarking[T] = eT match {
-    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem  =>
+    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem | _: ColOverArrayBuilderElem =>
       EmptyBaseMarking(eT)
     case ae: ColElem[a,_] =>
       val eA = ae.eItem
@@ -90,7 +90,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   override def createAllMarking[T](e: Elem[T]): SliceMarking[T] = e match {
-    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem =>
+    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem | _: ColOverArrayBuilderElem =>
       AllBaseMarking(e)
     case colE: ColElem[a,_] =>
       implicit val eA = colE.eItem
@@ -305,7 +305,25 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       }
     }
   }
+
+  object IsConstSizeCostedCol {
+    def unapply(d: Def[_]): Nullable[Rep[Costed[Col[A]]] forSome {type A}] = d.selfType match {
+      case ce: CostedElem[_,_] if !ce.isInstanceOf[CostedColElem[_, _]] =>
+        ce.eVal match {
+          case colE: ColElem[a,_] if colE.eItem.isConstantSize =>
+            val res = d.self.asInstanceOf[Rep[Costed[Col[A]]] forSome {type A}]
+            Nullable(res)
+          case _ => Nullable.None
+        }
+      case _ => Nullable.None
+    }
+  }
+
   override val performViewsLifting = false
+
+  implicit class ElemOpsForCosting(e: Elem[_]) {
+    def isConstantSize: Boolean = elemToSType(e).isConstantSize
+  }
 
   type CostedThunk[T] = Th[Costed[T]]
 
@@ -427,8 +445,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             val p = asRep[(a,b)](v)
             // TODO costing: this is approximation (we essentially double the cost and size)
             RCCostedPair(RCCostedPrim(p._1, c, s), RCCostedPrim(p._2, c, s))
+          case ce: ColElem[a,_] if ce.eItem.isConstantSize =>
+            val col = asRep[Col[a]](v)
+            mkCostedCol(col, col.length, c)
           case _ => super.rewriteDef(d)
         }
+
+      case IsConstSizeCostedCol(col) =>
+        mkCostedCol(col.value, col.value.length, col.cost)
 
       case _ if isCostingProcess =>
         // apply special rules for costing function

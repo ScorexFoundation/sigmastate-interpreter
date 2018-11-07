@@ -202,7 +202,7 @@ class ErgoLikeTestInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).map(_._1).getOrElse(false) shouldBe false
   }
 
-  ignore("map + sum") { // TODO Don't know how to evalNode(Fold(MapCollection(...
+  property("map + sum") {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
