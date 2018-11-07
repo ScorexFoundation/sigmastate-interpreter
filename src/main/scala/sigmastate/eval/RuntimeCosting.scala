@@ -76,6 +76,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def createSliceAnalyzer = new SliceAnalyzer
 
+  override def createEmptyMarking[T](eT: Elem[T]): SliceMarking[T] = eT match {
+    case boxE: BoxElem[_] => EmptyBaseMarking(boxE)
+    case _ => super.createEmptyMarking(eT)
+  }
+
   def opcodeToArithOpName(opCode: Byte): String = opCode match {
     case OpCodes.PlusCode     => "+"
     case OpCodes.MinusCode    => "-"
@@ -226,6 +231,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   implicit def extendCostedElem[A](elem: Elem[Costed[A]]): CostedElem[A, Costed[A]] =
     elem.asInstanceOf[CostedElem[A, Costed[A]]]
 
+  implicit def extendCostedColElem[A](elem: Elem[CostedCol[A]]): CostedColElem[A, CostedCol[A]] =
+    elem.asInstanceOf[CostedColElem[A, CostedCol[A]]]
+
   def splitCostedFunc2[A,B](f: RCostedFunc[A,B]): (Rep[A=>B], Rep[((A, (Int, Long))) => Int]) = {
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceCalc
@@ -317,8 +325,23 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val f = asRep[Costed[a] => Costed[b]](_f)
         val (calcF, costF, sizeF) = splitCostedFunc[a, b](f)
         val vals = xs.values.map(calcF)
-        val costs = xs.values.zip(xs.costs.zip(xs.sizes)).map(costF)
-        val sizes = xs.sizes.map(sizeF)
+        val mRes = AllMarking(element[Int])
+        val mCostF = sliceAnalyzer.analyzeFunc(costF, mRes)
+        implicit val eA = xs.elem.eItem
+        implicit val eB = f.elem.eRange.eVal
+
+        val costs = mCostF.mDom match {
+          case PairMarking(markA,_) if markA.isEmpty =>
+            val slicedCostF = fun { in: Rep[(Int, Long)] => costF(Pair(variable[a], in)) }
+            xs.costs.zip(xs.sizes).map(slicedCostF)
+          case _ =>
+            xs.values.zip(xs.costs.zip(xs.sizes)).map(costF)
+        }
+        val tpeB = elemToSType(eB)
+        val sizes = if (tpeB.isConstantSize) {
+          colBuilder.replicate(xs.sizes.length, typeSize(tpeB))
+        } else
+          xs.sizes.map(sizeF)
         RCCostedCol(vals, costs, sizes, xs.valuesCost)
 
       case CCM.foldCosted(xs: RCostedCol[a], zero: RCosted[b], _f) =>
@@ -330,9 +353,16 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
         mCostF.mDom match {
           case PairMarking(markA,_) if markA.isEmpty =>
-            val sliced = sliceFunc(costF, mCostF)
-            // TODO costing: make more accurate cost estimation
-            RCCostedPrim(resV, zero.cost, zero.dataSize)
+            implicit val eA = xs.elem.eItem
+            implicit val eB = zero.elem.eVal
+            val slicedCostF = fun { in: Rep[(Int, Long)] => costF(Pair(variable[(b,a)], in)) }
+            val cost = xs.costs.zip(xs.sizes).map(slicedCostF).sum(intPlusMonoid)
+            if (elemToSType(zero.elem.eVal).isConstantSize)
+              RCCostedPrim(resV, cost, zero.dataSize)
+            else {
+              // TODO costing: make more accurate cost estimation
+              RCCostedPrim(resV, cost, zero.dataSize)
+            }
           case _ =>
             error(s"Cost of the folded function depends on data: $d")
         }

@@ -320,7 +320,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
-  property("map fold") { // TODO Don't know how to evalNode(Fold(MapCollection(Outputs,...
+  property("map fold") {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """OUTPUTS
