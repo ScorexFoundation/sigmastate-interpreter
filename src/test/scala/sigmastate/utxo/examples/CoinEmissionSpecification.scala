@@ -7,11 +7,11 @@ import scorex.util.ScorexLogging
 import sigmastate.Values.{ConcreteCollection, IntConstant, LongConstant}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
+import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
-import sigmastate.lang.Terms._
 
 /**
   * Coin emission specification.
@@ -108,7 +108,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val minerProp = prover.dlogSecrets.head.publicImage
     val minerPubkey = minerProp.pkBytes
 
-    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Seq(), Map(register -> LongConstant(-1)))
+    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, 0, Seq(), Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block(
       IndexedSeq(
         ErgoLikeTransaction(
@@ -120,7 +120,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     )
     val genesisState = ValidationState.initialState(initBlock)
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get
-    val initialBox = ErgoBox(initialBoxCandidate.value, initialBoxCandidate.proposition,
+    val initialBox = ErgoBox(initialBoxCandidate.value, initialBoxCandidate.proposition, 0,
       initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters, initBlock.txs.head.id, 0)
     initialBox shouldBe fromState
 
@@ -129,17 +129,17 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
                                    height: Long): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
       val ut = if (emissionBox.value > s.oneEpochReduction) {
-        val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, Seq(), Map())
+        val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, height, Seq(), Map())
         val newEmissionBox: ErgoBoxCandidate =
-          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, Seq(), Map(register -> LongConstant(height)))
+          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, height, Seq(), Map(register -> LongConstant(height)))
 
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(newEmissionBox, minerBox)
         )
       } else {
-        val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, minerProp, Seq(), Map(register -> LongConstant(height)))
-        val minerBox2 = new ErgoBoxCandidate(1, minerProp, Seq(), Map(register -> LongConstant(height)))
+        val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, minerProp, height, Seq(), Map(register -> LongConstant(height)))
+        val minerBox2 = new ErgoBoxCandidate(1, minerProp, height, Seq(), Map(register -> LongConstant(height)))
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(minerBox1, minerBox2)
