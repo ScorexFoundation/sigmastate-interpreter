@@ -9,9 +9,9 @@ import sigmastate.lang.Terms.OperationId
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{Relation3Serializer, QuadrupleSerializer, Relation2Serializer}
+import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utils.Extensions._
-import sigmastate.utils.{ByteWriter, SparseArrayContainer, ByteReader}
+import sigmastate.utils._
 import sigmastate.utxo.CostTable._
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -129,9 +129,16 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     serializer
   }
 
-  override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
+  override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
-      constantSerializer.serialize(c, w)
+      w.constantExtractionStore match {
+        case Some(constantStore) =>
+          val ph = constantStore.put(c)(DeserializationSigmaBuilder)
+          w.put(ph.opCode)
+          constantPlaceholderSerializer.serializeBody(ph, w)
+        case None =>
+          constantSerializer.serialize(c, w)
+      }
     case _ =>
       val opCode = v.opCode
       w.put(opCode)
@@ -139,7 +146,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serializeBody(v, w)
   }
 
-  override def deserialize(r: ByteReader): Value[SType] = {
+  override def deserialize(r: SigmaByteReader): Value[SType] = {
     val bytesRemaining = r.remaining
     if (bytesRemaining > Serializer.MaxInputSize)
       throw new InputSizeLimitExceeded(s"input size $bytesRemaining exceeds ${ Serializer.MaxInputSize}")
@@ -149,20 +156,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     r.level = depth + 1
     val firstByte = r.peekByte().toUByte
     val v = if (firstByte <= LastConstantCode) {
-      if (firstByte == ConstantPlaceholderIndexCode) {
-        // skip opcode
-        r.getByte()
-        val placeholderIndex = r.getUInt().toInt
-        r.payload[ConstantStore] match {
-          case Some(store) =>
-            store.get(placeholderIndex)
-          case None =>
-            sys.error("missing ConstantStore in ByteReader.payload")
-        }
-      } else {
-        // look ahead byte tell us this is going to be a Constant
-        constantSerializer.deserialize(r)
-      }
+      // look ahead byte tell us this is going to be a Constant
+      constantSerializer.deserialize(r)
     }
     else {
       val opCode = r.getByte()

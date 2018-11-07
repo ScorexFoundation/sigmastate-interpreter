@@ -13,13 +13,7 @@ class BlockSerializerSpecification extends SerializationSpecification {
     }
   }
 
-  property("ValUse: serializer round trip") {
-    forAll(valUseGen) { v =>
-      roundTripTest(v)
-    }
-  }
-
-  property("BlockValue: serializer round trip") {
+  property("BlockValue and ValUse: serializer round trip") {
     forAll(blockValueGen) { v =>
       roundTripTest(v)
     }
@@ -33,8 +27,7 @@ class BlockSerializerSpecification extends SerializationSpecification {
       val s = ConstantPlaceholderSerializer(DeserializationSigmaBuilder.mkConstantPlaceholder)
       val w = Serializer.startWriter()
       s.serializeBody(placeholder, w)
-      val r = Serializer.startReader(w.toBytes)
-      r.payload = store
+      val r = Serializer.startReader(w.toBytes, store)
       s.parseBody(r) shouldEqual placeholder
     }
   }

@@ -1,8 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.SType
-import sigmastate.Values.{Constant, ConstantNode, ConstantPlaceholder, Value}
-import sigmastate.eval.IRContext
+import sigmastate.Values.{Constant, ConstantNode, ConstantPlaceholder}
 import sigmastate.lang.SigmaBuilder
 
 import scala.collection.mutable.ArrayBuffer
@@ -23,15 +22,3 @@ class ConstantStore(private val constants: IndexedSeq[Constant[SType]] = Indexed
 
   def getAll: IndexedSeq[Constant[SType]] = store.toIndexedSeq
 }
-
-object ConstantStore {
-
-  def extractConstants(tree: Value[SType])(implicit IR: IRContext): (IndexedSeq[Constant[SType]], Value[SType]) = {
-    val env = Map[String, Any]()
-    val IR.Pair(calcF, _) = IR.doCosting(env, tree)
-    val extractConstants = new ConstantStore()
-    val outTree = IR.buildTree(calcF, Some(extractConstants))
-    (extractConstants.getAll, outTree)
-  }
-}
-

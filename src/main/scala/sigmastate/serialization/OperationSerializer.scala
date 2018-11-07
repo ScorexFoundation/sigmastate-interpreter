@@ -2,15 +2,15 @@ package sigmastate.serialization
 
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.annotation.tailrec
 
 class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends Serializer[Operation, Operation] {
 
-  def parseSeq(r: ByteReader): Seq[Operation] = {
+  def parseSeq(r: SigmaByteReader): Seq[Operation] = {
     @tailrec
-    def parse(r: ByteReader, acc: Seq[Operation]): Seq[Operation] = if (r.remaining > 0) {
+    def parse(r: SigmaByteReader, acc: Seq[Operation]): Seq[Operation] = if (r.remaining > 0) {
       val op = parseBody(r)
       parse(r, op +: acc)
     } else {
@@ -26,7 +26,7 @@ class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends S
     w.toBytes
   }
 
-  override def parseBody(r: ByteReader): Operation = {
+  override def parseBody(r: SigmaByteReader): Operation = {
     def parseValue(): ADValue = {
       val vl: Int = valueLengthOpt.getOrElse(r.getShort())
       ADValue @@ r.getBytes(vl)
@@ -43,7 +43,7 @@ class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends S
     }
   }
 
-  override def serializeBody(o: Operation, w: ByteWriter): Unit = {
+  override def serializeBody(o: Operation, w: SigmaByteWriter): Unit = {
     def serializeKey(tp: Byte, key: Array[Byte]): Unit = {
       w.put(tp)
       w.putBytes(key)

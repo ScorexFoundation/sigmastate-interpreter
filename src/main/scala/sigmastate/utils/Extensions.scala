@@ -170,15 +170,5 @@ object Extensions {
     }
   }
 
-  implicit class ByteWriterOps(w: ByteWriter) {
-    @inline def putType[T <: SType](x: T): ByteWriter = { TypeSerializer.serialize(x, w); w }
-    @inline def putValue[T <: SType](x: Value[T]): ByteWriter = { ValueSerializer.serialize(x, w); w }
-  }
-
-  implicit class ByteReaderOps(r: ByteReader) {
-    @inline def getType(): SType = TypeSerializer.deserialize(r)
-    @inline def getValue(): SValue = ValueSerializer.deserialize(r)
-  }
-
 }
 

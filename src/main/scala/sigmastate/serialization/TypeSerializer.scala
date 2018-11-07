@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import sigmastate._
 import sigmastate.lang.exceptions.{InvalidTypePrefix, TypeDeserializeCallDepthExceeded}
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer extends ByteBufferSerializer[SType] {
@@ -21,7 +21,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     else
       embeddableIdToType(code)
 
-  override def serialize(tpe: SType, w: ByteWriter) = tpe match {
+  override def serialize(tpe: SType, w: SigmaByteWriter) = tpe match {
     case p: SEmbeddable => w.put(p.typeCode)
     case SString => w.put(SString.typeCode)
     case SAny => w.put(SAny.typeCode)
@@ -108,9 +108,9 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     }
   }
 
-  override def deserialize(r: ByteReader): SType = deserialize(r, 0)
+  override def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
 
-  private def deserialize(r: ByteReader, depth: Int): SType = {
+  private def deserialize(r: SigmaByteReader, depth: Int): SType = {
     if (depth > Serializer.MaxTreeDepth)
       throw new TypeDeserializeCallDepthExceeded(s"deserialize call depth exceeds ${Serializer.MaxTreeDepth}")
     val c = r.getUByte()
@@ -190,13 +190,13 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     tpe
   }
 
-  private def getArgType(r: ByteReader, primId: Int, depth: Int) =
+  private def getArgType(r: SigmaByteReader, primId: Int, depth: Int) =
     if (primId == 0)
       deserialize(r, depth + 1)
     else
       getEmbeddableType(primId)
 
-  private def serializeTuple(t: STuple, w: ByteWriter) = {
+  private def serializeTuple(t: STuple, w: SigmaByteWriter) = {
     assert(t.items.length <= 255)
     w.put(STuple.TupleTypeCode)
     w.putUByte(t.items.length)

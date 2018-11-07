@@ -68,9 +68,6 @@ trait ByteReader {
   def remaining: Int
   def level: Int
   def level_=(v: Int)
-
-  def payload[T]: Option[T]
-  def payload_=[T](v: T)
 }
 
 /**
@@ -181,10 +178,6 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   private var lvl: Int = 0
   @inline override def level: Int = lvl
   @inline override def level_=(v: Int): Unit = lvl = v
-
-  private var _payload: Any = _
-  @inline override def payload[T]: Option[T] = if (_payload == null) None else Some(_payload.asInstanceOf[T])
-  @inline override def payload_=[T](v: T): Unit = _payload = v
 }
 
 object ByteBufferReader {

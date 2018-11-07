@@ -1,8 +1,11 @@
 package sigmastate.serialization
 
+import java.nio.ByteBuffer
+
 import sigmastate.SType
 import sigmastate.Values.{Constant, Value}
 import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.utils.{ByteArrayBuilder, ByteArrayWriter, SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
 
@@ -15,6 +18,23 @@ object ErgoTreeSerializer {
     w.putUInt(constants.length)
     constants.foreach(c => constantSerializer.serialize(c, w))
     ValueSerializer.serialize(tree, w)
+    w.toBytes
+  }
+
+  def serialize(tree: Value[SType]): Array[Byte] = {
+    val constantStore = new ConstantStore()
+    val treeWriter = Serializer.startWriter(constantStore)
+    ValueSerializer.serialize(tree, treeWriter)
+    val extractedConstants = constantStore.getAll
+    val w = Serializer.startWriter()
+    // header: reserved for future flags
+    w.put(0)
+    // write constants
+    w.putUInt(extractedConstants.length)
+    val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+    extractedConstants.foreach(c => constantSerializer.serialize(c, w))
+    // write tree with constant placeholders
+    w.putBytes(treeWriter.toBytes)
     w.toBytes
   }
 
@@ -33,16 +53,15 @@ object ErgoTreeSerializer {
   }
 
   def deserialize(bytes: Array[Byte]): Value[SType] = {
+    // TODO optimize allocation/copying
     val (constants, treeBytesArray) = treeWithPlaceholdersBytes(bytes)
-    val r = Serializer.startReader(treeBytesArray)
-    r.payload = new ConstantStore(constants)
+    val r = Serializer.startReader(treeBytesArray, new ConstantStore(constants))
     val tree = ValueSerializer.deserialize(r)
     tree
   }
 
   def deserializeWithConstantInjection(constantStore: ConstantStore, treeBytes: Array[Byte]): Value[SType] = {
-    val r = Serializer.startReader(treeBytes)
-    r.payload = constantStore
+    val r = Serializer.startReader(treeBytes, constantStore)
     val tree = ValueSerializer.deserialize(r)
     tree
   }

@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.SigmaBoolean
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utils.Extensions._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -15,7 +15,7 @@ import scala.collection.mutable
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer {
 
-  def serialize[T <: SType](v: T#WrappedType, tpe: T, w: ByteWriter): Unit = tpe match {
+  def serialize[T <: SType](v: T#WrappedType, tpe: T, w: SigmaByteWriter): Unit = tpe match {
     case SUnit => // don't need to save anything
     case SBoolean => w.putBoolean(v.asInstanceOf[Boolean])
     case SByte => w.put(v.asInstanceOf[Byte])
@@ -66,7 +66,7 @@ object DataSerializer {
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
 
-  def deserialize[T <: SType](tpe: T, r: ByteReader): (T#WrappedType) = (tpe match {
+  def deserialize[T <: SType](tpe: T, r: SigmaByteReader): (T#WrappedType) = (tpe match {
     case SUnit => ()
     case SBoolean => r.getUByte() != 0
     case SByte => r.getByte()
@@ -104,7 +104,7 @@ object DataSerializer {
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
 
-  def deserializeArray[T <: SType](len: Int, tpe: T, r: ByteReader): Array[T#WrappedType] =
+  def deserializeArray[T <: SType](len: Int, tpe: T, r: SigmaByteReader): Array[T#WrappedType] =
     tpe match {
       case SBoolean =>
         r.getBits(len).asInstanceOf[Array[T#WrappedType]]

@@ -12,20 +12,6 @@ class ConstantStoreSpecification extends SerializationSpecification with SigmaTe
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   implicit val builder: SigmaBuilder = DeserializationSigmaBuilder
 
-  property("extract constants") {
-    val script = Plus(10, 20)
-    val extractedConstants = Seq(IntConstant(10), IntConstant(20))
-    val scriptWithPlaceholders = Plus(ConstantPlaceholder(0, SInt), ConstantPlaceholder(1, SInt))
-    ConstantStore.extractConstants(script) shouldEqual (extractedConstants, scriptWithPlaceholders)
-  }
-
-  property("no constants to extract") {
-    val script = Plus(ExtractAmount(Self), ExtractAmount(Self))
-    val extractedConstants = Seq()
-    val scriptWithPlaceholders = BlockValue(Vector(ValDef(1,List(),ExtractAmount(Self))),Plus(ValUse(1,SLong),ValUse(1,SLong)))
-    ConstantStore.extractConstants(script) shouldEqual (extractedConstants, scriptWithPlaceholders)
-  }
-
   property("empty store should have no constants") {
     val s = new ConstantStore()
     s.getAll shouldBe empty

@@ -25,8 +25,6 @@ trait ValueCodes extends TypeCodes {
     * */
   val ConstantCode: Byte = 0
 
-  val ConstantPlaceholderIndexCode: Byte = 104
-
   /** The last constant code is equal to FirstFuncType which represent generic function type.
     * We use this single code to represent all functional constants, since we don't have enough space in single byte.
     * Subsequent bytes have to be read from ByteReader in order to decode the type of the function and the corresponding data. */
@@ -42,7 +40,8 @@ object OpCodes extends ValueCodes {
 
   // variables
   val TaggedVariableCode: OpCode = (LastConstantCode + 1).toByte
-  val ValUseCode: OpCode = (LastConstantCode + 2).toByte   // reserved 3 - 9
+  val ValUseCode: OpCode = (LastConstantCode + 2).toByte
+  val ConstantPlaceholderIndexCode: OpCode = (LastConstantCode + 3).toByte // reserved 4 - 9
 
   val LongToByteArrayCode  : OpCode = (LastConstantCode + 10).toByte
   val ByteArrayToBigIntCode: OpCode = (LastConstantCode + 11).toByte

@@ -242,8 +242,10 @@ trait TransformerGenerators {
 
   val blockValueGen: Gen[BlockValue] = for {
     items <- Gen.nonEmptyListOf(valDefGen)
-    result <- Gen.oneOf(logicalExprTreeNodeGen(Seq(AND.apply)), valUseGen)
-  } yield BlockValue(items.toIndexedSeq, result)
+  } yield BlockValue(items.toIndexedSeq,
+    EQ(
+      SizeOf(Tuple(items.toIndexedSeq.map(valDef => ValUse(valDef.id, valDef.tpe)))),
+      IntConstant(items.length)))
 
   val constantPlaceholderGen: Gen[ConstantPlaceholder[SType]] = for {
     id <- unsignedIntGen
@@ -258,7 +260,7 @@ trait TransformerGenerators {
 
   val funcValueGen: Gen[FuncValue] = for {
     args <- funcValueArgsGen
-    body <- Gen.oneOf(logicalExprTreeNodeGen(Seq(AND.apply)), valUseGen)
+    body <- logicalExprTreeNodeGen(Seq(AND.apply))
   } yield FuncValue(args, body)
 
 }
