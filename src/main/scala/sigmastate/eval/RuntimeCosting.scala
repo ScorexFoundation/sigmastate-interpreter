@@ -73,12 +73,30 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import AvlTree._
   import CostedAvlTree._
   import CCostedAvlTree._
+  import IntPlusMonoid._
 
   def createSliceAnalyzer = new SliceAnalyzer
 
+  val ColMarking = new TraversableMarkingFor[Col]
+
   override def createEmptyMarking[T](eT: Elem[T]): SliceMarking[T] = eT match {
-    case boxE: BoxElem[_] => EmptyBaseMarking(boxE)
-    case _ => super.createEmptyMarking(eT)
+    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem  =>
+      EmptyBaseMarking(eT)
+    case ae: ColElem[a,_] =>
+      val eA = ae.eItem
+      ColMarking(KeyPath.None, EmptyMarking(eA)).asMark[T]
+    case _ =>
+      super.createEmptyMarking(eT)
+  }
+
+  override def createAllMarking[T](e: Elem[T]): SliceMarking[T] = e match {
+    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem =>
+      AllBaseMarking(e)
+    case colE: ColElem[a,_] =>
+      implicit val eA = colE.eItem
+      ColMarking[a](KeyPath.All, AllMarking(eA)).asMark[T]
+    case _ =>
+      super.createAllMarking(e)
   }
 
   def opcodeToArithOpName(opCode: Byte): String = opCode match {
