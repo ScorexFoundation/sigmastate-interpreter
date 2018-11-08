@@ -7,7 +7,8 @@ import sigmastate.Values.SValue
 import sigmastate.serialization.{ConstantStore, TypeSerializer, ValDefTypeStore, ValueSerializer}
 
 class SigmaByteReader(b: ByteBuffer,
-                      val constantStore: Option[ConstantStore] = None)
+                      val constantStore: Option[ConstantStore] = None,
+                      val resolvePlaceholdersToConstants: Boolean)
   extends ByteBufferReader(b) {
 
   val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()

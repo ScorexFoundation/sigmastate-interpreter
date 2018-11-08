@@ -27,7 +27,7 @@ class BlockSerializerSpecification extends SerializationSpecification {
       val s = ConstantPlaceholderSerializer(DeserializationSigmaBuilder.mkConstantPlaceholder)
       val w = Serializer.startWriter()
       s.serializeBody(placeholder, w)
-      val r = Serializer.startReader(w.toBytes, store)
+      val r = Serializer.startReader(w.toBytes, store, resolvePlaceholdersToConstants = false)
       s.parseBody(r) shouldEqual placeholder
     }
   }

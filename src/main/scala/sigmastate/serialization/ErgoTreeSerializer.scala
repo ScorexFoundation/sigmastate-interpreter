@@ -52,16 +52,17 @@ object ErgoTreeSerializer {
     (constants, treeBytes)
   }
 
-  def deserialize(bytes: Array[Byte]): Value[SType] = {
+  def deserialize(bytes: Array[Byte], resolvePlaceholdersToConstants: Boolean = true): Value[SType] = {
     // TODO optimize allocation/copying
     val (constants, treeBytesArray) = treeWithPlaceholdersBytes(bytes)
-    val r = Serializer.startReader(treeBytesArray, new ConstantStore(constants))
+    val r = Serializer.startReader(treeBytesArray, new ConstantStore(constants),
+      resolvePlaceholdersToConstants)
     val tree = ValueSerializer.deserialize(r)
     tree
   }
 
   def deserializeWithConstantInjection(constantStore: ConstantStore, treeBytes: Array[Byte]): Value[SType] = {
-    val r = Serializer.startReader(treeBytes, constantStore)
+    val r = Serializer.startReader(treeBytes, constantStore, resolvePlaceholdersToConstants = true)
     val tree = ValueSerializer.deserialize(r)
     tree
   }

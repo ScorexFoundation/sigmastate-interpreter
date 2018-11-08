@@ -16,11 +16,15 @@ case class ConstantPlaceholderSerializer(cons: (Int, SType) => Value[SType])
 
   override def parseBody(r: SigmaByteReader): Value[SType] = {
     val id = r.getUInt().toInt
-    val constant = r.constantStore match {
-      case Some(store) => store.get(id)
+    r.constantStore match {
+      case Some(store) =>
+        val constant = store.get(id)
+        if (r.resolvePlaceholdersToConstants)
+          constant
+        else
+          cons(id, constant.tpe)
       case None => sys.error("cannot deserialize Constant without a ConstantStore")
     }
-    constant
   }
 }
 

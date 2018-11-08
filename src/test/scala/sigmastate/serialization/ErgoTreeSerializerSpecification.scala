@@ -35,7 +35,8 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val bytes = ErgoTreeSerializer.serialize(constants, treeWithPlaceholders)
     val (deserializedConstants, treeBytes) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes)
     deserializedConstants shouldEqual constants
-    val r = Serializer.startReader(treeBytes, new ConstantStore(deserializedConstants))
+    val r = Serializer.startReader(treeBytes, new ConstantStore(deserializedConstants),
+      resolvePlaceholdersToConstants = true)
     val deserializedTree = ValueSerializer.deserialize(r)
     deserializedTree shouldEqual tree
   }
