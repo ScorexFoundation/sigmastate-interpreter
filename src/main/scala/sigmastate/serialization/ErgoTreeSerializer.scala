@@ -1,11 +1,8 @@
 package sigmastate.serialization
 
-import java.nio.ByteBuffer
-
 import sigmastate.SType
 import sigmastate.Values.{Constant, Value}
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.utils.{ByteArrayBuilder, ByteArrayWriter, SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
 
