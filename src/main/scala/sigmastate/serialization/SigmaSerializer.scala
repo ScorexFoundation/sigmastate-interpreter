@@ -33,7 +33,7 @@ object Serializer {
   def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
-    val r = new SigmaByteReader(buf, constantStore = None, resolvePlaceholdersToConstants = false)
+    val r = new SigmaByteReader(buf, new ConstantStore(), resolvePlaceholdersToConstants = false)
         .mark()
     r
   }
@@ -42,7 +42,7 @@ object Serializer {
                   constantStore: ConstantStore,
                   resolvePlaceholdersToConstants: Boolean): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
-    val r = new SigmaByteReader(buf, constantStore = Some(constantStore), resolvePlaceholdersToConstants)
+    val r = new SigmaByteReader(buf, constantStore, resolvePlaceholdersToConstants)
       .mark()
     r
   }
