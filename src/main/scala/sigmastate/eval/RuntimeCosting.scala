@@ -333,6 +333,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     val CCM = CostedColMethods
     val CostedM = CostedMethods
     val CostedOptionM = CostedOptionMethods
+    val CostedBoxM = CostedBoxMethods
     val WOptionM = WOptionMethods
     val CM = ColMethods
 
@@ -411,6 +412,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //        val sizes = colBuilder.replicate(xs.sizes.length, 1L)
 //        RCostedCol(vals, costs, sizes, xs.valuesCost)
 
+      case CostedBoxM.creationInfo(boxC) =>
+        val info = boxC.value.creationInfo
+        val l = RCCostedPrim(info._1, 0, 8L)
+        val r = mkCostedCol(info._2, 34, boxC.cost)
+        RCCostedPair(l, r)
+
       case CostedM.value(Def(CCostedFuncCtor(_, func: RCostedFunc[a,b], _,_))) =>
         func.sliceCalc
 
@@ -451,8 +458,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           case _ => super.rewriteDef(d)
         }
 
-      case IsConstSizeCostedCol(col) =>
-        mkCostedCol(col.value, col.value.length, col.cost)
+//      case IsConstSizeCostedCol(col) =>
+//        mkCostedCol(col.value, col.value.length, col.cost)
 
       case _ if isCostingProcess =>
         // apply special rules for costing function
@@ -775,6 +782,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case Outputs => ctx.OUTPUTS
       case Self    => ctx.SELF
       case LastBlockUtxoRootHash => ctx.LastBlockUtxoRootHash
+      case MinerPubkey => ctx.MinerPubKey
 
       case op @ GetVar(id, optTpe) =>
         val res = ctx.getVar(id)(stypeToElem(optTpe.elemType))
@@ -860,9 +868,18 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         opt.getOrElse(_default)
 
       case SelectField(In(_tup), fieldIndex) =>
-        val tup = asRep[Costed[Struct]](_tup)
-        val fn = STuple.componentNames(fieldIndex - 1)
-        withDefaultSize(tup.value.getUntyped(fn), costedBuilder.SelectFieldCost)
+        _tup.elem.eVal.asInstanceOf[Elem[_]] match {
+          case se: StructElem[_] =>
+            val tup = asRep[Costed[Struct]](_tup)
+            val fn = STuple.componentNames(fieldIndex - 1)
+            withDefaultSize(tup.value.getUntyped(fn), costedBuilder.SelectFieldCost)
+          case pe: PairElem[a,b] =>
+            assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${_tup}: $pe")
+            val pair = asRep[CostedPair[a,b]](_tup)
+            val res = if (fieldIndex == 1) pair.l else pair.r
+            res
+        }
+
 
       case Values.Tuple(InSeq(items)) =>
         val fields = items.zipWithIndex.map { case (x, i) => (s"_${i+1}", x)}
@@ -1087,6 +1104,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.bytes
         mkCostedCol(bytes, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
+
+      case utxo.ExtractCreationInfo(In(box)) =>
+        val boxC = asRep[CostedBox](box)
+        boxC.creationInfo
 
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
         val boxC = asRep[CostedBox](box)

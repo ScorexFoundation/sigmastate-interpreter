@@ -6,8 +6,8 @@ import org.bouncycastle.math.ec.ECPoint
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
-import sigmastate.{AvlTreeData, SType, SAvlTree}
-import sigmastate.Values.{Constant, EvaluatedValue, AvlTreeConstant, SomeValue, NoneValue}
+import sigmastate._
+import sigmastate.Values.{Constant, EvaluatedValue, AvlTreeConstant, ConstantNode, SomeValue, NoneValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{Serializer, OperationSerializer}
@@ -70,6 +70,17 @@ class CostingBox(
       }
     } else
       super.getReg(i)
+
+  override def creationInfo: (Long, Col[Byte]) = {
+    import Types._
+    this.R3[(Long, Col[Byte])].get.asInstanceOf[Any] match {
+      case ConstantNode(arr: Array[Any], STuple(IndexedSeq(SLong, SByteArray))) if arr.length == 2 =>
+        (arr(0).asInstanceOf[Long], builder.Cols.fromArray(arr(1).asInstanceOf[Array[Byte]]))
+      case v =>
+        sys.error(s"Invalid value $v of creationInfo register R3")
+    }
+
+  }
 }
 
 class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { dsl =>

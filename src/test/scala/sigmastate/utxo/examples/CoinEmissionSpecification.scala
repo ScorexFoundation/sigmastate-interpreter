@@ -61,7 +61,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
-  ignore("emission specification") { // TODO Don't know how to evalNode(MinerPubkey)
+  ignore("emission specification") {
     val register = reg1
     val prover = new ErgoLikeTestProvingInterpreter()
 
@@ -113,7 +113,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
     val minerImage = prover.dlogSecrets.head.publicImage
     val minerPubkey = minerImage.pkBytes
-    val minerProp = minerImage.isValid
+    val minerProp = minerImage
 
     val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, Seq(), Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block(
