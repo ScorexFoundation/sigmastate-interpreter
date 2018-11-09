@@ -842,7 +842,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val cost = tree.cost + key.cost + proof.cost + costOf(node)
         value.fold[CostedOption[Col[Byte]]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Col[Byte]] => RCostedSome(RCCostedPrim(x, cost, Blake2b256.DigestSize.toLong)) })
+          fun { x: Rep[Col[Byte]] => RCostedSome(mkCostedCol(x, Blake2b256.DigestSize, cost)) })
 
       case TreeModifications(In(_tree), InColByte(operations), InColByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
@@ -850,7 +850,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val cost = tree.cost + operations.cost + proof.cost + costOf(node)
         value.fold[CostedOption[Col[Byte]]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Col[Byte]] => RCostedSome(RCCostedPrim(x, cost, Blake2b256.DigestSize.toLong)) })
+          fun { x: Rep[Col[Byte]] => RCostedSome(mkCostedCol(x, Blake2b256.DigestSize, cost)) })
 
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>
@@ -879,7 +879,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             val res = if (fieldIndex == 1) pair.l else pair.r
             res
         }
-
 
       case Values.Tuple(InSeq(items)) =>
         val fields = items.zipWithIndex.map { case (x, i) => (s"_${i+1}", x)}
