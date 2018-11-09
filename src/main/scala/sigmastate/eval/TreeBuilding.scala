@@ -174,7 +174,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case ColM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
-        mkExists1(col.asCollection[SType], p.asFunc)
+        mkExists(col.asCollection[SType], 21, p.asBoolValue)
 
       case ColM.forall(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
@@ -182,7 +182,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case ColM.map(colSym, fSym) =>
         val Seq(col, f) = Seq(colSym, fSym).map(recurse)
-        mkMapCollection1(col.asCollection[SType], f.asFunc)
+        mkMapCollection(col.asCollection[SType], 21, f.asFunc)
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))

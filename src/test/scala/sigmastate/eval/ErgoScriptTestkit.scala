@@ -147,13 +147,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       verifyCostFunc(costF) shouldBe Success(())
       verifyIsValid(calcF) shouldBe Success(())
 
-      val compiledTree = IR.buildTree(calcF.asRep[Context => SType#WrappedType])
-      checkExpected(compiledTree, expectedTree,
-        "Compiled Tree actual: %s, expected: %s")
+      if (expectedTree.isDefined) {
+        val compiledTree = IR.buildTree(calcF.asRep[Context => SType#WrappedType])
+        checkExpected(compiledTree, expectedTree, "Compiled Tree actual: %s, expected: %s")
 
-      val compiledTreeBytes = ErgoTreeSerializer.serialize(compiledTree)
-      checkExpected(ErgoTreeSerializer.deserialize(compiledTreeBytes), Some(compiledTree),
-        "(de)serialization round trip actual: %s, expected: %s")
+        val compiledTreeBytes = ErgoTreeSerializer.serialize(compiledTree)
+        checkExpected(ErgoTreeSerializer.deserialize(compiledTreeBytes), Some(compiledTree),
+          "(de)serialization round trip actual: %s, expected: %s")
+      }
 
       if (ergoCtx.isDefined) {
         val calcCtx = ergoCtx.get.toSigmaContext(IR, isCost = false)
@@ -190,31 +191,31 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   }
 
   def Case(env: ScriptEnv, name: String, script: String, ctx: ErgoLikeContext,
-      calc: Rep[Context] => Rep[Any],
-      cost: Rep[Context] => Rep[Int],
-      size: Rep[Context] => Rep[Long],
-      tree: SValue,
-      result: Result) =
+           calc: Rep[Context] => Rep[Any],
+           cost: Rep[Context] => Rep[Int],
+           size: Rep[Context] => Rep[Long],
+           tree: SValue,
+           result: Result) =
     EsTestCase(name, env, script, Option(ctx), None,
       Option(calc), Option(cost), Option(size),
       Option(tree), result)
 
   def checkAll(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext,
-      calc: Rep[Context] => Rep[Any],
-      cost: Rep[Context] => Rep[Int],
-      size: Rep[Context] => Rep[Long],
-      tree: SValue,
-      result: Result): Unit =
+               calc: Rep[Context] => Rep[Any],
+               cost: Rep[Context] => Rep[Int],
+               size: Rep[Context] => Rep[Long],
+               tree: SValue,
+               result: Result): Unit =
   {
     val tcase = Case(env, name, script, ergoCtx, calc, cost, size, tree, result)
     tcase.doReduce()
   }
 
   def checkInEnv(env: ScriptEnv, name: String, script: String,
-      expectedCalc: Rep[Context] => Rep[Any],
-      expectedCost: Rep[Context] => Rep[Int] = null,
-      expectedSize: Rep[Context] => Rep[Long] = null
-  ): Rep[(Context => Any, (Context => Int, Context => Long))] =
+                 expectedCalc: Rep[Context] => Rep[Any],
+                 expectedCost: Rep[Context] => Rep[Int] = null,
+                 expectedSize: Rep[Context] => Rep[Long] = null
+                ): Rep[(Context => Any, (Context => Int, Context => Long))] =
   {
     val tc = EsTestCase(name, env, script, None, None,
       Option(expectedCalc),

@@ -164,4 +164,16 @@ class TransformersSerializationSpec extends SerializationSpecification {
   property("OptionIsDefined: Serializer round trip") {
     forAll(optionIsDefinedGen) { v => roundTripTest(v) }
   }
+
+  property("SigmaAnd: Serializer round trip") {
+    forAll(sigmaAndGen) { v => roundTripTest(v) }
+  }
+
+  property("SigmaOr: Serializer round trip") {
+    forAll(sigmaOrGen) { v => roundTripTest(v) }
+  }
+
+  property("BoolToSigmaProp: Serializer round trip") {
+    forAll(boolToSigmaPropGen) { v => roundTripTest(v) }
+  }
 }

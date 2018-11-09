@@ -101,11 +101,6 @@ trait SigmaBuilder {
 
   def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc]
 
-  def mkMapCollection1[IV <: SType, OV <: SType](
-      input: Value[SCollection[IV]], mapper: Value[SFunc]): Value[SCollection[OV]]
-
-  def mkExists1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
-
   def mkForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
 
   def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
@@ -150,6 +145,8 @@ trait SigmaBuilder {
   def mkSigmaPropIsValid(value: Value[SSigmaProp.type]): BoolValue
 
   def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray]
+  def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue
+  def mkSigmaOr(items: Seq[SigmaPropValue]): SigmaPropValue
 
   def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                        elementType: T): Value[SCollection[T]]
@@ -365,14 +362,6 @@ class StdSigmaBuilder extends SigmaBuilder {
   def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc] =
     FuncValue(args, body)
 
-  def mkMapCollection1[IV <: SType, OV <: SType](
-        input: Value[SCollection[IV]], mapper: Value[SFunc]) =
-    MapCollection1(input, mapper)
-
-  override def mkExists1[IV <: SType](input: Value[SCollection[IV]],
-                                     condition: Value[SFunc]): BoolValue =
-    Exists1(input, condition)
-
   override def mkForAll1[IV <: SType](input: Value[SCollection[IV]],
                                      condition: Value[SFunc]): BoolValue =
     ForAll1(input, condition)
@@ -443,6 +432,10 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkSigmaPropIsValid(value: Value[SSigmaProp.type]) = SigmaPropIsValid(value)
 
   override def mkSigmaPropBytes(value: Value[SSigmaProp.type]) = SigmaPropBytes(value)
+
+  override def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue = SigmaAnd(items)
+
+  override def mkSigmaOr(items: Seq[SigmaPropValue]): SigmaPropValue = SigmaOr(items)
 
   override def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                                 elementType: T): Value[SCollection[T]] =

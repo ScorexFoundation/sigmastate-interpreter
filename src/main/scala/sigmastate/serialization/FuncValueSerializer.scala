@@ -6,6 +6,8 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
+import scala.collection.mutable
+
 case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) => Value[SType])
   extends ValueSerializer[FuncValue] {
 
@@ -19,8 +21,14 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
 
   override def parseBody(r: SigmaByteReader): Value[SType] = {
     val argsSize = r.getUInt().toIntExact
-    val args = (1 to argsSize).map(_ => (r.getUInt().toInt, r.getType()))
+    val argsBuilder = mutable.ArrayBuilder.make[(Int, SType)]()
+    for (_ <- 0 until argsSize) {
+      val id = r.getUInt().toInt
+      val tpe = r.getType()
+      r.valDefTypeStore(id) = tpe
+      argsBuilder += ((id, tpe))
+    }
     val body = r.getValue()
-    cons(args, body)
+    cons(argsBuilder.result(), body)
   }
 }

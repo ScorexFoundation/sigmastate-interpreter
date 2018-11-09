@@ -114,6 +114,9 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     BlockValueSerializer(mkBlockValue),
     ValUseSerializer(mkValUse),
     FuncValueSerializer(mkFuncValue),
+    SigmaTransformerSerializer(SigmaAndCode, mkSigmaAnd),
+    SigmaTransformerSerializer(SigmaOrCode, mkSigmaOr),
+    BoolToSigmaPropSerializer(mkBoolToSigmaProp),
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
