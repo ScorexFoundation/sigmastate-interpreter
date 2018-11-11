@@ -30,19 +30,8 @@ step are given in later sections):
 5   | Topoligically sort nodes of `costF` for execution (Tarjan algorithm) | `O(M)`
 6   | Iterate over sorted nodes of `costF` and execute primitive ops    | `O(M)` 
 
-### Deserialization (Steps 1, 2 of costing algorithm)
-
-Deserializer should check that serialized byte array is of limited size, otherwise 
-out-of-memory attack is possible. `MaxPropBytesSize` is a protocol parameter (see `ProtocolParameters`). 
-During deserialization another parameter `MaxTreeDepth` is checked to limit depth of ErgoTree and thus 
-avoid stack-overflow attack.
-
-### Graph-based IR
-
-After deserialization ErgoTree is transformed to graph-based IR of Scalan framework.
-See (Scalan idioms)[https://github.com/scalan/scalan.github.io/blob/master/idioms.md] for details.
-
-### Costing Process 
+#### Overview of Costing Process 
+<a name="CostingOverview"></a> 
 
 Deserialized ErgoTree have to be translated into two related functions: 
 1) `calcF: Context => SigmaBoolean` - script calculation function, which produces Sigma tree for 
@@ -66,6 +55,19 @@ Costing process is divided into two steps:
 1) Construction of _Costed Graph_ `graphC`
 2) Splitting of the `graphC` into `calcF` and `costF` functions
 
+### Deserialization (Steps 1, 2 of costing algorithm)
+
+Deserializer should check that serialized byte array is of limited size, otherwise 
+out-of-memory attack is possible. `MaxPropBytesSize` is a protocol parameter (see `ProtocolParameters`). 
+During deserialization another parameter `MaxTreeDepth` is checked to limit depth of ErgoTree and thus 
+avoid stack-overflow attack.
+
+### Building Costed Graph (Step 3)
+
+Costed Graph is a graph-based intermediate representatin (IR) which is created from the deserialized 
+ErgoTree. Implementation of Costed Graph is based on Scalan/Special framework.
+See [Scalan idioms](https://github.com/scalan/scalan.github.io/blob/master/idioms.md) for details.
+
 #### Costed Values
 
 The nodes of the costed graph `graphC` are _costed values_ of type `Costed[T]`.
@@ -76,7 +78,7 @@ trait Costed[Val] {
   def dataSize: Long  // the size estimation of the value in bytes
 }
 ```
-Every costed value `valC: Costed[T]` is a container for the value along with additional data to 
+Every costed value `valC: Costed[T]` is a container of the value along with additional data to 
 represent cost and size (costing information, costing properties).
 
 Note, that `cost` and `dataSize` are independent parameters because some _costed_ values may have 
@@ -116,15 +118,15 @@ can be approximated using costing properties of arguments along.
 The property 3) turns out to be very important, because many operations have this property 
 which leads to the possibility to do context-independent costing.
 
-#### Type-dependent representation of costs
-
 Depending on type `T` costed values have specialized representations, given by descendants of 
-the type `Costed[T]`.
+the type `Costed[T]`. The following subsections describe possible specialization in detail.
  
-##### Primitive types
+##### Costed Values of Primitive Type
 
 The simplest case is when `T` is primitive.
-In this case cost information is represented by class `CCostedPrim[T]` derived from trait `CostedPrim[T]`. 
+In this case cost information is represented by class `CCostedPrim[T]` derived from trait `CostedPrim[T]`.
+Separation into class and closely related trait is technical implementation detail, we will omit traits 
+in the following sections for brevity. The trait always have the same public methods as class. 
 ```
 trait CostedPrim[Val] extends Costed[Val] 
 class CCostedPrim[Val](val value: Val, val cost: Int, val dataSize: Long) extends CostedPrim[Val]
@@ -158,15 +160,11 @@ costing algorithm constructs the following graph
 Here `costOf("Const:() => Int")` is an operation which requests `CostModel` for the cost of using 
 a constant value in a script.
   
-##### Tuple types
+##### Costed Values of Tuple type
 
 If `L` and `R` types, then costed value of type `(L,R)` is represented by the following
 specializations of `Costed[(L,R)]` type
 ```
-trait CostedPair[L,R] extends Costed[(L,R)] {
-  def l: Costed[L]
-  def r: Costed[R]
-}
 class CCostedPair[L,R](val l: Costed[L], val r: Costed[R]) extends CostedPair[L,R] {
   def value: (L,R) = (l.value, r.value)
   def cost: Int = l.cost + r.cost + ConstructTupleCost
@@ -190,25 +188,19 @@ CCostedPair(
     CCostedPrim(true, costOf("Const:() => Boolean"), sizeOf[Boolean])))
 ```
 
-##### Array types
+##### Costed Values of Array Type
 
 If `Item` is a type of array element, then costed value of type `Col[Item]` is 
 represented by the following specializations of `Costed[Col[Item]]` type
-```
-trait CostedCol[Item] extends Costed[Col[Item]] {
-  def values: Col[Item]  // items in the collection
-  def costs: Col[Int]    // costs[i] is the cost to compute the values[i]
-  def sizes: Col[Long]   // sizes[i] is a size of value[i]
-  def valuesCost: Int    // accumulated cost to create a collection besides item costs
-  def mapCosted[Res](f: Costed[Item] => Costed[Res]): CostedCol[Res] = rewritableMethod
-  def foldCosted[B](zero: Costed[B], op: Costed[(B, Item)] => Costed[B]): Costed[B] = rewritableMethod
-}
+```scala 
 class CCostedCol[Item](
       val values: Col[Item], val costs: Col[Int],
       val sizes: Col[Long], val valuesCost: Int) extends CostedCol[Item] {
   def value: Col[Item] = values
   def cost: Int = valuesCost + costs.sum
   def dataSize: Long = sizes.sum
+  def mapCosted[Res](f: Costed[Item] => Costed[Res]): CostedCol[Res] = rewritableMethod
+  def foldCosted[B](zero: Costed[B], op: Costed[(B, Item)] => Costed[B]): Costed[B] = rewritableMethod
 }
 ```
 For constant, context variables and registers values of `Col` type the costing information 
@@ -218,4 +210,148 @@ Note methods `mapCosted` and `foldCosted`, these methods represent costed versio
 collection methods. Note the methods are defined as rewritable, meaning their implementation 
 require special rewriting rule. See section [Rewrite Rules](#RewriteRules)
 
-####
+#### Building Costed Graph 
+
+Given an environment `envVals` and ErgoTree `tree` a Costed Graph can be obtained as 
+[reified lambda](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom4) of type 
+`Rep[Context => Costed[T#WrappedType]]`
+This transformation is implemented as shown in the following `buildCostedGraph` method, which can
+be found in `RuntimeCosting.scala` file.
+```scala
+def buildCostedGraph[T <: SType](envVals: Map[Any, SValue], tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = 
+  fun { ctx: Rep[Context] =>        // here ctx represents data context
+    val ctxC = RCCostedContext(ctx) // data context is wrapped into Costed value container 
+    val env = envVals.mapValues(v => evalNode(ctxC, Map(), v)) // do costing of environment
+    val res = evalNode(ctxC, env, tree)  // traverse tree recursively applying costing rules 
+    res
+  }
+```
+Note that function `evalNode` applies the [costing rules](#CostingRules) recursively for tree nodes 
+(of `sigmastate.Values.Value[T]` type). Those rules are executed in the `fun` block and 
+as result all the created graph nodes belong to the resulting costed graph
+
+<a name="CostingRules"></a> 
+#### Costing Rules
+
+In order to build costed graph, the algorithm have to recursively traverse ErgoTree. 
+For each node of ErgoTree, separate _costing rule_ is applied using `evalNode` method 
+whose structure is show below. 
+```scala
+type RCosted[A] = Rep[Costed[A]]
+type CostingEnv = Map[Any, RCosted[_]]
+def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
+  def eval[T <: SType](node: Value[T]) = evalNode(ctx, env, node)
+  object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(evalNode(ctx, env, v)) }
+  ...
+  node match {
+    case Node1(In(arg1),...,In(argK)) => rhs1(arg1,...,argK)
+    ...
+    case NodeN(In(arg1),...,In(argK)) => rhsN(arg1,...,argK)
+  }
+}
+```
+Here `In` is a helper extractor which recursively apply `evalNode` for each argument so that variables 
+`arg1,...,argK` represent results of costing of the corresponding subtree. 
+The right hand side of each rule (`rhs1,...rhsN`) contains operations with 
+[Rep types](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom3), the effect of their 
+execution is creation of new graph nodes which become part of resulting costed graph.
+
+Following is an example of a simple costing rule to introduce basic concepts 
+(it can be found in RuntimeCosting.scala file).
+```
+  case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
+    val l = asRep[Costed[WECPoint]](_l)   // type cast to an expected Rep type
+    val r = asRep[Costed[WECPoint]](_r)
+    val value = l.value.add(r.value)            // value sub-rule
+    val cost = l.cost + r.cost + costOf(node)   // cost sub-rule
+    val size = CryptoConstants.groupSize.toLong // size sub-rule
+    RCCostedPrim(value, cost, size)
+```
+The rule first recognizes specific ErgoTree node, then recursively each argument is costed 
+so that the result is bound with variables `_l` and `_r`. 
+Right hand side starts with typecasting costed subgraphs to expected types. This operation is safe 
+because input ErgoTree is type checked. These typecasts also make the rest of the rules typesafe,
+which is ensured by Scala compiler checking correctness of the operations.
+Using costed arguments `l` and `r` the rule contains three sub-rules.
+_Value rule_ implements calculation of the resulting value and essentially translates  
+MultiplyGroup operation into operation in the costed graph.
+_Cost rule_ defines formula of the cost for `MultiplyGroup` operation (by adding to the costed graph).
+_Size rule_ defines formula of the size for `MultiplyGroup` operation
+And finally `value`, `cost` and `size` are packed into costed value which represent current tree node 
+in the costed graph.
+
+The rule above has the simples form and applicable to most simple operations. However some operations
+require rules which don't fall into this default patterns. 
+Following is an example rule for `MapCollection` tree node, which makes recursive costing of arguments
+explicit by using `eval` helper and also employ other idioms of staged evaluation.
+```
+  case MapCollection(input, id, mapper) =>
+    val eIn = stypeToElem(input.tpe.elemType)   // translate sigma type to Special type descriptor
+    val xs = asRep[CostedCol[Any]](eval(input)) // recursively build subgraph for input argument
+    implicit val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+    assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
+    val mapperC = fun { x: Rep[Costed[Any]] => // x argument is already costed
+      evalNode(ctx, env + (id -> x), mapper)   // associate id in the tree with x node of the graph
+    }
+    val res = xs.mapCosted(mapperC)    // call costed method of costed collection
+    res
+```
+Observe that this rule basically translates mapping operation over collection into invocation of
+the method `mapCosted` on costed collection value `xs` with appropriately prepared argument `mapperC`.
+Because `xs` has [Rep type](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom3)
+this invocation has an effect of adding new `MethodCall(xs, "mapCosted", Seq(mapperC))` node to the graph.
+This new node is immediately catched by the rewriting rule (see [Rewrite Rules](#RewriteRules) section) which further transforms it into final 
+nodes of resulting costed graph. Such separation makes the whole algorithm more modular. 
+
+### Spliting Costed Graph
+
+
+
+### Real World Complications
+
+Here we discuss some complications in the algorithm caused by the diversity of real world examples.
+The main motivation here is to keep main algorithm generic and simple, and encapsulate all complexity 
+of the specific cases into reusable modules.
+
+<a name="RewriteRules"></a> 
+#### Rewrite Rules
+
+[Rewrite rules](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom6) is the mechanism 
+to hook into graph building process and perform on the fly substitution of
+specific sub-graphs with equivalent but different sub-graphs.
+The following rule uses auto-generated extractor `mapCosted` which recognizes invocations of method 
+`CostedCol.mapCosted` (Remember, this method was used in costing rule for `MapCollection` tree node).
+
+```scala
+override def rewriteDef[T](d: Def[T]): Rep[_] = {
+  val CCM = CostedColMethods
+  d match {
+  case CCM.mapCosted(xs: RCostedCol[a], _f: RCostedFunc[_, b]) =>
+    val f = asRep[Costed[a] => Costed[b]](_f)
+    val (calcF, costF, sizeF) = splitCostedFunc[a, b](f)
+    val vals = xs.values.map(calcF)
+    val mRes = AllMarking(element[Int])
+    val mCostF = sliceAnalyzer.analyzeFunc(costF, mRes)
+    implicit val eA = xs.elem.eItem
+    implicit val eB = f.elem.eRange.eVal
+
+    val costs = mCostF.mDom match {
+      case PairMarking(markA,_) if markA.isEmpty =>
+        val slicedCostF = fun { in: Rep[(Int, Long)] => costF(Pair(variable[a], in)) }
+        xs.costs.zip(xs.sizes).map(slicedCostF)
+      case _ =>
+        xs.values.zip(xs.costs.zip(xs.sizes)).map(costF)
+    }
+    val tpeB = elemToSType(eB)
+    val sizes = if (tpeB.isConstantSize) {
+      colBuilder.replicate(xs.sizes.length, typeSize(tpeB))
+    } else
+      xs.sizes.map(sizeF)
+    RCCostedCol(vals, costs, sizes, xs.valuesCost)
+  case _ => super.rewriteDef(d)
+  }
+}
+```
+Method `rewriteDef` is defined in `Scalan` cake trait and can be overridden following _stackable overrides_  
+pattern (calling super.rewriteDef for the default case). This specific rule is defined in `RuntimeCosting`
+trait.
