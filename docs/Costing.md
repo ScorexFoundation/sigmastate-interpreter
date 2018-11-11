@@ -52,8 +52,8 @@ Context-dependent costing can use data in the `Context` to construct `calcF` and
 This is necessary to achieve better cost approximations in complex scripts. 
 
 Costing process is divided into two steps:
-1) Construction of _Costed Graph_ `graphC`
-2) Splitting of the `graphC` into `calcF` and `costF` functions
+1) Building of _Costed Graph_ `graphC` (see [below](#BuildingCostedGraph))
+2) Splitting of the `graphC` into `calcF` and `costF` functions (see [below](#SplittingCostedGraph))
 
 ### Deserialization (Steps 1, 2 of costing algorithm)
 
@@ -63,15 +63,17 @@ During deserialization another parameter `MaxTreeDepth` is checked to limit dept
 avoid stack-overflow attack.
 
 ### Building Costed Graph (Step 3)
+<a name="BuildingCostedGraph"></a> 
 
 Costed Graph is a graph-based intermediate representatin (IR) which is created from the deserialized 
 ErgoTree. Implementation of Costed Graph is based on Scalan/Special framework.
 See [Scalan idioms](https://github.com/scalan/scalan.github.io/blob/master/idioms.md) for details.
 
 #### Costed Values
+<a name="CostedValues"></a> 
 
 The nodes of the costed graph `graphC` are _costed values_ of type `Costed[T]`.
-```
+```scala
 trait Costed[Val] {
   def value: Val      // the value which is costed
   def cost: Int       // the cost estimation to obtain value
@@ -100,7 +102,7 @@ val z = x * y
 ``` 
 In the costed graph it corresponds to the following fragment:
 
-```
+```scala
 val xC: Costed[BigInt] = ...
 val yC: Costed[BigInt]= ...
 val zC = new Costed { 
@@ -127,7 +129,7 @@ The simplest case is when `T` is primitive.
 In this case cost information is represented by class `CCostedPrim[T]` derived from trait `CostedPrim[T]`.
 Separation into class and closely related trait is technical implementation detail, we will omit traits 
 in the following sections for brevity. The trait always have the same public methods as class. 
-```
+```scala
 trait CostedPrim[Val] extends Costed[Val] 
 class CCostedPrim[Val](val value: Val, val cost: Int, val dataSize: Long) extends CostedPrim[Val]
 ```
@@ -164,7 +166,7 @@ a constant value in a script.
 
 If `L` and `R` types, then costed value of type `(L,R)` is represented by the following
 specializations of `Costed[(L,R)]` type
-```
+```scala
 class CCostedPair[L,R](val l: Costed[L], val r: Costed[R]) extends CostedPair[L,R] {
   def value: (L,R) = (l.value, r.value)
   def cost: Int = l.cost + r.cost + ConstructTupleCost
@@ -180,7 +182,7 @@ is computed from actual data values by recursively deconstructing them down to p
 types.
 For example for the constant `(10, (10L, true))` the following costed value will be created 
 in costed graph 
-```
+```scala
 CCostedPair(
   CCostedPrim(10, costOf("Const:() => Int"), sizeOf[Int]),
   CCostedPair(
@@ -230,8 +232,8 @@ Note that function `evalNode` applies the [costing rules](#CostingRules) recursi
 (of `sigmastate.Values.Value[T]` type). Those rules are executed in the `fun` block and 
 as result all the created graph nodes belong to the resulting costed graph
 
-<a name="CostingRules"></a> 
 #### Costing Rules
+<a name="CostingRules"></a> 
 
 In order to build costed graph, the algorithm have to recursively traverse ErgoTree. 
 For each node of ErgoTree, separate _costing rule_ is applied using `evalNode` method 
@@ -258,7 +260,7 @@ execution is creation of new graph nodes which become part of resulting costed g
 
 Following is an example of a simple costing rule to introduce basic concepts 
 (it can be found in RuntimeCosting.scala file).
-```
+```scala
   case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
     val l = asRep[Costed[WECPoint]](_l)   // type cast to an expected Rep type
     val r = asRep[Costed[WECPoint]](_r)
@@ -284,7 +286,7 @@ The rule above has the simples form and applicable to most simple operations. Ho
 require rules which don't fall into this default patterns. 
 Following is an example rule for `MapCollection` tree node, which makes recursive costing of arguments
 explicit by using `eval` helper and also employ other idioms of staged evaluation.
-```
+```scala
   case MapCollection(input, id, mapper) =>
     val eIn = stypeToElem(input.tpe.elemType)   // translate sigma type to Special type descriptor
     val xs = asRep[CostedCol[Any]](eval(input)) // recursively build subgraph for input argument
@@ -303,9 +305,76 @@ this invocation has an effect of adding new `MethodCall(xs, "mapCosted", Seq(map
 This new node is immediately catched by the rewriting rule (see [Rewrite Rules](#RewriteRules) section) which further transforms it into final 
 nodes of resulting costed graph. Such separation makes the whole algorithm more modular. 
 
-### Spliting Costed Graph
+### Spliting Costed Graph (Step 4)
+<a name="SplittingCostedGraph"></a> 
 
+Costed Graph represents simultaneous calculation of original contract and cost information along contract's data flow.
+However in order to perform cost estimation before contract calculation we need to separate contract calculation 
+operations of the Costed Graph from cost and data size computing operations. 
 
+After building a Costed Graph
+```scala
+val graphC: Rep[Context => SType#WrappedValue] = buildCostedGraph(env, tree)
+```
+we can perform _splitting_ by using the function `split` to obtain `calcF` and `costF` functions
+```scala
+val Pair(calcF: Rep[Context => SType#WrappedValue], costF: Rep[Context => Int]) = split(graphC)
+```
+Both `calcF` and `costF` take `Context` as its argument and both represented as 
+[reified lambdas](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom4) of
+Scalan/Special IR.
+
+This _splitting_ function is generic and defined as shown below 
+```scala
+  def split[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Int)] = {
+    val calc = fun { x: Rep[T] => val y = f(x); val res = y.value; res }
+    val cost = fun { x: Rep[T] => f(x).cost }
+    Pair(calc, cost)
+  }
+```
+In order to understand how this function works first observe, that this function is from 
+reified lambda to a pair of reified lambdas, thus it performs transformation of one graph to a pair of 
+new graphs.
+Second, consider the `fun` block in the definition of `calc` and the application `f(x)` inside the block.
+Because `f` is a reified lambda then according to staged evaluation semantics its application to `x`
+has an effect of inlining, i.e. unfolding the graph of `f` with `x` substituted for `f`'s argument into 
+the block of `fun`.
+Third, remember that Costed Graph have nodes of types derived from `Costed` depending of the type of value,
+e.g. for primitive type `CCostedPrim(v, c, s)` node is added to the graph.
+This is described in [Costed Values](#CostedValues) section.
+And forth, recall that typical costing rule have the following formulas for calculation of costed values.
+```scala
+    val value = l.value.add(r.value)            // value sub-rule
+    val cost = l.cost + r.cost + costOf(node)   // cost sub-rule
+    val size = CryptoConstants.groupSize.toLong // size sub-rule
+    RCCostedPrim(value, cost, size)
+```
+Combined with third point and assuming 
+```scala
+  l = new CCostedPrim(v1, c1, s1)
+  r = new CCostedPrim(v2, c2, s2)
+``` 
+we can conclude that `l.value.add(r.value)` will evaluate to `v1.add(v2)` and similarly
+`l.cost + r.cost + costOf(node)` will evaluate to `c1 + c2 + costOf(node)`.
+
+```scala
+    val value = v1.add(v2)            // value sub-rule
+    val cost = c1 + c2 + costOf(node)   // cost sub-rule
+    val size = CryptoConstants.groupSize.toLong // size sub-rule
+    RCCostedPrim(value, cost, size)
+``` 
+In other words, resuting node of the cosing rule doesn't depend on intermediate costed nodes.
+Such intermediate nodes (like `CCostedPrim` above) become dead and are not used in values calculation.
+This is the key insight in the implementation of function `split`.
+
+Now, keeping above in mind, after the graph of `f` is unfolded `y` represents resulting node. 
+Thus, `value` property is called on the costed node `y` which has type `Costed`. 
+The resulting symbol obtained by execution of `y.value` becomes a resulting node of the
+`calc` graph. After the block of `fun` operator is executed, dead-code-elimination is performed by `fun`
+using simple collection of reachable nodes of the graph starting from resulting node `res`.
+
+Thus, by construction, the body of `calc` contains only operations necessary to execute contract, and have no
+vestiges of costing and sizing operations.
 
 ### Real World Complications
 
