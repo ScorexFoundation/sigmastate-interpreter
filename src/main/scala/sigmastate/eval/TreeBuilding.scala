@@ -14,7 +14,7 @@ import sigmastate._
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.{ConstantStore, ValueSerializer}
-import sigmastate.utxo.{CostTable, Exists1, ExtractAmount, SizeOf}
+import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
