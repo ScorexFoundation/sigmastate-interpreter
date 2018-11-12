@@ -74,7 +74,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import CostedAvlTree._
   import CCostedAvlTree._
   import IntPlusMonoid._
-
+  import WSpecialPredef._
+  
   def createSliceAnalyzer = new SliceAnalyzer
 
   val ColMarking = new TraversableMarkingFor[Col]
@@ -336,6 +337,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     val CostedBoxM = CostedBoxMethods
     val WOptionM = WOptionMethods
     val CM = ColMethods
+    val CostedBuilderM = CostedBuilderMethods
+    val SPCM = WSpecialPredefCompanionMethods
 
     d match {
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
@@ -458,8 +461,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           case _ => super.rewriteDef(d)
         }
 
-//      case IsConstSizeCostedCol(col) =>
-//        mkCostedCol(col.value, col.value.length, col.cost)
+      case CostedBuilderM.costedValue(b, x, SPCM.some(cost)) =>
+        dataCost(x, Some(asRep[Int](cost)))
+
+      case IsConstSizeCostedCol(col) =>
+        mkCostedCol(col.value, col.value.length, col.cost)
 
       case _ if isCostingProcess =>
         // apply special rules for costing function
@@ -929,7 +935,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case Fold(input, id, zero, accId, foldOp) =>
         val eItem = stypeToElem(input.tpe.elemType)
         val eState = stypeToElem(zero.tpe)
-        (eItem, eState) match { case (eItem: Elem[a], eState: Elem[s]) =>
+        (eState, eItem) match { case (eState: Elem[s], eItem: Elem[a]) =>
           val inputC = asRep[CostedCol[a]](eval(input))
           implicit val eA = inputC.elem.asInstanceOf[CostedElem[Col[a],_]].eVal.eA
           assert(eItem == eA, s"Types should be equal: but $eItem != $eA")

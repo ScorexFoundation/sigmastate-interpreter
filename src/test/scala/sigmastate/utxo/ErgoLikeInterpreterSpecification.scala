@@ -134,7 +134,7 @@ class ErgoLikeTestInterpreterSpecification extends SigmaTestingCommons {
     proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  ignore("mixing scenario w. timeout") {  // TODO Don't know how to evalNode(Fold(MapCollection
+  ignore("mixing scenario w. timeout") {  // TODO Cost of the folded function depends on data
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
 

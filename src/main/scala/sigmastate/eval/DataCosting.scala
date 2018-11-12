@@ -23,18 +23,8 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
   import CostedCol._;
   import CCostedCol._;
   import CostedNestedCol._; import CostedPairCol._
-  import CCostedBuilder._
+  import CostedBuilder._
   import WSpecialPredef._
-
-  override def rewriteDef[T](d: Def[T]): Rep[_] = {
-    val CCB = CCostedBuilderMethods
-    val SPCM = WSpecialPredefCompanionMethods
-    d match {
-      case CCB.costedValue(b, x, SPCM.some(cost)) =>
-        dataCost(x, Some(asRep[Int](cost)))
-      case _ => super.rewriteDef(d)
-    }
-  }
 
   def dataCost[T](x: Rep[T], optCost: Option[Rep[Int]]): Rep[Costed[T]] = {
     val res: Rep[Any] = x.elem match {
