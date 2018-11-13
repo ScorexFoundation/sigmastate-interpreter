@@ -3,7 +3,7 @@ package sigmastate.serialization
 import java.nio.ByteBuffer
 
 import org.ergoplatform.Self
-import sigmastate.Values.{BlockValue, Constant, ConstantPlaceholder, IntConstant, ValDef, ValUse, Value}
+import sigmastate.Values.{Constant, BlockValue, ConstantPlaceholder, Value, IntConstant, ErgoTree, ValDef, ValUse}
 import sigmastate._
 import sigmastate.eval.IRContext
 import sigmastate.helpers.SigmaTestingCommons
@@ -21,20 +21,22 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     outTree
   }
 
-  private def extractConstants(tree: Value[SType])(implicit IR: IRContext): (IndexedSeq[Constant[SType]], Value[SType]) = {
+  private def extractConstants(tree: Value[SType])(implicit IR: IRContext): ErgoTree = {
     val env = Map[String, Any]()
     val IR.Pair(calcF, _) = IR.doCosting(env, tree)
     val extractConstants = new ConstantStore()
     val outTree = IR.buildTree(calcF, Some(extractConstants))
-    (extractConstants.getAll, outTree)
+    val constants = extractConstants.getAll
+    val ergoTree = ErgoTree.withDefaultHeader(constants, outTree)
+    ergoTree
   }
 
   property("(de)serialization round trip using treeBytes()") {
     val tree = Plus(10, 20)
-    val (constants, treeWithPlaceholders) = extractConstants(tree)
-    val bytes = ErgoTreeSerializer.serialize(constants, treeWithPlaceholders)
-    val (deserializedConstants, treeBytes) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes)
-    deserializedConstants shouldEqual constants
+    val ergoTree = extractConstants(tree)
+    val bytes = ErgoTreeSerializer.serialize(ergoTree)
+    val (_, deserializedConstants, treeBytes) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes)
+    deserializedConstants shouldEqual ergoTree.constants
     val r = Serializer.startReader(treeBytes, new ConstantStore(deserializedConstants),
       resolvePlaceholdersToConstants = true)
     val deserializedTree = ValueSerializer.deserialize(r)
@@ -43,8 +45,8 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
 
   property("Constant extraction via compiler pass: (de)serialization round trip") {
     val tree = Plus(10, 20)
-    val (constants, treeWithPlaceholders) = extractConstants(tree)
-    val bytes = ErgoTreeSerializer.serialize(constants, treeWithPlaceholders)
+    val ergoTree = extractConstants(tree)
+    val bytes = ErgoTreeSerializer.serialize(ergoTree)
     val deserializedTree = ErgoTreeSerializer.deserialize(bytes)
     deserializedTree shouldEqual tree
   }
@@ -52,7 +54,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
   property("Constant extraction during serialization: (de)serialization round trip") {
     val tree = Plus(10, 20)
     val bytes = ErgoTreeSerializer.serialize(tree)
-    val (deserializedConstants, _) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes)
+    val (_, deserializedConstants, _) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes)
     deserializedConstants.size shouldBe 2
     val deserializedTree = ErgoTreeSerializer.deserialize(bytes)
     deserializedTree shouldEqual tree
@@ -63,14 +65,14 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val tree2 = Plus(30, 40)
     val bytes1 = ErgoTreeSerializer.serialize(tree1)
     val bytes2 = ErgoTreeSerializer.serialize(tree2)
-    val (_, treeBytes1) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes1)
-    val (_, treeBytes2) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes2)
+    val (_, _, treeBytes1) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes1)
+    val (_, _, treeBytes2) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes2)
     treeBytes1 shouldEqual treeBytes2
   }
 
   property("(de)serialize round trip (without constants)") {
     val tree = ExtractAmount(Self)
-    val bytes = ErgoTreeSerializer.serialize(IndexedSeq(), tree)
+    val bytes = ErgoTreeSerializer.serialize(ErgoTree.withDefaultHeader(IndexedSeq(), tree))
     val deserializedTree = ErgoTreeSerializer.deserialize(bytes)
     deserializedTree shouldEqual tree
   }
@@ -78,8 +80,8 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
   property("AND expr gen: (de)serializer round trip") {
     forAll(logicalExprTreeNodeGen(Seq(AND.apply))) { tree =>
       val processedTree = passThroughTreeBuilder(tree)
-      val (constants, treeWithPlaceholders) = extractConstants(processedTree)
-      val bytes = ErgoTreeSerializer.serialize(constants, treeWithPlaceholders)
+      val ergoTree = extractConstants(processedTree)
+      val bytes = ErgoTreeSerializer.serialize(ergoTree)
       val deserializedTree = ErgoTreeSerializer.deserialize(bytes)
       deserializedTree shouldEqual processedTree
     }
@@ -88,9 +90,9 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
   property("AND expr gen: deserialization round trip with constant injection") {
     forAll(logicalExprTreeNodeGen(Seq(AND.apply))) { tree =>
       val processedTree = passThroughTreeBuilder(tree)
-      val (constants, treeWithPlaceholders) = extractConstants(processedTree)
-      val bytes = ErgoTreeSerializer.serialize(constants, treeWithPlaceholders)
-      val (deserializedConstants, treeBytes) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes)
+      val ergoTree = extractConstants(processedTree)
+      val bytes = ErgoTreeSerializer.serialize(ergoTree)
+      val (_, deserializedConstants, treeBytes) = ErgoTreeSerializer.treeWithPlaceholdersBytes(bytes)
       val c = new ConstantStore(deserializedConstants)
       val deserializedTree = ErgoTreeSerializer.deserializeWithConstantInjection(c, treeBytes)
       deserializedTree shouldEqual processedTree

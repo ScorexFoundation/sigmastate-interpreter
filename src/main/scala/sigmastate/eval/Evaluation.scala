@@ -153,7 +153,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     }
   }
 
-  val okPrintEvaluatedEntries: Boolean = true
+  val okPrintEvaluatedEntries: Boolean = false
 
   def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
     if (okPrintEvaluatedEntries)

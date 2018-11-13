@@ -685,4 +685,37 @@ object Values {
   def GetVarSigmaProp(varId: Byte): GetVar[SSigmaProp.type] = GetVar(varId, SSigmaProp)
   def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
 
+  /** The root of ErgoScript IR. Serialized instances of this class are self sufficient and can be passed around.
+    * ErgoTreeSerializer defines top-level serialization format of the scripts.
+    * The interpretation of the byte array depend on the first `header` byte, which uses VLQ encoding up to 30 bits.
+    * Currently we define meaning for only first byte, which may be extended in future versions.
+    *   7  6  5  4  3  2  1  0
+    * -------------------------
+    * |  |  |  |  |  |  |  |  |
+    * -------------------------
+    *  Bit 7 == 1 if the header contains more than 1 byte (default == 0)
+    *  Bit 6 == 1 if the bytes after the header are compressed using GZIP (default == 0)
+    *  Bit 5 == 1 if context dependent costing should be used (default = 0)
+    *  Bit 4 - reserved
+    *  Bit 3 - reserved
+    *  Bits 2-0 - language version
+    *
+    *  Currently we don't specify interpretation for the second and other bytes of the header.
+    *  We reserve the possibility to extend header by using Bit 7 == 1 and chain additional bytes as in VLQ.
+    *  Once the new bytes are required, a new version of the language should be created and implemented.
+    *  That new language will give an interpretation for the new bytes.
+    * */
+  case class ErgoTree private(
+    header: Byte,
+    constants: IndexedSeq[Constant[SType]],
+    root: Value[SType]) {
+  }
+  object ErgoTree {
+    val DefaultHeader: Byte = 0
+    def withDefaultHeader(constants: IndexedSeq[Constant[SType]], root: Value[SType]) =
+      ErgoTree(DefaultHeader, constants, root)
+    def withHeader(header: Byte, constants: IndexedSeq[Constant[SType]], root: Value[SType]) =
+      ErgoTree(header, constants, root)
+  }
+
 }
