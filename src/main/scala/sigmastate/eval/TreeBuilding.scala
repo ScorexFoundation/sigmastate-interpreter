@@ -2,20 +2,19 @@ package sigmastate.eval
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate._
-import sigmastate.Values.{SValue, BlockValue, SigmaPropConstant, BoolValue, Value, ValDef, ValUse}
+import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.serialization.OpCodes._
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import java.lang.reflect.Method
 import java.math.BigInteger
 
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import scapi.sigma.DLogProtocol
 import sigmastate._
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{Exists1, CostTable, ExtractAmount, SizeOf}
+import sigmastate.serialization.{ConstantStore, ValueSerializer}
+import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -25,6 +24,7 @@ import SType._
 import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.lang.SigmaBuilder
 
 trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import Liftables._
@@ -106,10 +106,14 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     }
   }
 
-  def buildValue(mainG: PGraph, env: DefEnv, s: Sym, defId: Int): SValue = {
+  def buildValue(mainG: PGraph,
+                 env: DefEnv,
+                 s: Sym,
+                 defId: Int,
+                 constantsProcessing: Option[ConstantStore]): SValue = {
     import builder._
-    def recurse[T <: SType](s: Sym) = buildValue(mainG, env, s, defId).asValue[T]
-    object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(mainG, env, s, defId)) }
+    def recurse[T <: SType](s: Sym) = buildValue(mainG, env, s, defId, constantsProcessing).asValue[T]
+    object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(mainG, env, s, defId, constantsProcessing)) }
     s match {
       case _ if env.contains(s) =>
         val (id, tpe) = env(s)
@@ -117,18 +121,25 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(Lambda(lam, _, x, y)) =>
         val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
       val env1 = env + (x -> (varId, elemToSType(x.elem)))
-        val block = processAstGraph(mainG, env1, lam, varId + 1)
+        val block = processAstGraph(mainG, env1, lam, varId + 1, constantsProcessing)
         val rhs = mkFuncValue(Vector((varId, elemToSType(x.elem))), block)
         rhs
       case Def(Apply(fSym, xSym, _)) =>
         val Seq(f, x) = Seq(fSym, xSym).map(recurse)
         builder.mkApply(f, IndexedSeq(x))
       case Def(th @ ThunkDef(root, _)) =>
-        val block = processAstGraph(mainG, env, th, defId)
+        val block = processAstGraph(mainG, env, th, defId, constantsProcessing)
         block
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
-        mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+        constantsProcessing match {
+          case Some(s) =>
+            val constant = mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+              .asInstanceOf[ConstantNode[SType]]
+            s.put(constant)(builder)
+          case None =>
+            mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+        }
       case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
         val colTpe = elemToSType(s.elem)
         mkConstant[colTpe.type](wc.constValue.asInstanceOf[colTpe.WrappedType], colTpe)
@@ -163,7 +174,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case ColM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
-        mkExists1(col.asCollection[SType], p.asFunc)
+        mkExists(col.asCollection[SType], 21, p.asBoolValue)
 
       case ColM.forall(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
@@ -171,7 +182,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case ColM.map(colSym, fSym) =>
         val Seq(col, f) = Seq(colSym, fSym).map(recurse)
-        mkMapCollection1(col.asCollection[SType], f.asFunc)
+        mkMapCollection(col.asCollection[SType], 21, f.asFunc)
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))
@@ -219,13 +230,17 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     }
   }
 
-  def processAstGraph(mainG: PGraph, env: DefEnv, subG: AstGraph, defId: Int): SValue = {
+  private def processAstGraph(mainG: PGraph,
+                              env: DefEnv,
+                              subG: AstGraph,
+                              defId: Int,
+                              constantsProcessing: Option[ConstantStore]): SValue = {
     val valdefs = new ArrayBuffer[ValDef]
     var curId = defId
     var curEnv = env
     for (TableEntry(s, d) <- subG.schedule) {
       if (mainG.hasManyUsagesGlobal(s) && IsContextProperty.unapply(d).isEmpty && IsInternalDef.unapply(d).isEmpty) {
-        val rhs = buildValue(mainG, curEnv, s, curId)
+        val rhs = buildValue(mainG, curEnv, s, curId, constantsProcessing)
         curId += 1
         val vd = ValDef(curId, Seq(), rhs)
         curEnv = curEnv + (s -> (curId, elemToSType(s.elem)))  // assign valId to s, so it can be use in ValUse
@@ -233,15 +248,16 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       }
     }
     val Seq(root) = subG.roots
-    val rhs = buildValue(mainG, curEnv, root, curId)
+    val rhs = buildValue(mainG, curEnv, root, curId, constantsProcessing)
     val res = if (valdefs.nonEmpty) BlockValue(valdefs.toIndexedSeq, rhs) else rhs
     res
   }
 
-  def buildTree[T <: SType](f: Rep[Context => Any]): Value[T] = {
+  def buildTree[T <: SType](f: Rep[Context => Any],
+                            constantsProcessing: Option[ConstantStore] = None): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
     val mainG = new PGraph(lam.y)
-    val block = processAstGraph(mainG, Map(), mainG, 0)
+    val block = processAstGraph(mainG, Map(), mainG, 0, constantsProcessing)
     block.asValue[T]
   }
 }

@@ -502,24 +502,6 @@ case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
   override def cost[C <: Context](context: C): Long = input.cost(context) + Cost.OptionIsDefined
 }
 
-case class MapCollection1[IV <: SType, OV <: SType](
-    input: Value[SCollection[IV]],
-    mapper: Value[SFunc])
-    extends NotReadyValue[SCollection[OV]] {
-  override val opCode: OpCode = OpCodes.MapCollectionCode
-  val tpe = SCollection[OV](mapper.tpe.tRange.asInstanceOf[OV])
-  def cost[C <: Context](context: C) = ???
-  val opType = SCollection.MapMethod.stype.asFunc
-}
-
-case class Exists1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc])
-    extends NotReadyValue[SBoolean.type] {
-  override val opCode: OpCode = OpCodes.ExistsCode
-  override def tpe = SBoolean
-  override def cost[C <: Context](context: C): Long = ???
-  val opType = SCollection.ExistsMethod.stype.asFunc
-}
-
 case class ForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc])
     extends NotReadyValue[SBoolean.type] {
   override val opCode: OpCode = OpCodes.ForAllCode

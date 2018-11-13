@@ -2,18 +2,18 @@ package sigmastate.serialization
 
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 object GroupElementSerializer extends Serializer[EcPointType, EcPointType] {
 
   private val curve = CryptoConstants.dlogGroup
 
-  override def serializeBody(obj: EcPointType, w: ByteWriter): Unit = {
+  override def serializeBody(obj: EcPointType, w: SigmaByteWriter): Unit = {
     val bytes = obj.getEncoded(true)
     w.putBytes(bytes)
   }
 
-  override def parseBody(r: ByteReader): EcPointType = r.getByte() match {
+  override def parseBody(r: SigmaByteReader): EcPointType = r.getByte() match {
     case 0 =>
       // infinity point is always compressed as 1 byte (X9.62 s 4.3.6)
       val point = curve.curve.decodePoint(Array(0)).asInstanceOf[EcPointType]

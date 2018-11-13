@@ -139,8 +139,7 @@ trait TransformerGenerators {
         EQ(IntConstant(1), IntConstant(1)), // true
         EQ(IntConstant(1), IntConstant(2))  // false
       ),
-      proveDlogGen,
-      proveDHTGen
+      booleanConstGen
     )
 
   private type LogicalTransformerCons =
@@ -235,4 +234,49 @@ trait TransformerGenerators {
   val valOrFunDefGen: Gen[ValDef] = for {
     v <- Gen.oneOf(valDefGen, funDefGen)
   } yield v
+
+  val valUseGen: Gen[ValUse[SType]] = for {
+    id <- unsignedIntGen
+    tpe <- predefTypeGen
+  } yield ValUse(id, tpe)
+
+  val blockValueGen: Gen[BlockValue] = for {
+    items <- Gen.nonEmptyListOf(valDefGen)
+  } yield BlockValue(items.toIndexedSeq,
+    EQ(
+      SizeOf(Tuple(items.toIndexedSeq.map(valDef => ValUse(valDef.id, valDef.tpe)))),
+      IntConstant(items.length)))
+
+  val constantPlaceholderGen: Gen[ConstantPlaceholder[SType]] = for {
+    id <- unsignedIntGen
+    tpe <- predefTypeGen
+  } yield ConstantPlaceholder(id, tpe)
+
+  val funcValueArgsGen: Gen[IndexedSeq[(Int, SType)]] = for {
+    num <- Gen.chooseNum(1, 10)
+    indices <- Gen.listOfN(num, unsignedIntGen)
+    tpes <- Gen.listOfN(num, predefTypeGen)
+  } yield indices.zip(tpes).toIndexedSeq
+
+  val funcValueGen: Gen[FuncValue] = for {
+    args <- funcValueArgsGen
+    body <- logicalExprTreeNodeGen(Seq(AND.apply))
+  } yield FuncValue(args, body)
+
+  val sigmaPropValueGen: Gen[SigmaPropValue] = sigmaBooleanGen.map(SigmaPropConstant(_))
+
+  val sigmaAndGen: Gen[SigmaAnd] = for {
+    num <- Gen.chooseNum(1, 10)
+    items <- Gen.listOfN(num, sigmaPropValueGen)
+  } yield mkSigmaAnd(items).asInstanceOf[SigmaAnd]
+
+  val sigmaOrGen: Gen[SigmaOr] = for {
+    num <- Gen.chooseNum(1, 10)
+    items <- Gen.listOfN(num, sigmaPropValueGen)
+  } yield mkSigmaOr(items).asInstanceOf[SigmaOr]
+
+  val boolToSigmaPropGen: Gen[BoolToSigmaProp] = for {
+    b <- booleanConstGen
+  } yield mkBoolToSigmaProp(b)
+
 }

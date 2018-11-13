@@ -10,7 +10,7 @@ import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropCons
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{Exists1, CostTable, ExtractAmount, SizeOf}
+import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

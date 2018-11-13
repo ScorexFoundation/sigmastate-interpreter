@@ -146,6 +146,8 @@ object CostTable {
 
     ("TreeModifications", "(AvlTree, Array[Byte], Array[Byte]) => Option[Array[Byte]]", MinimalCost),
     ("TreeLookup", "(AvlTree, Array[Byte], Array[Byte]) => Option[Array[Byte]]", MinimalCost),
+
+    ("LongToByteArray", "(Long) => Array[Byte]", MinimalCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Double)]): CostTable = {

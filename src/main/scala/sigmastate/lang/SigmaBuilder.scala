@@ -5,17 +5,16 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.{ProveDiffieHellmanTuple, DLogProtocol}
+import scapi.sigma.{DLogProtocol, ProveDiffieHellmanTuple}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, ConstantNode, SomeValue, BoolValue, Value, SigmaPropValue, Tuple, TaggedVariableNode, SigmaBoolean, TaggedVariable, ConcreteCollection, NoneValue}
+import sigmastate.Values.{BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
-
 import scalan.Nullable
 
 trait SigmaBuilder {
@@ -102,11 +101,6 @@ trait SigmaBuilder {
 
   def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc]
 
-  def mkMapCollection1[IV <: SType, OV <: SType](
-      input: Value[SCollection[IV]], mapper: Value[SFunc]): Value[SCollection[OV]]
-
-  def mkExists1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
-
   def mkForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
 
   def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
@@ -151,6 +145,8 @@ trait SigmaBuilder {
   def mkSigmaPropIsValid(value: Value[SSigmaProp.type]): BoolValue
 
   def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray]
+  def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue
+  def mkSigmaOr(items: Seq[SigmaPropValue]): SigmaPropValue
 
   def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                        elementType: T): Value[SCollection[T]]
@@ -161,6 +157,8 @@ trait SigmaBuilder {
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
 
   def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType]
+  def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType]
+  def mkValUse(valId: Int, tpe: SType): Value[SType]
   def mkVal(name: String, givenType: SType, body: Value[SType]): Val
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
   def mkIdent(name: String, tpe: SType): Value[SType]
@@ -178,6 +176,7 @@ trait SigmaBuilder {
                body: Option[Value[SType]]): Value[SFunc]
 
   def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T]
+  def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType]
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
   def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type]
@@ -363,14 +362,6 @@ class StdSigmaBuilder extends SigmaBuilder {
   def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc] =
     FuncValue(args, body)
 
-  def mkMapCollection1[IV <: SType, OV <: SType](
-        input: Value[SCollection[IV]], mapper: Value[SFunc]) =
-    MapCollection1(input, mapper)
-
-  override def mkExists1[IV <: SType](input: Value[SCollection[IV]],
-                                     condition: Value[SFunc]): BoolValue =
-    Exists1(input, condition)
-
   override def mkForAll1[IV <: SType](input: Value[SCollection[IV]],
                                      condition: Value[SFunc]): BoolValue =
     ForAll1(input, condition)
@@ -442,6 +433,10 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkSigmaPropBytes(value: Value[SSigmaProp.type]) = SigmaPropBytes(value)
 
+  override def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue = SigmaAnd(items)
+
+  override def mkSigmaOr(items: Seq[SigmaPropValue]): SigmaPropValue = SigmaOr(items)
+
   override def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
                                                 elementType: T): Value[SCollection[T]] =
     ConcreteCollection(items, elementType)
@@ -454,6 +449,12 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType] =
     Block(bindings, result)
+
+  override def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType] =
+    BlockValue(items, result)
+
+  override def mkValUse(valId: Int, tpe: SType): Value[SType] =
+    ValUse(valId, tpe)
 
   override def mkVal(name: String, givenType: SType, body: Value[SType]): Val =
     ValNode(name, givenType, body)
@@ -490,6 +491,10 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T] =
     ConstantNode[T](value, tpe)
+
+
+  override def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType] =
+    ConstantPlaceholder[T](id, tpe)
 
   override def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                                 elementType: T): Constant[SCollection[T]] =

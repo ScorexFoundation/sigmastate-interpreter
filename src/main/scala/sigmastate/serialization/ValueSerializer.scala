@@ -9,9 +9,9 @@ import sigmastate.lang.Terms.OperationId
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{Relation3Serializer, QuadrupleSerializer, Relation2Serializer}
+import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
 import sigmastate.utils.Extensions._
-import sigmastate.utils.{ByteWriter, SparseArrayContainer, ByteReader}
+import sigmastate.utils._
 import sigmastate.utxo.CostTable._
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
@@ -32,8 +32,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   private val builder: DeserializationSigmaBuilder.type = DeserializationSigmaBuilder
   import builder._
 
+  private val constantSerializer = ConstantSerializer(builder)
+  private val constantPlaceholderSerializer = ConstantPlaceholderSerializer(mkConstantPlaceholder)
+
   private val serializers = SparseArrayContainer.buildForSerializers(Seq[ValueSerializer[_ <: Value[SType]]](
-    ConstantSerializer(builder),
+    constantSerializer,
+    constantPlaceholderSerializer,
     TupleSerializer(mkTuple),
     SelectFieldSerializer(mkSelectField),
     Relation2Serializer(GtCode, mkGT[SType]),
@@ -107,6 +111,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     NumericCastSerializer(DowncastCode, mkDowncast),
     ValDefSerializer(ValDefCode),
     ValDefSerializer(FunDefCode),
+    BlockValueSerializer(mkBlockValue),
+    ValUseSerializer(mkValUse),
+    FuncValueSerializer(mkFuncValue),
+    SigmaTransformerSerializer(SigmaAndCode, mkSigmaAnd),
+    SigmaTransformerSerializer(SigmaOrCode, mkSigmaOr),
+    BoolToSigmaPropSerializer(mkBoolToSigmaProp),
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
@@ -122,9 +132,16 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     serializer
   }
 
-  override def serialize(v: Value[SType], w: ByteWriter): Unit = serializable(v) match {
+  override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
-      ConstantSerializer(builder).serialize(c, w)
+      w.constantExtractionStore match {
+        case Some(constantStore) =>
+          val ph = constantStore.put(c)(DeserializationSigmaBuilder)
+          w.put(ph.opCode)
+          constantPlaceholderSerializer.serializeBody(ph, w)
+        case None =>
+          constantSerializer.serialize(c, w)
+      }
     case _ =>
       val opCode = v.opCode
       w.put(opCode)
@@ -132,7 +149,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serializeBody(v, w)
   }
 
-  override def deserialize(r: ByteReader): Value[SType] = {
+  override def deserialize(r: SigmaByteReader): Value[SType] = {
     val bytesRemaining = r.remaining
     if (bytesRemaining > Serializer.MaxInputSize)
       throw new InputSizeLimitExceeded(s"input size $bytesRemaining exceeds ${ Serializer.MaxInputSize}")
@@ -140,10 +157,10 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     if (depth > Serializer.MaxTreeDepth)
       throw new ValueDeserializeCallDepthExceeded(s"nested value deserialization call depth($depth) exceeds allowed maximum ${Serializer.MaxTreeDepth}")
     r.level = depth + 1
-    val firstByte = r.peekByte()
-    val v = if (firstByte.toUByte <= LastConstantCode) {
+    val firstByte = r.peekByte().toUByte
+    val v = if (firstByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
-      ConstantSerializer(builder).deserialize(r)
+      constantSerializer.deserialize(r)
     }
     else {
       val opCode = r.getByte()

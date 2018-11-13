@@ -7,15 +7,14 @@ import scala.language.implicitConversions
 import scala.language.existentials
 import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
-
-import scalan.{Lazy, SigmaLibrary, Nullable}
+import scalan.{Lazy, Nullable, SigmaLibrary}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
-import sigmastate.Values.{OptionValue, Constant, SValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ConcreteCollection}
+import sigmastate.Values.{BlockValue, BoolValue, ByteArrayConstant, ConcreteCollection, Constant, OptionValue, SValue, SigmaBoolean, SigmaPropConstant, TaggedVariableNode, ValDef, ValUse, Value}
 import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._
@@ -30,9 +29,9 @@ import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
 import scorex.crypto.hash.Blake2b256.DigestSize
-import scorex.crypto.hash.{Sha256, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Sha256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{Terms, SigmaCompiler}
+import sigmastate.lang.{SigmaCompiler, Terms}
 import scalan.staged.Slicing
 
 trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Evaluation =>
@@ -114,6 +113,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int]
 
   def costOf(opName: String, opType: SFunc): Rep[Int] = CostOf(opName, opType)
+
+  case class ConstantPlaceholder[T](index: Int)(implicit eT: LElem[T]) extends Def[T] {
+    def selfType: Elem[T] = eT.value
+  }
+
+  def constantPlaceholder[T](index: Int)(implicit eT: LElem[T]): Rep[T] = ConstantPlaceholder[T](index)
 
   def perKbCostOf(node: SValue, dataSize: Rep[Long]) = {
     val opName = s"${node.getClass.getSimpleName}_per_kb"
@@ -808,6 +813,19 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res1 = evalNode(ctx, curEnv, res)
         res1
 
+      case BlockValue(binds, res) =>
+        var curEnv = env
+        for (ValDef(n, _, b) <- binds) {
+          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
+          val bC = evalNode(ctx, curEnv, b)
+          curEnv = curEnv + (n -> bC)
+        }
+        val res1 = evalNode(ctx, curEnv, res)
+        res1
+
+      case ValUse(valId, _) =>
+        env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
+
       case sigmastate.Exponentiate(In(_l), In(_r)) =>
         val l = asRep[Costed[WECPoint]](_l)
         val r = asRep[Costed[WBigInteger]](_r)
@@ -1303,6 +1321,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //      case ErgoAddressToSigmaProp(input) =>
 //        val inputC = evalNode(ctx, env, input)
 //        withDefaultSize(inputC.value, inputC.cost + costOf(node))
+
+      case sigmastate.Values.ConstantPlaceholder(index, tpe) =>
+        val elem = toLazyElem(stypeToElem(tpe))
+        val res = constantPlaceholder(index)(elem)
+        withDefaultSize(res, costOf(node))
 
       case _ =>
         error(s"Don't know how to evalNode($node)")

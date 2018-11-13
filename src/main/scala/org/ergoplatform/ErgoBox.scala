@@ -11,7 +11,7 @@ import sigmastate.SType.AnyOps
 import sigmastate._
 import sigmastate.serialization.Serializer
 import sigmastate.SCollection.SByteArray
-import sigmastate.utils.{ByteWriter, ByteReader, Helpers}
+import sigmastate.utils.{SigmaByteWriter, SigmaByteReader, Helpers}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -152,7 +152,7 @@ object ErgoBox {
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
 
-    override def serializeBody(obj: ErgoBox, w: ByteWriter): Unit = {
+    override def serializeBody(obj: ErgoBox, w: SigmaByteWriter): Unit = {
       ErgoBoxCandidate.serializer.serializeBody(obj, w)
       val txIdBytes = obj.transactionId.toBytes
       val txIdBytesSize = txIdBytes.length
@@ -162,7 +162,7 @@ object ErgoBox {
       w.putUShort(obj.index)
     }
 
-    override def parseBody(r: ByteReader): ErgoBox = {
+    override def parseBody(r: SigmaByteReader): ErgoBox = {
       val ergoBoxCandidate = ErgoBoxCandidate.serializer.parseBody(r)
       val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdBytesSize).toModifierId
       val index = r.getUShort()

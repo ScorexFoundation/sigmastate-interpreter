@@ -4,13 +4,13 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Extensions._
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
 
 case class ValDefSerializer(override val opCode: OpCode) extends ValueSerializer[ValDef] {
 
-  override def serializeBody(obj: ValDef, w: ByteWriter): Unit = {
+  override def serializeBody(obj: ValDef, w: SigmaByteWriter): Unit = {
     w.putUInt(obj.id)
     if (opCode == FunDefCode) {
       require(!obj.isValDef, s"expected FunDef, got $obj")
@@ -21,7 +21,7 @@ case class ValDefSerializer(override val opCode: OpCode) extends ValueSerializer
     w.putValue(obj.rhs)
   }
 
-  override def parseBody(r: ByteReader): Value[SType] = {
+  override def parseBody(r: SigmaByteReader): Value[SType] = {
     val id = r.getUInt().toInt
     val tpeArgs: Seq[STypeIdent] = opCode match {
       case FunDefCode =>
@@ -35,6 +35,7 @@ case class ValDefSerializer(override val opCode: OpCode) extends ValueSerializer
         Seq()
     }
     val rhs = r.getValue()
+    r.valDefTypeStore(id) = rhs.tpe
     ValDef(id, tpeArgs, rhs)
   }
 }

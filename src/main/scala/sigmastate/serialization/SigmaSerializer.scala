@@ -7,8 +7,8 @@ import sigmastate.utils._
 
 trait Serializer[TFamily, T <: TFamily] {
 
-  def parseBody(r: ByteReader): TFamily
-  def serializeBody(obj: T, w: ByteWriter): Unit
+  def parseBody(r: SigmaByteReader): TFamily
+  def serializeBody(obj: T, w: SigmaByteWriter): Unit
   def error(msg: String) = throw new SerializerException(msg, None)
 
   final def toBytes(obj: T): Array[Byte] = {
@@ -30,11 +30,20 @@ object Serializer {
     * val r = Serializer.startReader(bytes, pos)
     * val obj = r.getValue()
     * obj -> r.consumed */
-  def startReader(bytes: Array[Byte], pos: Int = 0): ByteReader = {
+  def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
-    val r = new ByteBufferReader(buf)
+    val r = new SigmaByteReader(buf, new ConstantStore(), resolvePlaceholdersToConstants = false)
         .mark()
+    r
+  }
+
+  def startReader(bytes: Array[Byte],
+                  constantStore: ConstantStore,
+                  resolvePlaceholdersToConstants: Boolean): SigmaByteReader = {
+    val buf = ByteBuffer.wrap(bytes)
+    val r = new SigmaByteReader(buf, constantStore, resolvePlaceholdersToConstants)
+      .mark()
     r
   }
 
@@ -43,9 +52,15 @@ object Serializer {
     * w.putLong(l)
     * val res = w.toBytes
     * res */
-  def startWriter(): ByteWriter = {
+  def startWriter(): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
-    val w = new ByteArrayWriter(b)
+    val w = new SigmaByteWriter(b, constantExtractionStore = None)
+    w
+  }
+
+  def startWriter(constantExtractionStore: ConstantStore): SigmaByteWriter = {
+    val b = new ByteArrayBuilder()
+    val w = new SigmaByteWriter(b, constantExtractionStore = Some(constantExtractionStore))
     w
   }
 }
@@ -58,7 +73,7 @@ trait SigmaSerializerCompanion[TFamily] {
   type Tag
 
   def getSerializer(opCode: Tag): SigmaSerializer[TFamily, _ <: TFamily]
-  def deserialize(r: ByteReader): TFamily
-  def serialize(v: TFamily, w: ByteWriter): Unit
+  def deserialize(r: SigmaByteReader): TFamily
+  def serialize(v: TFamily, w: SigmaByteWriter): Unit
 }
 

@@ -7,15 +7,14 @@ import org.ergoplatform._
 import scapi.sigma.DLogProtocol
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean, GroupElementConstant, ValUse}
+import sigmastate.Values.{BigIntArrayConstant, BigIntConstant, ByteArrayConstant, FalseLeaf, GroupElementConstant, IntConstant, LongConstant, SigmaBoolean, SigmaPropConstant, TrueLeaf, ValUse}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
 import sigmastate.lang.LangTests
-import sigmastate.utxo.{Exists1, ExtractScriptBytes, SigmaPropBytes, ExtractAmount}
+import sigmastate.utxo._
 import special.collection.{Col => VCol}
 import special.sigma.{TestValue => VTestValue}
-
 import scalan.BaseCtxTests
 
 class CompilerItTest extends BaseCtxTests
@@ -157,8 +156,9 @@ class CompilerItTest extends BaseCtxTests
         val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
         arrSizes.map(f).sum(longPlusMonoid)
       },
-      tree = mkMapCollection1(
+      tree = mkMapCollection(
         BigIntArrayConstant(bigIntArr1),
+        21,
         mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))
       ),
       Result(res, 207, 4))
@@ -273,10 +273,12 @@ class CompilerItTest extends BaseCtxTests
           SigmaAnd(Seq(
             BoolToSigmaProp(AND(Vector(
               LT(Height,ValUse(1,SLong)),
-              Exists1(Outputs, FuncValue(Vector((3,SBox)),
-                BinAnd(
-                  GE(ExtractAmount(ValUse(3,SBox)),LongConstant(1000)),
-                  EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp)))))
+              Exists(Outputs, 21,
+                FuncValue(Vector((3,SBox)),
+                  BinAnd(
+                    GE(ExtractAmount(ValUse(3,SBox)),LongConstant(1000)),
+                    EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp))))
+                ).asInstanceOf[Value[SBoolean.type]]
               )))),
             ValUse(2,SSigmaProp)
           ))))),

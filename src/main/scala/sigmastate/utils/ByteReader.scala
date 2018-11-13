@@ -176,8 +176,8 @@ class ByteBufferReader(buf: ByteBuffer) extends ByteReader {
   @inline override def remaining: Int = buf.remaining()
 
   private var lvl: Int = 0
-  override def level: Int = lvl
-  override def level_=(v: Int): Unit = lvl = v
+  @inline override def level: Int = lvl
+  @inline override def level_=(v: Int): Unit = lvl = v
 }
 
 object ByteBufferReader {

@@ -57,7 +57,7 @@ class ErgoTreeBuildingTest extends BaseCtxTests
     build(emptyEnv, "lam1", "{ (x: Long) => HEIGHT + x }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
     build(emptyEnv, "lam2", "{ val f = { (x: Long) => HEIGHT + x }; f }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
     build(emptyEnv, "lam3", "{ OUTPUTS.exists { (x: Box) => HEIGHT == x.value } }",
-      Exists1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
+      Exists(Outputs, 21, FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox)))).asBoolValue))
     build(emptyEnv, "lam4", "{ OUTPUTS.forall { (x: Box) => HEIGHT == x.value } }",
       ForAll1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
     build(emptyEnv, "lam5", "{ val f = { (x: Long) => HEIGHT + x }; f(10L) }",
@@ -83,10 +83,10 @@ class ErgoTreeBuildingTest extends BaseCtxTests
           SigmaAnd(Seq(
             BoolToSigmaProp(AND(Vector(
               LT(Height,ValUse(1,SLong)),
-              Exists1(Outputs, FuncValue(Vector((3,SBox)),
+              Exists(Outputs, 21, FuncValue(Vector((3,SBox)),
                   BinAnd(
                     GE(ExtractAmount(ValUse(3,SBox)),LongConstant(1000)),
-                    EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp)))))
+                    EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp))))).asBoolValue
               )))),
             ValUse(2,SSigmaProp)
           ))))))

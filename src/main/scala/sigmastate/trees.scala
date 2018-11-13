@@ -108,10 +108,14 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   val opType = SFunc(SBoolean, SSigmaProp)
 }
 
+trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
+  val items: Seq[IV]
+}
+
 /**
   * AND conjunction for sigma propositions
   */
-case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaPropValue {
+case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPropValue, SigmaPropValue] {
   override val opCode: OpCode = OpCodes.SigmaAndCode
   override def cost[C <: Context](context: C): Long = ???
   def tpe = SSigmaProp
@@ -122,7 +126,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaPropValue {
 /**
   * OR disjunction for sigma propositions
   */
-case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaPropValue {
+case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPropValue, SigmaPropValue] {
   override val opCode: OpCode = OpCodes.SigmaOrCode
   override def cost[C <: Context](context: C): Long = ???
   def tpe = SSigmaProp

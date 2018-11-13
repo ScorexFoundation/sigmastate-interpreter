@@ -11,7 +11,7 @@ import sigmastate._
 import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 
@@ -70,7 +70,7 @@ object ErgoBoxCandidate {
 
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
                                         digestsInTx: Option[Array[Digest32]],
-                                        w: ByteWriter): Unit = {
+                                        w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
       w.putValue(obj.proposition)
       w.putULong(obj.creationHeight)
@@ -105,11 +105,11 @@ object ErgoBoxCandidate {
       }
     }
 
-    override def serializeBody(obj: ErgoBoxCandidate, w: ByteWriter): Unit = {
+    override def serializeBody(obj: ErgoBoxCandidate, w: SigmaByteWriter): Unit = {
       serializeBodyWithIndexedDigests(obj, None, w)
     }
 
-    def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: ByteReader): ErgoBoxCandidate = {
+    def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: SigmaByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
       val prop = r.getValue().asBoolValue
       val creationHeight = r.getULong()
@@ -135,7 +135,7 @@ object ErgoBoxCandidate {
       new ErgoBoxCandidate(value, prop, addTokens, regs, creationHeight)
     }
 
-    override def parseBody(r: ByteReader): ErgoBoxCandidate = {
+    override def parseBody(r: SigmaByteReader): ErgoBoxCandidate = {
       parseBodyWithIndexedDigests(None, r)
     }
   }

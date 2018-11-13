@@ -5,7 +5,7 @@ import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utils.Extensions._
 
 
@@ -13,7 +13,7 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
 (override val opCode: Byte,
  constructor: (Value[S1], Value[S2]) => Value[SBoolean.type]) extends ValueSerializer[R] {
 
-  override def serializeBody(obj: R, w: ByteWriter): Unit = {
+  override def serializeBody(obj: R, w: SigmaByteWriter): Unit = {
     val typedRel = obj.asInstanceOf[Relation[S1, S2]]
     (typedRel.left, typedRel.right) match {
       case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
@@ -25,7 +25,7 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
     }
   }
 
-  override def parseBody(r: ByteReader): R = {
+  override def parseBody(r: SigmaByteReader): R = {
     if (r.peekByte() == ConcreteCollectionBooleanConstantCode) {
       val _ = r.getByte() // skip collection op code
       val booleans = r.getBits(2)
