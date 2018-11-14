@@ -3,7 +3,8 @@ package sigmastate.lang.syntax
 import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, Val, MethodCall, Select, ValueOps}
+import sigmastate.lang.SigmaPredef.ZKProofSym
+import sigmastate.lang.Terms.{Lambda, ApplyTypes, MethodCall, Apply, Val, ValueOps, Select, Ident}
 import sigmastate.lang._
 import sigmastate.lang.syntax.Basic._
 
@@ -191,10 +192,10 @@ trait Exprs extends Core with Types {
       case STypeApply("", targs) => mkApplyTypes(acc, targs)
       case arg: SValue => acc match {
         case Ident(name, _) if name == "ZKProof" => arg match {
-          case Terms.Block(_, body) => builder.mkZKProofBlock(body)
+          case Terms.Block(_, body) => Apply(ZKProofSym, IndexedSeq(body))
           case nonBlock => error(s"expected block parameter for ZKProof, got $nonBlock")
         }
-        case _ => mkApply(acc, IndexedSeq (arg) )
+        case _ => mkApply(acc, IndexedSeq(arg))
       }
       case _ => error(s"Error after expression $f: invalid suffixes $args")
     })

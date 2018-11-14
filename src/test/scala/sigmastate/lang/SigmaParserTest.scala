@@ -516,7 +516,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("ZKProof") {
-    parse("ZKProof { HEIGHT > 1000 }") shouldBe ZKProofBlock(GT(Ident("HEIGHT"), IntConstant(1000)))
+    parse("ZKProof { condition }") shouldBe Apply(SigmaPredef.ZKProofSym, IndexedSeq(Ident("condition")))
   }
 
   property("invalid ZKProof (non block parameter)") {

@@ -51,6 +51,10 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
     case Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
       Some(mkAtLeast(bound.asIntValue, arr))
 
+    // Rule: ZKProof(block) --> ZKProofBlock(block)
+    case Apply(ZKProofSym, Seq(block: SigmaPropValue@unchecked)) =>
+      Some(mkZKProofBlock(block))
+
     case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(mkCalcBlake2b256(arg))
 

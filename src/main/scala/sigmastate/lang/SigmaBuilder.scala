@@ -159,7 +159,7 @@ trait SigmaBuilder {
   def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType]
   def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType]
   def mkValUse(valId: Int, tpe: SType): Value[SType]
-  def mkZKProofBlock(body: Value[SType]): Value[SType]
+  def mkZKProofBlock(body: Value[SSigmaProp.type]): Value[SBoolean.type]
   def mkVal(name: String, givenType: SType, body: Value[SType]): Val
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
   def mkIdent(name: String, tpe: SType): Value[SType]
@@ -457,7 +457,7 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkValUse(valId: Int, tpe: SType): Value[SType] =
     ValUse(valId, tpe)
 
-  override def mkZKProofBlock(body: Value[SType]): Value[SType] =
+  override def mkZKProofBlock(body: Value[SSigmaProp.type]): BoolValue =
     ZKProofBlock(body)
 
   override def mkVal(name: String, givenType: SType, body: Value[SType]): Val =

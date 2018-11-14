@@ -25,6 +25,9 @@ object SigmaPredef {
     "allOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "anyOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "atLeast" -> mkLambda(Vector("k" -> SInt, "conditions" -> SCollection(SBoolean)), SBoolean, None),
+    "ZKProof" -> mkLambda(Vector("block" -> SSigmaProp), SBoolean, None),
+    "sigmaProp" -> mkLambda(Vector("condition" -> SBoolean), SSigmaProp, None),
+
     "blake2b256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
     "sha256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
     "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
@@ -32,12 +35,13 @@ object SigmaPredef {
 
     "getVar" -> mkGenLambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), SOption(tT), None),
 
-    "proveDHTuple" -> mkLambda(Vector(
-      "g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
+    "proveDHTuple" -> mkLambda(Vector("g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
     "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SSigmaProp, None),
+
     "isMember" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
     "treeLookup" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
     "treeModifications" -> mkLambda(Vector("tree" -> SAvlTree, "ops" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
+
     "fromBase58" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "PK" -> mkLambda(Vector("input" -> SString), SSigmaProp, None),
@@ -52,6 +56,8 @@ object SigmaPredef {
   val AllSym = PredefIdent("allOf")
   val AnySym = PredefIdent("anyOf")
   val AtLeastSym = PredefIdent("atLeast")
+  val ZKProofSym = PredefIdent("ZKProof")
+  val SigmaPropSym = PredefIdent("sigmaProp")
 
   val GetVarSym = PredefIdent("getVar")
 

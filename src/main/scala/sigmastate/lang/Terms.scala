@@ -30,12 +30,24 @@ object Terms {
       Block(Seq(let), result)
   }
 
-  case class ZKProofBlock(body: Value[SType]) extends Value[SType] {
+  /** IR node to represent explicit Zero Knowledge scope in ErgoTree.
+    * Compiler checks Zero Knowledge properties and issue error message is case of violations.
+    * ZK-scoping is optional, at can be used when the user want to ensure Zero Knowledge of
+    * specific set of operations.
+    * Usually it will require simple restructuring of the code to make the scope body explicit.
+    * Invariants checked by the compiler:
+    *  - single ZKProof in ErgoTree in a root position
+    *  - no boolean operations in the body, because otherwise the result may be disclosed
+    *  - all the operations are over SigmaProp values
+    *
+    * For motivation and details see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
+    * */
+  case class ZKProofBlock(body: SigmaPropValue) extends BoolValue {
     override val opCode: OpCode = OpCodes.Undefined
-    override def tpe: SType = body.tpe
+    override def tpe = SBoolean
     override def cost[C <: Context](context: C): Long = ???
     override def evaluated: Boolean = false
-    override def opType: SFunc = SFunc(Vector(), tpe)
+    override def opType: SFunc = SFunc(SSigmaProp, SBoolean)
   }
 
   trait Val extends Value[SType] {
