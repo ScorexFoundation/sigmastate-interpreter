@@ -49,7 +49,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
-    val prop = compile(Map(), code).asBoolValue
+//    val prop = compile(Map(), code).asBoolValue
+
+    val interProp = compile(Map(), code).asBoolValue
+    val IR.Pair(calcF, _) = IR.doCosting(Map(), interProp)
+    val prop = IR.buildTree(calcF)
+
     prop shouldBe expectedComp
     val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey, 0)),
       outputBoxValues.map(ErgoBox(_, pubkey, 0)))
@@ -301,7 +306,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |.getOrElse(3, 0L)== 0""".stripMargin
     val expectedPropTree = EQ(
       ByIndex(
-        MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21))),
+        MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
         IntConstant(3),
         Some(LongConstant(0))),
       LongConstant(0))
@@ -328,13 +333,22 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |.fold(true, { (acc: Boolean, val: Long) => acc && (val < 0) }) == false""".stripMargin
     val expectedPropTree = EQ(
       Fold(
-        MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21))),
+        MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
         22,
         TrueLeaf,
         21,
         BinAnd(TaggedBoolean(21), LT(TaggedLong(22), LongConstant(0)))),
       FalseLeaf)
     assertProof(code, expectedPropTree, outputBoxValues)
+  }
+
+  property("map") {
+    assertProof("OUTPUTS.map({ (out: Box) => out.value })",
+      MapCollection(
+        Outputs,
+        FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))
+      ),
+      IndexedSeq(10L, 10L))
   }
 
   property("forall for custom collection") {

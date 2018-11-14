@@ -84,8 +84,7 @@ trait SigmaBuilder {
                            until: Value[SInt.type]): Value[SCollection[IV]]
 
   def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-      id: Byte,
-      mapper: SValue): Value[SCollection[OV]]
+                                                mapper: Value[SFunc]): Value[SCollection[OV]]
 
   def mkFilter[IV <: SType](input: Value[SCollection[IV]],
                             id: Byte,
@@ -333,8 +332,9 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray] =
     CalcSha256(input)
 
-  override def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]], id: Byte, mapper: SValue): Value[SCollection[OV]] =
-    MapCollection(input, id, mapper)
+  override def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
+                                                         mapper: Value[SFunc]): Value[SCollection[OV]] =
+    MapCollection(input, mapper)
 
   override def mkAppend[IV <: SType](input: Value[SCollection[IV]],
                                      col2: Value[SCollection[IV]]): Value[SCollection[IV]] =

@@ -173,7 +173,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         BinAnd(LE(Height, LongConstant(timeout)),
           EQ(CalcBlake2b256(
             Fold.concat[SByte.type](
-              MapCollection(Outputs, 21, ExtractBytesWithNoRef(TaggedBox(21)))
+              MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractBytesWithNoRef(ValUse(1, SBox))))
             ).asByteArray
           ),
             ByteArrayConstant(properHash))),
@@ -219,7 +219,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val propExp = BinAnd(
       pubkey.isValid,
       GT(
-        Fold.sum[SLong.type](MapCollection(Outputs, 21, ExtractAmount(TaggedBox(21)))),
+        Fold.sum[SLong.type](MapCollection(Outputs,
+          FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox))))),
         LongConstant(20))
     )
     prop shouldBe propExp

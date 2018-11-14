@@ -12,6 +12,7 @@ import sigmastate.lang.Terms.{Ident, ZKProofBlock}
 import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.serialization.generators.{ValueGenerators, TransformerGenerators, ConcreteCollectionGenerators}
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
 class SigmaSpecializerTest extends PropSpec
   with PropertyChecks
@@ -90,7 +91,7 @@ class SigmaSpecializerTest extends PropSpec
 //    spec(env, "(1, 2L).slice(0, 2)") shouldBe SCollection(SAny)
 //    spec(env, "fun (a: Int) = (1, 2L)(a)") shouldBe SFunc(IndexedSeq(SInt), SAny)
   }
-  
+
   property("Option constructors") {
     fail(Map(), "None", "Option constructors are not supported")
     fail(Map(), "Some(10)", "Option constructors are not supported")
@@ -98,7 +99,7 @@ class SigmaSpecializerTest extends PropSpec
 
   property("generic methods of arrays") {
     spec("OUTPUTS.map({ (out: Box) => out.value >= 10 })") shouldBe
-      MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      MapCollection(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("OUTPUTS.exists({ (out: Box) => out.value >= 10 })") shouldBe
         Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
     spec("OUTPUTS.forall({ (out: Box) => out.value >= 10 })") shouldBe

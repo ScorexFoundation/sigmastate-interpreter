@@ -966,15 +966,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
         withDefaultSize(value, cost)
 
-      case MapCollection(input, id, mapper) =>
+      case MapCollection(input, Terms.Lambda(_, Seq((n, t)), _, Some(mapper))) =>
         val eIn = stypeToElem(input.tpe.elemType)
-        val xs = asRep[CostedCol[Any]](eval(input))
-        implicit val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
+        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         val mapperC = fun { x: Rep[Costed[Any]] =>
-          evalNode(ctx, env + (id -> x), mapper)
+          evalNode(ctx, env + (n -> x), mapper)
         }
-        val res = xs.mapCosted(mapperC)
+        val res = inputC.mapCosted(mapperC)
         res
 
       case Fold(input, id, zero, accId, foldOp) =>

@@ -36,32 +36,20 @@ trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
 
 case class MapCollection[IV <: SType, OV <: SType](
                                                     input: Value[SCollection[IV]],
-                                                    id: Byte,
-                                                    mapper: SValue)
+                                                    mapper: Value[SFunc])
   extends Transformer[SCollection[IV], SCollection[OV]] {
 
   override val opCode: OpCode = OpCodes.MapCollectionCode
 
   implicit def tOV = mapper.asValue[OV].tpe
 
-  val tpe = SCollection[OV](tOV)
+  override val tpe = SCollection[OV](mapper.tpe.tRange.asInstanceOf[OV])
 
-  val opType = SCollection.MapMethod.stype.asFunc
+  override val opType = SCollection.MapMethod.stype.asFunc
 
   override def transformationReady: Boolean = input.isEvaluatedCollection
 
-  override def function(I: Interpreter, ctx: Context, cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = {
-    val cc = cl.toConcreteCollection
-    val resItems = cc.items.map {
-      case v: EvaluatedValue[IV] =>
-        val localCtx = ctx.withBindings(id -> v)
-        val reduced = I.eval(localCtx, mapper.asValue[OV])
-        reduced
-      case v =>
-        Interpreter.error(s"Error evaluating $this: value $v is not EvaluatedValue")
-    }
-    ConcreteCollection(resItems)
-  }
+  override def function(I: Interpreter, ctx: Context, cl: EvaluatedValue[SCollection[IV]]): Value[SCollection[OV]] = ???
 
   /**
     * We consider transformation cost as size of collection * cost of trasfomation of one element of the collection.

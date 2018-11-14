@@ -3,6 +3,7 @@ package sigmastate.utxo
 import java.lang.reflect.InvocationTargetException
 
 import org.ergoplatform.ErgoBox.{R6, R8}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, Outputs, Self}
 import org.ergoplatform.{ErgoLikeContext, ErgoBox, Self, Height}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -297,8 +298,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        val p = TaggedVariable(21, STuple(SCollection(SByte), SLong))
-        val swapped = MapCollection(data, 21, Tuple(SelectField(p, 2), SelectField(p, 1))).asCollection[STuple]
+        val p = ValUse(1, STuple(SByteArray, SLong))
+        val swapped = MapCollection(data,
+          FuncValue(IndexedSeq((1, STuple(SByteArray, SLong))),
+            Tuple(SelectField(p, 2), SelectField(p, 1)))
+        ).asCollection[STuple]
         EQ(SizeOf(swapped), IntConstant(1))
       }
     )

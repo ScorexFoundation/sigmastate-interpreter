@@ -9,6 +9,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
 trait TransformerGenerators {
   self: ValueGenerators with ConcreteCollectionGenerators =>
@@ -42,8 +43,8 @@ trait TransformerGenerators {
   val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
     idByte <- arbByte.arbitrary
-    mapper <- arbIntConstants.arbitrary
-  } yield mkMapCollection(input, idByte, mapper).asInstanceOf[MapCollection[SInt.type, SInt.type]]
+    mapper <- funcValueGen
+  } yield mkMapCollection(input, mapper).asInstanceOf[MapCollection[SInt.type, SInt.type]]
 
   val existsGen: Gen[Exists[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary

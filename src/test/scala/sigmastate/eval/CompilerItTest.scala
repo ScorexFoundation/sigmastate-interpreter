@@ -156,11 +156,7 @@ class CompilerItTest extends BaseCtxTests
         val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
         arrSizes.map(f).sum(longPlusMonoid)
       },
-      tree = mkMapCollection(
-        BigIntArrayConstant(bigIntArr1),
-        21,
-        mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))
-      ),
+      tree = mkMapCollection(BigIntArrayConstant(bigIntArr1), mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))),
       Result(res, 27, 4))
   }
   test("bigIntArray_Map_Case") {
