@@ -57,15 +57,26 @@ version in ThisBuild := {
 
 git.gitUncommittedChanges in ThisBuild := true
 
+val specialVersion = "snapshot-publish-b32356d5-SNAPSHOT"
+val specialCommon = "io.github.scalan" %% "common" % specialVersion
+val specialCore = "io.github.scalan" %% "core" % specialVersion
+val specialLibrary = "io.github.scalan" %% "library" % specialVersion
+
+val specialSigmaVersion = "special-snapshot-from-sonatype-0e5f4283-SNAPSHOT"
+val sigmaImpl = "io.github.scalan" %% "sigma-impl" % specialSigmaVersion
+val sigmaLibrary = "io.github.scalan" %% "sigma-library" % specialSigmaVersion
+
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
   "junit" % "junit" % "4.12" % "test",
   "com.novocode" % "junit-interface" % "0.11" % "test",
-  "special" %% "library" % "0.3.0-SNAPSHOT" % allConfigDependency,
-  "special.sigma" %% "sigma-impl" % "0.3.0-SNAPSHOT" % allConfigDependency,
-  "special.sigma" %% "sigma-library" % "0.3.0-SNAPSHOT" % allConfigDependency
+  specialCommon, (specialCommon % Test).classifier("tests"),
+  specialCore, (specialCore % Test).classifier("tests"),
+  specialLibrary, (specialLibrary % Test).classifier("tests"),
+  sigmaImpl, (sigmaImpl % Test).classifier("tests"),
+  sigmaLibrary, (sigmaLibrary % Test).classifier("tests"),
 )
 
 libraryDependencies ++= Seq(
@@ -75,9 +86,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
   "com.lihaoyi" %% "fastparse" % "1.0.0",
-  "special" %% "library" % "0.3.0-SNAPSHOT" % allConfigDependency,
-  "special.sigma" %% "sigma-impl" % "0.3.0-SNAPSHOT" % allConfigDependency,
-  "special.sigma" %% "sigma-library" % "0.3.0-SNAPSHOT" % allConfigDependency
+  sigmaImpl,
+  sigmaLibrary,
 ) ++ testingDependencies
 
 
