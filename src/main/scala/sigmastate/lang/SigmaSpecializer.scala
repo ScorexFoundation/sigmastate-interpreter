@@ -55,6 +55,10 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
     case Apply(ZKProofSym, Seq(block: SigmaPropValue@unchecked)) =>
       Some(mkZKProofBlock(block))
 
+    // Rule: sigmaProp(condition) --> BoolToSigmaProp(condition)
+    case Apply(SigmaPropSym, Seq(condition: BoolValue@unchecked)) =>
+      Some(mkBoolToSigmaProp(condition))
+
     case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(mkCalcBlake2b256(arg))
 

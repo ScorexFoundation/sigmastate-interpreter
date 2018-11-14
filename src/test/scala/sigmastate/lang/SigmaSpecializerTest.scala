@@ -4,13 +4,13 @@ import org.ergoplatform.ErgoAddressEncoder.{NetworkPrefix, TestnetNetworkPrefix}
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.Terms.Ident
+import sigmastate.lang.Terms.{Ident, ZKProofBlock}
 import sigmastate.lang.exceptions.SpecializerException
-import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ValueGenerators}
+import sigmastate.serialization.generators.{ValueGenerators, TransformerGenerators, ConcreteCollectionGenerators}
 import sigmastate.utxo._
 
 class SigmaSpecializerTest extends PropSpec
@@ -236,5 +236,13 @@ class SigmaSpecializerTest extends PropSpec
     spec("SELF.creationInfo") shouldBe ExtractCreationInfo(Self)
     spec("SELF.creationInfo._1") shouldBe SelectField(ExtractCreationInfo(Self), 1)
     spec("SELF.creationInfo._2") shouldBe SelectField(ExtractCreationInfo(Self), 2)
+  }
+
+  property("sigmaProp") {
+    spec("sigmaProp(HEIGHT > 1000)") shouldBe BoolToSigmaProp(GT(Height, LongConstant(1000)))
+  }
+
+  property("ZKProof") {
+    spec("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe ZKProofBlock(BoolToSigmaProp(GT(Height, LongConstant(1000))))
   }
 }
