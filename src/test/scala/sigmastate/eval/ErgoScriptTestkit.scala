@@ -62,10 +62,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     3.toByte -> bigIntArr1
   )).arr
 
-  val boxToSpend = ErgoBox(10, TrueLeaf,
+  val boxToSpend = ErgoBox(10, TrueLeaf, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntArr1)))
-  lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
-  lazy val tx1Output2 = ErgoBox(1, projectPubKey)
+  lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey, 0)
+  lazy val tx1Output2 = ErgoBox(1, projectPubKey, 0)
   lazy val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
   lazy val ergoCtx = ErgoLikeContext(
     currentHeight = timeout - 1,

@@ -125,7 +125,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override val opCode: OpCode = OpCodes.FilterCode
   override def tpe: SCollection[IV] = input.tpe
-  val opType = SCollection.WhereMethod.stype.asFunc
+  val opType = SCollection.FilterMethod.stype.asFunc
 
   override def transformationReady: Boolean = input.isEvaluatedCollection
 
@@ -133,7 +133,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
     val elemType = input.tpe.elemType
     val data = Constant(null.asInstanceOf[elemType.WrappedType], elemType)
     val localCtx = context.withBindings(id -> data)
-    Cost.WhereDeclaration + input.cost(context) * condition.cost(context) + input.cost(context)
+    Cost.FilterDeclaration + input.cost(context) * condition.cost(context) + input.cost(context)
   }
 
   override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {

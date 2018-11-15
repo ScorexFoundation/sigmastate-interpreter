@@ -35,7 +35,7 @@ class EvaluationTest extends BaseCtxTests
   test("lazy logical ops") {
     val prover = new ErgoLikeTestProvingInterpreter
     val pk = prover.dlogSecrets.head.publicImage
-    val self = ErgoBox(1, pk, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
+    val self = ErgoBox(1, pk, 0, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
     val ctx = newErgoContext(height = 1, self)
     // guarded register access: existing reg
     reduce(emptyEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].get == 10", ctx, true)

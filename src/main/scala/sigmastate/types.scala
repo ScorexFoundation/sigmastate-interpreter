@@ -566,7 +566,7 @@ object SCollection {
   val FoldMethod = SMethod("fold", SFunc(IndexedSeq(SCollection(tIV), tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV, Seq(STypeParam(tIV), STypeParam(tOV))))
   val ForallMethod = SMethod("forall", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV))))
   val SliceMethod = SMethod("slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(STypeParam(tIV))))
-  val WhereMethod = SMethod("where", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(STypeParam(tIV))))
+  val FilterMethod = SMethod("filter", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(STypeParam(tIV))))
   val AppendMethod = SMethod("append", SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SCollection(tIV), Seq(STypeParam(tIV))))
   val ApplyMethod = SMethod("apply", SFunc(IndexedSeq(SCollection(tIV), SInt), tIV, Seq(STypeParam(tIV))))
 
@@ -578,7 +578,7 @@ object SCollection {
     FoldMethod,
     ForallMethod,
     SliceMethod,
-    WhereMethod,
+    FilterMethod,
     AppendMethod,
     ApplyMethod
   )

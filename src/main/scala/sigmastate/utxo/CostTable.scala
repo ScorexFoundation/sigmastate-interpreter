@@ -233,7 +233,7 @@ object CostTable {
     val SigmaPropBytesDeclaration = 50
 
     val MapDeclaration = 100
-    val WhereDeclaration = 200
+    val FilterDeclaration = 200
     val ExistsDeclaration = 200
     val ForAllDeclaration = 200
     val FoldDeclaration = 200
