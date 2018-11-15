@@ -696,9 +696,10 @@ object Values {
     *  Bit 7 == 1 if the header contains more than 1 byte (default == 0)
     *  Bit 6 == 1 if the bytes after the header are compressed using GZIP (default == 0)
     *  Bit 5 == 1 if context dependent costing should be used (default = 0)
-    *  Bit 4 - reserved
-    *  Bit 3 - reserved
-    *  Bits 2-0 - language version
+    *  Bit 4 == 1 if constant segregation is used for this ErgoTree (default = 0)
+    *                (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/264)
+    *  Bit 3 - reserved (should be 0)
+    *  Bits 2-0 - language version (current version == 0)
     *
     *  Currently we don't specify interpretation for the second and other bytes of the header.
     *  We reserve the possibility to extend header by using Bit 7 == 1 and chain additional bytes as in VLQ.

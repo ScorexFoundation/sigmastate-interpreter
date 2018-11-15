@@ -3,7 +3,7 @@ package sigmastate.utxo
 import java.lang.reflect.InvocationTargetException
 
 import org.ergoplatform.ErgoBox.{R6, R8}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, Self}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox, Self, Height}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
@@ -12,6 +12,7 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.OptionUnwrapNone
 import special.sigma.InvalidType
+
 import scalan.BaseCtxTests
 
 class BasicOpsSpecification extends SigmaTestingCommons {
@@ -48,7 +49,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   def test(name: String, env: ScriptEnv,
            ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
-           script: String, propExp: Value[SBoolean.type],
+           script: String, propExp: SValue,
       onlyPositive: Boolean = false) = {
     val prover = new ErgoLikeTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
@@ -443,4 +444,16 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
   }
+
+  property("sigmaProp") {
+    test("prop1", env, ext, "sigmaProp(HEIGHT >= 0)",
+      BoolToSigmaProp(GE(Height, LongConstant(0))), true)
+    test("prop2", env, ext, "sigmaProp(HEIGHT >= 0) && getVar[SigmaProp](proofVar1).get",
+      BinAnd(BoolToSigmaProp(GE(Height, LongConstant(0))).isValid, GetVarSigmaProp(propVar1).get.isValid), true)
+  }
+
+//  property("ZKProof") {
+//    test("zk1", env, ext, "ZKProof { sigmaProp(HEIGHT >= 0) }",
+//      ZKProofBlock(BoolToSigmaProp(GE(Height, LongConstant(0)))), true)
+//  }
 }
