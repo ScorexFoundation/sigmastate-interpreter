@@ -124,11 +124,11 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     //creating a box in an initial state
 
-    val fsmBox1 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
+    val fsmBox1 = ErgoBox(100, fsmScript, 0, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
       currentStateRegister -> ByteConstant(state1Id)))
 
     //successful transition from state1 to state2
-    val fsmBox2 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
+    val fsmBox2 = ErgoBox(100, fsmScript, 0, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
       currentStateRegister -> ByteConstant(state2Id)))
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition12 ++ script1Hash)))
@@ -172,7 +172,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     //Box for state3
 
-    val fsmBox3 = ErgoBox(100, fsmScript, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
+    val fsmBox3 = ErgoBox(100, fsmScript, 0, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
       currentStateRegister -> ByteConstant(state3Id)))
 
     //transition from state1 to state3 is impossible
@@ -226,7 +226,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     //clearing FSM out of the box in the final state
 
-    val freeBox = ErgoBox(100, TrueLeaf)
+    val freeBox = ErgoBox(100, TrueLeaf, 0)
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition30 ++ script4Hash)))
     val transition30Proof = avlProver.generateProof()

@@ -2,13 +2,11 @@ package scapi.sigma
 
 import java.security.SecureRandom
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
 import scapi.sigma.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
 import supertagged.TaggedType
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 

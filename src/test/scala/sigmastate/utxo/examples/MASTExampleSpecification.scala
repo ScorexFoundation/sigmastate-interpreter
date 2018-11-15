@@ -43,9 +43,9 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val prop = AND(scriptIsCorrect, If(EQ(SizeOf(Inputs), 1), EQ(scriptHash, script1Hash), EQ(scriptHash, script2Hash)))
 
 
-    val input1 = ErgoBox(20, prop)
+    val input1 = ErgoBox(20, prop, 0)
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(input1).map(i => new UnsignedInput(i.id)),
-      IndexedSeq(ErgoBox(1, TrueLeaf)))
+      IndexedSeq(ErgoBox(1, TrueLeaf, 0)))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -99,8 +99,8 @@ class MASTExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition))),
-      self = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      self = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))
 
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))
     val knownSecretPathProof = avlProver.generateProof()

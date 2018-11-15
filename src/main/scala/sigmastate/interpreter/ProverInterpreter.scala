@@ -15,7 +15,6 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywher
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scapi.sigma.VerifierMessage.Challenge
 import scapi.sigma._
-import scorex.utils.Random
 import sigmastate.serialization.Serializer
 import gf2t.GF2_192
 import gf2t.GF2_192_Poly
@@ -65,6 +64,7 @@ case class CostedProverResult(override val proof: Array[Byte],
   */
 trait ProverInterpreter extends Interpreter with AttributionCore {
   import Interpreter._
+  import CryptoConstants.secureRandomBytes
 
   override type ProofT = UncheckedTree
 
@@ -231,7 +231,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         //
         // We'll mark the first k real ones real
         val newChildren = t.children.foldLeft((Seq[UnprovenTree](), 0)) { case ((children, countOfReal), child) =>
-          val kid = child.asInstanceOf[UnprovenTree];
+          val kid = child.asInstanceOf[UnprovenTree]
           val (newKid, newCountOfReal) = kid.real match {
             case false => (kid, countOfReal)
             case true => ({if (countOfReal>=t.k) kid.withSimulated(true) else kid}, countOfReal+1)
@@ -261,7 +261,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case uc: UnprovenConjecture if uc.real =>
       val newChildren = uc.children.cast[UnprovenTree].map(c =>
         if (c.real) c
-        else c.withChallenge(Challenge @@ Random.randomBytes(CryptoFunctions.soundnessBytes))
+        else c.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes))
       )
       uc match {
         case or: COrUnproven        => or.copy(children = newChildren)
@@ -285,7 +285,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       // the other children and e_0.
       assert(or.challengeOpt.isDefined)
       val unprovenChildren = or.children.cast[UnprovenTree]
-      val t = unprovenChildren.tail.map(_.withChallenge(Challenge @@ Random.randomBytes(CryptoFunctions.soundnessBytes)))
+      val t = unprovenChildren.tail.map(_.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)))
       val toXor: Seq[Array[Byte]] = or.challengeOpt.get +: t.map(_.challengeOpt.get)
       val xoredChallenge = Challenge @@ Helpers.xor(toXor: _*)
       val h = unprovenChildren.head.withChallenge(xoredChallenge)
@@ -300,7 +300,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       assert(t.challengeOpt.isDefined)
       val n = t.children.length
       val unprovenChildren = t.children.cast[UnprovenTree]
-      val q = GF2_192_Poly.fromByteArray(t.challengeOpt.get, Random.randomBytes(CryptoFunctions.soundnessBytes*(n-t.k)) )
+      val q = GF2_192_Poly.fromByteArray(t.challengeOpt.get, secureRandomBytes(CryptoFunctions.soundnessBytes*(n-t.k)) )
 
       val newChildren = unprovenChildren.foldLeft((Seq[UnprovenTree](), 1)) {
         case ((childSeq, childIndex), child) =>
@@ -321,7 +321,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       assert(t.challengeOpt.isDefined)
       val n = t.children.length
       val unprovenChildren = t.children.cast[UnprovenTree]
-      val childrenWithRandomChallenges = unprovenChildren.slice(0, n-t.k).map(_.withChallenge(Challenge @@ Random.randomBytes(CryptoFunctions.soundnessBytes)))
+      val childrenWithRandomChallenges = unprovenChildren.slice(0, n-t.k).map(_.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)))
       val (points, values, _) = childrenWithRandomChallenges.foldLeft(((Array[Byte](), Array[GF2_192](),1))) {
         case ((p, v, count), child) =>
           val (newPoints, newValues) =

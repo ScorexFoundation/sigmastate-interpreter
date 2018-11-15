@@ -102,7 +102,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     DeserializeContextSerializer(mkDeserializeContext),
     DeserializeRegisterSerializer(mkDeserializeRegister),
     ExtractRegisterAsSerializer(mkExtractRegisterAs),
-    WhereSerializer(mkWhere),
+    FilterSerializer(mkFilter),
     SliceSerializer(mkSlice),
     AtLeastSerializer(mkAtLeast),
     ByIndexSerializer(mkByIndex),

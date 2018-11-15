@@ -109,7 +109,7 @@ object OpCodes extends ValueCodes {
   val ByIndexCode          : OpCode = (LastConstantCode + 66).toByte
   val AppendCode           : OpCode = (LastConstantCode + 67).toByte
   val SliceCode            : OpCode = (LastConstantCode + 68).toByte
-  val WhereCode            : OpCode = (LastConstantCode + 69).toByte
+  val FilterCode           : OpCode = (LastConstantCode + 69).toByte
   val TreeLookupCode       : OpCode = (LastConstantCode + 70).toByte
   val StringConcatCode     : OpCode = (LastConstantCode + 71).toByte
   val TreeModificationsCode: OpCode = (LastConstantCode + 72).toByte

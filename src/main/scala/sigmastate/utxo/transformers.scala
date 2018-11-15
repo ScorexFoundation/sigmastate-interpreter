@@ -119,11 +119,11 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
   }
 }
 
-case class Where[IV <: SType](input: Value[SCollection[IV]],
-                              id: Byte,
-                              condition: Value[SBoolean.type])
+case class Filter[IV <: SType](input: Value[SCollection[IV]],
+                               id: Byte,
+                               condition: Value[SBoolean.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
-  override val opCode: OpCode = OpCodes.WhereCode
+  override val opCode: OpCode = OpCodes.FilterCode
   override def tpe: SCollection[IV] = input.tpe
   val opType = SCollection.WhereMethod.stype.asFunc
 
@@ -143,7 +143,7 @@ case class Where[IV <: SType](input: Value[SCollection[IV]],
       val reduced = intr.eval(localCtx, condition)
       reduced match {
         case ev: EvaluatedValue[SBoolean.type] => ev.value
-        case _ => Interpreter.error(s"Expected EvaluatedValue during execution of where but found $reduced")
+        case _ => Interpreter.error(s"Expected EvaluatedValue during execution of filter but found $reduced")
       }
     }
     ConcreteCollection(filtered)(tpe.elemType)

@@ -1,16 +1,13 @@
 package scapi.sigma
 
 import java.math.BigInteger
-import java.security.SecureRandom
 
-import com.google.common.primitives.Shorts
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.{SecP384R1Point, SecP521R1Point}
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import org.bouncycastle.util.BigIntegers
-import sigmastate.serialization.ValueSerializer
 
 import scala.collection.mutable
 import scala.util.Try
@@ -177,13 +174,12 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     val l = p.bitLength / 8
     val randomArray = new Array[Byte](l - k - 2)
     //Create a random object and make it seed itself:
-    val rand = new SecureRandom
     val newString = new Array[Byte](randomArray.length + 1 + binaryString.length)
     var counter = 0
     var y: BigInteger = null
     var x: BigInteger = null
     do {
-      rand.nextBytes(randomArray)
+      secureRandom.nextBytes(randomArray)
       System.arraycopy(randomArray, 0, newString, 0, randomArray.length)
       System.arraycopy(binaryString, 0, newString, randomArray.length, binaryString.length)
       newString(newString.length - 1) = binaryString.length.toByte
@@ -405,7 +401,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
     val one = BigInteger.ONE
     val qMinusOne = x9params.getN.subtract(one)
     // choose a random number x in Zq*
-    val randNum = BigIntegers.createRandomInRange(one, qMinusOne, random)
+    val randNum = BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
     // compute g^x to get a new element
     exponentiate(generator, randNum)
   }
@@ -678,7 +674,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
     val one = BigInteger.ONE
     val qMinusOne = x9params.getN.subtract(one)
     // choose a random number x in Zq*
-    BigIntegers.createRandomInRange(one, qMinusOne, random)
+    BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
   }.toArray
 
   println(exps.map(e => exponentiateWithPreComputedValues(base, e) == exponentiate(base, e)).forall(_ == true))
@@ -700,7 +696,7 @@ object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("s
     val one = BigInteger.ONE
     val qMinusOne = x9params.getN.subtract(one)
     // choose a random number x in Zq*
-    BigIntegers.createRandomInRange(one, qMinusOne, random)
+    BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
   }.toArray
 
   var t0 = System.currentTimeMillis()

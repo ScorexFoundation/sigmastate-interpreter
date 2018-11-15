@@ -6,14 +6,14 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.Where
+import sigmastate.utxo.Filter
 import sigmastate.{SBoolean, SCollection, SType}
 
-case class WhereSerializer(cons: (Value[SCollection[SType]], Byte, Value[SBoolean.type]) => Value[SCollection[SType]]) extends ValueSerializer[Where[SType]] {
+case class FilterSerializer(cons: (Value[SCollection[SType]], Byte, Value[SBoolean.type]) => Value[SCollection[SType]]) extends ValueSerializer[Filter[SType]] {
 
-  override val opCode: OpCode = OpCodes.WhereCode
+  override val opCode: OpCode = OpCodes.FilterCode
 
-  override def serializeBody(obj: Where[SType], w: SigmaByteWriter): Unit =
+  override def serializeBody(obj: Filter[SType], w: SigmaByteWriter): Unit =
     w.put(obj.id)
     .putValue(obj.input)
     .putValue(obj.condition)

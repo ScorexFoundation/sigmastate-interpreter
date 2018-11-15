@@ -51,8 +51,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
     val prop = compile(Map(), code).asBoolValue
     prop shouldBe expectedComp
-    val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey)),
-      outputBoxValues.map(ErgoBox(_, pubkey)))
+    val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey, 0)),
+      outputBoxValues.map(ErgoBox(_, pubkey, 0)))
     (prover, verifier, prop, ctx)
   }
 
@@ -67,8 +67,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expProp = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), LongConstant(5)), LongConstant(10)))
     prop shouldBe expProp
 
-    val newBox1 = ErgoBox(16, pubkey)
-    val newBox2 = ErgoBox(15, pubkey)
+    val newBox1 = ErgoBox(16, pubkey, 0)
+    val newBox2 = ErgoBox(15, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
@@ -96,8 +96,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val propTree = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), LongConstant(10)))
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey)
-    val newBox2 = ErgoBox(10, pubkey)
+    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBox2 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
@@ -125,8 +125,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val propTree = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), LongConstant(10)))
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey)
-    val newBox2 = ErgoBox(11, pubkey)
+    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBox2 = ErgoBox(11, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
@@ -157,13 +157,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))))
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey, Seq(), Map(reg1 -> LongConstant(3)))
-    val newBox2 = ErgoBox(10, pubkey, Seq(), Map(reg1 -> LongConstant(6)))
+    val newBox1 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(3)))
+    val newBox2 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> LongConstant(5)))
+    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -193,13 +193,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))))
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey)
-    val newBox2 = ErgoBox(10, pubkey, Seq(), Map(reg1 -> LongConstant(6)))
+    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBox2 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, Seq(), Map(reg1 -> LongConstant(5)))
+    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -224,13 +224,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val propTree = BinAnd(pubkey.isValid, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(11, pubkey)
-    val newBox2 = ErgoBox(10, pubkey)
+    val newBox1 = ErgoBox(11, pubkey, 0)
+    val newBox2 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(21, pubkey)
+    val s = ErgoBox(21, pubkey, 0)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,

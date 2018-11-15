@@ -111,8 +111,8 @@ class SigmaSpecializerTest extends PropSpec
         22, TrueLeaf, 21, BinAnd(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
     spec("OUTPUTS.slice(0, 10)") shouldBe
         Slice(Outputs, IntConstant(0), IntConstant(10))
-    spec("OUTPUTS.where({ (out: Box) => out.value >= 10 })") shouldBe
-        Where(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+    spec("OUTPUTS.filter({ (out: Box) => out.value >= 10 })") shouldBe
+        Filter(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
   }
 
   property("AND flattening predefined") {

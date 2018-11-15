@@ -303,8 +303,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       )
     parse("OUTPUTS.slice(0, 10)") shouldBe
         Apply(Select(Ident("OUTPUTS"), "slice"), Vector(IntConstant(0), IntConstant(10)))
-    parse("OUTPUTS.where({ (out: Box) => out.value > 0 })") shouldBe
-        Apply(Select(Ident("OUTPUTS"), "where"),
+    parse("OUTPUTS.filter({ (out: Box) => out.value > 0 })") shouldBe
+        Apply(Select(Ident("OUTPUTS"), "filter"),
           Vector(Lambda(Vector(("out",SBox)), GT(Select(Ident("out"),"value").asIntValue, 0))))
   }
 
