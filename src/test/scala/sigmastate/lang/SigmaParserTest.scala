@@ -157,11 +157,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("{val X: Int = 10; 3 > 2}") shouldBe Block(Seq(Val("X", SInt, IntConstant(10))), GT(3, 2))
     parse("""{val X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe
       Block(Seq(Val("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
-    parse("""{val X: Array[Int] = Array(1,2,3); X.size}""") shouldBe
-      Block(Seq(Val("X", SCollection(SInt), Apply(Ident("Array"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
+    parse("""{val X: Col[Int] = Col(1,2,3); X.size}""") shouldBe
+      Block(Seq(Val("X", SCollection(SInt), Apply(Ident("Col"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
             Select(Ident("X"), "size"))
-    parse("""{val X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}""") shouldBe
-        Block(Seq(Val("X", STuple(SCollection(SInt), SBox), Tuple(Apply(Ident("Array"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
+    parse("""{val X: (Col[Int], Box) = (Col(1,2,3), INPUT); X._1}""") shouldBe
+        Block(Seq(Val("X", STuple(SCollection(SInt), SBox), Tuple(Apply(Ident("Col"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
           Select(Ident("X"), "_1"))
   }
 
@@ -225,31 +225,31 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("array literals") {
-    val emptyCol = Apply(Ident("Array"), IndexedSeq.empty)
-    parse("Array()") shouldBe emptyCol
-    val emptyCol2 = Apply(Ident("Array"), IndexedSeq(emptyCol))
-    parse("Array(Array())") shouldBe emptyCol2
-    parse("Array(Array(Array()))") shouldBe Apply(Ident("Array"), IndexedSeq(emptyCol2))
+    val emptyCol = Apply(Ident("Col"), IndexedSeq.empty)
+    parse("Col()") shouldBe emptyCol
+    val emptyCol2 = Apply(Ident("Col"), IndexedSeq(emptyCol))
+    parse("Col(Col())") shouldBe emptyCol2
+    parse("Col(Col(Col()))") shouldBe Apply(Ident("Col"), IndexedSeq(emptyCol2))
 
-    parse("Array(1)") shouldBe Apply(Ident("Array"), IndexedSeq(IntConstant(1)))
-    parse("Array(1, X)") shouldBe Apply(Ident("Array"), IndexedSeq(IntConstant(1), Ident("X")))
-    parse("Array(1, X - 1, Array())") shouldBe
-    Apply(Ident("Array"),
+    parse("Col(1)") shouldBe Apply(Ident("Col"), IndexedSeq(IntConstant(1)))
+    parse("Col(1, X)") shouldBe Apply(Ident("Col"), IndexedSeq(IntConstant(1), Ident("X")))
+    parse("Col(1, X - 1, Col())") shouldBe
+    Apply(Ident("Col"),
       IndexedSeq(
         IntConstant(1),
         mkMinus(Ident("X").asValue[SLong.type], IntConstant(1)),
-        Apply(Ident("Array"), IndexedSeq.empty)))
-    parse("Array(1, X + 1, Array())") shouldBe
-      Apply(Ident("Array"),
+        Apply(Ident("Col"), IndexedSeq.empty)))
+    parse("Col(1, X + 1, Col())") shouldBe
+      Apply(Ident("Col"),
         IndexedSeq(
           IntConstant(1),
           plus(Ident("X").asValue[SLong.type], IntConstant(1)),
-          Apply(Ident("Array"), IndexedSeq.empty)))
-    parse("Array(Array(X - 1))") shouldBe Apply(Ident("Array"),
-      IndexedSeq(Apply(Ident("Array"), IndexedSeq(
+          Apply(Ident("Col"), IndexedSeq.empty)))
+    parse("Col(Col(X - 1))") shouldBe Apply(Ident("Col"),
+      IndexedSeq(Apply(Ident("Col"), IndexedSeq(
                   mkMinus(Ident("X").asValue[SLong.type], IntConstant(1))))))
-    parse("Array(Array(X + 1))") shouldBe Apply(Ident("Array"),
-      IndexedSeq(Apply(Ident("Array"), IndexedSeq(
+    parse("Col(Col(X + 1))") shouldBe Apply(Ident("Col"),
+      IndexedSeq(Apply(Ident("Col"), IndexedSeq(
         plus(Ident("X").asValue[SLong.type], IntConstant(1))))))
   }
 
@@ -267,7 +267,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("array indexed access") {
-    parse("Array()") shouldBe Apply(Ident("Array"), IndexedSeq.empty)
+    parse("Col()") shouldBe Apply(Ident("Col"), IndexedSeq.empty)
     parse("Array()(0)") shouldBe Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0)))
     parse("Array()(0)(0)") shouldBe Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
   }
@@ -315,7 +315,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("f(x, y).size") shouldBe Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "size")
     parse("f(x, y).get(1)") shouldBe Apply(Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "get"), IndexedSeq(IntConstant(1)))
     parse("{val y = f(x); y}") shouldBe Block(Seq(Val("y", Apply(Ident("f"), IndexedSeq(Ident("x"))))), Ident("y"))
-    parse("getVar[Array[Byte]](10).get") shouldBe Select(Apply(ApplyTypes(Ident("getVar"), Seq(SByteArray)), IndexedSeq(IntConstant(10))), "get")
+    parse("getVar[Col[Byte]](10).get") shouldBe Select(Apply(ApplyTypes(Ident("getVar"), Seq(SByteArray)), IndexedSeq(IntConstant(10))), "get")
     parse("min(x, y)") shouldBe Apply(Ident("min"), IndexedSeq(Ident("x"), Ident("y")))
     parse("min(1, 2)") shouldBe Apply(Ident("min"), IndexedSeq(IntConstant(1), IntConstant(2)))
     parse("max(x, y)") shouldBe Apply(Ident("max"), IndexedSeq(Ident("x"), Ident("y")))
@@ -446,16 +446,16 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
     parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt))
     parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
-    parse("Array[Int]()") shouldBe Apply(ApplyTypes(Ident("Array"), Seq(SInt)), IndexedSeq.empty)
+    parse("Col[Int]()") shouldBe Apply(ApplyTypes(Ident("Col"), Seq(SInt)), IndexedSeq.empty)
   }
 
   property("type tests") {
     parseType("Int") shouldBe SInt
     parseType("(Int, Long)") shouldBe STuple(SInt, SLong)
-    parseType("Array[(Int, Long)]") shouldBe SCollection(STuple(SInt, SLong))
-    parseType("Array[(Array[Byte], Long)]") shouldBe SCollection(STuple(SCollection(SByte), SLong))
-    parseType("Array[(Array[Byte], Array[Long])]") shouldBe SCollection(STuple(SCollection(SByte), SCollection(SLong)))
-    parseType("Array[(Array[Byte], (Array[Long], Long))]") shouldBe SCollection(STuple(SCollection(SByte), STuple(SCollection(SLong), SLong)))
+    parseType("Col[(Int, Long)]") shouldBe SCollection(STuple(SInt, SLong))
+    parseType("Col[(Col[Byte], Long)]") shouldBe SCollection(STuple(SCollection(SByte), SLong))
+    parseType("Col[(Col[Byte], Col[Long])]") shouldBe SCollection(STuple(SCollection(SByte), SCollection(SLong)))
+    parseType("Col[(Col[Byte], (Col[Long], Long))]") shouldBe SCollection(STuple(SCollection(SByte), STuple(SCollection(SLong), SLong)))
   }
 
   property("negative tests") {
@@ -511,7 +511,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   property("deserialize") {
     parse("""deserialize[GroupElement]("12345")""") shouldBe
       Apply(ApplyTypes(Ident("deserialize"), Seq(SGroupElement)), IndexedSeq(StringConstant("12345")))
-    parse("""deserialize[(GroupElement, Array[(Int, Byte)])]("12345")""") shouldBe
+    parse("""deserialize[(GroupElement, Col[(Int, Byte)])]("12345")""") shouldBe
       Apply(ApplyTypes(Ident("deserialize"), Seq(STuple(SGroupElement, SCollection(STuple(SInt, SByte))))), IndexedSeq(StringConstant("12345")))
   }
 

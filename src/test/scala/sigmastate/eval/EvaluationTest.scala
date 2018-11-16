@@ -70,8 +70,8 @@ class EvaluationTest extends BaseCtxTests
     reduce(emptyEnv, "lam5",
       """{
        |  val f = { (out: Box) => out.value >= 0L };
-       |  val g = { (xs: Array[Int]) => xs.size > 0 };
-       |  f(SELF) || g(SELF.R5[Array[Int]].get)
+       |  val g = { (xs: Col[Int]) => xs.size > 0 };
+       |  f(SELF) || g(SELF.R5[Col[Int]].get)
        | }""".stripMargin, ctx, true)
   }
 
