@@ -103,10 +103,10 @@ class SigmaSpecializerTest extends PropSpec
         Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
     spec("OUTPUTS.forall({ (out: Box) => out.value >= 10 })") shouldBe
         ForAll(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
-    spec("{ val arr = Array(1,2); arr.fold(0, { (n1: Int, n2: Int) => n1 + n2 })}") shouldBe
+    spec("{ val arr = Col(1,2); arr.fold(0, { (n1: Int, n2: Int) => n1 + n2 })}") shouldBe
         Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
              22, IntConstant(0), 21, Plus(TaggedInt(21), TaggedInt(22)))
-    spec("{ val arr = Array(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
+    spec("{ val arr = Col(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
       Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
         22, TrueLeaf, 21, BinAnd(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
     spec("OUTPUTS.slice(0, 10)") shouldBe

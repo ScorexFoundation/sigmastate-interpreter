@@ -44,7 +44,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val compiledScript = compile(env,
       """{
         | val c1 = HEIGHT >= timeout && backerPubKey
-        | val c2 = allOf(Array(
+        | val c2 = allOf(Col(
         |   HEIGHT < timeout,
         |   projectPubKey,
         |   OUTPUTS.exists({ (out: Box) =>

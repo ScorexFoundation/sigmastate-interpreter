@@ -11,7 +11,7 @@
 - statically typed with local type inference
 - blocks are expressions 
 - semicolon inference in blocks
-- type constructors: Tuple, Array, Option
+- type constructors: Tuple, Col, Option
 
 #### Operations and constructs
 
@@ -19,8 +19,8 @@
 - predefined primitives: `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
 - val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
-- array literals: `Array(1, 2, 3, 4)`
-- generic high-order array operations: `map`, `fold`, `exists`, `forall`, etc.
+- collection literals: `Col(1, 2, 3, 4)`
+- generic high-order collection operations: `map`, `fold`, `exists`, `forall`, etc.
 - accessing fields of any predefined structured objects: `box.value`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
 - user defined functions: `def isValid(pk: GroupElement) = proveDlog(pk)`
@@ -40,7 +40,7 @@
 - `GroupElement` - elliptic curve points
 - `Box` - a box containing a value with guarding proposition
 - `Option[T]` - a container which either have some value of type `T` or none.
-- `Array[T]` - arrays of arbitrary length with all values of type `T` 
+- `Col[T]` - a collection of arbitrary length with all values of type `T` 
 - `(T1, ..., Tn)` - tuples
 
 #### Literal syntax and Constants
@@ -49,9 +49,9 @@ There is a syntax for literals, which can be used to introduce values
 of some types directly in program text like the following examples:
 ```
  val unit: Unit = ()       // unit constant
- val long: Int = 10       // interger value literal
+ val long: Int = 10        // interger value literal
  val bool: Boolean = true  // logical literal
- val arr = Array(1, 2, 3)  // constructs array with given items
+ val arr = Col(1, 2, 3)    // constructs a collection with given items
 ```
 Note that many types don't have literal syntax and their values are introduced 
 by applying operations.
@@ -62,8 +62,8 @@ The following data objects available in every script using predefined variables
 
 - `HEIGHT: Int` - height (block number) of the current block
 - `SELF: Box` - block to be opened when currently executing script evaluates to `true`
-- `INPUTS: Array[Box]` - an array of inputs of the current spending transaction
-- `OUTPUTS: Array[Box]` - an array of outputs of current spending transaction
+- `INPUTS: Col[Box]` - a collection of inputs of the current spending transaction
+- `OUTPUTS: Col[Box]` - a collection of outputs of current spending transaction
 - `LastBlockUtxoRootHash: AvlTree` - last block UTXO root 
 
 ## Data Types
@@ -94,10 +94,10 @@ SELF.R3[Int]: Option[Int]
 ```
 However, Option is not supported by `Interpreter`, so all `Option` operations are eliminated during compilation.
 
-#### Array[T]
+#### Col[T]
 
 As in many languages Array is a collection of items of the same type. 
-`Array[T]` - is a collection of items of type `T`.
+`Col[T]` - is a collection of items of type `T`.
 
 Each item can be accessed by constant index, for example:
 ```
@@ -105,14 +105,14 @@ val myOutput = OUTPUTS(0)
 val myInput = INPUTS(0)
 ```
 
-Array have `size` property which returns number of elements in an array. 
+Any collection have a `size` property which returns number of elements in a collection. 
 
 ```
 val size = OUTPUTS.size
 ```
 
-Even though ErgoScript is not object-oriented language, Array operations use the syntax of method invocations. 
-For example the following script check an existence of some element in the array satisfying some predicate (condition)
+Even though ErgoScript is not an object-oriented language, Col operations use the syntax of method invocations. 
+For example the following script check an existence of some element in the collection satisfying some predicate (condition)
 
 ```
 val ok = OUTPUTS.exists { (box: Box) => box.value > 1000 }
@@ -122,11 +122,11 @@ The following properties and methods can be used with arrays
 
 Function  | Description
 --------- | ------------
-`Array[T].size` |  number of items in the array
-`def Array[T].exists(p: T => Boolean): Boolean ` | Returns true if there exists an item `x` in the array for which `p(x) == true`  
-`def Array[T].forall(f: T => Boolean): Boolean ` | Returns true if for all items `x` in the array `p(x) == true`   
-`def Array[T].map[R](f: T => R): Array[R] ` | Applies function `f` for each element of array collecting results in a new array of type `R`. 
-`def Array[T].reduce(f: (T, T) => T): T ` | For an array `Array(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
+`Col[T].size` |  a number of items in the collection
+`def Col[T].exists(p: T => Boolean): Boolean ` | Returns true if there exists an item `x` in the collection for which `p(x) == true`  
+`def Col[T].forall(f: T => Boolean): Boolean ` | Returns true if for all items `x` in the collection `p(x) == true`   
+`def Col[T].map[R](f: T => R): Col[R] ` | Applies function `f` for each element of the collection gathering results in a new collection of type `R`. 
+`def Col[T].reduce(f: (T, T) => T): T ` | For a collection `Col(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
 
 #### AvlTree
 TBD
@@ -140,22 +140,22 @@ The following function declarations are automatically imported into any script:
 
 ```
 /** Returns true if all the conditions are true */
-def allOf(conditions: Array[Boolean]): Boolean
+def allOf(conditions: Col[Boolean]): Boolean
 
 /** Returns true if any of the conditions is true */
-def anyOf(conditions: Array[Boolean]): Boolean
+def anyOf(conditions: Col[Boolean]): Boolean
 
 /** Cryptographic hash function Blake2b */
-def blake2b256(input: Array[Byte]): Array[Byte]
+def blake2b256(input: Col[Byte]): Col[Byte]
 
 /** Cryptographic hash function Sha256 */
-def sha256(input: Array[Byte]): Array[Byte]
+def sha256(input: Col[Byte]): Col[Byte]
 
-/** Create BigInt from byte array representation. */
-def byteArrayToBigInt(input: Array[Byte]): BigInt
+/** Create BigInt from a collection of bytes representation. */
+def byteArrayToBigInt(input: Col[Byte]): BigInt
 
 /** Returns bytes representation of integer value. */
-def intToByteArray(input: Int): Array[Byte]
+def intToByteArray(input: Int): Col[Byte]
 
 /** Returns value of the given type from the environment by its tag.*/
 def getVar[T](tag: Int): Option[T]
@@ -165,7 +165,7 @@ def proveDHTuple(g: GroupElement, h: GroupElement,
 def proveDlog(value: GroupElement): SigmaProp
 
 /** Predicate which checks whether a key is in a tree, by using a membership proof. */
-def isMember(tree: AvlTree, key: Array[Byte], proof: Array[Byte]): Boolean
+def isMember(tree: AvlTree, key: Col[Byte], proof: Col[Byte]): Boolean
 
 /** Deserializes values from Base58 encoded binary data at compile time */
 def deserialize[T](string: String): T
@@ -185,7 +185,7 @@ After the timeout output could be spent by backer only.
 guard CrowdFunding(timeout: Int, minToRaise: Int, 
                    backerPubKey: SigmaProp, projectPubKey: SigmaProp) {
   val c1 = HEIGHT >= timeout && backerPubKey
-  val c2 = allOf(Array(
+  val c2 = allOf(Col(
     HEIGHT < timeout,
     projectPubKey,
     OUTPUTS.exists { (out: Box) => 
@@ -212,7 +212,7 @@ into the blockchain yet, then R3 contains the current height of the blockchain).
     
 ```
 guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript: SigmaProp) {
-  val c2 = allOf(Array(
+  val c2 = allOf(Col(
    HEIGHT >= SELF.R3[Int].get + demurragePeriod,
    OUTPUTS.exists { (out: Box) => 
      out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
@@ -225,11 +225,11 @@ guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript:
 #### Ring Signature
 
 Simplest linear-sized ring signature (1-out-of-N OR). 
-The ring is an array of public keys which correspond to some secret keys (of some parties).
+The ring is a collection of public keys which correspond to some secret keys (of some parties).
 The script below checks that at least one party provided the signature WITHOUT disclosing this party.
 
 ```
-guard RingSignature(ring: Array[SigmaProp]) {
+guard RingSignature(ring: Col[SigmaProp]) {
   anyOf(ring)
 }
 ```

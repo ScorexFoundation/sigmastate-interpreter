@@ -82,8 +82,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       "pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
     val altBuyerProp = compile(buyerEnv,
       """(HEIGHT > deadline && pkA) || {
-        |  val tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].get(0)
-        |  allOf(Array(
+        |  val tokenData = OUTPUTS(0).R2[Col[(Col[Byte], Long)]].get(0)
+        |  allOf(Col(
         |      tokenData._1 == token1,
         |      tokenData._2 >= 60L,
         |      OUTPUTS(0).propositionBytes == pkA.propBytes,
@@ -105,7 +105,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       "pkB" -> tokenSellerKey, "deadline" -> deadline)
     val altSellerProp = compile(sellerEnv,
       """ (HEIGHT > deadline && pkB) ||
-        | allOf(Array(
+        | allOf(Col(
         |        OUTPUTS(1).value >= 100,
         |        OUTPUTS(1).propositionBytes == pkB.propBytes
         | ))

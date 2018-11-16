@@ -16,7 +16,7 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
      | //let projectPubKey = proveDlog(project)  //getVar[SigmaProp](projectPubKeyId)
      | //let backerPubKey = proveDlog(backer)  //getVar[SigmaProp](backerPubKeyId)
      | val c1 = HEIGHT >= timeout && backerPubKey
-     | val c2 = allOf(Array(
+     | val c2 = allOf(Col(
      |   HEIGHT < timeout,
      |   projectPubKey,
      |   OUTPUTS.exists { (out: Box) =>
@@ -38,7 +38,7 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
 
   val demurrageScript =
     """{
-     | val c2 = allOf(Array(
+     | val c2 = allOf(Col(
      |   HEIGHT >= SELF.R4[Long].get + demurragePeriod,
      |   OUTPUTS.exists { (out: Box) =>
      |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
