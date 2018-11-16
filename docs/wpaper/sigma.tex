@@ -159,16 +159,16 @@ Naturally, this approach can be extended to more than two keys. If Carol's publi
         pkA || pkB || pkC
 \end{verbatim}
 	
-For syntactic convenience, multiple keys can be placed into an array, and \texttt{anyOf} operator can be used instead of \texttt{||}, as follows:
+For syntactic convenience, multiple keys can be placed into a collection, and \texttt{anyOf} operator can be used instead of \texttt{||}, as follows:
 \begin{verbatim}
-        anyOf (Array (pkA, pkB, pkC))
+        anyOf (Col (pkA, pkB, pkC))
 \end{verbatim}
 
 A conjunction is also possible: the script
 \begin{verbatim}
         pkA && pkB
 \end{verbatim}
-requires Alice and Bob to use secret keys corresponding to \texttt{pkA} and \texttt{pkB} in order to spend the box. Note that Alice and Bob will have to communicate to produce the proof: separate signatures by Alice and Bob will not be sufficient (but Alice and Bob will not have to reveal their secret keys to each other; see Section~\ref{sec:proving}). Similarly to \texttt{||}, multiple \texttt{\&\&} can be used in sequence, and the operator \texttt{allOf} can be used for arrays.
+requires Alice and Bob to use secret keys corresponding to \texttt{pkA} and \texttt{pkB} in order to spend the box. Note that Alice and Bob will have to communicate to produce the proof: separate signatures by Alice and Bob will not be sufficient (but Alice and Bob will not have to reveal their secret keys to each other; see Section~\ref{sec:proving}). Similarly to \texttt{||}, multiple \texttt{\&\&} can be used in sequence, and the operator \texttt{allOf} can be used for collections.
 
 
 Using these operators, it is possible to produce more sophisticated scripts. For example, here is a script stating that the box can be spent either by Carol or by a collaboration between Alice and Bob:
@@ -180,11 +180,11 @@ Using these operators, it is possible to produce more sophisticated scripts. For
 
 A valid proof (contained in the spending transaction) will not reveal which of two possibilities was used.
 
-Operators \texttt{allOf} and \texttt{anyOf} are actually special cases of the operator \texttt{atLeast(bound, array)}, which requires the prover to know secrets for $\texttt{bound}$ elements of the \texttt{array} (just in like in \texttt{anyOf}, which secrets the prover used will not be revealed by the proof). \texttt{allOf(array)} is the same as \texttt{atLeast(array.size, array)} and $\texttt{anyOf(array)}$ is the same as \texttt{atLeast(1, array)}.
+Operators \texttt{allOf} and \texttt{anyOf} are actually special cases of the operator \texttt{atLeast(bound, collection)}, which requires the prover to know secrets for $\texttt{bound}$ elements of the \texttt{collection} (just in like in \texttt{anyOf}, which secrets the prover used will not be revealed by the proof). \texttt{allOf(collection)} is the same as \texttt{atLeast(collection.size, collection)} and $\texttt{anyOf(collection)}$ is the same as \texttt{atLeast(1, collection)}.
 
 For example, here is a script stating that the box can be spent by any 3 out of the following 6 possibilities: Alice, Bob, Charlie, David and Edie, Fran and George, Helen and Irene:
 \begin{verbatim}
-        atLeast(3, Array (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))
+        atLeast(3, Col (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))
 \end{verbatim}
 The same result could be achieved by writing an \texttt{anyOf} of all possible 3-out-of-6 (twenty) combinations.
 
@@ -211,14 +211,14 @@ We emphasize that this evaluation is not the same as the usual left-to-right laz
 
 \subsection{Accessing the Context and Box Contents}
 \label{sec:context}
-In addition to the predefined variable \texttt{HEIGHT}, the context contains predefined arrays \texttt{INPUTS} and \texttt{OUTPUTS}, which refer to the inputs and outputs of the transaction. Elements of these arrays are of type \texttt{Box}. The script also has access to its own box via the context variable \texttt{SELF} of type \texttt{Box}. Note that \texttt{SELF} is also an element of the \texttt{INPUTS} array, because the script is executed when the its box is being spent.
+In addition to the predefined variable \texttt{HEIGHT}, the context contains predefined collections \texttt{INPUTS} and \texttt{OUTPUTS}, which refer to the inputs and outputs of the transaction. Elements of these collections are of type \texttt{Box}. The script also has access to its own box via the context variable \texttt{SELF} of type \texttt{Box}. Note that \texttt{SELF} is also an element of the \texttt{INPUTS} collection, because the script is executed when the its box is being spent.
 
-To access information inside a box \texttt{b}, scripts can use \texttt{b.value} for the amount, \texttt{b.propositionBytes} for the protecting script, and \texttt{b.id} for the identifier of the box, which is the BLAKE2b-256 hash of the contents of the box. Boxes include additional information in \emph{registers};  each box is unique, because ones of its registers includes the transaction id in which it was created as an output, and its own index in the \texttt{OUTPUTS} array, accessible through \texttt{b.R3} (see Section \ref{sec:box-registers} for more on registers).
+To access information inside a box \texttt{b}, scripts can use \texttt{b.value} for the amount, \texttt{b.propositionBytes} for the protecting script, and \texttt{b.id} for the identifier of the box, which is the BLAKE2b-256 hash of the contents of the box. Boxes include additional information in \emph{registers};  each box is unique, because ones of its registers includes the transaction id in which it was created as an output, and its own index in the \texttt{OUTPUTS} collection, accessible through \texttt{b.R3} (see Section \ref{sec:box-registers} for more on registers).
 
 \lnote{ The comments in ErgoBox.scala says something about a unique nonce, but that doesn't seem to be matched by code. }
 
 \paragraph{Example: two boxes together}
-Access to this information allows us, for example, to create an output box that can be spent only in the same transaction as another output box, and only if no other inputs are present in the transaction. If \texttt{friend} stands for an already existing box (per the environment mapping), then we create a new box that can be spent only together with \texttt{friend} and no other input by the following script (note that it uses the array property \texttt{size} and array indexing, starting at 0, denoted by parentheses):
+Access to this information allows us, for example, to create an output box that can be spent only in the same transaction as another output box, and only if no other inputs are present in the transaction. If \texttt{friend} stands for an already existing box (per the environment mapping), then we create a new box that can be spent only together with \texttt{friend} and no other input by the following script (note that it uses the collection property \texttt{size} and collection indexing, starting at 0, denoted by parentheses):
 
 \begin{verbatim}
         INPUTS.size == 2 && INPUTS(0).id == friend.id
@@ -226,7 +226,7 @@ Access to this information allows us, for example, to create an output box that 
 
 Note that the script does not prevent the \texttt{friend} box from being spent on its own, in which case the output box protected by the script above will become not spendable.
 
-We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input array using the \texttt{exists} operator, which applies a boolean function to each array element until it finds one that satisfies the function or finds that none exists. To define a function, we use lambda syntax; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{val} keyword.
+We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input collection using the \texttt{exists} operator, which applies a boolean function to each collection element until it finds one that satisfies the function or finds that none exists. To define a function, we use lambda syntax; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{val} keyword.
 \begin{verbatim}
         {
                 val isFriend = { (inputBox: Box) => inputBox.id == friend.id }
@@ -244,7 +244,7 @@ It can also be written in one statement, as follows:
 \paragraph{Example: crowdfunding}
 Access to the context allows us to create a script for the following crowdfunding situation: a project backer (with key  \texttt{backerPubKey}) wishes to give money to a project (with key \texttt{projectPubKey}), but only if the project raises enough money (at least \texttt{minToRaise}) from other sources by a deadline (expressed in terms of \texttt{HEIGHT}). 
 
-To give money to the project, the backer will create an output box protected by the following script. The script contains two conditions: one for the case the deadline has passed (enabling the backer to get the money back) and one for the case it succeeded (enabling the project to spend the money if the amount is at least \texttt{minToRaise} before the deadline).  In order to ensure enough money has been raised, the script will search the output array for a box with a sufficient value going to the \texttt{projectPubKey}. To check where the value of the output box is going, the script will read the script protecting the output box and compare it to the script corresponding to \texttt{proveDlog(projectPubKey)}; this script can be obtained by \texttt{projectPubKey.propBytes}.
+To give money to the project, the backer will create an output box protected by the following script. The script contains two conditions: one for the case the deadline has passed (enabling the backer to get the money back) and one for the case it succeeded (enabling the project to spend the money if the amount is at least \texttt{minToRaise} before the deadline).  In order to ensure enough money has been raised, the script will search the output collection for a box with a sufficient value going to the \texttt{projectPubKey}. To check where the value of the output box is going, the script will read the script protecting the output box and compare it to the script corresponding to \texttt{proveDlog(projectPubKey)}; this script can be obtained by \texttt{projectPubKey.propBytes}.
 
 \begin{verbatim}
         {
@@ -270,9 +270,9 @@ A context can also contain typed variables that can be retrieved by numerical id
 
 Such context enxtensions can be useful, for example, for requiring a spending transaction to produce hash preimages (the BLAKE2b-256 and SHA-256 hash functions can invoked in \langname, using keywords \texttt{blake2b256} and \texttt{sha256}). For example,
 \begin{verbatim}
-       pkA && blake2b256(getVar[Array[Byte]](1).get) ==  hashOutput
+       pkA && blake2b256(getVar[Col[Byte]](1).get) ==  hashOutput
 \end{verbatim}
-says that spending can be done only using the signature of Alice, and only if the preimage of \texttt{hashOutput} is written in the context. Specifically, the script requires that the context extension should contain a variable (with id \texttt{1}), which is an array of bytes that hashes to the value of \texttt{hashOutput} (the value of \texttt{hashOutput}, like \texttt{pkA}, is defined in the environment and is hardwired into the script at compile time).  Note that although the script requires both the secret key corresponding to \texttt{pkA} and the hash preimage corresponding to \texttt{hashOutput}, there is the stark difference between how these two values are used: the secret key is not revealed in the proof (by the zero-knowledge property of $\Sigma$-proofs), while the hash preimage is explicitly written into the context extension and can be seen by anyone once the transaction takes place.
+says that spending can be done only using the signature of Alice, and only if the preimage of \texttt{hashOutput} is written in the context. Specifically, the script requires that the context extension should contain a variable (with id \texttt{1}), which is a collection of bytes that hashes to the value of \texttt{hashOutput} (the value of \texttt{hashOutput}, like \texttt{pkA}, is defined in the environment and is hardwired into the script at compile time).  Note that although the script requires both the secret key corresponding to \texttt{pkA} and the hash preimage corresponding to \texttt{hashOutput}, there is the stark difference between how these two values are used: the secret key is not revealed in the proof (by the zero-knowledge property of $\Sigma$-proofs), while the hash preimage is explicitly written into the context extension and can be seen by anyone once the transaction takes place.
 
 \paragraph{Example: atomic transactions and cross-chain trading}
 Suppose there are two separate blockchains, for two different asset types. Alice wants to receive some assets in her blockchain in exchange for giving some assets to Bob in his blockchain. \langname allows to accomplish in a simpler way than proposed for Bitcoin, for example, in \cite{Nol13}. 
@@ -280,28 +280,28 @@ Suppose there are two separate blockchains, for two different asset types. Alice
 
 Alice creates a random secret \texttt{x} of 256 bits (32 bytes), hashes it to obtain the value \texttt{hx}, and creates a transaction in Bob's blockchain with the output box protected by the following script:
 \begin{verbatim}
-        anyOf( Array(
+        anyOf( Col(
                 HEIGHT > deadlineBob && pkA,
-                pkB && blake2b256(getVar[Array[Byte]](1).get) == hx
+                pkB && blake2b256(getVar[Col[Byte]](1).get) == hx
         ))
 \end{verbatim}
 Bob can receive the value of this box only upon presentation of a hash preimage of \texttt{hx}. Alice can reclaim it after \texttt{deadlineBob}.
 
 From this output, Bob learns \texttt{hx}. He creates a transaction in Alice's blockchain with an output box protected by the following script:
 \begin{verbatim}
-        anyOf( Array(
+        anyOf( Col(
                 HEIGHT > deadlineAlice && pkB,
-                allOf( Array( 
+                allOf( Col(
                         pkA,
-                        getVar[Array[Byte]](1).get.size < 33,
-                        blake2b256(getVar[Array[Byte]](1).get) == hx
+                        getVar[Col[Byte]](1).get.size < 33,
+                        blake2b256(getVar[Col[Byte]](1).get) == hx
                 ))
         ))
 \end{verbatim}
 
 If Alice is satisfied with the amount Bob is giving her, she claims the value of this box by revealing \texttt{x}. Alice is protected as long as the hash function is one-way and she keeps her \texttt{x} secret until she claims the value of this box. (She should be careful to submit her transaction in enough time before \texttt{deadlineAlice} to make sure it gets processed before Bob can reclaim this money, because once she submits the transaction, \texttt{x} is public and thus, if the \texttt{deadlineAlice} passes before the transaction is processed, Bob can both reclaim this box and claim the box Alice left in his blockchain.)
 
-Bob is protected, because in order for Alice to claim the value of this box, she must present a hash preimage of \texttt{hx} as a context extension in the transaction that uses this box as input. But once she does, Bob also learns this hash preimage, and is able to claim the value of the box that Alice placed into his blockchain. Note that Bob needs to choose \texttt{deadlineAlice} early enough to make sure that he is able to learn the preimage of \texttt{hx} from the transaction in Alice's block chain, and create a transaction in his blockchain, all before \texttt{deadlineBob} that Alice chose. Note also that \texttt{HEIGHT} in the two scripts is with respect to two different blockchains, which may be growing at a different rate. Bob also needs to make sure that he can use Alice's \texttt{x} as a context extension; to make sure Alice cannot cheat by making this \texttt{x} so long that it will not be allowed as a context extension in his blockchain, he uses the constraint \texttt{getVar[Array[Byte]](1).get.size < 33}.
+Bob is protected, because in order for Alice to claim the value of this box, she must present a hash preimage of \texttt{hx} as a context extension in the transaction that uses this box as input. But once she does, Bob also learns this hash preimage, and is able to claim the value of the box that Alice placed into his blockchain. Note that Bob needs to choose \texttt{deadlineAlice} early enough to make sure that he is able to learn the preimage of \texttt{hx} from the transaction in Alice's block chain, and create a transaction in his blockchain, all before \texttt{deadlineBob} that Alice chose. Note also that \texttt{HEIGHT} in the two scripts is with respect to two different blockchains, which may be growing at a different rate. Bob also needs to make sure that he can use Alice's \texttt{x} as a context extension; to make sure Alice cannot cheat by making this \texttt{x} so long that it will not be allowed as a context extension in his blockchain, he uses the constraint \texttt{getVar[Col[Byte]](1).get.size < 33}.
 
 The same approach can be used to trade different assets on the same blockchain, in case of multiasset blockchains. However, for transactions on a single blockchain, an alternative approach is also possible. We describe it below.
 
@@ -310,11 +310,11 @@ The same approach can be used to trade different assets on the same blockchain, 
 In addition to its value and protecting script, a box can contain up to 10 numbered registers, \texttt{R0} through \texttt{R9}. The first four of these have fixed meaning, as follows. For a box \texttt{b}, \texttt{b.R0} is the same as \texttt{b.value} and \texttt{b.R1} is the same as \texttt{b.propositionBytes}. 
 
 
-The third register, \texttt{b.R2}, is for specifying additional, secondary tokens contained in the box (the primary token amount is specified in \texttt{b.value}). \texttt{b.R2} contains an array of pairs, the first element of each pair specifying the token id (as a byte string) and the second element specifying the amount (as a long constant). The maximum number of tokens in a box is set to 4. For every token id, the sum of amounts in inputs boxes should equal the sum of amounts in output boxes. There is one exception to this rule for the creation of new tokens. When a new token type gets created in a transaction, its id is equal to the id of the input box 0. Thus, the exception for the creation of new tokens is that if the token id in some output box is equal to the id of input box 0, then an arbitrary amount of this token can be output. Because each box has a unique id (see Section~\ref{sec:context}, this exception can be applied exactly once per token type. A newly created token can be emitted in a time-controlled fashion---see Section~\ref{sec:self-replicating}.
+The third register, \texttt{b.R2}, is for specifying additional, secondary tokens contained in the box (the primary token amount is specified in \texttt{b.value}). \texttt{b.R2} contains a collection of pairs, the first element of each pair specifying the token id (as a byte string) and the second element specifying the amount (as a long constant). The maximum number of tokens in a box is set to 4. For every token id, the sum of amounts in inputs boxes should equal the sum of amounts in output boxes. There is one exception to this rule for the creation of new tokens. When a new token type gets created in a transaction, its id is equal to the id of the input box 0. Thus, the exception for the creation of new tokens is that if the token id in some output box is equal to the id of input box 0, then an arbitrary amount of this token can be output. Because each box has a unique id (see Section~\ref{sec:context}, this exception can be applied exactly once per token type. A newly created token can be emitted in a time-controlled fashion---see Section~\ref{sec:self-replicating}.
 
 
 
-The fourth register, \texttt{b.R3}, contains a 34-byte array. This array specifies the 32-byte transaction id \lnote{how is transaction id computed?} where this box appears as an output followed by a 2-byte sequence number of this box in the \texttt{OUTPUTS} array of that transaction. This ensures that each box has unique \texttt{R3} and therefore a unique \texttt{id} as long as there are no hash collisions (because the \texttt{id} of the box is computed by hashing its content, including \texttt{R3}).
+The fourth register, \texttt{b.R3}, contains a 34-byte collection. This collection specifies the 32-byte transaction id \lnote{how is transaction id computed?} where this box appears as an output followed by a 2-byte sequence number of this box in the \texttt{OUTPUTS} collection of that transaction. This ensures that each box has unique \texttt{R3} and therefore a unique \texttt{id} as long as there are no hash collisions (because the \texttt{id} of the box is computed by hashing its content, including \texttt{R3}).
 
 The remaining six registers can be used arbitrarily. 
 
@@ -327,8 +327,8 @@ These box registers provide additional capabilities to \langname. Consider, for 
 
 \begin{verbatim}
   (HEIGHT > deadline && pkA) || {
-    val tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].get(0)
-    allOf(Array(
+    val tokenData = OUTPUTS(0).R2[Col[(Col[Byte], Long)]].get(0)
+    allOf(Col(
         tokenData._1 == token1,
         tokenData._2 >= 60L,
         OUTPUTS(0).propositionBytes == pkA.propBytes,
@@ -344,7 +344,7 @@ Bob, similarly, could create an output box with value 0
 \lnote{for some reason the example in the code we want value 1 --- why? It's not explained. Similarly, why do we need \texttt{OUTPUTS(0).value >= 1L} in the script above? } and 60 tokens of type \texttt{token1} and protect it by the following script:
 \begin{verbatim}
         (HEIGHT > deadline && pkB) || 
-        allOf( Array( 
+        allOf( Col(
                 OUTPUTS(1).value >= 100,
                 OUTPUTS(1).propositionBytes == pkB.propBytes
          ))
@@ -359,8 +359,8 @@ We caution that for security, Alice cannot have two such boxes outstanding at an
 \lnote{this seems like a pretty big security vulnerability and we should highlight it and show how to fix it. Restricting the number of inputs and outputs to just 2 is not enough. For example, suppose Alice has another box C in the UTXO with value 100 Ergo and 60 token1, and the following script:}
 \begin{verbatim}
   (HEIGHT > deadline && pkA) || {
-    val tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].get(0)
-    allOf(Array(
+    val tokenData = OUTPUTS(0).R2[Col[(Col[Byte], Long)]].get(0)
+    allOf(Col(
         tokenData._1 == token1,
         tokenData._2 >= 60L,
         OUTPUTS(0).propositionBytes == pkA.propBytes,
@@ -394,7 +394,7 @@ a fixed amount specified by \texttt{fixedRate} per block until \texttt{HEIGHT} r
               val heightIncreased = HEIGHT > SELF.R4[Long].get
               val heightCorrect = out.R4[Long].get == HEIGHT
               val lastCoins = SELF.value <= oneEpochReduction
-              allOf(Array(
+              allOf(Col(
                       correctCoinsConsumed, 
                       heightCorrect, 
                       heightIncreased, 
@@ -459,9 +459,9 @@ Verifier performs the following safety checks:
 
 \begin{enumerate}
 \item \textbf{Deserialization of Statement.}
-Verifier receives the statement as an array of bytes and checks that the size
-of array is less than predefined constant $C_1$. Deserializer parses the
-array of bytes and checks if it is according to the format. Deserializer also
+Verifier receives the statement as a collection of bytes and checks that the size
+of collection is less than predefined constant $C_1$. Deserializer parses the
+collection of bytes and checks if it is according to the format. Deserializer also
 controls the size of the constructed statement tree. It should be less than
 predefined constant $C_2$. The tree being constricted is also checked to
 satisfy typing rules. After deserialization stage we have valid tree of known
@@ -863,7 +863,7 @@ We have following types in the language:
     \item{cryptography group element}
     \item{box}
     \item{tuple of values of different types}
-    \item{array of values of the same type}
+    \item{collection of values of the same type}
     \item{optional value}
 \end{itemize}
 
@@ -1053,7 +1053,7 @@ The Bob can create a box with the same guarding conditions. However, if Alice's 
       &	$\mid$	& \lst{Box} 				& value in a box protected by proposition  \\
       &	$\mid$	& \lst{AvlTree} 			&  Authenticated Dynamic Dictionary \\
       &	$\mid$	& $(\tau_1, \dots, \tau_n) $	& binary product type  \\
-      & $\mid$  & $\text{\lst{Array}}[\tau]$	& array type       \\
+      & $\mid$  & $\text{\lst{Col}}[\tau]$	& collection type       \\
       & $\mid$  & $\text{\lst{Option}}[\tau]$	& optional value (either $Some(\tau)$ or $None$)      \\
       & $\mid$  & \lst{Any}                     & type of any value (common supertype of all the types) \\
 \end{tabular}\]
