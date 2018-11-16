@@ -86,7 +86,7 @@ represent cost and size (costing information, costing properties).
 Note, that `cost` and `dataSize` are independent parameters because some _costed_ values may have 
 very small `dataSize`, but at the same time very high `cost`, e.g. result of contract may be `true` 
 boolean value whose `dataSize` is 1 byte, but its `cost` is the cost of executing the whole contract. 
-The opposite is also possible. For example a context variable of `Array[Byte]` type have `cost` equal 0,
+The opposite is also possible. For example a context variable of `Col[Byte]` type have `cost` equal 0,
 but may have very big `dataSize`.
 
 From this perspective Costed Graph `graphC` is a data flow graph between costed values.
@@ -190,7 +190,7 @@ CCostedPair(
     CCostedPrim(true, costOf("Const:() => Boolean"), sizeOf[Boolean])))
 ```
 
-##### Costed Values of Array Type
+##### Costed Values of Col Type
 
 If `Item` is a type of array element, then costed value of type `Col[Item]` is 
 represented by the following specializations of `Costed[Col[Item]]` type
