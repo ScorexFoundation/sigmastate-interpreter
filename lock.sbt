@@ -17,13 +17,13 @@ dependencyOverrides in ThisBuild ++= Seq(
   "com.typesafe.akka" % "akka-actor_2.12" % "2.4.20",
   "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.0",
   "commons-io" % "commons-io" % "2.5",
-  "io.github.scalan" % "common_2.12" % "master-c1654f39-SNAPSHOT",
-  "io.github.scalan" % "core_2.12" % "master-c1654f39-SNAPSHOT",
-  "io.github.scalan" % "library-api_2.12" % "master-c1654f39-SNAPSHOT",
-  "io.github.scalan" % "library-impl_2.12" % "master-c1654f39-SNAPSHOT",
-  "io.github.scalan" % "library_2.12" % "master-c1654f39-SNAPSHOT",
-  "io.github.scalan" % "macros_2.12" % "master-c1654f39-SNAPSHOT",
-  "io.github.scalan" % "meta_2.12" % "master-c1654f39-SNAPSHOT",
+  "io.github.scalan" % "common_2.12" % "optimizations-1599c13b-SNAPSHOT",
+  "io.github.scalan" % "core_2.12" % "optimizations-1599c13b-SNAPSHOT",
+  "io.github.scalan" % "library-api_2.12" % "optimizations-1599c13b-SNAPSHOT",
+  "io.github.scalan" % "library-impl_2.12" % "optimizations-1599c13b-SNAPSHOT",
+  "io.github.scalan" % "library_2.12" % "optimizations-1599c13b-SNAPSHOT",
+  "io.github.scalan" % "macros_2.12" % "optimizations-1599c13b-SNAPSHOT",
+  "io.github.scalan" % "meta_2.12" % "optimizations-1599c13b-SNAPSHOT",
   "io.github.scalan" % "sigma-api_2.12" % "master-696a31dc-SNAPSHOT",
   "io.github.scalan" % "sigma-impl_2.12" % "master-696a31dc-SNAPSHOT",
   "io.github.scalan" % "sigma-library_2.12" % "master-696a31dc-SNAPSHOT",
@@ -47,4 +47,4 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.typelevel" % "macro-compat_2.12" % "1.1.1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 275304f2bb9f6569bd042a2df62a353c5c51dc3e
+// LIBRARY_DEPENDENCIES_HASH 629cf58c1422f5c183cecff35205ad24360200de

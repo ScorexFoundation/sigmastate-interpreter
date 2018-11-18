@@ -35,7 +35,10 @@ trait Evaluation extends RuntimeCosting { IR =>
   import AvlTree._
   import ColBuilder._
   import SigmaDslBuilder._
+  import CostedBuilder._
   import CCostedBuilder._
+  import Monoid._
+  import MonoidBuilder._
   import MonoidBuilderInst._
   import TrivialSigma._
   import ProveDlogEvidence._
@@ -88,9 +91,10 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   def findIsValid[T](f: Rep[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
-    val ok = lam.scheduleAll.collectFirst {
-      case TableEntry(s, SigmaM.isValid(_)) => s
-    }
+    val ok = lam.scheduleAll.find(te => te.rhs match {
+      case SigmaM.isValid(_) => true
+      case _ => false
+    }).map(_.sym)
     ok
   }
 

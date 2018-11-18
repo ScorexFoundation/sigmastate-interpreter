@@ -61,7 +61,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
-  ignore("emission specification") {
+  property("emission specification") {
     val register = reg1
     val prover = new ErgoLikeTestProvingInterpreter()
 
@@ -172,6 +172,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
                  hLimit: Int): Unit = if (height < hLimit) {
       if (height % 1000 == 0) {
         println(s"block $height in ${System.currentTimeMillis() - st} ms, ${emissionBox.value} coins remain")
+        IR.resetContext()
       }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
       val block = Block(IndexedSeq(tx), minerPubkey)

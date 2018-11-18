@@ -8,7 +8,6 @@ import sigmastate.lang.TransformingSigmaBuilder
 trait IRContext extends Evaluation with TreeBuilding {
   import TestSigmaDslBuilder._
 
-  override val sigmaDslBuilder = RTestSigmaDslBuilder()
   override val builder = TransformingSigmaBuilder
 
   beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))

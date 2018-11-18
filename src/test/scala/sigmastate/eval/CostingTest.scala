@@ -17,6 +17,10 @@ import SType._
 import scalan.BaseCtxTests
 
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>
+  implicit override lazy val IR: TestContext with IRContext =
+    new TestContext with IRContext with CompiletimeCosting {
+//      override val useAlphaEquality = false
+    }
   import IR._
   import WArray._
   import WECPoint._
@@ -223,8 +227,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     var res: Rep[Any] = null
     measure(2) { j => // 10 warm up iterations when j == 0
       measure(j*500 + 10, false) { i =>
-        res = check("", s"INPUTS.size + OUTPUTS.size + $i",
-          ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i)
+        res = check("", s"INPUTS.size + OUTPUTS.size + $i", null
+          /*ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i*/)
       }
     }
   }

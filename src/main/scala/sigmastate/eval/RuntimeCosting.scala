@@ -46,6 +46,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import TrivialSigma._
   import Box._
   import ColOverArrayBuilder._;
+  import CostedBuilder._
   import CCostedBuilder._
   import Costed._;
   import CostedContext._
@@ -68,13 +69,16 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import ProveDHTEvidence._
   import SigmaDslBuilder._
   import TrivialSigma._
+  import MonoidBuilder._
   import MonoidBuilderInst._
   import AvlTree._
   import CostedAvlTree._
   import CCostedAvlTree._
+  import Monoid._
   import IntPlusMonoid._
   import WSpecialPredef._
-  
+  import TestSigmaDslBuilder._
+
   def createSliceAnalyzer = new SliceAnalyzer
 
   val ColMarking = new TraversableMarkingFor[Col]
@@ -484,20 +488,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
   }
 
-    // these rules are applied only when isCostingProcess == true
-//  def rewriteCostingDef[T](d: Def[T]): Rep[_] = {
-//    val CBM = ColBuilderMethods
-//    val SigmaM = SigmaPropMethods
-//    val CCM = CostedColMethods
-//    val CostedM = CostedMethods
-//    val CostedOptionM = CostedOptionMethods
-//    val WOptionM = WOptionMethods
-//    val CM = ColMethods
-//    d match {
-//
-//    }
-//  }
-
   lazy val BigIntegerElement: Elem[WBigInteger] = wBigIntegerElement
 
   override def toRep[A](x: A)(implicit eA: Elem[A]):Rep[A] = eA match {
@@ -510,10 +500,33 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import builder._
   lazy val compiler = new SigmaCompiler(builder)
 
-  val colBuilder: Rep[ColBuilder] = RColOverArrayBuilder()
-  val costedBuilder = RCCostedBuilder()
-  val intPlusMonoid = costedBuilder.monoidBuilder.intPlusMonoid
-  val longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
+  var _colBuilder: Rep[ColBuilder] = _
+  var _costedBuilder: Rep[CostedBuilder] = _
+  var _intPlusMonoid: Rep[Monoid[Int]] = _
+  var _longPlusMonoid: Rep[Monoid[Long]] = _
+  var _sigmaDslBuilder: Rep[SigmaDslBuilder] = _
+
+  init() // initialize global context state
+
+  def colBuilder: Rep[ColBuilder] = _colBuilder
+  def costedBuilder: Rep[CostedBuilder] = _costedBuilder
+  def intPlusMonoid: Rep[Monoid[Int]] = _intPlusMonoid
+  def longPlusMonoid: Rep[Monoid[Long]] = _longPlusMonoid
+  def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder
+
+  protected def init(): Unit = {
+    _colBuilder = RColOverArrayBuilder()
+    _costedBuilder = RCCostedBuilder()
+    _intPlusMonoid = costedBuilder.monoidBuilder.intPlusMonoid
+    _longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
+    _sigmaDslBuilder = RTestSigmaDslBuilder()
+  }
+
+  protected override def onReset(): Unit = {
+    super.onReset()
+    init()
+  }
+
   import Cost._
 
   def removeIsValid[T,R](f: Rep[T] => Rep[Any]): Rep[T] => Rep[Any] = { x: Rep[T] =>
