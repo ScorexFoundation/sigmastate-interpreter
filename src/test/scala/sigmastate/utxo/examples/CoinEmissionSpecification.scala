@@ -2,14 +2,15 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.util.ScorexLogging
-import sigmastate.Values.{LongConstant, IntConstant, SValue}
+import sigmastate.Values.{IntConstant, LongConstant, SValue}
 import sigmastate.Values.{ConcreteCollection, IntConstant, LongConstant}
+import sigmastate.eval.RuntimeIRContext
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv, ScriptEnv}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.BlockchainSimulationSpecification.{ValidationState, Block}
+import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
 
@@ -19,12 +20,8 @@ import sigmastate.{SLong, _}
   * that controls emission rules
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
-  implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
-    // overrided to avoid outputing intermediate graphs in files (too many of them)
-    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
-    }
-  }
+  // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
+  implicit lazy val IR = new RuntimeIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
