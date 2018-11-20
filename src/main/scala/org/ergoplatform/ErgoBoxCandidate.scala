@@ -10,7 +10,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
-import sigmastate.serialization.Serializer
+import sigmastate.serialization.{ErgoTreeSerializer, Serializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
@@ -72,7 +72,7 @@ object ErgoBoxCandidate {
                                         digestsInTx: Option[Array[Digest32]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
-      w.putValue(obj.proposition)
+      w.putBytes(ErgoTreeSerializer.serialize(obj.proposition))
       w.putULong(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
@@ -111,7 +111,7 @@ object ErgoBoxCandidate {
 
     def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: SigmaByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
-      val prop = r.getValue().asBoolValue
+      val prop = ErgoTreeSerializer.deserialize(r, resolvePlaceholdersToConstants = true).asBoolValue
       val creationHeight = r.getULong()
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
