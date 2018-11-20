@@ -8,7 +8,7 @@ import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import scapi.sigma.VerifierMessage.Challenge
 import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple}
 import sigmastate.Values.SigmaBoolean
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.ErgoTreeSerializer
 
 import scala.language.existentials
 
@@ -138,7 +138,7 @@ object FiatShamirTree {
 
     def traverseNode(node: ProofTree): Array[Byte] = node match {
       case l: ProofTreeLeaf =>
-        val propBytes = ValueSerializer.serialize(l.proposition)
+        val propBytes = ErgoTreeSerializer.serialize(l.proposition)
         val commitmentBytes = l.commitmentOpt.get.bytes
         leafPrefix +:
           ((Shorts.toByteArray(propBytes.length.toShort) ++ propBytes) ++
