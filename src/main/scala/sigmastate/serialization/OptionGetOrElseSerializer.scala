@@ -4,7 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.OptionGetOrElse
 
@@ -13,12 +13,12 @@ case class OptionGetOrElseSerializer(cons: (Value[SOption[SType]], Value[SType])
 
   override val opCode: OpCode = OptionGetOrElseCode
 
-  override def serializeBody(obj: OptionGetOrElse[_ <: SType], w: SigmaByteWriter): Unit =
+  override def serialize(obj: OptionGetOrElse[_ <: SType], w: SigmaByteWriter): Unit =
     w.putValue(obj.input)
       .putValue(obj.default)
 
 
-  override def parseBody(r: SigmaByteReader): Value[SType] = {
+  override def parse(r: SigmaByteReader): Value[SType] = {
     val input = r.getValue().asValue[SOption[SType]]
     val default = r.getValue()
     cons(input, default)

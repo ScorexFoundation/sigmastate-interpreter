@@ -3,11 +3,11 @@ package sigmastate.interpreter
 import java.util
 import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import scapi.sigma.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scapi.sigma._
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
@@ -16,17 +16,17 @@ import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, _}
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
-import sigmastate.utils.Extensions._
+import sigmastate.serialization.{OpCodes, OperationSerializer, SigmaSerializer, ValueSerializer}
+import scorex.util.Extensions._
 import sigmastate.utils.Helpers
-import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
+import sigmastate.utxo.{DeserializeContext, GetVar, Transformer}
 import sigmastate.{SType, _}
 import special.sigma.InvalidType
 
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 
 object CryptoConstants {
@@ -303,7 +303,7 @@ trait Interpreter extends ScorexLogging {
       val proofBytes = proof.matchCase(cc => cc.value, c => c.value, _ => invalidArg(proof))
       val bv = tree.asInstanceOf[AvlTreeConstant].createVerifier(SerializedAdProof @@ proofBytes)
       val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
-      val operations: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
+      val operations: Seq[Operation] = opSerializer.parseSeq(SigmaSerializer.startReader(operationsBytes, 0))
       operations.foreach(o => bv.performOneOperation(o))
       bv.digest match {
         case Some(v) => SomeValue(v)

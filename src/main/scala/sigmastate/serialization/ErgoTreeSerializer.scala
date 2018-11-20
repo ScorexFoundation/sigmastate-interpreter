@@ -8,7 +8,7 @@ import scala.collection.mutable
 object ErgoTreeSerializer {
 
   def serialize(ergoTree: ErgoTree): Array[Byte] = {
-    val w = Serializer.startWriter()
+    val w = SigmaSerializer.startWriter()
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
     w.put(ergoTree.header)
     w.putUInt(ergoTree.constants.length)
@@ -24,10 +24,10 @@ object ErgoTreeSerializer {
     * then appending `treeBytes` */
   def serialize(tree: Value[SType]): Array[Byte] = {
     val constantStore = new ConstantStore()
-    val treeWriter = Serializer.startWriter(constantStore)
+    val treeWriter = SigmaSerializer.startWriter(constantStore)
     ValueSerializer.serialize(tree, treeWriter)
     val extractedConstants = constantStore.getAll
-    val w = Serializer.startWriter()
+    val w = SigmaSerializer.startWriter()
     w.put(ErgoTree.DefaultHeader)
 
     // write constants
@@ -42,7 +42,7 @@ object ErgoTreeSerializer {
 
   def treeWithPlaceholdersBytes(bytes: Array[Byte]): (Byte, IndexedSeq[Constant[SType]], Array[Byte]) = {
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
-    val r = Serializer.startReader(bytes)
+    val r = SigmaSerializer.startReader(bytes)
     val header = r.getByte() // skip the header
     val constantCount = r.getUInt().toInt
     val constantsBuilder = mutable.ArrayBuilder.make[Constant[SType]]()
@@ -57,14 +57,14 @@ object ErgoTreeSerializer {
   def deserialize(bytes: Array[Byte], resolvePlaceholdersToConstants: Boolean = true): Value[SType] = {
     // TODO optimize allocation/copying
     val (header, constants, treeBytes) = treeWithPlaceholdersBytes(bytes)
-    val r = Serializer.startReader(treeBytes, new ConstantStore(constants),
+    val r = SigmaSerializer.startReader(treeBytes, new ConstantStore(constants),
       resolvePlaceholdersToConstants)
     val tree = ValueSerializer.deserialize(r)
     tree
   }
 
   def deserializeWithConstantInjection(constantStore: ConstantStore, treeBytes: Array[Byte]): Value[SType] = {
-    val r = Serializer.startReader(treeBytes, constantStore, resolvePlaceholdersToConstants = true)
+    val r = SigmaSerializer.startReader(treeBytes, constantStore, resolvePlaceholdersToConstants = true)
     val tree = ValueSerializer.deserialize(r)
     tree
   }

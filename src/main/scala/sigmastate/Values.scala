@@ -15,7 +15,7 @@ import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 

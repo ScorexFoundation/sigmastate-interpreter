@@ -3,7 +3,7 @@ package sigmastate.serialization
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
@@ -13,13 +13,13 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
 
   override val opCode: OpCode = FuncValueCode
 
-  override def serializeBody(obj: FuncValue, w: SigmaByteWriter): Unit = {
+  override def serialize(obj: FuncValue, w: SigmaByteWriter): Unit = {
     w.putUInt(obj.args.length)
     obj.args.foreach{ case (idx, tpe) => w.putUInt(idx).putType(tpe) }
     w.putValue(obj.body)
   }
 
-  override def parseBody(r: SigmaByteReader): Value[SType] = {
+  override def parse(r: SigmaByteReader): Value[SType] = {
     val argsSize = r.getUInt().toIntExact
     val argsBuilder = mutable.ArrayBuilder.make[(Int, SType)]()
     for (_ <- 0 until argsSize) {

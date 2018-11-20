@@ -7,7 +7,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.BooleanTransformer
 import sigmastate.{SBoolean, SCollection, SType}
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 
 case class BooleanTransformerSerializer[T <: SType]
 (code: OpCode,
@@ -15,12 +15,12 @@ case class BooleanTransformerSerializer[T <: SType]
 
   override val opCode: OpCode = code
 
-  override def serializeBody(obj: BooleanTransformer[T], w: SigmaByteWriter): Unit =
+  override def serialize(obj: BooleanTransformer[T], w: SigmaByteWriter): Unit =
     w.putValue(obj.input)
       .put(obj.id)
       .putValue(obj.condition)
 
-  override def parseBody(r: SigmaByteReader): Value[SBoolean.type] = {
+  override def parse(r: SigmaByteReader): Value[SBoolean.type] = {
     val input = r.getValue().asCollection[T]
     val idByte = r.getByte()
     val condition = r.getValue().asValue[SBoolean.type]

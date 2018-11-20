@@ -4,14 +4,14 @@ import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate._
-import sigmastate.serialization.Serializer
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.SCollection.SByteArray
-import sigmastate.utils.{SigmaByteWriter, SigmaByteReader, Helpers}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -150,10 +150,10 @@ object ErgoBox {
             boxId: Short = 0): ErgoBox =
     new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId, creationHeight)
 
-  object serializer extends Serializer[ErgoBox, ErgoBox] {
+  object serializer extends SigmaSerializer[ErgoBox, ErgoBox] {
 
-    override def serializeBody(obj: ErgoBox, w: SigmaByteWriter): Unit = {
-      ErgoBoxCandidate.serializer.serializeBody(obj, w)
+    override def serialize(obj: ErgoBox, w: SigmaByteWriter): Unit = {
+      ErgoBoxCandidate.serializer.serialize(obj, w)
       val txIdBytes = obj.transactionId.toBytes
       val txIdBytesSize = txIdBytes.length
       assert(txIdBytesSize == ErgoLikeTransaction.TransactionIdBytesSize,
@@ -162,8 +162,8 @@ object ErgoBox {
       w.putUShort(obj.index)
     }
 
-    override def parseBody(r: SigmaByteReader): ErgoBox = {
-      val ergoBoxCandidate = ErgoBoxCandidate.serializer.parseBody(r)
+    override def parse(r: SigmaByteReader): ErgoBox = {
+      val ergoBoxCandidate = ErgoBoxCandidate.serializer.parse(r)
       val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdBytesSize).toModifierId
       val index = r.getUShort()
       ergoBoxCandidate.toBox(transactionId, index.toShort)

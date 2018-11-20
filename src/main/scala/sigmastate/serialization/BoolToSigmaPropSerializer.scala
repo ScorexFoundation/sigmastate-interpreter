@@ -10,11 +10,11 @@ case class BoolToSigmaPropSerializer(cons: BoolValue => SigmaPropValue) extends 
 
   override val opCode: Byte = BoolToSigmaPropCode
 
-  def serializeBody(obj: BoolToSigmaProp, w: SigmaByteWriter): Unit = {
+  def serialize(obj: BoolToSigmaProp, w: SigmaByteWriter): Unit = {
     w.putValue(obj.value)
   }
 
-  def parseBody(r: SigmaByteReader): Values.Value[SType] = {
+  def parse(r: SigmaByteReader): Values.Value[SType] = {
     val p = r.getValue().asBoolValue
     cons(p)
   }

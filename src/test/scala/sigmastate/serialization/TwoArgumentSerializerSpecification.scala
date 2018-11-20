@@ -6,7 +6,7 @@ import sigmastate.Values._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.Append
 import OpCodes._
-import sigmastate.utils.ByteArrayWriter.encodeZigZagLong
+import scorex.util.serialization.VLQByteBufferWriter.encodeZigZagLong
 
 class TwoArgumentSerializerSpecification extends TableSerializationSpecification {
 

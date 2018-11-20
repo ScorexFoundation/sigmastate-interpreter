@@ -3,7 +3,7 @@ package sigmastate.serialization
 import sigmastate.Values.{BooleanConstant, Constant, IntConstant}
 import sigmastate._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.ByteArrayWriter.encodeZigZagInt
+import scorex.util.serialization.VLQByteBufferWriter.encodeZigZagInt
 
 class AndSerializerSpecification extends TableSerializationSpecification {
 

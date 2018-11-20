@@ -6,7 +6,7 @@ import sigmastate.Values.{Constant, GroupElementConstant, SigmaBoolean, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{DataSerializer, OpCodes, ValueSerializer}
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ProveDiffieHellmanTupleSerializer(cons:
@@ -20,7 +20,7 @@ case class ProveDiffieHellmanTupleSerializer(cons:
 
   private val constCodePrefix: Byte = 0
 
-  override def serializeBody(obj: ProveDiffieHellmanTuple, w: SigmaByteWriter): Unit = obj match {
+  override def serialize(obj: ProveDiffieHellmanTuple, w: SigmaByteWriter): Unit = obj match {
     case ProveDiffieHellmanTuple(
     gv @ Constant(_, SGroupElement),
     hv @ Constant(_, SGroupElement),
@@ -39,7 +39,7 @@ case class ProveDiffieHellmanTupleSerializer(cons:
       w.putValue(obj.vv)
   }
 
-  override def parseBody(r: SigmaByteReader): SigmaBoolean = {
+  override def parse(r: SigmaByteReader): SigmaBoolean = {
     if (r.peekByte() == constCodePrefix) {
       val _ = r.getByte() // skip prefix code
       r.getType() match {

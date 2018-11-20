@@ -7,7 +7,7 @@ import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Assertion, Matchers, PropSpec}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.Serializer
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.generators.ValueGenerators
 
 class SerializationRoundTripSpec extends PropSpec
@@ -15,17 +15,17 @@ class SerializationRoundTripSpec extends PropSpec
   with Matchers
   with ValueGenerators {
 
-  private def roundTripTest[T](v: T)(implicit serializer: Serializer[T, T]): Assertion = {
+  private def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
     val bytes = serializer.toBytes(v)
-    serializer.parseBody(Serializer.startReader(bytes)) shouldBe v
+    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
   }
 
-  private def roundTripTestWithPos[T](v: T)(implicit serializer: Serializer[T, T]): Assertion = {
+  private def roundTripTestWithPos[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
     val randomBytesCount = Gen.chooseNum(1, 20).sample.get
     val randomBytes = Gen.listOfN(randomBytesCount, arbByte.arbitrary).sample.get.toArray
     val bytes = serializer.toBytes(v)
-    serializer.parseBody(Serializer.startReader(bytes)) shouldBe v
-    serializer.parseBody(Serializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
+    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
+    serializer.parse(SigmaSerializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
   }
 
   property("ErgoBoxCandidate: Serializer round trip") {

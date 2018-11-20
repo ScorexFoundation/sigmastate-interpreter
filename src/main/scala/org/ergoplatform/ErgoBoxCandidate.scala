@@ -10,10 +10,10 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
-import sigmastate.serialization.Serializer
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 
 import scala.runtime.ScalaRunTime
 
@@ -66,7 +66,7 @@ class ErgoBoxCandidate(val value: Long,
 
 object ErgoBoxCandidate {
 
-  object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
+  object serializer extends SigmaSerializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
                                         digestsInTx: Option[Array[Digest32]],
@@ -105,7 +105,7 @@ object ErgoBoxCandidate {
       }
     }
 
-    override def serializeBody(obj: ErgoBoxCandidate, w: SigmaByteWriter): Unit = {
+    override def serialize(obj: ErgoBoxCandidate, w: SigmaByteWriter): Unit = {
       serializeBodyWithIndexedDigests(obj, None, w)
     }
 
@@ -135,7 +135,7 @@ object ErgoBoxCandidate {
       new ErgoBoxCandidate(value, prop, creationHeight, addTokens, regs)
     }
 
-    override def parseBody(r: SigmaByteReader): ErgoBoxCandidate = {
+    override def parse(r: SigmaByteReader): ErgoBoxCandidate = {
       parseBodyWithIndexedDigests(None, r)
     }
   }

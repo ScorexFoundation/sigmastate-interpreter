@@ -7,15 +7,15 @@ import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, EvaluatedValue, AvlTreeConstant, ConstantNode, SomeValue, NoneValue}
+import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, EvaluatedValue, NoneValue, SomeValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{Serializer, OperationSerializer}
+import sigmastate.serialization.{OperationSerializer, SigmaSerializer}
 import special.collection.{CCostedBuilder, Col, Types}
 import special.sigma._
 
 import scala.reflect.ClassTag
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 import scalan.meta.RType
 
 case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree {
@@ -121,7 +121,7 @@ class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { d
     val treeData = tree.asInstanceOf[CostingAvlTree].treeData
     val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
     val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
-    val ops: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
+    val ops: Seq[Operation] = opSerializer.parseSeq(SigmaSerializer.startReader(operationsBytes, 0))
     ops.foreach(o => bv.performOneOperation(o))
     bv.digest match {
       case Some(v) => Some(Cols.fromArray(v))

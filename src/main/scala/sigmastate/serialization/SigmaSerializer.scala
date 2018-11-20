@@ -2,23 +2,12 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
+import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
+import scorex.util.serialization.Serializer
 
-trait Serializer[TFamily, T <: TFamily] {
-
-  def parseBody(r: SigmaByteReader): TFamily
-  def serializeBody(obj: T, w: SigmaByteWriter): Unit
-  def error(msg: String) = throw new SerializerException(msg, None)
-
-  final def toBytes(obj: T): Array[Byte] = {
-    val w = Serializer.startWriter()
-    serializeBody(obj, w)
-    w.toBytes
-  }
-}
-
-object Serializer {
+object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
@@ -65,8 +54,15 @@ object Serializer {
   }
 }
 
-trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T] {
-  val companion: SigmaSerializerCompanion[TFamily]
+trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, SigmaByteReader, SigmaByteWriter] {
+
+  def error(msg: String) = throw new SerializerException(msg, None)
+
+  final def toBytes(obj: T): Array[Byte] = {
+    val w = SigmaSerializer.startWriter()
+    serialize(obj, w)
+    w.toBytes
+  }
 }
 
 trait SigmaSerializerCompanion[TFamily] {

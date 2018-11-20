@@ -8,7 +8,7 @@ import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaTyper

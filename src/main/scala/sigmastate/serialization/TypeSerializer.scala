@@ -111,8 +111,8 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
   override def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
 
   private def deserialize(r: SigmaByteReader, depth: Int): SType = {
-    if (depth > Serializer.MaxTreeDepth)
-      throw new TypeDeserializeCallDepthExceeded(s"deserialize call depth exceeds ${Serializer.MaxTreeDepth}")
+    if (depth > SigmaSerializer.MaxTreeDepth)
+      throw new TypeDeserializeCallDepthExceeded(s"deserialize call depth exceeds ${SigmaSerializer.MaxTreeDepth}")
     val c = r.getUByte()
     if (c <= 0)
       throw new InvalidTypePrefix(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")

@@ -14,12 +14,12 @@ case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
 
   override val opCode: OpCode = code
 
-  override def serializeBody(obj: SigmaTransformer[I, O], w: SigmaByteWriter): Unit = {
+  override def serialize(obj: SigmaTransformer[I, O], w: SigmaByteWriter): Unit = {
     w.putUInt(obj.items.length)
     obj.items.foreach(w.putValue)
   }
 
-  override def parseBody(r: SigmaByteReader): SigmaPropValue = {
+  override def parse(r: SigmaByteReader): SigmaPropValue = {
     val itemsSize = r.getUInt().toInt
     val b = mutable.ArrayBuilder.make[SigmaPropValue]()
     for (_ <- 0 until itemsSize) {
