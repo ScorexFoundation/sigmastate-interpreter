@@ -79,6 +79,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import WSpecialPredef._
   import TestSigmaDslBuilder._
 
+  //this.keepOriginalFunc = false  // original lambda contains invocations of evalNode and we don't want that
+
   def createSliceAnalyzer = new SliceAnalyzer
 
   val ColMarking = new TraversableMarkingFor[Col]

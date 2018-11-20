@@ -166,7 +166,7 @@ class SpamSpecification extends SigmaTestingCommons {
     }
   }
 
-  ignore("transaction with many inputs and outputs") { // TODO avoid too complex cost function by approximating INPUT and OUTPUT sizes
+  property("transaction with many inputs and outputs") { // TODO avoid too complex cost function by approximating INPUT and OUTPUT sizes
     implicit lazy val IR = new TestingIRContext {
       override val okPrintEvaluatedEntries = false
       override def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
