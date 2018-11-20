@@ -1,18 +1,18 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Objects, Arrays}
+import java.util.{Arrays, Objects}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.serialization.{ErgoTreeSerializer, OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
@@ -46,7 +46,7 @@ object Values {
     /** Returns true if this value represent some constant or sigma statement, false otherwise */
     def evaluated: Boolean
 
-    lazy val bytes = ValueSerializer.serialize(this)
+    lazy val bytes = ErgoTreeSerializer.serialize(this)
 
     /** Every value represents an operation and that operation can be associated with a function type,
       * describing functional meaning of the operation, kind of operation signature.
