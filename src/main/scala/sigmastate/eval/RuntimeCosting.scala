@@ -490,6 +490,16 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
   }
 
+//  override def transformDef[A](d: Def[A], t: Transformer): Rep[A] = d match {
+//    // not the same as super because mkMethodCall can produce a more precise return type
+//    case MethodCall(receiver, method, args, neverInvoke) =>
+//      val args1 = args.map(transformProductParam(_, t).asInstanceOf[AnyRef])
+//      val receiver1 = t(receiver)
+//      // in the case neverInvoke is false, the method is invoked in rewriteDef
+//      mkMethodCall(receiver1, method, args1, neverInvoke).asInstanceOf[Rep[A]]
+//    case _ => super.transformDef(d, t)
+//  }
+
   lazy val BigIntegerElement: Elem[WBigInteger] = wBigIntegerElement
 
   override def toRep[A](x: A)(implicit eA: Elem[A]):Rep[A] = eA match {
