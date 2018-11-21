@@ -21,4 +21,8 @@ class SigmaByteReader(b: ByteBuffer,
 
   @inline def getType(): SType = TypeSerializer.deserialize(this)
   @inline def getValue(): SValue = ValueSerializer.deserialize(this)
+
+  private var lvl: Int = 0
+  @inline def level: Int = lvl
+  @inline def level_=(v: Int): Unit = lvl = v
 }
