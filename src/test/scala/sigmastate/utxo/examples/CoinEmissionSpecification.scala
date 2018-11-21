@@ -9,7 +9,7 @@ import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes
+import sigmastate.serialization.{ErgoTreeSerializer, OpCodes}
 import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
@@ -76,22 +76,9 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(rewardOut)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
     val outputsNum = EQ(SizeOf(Outputs), 2)
-    val correctMinerProposition = EQ(ExtractScriptBytes(minerOut),
-      Append(
-        Append(
-          ConcreteCollection(
-            0.toByte, // header
-            1.toByte, // const count
-            SGroupElement.typeCode // const type
-          ),
-          MinerPubkey // const value
-        ),
-        ConcreteCollection(
-          OpCodes.ProveDlogCode,
-          OpCodes.ConstantPlaceholderIndexCode,
-          0.toByte // constant index in the store
-        )
-      )
+    val correctMinerProposition = EQ(
+      ExtractScriptBytes(minerOut),
+      ErgoTreeSerializer.serializedPubkeyPropValue(MinerPubkey)
     )
 
     val prop = AND(

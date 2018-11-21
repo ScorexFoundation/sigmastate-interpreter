@@ -1,9 +1,11 @@
 package sigmastate.serialization
 
-import sigmastate.SType
-import sigmastate.Values.{Constant, ErgoTree, Value}
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{ConcreteCollection, Constant, ErgoTree, Value}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.SigmaByteReader
+import sigmastate.utxo.Append
+import sigmastate.{SGroupElement, SType}
 
 import scala.collection.mutable
 
@@ -84,5 +86,23 @@ object ErgoTreeSerializer {
     val tree = ValueSerializer.deserialize(r)
     tree
   }
+
+  def serializedPubkeyPropValue(pubkey: Value[SByteArray]): Value[SByteArray] =
+    Append(
+      Append(
+        ConcreteCollection(
+          0.toByte, // header
+          1.toByte, // const count
+          SGroupElement.typeCode // const type
+        ),
+        pubkey // const value
+      ),
+      ConcreteCollection(
+        OpCodes.ProveDlogCode,
+        OpCodes.ConstantPlaceholderIndexCode,
+        0.toByte // constant index in the store
+      )
+    )
+
 }
 
