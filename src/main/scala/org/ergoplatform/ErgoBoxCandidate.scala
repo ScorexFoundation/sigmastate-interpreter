@@ -10,7 +10,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
-import sigmastate.serialization.{ErgoTreeSerializer, Serializer}
+import sigmastate.serialization.{ErgoTreeSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._

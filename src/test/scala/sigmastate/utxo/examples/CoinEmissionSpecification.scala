@@ -58,7 +58,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
-  ignore("emission specification") {
+  property("emission specification") {
     val register = reg1
     val prover = new ErgoLikeTestProvingInterpreter()
 
@@ -77,7 +77,22 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
     val outputsNum = EQ(SizeOf(Outputs), 2)
     val correctMinerProposition = EQ(ExtractScriptBytes(minerOut),
-      Append(ConcreteCollection(OpCodes.ProveDlogCode, SGroupElement.typeCode), MinerPubkey))
+      Append(
+        Append(
+          ConcreteCollection(
+            0.toByte, // header
+            1.toByte, // const count
+            SGroupElement.typeCode // const type
+          ),
+          MinerPubkey // const value
+        ),
+        ConcreteCollection(
+          OpCodes.ProveDlogCode,
+          OpCodes.ConstantPlaceholderIndexCode,
+          0.toByte // constant index in the store
+        )
+      )
+    )
 
     val prop = AND(
       heightIncreased,
@@ -102,7 +117,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    val heightCorrect = out.R4[Long].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
         |    val outputsNum = OUTPUTS.size == 2
-        |    val correctMinerProposition = minerOut.propositionBytes == Col[Byte](-51.toByte, 7.toByte) ++ MinerPubkey
+        |    val correctMinerProposition = minerOut.propositionBytes ==
+        |      Col[Byte](0.toByte, 1.toByte, 7.toByte) ++ MinerPubkey ++ Col[Byte](-51.toByte, 115.toByte, 0.toByte)
         |    allOf(Col(heightIncreased, correctMinerProposition, allOf(Col(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect)) || lastCoins))
         |}""".stripMargin).asBoolValue
 
