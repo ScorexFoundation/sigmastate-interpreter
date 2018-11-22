@@ -765,15 +765,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         case p: DLogProtocol.ProveDlog =>
           val ge = asRep[Costed[WECPoint]](eval(p.value))
           val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
-          withDefaultSize(resV, ge.cost + costOf(SigmaPropConstant(p)))
+          RCCostedPrim(resV, costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)), CryptoConstants.groupSize.toLong)
         case p @ ProveDiffieHellmanTuple(gv, hv, uv, vv) =>
           val gvC = asRep[Costed[WECPoint]](eval(gv))
           val hvC = asRep[Costed[WECPoint]](eval(hv))
           val uvC = asRep[Costed[WECPoint]](eval(uv))
           val vvC = asRep[Costed[WECPoint]](eval(vv))
           val resV: Rep[SigmaProp] = RProveDHTEvidence(gvC.value, hvC.value, uvC.value, vvC.value)
-          val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOf(SigmaPropConstant(p))
-          RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
+          RCCostedPrim(resV, costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2, CryptoConstants.groupSize.toLong * 4)
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)
