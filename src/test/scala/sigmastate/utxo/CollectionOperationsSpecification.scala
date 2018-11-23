@@ -304,12 +304,17 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       """OUTPUTS
         |.map { (box: Box) => box.value }
         |.getOrElse(3, 0L)== 0""".stripMargin
-    val expectedPropTree = EQ(
-      ByIndex(
-        MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-        IntConstant(3),
-        Some(LongConstant(0))),
-      LongConstant(0))
+    val expectedPropTree = BlockValue(
+      Vector(ValDef(1, List(), LongConstant(0))),
+      EQ(
+        ByIndex(
+          MapCollection(Outputs, FuncValue(Vector((2, SBox)), ExtractAmount(ValUse(2, SBox)))),
+          IntConstant(3),
+          Some(ValUse(1, SLong))
+        ),
+        ValUse(1, SLong)
+      )
+    )
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
