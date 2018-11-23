@@ -149,7 +149,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)
-        mkTaggedVariable(id, tpe)
+        mkGetVar(id, tpe)
       case BIM.subtract(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, MinusCode)
       case BIM.add(In(x), In(y)) =>
@@ -205,6 +205,13 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkExtractAmount(recurse[SBox.type](box))
       case BoxM.propositionBytes(In(box)) =>
         mkExtractScriptBytes(box.asBox)
+
+      case OM.get(In(optionSym)) =>
+        mkOptionGet(optionSym.asValue[SOption[SType]])
+      case OM.getOrElse(In(optionSym), In(defVal)) =>
+        mkOptionGetOrElse(optionSym.asValue[SOption[SType]], defVal)
+      case OM.isDefined(In(optionSym)) =>
+        mkOptionIsDefined(optionSym.asValue[SOption[SType]])
 
       case Def(AnyZk(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asSigmaProp)

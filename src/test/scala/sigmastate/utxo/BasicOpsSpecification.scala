@@ -60,7 +60,9 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       }
     }
 
-    val prop = compile(env, script).asBoolValue
+    val interProp = compile(env, script).asBoolValue
+    val IR.Pair(calcF, _) = IR.doCosting(Map(), interProp)
+    val prop = IR.buildTree(calcF)
     prop shouldBe propExp
 
     val p3 = prover.dlogSecrets(2).publicImage
