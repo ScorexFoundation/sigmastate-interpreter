@@ -7,14 +7,14 @@ import scala.language.implicitConversions
 import scala.language.existentials
 import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
-import scalan.{Lazy, Nullable, SigmaLibrary}
+import scalan.{Lazy, SigmaLibrary, Nullable}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import scapi.sigma.ProveDiffieHellmanTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
-import sigmastate.Values.{BlockValue, BoolValue, ByteArrayConstant, ConcreteCollection, Constant, OptionValue, SValue, SigmaBoolean, SigmaPropConstant, TaggedVariableNode, ValDef, ValUse, Value}
+import sigmastate.Values.{FuncValue, OptionValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
 import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaPredef._
@@ -29,9 +29,9 @@ import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
 import scorex.crypto.hash.Blake2b256.DigestSize
-import scorex.crypto.hash.{Blake2b256, Sha256}
+import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{SigmaCompiler, Terms}
+import sigmastate.lang.{Terms, SigmaCompiler}
 import scalan.staged.Slicing
 
 trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Evaluation =>
@@ -105,17 +105,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       super.createAllMarking(e)
   }
 
-  def opcodeToArithOpName(opCode: Byte): String = opCode match {
-    case OpCodes.PlusCode     => "+"
-    case OpCodes.MinusCode    => "-"
-    case OpCodes.MultiplyCode => "*"
-    case OpCodes.DivisionCode => "/"
-    case OpCodes.ModuloCode   => "%"
-    case OpCodes.MinCode      => "min"
-    case OpCodes.MaxCode      => "max"
-    case _ => error(s"Cannot find ArithOpName for opcode $opCode")
-  }
-
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int]
 
   def costOf(opName: String, opType: SFunc): Rep[Int] = CostOf(opName, opType)
@@ -149,18 +138,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   def costOf(v: SValue): Rep[Int] = {
-    val opTy = v.opType
-    v match {
-      case ArithOp(_, _, opCode) =>
-        costOf(opcodeToArithOpName(opCode), opTy)
-      case l: Terms.Lambda =>
-        constCost(l.tpe)
-      case c @ Constant(_, tpe) =>
-        costOf(s"Const", opTy)
-      case v =>
-        val className = v.getClass.getSimpleName
-        costOf(className, opTy)
-    }
+    costOf(v.opName, v.opType)
   }
 
   trait CostedStruct extends Costed[Struct] { }
@@ -736,6 +714,27 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import sigmastate._
   import scapi.sigma.{DLogProtocol}
 
+  val okMeasureOperationTime: Boolean = false
+
+  val OperationIdKey = MetaKey[AnyRef]("OperationId")(AnyRefElement)
+
+  protected def isOperationNode(v: SValue): Boolean = v match {
+    case _: Block | _: BlockValue | _: TaggedVariableNode[_] | _: ValNode | _: ValDef | _: ValUse[_] | _: FuncValue => false
+    case _ => true
+  }
+
+  protected def onTreeNodeCosted[T <: SType](
+        ctx: Rep[CostedContext], env: CostingEnv,
+        node: Value[T], costed: RCosted[T#WrappedType]): Unit = {
+    if (okMeasureOperationTime) {
+      costed match {
+        case Def(CCostedPrimCtor(v, c, s)) if isOperationNode(node) =>
+          v.setMetadata(OperationIdKey)(node.opId)
+        case _ =>
+      }
+    }
+  }
+
   protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
@@ -1190,7 +1189,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         import OpCodes._
         val x = asRep[Costed[WBigInteger]](eval(op.left))
         val y = asRep[Costed[WBigInteger]](eval(op.right))
-        val opName = opcodeToArithOpName(op.opCode)
+        val opName = op.opName
         var v: Rep[WBigInteger] = null; var s: Rep[Long] = null
         op.opCode match {
           case PlusCode | MinusCode =>
@@ -1355,7 +1354,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case _ =>
         error(s"Don't know how to evalNode($node)")
     }
-    asRep[Costed[T#WrappedType]](res)
+    val resC = asRep[Costed[T#WrappedType]](res)
+    onTreeNodeCosted(ctx, env, node, resC)
+    resC
   }
 
 

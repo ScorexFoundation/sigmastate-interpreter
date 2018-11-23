@@ -59,6 +59,10 @@ object Values {
       * performance parameters.
       * */
     def opType: SFunc
+
+    def opName: String = this.getClass.getSimpleName
+
+    def opId: OperationId = OperationId(opName, opType)
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {
@@ -110,6 +114,8 @@ object Values {
     override def companion: ValueCompanion = Constant
 
     override val opCode: OpCode = ConstantCode
+    override def opName: String = s"Const"
+
     override def cost[C <: Context](context: C) = tpe.dataSize(value)
 
     override def equals(obj: scala.Any): Boolean = obj match {

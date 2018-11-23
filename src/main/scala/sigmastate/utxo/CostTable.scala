@@ -4,6 +4,8 @@ import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
 
+import scala.collection.mutable
+
 case class CostTable(operCosts: Map[OperationId, Double]) extends (OperationId => Int) {
   import CostTable._
   override def apply(operId: OperationId) = {
@@ -251,3 +253,24 @@ object CostTable {
     val OptionIsDefined = 1
   }
 }
+
+object CostTableStat {
+  private class StatItem(var count: Long, var sum: Long)  // make immutable before making public
+  private val stat = mutable.HashMap[OperationId, StatItem]()
+  def addOpTime(op: OperationId, time: Long) = {
+    stat.get(op) match {
+      case Some(item) =>
+        item.count += 1
+        item.sum += time
+      case None =>
+        stat(op) = new StatItem(1, time)
+    }
+  }
+  def print: String = {
+    stat.map { case (opId, item) =>
+      val cost = item.sum / item.count
+      s"""("${opId.name}", "${opId.opType}", $cost)"""
+    }.mkString("Seq(", ",\n", ")")
+  }
+}
+
