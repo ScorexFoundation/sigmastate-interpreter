@@ -169,6 +169,11 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
+
+      case ColM.apply(colSym, In(index)) =>
+        val col = recurse(colSym)
+        mkByIndex(col, index.asIntValue, None)
+
       case ColM.length(col) =>
         utxo.SizeOf(recurse(col).asCollection[SType])
 

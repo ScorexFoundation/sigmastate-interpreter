@@ -343,12 +343,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("map") {
-    assertProof("OUTPUTS.map({ (out: Box) => out.value })",
-      MapCollection(
-        Outputs,
-        FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))
+    assertProof("OUTPUTS.map({ (out: Box) => out.value })(0) == 1L",
+      EQ(
+        ByIndex(
+          MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+          IntConstant(0)
+        ),
+        LongConstant(1)
       ),
-      IndexedSeq(10L, 10L))
+      IndexedSeq(1L, 1L))
   }
 
   property("forall for custom collection") {
