@@ -22,20 +22,26 @@ object CostTable {
   type ExpressionCost = Int
   def costToInt(cost: Double): Int = (cost * 1000000).toInt
   val MinimalCost = 0.000001
+
+  val expCost = 0.005
+  val multiplyCost = 0.0001
+  val groupElementConst = MinimalCost
+  val constCost = MinimalCost
+
   val DefaultCosts = CostTable.fromSeq(Seq(
-    ("Const", "() => Unit",    MinimalCost),
-    ("Const", "() => Boolean", MinimalCost),
-    ("Const", "() => Byte",    MinimalCost),
-    ("Const", "() => Short",   MinimalCost),
-    ("Const", "() => Int",     MinimalCost),
-    ("Const", "() => Long",    MinimalCost),
-    ("Const", "() => BigInt",  MinimalCost),
-    ("Const", "() => String",  MinimalCost),
-    ("Const", "() => GroupElement", MinimalCost),
-    ("Const", "() => SigmaProp", MinimalCost),
-    ("Const", "() => Col[IV]", MinimalCost),
-    ("Const", "() => Box", MinimalCost),
-    ("ConcreteCollection", "() => Col[IV]", MinimalCost),
+    ("Const", "() => Unit",    constCost),
+    ("Const", "() => Boolean", constCost),
+    ("Const", "() => Byte",    constCost),
+    ("Const", "() => Short",   constCost),
+    ("Const", "() => Int",     constCost),
+    ("Const", "() => Long",    constCost),
+    ("Const", "() => BigInt",  constCost),
+    ("Const", "() => String",  constCost),
+    ("Const", "() => GroupElement", constCost),
+    ("Const", "() => SigmaProp", constCost),
+    ("Const", "() => Col[IV]", constCost),
+    ("Const", "() => Box", constCost),
+    ("ConcreteCollection", "() => Col[IV]", constCost),
     ("If", "(Boolean, T, T) => T", MinimalCost),
 //    ("If", "(Boolean, Unit, Unit) => Unit", MinimalCost),
 //    ("If", "(Boolean, Byte, Byte) => Byte", MinimalCost),
@@ -58,8 +64,8 @@ object CostTable {
     ("ExtractBytesWithNoRef", "(Box) => Col[Byte]", MinimalCost),
     ("ExtractRegisterAs", "(Box,Byte) => Col[BigInt]", MinimalCost),
 
-    ("Exponentiate", "(GroupElement,BigInt) => GroupElement", MinimalCost),
-    ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", MinimalCost),
+    ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
+    ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyCost),
     ("ByteArrayToBigInt", "(Col[Byte]) => BigInt", MinimalCost),
     ("new_BigInteger_per_item", "(Col[Byte]) => BigInt", MinimalCost),
 
@@ -150,6 +156,11 @@ object CostTable {
     ("TreeLookup", "(AvlTree, Col[Byte], Col[Byte]) => Option[Col[Byte]]", MinimalCost),
 
     ("LongToByteArray", "(Long) => Col[Byte]", MinimalCost),
+
+    ("ProveDlogEval", "(Unit) => SigmaProp", groupElementConst + constCost + 2 * expCost + multiplyCost),
+
+    //cost if of twice prove dlog
+    ("ProveDHTuple", "(Unit) => SigmaProp", 2 * (groupElementConst + constCost + 2 * expCost + multiplyCost)),
   ))
 
   def fromSeq(items: Seq[(String, String, Double)]): CostTable = {
