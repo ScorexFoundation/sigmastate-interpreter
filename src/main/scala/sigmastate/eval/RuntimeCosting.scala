@@ -108,6 +108,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int]
 
   def costOf(opName: String, opType: SFunc): Rep[Int] = CostOf(opName, opType)
+  def costOfProveDlog = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
+  def costOfDHTuple = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2
 
   case class ConstantPlaceholder[T](index: Int)(implicit eT: LElem[T]) extends Def[T] {
     def selfType: Elem[T] = eT.value
@@ -764,14 +766,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         case p: DLogProtocol.ProveDlog =>
           val ge = asRep[Costed[WECPoint]](eval(p.value))
           val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
-          RCCostedPrim(resV, costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)), CryptoConstants.groupSize.toLong)
+          RCCostedPrim(resV, costOfProveDlog, CryptoConstants.groupSize.toLong)
         case p @ ProveDiffieHellmanTuple(gv, hv, uv, vv) =>
           val gvC = asRep[Costed[WECPoint]](eval(gv))
           val hvC = asRep[Costed[WECPoint]](eval(hv))
           val uvC = asRep[Costed[WECPoint]](eval(uv))
           val vvC = asRep[Costed[WECPoint]](eval(vv))
           val resV: Rep[SigmaProp] = RProveDHTEvidence(gvC.value, hvC.value, uvC.value, vvC.value)
-          RCCostedPrim(resV, costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2, CryptoConstants.groupSize.toLong * 4)
+          RCCostedPrim(resV, costOfDHTuple, CryptoConstants.groupSize.toLong * 4)
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)

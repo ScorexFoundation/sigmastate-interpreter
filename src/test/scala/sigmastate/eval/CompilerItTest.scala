@@ -7,9 +7,9 @@ import org.ergoplatform._
 import scapi.sigma.DLogProtocol
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{BigIntArrayConstant, BigIntConstant, ByteArrayConstant, FalseLeaf, GroupElementConstant, IntConstant, LongConstant, SigmaBoolean, SigmaPropConstant, TrueLeaf, ValUse}
+import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean, GroupElementConstant, ValUse}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
-import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.{ContextExtension, CryptoConstants}
 import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
 import sigmastate.lang.LangTests
 import sigmastate.utxo._
@@ -96,9 +96,9 @@ class CompilerItTest extends BaseCtxTests
     val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
     Case(env, "sigmaPropConst", "p1", ergoCtx,
       calc = {_ => resSym },
-      cost = {_ => constCost[WECPoint] + constCost[SigmaProp] },
-      size = {_ => sizeOf(resSym) },
-      tree = SigmaPropConstant(p1), Result(res, 1 + 1, 32 + 1))
+      cost = {_ => costOfProveDlog },
+      size = {_ => CryptoConstants.groupSize.toLong },
+      tree = SigmaPropConstant(p1), Result(res, 10102, 32))
   }
   test("sigmaPropConstCase") {
     sigmaPropConstCase.doReduce()
@@ -111,12 +111,12 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => resSym },
       cost = {_ =>
-        val c1 = constCost[WECPoint] + constCost[SigmaProp] + costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
+        val c1 = costOfProveDlog + costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
         c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
       },
       size = {_ => typeSize[Boolean] },
       tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))),
-      Result(CAND(Seq(p1, p2)), (1 + 1 + 1) * 2 + 1, 1))
+      Result(CAND(Seq(p1, p2)), 20207, 1))
   }
 
   test("andSigmaPropConstsCase") {
@@ -282,7 +282,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(2,SSigmaProp)
           ))))),
-      Result({ TrivialProof.FalseProof }, 160, 1L)
+      Result({ TrivialProof.FalseProof }, 40560, 1L)
     )
   }
   test("crowdFunding_Case") {
