@@ -6,12 +6,11 @@ import sigmastate.lang.Terms.OperationId
 
 import scala.collection.mutable
 
-case class CostTable(operCosts: Map[OperationId, Double]) extends (OperationId => Int) {
-  import CostTable._
-  override def apply(operId: OperationId) = {
-    val cleannedOperId = operId.copy(opType = operId.opType.copy(tpeParams = Nil))
-    operCosts.get(cleannedOperId) match {
-      case Some(cost) => costToInt(cost)
+case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
+  override def apply(operId: OperationId): Int = {
+    val cleanOperId = operId.copy(opType = operId.opType.copy(tpeParams = Nil))
+    operCosts.get(cleanOperId) match {
+      case Some(cost) => cost
       case None => //costToInt(MinimalCost)
         sys.error(s"Cannot find cost in CostTable for $operId")
     }
@@ -20,13 +19,21 @@ case class CostTable(operCosts: Map[OperationId, Double]) extends (OperationId =
 
 object CostTable {
   type ExpressionCost = Int
-  def costToInt(cost: Double): Int = (cost * 1000000).toInt
-  val MinimalCost = 0.000001
 
-  val expCost = 0.005
-  val multiplyCost = 0.0001
-  val groupElementConst = MinimalCost
-  val constCost = MinimalCost
+  val MinimalCost = 1
+
+  val expCost = 5000
+  val multiplyGroup = 50
+  val groupElementConst = 1
+  val constCost = 1
+
+  val plusMinus = 1
+  val multiply = 10
+
+  val plusMinusBigInt = 10
+  val multiplyBigInt = 50
+
+  val hashPerKb = 100
 
   val DefaultCosts = CostTable.fromSeq(Seq(
     ("Const", "() => Unit",    constCost),
@@ -65,7 +72,7 @@ object CostTable {
     ("ExtractRegisterAs", "(Box,Byte) => Col[BigInt]", MinimalCost),
 
     ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
-    ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyCost),
+    ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
     ("ByteArrayToBigInt", "(Col[Byte]) => BigInt", MinimalCost),
     ("new_BigInteger_per_item", "(Col[Byte]) => BigInt", MinimalCost),
 
@@ -80,11 +87,11 @@ object CostTable {
     ("BinAnd", "(Boolean, Boolean) => Boolean", MinimalCost),
     ("BinOr", "(Boolean, Boolean) => Boolean", MinimalCost),
     ("AND", "(Col[Boolean]) => Boolean", MinimalCost),
-    ("OR_per_item", "(Col[Boolean]) => Boolean", 0.0001),
+    ("OR_per_item", "(Col[Boolean]) => Boolean", MinimalCost),
     ("AND_per_item", "(Col[Boolean]) => Boolean", MinimalCost),
     ("AtLeast", "(Int, Col[Boolean]) => Boolean", MinimalCost),
-    ("CalcBlake2b256_per_kb", "(Col[Byte]) => Col[Byte]", 0.0001),
-    ("CalcSha256_per_kb", "(Col[Byte]) => Col[Byte]", 0.0001),
+    ("CalcBlake2b256_per_kb", "(Col[Byte]) => Col[Byte]", hashPerKb),
+    ("CalcSha256_per_kb", "(Col[Byte]) => Col[Byte]", hashPerKb),
     ("Xor_per_kb", "(Col[Byte],Col[Byte]) => Col[Byte]", MinimalCost),
     ("GT_per_kb", "(T,T) => Boolean", MinimalCost),
     ("GE_per_kb", "(T,T) => Boolean", MinimalCost),
@@ -92,46 +99,48 @@ object CostTable {
     ("LT_per_kb", "(T,T) => Boolean", MinimalCost),
     ("EQ_per_kb", "(T,T) => Boolean", MinimalCost),
     ("NEQ_per_kb", "(T,T) => Boolean", MinimalCost),
-    ("GT", "(BigInt,BigInt) => Boolean", 0.0001),
+
+    ("+", "(Byte, Byte) => Byte", plusMinus),
+    ("+", "(Short, Short) => Short", plusMinus),
+    ("+", "(Int, Int) => Int", plusMinus),
+    ("+", "(Long, Long) => Long", plusMinus),
+
+    ("-", "(Byte, Byte) => Byte", plusMinus),
+    ("-", "(Short, Short) => Short", plusMinus),
+    ("-", "(Int, Int) => Int", plusMinus),
+    ("-", "(Long, Long) => Long", plusMinus),
+
+    ("*", "(Byte, Byte) => Byte", multiply),
+    ("*", "(Short, Short) => Short", multiply),
+    ("*", "(Int, Int) => Int", multiply),
+    ("*", "(Long, Long) => Long", multiply),
+
+    ("/", "(Byte, Byte) => Byte", multiply),
+    ("/", "(Short, Short) => Short", multiply),
+    ("/", "(Int, Int) => Int", multiply),
+    ("/", "(Long, Long) => Long", multiply),
+
+    ("%", "(Byte, Byte) => Byte", multiply),
+    ("%", "(Short, Short) => Short", multiply),
+    ("%", "(Int, Int) => Int", multiply),
+    ("%", "(Long, Long) => Long", multiply),
+
+    ("GT", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
     (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
-    ("+", "(Byte, Byte) => Byte", 0.0001),
-    ("+", "(Short, Short) => Short", 0.0001),
-    ("+", "(Int, Int) => Int", 0.0001),
-    ("+", "(Long, Long) => Long", 0.0001),
 
-    ("-", "(Byte, Byte) => Byte", 0.0001),
-    ("-", "(Short, Short) => Short", 0.0001),
-    ("-", "(Int, Int) => Int", 0.0001),
-    ("-", "(Long, Long) => Long", 0.0001),
-
-    ("*", "(Byte, Byte) => Byte", 0.0001),
-    ("*", "(Short, Short) => Short", 0.0001),
-    ("*", "(Int, Int) => Int", 0.0001),
-    ("*", "(Long, Long) => Long", 0.0001),
-
-    ("/", "(Byte, Byte) => Byte", 0.0001),
-    ("/", "(Short, Short) => Short", 0.0001),
-    ("/", "(Int, Int) => Int", 0.0001),
-    ("/", "(Long, Long) => Long", 0.0001),
-
-    ("%", "(Byte, Byte) => Byte", 0.0001),
-    ("%", "(Short, Short) => Short", 0.0001),
-    ("%", "(Int, Int) => Int", 0.0001),
-    ("%", "(Long, Long) => Long", 0.0001),
-
-    ("+", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("+", "(BigInt, BigInt) => BigInt", plusMinusBigInt),
     ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    ("-", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("-", "(BigInt, BigInt) => BigInt", plusMinusBigInt),
     ("-_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    ("*", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("*", "(BigInt, BigInt) => BigInt", multiplyBigInt),
     ("*_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
-    
-    ("/", "(BigInt, BigInt) => BigInt", 0.0001),
+
+    ("/", "(BigInt, BigInt) => BigInt", multiplyBigInt),
     ("/_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    ("%", "(BigInt, BigInt) => BigInt", 0.0001),
+    ("%", "(BigInt, BigInt) => BigInt", multiplyBigInt),
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", MinimalCost),
@@ -157,13 +166,13 @@ object CostTable {
 
     ("LongToByteArray", "(Long) => Col[Byte]", MinimalCost),
 
-    ("ProveDlogEval", "(Unit) => SigmaProp", groupElementConst + constCost + 2 * expCost + multiplyCost),
+    ("ProveDlogEval", "(Unit) => SigmaProp", groupElementConst + constCost + 2 * expCost + multiplyGroup),
 
     //cost if of twice prove dlog
-    ("ProveDHTuple", "(Unit) => SigmaProp", 2 * (groupElementConst + constCost + 2 * expCost + multiplyCost)),
+    ("ProveDHTuple", "(Unit) => SigmaProp", 2 * (groupElementConst + constCost + 2 * expCost + multiplyGroup)),
   ))
 
-  def fromSeq(items: Seq[(String, String, Double)]): CostTable = {
+  def fromSeq(items: Seq[(String, String, Int)]): CostTable = {
     val parsed = for ((name, ts, cost) <- items) yield {
       val ty = SigmaParser.parseType(ts).asFunc
       (OperationId(name, ty), cost)
