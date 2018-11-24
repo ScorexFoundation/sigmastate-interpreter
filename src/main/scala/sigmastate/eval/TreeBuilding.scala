@@ -4,8 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import sigmastate._
 import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.serialization.OpCodes._
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
-import java.lang.reflect.Method
+import org.ergoplatform._
 import java.math.BigInteger
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
@@ -205,6 +204,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkExtractAmount(recurse[SBox.type](box))
       case BoxM.propositionBytes(In(box)) =>
         mkExtractScriptBytes(box.asBox)
+      case BoxM.getReg(In(box), regId, _) =>
+        val tpe = elemToSType(s.elem).asOption
+        mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
 
       case OM.get(In(optionSym)) =>
         mkOptionGet(optionSym.asValue[SOption[SType]])

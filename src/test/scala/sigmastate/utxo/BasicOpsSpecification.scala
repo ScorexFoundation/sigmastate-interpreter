@@ -3,7 +3,6 @@ package sigmastate.utxo
 import java.lang.reflect.InvocationTargetException
 
 import org.ergoplatform.ErgoBox.{R6, R8}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, Outputs, Self}
 import org.ergoplatform.{ErgoLikeContext, ErgoBox, Self, Height}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -11,7 +10,6 @@ import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.OptionUnwrapNone
 import special.sigma.InvalidType
 
 import scalan.BaseCtxTests
