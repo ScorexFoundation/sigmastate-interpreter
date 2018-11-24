@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate._
-import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
+import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value, FalseLeaf}
 import sigmastate.serialization.OpCodes._
 import org.ergoplatform._
 import java.math.BigInteger
@@ -88,6 +88,13 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     }
   }
 
+  object IsLogicalUnOp {
+    def unapply(op: UnOp[_,_]): Option[BoolValue => Value[SBoolean.type]] = op match {
+      case Not => Some({ v: BoolValue => builder.mkEQ(v, FalseLeaf) })
+      case _ => None
+    }
+  }
+
   object IsContextProperty {
     def unapply(d: Def[_]): Option[SValue] = d match {
       case ContextM.HEIGHT(_) => Some(Height)
@@ -168,6 +175,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
+      case Def(ApplyUnOp(IsLogicalUnOp(mkNode), xSym)) =>
+        mkNode(recurse(xSym))
 
       case ColM.apply(colSym, In(index)) =>
         val col = recurse(colSym)
