@@ -242,6 +242,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(AllOf(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asBoolValue)
         mkAllOf(col)
+      case Def(SDBM.allOf(_,  items)) =>
+        mkAND(recurse(items))
 
       case SigmaM.and_bool_&&(In(prop), In(cond)) =>
         SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
