@@ -186,31 +186,24 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case ColM.apply(colSym, In(index)) =>
         val col = recurse(colSym)
         mkByIndex(col, index.asIntValue, None)
-
       case ColM.length(col) =>
         utxo.SizeOf(recurse(col).asCollection[SType])
-
       case ColM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
         mkExists(col.asCollection[SType], 21, p.asBoolValue)
-
       case ColM.forall(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
         mkForAll1(col.asCollection[SType], p.asFunc)
-
       case ColM.map(colSym, fSym) =>
         val Seq(col, f) = Seq(colSym, fSym).map(recurse)
         mkMapCollection(col.asCollection[SType], f.asFunc)
-
       case ColM.getOrElse(colSym, In(index), defValSym) =>
         val col = recurse(colSym)
         val defVal = recurse(defValSym)
         mkByIndex(col, index.asIntValue, Some(defVal))
-
       case ColM.append(col1Sym, col2Sym) =>
         val Seq(col1, col2) = Seq(col1Sym, col2Sym).map(recurse)
         mkAppend(col1, col2)
-
       case ColM.slice(colSym, In(from), In(until)) =>
         mkSlice(recurse(colSym), from.asIntValue, until.asIntValue)
 
