@@ -149,6 +149,11 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
         val colTpe = elemToSType(s.elem)
         mkConstant[colTpe.type](wc.constValue.asInstanceOf[colTpe.WrappedType], colTpe)
+      case CBM.fromItems(_, colSyms, elemT) =>
+        val elemTpe = elemToSType(elemT)
+        val col = colSyms.map(recurse(_).asValue[elemTpe.type])
+        mkConcreteCollection[elemTpe.type](col.toIndexedSeq, elemTpe)
+
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
         mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
@@ -260,6 +265,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         SigmaPropConstant(mkProveDlog(g.asGroupElement))
       case Def(ProveDHTEvidenceCtor(In(g), In(h), In(u), In(v))) =>
         SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement))
+
+      case SDBM.byteArrayToBigInt(_, colSym) =>
+        mkByteArrayToBigInt(recurse(colSym))
+
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
     }
