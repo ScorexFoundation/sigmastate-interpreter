@@ -70,7 +70,7 @@ class CompilerItTest extends BaseCtxTests
           costOf("+_per_item", SFunc(Vector(SBigInt, SBigInt), SBigInt)) * size.toInt },
       size = {_ => size },
       tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)),
-      Result(res, 119, 17))
+      Result(res, 29, 17))
   }
   test("addBigIntegerConstsCase") {
     addBigIntegerConstsCase.doReduce()
@@ -98,7 +98,7 @@ class CompilerItTest extends BaseCtxTests
       calc = {_ => resSym },
       cost = {_ => costOfProveDlog },
       size = {_ => CryptoConstants.groupSize.toLong },
-      tree = SigmaPropConstant(p1), Result(res, 10102, 32))
+      tree = SigmaPropConstant(p1), Result(res, 10052, 32))
   }
   test("sigmaPropConstCase") {
     sigmaPropConstCase.doReduce()
@@ -116,7 +116,7 @@ class CompilerItTest extends BaseCtxTests
       },
       size = {_ => typeSize[Boolean] },
       tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))),
-      Result(CAND(Seq(p1, p2)), 20207, 1))
+      Result(CAND(Seq(p1, p2)), 20107, 1))
   }
 
   test("andSigmaPropConstsCase") {
@@ -161,7 +161,7 @@ class CompilerItTest extends BaseCtxTests
         21,
         mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))
       ),
-      Result(res, 207, 4))
+      Result(res, 27, 4))
   }
   test("bigIntArray_Map_Case") {
     bigIntArray_Map_Case.doReduce()
@@ -219,7 +219,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1.map(i => i.add(n1)), 208, 4L))
+      Result(bigIntArr1.map(i => i.add(n1)), 28, 4L))
   }
   test("register_BigIntArr_Map_Case") {
     register_BigIntArr_Map_Case.doReduce()
@@ -282,7 +282,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(2,SSigmaProp)
           ))))),
-      Result({ TrivialProof.FalseProof }, 40560, 1L)
+      Result({ TrivialProof.FalseProof }, 40360, 1L)
     )
   }
   test("crowdFunding_Case") {

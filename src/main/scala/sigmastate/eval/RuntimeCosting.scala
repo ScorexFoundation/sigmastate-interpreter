@@ -716,7 +716,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import sigmastate._
   import scapi.sigma.{DLogProtocol}
 
-  val okMeasureOperationTime: Boolean = false
+  val okMeasureOperationTime: Boolean = true
 
   val OperationIdKey = MetaKey[AnyRef]("OperationId")(AnyRefElement)
 
@@ -728,10 +728,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   protected def onTreeNodeCosted[T <: SType](
         ctx: Rep[CostedContext], env: CostingEnv,
         node: Value[T], costed: RCosted[T#WrappedType]): Unit = {
-    if (okMeasureOperationTime) {
-      costed match {
-        case Def(CCostedPrimCtor(v, c, s)) if isOperationNode(node) =>
+    if (okMeasureOperationTime && isOperationNode(node)) {
+      asRep[Any](costed) match {
+        case Def(CCostedPrimCtor(v, c, s)) =>
           v.setMetadata(OperationIdKey)(node.opId)
+        case Def(CCostedColCtor(vs,_,_,_)) =>
+          vs.setMetadata(OperationIdKey)(node.opId)
         case _ =>
       }
     }
