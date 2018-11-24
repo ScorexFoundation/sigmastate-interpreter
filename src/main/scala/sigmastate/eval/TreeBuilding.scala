@@ -264,6 +264,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case SDBM.byteArrayToBigInt(_, colSym) =>
         mkByteArrayToBigInt(recurse(colSym))
 
+      case Def(IfThenElseLazy(condSym, thenPSym, elsePSym)) =>
+        val Seq(cond, thenP, elseP) = Seq(condSym, thenPSym, elsePSym).map(recurse)
+        mkIf(cond, thenP, elseP)
+
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
     }
