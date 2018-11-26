@@ -58,7 +58,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       }
     }
 
-    val prop = compileNG(env, script).asBoolValue
+    val prop = compileWithCosting(env, script).asBoolValue
     prop shouldBe propExp
 
     val p3 = prover.dlogSecrets(2).publicImage
