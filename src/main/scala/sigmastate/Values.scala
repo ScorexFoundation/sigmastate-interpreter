@@ -1,18 +1,19 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Arrays, Objects}
+import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
-import sigmastate.serialization.{ErgoTreeSerializer, OpCodes, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
@@ -700,8 +701,8 @@ object Values {
     * |  |  |  |  |  |  |  |  |
     * -------------------------
     *  Bit 7 == 1 if the header contains more than 1 byte (default == 0)
-    *  Bit 6 - reserved
-    *  Bit 5 == 1 - reserved for context dependent costing should be used (default = 0)
+    *  Bit 6 - reserved for GZIP compression (should be 0)
+    *  Bit 5 == 1 - reserved for context dependent costing (should be = 0)
     *  Bit 4 == 1 if constant segregation is used for this ErgoTree (default = 0)
     *                (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/264)
     *  Bit 3 - reserved (should be 0)
@@ -711,18 +712,49 @@ object Values {
     *  We reserve the possibility to extend header by using Bit 7 == 1 and chain additional bytes as in VLQ.
     *  Once the new bytes are required, a new version of the language should be created and implemented.
     *  That new language will give an interpretation for the new bytes.
+    *
+    *  Consistency between fields is ensured by private constructor and factory methods in `ErgoTree` object.
     * */
   case class ErgoTree private(
     header: Byte,
+    /** If isConstantSegregation == true contains all constants.
+      * Otherwise should be empty */
     constants: IndexedSeq[Constant[SType]],
-    root: Value[SType]) {
+    /** if isConstantSegregation == true contains ConstantPlaceholder instead of Constant nodes.
+      * Otherwise */
+    root: BoolValue,
+    /** When isConstantSegregation == false this is the same as root.
+      * Otherwise, it is equivalent to `root` where all placeholders are replaced by Constants */
+    proposition: BoolValue
+  ) {
+    assert(isConstantSegregation || constants.isEmpty)
+
+    def isConstantSegregation: Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
   }
+
   object ErgoTree {
     val DefaultHeader: Byte = 0
-    def withDefaultHeader(constants: IndexedSeq[Constant[SType]], root: Value[SType]) =
-      ErgoTree(DefaultHeader, constants, root)
-    def withHeader(header: Byte, constants: IndexedSeq[Constant[SType]], root: Value[SType]) =
-      ErgoTree(header, constants, root)
+    val ConstantSegregationFlag: Byte = 0x10
+
+    def substConstants(root: BoolValue, constants: IndexedSeq[Constant[SType]]): BoolValue = {
+      val store = new ConstantStore(constants)
+      val substRule = strategy[Value[_ <: SType]] {
+        case ph: ConstantPlaceholder[_] =>
+          Some(store.get(ph.id))
+        case _ => None
+      }
+      everywherebu(substRule)(root).fold(root)(_.asInstanceOf[BoolValue])
+    }
+
+    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: BoolValue) = {
+      if ((header & ConstantSegregationFlag) != 0) {
+        val prop = substConstants(root, constants)
+        new ErgoTree(header, constants, root, prop)
+      } else
+        new ErgoTree(header, constants, root, root)
+    }
+
+    implicit def fromProposition(prop: BoolValue): ErgoTree = ErgoTree(DefaultHeader, IndexedSeq(), prop, prop)
   }
 
 }

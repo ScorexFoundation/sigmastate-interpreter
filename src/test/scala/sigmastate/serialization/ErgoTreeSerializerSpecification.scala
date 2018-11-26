@@ -3,7 +3,7 @@ package sigmastate.serialization
 import java.nio.ByteBuffer
 
 import org.ergoplatform.Self
-import sigmastate.Values.{Constant, BlockValue, ConstantPlaceholder, Value, IntConstant, ErgoTree, ValDef, ValUse}
+import sigmastate.Values.{LongConstant, Constant, BlockValue, ConstantPlaceholder, Value, IntConstant, ErgoTree, ValDef, ValUse}
 import sigmastate._
 import sigmastate.eval.IRContext
 import sigmastate.helpers.SigmaTestingCommons
@@ -22,12 +22,14 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
   }
 
   private def extractConstants(tree: Value[SType])(implicit IR: IRContext): ErgoTree = {
+    import ErgoTree._
     val env = Map[String, Any]()
     val IR.Pair(calcF, _) = IR.doCosting(env, tree)
     val extractConstants = new ConstantStore()
     val outTree = IR.buildTree(calcF, Some(extractConstants))
     val constants = extractConstants.getAll
-    val ergoTree = ErgoTree.withDefaultHeader(constants, outTree)
+    val header = if (constants.isEmpty) DefaultHeader else (DefaultHeader | ConstantSegregationFlag).toByte
+    val ergoTree = ErgoTree(header, constants, outTree)
     ergoTree
   }
 
@@ -71,8 +73,8 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
   }
 
   property("(de)serialize round trip (without constants)") {
-    val tree = ExtractAmount(Self)
-    val bytes = ErgoTreeSerializer.serialize(ErgoTree.withDefaultHeader(IndexedSeq(), tree))
+    val tree = EQ(ExtractAmount(Self), LongConstant(0))
+    val bytes = ErgoTreeSerializer.serialize(ErgoTree.fromProposition(tree))
     val deserializedTree = ErgoTreeSerializer.deserialize(bytes)
     deserializedTree shouldEqual tree
   }

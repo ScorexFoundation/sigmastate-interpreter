@@ -99,7 +99,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val oracleBox = ErgoBox(
       value = 1L,
-      proposition = oraclePubKey,
+      ergoTree = oraclePubKey,
       creationHeight = 0,
       additionalRegisters = Map(
         reg1 -> LongConstant(temperature),
@@ -214,7 +214,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val oracleBox = ErgoBox(
       value = 1L,
-      proposition = oraclePubKey,
+      ergoTree = oraclePubKey,
       creationHeight = 0,
       additionalRegisters = Map(reg1 -> LongConstant(temperature))
     )

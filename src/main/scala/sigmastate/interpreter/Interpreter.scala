@@ -373,7 +373,7 @@ trait Interpreter extends ScorexLogging {
     val substTree = everywherebu(substRule)(exp) match {
       case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
       case Some(p: SValue) if p.tpe == SSigmaProp => p.asSigmaProp.isValid
-      case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean of SigmaProp but was $x")
+      case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
     }
     val costingRes @ IR.Pair(calcF, costF) = doCosting(env, substTree)
     IR.onCostingResult(env, substTree, costingRes)

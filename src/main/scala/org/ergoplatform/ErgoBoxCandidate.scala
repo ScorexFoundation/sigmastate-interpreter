@@ -18,19 +18,21 @@ import sigmastate.utils.Extensions._
 import scala.runtime.ScalaRunTime
 
 class ErgoBoxCandidate(val value: Long,
-                       val proposition: Value[SBoolean.type],
+                       val ergoTree: ErgoTree,
                        val creationHeight: Long,
                        val additionalTokens: Seq[(TokenId, Long)] = Seq(),
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
+  def proposition: BoolValue = ergoTree.proposition
+
   lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
 
-  val propositionBytes: Array[Byte] = ErgoTreeSerializer.serialize(proposition)
+  val propositionBytes: Array[Byte] = ErgoTreeSerializer.serialize(ergoTree.proposition)
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   def toBox(txId: ModifierId, boxId: Short) =
-    ErgoBox(value, proposition, creationHeight, additionalTokens, additionalRegisters, txId, boxId)
+    ErgoBox(value, ergoTree, creationHeight, additionalTokens, additionalRegisters, txId, boxId)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
@@ -57,9 +59,9 @@ class ErgoBoxCandidate(val value: Long,
   }
 
   override def hashCode(): Int =
-    ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters, creationHeight))
+    ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
 
-  override def toString: Idn = s"ErgoBoxCandidate($value, $proposition," +
+  override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
     s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2).mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 }
@@ -72,7 +74,7 @@ object ErgoBoxCandidate {
                                         digestsInTx: Option[Array[Digest32]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
-      w.putBytes(ErgoTreeSerializer.serialize(obj.proposition))
+      w.putBytes(ErgoTreeSerializer.serialize(obj.ergoTree))
       w.putULong(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
