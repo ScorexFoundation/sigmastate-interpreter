@@ -39,6 +39,12 @@ trait SigmaTestingCommons extends PropSpec
     compiler.compile(env, code, TestnetNetworkPrefix)
   }
 
+  def compileNG(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+    val interProp = compiler.compile(env, code, TestnetNetworkPrefix)
+    val IR.Pair(calcF, _) = IR.doCosting(Map(), interProp)
+    IR.buildTree(calcF)
+  }
+
   def createBox(value: Int,
                 proposition: Value[SBoolean.type],
                 additionalTokens: Seq[(TokenId, Long)] = Seq(),

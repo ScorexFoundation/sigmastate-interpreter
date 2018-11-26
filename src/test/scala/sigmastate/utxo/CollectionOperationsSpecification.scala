@@ -50,9 +50,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val interProp = compile(Map(), code).asBoolValue
-    val IR.Pair(calcF, _) = IR.doCosting(Map(), interProp)
-    val prop = IR.buildTree(calcF)
+    val prop = compileNG(Map(), code).asBoolValue
 
     prop shouldBe expectedComp
     val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey, 0)),
