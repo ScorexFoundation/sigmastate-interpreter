@@ -266,6 +266,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(ProveDHTEvidenceCtor(In(g), In(h), In(u), In(v))) =>
         SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement))
 
+      case SDBM.sigmaProp(_, In(cond)) =>
+        mkBoolToSigmaProp(cond.asBoolValue)
+
       case SDBM.byteArrayToBigInt(_, colSym) =>
         mkByteArrayToBigInt(recurse(colSym))
 
