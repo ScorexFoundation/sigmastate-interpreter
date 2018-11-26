@@ -217,6 +217,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case BoxM.getReg(In(box), regId, _) =>
         val tpe = elemToSType(s.elem).asOption
         mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
+      case BoxM.creationInfo(In(box)) =>
+        mkExtractCreationInfo(box.asBox)
 
       case OM.get(In(optionSym)) =>
         mkOptionGet(optionSym.asValue[SOption[SType]])
@@ -270,6 +272,11 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(IfThenElseLazy(condSym, thenPSym, elsePSym)) =>
         val Seq(cond, thenP, elseP) = Seq(condSym, thenPSym, elsePSym).map(recurse)
         mkIf(cond, thenP, elseP)
+
+      case Def(First(pair)) =>
+        mkSelectField(recurse(pair), 1)
+      case Def(Second(pair)) =>
+        mkSelectField(recurse(pair), 2)
 
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
