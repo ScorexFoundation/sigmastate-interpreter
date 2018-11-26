@@ -348,7 +348,13 @@ trait Evaluation extends RuntimeCosting { IR =>
           val estimatedTime = endTime - startTime
           te.sym.getMetadata(OperationIdKey) match {
             case Some(opId: OperationId) =>
-              CostTableStat.addOpTime(opId, estimatedTime)
+              if (opId.opType.tRange.isCollection) {
+                val col = res._1(res._2).asInstanceOf[special.collection.Col[Any]]
+                val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
+                CostTableStat.addOpTime(opId, colTime, col.length)
+              }
+              else
+                CostTableStat.addOpTime(opId, estimatedTime, len = 1)
             case _ =>
           }
         }

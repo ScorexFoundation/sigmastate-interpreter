@@ -11,7 +11,7 @@ class PDHTSerializerSpecification extends SerializationSpecification {
     }
     // In IntelliJ IDEA this test is executed last, at this point all statistics has been collected
     // We output it here in the console
-    println(CostTableStat.print)
+    println(CostTableStat.costTableString)
   }
 
 }

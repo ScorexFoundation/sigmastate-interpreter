@@ -449,6 +449,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       BoolToSigmaProp(GE(Height, LongConstant(0))), true)
     test("prop2", env, ext, "sigmaProp(HEIGHT >= 0) && getVar[SigmaProp](proofVar1).get",
       BinAnd(BoolToSigmaProp(GE(Height, LongConstant(0))).isValid, GetVarSigmaProp(propVar1).get.isValid), true)
+//    println(CostTableStat.costTableString)
   }
 
 //  property("ZKProof") {
