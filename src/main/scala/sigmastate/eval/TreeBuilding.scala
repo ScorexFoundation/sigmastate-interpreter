@@ -208,7 +208,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkSlice(recurse(colSym), from.asIntValue, until.asIntValue)
       case ColM.fold(colSym, zeroSym, pSym) =>
         val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
-        mkFold(col, 21, zero, 22, p.asFunc)
+        mkFold(col, zero, p.asFunc)
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))

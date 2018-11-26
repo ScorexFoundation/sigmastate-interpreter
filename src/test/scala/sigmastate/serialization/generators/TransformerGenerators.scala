@@ -60,8 +60,9 @@ trait TransformerGenerators {
 
   val foldGen: Gen[Fold[SInt.type, SBoolean.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-  } yield mkFold(input, 21, TrueLeaf, 22, AND(TaggedBoolean(21), GT(TaggedInt(21), IntConstant(1))))
-    .asInstanceOf[Fold[SInt.type, SBoolean.type]]
+    foldOp <- funcValueGen
+  } yield
+    mkFold(input, TrueLeaf, foldOp).asInstanceOf[Fold[SInt.type, SBoolean.type]]
 
   val sliceGen: Gen[Slice[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary

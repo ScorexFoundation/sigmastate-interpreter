@@ -170,6 +170,8 @@ object CostTable {
 
     //cost if of twice prove dlog
     ("ProveDHTuple", "(Unit) => SigmaProp", 2 * (groupElementConst + constCost + 2 * expCost + multiplyGroup)),
+
+    ("SigmaAnd_per_item", "(Col[SigmaProp]) => SigmaProp", MinimalCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Int)]): CostTable = {

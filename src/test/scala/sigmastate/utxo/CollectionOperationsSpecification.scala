@@ -336,10 +336,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expectedPropTree = EQ(
       Fold(
         MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-        22,
         TrueLeaf,
-        21,
-        BinAnd(TaggedBoolean(21), LT(TaggedLong(22), LongConstant(0)))),
+        FuncValue(Vector((1, STuple(SBoolean, SLong))),
+          BinAnd(
+            SelectField(ValUse(1, STuple(SBoolean, SLong)), 1).asBoolValue,
+            LT(SelectField(ValUse(1, STuple(SBoolean, SLong)), 2), LongConstant(0))))),
       FalseLeaf)
     assertProof(code, expectedPropTree, outputBoxValues)
   }

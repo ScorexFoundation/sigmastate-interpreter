@@ -103,10 +103,8 @@ trait SigmaBuilder {
   def mkForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
 
   def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                          id: Byte,
                           zero: Value[OV],
-                          accId: Byte,
-                          foldOp: SValue): Value[OV]
+                          foldOp: Value[SFunc]): Value[OV]
 
   def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
                                index: Value[SInt.type],
@@ -368,11 +366,9 @@ class StdSigmaBuilder extends SigmaBuilder {
     ForAll1(input, condition)
 
   override def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                                   id: Byte,
                                    zero: Value[OV],
-                                   accId: Byte,
-                                   foldOp: SValue): Value[OV] =
-    Fold(input, id, zero, accId, foldOp)
+                                   foldOp: Value[SFunc]): Value[OV] =
+    Fold(input, zero, foldOp)
 
   override def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
                                       index: Value[SInt.type],

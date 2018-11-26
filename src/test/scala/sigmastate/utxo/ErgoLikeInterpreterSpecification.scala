@@ -210,18 +210,22 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val prop = compile(env,
+    val prop = compileWithCosting(env,
       """{
         |  val outValues = OUTPUTS.map({ (box: Box) => box.value })
         |  pubkey && outValues.fold(0L, { (x: Long, y: Long) => x + y }) > 20
          }""".stripMargin).asBoolValue
 
-    val propExp = BinAnd(
-      pubkey.isValid,
-      GT(
-        Fold.sum[SLong.type](MapCollection(Outputs,
-          FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox))))),
-        LongConstant(20))
+    val propExp = SigmaAnd(
+      List(
+        SigmaPropConstant(pubkey),
+        BoolToSigmaProp(
+          GT(
+            Fold.sum[SLong.type](MapCollection(Outputs,
+              FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox))))),
+            LongConstant(20))
+        )
+      )
     )
     prop shouldBe propExp
 

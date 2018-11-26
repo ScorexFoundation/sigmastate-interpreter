@@ -197,14 +197,11 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
       val body1 = eval(env + (n -> tagged), body)
       Some(mkForAll(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col, MapMethod.name, _), Seq(l @ Lambda(_, Seq((n, t)), _, Some(body)))) =>
+    case Apply(Select(col, MapMethod.name, _), Seq(l @ Lambda(_, _, _, _))) =>
       Some(mkMapCollection(col.asValue[SCollection[SType]], l))
 
-    case Apply(Select(col, FoldMethod.name, _), Seq(zero, Lambda(_, Seq((accArg, tAccArg), (opArg, tOpArg)), _, Some(body)))) =>
-      val taggedAcc = mkTagged(accArg, tAccArg, 21)
-      val taggedOp = mkTagged(opArg, tOpArg, 22)
-      val body1 = eval(env ++ Seq(accArg -> taggedAcc, opArg -> taggedOp), body)
-      Some(mkFold(col.asValue[SCollection[SType]], taggedOp.varId, zero, taggedAcc.varId, body1))
+    case Apply(Select(col, FoldMethod.name, _), Seq(zero, l @ Lambda(_, _, _, _))) =>
+      Some(mkFold(col.asValue[SCollection[SType]], zero, l))
 
     case Apply(Select(col, GetOrElseMethod.name, _), Seq(index, defaultValue)) =>
       val index1 = eval(env, index).asValue[SInt.type]

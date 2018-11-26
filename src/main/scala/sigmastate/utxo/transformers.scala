@@ -189,44 +189,40 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
 
 
 case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                                          id: Byte,
                                           zero: Value[OV],
-                                          accId: Byte,
-                                          foldOp: SValue)
-  extends Transformer[SCollection[IV], OV] with NotReadyValue[OV] {
+                                          foldOp: Value[SFunc])
+  extends Transformer[SCollection[IV], OV] {
   override val opCode: OpCode = OpCodes.FoldCode
 
-  implicit def tpe = zero.tpe
-  val opType = SCollection.FoldMethod.stype.asFunc
+  implicit def tpe: OV = zero.tpe
+  val opType: SFunc = SCollection.FoldMethod.stype.asFunc
 
   override def transformationReady: Boolean =
-    input.evaluated &&
-      input.items.forall(_.evaluated) &&
+    input.isEvaluatedCollection &&
       zero.isInstanceOf[EvaluatedValue[OV]]
 
   override def cost[C <: Context](context: C): Long =
     Cost.FoldDeclaration + zero.cost(context) + input.cost(context) * foldOp.cost(context)
 
-  override def function(I: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[IV]]): Value[OV] = {
-    val cc = input.toConcreteCollection
-    cc.items.foldLeft(zero) { case (x, y) =>
-      val (acc: EvaluatedValue[OV], elem: EvaluatedValue[IV]) = (x, y)
-      val localCtx = ctx.withBindings(id -> elem, accId -> acc)
-      val res = I.eval(localCtx, foldOp.asValue[OV])
-      res
-    }
-  }
+  override def function(I: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[IV]]): Value[OV] = ???
 }
 
 object Fold {
   def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
-    Fold(input, 22, Constant(tT.upcast(0.toByte), tT), 21, Plus(TaggedVariable(21, tT), TaggedVariable(22, tT)))
+    Fold(input,
+      Constant(tT.upcast(0.toByte), tT),
+      FuncValue(Vector((1, STuple(tT, tT))),
+        Plus(
+          SelectField(ValUse(1, STuple(tT, tT)), 1).asNumValue,
+          SelectField(ValUse(1, STuple(tT, tT)), 2).asNumValue))
+    )
 
   def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T): Fold[SCollection[T], T] = {
     val tCol = SCollection(tT)
-    Fold[SCollection[T], T](
-      input, 22, ConcreteCollection()(tT).asValue[T], 21,
-      Append(TaggedVariable(21, tCol), TaggedVariable(22, tCol)))
+    Fold[SCollection[T], T](input,
+      ConcreteCollection()(tT).asValue[T],
+      FuncValue(Vector((1, tCol), (2, tCol)), Append(ValUse(1, tCol), ValUse(2, tCol)))
+    )
   }
 }
 
