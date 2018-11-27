@@ -969,24 +969,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
         withDefaultSize(value, cost)
 
-      case MapCollection(input, Terms.Lambda(_, Seq((n, _)), _, Some(mapper))) =>
+      case MapCollection(input, sfunc) =>
         val eIn = stypeToElem(input.tpe.elemType)
         val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
-        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any], _]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-        val mapperC = fun { x: Rep[Costed[Any]] =>
-          evalNode(ctx, env + (n -> x), mapper)
+        val (id, mapper) = sfunc match {
+          case Terms.Lambda(_, Seq((n, _)), _, Some(m)) => (n, m)
+          case FuncValue(Seq((n, _)), m) => (n, m)
         }
-        val res = inputC.mapCosted(mapperC)
-        res
-
-      case MapCollection(input, FuncValue(Seq((n, t)), mapper)) =>
-        val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
-        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
-        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         val mapperC = fun { x: Rep[Costed[Any]] =>
-          evalNode(ctx, env + (n -> x), mapper)
+          evalNode(ctx, env + (id -> x), mapper)
         }
         val res = inputC.mapCosted(mapperC)
         res
