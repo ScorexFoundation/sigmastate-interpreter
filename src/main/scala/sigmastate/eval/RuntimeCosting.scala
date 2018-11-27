@@ -937,7 +937,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         RCostedStruct(struct(fields), costedBuilder.ConstructTupleCost)
 
       case node: BooleanTransformer[_] =>
-        val cond = node.condition.asValue[SBoolean.type]
         val eIn = stypeToElem(node.input.tpe.elemType)
         val xs = asRep[CostedCol[Any]](eval(node.input))
         val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
@@ -946,9 +945,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           case _: BoxElem[_] => element[CostedBox].asElem[Costed[Any]]
           case _ => costedElement(eAny)
         }
-
+        val (id, mapper) = node.condition match {
+          case Terms.Lambda(_, Seq((n, _)), _, Some(m)) => (n, m)
+          case FuncValue(Seq((n, _)), m) => (n, m)
+        }
         val condC = fun { x: Rep[Costed[Any]] =>
-          evalNode(ctx, env + (node.id -> x), cond)
+          evalNode(ctx, env + (id -> x), mapper)
         }
         val (calcF, costF) = splitCostedFunc2(condC, okRemoveIsValid = true)
         val values = xs.values.map(calcF)

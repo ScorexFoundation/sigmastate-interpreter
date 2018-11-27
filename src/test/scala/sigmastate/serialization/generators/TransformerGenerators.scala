@@ -42,21 +42,18 @@ trait TransformerGenerators {
 
   val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-    idByte <- arbByte.arbitrary
     mapper <- funcValueGen
   } yield mkMapCollection(input, mapper).asInstanceOf[MapCollection[SInt.type, SInt.type]]
 
   val existsGen: Gen[Exists[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-    idByte <- arbByte.arbitrary
-    condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield mkExists(input, idByte, condition).asInstanceOf[Exists[SInt.type]]
+    condition <- funcValueGen
+  } yield mkExists(input, condition).asInstanceOf[Exists[SInt.type]]
 
   val forAllGen: Gen[ForAll[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-    idByte <- arbByte.arbitrary
-    condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield mkForAll(input, idByte, condition).asInstanceOf[ForAll[SInt.type]]
+    condition <- funcValueGen
+  } yield mkForAll(input, condition).asInstanceOf[ForAll[SInt.type]]
 
   val foldGen: Gen[Fold[SInt.type, SBoolean.type]] = for {
     input <- arbCCOfIntConstant.arbitrary

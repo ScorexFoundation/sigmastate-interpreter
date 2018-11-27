@@ -64,9 +64,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage.isValid
 
-    val prop = compile(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue
+    val prop = compileWithCosting(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue
 
-    val expProp = Exists(Outputs, 21, GT(Plus(ExtractAmount(TaggedBox(21)), LongConstant(5)), LongConstant(10)))
+    val expProp = OR(
+      MapCollection(Outputs,
+        FuncValue(Vector((1, SBox)),
+          GT(Plus(ExtractAmount(ValUse(1, SBox)), LongConstant(5)), LongConstant(10)))
+      ).asCollection[SBoolean.type])
     prop shouldBe expProp
 
     val newBox1 = ErgoBox(16, pubkey, 0)
@@ -93,9 +97,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue
+    val prop = compileWithCosting(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue
 
-    val propTree = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+    val propTree = AND(
+      MapCollection(Outputs,
+        FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
+      ).asCollection[SBoolean.type])
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -123,8 +130,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue
-    val propTree = ForAll(Outputs, 21, EQ(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+    val prop = compileWithCosting(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue
+    val propTree = AND(
+      MapCollection(Outputs,
+        FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
+      ).asCollection[SBoolean.type])
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -150,13 +160,21 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage.isValid
 
-    val prop = compile(Map(),
+    val prop = compileWithCosting(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].get == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue
 
-    val propTree = Exists(Outputs, 21, EQ(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).get,
-      Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))))
+    val propTree = BlockValue(
+      Vector(ValDef(1, List(), IntConstant(4))),
+      OR(MapCollection(Outputs,
+        FuncValue(
+          Vector((2, SBox)),
+          EQ(
+            ExtractRegisterAs[SLong.type](ValUse(2, SBox), reg1).get,
+            Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
+        )
+      ).asCollection[SBoolean.type]) )
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(3)))
@@ -185,14 +203,23 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compile(Map(),
+    val prop = compileWithCosting(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].getOrElse(0L) == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue
 
-    val propTree = Exists(Outputs, 21,
-      EQ(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).getOrElse(LongConstant(0L)),
-        Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))))
+    val propTree = BlockValue(
+      Vector(ValDef(1, List(), IntConstant(4))),
+      OR(MapCollection(Outputs,
+        FuncValue(
+          Vector((2, SBox)),
+          EQ(
+            ExtractRegisterAs[SLong.type](ValUse(2, SBox), reg1).getOrElse(LongConstant(0)),
+            Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
+          )
+        )
+      ).asCollection[SBoolean.type]))
+
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)

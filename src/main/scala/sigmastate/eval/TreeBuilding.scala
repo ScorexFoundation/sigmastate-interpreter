@@ -190,10 +190,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         utxo.SizeOf(recurse(col).asCollection[SType])
       case ColM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
-        mkExists(col.asCollection[SType], 21, p.asBoolValue)
+        mkExists(col.asCollection[SType], p.asFunc)
       case ColM.forall(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
-        mkForAll1(col.asCollection[SType], p.asFunc)
+        mkForAll(col.asCollection[SType], p.asFunc)
       case ColM.map(colSym, fSym) =>
         val Seq(col, f) = Seq(colSym, fSym).map(recurse)
         mkMapCollection(col.asCollection[SType], f.asFunc)
@@ -219,6 +219,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
       case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
+      case BoxM.id(In(box)) =>
+        mkExtractId(box.asBox)
 
       case OM.get(In(optionSym)) =>
         mkOptionGet(optionSym.asValue[SOption[SType]])

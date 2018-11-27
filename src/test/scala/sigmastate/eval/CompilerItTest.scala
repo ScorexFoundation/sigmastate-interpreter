@@ -269,12 +269,12 @@ class CompilerItTest extends BaseCtxTests
           SigmaAnd(Seq(
             BoolToSigmaProp(AND(Vector(
               LT(Height,ValUse(1,SLong)),
-              Exists(Outputs, 21,
+              Exists(Outputs,
                 FuncValue(Vector((3,SBox)),
                   BinAnd(
                     GE(ExtractAmount(ValUse(3,SBox)),LongConstant(1000)),
                     EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp))))
-                ).asInstanceOf[Value[SBoolean.type]]
+                )
               )))),
             ValUse(2,SSigmaProp)
           ))))),

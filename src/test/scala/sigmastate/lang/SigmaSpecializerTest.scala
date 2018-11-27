@@ -101,9 +101,9 @@ class SigmaSpecializerTest extends PropSpec
     spec("OUTPUTS.map({ (out: Box) => out.value >= 10 })") shouldBe
       MapCollection(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("OUTPUTS.exists({ (out: Box) => out.value >= 10 })") shouldBe
-        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      Exists(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("OUTPUTS.forall({ (out: Box) => out.value >= 10 })") shouldBe
-        ForAll(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      ForAll(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("{ val arr = Col(1,2); arr.fold(0, { (n1: Int, n2: Int) => n1 + n2 })}") shouldBe
       Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
         IntConstant(0),

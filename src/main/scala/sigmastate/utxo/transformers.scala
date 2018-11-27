@@ -140,42 +140,27 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
 
 trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBoolean.type] {
   override val input: Value[SCollection[IV]]
-  val id: Byte
-  val condition: Value[SBoolean.type]
-
-  def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type]
+  val condition: Value[SFunc]
 
   override def tpe = SBoolean
 
   override def transformationReady: Boolean = input.isEvaluatedCollection
 
-  override def function(I: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = {
-    val cc = input.toConcreteCollection
-    val resItems = cc.items.map { case v: EvaluatedValue[IV] =>
-      val localCtx = ctx.withBindings(id -> v)
-      val reduced = I.eval(localCtx, condition)
-      reduced
-    }
-    constructResult(resItems)
-  }
+  override def function(I: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[IV]]): Value[SBoolean.type] = ???
 }
 
-case class Exists[IV <: SType](input: Value[SCollection[IV]],
-                               id: Byte,
-                               condition: Value[SBoolean.type])
+case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
+                               override val condition: Value[SFunc])
   extends BooleanTransformer[IV] {
   override val opCode: OpCode = OpCodes.ExistsCode
   val opType = SCollection.ExistsMethod.stype.asFunc
 
   override def cost[C <: Context](context: C): Long =
     Cost.ExistsDeclaration + input.cost(context) * condition.cost(context) + Cost.OrDeclaration
-
-  override def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type] = OR(items)
 }
 
-case class ForAll[IV <: SType](input: Value[SCollection[IV]],
-                               id: Byte,
-                               condition: Value[SBoolean.type])
+case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
+                               override val condition: Value[SFunc])
   extends BooleanTransformer[IV] {
 
   override val opCode: OpCode = OpCodes.ForAllCode
@@ -183,8 +168,6 @@ case class ForAll[IV <: SType](input: Value[SCollection[IV]],
 
   override def cost[C <: Context](context: C) =
     Cost.ForAllDeclaration + input.cost(context) * condition.cost(context) + Cost.AndDeclaration
-
-  override def constructResult(items: Seq[Value[SBoolean.type]]): Transformer[SBooleanArray, SBoolean.type] = AND(items)
 }
 
 
@@ -487,12 +470,3 @@ case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
 //    }
   override def cost[C <: Context](context: C): Long = input.cost(context) + Cost.OptionIsDefined
 }
-
-case class ForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc])
-    extends NotReadyValue[SBoolean.type] {
-  override val opCode: OpCode = OpCodes.ForAllCode
-  override def tpe = SBoolean
-  override def cost[C <: Context](context: C) = ???
-  val opType = SCollection.ForallMethod.stype.asFunc
-}
-

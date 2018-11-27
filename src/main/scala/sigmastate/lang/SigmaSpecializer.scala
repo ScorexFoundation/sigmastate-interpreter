@@ -187,15 +187,11 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
       val body1 = eval(env + (n -> tagged), body)
       Some(mkFilter(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
 
-    case Apply(Select(col, ExistsMethod.name, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
-      val tagged = mkTagged(n, t, 21)
-      val body1 = eval(env + (n -> tagged), body)
-      Some(mkExists(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
+    case Apply(Select(col, ExistsMethod.name, _), Seq(l @ Lambda(_, _, _, _))) =>
+      Some(mkExists(col.asValue[SCollection[SType]], l))
 
-    case Apply(Select(col, ForallMethod.name, _), Seq(Lambda(_, Seq((n, t)), _, Some(body)))) =>
-      val tagged = mkTagged(n, t, 21)
-      val body1 = eval(env + (n -> tagged), body)
-      Some(mkForAll(col.asValue[SCollection[SType]], tagged.varId, body1.asValue[SBoolean.type]))
+    case Apply(Select(col, ForallMethod.name, _), Seq(l @ Lambda(_, _, _, _))) =>
+      Some(mkForAll(col.asValue[SCollection[SType]], l))
 
     case Apply(Select(col, MapMethod.name, _), Seq(l @ Lambda(_, _, _, _))) =>
       Some(mkMapCollection(col.asValue[SCollection[SType]], l))
