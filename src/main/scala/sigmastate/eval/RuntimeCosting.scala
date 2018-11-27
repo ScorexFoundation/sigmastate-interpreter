@@ -1307,6 +1307,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
         withDefaultSize(res, cost)
 
+      case SigmaOr(items) =>
+        val itemsC = items.map(eval)
+        val res = sigmaDslBuilder.anyZK(colBuilder.fromItems(itemsC.map(_.value.asRep[SigmaProp]): _*))
+        val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
+        val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
+        withDefaultSize(res, cost)
+
       case op: Relation[t,_] if op.tpe == SBigInt =>
         import OpCodes._
         op.opCode match {

@@ -456,6 +456,8 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
 //    }
 
   override def cost[C <: Context](context: C): Long = input.cost(context) + Cost.OptionGet
+
+  override def toString: String = s"$input.get"
 }
 
 case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[V])

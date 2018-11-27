@@ -128,8 +128,11 @@ object Values {
     override def toString: String = tpe.asInstanceOf[SType] match {
       case SGroupElement =>
         s"ConstantNode(${CryptoFunctions.showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
-      case _ =>
-        s"ConstantNode($value,$tpe)"
+      case SInt => s"IntConstant($value)"
+      case SLong => s"LongConstant($value)"
+      case SBoolean if value == true => "TrueLeaf"
+      case SBoolean if value == false => "FalseLeaf"
+      case _ => s"ConstantNode($value,$tpe)"
     }
   }
 

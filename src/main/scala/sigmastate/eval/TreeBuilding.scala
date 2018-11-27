@@ -242,6 +242,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkAllOf(col)
       case Def(SDBM.allOf(_,  items)) =>
         mkAND(recurse(items))
+      case Def(SDBM.anyOf(_,  items)) =>
+        mkOR(recurse(items))
 
       case SigmaM.and_bool_&&(In(prop), In(cond)) =>
         SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
@@ -280,6 +282,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkSelectField(recurse(pair), 1)
       case Def(Second(pair)) =>
         mkSelectField(recurse(pair), 2)
+      case Def(FieldApply(In(data), IsTupleFN(i))) =>
+        mkSelectField(data.asTuple, i)
 
       case Def(Downcast(inputSym, toSym)) =>
         mkDowncast(recurse(inputSym).asNumValue, elemToSType(toSym).asNumType)
