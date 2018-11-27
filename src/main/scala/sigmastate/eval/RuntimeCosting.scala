@@ -984,7 +984,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = inputC.mapCosted(mapperC)
         res
 
-      case Fold(input, zero, Terms.Lambda(_, Seq((accN, _), (n, _)), _, Some(foldOp))) =>
+      case Fold(input, zero, sfunc) =>
         val eItem = stypeToElem(input.tpe.elemType)
         val eState = stypeToElem(zero.tpe)
         (eState, eItem) match { case (eState: Elem[s], eItem: Elem[a]) =>
@@ -998,27 +998,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
           val foldOpC = fun { in: Rep[CostedPair[s, a]] =>
             val acc = in.l; val item = in.r
-            val out = evalNode(ctx, env + (accN -> acc, n -> item), foldOp)
-            asRep[Costed[s]](out)
-          }
-          val res = inputC.foldCosted(zeroC, asRep[Costed[(s,a)] => Costed[s]](foldOpC))
-          res
-        }
-
-      case Fold(input, zero, FuncValue(Seq((tN, _)), foldOp)) =>
-        val eItem = stypeToElem(input.tpe.elemType)
-        val eState = stypeToElem(zero.tpe)
-        (eState, eItem) match { case (eState: Elem[s], eItem: Elem[a]) =>
-          val inputC = asRep[CostedCol[a]](eval(input))
-          implicit val eA = inputC.elem.asInstanceOf[CostedElem[Col[a],_]].eVal.eA
-          assert(eItem == eA, s"Types should be equal: but $eItem != $eA")
-
-          val zeroC = asRep[Costed[s]](eval(zero))
-          implicit val eS = zeroC.elem.eVal
-          assert(eState == eS, s"Types should be equal: but $eState != $eS")
-
-          val foldOpC = fun { in: Rep[CostedPair[s, a]] =>
-            val out = evalNode(ctx, env + (tN -> in), foldOp)
+            val out = sfunc match {
+              case Terms.Lambda(_, Seq((accN, _), (n, _)), _, Some(op)) =>
+                evalNode(ctx, env + (accN -> acc, n -> item), op)
+              case FuncValue(Seq((tpl, _)), op) =>
+                evalNode(ctx, env + (tpl -> in), op)
+            }
             asRep[Costed[s]](out)
           }
           val res = inputC.foldCosted(zeroC, asRep[Costed[(s,a)] => Costed[s]](foldOpC))
