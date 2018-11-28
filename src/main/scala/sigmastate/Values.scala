@@ -128,8 +128,11 @@ object Values {
     override def toString: String = tpe.asInstanceOf[SType] match {
       case SGroupElement =>
         s"ConstantNode(${CryptoFunctions.showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
-      case _ =>
-        s"ConstantNode($value,$tpe)"
+      case SInt => s"IntConstant($value)"
+      case SLong => s"LongConstant($value)"
+      case SBoolean if value == true => "TrueLeaf"
+      case SBoolean if value == false => "FalseLeaf"
+      case _ => s"ConstantNode($value,$tpe)"
     }
   }
 
@@ -663,6 +666,10 @@ object Values {
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
+  /**
+    * @param args parameters list, where each parameter has an id and a type.
+    * @param body expression, which refers function parameters with ValUse.
+    */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
     lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
     val opCode: OpCode = FuncValueCode

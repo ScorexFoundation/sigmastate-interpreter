@@ -12,6 +12,7 @@ import sigmastate.lang.Terms.{Ident, ZKProofBlock}
 import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.serialization.generators.{ValueGenerators, TransformerGenerators, ConcreteCollectionGenerators}
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
 class SigmaSpecializerTest extends PropSpec
   with PropertyChecks
@@ -90,7 +91,7 @@ class SigmaSpecializerTest extends PropSpec
 //    spec(env, "(1, 2L).slice(0, 2)") shouldBe SCollection(SAny)
 //    spec(env, "fun (a: Int) = (1, 2L)(a)") shouldBe SFunc(IndexedSeq(SInt), SAny)
   }
-  
+
   property("Option constructors") {
     fail(Map(), "None", "Option constructors are not supported")
     fail(Map(), "Some(10)", "Option constructors are not supported")
@@ -98,21 +99,25 @@ class SigmaSpecializerTest extends PropSpec
 
   property("generic methods of arrays") {
     spec("OUTPUTS.map({ (out: Box) => out.value >= 10 })") shouldBe
-      MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      MapCollection(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("OUTPUTS.exists({ (out: Box) => out.value >= 10 })") shouldBe
-        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      Exists(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("OUTPUTS.forall({ (out: Box) => out.value >= 10 })") shouldBe
-        ForAll(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      ForAll(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("{ val arr = Col(1,2); arr.fold(0, { (n1: Int, n2: Int) => n1 + n2 })}") shouldBe
-        Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
-             22, IntConstant(0), 21, Plus(TaggedInt(21), TaggedInt(22)))
+      Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
+        IntConstant(0),
+        Lambda(Vector(("n1", SInt), ("n2", SInt)), SInt, Plus(Ident("n1", SInt).asNumValue, Ident("n2", SInt).asNumValue)))
     spec("{ val arr = Col(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
       Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
-        22, TrueLeaf, 21, BinAnd(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
+        TrueLeaf,
+        Lambda(Vector(("n1", SBoolean), ("n2", SInt)), SBoolean,
+          BinAnd(Ident("n1", SBoolean).asBoolValue, GT(Ident("n2", SInt), IntConstant(1))))
+      )
     spec("OUTPUTS.slice(0, 10)") shouldBe
-        Slice(Outputs, IntConstant(0), IntConstant(10))
+      Slice(Outputs, IntConstant(0), IntConstant(10))
     spec("OUTPUTS.filter({ (out: Box) => out.value >= 10 })") shouldBe
-        Filter(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      Filter(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
   }
 
   property("AND flattening predefined") {

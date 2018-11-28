@@ -9,6 +9,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
 trait TransformerGenerators {
   self: ValueGenerators with ConcreteCollectionGenerators =>
@@ -41,26 +42,24 @@ trait TransformerGenerators {
 
   val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-    idByte <- arbByte.arbitrary
-    mapper <- arbIntConstants.arbitrary
-  } yield mkMapCollection(input, idByte, mapper).asInstanceOf[MapCollection[SInt.type, SInt.type]]
+    mapper <- funcValueGen
+  } yield mkMapCollection(input, mapper).asInstanceOf[MapCollection[SInt.type, SInt.type]]
 
   val existsGen: Gen[Exists[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-    idByte <- arbByte.arbitrary
-    condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield mkExists(input, idByte, condition).asInstanceOf[Exists[SInt.type]]
+    condition <- funcValueGen
+  } yield mkExists(input, condition).asInstanceOf[Exists[SInt.type]]
 
   val forAllGen: Gen[ForAll[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-    idByte <- arbByte.arbitrary
-    condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield mkForAll(input, idByte, condition).asInstanceOf[ForAll[SInt.type]]
+    condition <- funcValueGen
+  } yield mkForAll(input, condition).asInstanceOf[ForAll[SInt.type]]
 
   val foldGen: Gen[Fold[SInt.type, SBoolean.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-  } yield mkFold(input, 21, TrueLeaf, 22, AND(TaggedBoolean(21), GT(TaggedInt(21), IntConstant(1))))
-    .asInstanceOf[Fold[SInt.type, SBoolean.type]]
+    foldOp <- funcValueGen
+  } yield
+    mkFold(input, TrueLeaf, foldOp).asInstanceOf[Fold[SInt.type, SBoolean.type]]
 
   val sliceGen: Gen[Slice[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
