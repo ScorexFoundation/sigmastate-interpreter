@@ -82,9 +82,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   property("Relation operations") {
     test("R1", env, ext,
       "{ allOf(Col(getVar[Boolean](trueVar).get, true, true)) }",
-      BlockValue(
-        Vector(ValDef(1, TrueLeaf)),
-        AND(ConcreteCollection(Vector(GetVarBoolean(9).get, ValUse(1, SBoolean), ValUse(1, SBoolean)), SBoolean))),
+      AND(GetVarBoolean(booleanVar).get, TrueLeaf, TrueLeaf)
     )
     test("R2", env, ext,
       "{ anyOf(Col(getVar[Boolean](trueVar).get, true, false)) }",
@@ -210,13 +208,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test("Arith4", env, ext,
       "{ getVar[Int](intVar2).get / 2 + getVar[Int](intVar1).get == 2 }",
-      BlockValue(
-        Vector(ValDef(1,IntConstant(2))),
-        EQ(
-          Plus(
-            Divide(GetVarInt(2).get, ValUse(1, SInt)),
-            GetVarInt(1).get),
-          ValUse(1, SInt))),
+      EQ(Plus(Divide(GetVarInt(2).get, IntConstant(2)), GetVarInt(1).get),IntConstant(2)),
     )
     test("Arith5", env, ext,
       "{ getVar[Int](intVar2).get % 2 + getVar[Int](intVar1).get == 1 }",
@@ -391,17 +383,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     // register should be empty
     test("OptGet2", env, ext,
       "{ SELF.R6[Int].getOrElse(3) == 3 }",
-      BlockValue(
-        Vector(ValDef(1, IntConstant(3))),
-        EQ(
-          ExtractRegisterAs(Self, R6, SOption(SInt)).getOrElse(
-            BlockValue(
-              Vector(ValDef(2, ValUse(1, SInt))),
-              ValUse(2, SInt)).asIntValue
-          ),
-        ValUse(1, SInt))
-    ),
-    true
+      EQ(ExtractRegisterAs(Self, R6, SOption(SInt)).getOrElse(IntConstant(3)), IntConstant(3)),
+      true
     )
     test("OptGet3", env, ext,
       "{ getVar[Int](intVar2).getOrElse(3) == 2 }",
@@ -411,12 +394,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     // there should be no variable with this id
     test("OptGet4", env, ext,
     "{ getVar[Int](99).getOrElse(3) == 3 }",
-    BlockValue(
-      Vector(ValDef(1,IntConstant(3))),
-      EQ(
-          GetVarInt(99).getOrElse(BlockValue(Vector(ValDef(2, ValUse(1, SInt))), ValUse(2, SInt)).asIntValue),
-        ValUse(1, SInt))
-    ),
+      EQ(GetVarInt(99).getOrElse(IntConstant(3)), IntConstant(3)),
       true
     )
   }

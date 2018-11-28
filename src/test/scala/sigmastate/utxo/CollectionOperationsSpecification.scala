@@ -165,16 +165,14 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  box.R4[Long].get == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue
 
-    val propTree = BlockValue(
-      Vector(ValDef(1, List(), IntConstant(4))),
-      OR(MapCollection(Outputs,
-        FuncValue(
-          Vector((2, SBox)),
-          EQ(
-            ExtractRegisterAs[SLong.type](ValUse(2, SBox), reg1).get,
-            Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
-        )
-      ).asCollection[SBoolean.type]) )
+    val propTree = OR(MapCollection(Outputs,
+      FuncValue(
+        Vector((1, SBox)),
+        EQ(
+          ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).get,
+          Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
+      )
+    ).asCollection[SBoolean.type])
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(3)))
@@ -208,17 +206,16 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  box.R4[Long].getOrElse(0L) == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue
 
-    val propTree = BlockValue(
-      Vector(ValDef(1, List(), IntConstant(4))),
-      OR(MapCollection(Outputs,
-        FuncValue(
-          Vector((2, SBox)),
-          EQ(
-            ExtractRegisterAs[SLong.type](ValUse(2, SBox), reg1).getOrElse(LongConstant(0)),
-            Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
-          )
+    val propTree = OR(MapCollection(Outputs,
+      FuncValue(
+        Vector((1, SBox)),
+        EQ(
+          ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).getOrElse(LongConstant(0)),
+          Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
         )
-      ).asCollection[SBoolean.type]))
+      )
+    ).asCollection[SBoolean.type])
+
 
     prop shouldBe propTree
 
@@ -330,17 +327,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       """OUTPUTS
         |.map { (box: Box) => box.value }
         |.getOrElse(3, 0L)== 0""".stripMargin
-    val expectedPropTree = BlockValue(
-      Vector(ValDef(1, List(), LongConstant(0))),
-      EQ(
-        ByIndex(
-          MapCollection(Outputs, FuncValue(Vector((2, SBox)), ExtractAmount(ValUse(2, SBox)))),
-          IntConstant(3),
-          Some(ValUse(1, SLong))
-        ),
-        ValUse(1, SLong)
-      )
+    val expectedPropTree = EQ(
+      ByIndex(
+        MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+        IntConstant(3),
+        Some(LongConstant(0))
+      ),
+      LongConstant(0)
     )
+
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
@@ -398,34 +393,21 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         |  indexCollection.forall(elementRule)
          }""".stripMargin
 
-    val indexCollection = ConcreteCollection(
-      Seq[Value[SInt.type]](ValUse(1, SInt), ValUse(2, SInt)) ++
-        (2 until 5).map(i => IntConstant(i)) ++
-        Seq(ValUse(3, SInt)))
-    val boundaryIndex = If(
-              ValUse(6, SBoolean),
-              BlockValue(Vector(ValDef(7, List(), ValUse(3, SInt))), ValUse(7, SInt)),
-              Minus(ValUse(4, SInt), ValUse(2, SInt)))
-    val elementRule = FuncValue(Vector((4, SInt)),
-      BlockValue(
-        Vector(ValDef(6, List(), EQ(ValUse(4, SInt), ValUse(1, SInt)))),
-        BinAnd(
-          GE(boundaryIndex, ValUse(1, SInt)),
-          LE(boundaryIndex, ValUse(3, SInt))
+    val expectedPropTree = AND(MapCollection(
+      ConcreteCollection(Vector(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
+      FuncValue(
+        Vector((1, SInt)),
+        BlockValue(
+          Vector(ValDef(3, EQ(ValUse(1, SInt), IntConstant(0)))),
+          BinAnd(
+            GE(If(ValUse(3, SBoolean), IntConstant(5), Minus(ValUse(1, SInt), IntConstant(1))), IntConstant(0)),
+            LE(If(ValUse(3, SBoolean), IntConstant(5), Minus(ValUse(1, SInt), IntConstant(1))), IntConstant(5))
+          )
         )
       )
-    )
-    val expectedPropTree = BlockValue(
-      Vector(
-        ValDef(1,List(),IntConstant(0)),
-        ValDef(2,List(),IntConstant(1)),
-        ValDef(3,List(),IntConstant(5))),
-       AND(
-         MapCollection(indexCollection, elementRule).asCollection[SBoolean.type]
-       )
-    )
-    assertProof(code, expectedPropTree, outputBoxValues)
+    ).asCollection[SBoolean.type])
 
+    assertProof(code, expectedPropTree, outputBoxValues)
   }
 
   property("ByIndex for non-evaluated index") {
@@ -443,29 +425,27 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
          }""".stripMargin
 
     val element = ByIndex(
-      ValUse(4, SCollectionType(SInt)),
-      If(
-        ValUse(7, SBoolean),
-        BlockValue(Vector(ValDef(8, List(), ValUse(3, SInt))), ValUse(8, SInt)).asIntValue,
-        Minus(ValUse(5, SInt), ValUse(2, SInt))),
+      ValUse(1, SCollectionType(SInt)),
+      If(ValUse(4, SBoolean), IntConstant(5), Minus(ValUse(2, SInt), IntConstant(1))),
       None)
-val expectedPropTree = BlockValue(
-  Vector(
-    ValDef(1, List(), IntConstant(0)),
-    ValDef(2, List(), IntConstant(1)),
-    ValDef(3, List(), IntConstant(5)),
-    ValDef(4, List(), ConcreteCollection(Vector(ValUse(2, SInt), ValUse(2, SInt), ValUse(1, SInt), ValUse(1, SInt), ValUse(1, SInt), ValUse(2, SInt)), SInt))),
-  AND(MapCollection(
-    ConcreteCollection(Vector(ValUse(1, SInt), ValUse(2, SInt), IntConstant(2), IntConstant(3), IntConstant(4), ValUse(3, SInt)), SInt),
-    FuncValue(
-      Vector((5, SInt)),
-      BlockValue(
-        Vector(ValDef(7, List(), LE(ValUse(5, SInt), ValUse(1, SInt)))),
-        BinOr(EQ(element, ValUse(1, SInt)), EQ(element, ValUse(2, SInt)))
+    val expectedPropTree = BlockValue(
+      Vector(
+        ValDef(1,
+          ConcreteCollection(Vector(IntConstant(1), IntConstant(1), IntConstant(0), IntConstant(0), IntConstant(0), IntConstant(1)), SInt))),
+      AND(
+        MapCollection(
+          ConcreteCollection(Vector(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
+          FuncValue(Vector((2, SInt)),
+            BlockValue(
+              Vector(ValDef(4, LE(ValUse(2, SInt), IntConstant(0)))),
+              BinOr(
+                EQ(element, IntConstant(0)),
+                EQ(element, IntConstant(1)))
+            )
+          )
+        ).asCollection[SBoolean.type]
       )
     )
-  ).asCollection[SBoolean.type])
-)
 
     assertProof(code, expectedPropTree, outputBoxValues)
   }

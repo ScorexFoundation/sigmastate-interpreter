@@ -112,6 +112,19 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     }
   }
 
+  object IsExtractableConstant {
+    def unapply(d: Def[_]): Option[Def[_]] = d match {
+      // in case of GroupElement constant (ProveDlog) different constants have different meaning,
+      // thus it is ok for them to create ValDef
+      case c: Const[_] if c.elem.isInstanceOf[WECPointElem[_]] => Some(d)
+      // to increase effect of constant segregation we need to treat the constants specially
+      // and don't create ValDef even if the constant is used more than one time,
+      // because two equal constants don't always have the same meaning.
+      case _: Const[_] => None
+      case _ => Some(d)
+    }
+  }
+
   def buildValue(mainG: PGraph,
                  env: DefEnv,
                  s: Sym,
@@ -307,7 +320,11 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     var curEnv = env
     for (te <- subG.schedule) {
       val s = te.sym; val d = te.rhs
-      if (mainG.hasManyUsagesGlobal(s) && IsContextProperty.unapply(d).isEmpty && IsInternalDef.unapply(d).isEmpty) {
+      if (mainG.hasManyUsagesGlobal(s)
+        && IsContextProperty.unapply(d).isEmpty
+        && IsInternalDef.unapply(d).isEmpty
+        && IsExtractableConstant.unapply(d).nonEmpty)
+      {
         val rhs = buildValue(mainG, curEnv, s, curId, constantsProcessing)
         curId += 1
         val vd = ValDef(curId, Seq(), rhs)

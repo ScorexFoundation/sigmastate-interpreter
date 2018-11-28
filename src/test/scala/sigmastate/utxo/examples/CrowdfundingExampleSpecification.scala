@@ -57,26 +57,27 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       """.stripMargin).asBoolValue
 
     val expectedScript = BlockValue(
-      Vector(ValDef(1, LongConstant(100)), ValDef(2, SigmaPropConstant(projectPubKey))),
+      Vector(
+        ValDef(1, SigmaPropConstant(projectPubKey))),
       SigmaOr(List(
         SigmaAnd(List(
-          BoolToSigmaProp(GE(Height, ValUse(1, SLong))),
+          BoolToSigmaProp(GE(Height, LongConstant(100))),
           SigmaPropConstant(backerPubKey))
         ),
         SigmaAnd(List(
           BoolToSigmaProp(AND(ConcreteCollection(Vector(
-            LT(Height, ValUse(1, SLong)),
+            LT(Height, LongConstant(100)),
             OR(
               MapCollection(Outputs,
-                FuncValue(Vector((3, SBox)),
+                FuncValue(Vector((2, SBox)),
                   BinAnd(
-                    GE(ExtractAmount(ValUse(3, SBox)), LongConstant(1000)),
-                    EQ(ExtractScriptBytes(ValUse(3, SBox)), SigmaPropBytes(ValUse(2, SSigmaProp)))
+                    GE(ExtractAmount(ValUse(2, SBox)), LongConstant(1000)),
+                    EQ(ExtractScriptBytes(ValUse(2, SBox)), SigmaPropBytes(ValUse(1, SSigmaProp)))
                   )
                 )
               ).asCollection[SBoolean.type])
           ), SBoolean))),
-          ValUse(2, SSigmaProp)))
+          ValUse(1, SSigmaProp)))
       ))
     )
 

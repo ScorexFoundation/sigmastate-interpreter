@@ -262,21 +262,20 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = BlockValue(Vector(
-        ValDef(1,List(),LongConstant(100)),
-        ValDef(2,List(),SigmaPropConstant(projectPK))),
+        ValDef(1,List(),SigmaPropConstant(projectPK))),
         SigmaOr(Seq(
-          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,ValUse(1,SLong))),SigmaPropConstant(backerPK))),
+          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,LongConstant(100))),SigmaPropConstant(backerPK))),
           SigmaAnd(Seq(
             BoolToSigmaProp(AND(Vector(
-              LT(Height,ValUse(1,SLong)),
+              LT(Height,LongConstant(100)),
               Exists(Outputs,
-                FuncValue(Vector((3,SBox)),
+                FuncValue(Vector((2,SBox)),
                   BinAnd(
-                    GE(ExtractAmount(ValUse(3,SBox)),LongConstant(1000)),
-                    EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp))))
+                    GE(ExtractAmount(ValUse(2,SBox)),LongConstant(1000)),
+                    EQ(ExtractScriptBytes(ValUse(2,SBox)), SigmaPropBytes(ValUse(1,SSigmaProp))))
                 )
               )))),
-            ValUse(2,SSigmaProp)
+            ValUse(1,SSigmaProp)
           ))))),
       Result({ TrivialProof.FalseProof }, 40360, 1L)
     )
