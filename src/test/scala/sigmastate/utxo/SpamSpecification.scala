@@ -23,10 +23,10 @@ class SpamSpecification extends SigmaTestingCommons {
     val hf = Blake2b256
 
     //just in case to heat up JVM
-    (1 to 2000000).foreach(_ => hf(block))
+    (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 4000000).foreach(_ => hf(block))
+    (1 to 15000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -82,7 +82,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val prover = new ErgoLikeTestProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
-    val bigSubScript = (1 to 150).foldLeft(CalcBlake2b256(GetVarByteArray(id).get)) { case (script, _) =>
+    val bigSubScript = (1 to 120).foldLeft(CalcBlake2b256(GetVarByteArray(id).get)) { case (script, _) =>
       CalcBlake2b256(script)
     }
 
@@ -166,8 +166,9 @@ class SpamSpecification extends SigmaTestingCommons {
     }
   }
 
-  ignore("transaction with many inputs and outputs") { // TODO avoid too complex cost function by approximating INPUT and OUTPUT sizes
+  property("transaction with many inputs and outputs") { // TODO avoid too complex cost function by approximating INPUT and OUTPUT sizes
     implicit lazy val IR = new TestingIRContext {
+      this.useAlphaEquality = true
       override val okPrintEvaluatedEntries = false
       override def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
         if (okPrintEvaluatedEntries)
@@ -194,6 +195,8 @@ class SpamSpecification extends SigmaTestingCommons {
       spendingTransaction = tx,
       self = ErgoBox(11, prop, 0))
 
+    println(s"Timeout: ${Timeout / 1000.0} seconds")
+
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
     val pt = System.currentTimeMillis()
@@ -201,6 +204,8 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeTestInterpreter
     val (res, terminated) = termination(() => verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, proof, fakeMessage))
+    val pt2 = System.currentTimeMillis()
+    println(s"Verifier time: ${(pt2 - pt) / 1000.0} seconds")
     terminated shouldBe true
     res.isFailure shouldBe true
   }

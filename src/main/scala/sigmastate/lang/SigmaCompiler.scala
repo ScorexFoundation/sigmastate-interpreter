@@ -40,4 +40,5 @@ class SigmaCompiler(builder: SigmaBuilder) {
 }
 
 object SigmaCompiler {
+  def apply(builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler = new SigmaCompiler(builder)
 }

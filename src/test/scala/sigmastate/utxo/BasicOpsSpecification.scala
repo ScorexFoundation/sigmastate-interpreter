@@ -193,7 +193,6 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       "{ getVar[Int](intVar2).get * 2 + getVar[Int](intVar1).get == 5 }",
       EQ(Plus(Multiply(GetVarInt(intVar2).get, IntConstant(2)), GetVarInt(intVar1).get), IntConstant(5))
     )
-
     test("Arith2", env, ext :+ (bigIntVar3 -> BigIntConstant(50)),
       "{ getVar[BigInt](bigIntVar2).get * 2 + getVar[BigInt](bigIntVar1).get == getVar[BigInt](bigIntVar3).get }",
       EQ(
@@ -450,6 +449,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       BoolToSigmaProp(GE(Height, LongConstant(0))), true)
     test("prop2", env, ext, "sigmaProp(HEIGHT >= 0) && getVar[SigmaProp](proofVar1).get",
       BinAnd(BoolToSigmaProp(GE(Height, LongConstant(0))).isValid, GetVarSigmaProp(propVar1).get.isValid), true)
+//    println(CostTableStat.costTableString)
   }
 
 //  property("ZKProof") {

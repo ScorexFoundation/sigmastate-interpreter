@@ -2,14 +2,15 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.util.ScorexLogging
-import sigmastate.Values.{LongConstant, IntConstant, SValue}
+import sigmastate.Values.{IntConstant, LongConstant, SValue}
 import sigmastate.Values.{ConcreteCollection, IntConstant, LongConstant}
+import sigmastate.eval.RuntimeIRContext
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv, ScriptEnv}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes
-import sigmastate.utxo.BlockchainSimulationSpecification.{ValidationState, Block}
+import sigmastate.serialization.{ErgoTreeSerializer, OpCodes}
+import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
 
@@ -19,12 +20,8 @@ import sigmastate.{SLong, _}
   * that controls emission rules
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
-  implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
-    // overrided to avoid outputing intermediate graphs in files (too many of them)
-    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
-    }
-  }
+  // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
+  implicit lazy val IR = new RuntimeIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
@@ -61,7 +58,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
-  ignore("emission specification") {
+  property("emission specification") {
     val register = reg1
     val prover = new ErgoLikeTestProvingInterpreter()
 
@@ -79,8 +76,10 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(rewardOut)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
     val outputsNum = EQ(SizeOf(Outputs), 2)
-    val correctMinerProposition = EQ(ExtractScriptBytes(minerOut),
-      Append(ConcreteCollection(OpCodes.ProveDlogCode, SGroupElement.typeCode), MinerPubkey))
+    val correctMinerProposition = EQ(
+      ExtractScriptBytes(minerOut),
+      ErgoTreeSerializer.serializedPubkeyPropValue(MinerPubkey)
+    )
 
     val prop = AND(
       heightIncreased,
@@ -105,7 +104,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    val heightCorrect = out.R4[Long].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
         |    val outputsNum = OUTPUTS.size == 2
-        |    val correctMinerProposition = minerOut.propositionBytes == Col[Byte](-51.toByte, 7.toByte) ++ MinerPubkey
+        |    val correctMinerProposition = minerOut.propositionBytes ==
+        |      Col[Byte](0.toByte, 1.toByte, 7.toByte) ++ MinerPubkey ++ Col[Byte](-51.toByte, 115.toByte, 0.toByte)
         |    allOf(Col(heightIncreased, correctMinerProposition, allOf(Col(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect)) || lastCoins))
         |}""".stripMargin).asBoolValue
 
@@ -172,6 +172,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
                  hLimit: Int): Unit = if (height < hLimit) {
       if (height % 1000 == 0) {
         println(s"block $height in ${System.currentTimeMillis() - st} ms, ${emissionBox.value} coins remain")
+        IR.resetContext()
       }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
       val block = Block(IndexedSeq(tx), minerPubkey)

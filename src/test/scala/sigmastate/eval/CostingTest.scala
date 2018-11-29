@@ -17,6 +17,10 @@ import SType._
 import scalan.BaseCtxTests
 
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>
+  implicit override lazy val IR: TestContext with IRContext =
+    new TestContext with IRContext with CompiletimeCosting {
+//      override val useAlphaEquality = false
+    }
   import IR._
   import WArray._
   import WECPoint._
@@ -79,7 +83,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
     checkInEnv(env, "sigmaprop", "p1.propBytes",
       { _ => RProveDlogEvidence(g1Sym).asRep[SigmaProp].propBytes },
-      { _ => constCost[WECPoint] + constCost[SigmaProp] + costOf("SigmaPropBytes", SFunc(SSigmaProp, SCollection.SByteArray))})
+      { _ => costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)) +
+             costOf("SigmaPropBytes", SFunc(SSigmaProp, SCollection.SByteArray))})
   }
 
   test("operations") {
@@ -139,9 +144,9 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("lambdas") {
     check("lam1", "{ (out: Box) => out.value >= 0L }",
-      ctx => fun { out: Rep[Box] => out.value >= 0L }, {_ => constCost[Box => Boolean]}, {_ => 8L})
+      ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
     check("lam2", "{ val f = { (out: Box) => out.value >= 0L }; f }",
-      ctx => fun { out: Rep[Box] => out.value >= 0L }, {_ => constCost[Box => Boolean]}, {_ => 8L})
+      ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
     check("lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }",
       ctx => { val f = fun { out: Rep[Box] => out.value >= 0L }; Apply(f, ctx.SELF, false) })
   }
@@ -223,8 +228,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     var res: Rep[Any] = null
     measure(2) { j => // 10 warm up iterations when j == 0
       measure(j*500 + 10, false) { i =>
-        res = check("", s"INPUTS.size + OUTPUTS.size + $i",
-          ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i)
+        res = check("", s"INPUTS.size + OUTPUTS.size + $i", null
+          /*ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i*/)
       }
     }
   }

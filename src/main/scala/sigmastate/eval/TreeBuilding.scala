@@ -238,7 +238,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     val valdefs = new ArrayBuffer[ValDef]
     var curId = defId
     var curEnv = env
-    for (TableEntry(s, d) <- subG.schedule) {
+    for (te <- subG.schedule) {
+      val s = te.sym; val d = te.rhs
       if (mainG.hasManyUsagesGlobal(s) && IsContextProperty.unapply(d).isEmpty && IsInternalDef.unapply(d).isEmpty) {
         val rhs = buildValue(mainG, curEnv, s, curId, constantsProcessing)
         curId += 1

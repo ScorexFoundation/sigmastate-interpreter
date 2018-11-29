@@ -472,8 +472,21 @@ sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
 case class ArithOp[T <: SType](left: Value[T], right: Value[T], opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
   override def tpe: T = left.tpe
+  override def opName: String = ArithOp.opcodeToArithOpName(opCode)
 }
 
+object ArithOp {
+  def opcodeToArithOpName(opCode: Byte): String = opCode match {
+    case OpCodes.PlusCode     => "+"
+    case OpCodes.MinusCode    => "-"
+    case OpCodes.MultiplyCode => "*"
+    case OpCodes.DivisionCode => "/"
+    case OpCodes.ModuloCode   => "%"
+    case OpCodes.MinCode      => "min"
+    case OpCodes.MaxCode      => "max"
+    case _ => sys.error(s"Cannot find ArithOpName for opcode $opCode")
+  }
+}
 
 /**
   * XOR for two SByteArray
