@@ -108,7 +108,7 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
   //see ErgoLikeInterpreterSpecification."P2SH - 160 bits" test
   override val script: Value[SBoolean.type] = {
     val scriptId = 1: Byte
-    val hashEquals = EQ(Slice(CalcBlake2b256(GetVarByteArray(scriptId)), IntConstant(0), IntConstant(24)),
+    val hashEquals = EQ(Slice(CalcBlake2b256(GetVarByteArray(scriptId).get), IntConstant(0), IntConstant(24)),
       scriptHash)
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     AND(hashEquals, scriptIsCorrect)
