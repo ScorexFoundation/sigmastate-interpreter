@@ -156,11 +156,7 @@ class CompilerItTest extends BaseCtxTests
         val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
         arrSizes.map(f).sum(longPlusMonoid)
       },
-      tree = mkMapCollection(
-        BigIntArrayConstant(bigIntArr1),
-        21,
-        mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))
-      ),
+      tree = mkMapCollection(BigIntArrayConstant(bigIntArr1), mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))),
       Result(res, 27, 4))
   }
   test("bigIntArray_Map_Case") {
@@ -266,21 +262,20 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = BlockValue(Vector(
-        ValDef(1,List(),LongConstant(100)),
-        ValDef(2,List(),SigmaPropConstant(projectPK))),
+        ValDef(1,List(),SigmaPropConstant(projectPK))),
         SigmaOr(Seq(
-          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,ValUse(1,SLong))),SigmaPropConstant(backerPK))),
+          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,LongConstant(100))),SigmaPropConstant(backerPK))),
           SigmaAnd(Seq(
             BoolToSigmaProp(AND(Vector(
-              LT(Height,ValUse(1,SLong)),
-              Exists(Outputs, 21,
-                FuncValue(Vector((3,SBox)),
+              LT(Height,LongConstant(100)),
+              Exists(Outputs,
+                FuncValue(Vector((2,SBox)),
                   BinAnd(
-                    GE(ExtractAmount(ValUse(3,SBox)),LongConstant(1000)),
-                    EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp))))
-                ).asInstanceOf[Value[SBoolean.type]]
+                    GE(ExtractAmount(ValUse(2,SBox)),LongConstant(1000)),
+                    EQ(ExtractScriptBytes(ValUse(2,SBox)), SigmaPropBytes(ValUse(1,SSigmaProp))))
+                )
               )))),
-            ValUse(2,SSigmaProp)
+            ValUse(1,SSigmaProp)
           ))))),
       Result({ TrivialProof.FalseProof }, 40360, 1L)
     )

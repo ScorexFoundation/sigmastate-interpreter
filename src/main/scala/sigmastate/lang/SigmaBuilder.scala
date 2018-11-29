@@ -84,30 +84,23 @@ trait SigmaBuilder {
                            until: Value[SInt.type]): Value[SCollection[IV]]
 
   def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-      id: Byte,
-      mapper: SValue): Value[SCollection[OV]]
+                                                mapper: Value[SFunc]): Value[SCollection[OV]]
 
   def mkFilter[IV <: SType](input: Value[SCollection[IV]],
                             id: Byte,
                             condition: Value[SBoolean.type]): Value[SCollection[IV]]
 
   def mkExists[IV <: SType](input: Value[SCollection[IV]],
-                            id: Byte,
-                            condition: Value[SBoolean.type]): Value[SBoolean.type]
+                            condition: Value[SFunc]): Value[SBoolean.type]
 
   def mkForAll[IV <: SType](input: Value[SCollection[IV]],
-                            id: Byte,
-                            condition: Value[SBoolean.type]): Value[SBoolean.type]
+                            condition: Value[SFunc]): Value[SBoolean.type]
 
   def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc]
 
-  def mkForAll1[IV <: SType](input: Value[SCollection[IV]], condition: Value[SFunc]): BoolValue
-
   def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                          id: Byte,
                           zero: Value[OV],
-                          accId: Byte,
-                          foldOp: SValue): Value[OV]
+                          foldOp: Value[SFunc]): Value[OV]
 
   def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
                                index: Value[SInt.type],
@@ -333,8 +326,9 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray] =
     CalcSha256(input)
 
-  override def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]], id: Byte, mapper: SValue): Value[SCollection[OV]] =
-    MapCollection(input, id, mapper)
+  override def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
+                                                         mapper: Value[SFunc]): Value[SCollection[OV]] =
+    MapCollection(input, mapper)
 
   override def mkAppend[IV <: SType](input: Value[SCollection[IV]],
                                      col2: Value[SCollection[IV]]): Value[SCollection[IV]] =
@@ -351,28 +345,20 @@ class StdSigmaBuilder extends SigmaBuilder {
     Filter(input, id, condition)
 
   override def mkExists[IV <: SType](input: Value[SCollection[IV]],
-                                     id: Byte,
-                                     condition: Value[SBoolean.type]): Value[SBoolean.type] =
-    Exists(input, id, condition)
+                                     condition: Value[SFunc]): Value[SBoolean.type] =
+    Exists(input, condition)
 
   override def mkForAll[IV <: SType](input: Value[SCollection[IV]],
-                                     id: Byte,
-                                     condition: Value[SBoolean.type]): Value[SBoolean.type] =
-    ForAll(input, id, condition)
+                                     condition: Value[SFunc]): Value[SBoolean.type] =
+    ForAll(input, condition)
 
   def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc] =
     FuncValue(args, body)
 
-  override def mkForAll1[IV <: SType](input: Value[SCollection[IV]],
-                                     condition: Value[SFunc]): BoolValue =
-    ForAll1(input, condition)
-
   override def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                                   id: Byte,
                                    zero: Value[OV],
-                                   accId: Byte,
-                                   foldOp: SValue): Value[OV] =
-    Fold(input, id, zero, accId, foldOp)
+                                   foldOp: Value[SFunc]): Value[OV] =
+    Fold(input, zero, foldOp)
 
   override def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
                                       index: Value[SInt.type],

@@ -1,7 +1,8 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import sigmastate.Values.{ByteArrayConstant, LongConstant, TaggedBox, SigmaPropConstant}
+import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.Values.{BlockValue, ByteArrayConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, LongConstant, SigmaPropConstant, TaggedBox, ValDef, ValUse}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
@@ -41,7 +42,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       "backerPubKey" -> backerPubKey,
       "projectPubKey" -> projectPubKey
     )
-    val compiledScript = compile(env,
+    val compiledScript = compileWithCosting(env,
       """{
         | val c1 = HEIGHT >= timeout && backerPubKey
         | val c2 = allOf(Col(
@@ -55,22 +56,32 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
         | }
       """.stripMargin).asBoolValue
 
-    val crowdFundingScript = BinOr(
-      BinAnd(GE(Height, timeout), SigmaPropConstant(backerPubKey).isValid),
-      AND(
-        Seq(
-          LT(Height, timeout),
-          SigmaPropConstant(projectPubKey).isValid,
-          Exists(Outputs, 21,
-            BinAnd(
-              GE(ExtractAmount(TaggedBox(21)), minToRaise),
-              EQ(ExtractScriptBytes(TaggedBox(21)), SigmaPropConstant(projectPubKey).propBytes)
-            )
-          )
-        )
-      )
+    val expectedScript = BlockValue(
+      Vector(
+        ValDef(1, SigmaPropConstant(projectPubKey))),
+      SigmaOr(List(
+        SigmaAnd(List(
+          BoolToSigmaProp(GE(Height, LongConstant(100))),
+          SigmaPropConstant(backerPubKey))
+        ),
+        SigmaAnd(List(
+          BoolToSigmaProp(AND(ConcreteCollection(Vector(
+            LT(Height, LongConstant(100)),
+            OR(
+              MapCollection(Outputs,
+                FuncValue(Vector((2, SBox)),
+                  BinAnd(
+                    GE(ExtractAmount(ValUse(2, SBox)), LongConstant(1000)),
+                    EQ(ExtractScriptBytes(ValUse(2, SBox)), SigmaPropBytes(ValUse(1, SSigmaProp)))
+                  )
+                )
+              ).asCollection[SBoolean.type])
+          ), SBoolean))),
+          ValUse(1, SSigmaProp)))
+      ))
     )
-    compiledScript shouldBe crowdFundingScript
+
+    compiledScript shouldBe expectedScript
 
     // Try a version of the script that matches the white paper -- should give the same result
     val altEnv = Map(
@@ -80,7 +91,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       "projectPubKey" -> projectPubKey
     )
 
-    val altScript = compile(altEnv,
+    val altScript = compileWithCosting(altEnv,
       """
         |       {
         |                val fundraisingFailure = HEIGHT >= deadline && backerPubKey

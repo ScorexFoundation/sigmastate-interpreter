@@ -598,6 +598,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       STuple(se.fieldElems.map(elemToSType(_)).toIndexedSeq)
     case ce: ColElem[_, _] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_, _] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
+    case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
     case _ => error(s"Don't know how to convert Elem $e to SType")
   }
 
@@ -936,7 +937,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         RCostedStruct(struct(fields), costedBuilder.ConstructTupleCost)
 
       case node: BooleanTransformer[_] =>
-        val cond = node.condition.asValue[SBoolean.type]
         val eIn = stypeToElem(node.input.tpe.elemType)
         val xs = asRep[CostedCol[Any]](eval(node.input))
         val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
@@ -945,9 +945,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           case _: BoxElem[_] => element[CostedBox].asElem[Costed[Any]]
           case _ => costedElement(eAny)
         }
-
+        val (id, mapper) = node.condition match {
+          case Terms.Lambda(_, Seq((n, _)), _, Some(m)) => (n, m)
+          case FuncValue(Seq((n, _)), m) => (n, m)
+        }
         val condC = fun { x: Rep[Costed[Any]] =>
-          evalNode(ctx, env + (node.id -> x), cond)
+          evalNode(ctx, env + (id -> x), mapper)
         }
         val (calcF, costF) = splitCostedFunc2(condC, okRemoveIsValid = true)
         val values = xs.values.map(calcF)
@@ -966,18 +969,22 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
         withDefaultSize(value, cost)
 
-      case MapCollection(input, id, mapper) =>
+      case MapCollection(input, sfunc) =>
         val eIn = stypeToElem(input.tpe.elemType)
-        val xs = asRep[CostedCol[Any]](eval(input))
-        implicit val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
+        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any], _]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
+        val (id, mapper) = sfunc match {
+          case Terms.Lambda(_, Seq((n, _)), _, Some(m)) => (n, m)
+          case FuncValue(Seq((n, _)), m) => (n, m)
+        }
         val mapperC = fun { x: Rep[Costed[Any]] =>
           evalNode(ctx, env + (id -> x), mapper)
         }
-        val res = xs.mapCosted(mapperC)
+        val res = inputC.mapCosted(mapperC)
         res
 
-      case Fold(input, id, zero, accId, foldOp) =>
+      case Fold(input, zero, sfunc) =>
         val eItem = stypeToElem(input.tpe.elemType)
         val eState = stypeToElem(zero.tpe)
         (eState, eItem) match { case (eState: Elem[s], eItem: Elem[a]) =>
@@ -991,7 +998,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
           val foldOpC = fun { in: Rep[CostedPair[s, a]] =>
             val acc = in.l; val item = in.r
-            val out = evalNode(ctx, env + (id -> item, accId -> acc), foldOp)
+            val out = sfunc match {
+              case Terms.Lambda(_, Seq((accN, _), (n, _)), _, Some(op)) =>
+                evalNode(ctx, env + (accN -> acc, n -> item), op)
+              case FuncValue(Seq((tpl, _)), op) =>
+                evalNode(ctx, env + (tpl -> in), op)
+            }
             asRep[Costed[s]](out)
           }
           val res = inputC.foldCosted(zeroC, asRep[Costed[(s,a)] => Costed[s]](foldOpC))
@@ -1267,6 +1279,20 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val rValTh = Thunk(evalNode(ctx, env, r).value)
         val rCost = evalNode(ctx, env, r).cost
         withDefaultSize(And.applyLazy(lC.value, rValTh), lC.cost + rCost + costOf(node))
+
+      case SigmaAnd(items) =>
+        val itemsC = items.map(eval)
+        val res = sigmaDslBuilder.allZK(colBuilder.fromItems(itemsC.map(_.value.asRep[SigmaProp]): _*))
+        val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
+        val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
+        withDefaultSize(res, cost)
+
+      case SigmaOr(items) =>
+        val itemsC = items.map(eval)
+        val res = sigmaDslBuilder.anyZK(colBuilder.fromItems(itemsC.map(_.value.asRep[SigmaProp]): _*))
+        val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
+        val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
+        withDefaultSize(res, cost)
 
       case op: Relation[t,_] if op.tpe == SBigInt =>
         import OpCodes._

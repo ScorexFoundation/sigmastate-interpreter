@@ -26,7 +26,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 15000000).foreach(_ => hf(block))
+    (1 to 20000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -141,10 +141,12 @@ class SpamSpecification extends SigmaTestingCommons {
       EQ(LongConstant(6), LongConstant(6)))
 
     val spamScript =
-      Exists(Outputs, 21,
-        AND(
-          GE(ExtractAmount(TaggedBox(21)), LongConstant(10)),
-          EQ(ExtractScriptBytes(TaggedBox(21)), ByteArrayConstant(propToCompare.bytes))
+      Exists(Outputs,
+        FuncValue(Vector((1, SBox)),
+          AND(
+            GE(ExtractAmount(ValUse(1, SBox)), LongConstant(10)),
+            EQ(ExtractScriptBytes(ValUse(1, SBox)), ByteArrayConstant(propToCompare.bytes))
+          )
         )
       )
 
@@ -177,8 +179,10 @@ class SpamSpecification extends SigmaTestingCommons {
     }
     val prover = new ErgoLikeTestProvingInterpreter(maxCost = Long.MaxValue)
 
-    val prop = Exists(Inputs, 21, Exists(Outputs, 22,
-      EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(TaggedBox(22)))))
+    val prop = Exists(Inputs,
+      FuncValue(Vector((1, SBox)),
+        Exists(Outputs,
+          FuncValue(Vector((2, SBox)), EQ(ExtractScriptBytes(ValUse(1, SBox)), ExtractScriptBytes(ValUse(2, SBox)))))))
 
     val inputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(5))))
     val outputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(6))))

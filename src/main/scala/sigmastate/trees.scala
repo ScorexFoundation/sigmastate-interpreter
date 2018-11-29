@@ -473,6 +473,16 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
   override def tpe: T = left.tpe
   override def opName: String = ArithOp.opcodeToArithOpName(opCode)
+
+  override def toString: String = opCode match {
+    case OpCodes.PlusCode     => s"Plus($left, $right)"
+    case OpCodes.MinusCode    => s"Minus($left, $right)"
+    case OpCodes.MultiplyCode => s"Multiply($left, $right)"
+    case OpCodes.DivisionCode => s"Divide($left, $right)"
+    case OpCodes.ModuloCode   => s"Modulo($left, $right)"
+    case OpCodes.MinCode      => s"Min($left, $right)"
+    case OpCodes.MaxCode      => s"Max($left, $right)"
+  }
 }
 
 object ArithOp {

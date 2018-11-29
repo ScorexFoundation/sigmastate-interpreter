@@ -23,26 +23,35 @@ class ErgoTreeBuildingTest extends BaseCtxTests
   }
 
   test("binary operations") {
-    build(emptyEnv, "one+one", "1 + 1", BlockValue(Vector(ValDef(1, IntConstant(1))), ArithOp(ValUse(1, SInt), ValUse(1, SInt), PlusCode)))
-    build(emptyEnv, "oneL-oneL", "1L - 1L", BlockValue(Vector(ValDef(1, LongConstant(1))), ArithOp(ValUse(1, SLong), ValUse(1, SLong), MinusCode)))
+    build(emptyEnv, "one+one",
+      "1 + 1",
+      Plus(IntConstant(1), IntConstant(1))
+    )
+    build(emptyEnv, "oneL-oneL",
+      "1L - 1L",
+      Minus(LongConstant(1), LongConstant(1))
+    )
     Seq((">", GT[SType] _), ("<", LT[SType] _), (">=", GE[SType] _), ("<=", LE[SType] _), ("==", EQ[SType] _), ("!=", NEQ[SType] _))
           .foreach { case (op, mk) =>
             build(emptyEnv, s"one_${op}_one", s"1 $op 2", mk(IntConstant(1), IntConstant(2)))
           }
     build(emptyEnv, "logical", "1 > 1 || 2 < 1",
-      BlockValue(
-        Vector(ValDef(1, IntConstant(1))),
-        BinOr(GT(ValUse(1,SInt),ValUse(1,SInt)),LT(IntConstant(2),ValUse(1,SInt)))))
+      BinOr(GT(IntConstant(1),IntConstant(1)),LT(IntConstant(2),IntConstant(1)))
+    )
     build(emptyEnv, "logical2", "1 > 1 && 2 < 1 || 2 > 1",
-      BlockValue(Vector(
-        ValDef(1,List(),IntConstant(1)),
-        ValDef(2,List(),IntConstant(2))),
-        BinOr(BinAnd(GT(ValUse(1,SInt),ValUse(1,SInt)),LT(ValUse(2,SInt),ValUse(1,SInt))),GT(ValUse(2,SInt),ValUse(1,SInt)))))
+      BinOr(
+        BinAnd(
+          GT(IntConstant(1), IntConstant(1)),
+          LT(IntConstant(2), IntConstant(1))
+        ),
+        GT(IntConstant(2), IntConstant(1))
+      )
+    )
     build(emptyEnv, "logical3", "OUTPUTS.size > 1 || OUTPUTS.size < 1",
-      BlockValue(Vector(
-        ValDef(1,List(),SizeOf(Outputs)),
-        ValDef(2,List(),IntConstant(1))),
-        BinOr(GT(ValUse(1,SInt),ValUse(2,SInt)),LT(ValUse(1,SInt),ValUse(2,SInt)))))
+      BlockValue(
+        Vector(ValDef(1, List(), SizeOf(Outputs))),
+        BinOr(GT(ValUse(1, SInt), IntConstant(1)), LT(ValUse(1, SInt), IntConstant(1))))
+    )
   }
 
   test("context data") {
@@ -57,9 +66,9 @@ class ErgoTreeBuildingTest extends BaseCtxTests
     build(emptyEnv, "lam1", "{ (x: Long) => HEIGHT + x }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
     build(emptyEnv, "lam2", "{ val f = { (x: Long) => HEIGHT + x }; f }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
     build(emptyEnv, "lam3", "{ OUTPUTS.exists { (x: Box) => HEIGHT == x.value } }",
-      Exists(Outputs, 21, FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox)))).asBoolValue))
+      Exists(Outputs, FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
     build(emptyEnv, "lam4", "{ OUTPUTS.forall { (x: Box) => HEIGHT == x.value } }",
-      ForAll1(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
+      ForAll(Outputs,FuncValue(Vector((1,SBox)),EQ(Height,ExtractAmount(ValUse(1,SBox))))))
     build(emptyEnv, "lam5", "{ val f = { (x: Long) => HEIGHT + x }; f(10L) }",
       Apply(FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))), Vector(LongConstant(10))))
     build(emptyEnv, "lam6", "{ val f = { (x: Long) => HEIGHT + x }; f(10L) + f(20L) }",
@@ -76,19 +85,18 @@ class ErgoTreeBuildingTest extends BaseCtxTests
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     build(env, "CrowdFunding", crowdFundingScript,
       BlockValue(Vector(
-        ValDef(1,List(),LongConstant(100)),
-        ValDef(2,List(),SigmaPropConstant(projectPK))),
+        ValDef(1,List(),SigmaPropConstant(projectPK))),
         SigmaOr(Seq(
-          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,ValUse(1,SLong))),SigmaPropConstant(backerPK))),
+          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,LongConstant(100))),SigmaPropConstant(backerPK))),
           SigmaAnd(Seq(
             BoolToSigmaProp(AND(Vector(
-              LT(Height,ValUse(1,SLong)),
-              Exists(Outputs, 21, FuncValue(Vector((3,SBox)),
+              LT(Height,LongConstant(100)),
+              Exists(Outputs, FuncValue(Vector((2,SBox)),
                   BinAnd(
-                    GE(ExtractAmount(ValUse(3,SBox)),LongConstant(1000)),
-                    EQ(ExtractScriptBytes(ValUse(3,SBox)), SigmaPropBytes(ValUse(2,SSigmaProp))))).asBoolValue
+                    GE(ExtractAmount(ValUse(2,SBox)),LongConstant(1000)),
+                    EQ(ExtractScriptBytes(ValUse(2,SBox)), SigmaPropBytes(ValUse(1,SSigmaProp)))))
               )))),
-            ValUse(2,SSigmaProp)
+            ValUse(1,SSigmaProp)
           ))))))
   }
 }

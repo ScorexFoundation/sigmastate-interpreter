@@ -2,10 +2,9 @@ package sigmastate.eval
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate._
-import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
+import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value, FalseLeaf}
 import sigmastate.serialization.OpCodes._
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
-import java.lang.reflect.Method
+import org.ergoplatform._
 import java.math.BigInteger
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
@@ -89,6 +88,13 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     }
   }
 
+  object IsLogicalUnOp {
+    def unapply(op: UnOp[_,_]): Option[BoolValue => Value[SBoolean.type]] = op match {
+      case Not => Some({ v: BoolValue => builder.mkEQ(v, FalseLeaf) })
+      case _ => None
+    }
+  }
+
   object IsContextProperty {
     def unapply(d: Def[_]): Option[SValue] = d match {
       case ContextM.HEIGHT(_) => Some(Height)
@@ -103,6 +109,19 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     def unapply(d: Def[_]): Option[Def[_]] = d match {
       case _: SigmaDslBuilder | _: ColBuilder => Some(d)
       case _ => None
+    }
+  }
+
+  object IsExtractableConstant {
+    def unapply(d: Def[_]): Option[Def[_]] = d match {
+      // in case of GroupElement constant (ProveDlog) different constants have different meaning,
+      // thus it is ok for them to create ValDef
+      case c: Const[_] if c.elem.isInstanceOf[WECPointElem[_]] => Some(d)
+      // to increase effect of constant segregation we need to treat the constants specially
+      // and don't create ValDef even if the constant is used more than one time,
+      // because two equal constants don't always have the same meaning.
+      case _: Const[_] => None
+      case _ => Some(d)
     }
   }
 
@@ -143,13 +162,18 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
         val colTpe = elemToSType(s.elem)
         mkConstant[colTpe.type](wc.constValue.asInstanceOf[colTpe.WrappedType], colTpe)
+      case CBM.fromItems(_, colSyms, elemT) =>
+        val elemTpe = elemToSType(elemT)
+        val col = colSyms.map(recurse(_).asValue[elemTpe.type])
+        mkConcreteCollection[elemTpe.type](col.toIndexedSeq, elemTpe)
+
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
         mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
       case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)
-        mkTaggedVariable(id, tpe)
+        mkGetVar(id, tpe)
       case BIM.subtract(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, MinusCode)
       case BIM.add(In(x), In(y)) =>
@@ -169,25 +193,54 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
+      case Def(ApplyUnOp(IsLogicalUnOp(mkNode), xSym)) =>
+        mkNode(recurse(xSym))
+
+      case ColM.apply(colSym, In(index)) =>
+        val col = recurse(colSym)
+        mkByIndex(col, index.asIntValue, None)
       case ColM.length(col) =>
         utxo.SizeOf(recurse(col).asCollection[SType])
-
       case ColM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
-        mkExists(col.asCollection[SType], 21, p.asBoolValue)
-
+        mkExists(col.asCollection[SType], p.asFunc)
       case ColM.forall(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
-        mkForAll1(col.asCollection[SType], p.asFunc)
-
+        mkForAll(col.asCollection[SType], p.asFunc)
       case ColM.map(colSym, fSym) =>
         val Seq(col, f) = Seq(colSym, fSym).map(recurse)
-        mkMapCollection(col.asCollection[SType], 21, f.asFunc)
+        mkMapCollection(col.asCollection[SType], f.asFunc)
+      case ColM.getOrElse(colSym, In(index), defValSym) =>
+        val col = recurse(colSym)
+        val defVal = recurse(defValSym)
+        mkByIndex(col, index.asIntValue, Some(defVal))
+      case ColM.append(col1Sym, col2Sym) =>
+        val Seq(col1, col2) = Seq(col1Sym, col2Sym).map(recurse)
+        mkAppend(col1, col2)
+      case ColM.slice(colSym, In(from), In(until)) =>
+        mkSlice(recurse(colSym), from.asIntValue, until.asIntValue)
+      case ColM.fold(colSym, zeroSym, pSym) =>
+        val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
+        mkFold(col, zero, p.asFunc)
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))
       case BoxM.propositionBytes(In(box)) =>
         mkExtractScriptBytes(box.asBox)
+      case BoxM.getReg(In(box), regId, _) =>
+        val tpe = elemToSType(s.elem).asOption
+        mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
+      case BoxM.creationInfo(In(box)) =>
+        mkExtractCreationInfo(box.asBox)
+      case BoxM.id(In(box)) =>
+        mkExtractId(box.asBox)
+
+      case OM.get(In(optionSym)) =>
+        mkOptionGet(optionSym.asValue[SOption[SType]])
+      case OM.getOrElse(In(optionSym), In(defVal)) =>
+        mkOptionGetOrElse(optionSym.asValue[SOption[SType]], defVal)
+      case OM.isDefined(In(optionSym)) =>
+        mkOptionIsDefined(optionSym.asValue[SOption[SType]])
 
       case Def(AnyZk(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asSigmaProp)
@@ -202,6 +255,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(AllOf(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asBoolValue)
         mkAllOf(col)
+      case Def(SDBM.allOf(_,  items)) =>
+        mkAND(recurse(items))
+      case Def(SDBM.anyOf(_,  items)) =>
+        mkOR(recurse(items))
 
       case SigmaM.and_bool_&&(In(prop), In(cond)) =>
         SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
@@ -225,6 +282,29 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         SigmaPropConstant(mkProveDlog(g.asGroupElement))
       case Def(ProveDHTEvidenceCtor(In(g), In(h), In(u), In(v))) =>
         SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement))
+
+      case SDBM.sigmaProp(_, In(cond)) =>
+        mkBoolToSigmaProp(cond.asBoolValue)
+
+      case SDBM.byteArrayToBigInt(_, colSym) =>
+        mkByteArrayToBigInt(recurse(colSym))
+
+      case Def(IfThenElseLazy(condSym, thenPSym, elsePSym)) =>
+        val Seq(cond, thenP, elseP) = Seq(condSym, thenPSym, elsePSym).map(recurse)
+        mkIf(cond, thenP, elseP)
+
+      case Def(First(pair)) =>
+        mkSelectField(recurse(pair), 1)
+      case Def(Second(pair)) =>
+        mkSelectField(recurse(pair), 2)
+      case Def(FieldApply(In(data), IsTupleFN(i))) =>
+        mkSelectField(data.asTuple, i)
+
+      case Def(Downcast(inputSym, toSym)) =>
+        mkDowncast(recurse(inputSym).asNumValue, elemToSType(toSym).asNumType)
+      case Def(Upcast(inputSym, toSym)) =>
+        mkUpcast(recurse(inputSym).asNumValue, elemToSType(toSym).asNumType)
+
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
     }
@@ -240,7 +320,11 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     var curEnv = env
     for (te <- subG.schedule) {
       val s = te.sym; val d = te.rhs
-      if (mainG.hasManyUsagesGlobal(s) && IsContextProperty.unapply(d).isEmpty && IsInternalDef.unapply(d).isEmpty) {
+      if (mainG.hasManyUsagesGlobal(s)
+        && IsContextProperty.unapply(d).isEmpty
+        && IsInternalDef.unapply(d).isEmpty
+        && IsExtractableConstant.unapply(d).nonEmpty)
+      {
         val rhs = buildValue(mainG, curEnv, s, curId, constantsProcessing)
         curId += 1
         val vd = ValDef(curId, Seq(), rhs)

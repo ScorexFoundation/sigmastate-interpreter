@@ -105,6 +105,7 @@ object SType {
     def isNumType: Boolean = tpe.isInstanceOf[SNumericType]
     def asNumType: SNumericType = tpe.asInstanceOf[SNumericType]
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
+    def asOption[T <: SType]: SOption[T] = tpe.asInstanceOf[SOption[T]]
     def whenFunc[T](action: SFunc => Unit) = if(tpe.isInstanceOf[SFunc]) action(tpe.asFunc)
     def asCollection[T <: SType] = tpe.asInstanceOf[SCollection[T]]
     def classTag[T <: SType#WrappedType]: ClassTag[T] = (tpe match {

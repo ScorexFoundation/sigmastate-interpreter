@@ -2,17 +2,15 @@ package sigmastate.utxo
 
 import java.lang.reflect.InvocationTargetException
 
-import org.ergoplatform.ErgoBox.{R6, R8}
-import org.ergoplatform.{ErgoLikeContext, ErgoBox, Self, Height}
+import org.ergoplatform.ErgoBox.{R4, R6, R8}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, Height, Self}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.OptionUnwrapNone
 import special.sigma.InvalidType
-
 import scalan.BaseCtxTests
 
 class BasicOpsSpecification extends SigmaTestingCommons {
@@ -59,7 +57,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       }
     }
 
-    val prop = compile(env, script).asBoolValue
+    val prop = compileWithCosting(env, script).asBoolValue
     prop shouldBe propExp
 
     val p3 = prover.dlogSecrets(2).publicImage
@@ -92,93 +90,95 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test("R3", env, ext,
       "{ getVar[Int](intVar2).get > getVar[Int](intVar1).get && getVar[Int](intVar1).get < getVar[Int](intVar2).get }",
-      BinAnd(GT(GetVarInt(intVar2).get, GetVarInt(intVar1).get),
-        LT(GetVarInt(intVar1).get, GetVarInt(intVar2).get))
+      BlockValue(
+        Vector(ValDef(1, GetVarInt(2).get), ValDef(2, GetVarInt(1).get)),
+        BinAnd(GT(ValUse(1, SInt), ValUse(2, SInt)), LT(ValUse(2, SInt), ValUse(1, SInt)))),
     )
     test("R4", env, ext,
       "{ getVar[Int](intVar2).get >= getVar[Int](intVar1).get && getVar[Int](intVar1).get <= getVar[Int](intVar2).get }",
-      BinAnd(GE(GetVarInt(intVar2).get, GetVarInt(intVar1).get),
-        LE(GetVarInt(intVar1).get, GetVarInt(intVar2).get))
+      BlockValue(
+        Vector(ValDef(1, GetVarInt(2).get), ValDef(2, GetVarInt(1).get)),
+        BinAnd(GE(ValUse(1, SInt), ValUse(2, SInt)), LE(ValUse(2, SInt), ValUse(1, SInt)))),
     )
     test("R5", env, ext,
       "{ getVar[Byte](byteVar2).get > getVar[Byte](byteVar1).get && getVar[Byte](byteVar1).get < getVar[Byte](byteVar2).get }",
-      BinAnd(GT(GetVarByte(byteVar2).get, GetVarByte(byteVar1).get),
-        LT(GetVarByte(byteVar1).get, GetVarByte(byteVar2).get))
+      BlockValue(
+        Vector(ValDef(1, GetVarByte(4).get), ValDef(2, GetVarByte(3).get)),
+        BinAnd(GT(ValUse(1, SByte), ValUse(2, SByte)), LT(ValUse(2, SByte), ValUse(1, SByte)))),
     )
     test("R6", env, ext,
       "{ getVar[Byte](byteVar2).get >= getVar[Byte](byteVar1).get && getVar[Byte](byteVar1).get <= getVar[Byte](byteVar2).get }",
-      BinAnd(GE(GetVarByte(byteVar2).get, GetVarByte(byteVar1).get),
-        LE(GetVarByte(byteVar1).get, GetVarByte(byteVar2).get))
+      BlockValue(
+        Vector(ValDef(1, GetVarByte(4).get), ValDef(2, List(), GetVarByte(3).get)),
+        BinAnd(GE(ValUse(1, SByte), ValUse(2, SByte)), LE(ValUse(2, SByte), ValUse(1, SByte)))),
     )
     test("R7", env, ext,
       "{ getVar[BigInt](bigIntVar2).get > getVar[BigInt](bigIntVar1).get && getVar[BigInt](bigIntVar1).get < getVar[BigInt](bigIntVar2).get }",
-      BinAnd(
-        GT(GetVarBigInt(bigIntVar2).get, GetVarBigInt(bigIntVar1).get),
-        LT(GetVarBigInt(bigIntVar1).get, GetVarBigInt(bigIntVar2).get))
+      BlockValue(
+        Vector(ValDef(1, GetVarBigInt(6).get), ValDef(2, List(), GetVarBigInt(5).get)),
+        BinAnd(GT(ValUse(1, SBigInt), ValUse(2, SBigInt)), LT(ValUse(2, SBigInt), ValUse(1, SBigInt)))),
     )
     test("R8", env, ext,
       "{ getVar[BigInt](bigIntVar2).get >= getVar[BigInt](bigIntVar1).get && getVar[BigInt](bigIntVar1).get <= getVar[BigInt](bigIntVar2).get }",
-      BinAnd(
-        GE(GetVarBigInt(bigIntVar2).get, GetVarBigInt(bigIntVar1).get),
-        LE(GetVarBigInt(bigIntVar1).get, GetVarBigInt(bigIntVar2).get))
+      BlockValue(
+        Vector(ValDef(1, GetVarBigInt(6).get), ValDef(2, List(), GetVarBigInt(5).get)),
+        BinAnd(GE(ValUse(1, SBigInt), ValUse(2, SBigInt)), LE(ValUse(2, SBigInt), ValUse(1, SBigInt)))),
     )
   }
 
   property("SigmaProp operations") {
     test("Prop1", env, ext,
       "{ getVar[SigmaProp](proofVar1).get.isValid }",
-      GetVarSigmaProp(propVar1).get.isValid
+      GetVarSigmaProp(propVar1).get
     )
     test("Prop2", env, ext,
       "{ getVar[SigmaProp](proofVar1).get || getVar[SigmaProp](proofVar2).get }",
-      BinOr(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
+      SigmaOr(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
     )
     test("Prop3", env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[SigmaProp](proofVar2).get }",
-      BinAnd(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
+      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
     )
     test("Prop4", env, ext,
       "{ getVar[SigmaProp](proofVar1).get.isValid && getVar[SigmaProp](proofVar2).get }",
-      BinAnd(GetVarSigmaProp(propVar1).get.isValid, GetVarSigmaProp(propVar2).get.isValid)
+      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
     )
     test("Prop5", env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[Int](intVar1).get == 1 }",
-      BinAnd(GetVarSigmaProp(propVar1).get.isValid, EQ(GetVarInt(intVar1).get, 1))
+      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, BoolToSigmaProp(EQ(GetVarInt(intVar1).get, 1))))
     )
     test("Prop6", env, ext,
       "{ getVar[Int](intVar1).get == 1 || getVar[SigmaProp](proofVar1).get }",
-      BinOr(EQ(GetVarInt(intVar1).get, 1), GetVarSigmaProp(propVar1).get.isValid)
+      SigmaOr(Seq(BoolToSigmaProp(EQ(GetVarInt(intVar1).get, 1)), GetVarSigmaProp(propVar1).get))
     )
     test("Prop7", env, ext,
       "{ SELF.R4[SigmaProp].get.isValid }",
-      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
       true
     )
     test("Prop8", env, ext,
       "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
-      BinAnd(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+      SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
       true
     )
     test("Prop9", env, ext,
       "{ allOf(Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      AND(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+      SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
       true
     )
     test("Prop10", env, ext,
       "{ anyOf(Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      OR(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid, GetVarSigmaProp(propVar1).get.isValid),
+      SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
       true
     )
     test("Prop11", env, ext,
         "{ Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isValid }) }",
-        ForAll(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get),
-          21, SigmaPropIsValid(TaggedSigmaProp(21))),
+      SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get , GetVarSigmaProp(propVar1).get)),
         true
         )
     test("Prop12", env, ext,
       "{ Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).exists({ (p: SigmaProp) => p.isValid }) }",
-      Exists(ConcreteCollection(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get),
-        21, SigmaPropIsValid(TaggedSigmaProp(21))),
+      SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
       true
     )
     test("Prop13", env, ext,
@@ -208,7 +208,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test("Arith4", env, ext,
       "{ getVar[Int](intVar2).get / 2 + getVar[Int](intVar1).get == 2 }",
-      EQ(Plus(Divide(GetVarInt(intVar2).get, IntConstant(2)), GetVarInt(intVar1).get), IntConstant(2))
+      EQ(Plus(Divide(GetVarInt(2).get, IntConstant(2)), GetVarInt(1).get),IntConstant(2)),
     )
     test("Arith5", env, ext,
       "{ getVar[Int](intVar2).get % 2 + getVar[Int](intVar1).get == 1 }",
@@ -219,20 +219,18 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   property("Tuple operations") {
     test("Tup1", env, ext,
       "{ (getVar[Int](intVar1).get, getVar[Int](intVar2).get)._1 == 1 }",
-      EQ(SelectField(Tuple(GetVarInt(intVar1).get, GetVarInt(intVar2).get), 1), IntConstant(1))
+      EQ(GetVarInt(intVar1).get, IntConstant(1))
     )
     test("Tup2", env, ext,
       "{ (getVar[Int](intVar1).get, getVar[Int](intVar2).get)._2 == 2 }",
-      EQ(SelectField(Tuple(GetVarInt(intVar1).get, GetVarInt(intVar2).get), 2), IntConstant(2))
+      EQ(GetVarInt(intVar2).get, IntConstant(2))
     )
     test("Tup3", env, ext,
       """{ val p = (getVar[Int](intVar1).get, getVar[Int](intVar2).get)
         |  val res = p._1 + p._2
         |  res == 3 }""".stripMargin,
       {
-        val p = Tuple(GetVarInt(intVar1).get, GetVarInt(intVar2).get)
-        val res = Plus(SelectField(p, 1).asIntValue, SelectField(p, 2).asIntValue)
-        EQ(res, IntConstant(3))
+        EQ(Plus(GetVarInt(intVar1).get, GetVarInt(intVar2).get), IntConstant(3))
       }
     )
   }
@@ -242,15 +240,13 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p.size == 2 }""".stripMargin,
     {
-      val p = Tuple(GetVarInt(intVar1).get, GetVarByte(byteVar2).get)
-      EQ(SizeOf(p), IntConstant(2))
+      TrueLeaf
     }, true)
     test("TupCol2", env, ext,
     """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p(0) == 1 }""".stripMargin,
     {
-      val p = Tuple(GetVarInt(intVar1).get, GetVarByte(byteVar2).get)
-      EQ(SelectField(p, 1), IntConstant(1))
+      EQ(GetVarInt(intVar1).get, IntConstant(1))
     })
 
     val dataVar = (lastExtVar + 1).toByte
@@ -276,7 +272,12 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        Exists(data, 21, EQ(SelectField(TaggedVariable(21, STuple(SCollection(SByte), SLong)), 2), LongConstant(10)))
+        OR(
+          MapCollection(data,
+            FuncValue(
+              Vector((1, STuple(SByteArray, SLong))),
+              EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
+          ).asCollection[SBoolean.type])
       }
     )
     test("TupCol5", env1, ext1,
@@ -286,8 +287,12 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        val p = TaggedVariable(21, STuple(SCollection(SByte), SLong))
-        ForAll(data, 21, GT(SizeOf(SelectField(p, 1).asValue[SByteArray]), IntConstant(0)))
+        AND(
+          MapCollection(data,
+            FuncValue(
+              Vector((1, STuple(SByteArray, SLong))),
+              GT(SizeOf(SelectField(ValUse(1, STuple(SByteArray, SLong)), 1).asCollection[SByte.type]), IntConstant(0)))
+          ).asCollection[SBoolean.type])
       }
     )
     test("TupCol6", env1, ext1,
@@ -297,9 +302,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        val p = TaggedVariable(21, STuple(SCollection(SByte), SLong))
-        val swapped = MapCollection(data, 21, Tuple(SelectField(p, 2), SelectField(p, 1))).asCollection[STuple]
-        EQ(SizeOf(swapped), IntConstant(1))
+        EQ(SizeOf(data), IntConstant(1))
       }
     )
 
@@ -331,7 +334,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   property("ExtractRegisterAs") {
     test("Extract1", env, ext,
       "{ SELF.R4[SigmaProp].get.isValid }",
-      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get.isValid,
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
       true
     )
     // wrong type
@@ -380,7 +383,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     // register should be empty
     test("OptGet2", env, ext,
       "{ SELF.R6[Int].getOrElse(3) == 3 }",
-      EQ(ExtractRegisterAs[SInt.type](Self, R6).getOrElse(IntConstant(3)), IntConstant(3)),
+      EQ(ExtractRegisterAs(Self, R6, SOption(SInt)).getOrElse(IntConstant(3)), IntConstant(3)),
       true
     )
     test("OptGet3", env, ext,
@@ -390,7 +393,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     // there should be no variable with this id
     test("OptGet4", env, ext,
-      "{ getVar[Int](99).getOrElse(3) == 3 }",
+    "{ getVar[Int](99).getOrElse(3) == 3 }",
       EQ(GetVarInt(99).getOrElse(IntConstant(3)), IntConstant(3)),
       true
     )
@@ -448,7 +451,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     test("prop1", env, ext, "sigmaProp(HEIGHT >= 0)",
       BoolToSigmaProp(GE(Height, LongConstant(0))), true)
     test("prop2", env, ext, "sigmaProp(HEIGHT >= 0) && getVar[SigmaProp](proofVar1).get",
-      BinAnd(BoolToSigmaProp(GE(Height, LongConstant(0))).isValid, GetVarSigmaProp(propVar1).get.isValid), true)
+      SigmaAnd(Vector(BoolToSigmaProp(GE(Height, LongConstant(0))), GetVarSigmaProp(propVar1).get)), true)
 //    println(CostTableStat.costTableString)
   }
 
