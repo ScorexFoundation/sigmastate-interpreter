@@ -6,7 +6,7 @@ import com.google.common.primitives.Ints
 import scapi.sigma.DLogProtocol.ProveDlog
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
-import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, TaggedByteArray, Value}
+import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, Value, GetVarByteArray}
 import sigmastate._
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.utxo.{DeserializeContext, Slice}
@@ -108,7 +108,7 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
   //see ErgoLikeInterpreterSpecification."P2SH - 160 bits" test
   override val script: Value[SBoolean.type] = {
     val scriptId = 1: Byte
-    val hashEquals = EQ(Slice(CalcBlake2b256(TaggedByteArray(scriptId)), IntConstant(0), IntConstant(24)),
+    val hashEquals = EQ(Slice(CalcBlake2b256(GetVarByteArray(scriptId)), IntConstant(0), IntConstant(24)),
       scriptHash)
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     AND(hashEquals, scriptIsCorrect)
@@ -206,6 +206,7 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
   def fromProposition(proposition: Value[SType]): Try[ErgoAddress] = Try {
     proposition match {
       case d @ ProveDlog(_) => P2PKAddress(d)
+      //TODO move this pattern to PredefScripts
       case a @ AND(ConcreteCollection(Vector(EQ(Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)), _), _), _)) =>
         Pay2SHAddress(a)
       case b: Value[SBoolean.type]@unchecked if b.tpe == SBoolean => Pay2SAddress(b)
