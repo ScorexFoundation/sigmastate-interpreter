@@ -36,7 +36,7 @@ object DataSerializer {
       val p = v.asInstanceOf[SigmaBoolean]
       w.putValue(p)
     case SBox =>
-      ErgoBox.serializer.serialize(v.asInstanceOf[ErgoBox], w)
+      ErgoBox.sigmaSerializer.serialize(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
       AvlTreeData.serializer.serialize(v.asInstanceOf[AvlTreeData], w)
     case tCol: SCollectionType[a] =>
@@ -87,7 +87,7 @@ object DataSerializer {
       val p = r.getValue().asInstanceOf[SigmaBoolean]
       p
     case SBox =>
-      ErgoBox.serializer.parse(r)
+      ErgoBox.sigmaSerializer.parse(r)
     case SAvlTree =>
       AvlTreeData.serializer.parse(r)
     case tCol: SCollectionType[a] =>
