@@ -31,8 +31,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val e = compile(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
-    val exp = EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes))
+    val e = compileWithCosting(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
+    val exp = TrueLeaf
     e shouldBe exp
 
     verifier.reduceToCrypto(ctx, exp)
