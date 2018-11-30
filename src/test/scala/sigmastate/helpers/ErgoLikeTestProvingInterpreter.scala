@@ -1,10 +1,10 @@
 package sigmastate.helpers
 
-import scapi.sigma.DLogProtocol.DLogProverInput
-import scapi.sigma.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
+import sigmastate.basics.DLogProtocol.DLogProverInput
 import scorex.utils.Random
 import sigmastate.SType
 import sigmastate.Values._
+import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.interpreter.ProverInterpreter
 import sigmastate.utxo.{CostTable, ErgoLikeTestInterpreter}
 

@@ -2,11 +2,11 @@ package sigmastate
 
 import java.util
 
-import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
-import scapi.sigma.VerifierMessage.Challenge
-import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
+import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.SigmaBoolean
 import gf2t.GF2_192_Poly
+import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
 
 sealed trait UncheckedTree extends ProofTree
 

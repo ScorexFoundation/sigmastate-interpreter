@@ -1,0 +1,142 @@
+digraph "register_BigIntArr_Case" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s5391" [
+label="s5391: Int = Const(4)"
+shape=box, color=gray, tooltip="s5391:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s5469 {
+style=dashed; color="#FFCCFF"
+"s5467" [
+label="s5467: Context"
+shape=oval, color=gray, tooltip="s5467:Context", style=filled, fillcolor=white
+]
+"s5469" [
+label="s5469: Context => Col[WBigInteger] = s5467 => s5483.WOption.get()"
+shape=box, color=magenta, tooltip="s5469:Context => Col[WBigInteger]", style=filled, fillcolor=white
+]
+{rank=source; s5467}
+"s5473" [
+label="s5473: Box = s5467.Context.SELF()"
+shape=box, color=darkblue, tooltip="s5473:Box", style=filled, fillcolor=white
+]
+"s5483" [
+label="s5483: WOption[Col[WBigInteger]] =\ls5473.Box.getReg(s5391, ColElem<Col[WBigInteger]>)\l"
+shape=box, color=darkblue, tooltip="s5483:WOption[Col[WBigInteger]]", style=filled, fillcolor=white
+]
+{rank=sink; s5469}
+}
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s5386" [
+label="s5386: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s5386:CostModel", style=filled, fillcolor=white
+]
+"s5400" [
+label="s5400: Int = s5386.CostModel.GetRegister()"
+shape=box, color=darkblue, tooltip="s5400:Int", style=filled, fillcolor=white
+]
+"s559" [
+label="s559: Int = CostOf(Const:() => Col[IV])"
+shape=box, color=gray, tooltip="s559:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s5556 {
+style=dashed; color="#FFCCFF"
+"s5554" [
+label="s5554: Context"
+shape=oval, color=gray, tooltip="s5554:Context", style=filled, fillcolor=white
+]
+"s5556" [
+label="s5556: Context => Int = s5554 => s5400 + s559"
+shape=box, color=magenta, tooltip="s5556:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s5554}
+{rank=sink; s5556}
+}
+"s15" [
+label="s15: Long = Const(0l)"
+shape=box, color=gray, tooltip="s15:Long", style=filled, fillcolor=white
+]
+"s16" [
+label="s16: LongPlusMonoid[Long] = LongPlusMonoidCtor(s15)"
+shape=box, color=green, tooltip="s16:LongPlusMonoid[Long]", style=filled, fillcolor=white
+]
+subgraph cluster_s5426 {
+style=dashed; color="#FFCCFF"
+"s5424" [
+label="s5424: WBigInteger"
+shape=oval, color=gray, tooltip="s5424:WBigInteger", style=filled, fillcolor=white
+]
+"s5426" [
+label="s5426: WBigInteger => Long = s5424 => SizeOf(s5424)"
+shape=box, color=magenta, tooltip="s5426:WBigInteger => Long", style=filled, fillcolor=white
+]
+{rank=source; s5424}
+{rank=sink; s5426}
+}
+subgraph cluster_s5657 {
+style=dashed; color="#FFCCFF"
+"s5655" [
+label="s5655: Context"
+shape=oval, color=gray, tooltip="s5655:Context", style=filled, fillcolor=white
+]
+"s5657" [
+label="s5657: Context => Long = s5655 => s5733.Col.sum(s16)"
+shape=box, color=magenta, tooltip="s5657:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s5655}
+"s5661" [
+label="s5661: Box = s5655.Context.SELF()"
+shape=box, color=darkblue, tooltip="s5661:Box", style=filled, fillcolor=white
+]
+"s5671" [
+label="s5671: WOption[Col[WBigInteger]] =\ls5661.Box.getReg(s5391, ColElem<Col[WBigInteger]>)\l"
+shape=box, color=darkblue, tooltip="s5671:WOption[Col[WBigInteger]]", style=filled, fillcolor=white
+]
+"s5716" [
+label="s5716: Col[WBigInteger] = s5671.WOption.get()"
+shape=box, color=darkblue, tooltip="s5716:Col[WBigInteger]", style=filled, fillcolor=white
+]
+"s5733" [
+label="s5733: Col[Long] = s5716.Col.map(s5426)"
+shape=box, color=darkblue, tooltip="s5733:Col[Long]", style=filled, fillcolor=white
+]
+{rank=sink; s5657}
+}
+"s5755" [
+label="s5755: {calc: Context => Col[WBigInteger]; cost: Context => Int; size: Context => Long} = {calc:s5469; cost:s5556; size:s5657}"
+shape=box, color=gray, tooltip="s5755:{calc: Context => Col[WBigInteger]; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s5296" [
+label="s5296: {} = {}"
+shape=box, color=gray, tooltip="s5296:{}", style=filled, fillcolor=white
+]
+"s5467" -> "s5469" [style=dashed, color=lightgray, weight=0]
+"s5483" -> "s5469" [style=solid]
+"s5716" -> "s5733" [style=solid]
+"s5426" -> "s5733" [style=solid]
+"s5469" -> "s5755" [style=solid]
+"s5556" -> "s5755" [style=solid]
+"s5657" -> "s5755" [style=solid]
+"s5473" -> "s5483" [style=solid]
+"s5391" -> "s5483" [style=solid]
+"s5386" -> "s5400" [style=solid]
+"s5554" -> "s5556" [style=dashed, color=lightgray, weight=0]
+"s5400" -> "s5556" [style=solid]
+"s559" -> "s5556" [style=solid]
+"s5661" -> "s5671" [style=solid]
+"s5391" -> "s5671" [style=solid]
+"s5655" -> "s5657" [style=dashed, color=lightgray, weight=0]
+"s5733" -> "s5657" [style=solid]
+"s16" -> "s5657" [style=solid]
+"s5655" -> "s5661" [style=solid]
+"s5671" -> "s5716" [style=solid]
+"s15" -> "s16" [style=solid]
+"s28" -> "s5386" [style=solid]
+"s5424" -> "s5426" [style=dashed, color=lightgray, weight=0]
+"s5424" -> "s5426" [style=solid]
+"s5467" -> "s5473" [style=solid]
+}

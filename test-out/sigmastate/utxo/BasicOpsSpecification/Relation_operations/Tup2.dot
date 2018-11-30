@@ -1,0 +1,70 @@
+digraph "Tup2" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s37768" [
+label="s37768: Int = Const(2)"
+shape=box, color=gray, tooltip="s37768:Int", style=filled, fillcolor=white
+]
+"s1679" [
+label="s1679: Byte = Const(2)"
+shape=box, color=gray, tooltip="s1679:Byte", style=filled, fillcolor=white
+]
+subgraph cluster_s45876 {
+style=dashed; color="#FFCCFF"
+"s45874" [
+label="s45874: Context"
+shape=oval, color=gray, tooltip="s45874:Context", style=filled, fillcolor=white
+]
+"s45876" [
+label="s45876: Context => Boolean = s45874 => s45958 == s37768"
+shape=box, color=magenta, tooltip="s45876:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s45874}
+"s45926" [
+label="s45926: WOption[Int] = s45874.Context.getVar(s1679, anon$7<Int>)"
+shape=box, color=darkblue, tooltip="s45926:WOption[Int]", style=filled, fillcolor=white
+]
+"s45958" [
+label="s45958: Int = s45926.WOption.get()"
+shape=box, color=darkblue, tooltip="s45958:Int", style=filled, fillcolor=white
+]
+{rank=sink; s45876}
+}
+"s25151" [
+label="s25151: Int = Const(1)"
+shape=box, color=gray, tooltip="s25151:Int", style=filled, fillcolor=white
+]
+"s25152" [
+label="s25152: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s25152:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s44778 {
+style=dashed; color="#FFCCFF"
+"s44776" [
+label="s44776: Context"
+shape=oval, color=gray, tooltip="s44776:Context", style=filled, fillcolor=white
+]
+"s44778" [
+label="s44778: Context => Int = s44776 => s25151 + s25152"
+shape=box, color=magenta, tooltip="s44778:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s44776}
+{rank=sink; s44778}
+}
+"s46107" [
+label="s46107: (Context => Boolean, Context => Int) = (s45876, s44778)"
+shape=box, color=gray, tooltip="s46107:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s44776" -> "s44778" [style=dashed, color=lightgray, weight=0]
+"s25151" -> "s44778" [style=solid]
+"s25152" -> "s44778" [style=solid]
+"s45874" -> "s45876" [style=dashed, color=lightgray, weight=0]
+"s45958" -> "s45876" [style=solid]
+"s37768" -> "s45876" [style=solid]
+"s45876" -> "s46107" [style=solid]
+"s44778" -> "s46107" [style=solid]
+"s45874" -> "s45926" [style=solid]
+"s1679" -> "s45926" [style=solid]
+"s45926" -> "s45958" [style=solid]
+}

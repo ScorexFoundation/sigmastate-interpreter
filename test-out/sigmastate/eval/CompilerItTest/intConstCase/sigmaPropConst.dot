@@ -1,0 +1,110 @@
+digraph "sigmaPropConst" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s749" [
+label="s749: WECPoint = ECPoint(2aaaaa,20ae19,...)"
+shape=box, color=gray, tooltip="s749:WECPoint", style=filled, fillcolor=white
+]
+subgraph cluster_s771 {
+style=dashed; color="#FFCCFF"
+"s769" [
+label="s769: Context"
+shape=oval, color=gray, tooltip="s769:Context", style=filled, fillcolor=white
+]
+"s771" [
+label="s771: Context => ProveDlogEvidence = s769 => ProveDlogEvidenceCtor(s749)"
+shape=box, color=magenta, tooltip="s771:Context => ProveDlogEvidence", style=filled, fillcolor=white
+]
+{rank=source; s769}
+{rank=sink; s771}
+}
+subgraph cluster_s789 {
+style=dashed; color="#FFCCFF"
+"s787" [
+label="s787: Context"
+shape=oval, color=gray, tooltip="s787:Context", style=filled, fillcolor=white
+]
+"s789" [
+label="s789: Context => Int =\ls787 => CostOf(ProveDlogEval:(SUnit) => SSigmaProp)\l"
+shape=box, color=magenta, tooltip="s789:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s787}
+{rank=sink; s789}
+}
+subgraph cluster_s806 {
+style=dashed; color="#FFCCFF"
+"s804" [
+label="s804: Context"
+shape=oval, color=gray, tooltip="s804:Context", style=filled, fillcolor=white
+]
+"s806" [
+label="s806: Context => Long = s804 => Const(32l)"
+shape=box, color=magenta, tooltip="s806:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s804}
+{rank=sink; s806}
+}
+"s822" [
+label="s822: {calc: Context => ProveDlogEvidence; cost: Context => Int; size: Context => Long} = {calc:s771; cost:s789; size:s806}"
+shape=box, color=gray, tooltip="s822:{calc: Context => ProveDlogEvidence; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s759" [
+label="s759: Int = CostOf(Const:() => SGroupElement)"
+shape=box, color=gray, tooltip="s759:Int", style=filled, fillcolor=white
+]
+"s832" [
+label="s832: Int = CostOf(Const:() => SSigmaProp)"
+shape=box, color=gray, tooltip="s832:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s830 {
+style=dashed; color="#FFCCFF"
+"s828" [
+label="s828: Context"
+shape=oval, color=gray, tooltip="s828:Context", style=filled, fillcolor=white
+]
+"s830" [
+label="s830: Context => Int = s828 => s759 + s832"
+shape=box, color=magenta, tooltip="s830:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s828}
+{rank=sink; s830}
+}
+"s750" [
+label="s750: ProveDlogEvidence = ProveDlogEvidenceCtor(s749)"
+shape=box, color=green, tooltip="s750:ProveDlogEvidence", style=filled, fillcolor=white
+]
+subgraph cluster_s837 {
+style=dashed; color="#FFCCFF"
+"s835" [
+label="s835: Context"
+shape=oval, color=gray, tooltip="s835:Context", style=filled, fillcolor=white
+]
+"s837" [
+label="s837: Context => Long = s835 => SizeOf(s750)"
+shape=box, color=magenta, tooltip="s837:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s835}
+{rank=sink; s837}
+}
+"s839" [
+label="s839: {calc: Context => ProveDlogEvidence; cost: Context => Int; size: Context => Long} = {calc:s771; cost:s830; size:s837}"
+shape=box, color=gray, tooltip="s839:{calc: Context => ProveDlogEvidence; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s787" -> "s789" [style=dashed, color=lightgray, weight=0]
+"s804" -> "s806" [style=dashed, color=lightgray, weight=0]
+"s828" -> "s830" [style=dashed, color=lightgray, weight=0]
+"s759" -> "s830" [style=solid]
+"s832" -> "s830" [style=solid]
+"s835" -> "s837" [style=dashed, color=lightgray, weight=0]
+"s750" -> "s837" [style=solid]
+"s749" -> "s750" [style=solid]
+"s769" -> "s771" [style=dashed, color=lightgray, weight=0]
+"s749" -> "s771" [style=solid]
+"s771" -> "s839" [style=solid]
+"s830" -> "s839" [style=solid]
+"s837" -> "s839" [style=solid]
+"s771" -> "s822" [style=solid]
+"s789" -> "s822" [style=solid]
+"s806" -> "s822" [style=solid]
+}

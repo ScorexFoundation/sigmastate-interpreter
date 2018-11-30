@@ -1,0 +1,61 @@
+digraph "lam2" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s15" [
+label="s15: Long = Const(0l)"
+shape=box, color=gray, tooltip="s15:Long", style=filled, fillcolor=white
+]
+subgraph cluster_s4012 {
+style=dashed; color="#FFCCFF"
+"s4010" [
+label="s4010: Context"
+shape=oval, color=gray, tooltip="s4010:Context", style=filled, fillcolor=white
+]
+"s4012" [
+label="s4012: Context => Box => Boolean = s4010 => s2136 => s2146 >= s15"
+shape=box, color=magenta, tooltip="s4012:Context => Box => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s4010}
+{rank=sink; s4012}
+}
+subgraph cluster_s4077 {
+style=dashed; color="#FFCCFF"
+"s4075" [
+label="s4075: Context"
+shape=oval, color=gray, tooltip="s4075:Context", style=filled, fillcolor=white
+]
+"s4077" [
+label="s4077: Context => Int = s4075 => CostOf(Lambda:() => (D1) => R)"
+shape=box, color=magenta, tooltip="s4077:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s4075}
+{rank=sink; s4077}
+}
+subgraph cluster_s4116 {
+style=dashed; color="#FFCCFF"
+"s4114" [
+label="s4114: Context"
+shape=oval, color=gray, tooltip="s4114:Context", style=filled, fillcolor=white
+]
+"s4116" [
+label="s4116: Context => Long = s4114 => Const(8l)"
+shape=box, color=magenta, tooltip="s4116:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s4114}
+{rank=sink; s4116}
+}
+"s4154" [
+label="s4154: {calc: Context => Box => Boolean; cost: Context => Int; size: Context => Long} = {calc:s4012; cost:s4077; size:s4116}"
+shape=box, color=gray, tooltip="s4154:{calc: Context => Box => Boolean; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s4010" -> "s4012" [style=dashed, color=lightgray, weight=0]
+"s2136" -> "s4012" [style=dashed, color=lightgray, weight=0]
+"s2146" -> "s4012" [style=solid]
+"s15" -> "s4012" [style=solid]
+"s4114" -> "s4116" [style=dashed, color=lightgray, weight=0]
+"s4075" -> "s4077" [style=dashed, color=lightgray, weight=0]
+"s4012" -> "s4154" [style=solid]
+"s4077" -> "s4154" [style=solid]
+"s4116" -> "s4154" [style=solid]
+}

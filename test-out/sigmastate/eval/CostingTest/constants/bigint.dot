@@ -1,0 +1,59 @@
+digraph "bigint" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+subgraph cluster_s611 {
+style=dashed; color="#FFCCFF"
+"s609" [
+label="s609: Context"
+shape=oval, color=gray, tooltip="s609:Context", style=filled, fillcolor=white
+]
+"s611" [
+label="s611: Context => WBigInteger = s609 => WBigIntegerConst(10)"
+shape=box, color=magenta, tooltip="s611:Context => WBigInteger", style=filled, fillcolor=white
+]
+{rank=source; s609}
+{rank=sink; s611}
+}
+subgraph cluster_s622 {
+style=dashed; color="#FFCCFF"
+"s620" [
+label="s620: Context"
+shape=oval, color=gray, tooltip="s620:Context", style=filled, fillcolor=white
+]
+"s622" [
+label="s622: Context => Int = s620 => CostOf(Const:() => SBigInt)"
+shape=box, color=magenta, tooltip="s622:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s620}
+{rank=sink; s622}
+}
+"s596" [
+label="s596: WBigInteger = WBigIntegerConst(10)"
+shape=box, color=gray, tooltip="s596:WBigInteger", style=filled, fillcolor=white
+]
+subgraph cluster_s633 {
+style=dashed; color="#FFCCFF"
+"s631" [
+label="s631: Context"
+shape=oval, color=gray, tooltip="s631:Context", style=filled, fillcolor=white
+]
+"s633" [
+label="s633: Context => Long = s631 => SizeOf(s596)"
+shape=box, color=magenta, tooltip="s633:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s631}
+{rank=sink; s633}
+}
+"s643" [
+label="s643: {calc: Context => WBigInteger; cost: Context => Int; size: Context => Long} = {calc:s611; cost:s622; size:s633}"
+shape=box, color=gray, tooltip="s643:{calc: Context => WBigInteger; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s620" -> "s622" [style=dashed, color=lightgray, weight=0]
+"s631" -> "s633" [style=dashed, color=lightgray, weight=0]
+"s596" -> "s633" [style=solid]
+"s609" -> "s611" [style=dashed, color=lightgray, weight=0]
+"s611" -> "s643" [style=solid]
+"s622" -> "s643" [style=solid]
+"s633" -> "s643" [style=solid]
+}

@@ -27,7 +27,7 @@ import scala.runtime.ScalaRunTime
   * We add additional fields in addition to amount and proposition~(which stored in the registers R0 and R1). Namely,
   * register R2 contains additional tokens (a sequence of pairs (token identifier, value)). Register R3 contains height
   * when block got included into the blockchain and also transaction identifier and box index in the transaction outputs.
-  * Registers R4-R9 are free for abritrary usage. 
+  * Registers R4-R9 are free for arbitrary usage.
   *
   *
   * A transaction is unsealing a box. As a box can not be open twice, any further valid transaction can not be linked

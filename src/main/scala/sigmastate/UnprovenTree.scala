@@ -4,10 +4,10 @@ import java.math.BigInteger
 
 import com.google.common.primitives.Shorts
 import gf2t.GF2_192_Poly
-import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
-import scapi.sigma.VerifierMessage.Challenge
-import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple}
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
+import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.SigmaBoolean
+import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple}
 import sigmastate.serialization.ValueSerializer
 
 import scala.language.existentials

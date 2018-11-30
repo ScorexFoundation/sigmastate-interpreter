@@ -1,0 +1,585 @@
+digraph "tokenBuyer_verify" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s71" [
+label="s71: WECPoint = ECPoint(193e8e,6835d2,...)"
+shape=box, color=gray, tooltip="s71:WECPoint", style=filled, fillcolor=white
+]
+"s75" [
+label="s75: ProveDlogEvidence = ProveDlogEvidenceCtor(s71)"
+shape=box, color=green, tooltip="s75:ProveDlogEvidence", style=filled, fillcolor=white
+]
+"s1286" [
+label="s1286: Col[Byte] = s75.SigmaProp.propBytes()"
+shape=box, color=darkblue, tooltip="s1286:Col[Byte]", style=filled, fillcolor=white
+]
+"s1435" [
+label="s1435: Long = Const(1l)"
+shape=box, color=gray, tooltip="s1435:Long", style=filled, fillcolor=white
+]
+"s3" [
+label="s3: ColOverArrayBuilder = ColOverArrayBuilderCtor()"
+shape=box, color=green, tooltip="s3:ColOverArrayBuilder", style=filled, fillcolor=white
+]
+"s836" [
+label="s836: Int = Const(2)"
+shape=box, color=gray, tooltip="s836:Int", style=filled, fillcolor=white
+]
+"s11" [
+label="s11: Int = Const(0)"
+shape=box, color=gray, tooltip="s11:Int", style=filled, fillcolor=white
+]
+"s1197" [
+label="s1197: Long = Const(60l)"
+shape=box, color=gray, tooltip="s1197:Long", style=filled, fillcolor=white
+]
+"s954" [
+label="s954: WArray[Byte] =\lWArrayConst(Array(45, 17, -3, 108, 18, 67, 95, -5, 7, -86, -19, 77, 25, 10, 80, 91, 98, 27, -110, 122, 95, 110, 81, -74, 28, -32, -21, -31, -122, 57, 123, -35), Liftable(anon$5<Byte>))\l"
+shape=box, color=gray, tooltip="s954:WArray[Byte]", style=filled, fillcolor=white
+]
+"s955" [
+label="s955: Col[Byte] = s3.ColBuilder.fromArray(s954)"
+shape=box, color=darkblue, tooltip="s955:Col[Byte]", style=filled, fillcolor=white
+]
+"s47" [
+label="s47: Long = Const(70l)"
+shape=box, color=gray, tooltip="s47:Long", style=filled, fillcolor=white
+]
+subgraph cluster_s1471 {
+style=dashed; color="#FFCCFF"
+"s1469" [
+label="s1469: Context"
+shape=oval, color=gray, tooltip="s1469:Context", style=filled, fillcolor=white
+]
+"s1471" [
+label="s1471: Context => SigmaProp = s1469 => s1531.SigmaProp.||(s2901)"
+shape=box, color=magenta, tooltip="s1471:Context => SigmaProp", style=filled, fillcolor=white
+]
+{rank=source; s1469}
+"s1480" [
+label="s1480: Long = s1469.Context.HEIGHT()"
+shape=box, color=darkblue, tooltip="s1480:Long", style=filled, fillcolor=white
+]
+"s1489" [
+label="s1489: Boolean = s1480 > s47"
+shape=box, color=gray, tooltip="s1489:Boolean", style=filled, fillcolor=white
+]
+"s1529" [
+label="s1529: TrivialSigma = TrivialSigmaCtor(s1489)"
+shape=box, color=green, tooltip="s1529:TrivialSigma", style=filled, fillcolor=white
+]
+"s1531" [
+label="s1531: SigmaProp = s1529.SigmaProp.&&(s75)"
+shape=box, color=darkblue, tooltip="s1531:SigmaProp", style=filled, fillcolor=white
+]
+"s1544" [
+label="s1544: Col[Box] = s1469.Context.OUTPUTS()"
+shape=box, color=darkblue, tooltip="s1544:Col[Box]", style=filled, fillcolor=white
+]
+"s1577" [
+label="s1577: Box = s1544.Col.apply(s11)"
+shape=box, color=darkblue, tooltip="s1577:Box", style=filled, fillcolor=white
+]
+"s1600" [
+label="s1600: WOption[Col[{_1: Col[Byte]; _2: Long}]] =\ls1577.Box.getReg(s836, ColElem<Col[{_1: Col[Byte]; _2: Long}]>)\l"
+shape=box, color=darkblue, tooltip="s1600:WOption[Col[{_1: Col[Byte]; _2: Long}]]", style=filled, fillcolor=white
+]
+"s1645" [
+label="s1645: Col[{_1: Col[Byte]; _2: Long}] = s1600.WOption.get()"
+shape=box, color=darkblue, tooltip="s1645:Col[{_1: Col[Byte]; _2: Long}]", style=filled, fillcolor=white
+]
+"s1678" [
+label="s1678: {_1: Col[Byte]; _2: Long} = s1645.Col.apply(s11)"
+shape=box, color=darkblue, tooltip="s1678:{_1: Col[Byte]; _2: Long}", style=filled, fillcolor=white
+]
+"s1698" [
+label="s1698: Col[Byte] = s1678._1"
+shape=box, color=gray, tooltip="s1698:Col[Byte]", style=filled, fillcolor=white
+]
+"s1728" [
+label="s1728: Boolean = s1698 == s955"
+shape=box, color=gray, tooltip="s1728:Boolean", style=filled, fillcolor=white
+]
+"s1954" [
+label="s1954: Long = s1678._2"
+shape=box, color=gray, tooltip="s1954:Long", style=filled, fillcolor=white
+]
+"s1964" [
+label="s1964: Boolean = s1954 >= s1197"
+shape=box, color=gray, tooltip="s1964:Boolean", style=filled, fillcolor=white
+]
+"s2027" [
+label="s2027: Col[Byte] = s1577.Box.propositionBytes()"
+shape=box, color=darkblue, tooltip="s2027:Col[Byte]", style=filled, fillcolor=white
+]
+"s2069" [
+label="s2069: Boolean = s2027 == s1286"
+shape=box, color=gray, tooltip="s2069:Boolean", style=filled, fillcolor=white
+]
+"s2195" [
+label="s2195: Long = s1577.Box.value()"
+shape=box, color=darkblue, tooltip="s2195:Long", style=filled, fillcolor=white
+]
+"s2206" [
+label="s2206: Boolean = s2195 >= s1435"
+shape=box, color=gray, tooltip="s2206:Boolean", style=filled, fillcolor=white
+]
+"s2210" [
+label="s2210: Col[Boolean] =\ls3.ColBuilder.fromItems(Vector(s1728, s1964, s2069, s2206), anon$4<Boolean>)\l"
+shape=box, color=darkblue, tooltip="s2210:Col[Boolean]", style=filled, fillcolor=white
+]
+"s2211" [
+label="s2211: Boolean = s28.SigmaDslBuilder.allOf(s2210)"
+shape=box, color=darkblue, tooltip="s2211:Boolean", style=filled, fillcolor=white
+]
+"s2901" [
+label="s2901: TrivialSigma = TrivialSigmaCtor(s2211)"
+shape=box, color=green, tooltip="s2901:TrivialSigma", style=filled, fillcolor=white
+]
+{rank=sink; s1471}
+}
+"s809" [
+label="s809: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s809:Int", style=filled, fillcolor=white
+]
+"s939" [
+label="s939: Long = TypeSize(SByte)"
+shape=box, color=gray, tooltip="s939:Long", style=filled, fillcolor=white
+]
+"s960" [
+label="s960: Int = s955.Col.length()"
+shape=box, color=darkblue, tooltip="s960:Int", style=filled, fillcolor=white
+]
+"s1023" [
+label="s1023: Long = ToLong s960"
+shape=box, color=gray, tooltip="s1023:Long", style=filled, fillcolor=white
+]
+"s1024" [
+label="s1024: Long = s939 * s1023"
+shape=box, color=gray, tooltip="s1024:Long", style=filled, fillcolor=white
+]
+"s39" [
+label="s39: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s39:CostModel", style=filled, fillcolor=white
+]
+"s802" [
+label="s802: Int = s39.CostModel.CollectionConst()"
+shape=box, color=darkblue, tooltip="s802:Int", style=filled, fillcolor=white
+]
+"s41" [
+label="s41: Int = s39.CostModel.SelectField()"
+shape=box, color=darkblue, tooltip="s41:Int", style=filled, fillcolor=white
+]
+"s48" [
+label="s48: Int = CostOf(Const:() => SLong)"
+shape=box, color=gray, tooltip="s48:Int", style=filled, fillcolor=white
+]
+"s52" [
+label="s52: Int = s41 + s48"
+shape=box, color=gray, tooltip="s52:Int", style=filled, fillcolor=white
+]
+"s77" [
+label="s77: Int = CostOf(ProveDlogEval:(SUnit) => SSigmaProp)"
+shape=box, color=gray, tooltip="s77:Int", style=filled, fillcolor=white
+]
+"s81" [
+label="s81: Int = CostOf(SigmaPropIsValid:(SSigmaProp) => SBoolean)"
+shape=box, color=gray, tooltip="s81:Int", style=filled, fillcolor=white
+]
+"s82" [
+label="s82: Int = s77 + s81"
+shape=box, color=gray, tooltip="s82:Int", style=filled, fillcolor=white
+]
+"s91" [
+label="s91: Int = s52 + s82"
+shape=box, color=gray, tooltip="s91:Int", style=filled, fillcolor=white
+]
+"s92" [
+label="s92: Int = CostOf(BinAnd:(SBoolean,SBoolean) => SBoolean)"
+shape=box, color=gray, tooltip="s92:Int", style=filled, fillcolor=white
+]
+"s93" [
+label="s93: Int = s91 + s92"
+shape=box, color=gray, tooltip="s93:Int", style=filled, fillcolor=white
+]
+"s1450" [
+label="s1450: Int = CostOf(AND_per_item:(Col[SBoolean]) => SBoolean)"
+shape=box, color=gray, tooltip="s1450:Int", style=filled, fillcolor=white
+]
+"s788" [
+label="s788: Int = s39.CostModel.AccessBox()"
+shape=box, color=darkblue, tooltip="s788:Int", style=filled, fillcolor=white
+]
+"s1266" [
+label="s1266: Int = CostOf(ExtractScriptBytes:(SBox) => Col[SByte])"
+shape=box, color=gray, tooltip="s1266:Int", style=filled, fillcolor=white
+]
+"s938" [
+label="s938: Int = Const(1)"
+shape=box, color=gray, tooltip="s938:Int", style=filled, fillcolor=white
+]
+"s1202" [
+label="s1202: Int = s938 + s48"
+shape=box, color=gray, tooltip="s1202:Int", style=filled, fillcolor=white
+]
+"s1026" [
+label="s1026: Long = Const(1024l)"
+shape=box, color=gray, tooltip="s1026:Long", style=filled, fillcolor=white
+]
+"s12" [
+label="s12: IntPlusMonoid[Int] = IntPlusMonoidCtor(s11)"
+shape=box, color=green, tooltip="s12:IntPlusMonoid[Int]", style=filled, fillcolor=white
+]
+"s831" [
+label="s831: Int = CostOf(ByIndex:[IV](Col[IV],SInt) => IV)"
+shape=box, color=gray, tooltip="s831:Int", style=filled, fillcolor=white
+]
+"s872" [
+label="s872: Int = CostOf(Const:() => Col[IV])"
+shape=box, color=gray, tooltip="s872:Int", style=filled, fillcolor=white
+]
+"s996" [
+label="s996: Int = s938 + s872"
+shape=box, color=gray, tooltip="s996:Int", style=filled, fillcolor=white
+]
+"s1029" [
+label="s1029: Int = CostOf(EQ_per_kb:(T,T) => SBoolean)"
+shape=box, color=gray, tooltip="s1029:Int", style=filled, fillcolor=white
+]
+"s1287" [
+label="s1287: Int = CostOf(SigmaPropBytes:(SSigmaProp) => Col[SByte])"
+shape=box, color=gray, tooltip="s1287:Int", style=filled, fillcolor=white
+]
+"s1288" [
+label="s1288: Int = s77 + s1287"
+shape=box, color=gray, tooltip="s1288:Int", style=filled, fillcolor=white
+]
+"s1431" [
+label="s1431: Int = CostOf(ExtractAmount:(SBox) => SLong)"
+shape=box, color=gray, tooltip="s1431:Int", style=filled, fillcolor=white
+]
+"s1265" [
+label="s1265: Int = Const(65536)"
+shape=box, color=gray, tooltip="s1265:Int", style=filled, fillcolor=white
+]
+"s1346" [
+label="s1346: Long = ToLong s1265"
+shape=box, color=gray, tooltip="s1346:Long", style=filled, fillcolor=white
+]
+"s1347" [
+label="s1347: Long = s939 * s1346"
+shape=box, color=gray, tooltip="s1347:Long", style=filled, fillcolor=white
+]
+"s1291" [
+label="s1291: Int = s1286.Col.length()"
+shape=box, color=darkblue, tooltip="s1291:Int", style=filled, fillcolor=white
+]
+"s1292" [
+label="s1292: Long = ToLong s1291"
+shape=box, color=gray, tooltip="s1292:Long", style=filled, fillcolor=white
+]
+"s1293" [
+label="s1293: Long = s939 * s1292"
+shape=box, color=gray, tooltip="s1293:Long", style=filled, fillcolor=white
+]
+"s1362" [
+label="s1362: Long = s1347 + s1293"
+shape=box, color=gray, tooltip="s1362:Long", style=filled, fillcolor=white
+]
+"s1364" [
+label="s1364: Long = s1362 / s1026"
+shape=box, color=gray, tooltip="s1364:Long", style=filled, fillcolor=white
+]
+"s1365" [
+label="s1365: Int = s1364.toInt"
+shape=box, color=gray, tooltip="s1365:Int", style=filled, fillcolor=white
+]
+"s1367" [
+label="s1367: Int = s1365 * s1029"
+shape=box, color=gray, tooltip="s1367:Int", style=filled, fillcolor=white
+]
+"s1463" [
+label="s1463: Int = CostOf(BinOr:(SBoolean,SBoolean) => SBoolean)"
+shape=box, color=gray, tooltip="s1463:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s2915 {
+style=dashed; color="#FFCCFF"
+"s2913" [
+label="s2913: Context"
+shape=oval, color=gray, tooltip="s2913:Context", style=filled, fillcolor=white
+]
+"s2915" [
+label="s2915: Context => Int = s2913 => s4346 + s1463"
+shape=box, color=magenta, tooltip="s2915:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s2913}
+"s3664" [
+label="s3664: Col[Box] = s2913.Context.OUTPUTS()"
+shape=box, color=darkblue, tooltip="s3664:Col[Box]", style=filled, fillcolor=white
+]
+"s3697" [
+label="s3697: Box = s3664.Col.apply(s11)"
+shape=box, color=darkblue, tooltip="s3697:Box", style=filled, fillcolor=white
+]
+"s3720" [
+label="s3720: WOption[Col[{_1: Col[Byte]; _2: Long}]] =\ls3697.Box.getReg(s836, ColElem<Col[{_1: Col[Byte]; _2: Long}]>)\l"
+shape=box, color=darkblue, tooltip="s3720:WOption[Col[{_1: Col[Byte]; _2: Long}]]", style=filled, fillcolor=white
+]
+"s3765" [
+label="s3765: Col[{_1: Col[Byte]; _2: Long}] = s3720.WOption.get()"
+shape=box, color=darkblue, tooltip="s3765:Col[{_1: Col[Byte]; _2: Long}]", style=filled, fillcolor=white
+]
+"s3798" [
+label="s3798: {_1: Col[Byte]; _2: Long} = s3765.Col.apply(s11)"
+shape=box, color=darkblue, tooltip="s3798:{_1: Col[Byte]; _2: Long}", style=filled, fillcolor=white
+]
+"s3818" [
+label="s3818: Col[Byte] = s3798._1"
+shape=box, color=gray, tooltip="s3818:Col[Byte]", style=filled, fillcolor=white
+]
+"s3822" [
+label="s3822: Int = s3818.Col.length()"
+shape=box, color=darkblue, tooltip="s3822:Int", style=filled, fillcolor=white
+]
+"s3823" [
+label="s3823: Long = ToLong s3822"
+shape=box, color=gray, tooltip="s3823:Long", style=filled, fillcolor=white
+]
+"s3824" [
+label="s3824: Long = s939 * s3823"
+shape=box, color=gray, tooltip="s3824:Long", style=filled, fillcolor=white
+]
+"s3906" [
+label="s3906: Long = s3824 + s1024"
+shape=box, color=gray, tooltip="s3906:Long", style=filled, fillcolor=white
+]
+"s3908" [
+label="s3908: Long = s3906 / s1026"
+shape=box, color=gray, tooltip="s3908:Long", style=filled, fillcolor=white
+]
+"s3909" [
+label="s3909: Int = s3908.toInt"
+shape=box, color=gray, tooltip="s3909:Int", style=filled, fillcolor=white
+]
+"s3911" [
+label="s3911: Int = s3909 * s1029"
+shape=box, color=gray, tooltip="s3911:Int", style=filled, fillcolor=white
+]
+"s3912" [
+label="s3912: Int = s996 + s3911"
+shape=box, color=gray, tooltip="s3912:Int", style=filled, fillcolor=white
+]
+"s3666" [
+label="s3666: Int = s3664.Col.length()"
+shape=box, color=darkblue, tooltip="s3666:Int", style=filled, fillcolor=white
+]
+"s3710" [
+label="s3710: Int = s788 * s3666"
+shape=box, color=gray, tooltip="s3710:Int", style=filled, fillcolor=white
+]
+"s3711" [
+label="s3711: Int = s802 + s3710"
+shape=box, color=gray, tooltip="s3711:Int", style=filled, fillcolor=white
+]
+"s3712" [
+label="s3712: Int = s3711 + s809"
+shape=box, color=gray, tooltip="s3712:Int", style=filled, fillcolor=white
+]
+"s3714" [
+label="s3714: Int = s3712 + s831"
+shape=box, color=gray, tooltip="s3714:Int", style=filled, fillcolor=white
+]
+"s4149" [
+label="s4149: Int = s3714 + s1266"
+shape=box, color=gray, tooltip="s4149:Int", style=filled, fillcolor=white
+]
+"s4216" [
+label="s4216: Int = s4149 + s1288"
+shape=box, color=gray, tooltip="s4216:Int", style=filled, fillcolor=white
+]
+"s4251" [
+label="s4251: Int = s4216 + s1367"
+shape=box, color=gray, tooltip="s4251:Int", style=filled, fillcolor=white
+]
+"s4315" [
+label="s4315: Int = s3714 + s1431"
+shape=box, color=gray, tooltip="s4315:Int", style=filled, fillcolor=white
+]
+"s4324" [
+label="s4324: Int = s4315 + s48"
+shape=box, color=gray, tooltip="s4324:Int", style=filled, fillcolor=white
+]
+"s4329" [
+label="s4329: Col[Int] =\ls3.ColBuilder.fromItems(Vector(s3912, s1202, s4251, s4324), anon$7<Int>)\l"
+shape=box, color=darkblue, tooltip="s4329:Col[Int]", style=filled, fillcolor=white
+]
+"s4331" [
+label="s4331: Int = s4329.Col.sum(s12)"
+shape=box, color=darkblue, tooltip="s4331:Int", style=filled, fillcolor=white
+]
+"s4333" [
+label="s4333: Int = s4329.Col.length()"
+shape=box, color=darkblue, tooltip="s4333:Int", style=filled, fillcolor=white
+]
+"s4335" [
+label="s4335: Int = s1450 * s4333"
+shape=box, color=gray, tooltip="s4335:Int", style=filled, fillcolor=white
+]
+"s4336" [
+label="s4336: Int = s4331 + s4335"
+shape=box, color=gray, tooltip="s4336:Int", style=filled, fillcolor=white
+]
+"s4346" [
+label="s4346: Int = s93 + s4336"
+shape=box, color=gray, tooltip="s4346:Int", style=filled, fillcolor=white
+]
+{rank=sink; s2915}
+}
+"s4351" [
+label="s4351: (Context => SigmaProp, Context => Int) = (s1471, s2915)"
+shape=box, color=gray, tooltip="s4351:(Context => SigmaProp, Context => Int)", style=filled, fillcolor=white
+]
+"s939" -> "s1024" [style=solid]
+"s1023" -> "s1024" [style=solid]
+"s3765" -> "s3798" [style=solid]
+"s11" -> "s3798" [style=solid]
+"s3664" -> "s3666" [style=solid]
+"s3" -> "s2210" [style=solid]
+"s1728" -> "s2210" [style=solid]
+"s1964" -> "s2210" [style=solid]
+"s2069" -> "s2210" [style=solid]
+"s2206" -> "s2210" [style=solid]
+"s996" -> "s3912" [style=solid]
+"s3911" -> "s3912" [style=solid]
+"s1469" -> "s1544" [style=solid]
+"s1698" -> "s1728" [style=solid]
+"s955" -> "s1728" [style=solid]
+"s1577" -> "s2195" [style=solid]
+"s2211" -> "s2901" [style=solid]
+"s1678" -> "s1954" [style=solid]
+"s1600" -> "s1645" [style=solid]
+"s1489" -> "s1529" [style=solid]
+"s41" -> "s52" [style=solid]
+"s48" -> "s52" [style=solid]
+"s39" -> "s802" [style=solid]
+"s1544" -> "s1577" [style=solid]
+"s11" -> "s1577" [style=solid]
+"s91" -> "s93" [style=solid]
+"s92" -> "s93" [style=solid]
+"s939" -> "s1347" [style=solid]
+"s1346" -> "s1347" [style=solid]
+"s1347" -> "s1362" [style=solid]
+"s1293" -> "s1362" [style=solid]
+"s1480" -> "s1489" [style=solid]
+"s47" -> "s1489" [style=solid]
+"s3" -> "s4329" [style=solid]
+"s3912" -> "s4329" [style=solid]
+"s1202" -> "s4329" [style=solid]
+"s4251" -> "s4329" [style=solid]
+"s4324" -> "s4329" [style=solid]
+"s1577" -> "s2027" [style=solid]
+"s3711" -> "s3712" [style=solid]
+"s809" -> "s3712" [style=solid]
+"s1577" -> "s1600" [style=solid]
+"s836" -> "s1600" [style=solid]
+"s3824" -> "s3906" [style=solid]
+"s1024" -> "s3906" [style=solid]
+"s4149" -> "s4216" [style=solid]
+"s1288" -> "s4216" [style=solid]
+"s3697" -> "s3720" [style=solid]
+"s836" -> "s3720" [style=solid]
+"s802" -> "s3711" [style=solid]
+"s3710" -> "s3711" [style=solid]
+"s39" -> "s788" [style=solid]
+"s2913" -> "s3664" [style=solid]
+"s1364" -> "s1365" [style=solid]
+"s28" -> "s2211" [style=solid]
+"s2210" -> "s2211" [style=solid]
+"s1286" -> "s1291" [style=solid]
+"s3908" -> "s3909" [style=solid]
+"s4329" -> "s4333" [style=solid]
+"s1954" -> "s1964" [style=solid]
+"s1197" -> "s1964" [style=solid]
+"s1291" -> "s1292" [style=solid]
+"s3712" -> "s3714" [style=solid]
+"s831" -> "s3714" [style=solid]
+"s3714" -> "s4315" [style=solid]
+"s1431" -> "s4315" [style=solid]
+"s39" -> "s41" [style=solid]
+"s939" -> "s3824" [style=solid]
+"s3823" -> "s3824" [style=solid]
+"s938" -> "s1202" [style=solid]
+"s48" -> "s1202" [style=solid]
+"s75" -> "s1286" [style=solid]
+"s2913" -> "s2915" [style=dashed, color=lightgray, weight=0]
+"s4346" -> "s2915" [style=solid]
+"s1463" -> "s2915" [style=solid]
+"s1678" -> "s1698" [style=solid]
+"s4216" -> "s4251" [style=solid]
+"s1367" -> "s4251" [style=solid]
+"s11" -> "s12" [style=solid]
+"s3714" -> "s4149" [style=solid]
+"s1266" -> "s4149" [style=solid]
+"s938" -> "s996" [style=solid]
+"s872" -> "s996" [style=solid]
+"s788" -> "s3710" [style=solid]
+"s3666" -> "s3710" [style=solid]
+"s28" -> "s39" [style=solid]
+"s1469" -> "s1471" [style=dashed, color=lightgray, weight=0]
+"s1531" -> "s1471" [style=solid]
+"s2901" -> "s1471" [style=solid]
+"s52" -> "s91" [style=solid]
+"s82" -> "s91" [style=solid]
+"s939" -> "s1293" [style=solid]
+"s1292" -> "s1293" [style=solid]
+"s1362" -> "s1364" [style=solid]
+"s1026" -> "s1364" [style=solid]
+"s3906" -> "s3908" [style=solid]
+"s1026" -> "s3908" [style=solid]
+"s2027" -> "s2069" [style=solid]
+"s1286" -> "s2069" [style=solid]
+"s4329" -> "s4331" [style=solid]
+"s12" -> "s4331" [style=solid]
+"s4331" -> "s4336" [style=solid]
+"s4335" -> "s4336" [style=solid]
+"s1529" -> "s1531" [style=solid]
+"s75" -> "s1531" [style=solid]
+"s4315" -> "s4324" [style=solid]
+"s48" -> "s4324" [style=solid]
+"s93" -> "s4346" [style=solid]
+"s4336" -> "s4346" [style=solid]
+"s3798" -> "s3818" [style=solid]
+"s3822" -> "s3823" [style=solid]
+"s1471" -> "s4351" [style=solid]
+"s2915" -> "s4351" [style=solid]
+"s3664" -> "s3697" [style=solid]
+"s11" -> "s3697" [style=solid]
+"s960" -> "s1023" [style=solid]
+"s3909" -> "s3911" [style=solid]
+"s1029" -> "s3911" [style=solid]
+"s71" -> "s75" [style=solid]
+"s77" -> "s82" [style=solid]
+"s81" -> "s82" [style=solid]
+"s1645" -> "s1678" [style=solid]
+"s11" -> "s1678" [style=solid]
+"s1469" -> "s1480" [style=solid]
+"s3818" -> "s3822" [style=solid]
+"s77" -> "s1288" [style=solid]
+"s1287" -> "s1288" [style=solid]
+"s3720" -> "s3765" [style=solid]
+"s955" -> "s960" [style=solid]
+"s3" -> "s955" [style=solid]
+"s954" -> "s955" [style=solid]
+"s1265" -> "s1346" [style=solid]
+"s1450" -> "s4335" [style=solid]
+"s4333" -> "s4335" [style=solid]
+"s1365" -> "s1367" [style=solid]
+"s1029" -> "s1367" [style=solid]
+"s2195" -> "s2206" [style=solid]
+"s1435" -> "s2206" [style=solid]
+}

@@ -1,0 +1,130 @@
+digraph "R1" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s37" [
+label="s37: Byte = Const(9)"
+shape=box, color=gray, tooltip="s37:Byte", style=filled, fillcolor=white
+]
+"s85" [
+label="s85: Boolean = Const(true)"
+shape=box, color=gray, tooltip="s85:Boolean", style=filled, fillcolor=white
+]
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s3" [
+label="s3: ColOverArrayBuilder = ColOverArrayBuilderCtor()"
+shape=box, color=green, tooltip="s3:ColOverArrayBuilder", style=filled, fillcolor=white
+]
+subgraph cluster_s111 {
+style=dashed; color="#FFCCFF"
+"s109" [
+label="s109: Context"
+shape=oval, color=gray, tooltip="s109:Context", style=filled, fillcolor=white
+]
+"s111" [
+label="s111: Context => Boolean = s109 => s28.SigmaDslBuilder.allOf(s170)"
+shape=box, color=magenta, tooltip="s111:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s109}
+"s116" [
+label="s116: WOption[Boolean] = s109.Context.getVar(s37, anon$4<Boolean>)"
+shape=box, color=darkblue, tooltip="s116:WOption[Boolean]", style=filled, fillcolor=white
+]
+"s149" [
+label="s149: Boolean = s116.WOption.get()"
+shape=box, color=darkblue, tooltip="s149:Boolean", style=filled, fillcolor=white
+]
+"s170" [
+label="s170: Col[Boolean] =\ls3.ColBuilder.fromItems(Vector(s149, s85, s85), anon$4<Boolean>)\l"
+shape=box, color=darkblue, tooltip="s170:Col[Boolean]", style=filled, fillcolor=white
+]
+{rank=sink; s111}
+}
+"s44" [
+label="s44: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s44:CostModel", style=filled, fillcolor=white
+]
+"s46" [
+label="s46: Int = s44.CostModel.GetVar()"
+shape=box, color=darkblue, tooltip="s46:Int", style=filled, fillcolor=white
+]
+"s86" [
+label="s86: Int = CostOf(Const:() => SBoolean)"
+shape=box, color=gray, tooltip="s86:Int", style=filled, fillcolor=white
+]
+"s97" [
+label="s97: Col[Int] =\ls3.ColBuilder.fromItems(Vector(s46, s86, s86), anon$7<Int>)\l"
+shape=box, color=darkblue, tooltip="s97:Col[Int]", style=filled, fillcolor=white
+]
+"s11" [
+label="s11: Int = Const(0)"
+shape=box, color=gray, tooltip="s11:Int", style=filled, fillcolor=white
+]
+"s12" [
+label="s12: IntPlusMonoid[Int] = IntPlusMonoidCtor(s11)"
+shape=box, color=green, tooltip="s12:IntPlusMonoid[Int]", style=filled, fillcolor=white
+]
+"s99" [
+label="s99: Int = s97.Col.sum(s12)"
+shape=box, color=darkblue, tooltip="s99:Int", style=filled, fillcolor=white
+]
+"s102" [
+label="s102: Int = CostOf(AND_per_item:(Col[SBoolean]) => SBoolean)"
+shape=box, color=gray, tooltip="s102:Int", style=filled, fillcolor=white
+]
+"s101" [
+label="s101: Int = s97.Col.length()"
+shape=box, color=darkblue, tooltip="s101:Int", style=filled, fillcolor=white
+]
+"s103" [
+label="s103: Int = s102 * s101"
+shape=box, color=gray, tooltip="s103:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s185 {
+style=dashed; color="#FFCCFF"
+"s183" [
+label="s183: Context"
+shape=oval, color=gray, tooltip="s183:Context", style=filled, fillcolor=white
+]
+"s185" [
+label="s185: Context => Int = s183 => s99 + s103"
+shape=box, color=magenta, tooltip="s185:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s183}
+{rank=sink; s185}
+}
+"s255" [
+label="s255: (Context => Boolean, Context => Int) = (s111, s185)"
+shape=box, color=gray, tooltip="s255:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s97" -> "s101" [style=solid]
+"s3" -> "s170" [style=solid]
+"s149" -> "s170" [style=solid]
+"s85" -> "s170" [style=solid]
+"s85" -> "s170" [style=solid]
+"s183" -> "s185" [style=dashed, color=lightgray, weight=0]
+"s99" -> "s185" [style=solid]
+"s103" -> "s185" [style=solid]
+"s44" -> "s46" [style=solid]
+"s109" -> "s116" [style=solid]
+"s37" -> "s116" [style=solid]
+"s3" -> "s97" [style=solid]
+"s46" -> "s97" [style=solid]
+"s86" -> "s97" [style=solid]
+"s86" -> "s97" [style=solid]
+"s116" -> "s149" [style=solid]
+"s28" -> "s44" [style=solid]
+"s11" -> "s12" [style=solid]
+"s102" -> "s103" [style=solid]
+"s101" -> "s103" [style=solid]
+"s111" -> "s255" [style=solid]
+"s185" -> "s255" [style=solid]
+"s97" -> "s99" [style=solid]
+"s12" -> "s99" [style=solid]
+"s109" -> "s111" [style=dashed, color=lightgray, weight=0]
+"s28" -> "s111" [style=solid]
+"s170" -> "s111" [style=solid]
+}

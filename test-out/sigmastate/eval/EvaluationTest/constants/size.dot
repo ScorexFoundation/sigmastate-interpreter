@@ -1,0 +1,171 @@
+digraph "size" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+subgraph cluster_s8591 {
+style=dashed; color="#FFCCFF"
+"s8589" [
+label="s8589: Context"
+shape=oval, color=gray, tooltip="s8589:Context", style=filled, fillcolor=white
+]
+"s8591" [
+label="s8591: Context => Int = s8589 => s8599 + s8647"
+shape=box, color=magenta, tooltip="s8591:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s8589}
+"s8597" [
+label="s8597: Col[Box] = s8589.Context.INPUTS()"
+shape=box, color=darkblue, tooltip="s8597:Col[Box]", style=filled, fillcolor=white
+]
+"s8599" [
+label="s8599: Int = s8597.Col.length()"
+shape=box, color=darkblue, tooltip="s8599:Int", style=filled, fillcolor=white
+]
+"s8645" [
+label="s8645: Col[Box] = s8589.Context.OUTPUTS()"
+shape=box, color=darkblue, tooltip="s8645:Col[Box]", style=filled, fillcolor=white
+]
+"s8647" [
+label="s8647: Int = s8645.Col.length()"
+shape=box, color=darkblue, tooltip="s8647:Int", style=filled, fillcolor=white
+]
+{rank=sink; s8591}
+}
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s1597" [
+label="s1597: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s1597:CostModel", style=filled, fillcolor=white
+]
+"s1613" [
+label="s1613: Int = s1597.CostModel.CollectionConst()"
+shape=box, color=darkblue, tooltip="s1613:Int", style=filled, fillcolor=white
+]
+"s1636" [
+label="s1636: Int = CostOf(SizeOf:(Col[IV]) => SInt)"
+shape=box, color=gray, tooltip="s1636:Int", style=filled, fillcolor=white
+]
+"s302" [
+label="s302: Int = CostOf(+:(SInt,SInt) => SInt)"
+shape=box, color=gray, tooltip="s302:Int", style=filled, fillcolor=white
+]
+"s1599" [
+label="s1599: Int = s1597.CostModel.AccessBox()"
+shape=box, color=darkblue, tooltip="s1599:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s8699 {
+style=dashed; color="#FFCCFF"
+"s8697" [
+label="s8697: Context"
+shape=oval, color=gray, tooltip="s8697:Context", style=filled, fillcolor=white
+]
+"s8699" [
+label="s8699: Context => Int = s8697 => s8799 + s302"
+shape=box, color=magenta, tooltip="s8699:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s8697}
+"s8705" [
+label="s8705: Col[Box] = s8697.Context.INPUTS()"
+shape=box, color=darkblue, tooltip="s8705:Col[Box]", style=filled, fillcolor=white
+]
+"s8707" [
+label="s8707: Int = s8705.Col.length()"
+shape=box, color=darkblue, tooltip="s8707:Int", style=filled, fillcolor=white
+]
+"s8744" [
+label="s8744: Int = s1599 * s8707"
+shape=box, color=gray, tooltip="s8744:Int", style=filled, fillcolor=white
+]
+"s8745" [
+label="s8745: Int = s1613 + s8744"
+shape=box, color=gray, tooltip="s8745:Int", style=filled, fillcolor=white
+]
+"s8747" [
+label="s8747: Int = s8745 + s1636"
+shape=box, color=gray, tooltip="s8747:Int", style=filled, fillcolor=white
+]
+"s8753" [
+label="s8753: Col[Box] = s8697.Context.OUTPUTS()"
+shape=box, color=darkblue, tooltip="s8753:Col[Box]", style=filled, fillcolor=white
+]
+"s8755" [
+label="s8755: Int = s8753.Col.length()"
+shape=box, color=darkblue, tooltip="s8755:Int", style=filled, fillcolor=white
+]
+"s8792" [
+label="s8792: Int = s1599 * s8755"
+shape=box, color=gray, tooltip="s8792:Int", style=filled, fillcolor=white
+]
+"s8793" [
+label="s8793: Int = s1613 + s8792"
+shape=box, color=gray, tooltip="s8793:Int", style=filled, fillcolor=white
+]
+"s8795" [
+label="s8795: Int = s8793 + s1636"
+shape=box, color=gray, tooltip="s8795:Int", style=filled, fillcolor=white
+]
+"s8799" [
+label="s8799: Int = s8747 + s8795"
+shape=box, color=gray, tooltip="s8799:Int", style=filled, fillcolor=white
+]
+{rank=sink; s8699}
+}
+subgraph cluster_s68 {
+style=dashed; color="#FFCCFF"
+"s66" [
+label="s66: Context"
+shape=oval, color=gray, tooltip="s66:Context", style=filled, fillcolor=white
+]
+"s68" [
+label="s68: Context => Long = s66 => TypeSize(SInt)"
+shape=box, color=magenta, tooltip="s68:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s66}
+{rank=sink; s68}
+}
+"s8914" [
+label="s8914: {calc: Context => Int; cost: Context => Int; size: Context => Long} = {calc:s8591; cost:s8699; size:s68}"
+shape=box, color=gray, tooltip="s8914:{calc: Context => Int; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s79" [
+label="s79: {} = {}"
+shape=box, color=gray, tooltip="s79:{}", style=filled, fillcolor=white
+]
+"s8753" -> "s8755" [style=solid]
+"s8745" -> "s8747" [style=solid]
+"s1636" -> "s8747" [style=solid]
+"s1597" -> "s1613" [style=solid]
+"s8697" -> "s8705" [style=solid]
+"s8697" -> "s8699" [style=dashed, color=lightgray, weight=0]
+"s8799" -> "s8699" [style=solid]
+"s302" -> "s8699" [style=solid]
+"s8645" -> "s8647" [style=solid]
+"s8697" -> "s8753" [style=solid]
+"s8793" -> "s8795" [style=solid]
+"s1636" -> "s8795" [style=solid]
+"s8589" -> "s8645" [style=solid]
+"s1599" -> "s8792" [style=solid]
+"s8755" -> "s8792" [style=solid]
+"s8597" -> "s8599" [style=solid]
+"s1597" -> "s1599" [style=solid]
+"s8589" -> "s8591" [style=dashed, color=lightgray, weight=0]
+"s8599" -> "s8591" [style=solid]
+"s8647" -> "s8591" [style=solid]
+"s8589" -> "s8597" [style=solid]
+"s1613" -> "s8745" [style=solid]
+"s8744" -> "s8745" [style=solid]
+"s8747" -> "s8799" [style=solid]
+"s8795" -> "s8799" [style=solid]
+"s8705" -> "s8707" [style=solid]
+"s1599" -> "s8744" [style=solid]
+"s8707" -> "s8744" [style=solid]
+"s8591" -> "s8914" [style=solid]
+"s8699" -> "s8914" [style=solid]
+"s68" -> "s8914" [style=solid]
+"s1613" -> "s8793" [style=solid]
+"s8792" -> "s8793" [style=solid]
+"s66" -> "s68" [style=dashed, color=lightgray, weight=0]
+"s28" -> "s1597" [style=solid]
+}

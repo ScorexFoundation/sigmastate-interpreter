@@ -1,0 +1,190 @@
+digraph "lazy3" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s4689" [
+label="s4689: Int = Const(4)"
+shape=box, color=gray, tooltip="s4689:Int", style=filled, fillcolor=white
+]
+"s5522" [
+label="s5522: Int = Const(5)"
+shape=box, color=gray, tooltip="s5522:Int", style=filled, fillcolor=white
+]
+"s4848" [
+label="s4848: Int = Const(10)"
+shape=box, color=gray, tooltip="s4848:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s6765 {
+style=dashed; color="#FFCCFF"
+"s6763" [
+label="s6763: Context"
+shape=oval, color=gray, tooltip="s6763:Context", style=filled, fillcolor=white
+]
+"s6765" [
+label="s6765: Context => Boolean = s6763 => s6811 && { s6816 }"
+shape=box, color=magenta, tooltip="s6765:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s6763}
+"s6769" [
+label="s6769: Box = s6763.Context.SELF()"
+shape=box, color=darkblue, tooltip="s6769:Box", style=filled, fillcolor=white
+]
+"s6779" [
+label="s6779: WOption[Int] = s6769.Box.getReg(s4689, anon$7<Int>)"
+shape=box, color=darkblue, tooltip="s6779:WOption[Int]", style=filled, fillcolor=white
+]
+"s6811" [
+label="s6811: Boolean = s6779.WOption.isDefined()"
+shape=box, color=darkblue, tooltip="s6811:Boolean", style=filled, fillcolor=white
+]
+subgraph cluster_s6816 {
+style=dashed; color="#FFCCCC"
+"s6816" [
+label="s6816: Thunk[Boolean] = Thunk(s6992, [s6828,s6860,s6865,s6992])"
+shape=box, color=red, tooltip="s6816:Thunk[Boolean]", style=filled, fillcolor=white
+]
+"s6828" [
+label="s6828: WOption[Int] = s6769.Box.getReg(s5522, anon$7<Int>)"
+shape=box, color=darkblue, tooltip="s6828:WOption[Int]", style=filled, fillcolor=white
+]
+"s6860" [
+label="s6860: Boolean = s6828.WOption.isDefined()"
+shape=box, color=darkblue, tooltip="s6860:Boolean", style=filled, fillcolor=white
+]
+subgraph cluster_s6865 {
+style=dashed; color="#FFCCCC"
+"s6865" [
+label="s6865: Thunk[Boolean] = Thunk(s6925, [s6909,s6925])"
+shape=box, color=red, tooltip="s6865:Thunk[Boolean]", style=filled, fillcolor=white
+]
+"s6909" [
+label="s6909: Int = s6779.WOption.get()"
+shape=box, color=darkblue, tooltip="s6909:Int", style=filled, fillcolor=white
+]
+"s6925" [
+label="s6925: Boolean = s6909 == s4848"
+shape=box, color=gray, tooltip="s6925:Boolean", style=filled, fillcolor=white
+]
+{rank=sink; s6865}
+}
+"s6992" [
+label="s6992: Boolean = s6860 || { s6865 }"
+shape=box, color=gray, tooltip="s6992:Boolean", style=filled, fillcolor=white
+]
+{rank=sink; s6816}
+}
+{rank=sink; s6765}
+}
+"s37" [
+label="s37: Int = Const(1)"
+shape=box, color=gray, tooltip="s37:Int", style=filled, fillcolor=white
+]
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s1597" [
+label="s1597: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s1597:CostModel", style=filled, fillcolor=white
+]
+"s4698" [
+label="s4698: Int = s1597.CostModel.GetRegister()"
+shape=box, color=darkblue, tooltip="s4698:Int", style=filled, fillcolor=white
+]
+"s38" [
+label="s38: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s38:Int", style=filled, fillcolor=white
+]
+"s4853" [
+label="s4853: Int = s4698 + s38"
+shape=box, color=gray, tooltip="s4853:Int", style=filled, fillcolor=white
+]
+"s4857" [
+label="s4857: Int = s37 + s4853"
+shape=box, color=gray, tooltip="s4857:Int", style=filled, fillcolor=white
+]
+"s849" [
+label="s849: Int = CostOf(BinOr:(SBoolean,SBoolean) => SBoolean)"
+shape=box, color=gray, tooltip="s849:Int", style=filled, fillcolor=white
+]
+"s6752" [
+label="s6752: Int = s4857 + s849"
+shape=box, color=gray, tooltip="s6752:Int", style=filled, fillcolor=white
+]
+"s6756" [
+label="s6756: Int = s37 + s6752"
+shape=box, color=gray, tooltip="s6756:Int", style=filled, fillcolor=white
+]
+"s2476" [
+label="s2476: Int = CostOf(BinAnd:(SBoolean,SBoolean) => SBoolean)"
+shape=box, color=gray, tooltip="s2476:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s7188 {
+style=dashed; color="#FFCCFF"
+"s7186" [
+label="s7186: Context"
+shape=oval, color=gray, tooltip="s7186:Context", style=filled, fillcolor=white
+]
+"s7188" [
+label="s7188: Context => Int = s7186 => s6756 + s2476"
+shape=box, color=magenta, tooltip="s7188:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s7186}
+{rank=sink; s7188}
+}
+subgraph cluster_s698 {
+style=dashed; color="#FFCCFF"
+"s696" [
+label="s696: Context"
+shape=oval, color=gray, tooltip="s696:Context", style=filled, fillcolor=white
+]
+"s698" [
+label="s698: Context => Long = s696 => TypeSize(SBoolean)"
+shape=box, color=magenta, tooltip="s698:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s696}
+{rank=sink; s698}
+}
+"s8033" [
+label="s8033: {calc: Context => Boolean; cost: Context => Int; size: Context => Long} = {calc:s6765; cost:s7188; size:s698}"
+shape=box, color=gray, tooltip="s8033:{calc: Context => Boolean; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s79" [
+label="s79: {} = {}"
+shape=box, color=gray, tooltip="s79:{}", style=filled, fillcolor=white
+]
+"s696" -> "s698" [style=dashed, color=lightgray, weight=0]
+"s7186" -> "s7188" [style=dashed, color=lightgray, weight=0]
+"s6756" -> "s7188" [style=solid]
+"s2476" -> "s7188" [style=solid]
+"s6779" -> "s6909" [style=solid]
+"s6769" -> "s6828" [style=solid]
+"s5522" -> "s6828" [style=solid]
+"s37" -> "s4857" [style=solid]
+"s4853" -> "s4857" [style=solid]
+"s6765" -> "s8033" [style=solid]
+"s7188" -> "s8033" [style=solid]
+"s698" -> "s8033" [style=solid]
+"s6828" -> "s6860" [style=solid]
+"s4698" -> "s4853" [style=solid]
+"s38" -> "s4853" [style=solid]
+"s6925" -> "s6865" [style=solid]
+"s4857" -> "s6752" [style=solid]
+"s849" -> "s6752" [style=solid]
+"s37" -> "s6756" [style=solid]
+"s6752" -> "s6756" [style=solid]
+"s6769" -> "s6779" [style=solid]
+"s4689" -> "s6779" [style=solid]
+"s6763" -> "s6769" [style=solid]
+"s6779" -> "s6811" [style=solid]
+"s6992" -> "s6816" [style=solid]
+"s6860" -> "s6992" [style=solid]
+"s6865" -> "s6992" [style=solid]
+"s1597" -> "s4698" [style=solid]
+"s6909" -> "s6925" [style=solid]
+"s4848" -> "s6925" [style=solid]
+"s6763" -> "s6765" [style=dashed, color=lightgray, weight=0]
+"s6811" -> "s6765" [style=solid]
+"s6816" -> "s6765" [style=solid]
+"s28" -> "s1597" [style=solid]
+}

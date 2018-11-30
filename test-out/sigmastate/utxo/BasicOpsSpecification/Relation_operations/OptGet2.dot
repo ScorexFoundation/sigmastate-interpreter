@@ -1,0 +1,99 @@
+digraph "OptGet2" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s71841" [
+label="s71841: Int = Const(6)"
+shape=box, color=gray, tooltip="s71841:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s71958 {
+style=dashed; color="#FFCCCC"
+"s71958" [
+label="s71958: Thunk[Int] = Thunk(s47186, [s47186])"
+shape=box, color=red, tooltip="s71958:Thunk[Int]", style=filled, fillcolor=white
+]
+"s47186" [
+label="s47186: Int = Const(3)"
+shape=box, color=gray, tooltip="s47186:Int", style=filled, fillcolor=white
+]
+{rank=sink; s71958}
+}
+"s47186" [
+label="s47186: Int = Const(3)"
+shape=box, color=gray, tooltip="s47186:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s71906 {
+style=dashed; color="#FFCCFF"
+"s71904" [
+label="s71904: Context"
+shape=oval, color=gray, tooltip="s71904:Context", style=filled, fillcolor=white
+]
+"s71906" [
+label="s71906: Context => Boolean = s71904 => s71959 == s47186"
+shape=box, color=magenta, tooltip="s71906:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s71904}
+"s71910" [
+label="s71910: Box = s71904.Context.SELF()"
+shape=box, color=darkblue, tooltip="s71910:Box", style=filled, fillcolor=white
+]
+"s71920" [
+label="s71920: WOption[Int] = s71910.Box.getReg(s71841, anon$7<Int>)"
+shape=box, color=darkblue, tooltip="s71920:WOption[Int]", style=filled, fillcolor=white
+]
+"s71959" [
+label="s71959: Int = s71920.WOption.getOrElse(s71958)"
+shape=box, color=darkblue, tooltip="s71959:Int", style=filled, fillcolor=white
+]
+{rank=sink; s71906}
+}
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s44" [
+label="s44: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s44:CostModel", style=filled, fillcolor=white
+]
+"s28502" [
+label="s28502: Int = s44.CostModel.GetRegister()"
+shape=box, color=darkblue, tooltip="s28502:Int", style=filled, fillcolor=white
+]
+"s25152" [
+label="s25152: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s25152:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s71418 {
+style=dashed; color="#FFCCFF"
+"s71416" [
+label="s71416: Context"
+shape=oval, color=gray, tooltip="s71416:Context", style=filled, fillcolor=white
+]
+"s71418" [
+label="s71418: Context => Int = s71416 => s28502 + s25152"
+shape=box, color=magenta, tooltip="s71418:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s71416}
+{rank=sink; s71418}
+}
+"s72055" [
+label="s72055: (Context => Boolean, Context => Int) = (s71906, s71418)"
+shape=box, color=gray, tooltip="s72055:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s47186" -> "s71958" [style=solid]
+"s71904" -> "s71906" [style=dashed, color=lightgray, weight=0]
+"s71959" -> "s71906" [style=solid]
+"s47186" -> "s71906" [style=solid]
+"s71904" -> "s71910" [style=solid]
+"s71906" -> "s72055" [style=solid]
+"s71418" -> "s72055" [style=solid]
+"s71416" -> "s71418" [style=dashed, color=lightgray, weight=0]
+"s28502" -> "s71418" [style=solid]
+"s25152" -> "s71418" [style=solid]
+"s71920" -> "s71959" [style=solid]
+"s71958" -> "s71959" [style=solid]
+"s28" -> "s44" [style=solid]
+"s71910" -> "s71920" [style=solid]
+"s71841" -> "s71920" [style=solid]
+"s44" -> "s28502" [style=solid]
+}
