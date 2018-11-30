@@ -18,9 +18,9 @@ import scala.runtime.ScalaRunTime
 
 class ErgoBoxCandidate(val value: Long,
                        val proposition: Value[SBoolean.type],
+                       val creationHeight: Long,
                        val additionalTokens: Seq[(TokenId, Long)] = Seq(),
-                       val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
-                       val creationHeight: Long = 0) {
+                       val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
   lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
 
@@ -29,7 +29,7 @@ class ErgoBoxCandidate(val value: Long,
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   def toBox(txId: ModifierId, boxId: Short) =
-    ErgoBox(value, proposition, additionalTokens, additionalRegisters, txId, boxId, creationHeight)
+    ErgoBox(value, proposition, creationHeight, additionalTokens, additionalRegisters, txId, boxId)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
@@ -128,7 +128,7 @@ object ErgoBoxCandidate {
         val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
         (reg, v)
       }.toMap
-      new ErgoBoxCandidate(value, prop, addTokens, regs, creationHeight)
+      new ErgoBoxCandidate(value, prop, creationHeight, addTokens, regs)
     }
 
     override def parseBody(r: ByteReader): ErgoBoxCandidate = {

@@ -1,0 +1,139 @@
+digraph "Arith4" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s1723" [
+label="s1723: Byte = Const(1)"
+shape=box, color=gray, tooltip="s1723:Byte", style=filled, fillcolor=white
+]
+"s37768" [
+label="s37768: Int = Const(2)"
+shape=box, color=gray, tooltip="s37768:Int", style=filled, fillcolor=white
+]
+"s1679" [
+label="s1679: Byte = Const(2)"
+shape=box, color=gray, tooltip="s1679:Byte", style=filled, fillcolor=white
+]
+subgraph cluster_s42146 {
+style=dashed; color="#FFCCFF"
+"s42144" [
+label="s42144: Context"
+shape=oval, color=gray, tooltip="s42144:Context", style=filled, fillcolor=white
+]
+"s42146" [
+label="s42146: Context => Boolean = s42144 => s42250 == s37768"
+shape=box, color=magenta, tooltip="s42146:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s42144}
+"s42151" [
+label="s42151: WOption[Int] = s42144.Context.getVar(s1679, anon$7<Int>)"
+shape=box, color=darkblue, tooltip="s42151:WOption[Int]", style=filled, fillcolor=white
+]
+"s42183" [
+label="s42183: Int = s42151.WOption.get()"
+shape=box, color=darkblue, tooltip="s42183:Int", style=filled, fillcolor=white
+]
+"s42199" [
+label="s42199: Int = s42183 / s37768"
+shape=box, color=gray, tooltip="s42199:Int", style=filled, fillcolor=white
+]
+"s42207" [
+label="s42207: WOption[Int] = s42144.Context.getVar(s1723, anon$7<Int>)"
+shape=box, color=darkblue, tooltip="s42207:WOption[Int]", style=filled, fillcolor=white
+]
+"s42239" [
+label="s42239: Int = s42207.WOption.get()"
+shape=box, color=darkblue, tooltip="s42239:Int", style=filled, fillcolor=white
+]
+"s42250" [
+label="s42250: Int = s42199 + s42239"
+shape=box, color=gray, tooltip="s42250:Int", style=filled, fillcolor=white
+]
+{rank=sink; s42146}
+}
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s44" [
+label="s44: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s44:CostModel", style=filled, fillcolor=white
+]
+"s46" [
+label="s46: Int = s44.CostModel.GetVar()"
+shape=box, color=darkblue, tooltip="s46:Int", style=filled, fillcolor=white
+]
+"s25152" [
+label="s25152: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s25152:Int", style=filled, fillcolor=white
+]
+"s25156" [
+label="s25156: Int = s46 + s25152"
+shape=box, color=gray, tooltip="s25156:Int", style=filled, fillcolor=white
+]
+"s42078" [
+label="s42078: Int = CostOf(/:(SInt,SInt) => SInt)"
+shape=box, color=gray, tooltip="s42078:Int", style=filled, fillcolor=white
+]
+"s42079" [
+label="s42079: Int = s25156 + s42078"
+shape=box, color=gray, tooltip="s42079:Int", style=filled, fillcolor=white
+]
+"s42128" [
+label="s42128: Int = s42079 + s46"
+shape=box, color=gray, tooltip="s42128:Int", style=filled, fillcolor=white
+]
+"s37825" [
+label="s37825: Int = CostOf(+:(SInt,SInt) => SInt)"
+shape=box, color=gray, tooltip="s37825:Int", style=filled, fillcolor=white
+]
+"s42130" [
+label="s42130: Int = s42128 + s37825"
+shape=box, color=gray, tooltip="s42130:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s42268 {
+style=dashed; color="#FFCCFF"
+"s42266" [
+label="s42266: Context"
+shape=oval, color=gray, tooltip="s42266:Context", style=filled, fillcolor=white
+]
+"s42268" [
+label="s42268: Context => Int = s42266 => s42130 + s25152"
+shape=box, color=magenta, tooltip="s42268:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s42266}
+{rank=sink; s42268}
+}
+"s42387" [
+label="s42387: (Context => Boolean, Context => Int) = (s42146, s42268)"
+shape=box, color=gray, tooltip="s42387:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s42146" -> "s42387" [style=solid]
+"s42268" -> "s42387" [style=solid]
+"s42144" -> "s42207" [style=solid]
+"s1723" -> "s42207" [style=solid]
+"s42207" -> "s42239" [style=solid]
+"s44" -> "s46" [style=solid]
+"s42266" -> "s42268" [style=dashed, color=lightgray, weight=0]
+"s42130" -> "s42268" [style=solid]
+"s25152" -> "s42268" [style=solid]
+"s25156" -> "s42079" [style=solid]
+"s42078" -> "s42079" [style=solid]
+"s46" -> "s25156" [style=solid]
+"s25152" -> "s25156" [style=solid]
+"s42199" -> "s42250" [style=solid]
+"s42239" -> "s42250" [style=solid]
+"s42144" -> "s42146" [style=dashed, color=lightgray, weight=0]
+"s42250" -> "s42146" [style=solid]
+"s37768" -> "s42146" [style=solid]
+"s42183" -> "s42199" [style=solid]
+"s37768" -> "s42199" [style=solid]
+"s28" -> "s44" [style=solid]
+"s42151" -> "s42183" [style=solid]
+"s42144" -> "s42151" [style=solid]
+"s1679" -> "s42151" [style=solid]
+"s42128" -> "s42130" [style=solid]
+"s37825" -> "s42130" [style=solid]
+"s42079" -> "s42128" [style=solid]
+"s46" -> "s42128" [style=solid]
+}

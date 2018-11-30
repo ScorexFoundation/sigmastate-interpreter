@@ -1,0 +1,134 @@
+digraph "one+one2" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s1033" [
+label="s1033: WBigInteger =\lWBigIntegerConst(85070591730234615847396907784232501249)\l"
+shape=box, color=gray, tooltip="s1033:WBigInteger", style=filled, fillcolor=white
+]
+"s596" [
+label="s596: WBigInteger = WBigIntegerConst(10)"
+shape=box, color=gray, tooltip="s596:WBigInteger", style=filled, fillcolor=white
+]
+subgraph cluster_s1058 {
+style=dashed; color="#FFCCFF"
+"s1056" [
+label="s1056: Context"
+shape=oval, color=gray, tooltip="s1056:Context", style=filled, fillcolor=white
+]
+"s1058" [
+label="s1058: Context => WBigInteger = s1056 => s1033.WBigInteger.subtract(s596)"
+shape=box, color=magenta, tooltip="s1058:Context => WBigInteger", style=filled, fillcolor=white
+]
+{rank=source; s1056}
+{rank=sink; s1058}
+}
+"s604" [
+label="s604: Int = CostOf(Const:() => SBigInt)"
+shape=box, color=gray, tooltip="s604:Int", style=filled, fillcolor=white
+]
+"s1046" [
+label="s1046: Int = s604 + s604"
+shape=box, color=gray, tooltip="s1046:Int", style=filled, fillcolor=white
+]
+"s1047" [
+label="s1047: Int = CostOf(-:(SBigInt,SBigInt) => SBigInt)"
+shape=box, color=gray, tooltip="s1047:Int", style=filled, fillcolor=white
+]
+"s1048" [
+label="s1048: Int = s1046 + s1047"
+shape=box, color=gray, tooltip="s1048:Int", style=filled, fillcolor=white
+]
+"s1049" [
+label="s1049: Int = CostOf(-_per_item:(SBigInt,SBigInt) => SBigInt)"
+shape=box, color=gray, tooltip="s1049:Int", style=filled, fillcolor=white
+]
+"s1035" [
+label="s1035: Long = SizeOf(s1033)"
+shape=box, color=gray, tooltip="s1035:Long", style=filled, fillcolor=white
+]
+"s605" [
+label="s605: Long = SizeOf(s596)"
+shape=box, color=gray, tooltip="s605:Long", style=filled, fillcolor=white
+]
+"s1042" [
+label="s1042: Long = s1035 max s605"
+shape=box, color=gray, tooltip="s1042:Long", style=filled, fillcolor=white
+]
+"s102" [
+label="s102: Long = Const(1l)"
+shape=box, color=gray, tooltip="s102:Long", style=filled, fillcolor=white
+]
+"s1044" [
+label="s1044: Long = s1042 + s102"
+shape=box, color=gray, tooltip="s1044:Long", style=filled, fillcolor=white
+]
+"s1050" [
+label="s1050: Int = s1044.toInt"
+shape=box, color=gray, tooltip="s1050:Int", style=filled, fillcolor=white
+]
+"s1051" [
+label="s1051: Int = s1049 * s1050"
+shape=box, color=gray, tooltip="s1051:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s1088 {
+style=dashed; color="#FFCCFF"
+"s1086" [
+label="s1086: Context"
+shape=oval, color=gray, tooltip="s1086:Context", style=filled, fillcolor=white
+]
+"s1088" [
+label="s1088: Context => Int = s1086 => s1048 + s1051"
+shape=box, color=magenta, tooltip="s1088:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s1086}
+{rank=sink; s1088}
+}
+subgraph cluster_s1117 {
+style=dashed; color="#FFCCFF"
+"s1115" [
+label="s1115: Context"
+shape=oval, color=gray, tooltip="s1115:Context", style=filled, fillcolor=white
+]
+"s1117" [
+label="s1117: Context => Long = s1115 => s1042 + s102"
+shape=box, color=magenta, tooltip="s1117:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s1115}
+{rank=sink; s1117}
+}
+"s1145" [
+label="s1145: {calc: Context => WBigInteger; cost: Context => Int; size: Context => Long} = {calc:s1058; cost:s1088; size:s1117}"
+shape=box, color=gray, tooltip="s1145:{calc: Context => WBigInteger; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s1153" [
+label="s1153: {calc: Context => WBigInteger} = {calc:s1058}"
+shape=box, color=gray, tooltip="s1153:{calc: Context => WBigInteger}", style=filled, fillcolor=white
+]
+"s604" -> "s1046" [style=solid]
+"s604" -> "s1046" [style=solid]
+"s1049" -> "s1051" [style=solid]
+"s1050" -> "s1051" [style=solid]
+"s1058" -> "s1153" [style=solid]
+"s1035" -> "s1042" [style=solid]
+"s605" -> "s1042" [style=solid]
+"s1044" -> "s1050" [style=solid]
+"s596" -> "s605" [style=solid]
+"s1033" -> "s1035" [style=solid]
+"s1056" -> "s1058" [style=dashed, color=lightgray, weight=0]
+"s1033" -> "s1058" [style=solid]
+"s596" -> "s1058" [style=solid]
+"s1115" -> "s1117" [style=dashed, color=lightgray, weight=0]
+"s1042" -> "s1117" [style=solid]
+"s102" -> "s1117" [style=solid]
+"s1046" -> "s1048" [style=solid]
+"s1047" -> "s1048" [style=solid]
+"s1042" -> "s1044" [style=solid]
+"s102" -> "s1044" [style=solid]
+"s1058" -> "s1145" [style=solid]
+"s1088" -> "s1145" [style=solid]
+"s1117" -> "s1145" [style=solid]
+"s1086" -> "s1088" [style=dashed, color=lightgray, weight=0]
+"s1048" -> "s1088" [style=solid]
+"s1051" -> "s1088" [style=solid]
+}

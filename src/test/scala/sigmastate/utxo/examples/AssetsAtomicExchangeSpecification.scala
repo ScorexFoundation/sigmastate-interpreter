@@ -112,12 +112,12 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     sellerProp shouldBe altSellerProp
 
     //tx inputs
-    val input0 = ErgoBox(100, buyerProp)
-    val input1 = ErgoBox(1, sellerProp, Seq(tokenId -> 60))
+    val input0 = ErgoBox(100, buyerProp, 0)
+    val input1 = ErgoBox(1, sellerProp, 0, Seq(tokenId -> 60))
 
-    //tx ouputs
-    val newBox1 = ErgoBox(1, tokenBuyerKey, Seq(tokenId -> 60), Map(R4 -> ByteArrayConstant(input0.id)))
-    val newBox2 = ErgoBox(100, tokenSellerKey, Seq(), Map(R4 -> ByteArrayConstant(input1.id)))
+    //tx outputs
+    val newBox1 = ErgoBox(1, tokenBuyerKey, 0, Seq(tokenId -> 60), Map(R4 -> ByteArrayConstant(input0.id)))
+    val newBox2 = ErgoBox(100, tokenSellerKey, 0, Seq(), Map(R4 -> ByteArrayConstant(input1.id)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
@@ -216,12 +216,12 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       """.stripMargin).asBoolValue
 
     //tx inputs
-    val input0 = ErgoBox(10000, buyerProp)
-    val input1 = ErgoBox(0, sellerProp, Seq(tokenId -> 60))
+    val input0 = ErgoBox(10000, buyerProp, 0)
+    val input1 = ErgoBox(0, sellerProp, 0, Seq(tokenId -> 60))
 
     //tx outputs
-    val newBox1 = ErgoBox(5050, tokenBuyerKey, Seq(tokenId -> 10), Map(R4 -> ByteArrayConstant(input0.id)))
-    val newBox2 = ErgoBox(4950, tokenSellerKey, Seq(tokenId -> 50), Map(R4 -> ByteArrayConstant(input1.id)))
+    val newBox1 = ErgoBox(5050, tokenBuyerKey, 0, Seq(tokenId -> 10), Map(R4 -> ByteArrayConstant(input0.id)))
+    val newBox2 = ErgoBox(4950, tokenSellerKey, 0, Seq(tokenId -> 50), Map(R4 -> ByteArrayConstant(input1.id)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)

@@ -10,10 +10,10 @@ import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons {
 
   def createTestContext(contract: CrowdFundingContract): ErgoLikeContext = {
-    val outputToSpend = ErgoBox(10, TrueLeaf)
+    val outputToSpend = ErgoBox(10, TrueLeaf, 0)
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
-    val tx1Output1 = ErgoBox(contract.minToRaise, contract.projectPubKey)
-    val tx1Output2 = ErgoBox(1, contract.projectPubKey)
+    val tx1Output1 = ErgoBox(contract.minToRaise, contract.projectPubKey, 0)
+    val tx1Output2 = ErgoBox(1, contract.projectPubKey, 0)
     //normally this transaction would invalid, but we're not checking it in this test
     val tx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
     val ctx = ErgoLikeContext(

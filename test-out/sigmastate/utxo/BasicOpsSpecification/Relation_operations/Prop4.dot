@@ -1,0 +1,107 @@
+digraph "Prop4" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s20053" [
+label="s20053: Byte = Const(11)"
+shape=box, color=gray, tooltip="s20053:Byte", style=filled, fillcolor=white
+]
+"s19285" [
+label="s19285: Byte = Const(10)"
+shape=box, color=gray, tooltip="s19285:Byte", style=filled, fillcolor=white
+]
+subgraph cluster_s21802 {
+style=dashed; color="#FFCCFF"
+"s21800" [
+label="s21800: Context"
+shape=oval, color=gray, tooltip="s21800:Context", style=filled, fillcolor=white
+]
+"s21802" [
+label="s21802: Context => SigmaProp = s21800 => s21839.SigmaProp.&&(s21891)"
+shape=box, color=magenta, tooltip="s21802:Context => SigmaProp", style=filled, fillcolor=white
+]
+{rank=source; s21800}
+"s21807" [
+label="s21807: WOption[SigmaProp] =\ls21800.Context.getVar(s19285, SigmaPropElem<SigmaProp>)\l"
+shape=box, color=darkblue, tooltip="s21807:WOption[SigmaProp]", style=filled, fillcolor=white
+]
+"s21839" [
+label="s21839: SigmaProp = s21807.WOption.get()"
+shape=box, color=darkblue, tooltip="s21839:SigmaProp", style=filled, fillcolor=white
+]
+"s21859" [
+label="s21859: WOption[SigmaProp] =\ls21800.Context.getVar(s20053, SigmaPropElem<SigmaProp>)\l"
+shape=box, color=darkblue, tooltip="s21859:WOption[SigmaProp]", style=filled, fillcolor=white
+]
+"s21891" [
+label="s21891: SigmaProp = s21859.WOption.get()"
+shape=box, color=darkblue, tooltip="s21891:SigmaProp", style=filled, fillcolor=white
+]
+{rank=sink; s21802}
+}
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s44" [
+label="s44: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s44:CostModel", style=filled, fillcolor=white
+]
+"s46" [
+label="s46: Int = s44.CostModel.GetVar()"
+shape=box, color=darkblue, tooltip="s46:Int", style=filled, fillcolor=white
+]
+"s19331" [
+label="s19331: Int = CostOf(SigmaPropIsValid:(SSigmaProp) => SBoolean)"
+shape=box, color=gray, tooltip="s19331:Int", style=filled, fillcolor=white
+]
+"s19332" [
+label="s19332: Int = s46 + s19331"
+shape=box, color=gray, tooltip="s19332:Int", style=filled, fillcolor=white
+]
+"s20110" [
+label="s20110: Int = s19332 + s19332"
+shape=box, color=gray, tooltip="s20110:Int", style=filled, fillcolor=white
+]
+"s1971" [
+label="s1971: Int = CostOf(BinAnd:(SBoolean,SBoolean) => SBoolean)"
+shape=box, color=gray, tooltip="s1971:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s21971 {
+style=dashed; color="#FFCCFF"
+"s21969" [
+label="s21969: Context"
+shape=oval, color=gray, tooltip="s21969:Context", style=filled, fillcolor=white
+]
+"s21971" [
+label="s21971: Context => Int = s21969 => s20110 + s1971"
+shape=box, color=magenta, tooltip="s21971:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s21969}
+{rank=sink; s21971}
+}
+"s22137" [
+label="s22137: (Context => SigmaProp, Context => Int) = (s21802, s21971)"
+shape=box, color=gray, tooltip="s22137:(Context => SigmaProp, Context => Int)", style=filled, fillcolor=white
+]
+"s21807" -> "s21839" [style=solid]
+"s44" -> "s46" [style=solid]
+"s21800" -> "s21807" [style=solid]
+"s19285" -> "s21807" [style=solid]
+"s46" -> "s19332" [style=solid]
+"s19331" -> "s19332" [style=solid]
+"s21802" -> "s22137" [style=solid]
+"s21971" -> "s22137" [style=solid]
+"s28" -> "s44" [style=solid]
+"s21800" -> "s21859" [style=solid]
+"s20053" -> "s21859" [style=solid]
+"s21800" -> "s21802" [style=dashed, color=lightgray, weight=0]
+"s21839" -> "s21802" [style=solid]
+"s21891" -> "s21802" [style=solid]
+"s19332" -> "s20110" [style=solid]
+"s19332" -> "s20110" [style=solid]
+"s21969" -> "s21971" [style=dashed, color=lightgray, weight=0]
+"s20110" -> "s21971" [style=solid]
+"s1971" -> "s21971" [style=solid]
+"s21859" -> "s21891" [style=solid]
+}

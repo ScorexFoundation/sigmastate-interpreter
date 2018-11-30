@@ -1,0 +1,95 @@
+digraph "split_cols" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s57" [
+label="s57: (Col[Int], Byte)"
+shape=oval, color=gray, tooltip="s57:(Col[Int], Byte)", style=filled, fillcolor=white
+]
+"s59" [
+label="s59: (Col[Int], Byte) => (Col[Int], Byte) = s57 => Variable(56)"
+shape=box, color=magenta, tooltip="s59:(Col[Int], Byte) => (Col[Int], Byte)", style=filled, fillcolor=white
+]
+"s44" [
+label="s44: Int = CostOf(Const:() => Col[IV])"
+shape=box, color=gray, tooltip="s44:Int", style=filled, fillcolor=white
+]
+"s120" [
+label="s120: Int = Const(1)"
+shape=box, color=gray, tooltip="s120:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s83 {
+style=dashed; color="#FFCCFF"
+"s81" [
+label="s81: (Col[Int], Byte)"
+shape=oval, color=gray, tooltip="s81:(Col[Int], Byte)", style=filled, fillcolor=white
+]
+"s83" [
+label="s83: (Col[Int], Byte) => Int = s81 => s44 + s120"
+shape=box, color=magenta, tooltip="s83:(Col[Int], Byte) => Int", style=filled, fillcolor=white
+]
+{rank=source; s81}
+{rank=sink; s83}
+}
+"s42" [
+label="s42: Long = TypeSize(SInt)"
+shape=box, color=gray, tooltip="s42:Long", style=filled, fillcolor=white
+]
+"s51" [
+label="s51: Long = TypeSize(SByte)"
+shape=box, color=gray, tooltip="s51:Long", style=filled, fillcolor=white
+]
+subgraph cluster_s125 {
+style=dashed; color="#FFCCFF"
+"s123" [
+label="s123: (Col[Int], Byte)"
+shape=oval, color=gray, tooltip="s123:(Col[Int], Byte)", style=filled, fillcolor=white
+]
+"s125" [
+label="s125: (Col[Int], Byte) => Long = s123 => s158 + s51"
+shape=box, color=magenta, tooltip="s125:(Col[Int], Byte) => Long", style=filled, fillcolor=white
+]
+{rank=source; s123}
+"s126" [
+label="s126: Col[Int] = s123._1"
+shape=box, color=gray, tooltip="s126:Col[Int]", style=filled, fillcolor=white
+]
+"s129" [
+label="s129: Int = s126.Col.length()"
+shape=box, color=darkblue, tooltip="s129:Int", style=filled, fillcolor=white
+]
+"s157" [
+label="s157: Long = ToLong s129"
+shape=box, color=gray, tooltip="s157:Long", style=filled, fillcolor=white
+]
+"s158" [
+label="s158: Long = s42 * s157"
+shape=box, color=gray, tooltip="s158:Long", style=filled, fillcolor=white
+]
+{rank=sink; s125}
+}
+"s160" [
+label="s160: ((Col[Int], Byte) => Int, (Col[Int], Byte) => Long) = (s83, s125)"
+shape=box, color=gray, tooltip="s160:((Col[Int], Byte) => Int, (Col[Int], Byte) => Long)", style=filled, fillcolor=white
+]
+"s161" [
+label="s161: ((Col[Int], Byte) => (Col[Int], Byte), ((Col[Int], Byte) => Int, (Col[Int], Byte) => Long)) = (s59, s160)"
+shape=box, color=gray, tooltip="s161:((Col[Int], Byte) => (Col[Int], Byte), ((Col[Int], Byte) => Int, (Col[Int], Byte) => Long))", style=filled, fillcolor=white
+]
+"s123" -> "s125" [style=dashed, color=lightgray, weight=0]
+"s158" -> "s125" [style=solid]
+"s51" -> "s125" [style=solid]
+"s129" -> "s157" [style=solid]
+"s83" -> "s160" [style=solid]
+"s125" -> "s160" [style=solid]
+"s126" -> "s129" [style=solid]
+"s59" -> "s161" [style=solid]
+"s160" -> "s161" [style=solid]
+"s57" -> "s59" [style=dashed, color=lightgray, weight=0]
+"s42" -> "s158" [style=solid]
+"s157" -> "s158" [style=solid]
+"s123" -> "s126" [style=solid]
+"s81" -> "s83" [style=dashed, color=lightgray, weight=0]
+"s44" -> "s83" [style=solid]
+"s120" -> "s83" [style=solid]
+}

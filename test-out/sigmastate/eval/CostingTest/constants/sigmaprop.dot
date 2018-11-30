@@ -1,0 +1,131 @@
+digraph "sigmaprop" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s659" [
+label="s659: WECPoint = ECPoint(2aaaaa,20ae19,...)"
+shape=box, color=gray, tooltip="s659:WECPoint", style=filled, fillcolor=white
+]
+"s734" [
+label="s734: ProveDlogEvidence = ProveDlogEvidenceCtor(s659)"
+shape=box, color=green, tooltip="s734:ProveDlogEvidence", style=filled, fillcolor=white
+]
+subgraph cluster_s760 {
+style=dashed; color="#FFCCFF"
+"s758" [
+label="s758: Context"
+shape=oval, color=gray, tooltip="s758:Context", style=filled, fillcolor=white
+]
+"s760" [
+label="s760: Context => Col[Byte] = s758 => s734.SigmaProp.propBytes()"
+shape=box, color=magenta, tooltip="s760:Context => Col[Byte]", style=filled, fillcolor=white
+]
+{rank=source; s758}
+{rank=sink; s760}
+}
+"s736" [
+label="s736: Int = CostOf(ProveDlogEval:(SUnit) => SSigmaProp)"
+shape=box, color=gray, tooltip="s736:Int", style=filled, fillcolor=white
+]
+"s740" [
+label="s740: Int = CostOf(SigmaPropBytes:(SSigmaProp) => Col[SByte])"
+shape=box, color=gray, tooltip="s740:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s798 {
+style=dashed; color="#FFCCFF"
+"s796" [
+label="s796: Context"
+shape=oval, color=gray, tooltip="s796:Context", style=filled, fillcolor=white
+]
+"s798" [
+label="s798: Context => Int = s796 => s736 + s740"
+shape=box, color=magenta, tooltip="s798:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s796}
+{rank=sink; s798}
+}
+"s232" [
+label="s232: Long = TypeSize(SByte)"
+shape=box, color=gray, tooltip="s232:Long", style=filled, fillcolor=white
+]
+"s739" [
+label="s739: Col[Byte] = s734.SigmaProp.propBytes()"
+shape=box, color=darkblue, tooltip="s739:Col[Byte]", style=filled, fillcolor=white
+]
+"s744" [
+label="s744: Int = s739.Col.length()"
+shape=box, color=darkblue, tooltip="s744:Int", style=filled, fillcolor=white
+]
+"s745" [
+label="s745: Long = ToLong s744"
+shape=box, color=gray, tooltip="s745:Long", style=filled, fillcolor=white
+]
+subgraph cluster_s848 {
+style=dashed; color="#FFCCFF"
+"s846" [
+label="s846: Context"
+shape=oval, color=gray, tooltip="s846:Context", style=filled, fillcolor=white
+]
+"s848" [
+label="s848: Context => Long = s846 => s232 * s745"
+shape=box, color=magenta, tooltip="s848:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s846}
+{rank=sink; s848}
+}
+"s897" [
+label="s897: {calc: Context => Col[Byte]; cost: Context => Int; size: Context => Long} = {calc:s760; cost:s798; size:s848}"
+shape=box, color=gray, tooltip="s897:{calc: Context => Col[Byte]; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s667" [
+label="s667: Int = CostOf(Const:() => SGroupElement)"
+shape=box, color=gray, tooltip="s667:Int", style=filled, fillcolor=white
+]
+"s910" [
+label="s910: Int = CostOf(Const:() => SSigmaProp)"
+shape=box, color=gray, tooltip="s910:Int", style=filled, fillcolor=white
+]
+"s911" [
+label="s911: Int = s667 + s910"
+shape=box, color=gray, tooltip="s911:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s908 {
+style=dashed; color="#FFCCFF"
+"s906" [
+label="s906: Context"
+shape=oval, color=gray, tooltip="s906:Context", style=filled, fillcolor=white
+]
+"s908" [
+label="s908: Context => Int = s906 => s911 + s740"
+shape=box, color=magenta, tooltip="s908:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s906}
+{rank=sink; s908}
+}
+"s914" [
+label="s914: {calc: Context => Col[Byte]; cost: Context => Int} = {calc:s760; cost:s908}"
+shape=box, color=gray, tooltip="s914:{calc: Context => Col[Byte]; cost: Context => Int}", style=filled, fillcolor=white
+]
+"s758" -> "s760" [style=dashed, color=lightgray, weight=0]
+"s734" -> "s760" [style=solid]
+"s659" -> "s734" [style=solid]
+"s796" -> "s798" [style=dashed, color=lightgray, weight=0]
+"s736" -> "s798" [style=solid]
+"s740" -> "s798" [style=solid]
+"s667" -> "s911" [style=solid]
+"s910" -> "s911" [style=solid]
+"s744" -> "s745" [style=solid]
+"s846" -> "s848" [style=dashed, color=lightgray, weight=0]
+"s232" -> "s848" [style=solid]
+"s745" -> "s848" [style=solid]
+"s734" -> "s739" [style=solid]
+"s739" -> "s744" [style=solid]
+"s760" -> "s914" [style=solid]
+"s908" -> "s914" [style=solid]
+"s760" -> "s897" [style=solid]
+"s798" -> "s897" [style=solid]
+"s848" -> "s897" [style=solid]
+"s906" -> "s908" [style=dashed, color=lightgray, weight=0]
+"s911" -> "s908" [style=solid]
+"s740" -> "s908" [style=solid]
+}

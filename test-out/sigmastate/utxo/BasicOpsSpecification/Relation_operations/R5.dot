@@ -1,0 +1,124 @@
+digraph "R5" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s7439" [
+label="s7439: Byte = Const(4)"
+shape=box, color=gray, tooltip="s7439:Byte", style=filled, fillcolor=white
+]
+"s7483" [
+label="s7483: Byte = Const(3)"
+shape=box, color=gray, tooltip="s7483:Byte", style=filled, fillcolor=white
+]
+subgraph cluster_s7739 {
+style=dashed; color="#FFCCFF"
+"s7737" [
+label="s7737: Context"
+shape=oval, color=gray, tooltip="s7737:Context", style=filled, fillcolor=white
+]
+"s7739" [
+label="s7739: Context => Boolean = s7737 => s7832 && { s7837 }"
+shape=box, color=magenta, tooltip="s7739:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s7737}
+"s7744" [
+label="s7744: WOption[Byte] = s7737.Context.getVar(s7439, anon$5<Byte>)"
+shape=box, color=darkblue, tooltip="s7744:WOption[Byte]", style=filled, fillcolor=white
+]
+"s7776" [
+label="s7776: Byte = s7744.WOption.get()"
+shape=box, color=darkblue, tooltip="s7776:Byte", style=filled, fillcolor=white
+]
+"s7789" [
+label="s7789: WOption[Byte] = s7737.Context.getVar(s7483, anon$5<Byte>)"
+shape=box, color=darkblue, tooltip="s7789:WOption[Byte]", style=filled, fillcolor=white
+]
+"s7821" [
+label="s7821: Byte = s7789.WOption.get()"
+shape=box, color=darkblue, tooltip="s7821:Byte", style=filled, fillcolor=white
+]
+"s7832" [
+label="s7832: Boolean = s7776 > s7821"
+shape=box, color=gray, tooltip="s7832:Boolean", style=filled, fillcolor=white
+]
+subgraph cluster_s7837 {
+style=dashed; color="#FFCCCC"
+"s7837" [
+label="s7837: Thunk[Boolean] = Thunk(s7932, [s7932])"
+shape=box, color=red, tooltip="s7837:Thunk[Boolean]", style=filled, fillcolor=white
+]
+"s7932" [
+label="s7932: Boolean = s7821 < s7776"
+shape=box, color=gray, tooltip="s7932:Boolean", style=filled, fillcolor=white
+]
+{rank=sink; s7837}
+}
+{rank=sink; s7739}
+}
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s44" [
+label="s44: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s44:CostModel", style=filled, fillcolor=white
+]
+"s46" [
+label="s46: Int = s44.CostModel.GetVar()"
+shape=box, color=darkblue, tooltip="s46:Int", style=filled, fillcolor=white
+]
+"s1770" [
+label="s1770: Int = s46 + s46"
+shape=box, color=gray, tooltip="s1770:Int", style=filled, fillcolor=white
+]
+"s1970" [
+label="s1970: Int = s1770 + s1770"
+shape=box, color=gray, tooltip="s1970:Int", style=filled, fillcolor=white
+]
+"s1971" [
+label="s1971: Int = CostOf(BinAnd:(SBoolean,SBoolean) => SBoolean)"
+shape=box, color=gray, tooltip="s1971:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s2281 {
+style=dashed; color="#FFCCFF"
+"s2279" [
+label="s2279: Context"
+shape=oval, color=gray, tooltip="s2279:Context", style=filled, fillcolor=white
+]
+"s2281" [
+label="s2281: Context => Int = s2279 => s1970 + s1971"
+shape=box, color=magenta, tooltip="s2281:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s2279}
+{rank=sink; s2281}
+}
+"s8340" [
+label="s8340: (Context => Boolean, Context => Int) = (s7739, s2281)"
+shape=box, color=gray, tooltip="s8340:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s44" -> "s46" [style=solid]
+"s7737" -> "s7739" [style=dashed, color=lightgray, weight=0]
+"s7832" -> "s7739" [style=solid]
+"s7837" -> "s7739" [style=solid]
+"s2279" -> "s2281" [style=dashed, color=lightgray, weight=0]
+"s1970" -> "s2281" [style=solid]
+"s1971" -> "s2281" [style=solid]
+"s1770" -> "s1970" [style=solid]
+"s1770" -> "s1970" [style=solid]
+"s7789" -> "s7821" [style=solid]
+"s7737" -> "s7789" [style=solid]
+"s7483" -> "s7789" [style=solid]
+"s28" -> "s44" [style=solid]
+"s7932" -> "s7837" [style=solid]
+"s7739" -> "s8340" [style=solid]
+"s2281" -> "s8340" [style=solid]
+"s46" -> "s1770" [style=solid]
+"s46" -> "s1770" [style=solid]
+"s7776" -> "s7832" [style=solid]
+"s7821" -> "s7832" [style=solid]
+"s7737" -> "s7744" [style=solid]
+"s7439" -> "s7744" [style=solid]
+"s7821" -> "s7932" [style=solid]
+"s7776" -> "s7932" [style=solid]
+"s7744" -> "s7776" [style=solid]
+}

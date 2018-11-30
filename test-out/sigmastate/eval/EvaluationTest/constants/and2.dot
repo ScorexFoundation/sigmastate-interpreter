@@ -1,0 +1,144 @@
+digraph "and2" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s37" [
+label="s37: Int = Const(1)"
+shape=box, color=gray, tooltip="s37:Int", style=filled, fillcolor=white
+]
+"s648" [
+label="s648: Boolean = s37 > s37"
+shape=box, color=gray, tooltip="s648:Boolean", style=filled, fillcolor=white
+]
+"s834" [
+label="s834: Int = Const(2)"
+shape=box, color=gray, tooltip="s834:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s2860 {
+style=dashed; color="#FFCCCC"
+"s2860" [
+label="s2860: Thunk[Boolean] = Thunk(s843, [s843])"
+shape=box, color=red, tooltip="s2860:Thunk[Boolean]", style=filled, fillcolor=white
+]
+"s843" [
+label="s843: Boolean = s834 < s37"
+shape=box, color=gray, tooltip="s843:Boolean", style=filled, fillcolor=white
+]
+{rank=sink; s2860}
+}
+"s2891" [
+label="s2891: Boolean = s648 && { s2860 }"
+shape=box, color=gray, tooltip="s2891:Boolean", style=filled, fillcolor=white
+]
+subgraph cluster_s2898 {
+style=dashed; color="#FFCCCC"
+"s2898" [
+label="s2898: Thunk[Boolean] = Thunk(s1200, [s1200])"
+shape=box, color=red, tooltip="s2898:Thunk[Boolean]", style=filled, fillcolor=white
+]
+"s1200" [
+label="s1200: Boolean = s834 > s37"
+shape=box, color=gray, tooltip="s1200:Boolean", style=filled, fillcolor=white
+]
+{rank=sink; s2898}
+}
+subgraph cluster_s2841 {
+style=dashed; color="#FFCCFF"
+"s2839" [
+label="s2839: Context"
+shape=oval, color=gray, tooltip="s2839:Context", style=filled, fillcolor=white
+]
+"s2841" [
+label="s2841: Context => Boolean = s2839 => s2891 && { s2898 }"
+shape=box, color=magenta, tooltip="s2841:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s2839}
+{rank=sink; s2841}
+}
+"s38" [
+label="s38: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s38:Int", style=filled, fillcolor=white
+]
+"s301" [
+label="s301: Int = s38 + s38"
+shape=box, color=gray, tooltip="s301:Int", style=filled, fillcolor=white
+]
+"s848" [
+label="s848: Int = s301 + s301"
+shape=box, color=gray, tooltip="s848:Int", style=filled, fillcolor=white
+]
+"s2476" [
+label="s2476: Int = CostOf(BinAnd:(SBoolean,SBoolean) => SBoolean)"
+shape=box, color=gray, tooltip="s2476:Int", style=filled, fillcolor=white
+]
+"s2477" [
+label="s2477: Int = s848 + s2476"
+shape=box, color=gray, tooltip="s2477:Int", style=filled, fillcolor=white
+]
+"s2832" [
+label="s2832: Int = s2477 + s301"
+shape=box, color=gray, tooltip="s2832:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s2938 {
+style=dashed; color="#FFCCFF"
+"s2936" [
+label="s2936: Context"
+shape=oval, color=gray, tooltip="s2936:Context", style=filled, fillcolor=white
+]
+"s2938" [
+label="s2938: Context => Int = s2936 => s2832 + s2476"
+shape=box, color=magenta, tooltip="s2938:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s2936}
+{rank=sink; s2938}
+}
+subgraph cluster_s698 {
+style=dashed; color="#FFCCFF"
+"s696" [
+label="s696: Context"
+shape=oval, color=gray, tooltip="s696:Context", style=filled, fillcolor=white
+]
+"s698" [
+label="s698: Context => Long = s696 => TypeSize(SBoolean)"
+shape=box, color=magenta, tooltip="s698:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s696}
+{rank=sink; s698}
+}
+"s3131" [
+label="s3131: {calc: Context => Boolean; cost: Context => Int; size: Context => Long} = {calc:s2841; cost:s2938; size:s698}"
+shape=box, color=gray, tooltip="s3131:{calc: Context => Boolean; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s79" [
+label="s79: {} = {}"
+shape=box, color=gray, tooltip="s79:{}", style=filled, fillcolor=white
+]
+"s834" -> "s1200" [style=solid]
+"s37" -> "s1200" [style=solid]
+"s696" -> "s698" [style=dashed, color=lightgray, weight=0]
+"s38" -> "s301" [style=solid]
+"s38" -> "s301" [style=solid]
+"s2841" -> "s3131" [style=solid]
+"s2938" -> "s3131" [style=solid]
+"s698" -> "s3131" [style=solid]
+"s848" -> "s2477" [style=solid]
+"s2476" -> "s2477" [style=solid]
+"s2839" -> "s2841" [style=dashed, color=lightgray, weight=0]
+"s2891" -> "s2841" [style=solid]
+"s2898" -> "s2841" [style=solid]
+"s2936" -> "s2938" [style=dashed, color=lightgray, weight=0]
+"s2832" -> "s2938" [style=solid]
+"s2476" -> "s2938" [style=solid]
+"s834" -> "s843" [style=solid]
+"s37" -> "s843" [style=solid]
+"s648" -> "s2891" [style=solid]
+"s2860" -> "s2891" [style=solid]
+"s301" -> "s848" [style=solid]
+"s301" -> "s848" [style=solid]
+"s37" -> "s648" [style=solid]
+"s37" -> "s648" [style=solid]
+"s843" -> "s2860" [style=solid]
+"s1200" -> "s2898" [style=solid]
+"s2477" -> "s2832" [style=solid]
+"s301" -> "s2832" [style=solid]
+}

@@ -96,7 +96,7 @@ class TestingInterpreterSpecification extends PropSpec
       "dk2" -> dk2,
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
-      "box1" -> ErgoBox(10, TrueLeaf, Seq(), Map(
+      "box1" -> ErgoBox(10, TrueLeaf, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue

@@ -1,0 +1,70 @@
+digraph "Def2" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s70619" [
+label="s70619: Int = Const(8)"
+shape=box, color=gray, tooltip="s70619:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s73903 {
+style=dashed; color="#FFCCFF"
+"s73901" [
+label="s73901: Context"
+shape=oval, color=gray, tooltip="s73901:Context", style=filled, fillcolor=white
+]
+"s73903" [
+label="s73903: Context => Boolean = s73901 => ! s73949"
+shape=box, color=magenta, tooltip="s73903:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s73901}
+"s73907" [
+label="s73907: Box = s73901.Context.SELF()"
+shape=box, color=darkblue, tooltip="s73907:Box", style=filled, fillcolor=white
+]
+"s73917" [
+label="s73917: WOption[Int] = s73907.Box.getReg(s70619, anon$7<Int>)"
+shape=box, color=darkblue, tooltip="s73917:WOption[Int]", style=filled, fillcolor=white
+]
+"s73949" [
+label="s73949: Boolean = s73917.WOption.isDefined()"
+shape=box, color=darkblue, tooltip="s73949:Boolean", style=filled, fillcolor=white
+]
+{rank=sink; s73903}
+}
+"s25151" [
+label="s25151: Int = Const(1)"
+shape=box, color=gray, tooltip="s25151:Int", style=filled, fillcolor=white
+]
+"s86" [
+label="s86: Int = CostOf(Const:() => SBoolean)"
+shape=box, color=gray, tooltip="s86:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s73966 {
+style=dashed; color="#FFCCFF"
+"s73964" [
+label="s73964: Context"
+shape=oval, color=gray, tooltip="s73964:Context", style=filled, fillcolor=white
+]
+"s73966" [
+label="s73966: Context => Int = s73964 => s25151 + s86"
+shape=box, color=magenta, tooltip="s73966:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s73964}
+{rank=sink; s73966}
+}
+"s74026" [
+label="s74026: (Context => Boolean, Context => Int) = (s73903, s73966)"
+shape=box, color=gray, tooltip="s74026:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s73964" -> "s73966" [style=dashed, color=lightgray, weight=0]
+"s25151" -> "s73966" [style=solid]
+"s86" -> "s73966" [style=solid]
+"s73901" -> "s73907" [style=solid]
+"s73903" -> "s74026" [style=solid]
+"s73966" -> "s74026" [style=solid]
+"s73917" -> "s73949" [style=solid]
+"s73907" -> "s73917" [style=solid]
+"s70619" -> "s73917" [style=solid]
+"s73901" -> "s73903" [style=dashed, color=lightgray, weight=0]
+"s73949" -> "s73903" [style=solid]
+}

@@ -1,0 +1,271 @@
+digraph "verify_prop" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s768" [
+label="s768: Int = Const(2)"
+shape=box, color=gray, tooltip="s768:Int", style=filled, fillcolor=white
+]
+"s11" [
+label="s11: Int = Const(0)"
+shape=box, color=gray, tooltip="s11:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s15842 {
+style=dashed; color="#FFCCFF"
+"s15840" [
+label="s15840: Context"
+shape=oval, color=gray, tooltip="s15840:Context", style=filled, fillcolor=white
+]
+"s15842" [
+label="s15842: Context => Boolean = s15840 => s15898 && { s15903 }"
+shape=box, color=magenta, tooltip="s15842:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s15840}
+"s15848" [
+label="s15848: Col[Box] = s15840.Context.INPUTS()"
+shape=box, color=darkblue, tooltip="s15848:Col[Box]", style=filled, fillcolor=white
+]
+"s15850" [
+label="s15850: Int = s15848.Col.length()"
+shape=box, color=darkblue, tooltip="s15850:Int", style=filled, fillcolor=white
+]
+"s15898" [
+label="s15898: Boolean = s15850 == s768"
+shape=box, color=gray, tooltip="s15898:Boolean", style=filled, fillcolor=white
+]
+subgraph cluster_s15903 {
+style=dashed; color="#FFCCCC"
+"s15903" [
+label="s15903: Thunk[Boolean] =\lThunk(s15988, [s15940,s15962,s15973,s15977,s15988])\l"
+shape=box, color=red, tooltip="s15903:Thunk[Boolean]", style=filled, fillcolor=white
+]
+"s15940" [
+label="s15940: Box = s15848.Col.apply(s11)"
+shape=box, color=darkblue, tooltip="s15940:Box", style=filled, fillcolor=white
+]
+"s15962" [
+label="s15962: Col[Byte] = s15940.Box.id()"
+shape=box, color=darkblue, tooltip="s15962:Col[Byte]", style=filled, fillcolor=white
+]
+"s15973" [
+label="s15973: Box =\lBoxConst(Box(id=Col(102,104,86,-69,52,110,-80,87,5,46,-31,16,-25,90,4,-55,79,40,-38,-126,67,98,101,-114,-24,106,119,52,18,-52,117,109); value=10; cost=72; size=72; regs=Col(Value(ConstantNode(10,SLong)),Value(ConstantNode([B@da64590,Col[SByte])),Value(ConstantNode([[Ljava.lang.Object;@7366767,Col[(Col[SByte],SLong)])),Value(ConstantNode([Ljava.lang.Object;@1fd218ea,(SLong,Col[SByte]))),null,null,null,null,null,null)))\l"
+shape=box, color=gray, tooltip="s15973:Box", style=filled, fillcolor=white
+]
+"s15977" [
+label="s15977: Col[Byte] = s15973.Box.id()"
+shape=box, color=darkblue, tooltip="s15977:Col[Byte]", style=filled, fillcolor=white
+]
+"s15988" [
+label="s15988: Boolean = s15962 == s15977"
+shape=box, color=gray, tooltip="s15988:Boolean", style=filled, fillcolor=white
+]
+{rank=sink; s15903}
+}
+{rank=sink; s15842}
+}
+"s6727" [
+label="s6727: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s6727:Int", style=filled, fillcolor=white
+]
+"s6749" [
+label="s6749: Int = CostOf(ByIndex:[IV](Col[IV],SInt) => IV)"
+shape=box, color=gray, tooltip="s6749:Int", style=filled, fillcolor=white
+]
+"s44" [
+label="s44: Long = TypeSize(SByte)"
+shape=box, color=gray, tooltip="s44:Long", style=filled, fillcolor=white
+]
+"s8695" [
+label="s8695: Int = Const(32)"
+shape=box, color=gray, tooltip="s8695:Int", style=filled, fillcolor=white
+]
+"s8758" [
+label="s8758: Long = ToLong s8695"
+shape=box, color=gray, tooltip="s8758:Long", style=filled, fillcolor=white
+]
+"s8759" [
+label="s8759: Long = s44 * s8758"
+shape=box, color=gray, tooltip="s8759:Long", style=filled, fillcolor=white
+]
+"s14649" [
+label="s14649: Long = s8759 + s8759"
+shape=box, color=gray, tooltip="s14649:Long", style=filled, fillcolor=white
+]
+"s124" [
+label="s124: Long = Const(1024l)"
+shape=box, color=gray, tooltip="s124:Long", style=filled, fillcolor=white
+]
+"s14651" [
+label="s14651: Long = s14649 / s124"
+shape=box, color=gray, tooltip="s14651:Long", style=filled, fillcolor=white
+]
+"s14652" [
+label="s14652: Int = s14651.toInt"
+shape=box, color=gray, tooltip="s14652:Int", style=filled, fillcolor=white
+]
+"s127" [
+label="s127: Int = CostOf(EQ_per_kb:(T,T) => SBoolean)"
+shape=box, color=gray, tooltip="s127:Int", style=filled, fillcolor=white
+]
+"s14654" [
+label="s14654: Int = s14652 * s127"
+shape=box, color=gray, tooltip="s14654:Int", style=filled, fillcolor=white
+]
+"s14342" [
+label="s14342: Int = CostOf(SizeOf:(Col[IV]) => SInt)"
+shape=box, color=gray, tooltip="s14342:Int", style=filled, fillcolor=white
+]
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s3492" [
+label="s3492: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s3492:CostModel", style=filled, fillcolor=white
+]
+"s3508" [
+label="s3508: Int = s3492.CostModel.CollectionConst()"
+shape=box, color=darkblue, tooltip="s3508:Int", style=filled, fillcolor=white
+]
+"s2220" [
+label="s2220: Int = CostOf(BinAnd:(SBoolean,SBoolean) => SBoolean)"
+shape=box, color=gray, tooltip="s2220:Int", style=filled, fillcolor=white
+]
+"s14567" [
+label="s14567: Int = CostOf(ExtractId:(SBox) => Col[SByte])"
+shape=box, color=gray, tooltip="s14567:Int", style=filled, fillcolor=white
+]
+"s3494" [
+label="s3494: Int = s3492.CostModel.AccessBox()"
+shape=box, color=darkblue, tooltip="s3494:Int", style=filled, fillcolor=white
+]
+"s14577" [
+label="s14577: Int = CostOf(Const:() => SBox)"
+shape=box, color=gray, tooltip="s14577:Int", style=filled, fillcolor=white
+]
+"s14583" [
+label="s14583: Int = s14577 + s14567"
+shape=box, color=gray, tooltip="s14583:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s15042 {
+style=dashed; color="#FFCCFF"
+"s15040" [
+label="s15040: Context"
+shape=oval, color=gray, tooltip="s15040:Context", style=filled, fillcolor=white
+]
+"s15042" [
+label="s15042: Context => Int = s15040 => s15407 + s2220"
+shape=box, color=magenta, tooltip="s15042:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s15040}
+"s15048" [
+label="s15048: Col[Box] = s15040.Context.INPUTS()"
+shape=box, color=darkblue, tooltip="s15048:Col[Box]", style=filled, fillcolor=white
+]
+"s15050" [
+label="s15050: Int = s15048.Col.length()"
+shape=box, color=darkblue, tooltip="s15050:Int", style=filled, fillcolor=white
+]
+"s15087" [
+label="s15087: Int = s3494 * s15050"
+shape=box, color=gray, tooltip="s15087:Int", style=filled, fillcolor=white
+]
+"s15088" [
+label="s15088: Int = s3508 + s15087"
+shape=box, color=gray, tooltip="s15088:Int", style=filled, fillcolor=white
+]
+"s15090" [
+label="s15090: Int = s15088 + s14342"
+shape=box, color=gray, tooltip="s15090:Int", style=filled, fillcolor=white
+]
+"s15099" [
+label="s15099: Int = s15090 + s6727"
+shape=box, color=gray, tooltip="s15099:Int", style=filled, fillcolor=white
+]
+"s15306" [
+label="s15306: Int = s15088 + s6727"
+shape=box, color=gray, tooltip="s15306:Int", style=filled, fillcolor=white
+]
+"s15308" [
+label="s15308: Int = s15306 + s6749"
+shape=box, color=gray, tooltip="s15308:Int", style=filled, fillcolor=white
+]
+"s15316" [
+label="s15316: Int = s15308 + s14567"
+shape=box, color=gray, tooltip="s15316:Int", style=filled, fillcolor=white
+]
+"s15368" [
+label="s15368: Int = s15316 + s14583"
+shape=box, color=gray, tooltip="s15368:Int", style=filled, fillcolor=white
+]
+"s15403" [
+label="s15403: Int = s15368 + s14654"
+shape=box, color=gray, tooltip="s15403:Int", style=filled, fillcolor=white
+]
+"s15407" [
+label="s15407: Int = s15099 + s15403"
+shape=box, color=gray, tooltip="s15407:Int", style=filled, fillcolor=white
+]
+{rank=sink; s15042}
+}
+"s16585" [
+label="s16585: (Context => Boolean, Context => Int) = (s15842, s15042)"
+shape=box, color=gray, tooltip="s16585:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s15840" -> "s15848" [style=solid]
+"s15368" -> "s15403" [style=solid]
+"s14654" -> "s15403" [style=solid]
+"s3494" -> "s15087" [style=solid]
+"s15050" -> "s15087" [style=solid]
+"s15088" -> "s15306" [style=solid]
+"s6727" -> "s15306" [style=solid]
+"s44" -> "s8759" [style=solid]
+"s8758" -> "s8759" [style=solid]
+"s14652" -> "s14654" [style=solid]
+"s127" -> "s14654" [style=solid]
+"s14651" -> "s14652" [style=solid]
+"s28" -> "s3492" [style=solid]
+"s15940" -> "s15962" [style=solid]
+"s15099" -> "s15407" [style=solid]
+"s15403" -> "s15407" [style=solid]
+"s15048" -> "s15050" [style=solid]
+"s15316" -> "s15368" [style=solid]
+"s14583" -> "s15368" [style=solid]
+"s8759" -> "s14649" [style=solid]
+"s8759" -> "s14649" [style=solid]
+"s15848" -> "s15940" [style=solid]
+"s11" -> "s15940" [style=solid]
+"s15040" -> "s15042" [style=dashed, color=lightgray, weight=0]
+"s15407" -> "s15042" [style=solid]
+"s2220" -> "s15042" [style=solid]
+"s3492" -> "s3508" [style=solid]
+"s15840" -> "s15842" [style=dashed, color=lightgray, weight=0]
+"s15898" -> "s15842" [style=solid]
+"s15903" -> "s15842" [style=solid]
+"s15308" -> "s15316" [style=solid]
+"s14567" -> "s15316" [style=solid]
+"s15962" -> "s15988" [style=solid]
+"s15977" -> "s15988" [style=solid]
+"s15842" -> "s16585" [style=solid]
+"s15042" -> "s16585" [style=solid]
+"s15850" -> "s15898" [style=solid]
+"s768" -> "s15898" [style=solid]
+"s15040" -> "s15048" [style=solid]
+"s15088" -> "s15090" [style=solid]
+"s14342" -> "s15090" [style=solid]
+"s15306" -> "s15308" [style=solid]
+"s6749" -> "s15308" [style=solid]
+"s15090" -> "s15099" [style=solid]
+"s6727" -> "s15099" [style=solid]
+"s15988" -> "s15903" [style=solid]
+"s3508" -> "s15088" [style=solid]
+"s15087" -> "s15088" [style=solid]
+"s15973" -> "s15977" [style=solid]
+"s15848" -> "s15850" [style=solid]
+"s14649" -> "s14651" [style=solid]
+"s124" -> "s14651" [style=solid]
+"s8695" -> "s8758" [style=solid]
+"s3492" -> "s3494" [style=solid]
+"s14577" -> "s14583" [style=solid]
+"s14567" -> "s14583" [style=solid]
+}

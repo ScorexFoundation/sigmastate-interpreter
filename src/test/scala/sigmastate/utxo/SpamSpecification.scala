@@ -132,7 +132,7 @@ class SpamSpecification extends SigmaTestingCommons {
             )
           )
 
-        val txOutputs = ((1 to outCnt) map (_ => ErgoBox(11, spamProp))) :+ ErgoBox(11, propToCompare)
+        val txOutputs = ((1 to outCnt) map (_ => ErgoBox(11, spamProp, 0))) :+ ErgoBox(11, propToCompare, 0)
         val tx = ErgoLikeTransaction(IndexedSeq(), txOutputs)
 
         val ctx = ErgoLikeContext.dummy(createBox(0, propToCompare)).withTransaction(tx)
@@ -158,8 +158,8 @@ class SpamSpecification extends SigmaTestingCommons {
     val inputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(5))))
     val outputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(6))))
 
-    val inputs = ((1 to 999) map (_ => ErgoBox(11, inputScript))) :+ ErgoBox(11, outputScript)
-    val outputs = (1 to 1000) map (_ => ErgoBox(11, outputScript))
+    val inputs = ((1 to 999) map (_ => ErgoBox(11, inputScript, 0))) :+ ErgoBox(11, outputScript, 0)
+    val outputs = (1 to 1000) map (_ => ErgoBox(11, outputScript, 0))
 
     val tx = ergoplatform.ErgoLikeTransaction(IndexedSeq(), outputs)
 
@@ -168,7 +168,7 @@ class SpamSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = ErgoBox(11, prop),
+      self = ErgoBox(11, prop, 0),
       metadata = Metadata(TestnetNetworkPrefix))
 
     val pt0 = System.currentTimeMillis()

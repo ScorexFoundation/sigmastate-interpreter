@@ -1,0 +1,70 @@
+digraph "height_2_verify" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s50447" [
+label="s50447: Long = Const(2l)"
+shape=box, color=gray, tooltip="s50447:Long", style=filled, fillcolor=white
+]
+subgraph cluster_s50459 {
+style=dashed; color="#FFCCFF"
+"s50457" [
+label="s50457: Context"
+shape=oval, color=gray, tooltip="s50457:Context", style=filled, fillcolor=white
+]
+"s50459" [
+label="s50459: Context => Boolean = s50457 => s50468 >= s50447"
+shape=box, color=magenta, tooltip="s50459:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s50457}
+"s50468" [
+label="s50468: Long = s50457.Context.HEIGHT()"
+shape=box, color=darkblue, tooltip="s50468:Long", style=filled, fillcolor=white
+]
+{rank=sink; s50459}
+}
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s39" [
+label="s39: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s39:CostModel", style=filled, fillcolor=white
+]
+"s41" [
+label="s41: Int = s39.CostModel.SelectField()"
+shape=box, color=darkblue, tooltip="s41:Int", style=filled, fillcolor=white
+]
+"s48" [
+label="s48: Int = CostOf(Const:() => SLong)"
+shape=box, color=gray, tooltip="s48:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s84 {
+style=dashed; color="#FFCCFF"
+"s82" [
+label="s82: Context"
+shape=oval, color=gray, tooltip="s82:Context", style=filled, fillcolor=white
+]
+"s84" [
+label="s84: Context => Int = s82 => s41 + s48"
+shape=box, color=magenta, tooltip="s84:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s82}
+{rank=sink; s84}
+}
+"s50505" [
+label="s50505: (Context => Boolean, Context => Int) = (s50459, s84)"
+shape=box, color=gray, tooltip="s50505:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s82" -> "s84" [style=dashed, color=lightgray, weight=0]
+"s41" -> "s84" [style=solid]
+"s48" -> "s84" [style=solid]
+"s50459" -> "s50505" [style=solid]
+"s84" -> "s50505" [style=solid]
+"s39" -> "s41" [style=solid]
+"s50457" -> "s50468" [style=solid]
+"s28" -> "s39" [style=solid]
+"s50457" -> "s50459" [style=dashed, color=lightgray, weight=0]
+"s50468" -> "s50459" [style=solid]
+"s50447" -> "s50459" [style=solid]
+}
