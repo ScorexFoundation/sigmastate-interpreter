@@ -59,7 +59,7 @@ object ErgoTreeSerializer {
   }
 
   def deserialize(bytes: Array[Byte], resolvePlaceholdersToConstants: Boolean = true): Value[SType] = {
-    deserialize(Serializer.startReader(bytes), resolvePlaceholdersToConstants)
+    deserialize(SigmaSerializer.startReader(bytes), resolvePlaceholdersToConstants)
   }
 
   def deserialize(r: SigmaByteReader, resolvePlaceholdersToConstants: Boolean): Value[SType] = {
