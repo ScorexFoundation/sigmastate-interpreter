@@ -25,6 +25,7 @@ class SerializationRoundTripSpec extends PropSpec
     val w = new ByteStringWriter()
     serializer.serialize(v, w)
     val bytes = w.result()
+    bytes.nonEmpty shouldBe true
     serializer.parse(new ByteStringReader(bytes)) shouldBe v
   }
 

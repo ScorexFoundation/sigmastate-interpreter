@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
-import scorex.util.serialization.Serializer
+import scorex.util.serialization.{Serializer, VLQByteBufferWriter}
 
 object SigmaSerializer {
   type Position = Int
@@ -43,13 +43,15 @@ object SigmaSerializer {
     * res */
   def startWriter(): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
-    val w = new SigmaByteWriter(b, constantExtractionStore = None)
+    val wi = new VLQByteBufferWriter(b)
+    val w = new SigmaByteWriter(wi, constantExtractionStore = None)
     w
   }
 
   def startWriter(constantExtractionStore: ConstantStore): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
-    val w = new SigmaByteWriter(b, constantExtractionStore = Some(constantExtractionStore))
+    val wi = new VLQByteBufferWriter(b)
+    val w = new SigmaByteWriter(wi, constantExtractionStore = Some(constantExtractionStore))
     w
   }
 }
