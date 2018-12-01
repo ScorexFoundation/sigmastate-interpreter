@@ -75,6 +75,13 @@ class EvaluationTest extends BaseCtxTests
        | }""".stripMargin, ctx, true)
   }
 
+  test("Measure IRContext creation speed") {
+    var ctx: RuntimeIRContext = null
+    measure(100) { i =>
+      ctx = new RuntimeIRContext
+    }
+    println(s"Def count: ${ctx.defCount}")
+  }
 //  test("Crowd Funding") {
 //    val backerProver = new ErgoLikeProvingInterpreter
 //    val projectProver = new ErgoLikeProvingInterpreter

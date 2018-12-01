@@ -1,8 +1,12 @@
 package sigmastate.serialization
 
-import sigmastate.SType
-import sigmastate.Values.{Value, Constant, ErgoTree}
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{ConcreteCollection, Constant, ErgoTree, Value}
 import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.utils.SigmaByteReader
+import sigmastate.utxo.Append
+import sigmastate.{SGroupElement, SType}
+
 import scala.collection.mutable
 
 object ErgoTreeSerializer {
@@ -55,11 +59,25 @@ object ErgoTreeSerializer {
   }
 
   def deserialize(bytes: Array[Byte], resolvePlaceholdersToConstants: Boolean = true): Value[SType] = {
-    // TODO optimize allocation/copying
-    val (header, constants, treeBytes) = treeWithPlaceholdersBytes(bytes)
-    val r = Serializer.startReader(treeBytes, new ConstantStore(constants),
-      resolvePlaceholdersToConstants)
+    deserialize(Serializer.startReader(bytes), resolvePlaceholdersToConstants)
+  }
+
+  def deserialize(r: SigmaByteReader, resolvePlaceholdersToConstants: Boolean): Value[SType] = {
+    val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+    r.getByte() // skip the header
+    val constantCount = r.getUInt().toInt
+    val constantsBuilder = mutable.ArrayBuilder.make[Constant[SType]]()
+    for (_ <- 0 until constantCount) {
+      constantsBuilder += constantSerializer.deserialize(r)
+    }
+    val constants = constantsBuilder.result
+    val previousConstantStore = r.constantStore
+    r.constantStore = new ConstantStore(constants)
+    val previousResolvePlaceholderValue = r.resolvePlaceholdersToConstants
+    r.resolvePlaceholdersToConstants = resolvePlaceholdersToConstants
     val tree = ValueSerializer.deserialize(r)
+    r.constantStore = previousConstantStore
+    r.resolvePlaceholdersToConstants = previousResolvePlaceholderValue
     tree
   }
 
@@ -68,5 +86,23 @@ object ErgoTreeSerializer {
     val tree = ValueSerializer.deserialize(r)
     tree
   }
+
+  def serializedPubkeyPropValue(pubkey: Value[SByteArray]): Value[SByteArray] =
+    Append(
+      Append(
+        ConcreteCollection(
+          0.toByte, // header
+          1.toByte, // const count
+          SGroupElement.typeCode // const type
+        ),
+        pubkey // const value
+      ),
+      ConcreteCollection(
+        OpCodes.ProveDlogCode,
+        OpCodes.ConstantPlaceholderIndexCode,
+        0.toByte // constant index in the store
+      )
+    )
+
 }
 
