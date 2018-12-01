@@ -28,7 +28,6 @@ import sigmastate.lang.DefaultSigmaBuilder._
 object Values {
 
   type SigmaTree = Tree[SigmaNode, SValue]
-
   type SValue = Value[SType]
   type Idn = String
 
@@ -36,13 +35,12 @@ object Values {
     def companion: ValueCompanion =
       sys.error(s"Companion object is not defined for AST node ${this.getClass}")
 
+    /** Unique id of the node class used in serialization of ErgoTree. */
     val opCode: OpCode
 
+    /** The type of the value represented by this node. If the value is an operation it is
+      * the type of operation result. */
     def tpe: S
-
-    def typeCode: SType.TypeCode = tpe.typeCode
-
-    def cost[C <: Context](context: C): Long
 
     /** Returns true if this value represent some constant or sigma statement, false otherwise */
     def evaluated: Boolean
@@ -117,8 +115,6 @@ object Values {
     override val opCode: OpCode = ConstantCode
     override def opName: String = s"Const"
 
-    override def cost[C <: Context](context: C) = tpe.dataSize(value)
-
     override def equals(obj: scala.Any): Boolean = obj match {
       case c: Constant[_] => Objects.deepEquals(value, c.value) && tpe == c.tpe
       case _ => false
@@ -149,7 +145,6 @@ object Values {
     override def evaluated: Boolean = false
     def opType = SFunc(SInt, tpe)
     override val opCode: OpCode = ConstantPlaceholderIndexCode
-    override def cost[C <: Context](context: C): Long = 0
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -168,7 +163,6 @@ object Values {
   case class TaggedVariableNode[T <: SType](varId: Byte, override val tpe: T)
     extends TaggedVariable[T] {
     override val opCode: OpCode = TaggedVariableCode
-    override def cost[C <: Context](context: C): Long = context.extension.cost(varId) + 1
     def opType: SFunc = ???
   }
 
@@ -179,10 +173,7 @@ object Values {
 
   case object UnitConstant extends EvaluatedValue[SUnit.type] {
     override val opCode = UnitConstantCode
-    override def cost[C <: Context](context: C) = 1
-
     override def tpe = SUnit
-
     val value = ()
   }
 
@@ -465,8 +456,6 @@ object Values {
 
     import CryptoConstants.dlogGroup
 
-    override def cost[C <: Context](context: C) = 10
-
     override def tpe = SGroupElement
 
     override val value: CryptoConstants.EcPointType = dlogGroup.generator
@@ -528,7 +517,6 @@ object Values {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]])
     }
-    override def cost[C <: Context](context: C) = Cost.TupleDeclaration + items.map(_.cost(context)).sum
   }
 
   object Tuple {
@@ -541,14 +529,12 @@ object Values {
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override val opCode = SomeValueCode
-    def cost[C <: Context](context: C): Long = x.cost(context) + 1
     val tpe = SOption(x.tpe)
     def opType = SFunc(x.tpe, tpe)
   }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
     override val opCode = NoneValueCode
-    def cost[C <: Context](context: C): Long = 1
     val tpe = SOption(elemType)
     def opType = SFunc(elemType, tpe)
   }
@@ -560,8 +546,6 @@ object Values {
         ConcreteCollectionBooleanConstantCode
       else
         ConcreteCollectionCode
-
-    def cost[C <: Context](context: C): Long = Cost.ConcreteCollectionDeclaration + items.map(_.cost(context)).sum
 
     val tpe = SCollection[V](elementType)
 
@@ -629,7 +613,6 @@ object Values {
     require(id >= 0, "id must be >= 0")
     val opCode: OpCode = if (tpeArgs.isEmpty) ValDefCode else FunDefCode
     def tpe: SType = rhs.tpe
-    def cost[C <: Context](ctx: C): Long = rhs.cost(ctx)
     def isValDef: Boolean = tpeArgs.isEmpty
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
@@ -647,7 +630,6 @@ object Values {
   /** Special node which represents a reference to ValDef in was introduced as result of CSE. */
   case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
     override val opCode: OpCode = ValUseCode
-    override def cost[C <: Context](context: C): Long = 1
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
@@ -662,7 +644,6 @@ object Values {
   case class BlockValue(items: IndexedSeq[BlockItem], result: SValue) extends NotReadyValue[SType] {
     val opCode: OpCode = BlockValueCode
     def tpe: SType = result.tpe
-    def cost[C <: Context](ctx: C): Long = items.map(_.cost(ctx)).sum + result.cost(ctx)
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
@@ -674,7 +655,6 @@ object Values {
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
     lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
     val opCode: OpCode = FuncValueCode
-    def cost[C <: Context](context: C): Long = 1
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }

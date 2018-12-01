@@ -6,7 +6,6 @@ import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
 import scapi.sigma.VerifierMessage.Challenge
-import sigmastate.utxo.CostTable.Cost
 import sigmastate._
 import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
@@ -20,19 +19,10 @@ object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
-//  case class TrivialSigma(value: BoolValue)
-//    extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
-//    override val opCode: OpCode = OpCodes.TrivialSigmaCode
-//    override def cost[C <: Context[C]](context: C): Long = Cost.BooleanConstantDeclaration
-//  }
-
   case class ProveDlog(value: Value[SGroupElement.type])
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
     override val opCode: OpCode = OpCodes.ProveDlogCode
-
-    override def cost[C <: Context](context: C): Long = Cost.DlogDeclaration
-
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
     lazy val pkBytes: Array[Byte] = h.getEncoded(true)

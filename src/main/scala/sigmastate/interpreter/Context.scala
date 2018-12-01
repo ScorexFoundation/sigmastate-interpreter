@@ -14,10 +14,6 @@ import special.sigma
 case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]]) {
   def add(bindings: (Byte, EvaluatedValue[_ <: SType])*): ContextExtension =
     ContextExtension(values ++ bindings)
-  //context values should not use context to determine their cost
-  //todo: getOrElse(0L) branch triggers for local variables in Where/ForAll/Exists/Fold etc.
-  //todo: Should the cost be 0 in this case?
-  def cost(id: Byte): Long = values.get(id).map(_.cost(null)).getOrElse(0L)
 }
 
 object ContextExtension {

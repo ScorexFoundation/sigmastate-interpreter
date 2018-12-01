@@ -146,7 +146,5 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
     val pr2 = tokenSeller.prove(sellerProp, sellerCtx, fakeMessage).get
     verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
-
-    println("total cost: " + (buyerProp.cost(buyerCtx) + sellerProp.cost(sellerCtx)))
   }
 }

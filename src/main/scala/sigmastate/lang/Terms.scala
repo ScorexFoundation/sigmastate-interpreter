@@ -16,9 +16,6 @@ object Terms {
 
   case class Block(bindings: Seq[Val], result: SValue) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
     override def evaluated: Boolean = false
     def tpe: SType = result.tpe
 
@@ -45,7 +42,6 @@ object Terms {
   case class ZKProofBlock(body: SigmaPropValue) extends BoolValue {
     override val opCode: OpCode = OpCodes.Undefined
     override def tpe = SBoolean
-    override def cost[C <: Context](context: C): Long = ???
     override def evaluated: Boolean = false
     override def opType: SFunc = SFunc(SSigmaProp, SBoolean)
   }
@@ -58,9 +54,6 @@ object Terms {
 
   case class ValNode(name: String, givenType: SType, body: SValue) extends Val {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
     override def evaluated: Boolean = ???
     def tpe: SType = givenType ?: body.tpe
     /** This is not used as operation, but rather to form a program structure */
@@ -75,10 +68,9 @@ object Terms {
     }
   }
 
+  /** Frontend node to select a field from an object. Should be transformed to SelectField*/
   case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = obj.cost(context) + Cost.SelectFieldDeclaration
 
     override def evaluated: Boolean = ???
     val tpe: SType = resType.getOrElse(obj.tpe match {
@@ -94,9 +86,6 @@ object Terms {
 
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
     override def evaluated: Boolean = ???
 
     def opType: SFunc = SFunc(Vector(), tpe)
@@ -107,9 +96,6 @@ object Terms {
 
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
     override def evaluated: Boolean = false
     lazy val tpe: SType = func.tpe match {
       case SFunc(_, r, _) => r
@@ -127,9 +113,6 @@ object Terms {
 //        s"Invalid number of tpeArgs in $node: expected ${funcType.tpeArgs} but found $tpeArgs")
 //    )
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
     override def evaluated: Boolean = false
     lazy val tpe: SType = input.tpe match {
       case funcType: SFunc =>
@@ -145,9 +128,6 @@ object Terms {
   case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
 
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
     override def evaluated: Boolean = false
 
     def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
@@ -166,7 +146,6 @@ object Terms {
   {
     require(!(tpeParams.nonEmpty && body.nonEmpty), s"Generic function definitions are not supported, but found $this")
     override val opCode: OpCode = OpCodes.Undefined
-    override def cost[C <: Context](context: C): Long = ???
     override def evaluated: Boolean = false
     lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe), tpeParams)
     /** This is not used as operation, but rather to form a program structure */
