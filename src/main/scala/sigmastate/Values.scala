@@ -42,9 +42,6 @@ object Values {
       * the type of operation result. */
     def tpe: S
 
-    /** Returns true if this value represent some constant or sigma statement, false otherwise */
-    def evaluated: Boolean
-
     lazy val bytes = ErgoTreeSerializer.serialize(this)
 
     /** Every value represents an operation and that operation can be associated with a function type,
@@ -94,7 +91,6 @@ object Values {
 
   trait EvaluatedValue[S <: SType] extends Value[S] {
     val value: S#WrappedType
-    override lazy val evaluated = true
     def opType: SFunc = {
       val resType = tpe match {
         case ct @ SCollection(tItem) =>
@@ -142,13 +138,11 @@ object Values {
   }
 
   case class ConstantPlaceholder[S <: SType](id: Int, override val tpe: S) extends Value[S] {
-    override def evaluated: Boolean = false
     def opType = SFunc(SInt, tpe)
     override val opCode: OpCode = ConstantPlaceholderIndexCode
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
-    override lazy val evaluated = false
   }
 
   /** Base class for references to context variables. */
@@ -163,7 +157,7 @@ object Values {
   case class TaggedVariableNode[T <: SType](varId: Byte, override val tpe: T)
     extends TaggedVariable[T] {
     override val opCode: OpCode = TaggedVariableCode
-    def opType: SFunc = ???
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
   object TaggedVariable {
@@ -487,13 +481,11 @@ object Values {
     * For sigma statements
     */
   trait SigmaBoolean extends NotReadyValue[SBoolean.type] {
-    override lazy val evaluated = true
-
     override def tpe = SBoolean
 
     def fields: Seq[(String, SType)] = SigmaBoolean.fields
-    /** This is not used as operation, but rather as value of SigmaProp type. */
-    def opType: SFunc = ???
+    /** This is not used as operation, but rather as data value of SigmaProp type. */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
   object SigmaBoolean {
@@ -524,7 +516,6 @@ object Values {
   }
 
   trait OptionValue[T <: SType] extends Value[SOption[T]] {
-    def evaluated: Boolean = false
   }
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
@@ -567,8 +558,8 @@ object Values {
   implicit class CollectionOps[T <: SType](coll: Value[SCollection[T]]) {
     def length: Int = matchCase(_.items.length, _.value.length, _.items.length)
     def items = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"), _.items)
-    def isEvaluatedCollection =
-      coll.evaluated && matchCase(_.items.forall(_.evaluated), _ => true, _.items.forall(_.evaluated))
+//    def isEvaluatedCollection =
+//      coll.evaluated && matchCase(_.items.forall(_.evaluated), _ => true, _.items.forall(_.evaluated))
     def matchCase[R](
         whenConcrete: ConcreteCollection[T] => R,
         whenConstant: CollectionConstant[T] => R,

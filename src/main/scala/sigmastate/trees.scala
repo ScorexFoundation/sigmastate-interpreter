@@ -93,7 +93,6 @@ object TrivialProof {
 case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
   def tpe = SSigmaProp
-  def evaluated = false
   val opType = SFunc(SBoolean, SSigmaProp)
 }
 
@@ -107,7 +106,6 @@ trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends Sigma
 case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPropValue, SigmaPropValue] {
   override val opCode: OpCode = OpCodes.SigmaAndCode
   def tpe = SSigmaProp
-  def evaluated = false
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 
@@ -117,7 +115,6 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
 case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPropValue, SigmaPropValue] {
   override val opCode: OpCode = OpCodes.SigmaOrCode
   def tpe = SSigmaProp
-  def evaluated = false
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 

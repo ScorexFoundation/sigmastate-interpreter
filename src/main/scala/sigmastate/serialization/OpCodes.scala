@@ -140,7 +140,8 @@ object OpCodes extends ValueCodes {
   val ValDefCode: OpCode = (LastConstantCode + 102).toByte
   val FunDefCode: OpCode = (LastConstantCode + 103).toByte
   val BlockValueCode: OpCode = (LastConstantCode + 104).toByte
-  val FuncValueCode: OpCode = (LastConstantCode + 105).toByte // reserved 106 - 109
+  val FuncValueCode: OpCode = (LastConstantCode + 105).toByte
+  val FuncApplyCode: OpCode = (LastConstantCode + 106).toByte // reserved 107 - 109
 
   val SomeValueCode: OpCode = (LastConstantCode + 110).toByte
   val NoneValueCode: OpCode = (LastConstantCode + 111).toByte
