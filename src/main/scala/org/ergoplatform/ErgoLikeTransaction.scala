@@ -156,11 +156,11 @@ object ErgoLikeTransaction {
       }
     }
 
-    object ergoSerializer extends Serializer[ErgoBox, ErgoBox, Reader, Writer] {
+    object ergoSerializer extends Serializer[FlattenedTransaction, FlattenedTransaction, Reader, Writer] {
 
-      override def serialize(obj: ErgoBox, w: Writer): Unit = ???
+      override def serialize(obj: FlattenedTransaction, w: Writer): Unit = ???
 
-      override def parse(r: Reader): ErgoBox = ???
+      override def parse(r: Reader): FlattenedTransaction = ???
     }
   }
 
