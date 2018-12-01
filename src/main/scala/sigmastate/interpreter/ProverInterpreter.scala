@@ -124,7 +124,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   def prove(env: ScriptEnv, exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
     import TrivialProof._
-    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions).asInstanceOf[CTX], env, exp).get
+    val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
+    val propTree = applyDeserializeContext(ctx, exp)
+    val (reducedProp, cost) = reduceToCrypto(ctx, env, propTree).get
 
     def errorReducedToFalse = Interpreter.error("Script reduced to false")
 

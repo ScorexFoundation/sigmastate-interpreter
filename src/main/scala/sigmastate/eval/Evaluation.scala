@@ -379,8 +379,8 @@ trait Evaluation extends RuntimeCosting { IR =>
         case sb: SigmaBoolean => builder.liftAny(sb).get
         case v: Value[_] => v
         case col: special.collection.Col[_] =>
-          val et = elemToSType(f.elem.eRange)
-          CollectionConstant(col.arr.asInstanceOf[Array[SType#WrappedType]], et)
+          val et = elemToSType(f.elem.eRange).asCollection[SType]
+          CollectionConstant(col.arr.asInstanceOf[Array[SType#WrappedType]], et.elemType)
         case x => builder.liftAny(x).get
       }
     }

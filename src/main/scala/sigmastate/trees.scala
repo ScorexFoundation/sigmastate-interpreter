@@ -123,53 +123,13 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
 
 /**
   * OR logical conjunction
-  * todo: reduce AND + OR boilerplate by introducing a Connective superclass for both
   */
 case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
-
   override val opCode: OpCode = OrCode
-  val opType = SFunc(SCollection.SBooleanArray, SBoolean)
-
-  //todo: reduce such boilerplate around AND/OR, folders, map etc
-  override def transformationReady: Boolean =
-    input.evaluated && input.matchCase(
-      _.items.forall(_.evaluated),
-      _ => true,
-      _.items.forall(_.evaluated)
-    )
-
-  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
-    @tailrec
-    def iterChildren(children: Seq[Value[SBoolean.type]],
-                     currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
-      if (children.isEmpty) currentBuffer else children.head match {
-        case TrueLeaf  => mutable.Buffer(TrueLeaf)
-        case FalseLeaf  => iterChildren(children.tail, currentBuffer)
-        case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
-      }
-    }
-
-    input.matchCase(in => {
-      val reduced = iterChildren(in.items, mutable.Buffer())
-      reduced.size match {
-        case 0 => FalseLeaf
-        case 1 => reduced.head
-        case _ =>
-          if (reduced.forall(_.isInstanceOf[SigmaBoolean])) COR(reduced.map(_.asInstanceOf[SigmaBoolean]))
-          else OR(reduced)
-      }
-    },
-      c => if (anyOf(c.value)) TrueLeaf else FalseLeaf,
-      _ => ???
-    )
-  }
+  override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 }
 
-
-/**
-  * OR logical conjunction
-  */
 object OR {
   def apply(children: Seq[Value[SBoolean.type]]): OR =
     OR(ConcreteCollection(children.toIndexedSeq))
@@ -183,56 +143,10 @@ object OR {
 case class AND(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type]
     with NotReadyValueBoolean {
-
   override val opCode: OpCode = AndCode
-  val opType = SFunc(SCollection.SBooleanArray, SBoolean)
-
-  //todo: reduce such boilerplate around AND/OR, folders, map etc
-  override def transformationReady: Boolean =
-    input.evaluated && input.matchCase(
-      _.items.forall(_.evaluated),
-      _ => true,
-      _.items.forall(_.evaluated)
-    )
-
-  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
-    @tailrec
-    def iterChildren(children: IndexedSeq[Value[SBoolean.type]],
-                     currentBuffer: mutable.Buffer[Value[SBoolean.type]]): mutable.Buffer[Value[SBoolean.type]] = {
-      if (children.isEmpty) currentBuffer else children.head match {
-        case FalseLeaf  => mutable.Buffer(FalseLeaf)
-        case TrueLeaf  => iterChildren(children.tail, currentBuffer)
-        case and: CAND => iterChildren(and.sigmaBooleans.toIndexedSeq ++ children.tail, currentBuffer)
-        case s: Value[SBoolean.type] => iterChildren(children.tail, currentBuffer += s)
-      }
-    }
-
-    input.matchCase(in => {
-      val reduced = iterChildren(in.items, mutable.Buffer())
-      reduced.size match {
-        case 0 => TrueLeaf
-        case 1 => reduced.head
-        case _ =>
-          // TODO we may have Sigma and Boolean values in different order
-          // current implementation is "all or nothing"
-          if (reduced.forall(_.isInstanceOf[SigmaBoolean]))
-            CAND(reduced.map(_.asInstanceOf[SigmaBoolean]))
-          else if (reduced.forall(!_.isInstanceOf[SigmaBoolean]))
-            AND(reduced)
-          else
-            Interpreter.error(
-              s"Conjunction $input was reduced to mixed Sigma and Boolean conjunction which is not supported: $reduced")
-      }
-    },
-      c => if (allOf(c.value)) TrueLeaf else FalseLeaf,
-      _ => ???
-    )
-  }
+  override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 }
 
-/**
-  * AND logical conjunction
-  */
 object AND {
   def apply(children: Seq[Value[SBoolean.type]]): AND =
     AND(ConcreteCollection(children.toIndexedSeq))
@@ -240,37 +154,17 @@ object AND {
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
 
-/** AtLeast has two inputs: integer bound and children same as in AND/OR. The result is true if at least bound children are true.
+/**
+  * Logical threshold.
+  * AtLeast has two inputs: integer bound and children same as in AND/OR. The result is true if at least bound children are true.
   */
 case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type]
     with NotReadyValueBoolean {
   override val opCode: OpCode = AtLeastCode
   override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
-
-  override def transformationReady: Boolean =
-    bound.evaluated && input.evaluated && input.matchCase(
-      _.items.forall(_.evaluated),
-      _ => true,
-      _.items.forall(_.evaluated)
-    )
-
-  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[SBoolean.type]]): Value[SBoolean.type] = {
-    ???
-//    val k = bound.asInstanceOf[EvaluatedValue[SInt.type]].value
-//    input.matchCase(
-//      cc => {
-//        AtLeast.reduce(k, cc.items)
-//      },
-//      c => if (c.value.filter(_ == true).length >= k) TrueLeaf else FalseLeaf,
-//      _ => ???
-//    )
-  }
 }
 
-/**
-  * Logical threshold
-  */
 object AtLeast {
   def apply(bound: Value[SInt.type], children: Seq[Value[SBoolean.type]]): AtLeast =
     AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
@@ -331,10 +225,6 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   import Upcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.UpcastCode
-
-  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[T]): Value[R] =
-    Constant(this.tpe.upcast(input.value.asInstanceOf[AnyVal]), this.tpe)
-
   override val opType = SFunc(Vector(tT), tR)
 }
 
@@ -351,10 +241,6 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   import Downcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Downcast node for non-numeric type ${input.tpe}")
   override val opCode: OpCode = OpCodes.DowncastCode
-
-  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[T]): Value[R] =
-    Constant(this.tpe.downcast(input.value.asInstanceOf[AnyVal]), this.tpe)
-
   override val opType = SFunc(Vector(tT), tR)
 }
 
@@ -369,11 +255,7 @@ object Downcast {
 case class LongToByteArray(input: Value[SLong.type])
   extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.LongToByteArrayCode
-
-  override def function(intr: Interpreter, ctx: Context, bal: EvaluatedValue[SLong.type]): Value[SByteArray] =
-    ByteArrayConstant(Longs.toByteArray(bal.value))
-
-  val opType = SFunc(SLong, SByteArray)
+  override val opType = SFunc(SLong, SByteArray)
 }
 
 /**
@@ -381,24 +263,14 @@ case class LongToByteArray(input: Value[SLong.type])
   */
 case class ByteArrayToBigInt(input: Value[SByteArray])
   extends Transformer[SByteArray, SBigInt.type] with NotReadyValueBigInt {
-
   override val opCode: OpCode = OpCodes.ByteArrayToBigIntCode
-
-  override def function(intr: Interpreter, ctx: Context, bal: EvaluatedValue[SByteArray]): Value[SBigInt.type] =
-    BigIntConstant(new BigInteger(1, bal.value))
-
-  val opType = SFunc(SByteArray, SBigInt)
+  override val opType = SFunc(SByteArray, SBigInt)
 }
 
 trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByteArray {
   val input: Value[SByteArray]
-
   val hashFn: CryptographicHash32
-
-  override def function(intr: Interpreter, ctx: Context, bal: EvaluatedValue[SByteArray]): Value[SByteArray] =
-    ByteArrayConstant(hashFn.apply(bal.value))
-
-  val opType = SFunc(SByteArray, SByteArray)
+  override val opType = SFunc(SByteArray, SByteArray)
 }
 
 /**
@@ -406,7 +278,6 @@ trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByt
   */
 case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHash {
   override val opCode: OpCode = OpCodes.CalcBlake2b256Code
-
   override val hashFn: CryptographicHash32 = Blake2b256
 }
 
@@ -415,7 +286,6 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
   */
 case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override val opCode: OpCode = OpCodes.CalcSha256Code
-
   override val hashFn: CryptographicHash32 = Sha256
 }
 
@@ -423,11 +293,9 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   * A tree node with left and right descendants
   */
 sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyValue[OV] {
-
   val left: Value[LIV]
   val right: Value[RIV]
-
-  def opType = SFunc(Vector(left.tpe, right.tpe), tpe)
+  override def opType = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
 
 // TwoArgumentsOperation

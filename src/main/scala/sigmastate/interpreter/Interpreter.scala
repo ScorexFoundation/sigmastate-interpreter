@@ -97,6 +97,21 @@ trait Interpreter extends ScorexLogging {
   val IR: IRContext
   import IR._
 
+  def toValidScriptType(exp: SValue): BoolValue = exp match {
+    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
+    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isValid
+    case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
+  }
+
+  /** Substitute Deserialize* nodes with deserialized subtrees
+    * We can estimate cost of the tree evaluation only after this step.*/
+  def applyDeserializeContext(context: CTX, exp: Value[SType]): BoolValue = {
+    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
+    val Some(substTree: SValue) = everywherebu(substRule)(exp)
+    val res = toValidScriptType(substTree)
+    res
+  }
+
   /**
     * As the first step both prover and verifier are applying context-specific transformations and then estimating
     * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
@@ -106,18 +121,9 @@ trait Interpreter extends ScorexLogging {
     * @param context
     * @return
     */
-  def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SBoolean.type]): Try[ReductionResult] = Try {
-    // Substitute Deserialize* nodes with deserialized subtrees
-    // We can estimate cost of the tree evaluation only after this step.
-    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
-
-    val substTree = everywherebu(substRule)(exp) match {
-      case Some(v: Value[SBoolean.type]@unchecked) if v.tpe == SBoolean => v
-      case Some(p: SValue) if p.tpe == SSigmaProp => p.asSigmaProp.isValid
-      case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
-    }
-    val costingRes @ IR.Pair(calcF, costF) = doCosting(env, substTree)
-    IR.onCostingResult(env, substTree, costingRes)
+  def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
+    val costingRes @ IR.Pair(calcF, costF) = doCosting(env, exp)
+    IR.onCostingResult(env, exp, costingRes)
 
     IR.verifyCostFunc(costF).fold(t => throw t, x => x)
 
@@ -128,7 +134,7 @@ trait Interpreter extends ScorexLogging {
     val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
     val IntConstant(estimatedCost) = costFun(costingCtx)
     if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $substTree")
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
     }
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
@@ -141,14 +147,15 @@ trait Interpreter extends ScorexLogging {
     resValue -> estimatedCost
   }
 
-  def reduceToCrypto(context: CTX, exp: Value[SBoolean.type]): Try[ReductionResult] =
+  def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
   def verify(env: ScriptEnv, exp: Value[SBoolean.type],
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
-    val (cProp, cost) = reduceToCrypto(context, env, exp).get
+    val propTree = applyDeserializeContext(context, exp)
+    val (cProp, cost) = reduceToCrypto(context, env, propTree).get
 
     val checkingResult = cProp match {
       case TrueLeaf => true
