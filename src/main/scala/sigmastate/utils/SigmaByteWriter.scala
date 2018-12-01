@@ -9,4 +9,9 @@ class SigmaByteWriter(b: ByteArrayBuilder,
 
   @inline def putType[T <: SType](x: T): SigmaByteWriter = { TypeSerializer.serialize(x, this); this }
   @inline def putValue[T <: SType](x: Value[T]): SigmaByteWriter = { ValueSerializer.serialize(x, this); this }
+  @inline def putValues[T <: SType](xs: Seq[Value[T]]): SigmaByteWriter = {
+    putUInt(xs.length)
+    xs.foreach(putValue(_))
+    this
+  }
 }

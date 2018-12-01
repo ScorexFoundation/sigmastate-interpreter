@@ -4,7 +4,8 @@ import java.nio.ByteBuffer
 
 import sigmastate.SType
 import sigmastate.Values.SValue
-import sigmastate.serialization.{ConstantStore, TypeSerializer, ValDefTypeStore, ValueSerializer}
+import sigmastate.serialization.{ValDefTypeStore, TypeSerializer, ValueSerializer, ConstantStore}
+import sigmastate.utils.Extensions._
 
 class SigmaByteReader(b: ByteBuffer,
                       var constantStore: ConstantStore,
@@ -20,4 +21,12 @@ class SigmaByteReader(b: ByteBuffer,
 
   @inline def getType(): SType = TypeSerializer.deserialize(this)
   @inline def getValue(): SValue = ValueSerializer.deserialize(this)
+  @inline def getValues(): IndexedSeq[SValue] = {
+    val size = getUInt().toIntExact
+    val xs = new Array[SValue](size)
+    for (i <- 0 until size) {
+      xs(i) = getValue()
+    }
+    xs.toIndexedSeq
+  }
 }
