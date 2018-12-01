@@ -44,7 +44,6 @@ object DLogProtocol {
     }
   }
 
-
   case class DLogProverInput(w: BigInteger)
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol, ProveDlog] {
 

@@ -100,18 +100,19 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
 
   override def transformationReady: Boolean = input.isEvaluatedCollection
 
-  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = {
-    val cc = input.toConcreteCollection
-    val filtered = cc.items.filter { case v: EvaluatedValue[IV] =>
-      val localCtx = ctx.withBindings(id -> v)
-      val reduced = intr.eval(localCtx, condition)
-      reduced match {
-        case ev: EvaluatedValue[SBoolean.type] => ev.value
-        case _ => Interpreter.error(s"Expected EvaluatedValue during execution of filter but found $reduced")
-      }
-    }
-    ConcreteCollection(filtered)(tpe.elemType)
-  }
+  override def function(intr: Interpreter, ctx: Context, input: EvaluatedValue[SCollection[IV]]): ConcreteCollection[IV] = ???
+//  {
+//    val cc = input.toConcreteCollection
+//    val filtered = cc.items.filter { case v: EvaluatedValue[IV] =>
+//      val localCtx = ctx.withBindings(id -> v)
+//      val reduced = intr.eval(localCtx, condition)
+//      reduced match {
+//        case ev: EvaluatedValue[SBoolean.type] => ev.value
+//        case _ => Interpreter.error(s"Expected EvaluatedValue during execution of filter but found $reduced")
+//      }
+//    }
+//    ConcreteCollection(filtered)(tpe.elemType)
+//  }
 }
 
 trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBoolean.type] {
