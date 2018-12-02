@@ -6,7 +6,7 @@ import scorex.util.serialization.VLQByteBufferReader
 import sigmastate.SType
 import sigmastate.Values.SValue
 import sigmastate.serialization.{ValDefTypeStore, TypeSerializer, ValueSerializer, ConstantStore}
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 
 class SigmaByteReader(b: ByteBuffer,
                       var constantStore: ConstantStore,
