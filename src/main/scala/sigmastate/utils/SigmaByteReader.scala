@@ -5,7 +5,8 @@ import java.nio.ByteBuffer
 import scorex.util.serialization.VLQByteBufferReader
 import sigmastate.SType
 import sigmastate.Values.SValue
-import sigmastate.serialization.{ConstantStore, TypeSerializer, ValDefTypeStore, ValueSerializer}
+import sigmastate.serialization.{ValDefTypeStore, TypeSerializer, ValueSerializer, ConstantStore}
+import sigmastate.utils.Extensions._
 
 class SigmaByteReader(b: ByteBuffer,
                       var constantStore: ConstantStore,
@@ -25,4 +26,12 @@ class SigmaByteReader(b: ByteBuffer,
   private var lvl: Int = 0
   @inline def level: Int = lvl
   @inline def level_=(v: Int): Unit = lvl = v
+  @inline def getValues(): IndexedSeq[SValue] = {
+    val size = getUInt().toIntExact
+    val xs = new Array[SValue](size)
+    for (i <- 0 until size) {
+      xs(i) = getValue()
+    }
+    xs.toIndexedSeq
+  }
 }

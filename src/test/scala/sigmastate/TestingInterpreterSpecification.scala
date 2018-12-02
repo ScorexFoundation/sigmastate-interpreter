@@ -372,11 +372,4 @@ class TestingInterpreter(implicit val IR: IRContext) extends Interpreter with Pr
 
   override lazy val secrets: Seq[DLogProverInput] =
     Seq(DLogProverInput.random(), DLogProverInput.random())
-
-//  override val contextExtenders: Map[Byte, CollectionConstant[SByte.type]] = Map[Byte, CollectionConstant[SByte.type]]()
-
-  override def evaluateNode(context: TestingContext, tree: SValue): SValue = tree match {
-    case Height => LongConstant(context.height)
-    case _ => super.evaluateNode(context, tree)
-  }
 }

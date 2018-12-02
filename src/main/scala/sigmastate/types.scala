@@ -216,7 +216,7 @@ trait SEmbeddable extends SType {
   @inline final def embedIn(typeConstrId: Byte): Byte = (typeConstrId + this.typeCode).toByte
 }
 
-/** Base trait for all primitive types which don't have internal type items (aka atoms).
+/** Base trait for all primitive types (aka atoms) which don't have internal type items.
   * All primitive types can occupy a reserved interval of codes from 1 to MaxPrimTypeCode. */
 trait SPrimType extends SType with SPredefType {
 }

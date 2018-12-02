@@ -14,16 +14,15 @@ import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsValid, Slice}
 
 object Terms {
 
+  /** Frontend representation of a block of Val definitions.
+    * { val x = ...; val y = ... }
+    * This node is not part of ErgoTree and hence have Undefined opCode. */
   case class Block(bindings: Seq[Val], result: SValue) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = false
-    def tpe: SType = result.tpe
+    override def tpe: SType = result.tpe
 
     /** This is not used as operation, but rather to form a program structure */
-    def opType: SFunc = Value.notSupportedError(this, "opType")
+    override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Block {
     def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
@@ -32,7 +31,7 @@ object Terms {
 
   /** IR node to represent explicit Zero Knowledge scope in ErgoTree.
     * Compiler checks Zero Knowledge properties and issue error message is case of violations.
-    * ZK-scoping is optional, at can be used when the user want to ensure Zero Knowledge of
+    * ZK-scoping is optional, it can be used when the user want to ensure Zero Knowledge of
     * specific set of operations.
     * Usually it will require simple restructuring of the code to make the scope body explicit.
     * Invariants checked by the compiler:
@@ -45,8 +44,6 @@ object Terms {
   case class ZKProofBlock(body: SigmaPropValue) extends BoolValue {
     override val opCode: OpCode = OpCodes.Undefined
     override def tpe = SBoolean
-    override def cost[C <: Context](context: C): Long = ???
-    override def evaluated: Boolean = false
     override def opType: SFunc = SFunc(SSigmaProp, SBoolean)
   }
 
@@ -58,13 +55,9 @@ object Terms {
 
   case class ValNode(name: String, givenType: SType, body: SValue) extends Val {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = ???
-    def tpe: SType = givenType ?: body.tpe
+    override def tpe: SType = givenType ?: body.tpe
     /** This is not used as operation, but rather to form a program structure */
-    def opType: SFunc = Value.notSupportedError(this, "opType")
+    override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Val {
     def apply(name: String, body: SValue): Val = ValNode(name, NoType, body)
@@ -75,63 +68,44 @@ object Terms {
     }
   }
 
+  /** Frontend node to select a field from an object. Should be transformed to SelectField*/
   case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = obj.cost(context) + Cost.SelectFieldDeclaration
-
-    override def evaluated: Boolean = ???
-    val tpe: SType = resType.getOrElse(obj.tpe match {
+    override val tpe: SType = resType.getOrElse(obj.tpe match {
       case p: SProduct =>
         val i = p.methodIndex(field)
         if (i == -1) NoType
         else p.methods(i).stype
       case _ => NoType
     })
-
-    def opType: SFunc = SFunc(obj.tpe, tpe)
+    override def opType: SFunc = SFunc(obj.tpe, tpe)
   }
 
+  /** Frontend node to represent variable names parsed in a source code.
+    * Should be resolved during compilation to lambda argument, Val definition or
+    * compilation environment value. */
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = ???
-
-    def opType: SFunc = SFunc(Vector(), tpe)
+    override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Ident {
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
-    override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = false
-    lazy val tpe: SType = func.tpe match {
+    override val opCode: OpCode = OpCodes.FuncApplyCode
+    override lazy val tpe: SType = func.tpe match {
       case SFunc(_, r, _) => r
       case tCol: SCollectionType[_] => tCol.elemType
       case _ => NoType
     }
-
-    def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
+    override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
   }
 
   /** Apply types for type parameters of input value. */
   case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] { node =>
-//    input.tpe.whenFunc(funcType =>
-//      assert(funcType.tpeArgs.length == tpeArgs.length,
-//        s"Invalid number of tpeArgs in $node: expected ${funcType.tpeArgs} but found $tpeArgs")
-//    )
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = false
-    lazy val tpe: SType = input.tpe match {
+    override lazy val tpe: SType = input.tpe match {
       case funcType: SFunc =>
         require(funcType.tpeParams.length == tpeArgs.length, s"Invalid number of type parameters in $node")
         val subst = funcType.tpeParams.map(_.ident).zip(tpeArgs).toMap
@@ -139,18 +113,12 @@ object Terms {
       case _ => input.tpe
     }
     /** This is not used as operation, but rather to form a program structure */
-    def opType: SFunc = ???
+    override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
   case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
-
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = false
-
-    def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
+    override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
   }
 
   case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
@@ -158,6 +126,7 @@ object Terms {
     override def toString = ident.toString + upperBound.fold("")(u => s" <: $u") + lowerBound.fold("")(l => s" >: $l")
   }
 
+  /** Frontend implementation of lambdas. Should be transformed to FuncValue. */
   case class Lambda(
         tpeParams: Seq[STypeParam],
         args: IndexedSeq[(String,SType)],
@@ -166,11 +135,12 @@ object Terms {
   {
     require(!(tpeParams.nonEmpty && body.nonEmpty), s"Generic function definitions are not supported, but found $this")
     override val opCode: OpCode = OpCodes.Undefined
-    override def cost[C <: Context](context: C): Long = ???
-    override def evaluated: Boolean = false
-    lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe), tpeParams)
+    override lazy val tpe: SFunc = {
+      val sRange = givenResType ?: body.fold(NoType: SType)(_.tpe)
+      SFunc(args.map(_._2), sRange, tpeParams)
+    }
     /** This is not used as operation, but rather to form a program structure */
-    def opType: SFunc = SFunc(Vector(), tpe)
+    override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =

@@ -35,7 +35,8 @@ class CalcSha256Specification extends SigmaTestingCommons {
     forAll(objects) { (in, result) =>
       val calcSha256 = CalcSha256(stringToByteConstant(in))
       val expectedResult = decodeString(result)
-      calcSha256.evaluate(int, ctx) shouldBe expectedResult
+      val res = int.reduceToCrypto(ctx, calcSha256).get._1
+      res shouldBe expectedResult
     }
   }
 
