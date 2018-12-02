@@ -155,16 +155,6 @@ object ErgoLikeTransaction {
         FlattenedTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
       }
     }
-
-    object ergoSerializer extends Serializer[FlattenedTransaction, FlattenedTransaction, Reader, Writer] {
-
-      override def serialize(obj: FlattenedTransaction, w: Writer): Unit = {
-        val sw = new SigmaByteWriter(w, None)
-        sigmaSerializer.serialize(obj, sw)
-      }
-
-      override def parse(r: Reader): FlattenedTransaction = ???
-    }
   }
 
   object serializer extends SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] {
