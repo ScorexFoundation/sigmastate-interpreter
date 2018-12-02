@@ -4,7 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer._
-import scorex.util.serialization.VLQByteBufferWriter.encodeZigZagLong
+import scorex.util.serialization.VLQWriter.encodeZigZagLong
 
 class RelationsSpecification extends TableSerializationSpecification {
 
