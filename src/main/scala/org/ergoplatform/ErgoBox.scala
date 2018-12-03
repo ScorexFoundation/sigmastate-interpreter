@@ -170,14 +170,4 @@ object ErgoBox {
       ergoBoxCandidate.toBox(transactionId, index.toShort)
     }
   }
-
-  object ergoSerializer extends Serializer[ErgoBox, ErgoBox, Reader, Writer] {
-
-    override def serialize(obj: ErgoBox, w: Writer): Unit = {
-      val sw = new SigmaByteWriter(w, None)
-      sigmaSerializer.serialize(obj, sw)
-    }
-
-    override def parse(r: Reader): ErgoBox = ???
-  }
 }

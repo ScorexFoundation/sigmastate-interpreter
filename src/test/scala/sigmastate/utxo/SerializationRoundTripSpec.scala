@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import org.ergoplatform.ErgoLikeTransaction.FlattenedTransaction
 import org.ergoplatform.{ErgoBoxCandidate, ErgoLikeTransaction, _}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
@@ -17,16 +16,17 @@ class SerializationRoundTripSpec extends PropSpec
   with ValueGenerators {
 
   private def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
+    // using default sigma reader/writer
     val bytes = serializer.toBytes(v)
-    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
-  }
-
-  private def roundTripTestErgo[T](v: T)(implicit serializer: Serializer[T, T, Reader, Writer]): Assertion = {
-    val w = new VLQByteStringWriter()
-    serializer.serialize(v, w)
-    val bytes = w.result()
     bytes.nonEmpty shouldBe true
-    serializer.parse(new VLQByteStringReader(bytes)) shouldBe v
+    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
+
+    // using ergo's(scorex) reader/writer
+    val w = new VLQByteStringWriter()
+    serializer.serializeWithGenericWriter(v, w)
+    val byteStr = w.result()
+    byteStr.nonEmpty shouldBe true
+    serializer.parseWithGenericReader(new VLQByteStringReader(byteStr)) shouldEqual v
   }
 
   private def roundTripTestWithPos[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
@@ -50,16 +50,6 @@ class SerializationRoundTripSpec extends PropSpec
   property("ErgoLikeTransaction: Serializer round trip") {
     forAll { t: ErgoLikeTransaction => roundTripTest(t)(ErgoLikeTransaction.serializer) }
     forAll { t: ErgoLikeTransaction => roundTripTestWithPos(t)(ErgoLikeTransaction.serializer) }
-  }
-
-  property("ErgoBox: Ergo serializer round trip") {
-    forAll { t: ErgoBox => roundTripTestErgo(t)(ErgoBox.ergoSerializer) }
-  }
-
-  property("FlattenedTx: Ergo serializer round trip") {
-    forAll { t: ErgoLikeTransaction =>
-      roundTripTestErgo(FlattenedTransaction(t))(ErgoLikeTransaction.FlattenedTransaction.ergoSerializer)
-    }
   }
 
   property("ContextExtension: Serializer round trip") {
