@@ -14,7 +14,7 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
   override def serialize(cc: ConcreteCollection[_ <: SType], w: SigmaByteWriter): Unit = {
     w.putUShort(cc.items.size)
     w.putType(cc.tpe.elemType)
-    cc.items.foreach(w.putValue)
+    cc.items.foreach(w.putValue(_))
   }
 
   override def parse(r: SigmaByteReader): Value[SCollection[SType]] = {

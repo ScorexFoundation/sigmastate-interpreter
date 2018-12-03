@@ -22,11 +22,11 @@ class SerializationRoundTripSpec extends PropSpec
   }
 
   private def roundTripTestErgo[T](v: T)(implicit serializer: Serializer[T, T, Reader, Writer]): Assertion = {
-    val w = new ByteStringWriter()
+    val w = new VLQByteStringWriter()
     serializer.serialize(v, w)
     val bytes = w.result()
     bytes.nonEmpty shouldBe true
-    serializer.parse(new ByteStringReader(bytes)) shouldBe v
+    serializer.parse(new VLQByteStringReader(bytes)) shouldBe v
   }
 
   private def roundTripTestWithPos[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
