@@ -6,7 +6,6 @@ import sigmastate.SType
 import sigmastate.Values.Value
 import sigmastate.serialization.{ConstantStore, TypeSerializer, ValueSerializer}
 
-// todo rename to SigmaWriter?
 class SigmaByteWriter(val w: Writer,
                       val constantExtractionStore: Option[ConstantStore]) extends Writer {
 
@@ -18,10 +17,7 @@ class SigmaByteWriter(val w: Writer,
 
   override def putChunk(chunk: CH): this.type = { w.putChunk(chunk); this }
 
-  override def result(): CH = w match {
-    case wr: ByteStringWriter => wr.result().asInstanceOf[CH]
-    case wr: VLQByteBufferWriter => wr.result().asInstanceOf[CH]
-  }
+  override def result(): CH = w.result()
 
   def put(x: Byte): this.type = { w.put(x); this }
 
