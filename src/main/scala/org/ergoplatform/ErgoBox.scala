@@ -6,6 +6,7 @@ import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
+import scorex.util.serialization.{Reader, Serializer, Writer}
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate._
@@ -54,7 +55,6 @@ class ErgoBox private(
 
   import ErgoBox._
 
-  lazy val bytes: Array[Byte] = ErgoBox.serializer.toBytes(this)
   lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
   override lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
@@ -67,6 +67,8 @@ class ErgoBox private(
       case _ => super.get(identifier)
     }
   }
+
+  lazy val bytes: Array[Byte] = ErgoBox.sigmaSerializer.toBytes(this)
 
   override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox => java.util.Arrays.equals(id, x.id)
@@ -149,7 +151,7 @@ object ErgoBox {
             boxId: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, transactionId, boxId, creationHeight)
 
-  object serializer extends SigmaSerializer[ErgoBox, ErgoBox] {
+  object sigmaSerializer extends SigmaSerializer[ErgoBox, ErgoBox] {
 
     override def serialize(obj: ErgoBox, w: SigmaByteWriter): Unit = {
       ErgoBoxCandidate.serializer.serialize(obj, w)

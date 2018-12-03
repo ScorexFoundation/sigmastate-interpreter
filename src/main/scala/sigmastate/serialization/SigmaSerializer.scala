@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
-import scorex.util.serialization.Serializer
+import scorex.util.serialization._
 
 object SigmaSerializer {
   type Position = Int
@@ -22,7 +22,7 @@ object SigmaSerializer {
   def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
-    val r = new SigmaByteReader(buf, new ConstantStore(), resolvePlaceholdersToConstants = false)
+    val r = new SigmaByteReader(new VLQByteBufferReader(buf), new ConstantStore(), resolvePlaceholdersToConstants = false)
         .mark()
     r
   }
@@ -31,7 +31,7 @@ object SigmaSerializer {
                   constantStore: ConstantStore,
                   resolvePlaceholdersToConstants: Boolean): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
-    val r = new SigmaByteReader(buf, constantStore, resolvePlaceholdersToConstants)
+    val r = new SigmaByteReader(new VLQByteBufferReader(buf), constantStore, resolvePlaceholdersToConstants)
       .mark()
     r
   }
@@ -43,18 +43,28 @@ object SigmaSerializer {
     * res */
   def startWriter(): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
-    val w = new SigmaByteWriter(b, constantExtractionStore = None)
+    val wi = new VLQByteBufferWriter(b)
+    val w = new SigmaByteWriter(wi, constantExtractionStore = None)
     w
   }
 
   def startWriter(constantExtractionStore: ConstantStore): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
-    val w = new SigmaByteWriter(b, constantExtractionStore = Some(constantExtractionStore))
+    val wi = new VLQByteBufferWriter(b)
+    val w = new SigmaByteWriter(wi, constantExtractionStore = Some(constantExtractionStore))
     w
   }
 }
 
 trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, SigmaByteReader, SigmaByteWriter] {
+
+  def serializeWithGenericWriter(obj: T, w: Writer): Unit = {
+    serialize(obj, new SigmaByteWriter(w, None))
+  }
+
+  def parseWithGenericReader(r: Reader): TFamily = {
+    parse(new SigmaByteReader(r,  new ConstantStore(), resolvePlaceholdersToConstants = false))
+  }
 
   def error(msg: String) = throw new SerializerException(msg, None)
 

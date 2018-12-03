@@ -14,10 +14,8 @@ case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
 
   override val opCode: OpCode = code
 
-  override def serialize(obj: SigmaTransformer[I, O], w: SigmaByteWriter): Unit = {
-    w.putUInt(obj.items.length)
-    obj.items.foreach(w.putValue)
-  }
+  override def serialize(obj: SigmaTransformer[I, O], w: SigmaByteWriter): Unit =
+    w.putValues(obj.items)
 
   override def parse(r: SigmaByteReader): SigmaPropValue = {
     val itemsSize = r.getUInt().toInt

@@ -16,7 +16,7 @@ case class ValDefSerializer(override val opCode: OpCode) extends ValueSerializer
       require(!obj.isValDef, s"expected FunDef, got $obj")
       require(obj.tpeArgs.nonEmpty, s"expected FunDef with type args, got $obj")
       w.put(obj.tpeArgs.length.toByteExact)
-      obj.tpeArgs.foreach(w.putType)
+      obj.tpeArgs.foreach(w.putType(_))
     }
     w.putValue(obj.rhs)
   }
