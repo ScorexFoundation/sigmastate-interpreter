@@ -40,7 +40,7 @@ trait SigmaTestingCommons extends PropSpec
   }
 
   def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-    val interProp = compiler.compile(env, code, TestnetNetworkPrefix)
+    val interProp = compiler.typecheck(env, code)
     val IR.Pair(calcF, _) = IR.doCosting(Map(), interProp)
     IR.buildTree(calcF)
   }

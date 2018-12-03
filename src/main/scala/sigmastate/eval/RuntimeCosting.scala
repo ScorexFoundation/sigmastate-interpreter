@@ -1173,11 +1173,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.bytes
         mkCostedCol(bytes, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
-
       case utxo.ExtractCreationInfo(In(box)) =>
         val boxC = asRep[CostedBox](box)
         boxC.creationInfo
-
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
         val boxC = asRep[CostedBox](box)
         implicit val elem = stypeToElem(optTpe.elemType).asElem[Any]

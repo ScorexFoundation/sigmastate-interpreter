@@ -50,8 +50,17 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Terms.Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
         eval(mkLongToByteArray(arg))
 
-      case sigmastate.Upcast(Constant(value, tpe), toTpe: SNumericType) =>
+      case Terms.Apply(ByteArrayToBigIntSym, Seq(arr: Value[SByteArray]@unchecked)) =>
+        eval(mkByteArrayToBigInt(arr))
+
+      case Terms.Apply(SigmaPropSym, Seq(bool: Value[SBoolean.type]@unchecked)) =>
+        eval(mkBoolToSigmaProp(bool))
+
+      case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
+
+      case sigmastate.Downcast(Constant(value, _), toTpe: SNumericType) =>
+        eval(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
 
       // Rule: col.size --> SizeOf(col)
       case Select(obj, "size", _) =>
@@ -99,6 +108,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
           case (box, SBox.Id) => eval(mkExtractId(box))
           case (box, SBox.Bytes) => eval(mkExtractBytes(box))
           case (box, SBox.BytesWithNoRef) => eval(mkExtractBytesWithNoRef(box))
+          case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
           case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
         }
 
@@ -111,6 +121,16 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
         val index = fn.substring(1).toByte
         eval(mkSelectField(tuple.asTuple, index))
+
+      case Select(obj, method, Some(tRes: SNumericType))
+        if obj.tpe.isNumType && obj.asNumValue.tpe.isCastMethod(method) =>
+        val numValue = obj.asNumValue
+        if (numValue.tpe == tRes)
+          eval(numValue)
+        else if ((numValue.tpe max tRes) == numValue.tpe)
+          eval(mkDowncast(numValue, tRes))
+        else
+          eval(mkUpcast(numValue, tRes))
 
       case Terms.Apply(Select(col, "slice", _), Seq(from, until)) =>
         eval(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
