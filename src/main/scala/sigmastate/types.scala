@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDiffieHellmanTuple
-import sigmastate.SType.TypeCode
+import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utils.Extensions._
@@ -443,8 +443,15 @@ case object SContext extends SProduct with SPredefType {
   override type WrappedType = ErgoLikeContext
   override val typeCode: TypeCode = 101: Byte
   override def mkConstant(v: ErgoLikeContext): Value[SContext.type] = ContextConstant(v)
+
+  /** Approximate data size of the given context without ContextExtension. */
   override def dataSize(v: SType#WrappedType): Long = {
-    ???
+    val ctx = v.asInstanceOf[ErgoLikeContext]
+    val avlSize = SAvlTree.dataSize(ctx.lastBlockUtxoRoot.asWrappedType)
+    val inputSize = ctx.boxesToSpend.foldLeft(0L)((acc, b) => acc + b.dataSize)
+    val outputSize = ctx.spendingTransaction.outputs.foldLeft(0L)((acc, b) => acc + b.dataSize)
+    8L +   // Height
+    avlSize + ctx.minerPubkey.length + inputSize + outputSize
   }
   override def isConstantSize = false
   def ancestors = Nil
