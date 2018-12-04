@@ -952,22 +952,23 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           case _: BoxElem[_] => element[CostedBox].asElem[Costed[Any]]
           case _ => costedElement(eAny)
         }
-        val (id, mapper) = node.condition match {
-          case Terms.Lambda(_, Seq((n, _)), _, Some(m)) => (n, m)
-          case FuncValue(Seq((n, _)), m) => (n, m)
-        }
-        val condC = fun { x: Rep[Costed[Any]] =>
-          evalNode(ctx, env + (id -> x), mapper)
+        val condC = node.condition match {
+          case Terms.Lambda(_, Seq((id, _)), _, Some(body)) =>
+            fun { x: Rep[Costed[Any]] => evalNode(ctx, env + (id -> x), body) }
+          case FuncValue(Seq((id, _)), body) =>
+            fun { x: Rep[Costed[Any]] => evalNode(ctx, env + (id -> x), body) }
+          case v =>
+            evalNode(ctx, env, v).asRep[CostedFunc[Unit, Any, SType#WrappedType]].func
         }
         val (calcF, costF) = splitCostedFunc2(condC, okRemoveIsValid = true)
         val values = xs.values.map(calcF)
         val cost = xs.values.zip(xs.costs.zip(xs.sizes)).map(costF).sum(intPlusMonoid)
         val value = calcF.elem.eRange match {
           case e if e == BooleanElement =>
-            if (node.isInstanceOf[ForAll[_]])
-              sigmaDslBuilder.allOf(asRep[Col[Boolean]](values))
-            else
-              sigmaDslBuilder.anyOf(asRep[Col[Boolean]](values))
+            node match {
+              case _: ForAll[_] => xs.values.forall(asRep[Any => Boolean](calcF))
+              case _: Exists[_] => xs.values.exists(asRep[Any => Boolean](calcF))
+            }
           case _: SigmaPropElem[_] =>
             if (node.isInstanceOf[ForAll[_]])
               sigmaDslBuilder.allZK(asRep[Col[SigmaProp]](values))
@@ -1049,37 +1050,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = inputC.filterCosted(condC)
         res
 
-      case Terms.Apply(Select(col, method @ (SCollection.ExistsMethod.name | SCollection.ForallMethod.name), _),
-                       Seq(Terms.Lambda(_, Seq((n, t)), _, Some(body)))) =>
-        val input = col.asValue[SCollection[SType]]
-        val cond = body.asValue[SBoolean.type]
-        val eItem = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(ctx, env, input).asRep[Costed[Col[Any]]]
-        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
-        assert(eItem == eAny, s"Types should be equal: but $eItem != $eAny")
-        val Pair(condCalc, condCost) = split2(fun { x: Rep[Any] =>
-          evalNode(ctx, env + (n -> RCCostedPrim(x, 0, sizeOf(x))), cond)
-        })
-        val inputV = inputC.value
-        val res = method match {
-          // TODO don't remove isProven in split2 thus make sure the casts are ok
-          case SCollection.ExistsMethod.name => inputV.exists(asRep[Any => Boolean](condCalc))
-          case SCollection.ForallMethod.name => inputV.forall(asRep[Any => Boolean](condCalc))
-        }
-        val cost = inputC.cost + inputV.map(condCost).sum(intPlusMonoid)
-        withDefaultSize(res, cost)
-
-      case Terms.Apply(Select(col,"map", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(mapper)))) =>
-        val input = col.asValue[SCollection[SType]]
-        val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
-        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
-        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-        val mapperC = fun { x: Rep[Costed[Any]] =>
-          evalNode(ctx, env + (n -> x), mapper)
-        }
-        val res = inputC.mapCosted(mapperC)
-        res
+//      case Terms.Apply(Select(col,"map", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(mapper)))) =>
+//        val input = col.asValue[SCollection[SType]]
+//        val eIn = stypeToElem(input.tpe.elemType)
+//        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
+//        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+//        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
+//        val mapperC = fun { x: Rep[Costed[Any]] =>
+//          evalNode(ctx, env + (n -> x), mapper)
+//        }
+//        val res = inputC.mapCosted(mapperC)
+//        res
 
 //      case Terms.Apply(Select(col,"fold", _), Seq(zero, Terms.Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
 //        val taggedZero = mkTaggedVariable(21, tZero)

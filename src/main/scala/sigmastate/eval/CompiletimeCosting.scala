@@ -11,6 +11,7 @@ import sigmastate.lang.Terms.{Apply, _}
 import sigmastate.lang.SigmaPredef._
 import sigmastate.utxo._
 import sigmastate.SType._
+import sigmastate.SCollection._
 import sigmastate.Values.Value.Typed
 import sigmastate.lang.SigmaSpecializer.error
 import sigmastate.lang.{Terms, TransformingSigmaBuilder}
@@ -132,8 +133,23 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
         else
           eval(mkUpcast(numValue, tRes))
 
-      case Terms.Apply(Select(col, "slice", _), Seq(from, until)) =>
+      case Terms.Apply(Select(col, SliceMethod.name, _), Seq(from, until)) =>
         eval(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
+
+      case Terms.Apply(Select(col, ExistsMethod.name, _), Seq(l)) if l.tpe.isFunc =>
+        eval(mkExists(col.asValue[SCollection[SType]], l.asFunc))
+
+      case Terms.Apply(Select(col, ForallMethod.name, _), Seq(l)) if l.tpe.isFunc =>
+        eval(mkForAll(col.asValue[SCollection[SType]], l.asFunc))
+
+      case Terms.Apply(Select(col, MapMethod.name, _), Seq(l @ Terms.Lambda(_, _, _, _))) =>
+        eval(mkMapCollection(col.asValue[SCollection[SType]], l))
+
+      case Terms.Apply(Select(col, FoldMethod.name, _), Seq(zero, l @ Terms.Lambda(_, _, _, _))) =>
+        eval(mkFold(col.asValue[SCollection[SType]], zero, l))
+
+      case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
+        eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
 
       case _ =>
         super.evalNode(ctx, env, node)

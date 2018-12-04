@@ -272,12 +272,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        OR(
-          MapCollection(data,
-            FuncValue(
-              Vector((1, STuple(SByteArray, SLong))),
-              EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
-          ).asCollection[SBoolean.type])
+        Exists(data,
+          FuncValue(
+            Vector((1, STuple(SByteArray, SLong))),
+            EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
+        )
       }
     )
     test("TupCol5", env1, ext1,
@@ -287,12 +286,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        AND(
-          MapCollection(data,
-            FuncValue(
-              Vector((1, STuple(SByteArray, SLong))),
-              GT(SizeOf(SelectField(ValUse(1, STuple(SByteArray, SLong)), 1).asCollection[SByte.type]), IntConstant(0)))
-          ).asCollection[SBoolean.type])
+        ForAll(data,
+          FuncValue(
+            Vector((1, STuple(SByteArray, SLong))),
+            GT(SizeOf(SelectField(ValUse(1, STuple(SByteArray, SLong)), 1).asCollection[SByte.type]), IntConstant(0)))
+        )
       }
     )
     test("TupCol6", env1, ext1,

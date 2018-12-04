@@ -67,15 +67,14 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
         SigmaAnd(List(
           BoolToSigmaProp(AND(ConcreteCollection(Vector(
             LT(Height, LongConstant(100)),
-            OR(
-              MapCollection(Outputs,
-                FuncValue(Vector((2, SBox)),
-                  BinAnd(
-                    GE(ExtractAmount(ValUse(2, SBox)), LongConstant(1000)),
-                    EQ(ExtractScriptBytes(ValUse(2, SBox)), SigmaPropBytes(ValUse(1, SSigmaProp)))
-                  )
+            Exists(Outputs,
+              FuncValue(Vector((2, SBox)),
+                BinAnd(
+                  GE(ExtractAmount(ValUse(2, SBox)), LongConstant(1000)),
+                  EQ(ExtractScriptBytes(ValUse(2, SBox)), SigmaPropBytes(ValUse(1, SSigmaProp)))
                 )
-              ).asCollection[SBoolean.type])
+              )
+            )
           ), SBoolean))),
           ValUse(1, SSigmaProp)))
       ))
