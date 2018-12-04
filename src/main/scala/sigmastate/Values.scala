@@ -647,7 +647,7 @@ object Values {
     lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
     val opCode: OpCode = FuncValueCode
     /** This is not used as operation, but rather to form a program structure */
-    def opType: SFunc = Value.notSupportedError(this, "opType")
+    override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object FuncValue {
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =

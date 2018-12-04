@@ -142,8 +142,8 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Terms.Apply(Select(col, ForallMethod.name, _), Seq(l)) if l.tpe.isFunc =>
         eval(mkForAll(col.asValue[SCollection[SType]], l.asFunc))
 
-      case Terms.Apply(Select(col, MapMethod.name, _), Seq(l @ Terms.Lambda(_, _, _, _))) =>
-        eval(mkMapCollection(col.asValue[SCollection[SType]], l))
+      case Terms.Apply(Select(col, MapMethod.name, _), Seq(l)) if l.tpe.isFunc =>
+        eval(mkMapCollection(col.asValue[SCollection[SType]], l.asFunc))
 
       case Terms.Apply(Select(col, FoldMethod.name, _), Seq(zero, l @ Terms.Lambda(_, _, _, _))) =>
         eval(mkFold(col.asValue[SCollection[SType]], zero, l))

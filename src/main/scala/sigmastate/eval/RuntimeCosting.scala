@@ -952,14 +952,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           case _: BoxElem[_] => element[CostedBox].asElem[Costed[Any]]
           case _ => costedElement(eAny)
         }
-        val condC = node.condition match {
-          case Terms.Lambda(_, Seq((id, _)), _, Some(body)) =>
-            fun { x: Rep[Costed[Any]] => evalNode(ctx, env + (id -> x), body) }
-          case FuncValue(Seq((id, _)), body) =>
-            fun { x: Rep[Costed[Any]] => evalNode(ctx, env + (id -> x), body) }
-          case v =>
-            evalNode(ctx, env, v).asRep[CostedFunc[Unit, Any, SType#WrappedType]].func
-        }
+        val condC = evalNode(ctx, env, node.condition).asRep[CostedFunc[Unit, Any, SType#WrappedType]].func
         val (calcF, costF) = splitCostedFunc2(condC, okRemoveIsValid = true)
         val values = xs.values.map(calcF)
         val cost = xs.values.zip(xs.costs.zip(xs.sizes)).map(costF).sum(intPlusMonoid)
@@ -982,13 +975,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any], _]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-        val (id, mapper) = sfunc match {
-          case Terms.Lambda(_, Seq((n, _)), _, Some(m)) => (n, m)
-          case FuncValue(Seq((n, _)), m) => (n, m)
-        }
-        val mapperC = fun { x: Rep[Costed[Any]] =>
-          evalNode(ctx, env + (id -> x), mapper)
-        }
+        val mapperC = evalNode(ctx, env, sfunc).asRep[CostedFunc[Unit, Any, SType#WrappedType]].func
         val res = inputC.mapCosted(mapperC)
         res
 
@@ -1320,6 +1307,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           evalNode(ctx, env + (n -> x), body)
         }
         RCCostedFunc(RCCostedPrim((), 0, 0L), f, costOf(node), l.tpe.dataSize(SType.DummyValue))
+
+      case l @ FuncValue(Seq((n, argTpe)), body) =>
+        implicit val eAny = stypeToElem(argTpe).asElem[Any]
+        val f = fun { x: Rep[Costed[Any]] =>
+          evalNode(ctx, env + (n -> x), body)
+        }
+        RCCostedFunc(RCCostedPrim((), 0, 0L), f, costOf(node), l.tpe.dataSize(0.asWrappedType))
 
       case col @ ConcreteCollection(InSeqUnzipped(vs, cs, ss), elemType) =>
         implicit val eAny = stypeToElem(elemType).asElem[Any]
