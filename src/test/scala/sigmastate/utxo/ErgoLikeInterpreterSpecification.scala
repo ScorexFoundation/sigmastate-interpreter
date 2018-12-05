@@ -325,16 +325,16 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val regPubkey1 = ErgoBox.nonMandatoryRegisters.head
     val regPubkey2 = ErgoBox.nonMandatoryRegisters.tail.head
 
-    val prop = compile(Map(),
+    val prop = compileWithCosting(Map(),
       """{
         |  val pubkey1 = SELF.R4[GroupElement].get
         |  val pubkey2 = SELF.R5[GroupElement].get
         |  proveDlog(pubkey1) && proveDlog(pubkey2)
         |}""".stripMargin).asBoolValue
 
-    val propTree = BinAnd(
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get).isProven,
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get).isProven)
+    val propTree = SigmaAnd(
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get),
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey3, 0)
