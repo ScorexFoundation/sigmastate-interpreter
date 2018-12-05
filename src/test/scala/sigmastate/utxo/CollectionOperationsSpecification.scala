@@ -242,8 +242,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asBoolValue
-    val propTree = BinAnd(pubkey.isProven, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
+    val prop = compileWithCosting(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asBoolValue
+    val propTree = SigmaAnd(pubkey, BoolToSigmaProp(EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1)))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(11, pubkey, 0)

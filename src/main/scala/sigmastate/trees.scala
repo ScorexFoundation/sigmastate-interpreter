@@ -109,6 +109,10 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 
+object SigmaAnd {
+  def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(head +: tail)
+}
+
 /**
   * OR disjunction for sigma propositions
   */
