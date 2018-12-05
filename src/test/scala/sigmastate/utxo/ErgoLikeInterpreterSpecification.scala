@@ -254,9 +254,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val compiledProp = compile(env, """pubkey && OUTPUTS(0).value > 10""")
+    val compiledProp = compileWithCosting(env, """pubkey && OUTPUTS(0).value > 10""").asBoolValue
 
-    val prop = BinAnd(pubkey.isProven, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(10)))
+    val prop = SigmaAnd(pubkey, BoolToSigmaProp(GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(10))))
     compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(11, pubkey, 0)
@@ -273,8 +273,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = fakeSelf)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage)
+    val pr = prover.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, pr, fakeMessage)
 
 
     val fProp1 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(11)))
