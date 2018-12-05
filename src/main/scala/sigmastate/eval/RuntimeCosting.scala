@@ -952,7 +952,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           case _: BoxElem[_] => element[CostedBox].asElem[Costed[Any]]
           case _ => costedElement(eAny)
         }
-        val condC = evalNode(ctx, env, node.condition).asRep[CostedFunc[Unit, Any, SType#WrappedType]].func
+        val condC = asRep[CostedFunc[Unit, Any, SType#WrappedType]](evalNode(ctx, env, node.condition)).func
         val (calcF, costF) = splitCostedFunc2(condC, okRemoveIsValid = true)
         val values = xs.values.map(calcF)
         val cost = xs.values.zip(xs.costs.zip(xs.sizes)).map(costF).sum(intPlusMonoid)
@@ -972,10 +972,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case MapCollection(input, sfunc) =>
         val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
+        val inputC = asRep[CostedCol[Any]](evalNode(ctx, env, input))
         implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any], _]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-        val mapperC = evalNode(ctx, env, sfunc).asRep[CostedFunc[Unit, Any, SType#WrappedType]].func
+        val mapperC = asRep[CostedFunc[Unit, Any, SType#WrappedType]](evalNode(ctx, env, sfunc)).func
         val res = inputC.mapCosted(mapperC)
         res
 
@@ -1045,8 +1045,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
 
       case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
-        val fC = evalNode(ctx, env, f).asRep[CostedFunc[Unit, Any, Any]]
-        val xC = evalNode(ctx, env, x).asRep[Costed[Any]]
+        val fC = asRep[CostedFunc[Unit, Any, Any]](evalNode(ctx, env, f))
+        val xC = asRep[Costed[Any]](evalNode(ctx, env, x))
         if (f.tpe.asFunc.tRange.isCollection) {
           ???
         }
@@ -1255,8 +1255,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         import OpCodes._
         op.opCode match {
           case GtCode =>
-            val x = evalNode(ctx, env, op.left).asRep[Costed[WBigInteger]]
-            val y = evalNode(ctx, env, op.right).asRep[Costed[WBigInteger]]
+            val x = asRep[Costed[WBigInteger]](evalNode(ctx, env, op.left))
+            val y = asRep[Costed[WBigInteger]](evalNode(ctx, env, op.right))
             val resSize = x.dataSize.min(y.dataSize)
             val cost = x.cost + y.cost + costOf(op) + costOf(">_per_item", op.opType) * resSize.toInt
             RCCostedPrim(x.value.compareTo(y.value) > 0, cost, resSize)
