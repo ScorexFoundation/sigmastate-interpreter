@@ -87,9 +87,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubdhB = proverB.dhSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubdhB" -> pubdhB)
-    val compiledProp = compile(env, """pubkeyA || pubdhB""")
+    val compiledProp = compileWithCosting(env, """pubkeyA || pubdhB""").asBoolValue
 
-    val prop = BinOr(pubkeyA.isProven, pubdhB.isProven)
+    val prop = SigmaOr(pubkeyA, pubdhB)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -100,8 +100,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
   }
 
   property("DH tuple and DLOG") {
@@ -114,9 +114,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubdhA = proverA.dhSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubdhA" -> pubdhA)
-    val compiledProp = compile(env, """pubkeyA && pubdhA""")
+    val compiledProp = compileWithCosting(env, """pubkeyA && pubdhA""").asBoolValue
 
-    val prop = BinAnd(pubkeyA.isProven, pubdhA.isProven)
+    val prop = SigmaAnd(pubkeyA, pubdhA)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -127,11 +127,11 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, fakeMessage).get
+    val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
 
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
 
-    proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+    proverB.prove(compiledProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   ignore("mixing scenario w. timeout") {  // TODO Cost of the folded function depends on data

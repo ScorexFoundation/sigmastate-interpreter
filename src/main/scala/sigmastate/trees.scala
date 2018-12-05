@@ -122,6 +122,11 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 
+object SigmaOr {
+  def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
+}
+
+
 /**
   * OR logical conjunction
   */
