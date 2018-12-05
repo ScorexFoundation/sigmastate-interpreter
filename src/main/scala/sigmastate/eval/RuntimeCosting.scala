@@ -1037,18 +1037,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = inputC.filterCosted(condC)
         res
 
-//      case Terms.Apply(Select(col,"map", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(mapper)))) =>
-//        val input = col.asValue[SCollection[SType]]
-//        val eIn = stypeToElem(input.tpe.elemType)
-//        val inputC = evalNode(ctx, env, input).asRep[CostedCol[Any]]
-//        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
-//        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-//        val mapperC = fun { x: Rep[Costed[Any]] =>
-//          evalNode(ctx, env + (n -> x), mapper)
-//        }
-//        val res = inputC.mapCosted(mapperC)
-//        res
-
 //      case Terms.Apply(Select(col,"fold", _), Seq(zero, Terms.Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
 //        val taggedZero = mkTaggedVariable(21, tZero)
 //        val taggedOp = mkTaggedVariable(22, tOp)
