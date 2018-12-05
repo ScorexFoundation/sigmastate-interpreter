@@ -1,27 +1,27 @@
-digraph "prop1" {
+digraph "Prop1" {
 concentrate=true
 node [style=filled, fillcolor=orangered]
 
-"s15" [
-label="s15: Long = Const(0l)"
-shape=box, color=gray, tooltip="s15:Long", style=filled, fillcolor=white
+"s19285" [
+label="s19285: Byte = Const(10)"
+shape=box, color=gray, tooltip="s19285:Byte", style=filled, fillcolor=white
 ]
-subgraph cluster_s76524 {
+subgraph cluster_s19338 {
 style=dashed; color="#FFCCFF"
-"s76522" [
-label="s76522: Context"
-shape=oval, color=gray, tooltip="s76522:Context", style=filled, fillcolor=white
+"s19336" [
+label="s19336: Context"
+shape=oval, color=gray, tooltip="s19336:Context", style=filled, fillcolor=white
 ]
-"s76524" [
-label="s76524: Context => Boolean = s76522 => s76533 >= s15"
-shape=box, color=magenta, tooltip="s76524:Context => Boolean", style=filled, fillcolor=white
+"s19338" [
+label="s19338: Context => SigmaProp = s19336 => s19343.WOption.get()"
+shape=box, color=magenta, tooltip="s19338:Context => SigmaProp", style=filled, fillcolor=white
 ]
-{rank=source; s76522}
-"s76533" [
-label="s76533: Long = s76522.Context.HEIGHT()"
-shape=box, color=darkblue, tooltip="s76533:Long", style=filled, fillcolor=white
+{rank=source; s19336}
+"s19343" [
+label="s19343: WOption[SigmaProp] =\ls19336.Context.getVar(s19285, SigmaPropElem<SigmaProp>)\l"
+shape=box, color=darkblue, tooltip="s19343:WOption[SigmaProp]", style=filled, fillcolor=white
 ]
-{rank=sink; s76524}
+{rank=sink; s19338}
 }
 "s28" [
 label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
@@ -31,60 +31,40 @@ shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcol
 label="s44: CostModel = s28.SigmaDslBuilder.CostModel()"
 shape=box, color=darkblue, tooltip="s44:CostModel", style=filled, fillcolor=white
 ]
-"s76497" [
-label="s76497: Int = s44.CostModel.SelectField()"
-shape=box, color=darkblue, tooltip="s76497:Int", style=filled, fillcolor=white
-]
-"s52493" [
-label="s52493: Int = CostOf(Const:() => SLong)"
-shape=box, color=gray, tooltip="s52493:Int", style=filled, fillcolor=white
-]
-"s76507" [
-label="s76507: Int = s76497 + s52493"
-shape=box, color=gray, tooltip="s76507:Int", style=filled, fillcolor=white
-]
-"s76511" [
-label="s76511: Int = CostOf(BoolToSigmaProp:(SBoolean) => SSigmaProp)"
-shape=box, color=gray, tooltip="s76511:Int", style=filled, fillcolor=white
-]
-"s76512" [
-label="s76512: Int = s76507 + s76511"
-shape=box, color=gray, tooltip="s76512:Int", style=filled, fillcolor=white
+"s46" [
+label="s46: Int = s44.CostModel.GetVar()"
+shape=box, color=darkblue, tooltip="s46:Int", style=filled, fillcolor=white
 ]
 "s19331" [
 label="s19331: Int = CostOf(SigmaPropIsValid:(SSigmaProp) => SBoolean)"
 shape=box, color=gray, tooltip="s19331:Int", style=filled, fillcolor=white
 ]
-subgraph cluster_s76559 {
+subgraph cluster_s19395 {
 style=dashed; color="#FFCCFF"
-"s76557" [
-label="s76557: Context"
-shape=oval, color=gray, tooltip="s76557:Context", style=filled, fillcolor=white
+"s19393" [
+label="s19393: Context"
+shape=oval, color=gray, tooltip="s19393:Context", style=filled, fillcolor=white
 ]
-"s76559" [
-label="s76559: Context => Int = s76557 => s76512 + s19331"
-shape=box, color=magenta, tooltip="s76559:Context => Int", style=filled, fillcolor=white
+"s19395" [
+label="s19395: Context => Int = s19393 => s46 + s19331"
+shape=box, color=magenta, tooltip="s19395:Context => Int", style=filled, fillcolor=white
 ]
-{rank=source; s76557}
-{rank=sink; s76559}
+{rank=source; s19393}
+{rank=sink; s19395}
 }
-"s76590" [
-label="s76590: (Context => Boolean, Context => Int) = (s76524, s76559)"
-shape=box, color=gray, tooltip="s76590:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+"s19448" [
+label="s19448: (Context => SigmaProp, Context => Int) = (s19338, s19395)"
+shape=box, color=gray, tooltip="s19448:(Context => SigmaProp, Context => Int)", style=filled, fillcolor=white
 ]
-"s44" -> "s76497" [style=solid]
-"s76507" -> "s76512" [style=solid]
-"s76511" -> "s76512" [style=solid]
-"s76497" -> "s76507" [style=solid]
-"s52493" -> "s76507" [style=solid]
-"s76522" -> "s76533" [style=solid]
-"s76557" -> "s76559" [style=dashed, color=lightgray, weight=0]
-"s76512" -> "s76559" [style=solid]
-"s19331" -> "s76559" [style=solid]
+"s44" -> "s46" [style=solid]
+"s19336" -> "s19338" [style=dashed, color=lightgray, weight=0]
+"s19343" -> "s19338" [style=solid]
 "s28" -> "s44" [style=solid]
-"s76524" -> "s76590" [style=solid]
-"s76559" -> "s76590" [style=solid]
-"s76522" -> "s76524" [style=dashed, color=lightgray, weight=0]
-"s76533" -> "s76524" [style=solid]
-"s15" -> "s76524" [style=solid]
+"s19338" -> "s19448" [style=solid]
+"s19395" -> "s19448" [style=solid]
+"s19393" -> "s19395" [style=dashed, color=lightgray, weight=0]
+"s46" -> "s19395" [style=solid]
+"s19331" -> "s19395" [style=solid]
+"s19336" -> "s19343" [style=solid]
+"s19285" -> "s19343" [style=solid]
 }

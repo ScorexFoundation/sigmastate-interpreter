@@ -128,7 +128,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(input0, input1),
       spendingTransaction,
-      self = input0)
+      self = input0
+    )
 
     //Though we use separate provers below, both inputs do not contain any secrets, thus
     //a spending transaction could be created and posted by anyone.
@@ -141,12 +142,28 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(input0, input1),
       spendingTransaction,
-      self = input1)
+      self = input1
+    )
 
     val pr2 = tokenSeller.prove(sellerProp, sellerCtx, fakeMessage).get
+
+    // All requirements satisfied
     verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
 
     println("total cost: " + (buyerProp.cost(buyerCtx) + sellerProp.cost(sellerCtx)))
+
+    val inputWithSmallerValue = ErgoBox(1, sellerProp, 0, Seq(tokenId -> 59))
+    val sellerCtxInvalid = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(input0, inputWithSmallerValue),
+      spendingTransaction,
+      self = inputWithSmallerValue
+    )
+
+    // Does not satisfy requirement `tokenData._2 >= 60L` in buyer's script.
+    verifier.verify(sellerProp, sellerCtxInvalid, pr2, fakeMessage).get._1 shouldBe false
   }
 
   /**
