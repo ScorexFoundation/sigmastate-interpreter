@@ -57,6 +57,14 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Terms.Apply(SigmaPropSym, Seq(bool: Value[SBoolean.type]@unchecked)) =>
         eval(mkBoolToSigmaProp(bool))
 
+      case Terms.Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
+        eval(SigmaPropConstant(
+          mkProveDiffieHellmanTuple(
+            g.asGroupElement,
+            h.asGroupElement,
+            u.asGroupElement,
+            v.asGroupElement)))
+
       case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 
