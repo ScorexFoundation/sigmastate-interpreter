@@ -115,6 +115,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ValUseSerializer(mkValUse),
     FuncValueSerializer(mkFuncValue),
     ApplySerializer(mkApply),
+    MethodCallSerializer(PropertyCallCode, mkMethodCall),
+    MethodCallSerializer(MethodCallCode, mkMethodCall),
     SigmaTransformerSerializer(SigmaAndCode, mkSigmaAnd),
     SigmaTransformerSerializer(SigmaOrCode, mkSigmaOr),
     BoolToSigmaPropSerializer(mkBoolToSigmaProp),

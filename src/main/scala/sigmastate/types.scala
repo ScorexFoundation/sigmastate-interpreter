@@ -90,6 +90,14 @@ object SType {
   val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SAvlTree, SGroupElement, SSigmaProp, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
+  /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
+    * a companion object which can be used to access the list of corresponding methods.
+    * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
+  val types: Map[Byte, STypeCompanion] = Seq(
+    SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext,
+    SAvlTree, SBox
+  ).map { t => (t.typeId, t) }.toMap
+
   implicit class STypeOps(val tpe: SType) {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
@@ -168,6 +176,12 @@ trait STypeCompanion {
   def typeId: Byte
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]
+
+  def getMethodById(methodId: Byte): SMethod = {
+    methods(methodId - 1)
+  }
+
+  def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 }
 
 /** Base trait for all types which have methods (and properties) */

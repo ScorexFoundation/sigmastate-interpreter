@@ -158,10 +158,13 @@ trait SigmaBuilder {
   def mkIdent(name: String, tpe: SType): Value[SType]
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
   def mkApplyTypes(input: Value[SType], tpeArgs: Seq[SType]): Value[SType]
-  def mkMethodCall(obj: Value[SType],
+  def mkMethodCallLike(obj: Value[SType],
                    name: String,
                    args: IndexedSeq[Value[SType]],
                    tpe: SType = NoType): Value[SType]
+  def mkMethodCall(obj: Value[SType],
+                  method: SMethod,
+                  args: IndexedSeq[Value[SType]]): Value[SType]
   def mkLambda(args: IndexedSeq[(String,SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
@@ -462,11 +465,16 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkApplyTypes(input: Value[SType], tpeArgs: Seq[SType]): Value[SType] =
     ApplyTypes(input, tpeArgs)
 
-  override def mkMethodCall(obj: Value[SType],
+  override def mkMethodCallLike(obj: Value[SType],
                             name: String,
                             args: IndexedSeq[Value[SType]],
                             tpe: SType): Value[SType] =
     MethodCallLike(obj, name, args, tpe)
+
+  override def mkMethodCall(obj: Value[SType],
+                            method: SMethod,
+                            args: IndexedSeq[Value[SType]]): Value[SType] =
+    MethodCall(obj, method, args)
 
   override def mkLambda(args: IndexedSeq[(String, SType)],
                         givenResType: SType,
