@@ -412,4 +412,13 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
   }
+
+  property("EQ const array vs collection") {
+    val byteArrayVar1Value = ByteArrayConstant(Array[Byte](1.toByte, 2.toByte))
+    test(env + ("byteArrayVar1" -> byteArrayVar1Value), ext,
+      "byteArrayVar1 == Array[Byte](1.toByte, 2.toByte)",
+      EQ(byteArrayVar1Value, ConcreteCollection(Vector(ByteConstant(1), ByteConstant(2)), SByte)),
+      true
+    )
+  }
 }
