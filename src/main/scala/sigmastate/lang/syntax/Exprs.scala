@@ -4,7 +4,7 @@ import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.SigmaPredef.ZKProofSym
-import sigmastate.lang.Terms.{Lambda, ApplyTypes, MethodCall, Apply, Val, ValueOps, Select, Ident}
+import sigmastate.lang.Terms.{Lambda, ApplyTypes, MethodCallLike, Apply, Val, ValueOps, Select, Ident}
 import sigmastate.lang._
 import sigmastate.lang.syntax.Basic._
 

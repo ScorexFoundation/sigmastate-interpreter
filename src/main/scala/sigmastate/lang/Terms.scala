@@ -116,7 +116,7 @@ object Terms {
     override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
-  case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
+  case class MethodCallLike(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
     override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
   }

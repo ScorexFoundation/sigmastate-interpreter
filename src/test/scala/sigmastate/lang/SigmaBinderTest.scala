@@ -27,19 +27,19 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "b1") shouldBe ByteConstant(1)
     bind(env, "x-y") shouldBe Minus(10, 11)
     bind(env, "x+y") shouldBe plus(10, 11)
-    bind(env, "c1 && c2") shouldBe MethodCall(TrueLeaf, "&&", IndexedSeq(FalseLeaf))
+    bind(env, "c1 && c2") shouldBe MethodCallLike(TrueLeaf, "&&", IndexedSeq(FalseLeaf))
     bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
     bind(env, "HEIGHT - 1") shouldBe mkMinus(Height, 1)
     bind(env, "HEIGHT + 1") shouldBe plus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
     bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10, 20))
-    bind(env, "arr1 ++ arr2") shouldBe MethodCall(Array[Byte](1, 2), "++", IndexedSeq(Array[Byte](10, 20))) // AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
+    bind(env, "arr1 ++ arr2") shouldBe MethodCallLike(Array[Byte](1, 2), "++", IndexedSeq(Array[Byte](10, 20))) // AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
     bind(env, "col1 ++ col2") shouldBe
-      MethodCall(
+      MethodCallLike(
         ConcreteCollection(LongConstant(1), LongConstant(2)),
         "++", IndexedSeq(ConcreteCollection(LongConstant(10), LongConstant(20))))
     bind(env, "g1 ^ n1") shouldBe Exponentiate(g1, n1)
-    bind(env, "g1 * g2") shouldBe MethodCall(g1, "*", IndexedSeq(g2))
+    bind(env, "g1 * g2") shouldBe MethodCallLike(g1, "*", IndexedSeq(g2))
   }
 
   property("predefined functions") {
@@ -72,7 +72,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "{val X = (10, true); X._1 > 2 && X._2}") shouldBe
       Block(
         Val("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)),
-        MethodCall(GT(Select(IntIdent("X"), "_1").asValue[SInt.type], 2), "&&", IndexedSeq(Select(IntIdent("X"), "_2").asValue[SBoolean.type])))
+        MethodCallLike(GT(Select(IntIdent("X"), "_1").asValue[SInt.type], 2), "&&", IndexedSeq(Select(IntIdent("X"), "_2").asValue[SBoolean.type])))
   }
 
   property("predefined Exists with lambda argument") {

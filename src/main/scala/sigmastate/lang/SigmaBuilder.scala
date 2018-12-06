@@ -466,7 +466,7 @@ class StdSigmaBuilder extends SigmaBuilder {
                             name: String,
                             args: IndexedSeq[Value[SType]],
                             tpe: SType): Value[SType] =
-    MethodCall(obj, name, args, tpe)
+    MethodCallLike(obj, name, args, tpe)
 
   override def mkLambda(args: IndexedSeq[(String, SType)],
                         givenResType: SType,

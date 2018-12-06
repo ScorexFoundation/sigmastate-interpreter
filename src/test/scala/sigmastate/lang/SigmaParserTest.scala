@@ -40,8 +40,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     }
   }
 
-  def and(l: SValue, r: SValue) = MethodCall(l, "&&", IndexedSeq(r))
-  def or(l: SValue, r: SValue) = MethodCall(l, "||", IndexedSeq(r))
+  def and(l: SValue, r: SValue) = MethodCallLike(l, "&&", IndexedSeq(r))
+  def or(l: SValue, r: SValue) = MethodCallLike(l, "||", IndexedSeq(r))
 
   property("simple expressions") {
     parse("10") shouldBe IntConstant(10)
@@ -69,11 +69,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("false || false || false") shouldBe or(or(FalseLeaf, FalseLeaf), FalseLeaf)
     parse("(1>= 0)||(3L >2L)") shouldBe or(GE(1, 0), GT(3L, 2L))
     parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
-    parse("arr1 ++ arr2") shouldBe MethodCall(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
-    parse("col1 ++ col2") shouldBe MethodCall(Ident("col1"), "++", IndexedSeq(Ident("col2")))
+    parse("arr1 ++ arr2") shouldBe MethodCallLike(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
+    parse("col1 ++ col2") shouldBe MethodCallLike(Ident("col1"), "++", IndexedSeq(Ident("col2")))
     parse("ge ^ n") shouldBe Exponentiate(GEIdent("ge"), BigIntIdent("n"))
-    parse("g1 * g2") shouldBe MethodCall(Ident("g1"), "*", IndexedSeq(Ident("g2")))
-    parse("g1 + g2") shouldBe MethodCall(Ident("g1"), "+", IndexedSeq(Ident("g2")))
+    parse("g1 * g2") shouldBe MethodCallLike(Ident("g1"), "*", IndexedSeq(Ident("g2")))
+    parse("g1 + g2") shouldBe MethodCallLike(Ident("g1"), "+", IndexedSeq(Ident("g2")))
   }
 
   property("precedence of binary operations") {
@@ -496,7 +496,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("string concat") {
     parse(""" "hello" + "hello" """) shouldBe
-      MethodCall(StringConstant("hello"), "+", IndexedSeq(StringConstant("hello")))
+      MethodCallLike(StringConstant("hello"), "+", IndexedSeq(StringConstant("hello")))
   }
 
   property("fromBaseX string decoding") {

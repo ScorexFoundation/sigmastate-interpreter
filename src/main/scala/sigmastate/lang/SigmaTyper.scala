@@ -171,7 +171,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
           error(s"Invalid array application $app: array type is expected but was $t")
       }
 
-    case mc @ MethodCall(obj, m, args, _) =>
+    case mc @ MethodCallLike(obj, m, args, _) =>
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       newObj.tpe match {
