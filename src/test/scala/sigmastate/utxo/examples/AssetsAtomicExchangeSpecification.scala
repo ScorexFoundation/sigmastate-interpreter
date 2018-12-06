@@ -192,13 +192,15 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |  val tokenValue = tokenData._2
         |  val outValue = out.value
         |  val price = 500
+        |  val minimalRemainingAmount = 500
         |
         |  allOf(Array(
         |      tokenId == token1,
         |      tokenValue >= 1,
         |      (SELF.value - outValue) <= tokenValue * price,
-        |      out.propositionBytes == pkA.propBytes,
-        |      out.R4[Array[Byte]].get == SELF.id
+        |      out.R4[Array[Byte]].get == SELF.id,
+        |      out.propositionBytes == SELF.propositionBytes ||
+        |          (outValue <= minimalRemainingAmount && out.propositionBytes == pkA.propBytes)
         |  ))
         |}
       """.stripMargin).asBoolValue
@@ -210,11 +212,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |   val out = OUTPUTS(outIdx)
         |
         |   val tokenData = out.R2[Array[(Array[Byte], Long)]].get(0)
-        |   val tokenId = tokenData._1
-        |   val selfTokenData = SELF.R2[Array[(Array[Byte], Long)]].get(0)
-        |   val selfTokenId = selfTokenData._1
+        |   val selfTokensDataOpt = SELF.R2[Array[(Array[Byte], Long)]]
         |   val tokenValue = tokenData._2
-        |   val selfTokenValue = selfTokenData._2
+        |   val selfTokenValue = if (selfTokensDataOpt.isDefined) selfTokensDataOpt.get(0)._2 else 0L
         |
         |   val selfValue = SELF.value
         |   val outValue = out.value
@@ -225,9 +225,10 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |
         |   allOf(Array(
         |        sold >= 1,
-        |        (outValue - selfValue) >= sold*price,
+        |        (outValue - selfValue) >= sold * price,
         |        out.R4[Array[Byte]].get == SELF.id,
-        |        out.propositionBytes == pkB.propBytes
+        |        out.propositionBytes == SELF.propositionBytes ||
+        |            (tokenValue == 0 && out.propositionBytes == pkB.propBytes)
         |   ))
         | }
       """.stripMargin).asBoolValue
@@ -236,39 +237,70 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val input0 = ErgoBox(10000, buyerProp, 0)
     val input1 = ErgoBox(0, sellerProp, 0, Seq(tokenId -> 60))
 
-    //tx outputs
-    val newBox1 = ErgoBox(5050, tokenBuyerKey, 0, Seq(tokenId -> 10), Map(R4 -> ByteArrayConstant(input0.id)))
-    val newBox2 = ErgoBox(4950, tokenSellerKey, 0, Seq(tokenId -> 50), Map(R4 -> ByteArrayConstant(input1.id)))
-    val newBoxes = IndexedSeq(newBox1, newBox2)
+    //tx outputs at 1st round
+    val buyerBoxRound1 = ErgoBox(5000, buyerProp, 0, Seq(tokenId -> 10), Map(R4 -> ByteArrayConstant(input0.id)))
+    val sellerBoxRound1 = ErgoBox(4950, sellerProp, 0, Seq(tokenId -> 50), Map(R4 -> ByteArrayConstant(input1.id)))
+    val newBoxesRound1 = IndexedSeq(buyerBoxRound1, sellerBoxRound1)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    //tx outputs at 2nd round
+    val buyerBoxRound2 = ErgoBox(500, tokenBuyerKey, 1, Seq(tokenId -> 19), Map(R4 -> ByteArrayConstant(buyerBoxRound1.id)))
+    val sellerBoxRound2 = ErgoBox(29700, tokenSellerKey, 1, Seq(), Map(R4 -> ByteArrayConstant(sellerBoxRound1.id)))
+    val newBoxesRound2 = IndexedSeq(buyerBoxRound2, sellerBoxRound2)
 
-    val buyerCtx = ErgoLikeContext(
+    val spendingTransactionRound1 = ErgoLikeTransaction(IndexedSeq(), newBoxesRound1)
+    val spendingTransactionRound2 = ErgoLikeTransaction(IndexedSeq(), newBoxesRound2)
+
+    val buyerCtxRound1 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(input0, input1),
-      spendingTransaction,
+      spendingTransactionRound1,
       self = input0,
       extension = ContextExtension(Map(Byte.MaxValue -> ShortConstant(0))))
 
     //Though we use separate provers below, both inputs do not contain any secrets, thus
     //a spending transaction could be created and posted by anyone.
-    val pr = tokenBuyer.withContextExtender(Byte.MaxValue, ShortConstant(0)).prove(buyerProp, buyerCtx, fakeMessage).get
-    verifier.verify(buyerProp, buyerCtx, pr, fakeMessage).get._1 shouldBe true
+    val pr1R1 = tokenBuyer.withContextExtender(Byte.MaxValue, ShortConstant(0)).prove(buyerProp, buyerCtxRound1, fakeMessage).get
+    verifier.verify(buyerProp, buyerCtxRound1, pr1R1, fakeMessage).get._1 shouldBe true
 
-    val sellerCtx = ErgoLikeContext(
+    val sellerCtxRound1 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(input0, input1),
-      spendingTransaction,
+      spendingTransactionRound1,
       self = input1,
       extension = ContextExtension(Map(Byte.MaxValue -> ShortConstant(1))))
 
-    val pr2 = tokenSeller.withContextExtender(Byte.MaxValue, ShortConstant(1)).prove(sellerProp, sellerCtx, fakeMessage).get
-    verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
+    val pr2 = tokenSeller.withContextExtender(Byte.MaxValue, ShortConstant(1)).prove(sellerProp, sellerCtxRound1, fakeMessage).get
+    verifier.verify(sellerProp, sellerCtxRound1, pr2, fakeMessage).get._1 shouldBe true
 
-    println("total cost: " + (buyerProp.cost(buyerCtx) + sellerProp.cost(sellerCtx)))
+    println("total cost: " + (buyerProp.cost(buyerCtxRound1) + sellerProp.cost(sellerCtxRound1)))
+
+    val buyerCtxRound2 = ErgoLikeContext(
+      currentHeight = 51,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = newBoxesRound1,
+      spendingTransactionRound2,
+      self = buyerBoxRound1,
+      extension = ContextExtension(Map(Byte.MaxValue -> ShortConstant(0))))
+
+    val pr1R2 = tokenBuyer.withContextExtender(Byte.MaxValue, ShortConstant(0)).prove(buyerProp, buyerCtxRound2, fakeMessage).get
+    verifier.verify(buyerProp, buyerCtxRound2, pr1R2, fakeMessage).get._1 shouldBe true
+
+    val sellerCtxRound2 = ErgoLikeContext(
+      currentHeight = 51,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = newBoxesRound1,
+      spendingTransactionRound2,
+      self = sellerBoxRound1,
+      extension = ContextExtension(Map(Byte.MaxValue -> ShortConstant(1))))
+
+    //val pr2R2 = tokenSeller.withContextExtender(Byte.MaxValue, ShortConstant(1)).prove(sellerProp, sellerCtxRound2, fakeMessage).get
+    //verifier.verify(sellerProp, sellerCtxRound2, pr2R2, fakeMessage).get._1 shouldBe true
   }
+
 }
