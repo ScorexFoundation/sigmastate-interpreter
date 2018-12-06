@@ -187,9 +187,13 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |
         |  val outIdx = getVar[Short](127).get
         |  val out = OUTPUTS(outIdx)
+        |
+        |  val defaultTokenData = Array((Array(1.toByte), 0L))
+        |
         |  val tokenData = out.R2[Array[(Array[Byte], Long)]].get(0)
         |  val tokenId = tokenData._1
         |  val tokenValue = tokenData._2
+        |  val selfTokenValue = SELF.R2[Array[(Array[Byte], Long)]].getOrElse(defaultTokenData)(0)._2
         |  val outValue = out.value
         |  val price = 500
         |  val minimalRemainingAmount = 500
@@ -197,7 +201,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |  allOf(Array(
         |      tokenId == token1,
         |      tokenValue >= 1,
-        |      (SELF.value - outValue) <= tokenValue * price,
+        |      (SELF.value - outValue) <= (tokenValue - selfTokenValue) * price,
         |      out.R4[Array[Byte]].get == SELF.id,
         |      out.propositionBytes == SELF.propositionBytes ||
         |          (outValue <= minimalRemainingAmount && out.propositionBytes == pkA.propBytes)
@@ -211,10 +215,10 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |   val outIdx = getVar[Short](127).get
         |   val out = OUTPUTS(outIdx)
         |
-        |   val tokenData = out.R2[Array[(Array[Byte], Long)]].get(0)
-        |   val selfTokensDataOpt = SELF.R2[Array[(Array[Byte], Long)]]
-        |   val tokenValue = tokenData._2
-        |   val selfTokenValue = if (selfTokensDataOpt.isDefined) selfTokensDataOpt.get(0)._2 else 0L
+        |   val defaultTokenData = Array((Array(1.toByte), 0L))
+        |
+        |   val tokenValue = out.R2[Array[(Array[Byte], Long)]].getOrElse(defaultTokenData)(0)._2
+        |   val selfTokenValue = SELF.R2[Array[(Array[Byte], Long)]].getOrElse(defaultTokenData)(0)._2
         |
         |   val selfValue = SELF.value
         |   val outValue = out.value
@@ -234,7 +238,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       """.stripMargin).asBoolValue
 
     //tx inputs
-    val input0 = ErgoBox(10000, buyerProp, 0)
+    val input0 = ErgoBox(10000, buyerProp, 0, Seq(tokenId -> 0))
     val input1 = ErgoBox(0, sellerProp, 0, Seq(tokenId -> 60))
 
     //tx outputs at 1st round
@@ -244,7 +248,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
     //tx outputs at 2nd round
     val buyerBoxRound2 = ErgoBox(500, tokenBuyerKey, 1, Seq(tokenId -> 19), Map(R4 -> ByteArrayConstant(buyerBoxRound1.id)))
-    val sellerBoxRound2 = ErgoBox(29700, tokenSellerKey, 1, Seq(), Map(R4 -> ByteArrayConstant(sellerBoxRound1.id)))
+    val sellerBoxRound2 = ErgoBox(29700, tokenSellerKey, 1, Seq(tokenId -> 0), Map(R4 -> ByteArrayConstant(sellerBoxRound1.id)))
     val newBoxesRound2 = IndexedSeq(buyerBoxRound2, sellerBoxRound2)
 
     val spendingTransactionRound1 = ErgoLikeTransaction(IndexedSeq(), newBoxesRound1)
@@ -261,7 +265,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
     //Though we use separate provers below, both inputs do not contain any secrets, thus
     //a spending transaction could be created and posted by anyone.
-    val pr1R1 = tokenBuyer.withContextExtender(Byte.MaxValue, ShortConstant(0)).prove(buyerProp, buyerCtxRound1, fakeMessage).get
+    val pr1R1 = tokenBuyer
+      .withContextExtender(Byte.MaxValue, ShortConstant(0)).prove(buyerProp, buyerCtxRound1, fakeMessage).get
     verifier.verify(buyerProp, buyerCtxRound1, pr1R1, fakeMessage).get._1 shouldBe true
 
     val sellerCtxRound1 = ErgoLikeContext(
@@ -273,8 +278,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       self = input1,
       extension = ContextExtension(Map(Byte.MaxValue -> ShortConstant(1))))
 
-    val pr2 = tokenSeller.withContextExtender(Byte.MaxValue, ShortConstant(1)).prove(sellerProp, sellerCtxRound1, fakeMessage).get
-    verifier.verify(sellerProp, sellerCtxRound1, pr2, fakeMessage).get._1 shouldBe true
+    val pr2R1 = tokenSeller
+      .withContextExtender(Byte.MaxValue, ShortConstant(1)).prove(sellerProp, sellerCtxRound1, fakeMessage).get
+    verifier.verify(sellerProp, sellerCtxRound1, pr2R1, fakeMessage).get._1 shouldBe true
 
     println("total cost: " + (buyerProp.cost(buyerCtxRound1) + sellerProp.cost(sellerCtxRound1)))
 
@@ -287,7 +293,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       self = buyerBoxRound1,
       extension = ContextExtension(Map(Byte.MaxValue -> ShortConstant(0))))
 
-    val pr1R2 = tokenBuyer.withContextExtender(Byte.MaxValue, ShortConstant(0)).prove(buyerProp, buyerCtxRound2, fakeMessage).get
+    val pr1R2 = tokenBuyer
+      .withContextExtender(Byte.MaxValue, ShortConstant(0)).prove(buyerProp, buyerCtxRound2, fakeMessage).get
     verifier.verify(buyerProp, buyerCtxRound2, pr1R2, fakeMessage).get._1 shouldBe true
 
     val sellerCtxRound2 = ErgoLikeContext(
@@ -299,8 +306,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       self = sellerBoxRound1,
       extension = ContextExtension(Map(Byte.MaxValue -> ShortConstant(1))))
 
-    //val pr2R2 = tokenSeller.withContextExtender(Byte.MaxValue, ShortConstant(1)).prove(sellerProp, sellerCtxRound2, fakeMessage).get
-    //verifier.verify(sellerProp, sellerCtxRound2, pr2R2, fakeMessage).get._1 shouldBe true
+    val pr2R2 = tokenSeller
+      .withContextExtender(Byte.MaxValue, ShortConstant(1)).prove(sellerProp, sellerCtxRound2, fakeMessage).get
+    verifier.verify(sellerProp, sellerCtxRound2, pr2R2, fakeMessage).get._1 shouldBe true
   }
 
 }
