@@ -42,7 +42,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import WArray._
   import WOption._
   import WECPoint._
-  
+
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val ColM = ColMethods
@@ -166,6 +166,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val elemTpe = elemToSType(elemT)
         val col = colSyms.map(recurse(_).asValue[elemTpe.type])
         mkConcreteCollection[elemTpe.type](col.toIndexedSeq, elemTpe)
+      case CBM.xor(_, colSym1, colSym2) =>
+        mkXor(recurse(colSym1), recurse(colSym2))
 
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
