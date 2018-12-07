@@ -477,81 +477,11 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   )
 }
 
-case object SContext extends SProduct with SPredefType with STypeCompanion {
-  override type WrappedType = ErgoLikeContext
-  override val typeCode: TypeCode = 101: Byte
-  override def typeId = typeCode
-  override def mkConstant(v: ErgoLikeContext): Value[SContext.type] = ContextConstant(v)
-
-  /** Approximate data size of the given context without ContextExtension. */
-  override def dataSize(v: SType#WrappedType): Long = {
-    val ctx = v.asInstanceOf[ErgoLikeContext]
-    val avlSize = SAvlTree.dataSize(ctx.lastBlockUtxoRoot.asWrappedType)
-    val inputSize = ctx.boxesToSpend.foldLeft(0L)((acc, b) => acc + b.dataSize)
-    val outputSize = ctx.spendingTransaction.outputs.foldLeft(0L)((acc, b) => acc + b.dataSize)
-    8L +   // Height
-    avlSize + ctx.minerPubkey.length + inputSize + outputSize
-  }
+/** Any other type is implicitly subtype of this type. */
+case object SAny extends SPrimType {
+  override type WrappedType = Any
+  override val typeCode: Byte = 97: Byte
   override def isConstantSize = false
-  def ancestors = Nil
-  val methods = Nil
-}
-
-case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
-  override type WrappedType = AvlTreeData
-  override val typeCode: TypeCode = 100: Byte
-  override def typeId = typeCode
-  override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = {
-    val tree = v.asInstanceOf[AvlTreeData]
-    tree.startingDigest.length +
-    4 + // keyLength
-    tree.valueLengthOpt.fold(0)(_ => 4) +
-    tree.maxNumOperations.fold(0)(_ => 4) +
-    tree.maxDeletes.fold(0)(_ => 4)
-  }
-  override def isConstantSize = false
-  def ancestors = Nil
-  val methods = Nil
-}
-
-case object SBox extends SProduct with SPredefType with STypeCompanion {
-  override type WrappedType = ErgoBox
-  override val typeCode: TypeCode = 99: Byte
-  override def typeId = typeCode
-  override def mkConstant(v: ErgoBox): Value[SBox.type] = BoxConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = {
-    val box = v.asInstanceOf[this.WrappedType]
-    4 + // box.value
-    box.propositionBytes.length +
-    box.additionalTokens.length * (32 + 4) +
-    box.additionalRegisters.values.map(x => x.tpe.dataSize(x.value)).sum +
-    box.transactionId.length +
-    2 // box.index
-  }
-  override def isConstantSize = false
-  def ancestors = Nil
-
-  private val tT = STypeIdent("T")
-  def registers(idOfs: Int): Seq[SMethod] = {
-    (1 to 10).map { i =>
-      SMethod(this, s"R$i", SFunc(IndexedSeq(), SOption(tT), Seq(STypeParam(tT))), (idOfs + i).toByte)
-    }
-  }
-  val PropositionBytes = "propositionBytes"
-  val Value = "value"
-  val Id = "id"
-  val Bytes = "bytes"
-  val BytesWithNoRef = "bytesWithNoRef"
-  val CreationInfo = "creationInfo"
-  val methods = Vector(
-    SMethod(this, Value, SLong, 1), // see ExtractAmount
-    SMethod(this, PropositionBytes, SCollectionType(SByte), 2), // see ExtractScriptBytes
-    SMethod(this, Bytes, SCollectionType(SByte), 3), // see ExtractBytes
-    SMethod(this, BytesWithNoRef, SCollectionType(SByte), 4), // see ExtractBytesWithNoRef
-    SMethod(this, Id, SCollectionType(SByte), 5), // see ExtractId
-    SMethod(this, CreationInfo, STuple(SLong, SCollectionType(SByte)), 6) // see ExtractCreationInfo
-  ) ++ registers(6)
 }
 
 /** The type with single inhabitant value `()` */
@@ -562,11 +492,60 @@ case object SUnit extends SPrimType {
   override def isConstantSize = true
 }
 
-/** Any other type is implicitly subtype of this type. */
-case object SAny extends SPrimType {
-  override type WrappedType = Any
-  override val typeCode: Byte = 97: Byte
-  override def isConstantSize = false
+/** Type description of optional values. Instances of `Option`
+  *  are either constructed by `Some` or by `None` constructors. */
+case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
+  override type WrappedType = Option[ElemType#WrappedType]
+  override val typeCode: TypeCode = SOption.OptionTypeCode
+  override def dataSize(v: SType#WrappedType) = {
+    val opt = v.asInstanceOf[Option[ElemType#WrappedType]]
+    1L + opt.fold(0L)(x => elemType.dataSize(x))
+  }
+  override def isConstantSize = elemType.isConstantSize
+  def ancestors = Nil
+  override lazy val methods: Seq[SMethod] = {
+    val subst = Map(SOption.tT -> elemType)
+    SOption.methods.map { method =>
+      method.copy(stype = SigmaTyper.applySubst(method.stype, subst))
+    }
+  }
+  override def toString = s"Option[$elemType]"
+}
+
+object SOption extends STypeCompanion {
+  val OptionTypeConstrId = 3
+  val OptionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionTypeConstrId).toByte
+  val OptionCollectionTypeConstrId = 4
+  val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
+  override def typeId = OptionTypeCode
+
+  implicit val optionTypeByte = SOption(SByte)
+  implicit val optionTypeByteArray = SOption(SByteArray)
+  implicit val optionTypeShort = SOption(SShort)
+  implicit val optionTypeInt = SOption(SInt)
+  implicit val optionTypeLong = SOption(SLong)
+  implicit val optionTypeBigInt = SOption(SBigInt)
+  implicit val optionTypeBoolean = SOption(SBoolean)
+  implicit val optionTypeAvlTree = SOption(SAvlTree)
+  implicit val optionTypeGroupElement = SOption(SGroupElement)
+  implicit val optionTypeSigmaProp = SOption(SSigmaProp)
+  implicit val optionTypeBox = SOption(SBox)
+
+  implicit def optionTypeCollection[V <: SType](implicit tV: V): SOption[SCollection[V]] = SOption(SCollection[V])
+
+  val IsEmpty = "isEmpty"
+  val IsDefined = "isDefined"
+  val Get = "get"
+  val GetOrElse = "getOrElse"
+
+  private val tT = STypeIdent("T")
+  val IsEmptyMethod   = SMethod(this, IsEmpty, SBoolean, 1)
+  val IsDefinedMethod = SMethod(this, IsDefined, SBoolean, 2)
+  val GetMethod       = SMethod(this, Get, tT, 3)
+  val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(SOption(tT), tT), tT, Seq(STypeParam(tT))), 4)
+  val methods: Seq[SMethod] = Seq(IsEmptyMethod, IsDefinedMethod, GetMethod, GetOrElseMethod)
+  def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
+  def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
 
 trait SCollection[T <: SType] extends SProduct with SGenericType {
@@ -659,62 +638,6 @@ object SCollection extends STypeCompanion {
   val SSigmaPropArray    = SCollection(SSigmaProp)
   val SBoxArray          = SCollection(SBox)
   val SAvlTreeArray      = SCollection(SAvlTree)
-}
-
-/** Type description of optional values. Instances of `Option`
-  *  are either constructed by `Some` or by `None` constructors. */
-case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
-  override type WrappedType = Option[ElemType#WrappedType]
-  override val typeCode: TypeCode = SOption.OptionTypeCode
-  override def dataSize(v: SType#WrappedType) = {
-    val opt = v.asInstanceOf[Option[ElemType#WrappedType]]
-    1L + opt.fold(0L)(x => elemType.dataSize(x))
-  }
-  override def isConstantSize = elemType.isConstantSize
-  def ancestors = Nil
-  override lazy val methods: Seq[SMethod] = {
-    val subst = Map(SOption.tT -> elemType)
-    SOption.methods.map { method =>
-      method.copy(stype = SigmaTyper.applySubst(method.stype, subst))
-    }
-  }
-  override def toString = s"Option[$elemType]"
-}
-
-object SOption extends STypeCompanion {
-  val OptionTypeConstrId = 3
-  val OptionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionTypeConstrId).toByte
-  val OptionCollectionTypeConstrId = 4
-  val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
-  override def typeId = OptionTypeCode
-
-  implicit val optionTypeByte = SOption(SByte)
-  implicit val optionTypeByteArray = SOption(SByteArray)
-  implicit val optionTypeShort = SOption(SShort)
-  implicit val optionTypeInt = SOption(SInt)
-  implicit val optionTypeLong = SOption(SLong)
-  implicit val optionTypeBigInt = SOption(SBigInt)
-  implicit val optionTypeBoolean = SOption(SBoolean)
-  implicit val optionTypeAvlTree = SOption(SAvlTree)
-  implicit val optionTypeGroupElement = SOption(SGroupElement)
-  implicit val optionTypeSigmaProp = SOption(SSigmaProp)
-  implicit val optionTypeBox = SOption(SBox)
-
-  implicit def optionTypeCollection[V <: SType](implicit tV: V): SOption[SCollection[V]] = SOption(SCollection[V])
-
-  val IsEmpty = "isEmpty"
-  val IsDefined = "isDefined"
-  val Get = "get"
-  val GetOrElse = "getOrElse"
-
-  private val tT = STypeIdent("T")
-  val IsEmptyMethod   = SMethod(this, IsEmpty, SBoolean, 1)
-  val IsDefinedMethod = SMethod(this, IsDefined, SBoolean, 2)
-  val GetMethod       = SMethod(this, Get, tT, 3)
-  val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(SOption(tT), tT), tT, Seq(STypeParam(tT))), 4)
-  val methods: Seq[SMethod] = Seq(IsEmptyMethod, IsDefinedMethod, GetMethod, GetOrElseMethod)
-  def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
-  def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
 
 case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
@@ -829,3 +752,80 @@ object STypeIdent {
   implicit def liftString(n: String): STypeIdent = STypeIdent(n)
 }
 
+case object SBox extends SProduct with SPredefType with STypeCompanion {
+  override type WrappedType = ErgoBox
+  override val typeCode: TypeCode = 99: Byte
+  override def typeId = typeCode
+  override def mkConstant(v: ErgoBox): Value[SBox.type] = BoxConstant(v)
+  override def dataSize(v: SType#WrappedType): Long = {
+    val box = v.asInstanceOf[this.WrappedType]
+    4 + // box.value
+        box.propositionBytes.length +
+        box.additionalTokens.length * (32 + 4) +
+        box.additionalRegisters.values.map(x => x.tpe.dataSize(x.value)).sum +
+        box.transactionId.length +
+        2 // box.index
+  }
+  override def isConstantSize = false
+  def ancestors = Nil
+
+  private val tT = STypeIdent("T")
+  def registers(idOfs: Int): Seq[SMethod] = {
+    (1 to 10).map { i =>
+      SMethod(this, s"R$i", SFunc(IndexedSeq(), SOption(tT), Seq(STypeParam(tT))), (idOfs + i).toByte)
+    }
+  }
+  val PropositionBytes = "propositionBytes"
+  val Value = "value"
+  val Id = "id"
+  val Bytes = "bytes"
+  val BytesWithNoRef = "bytesWithNoRef"
+  val CreationInfo = "creationInfo"
+  // should be lazy to solve resursive initialization
+  lazy val methods = Vector(
+    SMethod(this, Value, SLong, 1), // see ExtractAmount
+    SMethod(this, PropositionBytes, SCollectionType(SByte), 2), // see ExtractScriptBytes
+    SMethod(this, Bytes, SCollectionType(SByte), 3), // see ExtractBytes
+    SMethod(this, BytesWithNoRef, SCollectionType(SByte), 4), // see ExtractBytesWithNoRef
+    SMethod(this, Id, SCollectionType(SByte), 5), // see ExtractId
+    SMethod(this, CreationInfo, STuple(SLong, SCollectionType(SByte)), 6) // see ExtractCreationInfo
+  ) ++ registers(6)
+}
+
+case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
+  override type WrappedType = AvlTreeData
+  override val typeCode: TypeCode = 100: Byte
+  override def typeId = typeCode
+  override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
+  override def dataSize(v: SType#WrappedType): Long = {
+    val tree = v.asInstanceOf[AvlTreeData]
+    tree.startingDigest.length +
+        4 + // keyLength
+        tree.valueLengthOpt.fold(0)(_ => 4) +
+        tree.maxNumOperations.fold(0)(_ => 4) +
+        tree.maxDeletes.fold(0)(_ => 4)
+  }
+  override def isConstantSize = false
+  def ancestors = Nil
+  val methods = Nil
+}
+
+case object SContext extends SProduct with SPredefType with STypeCompanion {
+  override type WrappedType = ErgoLikeContext
+  override val typeCode: TypeCode = 101: Byte
+  override def typeId = typeCode
+  override def mkConstant(v: ErgoLikeContext): Value[SContext.type] = ContextConstant(v)
+
+  /** Approximate data size of the given context without ContextExtension. */
+  override def dataSize(v: SType#WrappedType): Long = {
+    val ctx = v.asInstanceOf[ErgoLikeContext]
+    val avlSize = SAvlTree.dataSize(ctx.lastBlockUtxoRoot.asWrappedType)
+    val inputSize = ctx.boxesToSpend.foldLeft(0L)((acc, b) => acc + b.dataSize)
+    val outputSize = ctx.spendingTransaction.outputs.foldLeft(0L)((acc, b) => acc + b.dataSize)
+    8L +   // Height
+        avlSize + ctx.minerPubkey.length + inputSize + outputSize
+  }
+  override def isConstantSize = false
+  def ancestors = Nil
+  val methods = Nil
+}
