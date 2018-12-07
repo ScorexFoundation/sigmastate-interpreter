@@ -69,6 +69,12 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
             u.asGroupElement,
             v.asGroupElement)))
 
+      case Terms.Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
+        eval(mkTreeModifications(tree, operations, proof))
+
+      case Terms.Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
+        eval(mkTreeLookup(tree, key, proof))
+
       case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 
