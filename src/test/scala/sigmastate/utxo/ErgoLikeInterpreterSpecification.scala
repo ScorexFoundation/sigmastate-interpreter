@@ -1,8 +1,7 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
-import org.ergoplatform.ErgoLikeContext.Metadata
-import org.ergoplatform.ErgoLikeContext.Metadata._
+import org.ergoplatform.ErgoLikeContext._
 import org.ergoplatform._
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
@@ -160,7 +159,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = {
       val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
-      val compiledProp = compile(env,
+      val compiledProp = compileWithCosting(env,
         """{
           |  val notTimePassed = HEIGHT <= timeout
           |  val outBytes = OUTPUTS.map({(box: Box) => box.bytesWithNoRef})
@@ -577,7 +576,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val helloHash = Blake2b256.hash(preimageHello)
 
     val env = Map("helloHash" -> helloHash)
-    val prop = compile(env,
+    val prop = compileWithCosting(env,
       """{
         |  val cond = INPUTS(0).value > 10
         |  val preimage = if (cond)
