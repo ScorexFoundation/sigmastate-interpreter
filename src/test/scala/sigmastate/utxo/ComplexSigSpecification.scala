@@ -439,7 +439,8 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
     val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA, pubkeyB, HEIGHT > 500))""").asBoolValue
 
-    val prop = SigmaOr(pubkeyA, pubkeyB, GT(Height, LongConstant(500)).toSigmaProp)
+    // rewritten by http://github.com/aslesarenko/sigma/blob/2740b51c86bdf1917f688d4ccdb1a0eae9755e0c/sigma-library/src/main/scala/scalan/SigmaLibrary.scala#L91
+    val prop = SigmaOr(GT(Height, LongConstant(500)).toSigmaProp, SigmaOr(pubkeyA, pubkeyB))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
