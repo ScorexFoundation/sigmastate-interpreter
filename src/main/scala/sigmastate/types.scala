@@ -469,6 +469,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
           GroupElementConstant(gv), GroupElementConstant(hv),
           GroupElementConstant(uv), GroupElementConstant(vv)) =>
       SGroupElement.dataSize(gv.asWrappedType) * 4 + 1
+    case CAND(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum
     case _ => ???
   }
   override def isConstantSize = false

@@ -24,7 +24,7 @@ object SigmaPredef {
   val predefinedEnv: Map[String, SValue] = Seq(
     "allOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "anyOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-    "atLeast" -> mkLambda(Vector("k" -> SInt, "conditions" -> SCollection(SBoolean)), SBoolean, None),
+    "atLeast" -> mkLambda(Vector("k" -> SInt, "conditions" -> SCollection(SSigmaProp)), SSigmaProp, None),
     "ZKProof" -> mkLambda(Vector("block" -> SSigmaProp), SBoolean, None),
     "sigmaProp" -> mkLambda(Vector("condition" -> SBoolean), SSigmaProp, None),
 

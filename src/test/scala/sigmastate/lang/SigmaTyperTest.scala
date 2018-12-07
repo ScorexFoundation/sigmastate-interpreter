@@ -64,8 +64,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "col1 ++ col2") shouldBe SCollection(SLong)
     typecheck(env, "g1 ^ n1") shouldBe SGroupElement
     typecheck(env, "g1 * g2") shouldBe SGroupElement
-    typecheck(env, "p1 || p2") shouldBe SBoolean
-    typecheck(env, "p1 && p2") shouldBe SBoolean
+    typecheck(env, "p1 || p2") shouldBe SSigmaProp
+    typecheck(env, "p1 && p2") shouldBe SSigmaProp
     typecheck(env, "b1 < b2") shouldBe SBoolean
     typecheck(env, "b1 > b2") shouldBe SBoolean
     typecheck(env, "b1 <= b2") shouldBe SBoolean
@@ -84,9 +84,9 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "getVar[Byte](10).get") shouldBe SByte
     typecheck(env, "getVar[Coll[Byte]](10).get") shouldBe SByteArray
     typecheck(env, "getVar[SigmaProp](10).get") shouldBe SSigmaProp
-    typecheck(env, "p1 && getVar[SigmaProp](10).get") shouldBe SBoolean
-    typecheck(env, "getVar[SigmaProp](10).get || p2") shouldBe SBoolean
-    typecheck(env, "getVar[SigmaProp](10).get && getVar[SigmaProp](11).get") shouldBe SBoolean
+    typecheck(env, "p1 && getVar[SigmaProp](10).get") shouldBe SSigmaProp
+    typecheck(env, "getVar[SigmaProp](10).get || p2") shouldBe SSigmaProp
+    typecheck(env, "getVar[SigmaProp](10).get && getVar[SigmaProp](11).get") shouldBe SSigmaProp
     typecheck(env, "Coll(true, getVar[SigmaProp](11).get)") shouldBe SCollection(SBoolean)
     typecheck(env, "min(1, 2)") shouldBe SInt
     typecheck(env, "min(1L, 2)") shouldBe SLong

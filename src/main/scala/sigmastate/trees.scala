@@ -164,18 +164,20 @@ object AND {
   * Logical threshold.
   * AtLeast has two inputs: integer bound and children same as in AND/OR. The result is true if at least bound children are true.
   */
-case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]])
-  extends Transformer[SCollection[SBoolean.type], SBoolean.type]
-    with NotReadyValueBoolean {
+case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]])
+  extends Transformer[SCollection[SSigmaProp.type], SSigmaProp.type]
+    with NotReadyValue[SSigmaProp.type] {
+  override def tpe: SSigmaProp.type = SSigmaProp
   override val opCode: OpCode = AtLeastCode
   override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
+
 }
 
 object AtLeast {
-  def apply(bound: Value[SInt.type], children: Seq[Value[SBoolean.type]]): AtLeast =
+  def apply(bound: Value[SInt.type], children: Seq[SigmaPropValue]): AtLeast =
     AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
 
-  def apply(bound: Value[SInt.type], head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AtLeast = apply(bound, head +: tail)
+  def apply(bound: Value[SInt.type], head: SigmaPropValue, tail: SigmaPropValue*): AtLeast = apply(bound, head +: tail)
 
   def reduce(bound: Int, children: Seq[SigmaBoolean]): SigmaBoolean = {
     import sigmastate.TrivialProp._

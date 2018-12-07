@@ -6,7 +6,7 @@ import scala.language.{existentials, implicitConversions}
 import scapi.sigma.{ProveDHTuple, DLogProtocol}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, SigmaPropConstant, Value, NotReadyValue, SigmaBoolean}
+import sigmastate.Values.{Constant, NotReadyValue, SValue, SigmaBoolean, SigmaPropConstant, Value}
 import sigmastate.lang.Terms.{Apply, _}
 import sigmastate.lang.SigmaPredef._
 import sigmastate.utxo._
@@ -35,6 +35,10 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       // Rule: anyOf(arr) --> OR(arr)
       case Terms.Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
         eval(mkOR(arr))
+
+      // Rule: atLeast(bound, arr) --> AtLeast(bound, arr)
+      case Terms.Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
+        eval(mkAtLeast(bound.asIntValue, arr))
 
       case Terms.Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
         eval(mkCalcBlake2b256(arg))

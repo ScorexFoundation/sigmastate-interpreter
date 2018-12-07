@@ -588,6 +588,10 @@ object Values {
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
   }
 
+  implicit class BoolValueOps(b: BoolValue) {
+    def toSigmaProp: SigmaPropValue = BoolToSigmaProp(b)
+  }
+
   sealed trait BlockItem extends NotReadyValue[SType] {
     def id: Int
     def rhs: SValue

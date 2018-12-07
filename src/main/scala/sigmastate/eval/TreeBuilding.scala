@@ -259,6 +259,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkAND(recurse(items))
       case Def(SDBM.anyOf(_,  items)) =>
         mkOR(recurse(items))
+      case Def(SDBM.atLeast(_, bound, items)) =>
+        mkAtLeast(recurse(bound), recurse(items))
 
       case SigmaM.and_bool_&&(In(prop), In(cond)) =>
         SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
@@ -288,6 +290,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case SDBM.byteArrayToBigInt(_, colSym) =>
         mkByteArrayToBigInt(recurse(colSym))
+
+      case SDBM.blake2b256(_, colSym) =>
+        mkCalcBlake2b256(recurse(colSym))
 
       case Def(IfThenElseLazy(condSym, thenPSym, elsePSym)) =>
         val Seq(cond, thenP, elseP) = Seq(condSym, thenPSym, elsePSym).map(recurse)
