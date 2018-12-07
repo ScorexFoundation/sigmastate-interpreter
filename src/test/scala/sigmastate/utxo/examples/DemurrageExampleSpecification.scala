@@ -56,7 +56,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     )
 
     //todo: add condition on
-    val prop = compile(env,
+    val prop = compileWithCosting(env,
       """{
         | val outIdx = getVar[Short](127).get
         | val out = OUTPUTS(outIdx)

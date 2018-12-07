@@ -236,6 +236,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
         mkExtractId(box.asBox)
+      case BoxM.bytes(In(box)) =>
+        mkExtractBytes(box.asBox)
+      case BoxM.bytesWithoutRef(In(box)) =>
+        mkExtractBytesWithNoRef(box.asBox)
 
       case OM.get(In(optionSym)) =>
         mkOptionGet(optionSym.asValue[SOption[SType]])
