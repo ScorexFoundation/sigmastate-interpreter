@@ -64,6 +64,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case _: NumericTimes[_]   => Some(MultiplyCode)
       case _: IntegralDivide[_] => Some(DivisionCode)
       case _: IntegralMod[_]    => Some(ModuloCode)
+      case _: OrderingMin[_]    => Some(MinCode)
+      case _: OrderingMax[_]    => Some(MaxCode)
       case _ => None
     }
   }
@@ -186,6 +188,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkArith(x.asNumValue, y.asNumValue, DivisionCode)
       case BIM.mod(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, ModuloCode)
+      case BIM.min(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, MinCode)
+      case BIM.max(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, MaxCode)
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)

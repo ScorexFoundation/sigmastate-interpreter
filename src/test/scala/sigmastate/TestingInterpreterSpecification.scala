@@ -117,7 +117,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       "box1" -> ErgoBox(10, TrueLeaf, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
-    val prop = compile(env, code).asBoolValue
+    val prop = compileWithCosting(env, code).asBoolValue
     println(code)
     println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
