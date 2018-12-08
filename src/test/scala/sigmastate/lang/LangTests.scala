@@ -7,7 +7,7 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.ProveDHTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -39,7 +39,7 @@ trait LangTests {
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
   protected val p1: SigmaBoolean = ProveDlog(GroupElementConstant(g1))
   protected val p2: SigmaBoolean = ProveDlog(GroupElementConstant(g2))
-  protected val dht1: SigmaBoolean = ProveDiffieHellmanTuple(
+  protected val dht1: SigmaBoolean = ProveDHTuple(
       GroupElementConstant(g1), GroupElementConstant(g2), GroupElementConstant(g3), GroupElementConstant(g4))
 
   val env = Map(

@@ -46,7 +46,8 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
             val costs = colBuilder.replicate(xs.length, 0)
             val tpe = elemToSType(e)
             val sizes = if (tpe.isConstantSize)
-              colBuilder.replicate(xs.length, typeSize(tpe))
+              colBuilder.replicate(xs.length,
+              typeSize(tpe))
             else
               xs.map(fun(sizeOf(_)))
             val colCost = costOf(CollectionConstant(null, tpe))

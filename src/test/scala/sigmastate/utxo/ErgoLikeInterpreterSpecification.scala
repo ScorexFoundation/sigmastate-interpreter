@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.ProveDHTuple
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -52,8 +52,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val ci = secret.commonInput
 
-    val prop = SigmaPropConstant(ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)).isValid
-    val wrongProp = SigmaPropConstant(ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.u)).isValid
+    val prop = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.v)).isValid
+    val wrongProp = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.u)).isValid
 
     val env = Map("g" -> ci.g, "h" -> ci.h, "u" -> ci.u, "v" -> ci.v, "s" -> secret.publicImage)
     val compiledProp1 = compile(env, "s.isValid").asBoolValue

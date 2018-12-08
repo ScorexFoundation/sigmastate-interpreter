@@ -7,7 +7,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Assertion, Matchers, PropSpec}
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.ProveDHTuple
 import sigmastate.Values.{TrueLeaf, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -29,7 +29,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
     Gen.oneOf(
       prover.dhSecrets
         .map(_.commonInput)
-        .map(ci => ProveDiffieHellmanTuple(ci.g, ci.h, ci.u, ci.v)))
+        .map(ci => ProveDHTuple(ci.g, ci.h, ci.u, ci.v)))
 
   private def exprTreeNodeGen: Gen[Transformer[SCollection[SBoolean.type], SBoolean.type]] = for {
     left <- exprTreeGen

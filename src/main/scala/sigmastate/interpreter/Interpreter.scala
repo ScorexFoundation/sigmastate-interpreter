@@ -41,7 +41,10 @@ object CryptoConstants {
     bytes
   }
 
+  /** Size of the binary representation of any group element (2 ^ groupSizeBits == <number of elements in a group>) */
   val groupSizeBits: Int = 256
+
+  /** Number of bytes to represent any group element as byte array */
   val groupSize: Int = 256 / 8 //32 bytes
 
   //size of challenge in Sigma protocols, in bits

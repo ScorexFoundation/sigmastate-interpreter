@@ -16,6 +16,26 @@ The box `ib` itself is accessed via `SELF` property of the `Context` data struct
 Besides `Context` execution of a contract depends on votable `ProtocolParameters` data, which contains
 global parameters which can be set up by miners following a voting protocol.
 
+### Costing Rules
+
+The following constants are used in cost and size calculations.
+
+Constant Name | Description
+--------------|------------
+GroupSize     | Number of bytes to represent any group element as byte array
+
+The following table shows the rules for calculating cost and size for a result of each operation
+based on costs and sizes of the operations arguments.
+The operations names are given by the node classes of ErgoTree.
+
+
+Operation            |  Cost in time units, Size in bytes
+---------------------|-----------------------------------
+`ProveDLog`          | CT("ProveDlogEval"), GroupSize 
+`ProveDHTuple`       | CT("ProveDHTupleEval"), GroupSize * 4
+x,y: BigInt; x op y where op in ("+", "-") | cost(x) + cost(y) + CT("op"), MaxSizeInBytes 
+
+
 ### Asymptotic complexity of the costing algorithm
 
 For a given input box `ib` the algorithm consists of the following steps (details of each 
@@ -27,7 +47,7 @@ step are given in later sections):
 2   | Deserialize `propBytes` to ErgoTree `tree`  with `N` nodes        | `O(len) and N = O(len)` 
 3   | Recursively traverse `tree` and build costed graph `graphC` with `M <= N` nodes | `O(N)`
 4   | Split `graphC` into calculation function `calcF` and cost estimation function `costF` | `O(M)`
-5   | Topoligically sort nodes of `costF` for execution (Tarjan algorithm) | `O(M)`
+5   | Topologically sort nodes of `costF` for execution (Tarjan algorithm) | `O(M)`
 6   | Iterate over sorted nodes of `costF` and execute primitive ops    | `O(M)` 
 
 #### Overview of Costing Process 

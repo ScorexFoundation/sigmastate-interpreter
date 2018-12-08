@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.ProveDHTuple
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
@@ -71,6 +71,8 @@ sealed trait SType extends SigmaNode {
 object SType {
   /** Representation of type codes used in serialization. */
   type TypeCode = Byte
+
+  val DummyValue = 0.asWrappedType
 
   implicit val typeByte = SByte
   implicit val typeShort = SShort
@@ -225,8 +227,8 @@ case class SMethod(objType: STypeCompanion, name: String, stype: SType, methodId
   * which is interpreted as dynamic typing. */
 case object NoType extends SType {
   type WrappedType = Nothing
-  val typeCode = 0: Byte
-  def isConstantSize = true
+  override val typeCode = 0: Byte
+  override def isConstantSize = true
 }
 
 /** Base trait for all pre-defined types which are not necessary primitive (e.g. Box, AvlTree).
@@ -399,16 +401,18 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
   override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = {
-    val bits = v.asInstanceOf[BigInteger].bitLength()
-    val bytes =
-      if (bits == 0) 0
-      else
-        ((bits - 1) >> 3) + 1
-    bytes
-  }
-  override def isConstantSize = false
+
+  /** The maximum size of BigInteger value in byte array representation. */
+  val MaxSizeInBytes: Long = 32L
+
+  override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
+
+  /** While the size of BigInteger values is limited by the available memory this is not the case with sigma BigInt.
+    * In sigma we limit the size by the fixed constant and thus BigInt is a constant size type. */
+  override def isConstantSize = true
+
   val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
+
   override def upcast(v: AnyVal): BigInteger = v match {
     case x: Byte => BigInteger.valueOf(x.toLong)
     case x: Short => BigInteger.valueOf(x.toLong)
@@ -461,7 +465,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override def dataSize(v: SType#WrappedType): Long = v match {
     case ProveDlog(GroupElementConstant(g)) =>
       SGroupElement.dataSize(g.asWrappedType) + 1
-    case ProveDiffieHellmanTuple(
+    case ProveDHTuple(
           GroupElementConstant(gv), GroupElementConstant(hv),
           GroupElementConstant(uv), GroupElementConstant(vv)) =>
       SGroupElement.dataSize(gv.asWrappedType) * 4 + 1

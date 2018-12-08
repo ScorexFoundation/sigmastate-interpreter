@@ -18,10 +18,10 @@ trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtoco
   override type Z = SecondDiffieHellmanTupleProverMessage
 }
 
-case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDiffieHellmanTuple)
-  extends SigmaProtocolPrivateInput[DiffieHellmanTupleProtocol, ProveDiffieHellmanTuple] {
+case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDHTuple)
+  extends SigmaProtocolPrivateInput[DiffieHellmanTupleProtocol, ProveDHTuple] {
 
-  override lazy val publicImage: ProveDiffieHellmanTuple = commonInput
+  override lazy val publicImage: ProveDHTuple = commonInput
 }
 
 object DiffieHellmanTupleProverInput {
@@ -35,7 +35,7 @@ object DiffieHellmanTupleProverInput {
     val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
     val u = dlogGroup.exponentiate(g, w)
     val v = dlogGroup.exponentiate(h, w)
-    val ci = ProveDiffieHellmanTuple(
+    val ci = ProveDHTuple(
       GroupElementConstant(g), GroupElementConstant(h),
       GroupElementConstant(u), GroupElementConstant(v))
     DiffieHellmanTupleProverInput(w, ci)
@@ -61,7 +61,7 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger)
 }
 
 // Common input: (g,h,u,v)
-case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
+case class ProveDHTuple(gv: Value[SGroupElement.type],
                                    hv: Value[SGroupElement.type],
                                    uv: Value[SGroupElement.type],
                                    vv: Value[SGroupElement.type])
@@ -76,14 +76,14 @@ case class ProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
   lazy val v = vv.asInstanceOf[GroupElementConstant].value
 }
 
-object ProveDiffieHellmanTuple {
+object ProveDHTuple {
   val Code: PropositionCode = 103: Byte
 }
 
 
-class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieHellmanTuple,
+class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDHTuple,
                                           override val privateInputOpt: Option[DiffieHellmanTupleProverInput])
-  extends InteractiveProver[DiffieHellmanTupleProtocol, ProveDiffieHellmanTuple, DiffieHellmanTupleProverInput] {
+  extends InteractiveProver[DiffieHellmanTupleProtocol, ProveDHTuple, DiffieHellmanTupleProverInput] {
 
   var rOpt: Option[BigInteger] = None
 
@@ -119,7 +119,7 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDiffieH
 object DiffieHellmanTupleInteractiveProver {
   import sigmastate.interpreter.CryptoConstants.dlogGroup
 
-  def firstMessage(publicInput: ProveDiffieHellmanTuple): (BigInteger, FirstDiffieHellmanTupleProverMessage) = {
+  def firstMessage(publicInput: ProveDHTuple): (BigInteger, FirstDiffieHellmanTupleProverMessage) = {
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
     val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
     val a = dlogGroup.exponentiate(publicInput.g, r)
@@ -137,7 +137,7 @@ object DiffieHellmanTupleInteractiveProver {
     SecondDiffieHellmanTupleProverMessage(z)
   }
 
-  def simulate(publicInput: ProveDiffieHellmanTuple, challenge: Challenge):
+  def simulate(publicInput: ProveDHTuple, challenge: Challenge):
     (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
 
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
@@ -170,7 +170,7 @@ object DiffieHellmanTupleInteractiveProver {
     * @param secondMessage
     * @return
     */
-  def computeCommitment(proposition: ProveDiffieHellmanTuple,
+  def computeCommitment(proposition: ProveDHTuple,
                         challenge: Challenge,
                         secondMessage: SecondDiffieHellmanTupleProverMessage): (EcPointType, EcPointType) = {
 

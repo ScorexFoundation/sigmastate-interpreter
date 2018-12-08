@@ -3,7 +3,7 @@ package sigmastate.eval
 import org.ergoplatform.ErgoBox
 
 import scala.language.{existentials, implicitConversions}
-import scapi.sigma.{ProveDiffieHellmanTuple, DLogProtocol}
+import scapi.sigma.{ProveDHTuple, DLogProtocol}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{Constant, SigmaPropConstant, Value, NotReadyValue, SigmaBoolean}
@@ -24,7 +24,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
 
-      case _: DLogProtocol.ProveDlog | _: ProveDiffieHellmanTuple =>
+      case _: DLogProtocol.ProveDlog | _: ProveDHTuple =>
         eval(SigmaPropConstant(node.asSigmaBoolean))
 
       // Rule: allOf(arr) --> AND(arr)

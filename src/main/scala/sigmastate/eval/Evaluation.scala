@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 import java.math.BigInteger
 
 import org.ergoplatform._
-import scapi.sigma.{ProveDiffieHellmanTuple, DLogProtocol}
+import scapi.sigma.{ProveDHTuple, DLogProtocol}
 import sigmastate._
 import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, CollectionConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
@@ -144,7 +144,7 @@ trait Evaluation extends RuntimeCosting { IR =>
       case col: special.collection.Col[_] => s"Col(${trim(col.arr).mkString(",")})"
       case p: ECPoint => CryptoFunctions.showECPoint(p)
       case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${CryptoFunctions.showECPoint(g)})"
-      case ProveDiffieHellmanTuple(
+      case ProveDHTuple(
               GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)) =>
         s"ProveDHT(${CryptoFunctions.showECPoint(g)},${CryptoFunctions.showECPoint(h)},${CryptoFunctions.showECPoint(u)},${CryptoFunctions.showECPoint(v)})"
       case _ => x.toString
@@ -314,7 +314,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val res = DLogProtocol.ProveDlog(GroupElementConstant(g))
             out(res)
           case ProveDHTEvidenceCtor(In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
-            val res = ProveDiffieHellmanTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
+            val res = ProveDHTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
             out(res)
 
           case CReplColCtor(In(value), In(len: Int)) =>
@@ -332,7 +332,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             }
             out(size)
           case TypeSize(tpe) =>
-            val size = tpe.dataSize(0.asWrappedType)
+            val size = tpe.dataSize(SType.DummyValue)
             out(size)
           case Downcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType

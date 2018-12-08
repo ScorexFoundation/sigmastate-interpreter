@@ -53,24 +53,23 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "bigIntegerConst", "big", ergoCtx,
       calc = {_ => bigSym },
       cost = {_ => constCost[WBigInteger]},
-      size = {_ => sizeOf(bigSym)},
-      tree = BigIntConstant(big), Result(big, 1, 16))
+      size = {_ => SBigInt.MaxSizeInBytes },
+      tree = BigIntConstant(big), Result(big, 1, 32))
   }
   test("bigIntegerConstCase") {
     bigIntegerConstCase.doReduce
   }
 
   def addBigIntegerConstsCase = {
-    val size = (sizeOf(bigSym) max sizeOf(n1Sym)) + 1L
+//    val size = (sizeOf(bigSym) max sizeOf(n1Sym)) + 1L
     val res = big.add(n1)
     Case(env, "addBigIntegerConsts", "big + n1", ergoCtx,
       calc = {_ => bigSym.add(n1Sym) },
       cost = {_ => constCost[WBigInteger] + constCost[WBigInteger] +
-          costOf("+", SFunc(Vector(SBigInt, SBigInt), SBigInt)) +
-          costOf("+_per_item", SFunc(Vector(SBigInt, SBigInt), SBigInt)) * size.toInt },
-      size = {_ => size },
+          costOf("+", SFunc(Vector(SBigInt, SBigInt), SBigInt)) },
+      size = {_ => SBigInt.MaxSizeInBytes },
       tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)),
-      Result(res, 29, 17))
+      Result(res, 12, 32))
   }
   test("addBigIntegerConstsCase") {
     addBigIntegerConstsCase.doReduce()
@@ -152,12 +151,10 @@ class CompilerItTest extends BaseCtxTests
 //        constCost[Col[WBigInteger]] + costs.sum(intPlusMonoid)
 //      },
       size = {_ =>
-        val f = fun {s: Rep[Long] => (s max sizeOf(liftConst(n1))) + 1L}
-        val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
-        arrSizes.map(f).sum(longPlusMonoid)
+        typeSize[WBigInteger] * liftConst(bigIntArr1).length.toLong
       },
       tree = mkMapCollection(BigIntArrayConstant(bigIntArr1), mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))),
-      Result(res, 27, 4))
+      Result(res, 23, 64))
   }
   test("bigIntArray_Map_Case") {
     bigIntArray_Map_Case.doReduce()
@@ -171,7 +168,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1.slice(0, 1), 2, 1))
+      Result(bigIntArr1.slice(0, 1), 2, 32))
   }
   test("bigIntArray_Slice_Case") {
     bigIntArray_Slice_Case.doReduce()
@@ -199,7 +196,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1, 2, 2L))
+      Result(bigIntArr1, 2, 64L))
   }
   test("register_BigIntArr_Case") {
     measure(5) { i =>
@@ -215,7 +212,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1.map(i => i.add(n1)), 28, 4L))
+      Result(bigIntArr1.map(i => i.add(n1)), 24, 64L))
   }
   test("register_BigIntArr_Map_Case") {
     register_BigIntArr_Map_Case.doReduce()

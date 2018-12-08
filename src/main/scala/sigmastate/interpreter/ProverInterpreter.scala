@@ -477,7 +477,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       CThresholdUnproven(CTHRESHOLD(k, children), None, simulated = false, k, children.map(convertToUnproven), None)
     case ci: ProveDlog =>
       UnprovenSchnorr(ci, None, None, None, simulated = false)
-    case dh: ProveDiffieHellmanTuple =>
+    case dh: ProveDHTuple =>
       UnprovenDiffieHellmanTuple(dh, None, None, None, simulated = false)
   }
 

@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.{DLogProtocol, ProveDiffieHellmanTuple}
+import scapi.sigma.{DLogProtocol, ProveDHTuple}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
 import sigmastate._
@@ -412,7 +412,7 @@ class StdSigmaBuilder extends SigmaBuilder {
                                          hv: Value[SGroupElement.type],
                                          uv: Value[SGroupElement.type],
                                          vv: Value[SGroupElement.type]): SigmaBoolean =
-    ProveDiffieHellmanTuple(gv, hv, uv, vv)
+    ProveDHTuple(gv, hv, uv, vv)
 
   override def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean =
     ProveDlog(value)
