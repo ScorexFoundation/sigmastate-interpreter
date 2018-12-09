@@ -221,11 +221,11 @@ trait Evaluation extends RuntimeCosting { IR =>
             if (b) {
               out(l)
             } else
-              out(TrivialProof.FalseProof)
+              out(TrivialProp.FalseProp)
 
           case SigmaM.or_bool_||(In(l: SigmaBoolean), In(b: Boolean)) =>
             if (b)
-              out(TrivialProof.TrueProof)
+              out(TrivialProp.TrueProp)
             else {
               out(l)
             }
@@ -243,7 +243,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case SDBM.atLeast(dsl, In(bound: Int), In(children: special.collection.Col[SigmaBoolean]@unchecked)) =>
             out(AtLeast.reduce(bound, children.arr.toSeq))
           case SDBM.sigmaProp(_, In(b: Boolean)) =>
-            val res = sigmastate.TrivialProof(b)
+            val res = sigmastate.TrivialProp(b)
             out(res)
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
@@ -308,7 +308,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(th)
 
           case TrivialSigmaCtor(In(isValid: Boolean)) =>
-            val res = sigmastate.TrivialProof(isValid)
+            val res = sigmastate.TrivialProp(isValid)
             out(res)
           case ProveDlogEvidenceCtor(In(g: EcPointType)) =>
             val res = DLogProtocol.ProveDlog(GroupElementConstant(g))

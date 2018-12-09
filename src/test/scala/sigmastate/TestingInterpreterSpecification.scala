@@ -17,7 +17,7 @@ import scorex.util.encode.Base58
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.ValueSerializer
 import special.sigma.{AnyValue, Box, TestAvlTree}
-import TrivialProof._
+import TrivialProp._
 
 import scala.util.Random
 
@@ -44,17 +44,17 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
         {
           val res = reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1
-          res should matchPattern { case FalseProof => }
+          res should matchPattern { case FalseProp => }
         }
 
         {
           val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1
-          res should matchPattern { case TrueProof => }
+          res should matchPattern { case TrueProp => }
         }
 
         {
           val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1
-          res should matchPattern { case TrueProof => }
+          res should matchPattern { case TrueProp => }
         }
         reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1 should(
           matchPattern { case sb: SigmaBoolean => })
@@ -86,7 +86,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         reduceToCrypto(ctx, OR(
           AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
           AND(GT(Height, LongConstant(h + 1)), dk1)
-        )).get._1 shouldBe FalseProof
+        )).get._1 shouldBe FalseProp
 
         reduceToCrypto(ctx,
           OR(
@@ -96,7 +96,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
             ),
             AND(GT(Height, LongConstant(h - 1)), LE(Height, LongConstant(h + 1)))
           )
-        ).get._1 shouldBe TrueProof
+        ).get._1 shouldBe TrueProp
 
       }
     }

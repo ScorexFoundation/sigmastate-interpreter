@@ -123,7 +123,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     prove(emptyEnv, exp, context, message)
 
   def prove(env: ScriptEnv, exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
-    import TrivialProof._
+    import TrivialProp._
     val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
     val propTree = applyDeserializeContext(ctx, exp)
     val (reducedProp, cost) = reduceToCrypto(ctx, env, propTree).get
@@ -136,8 +136,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         else errorReducedToFalse
       case sigmaBoolean: SigmaBoolean =>
         sigmaBoolean match {
-          case TrueProof => NoProof
-          case FalseProof => errorReducedToFalse
+          case TrueProp => NoProof
+          case FalseProp => errorReducedToFalse
           case _ =>
             val ct = convertToUnproven(sigmaBoolean)
             prove(ct, message)
