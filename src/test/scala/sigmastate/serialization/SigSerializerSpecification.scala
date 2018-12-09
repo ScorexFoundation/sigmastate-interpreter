@@ -77,7 +77,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
         currentHeight = 1,
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContext.dummyPubkey,
-        boxesToSpend = IndexedSeq(),
+        boxesToSpend = IndexedSeq(fakeSelf),
         spendingTransaction = null,
         self = fakeSelf)
 

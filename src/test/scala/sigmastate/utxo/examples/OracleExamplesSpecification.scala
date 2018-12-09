@@ -161,7 +161,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxId = 4)
 
-    val ctx = ErgoLikeContext(
+   val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
       ErgoLikeContext.dummyPubkey,

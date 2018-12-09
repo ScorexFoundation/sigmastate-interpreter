@@ -37,7 +37,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -119,7 +119,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -288,7 +288,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -335,7 +335,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 

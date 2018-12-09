@@ -39,7 +39,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -72,7 +72,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -106,7 +106,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -141,7 +141,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -172,7 +172,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -213,7 +213,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -250,7 +250,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -283,7 +283,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -323,7 +323,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -364,7 +364,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -408,7 +408,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -445,7 +445,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
     val prA = proverA.prove(prop, ctx1, fakeMessage).get
@@ -458,7 +458,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
     val prC = proverC.prove(prop, ctx2, fakeMessage).get
@@ -486,7 +486,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -501,7 +501,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -534,7 +534,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -549,7 +549,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -584,7 +584,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
         currentHeight = 1,
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContext.dummyPubkey,
-        boxesToSpend = IndexedSeq(),
+        boxesToSpend = IndexedSeq(fakeSelf),
         spendingTransaction = null,
         self = fakeSelf)
 

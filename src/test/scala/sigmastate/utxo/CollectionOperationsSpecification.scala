@@ -22,7 +22,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = boxesToSpend,
       spendingTransaction = ErgoLikeTransaction(IndexedSeq(), outputs),
-      self = fakeSelf)
+      self = null)
 
   private def assertProof(code: String,
                           expectedComp: Value[SType],
@@ -83,7 +83,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
 
@@ -115,7 +115,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
 
@@ -147,7 +147,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
 
@@ -187,7 +187,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
 
@@ -231,7 +231,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
 

@@ -59,7 +59,7 @@ class Rule110Specification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(output),
+      boxesToSpend = IndexedSeq(input),
       tx,
       self = input)
 

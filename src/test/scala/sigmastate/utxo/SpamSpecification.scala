@@ -197,7 +197,7 @@ class SpamSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = ErgoBox(11, prop, 0))
+      self = null)
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 

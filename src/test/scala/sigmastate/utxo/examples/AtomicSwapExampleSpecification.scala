@@ -88,7 +88,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
     proverB.prove(env, prop1, ctxf1, fakeMessage).isSuccess shouldBe false
@@ -101,7 +101,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(), spendingTransaction = null, self = fakeSelf)
+      boxesToSpend = IndexedSeq(fakeSelf), spendingTransaction = null, self = fakeSelf)
     proverB.prove(env, prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
     //Successful run below:
@@ -111,7 +111,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
     val pr = proverA.prove(env, prop2, ctx1, fakeMessage).get
@@ -126,7 +126,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
     val pr2 = proverB2.prove(env, prop1, ctx2, fakeMessage).get

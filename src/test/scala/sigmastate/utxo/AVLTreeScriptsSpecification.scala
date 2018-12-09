@@ -60,7 +60,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
 
@@ -109,7 +109,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
 
@@ -155,7 +155,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
 
@@ -192,13 +192,14 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     // TODO propCompiled shouldBe prop
 
     val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
+    val selfBox = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(selfBox),
       new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
-      self = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData))))
+      self = selfBox)
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
     val bigLeafProof = avlProver.generateProof()
@@ -265,7 +266,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(s),
       spendingTransaction, self = s)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 

@@ -123,7 +123,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(outputToSpend),
       spendingTransaction = tx1,
       self = outputToSpend)
 
@@ -145,7 +145,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       currentHeight = timeout.value - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(outputToSpend),
       spendingTransaction = tx2,
       self = outputToSpend)
 
@@ -168,7 +168,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
       currentHeight = timeout.value,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(outputToSpend),
       spendingTransaction = tx3,
       self = outputToSpend)
 

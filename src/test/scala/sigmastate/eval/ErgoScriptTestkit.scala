@@ -31,7 +31,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(boxToSpend),
       spendingTransaction = tx1,
       self = boxToSpend,
       extension = ContextExtension(extension))
@@ -71,7 +71,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     currentHeight = timeout - 1,
     lastBlockUtxoRoot = AvlTreeData.dummy,
     minerPubkey = ErgoLikeContext.dummyPubkey,
-    boxesToSpend = IndexedSeq(),
+    boxesToSpend = IndexedSeq(boxToSpend),
     spendingTransaction = tx1,
     self = boxToSpend,
     extension = ContextExtension(Map(
