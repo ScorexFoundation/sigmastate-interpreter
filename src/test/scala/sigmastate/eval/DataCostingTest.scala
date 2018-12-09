@@ -19,12 +19,12 @@ class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit
 
 //  test("split pair cols") {
 //    ctx.emit("split_pair_col",
-//      split(fun { in: Rep[(Col[(Int, Short)], Byte)] =>
+//      split(fun { in: Rep[(Coll[(Int, Short)], Byte)] =>
 //        dataCost(in)
 //      })
 //    )
 //    ctx.emit("split_pair_cols2",
-//      split(fun { in: Rep[(Col[(Int, (Short, Boolean))], Byte)] =>
+//      split(fun { in: Rep[(Coll[(Int, (Short, Boolean))], Byte)] =>
 //        dataCost(in)
 //      })
 //    )
@@ -32,7 +32,7 @@ class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit
 //
 //  test("split nested cols") {
 //    ctx.emit("split_nested_cols",
-//      split(fun { in: Rep[(Col[Col[Int]], Byte)] =>
+//      split(fun { in: Rep[(Coll[Coll[Int]], Byte)] =>
 //        dataCost(in)
 //      })
 //    )
@@ -40,7 +40,7 @@ class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit
 //
 //  test("split nested pair cols") {
 //    ctx.emit("split_nested_pair_cols",
-//      split(fun { in: Rep[(Col[Col[(Int, Short)]], Byte)] =>
+//      split(fun { in: Rep[(Coll[Coll[(Int, Short)]], Byte)] =>
 //        dataCost(in)
 //      })
 //    )
@@ -48,7 +48,7 @@ class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit
 //
 //  test("split nested nested cols") {
 //    ctx.emit("split_nested_nested_cols",
-//      split(fun { in: Rep[(Col[Col[Col[Int]]], Byte)] =>
+//      split(fun { in: Rep[(Coll[Coll[Coll[Int]]], Byte)] =>
 //        dataCost(in)
 //      })
 //    )
@@ -56,7 +56,7 @@ class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit
 //
 //  test("split nested nested pair cols") {
 //    ctx.emit("split_nested_nested_pair_cols",
-//      split(fun { in: Rep[(Col[Col[Col[(Int, Short)]]], Byte)] =>
+//      split(fun { in: Rep[(Coll[Coll[Coll[(Int, Short)]]], Byte)] =>
 //        dataCost(in)
 //      })
 //    )
@@ -64,7 +64,7 @@ class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit
 //
 //  test("split complex1 cols") {
 //    ctx.emit("split_complex1_cols",
-//      split(fun { in: Rep[(Col[Col[(Col[(Int, Short)], Boolean)]], Byte)] =>
+//      split(fun { in: Rep[(Coll[Coll[(Coll[(Int, Short)], Boolean)]], Byte)] =>
 //        dataCost(in)
 //      })
 //    )
@@ -72,7 +72,7 @@ class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit
 //
 //  test("split complex2 cols") {
 //    ctx.emit("split_complex2_cols",
-//      split(fun { in: Rep[(Col[(Col[(Col[(Int, Boolean)], Short)], Char)], Byte)] =>
+//      split(fun { in: Rep[(Coll[(Coll[(Coll[(Int, Boolean)], Short)], Char)], Byte)] =>
 //        dataCost(in)
 //      })
 //    )

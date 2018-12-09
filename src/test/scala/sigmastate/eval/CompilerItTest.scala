@@ -148,7 +148,7 @@ class CompilerItTest extends BaseCtxTests
 //        }
 //        val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
 //        val costs = colBuilder.replicate(arr.length, 0).zip(arrSizes).map(f)
-//        constCost[Col[WBigInteger]] + costs.sum(intPlusMonoid)
+//        constCost[Coll[WBigInteger]] + costs.sum(intPlusMonoid)
 //      },
       size = {_ =>
         typeSize[WBigInteger] * liftConst(bigIntArr1).length.toLong
@@ -191,7 +191,7 @@ class CompilerItTest extends BaseCtxTests
   def register_BigIntArr_Case = {
     import SCollection._
     Case(env, "register_BigIntArr_Case",
-      "SELF.R4[Col[BigInt]].get", ergoCtx,
+      "SELF.R4[Coll[BigInt]].get", ergoCtx,
       calc = null,
       cost = null,
       size = null,
@@ -207,7 +207,7 @@ class CompilerItTest extends BaseCtxTests
   def register_BigIntArr_Map_Case = {
     import SCollection._
     Case(env, "register_BigIntArr_Map_Case",
-      "SELF.R4[Col[BigInt]].get.map { (i: BigInt) => i + n1 }", ergoCtx,
+      "SELF.R4[Coll[BigInt]].get.map { (i: BigInt) => i + n1 }", ergoCtx,
       calc = null,
       cost = null,
       size = null,
@@ -221,7 +221,7 @@ class CompilerItTest extends BaseCtxTests
   def register_BigIntArr_Slice_Case = {
     import SCollection._
     Case(env, "register_BinIntArr_Slice_Case",
-      "SELF.R4[Col[BigInt]].get.slice(0,1)", ergoCtx,
+      "SELF.R4[Coll[BigInt]].get.slice(0,1)", ergoCtx,
       calc = null,
       cost = null,
       size = null,

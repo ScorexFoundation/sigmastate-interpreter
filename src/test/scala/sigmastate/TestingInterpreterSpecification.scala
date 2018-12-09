@@ -150,20 +150,20 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 //              |}""".stripMargin)
 
     testEval("""{
-              |  val arr = box1.R4[Col[Int]].get
+              |  val arr = box1.R4[Coll[Int]].get
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  val arr = box1.R5[Col[Boolean]].get
+              |  val arr = box1.R5[Coll[Boolean]].get
               |  anyOf(arr)
               |}""".stripMargin)
     testEval("""{
-              |  val arr = box1.R5[Col[Boolean]].get
+              |  val arr = box1.R5[Coll[Boolean]].get
               |  allOf(arr) == false
               |}""".stripMargin)
     testEval("""{
-              |  val arr = Col(1, 2, 3)
-              |  arr.map {(i: Int) => i + 1} == Col(2, 3, 4)
+              |  val arr = Coll(1, 2, 3)
+              |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
               |}""".stripMargin)
 //    // TODO uncomment when Costing for where is implemented
 //    testEval("""{
@@ -181,10 +181,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
   property("Evaluate numeric casting ops") {
     def testWithCasting(castSuffix: String): Unit = {
-      testEval(s"Col(1).size.toByte.$castSuffix == 1.$castSuffix")
-      testEval(s"Col(1).size.toShort.$castSuffix == 1.$castSuffix")
-      testEval(s"Col(1).size.toInt.$castSuffix == 1.$castSuffix")
-      testEval(s"Col(1).size.toLong.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toByte.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toShort.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toInt.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toLong.$castSuffix == 1.$castSuffix")
     }
     testWithCasting("toByte")
     testWithCasting("toShort")
@@ -211,22 +211,22 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("failed numeric downcast (overflow)") {
-    assertExceptionThrown(testEval("Col(999)(0).toByte > 0"),
+    assertExceptionThrown(testEval("Coll(999)(0).toByte > 0"),
       _.getCause.isInstanceOf[ArithmeticException])
-    assertExceptionThrown(testEval("Col(999)(0).toShort.toByte > 0"),
+    assertExceptionThrown(testEval("Coll(999)(0).toShort.toByte > 0"),
       _.getCause.isInstanceOf[ArithmeticException])
-    assertExceptionThrown(testEval(s"Col(${Int.MaxValue})(0).toShort > 0"),
+    assertExceptionThrown(testEval(s"Coll(${Int.MaxValue})(0).toShort > 0"),
       _.getCause.isInstanceOf[ArithmeticException])
-    assertExceptionThrown(testEval(s"Col(${Long.MaxValue}L)(0).toInt > 0"),
+    assertExceptionThrown(testEval(s"Coll(${Long.MaxValue}L)(0).toInt > 0"),
       _.getCause.isInstanceOf[ArithmeticException])
   }
 
-  property("Col indexing (out of bounds with const default value)") {
-    testEval("Col(1, 2).getOrElse(3, 0) == 0")
+  property("Coll indexing (out of bounds with const default value)") {
+    testEval("Coll(1, 2).getOrElse(3, 0) == 0")
   }
 
-  property("Col indexing (out of bounds with evaluated default value)") {
-    testEval("Col(1, 1).getOrElse(3, 1 + 1) == 2")
+  property("Coll indexing (out of bounds with evaluated default value)") {
+    testEval("Coll(1, 1).getOrElse(3, 1 + 1) == 2")
   }
 
   property("Evaluation example #1") {
@@ -312,36 +312,36 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   property("passing a lambda argument") {
     // single expression
     testEval(
-      """ Col[Int](1,2,3).map { (a: Int) =>
+      """ Coll[Int](1,2,3).map { (a: Int) =>
         |   a + 1
-        | } == Col[Int](2,3,4) """.stripMargin)
+        | } == Coll[Int](2,3,4) """.stripMargin)
     // block
     testEval(
-      """ Col[Int](1,2,3).map { (a: Int) =>
+      """ Coll[Int](1,2,3).map { (a: Int) =>
         |   val b = a - 1
         |   b + 2
-        | } == Col[Int](2,3,4) """.stripMargin)
+        | } == Coll[Int](2,3,4) """.stripMargin)
   }
 
   property("nested lambdas argument") {
     // block with nested lambda
     testEval(
-      """ Col[Int](1,2,3).exists { (a: Int) =>
-        |   Col[Int](1).exists{ (c: Int) => c == 1 }
+      """ Coll[Int](1,2,3).exists { (a: Int) =>
+        |   Coll[Int](1).exists{ (c: Int) => c == 1 }
         | } == true """.stripMargin)
 
     // block with nested lambda (assigned to a val)
     testEval(
-      """ Col[Int](1,2,3).exists { (a: Int) =>
+      """ Coll[Int](1,2,3).exists { (a: Int) =>
         |   val g = { (c: Int) => c == 1 }
-        |   Col[Int](1).exists(g)
+        |   Coll[Int](1).exists(g)
         | } == true """.stripMargin)
   }
 
   property("deserialize") {
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
-    testEval(s"""deserialize[Col[Byte]]("$str").size == 1""")
-    testEval(s"""deserialize[Col[Byte]]("$str")(0) == 2""")
+    testEval(s"""deserialize[Coll[Byte]]("$str").size == 1""")
+    testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
   }
 }
 

@@ -141,7 +141,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
     def show(x: Any) = x match {
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
-      case col: special.collection.Col[_] => s"Col(${trim(col.arr).mkString(",")})"
+      case col: special.collection.Col[_] => s"Coll(${trim(col.arr).mkString(",")})"
       case p: ECPoint => CryptoFunctions.showECPoint(p)
       case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${CryptoFunctions.showECPoint(g)})"
       case ProveDHTuple(

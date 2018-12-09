@@ -216,9 +216,9 @@ If `Item` is a type of array element, then costed value of type `Col[Item]` is
 represented by the following specializations of `Costed[Col[Item]]` type
 ```scala 
 class CCostedCol[Item](
-      val values: Col[Item], val costs: Col[Int],
-      val sizes: Col[Long], val valuesCost: Int) extends CostedCol[Item] {
-  def value: Col[Item] = values
+      val values: Coll[Item], val costs: Coll[Int],
+      val sizes: Coll[Long], val valuesCost: Int) extends CostedCol[Item] {
+  def value: Coll[Item] = values
   def cost: Int = valuesCost + costs.sum
   def dataSize: Long = sizes.sum
   def mapCosted[Res](f: Costed[Item] => Costed[Res]): CostedCol[Res] = rewritableMethod
@@ -310,7 +310,7 @@ explicit by using `eval` helper and also employ other idioms of staged evaluatio
   case MapCollection(input, id, mapper) =>
     val eIn = stypeToElem(input.tpe.elemType)   // translate sigma type to Special type descriptor
     val xs = asRep[CostedCol[Any]](eval(input)) // recursively build subgraph for input argument
-    implicit val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+    implicit val eAny = xs.elem.asInstanceOf[CostedElem[Coll[Any],_]].eVal.eA
     assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
     val mapperC = fun { x: Rep[Costed[Any]] => // x argument is already costed
       evalNode(ctx, env + (id -> x), mapper)   // associate id in the tree with x node of the graph

@@ -164,7 +164,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         """{
           |  val notTimePassed = HEIGHT <= timeout
           |  val outBytes = OUTPUTS.map({(box: Box) => box.bytesWithNoRef})
-          |  val outSumBytes = outBytes.fold(Col[Byte](), {(arr1: Col[Byte], arr2: Col[Byte]) => arr1 ++ arr2})
+          |  val outSumBytes = outBytes.fold(Coll[Byte](), {(arr1: Coll[Byte], arr2: Coll[Byte]) => arr1 ++ arr2})
           |  val timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asBoolValue
@@ -581,9 +581,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       """{
         |  val cond = INPUTS(0).value > 10
         |  val preimage = if (cond)
-        |    INPUTS(2).R4[Col[Byte]].get
+        |    INPUTS(2).R4[Coll[Byte]].get
         |  else
-        |    INPUTS(1).R4[Col[Byte]].get
+        |    INPUTS(1).R4[Coll[Byte]].get
         |  helloHash == blake2b256(preimage)
          }""".stripMargin).asBoolValue
 

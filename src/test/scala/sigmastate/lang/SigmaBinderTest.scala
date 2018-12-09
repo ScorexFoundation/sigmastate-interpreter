@@ -102,10 +102,10 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "{val X: Int = 10; 3 > 2}") shouldBe Block(Val("X", SInt, IntConstant(10)), GT(3, 2))
     bind(env, "{val X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe
       Block(Val("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf)), GT(3, 2))
-    bind(env, "{val X: Col[Int] = Col(1,2,3); X.size}") shouldBe
+    bind(env, "{val X: Coll[Int] = Coll(1,2,3); X.size}") shouldBe
       Block(Val("X", SCollection(SInt), ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3)))),
         Select(Ident("X"), "size"))
-    bind(env, "{val X: (Col[Int], Box) = (Col(1,2,3), INPUT); X._1}") shouldBe
+    bind(env, "{val X: (Coll[Int], Box) = (Coll(1,2,3), INPUT); X._1}") shouldBe
       Block(Val("X", STuple(SCollection(SInt), SBox), Tuple(ConcreteCollection(IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT"))),
         Select(Ident("X"), "_1"))
   }
@@ -172,7 +172,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
     bind(env, "INPUTS.map[Int]") shouldBe ApplyTypes(Select(Inputs, "map"), Seq(SInt))
     bind(env, "INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Inputs, "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
-    bind(env, "Col[Int]()") shouldBe ConcreteCollection()(SInt)
+    bind(env, "Coll[Int]()") shouldBe ConcreteCollection()(SInt)
   }
 
   property("deserialize") {
@@ -181,8 +181,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       val str = Base58.encode(bytes)
       bind(env, s"deserialize[$typeSig](" + "\"" + str + "\")") shouldBe c
     }
-    roundtrip(ByteArrayConstant(Array[Byte](2)), "Col[Byte]")
-    roundtrip(Tuple(ByteArrayConstant(Array[Byte](2)), LongConstant(4)), "(Col[Byte], Long)")
+    roundtrip(ByteArrayConstant(Array[Byte](2)), "Coll[Byte]")
+    roundtrip(Tuple(ByteArrayConstant(Array[Byte](2)), LongConstant(4)), "(Coll[Byte], Long)")
   }
 
   property("deserialize fails") {

@@ -81,11 +81,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("Relation operations") {
     test("R1", env, ext,
-      "{ allOf(Col(getVar[Boolean](trueVar).get, true, true)) }",
+      "{ allOf(Coll(getVar[Boolean](trueVar).get, true, true)) }",
       AND(GetVarBoolean(booleanVar).get, TrueLeaf, TrueLeaf)
     )
     test("R2", env, ext,
-      "{ anyOf(Col(getVar[Boolean](trueVar).get, true, false)) }",
+      "{ anyOf(Coll(getVar[Boolean](trueVar).get, true, false)) }",
       OR(GetVarBoolean(booleanVar).get, TrueLeaf, FalseLeaf)
     )
     test("R3", env, ext,
@@ -162,22 +162,22 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
     test("Prop9", env, ext,
-      "{ allOf(Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
+      "{ allOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
       SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
       true
     )
     test("Prop10", env, ext,
-      "{ anyOf(Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
+      "{ anyOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
       SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
       true
     )
     test("Prop11", env, ext,
-        "{ Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isProven }) }",
+        "{ Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isProven }) }",
       SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get , GetVarSigmaProp(propVar1).get)),
         true
         )
     test("Prop12", env, ext,
-      "{ Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).exists({ (p: SigmaProp) => p.isProven }) }",
+      "{ Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).exists({ (p: SigmaProp) => p.isProven }) }",
       SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
       true
     )
@@ -257,7 +257,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val ext1 = ext :+ ((dataVar, Constant[SCollection[STuple]](data, dataType)))
     test("TupCol3", env1, ext1,
       """{
-        |  val data = getVar[Col[(Col[Byte], Long)]](dataVar).get
+        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
         |  data.size == 1
         |}""".stripMargin,
       {
@@ -267,8 +267,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test("TupCol4", env1, ext1,
       """{
-        |  val data = getVar[Col[(Col[Byte], Long)]](dataVar).get
-        |  data.exists({ (p: (Col[Byte], Long)) => p._2 == 10L })
+        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
+        |  data.exists({ (p: (Coll[Byte], Long)) => p._2 == 10L })
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
@@ -282,8 +282,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test("TupCol5", env1, ext1,
       """{
-        |  val data = getVar[Col[(Col[Byte], Long)]](dataVar).get
-        |  data.forall({ (p: (Col[Byte], Long)) => p._1.size > 0 })
+        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
+        |  data.forall({ (p: (Coll[Byte], Long)) => p._1.size > 0 })
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
@@ -297,8 +297,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
     test("TupCol6", env1, ext1,
       """{
-        |  val data = getVar[Col[(Col[Byte], Long)]](dataVar).get
-        |  data.map({ (p: (Col[Byte], Long)) => (p._2, p._1)}).size == 1
+        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
+        |  data.map({ (p: (Coll[Byte], Long)) => (p._2, p._1)}).size == 1
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
@@ -427,7 +427,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("ByteArrayToBigInt: big int should always be positive") {
     test("BATBI1", env, ext,
-      "{ byteArrayToBigInt(Col[Byte](-1.toByte)) > 0 }",
+      "{ byteArrayToBigInt(Coll[Byte](-1.toByte)) > 0 }",
       GT(ByteArrayToBigInt(ConcreteCollection(ByteConstant(-1))), BigIntConstant(0)),
       onlyPositive = true
     )

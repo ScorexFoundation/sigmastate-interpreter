@@ -44,9 +44,9 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
     val prop1 = compile(env,
       """{
-        |  anyOf(Col(
+        |  anyOf(Coll(
         |    HEIGHT > height1 + deadlineA && pubkeyA,
-        |    pubkeyB && blake2b256(getVar[Col[Byte]](1).get) == hx
+        |    pubkeyB && blake2b256(getVar[Coll[Byte]](1).get) == hx
         |  ))
         |}""".stripMargin).asBoolValue
 
@@ -59,12 +59,12 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     val script2 =
       """{
-        |  anyOf(Col(
+        |  anyOf(Coll(
         |    HEIGHT > height2 + deadlineB && pubkeyB,
-        |    allOf(Col(
+        |    allOf(Coll(
         |        pubkeyA,
-        |        getVar[Col[Byte]](1).get.size<33,
-        |        blake2b256(getVar[Col[Byte]](1).get) == hx
+        |        getVar[Coll[Byte]](1).get.size<33,
+        |        blake2b256(getVar[Coll[Byte]](1).get) == hx
         |    ))
         |  ))
         |}

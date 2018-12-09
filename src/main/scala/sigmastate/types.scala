@@ -580,7 +580,7 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
   val typeParams = Seq(STypeParam(tIV.name))
   val tparamSubst = Map(tIV.name -> elemType)
   override def methods = SCollection.methods
-  override def toString = s"Col[$elemType]"
+  override def toString = s"Coll[$elemType]"
 }
 
 object SCollectionType {

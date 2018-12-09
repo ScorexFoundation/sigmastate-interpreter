@@ -44,14 +44,14 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
 
     // Basic compilation
-    val compiledProp1 = compile(env, """atLeast(2, Col(pubkeyA, pubkeyB, pubkeyC))""")
+    val compiledProp1 = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""")
     val prop1 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
     compiledProp1 shouldBe prop1
 
     // this example is from the white paper
     val compiledProp2 = compile(env,
       """{
-        |    val array = Col(pubkeyA, pubkeyB, pubkeyC)
+        |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(array.size, array)
         |}""".stripMargin).asBoolValue
 
@@ -77,7 +77,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     // this example is from the white paper
     val compiledProp3 = compile(env,
       """{
-        |    val array = Col(pubkeyA, pubkeyB, pubkeyC)
+        |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(1, array)
         |}""".stripMargin).asBoolValue
     val prop3 = AtLeast(1, pubkeyA, pubkeyB, pubkeyC)
@@ -95,7 +95,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
     val compiledProp4 = compile(env,
       """{
-        |    val array = Col(pubkeyA, pubkeyB, pubkeyC)
+        |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(2, array)
         |}""".stripMargin).asBoolValue
     val prop4 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
@@ -271,7 +271,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val env = Map("pkA" -> pkA, "pkB" -> pkB, "pkC" -> pkC,
       "pkD" -> pkD, "pkE" -> pkE, "pkF" -> pkF,
       "pkG" -> pkG, "pkH" -> pkH, "pkI" -> pkI)
-    val compiledProp = compile(env, """atLeast(3, Col (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""")
+    val compiledProp = compile(env, """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""")
     val prop = AtLeast(3, pkA, pkB, pkC, BinAnd(pkD, pkE), BinAnd(pkF, pkG), BinAnd(pkH, pkI))
 
     compiledProp shouldBe prop

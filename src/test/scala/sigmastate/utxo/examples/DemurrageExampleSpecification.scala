@@ -61,19 +61,19 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         | val outIdx = getVar[Short](127).get
         | val out = OUTPUTS(outIdx)
         |
-        | val c1 = allOf(Col(
-        |   HEIGHT >= SELF.R3[(Long, Col[Byte])].get._1 + demurragePeriod,
-        |   SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Col[Byte])].get._1) <= 0
+        | val c1 = allOf(Coll(
+        |   HEIGHT >= SELF.R3[(Long, Coll[Byte])].get._1 + demurragePeriod,
+        |   SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Coll[Byte])].get._1) <= 0
         | ))
         |
-        | val c2 = allOf(Col(
-        |   HEIGHT >= SELF.R3[(Long, Col[Byte])].get._1 + demurragePeriod,
-        |   out.R3[(Long, Col[Byte])].get._1 == HEIGHT,
-        |   out.value >= SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Col[Byte])].get._1),
+        | val c2 = allOf(Coll(
+        |   HEIGHT >= SELF.R3[(Long, Coll[Byte])].get._1 + demurragePeriod,
+        |   out.R3[(Long, Coll[Byte])].get._1 == HEIGHT,
+        |   out.value >= SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Coll[Byte])].get._1),
         |   out.propositionBytes == SELF.propositionBytes
         | ))
         |
-        | anyOf(Col(regScript, c1, c2))
+        | anyOf(Coll(regScript, c1, c2))
         | }
       """.stripMargin).asBoolValue
 

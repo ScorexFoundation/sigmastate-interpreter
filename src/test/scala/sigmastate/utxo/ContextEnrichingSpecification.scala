@@ -18,7 +18,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage), "pubkey" -> pubkey)
     val compiledScript = compile(env,
       """{
-        |  pubkey && blake2b256(getVar[Col[Byte]](1).get) == blake
+        |  pubkey && blake2b256(getVar[Coll[Byte]](1).get) == blake
         |}
       """.stripMargin)
     val prop = BinAnd(
@@ -46,7 +46,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage1 ++ preimage2), "pubkey" -> pubkey)
     val compiledScript = compile(env,
       """{
-        |  pubkey && blake2b256(getVar[Col[Byte]](1).get ++ getVar[Col[Byte]](2).get) == blake
+        |  pubkey && blake2b256(getVar[Coll[Byte]](1).get ++ getVar[Coll[Byte]](2).get) == blake
         |}
       """.stripMargin)
 
@@ -85,7 +85,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("k1" -> k1.toInt, "k2" -> k2.toInt, "r" -> r)
     val compiledScript = compile(env,
       """{
-        |  (getVar[Col[Byte]](k1).get | getVar[Col[Byte]](k2).get) == r
+        |  (getVar[Coll[Byte]](k1).get | getVar[Coll[Byte]](k2).get) == r
         |}
       """.stripMargin)
 
@@ -116,7 +116,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage))
     val compiledScript = compile(env,
       """{
-        |  blake2b256(getVar[Col[Byte]](1).get) == blake
+        |  blake2b256(getVar[Coll[Byte]](1).get) == blake
         |}
       """.stripMargin)
 
@@ -143,7 +143,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("blake" -> Blake2b256(preimage2 ++ preimage1))
     val compiledScript = compile(env,
       """{
-        |  blake2b256(getVar[Col[Byte]](2).get ++ getVar[Col[Byte]](1).get) == blake
+        |  blake2b256(getVar[Coll[Byte]](2).get ++ getVar[Coll[Byte]](1).get) == blake
         |}
       """.stripMargin)
 

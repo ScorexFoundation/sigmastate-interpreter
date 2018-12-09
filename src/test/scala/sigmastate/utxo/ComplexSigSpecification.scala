@@ -63,7 +63,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compile(env, """anyOf(Col(pubkeyA, pubkeyB, pubkeyC))""")
+    val compiledProp = compile(env, """anyOf(Coll(pubkeyA, pubkeyB, pubkeyC))""")
 
     val prop = OR(pubkeyA.isProven, pubkeyB.isProven, pubkeyC.isProven)
     compiledProp shouldBe prop
@@ -132,7 +132,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyA4 = proverA.dlogSecrets(3).publicImage
 
     val env = Map("pubkeyA1" -> pubkeyA1, "pubkeyA2" -> pubkeyA2, "pubkeyA3" -> pubkeyA3, "pubkeyA4" -> pubkeyA4)
-    val compiledProp = compile(env, """anyOf(Col(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""")
+    val compiledProp = compile(env, """anyOf(Coll(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""")
 
     val prop = OR(Seq(pubkeyA1.isProven, pubkeyA2.isProven, pubkeyA3.isProven, pubkeyA4.isProven))
     compiledProp shouldBe prop
@@ -436,7 +436,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-    val compiledProp = compile(env, """anyOf(Col(pubkeyA, pubkeyB, HEIGHT > 500))""")
+    val compiledProp = compile(env, """anyOf(Coll(pubkeyA, pubkeyB, HEIGHT > 500))""")
 
     val prop = OR(pubkeyA.isProven, pubkeyB.isProven, GT(Height, LongConstant(500)))
     compiledProp shouldBe prop
@@ -477,7 +477,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compile(env, """anyOf(Col(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
+    val compiledProp = compile(env, """anyOf(Coll(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
 
     val prop = OR(BinOr(pubkeyA.isProven, pubkeyB.isProven), BinAnd(pubkeyC.isProven, GT(Height, LongConstant(500))))
     compiledProp shouldBe prop
