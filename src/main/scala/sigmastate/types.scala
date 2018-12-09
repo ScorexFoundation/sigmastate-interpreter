@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
 import scalan.meta.ScalanAst.STypeArgAnnotation
 import sigmastate.SBoolean.typeCode
 import sigmastate.SByte.typeCode
-import sigmastate.SSigmaProp.{PropBytes, IsValid}
+import sigmastate.SSigmaProp.{PropBytes, IsProven}
 
 
 /** Base type for all AST nodes of sigma lang. */
@@ -474,10 +474,10 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override def isConstantSize = false
   def ancestors = Nil
   val PropBytes = "propBytes"
-  val IsValid = "isValid"
+  val IsProven = "isProven"
   val methods = Seq(
     SMethod(this, PropBytes, SByteArray, 1),
-    SMethod(this, IsValid, SBoolean, 2)
+    SMethod(this, IsProven, SBoolean, 2)
   )
 }
 

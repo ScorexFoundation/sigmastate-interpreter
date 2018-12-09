@@ -81,7 +81,7 @@ object CostTable {
     ("SizeOf", "(Col[IV]) => Int", MinimalCost),
     ("ByIndex", "(Col[IV],Int) => IV", MinimalCost),
 
-    ("SigmaPropIsValid", "SigmaProp => Boolean", MinimalCost),
+    ("SigmaPropIsProven", "SigmaProp => Boolean", MinimalCost),
     ("BoolToSigmaProp", "Boolean => SigmaProp", MinimalCost),
     ("SigmaPropBytes", "SigmaProp => Col[Byte]", MinimalCost),
     ("BinAnd", "(Boolean, Boolean) => Boolean", MinimalCost),
@@ -254,7 +254,7 @@ object CostTable {
     val SizeOfDeclaration = 30
     val ByIndexDeclaration = 50
     val SelectFieldDeclaration = 50
-    val SigmaPropIsValidDeclaration = 50
+    val SigmaPropIsProvenDeclaration = 50
     val SigmaPropBytesDeclaration = 50
 
     val MapDeclaration = 100

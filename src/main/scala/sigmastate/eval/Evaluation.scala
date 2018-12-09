@@ -88,7 +88,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     Try { lam.scheduleAll.foreach(te => isValidCostPrimitive(te.rhs)) }
   }
 
-  def findIsValid[T](f: Rep[Context => T]): Option[Sym] = {
+  def findIsProven[T](f: Rep[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
     val ok = lam.scheduleAll.find(te => te.rhs match {
       case SigmaM.isValid(_) => true
@@ -97,12 +97,12 @@ trait Evaluation extends RuntimeCosting { IR =>
     ok
   }
 
-  def verifyIsValid[T](f: Rep[Context => T]): Try[Unit] = {
-    val isValidOpt = findIsValid(f)
+  def verifyIsProven[T](f: Rep[Context => T]): Try[Unit] = {
+    val isProvenOpt = findIsProven(f)
     Try {
-      isValidOpt match {
+      isProvenOpt match {
         case Some(s) =>
-          if (f.getLambda.y != s) !!!(s"Sigma.isValid found in none-root position", s)
+          if (f.getLambda.y != s) !!!(s"Sigma.isProven found in none-root position", s)
         case None =>
       }
     }

@@ -66,7 +66,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ProveDlogSerializer(mkProveDlog),
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
-    SigmaPropIsValidSerializer,
+    SigmaPropIsProvenSerializer,
     SigmaPropBytesSerializer,
     ConcreteCollectionBooleanConstantSerializer(mkConcreteCollection),
     CaseObjectSerialization(HeightCode, Height),

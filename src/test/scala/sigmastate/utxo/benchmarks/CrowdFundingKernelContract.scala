@@ -21,7 +21,7 @@ class CrowdFundingKernelContract(
                                   override val projectProver: ErgoLikeTestProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
-  def isValid(pubKey: ProveDlog, message: Array[Byte]): projectProver.ProofT = {
+  def isProven(pubKey: ProveDlog, message: Array[Byte]): projectProver.ProofT = {
     import projectProver._
     var su = UnprovenSchnorr(pubKey, None, None, None, simulated = false)
     val secret = secrets.find {
@@ -53,7 +53,7 @@ class CrowdFundingKernelContract(
   }
 
   def prove(ctx: ErgoLikeContext, message: Array[Byte]): Array[Byte] = {
-    val c1 = ctx.currentHeight >= timeout //&& isValid(backerPubKey, fakeMessage)
+    val c1 = ctx.currentHeight >= timeout //&& isProven(backerPubKey, fakeMessage)
     val c2 = Array(
       ctx.currentHeight < timeout,
       ctx.spendingTransaction.outputs.exists(out => {
@@ -61,7 +61,7 @@ class CrowdFundingKernelContract(
       })
     ).forall(identity)
     var proof: projectProver.ProofT = null
-    c1 || (c2 && { proof = isValid(projectPubKey, message); true})
+    c1 || (c2 && { proof = isProven(projectPubKey, message); true})
     SigSerializer.toBytes(proof)
   }
 

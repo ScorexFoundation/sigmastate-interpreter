@@ -52,8 +52,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     //chain1 script
     val prop1Tree = OR(
-      BinAnd(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))), pubkeyA.isValid),
-      BinAnd(pubkeyB.isValid, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
+      BinAnd(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))), pubkeyA.isProven),
+      BinAnd(pubkeyB.isProven, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )
     prop1 shouldBe prop1Tree
 
@@ -73,8 +73,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     //chain2 script
     val prop2Tree = OR(
-      BinAnd(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB.isValid),
-      AND(pubkeyA.isValid,
+      BinAnd(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB.isProven),
+      AND(pubkeyA.isProven,
         LT(SizeOf(GetVarByteArray(1).get), 33),
         EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )

@@ -62,7 +62,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage.isValid
+    val pubkey = prover.dlogSecrets.head.publicImage.isProven
 
     val prop = compileWithCosting(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue
 
@@ -158,7 +158,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage.isValid
+    val pubkey = prover.dlogSecrets.head.publicImage.isProven
 
     val prop = compileWithCosting(Map(),
       """OUTPUTS.exists { (box: Box) =>
@@ -247,7 +247,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val env = Map("pubkey" -> pubkey)
     val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asBoolValue
-    val propTree = BinAnd(pubkey.isValid, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
+    val propTree = BinAnd(pubkey.isProven, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(11, pubkey, 0)

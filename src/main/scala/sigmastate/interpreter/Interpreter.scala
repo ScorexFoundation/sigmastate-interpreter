@@ -102,7 +102,7 @@ trait Interpreter extends ScorexLogging {
 
   def toValidScriptType(exp: SValue): BoolValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
-    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isValid
+    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
     case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
@@ -130,7 +130,7 @@ trait Interpreter extends ScorexLogging {
 
     IR.verifyCostFunc(costF).fold(t => throw t, x => x)
 
-    IR.verifyIsValid(calcF).fold(t => throw t, x => x)
+    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
 
     // check cost
     val costingCtx = context.toSigmaContext(IR, isCost = true)

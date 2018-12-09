@@ -129,7 +129,7 @@ object OpCodes extends ValueCodes {
   val CalcSha256Code             : OpCode = (LastConstantCode + 92).toByte
   val ProveDlogCode              : OpCode = (LastConstantCode + 93).toByte
   val ProveDiffieHellmanTupleCode: OpCode = (LastConstantCode + 94).toByte
-  val SigmaPropIsValidCode       : OpCode = (LastConstantCode + 95).toByte
+  val SigmaPropIsProvenCode       : OpCode = (LastConstantCode + 95).toByte
   val SigmaPropBytesCode         : OpCode = (LastConstantCode + 96).toByte
   val BoolToSigmaPropCode        : OpCode = (LastConstantCode + 97 ).toByte
   val TrivialProofCode           : OpCode = (LastConstantCode + 98).toByte  // reserved 99

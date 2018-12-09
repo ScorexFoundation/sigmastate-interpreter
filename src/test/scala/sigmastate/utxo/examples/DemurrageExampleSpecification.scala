@@ -81,7 +81,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     todo: fix / uncomment
     val reg1 = ErgoBox.nonMandatoryRegisters.head
     val propTree = BinOr(
-      SigmaPropConstant(regScript).isValid,
+      SigmaPropConstant(regScript).isProven,
       AND(
         GE(Height, Plus(ExtractRegisterAs[STuple](Self, reg1).get.asTuple. , LongConstant(demurragePeriod))),
         Exists(Outputs, 21,

@@ -110,7 +110,7 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => resSym },
       cost = {_ =>
-        val c1 = costOfProveDlog + costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
+        val c1 = costOfProveDlog + costOf("SigmaPropIsProven", SFunc(SSigmaProp, SBoolean))
         c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
       },
       size = {_ => typeSize[Boolean] },

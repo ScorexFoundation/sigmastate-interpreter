@@ -34,7 +34,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
-        val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isValid
+        val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
 
         val ctx = TestingContext(h)
         reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1 should(
@@ -67,8 +67,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
-        val dk1 = DLogProverInput.random().publicImage.isValid
-        val dk2 = DLogProverInput.random().publicImage.isValid
+        val dk1 = DLogProverInput.random().publicImage.isProven
+        val dk2 = DLogProverInput.random().publicImage.isProven
 
         val ctx = TestingContext(h)
 
@@ -230,8 +230,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Evaluation example #1") {
-    val dk1 = ProveDlog(secrets(0).publicImage.h).isValid
-    val dk2 = ProveDlog(secrets(1).publicImage.h).isValid
+    val dk1 = ProveDlog(secrets(0).publicImage.h).isProven
+    val dk2 = ProveDlog(secrets(1).publicImage.h).isProven
 
     val env1 = TestingContext(99)
     val env2 = TestingContext(101)

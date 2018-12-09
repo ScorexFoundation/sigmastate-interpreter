@@ -24,9 +24,9 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val skB = proverB.dlogSecrets.head
     val skC = proverC.dlogSecrets.head
 
-    val pubkeyA = skA.publicImage.isValid
-    val pubkeyB = skB.publicImage.isValid
-    val pubkeyC = skC.publicImage.isValid
+    val pubkeyA = skA.publicImage.isProven
+    val pubkeyB = skB.publicImage.isProven
+    val pubkeyC = skC.publicImage.isProven
 
     val proverABC = proverA.withSecrets(Seq(skB, skC))
     val proverAB = proverA.withSecrets(Seq(skB))
@@ -142,7 +142,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       TestCase(0, Seq(fls), emptyDlogOnlyVector),
       TestCase(1, Seq(tr), emptyDlogOnlyVector))
     for (sk <- secrets) {
-      val pk = sk.publicImage.isValid
+      val pk = sk.publicImage.isProven
       var newTestCaseSeq = Seq[TestCase]()
       for (t <- testCaseSeq) {
         val dlogOnly = DlogOnlyVector(t.dlogOnlyVector.v :+ pk)
@@ -195,7 +195,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
           }
           // if bound is exactly numTrue+1, should be just dlog
           else if (bound == t.numTrue + 1) {
-            pReduced.get._1.asInstanceOf[SigmaBoolean].isValid shouldBe t.dlogOnlyVector.v.head
+            pReduced.get._1.asInstanceOf[SigmaBoolean].isProven shouldBe t.dlogOnlyVector.v.head
             case1DLogHit = true
           }
         }
@@ -257,15 +257,15 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val skH = proverH.dlogSecrets.head
     val skI = proverI.dlogSecrets.head
 
-    val pkA = skA.publicImage.isValid
-    val pkB = skB.publicImage.isValid
-    val pkC = skC.publicImage.isValid
-    val pkD = skD.publicImage.isValid
-    val pkE = skE.publicImage.isValid
-    val pkF = skF.publicImage.isValid
-    val pkG = skG.publicImage.isValid
-    val pkH = skH.publicImage.isValid
-    val pkI = skI.publicImage.isValid
+    val pkA = skA.publicImage.isProven
+    val pkB = skB.publicImage.isProven
+    val pkC = skC.publicImage.isProven
+    val pkD = skD.publicImage.isProven
+    val pkE = skE.publicImage.isProven
+    val pkF = skF.publicImage.isProven
+    val pkG = skG.publicImage.isProven
+    val pkH = skH.publicImage.isProven
+    val pkI = skI.publicImage.isProven
 
 
     val env = Map("pkA" -> pkA, "pkB" -> pkB, "pkC" -> pkC,
@@ -306,19 +306,19 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   property("threshold proving of different trees") {
     val secret1 = DLogProverInput.random()
-    val subProp1 = secret1.publicImage.isValid
+    val subProp1 = secret1.publicImage.isProven
     val secret2 = DLogProverInput.random()
-    val subProp2 = secret2.publicImage.isValid
+    val subProp2 = secret2.publicImage.isProven
     val secret31 = DLogProverInput.random()
     val secret32 = DLogProverInput.random()
-    val subProp3 = OR(secret31.publicImage.isValid, secret32.publicImage.isValid)
+    val subProp3 = OR(secret31.publicImage.isProven, secret32.publicImage.isProven)
     val secret41 = DLogProverInput.random()
     val secret42 = DLogProverInput.random()
-    val subProp4 = AND(secret41.publicImage.isValid, secret42.publicImage.isValid)
+    val subProp4 = AND(secret41.publicImage.isProven, secret42.publicImage.isProven)
     val secret51 = DLogProverInput.random()
     val secret52 = DLogProverInput.random()
     val secret53 = DLogProverInput.random()
-    val subProp5 = AtLeast(2, secret51.publicImage.isValid, secret52.publicImage.isValid, secret53.publicImage.isValid)
+    val subProp5 = AtLeast(2, secret51.publicImage.isProven, secret52.publicImage.isProven, secret53.publicImage.isProven)
     val secret6 = DLogProverInput.random()
 
     val propComponents = Seq(subProp1, subProp2, subProp3, subProp4, subProp5)
@@ -357,10 +357,10 @@ class ThresholdSpecification extends SigmaTestingCommons {
         // don't go beyond i -- "threshold reduce to crypto" tests that atLeast then becomes false
         // don't test bound 0 -- "threshold reduce to crypto" tests that atLeast then becomes true
         val pureAtLeastProp = AtLeast(bound, propComponents.slice(0, i))
-        val OrPlusAtLeastOnRightProp = OR(secret6.publicImage.isValid, pureAtLeastProp)
-        val OrPlusAtLeastOnLeftProp = OR(pureAtLeastProp, secret6.publicImage.isValid)
-        val AndPlusAtLeastOnLeftProp = AND(pureAtLeastProp, secret6.publicImage.isValid)
-        val AndPlusAtLeastOnRightProp = AND(secret6.publicImage.isValid, pureAtLeastProp)
+        val OrPlusAtLeastOnRightProp = OR(secret6.publicImage.isProven, pureAtLeastProp)
+        val OrPlusAtLeastOnLeftProp = OR(pureAtLeastProp, secret6.publicImage.isProven)
+        val AndPlusAtLeastOnLeftProp = AND(pureAtLeastProp, secret6.publicImage.isProven)
+        val AndPlusAtLeastOnRightProp = AND(secret6.publicImage.isProven, pureAtLeastProp)
 
         for (p <- provers.slice(0, twoToi)) {
           val pWithSecret6 = p._2.withSecrets(Seq(secret6))

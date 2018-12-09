@@ -41,10 +41,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     val prover = new ErgoLikeTestProvingInterpreter
 
-    val script1 = prover.dlogSecrets.head.publicImage.isValid
-    val script2 = prover.dhSecrets.head.publicImage.isValid
+    val script1 = prover.dlogSecrets.head.publicImage.isProven
+    val script2 = prover.dhSecrets.head.publicImage.isProven
     val script3 = AND(script1, script2)
-    val script4 = prover.dlogSecrets.tail.head.publicImage .isValid //a script to leave FSM
+    val script4 = prover.dlogSecrets.tail.head.publicImage .isProven //a script to leave FSM
 
     val script1Hash = hash.Blake2b256(ValueSerializer.serialize(script1))
     val script2Hash = hash.Blake2b256(ValueSerializer.serialize(script2))

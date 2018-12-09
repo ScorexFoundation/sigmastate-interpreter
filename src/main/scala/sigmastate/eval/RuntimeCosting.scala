@@ -227,7 +227,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       * This should be kept in mind at call site */
     def sliceCalc(okRemoveIsValid: Boolean): Rep[A => Any] = {
       val _f = { x: Rep[A] => f(RCCostedPrim(x, 0, 0L)).value }
-      val res = if (okRemoveIsValid) fun(removeIsValid(_f)) else fun(_f)
+      val res = if (okRemoveIsValid) fun(removeIsProven(_f)) else fun(_f)
       res
     }
 
@@ -528,7 +528,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   import Cost._
 
-  def removeIsValid[T,R](f: Rep[T] => Rep[Any]): Rep[T] => Rep[Any] = { x: Rep[T] =>
+  def removeIsProven[T,R](f: Rep[T] => Rep[Any]): Rep[T] => Rep[Any] = { x: Rep[T] =>
     val y = f(x);
     val res = y match {
       case SigmaPropMethods.isValid(p) => p
@@ -549,7 +549,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def split2[T,R](f: Rep[T => Costed[R]]): Rep[(T => Any, T => Int)] = {
     implicit val eT = f.elem.eDom
-    val calc = fun(removeIsValid { x: Rep[T] =>
+    val calc = fun(removeIsProven { x: Rep[T] =>
       val y = f(x);
       y.value
     })
@@ -559,7 +559,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def split3[T,R](f: Rep[T => Costed[R]]): Rep[(T => Any, (T => Int, T => Long))] = {
     implicit val eT = f.elem.eDom
-    val calc = fun(removeIsValid { x: Rep[T] =>
+    val calc = fun(removeIsProven { x: Rep[T] =>
       val y = f(x);
       y.value
     })
@@ -697,7 +697,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   def adaptSigmaBoolean(v: BoolValue) = v match {
-    case sb: SigmaBoolean => sb.isValid
+    case sb: SigmaBoolean => sb.isProven
     case _ => v
   }
 
@@ -1062,7 +1062,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         })
         val inputV = inputC.value
         val res = method match {
-          // TODO don't remove isValid in split2 thus make sure the casts are ok
+          // TODO don't remove isProven in split2 thus make sure the casts are ok
           case SCollection.ExistsMethod.name => inputV.exists(asRep[Any => Boolean](condCalc))
           case SCollection.ForallMethod.name => inputV.forall(asRep[Any => Boolean](condCalc))
         }
@@ -1144,7 +1144,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             RCCostedPrim(xsC.value(iV), xsC.cost + iC.cost + costOf(node), size)
         }
 
-      case SigmaPropIsValid(p) =>
+      case SigmaPropIsProven(p) =>
         val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.isValid
         val c = pC.cost + costOf(node)
@@ -1399,7 +1399,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       val res = evalNode(ctxC, env, tree)
       res
 //      val res1 = res match {
-//        case RCostedPrim(SigmaPropMethods.isValid(p), Def(ApplyBinOp(op, l, r)), s) if op.isInstanceOf[NumericPlus[_]] =>
+//        case RCostedPrim(SigmaPropMethods.isProven(p), Def(ApplyBinOp(op, l, r)), s) if op.isInstanceOf[NumericPlus[_]] =>
 //          RCostedPrim(p, l.asRep[Int], s)
 //        case _ => res
 //      }

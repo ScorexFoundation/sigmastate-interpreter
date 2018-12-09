@@ -22,7 +22,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
         |}
       """.stripMargin)
     val prop = BinAnd(
-      pubkey.isValid,
+      pubkey.isProven,
       EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage)))
     )
     compiledScript shouldBe prop
@@ -51,7 +51,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       """.stripMargin)
 
     val prop = BinAnd(
-      pubkey.isValid,
+      pubkey.isProven,
       EQ(
         CalcBlake2b256(Append(GetVarByteArray(1).get, GetVarByteArray(2).get)),
         ByteArrayConstant(Blake2b256(preimage1 ++ preimage2))

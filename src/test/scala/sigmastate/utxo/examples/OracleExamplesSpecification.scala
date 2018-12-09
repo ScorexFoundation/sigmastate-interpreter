@@ -79,10 +79,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubImage = oraclePrivKey.publicImage
-    val oraclePubKey = oraclePubImage.isValid
+    val oraclePubKey = oraclePubImage.isProven
 
-    val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage.isValid
-    val bobPubKey = bob.dlogSecrets.head.publicImage.isValid
+    val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage.isProven
+    val bobPubKey = bob.dlogSecrets.head.publicImage.isProven
 
     val group = CryptoConstants.dlogGroup
 
@@ -205,10 +205,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
-    val oraclePubKey = oraclePrivKey.publicImage.isValid
+    val oraclePubKey = oraclePrivKey.publicImage.isProven
 
-    val alicePubKey = alice.dlogSecrets.head.publicImage.isValid
-    val bobPubKey = bob.dlogSecrets.head.publicImage.isValid
+    val alicePubKey = alice.dlogSecrets.head.publicImage.isProven
+    val bobPubKey = bob.dlogSecrets.head.publicImage.isProven
 
     val temperature: Long = 18
 

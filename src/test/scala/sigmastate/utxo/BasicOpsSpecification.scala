@@ -128,7 +128,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("SigmaProp operations") {
     test("Prop1", env, ext,
-      "{ getVar[SigmaProp](proofVar1).get.isValid }",
+      "{ getVar[SigmaProp](proofVar1).get.isProven }",
       GetVarSigmaProp(propVar1).get
     )
     test("Prop2", env, ext,
@@ -140,7 +140,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
     )
     test("Prop4", env, ext,
-      "{ getVar[SigmaProp](proofVar1).get.isValid && getVar[SigmaProp](proofVar2).get }",
+      "{ getVar[SigmaProp](proofVar1).get.isProven && getVar[SigmaProp](proofVar2).get }",
       SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
     )
     test("Prop5", env, ext,
@@ -152,7 +152,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       SigmaOr(Seq(BoolToSigmaProp(EQ(GetVarInt(intVar1).get, 1)), GetVarSigmaProp(propVar1).get))
     )
     test("Prop7", env, ext,
-      "{ SELF.R4[SigmaProp].get.isValid }",
+      "{ SELF.R4[SigmaProp].get.isProven }",
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
       true
     )
@@ -172,12 +172,12 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
     test("Prop11", env, ext,
-        "{ Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isValid }) }",
+        "{ Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isProven }) }",
       SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get , GetVarSigmaProp(propVar1).get)),
         true
         )
     test("Prop12", env, ext,
-      "{ Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).exists({ (p: SigmaProp) => p.isValid }) }",
+      "{ Col(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).exists({ (p: SigmaProp) => p.isProven }) }",
       SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
       true
     )
@@ -333,7 +333,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("ExtractRegisterAs") {
     test("Extract1", env, ext,
-      "{ SELF.R4[SigmaProp].get.isValid }",
+      "{ SELF.R4[SigmaProp].get.isProven }",
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
       true
     )

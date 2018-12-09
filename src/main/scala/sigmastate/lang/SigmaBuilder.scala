@@ -132,10 +132,10 @@ trait SigmaBuilder {
                                 vv: Value[SGroupElement.type]): SigmaBoolean
   def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
 
-  /** Logically inverse to mkSigmaPropIsValid */
+  /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
   /** Logically inverse to mkBoolToSigmaProp */
-  def mkSigmaPropIsValid(value: Value[SSigmaProp.type]): BoolValue
+  def mkSigmaPropIsProven(value: Value[SSigmaProp.type]): BoolValue
 
   def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray]
   def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue
@@ -419,7 +419,7 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBoolToSigmaProp(value: BoolValue) = BoolToSigmaProp(value)
 
-  override def mkSigmaPropIsValid(value: Value[SSigmaProp.type]) = SigmaPropIsValid(value)
+  override def mkSigmaPropIsProven(value: Value[SSigmaProp.type]) = SigmaPropIsProven(value)
 
   override def mkSigmaPropBytes(value: Value[SSigmaProp.type]) = SigmaPropBytes(value)
 
