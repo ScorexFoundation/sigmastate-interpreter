@@ -96,7 +96,7 @@ trait Types extends Core {
     val BasicType = P( TupleType | TypeId )
     P( BasicType ~ TypeArgs.rep ).map {
       case (t: STuple, Seq()) => t
-      case (STypeApply("Col", IndexedSeq()), Seq(Seq(t))) => SCollection(t)
+      case (STypeApply("Coll", IndexedSeq()), Seq(Seq(t))) => SCollection(t)
       case (STypeApply("Option", IndexedSeq()), Seq(Seq(t))) => SOption(t)
       case (SPrimType(t), Seq()) => t
       case (STypeApply(tn, IndexedSeq()), args) if args.isEmpty => STypeIdent(tn)

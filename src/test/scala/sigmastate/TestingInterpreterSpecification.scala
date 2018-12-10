@@ -17,7 +17,7 @@ import scorex.util.encode.Base58
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.ValueSerializer
 import special.sigma.{AnyValue, Box, TestAvlTree}
-import TrivialProof._
+import TrivialProp._
 
 import scala.util.Random
 
@@ -34,7 +34,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
-        val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isValid
+        val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
 
         val ctx = TestingContext(h)
         reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1 should(
@@ -44,17 +44,17 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
         {
           val res = reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1
-          res should matchPattern { case FalseProof => }
+          res should matchPattern { case FalseProp => }
         }
 
         {
           val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1
-          res should matchPattern { case TrueProof => }
+          res should matchPattern { case TrueProp => }
         }
 
         {
           val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1
-          res should matchPattern { case TrueProof => }
+          res should matchPattern { case TrueProp => }
         }
         reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1 should(
           matchPattern { case sb: SigmaBoolean => })
@@ -67,8 +67,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
-        val dk1 = DLogProverInput.random().publicImage.isValid
-        val dk2 = DLogProverInput.random().publicImage.isValid
+        val dk1 = DLogProverInput.random().publicImage.isProven
+        val dk2 = DLogProverInput.random().publicImage.isProven
 
         val ctx = TestingContext(h)
 
@@ -86,7 +86,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         reduceToCrypto(ctx, OR(
           AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
           AND(GT(Height, LongConstant(h + 1)), dk1)
-        )).get._1 shouldBe FalseProof
+        )).get._1 shouldBe FalseProp
 
         reduceToCrypto(ctx,
           OR(
@@ -96,7 +96,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
             ),
             AND(GT(Height, LongConstant(h - 1)), LE(Height, LongConstant(h + 1)))
           )
-        ).get._1 shouldBe TrueProof
+        ).get._1 shouldBe TrueProp
 
       }
     }
@@ -150,20 +150,20 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 //              |}""".stripMargin)
 
     testEval("""{
-              |  val arr = box1.R4[Col[Int]].get
+              |  val arr = box1.R4[Coll[Int]].get
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  val arr = box1.R5[Col[Boolean]].get
+              |  val arr = box1.R5[Coll[Boolean]].get
               |  anyOf(arr)
               |}""".stripMargin)
     testEval("""{
-              |  val arr = box1.R5[Col[Boolean]].get
+              |  val arr = box1.R5[Coll[Boolean]].get
               |  allOf(arr) == false
               |}""".stripMargin)
     testEval("""{
-              |  val arr = Col(1, 2, 3)
-              |  arr.map {(i: Int) => i + 1} == Col(2, 3, 4)
+              |  val arr = Coll(1, 2, 3)
+              |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
               |}""".stripMargin)
 //    // TODO uncomment when Costing for where is implemented
 //    testEval("""{
@@ -181,10 +181,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
   property("Evaluate numeric casting ops") {
     def testWithCasting(castSuffix: String): Unit = {
-      testEval(s"Col(1).size.toByte.$castSuffix == 1.$castSuffix")
-      testEval(s"Col(1).size.toShort.$castSuffix == 1.$castSuffix")
-      testEval(s"Col(1).size.toInt.$castSuffix == 1.$castSuffix")
-      testEval(s"Col(1).size.toLong.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toByte.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toShort.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toInt.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toLong.$castSuffix == 1.$castSuffix")
     }
     testWithCasting("toByte")
     testWithCasting("toShort")
@@ -211,27 +211,27 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("failed numeric downcast (overflow)") {
-    assertExceptionThrown(testEval("Col(999)(0).toByte > 0"),
+    assertExceptionThrown(testEval("Coll(999)(0).toByte > 0"),
       _.getCause.isInstanceOf[ArithmeticException])
-    assertExceptionThrown(testEval("Col(999)(0).toShort.toByte > 0"),
+    assertExceptionThrown(testEval("Coll(999)(0).toShort.toByte > 0"),
       _.getCause.isInstanceOf[ArithmeticException])
-    assertExceptionThrown(testEval(s"Col(${Int.MaxValue})(0).toShort > 0"),
+    assertExceptionThrown(testEval(s"Coll(${Int.MaxValue})(0).toShort > 0"),
       _.getCause.isInstanceOf[ArithmeticException])
-    assertExceptionThrown(testEval(s"Col(${Long.MaxValue}L)(0).toInt > 0"),
+    assertExceptionThrown(testEval(s"Coll(${Long.MaxValue}L)(0).toInt > 0"),
       _.getCause.isInstanceOf[ArithmeticException])
   }
 
-  property("Col indexing (out of bounds with const default value)") {
-    testEval("Col(1, 2).getOrElse(3, 0) == 0")
+  property("Coll indexing (out of bounds with const default value)") {
+    testEval("Coll(1, 2).getOrElse(3, 0) == 0")
   }
 
-  property("Col indexing (out of bounds with evaluated default value)") {
-    testEval("Col(1, 1).getOrElse(3, 1 + 1) == 2")
+  property("Coll indexing (out of bounds with evaluated default value)") {
+    testEval("Coll(1, 1).getOrElse(3, 1 + 1) == 2")
   }
 
   property("Evaluation example #1") {
-    val dk1 = ProveDlog(secrets(0).publicImage.h).isValid
-    val dk2 = ProveDlog(secrets(1).publicImage.h).isValid
+    val dk1 = ProveDlog(secrets(0).publicImage.h).isProven
+    val dk2 = ProveDlog(secrets(1).publicImage.h).isProven
 
     val env1 = TestingContext(99)
     val env2 = TestingContext(101)
@@ -312,36 +312,36 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   property("passing a lambda argument") {
     // single expression
     testEval(
-      """ Col[Int](1,2,3).map { (a: Int) =>
+      """ Coll[Int](1,2,3).map { (a: Int) =>
         |   a + 1
-        | } == Col[Int](2,3,4) """.stripMargin)
+        | } == Coll[Int](2,3,4) """.stripMargin)
     // block
     testEval(
-      """ Col[Int](1,2,3).map { (a: Int) =>
+      """ Coll[Int](1,2,3).map { (a: Int) =>
         |   val b = a - 1
         |   b + 2
-        | } == Col[Int](2,3,4) """.stripMargin)
+        | } == Coll[Int](2,3,4) """.stripMargin)
   }
 
   property("nested lambdas argument") {
     // block with nested lambda
     testEval(
-      """ Col[Int](1,2,3).exists { (a: Int) =>
-        |   Col[Int](1).exists{ (c: Int) => c == 1 }
+      """ Coll[Int](1,2,3).exists { (a: Int) =>
+        |   Coll[Int](1).exists{ (c: Int) => c == 1 }
         | } == true """.stripMargin)
 
     // block with nested lambda (assigned to a val)
     testEval(
-      """ Col[Int](1,2,3).exists { (a: Int) =>
+      """ Coll[Int](1,2,3).exists { (a: Int) =>
         |   val g = { (c: Int) => c == 1 }
-        |   Col[Int](1).exists(g)
+        |   Coll[Int](1).exists(g)
         | } == true """.stripMargin)
   }
 
   property("deserialize") {
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
-    testEval(s"""deserialize[Col[Byte]]("$str").size == 1""")
-    testEval(s"""deserialize[Col[Byte]]("$str")(0) == 2""")
+    testEval(s"""deserialize[Coll[Byte]]("$str").size == 1""")
+    testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
   }
 }
 

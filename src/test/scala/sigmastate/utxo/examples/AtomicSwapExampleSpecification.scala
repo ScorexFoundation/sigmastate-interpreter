@@ -44,27 +44,27 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
     val prop1 = compile(env,
       """{
-        |  anyOf(Col(
+        |  anyOf(Coll(
         |    HEIGHT > height1 + deadlineA && pubkeyA,
-        |    pubkeyB && blake2b256(getVar[Col[Byte]](1).get) == hx
+        |    pubkeyB && blake2b256(getVar[Coll[Byte]](1).get) == hx
         |  ))
         |}""".stripMargin).asBoolValue
 
     //chain1 script
     val prop1Tree = OR(
-      BinAnd(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))), pubkeyA.isValid),
-      BinAnd(pubkeyB.isValid, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
+      BinAnd(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))), pubkeyA.isProven),
+      BinAnd(pubkeyB.isProven, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )
     prop1 shouldBe prop1Tree
 
     val script2 =
       """{
-        |  anyOf(Col(
+        |  anyOf(Coll(
         |    HEIGHT > height2 + deadlineB && pubkeyB,
-        |    allOf(Col(
+        |    allOf(Coll(
         |        pubkeyA,
-        |        getVar[Col[Byte]](1).get.size<33,
-        |        blake2b256(getVar[Col[Byte]](1).get) == hx
+        |        getVar[Coll[Byte]](1).get.size<33,
+        |        blake2b256(getVar[Coll[Byte]](1).get) == hx
         |    ))
         |  ))
         |}
@@ -73,8 +73,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     //chain2 script
     val prop2Tree = OR(
-      BinAnd(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB.isValid),
-      AND(pubkeyA.isValid,
+      BinAnd(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB.isProven),
+      AND(pubkeyA.isProven,
         LT(SizeOf(GetVarByteArray(1).get), 33),
         EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
     )
@@ -88,7 +88,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
     proverB.prove(env, prop1, ctxf1, fakeMessage).isSuccess shouldBe false
@@ -101,7 +101,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(), spendingTransaction = null, self = fakeSelf)
+      boxesToSpend = IndexedSeq(fakeSelf), spendingTransaction = null, self = fakeSelf)
     proverB.prove(env, prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
     //Successful run below:
@@ -111,7 +111,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
     val pr = proverA.prove(env, prop2, ctx1, fakeMessage).get
@@ -126,7 +126,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
     val pr2 = proverB2.prove(env, prop1, ctx2, fakeMessage).get

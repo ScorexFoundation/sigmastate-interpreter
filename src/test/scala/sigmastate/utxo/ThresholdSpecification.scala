@@ -24,9 +24,9 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val skB = proverB.dlogSecrets.head
     val skC = proverC.dlogSecrets.head
 
-    val pubkeyA = skA.publicImage.isValid
-    val pubkeyB = skB.publicImage.isValid
-    val pubkeyC = skC.publicImage.isValid
+    val pubkeyA = skA.publicImage.isProven
+    val pubkeyB = skB.publicImage.isProven
+    val pubkeyC = skC.publicImage.isProven
 
     val proverABC = proverA.withSecrets(Seq(skB, skC))
     val proverAB = proverA.withSecrets(Seq(skB))
@@ -37,21 +37,21 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
 
     // Basic compilation
-    val compiledProp1 = compile(env, """atLeast(2, Col(pubkeyA, pubkeyB, pubkeyC))""")
+    val compiledProp1 = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""")
     val prop1 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
     compiledProp1 shouldBe prop1
 
     // this example is from the white paper
     val compiledProp2 = compile(env,
       """{
-        |    val array = Col(pubkeyA, pubkeyB, pubkeyC)
+        |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(array.size, array)
         |}""".stripMargin).asBoolValue
 
@@ -77,7 +77,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     // this example is from the white paper
     val compiledProp3 = compile(env,
       """{
-        |    val array = Col(pubkeyA, pubkeyB, pubkeyC)
+        |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(1, array)
         |}""".stripMargin).asBoolValue
     val prop3 = AtLeast(1, pubkeyA, pubkeyB, pubkeyC)
@@ -95,7 +95,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
     val compiledProp4 = compile(env,
       """{
-        |    val array = Col(pubkeyA, pubkeyB, pubkeyC)
+        |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(2, array)
         |}""".stripMargin).asBoolValue
     val prop4 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
@@ -113,13 +113,13 @@ class ThresholdSpecification extends SigmaTestingCommons {
   }
 
   property("threshold reduce to crypto") {
-    import TrivialProof._
+    import TrivialProp._
     val prover = new ErgoLikeTestProvingInterpreter
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -142,7 +142,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       TestCase(0, Seq(fls), emptyDlogOnlyVector),
       TestCase(1, Seq(tr), emptyDlogOnlyVector))
     for (sk <- secrets) {
-      val pk = sk.publicImage.isValid
+      val pk = sk.publicImage.isProven
       var newTestCaseSeq = Seq[TestCase]()
       for (t <- testCaseSeq) {
         val dlogOnly = DlogOnlyVector(t.dlogOnlyVector.v :+ pk)
@@ -174,40 +174,40 @@ class ThresholdSpecification extends SigmaTestingCommons {
         pReduced.fold(t => throw t, x => true) shouldBe true
         if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe TrueProof
+            pReduced.get._1 shouldBe TrueProp
             case0TrueHit = true
           }
           else {
-            pReduced.get._1 shouldBe FalseProof
+            pReduced.get._1 shouldBe FalseProp
             case0FalseHit = true
           }
         }
         else if (t.dlogOnlyVector.v.length == 1) { // Case 1: 1 ProveDlog in the test vector
           // Should be just true if numTrue>=bound
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe TrueProof
+            pReduced.get._1 shouldBe TrueProp
             case1TrueHit = true
           }
           // Should be false if bound>numTrue + 1
           else if (bound > t.numTrue + 1) {
-            pReduced.get._1 shouldBe FalseProof
+            pReduced.get._1 shouldBe FalseProp
             case1FalseHit = true
           }
           // if bound is exactly numTrue+1, should be just dlog
           else if (bound == t.numTrue + 1) {
-            pReduced.get._1.asInstanceOf[SigmaBoolean].isValid shouldBe t.dlogOnlyVector.v.head
+            pReduced.get._1.asInstanceOf[SigmaBoolean].isProven shouldBe t.dlogOnlyVector.v.head
             case1DLogHit = true
           }
         }
         else { // Case 2: more than 1 ProveDlogs in the test vector
           // Should be just true if numTrue>=bound
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe TrueProof
+            pReduced.get._1 shouldBe TrueProp
             case2TrueHit = true
           }
           // Should be false if bound>numTrue + dlogOnlyVector.length
           else if (bound > t.numTrue + t.dlogOnlyVector.v.length) {
-            pReduced.get._1 shouldBe FalseProof
+            pReduced.get._1 shouldBe FalseProp
             case2FalseHit = true
           }
           // if bound is exactly numTrue+dlogOnlyVector, should be just AND of all dlogs
@@ -257,21 +257,21 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val skH = proverH.dlogSecrets.head
     val skI = proverI.dlogSecrets.head
 
-    val pkA = skA.publicImage.isValid
-    val pkB = skB.publicImage.isValid
-    val pkC = skC.publicImage.isValid
-    val pkD = skD.publicImage.isValid
-    val pkE = skE.publicImage.isValid
-    val pkF = skF.publicImage.isValid
-    val pkG = skG.publicImage.isValid
-    val pkH = skH.publicImage.isValid
-    val pkI = skI.publicImage.isValid
+    val pkA = skA.publicImage.isProven
+    val pkB = skB.publicImage.isProven
+    val pkC = skC.publicImage.isProven
+    val pkD = skD.publicImage.isProven
+    val pkE = skE.publicImage.isProven
+    val pkF = skF.publicImage.isProven
+    val pkG = skG.publicImage.isProven
+    val pkH = skH.publicImage.isProven
+    val pkI = skI.publicImage.isProven
 
 
     val env = Map("pkA" -> pkA, "pkB" -> pkB, "pkC" -> pkC,
       "pkD" -> pkD, "pkE" -> pkE, "pkF" -> pkF,
       "pkG" -> pkG, "pkH" -> pkH, "pkI" -> pkI)
-    val compiledProp = compile(env, """atLeast(3, Col (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""")
+    val compiledProp = compile(env, """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""")
     val prop = AtLeast(3, pkA, pkB, pkC, BinAnd(pkD, pkE), BinAnd(pkF, pkG), BinAnd(pkH, pkI))
 
     compiledProp shouldBe prop
@@ -288,7 +288,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -306,19 +306,19 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   property("threshold proving of different trees") {
     val secret1 = DLogProverInput.random()
-    val subProp1 = secret1.publicImage.isValid
+    val subProp1 = secret1.publicImage.isProven
     val secret2 = DLogProverInput.random()
-    val subProp2 = secret2.publicImage.isValid
+    val subProp2 = secret2.publicImage.isProven
     val secret31 = DLogProverInput.random()
     val secret32 = DLogProverInput.random()
-    val subProp3 = OR(secret31.publicImage.isValid, secret32.publicImage.isValid)
+    val subProp3 = OR(secret31.publicImage.isProven, secret32.publicImage.isProven)
     val secret41 = DLogProverInput.random()
     val secret42 = DLogProverInput.random()
-    val subProp4 = AND(secret41.publicImage.isValid, secret42.publicImage.isValid)
+    val subProp4 = AND(secret41.publicImage.isProven, secret42.publicImage.isProven)
     val secret51 = DLogProverInput.random()
     val secret52 = DLogProverInput.random()
     val secret53 = DLogProverInput.random()
-    val subProp5 = AtLeast(2, secret51.publicImage.isValid, secret52.publicImage.isValid, secret53.publicImage.isValid)
+    val subProp5 = AtLeast(2, secret51.publicImage.isProven, secret52.publicImage.isProven, secret53.publicImage.isProven)
     val secret6 = DLogProverInput.random()
 
     val propComponents = Seq(subProp1, subProp2, subProp3, subProp4, subProp5)
@@ -335,7 +335,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -357,10 +357,10 @@ class ThresholdSpecification extends SigmaTestingCommons {
         // don't go beyond i -- "threshold reduce to crypto" tests that atLeast then becomes false
         // don't test bound 0 -- "threshold reduce to crypto" tests that atLeast then becomes true
         val pureAtLeastProp = AtLeast(bound, propComponents.slice(0, i))
-        val OrPlusAtLeastOnRightProp = OR(secret6.publicImage.isValid, pureAtLeastProp)
-        val OrPlusAtLeastOnLeftProp = OR(pureAtLeastProp, secret6.publicImage.isValid)
-        val AndPlusAtLeastOnLeftProp = AND(pureAtLeastProp, secret6.publicImage.isValid)
-        val AndPlusAtLeastOnRightProp = AND(secret6.publicImage.isValid, pureAtLeastProp)
+        val OrPlusAtLeastOnRightProp = OR(secret6.publicImage.isProven, pureAtLeastProp)
+        val OrPlusAtLeastOnLeftProp = OR(pureAtLeastProp, secret6.publicImage.isProven)
+        val AndPlusAtLeastOnLeftProp = AND(pureAtLeastProp, secret6.publicImage.isProven)
+        val AndPlusAtLeastOnRightProp = AND(secret6.publicImage.isProven, pureAtLeastProp)
 
         for (p <- provers.slice(0, twoToi)) {
           val pWithSecret6 = p._2.withSecrets(Seq(secret6))

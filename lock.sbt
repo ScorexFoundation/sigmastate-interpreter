@@ -14,7 +14,7 @@ dependencyOverrides in ThisBuild ++= Seq(
   "com.sun.mail" % "javax.mail" % "1.6.0",
   "com.trueaccord.lenses" % "lenses_2.12" % "0.4.12",
   "com.typesafe" % "config" % "1.3.3",
-  "com.typesafe.akka" % "akka-actor_2.12" % "2.5.18",
+  "com.typesafe.akka" % "akka-actor_2.12" % "2.5.19",
   "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.0",
   "commons-io" % "commons-io" % "2.5",
   "io.github.scalan" % "common_2.12" % "master-98f4f086-SNAPSHOT",
@@ -24,9 +24,9 @@ dependencyOverrides in ThisBuild ++= Seq(
   "io.github.scalan" % "library_2.12" % "master-98f4f086-SNAPSHOT",
   "io.github.scalan" % "macros_2.12" % "master-98f4f086-SNAPSHOT",
   "io.github.scalan" % "meta_2.12" % "master-98f4f086-SNAPSHOT",
-  "io.github.scalan" % "sigma-api_2.12" % "master-c916619f-SNAPSHOT",
-  "io.github.scalan" % "sigma-impl_2.12" % "master-c916619f-SNAPSHOT",
-  "io.github.scalan" % "sigma-library_2.12" % "master-c916619f-SNAPSHOT",
+  "io.github.scalan" % "sigma-api_2.12" % "master-708072b5-SNAPSHOT",
+  "io.github.scalan" % "sigma-impl_2.12" % "master-708072b5-SNAPSHOT",
+  "io.github.scalan" % "sigma-library_2.12" % "master-708072b5-SNAPSHOT",
   "javax.activation" % "activation" % "1.1",
   "jline" % "jline" % "2.14.3",
   "org.apache.ant" % "ant" % "1.9.6",
@@ -47,4 +47,4 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.typelevel" % "macro-compat_2.12" % "1.1.1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 4d37bb0d8d294a987042c5d7be1e860b9c394a53
+// LIBRARY_DEPENDENCIES_HASH 732dbadacaa109dfdb04d6b8e2c485d8f5bd9c9b

@@ -39,15 +39,15 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val prop = compileWithCosting(Map(),
       """{
-        |  val indices: Col[Int] = Col(0, 1, 2, 3, 4, 5)
-        |  val inLayer: Col[Byte] = SELF.R4[Col[Byte]].get
+        |  val indices: Coll[Int] = Coll(0, 1, 2, 3, 4, 5)
+        |  val inLayer: Coll[Byte] = SELF.R4[Coll[Byte]].get
         |  val procCell = {(i: Int) =>
         |    val l = inLayer((if (i == 0) 5 else (i - 1)))
         |    val c = inLayer(i)
         |    val r = inLayer((i + 1) % 6)
         |    ((l * c * r + c * r + c + r) % 2).toByte
         |  }
-        |  (OUTPUTS(0).R4[Col[Byte]].get == indices.map(procCell)) &&
+        |  (OUTPUTS(0).R4[Coll[Byte]].get == indices.map(procCell)) &&
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
          }""".stripMargin).asBoolValue
 
@@ -59,7 +59,7 @@ class Rule110Specification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(output),
+      boxesToSpend = IndexedSeq(input),
       tx,
       self = input)
 

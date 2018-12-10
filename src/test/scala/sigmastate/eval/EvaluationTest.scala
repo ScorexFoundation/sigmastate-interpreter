@@ -51,7 +51,7 @@ class EvaluationTest extends BaseCtxTests
         .withTransaction(tx1)
     reduce(emptyEnv, "height1", "HEIGHT + 1L", ctx, 101)
     reduce(emptyEnv, "height2", "HEIGHT > 1L", ctx, true)
-    reduce(emptyEnv, "size", "INPUTS.size + OUTPUTS.size", ctx, 2)
+    reduce(emptyEnv, "size", "INPUTS.size + OUTPUTS.size", ctx, 3)
     reduce(emptyEnv, "value", "SELF.value + 1L", ctx, 11L)
   }
 
@@ -70,8 +70,8 @@ class EvaluationTest extends BaseCtxTests
     reduce(emptyEnv, "lam5",
       """{
        |  val f = { (out: Box) => out.value >= 0L };
-       |  val g = { (xs: Col[Int]) => xs.size > 0 };
-       |  f(SELF) || g(SELF.R5[Col[Int]].get)
+       |  val g = { (xs: Coll[Int]) => xs.size > 0 };
+       |  f(SELF) || g(SELF.R5[Coll[Int]].get)
        | }""".stripMargin, ctx, true)
   }
 

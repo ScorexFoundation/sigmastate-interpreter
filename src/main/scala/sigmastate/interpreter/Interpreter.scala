@@ -41,7 +41,10 @@ object CryptoConstants {
     bytes
   }
 
+  /** Size of the binary representation of any group element (2 ^ groupSizeBits == <number of elements in a group>) */
   val groupSizeBits: Int = 256
+
+  /** Number of bytes to represent any group element as byte array */
   val groupSize: Int = 256 / 8 //32 bytes
 
   //size of challenge in Sigma protocols, in bits
@@ -99,7 +102,7 @@ trait Interpreter extends ScorexLogging {
 
   def toValidScriptType(exp: SValue): BoolValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
-    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isValid
+    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
     case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
@@ -127,7 +130,7 @@ trait Interpreter extends ScorexLogging {
 
     IR.verifyCostFunc(costF).fold(t => throw t, x => x)
 
-    IR.verifyIsValid(calcF).fold(t => throw t, x => x)
+    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
 
     // check cost
     val costingCtx = context.toSigmaContext(IR, isCost = true)
@@ -162,7 +165,7 @@ trait Interpreter extends ScorexLogging {
       case FalseLeaf => false
       case cProp: SigmaBoolean =>
         cProp match {
-          case TrivialProof.TrueProof => true
+          case TrivialProp.TrueProp => true
           case _ =>
             // Perform Verifier Steps 1-3
             SigSerializer.parseAndComputeChallenges(cProp, proof) match {

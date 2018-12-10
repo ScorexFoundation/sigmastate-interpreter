@@ -57,7 +57,7 @@ class ErgoBox private(
 
   lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
-  override lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
+  override def dataSize: Long = bytes.length
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {

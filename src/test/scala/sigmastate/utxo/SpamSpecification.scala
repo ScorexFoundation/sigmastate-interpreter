@@ -116,7 +116,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
     val publicImages = secret.publicImage +: simulated
-    val prop = OR(publicImages.map(image => SigmaPropConstant(image).isValid))
+    val prop = OR(publicImages.map(image => SigmaPropConstant(image).isProven))
 
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
@@ -197,7 +197,7 @@ class SpamSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = ErgoBox(11, prop, 0))
+      self = null)
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 

@@ -28,18 +28,18 @@ case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.Undefined
 }
 object CAND {
-  import TrivialProof._
+  import TrivialProp._
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
     require(items.nonEmpty)
     val res = new ArrayBuffer[SigmaBoolean]()
     for (x <- items) {
       x match {
-        case FalseProof => return FalseProof
-        case TrueProof => // skip
+        case FalseProp => return FalseProp
+        case TrueProp => // skip
         case _ => res += x
       }
     }
-    if (res.isEmpty) TrueProof
+    if (res.isEmpty) TrueProp
     else if (res.length == 1) res(0)
     else CAND(res)
   }
@@ -52,18 +52,18 @@ case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.Undefined
 }
 object COR {
-  import TrivialProof._
+  import TrivialProp._
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
     require(items.nonEmpty)
     val res = new ArrayBuffer[SigmaBoolean]()
     for (x <- items) {
       x match {
-        case FalseProof => // skip
-        case TrueProof => return TrueProof
+        case FalseProp => // skip
+        case TrueProp => return TrueProp
         case _ => res += x
       }
     }
-    if (res.isEmpty) FalseProof
+    if (res.isEmpty) FalseProp
     else if (res.length == 1) res(0)
     else COR(res)
   }
@@ -82,12 +82,12 @@ case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoo
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
   extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
-case class TrivialProof(condition: Boolean) extends SigmaBoolean {
+case class TrivialProp(condition: Boolean) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.TrivialProofCode
 }
-object TrivialProof {
-  val TrueProof = TrivialProof(true)
-  val FalseProof = TrivialProof(false)
+object TrivialProp {
+  val TrueProp = TrivialProp(true)
+  val FalseProp = TrivialProp(false)
 }
 
 case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
@@ -169,9 +169,9 @@ object AtLeast {
   def apply(bound: Value[SInt.type], head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AtLeast = apply(bound, head +: tail)
 
   def reduce(bound: Int, children: Seq[SigmaBoolean]): SigmaBoolean = {
-    import sigmastate.TrivialProof._
-    if (bound <= 0) return TrueProof
-    if (bound > children.length) return FalseProof
+    import sigmastate.TrivialProp._
+    if (bound <= 0) return TrueProp
+    if (bound > children.length) return FalseProp
 
     var curBound = bound
     var childrenLeft = children.length
@@ -199,10 +199,10 @@ object AtLeast {
         return CAND.normalized(sigmas ++ children.slice(iChild, children.length))
       // at this point 1<curBound<childrenLeft
       children(iChild) match {
-        case TrueProof => // If child is true, remove child and reduce bound.
+        case TrueProp => // If child is true, remove child and reduce bound.
           childrenLeft -= 1
           curBound -= 1
-        case FalseProof => // If child is false, remove child, leave bound unchanged.
+        case FalseProp => // If child is false, remove child, leave bound unchanged.
           childrenLeft -= 1
         case sigma => sigmas += sigma
       }

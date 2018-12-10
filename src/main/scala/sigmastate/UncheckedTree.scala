@@ -4,7 +4,7 @@ import java.util
 
 import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
 import scapi.sigma.VerifierMessage.Challenge
-import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
+import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.Values.SigmaBoolean
 import gf2t.GF2_192_Poly
 
@@ -45,11 +45,11 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 }
 
 
-case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
+case class UncheckedDiffieHellmanTuple(override val proposition: ProveDHTuple,
                                        override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                        override val challenge: Challenge,
                                        secondMessage: SecondDiffieHellmanTupleProverMessage)
-  extends UncheckedLeaf[ProveDiffieHellmanTuple] {
+  extends UncheckedLeaf[ProveDHTuple] {
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedDiffieHellmanTuple =>

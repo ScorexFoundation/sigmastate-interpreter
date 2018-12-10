@@ -3,7 +3,7 @@ package sigmastate.eval
 import org.ergoplatform.ErgoBox
 
 import scala.language.{existentials, implicitConversions}
-import scapi.sigma.{ProveDiffieHellmanTuple, DLogProtocol}
+import scapi.sigma.{ProveDHTuple, DLogProtocol}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{Constant, SigmaPropConstant, Value, NotReadyValue, SigmaBoolean}
@@ -24,7 +24,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
 
-      case _: DLogProtocol.ProveDlog | _: ProveDiffieHellmanTuple =>
+      case _: DLogProtocol.ProveDlog | _: ProveDHTuple =>
         eval(SigmaPropConstant(node.asSigmaBoolean))
 
       // Rule: allOf(arr) --> AND(arr)
@@ -60,9 +60,9 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
         else
           error(s"The type of $obj is expected to be Collection to select 'size' property")
 
-      // Rule: proof.isValid --> IsValid(proof)
-      case Select(p, SSigmaProp.IsValid, _) if p.tpe == SSigmaProp =>
-        eval(SigmaPropIsValid(p.asSigmaProp))
+      // Rule: proof.isProven --> IsValid(proof)
+      case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
+        eval(SigmaPropIsProven(p.asSigmaProp))
 
       // Rule: proof.propBytes --> ProofBytes(proof)
       case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
@@ -105,7 +105,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Select(obj: SigmaBoolean, field, _) =>
         field match {
           case SigmaBoolean.PropBytes => eval(SigmaPropBytes(SigmaPropConstant(obj)))
-          case SigmaBoolean.IsValid => eval(SigmaPropIsValid(SigmaPropConstant(obj)))
+          case SigmaBoolean.IsProven => eval(SigmaPropIsProven(SigmaPropConstant(obj)))
         }
 
       case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>

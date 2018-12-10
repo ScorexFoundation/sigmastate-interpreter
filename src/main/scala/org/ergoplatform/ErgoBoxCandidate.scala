@@ -25,7 +25,9 @@ class ErgoBoxCandidate(val value: Long,
 
   def proposition: BoolValue = ergoTree.proposition
 
-  lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
+  def dataSize: Long = bytesWithNoRef.length.toLong
+
+  lazy val cost: Int = (dataSize / 1024 + 1).toInt * Cost.BoxPerKilobyte
 
   val propositionBytes: Array[Byte] = ErgoTreeSerializer.serialize(ergoTree.proposition)
 

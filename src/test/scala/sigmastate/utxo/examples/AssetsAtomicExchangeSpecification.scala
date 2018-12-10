@@ -66,7 +66,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.One)), tokenSellerKey.propBytes)
 
     val buyerProp = BinOr(
-      BinAnd(GT(Height, deadline), tokenSellerKey.isValid),
+      BinAnd(GT(Height, deadline), tokenSellerKey.isProven),
       AND(
         EQ(extractTokenId(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(tokenId)),
         GE(extractTokenAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(60)),
@@ -82,8 +82,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       "pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
     val altBuyerProp = compile(buyerEnv,
       """(HEIGHT > deadline && pkA) || {
-        |  val tokenData = OUTPUTS(0).R2[Col[(Col[Byte], Long)]].get(0)
-        |  allOf(Col(
+        |  val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
+        |  allOf(Coll(
         |      tokenData._1 == token1,
         |      tokenData._2 >= 60L,
         |      OUTPUTS(0).propositionBytes == pkA.propBytes,
@@ -94,7 +94,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     altBuyerProp shouldBe buyerProp
 
     val sellerProp = BinOr(
-      BinAnd(GT(Height, deadline), tokenSellerKey.isValid),
+      BinAnd(GT(Height, deadline), tokenSellerKey.isProven),
       AND(
         GE(ExtractAmount(ByIndex(Outputs, IntConstant.One)), LongConstant(100)),
         rightProtectionSeller
@@ -105,7 +105,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       "pkB" -> tokenSellerKey, "deadline" -> deadline)
     val altSellerProp = compile(sellerEnv,
       """ (HEIGHT > deadline && pkB) ||
-        | allOf(Col(
+        | allOf(Coll(
         |        OUTPUTS(1).value >= 100,
         |        OUTPUTS(1).propositionBytes == pkB.propBytes
         | ))

@@ -10,7 +10,7 @@ import org.bouncycastle.math.ec.ECPoint
 import scalan.{Lazy, SigmaLibrary, Nullable}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.ProveDHTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.Value.Typed
 import sigmastate._
@@ -109,7 +109,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def costOf(opName: String, opType: SFunc): Rep[Int] = CostOf(opName, opType)
   def costOfProveDlog = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
-  def costOfDHTuple = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2
+  def costOfDHTuple = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2  // cost ???
 
   case class ConstantPlaceholder[T](index: Int)(implicit eT: LElem[T]) extends Def[T] {
     def selfType: Elem[T] = eT.value
@@ -129,9 +129,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def constCost(tpe: SType): Rep[Int] = tpe match {
     case f: SFunc =>
-      costOf(s"Lambda", Constant[SType](0.asWrappedType, tpe).opType)
+      costOf(s"Lambda", Constant[SType](SType.DummyValue, tpe).opType)
     case _ =>
-      costOf(s"Const", Constant[SType](0.asWrappedType, tpe).opType)
+      costOf(s"Const", Constant[SType](SType.DummyValue, tpe).opType)
   }
 
   def constCost[T: Elem]: Rep[Int] = {
@@ -200,11 +200,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     assert(tpe.isConstantSize, s"Expected isConstantSize type but was TypeSize($tpe)")
   }
 
-  def typeSize(tpe: SType): Rep[Long] = TypeSize(tpe)
+  def typeSize(tpe: SType): Rep[Long] = {
+    assert(tpe.isConstantSize)
+    val size = tpe.dataSize(SType.DummyValue)
+    toRep(size)
+  }
 
   def typeSize[T: Elem]: Rep[Long] = {
     val tpe = elemToSType(element[T])
-    assert(tpe.isConstantSize)
     typeSize(tpe)
   }
 
@@ -224,7 +227,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       * This should be kept in mind at call site */
     def sliceCalc(okRemoveIsValid: Boolean): Rep[A => Any] = {
       val _f = { x: Rep[A] => f(RCCostedPrim(x, 0, 0L)).value }
-      val res = if (okRemoveIsValid) fun(removeIsValid(_f)) else fun(_f)
+      val res = if (okRemoveIsValid) fun(removeIsProven(_f)) else fun(_f)
       res
     }
 
@@ -332,6 +335,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     val SPCM = WSpecialPredefCompanionMethods
 
     d match {
+      case CM.length(CBM.replicate(_, len, _)) => len
+      case CM.length(CBM.fromArray(_, arr)) => arr.length
+      case CM.length(CBM.fromItems(_, items, _)) => items.length
+
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict
         val r = asRep[SigmaProp](RTrivialSigma(asRep[Boolean](root)))
@@ -521,7 +528,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   import Cost._
 
-  def removeIsValid[T,R](f: Rep[T] => Rep[Any]): Rep[T] => Rep[Any] = { x: Rep[T] =>
+  def removeIsProven[T,R](f: Rep[T] => Rep[Any]): Rep[T] => Rep[Any] = { x: Rep[T] =>
     val y = f(x);
     val res = y match {
       case SigmaPropMethods.isValid(p) => p
@@ -542,7 +549,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def split2[T,R](f: Rep[T => Costed[R]]): Rep[(T => Any, T => Int)] = {
     implicit val eT = f.elem.eDom
-    val calc = fun(removeIsValid { x: Rep[T] =>
+    val calc = fun(removeIsProven { x: Rep[T] =>
       val y = f(x);
       y.value
     })
@@ -552,7 +559,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def split3[T,R](f: Rep[T => Costed[R]]): Rep[(T => Any, (T => Int, T => Long))] = {
     implicit val eT = f.elem.eDom
-    val calc = fun(removeIsValid { x: Rep[T] =>
+    val calc = fun(removeIsProven { x: Rep[T] =>
       val y = f(x);
       y.value
     })
@@ -690,7 +697,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   def adaptSigmaBoolean(v: BoolValue) = v match {
-    case sb: SigmaBoolean => sb.isValid
+    case sb: SigmaBoolean => sb.isProven
     case _ => v
   }
 
@@ -770,7 +777,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           val ge = asRep[Costed[WECPoint]](eval(p.value))
           val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
           RCCostedPrim(resV, costOfProveDlog, CryptoConstants.groupSize.toLong)
-        case p @ ProveDiffieHellmanTuple(gv, hv, uv, vv) =>
+        case p @ ProveDHTuple(gv, hv, uv, vv) =>
           val gvC = asRep[Costed[WECPoint]](eval(gv))
           val hvC = asRep[Costed[WECPoint]](eval(hv))
           val uvC = asRep[Costed[WECPoint]](eval(uv))
@@ -780,7 +787,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)
-          withDefaultSize(resV, costOf(c))
+          RCCostedPrim(resV, costOf(c), SBigInt.MaxSizeInBytes)
         case ge: ECPoint =>
           assert(tpe == SGroupElement)
           val resV = liftConst(ge)
@@ -1055,7 +1062,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         })
         val inputV = inputC.value
         val res = method match {
-          // TODO don't remove isValid in split2 thus make sure the casts are ok
+          // TODO don't remove isProven in split2 thus make sure the casts are ok
           case SCollection.ExistsMethod.name => inputV.exists(asRep[Any => Boolean](condCalc))
           case SCollection.ForallMethod.name => inputV.forall(asRep[Any => Boolean](condCalc))
         }
@@ -1137,7 +1144,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             RCCostedPrim(xsC.value(iV), xsC.cost + iC.cost + costOf(node), size)
         }
 
-      case SigmaPropIsValid(p) =>
+      case SigmaPropIsProven(p) =>
         val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.isValid
         val c = pC.cost + costOf(node)
@@ -1202,33 +1209,29 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._
-        val x = asRep[Costed[WBigInteger]](eval(op.left))
-        val y = asRep[Costed[WBigInteger]](eval(op.right))
+        val xC = asRep[Costed[WBigInteger]](eval(op.left))
+        val yC = asRep[Costed[WBigInteger]](eval(op.right))
         val opName = op.opName
-        var v: Rep[WBigInteger] = null; var s: Rep[Long] = null
+        var v: Rep[WBigInteger] = null;
+        val s: Rep[Long] = SBigInt.MaxSizeInBytes
         op.opCode match {
-          case PlusCode | MinusCode =>
-            s = x.dataSize.max(y.dataSize) + 1L  // according to algorithm in BigInteger.add()
-            val isPlus = op.opCode == PlusCode
-            v = if (isPlus) x.value.add(y.value) else x.value.subtract(y.value)
+          case PlusCode =>
+            v = xC.value.add(yC.value)
+          case MinusCode =>
+            v = xC.value.subtract(yC.value)
           case MultiplyCode =>
-            s = x.dataSize + y.dataSize + 1L
-            v = x.value.multiply(y.value)
+            v = xC.value.multiply(yC.value)
           case DivisionCode =>
-            s = x.dataSize.max(y.dataSize)
-            v = x.value.divide(y.value)
+            v = xC.value.divide(yC.value)
           case ModuloCode =>
-            s = y.dataSize
-            v = x.value.mod(y.value)
+            v = xC.value.mod(yC.value)
           case MinCode =>
-            s = x.dataSize min y.dataSize
-            v = x.value.min(y.value)
+            v = xC.value.min(yC.value)
           case MaxCode =>
-            s = x.dataSize max y.dataSize
-            v = x.value.max(y.value)
-          case _ => error(s"Cannot perform Costing.evalNode($op)")
+            v = xC.value.max(yC.value)
+          case code => error(s"Cannot perform Costing.evalNode($op): unknown opCode ${code}")
         }
-        val c = x.cost + y.cost + costOf(op) + costOf(opName + "_per_item", op.opType) * s.toInt
+        val c = xC.cost + yC.cost + costOf(op)
         RCCostedPrim(v, c, s)
 
       case op: ArithOp[t] =>
@@ -1337,7 +1340,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val f = fun { x: Rep[Costed[Any]] =>
           evalNode(ctx, env + (n -> x), body)
         }
-        RCCostedFunc(RCCostedPrim((), 0, 0L), f, costOf(node), l.tpe.dataSize(0.asWrappedType))
+        RCCostedFunc(RCCostedPrim((), 0, 0L), f, costOf(node), l.tpe.dataSize(SType.DummyValue))
 
       case col @ ConcreteCollection(InSeqUnzipped(vs, cs, ss), elemType) =>
         implicit val eAny = stypeToElem(elemType).asElem[Any]
@@ -1396,7 +1399,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       val res = evalNode(ctxC, env, tree)
       res
 //      val res1 = res match {
-//        case RCostedPrim(SigmaPropMethods.isValid(p), Def(ApplyBinOp(op, l, r)), s) if op.isInstanceOf[NumericPlus[_]] =>
+//        case RCostedPrim(SigmaPropMethods.isProven(p), Def(ApplyBinOp(op, l, r)), s) if op.isInstanceOf[NumericPlus[_]] =>
 //          RCostedPrim(p, l.asRep[Int], s)
 //        case _ => res
 //      }

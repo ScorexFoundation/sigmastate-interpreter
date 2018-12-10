@@ -171,7 +171,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
           error(s"Invalid array application $app: array type is expected but was $t")
       }
 
-    case mc @ MethodCall(obj, m, args, _) =>
+    case mc @ MethodCallLike(obj, m, args, _) =>
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       newObj.tpe match {
@@ -209,12 +209,12 @@ class SigmaTyper(val builder: SigmaBuilder) {
         case SSigmaProp => (m, newArgs) match {
           case ("||" | "&&", Seq(r)) => r.tpe match {
             case SBoolean =>
-              val (a,b) = (Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val (a,b) = (Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
               val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
               res
             case SSigmaProp =>
-              val a = Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
-              val b = Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
+              val a = Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue
+              val b = Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue
               val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
               res
             case _ =>
@@ -229,7 +229,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
               val res = if (m == "||") mkBinOr(newObj.asBoolValue, r.asBoolValue) else mkBinAnd(newObj.asBoolValue, r.asBoolValue)
               res
             case SSigmaProp =>
-              val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue)
+              val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
               val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
               res
             case _ =>
@@ -338,11 +338,11 @@ class SigmaTyper(val builder: SigmaBuilder) {
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})")
       mkSizeOf(c1)
 
-    case SigmaPropIsValid(p) =>
+    case SigmaPropIsProven(p) =>
       val p1 = assignType(env, p)
       if (!p1.tpe.isSigmaProp)
         error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})")
-      SigmaPropIsValid(p1.asSigmaProp)
+      SigmaPropIsProven(p1.asSigmaProp)
 
     case SigmaPropBytes(p) =>
       val p1 = assignType(env, p)
@@ -391,7 +391,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
         val items = adaptSigmaPropToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
         assignConcreteCollection(cc, items.toIndexedSeq)
-      case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsValid(it.asSigmaProp)
+      case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsProven(it.asSigmaProp)
       case (it,_) => it
     }
     res

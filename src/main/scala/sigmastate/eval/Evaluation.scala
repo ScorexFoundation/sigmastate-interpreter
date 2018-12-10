@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 import java.math.BigInteger
 
 import org.ergoplatform._
-import scapi.sigma.{ProveDiffieHellmanTuple, DLogProtocol}
+import scapi.sigma.{ProveDHTuple, DLogProtocol}
 import sigmastate._
 import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, CollectionConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
@@ -88,7 +88,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     Try { lam.scheduleAll.foreach(te => isValidCostPrimitive(te.rhs)) }
   }
 
-  def findIsValid[T](f: Rep[Context => T]): Option[Sym] = {
+  def findIsProven[T](f: Rep[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
     val ok = lam.scheduleAll.find(te => te.rhs match {
       case SigmaM.isValid(_) => true
@@ -97,12 +97,12 @@ trait Evaluation extends RuntimeCosting { IR =>
     ok
   }
 
-  def verifyIsValid[T](f: Rep[Context => T]): Try[Unit] = {
-    val isValidOpt = findIsValid(f)
+  def verifyIsProven[T](f: Rep[Context => T]): Try[Unit] = {
+    val isProvenOpt = findIsProven(f)
     Try {
-      isValidOpt match {
+      isProvenOpt match {
         case Some(s) =>
-          if (f.getLambda.y != s) !!!(s"Sigma.isValid found in none-root position", s)
+          if (f.getLambda.y != s) !!!(s"Sigma.isProven found in none-root position", s)
         case None =>
       }
     }
@@ -141,10 +141,10 @@ trait Evaluation extends RuntimeCosting { IR =>
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
     def show(x: Any) = x match {
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
-      case col: special.collection.Col[_] => s"Col(${trim(col.arr).mkString(",")})"
+      case col: special.collection.Col[_] => s"Coll(${trim(col.arr).mkString(",")})"
       case p: ECPoint => CryptoFunctions.showECPoint(p)
       case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${CryptoFunctions.showECPoint(g)})"
-      case ProveDiffieHellmanTuple(
+      case ProveDHTuple(
               GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)) =>
         s"ProveDHT(${CryptoFunctions.showECPoint(g)},${CryptoFunctions.showECPoint(h)},${CryptoFunctions.showECPoint(u)},${CryptoFunctions.showECPoint(v)})"
       case _ => x.toString
@@ -221,11 +221,11 @@ trait Evaluation extends RuntimeCosting { IR =>
             if (b) {
               out(l)
             } else
-              out(TrivialProof.FalseProof)
+              out(TrivialProp.FalseProp)
 
           case SigmaM.or_bool_||(In(l: SigmaBoolean), In(b: Boolean)) =>
             if (b)
-              out(TrivialProof.TrueProof)
+              out(TrivialProp.TrueProp)
             else {
               out(l)
             }
@@ -243,7 +243,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case SDBM.atLeast(dsl, In(bound: Int), In(children: special.collection.Col[SigmaBoolean]@unchecked)) =>
             out(AtLeast.reduce(bound, children.arr.toSeq))
           case SDBM.sigmaProp(_, In(b: Boolean)) =>
-            val res = sigmastate.TrivialProof(b)
+            val res = sigmastate.TrivialProp(b)
             out(res)
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
@@ -308,13 +308,13 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(th)
 
           case TrivialSigmaCtor(In(isValid: Boolean)) =>
-            val res = sigmastate.TrivialProof(isValid)
+            val res = sigmastate.TrivialProp(isValid)
             out(res)
           case ProveDlogEvidenceCtor(In(g: EcPointType)) =>
             val res = DLogProtocol.ProveDlog(GroupElementConstant(g))
             out(res)
           case ProveDHTEvidenceCtor(In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
-            val res = ProveDiffieHellmanTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
+            val res = ProveDHTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
             out(res)
 
           case CReplColCtor(In(value), In(len: Int)) =>
@@ -332,7 +332,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             }
             out(size)
           case TypeSize(tpe) =>
-            val size = tpe.dataSize(0.asWrappedType)
+            val size = tpe.dataSize(SType.DummyValue)
             out(size)
           case Downcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType

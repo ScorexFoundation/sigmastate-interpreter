@@ -51,7 +51,7 @@ of some types directly in program text like the following examples:
  val unit: Unit = ()       // unit constant
  val long: Int = 10        // interger value literal
  val bool: Boolean = true  // logical literal
- val arr = Col(1, 2, 3)    // constructs a collection with given items
+ val arr = Coll(1, 2, 3)    // constructs a collection with given items
 ```
 Note that many types don't have literal syntax and their values are introduced 
 by applying operations.
@@ -140,22 +140,22 @@ The following function declarations are automatically imported into any script:
 
 ```
 /** Returns true if all the conditions are true */
-def allOf(conditions: Col[Boolean]): Boolean
+def allOf(conditions: Coll[Boolean]): Boolean
 
 /** Returns true if any of the conditions is true */
-def anyOf(conditions: Col[Boolean]): Boolean
+def anyOf(conditions: Coll[Boolean]): Boolean
 
 /** Cryptographic hash function Blake2b */
-def blake2b256(input: Col[Byte]): Col[Byte]
+def blake2b256(input: Coll[Byte]): Coll[Byte]
 
 /** Cryptographic hash function Sha256 */
-def sha256(input: Col[Byte]): Col[Byte]
+def sha256(input: Coll[Byte]): Coll[Byte]
 
 /** Create BigInt from a collection of bytes representation. */
-def byteArrayToBigInt(input: Col[Byte]): BigInt
+def byteArrayToBigInt(input: Coll[Byte]): BigInt
 
 /** Returns bytes representation of integer value. */
-def intToByteArray(input: Int): Col[Byte]
+def intToByteArray(input: Int): Coll[Byte]
 
 /** Returns value of the given type from the environment by its tag.*/
 def getVar[T](tag: Int): Option[T]
@@ -165,7 +165,7 @@ def proveDHTuple(g: GroupElement, h: GroupElement,
 def proveDlog(value: GroupElement): SigmaProp
 
 /** Predicate which checks whether a key is in a tree, by using a membership proof. */
-def isMember(tree: AvlTree, key: Col[Byte], proof: Col[Byte]): Boolean
+def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
 
 /** Deserializes values from Base58 encoded binary data at compile time */
 def deserialize[T](string: String): T
@@ -185,7 +185,7 @@ After the timeout output could be spent by backer only.
 guard CrowdFunding(timeout: Int, minToRaise: Int, 
                    backerPubKey: SigmaProp, projectPubKey: SigmaProp) {
   val c1 = HEIGHT >= timeout && backerPubKey
-  val c2 = allOf(Col(
+  val c2 = allOf(Coll(
     HEIGHT < timeout,
     projectPubKey,
     OUTPUTS.exists { (out: Box) => 
@@ -212,7 +212,7 @@ into the blockchain yet, then R3 contains the current height of the blockchain).
     
 ```
 guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript: SigmaProp) {
-  val c2 = allOf(Col(
+  val c2 = allOf(Coll(
    HEIGHT >= SELF.R3[Int].get + demurragePeriod,
    OUTPUTS.exists { (out: Box) => 
      out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
@@ -229,7 +229,7 @@ The ring is a collection of public keys which correspond to some secret keys (of
 The script below checks that at least one party provided the signature WITHOUT disclosing this party.
 
 ```
-guard RingSignature(ring: Col[SigmaProp]) {
+guard RingSignature(ring: Coll[SigmaProp]) {
   anyOf(ring)
 }
 ```

@@ -31,7 +31,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(boxToSpend),
       spendingTransaction = tx1,
       self = boxToSpend,
       extension = ContextExtension(extension))
@@ -71,7 +71,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     currentHeight = timeout - 1,
     lastBlockUtxoRoot = AvlTreeData.dummy,
     minerPubkey = ErgoLikeContext.dummyPubkey,
-    boxesToSpend = IndexedSeq(),
+    boxesToSpend = IndexedSeq(boxToSpend),
     spendingTransaction = tx1,
     self = boxToSpend,
     extension = ContextExtension(Map(
@@ -101,7 +101,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       printGraphs: Boolean = true,
       measureTime: Boolean = false)
   {
-    lazy val expectedCalcF = expectedCalc.map(f => fun(removeIsValid(f)))
+    lazy val expectedCalcF = expectedCalc.map(f => fun(removeIsProven(f)))
     lazy val expectedCostF = expectedCost.map(fun(_))
     lazy val expectedSizeF = expectedSize.map(fun(_))
 
@@ -145,7 +145,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     def doReduce(): Unit = {
       val Tuple(calcF, costF, sizeF) = doCosting
       verifyCostFunc(costF) shouldBe Success(())
-      verifyIsValid(calcF) shouldBe Success(())
+      verifyIsProven(calcF) shouldBe Success(())
 
       if (expectedTree.isDefined) {
         val compiledTree = IR.buildTree(calcF.asRep[Context => SType#WrappedType])
@@ -244,7 +244,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     val Tuple(valueF, costF, sizeF) = split3(costed)
     emit(name, valueF, costF, sizeF)
     verifyCostFunc(costF) shouldBe(Success(()))
-    verifyIsValid(valueF) shouldBe(Success(()))
+    verifyIsProven(valueF) shouldBe(Success(()))
     IR.buildTree(valueF) shouldBe expected
   }
 

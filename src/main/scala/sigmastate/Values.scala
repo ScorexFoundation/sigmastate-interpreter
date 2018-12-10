@@ -490,10 +490,10 @@ object Values {
 
   object SigmaBoolean {
     val PropBytes = "propBytes"
-    val IsValid = "isValid"
+    val IsProven = "isProven"
     val fields = Seq(
       PropBytes -> SByteArray,
-      IsValid -> SBoolean
+      IsProven -> SBoolean
     )
   }
 
@@ -579,12 +579,12 @@ object Values {
   }
 
   implicit class SigmaPropValueOps(p: Value[SSigmaProp.type]) {
-    def isValid: Value[SBoolean.type] = SigmaPropIsValid(p)
+    def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
 
   implicit class SigmaBooleanOps(sb: SigmaBoolean) {
-    def isValid: Value[SBoolean.type] = SigmaPropIsValid(SigmaPropConstant(sb))
+    def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
   }
 

@@ -1,13 +1,13 @@
 package sigmastate.lang
 
-import sigmastate.lang.Terms.{MethodCall, Ident}
+import sigmastate.lang.Terms.{MethodCallLike, Ident}
 import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, GroupElementConstant, ConcreteCollection}
 import sigmastate._
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.ProveDHTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -22,8 +22,8 @@ trait LangTests {
   def SigmaPropIdent(name: String): Value[SSigmaProp.type] = Ident(name).asValue[SSigmaProp.type]
   def BigIntIdent(name: String): Value[SBigInt.type] = Ident(name).asValue[SBigInt.type]
 
-  def plus(l: SValue, r: SValue, tpe: SType = NoType): MethodCall =
-    MethodCall(l, "+", IndexedSeq(r), tpe)
+  def plus(l: SValue, r: SValue, tpe: SType = NoType): MethodCallLike =
+    MethodCallLike(l, "+", IndexedSeq(r), tpe)
 
   val EV: ScriptEnv = Map()
 
@@ -39,7 +39,7 @@ trait LangTests {
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
   protected val p1: SigmaBoolean = ProveDlog(GroupElementConstant(g1))
   protected val p2: SigmaBoolean = ProveDlog(GroupElementConstant(g2))
-  protected val dht1: SigmaBoolean = ProveDiffieHellmanTuple(
+  protected val dht1: SigmaBoolean = ProveDHTuple(
       GroupElementConstant(g1), GroupElementConstant(g2), GroupElementConstant(g3), GroupElementConstant(g4))
 
   val env = Map(

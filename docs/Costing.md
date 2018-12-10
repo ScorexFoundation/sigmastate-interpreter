@@ -16,6 +16,26 @@ The box `ib` itself is accessed via `SELF` property of the `Context` data struct
 Besides `Context` execution of a contract depends on votable `ProtocolParameters` data, which contains
 global parameters which can be set up by miners following a voting protocol.
 
+### Costing Rules
+
+The following constants are used in cost and size calculations.
+
+Constant Name | Description
+--------------|------------
+GroupSize     | Number of bytes to represent any group element as byte array
+
+The following table shows the rules for calculating cost and size for a result of each operation
+based on costs and sizes of the operations arguments.
+The operations names are given by the node classes of ErgoTree.
+
+
+Operation            |  Cost in time units, Size in bytes
+---------------------|-----------------------------------
+`ProveDLog`          | CT("ProveDlogEval"), GroupSize 
+`ProveDHTuple`       | CT("ProveDHTupleEval"), GroupSize * 4
+x,y: BigInt; x op y where op in ("+", "-") | cost(x) + cost(y) + CT("op"), MaxSizeInBytes 
+
+
 ### Asymptotic complexity of the costing algorithm
 
 For a given input box `ib` the algorithm consists of the following steps (details of each 
@@ -27,7 +47,7 @@ step are given in later sections):
 2   | Deserialize `propBytes` to ErgoTree `tree`  with `N` nodes        | `O(len) and N = O(len)` 
 3   | Recursively traverse `tree` and build costed graph `graphC` with `M <= N` nodes | `O(N)`
 4   | Split `graphC` into calculation function `calcF` and cost estimation function `costF` | `O(M)`
-5   | Topoligically sort nodes of `costF` for execution (Tarjan algorithm) | `O(M)`
+5   | Topologically sort nodes of `costF` for execution (Tarjan algorithm) | `O(M)`
 6   | Iterate over sorted nodes of `costF` and execute primitive ops    | `O(M)` 
 
 #### Overview of Costing Process 
@@ -196,9 +216,9 @@ If `Item` is a type of array element, then costed value of type `Col[Item]` is
 represented by the following specializations of `Costed[Col[Item]]` type
 ```scala 
 class CCostedCol[Item](
-      val values: Col[Item], val costs: Col[Int],
-      val sizes: Col[Long], val valuesCost: Int) extends CostedCol[Item] {
-  def value: Col[Item] = values
+      val values: Coll[Item], val costs: Coll[Int],
+      val sizes: Coll[Long], val valuesCost: Int) extends CostedCol[Item] {
+  def value: Coll[Item] = values
   def cost: Int = valuesCost + costs.sum
   def dataSize: Long = sizes.sum
   def mapCosted[Res](f: Costed[Item] => Costed[Res]): CostedCol[Res] = rewritableMethod
@@ -290,7 +310,7 @@ explicit by using `eval` helper and also employ other idioms of staged evaluatio
   case MapCollection(input, id, mapper) =>
     val eIn = stypeToElem(input.tpe.elemType)   // translate sigma type to Special type descriptor
     val xs = asRep[CostedCol[Any]](eval(input)) // recursively build subgraph for input argument
-    implicit val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+    implicit val eAny = xs.elem.asInstanceOf[CostedElem[Coll[Any],_]].eVal.eA
     assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
     val mapperC = fun { x: Rep[Costed[Any]] => // x argument is already costed
       evalNode(ctx, env + (id -> x), mapper)   // associate id in the tree with x node of the graph
