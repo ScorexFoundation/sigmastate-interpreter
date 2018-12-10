@@ -342,12 +342,12 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
 
     def canProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
-      val proof = prover.prove(proposition.isValid, ctx, fakeMessage).get
-      verifier.verify(proposition.isValid, ctx, proof, fakeMessage).get._1 shouldBe true
+      val proof = prover.prove(proposition.isProven, ctx, fakeMessage).get
+      verifier.verify(proposition.isProven, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
     def cannotProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
-      prover.prove(proposition.isValid, ctx, fakeMessage).isFailure shouldBe true
+      prover.prove(proposition.isProven, ctx, fakeMessage).isFailure shouldBe true
     }
 
 
