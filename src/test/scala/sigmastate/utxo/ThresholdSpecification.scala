@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoLikeContext
 import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.Values.{BlockValue, ConcreteCollection, FalseLeaf, SigmaBoolean, SigmaPropConstant, SigmaPropValue, TrueLeaf, ValDef, ValUse, Value}
+import sigmastate.Values.{BlockValue, ConcreteCollection, FalseLeaf, IntConstant, SigmaBoolean, SigmaPropConstant, SigmaPropValue, TrueLeaf, ValDef, ValUse, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
@@ -56,10 +56,8 @@ class ThresholdSpecification extends SigmaTestingCommons {
         |}""".stripMargin).asBoolValue
 
 
-    val prop2 = BlockValue(
-      Vector(ValDef(1, ConcreteCollection(Vector[SigmaPropValue](pubkeyA, pubkeyB, pubkeyC), SSigmaProp))),
-      AtLeast(SizeOf(ValUse(1, SCollection(SSigmaProp))), ValUse(1, SCollection(SSigmaProp)))
-    )
+    val prop2 = AtLeast(IntConstant(3),
+      ConcreteCollection(Vector[SigmaPropValue](pubkeyA, pubkeyB, pubkeyC), SSigmaProp))
     compiledProp2 shouldBe prop2
 
     val proof = proverABC.prove(compiledProp2, ctx, fakeMessage).get

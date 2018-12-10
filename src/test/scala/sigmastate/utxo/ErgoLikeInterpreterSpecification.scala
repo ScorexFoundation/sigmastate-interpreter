@@ -51,8 +51,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val ci = secret.commonInput
 
-    val prop = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.v)).isProven
-    val wrongProp = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.u)).isProven
+    val prop = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.v))
+    val wrongProp = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.u))
 
     val env = Map("g" -> ci.g, "h" -> ci.h, "u" -> ci.u, "v" -> ci.v, "s" -> secret.publicImage)
     val compiledProp1 = compileWithCosting(env, "s.isProven").asBoolValue
@@ -69,11 +69,11 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(prop.isProven, ctx, fakeMessage).get
+    verifier.verify(prop.isProven, ctx, pr, fakeMessage).get._1 shouldBe true
 
-    fakeProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
-    prover.prove(wrongProp, ctx, fakeMessage).isSuccess shouldBe false
+    fakeProver.prove(prop.isProven, ctx, fakeMessage).isSuccess shouldBe false
+    prover.prove(wrongProp.isProven, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   property("DH tuple - simulation") {
