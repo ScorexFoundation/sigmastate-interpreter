@@ -340,7 +340,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
   property("deserialize") {
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
-    testEval(s"""deserialize[Coll[Byte]]("$str").size == 1""")
     testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
   }
 }
