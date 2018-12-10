@@ -3,7 +3,9 @@ package sigmastate.utxo
 import org.ergoplatform
 import org.ergoplatform._
 import org.scalacheck.Gen
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
@@ -212,5 +214,61 @@ class SpamSpecification extends SigmaTestingCommons {
     println(s"Verifier time: ${(pt2 - pt) / 1000.0} seconds")
     terminated shouldBe true
     res.isFailure shouldBe true
+  }
+
+  property("too heavy avl tree lookup") {
+    val reg1 = ErgoBox.nonMandatoryRegisters.head
+    def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)
+    def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)
+
+    val prover = new ErgoLikeTestProvingInterpreter(Long.MaxValue)
+    val verifier = new ErgoLikeTestInterpreter
+
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+
+    (1 to 100000).foreach {i =>
+      avlProver.performOneOperation(Insert(genKey(s"key$i"), genValue(s"value$i")))
+    }
+    avlProver.generateProof()
+
+    val digest = avlProver.digest
+
+    (1 to 100000).foreach { i =>
+      avlProver.performOneOperation(Lookup(genKey(s"key$i")))
+    }
+
+    val proof = avlProver.generateProof()
+
+    println("proof size: " + proof.length)
+
+    val treeData = new AvlTreeData(digest, 32, None)
+
+    val key1 = genKey("key1")
+    val value1 = genValue("value1")
+
+    val prop = EQ(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+      ByteArrayConstant(key1),
+      ByteArrayConstant(proof)).get, ByteArrayConstant(value1))
+
+    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBoxes = IndexedSeq(newBox1)
+
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+
+    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(s),
+      spendingTransaction,
+      self = s)
+
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    println("Cost: " + pr.cost)
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe false
   }
 }
