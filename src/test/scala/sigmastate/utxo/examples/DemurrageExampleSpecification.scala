@@ -61,19 +61,19 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         | val outIdx = getVar[Short](127).get
         | val out = OUTPUTS(outIdx)
         |
-        | val c1 = allOf(Col(
-        |   HEIGHT >= SELF.R3[(Long, Col[Byte])].get._1 + demurragePeriod,
-        |   SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Col[Byte])].get._1) <= 0
+        | val c1 = allOf(Coll(
+        |   HEIGHT >= SELF.R3[(Long, Coll[Byte])].get._1 + demurragePeriod,
+        |   SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Coll[Byte])].get._1) <= 0
         | ))
         |
-        | val c2 = allOf(Col(
-        |   HEIGHT >= SELF.R3[(Long, Col[Byte])].get._1 + demurragePeriod,
-        |   out.R3[(Long, Col[Byte])].get._1 == HEIGHT,
-        |   out.value >= SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Col[Byte])].get._1),
+        | val c2 = allOf(Coll(
+        |   HEIGHT >= SELF.R3[(Long, Coll[Byte])].get._1 + demurragePeriod,
+        |   out.R3[(Long, Coll[Byte])].get._1 == HEIGHT,
+        |   out.value >= SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Coll[Byte])].get._1),
         |   out.propositionBytes == SELF.propositionBytes
         | ))
         |
-        | anyOf(Col(regScript, c1, c2))
+        | anyOf(Coll(regScript, c1, c2))
         | }
       """.stripMargin).asBoolValue
 
@@ -81,7 +81,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     todo: fix / uncomment
     val reg1 = ErgoBox.nonMandatoryRegisters.head
     val propTree = BinOr(
-      SigmaPropConstant(regScript).isValid,
+      SigmaPropConstant(regScript).isProven,
       AND(
         GE(Height, Plus(ExtractRegisterAs[STuple](Self, reg1).get.asTuple. , LongConstant(demurragePeriod))),
         Exists(Outputs, 21,
@@ -108,14 +108,14 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val currentHeight1 = inHeight + demurragePeriod - 1
 
     val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue, prop, currentHeight1)))
-
+    val selfBox = createBox(inValue, prop, inHeight)
     val ctx1 = ErgoLikeContext(
       currentHeight1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx1,
-      self = createBox(inValue, prop, inHeight),
+      self = selfBox,
       extension = ce)
 
     //user can spend all the money
@@ -133,9 +133,9 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx2,
-      self = createBox(inValue, prop, inHeight),
+      self = selfBox,
       extension = ce)
 
     //user can spend all the money
@@ -149,9 +149,9 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(b),
+      boxesToSpend = IndexedSeq(b, selfBox),
       spendingTransaction = tx3,
-      self = createBox(inValue, prop, inHeight))
+      self = selfBox)
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
 
@@ -166,9 +166,9 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(b2),
+      boxesToSpend = IndexedSeq(b2, selfBox),
       spendingTransaction = tx4,
-      self = createBox(inValue, prop, inHeight),
+      self = selfBox,
       extension = ce)
 
     minerProver.prove(prop, ctx4, fakeMessage).isSuccess shouldBe false
@@ -182,9 +182,9 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx5,
-      self = createBox(inValue, prop, inHeight),
+      self = selfBox,
       extension = ce)
 
     val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get
@@ -194,14 +194,14 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val iv = inValue - outValue
     val b3 = createBox(iv, Values.FalseLeaf, currentHeight2)
     val tx6 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b3))
-
+    val selfBox6 = createBox(iv, prop, inHeight)
     val ctx6 = ErgoLikeContext(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(b3),
+      boxesToSpend = IndexedSeq(b3, selfBox6),
       spendingTransaction = tx6,
-      self = createBox(iv, prop, inHeight),
+      self = selfBox6,
       extension = ce)
 
     val mProof3 = minerProver.prove(prop, ctx6, fakeMessage).get

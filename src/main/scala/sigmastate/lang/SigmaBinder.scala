@@ -40,7 +40,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder) {
     }
 
     // Rule: Array[Int](...) -->
-    case e @ Apply(ApplyTypes(Ident("Col", _), Seq(tpe)), args) =>
+    case e @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
       val resTpe = if (args.isEmpty) tpe
       else {
         val elemType = args(0).tpe
@@ -51,7 +51,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder) {
       Some(mkConcreteCollection(args, resTpe))
 
     // Rule: Array(...) -->
-    case Apply(Ident("Col", _), args) =>
+    case Apply(Ident("Coll", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
       Some(mkConcreteCollection(args, tpe))
 

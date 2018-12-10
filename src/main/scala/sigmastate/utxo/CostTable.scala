@@ -63,9 +63,9 @@ object CostTable {
     ("Const", "() => String",  constCost),
     ("Const", "() => GroupElement", constCost),
     ("Const", "() => SigmaProp", constCost),
-    ("Const", "() => Col[IV]", constCost),
+    ("Const", "() => Coll[IV]", constCost),
     ("Const", "() => Box", constCost),
-    ("ConcreteCollection", "() => Col[IV]", constCost),
+    ("ConcreteCollection", "() => Coll[IV]", constCost),
     ("GroupGenerator$", "() => GroupElement", constCost),
     ("Self$", "Context => Box", constCost),
 
@@ -73,31 +73,22 @@ object CostTable {
     ("GetVar", "(Context, Byte) => Option[T]", extractCost),
     ("AccessRegister", "Box => Option[T]", extractCost),
     ("ExtractAmount", "(Box) => Long", extractCost),
-    ("ExtractId", "(Box) => Col[Byte]", extractCost),
-    ("ExtractBytes", "(Box) => Col[Byte]", extractCost),
-    ("ExtractScriptBytes", "(Box) => Col[Byte]", extractCost),
-    ("ExtractBytesWithNoRef", "(Box) => Col[Byte]", extractCost),
-    ("ExtractRegisterAs", "(Box,Byte) => Col[BigInt]", extractCost),
+    ("ExtractId", "(Box) => Coll[Byte]", extractCost),
+    ("ExtractBytes", "(Box) => Coll[Byte]", extractCost),
+    ("ExtractScriptBytes", "(Box) => Coll[Byte]", extractCost),
+    ("ExtractBytesWithNoRef", "(Box) => Coll[Byte]", extractCost),
+    ("ExtractRegisterAs", "(Box,Byte) => Coll[BigInt]", extractCost),
 
     ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
     ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
-    ("ByteArrayToBigInt", "(Col[Byte]) => BigInt", castOp),
-    ("new_BigInteger_per_item", "(Col[Byte]) => BigInt", MinimalCost),
+    ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
+    ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", MinimalCost),
 
-    ("Slice", "(Col[IV],Int,Int) => Col[IV]", collToColl),
-    ("Append", "(Col[IV],Col[IV]) => Col[IV]", collToColl),
-    ("SizeOf", "(Col[IV]) => Int", collAccess),
-    ("ByIndex", "(Col[IV],Int) => IV", collAccess),
+    ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
+    ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
+    ("SizeOf", "(Coll[IV]) => Int", collAccess),
+    ("ByIndex", "(Coll[IV],Int) => IV", collAccess),
 
-    ("SigmaPropIsValid", "SigmaProp => Boolean", logicCost),
-    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
-    ("SigmaPropBytes", "SigmaProp => Col[Byte]", logicCost),
-    ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
-    ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
-    ("AND", "(Col[Boolean]) => Boolean", logicCost),
-    ("OR_per_item", "(Col[Boolean]) => Boolean", logicCost),
-    ("AND_per_item", "(Col[Boolean]) => Boolean", logicCost),
-    ("AtLeast", "(Int, Col[Boolean]) => Boolean", logicCost),
     ("If", "(Boolean, T, T) => T", logicCost),
     //    ("If", "(Boolean, Unit, Unit) => Unit", MinimalCost),
     //    ("If", "(Boolean, Byte, Byte) => Byte", MinimalCost),
@@ -108,9 +99,19 @@ object CostTable {
     //    ("If", "(Boolean, GroupElement, GroupElement) => GroupElement", MinimalCost),
     //    ("If", "(Boolean, SigmaProp, SigmaProp) => SigmaProp", MinimalCost),
     //    ("If", "(Boolean, Array[IV], Array[IV]) => Array[IV]", MinimalCost),
-    ("CalcBlake2b256_per_kb", "(Col[Byte]) => Col[Byte]", hashPerKb),
-    ("CalcSha256_per_kb", "(Col[Byte]) => Col[Byte]", hashPerKb),
-    ("Xor_per_kb", "(Col[Byte],Col[Byte]) => Col[Byte]", hashPerKb / 2),
+
+    ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
+    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
+    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
+    ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
+    ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
+    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
+    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+    ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+    ("AtLeast", "(Int, Coll[Boolean]) => Boolean", logicCost),
+    ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
+    ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
+    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
     ("GT_per_kb", "(T,T) => Boolean", comparisonCost),
     ("GE_per_kb", "(T,T) => Boolean", comparisonCost),
     ("LE_per_kb", "(T,T) => Boolean", comparisonCost),
@@ -178,18 +179,18 @@ object CostTable {
     ("max", "(BigInt, BigInt) => BigInt", comparisonCost),
     ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
 
-    ("TreeModifications", "(AvlTree, Col[Byte], Col[Byte]) => Option[Col[Byte]]", treeOp),
-    ("TreeLookup", "(AvlTree, Col[Byte], Col[Byte]) => Option[Col[Byte]]", treeOp),
+    ("TreeModifications", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", treeOp),
+    ("TreeLookup", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", treeOp),
 
-    ("LongToByteArray", "(Long) => Col[Byte]", castOp),
+    ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
 
     ("ProveDlogEval", "(Unit) => SigmaProp", groupElementConst + constCost + 2 * expCost + multiplyGroup),
 
     //cost if of twice prove dlog
     ("ProveDHTuple", "(Unit) => SigmaProp", 2 * (groupElementConst + constCost + 2 * expCost + multiplyGroup)),
 
-    ("SigmaAnd_per_item", "(Col[SigmaProp]) => SigmaProp", sigmaAndCost),
-    ("SigmaOr_per_item", "(Col[SigmaProp]) => SigmaProp", sigmaOrCost),
+    ("SigmaAnd_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaAndCost),
+    ("SigmaOr_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaOrCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Int)]): CostTable = {
@@ -271,7 +272,7 @@ object CostTable {
     val SizeOfDeclaration = 30
     val ByIndexDeclaration = 50
     val SelectFieldDeclaration = 50
-    val SigmaPropIsValidDeclaration = 50
+    val SigmaPropIsProvenDeclaration = 50
     val SigmaPropBytesDeclaration = 50
 
     val MapDeclaration = 100
@@ -327,7 +328,7 @@ object CostTableStat {
     * ("Const", "() => SByte", 1206), // count=199
     * ("GT", "(T,T) => SBoolean", 7954), // count=157
     * ("/", "(SByte,SByte) => SByte", 25180), // count=2
-    * ("Inputs$", "(SContext) => Col[SBox]", 4699), // count=443; minLen=0; maxLen=1000; avgLen=9
+    * ("Inputs$", "(SContext) => Coll[SBox]", 4699), // count=443; minLen=0; maxLen=1000; avgLen=9
     * ("OptionIsDefined", "(Option[SSigmaProp]) => SBoolean", 9251), // count=2
     * )
     * */

@@ -22,7 +22,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = boxesToSpend,
       spendingTransaction = ErgoLikeTransaction(IndexedSeq(), outputs),
-      self = fakeSelf)
+      self = null)
 
   private def assertProof(code: String,
                           expectedComp: Value[SType],
@@ -62,7 +62,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage.isValid
+    val pubkey = prover.dlogSecrets.head.publicImage.isProven
 
     val prop = compileWithCosting(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue
 
@@ -83,7 +83,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
 
@@ -115,7 +115,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
 
@@ -147,7 +147,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
 
@@ -158,7 +158,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage.isValid
+    val pubkey = prover.dlogSecrets.head.publicImage.isProven
 
     val prop = compileWithCosting(Map(),
       """OUTPUTS.exists { (box: Box) =>
@@ -187,7 +187,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
 
@@ -231,7 +231,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
 
@@ -247,7 +247,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val env = Map("pubkey" -> pubkey)
     val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asBoolValue
-    val propTree = BinAnd(pubkey.isValid, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
+    val propTree = BinAnd(pubkey.isProven, EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1))))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(11, pubkey, 0)
@@ -385,7 +385,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """{
-        |  val indexCollection = Col(0, 1, 2, 3, 4, 5)
+        |  val indexCollection = Coll(0, 1, 2, 3, 4, 5)
         |  val elementRule = {(index: Int) =>
         |    val boundaryIndex = if (index == 0) 5 else (index - 1)
         |    boundaryIndex >= 0 && boundaryIndex <= 5
@@ -414,8 +414,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val outputBoxValues = IndexedSeq(10L, 10L)
     val code =
       """{
-        |  val string = Col(1, 1, 0, 0, 0, 1)
-        |  val indexCollection = Col(0, 1, 2, 3, 4, 5)
+        |  val string = Coll(1, 1, 0, 0, 0, 1)
+        |  val indexCollection = Coll(0, 1, 2, 3, 4, 5)
         |  val elementRule = {(index: Int) =>
         |    val boundedIndex = if (index <= 0) 5 else (index - 1)
         |    val element = string(boundedIndex)

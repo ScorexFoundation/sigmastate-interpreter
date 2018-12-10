@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.{DLogProtocol, ProveDiffieHellmanTuple}
+import scapi.sigma.{DLogProtocol, ProveDHTuple}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
 import sigmastate._
@@ -132,10 +132,10 @@ trait SigmaBuilder {
                                 vv: Value[SGroupElement.type]): SigmaBoolean
   def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
 
-  /** Logically inverse to mkSigmaPropIsValid */
+  /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
   /** Logically inverse to mkBoolToSigmaProp */
-  def mkSigmaPropIsValid(value: Value[SSigmaProp.type]): BoolValue
+  def mkSigmaPropIsProven(value: Value[SSigmaProp.type]): BoolValue
 
   def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray]
   def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue
@@ -158,10 +158,13 @@ trait SigmaBuilder {
   def mkIdent(name: String, tpe: SType): Value[SType]
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
   def mkApplyTypes(input: Value[SType], tpeArgs: Seq[SType]): Value[SType]
-  def mkMethodCall(obj: Value[SType],
+  def mkMethodCallLike(obj: Value[SType],
                    name: String,
                    args: IndexedSeq[Value[SType]],
                    tpe: SType = NoType): Value[SType]
+  def mkMethodCall(obj: Value[SType],
+                  method: SMethod,
+                  args: IndexedSeq[Value[SType]]): Value[SType]
   def mkLambda(args: IndexedSeq[(String,SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
@@ -409,14 +412,14 @@ class StdSigmaBuilder extends SigmaBuilder {
                                          hv: Value[SGroupElement.type],
                                          uv: Value[SGroupElement.type],
                                          vv: Value[SGroupElement.type]): SigmaBoolean =
-    ProveDiffieHellmanTuple(gv, hv, uv, vv)
+    ProveDHTuple(gv, hv, uv, vv)
 
   override def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean =
     ProveDlog(value)
 
   override def mkBoolToSigmaProp(value: BoolValue) = BoolToSigmaProp(value)
 
-  override def mkSigmaPropIsValid(value: Value[SSigmaProp.type]) = SigmaPropIsValid(value)
+  override def mkSigmaPropIsProven(value: Value[SSigmaProp.type]) = SigmaPropIsProven(value)
 
   override def mkSigmaPropBytes(value: Value[SSigmaProp.type]) = SigmaPropBytes(value)
 
@@ -462,11 +465,16 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkApplyTypes(input: Value[SType], tpeArgs: Seq[SType]): Value[SType] =
     ApplyTypes(input, tpeArgs)
 
-  override def mkMethodCall(obj: Value[SType],
+  override def mkMethodCallLike(obj: Value[SType],
                             name: String,
                             args: IndexedSeq[Value[SType]],
                             tpe: SType): Value[SType] =
-    MethodCall(obj, name, args, tpe)
+    MethodCallLike(obj, name, args, tpe)
+
+  override def mkMethodCall(obj: Value[SType],
+                            method: SMethod,
+                            args: IndexedSeq[Value[SType]]): Value[SType] =
+    MethodCall(obj, method, args)
 
   override def mkLambda(args: IndexedSeq[(String, SType)],
                         givenResType: SType,

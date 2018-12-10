@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.ProveDHTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util._
@@ -37,7 +37,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbTaggedAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedAvlTreeGen)
 
   implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
-  implicit val arbProveDHT: Arbitrary[ProveDiffieHellmanTuple] = Arbitrary(proveDHTGen)
+  implicit val arbProveDHT: Arbitrary[ProveDHTuple] = Arbitrary(proveDHTGen)
   implicit val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
 
 
@@ -87,12 +87,12 @@ trait ValueGenerators extends TypeGenerators {
 
   val proveDlogGen: Gen[ProveDlog] =
     arbGroupElementConstant.arbitrary.map(v => mkProveDlog(v).asInstanceOf[ProveDlog])
-  val proveDHTGen: Gen[ProveDiffieHellmanTuple] = for {
+  val proveDHTGen: Gen[ProveDHTuple] = for {
     gv: Value[SGroupElement.type] <- groupElementConstGen
     hv: Value[SGroupElement.type] <- groupElementConstGen
     uv: Value[SGroupElement.type] <- groupElementConstGen
     vv: Value[SGroupElement.type] <- groupElementConstGen
-  } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDiffieHellmanTuple]
+  } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDHTuple]
 
   val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
 

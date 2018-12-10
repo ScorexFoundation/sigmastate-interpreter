@@ -105,8 +105,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    val lastCoins = SELF.value <= oneEpochReduction
         |    val outputsNum = OUTPUTS.size == 2
         |    val correctMinerProposition = minerOut.propositionBytes ==
-        |      Col[Byte](0.toByte, 1.toByte, 7.toByte) ++ MinerPubkey ++ Col[Byte](-51.toByte, 115.toByte, 0.toByte)
-        |    allOf(Col(heightIncreased, correctMinerProposition, allOf(Col(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect)) || lastCoins))
+        |      Coll[Byte](0.toByte, 1.toByte, 7.toByte) ++ MinerPubkey ++ Coll[Byte](-51.toByte, 115.toByte, 0.toByte)
+        |    allOf(Coll(heightIncreased, correctMinerProposition, allOf(Coll(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect)) || lastCoins))
         |}""".stripMargin).asBoolValue
 
     prop1 shouldEqual prop

@@ -1,6 +1,6 @@
 package sigmastate.serialization.transformers
 
-import scapi.sigma.ProveDiffieHellmanTuple
+import scapi.sigma.ProveDHTuple
 import sigmastate.SGroupElement
 import sigmastate.Values.{Constant, GroupElementConstant, SigmaBoolean, Value}
 import sigmastate.lang.Terms._
@@ -14,14 +14,14 @@ case class ProveDiffieHellmanTupleSerializer(cons:
                                                Value[SGroupElement.type],
                                                Value[SGroupElement.type],
                                                Value[SGroupElement.type]) => SigmaBoolean)
-  extends ValueSerializer[ProveDiffieHellmanTuple] {
+  extends ValueSerializer[ProveDHTuple] {
 
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 
   private val constCodePrefix: Byte = 0
 
-  override def serializeBody(obj: ProveDiffieHellmanTuple, w: SigmaByteWriter): Unit = obj match {
-    case ProveDiffieHellmanTuple(
+  override def serializeBody(obj: ProveDHTuple, w: SigmaByteWriter): Unit = obj match {
+    case ProveDHTuple(
     gv @ Constant(_, SGroupElement),
     hv @ Constant(_, SGroupElement),
     uv @ Constant(_, SGroupElement),

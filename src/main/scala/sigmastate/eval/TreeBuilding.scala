@@ -273,7 +273,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       //      case SigmaM.lazyOr(In(l), In(r)) =>
       //        mkBinOr(l.asSigmaProp, r.asSigmaProp)
       case SigmaM.isValid(In(prop)) =>
-        mkSigmaPropIsValid(prop.asSigmaProp)
+        mkSigmaPropIsProven(prop.asSigmaProp)
       case SigmaM.propBytes(In(prop)) =>
         mkSigmaPropBytes(prop.asSigmaProp)
       case Def(TrivialSigmaCtor(In(cond))) =>

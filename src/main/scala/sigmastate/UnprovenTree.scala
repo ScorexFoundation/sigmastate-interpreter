@@ -6,7 +6,7 @@ import com.google.common.primitives.Shorts
 import gf2t.GF2_192_Poly
 import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import scapi.sigma.VerifierMessage.Challenge
-import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple}
+import scapi.sigma.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.serialization.ErgoTreeSerializer
 
@@ -107,7 +107,7 @@ case class UnprovenSchnorr(override val proposition: ProveDlog,
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
-case class UnprovenDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
+case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
                                       override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Challenge] = None,

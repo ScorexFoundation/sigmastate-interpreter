@@ -28,7 +28,7 @@ class CrowdFundingScriptContract(
     val compiledScript = compiler.compile(env,
       """{
        | val c1 = HEIGHT >= timeout && backerPubKey
-       | val c2 = allOf(Col(
+       | val c2 = allOf(Coll(
        |   HEIGHT < timeout,
        |   projectPubKey,
        |   OUTPUTS.exists({ (out: Box) =>

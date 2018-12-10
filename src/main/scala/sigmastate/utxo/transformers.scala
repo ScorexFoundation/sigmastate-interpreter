@@ -122,9 +122,9 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 }
 
 /** Represents execution of Sigma protocol that validates the given input SigmaProp. */
-case class SigmaPropIsValid(input: Value[SSigmaProp.type])
+case class SigmaPropIsProven(input: Value[SSigmaProp.type])
   extends Transformer[SSigmaProp.type, SBoolean.type] with NotReadyValueBoolean {
-  override val opCode: OpCode = OpCodes.SigmaPropIsValidCode
+  override val opCode: OpCode = OpCodes.SigmaPropIsProvenCode
   override def opType = SFunc(input.tpe, SBoolean)
 }
 

@@ -10,7 +10,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsValid, Slice}
+import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsProven, Slice}
 
 object Terms {
 
@@ -116,9 +116,29 @@ object Terms {
     override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
-  case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
+  /** Frontend node to represent potential method call in a source code.
+    * Should be resolved during compilation to MethodCall.
+    * Cannot be serialized to ErgoTree. */
+  case class MethodCallLike(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
     override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
+  }
+
+  /** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.*/
+  case class MethodCall(obj: Value[SType], method: SMethod, args: IndexedSeq[Value[SType]]) extends Value[SType] {
+    override val opCode: OpCode = if (args.isEmpty) OpCodes.PropertyCallCode else OpCodes.MethodCallCode
+    override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
+    override val tpe: SType = method.stype match {
+      case f: SFunc => f.tRange
+      case t => t
+    }
+  }
+  object MethodCall {
+    def fromIds(typeId: Byte, methodId: Byte): SMethod = {
+      val typeCompanion = SType.types.getOrElse(typeId, sys.error(s"Cannot find STypeCompanion instance for typeId=$typeId"))
+      val method = typeCompanion.getMethodById(methodId)
+      method
+    }
   }
 
   case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {

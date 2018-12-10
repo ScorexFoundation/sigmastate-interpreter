@@ -116,9 +116,9 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
       else
         error(s"The type of $obj is expected to be Collection to select 'size' property")
 
-    // Rule: proof.isValid --> IsValid(proof)
-    case Select(p, SSigmaProp.IsValid, _) if p.tpe == SSigmaProp =>
-      Some(SigmaPropIsValid(p.asSigmaProp))
+    // Rule: proof.isProven --> IsValid(proof)
+    case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
+      Some(SigmaPropIsProven(p.asSigmaProp))
 
     // Rule: proof.propBytes --> ProofBytes(proof)
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>

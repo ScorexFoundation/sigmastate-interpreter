@@ -53,24 +53,23 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "bigIntegerConst", "big", ergoCtx,
       calc = {_ => bigSym },
       cost = {_ => constCost[WBigInteger]},
-      size = {_ => sizeOf(bigSym)},
-      tree = BigIntConstant(big), Result(big, 1, 16))
+      size = {_ => SBigInt.MaxSizeInBytes },
+      tree = BigIntConstant(big), Result(big, 1, 32))
   }
   test("bigIntegerConstCase") {
     bigIntegerConstCase.doReduce
   }
 
   def addBigIntegerConstsCase = {
-    val size = (sizeOf(bigSym) max sizeOf(n1Sym)) + 1L
+//    val size = (sizeOf(bigSym) max sizeOf(n1Sym)) + 1L
     val res = big.add(n1)
     Case(env, "addBigIntegerConsts", "big + n1", ergoCtx,
       calc = {_ => bigSym.add(n1Sym) },
       cost = {_ => constCost[WBigInteger] + constCost[WBigInteger] +
-          costOf("+", SFunc(Vector(SBigInt, SBigInt), SBigInt)) +
-          costOf("+_per_item", SFunc(Vector(SBigInt, SBigInt), SBigInt)) * size.toInt },
-      size = {_ => size },
+          costOf("+", SFunc(Vector(SBigInt, SBigInt), SBigInt)) },
+      size = {_ => SBigInt.MaxSizeInBytes },
       tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)),
-      Result(res, 29, 17))
+      Result(res, 12, 32))
   }
   test("addBigIntegerConstsCase") {
     addBigIntegerConstsCase.doReduce()
@@ -111,12 +110,12 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => resSym },
       cost = {_ =>
-        val c1 = costOfProveDlog + costOf("SigmaPropIsValid", SFunc(SSigmaProp, SBoolean))
+        val c1 = costOfProveDlog + costOf("SigmaPropIsProven", SFunc(SSigmaProp, SBoolean))
         c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
       },
       size = {_ => typeSize[Boolean] },
       tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))),
-      Result(CAND(Seq(p1, p2)), 20107, 1))
+      Result(CAND(Seq(p1, p2)), 20110, 1))
   }
 
   test("andSigmaPropConstsCase") {
@@ -149,15 +148,13 @@ class CompilerItTest extends BaseCtxTests
 //        }
 //        val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
 //        val costs = colBuilder.replicate(arr.length, 0).zip(arrSizes).map(f)
-//        constCost[Col[WBigInteger]] + costs.sum(intPlusMonoid)
+//        constCost[Coll[WBigInteger]] + costs.sum(intPlusMonoid)
 //      },
       size = {_ =>
-        val f = fun {s: Rep[Long] => (s max sizeOf(liftConst(n1))) + 1L}
-        val arrSizes = colBuilder.fromArray(liftConst(Array(1L, 1L)))
-        arrSizes.map(f).sum(longPlusMonoid)
+        typeSize[WBigInteger] * liftConst(bigIntArr1).length.toLong
       },
       tree = mkMapCollection(BigIntArrayConstant(bigIntArr1), mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))),
-      Result(res, 27, 4))
+      Result(res, 23, 64))
   }
   test("bigIntArray_Map_Case") {
     bigIntArray_Map_Case.doReduce()
@@ -171,7 +168,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1.slice(0, 1), 2, 1))
+      Result(bigIntArr1.slice(0, 1), 21, 32))
   }
   test("bigIntArray_Slice_Case") {
     bigIntArray_Slice_Case.doReduce()
@@ -194,12 +191,12 @@ class CompilerItTest extends BaseCtxTests
   def register_BigIntArr_Case = {
     import SCollection._
     Case(env, "register_BigIntArr_Case",
-      "SELF.R4[Col[BigInt]].get", ergoCtx,
+      "SELF.R4[Coll[BigInt]].get", ergoCtx,
       calc = null,
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1, 2, 2L))
+      Result(bigIntArr1, 2, 64L))
   }
   test("register_BigIntArr_Case") {
     measure(5) { i =>
@@ -210,12 +207,12 @@ class CompilerItTest extends BaseCtxTests
   def register_BigIntArr_Map_Case = {
     import SCollection._
     Case(env, "register_BigIntArr_Map_Case",
-      "SELF.R4[Col[BigInt]].get.map { (i: BigInt) => i + n1 }", ergoCtx,
+      "SELF.R4[Coll[BigInt]].get.map { (i: BigInt) => i + n1 }", ergoCtx,
       calc = null,
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1.map(i => i.add(n1)), 28, 4L))
+      Result(bigIntArr1.map(i => i.add(n1)), 24, 64L))
   }
   test("register_BigIntArr_Map_Case") {
     register_BigIntArr_Map_Case.doReduce()
@@ -224,7 +221,7 @@ class CompilerItTest extends BaseCtxTests
   def register_BigIntArr_Slice_Case = {
     import SCollection._
     Case(env, "register_BinIntArr_Slice_Case",
-      "SELF.R4[Col[BigInt]].get.slice(0,1)", ergoCtx,
+      "SELF.R4[Coll[BigInt]].get.slice(0,1)", ergoCtx,
       calc = null,
       cost = null,
       size = null,
@@ -277,7 +274,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(1,SSigmaProp)
           ))))),
-      Result({ TrivialProof.FalseProof }, 40360, 1L)
+      Result({ TrivialProp.FalseProp }, 40663, 1L)
     )
   }
   test("crowdFunding_Case") {

@@ -27,6 +27,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       val self: ErgoBox,
                       override val extension: ContextExtension = ContextExtension(Map())
                  ) extends Context {
+  assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, spendingTransaction, self, newExtension)
 
@@ -73,7 +74,7 @@ object ErgoLikeContext {
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,
-    lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(),
+    lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(selfDesc),
     spendingTransaction = null, self = selfDesc)
 
   def fromTransaction(tx: ErgoLikeTransaction,
