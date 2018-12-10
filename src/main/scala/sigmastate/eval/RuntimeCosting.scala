@@ -1,34 +1,26 @@
 package sigmastate.eval
 
 import java.math.BigInteger
-import java.util.IntSummaryStatistics
 
 import scala.language.implicitConversions
 import scala.language.existentials
-import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
 import scalan.{Lazy, SigmaLibrary, Nullable}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import scapi.sigma.ProveDHTuple
-import sigmastate.SCollection.SByteArray
-import sigmastate.Values.Value.Typed
 import sigmastate._
-import sigmastate.Values.{FuncValue, OptionValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
+import sigmastate.Values._
 import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
 import sigmastate.lang.Terms._
-import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 import ErgoLikeContext._
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
-import scorex.crypto.hash.Blake2b256.DigestSize
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SigmaCompiler}
@@ -748,7 +740,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
-    import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
+    import WOption._
+
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = RCCostedPrim(v, cost, sizeOf(v))
     object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(asRep[Costed[Any]](evalNode(ctx, env, v))) }
