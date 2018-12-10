@@ -134,7 +134,7 @@ object ErgoLikeContext {
     IR.sigmaDslBuilderValue.Cols.fromArray(res)
   }
 
-  implicit class ErgoBoxOps(ebox: ErgoBox) {
+  implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
     def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
       if (ebox == null) return null
       val givenRegs = ebox.additionalRegisters ++ ErgoBox.mandatoryRegisters.map(id => (id, ebox.get(id).get))

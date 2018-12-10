@@ -275,7 +275,7 @@ object Values {
     }
   }
 
-  implicit class AvlTreeConstantOps(c: AvlTreeConstant) {
+  implicit class AvlTreeConstantOps(val c: AvlTreeConstant) extends AnyVal {
     def createVerifier(proof: SerializedAdProof) =
       new BatchAVLVerifier[Digest32, Blake2b256.type](
         c.value.startingDigest,
@@ -358,7 +358,7 @@ object Values {
     }
   }
 
-  implicit class CollectionConstantOps[T <: SType](c: CollectionConstant[T]) {
+  implicit class CollectionConstantOps[T <: SType](val c: CollectionConstant[T]) extends AnyVal {
     def toConcreteCollection: ConcreteCollection[T] = {
       val tElem = c.tpe.elemType
       val items = c.value.map(v => tElem.mkConstant(v.asInstanceOf[tElem.WrappedType]))
@@ -555,7 +555,7 @@ object Values {
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
-  implicit class CollectionOps[T <: SType](coll: Value[SCollection[T]]) {
+  implicit class CollectionOps[T <: SType](val coll: Value[SCollection[T]]) extends AnyVal {
     def length: Int = matchCase(_.items.length, _.value.length, _.items.length)
     def items = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"), _.items)
 //    def isEvaluatedCollection =
@@ -578,17 +578,17 @@ object Values {
       )
   }
 
-  implicit class SigmaPropValueOps(p: Value[SSigmaProp.type]) {
+  implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
 
-  implicit class SigmaBooleanOps(sb: SigmaBoolean) {
+  implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
   }
 
-  implicit class BoolValueOps(b: BoolValue) {
+  implicit class BoolValueOps(val b: BoolValue) extends AnyVal {
     def toSigmaProp: SigmaPropValue = BoolToSigmaProp(b)
   }
 
@@ -658,7 +658,7 @@ object Values {
       FuncValue(IndexedSeq((argId,tArg)), body)
   }
 
-  implicit class OptionValueOps[T <: SType](p: Value[SOption[T]]) {
+  implicit class OptionValueOps[T <: SType](val p: Value[SOption[T]]) extends AnyVal {
     def get: Value[T] = OptionGet(p)
     def getOrElse(default: Value[T]): Value[T] = OptionGetOrElse(p, default)
     def isDefined: Value[SBoolean.type] = OptionIsDefined(p)

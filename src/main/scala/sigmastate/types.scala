@@ -100,7 +100,7 @@ object SType {
     SAvlTree, SBox
   ).map { t => (t.typeId, t) }.toMap
 
-  implicit class STypeOps(val tpe: SType) {
+  implicit class STypeOps(val tpe: SType) extends AnyVal {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
     def isSigmaProp: Boolean = tpe.isInstanceOf[SSigmaProp.type]
@@ -143,7 +143,7 @@ object SType {
     }).asInstanceOf[ClassTag[T]]
   }
 
-  implicit class AnyOps(x: Any) {
+  implicit class AnyOps(val x: Any) extends AnyVal {
     def asWrappedType: SType#WrappedType = x.asInstanceOf[SType#WrappedType]
   }
 
