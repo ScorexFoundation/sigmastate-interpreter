@@ -269,7 +269,7 @@ trait SNumericType extends SProduct {
   import SNumericType._
   override def ancestors: Seq[SType] = Nil
   def methods = SNumericType.methods
-  def isCastMethod (name: String): Boolean = Seq(ToByte, ToShort, ToInt, ToLong, ToBigInt).contains(name)
+  def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
   def upcast(i: AnyVal): WrappedType
   def downcast(i: AnyVal): WrappedType
@@ -296,6 +296,7 @@ object SNumericType extends STypeCompanion {
     SMethod(this, ToLong, SLong, 4),    // see Downcast
     SMethod(this, ToBigInt, SBigInt, 5) // see Downcast
   )
+  val castMethods: Array[String] = Array(ToByte, ToShort, ToInt, ToLong, ToBigInt)
 }
 
 trait SLogical extends SType {
