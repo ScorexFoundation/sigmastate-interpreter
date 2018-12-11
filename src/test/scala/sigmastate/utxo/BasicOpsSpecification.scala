@@ -438,7 +438,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val itemsStr = bytes.map(v => s"$v.toByte").mkString(",")
     assertExceptionThrown(
       test("BATBI1", env, ext,
-        s"{ byteArrayToBigInt(Col[Byte]($itemsStr)) > 0 }",
+        s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) > 0 }",
         GT(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)),
         onlyPositive = true
       ),
