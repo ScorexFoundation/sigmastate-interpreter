@@ -126,39 +126,37 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Evaluate array ops") {
-//    testEval("""{
-//              |  val arr = Array(1, 2) ++ Array(3, 4)
-//              |  arr.size == 4
-//              |}""".stripMargin)
-//    testEval("""{
-//              |  val arr = Array(1, 2, 3)
-//              |  arr.slice(1, 3) == Array(2, 3)
-//              |}""".stripMargin)
-//    testEval("""{
-//              |  val arr = bytes1 ++ bytes2
-//              |  arr.size == 6
-//              |}""".stripMargin)
-
-//    // TODO IndexOutOfBoundsException in ColsOverArraysDefs$ColOverArrayBuilder$ColOverArrayBuilderCtor.apply(...
-//    testEval("""{
-//              |  val arr = bytes1 ++ Array[Byte]()
-//              |  arr.size == 3
-//              |}""".stripMargin)
-//    testEval("""{
-//              |  val arr = Array[Byte]() ++ bytes1
-//              |  arr.size == 3
-//              |}""".stripMargin)
-
     testEval("""{
-              |  val arr = box1.R4[Coll[Int]].get
+              |  val arr = Coll(1, 2) ++ Coll(3, 4)
+              |  arr.size == 4
+              |}""".stripMargin)
+    testEval("""{
+              |  val arr = Coll(1, 2, 3)
+              |  arr.slice(1, 3) == Coll(2, 3)
+              |}""".stripMargin)
+    testEval("""{
+              |  val arr = bytes1 ++ bytes2
+              |  arr.size == 6
+              |}""".stripMargin)
+    testEval("""{
+              |  val arr = bytes1 ++ Coll[Byte]()
               |  arr.size == 3
               |}""".stripMargin)
     testEval("""{
-              |  val arr = box1.R5[Coll[Boolean]].get
+              |  val arr = Coll[Byte]() ++ bytes1
+              |  arr.size == 3
+              |}""".stripMargin)
+
+    testEval("""{
+              |  val arr = Coll(1, 2, 3)
+              |  arr.size == 3
+              |}""".stripMargin)
+    testEval("""{
+              |  val arr = Coll(true, false)
               |  anyOf(arr)
               |}""".stripMargin)
     testEval("""{
-              |  val arr = box1.R5[Coll[Boolean]].get
+              |  val arr = Coll(true, false)
               |  allOf(arr) == false
               |}""".stripMargin)
     testEval("""{
