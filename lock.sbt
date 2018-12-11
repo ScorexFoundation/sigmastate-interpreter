@@ -17,16 +17,16 @@ dependencyOverrides in ThisBuild ++= Seq(
   "com.typesafe.akka" % "akka-actor_2.12" % "2.4.20",
   "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.0",
   "commons-io" % "commons-io" % "2.5",
-  "io.github.scalan" % "common_2.12" % "master-98f4f086-SNAPSHOT",
-  "io.github.scalan" % "core_2.12" % "master-98f4f086-SNAPSHOT",
-  "io.github.scalan" % "library-api_2.12" % "master-98f4f086-SNAPSHOT",
-  "io.github.scalan" % "library-impl_2.12" % "master-98f4f086-SNAPSHOT",
-  "io.github.scalan" % "library_2.12" % "master-98f4f086-SNAPSHOT",
-  "io.github.scalan" % "macros_2.12" % "master-98f4f086-SNAPSHOT",
-  "io.github.scalan" % "meta_2.12" % "master-98f4f086-SNAPSHOT",
-  "io.github.scalan" % "sigma-api_2.12" % "master-708072b5-SNAPSHOT",
-  "io.github.scalan" % "sigma-impl_2.12" % "master-708072b5-SNAPSHOT",
-  "io.github.scalan" % "sigma-library_2.12" % "master-708072b5-SNAPSHOT",
+  "io.github.scalan" % "common_2.12" % "master-014a4749-SNAPSHOT",
+  "io.github.scalan" % "core_2.12" % "master-014a4749-SNAPSHOT",
+  "io.github.scalan" % "library-api_2.12" % "master-014a4749-SNAPSHOT",
+  "io.github.scalan" % "library-impl_2.12" % "master-014a4749-SNAPSHOT",
+  "io.github.scalan" % "library_2.12" % "master-014a4749-SNAPSHOT",
+  "io.github.scalan" % "macros_2.12" % "master-014a4749-SNAPSHOT",
+  "io.github.scalan" % "meta_2.12" % "master-014a4749-SNAPSHOT",
+  "io.github.scalan" % "sigma-api_2.12" % "master-a2f5a270-SNAPSHOT",
+  "io.github.scalan" % "sigma-impl_2.12" % "master-a2f5a270-SNAPSHOT",
+  "io.github.scalan" % "sigma-library_2.12" % "master-a2f5a270-SNAPSHOT",
   "javax.activation" % "activation" % "1.1",
   "jline" % "jline" % "2.14.3",
   "org.apache.ant" % "ant" % "1.9.6",
@@ -47,4 +47,4 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.typelevel" % "macro-compat_2.12" % "1.1.1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH b522061cccc49b5850b42ab8588ba33a642953fe
+// LIBRARY_DEPENDENCIES_HASH 7f59af55a1891d1328d199766a7510ddf154fd00
