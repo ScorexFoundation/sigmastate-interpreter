@@ -433,6 +433,19 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
+  property("ByteArrayToBigInt: big int should not exceed dlog group order ") {
+    val bytes = Array.fill[Byte](500)(1)
+    val itemsStr = bytes.map(v => s"$v.toByte").mkString(",")
+    assertExceptionThrown(
+      test("BATBI1", env, ext,
+        s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) > 0 }",
+        GT(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)),
+        onlyPositive = true
+      ),
+      _.getCause.isInstanceOf[RuntimeException]
+    )
+  }
+
   property("ExtractCreationInfo") {
     test("Info1", env, ext,
       "SELF.creationInfo._1 == 5L",
