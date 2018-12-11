@@ -43,7 +43,8 @@ trait ValueGenerators extends TypeGenerators {
 
   implicit val arbBigInteger = Arbitrary(arbBigInt.arbitrary.map(_.bigInteger))
   implicit val arbGroupElement = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
-  implicit val arbSigmaProp: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
+  implicit val arbSigmaBoolean: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
+  implicit val arbSigmaProp: Arbitrary[SigmaPropValue] = Arbitrary(sigmaPropGen)
   implicit val arbBox = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
@@ -95,6 +96,8 @@ trait ValueGenerators extends TypeGenerators {
   } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDHTuple]
 
   val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
+  val sigmaPropGen: Gen[SigmaPropValue] =
+    Gen.oneOf(proveDlogGen.map(SigmaPropConstant(_)), proveDHTGen.map(SigmaPropConstant(_)))
 
   val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
@@ -187,7 +190,7 @@ trait ValueGenerators extends TypeGenerators {
     case SLong => arbLong
     case SBigInt => arbBigInteger
     case SGroupElement => arbGroupElement
-    case SSigmaProp => arbSigmaProp
+    case SSigmaProp => arbSigmaBoolean
     case SBox => arbBox
     case SAvlTree => arbAvlTreeData
     case SAny => arbAnyVal

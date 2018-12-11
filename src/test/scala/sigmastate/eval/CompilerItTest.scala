@@ -104,18 +104,15 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def andSigmaPropConstsCase = {
+    import SigmaDslBuilder._
     val p1Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
     val p2Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g2.asInstanceOf[ECPoint]))
-    val resSym = (p1Sym && p2Sym)
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
-      calc = {_ => resSym },
-      cost = {_ =>
-        val c1 = costOfProveDlog + costOf("SigmaPropIsProven", SFunc(SSigmaProp, SBoolean))
-        c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
-      },
-      size = {_ => typeSize[Boolean] },
+      calc = {_ => dsl.allZK(colBuilder.fromItems(p1Sym, p2Sym)) },
+      cost = null,
+      size = null,
       tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))),
-      Result(CAND(Seq(p1, p2)), 20107, 1))
+      Result(CAND(Seq(p1, p2)), 20106, 66))
   }
 
   test("andSigmaPropConstsCase") {
@@ -274,7 +271,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(1,SSigmaProp)
           ))))),
-      Result({ TrivialProp.FalseProp }, 40360, 1L)
+      Result({ TrivialProp.FalseProp }, 40361, 1L)
     )
   }
   test("crowdFunding_Case") {

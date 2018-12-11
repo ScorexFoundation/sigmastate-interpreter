@@ -4,6 +4,7 @@ import org.ergoplatform.{ErgoLikeContext, Height}
 import org.scalacheck.Gen
 import sigmastate.Values.LongConstant
 import sigmastate._
+import sigmastate.lang.Terms._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 
 import scala.util.Random
@@ -30,9 +31,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-    val compiledProp = compile(env, """pubkeyA || pubkeyB""")
+    val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB""").asBoolValue
 
-    val prop = BinOr(pubkeyA.isProven, pubkeyB.isProven)
+    val prop = SigmaOr(pubkeyA, pubkeyB)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -43,13 +44,13 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
 
-    val prB = proverB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prB, fakeMessage).get._1 shouldBe true
+    val prB = proverB.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prB, fakeMessage).get._1 shouldBe true
 
-    proverC.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverC.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
   }
 
   property("simplest linear-sized ring signature (1-out-of-3 OR), with anyOf syntax") {
@@ -63,9 +64,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compile(env, """anyOf(Coll(pubkeyA, pubkeyB, pubkeyC))""")
+    val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA, pubkeyB, pubkeyC))""").asBoolValue
 
-    val prop = OR(pubkeyA.isProven, pubkeyB.isProven, pubkeyC.isProven)
+    val prop = SigmaOr(pubkeyA, pubkeyB, pubkeyC)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -76,14 +77,14 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
 
-    val prB = proverB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prB, fakeMessage).get._1 shouldBe true
+    val prB = proverB.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prB, fakeMessage).get._1 shouldBe true
 
-    val prC = proverC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prC, fakeMessage).get._1 shouldBe true
+    val prC = proverC.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prC, fakeMessage).get._1 shouldBe true
   }
 
   property("simplest linear-sized ring signature (1-out-of-3 OR), with || syntax") {
@@ -97,9 +98,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compile(env, """pubkeyA || pubkeyB || pubkeyC""")
+    val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB || pubkeyC""").asBoolValue
 
-    val prop = BinOr(BinOr(pubkeyA.isProven, pubkeyB.isProven), pubkeyC.isProven)
+    val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), pubkeyC)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -110,14 +111,14 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
 
-    val prB = proverB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prB, fakeMessage).get._1 shouldBe true
+    val prB = proverB.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prB, fakeMessage).get._1 shouldBe true
 
-    val prC = proverC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prC, fakeMessage).get._1 shouldBe true
+    val prC = proverC.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prC, fakeMessage).get._1 shouldBe true
   }
 
   //two secrets are known, nevertheless, one will be simulated
@@ -132,9 +133,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyA4 = proverA.dlogSecrets(3).publicImage
 
     val env = Map("pubkeyA1" -> pubkeyA1, "pubkeyA2" -> pubkeyA2, "pubkeyA3" -> pubkeyA3, "pubkeyA4" -> pubkeyA4)
-    val compiledProp = compile(env, """anyOf(Coll(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""")
+    val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""").asBoolValue
 
-    val prop = OR(Seq(pubkeyA1.isProven, pubkeyA2.isProven, pubkeyA3.isProven, pubkeyA4.isProven))
+    val prop = SigmaOr(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -145,8 +146,8 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of two ANDs") {
@@ -163,9 +164,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compile(env, """pubkeyA && pubkeyB || pubkeyC && pubkeyD""")
+    val compiledProp = compileWithCosting(env, """pubkeyA && pubkeyB || pubkeyC && pubkeyD""").asBoolValue
 
-    val prop = BinOr(BinAnd(pubkeyA.isProven, pubkeyB.isProven), BinAnd(pubkeyC.isProven, pubkeyD.isProven))
+    val prop = SigmaOr(SigmaAnd(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -176,18 +177,18 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverC.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverD.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverC.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverD.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
-    val pr = proverAB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = proverAB.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val proverCD = proverC.withSecrets(Seq(proverD.dlogSecrets.head))
-    val pr2 = proverCD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr2, fakeMessage).get._1 shouldBe true
+    val pr2 = proverCD.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, pr2, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of AND and OR") {
@@ -204,9 +205,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compile(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""")
+    val compiledProp = compileWithCosting(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""").asBoolValue
 
-    val prop = BinOr(BinAnd(pubkeyA.isProven, pubkeyB.isProven), BinOr(pubkeyC.isProven, pubkeyD.isProven))
+    val prop = SigmaOr(SigmaAnd(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -217,18 +218,18 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
 
-    val prC = proverC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prC, fakeMessage).get._1 shouldBe true
+    val prC = proverC.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prC, fakeMessage).get._1 shouldBe true
 
-    val prD = proverD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prD, fakeMessage).get._1 shouldBe true
+    val prD = proverD.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prD, fakeMessage).get._1 shouldBe true
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
-    val pr = proverAB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = proverAB.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("simple sig scheme - AND of two") {
@@ -241,9 +242,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-    val compiledProp = compile(env, """pubkeyA && pubkeyB""")
+    val compiledProp = compileWithCosting(env, """pubkeyA && pubkeyB""").asBoolValue
 
-    val prop = BinAnd(pubkeyA.isProven, pubkeyB.isProven)
+    val prop = SigmaAnd(pubkeyA, pubkeyB)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -254,12 +255,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
-    val pr = proverAB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = proverAB.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of AND and DLOG") {
@@ -274,9 +275,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compile(env, """(pubkeyA && pubkeyB) || pubkeyC""")
+    val compiledProp = compileWithCosting(env, """(pubkeyA && pubkeyB) || pubkeyC""").asBoolValue
 
-    val prop = BinOr(BinAnd(pubkeyA.isProven, pubkeyB.isProven), pubkeyC.isProven)
+    val prop = SigmaOr(SigmaAnd(pubkeyA, pubkeyB), pubkeyC)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -287,17 +288,17 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverC.prove(prop, ctx, fakeMessage).isSuccess shouldBe true
+    proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverC.prove(compiledProp, ctx, fakeMessage).isSuccess shouldBe true
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
-    val pr = proverAB.prove(prop, ctx, fakeMessage).get
+    val pr = proverAB.prove(compiledProp, ctx, fakeMessage).get
     println("proof size: " + pr.proof.length)
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    verifier.verify(compiledProp, ctx, pr, fakeMessage).get._1 shouldBe true
 
-    val pr2 = proverC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr2, fakeMessage).get._1 shouldBe true
+    val pr2 = proverC.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, pr2, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - AND of two ORs") {
@@ -314,9 +315,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compile(env, """(pubkeyA || pubkeyB) && (pubkeyC || pubkeyD)""")
+    val compiledProp = compileWithCosting(env, """(pubkeyA || pubkeyB) && (pubkeyC || pubkeyD)""").asBoolValue
 
-    val prop = BinAnd(BinOr(pubkeyA.isProven, pubkeyB.isProven), BinOr(pubkeyC.isProven, pubkeyD.isProven))
+    val prop = SigmaAnd(SigmaOr(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -327,18 +328,18 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverC.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverD.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverC.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverD.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
 
     val proverAC = proverA.withSecrets(Seq(proverC.dlogSecrets.head))
-    val pr = proverAC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = proverAC.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val proverBD = proverB.withSecrets(Seq(proverD.dlogSecrets.head))
-    val pr2 = proverBD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr2, fakeMessage).get._1 shouldBe true
+    val pr2 = proverBD.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, pr2, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - AND of AND and OR") {
@@ -355,9 +356,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compile(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""")
+    val compiledProp = compileWithCosting(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""").asBoolValue
 
-    val prop = BinAnd(BinAnd(pubkeyA.isProven, pubkeyB.isProven), BinOr(pubkeyC.isProven, pubkeyD.isProven))
+    val prop = SigmaAnd(SigmaAnd(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -368,21 +369,21 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    proverA.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverC.prove(prop, ctx, fakeMessage).isFailure shouldBe true
-    proverD.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverC.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
+    proverD.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
-    proverAB.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    proverAB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
 
     val proverABC = proverAB.withSecrets(Seq(proverC.dlogSecrets.head))
-    val prABC = proverABC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prABC, fakeMessage).get._1 shouldBe true
+    val prABC = proverABC.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prABC, fakeMessage).get._1 shouldBe true
 
     val proverABD = proverAB.withSecrets(Seq(proverC.dlogSecrets.head))
-    val prABD = proverABD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prABD, fakeMessage).get._1 shouldBe true
+    val prABD = proverABD.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prABD, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of two ORs") {
@@ -399,9 +400,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compile(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""")
+    val compiledProp = compileWithCosting(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""").asBoolValue
 
-    val prop = BinOr(BinOr(pubkeyA.isProven, pubkeyB.isProven), BinOr(pubkeyC.isProven, pubkeyD.isProven))
+    val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -412,17 +413,17 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
 
-    val prB = proverB.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prB, fakeMessage).get._1 shouldBe true
+    val prB = proverB.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prB, fakeMessage).get._1 shouldBe true
 
-    val prC = proverC.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prC, fakeMessage).get._1 shouldBe true
+    val prC = proverC.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prC, fakeMessage).get._1 shouldBe true
 
-    val prD = proverD.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prD, fakeMessage).get._1 shouldBe true
+    val prD = proverD.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prD, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR w. predicate") {
@@ -436,9 +437,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-    val compiledProp = compile(env, """anyOf(Coll(pubkeyA, pubkeyB, HEIGHT > 500))""")
+    val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA, pubkeyB, HEIGHT > 500))""").asBoolValue
 
-    val prop = OR(pubkeyA.isProven, pubkeyB.isProven, GT(Height, LongConstant(500)))
+    // rewritten by http://github.com/aslesarenko/sigma/blob/2740b51c86bdf1917f688d4ccdb1a0eae9755e0c/sigma-library/src/main/scala/scalan/SigmaLibrary.scala#L91
+    val prop = SigmaOr(GT(Height, LongConstant(500)).toSigmaProp, SigmaOr(pubkeyA, pubkeyB))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
@@ -448,11 +450,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
-    val prA = proverA.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prA, fakeMessage).get._1 shouldBe true
-    val prB = proverB.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prB, fakeMessage).get._1 shouldBe true
-    proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
+    val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
+    verifier.verify(compiledProp, ctx1, prA, fakeMessage).get._1 shouldBe true
+    val prB = proverB.prove(compiledProp, ctx1, fakeMessage).get
+    verifier.verify(compiledProp, ctx1, prB, fakeMessage).get._1 shouldBe true
+    proverC.prove(compiledProp, ctx1, fakeMessage).isFailure shouldBe true
 
     val ctx2 = ErgoLikeContext(
       currentHeight = 501,
@@ -461,8 +463,8 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
-    val prC = proverC.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prC, fakeMessage).get._1 shouldBe true
+    val prC = proverC.prove(compiledProp, ctx2, fakeMessage).get
+    verifier.verify(compiledProp, ctx2, prC, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate, parentheses") {
@@ -477,9 +479,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compile(env, """anyOf(Coll(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""")
+    val compiledProp = compileWithCosting(env,
+      """anyOf(Coll(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""").asBoolValue
 
-    val prop = OR(BinOr(pubkeyA.isProven, pubkeyB.isProven), BinAnd(pubkeyC.isProven, GT(Height, LongConstant(500))))
+    val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, LongConstant(500)).toSigmaProp))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
@@ -490,11 +493,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prA, fakeMessage).get._1 shouldBe true
-    val prB = proverB.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prB, fakeMessage).get._1 shouldBe true
-    proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
+    val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
+    verifier.verify(compiledProp, ctx1, prA, fakeMessage).get._1 shouldBe true
+    val prB = proverB.prove(compiledProp, ctx1, fakeMessage).get
+    verifier.verify(compiledProp, ctx1, prB, fakeMessage).get._1 shouldBe true
+    proverC.prove(compiledProp, ctx1, fakeMessage).isFailure shouldBe true
 
 
     val ctx2 = ErgoLikeContext(
@@ -505,12 +508,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA2 = proverA.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prA2, fakeMessage).get._1 shouldBe true
-    val prB2 = proverB.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prB2, fakeMessage).get._1 shouldBe true
-    val prC2 = proverC.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prC2, fakeMessage).get._1 shouldBe true
+    val prA2 = proverA.prove(compiledProp, ctx2, fakeMessage).get
+    verifier.verify(compiledProp, ctx2, prA2, fakeMessage).get._1 shouldBe true
+    val prB2 = proverB.prove(compiledProp, ctx2, fakeMessage).get
+    verifier.verify(compiledProp, ctx2, prB2, fakeMessage).get._1 shouldBe true
+    val prC2 = proverC.prove(compiledProp, ctx2, fakeMessage).get
+    verifier.verify(compiledProp, ctx2, prC2, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate, no parentheses") {
@@ -525,9 +528,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compile(env, """pubkeyA || pubkeyB ||  (pubkeyC && HEIGHT > 500)""")
+    val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB ||  (pubkeyC && HEIGHT > 500)""").asBoolValue
 
-    val prop = BinOr(BinOr(pubkeyA.isProven, pubkeyB.isProven), BinAnd(pubkeyC.isProven, GT(Height, LongConstant(500))))
+    val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, LongConstant(500)).toSigmaProp))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
@@ -538,11 +541,11 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prA, fakeMessage).get._1 shouldBe true
-    val prB = proverB.prove(prop, ctx1, fakeMessage).get
-    verifier.verify(prop, ctx1, prB, fakeMessage).get._1 shouldBe true
-    proverC.prove(prop, ctx1, fakeMessage).isFailure shouldBe true
+    val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
+    verifier.verify(compiledProp, ctx1, prA, fakeMessage).get._1 shouldBe true
+    val prB = proverB.prove(compiledProp, ctx1, fakeMessage).get
+    verifier.verify(compiledProp, ctx1, prB, fakeMessage).get._1 shouldBe true
+    proverC.prove(compiledProp, ctx1, fakeMessage).isFailure shouldBe true
 
 
     val ctx2 = ErgoLikeContext(
@@ -553,12 +556,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA2 = proverA.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prA2, fakeMessage).get._1 shouldBe true
-    val prB2 = proverB.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prB2, fakeMessage).get._1 shouldBe true
-    val prC2 = proverC.prove(prop, ctx2, fakeMessage).get
-    verifier.verify(prop, ctx2, prC2, fakeMessage).get._1 shouldBe true
+    val prA2 = proverA.prove(compiledProp, ctx2, fakeMessage).get
+    verifier.verify(compiledProp, ctx2, prA2, fakeMessage).get._1 shouldBe true
+    val prB2 = proverB.prove(compiledProp, ctx2, fakeMessage).get
+    verifier.verify(compiledProp, ctx2, prB2, fakeMessage).get._1 shouldBe true
+    val prC2 = proverC.prove(compiledProp, ctx2, fakeMessage).get
+    verifier.verify(compiledProp, ctx2, prC2, fakeMessage).get._1 shouldBe true
   }
 
   property("complex sig scheme - k-out-of-n threshold") {

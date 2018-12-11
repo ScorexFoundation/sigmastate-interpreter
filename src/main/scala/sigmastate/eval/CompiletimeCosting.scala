@@ -6,11 +6,12 @@ import scala.language.{existentials, implicitConversions}
 import scapi.sigma.{ProveDHTuple, DLogProtocol}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, SigmaPropConstant, Value, NotReadyValue, SigmaBoolean}
+import sigmastate.Values.{Constant, NotReadyValue, SValue, SigmaBoolean, SigmaPropConstant, Value}
 import sigmastate.lang.Terms.{Apply, _}
 import sigmastate.lang.SigmaPredef._
 import sigmastate.utxo._
 import sigmastate.SType._
+import sigmastate.SCollection._
 import sigmastate.Values.Value.Typed
 import sigmastate.lang.SigmaSpecializer.error
 import sigmastate.lang.{Terms, TransformingSigmaBuilder}
@@ -35,6 +36,10 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Terms.Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
         eval(mkOR(arr))
 
+      // Rule: atLeast(bound, arr) --> AtLeast(bound, arr)
+      case Terms.Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
+        eval(mkAtLeast(bound.asIntValue, arr))
+
       case Terms.Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
         eval(mkCalcBlake2b256(arg))
 
@@ -50,8 +55,31 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Terms.Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
         eval(mkLongToByteArray(arg))
 
-      case sigmastate.Upcast(Constant(value, tpe), toTpe: SNumericType) =>
+      case Terms.Apply(ByteArrayToBigIntSym, Seq(arr: Value[SByteArray]@unchecked)) =>
+        eval(mkByteArrayToBigInt(arr))
+
+      case Terms.Apply(SigmaPropSym, Seq(bool: Value[SBoolean.type]@unchecked)) =>
+        eval(mkBoolToSigmaProp(bool))
+
+      case Terms.Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
+        eval(SigmaPropConstant(
+          mkProveDiffieHellmanTuple(
+            g.asGroupElement,
+            h.asGroupElement,
+            u.asGroupElement,
+            v.asGroupElement)))
+
+      case Terms.Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
+        eval(mkTreeModifications(tree, operations, proof))
+
+      case Terms.Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
+        eval(mkTreeLookup(tree, key, proof))
+
+      case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
+
+      case sigmastate.Downcast(Constant(value, _), toTpe: SNumericType) =>
+        eval(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
 
       // Rule: col.size --> SizeOf(col)
       case Select(obj, "size", _) =>
@@ -99,6 +127,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
           case (box, SBox.Id) => eval(mkExtractId(box))
           case (box, SBox.Bytes) => eval(mkExtractBytes(box))
           case (box, SBox.BytesWithNoRef) => eval(mkExtractBytesWithNoRef(box))
+          case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
           case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
         }
 
@@ -112,8 +141,33 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
         val index = fn.substring(1).toByte
         eval(mkSelectField(tuple.asTuple, index))
 
-      case Terms.Apply(Select(col, "slice", _), Seq(from, until)) =>
+      case Select(obj, method, Some(tRes: SNumericType))
+        if obj.tpe.isNumType && obj.asNumValue.tpe.isCastMethod(method) =>
+        val numValue = obj.asNumValue
+        if (numValue.tpe == tRes)
+          eval(numValue)
+        else if ((numValue.tpe max tRes) == numValue.tpe)
+          eval(mkDowncast(numValue, tRes))
+        else
+          eval(mkUpcast(numValue, tRes))
+
+      case Terms.Apply(Select(col, SliceMethod.name, _), Seq(from, until)) =>
         eval(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
+
+      case Terms.Apply(Select(col, ExistsMethod.name, _), Seq(l)) if l.tpe.isFunc =>
+        eval(mkExists(col.asValue[SCollection[SType]], l.asFunc))
+
+      case Terms.Apply(Select(col, ForallMethod.name, _), Seq(l)) if l.tpe.isFunc =>
+        eval(mkForAll(col.asValue[SCollection[SType]], l.asFunc))
+
+      case Terms.Apply(Select(col, MapMethod.name, _), Seq(l)) if l.tpe.isFunc =>
+        eval(mkMapCollection(col.asValue[SCollection[SType]], l.asFunc))
+
+      case Terms.Apply(Select(col, FoldMethod.name, _), Seq(zero, l @ Terms.Lambda(_, _, _, _))) =>
+        eval(mkFold(col.asValue[SCollection[SType]], zero, l))
+
+      case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
+        eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
 
       case _ =>
         super.evalNode(ctx, env, node)

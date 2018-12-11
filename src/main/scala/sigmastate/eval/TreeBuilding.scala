@@ -42,7 +42,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import WArray._
   import WOption._
   import WECPoint._
-  
+
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val ColM = ColMethods
@@ -64,6 +64,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case _: NumericTimes[_]   => Some(MultiplyCode)
       case _: IntegralDivide[_] => Some(DivisionCode)
       case _: IntegralMod[_]    => Some(ModuloCode)
+      case _: OrderingMin[_]    => Some(MinCode)
+      case _: OrderingMax[_]    => Some(MaxCode)
       case _ => None
     }
   }
@@ -166,6 +168,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val elemTpe = elemToSType(elemT)
         val col = colSyms.map(recurse(_).asValue[elemTpe.type])
         mkConcreteCollection[elemTpe.type](col.toIndexedSeq, elemTpe)
+      case CBM.xor(_, colSym1, colSym2) =>
+        mkXor(recurse(colSym1), recurse(colSym2))
 
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
@@ -184,6 +188,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkArith(x.asNumValue, y.asNumValue, DivisionCode)
       case BIM.mod(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, ModuloCode)
+      case BIM.min(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, MinCode)
+      case BIM.max(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, MaxCode)
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)
@@ -234,6 +242,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
         mkExtractId(box.asBox)
+      case BoxM.bytes(In(box)) =>
+        mkExtractBytes(box.asBox)
+      case BoxM.bytesWithoutRef(In(box)) =>
+        mkExtractBytesWithNoRef(box.asBox)
 
       case OM.get(In(optionSym)) =>
         mkOptionGet(optionSym.asValue[SOption[SType]])
@@ -259,6 +271,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkAND(recurse(items))
       case Def(SDBM.anyOf(_,  items)) =>
         mkOR(recurse(items))
+      case Def(SDBM.atLeast(_, bound, items)) =>
+        mkAtLeast(recurse(bound), recurse(items))
 
       case SigmaM.and_bool_&&(In(prop), In(cond)) =>
         SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
@@ -285,9 +299,16 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case SDBM.sigmaProp(_, In(cond)) =>
         mkBoolToSigmaProp(cond.asBoolValue)
-
       case SDBM.byteArrayToBigInt(_, colSym) =>
         mkByteArrayToBigInt(recurse(colSym))
+      case SDBM.blake2b256(_, colSym) =>
+        mkCalcBlake2b256(recurse(colSym))
+      case SDBM.treeModifications(_, treeSym, opsColSym, proofColSym) =>
+        mkTreeModifications(recurse(treeSym), recurse(opsColSym), recurse(proofColSym))
+      case SDBM.treeLookup(_, treeSym, keySym, proofColSym) =>
+        mkTreeLookup(recurse(treeSym), recurse(keySym), recurse(proofColSym))
+      case SDBM.longToByteArray(_, longSym) =>
+        mkLongToByteArray(recurse(longSym))
 
       case Def(IfThenElseLazy(condSym, thenPSym, elsePSym)) =>
         val Seq(cond, thenP, elseP) = Seq(condSym, thenPSym, elsePSym).map(recurse)

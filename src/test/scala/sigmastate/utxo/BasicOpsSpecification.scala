@@ -48,7 +48,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   def test(name: String, env: ScriptEnv,
            ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
            script: String, propExp: SValue,
-      onlyPositive: Boolean = false) = {
+      onlyPositive: Boolean = true) = {
     val prover = new ErgoLikeTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
@@ -272,12 +272,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        OR(
-          MapCollection(data,
-            FuncValue(
-              Vector((1, STuple(SByteArray, SLong))),
-              EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
-          ).asCollection[SBoolean.type])
+        Exists(data,
+          FuncValue(
+            Vector((1, STuple(SByteArray, SLong))),
+            EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
+        )
       }
     )
     test("TupCol5", env1, ext1,
@@ -287,12 +286,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        AND(
-          MapCollection(data,
-            FuncValue(
-              Vector((1, STuple(SByteArray, SLong))),
-              GT(SizeOf(SelectField(ValUse(1, STuple(SByteArray, SLong)), 1).asCollection[SByte.type]), IntConstant(0)))
-          ).asCollection[SBoolean.type])
+        ForAll(data,
+          FuncValue(
+            Vector((1, STuple(SByteArray, SLong))),
+            GT(SizeOf(SelectField(ValUse(1, STuple(SByteArray, SLong)), 1).asCollection[SByte.type]), IntConstant(0)))
+        )
       }
     )
     test("TupCol6", env1, ext1,
@@ -472,4 +470,17 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 //    test("zk1", env, ext, "ZKProof { sigmaProp(HEIGHT >= 0) }",
 //      ZKProofBlock(BoolToSigmaProp(GE(Height, LongConstant(0)))), true)
 //  }
+
+  property("numeric cast") {
+    test("downcast", env, ext,
+      "{ getVar[Int](intVar2).get.toByte == 2.toByte }",
+      EQ(Downcast(GetVarInt(2).get, SByte), ByteConstant(2)),
+      onlyPositive = true
+    )
+    test("upcast", env, ext,
+      "{ getVar[Int](intVar2).get.toLong == 2L }",
+      EQ(Upcast(GetVarInt(2).get, SLong), LongConstant(2)),
+      onlyPositive = true
+    )
+  }
 }

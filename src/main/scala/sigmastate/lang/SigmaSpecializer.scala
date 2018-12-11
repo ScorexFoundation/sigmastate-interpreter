@@ -48,7 +48,7 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
       Some(mkOR(arr))
 
     // Rule: atLeast(bound, arr) --> AtLeast(bound, arr)
-    case Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
+    case Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
       Some(mkAtLeast(bound.asIntValue, arr))
 
     // Rule: ZKProof(block) --> ZKProofBlock(block)

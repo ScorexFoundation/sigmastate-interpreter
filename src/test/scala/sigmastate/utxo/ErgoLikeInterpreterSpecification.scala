@@ -1,8 +1,7 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
-import org.ergoplatform.ErgoLikeContext.Metadata
-import org.ergoplatform.ErgoLikeContext.Metadata._
+import org.ergoplatform.ErgoLikeContext._
 import org.ergoplatform._
 import org.scalatest.TryValues._
 import scapi.sigma.DLogProtocol.ProveDlog
@@ -31,8 +30,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val e = compile(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
-    val exp = EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h1.bytes))
+    val e = compileWithCosting(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
+    val exp = TrueLeaf
     e shouldBe exp
 
     verifier.reduceToCrypto(ctx, exp)
@@ -52,12 +51,12 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val ci = secret.commonInput
 
-    val prop = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.v)).isProven
-    val wrongProp = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.u)).isProven
+    val prop = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.v))
+    val wrongProp = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.u))
 
     val env = Map("g" -> ci.g, "h" -> ci.h, "u" -> ci.u, "v" -> ci.v, "s" -> secret.publicImage)
-    val compiledProp1 = compile(env, "s.isProven").asBoolValue
-    val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v).isProven").asBoolValue
+    val compiledProp1 = compileWithCosting(env, "s.isProven").asBoolValue
+    val compiledProp2 = compileWithCosting(env, "proveDHTuple(g, h, u, v).isProven").asBoolValue
     compiledProp1 shouldBe prop
     compiledProp2 shouldBe prop
 
@@ -70,11 +69,11 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(prop.isProven, ctx, fakeMessage).get
+    verifier.verify(prop.isProven, ctx, pr, fakeMessage).get._1 shouldBe true
 
-    fakeProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
-    prover.prove(wrongProp, ctx, fakeMessage).isSuccess shouldBe false
+    fakeProver.prove(prop.isProven, ctx, fakeMessage).isSuccess shouldBe false
+    prover.prove(wrongProp.isProven, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   property("DH tuple - simulation") {
@@ -87,9 +86,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubdhB = proverB.dhSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubdhB" -> pubdhB)
-    val compiledProp = compile(env, """pubkeyA || pubdhB""")
+    val compiledProp = compileWithCosting(env, """pubkeyA || pubdhB""").asBoolValue
 
-    val prop = BinOr(pubkeyA.isProven, pubdhB.isProven)
+    val prop = SigmaOr(pubkeyA, pubdhB)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -100,8 +99,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
   }
 
   property("DH tuple and DLOG") {
@@ -114,9 +113,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubdhA = proverA.dhSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubdhA" -> pubdhA)
-    val compiledProp = compile(env, """pubkeyA && pubdhA""")
+    val compiledProp = compileWithCosting(env, """pubkeyA && pubdhA""").asBoolValue
 
-    val prop = BinAnd(pubkeyA.isProven, pubdhA.isProven)
+    val prop = SigmaAnd(pubkeyA, pubdhA)
     compiledProp shouldBe prop
 
     val ctx = ErgoLikeContext(
@@ -127,11 +126,11 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val prA = proverA.prove(prop, ctx, fakeMessage).get
+    val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
 
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
 
-    proverB.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+    proverB.prove(compiledProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   ignore("mixing scenario w. timeout") {  // TODO Cost of the folded function depends on data
@@ -160,7 +159,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = {
       val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
-      val compiledProp = compile(env,
+      val compiledProp = compileWithCosting(env,
         """{
           |  val notTimePassed = HEIGHT <= timeout
           |  val outBytes = OUTPUTS.map({(box: Box) => box.bytesWithNoRef})
@@ -254,9 +253,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val compiledProp = compile(env, """pubkey && OUTPUTS(0).value > 10""")
+    val compiledProp = compileWithCosting(env, """pubkey && OUTPUTS(0).value > 10""").asBoolValue
 
-    val prop = BinAnd(pubkey.isProven, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(10)))
+    val prop = SigmaAnd(pubkey, BoolToSigmaProp(GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(10))))
     compiledProp shouldBe prop
 
     val newBox1 = ErgoBox(11, pubkey, 0)
@@ -273,8 +272,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = fakeSelf)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage)
+    val pr = prover.prove(compiledProp, ctx, fakeMessage).get
+    verifier.verify(compiledProp, ctx, pr, fakeMessage)
 
 
     val fProp1 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(11)))
@@ -325,16 +324,16 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val regPubkey1 = ErgoBox.nonMandatoryRegisters.head
     val regPubkey2 = ErgoBox.nonMandatoryRegisters.tail.head
 
-    val prop = compile(Map(),
+    val prop = compileWithCosting(Map(),
       """{
         |  val pubkey1 = SELF.R4[GroupElement].get
         |  val pubkey2 = SELF.R5[GroupElement].get
         |  proveDlog(pubkey1) && proveDlog(pubkey2)
         |}""".stripMargin).asBoolValue
 
-    val propTree = BinAnd(
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get).isProven,
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get).isProven)
+    val propTree = SigmaAnd(
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get),
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey3, 0)
@@ -577,7 +576,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val helloHash = Blake2b256.hash(preimageHello)
 
     val env = Map("helloHash" -> helloHash)
-    val prop = compile(env,
+    val prop = compileWithCosting(env,
       """{
         |  val cond = INPUTS(0).value > 10
         |  val preimage = if (cond)

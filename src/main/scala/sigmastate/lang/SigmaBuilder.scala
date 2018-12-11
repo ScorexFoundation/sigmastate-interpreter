@@ -44,7 +44,7 @@ trait SigmaBuilder {
 
   def mkBinOr(left: BoolValue, right: BoolValue): BoolValue
   def mkBinAnd(left: BoolValue, right: BoolValue): BoolValue
-  def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
+  def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]]): SigmaPropValue
 
   def mkExponentiate(left: Value[SGroupElement.type],
                      right: Value[SBigInt.type]): Value[SGroupElement.type]
@@ -276,7 +276,7 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBinAnd(left: BoolValue, right: BoolValue) = BinAnd(left, right)
 
-  override def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
+  override def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]]): SigmaPropValue =
     AtLeast(bound, input)
 
   override def mkExponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =

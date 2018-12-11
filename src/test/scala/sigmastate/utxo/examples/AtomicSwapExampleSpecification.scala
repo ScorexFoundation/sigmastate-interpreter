@@ -8,7 +8,7 @@ import sigmastate._
 import interpreter.Interpreter._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{ErgoLikeTestInterpreter, SizeOf}
+import sigmastate.utxo.{ErgoLikeTestInterpreter, GetVar, SizeOf}
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
@@ -42,7 +42,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       "height1" -> height1, "height2" -> height2,
       "deadlineA" -> deadlineA, "deadlineB" -> deadlineB,
       "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
-    val prop1 = compile(env,
+    val prop1 = compileWithCosting(env,
       """{
         |  anyOf(Coll(
         |    HEIGHT > height1 + deadlineA && pubkeyA,
@@ -51,9 +51,9 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
         |}""".stripMargin).asBoolValue
 
     //chain1 script
-    val prop1Tree = OR(
-      BinAnd(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))), pubkeyA.isProven),
-      BinAnd(pubkeyB.isProven, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
+    val prop1Tree = SigmaOr(
+      SigmaAnd(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))).toSigmaProp, pubkeyA),
+      SigmaAnd(pubkeyB, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx).toSigmaProp)
     )
     prop1 shouldBe prop1Tree
 
@@ -69,15 +69,27 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
         |  ))
         |}
       """.stripMargin
-    val prop2 = compile(env, script2).asBoolValue
+    val prop2 = compileWithCosting(env, script2).asBoolValue
 
     //chain2 script
-    val prop2Tree = OR(
-      BinAnd(GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))), pubkeyB.isProven),
-      AND(pubkeyA.isProven,
-        LT(SizeOf(GetVarByteArray(1).get), 33),
-        EQ(CalcBlake2b256(GetVarByteArray(1).get), hx))
+    val prop2Tree = BlockValue(
+      Vector(ValDef(1, GetVarByteArray(1).get)),
+      SigmaOr(
+        SigmaAnd(
+          GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))).toSigmaProp,
+          pubkeyB),
+        SigmaAnd(
+          AND(
+            ConcreteCollection(Vector(
+              LT(SizeOf(ValUse(1, SCollection(SByte))), IntConstant(33)),
+              EQ(CalcBlake2b256(ValUse(1, SCollection(SByte))), hx)),
+              SBoolean)
+          ).toSigmaProp,
+          pubkeyA
+        )
+      )
     )
+
     prop2 shouldBe prop2Tree
 
 
@@ -139,7 +151,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val badProverA = proverA.withContextExtender(1, ByteArrayConstant(badX))
     val badHx = ByteArrayConstant(Blake2b256(badX))
     val badEnv = env + ("hx" -> badHx)
-    val badProp2 = compile(badEnv, script2).asBoolValue
+    val badProp2 = compileWithCosting(badEnv, script2).asBoolValue
 
     badProverA.prove(badEnv, badProp2, ctx1, fakeMessage).isSuccess shouldBe false
   }

@@ -117,7 +117,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       "box1" -> ErgoBox(10, TrueLeaf, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
-    val prop = compile(env, code).asBoolValue
+    val prop = compileWithCosting(env, code).asBoolValue
     println(code)
     println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -126,50 +126,72 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Evaluate array ops") {
-//    testEval("""{
-//              |  val arr = Array(1, 2) ++ Array(3, 4)
-//              |  arr.size == 4
-//              |}""".stripMargin)
-//    testEval("""{
-//              |  val arr = Array(1, 2, 3)
-//              |  arr.slice(1, 3) == Array(2, 3)
-//              |}""".stripMargin)
-//    testEval("""{
-//              |  val arr = bytes1 ++ bytes2
-//              |  arr.size == 6
-//              |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2) ++ Coll(3, 4)
+        |  arr.size == 4
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.slice(1, 3) == Coll(2, 3)
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = bytes1 ++ bytes2
+        |  arr.size == 6
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = bytes1 ++ Coll[Byte]()
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll[Byte]() ++ bytes1
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = box1.R4[Coll[Int]].get
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = box1.R5[Coll[Boolean]].get
+        |  anyOf(arr)
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = box1.R5[Coll[Boolean]].get
+        |  allOf(arr) == false
+        |}""".stripMargin)
 
-//    // TODO IndexOutOfBoundsException in ColsOverArraysDefs$ColOverArrayBuilder$ColOverArrayBuilderCtor.apply(...
-//    testEval("""{
-//              |  val arr = bytes1 ++ Array[Byte]()
-//              |  arr.size == 3
-//              |}""".stripMargin)
-//    testEval("""{
-//              |  val arr = Array[Byte]() ++ bytes1
-//              |  arr.size == 3
-//              |}""".stripMargin)
-
-    testEval("""{
-              |  val arr = box1.R4[Coll[Int]].get
-              |  arr.size == 3
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = box1.R5[Coll[Boolean]].get
-              |  anyOf(arr)
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = box1.R5[Coll[Boolean]].get
-              |  allOf(arr) == false
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = Coll(1, 2, 3)
-              |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
-              |}""".stripMargin)
-//    // TODO uncomment when Costing for where is implemented
-//    testEval("""{
-//              |  val arr = Array(1, 2, 3)
-//              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
-//              |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(true, false)
+        |  anyOf(arr)
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(true, false)
+        |  allOf(arr) == false
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
+        |}""".stripMargin)
+    //    // TODO uncomment when Costing for where is implemented
+    //    testEval("""{
+    //              |  val arr = Array(1, 2, 3)
+    //              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
+    //              |}""".stripMargin)
   }
 
 //  property("Evaluate sigma in lambdas") {
@@ -340,7 +362,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
   property("deserialize") {
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
-    testEval(s"""deserialize[Coll[Byte]]("$str").size == 1""")
     testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
   }
 }

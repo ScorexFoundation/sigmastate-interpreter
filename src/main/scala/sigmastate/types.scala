@@ -100,7 +100,7 @@ object SType {
     SAvlTree, SBox
   ).map { t => (t.typeId, t) }.toMap
 
-  implicit class STypeOps(val tpe: SType) {
+  implicit class STypeOps(val tpe: SType) extends AnyVal {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
     def isSigmaProp: Boolean = tpe.isInstanceOf[SSigmaProp.type]
@@ -143,7 +143,7 @@ object SType {
     }).asInstanceOf[ClassTag[T]]
   }
 
-  implicit class AnyOps(x: Any) {
+  implicit class AnyOps(val x: Any) extends AnyVal {
     def asWrappedType: SType#WrappedType = x.asInstanceOf[SType#WrappedType]
   }
 
@@ -269,7 +269,7 @@ trait SNumericType extends SProduct {
   import SNumericType._
   override def ancestors: Seq[SType] = Nil
   def methods = SNumericType.methods
-  def isCastMethod (name: String): Boolean = Seq(ToByte, ToShort, ToInt, ToLong, ToBigInt).contains(name)
+  def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
   def upcast(i: AnyVal): WrappedType
   def downcast(i: AnyVal): WrappedType
@@ -296,6 +296,7 @@ object SNumericType extends STypeCompanion {
     SMethod(this, ToLong, SLong, 4),    // see Downcast
     SMethod(this, ToBigInt, SBigInt, 5) // see Downcast
   )
+  val castMethods: Array[String] = Array(ToByte, ToShort, ToInt, ToLong, ToBigInt)
 }
 
 trait SLogical extends SType {
@@ -469,6 +470,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
           GroupElementConstant(gv), GroupElementConstant(hv),
           GroupElementConstant(uv), GroupElementConstant(vv)) =>
       SGroupElement.dataSize(gv.asWrappedType) * 4 + 1
+    case CAND(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum
     case _ => ???
   }
   override def isConstantSize = false
