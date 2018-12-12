@@ -110,7 +110,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
   /**
     * The script is asking for a hash function preimage. The "proof" could be replayed, so not really a proof.
     */
-  ignore("prover enriching context(!!! ignored)") {
+  property("prover enriching context") {
     val prover = new ErgoLikeTestProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
 
@@ -132,7 +132,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     //context w/out extensions
     assertExceptionThrown(verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
-      _.getCause.isInstanceOf[OptionUnwrapNone])
+      rootCause(_).isInstanceOf[NoSuchElementException])
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 

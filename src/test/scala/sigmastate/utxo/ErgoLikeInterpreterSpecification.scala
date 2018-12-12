@@ -427,7 +427,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val env = Map("brother" -> brother)
-    val prop = compile(env,
+    val prop = compileWithCosting(env,
       """{
         |  val okInputs = INPUTS.size == 2
         |  val okIds = INPUTS(0).id == brother.id
@@ -441,7 +441,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     // try a version of the script that matches the white paper
     val altEnv = Map("friend" -> brother)
-    val altProp = compile(altEnv, """INPUTS.size == 2 && INPUTS(0).id == friend.id""")
+    val altProp = compileWithCosting(altEnv, """INPUTS.size == 2 && INPUTS(0).id == friend.id""")
     altProp shouldBe prop
 
     val s = ErgoBox(10, prop, 0, Seq(), Map())
@@ -468,7 +468,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
     verifier.verify(prop, wrongCtx, pr, fakeMessage).fold(t => throw t, x => x)._1 shouldBe false
 
-    val prop2 = compile(env,
+    val prop2 = compileWithCosting(env,
       """{
         |  val okInputs = INPUTS.size == 3
         |  val okIds = INPUTS(0).id == brother.id
@@ -485,8 +485,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     * An example script where an output could be spent only along with an output with given id
     * (and possibly others, too).
     */
-  ignore("Along with a friend and maybe others (!!! Box constant in environment)") {
-    // TODO: fix CostingBox in the compiled prop (should be ErgoBox)
+  property("Along with a friend and maybe others (!!! Box constant in environment)") {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
@@ -509,21 +508,21 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         | INPUTS.exists (isFriend)
          }""".stripMargin).asBoolValue
 
-//    val propExpected = OR(
-//      MapCollection(Inputs,
-//        FuncValue(
-//          Vector((1, SBox)),
-//          EQ(
-//            ExtractId(ValUse(1, SBox)),
-//            ExtractId(Constant[SBox.type](friend.toTestBox(isCost = false), SBox).asBox)
-//          )
-//        )
-//      ).asCollection[SBoolean.type])
-//    prop shouldBe propExpected
+    val propExpected = Exists(Inputs,
+      FuncValue(
+        Vector((1, SBox)),
+        EQ(
+          ExtractId(ValUse(1, SBox)),
+          ExtractId(BoxConstant(friend))
+        )
+      )
+    )
+
+    prop shouldBe propExpected
 
     // same script written differently
-//    val altProp = compileWithCosting(env, "INPUTS.exists ({ (inputBox: Box) => inputBox.id == friend.id })")
-//    altProp shouldBe prop
+    val altProp = compileWithCosting(env, "INPUTS.exists ({ (inputBox: Box) => inputBox.id == friend.id })")
+    altProp shouldBe prop
 
     val s = ErgoBox(10, prop, 0, Seq(), Map())
 
