@@ -814,9 +814,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         case box: ErgoBox =>
           val boxV = liftConst(box.toTestBox(false)(IR))
           RCCostedBox(boxV, costOf(c))
-        case box: special.sigma.Box =>
-          val boxV = liftConst(box)
-          RCCostedBox(boxV, costOf(c))
         case treeData: AvlTreeData =>
           val tree: special.sigma.AvlTree = CostingAvlTree(IR, treeData)
           val treeV = liftConst(tree)

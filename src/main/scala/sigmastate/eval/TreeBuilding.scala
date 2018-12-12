@@ -173,7 +173,12 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
-        mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
+        wc.constValue match {
+          case cb: CostingBox =>
+            mkConstant[tpe.type](cb.ebox.asInstanceOf[tpe.WrappedType], tpe)
+          case _ =>
+            mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
+        }
       case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)
