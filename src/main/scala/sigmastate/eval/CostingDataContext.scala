@@ -3,19 +3,20 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
+import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, EvaluatedValue, AvlTreeConstant, ConstantNode, SomeValue, NoneValue}
+import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, EvaluatedValue, NoneValue, SomeValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{Serializer, OperationSerializer}
+import sigmastate.serialization.{OperationSerializer, Serializer}
 import special.collection.{CCostedBuilder, Col, Types}
 import special.sigma._
 
 import scala.reflect.ClassTag
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 import scalan.meta.RType
 
 case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree {
@@ -35,15 +36,20 @@ case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree
   def dataSize: Long = SAvlTree.dataSize(treeData.asInstanceOf[SType#WrappedType])
 }
 
-class CostingBox(
-    val IR: Evaluation,
-    id: Col[Byte],
-    value: Long,
-    bytes: Col[Byte],
-    bytesWithoutRef: Col[Byte],
-    propositionBytes: Col[Byte],
-    registers: Col[AnyValue],
-    var isCost: Boolean) extends TestBox(id, value, bytes, bytesWithoutRef, propositionBytes, registers) {
+import CostingBox._
+
+class CostingBox(val IR: Evaluation,
+                 isCost: Boolean,
+                 val ebox: ErgoBox)
+  extends TestBox(
+    colBytes(ebox.id)(IR),
+    ebox.value,
+    colBytes(ebox.bytes)(IR),
+    colBytes(ebox.bytesWithNoRef)(IR),
+    colBytes(ebox.propositionBytes)(IR),
+    regs(ebox)(IR)
+  )
+{
   override val builder = new CostingSigmaDslBuilder(IR)
 
   override def getReg[T](i: Int)(implicit cT: RType[T]): Option[T] =
@@ -81,6 +87,23 @@ class CostingBox(
     }
 
   }
+}
+
+object CostingBox {
+
+  def colBytes(b: Array[Byte])(implicit IR: Evaluation): Col[Byte] = IR.sigmaDslBuilderValue.Cols.fromArray(b)
+
+  def regs(ebox: ErgoBox)(implicit IR: Evaluation): Col[AnyValue] = {
+    val m: Map[Byte, Any] = (ebox.additionalRegisters ++ ErgoBox.mandatoryRegisters.map(id => (id, ebox.get(id).get)))
+      .map({ case (k, v) => k.number -> v })
+    val res = new Array[AnyValue](10)
+    for ((id, v) <- m) {
+      assert(res(id) == null, s"register $id is defined more then once")
+      res(id) = new TestValue(v)
+    }
+    IR.sigmaDslBuilderValue.Cols.fromArray(res)
+  }
+
 }
 
 class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { dsl =>

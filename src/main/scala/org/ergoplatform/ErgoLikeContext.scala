@@ -115,15 +115,6 @@ object ErgoLikeContext {
     case (x, _) => x
   }
 
-  def regs(m: Map[Byte, Any])(implicit IR: Evaluation): Col[AnyValue] = {
-    val res = new Array[AnyValue](10)
-    for ((id, v) <- m) {
-      assert(res(id) == null, s"register $id is defined more then once")
-      res(id) = new TestValue(v)
-    }
-    IR.sigmaDslBuilderValue.Cols.fromArray(res)
-  }
-
   def contextVars(m: Map[Byte, Any])(implicit IR: Evaluation): Col[AnyValue] = {
     val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
     val res = new Array[AnyValue](maxKey + 1)
@@ -137,15 +128,7 @@ object ErgoLikeContext {
   implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
     def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
       if (ebox == null) return null
-      val givenRegs = ebox.additionalRegisters ++ ErgoBox.mandatoryRegisters.map(id => (id, ebox.get(id).get))
-      val rs = regs(givenRegs.map({ case (k, v) => k.number -> v }))
-      new CostingBox(IR,
-        IR.sigmaDslBuilderValue.Cols.fromArray(ebox.id),
-        ebox.value,
-        IR.sigmaDslBuilderValue.Cols.fromArray(ebox.bytes),
-        IR.sigmaDslBuilderValue.Cols.fromArray(ebox.bytesWithNoRef),
-        IR.sigmaDslBuilderValue.Cols.fromArray(ebox.propositionBytes),
-        rs, isCost)
+      new CostingBox(IR, isCost, ebox)
     }
   }
 }
