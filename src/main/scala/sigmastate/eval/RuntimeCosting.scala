@@ -1,34 +1,26 @@
 package sigmastate.eval
 
 import java.math.BigInteger
-import java.util.IntSummaryStatistics
 
 import scala.language.implicitConversions
 import scala.language.existentials
-import com.sun.org.apache.xml.internal.serializer.ToUnknownStream
 import org.bouncycastle.math.ec.ECPoint
 import scalan.{Lazy, SigmaLibrary, Nullable}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import scapi.sigma.ProveDHTuple
-import sigmastate.SCollection.SByteArray
-import sigmastate.Values.Value.Typed
 import sigmastate._
-import sigmastate.Values.{FuncValue, OptionValue, Constant, SValue, BlockValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, TaggedVariableNode, SigmaBoolean, ValDef, ValUse, ConcreteCollection}
+import sigmastate.Values._
 import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
 import sigmastate.lang.Terms._
-import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 import ErgoLikeContext._
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scalan.compilation.GraphVizConfig
 import SType._
-import scorex.crypto.hash.Blake2b256.DigestSize
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SigmaCompiler}
@@ -119,7 +111,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def perKbCostOf(node: SValue, dataSize: Rep[Long]) = {
     val opName = s"${node.getClass.getSimpleName}_per_kb"
-    dataSize.div(1024L).toInt * costOf(opName, node.opType)
+    (dataSize.div(1024L).toInt + 1) * costOf(opName, node.opType)
   }
 
   def perItemCostOf(node: SValue, arrLength: Rep[Int]) = {
@@ -214,6 +206,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
     case CostOf(name, opType) => s"CostOf($name:$opType)"
     case WECPointConst(p) => CryptoFunctions.showECPoint(p)
+    case ac: WArrayConst[_,_] =>
+      val trimmed = ac.constValue.take(ac.constValue.length min 10)
+      s"WArray(len=${ac.constValue.length}; ${trimmed.mkString(",")},...)"
     case _ => super.formatDef(d)
   }
 
@@ -313,7 +308,18 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case _ => Nullable.None
     }
   }
-
+  object IsNumericToInt {
+    def unapply(d: Def[_]): Nullable[Rep[A] forSome {type A}] = d match {
+      case ApplyUnOp(_: NumericToInt[_], x) => Nullable(x.asInstanceOf[Rep[A] forSome {type A}])
+      case _ => Nullable.None
+    }
+  }
+  object IsNumericToLong {
+    def unapply(d: Def[_]): Nullable[Rep[A] forSome {type A}] = d match {
+      case ApplyUnOp(_: NumericToLong[_], x) => Nullable(x.asInstanceOf[Rep[A] forSome {type A}])
+      case _ => Nullable.None
+    }
+  }
   override val performViewsLifting = false
 
   implicit class ElemOpsForCosting(e: Elem[_]) {
@@ -338,6 +344,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case CM.length(CBM.replicate(_, len, _)) => len
       case CM.length(CBM.fromArray(_, arr)) => arr.length
       case CM.length(CBM.fromItems(_, items, _)) => items.length
+      case IsNumericToLong(Def(IsNumericToInt(x))) if x.elem == LongElement => x
 
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict
@@ -748,7 +755,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
-    import MonoidBuilderInst._; import WOption._; import WSpecialPredef._
+    import WOption._
+
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = RCCostedPrim(v, cost, sizeOf(v))
     object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(asRep[Costed[Any]](evalNode(ctx, env, v))) }
@@ -898,18 +906,20 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case TreeLookup(In(_tree), InColByte(key), InColByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
         val value = sigmaDslBuilder.treeLookup(tree.value, key.value, proof.value)
-        val cost = tree.cost + key.cost + proof.cost + costOf(node)
+        val size = tree.dataSize + key.dataSize + proof.dataSize
+        val cost = tree.cost + key.cost + proof.cost + perKbCostOf(node, size)
         value.fold[CostedOption[Col[Byte]]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Col[Byte]] => RCostedSome(mkCostedCol(x, Blake2b256.DigestSize, cost)) })
+          fun { x: Rep[Col[Byte]] => RCostedSome(mkCostedCol(x, size.toInt, cost)) })
 
       case TreeModifications(In(_tree), InColByte(operations), InColByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
         val value = sigmaDslBuilder.treeModifications(tree.value, operations.value, proof.value)
-        val cost = tree.cost + operations.cost + proof.cost + costOf(node)
+        val size = tree.dataSize + operations.dataSize + proof.dataSize
+        val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
         value.fold[CostedOption[Col[Byte]]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Col[Byte]] => RCostedSome(mkCostedCol(x, Blake2b256.DigestSize, cost)) })
+          fun { x: Rep[Col[Byte]] => RCostedSome(mkCostedCol(x, size.toInt, cost)) })
 
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>

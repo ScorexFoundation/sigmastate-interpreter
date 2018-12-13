@@ -1,7 +1,6 @@
 package sigmastate.utxo
 
 import org.ergoplatform
-import org.ergoplatform._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}

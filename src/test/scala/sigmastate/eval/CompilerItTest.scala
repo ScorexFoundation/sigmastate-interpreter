@@ -112,7 +112,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))),
-      Result(CAND(Seq(p1, p2)), 20106, 66))
+      Result(CAND(Seq(p1, p2)), 20110, 66))
   }
 
   test("andSigmaPropConstsCase") {
@@ -165,7 +165,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1.slice(0, 1), 2, 32))
+      Result(bigIntArr1.slice(0, 1), 21, 32))
   }
   test("bigIntArray_Slice_Case") {
     bigIntArray_Slice_Case.doReduce()
@@ -271,7 +271,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(1,SSigmaProp)
           ))))),
-      Result({ TrivialProp.FalseProp }, 40361, 1L)
+      Result({ TrivialProp.FalseProp }, 40669, 1L)
     )
   }
   test("crowdFunding_Case") {
