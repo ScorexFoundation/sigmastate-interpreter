@@ -112,7 +112,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))),
-      Result(CAND(Seq(p1, p2)), 20110, 66))
+      Result(CAND(Seq(p1, p2)), 20124, 66))
   }
 
   test("andSigmaPropConstsCase") {
@@ -271,7 +271,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(1,SSigmaProp)
           ))))),
-      Result({ TrivialProp.FalseProp }, 40669, 1L)
+      Result({ TrivialProp.FalseProp }, 40670, 1L)
     )
   }
   test("crowdFunding_Case") {
