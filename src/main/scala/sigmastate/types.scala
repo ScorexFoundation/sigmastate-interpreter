@@ -398,9 +398,10 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType {
   }
 }
 
-case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
+case object SBigInt extends SPrimType with SEmbeddable with SNumericType with STypeCompanion {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
+  override def typeId: TypeCode = typeCode
   override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
 
   /** The maximum size of BigInteger value in byte array representation. */
@@ -412,7 +413,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
     * In sigma we limit the size by the fixed constant and thus BigInt is a constant size type. */
   override def isConstantSize = true
 
-  val Max = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
+  val Max: BigInteger = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
 
   override def upcast(v: AnyVal): BigInteger = v match {
     case x: Byte => BigInteger.valueOf(x.toLong)
@@ -428,6 +429,15 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType {
     case x: Long => BigInteger.valueOf(x)
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
+
+  val ModQMethod = SMethod(this, "modQ", SBigInt, 1)
+  val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 2)
+  val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 3)
+  override val methods: Vector[SMethod] = Vector(
+    ModQMethod,
+    PlusModQMethod,
+    MinusModQMethod,
+  )
 }
 
 /** NOTE: this descriptor both type and type companion */

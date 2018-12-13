@@ -1196,6 +1196,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
           withDefaultSize(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + costOf(op))
         }
+
+//      case ModQ(input) =>
+//        val inputC = asRep[Costed[WBigInteger]](eval(input))
+//        val v = inputC.value.modQ
+//        RCCostedPrim(v, inputC.cost + costOf(node), SBigInt.MaxSizeInBytes)
+
       case OR(input) => input match {
         case ConcreteCollection(items, tpe) =>
           val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))

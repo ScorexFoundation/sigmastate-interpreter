@@ -531,4 +531,18 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("sigmaProp(HEIGHT > 1000)") shouldBe Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))
   }
 
+  property("modQ") {
+    parse("10.toBigInt.modQ") shouldBe Select(Select(IntConstant(10), "toBigInt"), "modQ")
+  }
+
+  property("plusModQ") {
+    parse("10.toBigInt.plusModQ(1.toBigInt)") shouldBe
+      Apply(Select(Select(IntConstant(10), "toBigInt"), "plusModQ"), Vector(Select(IntConstant(1), "toBigInt")))
+  }
+
+  property("minusModQ") {
+    parse("10.toBigInt.minusModQ(1.toBigInt)") shouldBe
+      Apply(Select(Select(IntConstant(10), "toBigInt"), "minusModQ"), Vector(Select(IntConstant(1), "toBigInt")))
+  }
+
 }

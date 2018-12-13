@@ -339,6 +339,19 @@ object ArithOp {
   }
 }
 
+case class ModQ(input: Value[SBigInt.type])
+  extends NotReadyValue[SBigInt.type] {
+  override val opCode: OpCode = OpCodes.ModQCode
+  override def tpe: SBigInt.type = SBigInt
+  override def opType: SFunc = SFunc(input.tpe, tpe)
+}
+
+case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], opCode: OpCode)
+  extends NotReadyValue[SBigInt.type] {
+  override def tpe: SBigInt.type = SBigInt
+  override def opType: SFunc = SFunc(Vector(left.tpe, right.tpe), tpe)
+}
+
 /**
   * XOR for two SByteArray
   */

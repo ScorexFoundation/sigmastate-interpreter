@@ -153,4 +153,9 @@ object OpCodes extends ValueCodes {
   val OptionGetCode      : OpCode = (LastConstantCode + 116).toByte
   val OptionGetOrElseCode: OpCode = (LastConstantCode + 117).toByte
   val OptionIsDefinedCode: OpCode = (LastConstantCode + 118).toByte
+
+  // Modular arithmetic operations codes
+  val ModQCode: OpCode = (LastConstantCode + 119).toByte
+  val PlusModQCode: OpCode = (LastConstantCode + 120).toByte
+  val MinusModQCode: OpCode = (LastConstantCode + 121).toByte
 }
