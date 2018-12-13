@@ -430,13 +430,13 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with ST
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 
-  val ModQ = "modQ"
-  val PlusModQ = "plusModQ"
-  val MinusModQ = "minusModQ"
+  val ModQMethod = SMethod(this, "modQ", SBigInt, 1)
+  val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 2)
+  val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 3)
   override val methods: Vector[SMethod] = Vector(
-    SMethod(this, ModQ, SBigInt, 1),
-    SMethod(this, PlusModQ, SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 2),
-    SMethod(this, MinusModQ, SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 3),
+    ModQMethod,
+    PlusModQMethod,
+    MinusModQMethod,
   )
 }
 

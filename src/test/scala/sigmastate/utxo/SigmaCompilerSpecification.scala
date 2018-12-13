@@ -1,8 +1,9 @@
 package sigmastate.utxo
 
-import sigmastate.GE
+import sigmastate.{GE, ModQ, SType}
 import sigmastate.Values._
 import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms._
 
 /**
@@ -10,6 +11,8 @@ import sigmastate.lang.Terms._
   */
 class SigmaCompilerSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
+
+  private def compile(code: String, env: ScriptEnv = Map()): Value[SType] = compileWithCosting(env, code)
 
   property(">= compile") {
     val elementId = 1: Byte
@@ -20,5 +23,9 @@ class SigmaCompilerSpecification extends SigmaTestingCommons {
         |  getVar[Int](elementId).get >= 120
         |}""".stripMargin).asBoolValue
     propComp shouldBe propTree
+  }
+
+  property("modQ") {
+    compile("10.toBigInt.modQ") shouldEqual ModQ(BigIntConstant(10))
   }
 }

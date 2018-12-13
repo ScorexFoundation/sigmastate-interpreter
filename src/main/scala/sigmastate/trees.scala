@@ -339,17 +339,17 @@ object ArithOp {
   }
 }
 
-case class ModQ[T <: SBigInt.type](input: Value[T], q: Value[T])
-  extends NotReadyValue[T] {
+case class ModQ(input: Value[SBigInt.type])
+  extends NotReadyValue[SBigInt.type] {
   override val opCode: OpCode = OpCodes.ModQCode
-  override def tpe: T = input.tpe
-  override def opType: SFunc = SFunc(Vector(input.tpe, q.tpe), tpe)
+  override def tpe: SBigInt.type = SBigInt
+  override def opType: SFunc = SFunc(input.tpe, tpe)
 }
 
-case class ModQArithOp[T <: SBigInt.type](left: Value[T], right: Value[T], q: Value[T], opCode: OpCode)
-  extends NotReadyValue[T] {
-  override def tpe: T = left.tpe
-  override def opType: SFunc = SFunc(Vector(left.tpe, right.tpe, q.tpe), tpe)
+case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], opCode: OpCode)
+  extends NotReadyValue[SBigInt.type] {
+  override def tpe: SBigInt.type = SBigInt
+  override def opType: SFunc = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
 
 /**
