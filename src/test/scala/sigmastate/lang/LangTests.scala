@@ -27,6 +27,8 @@ trait LangTests {
 
   val EV: ScriptEnv = Map()
 
+  val arr1 = Array[Byte](1, 2)
+  val arr2 = Array[Byte](10, 20)
   val dlog = CryptoConstants.dlogGroup
   val g1 = dlog.generator
   val g2 = dlog.multiplyGroupElements(g1, g1)
@@ -47,8 +49,8 @@ trait LangTests {
     "height1" -> 100L, "height2" -> 200L,
     "b1" -> 1.toByte,
     "b2" -> 2.toByte,
-    "arr1" -> Array[Byte](1, 2),
-    "arr2" -> Array[Byte](10, 20),
+    "arr1" -> arr1,
+    "arr2" -> arr2,
     "col1" -> ConcreteCollection(LongConstant(1), LongConstant(2)),
     "col2" -> ConcreteCollection(LongConstant(10), LongConstant(20)),
     "g1" -> g1,

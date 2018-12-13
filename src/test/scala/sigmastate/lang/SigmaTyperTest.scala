@@ -1,5 +1,6 @@
 package sigmastate.lang
 
+import org.ergoplatform.{Height, Inputs}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import sigmastate.SCollection.SByteArray
@@ -7,12 +8,14 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
+import sigmastate.lang.Terms.{Select, Ident}
 import sigmastate.lang.exceptions.{NonApplicableMethod, TyperException, InvalidBinaryOperationParameters, MethodNotFound}
 import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.utxo.{SizeOf, Append}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
-  def typecheck(env: ScriptEnv, x: String): SType = {
+  def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
@@ -21,7 +24,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder)
       val typed = typer.typecheck(bound)
-     typed.tpe
+      if (expected != null) typed shouldBe expected
+      typed.tpe
     } catch {
       case e: Exception => throw e
     }
@@ -47,20 +51,21 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("simple expressions") {
-    typecheck(env, "x") shouldBe SInt
-    typecheck(env, "x + y") shouldBe SInt
+    typecheck(env, "x", IntConstant(10)) shouldBe SInt   // constants are substituted from env
+    typecheck(env, "x + y", Plus(10, 11)) shouldBe SInt
+    typecheck(env, "x + height1", Plus(Upcast(10, SLong), 100L)) shouldBe SLong
     typecheck(env, "x - y") shouldBe SInt
     typecheck(env, "x / y") shouldBe SInt
     typecheck(env, "x % y") shouldBe SInt
-    typecheck(env, "c1 && c2") shouldBe SBoolean
-    typecheck(env, "arr1") shouldBe SByteArray
-    typecheck(env, "HEIGHT") shouldBe SLong
+    typecheck(env, "c1 && c2", BinAnd(TrueLeaf, FalseLeaf)) shouldBe SBoolean
+    typecheck(env, "arr1", ByteArrayConstant(Array[Byte](1,2))) shouldBe SByteArray
+    typecheck(env, "HEIGHT", Height) shouldBe SLong
     typecheck(env, "HEIGHT + 1") shouldBe SLong
-    typecheck(env, "INPUTS") shouldBe SCollection(SBox)
+    typecheck(env, "INPUTS", Inputs) shouldBe SCollection(SBox)
     typecheck(env, "INPUTS.size") shouldBe SInt
-    typecheck(env, "INPUTS.size > 1") shouldBe SBoolean
-    typecheck(env, "arr1 | arr2") shouldBe SByteArray
-    typecheck(env, "arr1 ++ arr2") shouldBe SByteArray
+    typecheck(env, "INPUTS.size > 1", GT(Select(Inputs, "size", Some(SInt)), 1)) shouldBe SBoolean
+    typecheck(env, "arr1 | arr2", Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
+    typecheck(env, "arr1 ++ arr2", Append(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
     typecheck(env, "col1 ++ col2") shouldBe SCollection(SLong)
     typecheck(env, "g1 ^ n1") shouldBe SGroupElement
     typecheck(env, "g1 * g2") shouldBe SGroupElement

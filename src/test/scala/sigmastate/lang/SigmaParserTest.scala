@@ -54,6 +54,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("0x10l") shouldBe LongConstant(0x10)
     parse("10L-11L") shouldBe Minus(10L, 11L)
     parse("(10-11)") shouldBe Minus(10, 11)
+    parse("(-10-11)") shouldBe Minus(-10, 11)
     parse("(10+11)") shouldBe plus(10, 11)
     parse("(10-11) - 12") shouldBe Minus(Minus(10, 11), 12)
     parse("10   - 11 - 12") shouldBe Minus(Minus(10, 11), 12)
