@@ -179,8 +179,8 @@ object CostTable {
     ("max", "(BigInt, BigInt) => BigInt", comparisonCost),
     ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
 
-    ("TreeModifications", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", treeOp),
-    ("TreeLookup", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", treeOp),
+    ("TreeModifications_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
+    ("TreeLookup_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
 
     ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
 

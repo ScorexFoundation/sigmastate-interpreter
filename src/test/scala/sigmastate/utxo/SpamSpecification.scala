@@ -84,7 +84,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val prover = new ErgoLikeTestProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
-    val bigSubScript = (1 to 120).foldLeft(CalcBlake2b256(GetVarByteArray(id).get)) { case (script, _) =>
+    val bigSubScript = (1 to 100).foldLeft(CalcBlake2b256(GetVarByteArray(id).get)) { case (script, _) =>
       CalcBlake2b256(script)
     }
 
@@ -269,6 +269,6 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
     println("Cost: " + pr.cost)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe false
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).isFailure shouldBe true
   }
 }
