@@ -7,7 +7,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.{DLogProtocol, ProveDHTuple}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
+import sigmastate.Values.{BigIntValue, BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
@@ -182,6 +182,10 @@ trait SigmaBuilder {
   def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T]
   def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T]
   def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type]
+
+  def mkModQ(input: Value[SBigInt.type]): Value[SBigInt.type]
+  def mkPlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
+  def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
 
   def liftAny(v: Any): Nullable[SValue] = v match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
@@ -512,6 +516,15 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type] =
     OptionIsDefined(input)
+
+  override def mkModQ(input: Value[SBigInt.type]): Value[SBigInt.type] =
+    ModQ(input)
+
+  override def mkPlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
+    ModQArithOp(left, right, OpCodes.PlusModQCode)
+
+  override def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
+    ModQArithOp(left, right, OpCodes.MinusModQCode)
 }
 
 trait TypeConstraintCheck {

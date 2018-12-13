@@ -12,6 +12,7 @@ import sigmastate.lang.SigmaPredef._
 import sigmastate.utxo._
 import sigmastate.SType._
 import sigmastate.SCollection._
+import sigmastate.SBigInt._
 import sigmastate.Values.Value.Typed
 import sigmastate.lang.SigmaSpecializer.error
 import sigmastate.lang.{Terms, TransformingSigmaBuilder}
@@ -168,6 +169,9 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
 
       case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
         eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
+
+      case Select(input, ModQMethod.name, _) =>
+        eval(mkModQ(input.asBigInt))
 
       case _ =>
         super.evalNode(ctx, env, node)
