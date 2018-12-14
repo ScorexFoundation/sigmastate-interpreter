@@ -1,0 +1,71 @@
+digraph conversions {
+    nodesep=0.8
+    K=0.6
+    concentrate=false
+    node [shape=box, color=gray, style=filled, fillcolor=white] 
+
+    Boolean -> Byte [label=" .toByte (to save bytes vs. \n if (b) 1 else 0)" color=red] 
+    Byte -> Boolean [label=" x == 0"]
+
+    subgraph cluster_Numerics {
+        style=dashed; color="#FFCCFF";label="Numerics";
+        Byte -> Short [label=" .toShort "]
+        // Byte -> Int [label=" .toInt "]
+        // Byte -> Long [label=" .toLong "]
+        // Byte -> BigInt [label=" .toBigInt "]
+
+        Short -> Byte [label=" .toByte "]
+        Short -> Int [label=" .toInt "]
+        // Short -> Long [label=" .toLong "; weight=0]
+        // Short -> BigInt [label=" .toBigInt "]
+
+        // Int -> Byte [label=" .toByte "]
+        Int -> Short [label=" .toShort "]
+        Int -> Long [label=" .toLong "]
+        // Int -> BigInt [label=" .toBigInt "]
+
+        // Long -> Byte [label=" .toByte "]
+        // Long -> Short [label=" .toShort "]
+        Long -> Int [label=" .toInt "]
+        Long -> BigInt [label=" .toBigInt "]
+
+        // BigInt -> Byte [label=" .toByte "]
+        // BigInt -> Short [label=" .toShort "]
+        // BigInt -> Int [label=" .toInt "]
+        BigInt -> Long [label=" .toLong "]
+
+        subgraph cluster_NumericsCasts {
+            style=xdashed; color="#FFCCFF";label="Upcast/Downcast";
+
+            Numeric -> Numeric [label=" Upcast(...) "]
+            Numeric -> Numeric [label=" Downcast(...) "]
+        }
+    }
+
+
+    Bytes -> GroupElement [label=" decodePoint(...) ", color=red]
+    Bytes -> BigInt [label=" byteArrayToBigInt(...) "]
+    Bytes -> Long [label=" byteArrayToLong(...) ", color=red, weight=0]
+    Long -> Bytes [label=" longToByteArray(...) "]
+
+    Bits [ label="Coll[Boolean]" shape=box, color=gray, style=filled, fillcolor=white ]
+    Bytes [ label="Coll[Byte]" shape=box, color=gray, style=filled, fillcolor=white ]
+
+    Bits -> Boolean [label=" anyOf(...) " ]
+    Bits -> Boolean [label=" allOf(...) " ]
+    Bits -> Boolean [label=" xorOf(...) " color=red ]
+
+    SigmaProp -> Boolean [label=" ZKProof {...} "]
+    SigmaProp -> Boolean [label=" .isProven "]
+    SigmaProp -> Bytes [label=" .propBytes "]
+    Boolean -> SigmaProp [label=" sigmaProp(...) "]
+
+    GroupElement -> SigmaProp [label="proveDlog(...)"]
+    GroupElement -> Boolean [label=".isIdentity"]
+    GroupElement -> Bytes [label=".nonce"]
+    GroupElement -> Bytes [label=".getEncoded(compressed)" color=red]
+
+    String -> Bytes [label="fromBase58(...)"]
+    String -> Bytes [label="fromBase64(...)"]
+    String -> SigmaProp [label="PK(...)"]
+}

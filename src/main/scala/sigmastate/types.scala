@@ -24,7 +24,8 @@ import scala.reflect.ClassTag
 import scalan.meta.ScalanAst.STypeArgAnnotation
 import sigmastate.SBoolean.typeCode
 import sigmastate.SByte.typeCode
-import sigmastate.SSigmaProp.{PropBytes, IsProven}
+//import sigmastate.SNumericType._
+import sigmastate.SSigmaProp.{IsProven, PropBytes}
 
 
 /** Base type for all AST nodes of sigma lang. */
@@ -302,11 +303,15 @@ object SNumericType extends STypeCompanion {
 trait SLogical extends SType {
 }
 
-case object SBoolean extends SPrimType with SEmbeddable with SLogical with STypeCompanion {
+case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with STypeCompanion {
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 1: Byte
   override def typeId = typeCode
-  def methods: Seq[SMethod] = Nil
+  override def ancestors: Seq[SType] = Nil
+  val ToByte = "toByte"
+  override val methods = Vector(
+    SMethod(this, ToByte, SByte, 1),
+  )
   override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 1
   override def isConstantSize = true
@@ -446,7 +451,7 @@ case object SString extends SProduct with STypeCompanion {
   override def ancestors: Seq[SType] = Nil
   override val typeCode: TypeCode = 101: Byte
   override def typeId = typeCode
-  val methods: Seq[SMethod] = Seq()
+  override val methods: Seq[SMethod] = Nil
   override def mkConstant(v: String): Value[SString.type] = StringConstant(v)
   override def dataSize(v: SType#WrappedType): Long = v.asInstanceOf[String].length
   override def isConstantSize = false
@@ -457,9 +462,10 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override type WrappedType = EcPointType
   override val typeCode: TypeCode = 7: Byte
   override def typeId = typeCode
-  override val methods = Seq(
+  override val methods: Seq[SMethod] = Seq(
     SMethod(this, "isIdentity", SBoolean, 1),
-    SMethod(this, "nonce", SCollectionType(SByte), 2)
+    SMethod(this, "nonce", SByteArray, 2),
+    SMethod(this, "getEncoded", SFunc(IndexedSeq(this, SBoolean), SByteArray), 3)
   )
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 32

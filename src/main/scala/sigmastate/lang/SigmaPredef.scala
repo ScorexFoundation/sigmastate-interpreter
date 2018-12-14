@@ -31,6 +31,8 @@ object SigmaPredef {
     "blake2b256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
     "sha256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
     "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
+    "byteArrayToLong" -> mkLambda(Vector("input" -> SByteArray), SLong, None),
+    "decodePoint" -> mkLambda(Vector("input" -> SByteArray), SGroupElement, None),
     "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
 
     "getVar" -> mkGenLambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), SOption(tT), None),
@@ -71,6 +73,10 @@ object SigmaPredef {
 
   val LongToByteArraySym = PredefIdent("longToByteArray")
   val ByteArrayToBigIntSym = PredefIdent("byteArrayToBigInt")
+  val ByteArrayToLongSym = PredefIdent("byteArrayToLong")  // mutually inverse to longToByteArray
+
+  /** Implemented as CryptoConstants.dlogGroup.curve.decodePoint(bytes)*/
+  val DecodePointSym = PredefIdent("decodePoint")
 
   val FromBase58Sym = PredefIdent("fromBase58")
   val FromBase64Sym = PredefIdent("fromBase64")
