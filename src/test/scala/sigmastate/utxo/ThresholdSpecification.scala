@@ -417,5 +417,8 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val pubKeysStrMax = Array.fill[String](AtLeast.MaxChildrenCount)(keyName).mkString(",")
     compileWithCosting(env, s"""atLeast(2, Coll($pubKeysStrMax))""")
     compileWithCosting(env, s"""{ val arr = Coll($pubKeysStrMax); atLeast(2, arr) }""")
+
+    // collection with unknown items should pass
+    compileWithCosting(env, s"""atLeast(2, getVar[Coll[SigmaProp]](1).get)""")
   }
 }
