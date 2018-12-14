@@ -174,6 +174,9 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
 }
 
 object AtLeast {
+
+  val MaxChildrenCount = 255
+
   def apply(bound: Value[SInt.type], children: Seq[SigmaPropValue]): AtLeast =
     AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
 
@@ -196,11 +199,8 @@ object AtLeast {
     //
     // (this will ensure bound is between 2 and 254, because otherwise one of the conditions above will apply and it will
     // be converted to one of true, false, and, or)
-    require(children.length <= 255)
+    require(children.length <= MaxChildrenCount)
     // My preferred method: if (children.length>=255) return FalseLeaf
-
-    // TODO: this constraint on the number of children of atLeast should also be ensured at ErgoScript compile time
-    // remove this todo once issue #291 is resolved
 
     for (iChild <- children.indices) {
       if (curBound == 1)

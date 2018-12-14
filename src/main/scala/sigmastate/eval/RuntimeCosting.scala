@@ -1155,6 +1155,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case AtLeast(bound, input) =>
         val inputC = asRep[CostedCol[Any]](evalNode(ctx, env, input))
+        if (inputC.values.length.isConst) {
+          val inputCount = inputC.values.length.asValue
+          if (inputCount > AtLeast.MaxChildrenCount)
+            error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount")
+        }
         val boundC = eval(bound)
         val res = sigmaDslBuilder.atLeast(boundC.value, asRep[Col[SigmaProp]](inputC.values))
         val cost = boundC.cost + inputC.cost + costOf(node)
