@@ -2,10 +2,11 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoLikeContext
 import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.Values.{BlockValue, ConcreteCollection, FalseLeaf, IntConstant, SigmaBoolean, SigmaPropConstant, SigmaPropValue, TrueLeaf, ValDef, ValUse, Value}
+import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.CosterException
 
 
 class ThresholdSpecification extends SigmaTestingCommons {
@@ -399,5 +400,22 @@ class ThresholdSpecification extends SigmaTestingCommons {
       }
       twoToi *= 2
     }
+  }
+
+  property("fail compilation when input limit exceeded") {
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val skA = proverA.dlogSecrets.head
+    val pubkeyA = skA.publicImage
+    val keyName = "pubkeyA"
+    val env = Map(keyName -> pubkeyA)
+    val pubKeysStrExceeding = Array.fill[String](AtLeast.MaxChildrenCount + 1)(keyName).mkString(",")
+    an[CosterException] should be thrownBy compileWithCosting(env, s"""atLeast(2, Coll($pubKeysStrExceeding))""")
+    an[CosterException] should be thrownBy
+      compileWithCosting(env, s"""{ val arr = Coll($pubKeysStrExceeding); atLeast(2, arr) }""")
+
+    // max children should work fine
+    val pubKeysStrMax = Array.fill[String](AtLeast.MaxChildrenCount)(keyName).mkString(",")
+    compileWithCosting(env, s"""atLeast(2, Coll($pubKeysStrMax))""")
+    compileWithCosting(env, s"""{ val arr = Coll($pubKeysStrMax); atLeast(2, arr) }""")
   }
 }
