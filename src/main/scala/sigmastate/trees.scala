@@ -489,6 +489,11 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   override val opCode: OpCode = BinAndCode
 }
 
+case class BinXor(override val left: BoolValue, override val right: BoolValue)
+  extends Relation[SBoolean.type, SBoolean.type] {
+  override val opCode: OpCode = BinOrCode
+}
+
 /**
   * A tree node with three descendants
   */

@@ -38,7 +38,9 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       MethodCallLike(
         ConcreteCollection(LongConstant(1), LongConstant(2)),
         "++", IndexedSeq(ConcreteCollection(LongConstant(10), LongConstant(20))))
-    bind(env, "g1 ^ n1") shouldBe Exponentiate(g1, n1)
+    // todo should be g1.exp(n1)
+    //  ( see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 )
+//    bind(env, "g1 ^ n1") shouldBe Exponentiate(g1, n1)
     bind(env, "g1 * g2") shouldBe MethodCallLike(g1, "*", IndexedSeq(g2))
   }
 

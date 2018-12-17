@@ -70,7 +70,7 @@ object SigmaParser extends Exprs with Types with Core {
     case "<"  => LT(l, r)
     case "-"  => builder.mkMinus(l.asValue[SLong.type], r.asValue[SLong.type])
     case "|"  => builder.mkXor(l.asValue[SByteArray], r.asValue[SByteArray])
-    case "^"  => builder.mkExponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
+    case "^"  => builder.mkBinXor(l.asBoolValue, r.asBoolValue)
     case _ if parseAsMethods.contains(opName) =>
       MethodCallLike(l, opName, IndexedSeq(r))
     case "/"  => builder.mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])

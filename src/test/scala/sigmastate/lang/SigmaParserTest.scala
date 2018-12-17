@@ -72,7 +72,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
     parse("arr1 ++ arr2") shouldBe MethodCallLike(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
     parse("col1 ++ col2") shouldBe MethodCallLike(Ident("col1"), "++", IndexedSeq(Ident("col2")))
-    parse("ge ^ n") shouldBe Exponentiate(GEIdent("ge"), BigIntIdent("n"))
+    parse("ge.exp(n)") shouldBe Apply(Select(GEIdent("ge"), "exp"), Vector(BigIntIdent("n")))
     parse("g1 * g2") shouldBe MethodCallLike(Ident("g1"), "*", IndexedSeq(Ident("g2")))
     parse("g1 + g2") shouldBe MethodCallLike(Ident("g1"), "+", IndexedSeq(Ident("g2")))
   }
@@ -660,4 +660,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("!true") shouldBe LogicalNot(TrueLeaf)
     parse("! (1 == 0)") shouldBe LogicalNot(EQ(IntConstant(1), IntConstant(0)))
   }
+
+  property("logical XOR") {
+    parse("true ^ false") shouldBe BinXor(TrueLeaf, FalseLeaf)
+  }
+
 }
