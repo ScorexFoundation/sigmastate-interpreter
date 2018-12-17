@@ -646,6 +646,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("- (3 - 2)") shouldBe Negation(Minus(IntConstant(3), IntConstant(2)))
   }
 
+  property("bitwise inversion unary op ~") {
+    parse("~OUTPUTS.size") shouldBe BitInversion(Select(Ident("OUTPUTS"), "size").asIntValue)
+  }
+
   property("HEADERS methods") {
     parse("HEADERS") shouldBe Ident("HEADERS")
     parse("HEADERS.version") shouldBe Select(Ident("HEADERS"), "version")

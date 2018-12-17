@@ -363,6 +363,12 @@ case class Negation[T <: SNumericType](input: Value[T]) extends NotReadyValue[T]
   override def opType: SFunc = SFunc(input.tpe, tpe)
 }
 
+case class BitInversion[T <: SNumericType](input: Value[T]) extends NotReadyValue[T] {
+  override val opCode: OpCode = OpCodes.BitInversionCode
+  override def tpe: T = input.tpe
+  override def opType: SFunc = SFunc(input.tpe, tpe)
+}
+
 case class ModQ(input: Value[SBigInt.type])
   extends NotReadyValue[SBigInt.type] {
   override val opCode: OpCode = OpCodes.ModQCode

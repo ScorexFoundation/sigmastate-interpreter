@@ -189,6 +189,7 @@ trait SigmaBuilder {
 
   def mkLogicalNot(input: Value[SBoolean.type]): Value[SBoolean.type]
   def mkNegation[T <: SNumericType](input: Value[T]): Value[T]
+  def mkBitInversion[T <: SNumericType](input: Value[T]): Value[T]
 
   def liftAny(v: Any): Nullable[SValue] = v match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
@@ -534,6 +535,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkNegation[T <: SNumericType](input: Value[T]): Value[T] =
     Negation(input)
+
+  override def mkBitInversion[T <: SNumericType](input: Value[T]): Value[T] =
+    BitInversion(input)
 }
 
 trait TypeConstraintCheck {
