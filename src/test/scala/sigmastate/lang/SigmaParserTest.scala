@@ -571,4 +571,35 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
           Vector(TrueLeaf, FalseLeaf))
       ))
   }
+
+  property("SBoolean.toByte") {
+    parse("true.toByte") shouldBe Select(TrueLeaf, "toByte")
+  }
+
+  property("SOption.map") {
+    parse("Some(1).map { (b: Int) => b}") shouldBe
+      Apply(Select(Apply(Ident("Some", NoType), Vector(IntConstant(1))), "map", None),
+        Vector(Lambda(List(), Vector(("b", SInt)), NoType, Some(Ident("b", NoType)))))
+  }
+
+  property("SCollection.zip") {
+    parse("OUTPUTS.zip(Coll(1, 2))") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "zip"),
+        Vector(Apply(Ident("Coll"), Vector(IntConstant(1), IntConstant(2)))))
+  }
+
+  property("SCollection.zipWith") {
+    parse("OUTPUTS.zipWith(Coll(1, 2), { (box: Box, i: Int) => i })") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "zipWith"),
+        Vector(Apply(Ident("Coll"), Vector(IntConstant(1), IntConstant(2))),
+          Lambda(List(), Vector(("box", SBox), ("i", SInt)), NoType, Some(Ident("i", NoType)))))
+  }
+
+  property("SCollection.flatMap") {
+    parse("OUTPUTS.flatMap({ (box: Box) => Coll(box) })") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "flatMap"),
+        Vector(Lambda(List(), Vector(("box", SBox)), NoType,
+          Some(Apply(Ident("Coll"), Vector(Ident("box", NoType)))))))
+  }
+
 }
