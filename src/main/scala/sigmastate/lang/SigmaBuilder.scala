@@ -187,6 +187,8 @@ trait SigmaBuilder {
   def mkPlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
   def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
 
+  def mkLogicalNot(input: Value[SBoolean.type]): Value[SBoolean.type]
+
   def liftAny(v: Any): Nullable[SValue] = v match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
     case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
@@ -525,6 +527,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
     ModQArithOp(left, right, OpCodes.MinusModQCode)
+
+  override def mkLogicalNot(input: Value[SBoolean.type]): Value[SBoolean.type] =
+    LogicalNot(input)
 }
 
 trait TypeConstraintCheck {

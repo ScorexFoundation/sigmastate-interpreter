@@ -641,4 +641,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("HEADERS.version") shouldBe Select(Ident("HEADERS"), "version")
     parse("HEADERS.parentId") shouldBe Select(Ident("HEADERS"), "parentId")
   }
+
+  property("logical not unary op") {
+    parse("!true") shouldBe LogicalNot(TrueLeaf)
+    parse("! (1 == 0)") shouldBe LogicalNot(EQ(IntConstant(1), IntConstant(0)))
+  }
 }

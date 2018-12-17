@@ -164,4 +164,7 @@ object OpCodes extends ValueCodes {
   val DecodePointCode: OpCode = (LastConstantCode + 126).toByte
 
   // reserved 127 - 143 (17)
+
+  val LogicalNotCode : OpCode = (LastConstantCode + 126).toByte
+  // reserved 127 - 143 (17)
 }

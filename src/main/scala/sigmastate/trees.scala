@@ -545,3 +545,8 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 object If {
   val tT = STypeIdent("T")
 }
+
+case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {
+  override val opCode: OpCode = OpCodes.LogicalNotCode
+  override val opType = SFunc(Vector(SBoolean), SBoolean)
+}
