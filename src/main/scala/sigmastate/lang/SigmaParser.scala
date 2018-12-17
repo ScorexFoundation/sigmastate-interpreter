@@ -53,6 +53,7 @@ object SigmaParser extends Exprs with Types with Core {
           builder.mkConstant[SLong.type](-value, SLong)
         case _ => error(s"cannot prefix $arg with op $opName")
       }
+    case "-" => builder.mkNegation(arg.asNumValue)
     case "!" => builder.mkLogicalNot(arg.asBoolValue)
     case _ => error(s"Unknown prefix operation $opName for $arg")
   }

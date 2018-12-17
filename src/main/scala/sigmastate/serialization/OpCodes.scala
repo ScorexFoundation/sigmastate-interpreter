@@ -166,5 +166,6 @@ object OpCodes extends ValueCodes {
   // reserved 127 - 143 (17)
 
   val LogicalNotCode : OpCode = (LastConstantCode + 126).toByte
-  // reserved 127 - 143 (17)
+  val NegationCode   : OpCode = (LastConstantCode + 127).toByte
+  // reserved 128 - 143 (16)
 }

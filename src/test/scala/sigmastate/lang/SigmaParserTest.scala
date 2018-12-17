@@ -636,6 +636,16 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("1.compare(2)") shouldBe Apply(Select(IntConstant(1), "compare", None), Vector(IntConstant(2)))
   }
 
+  property("numeric constant negation") {
+    parse("-3") shouldBe IntConstant(-3)
+    parse("-3.toByte") shouldBe Select(IntConstant(-3), "toByte")
+  }
+
+  property("numeric negation unary op") {
+    parse("-OUTPUTS.size") shouldBe Negation(Select(Ident("OUTPUTS"), "size").asIntValue)
+    parse("- (3 - 2)") shouldBe Negation(Minus(IntConstant(3), IntConstant(2)))
+  }
+
   property("HEADERS methods") {
     parse("HEADERS") shouldBe Ident("HEADERS")
     parse("HEADERS.version") shouldBe Select(Ident("HEADERS"), "version")
