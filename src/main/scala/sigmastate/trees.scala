@@ -369,6 +369,11 @@ case class BitInversion[T <: SNumericType](input: Value[T]) extends NotReadyValu
   override def opType: SFunc = SFunc(input.tpe, tpe)
 }
 
+case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], opCode: OpCode)
+  extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
+  override def tpe: T = left.tpe
+}
+
 case class ModQ(input: Value[SBigInt.type])
   extends NotReadyValue[SBigInt.type] {
   override val opCode: OpCode = OpCodes.ModQCode
@@ -491,7 +496,7 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
 
 case class BinXor(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
-  override val opCode: OpCode = BinOrCode
+  override val opCode: OpCode = BinXorCode
 }
 
 /**

@@ -9,6 +9,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
+import sigmastate.serialization.OpCodes
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
@@ -663,6 +664,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("logical XOR") {
     parse("true ^ false") shouldBe BinXor(TrueLeaf, FalseLeaf)
+  }
+
+  property("BitAnd: bitwise AND for numeric types") {
+    parse("1 & 2") shouldBe BitOp(IntConstant(1), IntConstant(2), OpCodes.BitAndCode)
   }
 
 }
