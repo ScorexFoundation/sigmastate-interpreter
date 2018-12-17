@@ -663,7 +663,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("logical XOR") {
-    parse("true ^ false") shouldBe BinXor(TrueLeaf, FalseLeaf)
+    parse("true ^ false") shouldBe MethodCallLike(TrueLeaf, "^", Vector(FalseLeaf))
   }
 
   property("BitAnd: bitwise AND for numeric types") {

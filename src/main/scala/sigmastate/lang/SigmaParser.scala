@@ -59,7 +59,7 @@ object SigmaParser extends Exprs with Types with Core {
     case _ => error(s"Unknown prefix operation $opName for $arg")
   }
 
-  val parseAsMethods = Set("*", "++", "||", "&&", "+")
+  val parseAsMethods = Set("*", "++", "||", "&&", "+", "^")
 
   def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType] = opName match {
     case "==" => EQ(l, r)
@@ -71,7 +71,6 @@ object SigmaParser extends Exprs with Types with Core {
     case "-"  => builder.mkMinus(l.asValue[SLong.type], r.asValue[SLong.type])
     case "|"  => builder.mkXor(l.asValue[SByteArray], r.asValue[SByteArray])
     case "&"  => builder.mkBitAnd(l.asNumValue, r.asNumValue)
-    case "^"  => builder.mkBinXor(l.asBoolValue, r.asBoolValue)
     case _ if parseAsMethods.contains(opName) =>
       MethodCallLike(l, opName, IndexedSeq(r))
     case "/"  => builder.mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])
