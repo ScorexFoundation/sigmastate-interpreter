@@ -635,4 +635,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   property("SNumeric.compare") {
     parse("1.compare(2)") shouldBe Apply(Select(IntConstant(1), "compare", None), Vector(IntConstant(2)))
   }
+
+  property("HEADERS methods") {
+    parse("HEADERS") shouldBe Ident("HEADERS")
+    parse("HEADERS.version") shouldBe Select(Ident("HEADERS"), "version")
+    parse("HEADERS.parentId") shouldBe Select(Ident("HEADERS"), "parentId")
+  }
 }
