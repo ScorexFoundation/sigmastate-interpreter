@@ -531,18 +531,27 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("sigmaProp(HEIGHT > 1000)") shouldBe Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))
   }
 
-  property("modQ") {
+  property("SBigInt.toBytes") {
+    parse("10.toBigInt.toBytes") shouldBe Select(Select(IntConstant(10), "toBigInt"), "toBytes")
+  }
+
+  property("SBigInt.modQ") {
     parse("10.toBigInt.modQ") shouldBe Select(Select(IntConstant(10), "toBigInt"), "modQ")
   }
 
-  property("plusModQ") {
+  property("SBigInt.plusModQ") {
     parse("10.toBigInt.plusModQ(1.toBigInt)") shouldBe
       Apply(Select(Select(IntConstant(10), "toBigInt"), "plusModQ"), Vector(Select(IntConstant(1), "toBigInt")))
   }
 
-  property("minusModQ") {
+  property("SBigInt.minusModQ") {
     parse("10.toBigInt.minusModQ(1.toBigInt)") shouldBe
       Apply(Select(Select(IntConstant(10), "toBigInt"), "minusModQ"), Vector(Select(IntConstant(1), "toBigInt")))
+  }
+
+  property("SBigInt.multModQ") {
+    parse("10.toBigInt.multModQ(1.toBigInt)") shouldBe
+      Apply(Select(Select(IntConstant(10), "toBigInt"), "multModQ"), Vector(Select(IntConstant(1), "toBigInt")))
   }
 
   property("byteArrayToLong") {
@@ -602,4 +611,28 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
           Some(Apply(Ident("Coll"), Vector(Ident("box", NoType)))))))
   }
 
+  property("SGroupElement.exp") {
+    parse("{ (g: GroupElement) => g.exp(1.toBigInt) }") shouldBe
+      Lambda(List(), Vector(("g", SGroupElement)), NoType,
+        Some(Apply(Select(Ident("g", NoType), "exp", None),
+          Vector(Select(IntConstant(1), "toBigInt", None)))))
+  }
+
+  property("SNumeric.toBytes") {
+    parse("1.toBytes") shouldBe Select(IntConstant(1), "toBytes")
+    parse("1L.toBytes") shouldBe Select(LongConstant(1), "toBytes")
+  }
+
+  property("SNumeric.toBits") {
+    parse("1.toBits") shouldBe Select(IntConstant(1), "toBits")
+    parse("1L.toBits") shouldBe Select(LongConstant(1), "toBits")
+  }
+
+  property("SNumeric.abs") {
+    parse("1.abs") shouldBe Select(IntConstant(1), "abs")
+  }
+
+  property("SNumeric.compare") {
+    parse("1.compare(2)") shouldBe Apply(Select(IntConstant(1), "compare", None), Vector(IntConstant(2)))
+  }
 }
