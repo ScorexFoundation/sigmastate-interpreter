@@ -195,6 +195,8 @@ trait SigmaBuilder {
   def mkBitOr[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkBitAnd[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitShiftRight[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitShiftLeft[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
 
   def liftAny(v: Any): Nullable[SValue] = v match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
@@ -554,6 +556,12 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     BitOp(left, right, OpCodes.BitXorCode)
+
+  override def mkBitShiftRight[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    BitOp(left, right, OpCodes.BitShiftRightCode)
+
+  override def mkBitShiftLeft[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    BitOp(left, right, OpCodes.BitShiftLeftCode)
 }
 
 trait TypeConstraintCheck {

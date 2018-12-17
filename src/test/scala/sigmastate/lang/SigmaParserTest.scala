@@ -670,4 +670,16 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("1 & 2") shouldBe BitOp(IntConstant(1), IntConstant(2), OpCodes.BitAndCode)
   }
 
+  property("BitShiftRight: bit-shifted right for numeric types") {
+    parse("128 >> 2") shouldBe MethodCallLike(IntConstant(128), ">>", Vector(IntConstant(2)))
+  }
+
+  property("BitShiftLeft: bit-shifted left for numeric types") {
+    parse("128 << 2") shouldBe MethodCallLike(IntConstant(128), "<<",  Vector(IntConstant(2)))
+  }
+
+  property("BitShiftRightZeroed: bit-shifted right(zeroed) for numeric types") {
+    parse("128 >>> 2") shouldBe MethodCallLike(IntConstant(128), ">>>", Vector(IntConstant(2)))
+  }
+
 }

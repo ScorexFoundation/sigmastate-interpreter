@@ -59,7 +59,7 @@ object SigmaParser extends Exprs with Types with Core {
     case _ => error(s"Unknown prefix operation $opName for $arg")
   }
 
-  val parseAsMethods = Set("*", "++", "||", "&&", "+", "^")
+  val parseAsMethods = Set("*", "++", "||", "&&", "+", "^", "<<", ">>", ">>>")
 
   def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType] = opName match {
     case "==" => EQ(l, r)
