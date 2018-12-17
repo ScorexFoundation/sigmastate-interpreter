@@ -545,4 +545,30 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       Apply(Select(Select(IntConstant(10), "toBigInt"), "minusModQ"), Vector(Select(IntConstant(1), "toBigInt")))
   }
 
+  property("byteArrayToLong") {
+    parse("byteArrayToLong(Coll[Byte](1.toByte))") shouldBe
+      Apply(Ident("byteArrayToLong"), Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
+          Vector(Select(IntConstant(1), "toByte", None)))
+      ))
+  }
+
+  property("decodePoint") {
+    parse("decodePoint(Coll[Byte](1.toByte))") shouldBe
+      Apply(Ident("decodePoint"), Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
+          Vector(Select(IntConstant(1), "toByte", None)))
+      ))
+  }
+
+  property("xorOf") {
+    parse("xorOf(Coll[Boolean](true, false))") shouldBe
+      Apply(Ident("xorOf"), Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(SBoolean)),
+          Vector(TrueLeaf, FalseLeaf))
+      ))
+  }
 }
