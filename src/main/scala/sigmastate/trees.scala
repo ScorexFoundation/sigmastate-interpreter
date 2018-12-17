@@ -258,7 +258,7 @@ object Downcast {
 }
 
 /**
-  * Cast SLong to SByteArray
+  * Convert SLong to SByteArray
   */
 case class LongToByteArray(input: Value[SLong.type])
   extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
@@ -267,12 +267,30 @@ case class LongToByteArray(input: Value[SLong.type])
 }
 
 /**
-  * Cast SByteArray to SBigInt
+  * Convert SByteArray to SLong
+  */
+case class ByteArrayToLong(input: Value[SByteArray])
+  extends Transformer[SByteArray, SLong.type] with NotReadyValueLong {
+  override val opCode: OpCode = OpCodes.ByteArrayToLongCode
+  override val opType = SFunc(SByteArray, SLong)
+}
+
+/**
+  * Convert SByteArray to SBigInt
   */
 case class ByteArrayToBigInt(input: Value[SByteArray])
   extends Transformer[SByteArray, SBigInt.type] with NotReadyValueBigInt {
   override val opCode: OpCode = OpCodes.ByteArrayToBigIntCode
   override val opType = SFunc(SByteArray, SBigInt)
+}
+
+/**
+  * Convert SByteArray to SGroupElement using CryptoConstants.dlogGroup.curve.decodePoint(bytes)
+  */
+case class DecodePoint(input: Value[SByteArray])
+  extends Transformer[SByteArray, SGroupElement.type] with NotReadyValueGroupElement {
+  override val opCode: OpCode = OpCodes.DecodePointCode
+  override val opType = SFunc(SByteArray, SGroupElement)
 }
 
 trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByteArray {

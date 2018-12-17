@@ -13,7 +13,7 @@ import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.{SigmaPropBytes, SizeOf}
 import SType._
-
+import scalan.util.BenchmarkUtil._
 import scalan.BaseCtxTests
 
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>

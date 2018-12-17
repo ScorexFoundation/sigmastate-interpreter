@@ -7,7 +7,7 @@ import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
 import special.sigma.{TestContext => DContext}
-
+import scalan.util.BenchmarkUtil._
 
 class EvaluationTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
@@ -76,7 +76,7 @@ class EvaluationTest extends BaseCtxTests
   }
 
   test("Measure IRContext creation speed") {
-    var ctx: RuntimeIRContext = null
+    var ctx: RuntimeIRContext = new RuntimeIRContext
     measure(100) { i =>
       ctx = new RuntimeIRContext
     }

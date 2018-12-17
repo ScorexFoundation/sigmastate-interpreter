@@ -248,15 +248,4 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     IR.buildTree(valueF) shouldBe expected
   }
 
-  def measure[T](nIters: Int, okShow: Boolean = true)(action: Int => Unit): Unit = {
-    for (i <- 0 until nIters) {
-      val start = System.currentTimeMillis()
-      val res = action(i)
-      val end = System.currentTimeMillis()
-      val iterTime = end - start
-      if (okShow)
-        println(s"Iter $i: $iterTime ms")
-    }
-  }
-
 }

@@ -320,6 +320,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case _ => Nullable.None
     }
   }
+
   override val performViewsLifting = false
 
   implicit class ElemOpsForCosting(e: Elem[_]) {
@@ -528,6 +529,38 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     _sigmaDslBuilder = RTestSigmaDslBuilder()
   }
 
+// This is experimental alternative which is 10x faster in MeasureIRContext benchmark
+// However it is not fully correct. It can be used if current implementation is not fast enough.
+//  def colBuilder: Rep[ColBuilder] = {
+//    if (_colBuilder == null) _colBuilder = RColOverArrayBuilder()
+//    _colBuilder
+//  }
+//  def costedBuilder: Rep[CostedBuilder] = {
+//    if (_costedBuilder == null) _costedBuilder = RCCostedBuilder()
+//    _costedBuilder
+//  }
+//  def intPlusMonoid: Rep[Monoid[Int]] = {
+//    if (_intPlusMonoid == null) _intPlusMonoid = costedBuilder.monoidBuilder.intPlusMonoid
+//    _intPlusMonoid
+//  }
+//  def longPlusMonoid: Rep[Monoid[Long]] = {
+//    if (_longPlusMonoid == null) _longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
+//    _longPlusMonoid
+//  }
+//  def sigmaDslBuilder: Rep[SigmaDslBuilder] = {
+//    if (_sigmaDslBuilder == null) _sigmaDslBuilder = RTestSigmaDslBuilder()
+//    _sigmaDslBuilder
+//  }
+//
+//  protected override def onReset(): Unit = {
+//    super.onReset()
+//    _colBuilder = null
+//    _costedBuilder = null
+//    _intPlusMonoid = null
+//    _longPlusMonoid = null
+//    _sigmaDslBuilder = null
+//  }
+
   protected override def onReset(): Unit = {
     super.onReset()
     init()
@@ -633,21 +666,21 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }).asInstanceOf[Liftable[_,WT]]
 
   import NumericOps._
-  private val elemToNumericMap = Map[Elem[_], Numeric[_]](
+  private lazy val elemToNumericMap = Map[Elem[_], Numeric[_]](
     (ByteElement, numeric[Byte]),
     (ShortElement, numeric[Short]),
     (IntElement, numeric[Int]),
     (LongElement, numeric[Long]),
     (BigIntegerElement, numeric[BigInteger])
   )
-  private val elemToIntegralMap = Map[Elem[_], Integral[_]](
+  private lazy val elemToIntegralMap = Map[Elem[_], Integral[_]](
     (ByteElement, integral[Byte]),
     (ShortElement, integral[Short]),
     (IntElement, integral[Int]),
     (LongElement, integral[Long]),
     (BigIntegerElement, integral[BigInteger])
   )
-  private val elemToOrderingMap = Map[Elem[_], Ordering[_]](
+  private lazy val elemToOrderingMap = Map[Elem[_], Ordering[_]](
     (ByteElement, implicitly[Ordering[Byte]]),
     (ShortElement, implicitly[Ordering[Short]]),
     (IntElement, implicitly[Ordering[Int]]),

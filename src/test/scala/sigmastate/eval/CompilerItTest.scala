@@ -16,6 +16,7 @@ import sigmastate.utxo._
 import special.collection.{Col => VCol}
 import special.sigma.{TestValue => VTestValue}
 import scalan.BaseCtxTests
+import scalan.util.BenchmarkUtil._
 
 class CompilerItTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {

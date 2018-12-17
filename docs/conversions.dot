@@ -42,7 +42,7 @@ digraph conversions {
         }
     }
 
-
+    {rank=same; BigInt, Bytes }
     Bytes -> GroupElement [label=" decodePoint(...) ", color=red]
     Bytes -> BigInt [label=" byteArrayToBigInt(...) "]
     Bytes -> Long [label=" byteArrayToLong(...) ", color=red, weight=0]

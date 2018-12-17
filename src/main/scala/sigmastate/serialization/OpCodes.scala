@@ -155,9 +155,13 @@ object OpCodes extends ValueCodes {
   val ModQCode     : OpCode = (LastConstantCode + 119).toByte
   val PlusModQCode : OpCode = (LastConstantCode + 120).toByte
   val MinusModQCode: OpCode = (LastConstantCode + 121).toByte
+
   val SigmaAndCode : OpCode = (LastConstantCode + 122).toByte
   val SigmaOrCode  : OpCode = (LastConstantCode + 123).toByte
   val BinOrCode    : OpCode = (LastConstantCode + 124).toByte
   val BinAndCode   : OpCode = (LastConstantCode + 125).toByte
-  // reserved 126 - 143 (18)
+
+  val DecodePointCode: OpCode = (LastConstantCode + 126).toByte
+
+  // reserved 127 - 143 (17)
 }

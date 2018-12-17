@@ -92,7 +92,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       "fixedRate" -> s.fixedRate,
       "oneEpochReduction" -> s.oneEpochReduction)
 
-    val prop1 = compileWithCosting(env,
+    val prop1 = compile(env,
       """{
         |    val epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
         |    val out = OUTPUTS(0)
