@@ -177,5 +177,13 @@ object OpCodes extends ValueCodes {
   val BitShiftRightCode    : OpCode = (LastConstantCode + 133).toByte
   val BitShiftLeftCode     : OpCode = (LastConstantCode + 134).toByte
   val BitShiftRightZeroedCode     : OpCode = (LastConstantCode + 135).toByte
-  // reserved 136 - 143 (8)
+
+  val BitCollShiftRightCode    : OpCode = (LastConstantCode + 136).toByte
+  val BitCollShiftLeftCode     : OpCode = (LastConstantCode + 137).toByte
+  val BitCollShiftRightZeroedCode     : OpCode = (LastConstantCode + 138).toByte
+
+  val BitCollRotateLeftCode     : OpCode = (LastConstantCode + 139).toByte
+  val BitCollRotateRightCode     : OpCode = (LastConstantCode + 140).toByte
+
+  // reserved 141 - 143 (2)
 }

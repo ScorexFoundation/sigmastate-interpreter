@@ -499,6 +499,22 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
   override val opCode: OpCode = BinXorCode
 }
 
+case class BitRotateLeft(override val left: Value[SCollection[SBoolean.type]],
+                         override val right: Value[SInt.type])
+  extends TwoArgumentsOperation[SCollection[SBoolean.type], SInt.type, SCollection[SBoolean.type]] {
+
+  override val opCode: OpCode = OpCodes.BitCollRotateLeftCode
+  override def tpe: SCollection[SBoolean.type] = left.tpe
+}
+
+case class BitRotateRight(override val left: Value[SCollection[SBoolean.type]],
+                         override val right: Value[SInt.type])
+  extends TwoArgumentsOperation[SCollection[SBoolean.type], SInt.type, SCollection[SBoolean.type]] {
+
+  override val opCode: OpCode = OpCodes.BitCollRotateRightCode
+  override def tpe: SCollection[SBoolean.type] = left.tpe
+}
+
 /**
   * A tree node with three descendants
   */
