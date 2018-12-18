@@ -70,7 +70,9 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, compiledScript, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  property("prover enriching context - xor") {
+  // todo: fix broken XOR for byte arrays
+  // in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+  ignore("prover enriching context - xor") {
     val v1 = Base16.decode("abcdef7865").get
     val k1 = 21: Byte
 

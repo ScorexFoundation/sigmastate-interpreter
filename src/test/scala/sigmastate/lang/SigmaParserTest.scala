@@ -70,7 +70,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("true || (true && false)") shouldBe or(TrueLeaf, and(TrueLeaf, FalseLeaf))
     parse("false || false || false") shouldBe or(or(FalseLeaf, FalseLeaf), FalseLeaf)
     parse("(1>= 0)||(3L >2L)") shouldBe or(GE(1, 0), GT(3L, 2L))
-    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
+    // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+//    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
     parse("arr1 ++ arr2") shouldBe MethodCallLike(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
     parse("col1 ++ col2") shouldBe MethodCallLike(Ident("col1"), "++", IndexedSeq(Ident("col2")))
     parse("ge.exp(n)") shouldBe Apply(Select(GEIdent("ge"), "exp"), Vector(BigIntIdent("n")))
@@ -668,6 +669,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("BitAnd: bitwise AND for numeric types") {
     parse("1 & 2") shouldBe BitOp(IntConstant(1), IntConstant(2), OpCodes.BitAndCode)
+  }
+
+  property("BitOr: bitwise OR for numeric types") {
+    parse("1 | 2") shouldBe BitOp(IntConstant(1), IntConstant(2), OpCodes.BitOrCode)
   }
 
   property("BitShiftRight: bit-shifted right for numeric types") {

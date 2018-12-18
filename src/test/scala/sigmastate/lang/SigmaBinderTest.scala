@@ -32,7 +32,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "HEIGHT - 1") shouldBe mkMinus(Height, 1)
     bind(env, "HEIGHT + 1") shouldBe plus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
-    bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10, 20))
+    // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+//    bind(env, "arr1 | arr2") shouldBe Xor(Array[Byte](1, 2), Array[Byte](10, 20))
     bind(env, "arr1 ++ arr2") shouldBe MethodCallLike(Array[Byte](1, 2), "++", IndexedSeq(Array[Byte](10, 20))) // AppendBytes(Array[Byte](1, 2), Array[Byte](10,20))
     bind(env, "col1 ++ col2") shouldBe
       MethodCallLike(
