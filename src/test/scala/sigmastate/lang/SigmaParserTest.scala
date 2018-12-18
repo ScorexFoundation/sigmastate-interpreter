@@ -687,17 +687,17 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("128 >>> 2") shouldBe MethodCallLike(IntConstant(128), ">>>", Vector(IntConstant(2)))
   }
 
-  property("BitCollShiftRight: bit-shifted right for numeric types") {
+  property("CollShiftRight: shift collection right") {
     parse("Coll(true, false) >> 2") shouldBe
       MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), ">>", Vector(IntConstant(2)))
   }
 
-  property("BitCollShiftLeft: bit-shifted left for numeric types") {
+  property("CollShiftLeft: shift collection left") {
     parse("Coll(true, false) << 2") shouldBe
       MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "<<", Vector(IntConstant(2)))
   }
 
-  property("BitCollShiftRightZeroed: bit-shifted right(zeroed) for numeric types") {
+  property("CollShiftRightZeroed: shift collection right(zeroed)") {
     parse("Coll(true, false) >>> 2") shouldBe
       MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), ">>>", Vector(IntConstant(2)))
   }
