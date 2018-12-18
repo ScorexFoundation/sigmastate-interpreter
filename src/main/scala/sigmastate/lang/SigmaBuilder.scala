@@ -197,10 +197,6 @@ trait SigmaBuilder {
   def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkBitShiftRight[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkBitShiftLeft[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-  def mkBitRotateLeft(left: Value[SCollection[SBoolean.type]],
-                      right: Value[SInt.type]): Value[SCollection[SBoolean.type]]
-  def mkBitRotateRight(left: Value[SCollection[SBoolean.type]],
-                      right: Value[SInt.type]): Value[SCollection[SBoolean.type]]
 
   def liftAny(v: Any): Nullable[SValue] = v match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
@@ -567,13 +563,6 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkBitShiftLeft[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T] =
     BitOp(bits, shift, OpCodes.BitShiftLeftCode)
 
-  override def mkBitRotateLeft(bits: Value[SCollection[SBoolean.type]],
-                               shift: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
-    BitRotate(bits, shift, OpCodes.BitCollRotateLeftCode)
-
-  override def mkBitRotateRight(bits: Value[SCollection[SBoolean.type]],
-                                shift: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
-    BitRotate(bits, shift, OpCodes.BitCollRotateRightCode)
 }
 
 trait TypeConstraintCheck {

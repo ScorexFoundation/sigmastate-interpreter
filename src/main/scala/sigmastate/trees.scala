@@ -499,14 +499,14 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
   override val opCode: OpCode = BinXorCode
 }
 
-/** Returns this collection bit-shifted left/right by the specified number of bits,
-  * filling in the new right/left bits from left/right bits. The size of collection is preserved. */
-case class BitRotate(bits: Value[SCollection[SBoolean.type]],
-                         shift: Value[SInt.type],
-                         opCode: OpCode)
-  extends NotReadyValue[SCollection[SBoolean.type]] {
-  override def tpe: SCollection[SBoolean.type] = bits.tpe
-  override def opType = SFunc(Vector(bits.tpe, shift.tpe), tpe)
+/** Returns this collection shifted left/right by the specified number of elements,
+  * filling in the new right/left elements from left/right elements. The size of collection is preserved. */
+case class Rotate[T <: SType](coll: Value[SCollection[T]],
+                              shift: Value[SInt.type],
+                              opCode: OpCode)
+  extends NotReadyValue[SCollection[T]] {
+  override def tpe: SCollection[T] = coll.tpe
+  override def opType = SFunc(Vector(coll.tpe, shift.tpe), tpe)
 }
 
 /**

@@ -702,14 +702,14 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), ">>>", Vector(IntConstant(2)))
   }
 
-  property("rotateLeft op: shift bit collection left") {
-    parse("Coll(true, false) rotateLeft 2") shouldBe
-      BitRotateLeft(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)).asCollection[SBoolean.type], IntConstant(2))
+  property("Coll.rotateLeft: shift collection left") {
+    parse("Coll(true, false).rotateLeft(2)") shouldBe
+      Apply(Select(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "rotateLeft", None), Vector(IntConstant(2)))
   }
 
-  property("rotateRight op: shift bit collection right") {
-    parse("Coll(true, false) rotateRight 2") shouldBe
-      BitRotateRight(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)).asCollection[SBoolean.type], IntConstant(2))
+  property("Coll.rotateRight: shift collection right") {
+    parse("Coll(true, false).rotateRight(2)") shouldBe
+      Apply(Select(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "rotateRight", None), Vector(IntConstant(2)))
   }
 
 }

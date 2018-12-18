@@ -75,8 +75,6 @@ object SigmaParser extends Exprs with Types with Core {
       MethodCallLike(l, opName, IndexedSeq(r))
     case "/"  => builder.mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])
     case "%"  => builder.mkModulo(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "rotateLeft" => builder.mkBitRotateLeft(l.asCollection[SBoolean.type], r.asIntValue)
-    case "rotateRight" => builder.mkBitRotateRight(l.asCollection[SBoolean.type], r.asIntValue)
     case _ => error(s"Unknown binary operation $opName")
   }
 
