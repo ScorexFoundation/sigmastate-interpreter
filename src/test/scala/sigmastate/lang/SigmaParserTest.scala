@@ -652,10 +652,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("~OUTPUTS.size") shouldBe BitInversion(Select(Ident("OUTPUTS"), "size").asIntValue)
   }
 
-  property("HEADERS methods") {
+  property("HEADERS and SHeader methods") {
     parse("HEADERS") shouldBe Ident("HEADERS")
-    parse("HEADERS.version") shouldBe Select(Ident("HEADERS"), "version")
-    parse("HEADERS.parentId") shouldBe Select(Ident("HEADERS"), "parentId")
+    parse("HEADERS(0).version") shouldBe Select(Apply(Ident("HEADERS"), Vector(IntConstant(0))), "version")
+    parse("HEADERS(0).parentId") shouldBe Select(Apply(Ident("HEADERS"), Vector(IntConstant(0))), "parentId")
   }
 
   property("logical not unary op") {
