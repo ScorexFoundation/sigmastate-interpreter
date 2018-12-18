@@ -561,19 +561,19 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     BitOp(left, right, OpCodes.BitXorCode)
 
-  override def mkBitShiftRight[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    BitOp(left, right, OpCodes.BitShiftRightCode)
+  override def mkBitShiftRight[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T] =
+    BitOp(bits, shift, OpCodes.BitShiftRightCode)
 
-  override def mkBitShiftLeft[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    BitOp(left, right, OpCodes.BitShiftLeftCode)
+  override def mkBitShiftLeft[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T] =
+    BitOp(bits, shift, OpCodes.BitShiftLeftCode)
 
-  override def mkBitRotateLeft(left: Value[SCollection[SBoolean.type]],
-                               right: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
-    BitRotateLeft(left, right)
+  override def mkBitRotateLeft(bits: Value[SCollection[SBoolean.type]],
+                               shift: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
+    BitRotateLeft(bits, shift)
 
-  override def mkBitRotateRight(left: Value[SCollection[SBoolean.type]],
-                               right: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
-    BitRotateRight(left, right)
+  override def mkBitRotateRight(bits: Value[SCollection[SBoolean.type]],
+                                shift: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
+    BitRotateRight(bits, shift)
 }
 
 trait TypeConstraintCheck {
