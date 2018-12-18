@@ -569,11 +569,11 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBitRotateLeft(bits: Value[SCollection[SBoolean.type]],
                                shift: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
-    BitRotateLeft(bits, shift)
+    BitRotate(bits, shift, OpCodes.BitCollRotateLeftCode)
 
   override def mkBitRotateRight(bits: Value[SCollection[SBoolean.type]],
                                 shift: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
-    BitRotateRight(bits, shift)
+    BitRotate(bits, shift, OpCodes.BitCollRotateRightCode)
 }
 
 trait TypeConstraintCheck {

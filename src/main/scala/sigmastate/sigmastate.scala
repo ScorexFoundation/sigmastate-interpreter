@@ -46,4 +46,11 @@ package object sigmastate {
   def MinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
     mkMinusModQ(left, right)
 
+  def BitRotateLeft(bits: Value[SCollection[SBoolean.type]],
+                    shift: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
+    mkBitRotateLeft(bits, shift)
+
+  def BitRotateRight(bits: Value[SCollection[SBoolean.type]],
+                    shift: Value[SInt.type]): Value[SCollection[SBoolean.type]] =
+    mkBitRotateRight(bits, shift)
 }
