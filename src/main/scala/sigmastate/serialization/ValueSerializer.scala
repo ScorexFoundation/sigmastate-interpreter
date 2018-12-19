@@ -123,6 +123,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ModQSerializer,
     ModQArithOpSerializer(PlusModQCode, mkPlusModQ),
     ModQArithOpSerializer(MinusModQCode, mkMinusModQ),
+    SubstConstantsSerializer,
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
