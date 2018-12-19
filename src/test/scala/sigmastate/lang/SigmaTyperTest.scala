@@ -64,10 +64,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "INPUTS", Inputs) shouldBe SCollection(SBox)
     typecheck(env, "INPUTS.size") shouldBe SInt
     typecheck(env, "INPUTS.size > 1", GT(Select(Inputs, "size", Some(SInt)), 1)) shouldBe SBoolean
-    typecheck(env, "arr1 | arr2", Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
+    // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+//    typecheck(env, "arr1 | arr2", Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
     typecheck(env, "arr1 ++ arr2", Append(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
     typecheck(env, "col1 ++ col2") shouldBe SCollection(SLong)
-    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
+    // todo should be g1.exp(n1)
+    // ( see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 )
+//    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
     typecheck(env, "g1 * g2") shouldBe SGroupElement
     typecheck(env, "p1 || p2") shouldBe SSigmaProp
     typecheck(env, "p1 && p2") shouldBe SSigmaProp

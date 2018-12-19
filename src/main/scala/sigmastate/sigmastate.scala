@@ -45,5 +45,4 @@ package object sigmastate {
 
   def MinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
     mkMinusModQ(left, right)
-
 }

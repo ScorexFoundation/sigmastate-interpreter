@@ -45,6 +45,7 @@ trait SigmaBuilder {
   def mkBinOr(left: BoolValue, right: BoolValue): BoolValue
   def mkBinAnd(left: BoolValue, right: BoolValue): BoolValue
   def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]]): SigmaPropValue
+  def mkBinXor(left: BoolValue, right: BoolValue): BoolValue
 
   def mkExponentiate(left: Value[SGroupElement.type],
                      right: Value[SBigInt.type]): Value[SGroupElement.type]
@@ -187,6 +188,16 @@ trait SigmaBuilder {
   def mkPlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
   def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
 
+  def mkLogicalNot(input: Value[SBoolean.type]): Value[SBoolean.type]
+
+  def mkNegation[T <: SNumericType](input: Value[T]): Value[T]
+  def mkBitInversion[T <: SNumericType](input: Value[T]): Value[T]
+  def mkBitOr[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitAnd[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitShiftRight[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitShiftLeft[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def liftAny(v: Any): Nullable[SValue] = v match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
     case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
@@ -282,6 +293,8 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]]): SigmaPropValue =
     AtLeast(bound, input)
+
+  override def mkBinXor(left: BoolValue, right: BoolValue): BoolValue = BinXor(left, right)
 
   override def mkExponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =
     Exponentiate(left, right)
@@ -525,6 +538,31 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
     ModQArithOp(left, right, OpCodes.MinusModQCode)
+
+  override def mkLogicalNot(input: Value[SBoolean.type]): Value[SBoolean.type] =
+    LogicalNot(input)
+
+  override def mkNegation[T <: SNumericType](input: Value[T]): Value[T] =
+    Negation(input)
+
+  override def mkBitInversion[T <: SNumericType](input: Value[T]): Value[T] =
+    BitInversion(input)
+
+  override def mkBitOr[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    BitOp(left, right, OpCodes.BitOrCode)
+
+  override def mkBitAnd[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    BitOp(left, right, OpCodes.BitAndCode)
+
+  override def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    BitOp(left, right, OpCodes.BitXorCode)
+
+  override def mkBitShiftRight[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T] =
+    BitOp(bits, shift, OpCodes.BitShiftRightCode)
+
+  override def mkBitShiftLeft[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T] =
+    BitOp(bits, shift, OpCodes.BitShiftLeftCode)
+
 }
 
 trait TypeConstraintCheck {

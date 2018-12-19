@@ -357,6 +357,23 @@ object ArithOp {
   }
 }
 
+case class Negation[T <: SNumericType](input: Value[T]) extends NotReadyValue[T] {
+  override val opCode: OpCode = OpCodes.NegationCode
+  override def tpe: T = input.tpe
+  override def opType: SFunc = SFunc(input.tpe, tpe)
+}
+
+case class BitInversion[T <: SNumericType](input: Value[T]) extends NotReadyValue[T] {
+  override val opCode: OpCode = OpCodes.BitInversionCode
+  override def tpe: T = input.tpe
+  override def opType: SFunc = SFunc(input.tpe, tpe)
+}
+
+case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], opCode: OpCode)
+  extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
+  override def tpe: T = left.tpe
+}
+
 case class ModQ(input: Value[SBigInt.type])
   extends NotReadyValue[SBigInt.type] {
   override val opCode: OpCode = OpCodes.ModQCode
@@ -477,6 +494,21 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   override val opCode: OpCode = BinAndCode
 }
 
+case class BinXor(override val left: BoolValue, override val right: BoolValue)
+  extends Relation[SBoolean.type, SBoolean.type] {
+  override val opCode: OpCode = BinXorCode
+}
+
+/** Returns this collection shifted left/right by the specified number of elements,
+  * filling in the new right/left elements from left/right elements. The size of collection is preserved. */
+case class Rotate[T <: SType](coll: Value[SCollection[T]],
+                              shift: Value[SInt.type],
+                              opCode: OpCode)
+  extends NotReadyValue[SCollection[T]] {
+  override def tpe: SCollection[T] = coll.tpe
+  override def opType = SFunc(Vector(coll.tpe, shift.tpe), tpe)
+}
+
 /**
   * A tree node with three descendants
   */
@@ -544,4 +576,9 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 }
 object If {
   val tT = STypeIdent("T")
+}
+
+case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {
+  override val opCode: OpCode = OpCodes.LogicalNotCode
+  override val opType = SFunc(Vector(SBoolean), SBoolean)
 }

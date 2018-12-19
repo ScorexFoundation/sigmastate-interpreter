@@ -9,6 +9,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
+import sigmastate.serialization.OpCodes
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
@@ -69,10 +70,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("true || (true && false)") shouldBe or(TrueLeaf, and(TrueLeaf, FalseLeaf))
     parse("false || false || false") shouldBe or(or(FalseLeaf, FalseLeaf), FalseLeaf)
     parse("(1>= 0)||(3L >2L)") shouldBe or(GE(1, 0), GT(3L, 2L))
-    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
+    // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+//    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
     parse("arr1 ++ arr2") shouldBe MethodCallLike(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
     parse("col1 ++ col2") shouldBe MethodCallLike(Ident("col1"), "++", IndexedSeq(Ident("col2")))
-    parse("ge ^ n") shouldBe Exponentiate(GEIdent("ge"), BigIntIdent("n"))
+    parse("ge.exp(n)") shouldBe Apply(Select(GEIdent("ge"), "exp"), Vector(BigIntIdent("n")))
     parse("g1 * g2") shouldBe MethodCallLike(Ident("g1"), "*", IndexedSeq(Ident("g2")))
     parse("g1 + g2") shouldBe MethodCallLike(Ident("g1"), "+", IndexedSeq(Ident("g2")))
   }
@@ -531,18 +533,183 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("sigmaProp(HEIGHT > 1000)") shouldBe Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))
   }
 
-  property("modQ") {
+  property("SBigInt.toBytes") {
+    parse("10.toBigInt.toBytes") shouldBe Select(Select(IntConstant(10), "toBigInt"), "toBytes")
+  }
+
+  property("SBigInt.modQ") {
     parse("10.toBigInt.modQ") shouldBe Select(Select(IntConstant(10), "toBigInt"), "modQ")
   }
 
-  property("plusModQ") {
+  property("SBigInt.plusModQ") {
     parse("10.toBigInt.plusModQ(1.toBigInt)") shouldBe
       Apply(Select(Select(IntConstant(10), "toBigInt"), "plusModQ"), Vector(Select(IntConstant(1), "toBigInt")))
   }
 
-  property("minusModQ") {
+  property("SBigInt.minusModQ") {
     parse("10.toBigInt.minusModQ(1.toBigInt)") shouldBe
       Apply(Select(Select(IntConstant(10), "toBigInt"), "minusModQ"), Vector(Select(IntConstant(1), "toBigInt")))
+  }
+
+  property("SBigInt.multModQ") {
+    parse("10.toBigInt.multModQ(1.toBigInt)") shouldBe
+      Apply(Select(Select(IntConstant(10), "toBigInt"), "multModQ"), Vector(Select(IntConstant(1), "toBigInt")))
+  }
+
+  property("byteArrayToLong") {
+    parse("byteArrayToLong(Coll[Byte](1.toByte))") shouldBe
+      Apply(Ident("byteArrayToLong"), Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
+          Vector(Select(IntConstant(1), "toByte", None)))
+      ))
+  }
+
+  property("decodePoint") {
+    parse("decodePoint(Coll[Byte](1.toByte))") shouldBe
+      Apply(Ident("decodePoint"), Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
+          Vector(Select(IntConstant(1), "toByte", None)))
+      ))
+  }
+
+  property("xorOf") {
+    parse("xorOf(Coll[Boolean](true, false))") shouldBe
+      Apply(Ident("xorOf"), Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(SBoolean)),
+          Vector(TrueLeaf, FalseLeaf))
+      ))
+  }
+
+  property("SBoolean.toByte") {
+    parse("true.toByte") shouldBe Select(TrueLeaf, "toByte")
+  }
+
+  property("SOption.map") {
+    parse("Some(1).map { (b: Int) => b}") shouldBe
+      Apply(Select(Apply(Ident("Some", NoType), Vector(IntConstant(1))), "map", None),
+        Vector(Lambda(List(), Vector(("b", SInt)), NoType, Some(Ident("b", NoType)))))
+  }
+
+  property("SCollection.zip") {
+    parse("OUTPUTS.zip(Coll(1, 2))") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "zip"),
+        Vector(Apply(Ident("Coll"), Vector(IntConstant(1), IntConstant(2)))))
+  }
+
+  property("SCollection.zipWith") {
+    parse("OUTPUTS.zipWith(Coll(1, 2), { (box: Box, i: Int) => i })") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "zipWith"),
+        Vector(Apply(Ident("Coll"), Vector(IntConstant(1), IntConstant(2))),
+          Lambda(List(), Vector(("box", SBox), ("i", SInt)), NoType, Some(Ident("i", NoType)))))
+  }
+
+  property("SCollection.flatMap") {
+    parse("OUTPUTS.flatMap({ (box: Box) => Coll(box) })") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "flatMap"),
+        Vector(Lambda(List(), Vector(("box", SBox)), NoType,
+          Some(Apply(Ident("Coll"), Vector(Ident("box", NoType)))))))
+  }
+
+  property("SGroupElement.exp") {
+    parse("{ (g: GroupElement) => g.exp(1.toBigInt) }") shouldBe
+      Lambda(List(), Vector(("g", SGroupElement)), NoType,
+        Some(Apply(Select(Ident("g", NoType), "exp", None),
+          Vector(Select(IntConstant(1), "toBigInt", None)))))
+  }
+
+  property("SNumeric.toBytes") {
+    parse("1.toBytes") shouldBe Select(IntConstant(1), "toBytes")
+    parse("1L.toBytes") shouldBe Select(LongConstant(1), "toBytes")
+  }
+
+  property("SNumeric.toBits") {
+    parse("1.toBits") shouldBe Select(IntConstant(1), "toBits")
+    parse("1L.toBits") shouldBe Select(LongConstant(1), "toBits")
+  }
+
+  property("SNumeric.abs") {
+    parse("1.abs") shouldBe Select(IntConstant(1), "abs")
+  }
+
+  property("SNumeric.compare") {
+    parse("1.compare(2)") shouldBe Apply(Select(IntConstant(1), "compare", None), Vector(IntConstant(2)))
+  }
+
+  property("numeric constant negation") {
+    parse("-3") shouldBe IntConstant(-3)
+    parse("-3.toByte") shouldBe Select(IntConstant(-3), "toByte")
+  }
+
+  property("numeric negation unary op") {
+    parse("-OUTPUTS.size") shouldBe Negation(Select(Ident("OUTPUTS"), "size").asIntValue)
+    parse("- (3 - 2)") shouldBe Negation(Minus(IntConstant(3), IntConstant(2)))
+  }
+
+  property("bitwise inversion unary op ~") {
+    parse("~OUTPUTS.size") shouldBe BitInversion(Select(Ident("OUTPUTS"), "size").asIntValue)
+  }
+
+  property("HEADERS and SHeader methods") {
+    parse("HEADERS") shouldBe Ident("HEADERS")
+    parse("HEADERS(0).version") shouldBe Select(Apply(Ident("HEADERS"), Vector(IntConstant(0))), "version")
+    parse("HEADERS(0).parentId") shouldBe Select(Apply(Ident("HEADERS"), Vector(IntConstant(0))), "parentId")
+  }
+
+  property("logical not unary op") {
+    parse("!true") shouldBe LogicalNot(TrueLeaf)
+    parse("! (1 == 0)") shouldBe LogicalNot(EQ(IntConstant(1), IntConstant(0)))
+  }
+
+  property("logical XOR") {
+    parse("true ^ false") shouldBe MethodCallLike(TrueLeaf, "^", Vector(FalseLeaf))
+  }
+
+  property("BitAnd: bitwise AND for numeric types") {
+    parse("1 & 2") shouldBe BitOp(IntConstant(1), IntConstant(2), OpCodes.BitAndCode)
+  }
+
+  property("BitOr: bitwise OR for numeric types") {
+    parse("1 | 2") shouldBe BitOp(IntConstant(1), IntConstant(2), OpCodes.BitOrCode)
+  }
+
+  property("BitShiftRight: bit-shifted right for numeric types") {
+    parse("128 >> 2") shouldBe MethodCallLike(IntConstant(128), ">>", Vector(IntConstant(2)))
+  }
+
+  property("BitShiftLeft: bit-shifted left for numeric types") {
+    parse("128 << 2") shouldBe MethodCallLike(IntConstant(128), "<<",  Vector(IntConstant(2)))
+  }
+
+  property("BitShiftRightZeroed: bit-shifted right(zeroed) for numeric types") {
+    parse("128 >>> 2") shouldBe MethodCallLike(IntConstant(128), ">>>", Vector(IntConstant(2)))
+  }
+
+  property("CollShiftRight: shift collection right") {
+    parse("Coll(true, false) >> 2") shouldBe
+      MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), ">>", Vector(IntConstant(2)))
+  }
+
+  property("CollShiftLeft: shift collection left") {
+    parse("Coll(true, false) << 2") shouldBe
+      MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "<<", Vector(IntConstant(2)))
+  }
+
+  property("CollShiftRightZeroed: shift collection right(zeroed)") {
+    parse("Coll(true, false) >>> 2") shouldBe
+      MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), ">>>", Vector(IntConstant(2)))
+  }
+
+  property("Coll.rotateLeft: shift collection left") {
+    parse("Coll(true, false).rotateLeft(2)") shouldBe
+      Apply(Select(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "rotateLeft", None), Vector(IntConstant(2)))
+  }
+
+  property("Coll.rotateRight: shift collection right") {
+    parse("Coll(true, false).rotateRight(2)") shouldBe
+      Apply(Select(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "rotateRight", None), Vector(IntConstant(2)))
   }
 
 }
