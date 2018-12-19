@@ -245,6 +245,15 @@ trait Evaluation extends RuntimeCosting { IR =>
           case SDBM.sigmaProp(_, In(b: Boolean)) =>
             val res = sigmastate.TrivialProp(b)
             out(res)
+          case SDBM.substConstants(_,
+            In(input: special.collection.Col[Byte]@unchecked),
+            In(positions: special.collection.Col[Int]@unchecked),
+            In(newVals: special.collection.Col[Any]@unchecked), elem) =>
+            val ctxObj = dataEnv(ctxSym).asInstanceOf[CostingDataContext]
+            val newValsTpe = elemToSType(elem)
+            val newValsOut = ErgoLikeContext.toTestData(newVals.arr, newValsTpe, ctxObj.isCost)(IR)
+              .asInstanceOf[Array[Any]]
+            out(SubstConstants.eval(input.arr, positions.arr, newValsOut.map(_.asInstanceOf[Value[SType]])))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
@@ -349,9 +358,11 @@ trait Evaluation extends RuntimeCosting { IR =>
           te.sym.getMetadata(OperationIdKey) match {
             case Some(opId: OperationId) =>
               if (opId.opType.tRange.isCollection) {
-                val col = res._1(res._2).asInstanceOf[special.collection.Col[Any]]
-                val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
-                CostTableStat.addOpTime(opId, colTime, col.length)
+                if (res._1(res._2).isInstanceOf[special.collection.Col[Any]]) {
+                  val col = res._1(res._2).asInstanceOf[special.collection.Col[Any]]
+                  val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
+                  CostTableStat.addOpTime(opId, colTime, col.length)
+                }
               }
               else
                 CostTableStat.addOpTime(opId, estimatedTime, len = 1)

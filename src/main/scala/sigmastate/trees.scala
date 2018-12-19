@@ -329,8 +329,20 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   */
 case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray], newValues: Value[SCollection[T]])
     extends NotReadyValueByteArray {
+  import SubstConstants._
+
   override val opCode: OpCode = OpCodes.SubstConstantsCode
-  override val opType = SFunc(Vector(SByteArray, SIntArray, newValues.tpe), SByteArray)
+  override val opType = SFunc(Vector(SByteArray, SIntArray, SCollection(tT)), SByteArray)
+}
+
+object SubstConstants {
+  val tT = STypeIdent("T")
+
+  def eval[T <: SType](scriptBytes: Array[Byte],
+                       positions: Array[Int],
+                       newVals: Array[Value[T]]): Value[SByteArray] = {
+    ByteArrayConstant(scriptBytes)
+  }
 }
 
 /**

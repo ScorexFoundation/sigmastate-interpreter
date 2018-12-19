@@ -125,6 +125,6 @@ class EvaluationTest extends BaseCtxTests
     val newVals = ConcreteCollection(Vector[SigmaPropValue](pk2), SSigmaProp)
     val expectedBytes = ErgoTreeSerializer.serialize(script(pk2))
     val ctx = newErgoContext(height = 1, boxToSpend)
-    reduce(emptyEnv, "one", EQ(SubstConstants(inputBytes, positions, newVals), ByteArrayConstant(expectedBytes)) , ctx,  true)
+    reduce(emptyEnv, "SubstConst", SubstConstants(inputBytes, positions, newVals), ctx, expectedBytes)
   }
 }

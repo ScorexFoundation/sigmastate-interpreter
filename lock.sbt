@@ -24,9 +24,9 @@ dependencyOverrides in ThisBuild ++= Seq(
   "io.github.scalan" % "library_2.12" % "master-c19564fd-SNAPSHOT",
   "io.github.scalan" % "macros_2.12" % "master-c19564fd-SNAPSHOT",
   "io.github.scalan" % "meta_2.12" % "master-c19564fd-SNAPSHOT",
-  "io.github.scalan" % "sigma-api_2.12" % "master-e8865bbf-SNAPSHOT",
-  "io.github.scalan" % "sigma-impl_2.12" % "master-e8865bbf-SNAPSHOT",
-  "io.github.scalan" % "sigma-library_2.12" % "master-e8865bbf-SNAPSHOT",
+  "io.github.scalan" % "sigma-api_2.12" % "master-4fdf0bf0-SNAPSHOT",
+  "io.github.scalan" % "sigma-impl_2.12" % "master-4fdf0bf0-SNAPSHOT",
+  "io.github.scalan" % "sigma-library_2.12" % "master-4fdf0bf0-SNAPSHOT",
   "javax.activation" % "activation" % "1.1",
   "jline" % "jline" % "2.14.3",
   "org.apache.ant" % "ant" % "1.9.6",
@@ -47,4 +47,4 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.typelevel" % "macro-compat_2.12" % "1.1.1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 198fbdeb60ac325125102dd51078f5b2ea4beaa3
+// LIBRARY_DEPENDENCIES_HASH 59006756260dd291a63118f4516f1e4e2eb5beb2
