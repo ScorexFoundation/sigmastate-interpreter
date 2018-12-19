@@ -4,13 +4,13 @@ import java.lang.reflect.Method
 import java.math.BigInteger
 
 import org.ergoplatform._
-import scapi.sigma.{ProveDHTuple, DLogProtocol}
+import scapi.sigma.{DLogProtocol, ProveDHTuple}
 import sigmastate._
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, CollectionConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
+import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, CollectionConstant, ConcreteCollection, Constant, EvaluatedValue, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf, CostTableStat}
+import sigmastate.utxo.{CostTable, CostTableStat, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -47,7 +47,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import WOption._
   import WECPoint._
   import Liftables._
-  
+
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val ColM = ColMethods
@@ -358,10 +358,11 @@ trait Evaluation extends RuntimeCosting { IR =>
           te.sym.getMetadata(OperationIdKey) match {
             case Some(opId: OperationId) =>
               if (opId.opType.tRange.isCollection) {
-                if (res._1(res._2).isInstanceOf[special.collection.Col[Any]]) {
-                  val col = res._1(res._2).asInstanceOf[special.collection.Col[Any]]
-                  val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
-                  CostTableStat.addOpTime(opId, colTime, col.length)
+                res._1(res._2) match {
+                  case col: SCol[Any]@unchecked =>
+                    val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
+                    CostTableStat.addOpTime(opId, colTime, col.length)
+                  case _ =>
                 }
               }
               else

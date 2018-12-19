@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ConcreteCollection, Constant, ErgoTree, Value}
+import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, Constant, ErgoTree, Value}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.Append
@@ -104,5 +104,34 @@ object ErgoTreeSerializer {
       )
     )
 
+  def substituteConstants(scriptBytes: Array[Byte],
+                          positions: Array[Int],
+                          newVals: Array[Value[SType]]): Value[SByteArray] = {
+    require(positions.length == newVals.length,
+      s"expected positions and newVals to have the same length, got: positions: ${positions.toSeq},\n newVals: ${newVals.toSeq}")
+    val (header, constants, treeBytes) = treeWithPlaceholdersBytes(scriptBytes)
+
+    val w = Serializer.startWriter()
+    w.put(header)
+    w.putUInt(constants.length)
+    val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+
+    constants.zipWithIndex.foreach {
+      case (_, i) if positions.contains(i) =>
+        val newVal = newVals(positions.indexOf(i))
+        // we need to get newVal's serialized constant value (see ProveDlogSerializer for example)
+        val constantStore = new ConstantStore()
+        val valW = Serializer.startWriter(constantStore)
+        ValueSerializer.serialize(newVal, valW)
+        val newConsts = constantStore.getAll
+        assert(newConsts.length == 1)
+        constantSerializer.serialize(newConsts.head, w)
+      case (c, _) =>
+        constantSerializer.serialize(c, w)
+    }
+
+    w.putBytes(treeBytes)
+    ByteArrayConstant(w.toBytes)
+  }
 }
 
