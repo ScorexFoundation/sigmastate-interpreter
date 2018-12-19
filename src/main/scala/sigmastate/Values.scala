@@ -697,23 +697,35 @@ object Values {
     *  That new language will give an interpretation for the new bytes.
     *
     *  Consistency between fields is ensured by private constructor and factory methods in `ErgoTree` object.
+    *  For performance reasons, ErgoTreeSerializer can be configured to perform additional constant segregation.
+    *  In such a case after deserialization there may be more constants segregated. This is done for example to
+    *  support caching optimization described in #264 mentioned above.
+    *
+    *  The default behavior of ErgoTreeSerializer is to preserve original structure of ErgoTree and check
+    *  consistency. In case of any inconsistency the serializer throws exception.
+    *  
+    *  @param header      the first byte of serialized byte array which determines interpretation of the rest of the array
+    *  @param constants   If isConstantSegregation == true contains the constants for which there may be
+    *                     ConstantPlaceholders in the tree.
+    *                     If isConstantSegregation == false this array should be empty and any placeholder in
+    *                     the tree will lead to exception.
+    *  @param root        if isConstantSegregation == true contains ConstantPlaceholder instead of some Constant nodes.
+    *                     Otherwise may not contain placeholders.
+    *                     It is possible to have both constants and placeholders in the tree, but for every placeholder
+    *                     there should be a constant in `constants` array.
+    *  @param proposition When isConstantSegregation == false this is the same as root.
+    *                     Otherwise, it is equivalent to `root` where all placeholders are replaced by Constants
     * */
   case class ErgoTree private(
     header: Byte,
-    /** If isConstantSegregation == true contains all constants.
-      * Otherwise should be empty */
     constants: IndexedSeq[Constant[SType]],
-    /** if isConstantSegregation == true contains ConstantPlaceholder instead of Constant nodes.
-      * Otherwise */
     root: BoolValue,
-    /** When isConstantSegregation == false this is the same as root.
-      * Otherwise, it is equivalent to `root` where all placeholders are replaced by Constants */
     proposition: BoolValue
   ) {
     assert(isConstantSegregation || constants.isEmpty)
 
-    def isConstantSegregation: Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
-    def bytes: Array[Byte] = ErgoTreeSerializer.serialize(this)
+    @inline def isConstantSegregation: Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
+    @inline def bytes: Array[Byte] = ErgoTreeSerializer.serialize(this)
   }
 
   object ErgoTree {

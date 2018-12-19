@@ -312,16 +312,18 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   * pre-defined templates.
   * The typical usage is "check that output box have proposition equal to given script bytes,
   * where minerPk (constants(0)) is replaced with currentMinerPk".
+  * Each constant in original scriptBytes have SType serialized before actual data (see ConstantSerializer).
+  * During substitution each value from newValues is checked to be an instance of the corresponding type.
+  * This means, the constants during substitution cannot change their types.
   *
   * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
   * @param positions zero based indexes in ErgoTree.constants array which should be replaced with new values
   * @param newValues new values to be injected into the corresponding positions in ErgoTree.constants array
-  * @return original scriptBytes array where only specified costants are replaced and all other bytes remain exactly the same
+  * @return original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same
   */
 case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray], newValues: Value[SCollection[T]])
     extends NotReadyValueByteArray {
   import SubstConstants._
-
   override val opCode: OpCode = OpCodes.SubstConstantsCode
   override val opType = SFunc(Vector(SByteArray, SIntArray, SCollection(tT)), SByteArray)
 }
