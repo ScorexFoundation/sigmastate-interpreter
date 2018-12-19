@@ -1387,6 +1387,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = constantPlaceholder(index)(elem)
         withDefaultSize(res, costOf(node))
 
+      case SubstConstants(In(scriptBytes), In(positions), newValues) =>
+        val bytesC = asRep[Costed[Col[Byte]]](scriptBytes)
+        val positionsC = asRep[Costed[Col[Int]]](positions)
+        val newValuesC = asRep[CostedCol[Any]](evalNode(ctx, env, newValues))
+        implicit val eAny = newValuesC.elem.asInstanceOf[CostedElem[Col[Any], _]].eVal.eA
+        val res = sigmaDslBuilder.substConstants(bytesC.value, positionsC.value, newValuesC.value)
+        val cost = bytesC.cost + perKbCostOf(node, bytesC.dataSize)
+        mkCostedCol(res, bytesC.value.length, cost)
+
       case _ =>
         error(s"Don't know how to evalNode($node)")
     }

@@ -1,13 +1,17 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigmastate.Values.IntConstant
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ConcreteCollection, Constant, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue, Value}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
 import special.sigma.{TestContext => DContext}
 import scalan.util.BenchmarkUtil._
+import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate._
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.serialization.ErgoTreeSerializer
 
 class EvaluationTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
@@ -110,4 +114,19 @@ class EvaluationTest extends BaseCtxTests
 //      )))
 //    reduce(envCF, "CrowdFunding", crowdFundingScript, ergoCtx.toTestContext, projectPubKey)
 //  }
+
+  test("SubstConst") {
+    def script(pk: ProveDlog): Value[SType] = AND(EQ(IntConstant(1), IntConstant(1)), pk)
+
+    val pk1 = DLogProverInput.random().publicImage
+    val pk2 = DLogProverInput.random().publicImage
+    val script1 = script(pk1)
+    val inputBytes = ErgoTreeSerializer.serialize(script1)
+    val positions = IntArrayConstant(Array[Int](2))
+    val newVals = ConcreteCollection(Vector[SigmaPropValue](pk2), SSigmaProp)
+    val script2 = script(pk2)
+    val expectedBytes = ErgoTreeSerializer.serialize(script2)
+    val ctx = newErgoContext(height = 1, boxToSpend)
+    reduce(emptyEnv, "SubstConst", SubstConstants(inputBytes, positions, newVals), ctx, expectedBytes)
+  }
 }

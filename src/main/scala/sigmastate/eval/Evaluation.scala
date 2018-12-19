@@ -4,13 +4,13 @@ import java.lang.reflect.Method
 import java.math.BigInteger
 
 import org.ergoplatform._
-import scapi.sigma.{ProveDHTuple, DLogProtocol}
+import scapi.sigma.{DLogProtocol, ProveDHTuple}
 import sigmastate._
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, CollectionConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
+import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, CollectionConstant, ConcreteCollection, Constant, EvaluatedValue, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf, CostTableStat}
+import sigmastate.utxo.{CostTable, CostTableStat, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -47,7 +47,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import WOption._
   import WECPoint._
   import Liftables._
-  
+
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val ColM = ColMethods
@@ -245,6 +245,15 @@ trait Evaluation extends RuntimeCosting { IR =>
           case SDBM.sigmaProp(_, In(b: Boolean)) =>
             val res = sigmastate.TrivialProp(b)
             out(res)
+          case SDBM.substConstants(_,
+            In(input: special.collection.Col[Byte]@unchecked),
+            In(positions: special.collection.Col[Int]@unchecked),
+            In(newVals: special.collection.Col[Any]@unchecked), elem) =>
+            val ctxObj = dataEnv(ctxSym).asInstanceOf[CostingDataContext]
+            val newValsTpe = elemToSType(elem)
+            val newValsOut = ErgoLikeContext.toTestData(newVals.arr, newValsTpe, ctxObj.isCost)(IR)
+              .asInstanceOf[Array[Any]]
+            out(SubstConstants.eval(input.arr, positions.arr, newValsOut.map(_.asInstanceOf[Value[SType]])))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
@@ -349,9 +358,12 @@ trait Evaluation extends RuntimeCosting { IR =>
           te.sym.getMetadata(OperationIdKey) match {
             case Some(opId: OperationId) =>
               if (opId.opType.tRange.isCollection) {
-                val col = res._1(res._2).asInstanceOf[special.collection.Col[Any]]
-                val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
-                CostTableStat.addOpTime(opId, colTime, col.length)
+                res._1(res._2) match {
+                  case col: SCol[Any]@unchecked =>
+                    val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
+                    CostTableStat.addOpTime(opId, colTime, col.length)
+                  case _ =>
+                }
               }
               else
                 CostTableStat.addOpTime(opId, estimatedTime, len = 1)

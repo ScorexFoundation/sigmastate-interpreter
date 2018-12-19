@@ -1,23 +1,14 @@
 package sigmastate
 
-import java.math.BigInteger
-
-import com.google.common.primitives.Longs
-import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
-import scorex.util.encode.{Base64, Base58}
-import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
-import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values._
-import sigmastate.interpreter.{Context, Interpreter}
-import sigmastate.serialization.OpCodes
+import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Helpers._
-import sigmastate.utxo.CostTable.Cost
+import sigmastate.serialization._
 import sigmastate.utxo.Transformer
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -329,8 +320,19 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   */
 case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray], newValues: Value[SCollection[T]])
     extends NotReadyValueByteArray {
+  import SubstConstants._
+
   override val opCode: OpCode = OpCodes.SubstConstantsCode
-  override val opType = SFunc(Vector(SByteArray, SIntArray, newValues.tpe), SByteArray)
+  override val opType = SFunc(Vector(SByteArray, SIntArray, SCollection(tT)), SByteArray)
+}
+
+object SubstConstants {
+  val tT = STypeIdent("T")
+
+  def eval(scriptBytes: Array[Byte],
+           positions: Array[Int],
+           newVals: Array[Value[SType]]): Value[SByteArray] =
+    ErgoTreeSerializer.substituteConstants(scriptBytes, positions, newVals)
 }
 
 /**

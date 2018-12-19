@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import scala.util.Success
 import sigmastate.{AvlTreeData, SInt, SLong, SType}
-import sigmastate.Values.{BigIntArrayConstant, Constant, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, TrueLeaf}
+import sigmastate.Values.{BigIntArrayConstant, Constant, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, TrueLeaf, Value}
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.utxo.CostTable
 import special.sigma.{ContractsTestkit, Box => DBox, Context => DContext, SigmaContract => DContract, TestBox => DTestBox, TestContext => DTestContext}
@@ -12,6 +12,8 @@ import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.serialization.{ConstantStore, ErgoTreeSerializer}
+
+import scala.language.implicitConversions
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxTests =>
 
@@ -87,10 +89,15 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     def apply(calc: Any, cost: Int, size: Long): Result = Result(Some(calc), Some(cost), Some(size))
   }
   def NoResult = Result(None, None, None)
+
+  sealed trait Script
+  case class Code(code: String) extends Script
+  case class Tree(tree: Value[SType]) extends Script
+
   case class EsTestCase(
       name: String,  // name of the test case, used in forming file names in test-out directory
       env: ScriptEnv,
-      script: String,
+      script: Script,
       ergoCtx: Option[ErgoLikeContext] = None,
       testContract: Option[DContext => Any] = None,
       expectedCalc: Option[Rep[Context] => Rep[Any]] = None,
@@ -120,7 +127,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     }
 
     def doCosting: Rep[(Context => Any, (Context => Int, Context => Long))] = {
-      val costed = cost(env, script)
+      val costed = script match {
+        case Code(code) => cost(env, code)
+        case Tree(tree) => cost(env, tree)
+      }
       val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
       if (printGraphs) {
         val str = struct(
@@ -196,7 +206,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
            size: Rep[Context] => Rep[Long],
            tree: SValue,
            result: Result) =
-    EsTestCase(name, env, script, Option(ctx), None,
+    EsTestCase(name, env, Code(script), Option(ctx), None,
       Option(calc), Option(cost), Option(size),
       Option(tree), result)
 
@@ -217,7 +227,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
                  expectedSize: Rep[Context] => Rep[Long] = null
                 ): Rep[(Context => Any, (Context => Int, Context => Long))] =
   {
-    val tc = EsTestCase(name, env, script, None, None,
+    val tc = EsTestCase(name, env, Code(script), None, None,
       Option(expectedCalc),
       Option(expectedCost),
       Option(expectedSize), expectedTree = None, expectedResult = NoResult, printGraphs = true )
@@ -235,7 +245,12 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   }
 
   def reduce(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
-    val tcase = EsTestCase(name, env, script, Some(ergoCtx), expectedResult = Result(expectedResult))
+    val tcase = EsTestCase(name, env, Code(script), Some(ergoCtx), expectedResult = Result(expectedResult))
+    tcase.doReduce()
+  }
+
+  def reduce(env: ScriptEnv, name: String, tree: Value[SType], ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
+    val tcase = EsTestCase(name, env, Tree(tree), Some(ergoCtx), expectedResult = Result(expectedResult))
     tcase.doReduce()
   }
 
