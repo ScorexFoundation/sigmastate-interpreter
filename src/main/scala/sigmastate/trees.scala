@@ -8,7 +8,7 @@ import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import scorex.util.encode.{Base64, Base58}
 import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values._
 import sigmastate.interpreter.{Context, Interpreter}
 import sigmastate.serialization.OpCodes
@@ -313,6 +313,24 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
 case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override val opCode: OpCode = OpCodes.CalcSha256Code
   override val hashFn: CryptographicHash32 = Sha256
+}
+
+/**
+  * Transforms serialized bytes of ErgoTree with segregated constants by replacing constants
+  * at given positions with new values. This operation allow to use serialized scripts as
+  * pre-defined templates.
+  * The typical usage is "check that output box have proposition equal to given script bytes,
+  * where minerPk (constants(0)) is replaced with currentMinerPk".
+  *
+  * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
+  * @param positions zero based indexes in ErgoTree.constants array which should be replaced with new values
+  * @param newValues new values to be injected into the corresponding positions in ErgoTree.constants array
+  * @return original scriptBytes array where only specified costants are replaced and all other bytes remain exactly the same
+  */
+case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray], newValues: Value[SCollection[T]])
+    extends NotReadyValueByteArray {
+  override val opCode: OpCode = OpCodes.SubstConstantsCode
+  override val opType = SFunc(Vector(SByteArray, SIntArray, newValues.tpe), SByteArray)
 }
 
 /**

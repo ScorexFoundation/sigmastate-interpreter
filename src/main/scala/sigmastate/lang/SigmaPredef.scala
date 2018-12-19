@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values.{Value, SValue}
 import sigmastate._
 import sigmastate.lang.Terms.{Lambda, STypeParam}
@@ -48,6 +48,10 @@ object SigmaPredef {
     "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "PK" -> mkLambda(Vector("input" -> SString), SSigmaProp, None),
     "deserialize" -> mkGenLambda(Seq(STypeParam(tT)), Vector("str" -> SString), SOption(tT), None),
+    "substConstants" -> mkGenLambda(
+      Seq(STypeParam(tT)),
+      Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
+      SByteArray, None),
   ).toMap
 
   def PredefIdent(name: String): Value[SType] = {

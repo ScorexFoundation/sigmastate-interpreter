@@ -137,6 +137,7 @@ object Values {
     }
   }
 
+  /** Placeholder for a constant in ErgoTree. Zero based index in ErgoTree.constants array. */
   case class ConstantPlaceholder[S <: SType](id: Int, override val tpe: S) extends Value[S] {
     def opType = SFunc(SInt, tpe)
     override val opCode: OpCode = ConstantPlaceholderIndexCode
@@ -712,10 +713,17 @@ object Values {
     assert(isConstantSegregation || constants.isEmpty)
 
     def isConstantSegregation: Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
+    def bytes: Array[Byte] = ErgoTreeSerializer.serialize(this)
   }
 
   object ErgoTree {
-    val DefaultHeader: Byte = 0
+    /** Current version of ErgoTree serialization format (aka bite-code language version)*/
+    val VersionFlag: Byte = 0
+
+    /** Default value of ErgoTree.header byte */
+    val DefaultHeader: Byte = (0 | VersionFlag).toByte
+
+    /** Header flag to indicate that constant segregation should be applied. */
     val ConstantSegregationFlag: Byte = 0x10
 
     def substConstants(root: BoolValue, constants: IndexedSeq[Constant[SType]]): BoolValue = {

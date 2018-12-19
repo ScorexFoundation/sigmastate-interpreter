@@ -41,7 +41,8 @@ object OpCodes extends ValueCodes {
   // variables
   val TaggedVariableCode: OpCode = (LastConstantCode + 1).toByte
   val ValUseCode: OpCode = (LastConstantCode + 2).toByte
-  val ConstantPlaceholderIndexCode: OpCode = (LastConstantCode + 3).toByte // reserved 4 - 9 (5)
+  val ConstantPlaceholderIndexCode: OpCode = (LastConstantCode + 3).toByte
+  val SubstConstantsCode: OpCode = (LastConstantCode + 4).toByte // reserved 5 - 9 (5)
 
   val LongToByteArrayCode  : OpCode = (LastConstantCode + 10).toByte
   val ByteArrayToBigIntCode: OpCode = (LastConstantCode + 11).toByte
