@@ -248,12 +248,9 @@ trait Evaluation extends RuntimeCosting { IR =>
           case SDBM.substConstants(_,
             In(input: special.collection.Col[Byte]@unchecked),
             In(positions: special.collection.Col[Int]@unchecked),
-            In(newVals: special.collection.Col[Any]@unchecked), elem) =>
-            val ctxObj = dataEnv(ctxSym).asInstanceOf[CostingDataContext]
-            val newValsTpe = elemToSType(elem)
-            val newValsOut = ErgoLikeContext.toTestData(newVals.arr, newValsTpe, ctxObj.isCost)(IR)
-              .asInstanceOf[Array[Any]]
-            out(SubstConstants.eval(input.arr, positions.arr, newValsOut.map(_.asInstanceOf[Value[SType]])))
+            In(newVals: special.collection.Col[Any]@unchecked), _) =>
+            val typedNewVals = newVals.arr.map(_.asInstanceOf[Value[SType]])
+            out(SubstConstants.eval(input.arr, positions.arr, typedNewVals))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
