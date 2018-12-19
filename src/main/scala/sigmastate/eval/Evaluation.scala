@@ -250,7 +250,8 @@ trait Evaluation extends RuntimeCosting { IR =>
             In(positions: special.collection.Col[Int]@unchecked),
             In(newVals: special.collection.Col[Any]@unchecked), _) =>
             val typedNewVals = newVals.arr.map(_.asInstanceOf[Value[SType]])
-            out(SubstConstants.eval(input.arr, positions.arr, typedNewVals))
+            val byteArray = SubstConstants.eval(input.arr, positions.arr, typedNewVals)
+            out(sigmaDslBuilderValue.Cols.fromArray(byteArray))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
@@ -355,12 +356,9 @@ trait Evaluation extends RuntimeCosting { IR =>
           te.sym.getMetadata(OperationIdKey) match {
             case Some(opId: OperationId) =>
               if (opId.opType.tRange.isCollection) {
-                res._1(res._2) match {
-                  case col: SCol[Any]@unchecked =>
-                    val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
-                    CostTableStat.addOpTime(opId, colTime, col.length)
-                  case _ =>
-                }
+                val col = res._1(res._2).asInstanceOf[SCol[Any]]
+                val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
+                CostTableStat.addOpTime(opId, colTime, col.length)
               }
               else
                 CostTableStat.addOpTime(opId, estimatedTime, len = 1)

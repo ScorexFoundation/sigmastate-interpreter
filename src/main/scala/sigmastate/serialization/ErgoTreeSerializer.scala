@@ -106,7 +106,7 @@ object ErgoTreeSerializer {
 
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
-                          newVals: Array[Value[SType]]): Value[SByteArray] = {
+                          newVals: Array[Value[SType]]): Array[Byte] = {
     require(positions.length == newVals.length,
       s"expected positions and newVals to have the same length, got: positions: ${positions.toSeq},\n newVals: ${newVals.toSeq}")
     val (header, constants, treeBytes) = treeWithPlaceholdersBytes(scriptBytes)
@@ -131,7 +131,7 @@ object ErgoTreeSerializer {
     }
 
     w.putBytes(treeBytes)
-    ByteArrayConstant(w.toBytes)
+    w.toBytes
   }
 }
 

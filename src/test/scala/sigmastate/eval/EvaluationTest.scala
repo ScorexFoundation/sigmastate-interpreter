@@ -127,6 +127,9 @@ class EvaluationTest extends BaseCtxTests
     val script2 = script(pk2)
     val expectedBytes = ErgoTreeSerializer.serialize(script2)
     val ctx = newErgoContext(height = 1, boxToSpend)
-    reduce(emptyEnv, "SubstConst", SubstConstants(inputBytes, positions, newVals), ctx, expectedBytes)
+    reduce(emptyEnv, "SubstConst",
+      EQ(SubstConstants(inputBytes, positions, newVals), expectedBytes),
+      ctx,
+      true)
   }
 }
