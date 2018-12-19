@@ -62,7 +62,7 @@ val specialCommon = "io.github.scalan" %% "common" % specialVersion
 val specialCore = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
 
-val specialSigmaVersion = "master-4fdf0bf0-SNAPSHOT"
+val specialSigmaVersion = "master-2e83859e-SNAPSHOT"
 val sigmaImpl = "io.github.scalan" %% "sigma-impl" % specialSigmaVersion
 val sigmaLibrary = "io.github.scalan" %% "sigma-library" % specialSigmaVersion
 

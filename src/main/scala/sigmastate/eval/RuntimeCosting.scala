@@ -794,7 +794,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = RCCostedPrim(v, cost, sizeOf(v))
     object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(asRep[Costed[Any]](evalNode(ctx, env, v))) }
     class InCol[T] { def unapply(v: SValue): Nullable[Rep[CostedCol[T]]] = Nullable(asRep[CostedCol[T]](evalNode(ctx, env, v))) }
-    val InColByte = new InCol[Byte]; val InColAny = new InCol[Any]
+    val InColByte = new InCol[Byte]; val InColAny = new InCol[Any]; val InColInt = new InCol[Int]
     object InSeq { def unapply(items: Seq[SValue]): Nullable[Seq[RCosted[Any]]] = {
       val res = items.map { x: SValue =>
         val xC = eval(x)
@@ -817,14 +817,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         case p: DLogProtocol.ProveDlog =>
           val ge = asRep[Costed[WECPoint]](eval(p.value))
           val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
-          RCCostedPrim(resV, costOfProveDlog, CryptoConstants.groupSize.toLong)
+          RCCostedPrim(resV, ge.cost + costOfProveDlog, CryptoConstants.groupSize.toLong)
         case p @ ProveDHTuple(gv, hv, uv, vv) =>
           val gvC = asRep[Costed[WECPoint]](eval(gv))
           val hvC = asRep[Costed[WECPoint]](eval(hv))
           val uvC = asRep[Costed[WECPoint]](eval(uv))
           val vvC = asRep[Costed[WECPoint]](eval(vv))
           val resV: Rep[SigmaProp] = RProveDHTEvidence(gvC.value, hvC.value, uvC.value, vvC.value)
-          RCCostedPrim(resV, costOfDHTuple, CryptoConstants.groupSize.toLong * 4)
+          val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
+          RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)
@@ -1387,14 +1388,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = constantPlaceholder(index)(elem)
         withDefaultSize(res, costOf(node))
 
-      case SubstConstants(In(scriptBytes), In(positions), newValues) =>
-        val bytesC = asRep[Costed[Col[Byte]]](scriptBytes)
-        val positionsC = asRep[Costed[Col[Int]]](positions)
-        val newValuesC = asRep[CostedCol[Any]](evalNode(ctx, env, newValues))
-        implicit val eAny = newValuesC.elem.asInstanceOf[CostedElem[Col[Any], _]].eVal.eA
-        val res = sigmaDslBuilder.substConstants(bytesC.value, positionsC.value, newValuesC.value)
-        val cost = bytesC.cost + perKbCostOf(node, bytesC.dataSize)
-        mkCostedCol(res, bytesC.value.length, cost)
+      case SubstConstants(InColByte(bytes), InColInt(positions), InColAny(newValues)) =>
+        val values = sigmaDslBuilder.substConstants(bytes.values, positions.values, newValues.values)(AnyElement)
+        val len = bytes.sizes.length + newValues.sizes.sum(longPlusMonoid).toInt
+        val cost = bytes.cost + positions.cost + newValues.cost + costOf(node)
+        mkCostedCol(values, len, cost)
 
       case _ =>
         error(s"Don't know how to evalNode($node)")

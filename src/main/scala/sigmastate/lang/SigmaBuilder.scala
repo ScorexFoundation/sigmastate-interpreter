@@ -5,12 +5,12 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.{DLogProtocol, ProveDHTuple}
+import scapi.sigma.{ProveDHTuple, DLogProtocol}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BigIntValue, BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
+import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, BlockValue, ConstantNode, SomeValue, ConstantPlaceholder, BigIntValue, BoolValue, Value, SigmaPropValue, Tuple, GroupElementValue, TaggedVariableNode, SigmaBoolean, BlockItem, ValUse, TaggedVariable, ConcreteCollection, NoneValue}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
+import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
@@ -76,6 +76,7 @@ trait SigmaBuilder {
 
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
+  def mkDecodePoint(input: Value[SByteArray]): GroupElementValue
 
   def mkAppend[IV <: SType](input: Value[SCollection[IV]],
                             col2: Value[SCollection[IV]]): Value[SCollection[IV]]
@@ -345,6 +346,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray] =
     CalcSha256(input)
+
+  override def mkDecodePoint(input: Value[SByteArray]): GroupElementValue =
+    DecodePoint(input)
 
   override def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                                          mapper: Value[SFunc]): Value[SCollection[OV]] =

@@ -133,7 +133,7 @@ object ErgoLikeContext {
   }
 }
 
-/** When interpreted evaluates to a IntConstant built from Context.currentHeight */
+/** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */
 case object MinerPubkey extends NotReadyValueByteArray {
   override val opCode: OpCode = OpCodes.MinerPubkeyCode
   def opType = SFunc(SContext, SCollection.SByteArray)

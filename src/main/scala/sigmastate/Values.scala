@@ -89,7 +89,7 @@ object Values {
       throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
   }
 
-  trait EvaluatedValue[S <: SType] extends Value[S] {
+  trait EvaluatedValue[+S <: SType] extends Value[S] {
     val value: S#WrappedType
     def opType: SFunc = {
       val resType = tpe match {
@@ -103,7 +103,7 @@ object Values {
     }
   }
 
-  trait Constant[S <: SType] extends EvaluatedValue[S] {}
+  trait Constant[+S <: SType] extends EvaluatedValue[S] {}
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     override def companion: ValueCompanion = Constant

@@ -6,15 +6,19 @@ import com.google.common.base.Strings
 import org.bouncycastle.math.ec.ECPoint
 import scapi.sigma.DLogProtocol
 import sigmastate._
-import sigmastate.Values._
+import sigmastate.Values.{ConstantPlaceholder, _}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{SigmaPropBytes, SizeOf}
+import sigmastate.utxo.{SigmaPropBytes, ExtractCreationInfo, SizeOf, SelectField}
 import SType._
+import org.ergoplatform.{Height, Self, MinerPubkey}
 import scalan.util.BenchmarkUtil._
 import scalan.BaseCtxTests
+import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.SCollection.SByteArray
+import sigmastate.lang.Terms.ValueOps
 
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>
   implicit override lazy val IR: TestContext with IRContext =
@@ -82,9 +86,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[WECPoint]}, { _ => typeSize[WECPoint] })
 
     checkInEnv(env, "sigmaprop", "p1.propBytes",
-      { _ => RProveDlogEvidence(g1Sym).asRep[SigmaProp].propBytes },
-      { _ => costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)) +
-             costOf("SigmaPropBytes", SFunc(SSigmaProp, SCollection.SByteArray))})
+      { _ => RProveDlogEvidence(g1Sym).asRep[SigmaProp].propBytes }
+    )
   }
 
   test("operations") {
@@ -154,6 +157,36 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   test("if then else") {
     check("lam1", "{ val x = if (OUTPUTS.size > 0) OUTPUTS(0).value else SELF.value; x }",
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
+  }
+
+  /**
+    * Required script of the box, that collects mining rewards
+    */
+  def rewardOutputScript(delta: Int, minerPk: ProveDlog): ErgoTree = {
+    import ErgoTree._
+    val createdAtHeight = SelectField(ExtractCreationInfo(Self), 1).asLongValue
+    val root = AND(
+      GE(Height, Plus(createdAtHeight, LongConstant(delta))),
+      ProveDlog(DecodePoint(Values.ConstantPlaceholder(0, SByteArray)))
+    )
+    ErgoTree((DefaultHeader | ConstantSegregationFlag).toByte, Vector(ByteArrayConstant(minerPk.pkBytes)), root)
+  }
+
+  def rewardOutputScriptForCurrentMiner(delta: Int): Value[SByteArray] = {
+    val expectedBytes = rewardOutputScript(delta, ProveDlog(CryptoConstants.dlogGroup.generator)).bytes
+    val currentMinerScript = SubstConstants(
+      ByteArrayConstant(expectedBytes),
+      ConcreteCollection(IntConstant(0)),
+      ConcreteCollection(MinerPubkey))
+    currentMinerScript
+  }
+
+  test("substConstants") {
+    val minerRewardDelay = 720
+    val prop = rewardOutputScriptForCurrentMiner(minerRewardDelay)
+    val costed = cost(env, prop)
+    val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
+    emit("substConstants", calcF, costF, sizeF)
   }
 
   test("Crowd Funding") {
