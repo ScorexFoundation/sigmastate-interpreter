@@ -153,7 +153,7 @@ class ErgoTreeSerializer {
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
     constants.zipWithIndex.foreach {
-      case (_, i) if positions.contains(i) =>
+      case (c, i) if positions.contains(i) =>
         val newVal = newVals(positions.indexOf(i))
         // we need to get newVal's serialized constant value (see ProveDlogSerializer for example)
         val constantStore = new ConstantStore()
@@ -161,7 +161,9 @@ class ErgoTreeSerializer {
         ValueSerializer.serialize(newVal, valW)
         val newConsts = constantStore.getAll
         assert(newConsts.length == 1)
-        constantSerializer.serialize(newConsts.head, w)
+        val newConst = newConsts.head
+        assert(c.tpe == newConst.tpe, s"expected new constant to have the same ${c.tpe} tpe, got ${newConst.tpe}")
+        constantSerializer.serialize(newConst, w)
       case (c, _) =>
         constantSerializer.serialize(c, w)
     }
