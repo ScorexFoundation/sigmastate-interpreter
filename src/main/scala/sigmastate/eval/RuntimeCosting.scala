@@ -1394,6 +1394,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val cost = bytes.cost + positions.cost + newValues.cost + perKbCostOf(node, len)
         mkCostedCol(values, len.toInt, cost)
 
+      case DecodePoint(InColByte(bytes)) =>
+        val res = sigmaDslBuilder.decodePoint(bytes.values)
+        withDefaultSize(res, costOf(node))
+
       case _ =>
         error(s"Don't know how to evalNode($node)")
     }

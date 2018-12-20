@@ -193,6 +193,8 @@ object CostTable {
     ("SigmaOr_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaOrCost),
 
     ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
+
+    ("DecodePoint", "(Coll[Byte]) => GroupElement", MinimalCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Int)]): CostTable = {
