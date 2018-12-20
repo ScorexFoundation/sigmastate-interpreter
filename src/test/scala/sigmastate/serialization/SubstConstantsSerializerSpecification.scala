@@ -7,7 +7,7 @@ class SubstConstantsSerializerSpecification extends SerializationSpecification {
 
   property("SubstConstant deserialization round trip") {
     forAll(numExprTreeNodeGen) { tree =>
-      val bytes = ErgoTreeSerializer.serialize(tree)
+      val bytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(tree)
       val newVals = ConcreteCollection(Vector[IntValue](1), SInt)
       val expr = SubstConstants(bytes, IntArrayConstant(Array(0)), newVals)
       roundTripTest(expr)

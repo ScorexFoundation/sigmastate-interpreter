@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{Constant, Value, ByteArrayConstant, ErgoTree, ConcreteCollection}
+import sigmastate.Values.{Constant, Value, ErgoTree, ConcreteCollection}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Append
@@ -30,7 +30,7 @@ class ErgoTreeSerializer {
   }
 
   /** Serialize header and constants section only.*/
-  private def serializeHeader(ergoTree: ErgoTree, w: SigmaByteWriter) = {
+  private def serializeHeader(ergoTree: ErgoTree, w: SigmaByteWriter): Unit = {
     w.put(ergoTree.header)
     if (ergoTree.isConstantSegregation) {
       val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)

@@ -78,7 +78,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val outputsNum = EQ(SizeOf(Outputs), 2)
     val correctMinerProposition = EQ(
       ExtractScriptBytes(minerOut),
-      ErgoTreeSerializer.serializedPubkeyPropValue(MinerPubkey)
+      ErgoTreeSerializer.DefaultSerializer.serializedPubkeyPropValue(MinerPubkey)
     )
 
     val prop = AND(
