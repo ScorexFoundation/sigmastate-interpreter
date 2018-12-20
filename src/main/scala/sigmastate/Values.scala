@@ -761,7 +761,12 @@ object Values {
         new ErgoTree(header, constants, root, root)
     }
 
-    implicit def fromProposition(prop: SValue): ErgoTree = ErgoTree(DefaultHeader, IndexedSeq(), prop, prop)
+    implicit def fromProposition(prop: SValue): ErgoTree = {
+      // get ErgoTree with segregated constants
+      // todo rewrite with everywherebu?
+      ErgoTreeSerializer.DefaultSerializer
+        .deserializeErgoTree(ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(prop))
+    }
   }
 
 }

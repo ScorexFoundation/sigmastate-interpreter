@@ -24,8 +24,16 @@ class ErgoTreeSerializer {
     * Doesn't apply any transformations to the parsed tree. */
   def deserializeErgoTree(bytes: Array[Byte]): ErgoTree  = {
     val r = Serializer.startReader(bytes)
+    deserializeErgoTree(r)
+  }
+
+  def deserializeErgoTree(r: SigmaByteReader): ErgoTree  = {
     val (h, cs) = deserializeHeader(r)
+    r.constantStore = new ConstantStore(cs)
+    // reader with constant store attached is required (to get tpe for a constant placeholder)
+    val previousConstantStore = r.constantStore
     val root = ValueSerializer.deserialize(r)
+    r.constantStore = previousConstantStore
     ErgoTree(h, cs, root)
   }
 

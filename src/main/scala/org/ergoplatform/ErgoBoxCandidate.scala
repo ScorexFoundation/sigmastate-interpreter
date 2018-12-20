@@ -115,7 +115,7 @@ object ErgoBoxCandidate {
 
     def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: SigmaByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
-      val prop = ErgoTreeSerializer.DefaultSerializer.deserialize(r, resolvePlaceholdersToConstants = true).asBoolValue
+      val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
       val creationHeight = r.getULong()
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
@@ -136,7 +136,7 @@ object ErgoBoxCandidate {
         val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
         (reg, v)
       }.toMap
-      new ErgoBoxCandidate(value, prop, creationHeight, addTokens, regs)
+      new ErgoBoxCandidate(value, tree, creationHeight, addTokens, regs)
     }
 
     override def parseBody(r: SigmaByteReader): ErgoBoxCandidate = {
