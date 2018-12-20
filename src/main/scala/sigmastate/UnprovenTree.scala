@@ -138,7 +138,7 @@ object FiatShamirTree {
 
     def traverseNode(node: ProofTree): Array[Byte] = node match {
       case l: ProofTreeLeaf =>
-        val propBytes = ErgoTreeSerializer.serialize(l.proposition)
+        val propBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(l.proposition)
         val commitmentBytes = l.commitmentOpt.get.bytes
         leafPrefix +:
           ((Shorts.toByteArray(propBytes.length.toShort) ++ propBytes) ++

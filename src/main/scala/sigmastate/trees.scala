@@ -334,7 +334,7 @@ object SubstConstants {
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
            newVals: Array[Value[SType]]): Array[Byte] =
-    ErgoTreeSerializer.substituteConstants(scriptBytes, positions, newVals)
+    ErgoTreeSerializer.DefaultSerializer.substituteConstants(scriptBytes, positions, newVals)
 }
 
 /**

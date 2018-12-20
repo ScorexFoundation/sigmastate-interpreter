@@ -23,13 +23,13 @@ class ErgoBoxCandidate(val value: Long,
                        val additionalTokens: Seq[(TokenId, Long)] = Seq(),
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
-  def proposition: BoolValue = ergoTree.proposition
+  def proposition: BoolValue = ergoTree.proposition.asBoolValue
 
   def dataSize: Long = bytesWithNoRef.length.toLong
 
   lazy val cost: Int = (dataSize / 1024 + 1).toInt * Cost.BoxPerKilobyte
 
-  val propositionBytes: Array[Byte] = ErgoTreeSerializer.serialize(ergoTree.proposition)
+  val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(ergoTree.proposition)
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
@@ -76,7 +76,7 @@ object ErgoBoxCandidate {
                                         digestsInTx: Option[Array[Digest32]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
-      w.putBytes(ErgoTreeSerializer.serialize(obj.ergoTree))
+      w.putBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(obj.ergoTree))
       w.putULong(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
@@ -115,7 +115,7 @@ object ErgoBoxCandidate {
 
     def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: SigmaByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
-      val prop = ErgoTreeSerializer.deserialize(r, resolvePlaceholdersToConstants = true).asBoolValue
+      val prop = ErgoTreeSerializer.DefaultSerializer.deserialize(r, resolvePlaceholdersToConstants = true).asBoolValue
       val creationHeight = r.getULong()
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>

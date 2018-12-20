@@ -28,7 +28,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val extractConstants = new ConstantStore()
     val outTree = IR.buildTree(calcF, Some(extractConstants))
     val constants = extractConstants.getAll
-    val header = if (constants.isEmpty) DefaultHeader else (DefaultHeader | ConstantSegregationFlag).toByte
+    val header = if (constants.isEmpty) DefaultHeader else ConstantSegregationHeader
     val ergoTree = ErgoTree(header, constants, outTree)
     ergoTree
   }

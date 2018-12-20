@@ -46,9 +46,9 @@ class ErgoAddressSpecification extends PropSpec
       val p2sh = Pay2SHAddress(s)
 
       //search we're doing to find a box potentially corresponding to some address
-      ErgoTreeSerializer.serialize(p2sh.script).containsSlice(p2sh.contentBytes) shouldBe true
+      ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(p2sh.script).containsSlice(p2sh.contentBytes) shouldBe true
     }
-  }
+  
 
   property("P2S proper bytes to track") {
     forAll(proveDlogGen) { s =>

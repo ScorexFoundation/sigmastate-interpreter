@@ -42,7 +42,7 @@ object Values {
       * the type of operation result. */
     def tpe: S
 
-    lazy val bytes = ErgoTreeSerializer.serialize(this)
+    lazy val bytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(this)
 
     /** Every value represents an operation and that operation can be associated with a function type,
       * describing functional meaning of the operation, kind of operation signature.
@@ -719,13 +719,13 @@ object Values {
   case class ErgoTree private(
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
-    root: BoolValue,
-    proposition: BoolValue
+    root: SValue,
+    proposition: SValue
   ) {
     assert(isConstantSegregation || constants.isEmpty)
 
-    @inline def isConstantSegregation: Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
-    @inline def bytes: Array[Byte] = ErgoTreeSerializer.serialize(this)
+    @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
+    @inline def bytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(this)
   }
 
   object ErgoTree {
@@ -738,17 +738,22 @@ object Values {
     /** Header flag to indicate that constant segregation should be applied. */
     val ConstantSegregationFlag: Byte = 0x10
 
-    def substConstants(root: BoolValue, constants: IndexedSeq[Constant[SType]]): BoolValue = {
+    /** Default header with constant segregation enabled. */
+    val ConstantSegregationHeader = (DefaultHeader | ConstantSegregationFlag).toByte
+
+    @inline def isConstantSegregation(header: Byte): Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
+
+    def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
       val substRule = strategy[Value[_ <: SType]] {
         case ph: ConstantPlaceholder[_] =>
           Some(store.get(ph.id))
         case _ => None
       }
-      everywherebu(substRule)(root).fold(root)(_.asInstanceOf[BoolValue])
+      everywherebu(substRule)(root).fold(root)(_.asInstanceOf[SValue])
     }
 
-    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: BoolValue) = {
+    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SValue) = {
       if ((header & ConstantSegregationFlag) != 0) {
         val prop = substConstants(root, constants)
         new ErgoTree(header, constants, root, prop)
@@ -756,7 +761,7 @@ object Values {
         new ErgoTree(header, constants, root, root)
     }
 
-    implicit def fromProposition(prop: BoolValue): ErgoTree = ErgoTree(DefaultHeader, IndexedSeq(), prop, prop)
+    implicit def fromProposition(prop: SValue): ErgoTree = ErgoTree(DefaultHeader, IndexedSeq(), prop, prop)
   }
 
 }

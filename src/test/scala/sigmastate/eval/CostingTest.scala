@@ -169,7 +169,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       GE(Height, Plus(createdAtHeight, LongConstant(delta))),
       ProveDlog(DecodePoint(Values.ConstantPlaceholder(0, SByteArray)))
     )
-    ErgoTree((DefaultHeader | ConstantSegregationFlag).toByte, Vector(ByteArrayConstant(minerPk.pkBytes)), root)
+    ErgoTree(ConstantSegregationHeader, Vector(ByteArrayConstant(minerPk.pkBytes)), root)
   }
 
   def rewardOutputScriptForCurrentMiner(delta: Int): Value[SByteArray] = {
