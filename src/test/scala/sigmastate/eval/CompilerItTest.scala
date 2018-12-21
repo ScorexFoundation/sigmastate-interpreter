@@ -4,10 +4,9 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
-import scapi.sigma.DLogProtocol
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean, GroupElementConstant, ValUse}
+import sigmastate.Values.{BigIntArrayConstant, BigIntConstant, ByteArrayConstant, FalseLeaf, GroupElementConstant, IntConstant, LongConstant, SigmaBoolean, SigmaPropConstant, TrueLeaf, ValUse}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.{ContextExtension, CryptoConstants}
 import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
@@ -17,6 +16,7 @@ import special.collection.{Col => VCol}
 import special.sigma.{TestValue => VTestValue}
 import scalan.BaseCtxTests
 import scalan.util.BenchmarkUtil._
+import sigmastate.basics.DLogProtocol
 
 class CompilerItTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {

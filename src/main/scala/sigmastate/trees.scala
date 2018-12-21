@@ -1,14 +1,9 @@
 package sigmastate
 
-import scapi.sigma.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import java.math.BigInteger
-
-import com.google.common.primitives.Longs
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values._
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
-import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.Transformer

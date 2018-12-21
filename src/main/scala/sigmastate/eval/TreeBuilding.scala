@@ -8,7 +8,6 @@ import org.ergoplatform._
 import java.math.BigInteger
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
-import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
@@ -21,7 +20,6 @@ import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import SType._
 import org.bouncycastle.math.ec.ECPoint
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.SigmaBuilder
 

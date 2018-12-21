@@ -1,14 +1,14 @@
 package sigmastate.lang
 
-import sigmastate.lang.Terms.{MethodCallLike, Ident}
-import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, GroupElementConstant, ConcreteCollection}
+import sigmastate.lang.Terms.{Ident, MethodCallLike}
+import sigmastate.Values.{ConcreteCollection, GroupElementConstant, LongConstant, SValue, SigmaBoolean, Value}
 import sigmastate._
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import sigmastate.basics.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDHTuple
 import sigmastate.SCollection.SByteArray
+import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 

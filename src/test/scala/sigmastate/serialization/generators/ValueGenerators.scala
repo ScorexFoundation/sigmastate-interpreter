@@ -5,15 +5,13 @@ import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDHTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDiffieHellmanTuple
+import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
 
 import scala.collection.JavaConverters._

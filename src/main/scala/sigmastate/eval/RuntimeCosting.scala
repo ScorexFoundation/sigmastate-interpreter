@@ -5,10 +5,9 @@ import java.math.BigInteger
 import scala.language.implicitConversions
 import scala.language.existentials
 import org.bouncycastle.math.ec.ECPoint
-import scalan.{Lazy, SigmaLibrary, Nullable}
+import scalan.{Lazy, Nullable, SigmaLibrary}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
-import scapi.sigma.ProveDHTuple
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
@@ -18,13 +17,13 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 import ErgoLikeContext._
-
 import scalan.compilation.GraphVizConfig
 import SType._
-import scorex.crypto.hash.{Sha256, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Sha256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{Terms, SigmaCompiler}
+import sigmastate.lang.{SigmaCompiler, Terms}
 import scalan.staged.Slicing
+import sigmastate.basics.{DLogProtocol, ProveDHTuple}
 
 trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Evaluation =>
   import Context._;
@@ -762,7 +761,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   type CostingEnv = Map[Any, RCosted[_]]
 
   import sigmastate._
-  import scapi.sigma.{DLogProtocol}
 
   val okMeasureOperationTime: Boolean = true
 

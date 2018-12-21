@@ -3,7 +3,6 @@ package sigmastate.eval
 import org.ergoplatform.ErgoBox
 
 import scala.language.{existentials, implicitConversions}
-import scapi.sigma.{ProveDHTuple, DLogProtocol}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{Constant, NotReadyValue, SValue, SigmaBoolean, SigmaPropConstant, Value}
@@ -14,6 +13,7 @@ import sigmastate.SType._
 import sigmastate.SCollection._
 import sigmastate.SBigInt._
 import sigmastate.Values.Value.Typed
+import sigmastate.basics.{DLogProtocol, ProveDHTuple}
 import sigmastate.lang.SigmaSpecializer.error
 import sigmastate.lang.{Terms, TransformingSigmaBuilder}
 

@@ -5,7 +5,6 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms.{Ident, ZKProofBlock}

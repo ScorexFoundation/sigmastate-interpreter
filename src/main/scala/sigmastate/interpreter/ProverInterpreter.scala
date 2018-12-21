@@ -5,7 +5,7 @@ import java.util
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import sigmastate.basics.DLogProtocol._
 import sigmastate._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utils.Extensions._
 import Values._
 
@@ -16,7 +16,7 @@ import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.serialization.Serializer
 import gf2t.GF2_192
 import gf2t.GF2_192_Poly
-import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDiffieHellmanTuple, SigmaProtocolPrivateInput}
+import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDHTuple, SigmaProtocolPrivateInput}
 import sigmastate.lang.exceptions.InterpreterException
 
 /**

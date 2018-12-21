@@ -8,8 +8,8 @@ import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
 import special.sigma.{TestContext => DContext}
 import scalan.util.BenchmarkUtil._
-import scapi.sigma.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate._
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer
 

@@ -4,9 +4,10 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BlockValue, ByteArrayConstant, ConcreteCollection, IntConstant, LongConstant, SigmaPropConstant, ValDef, ValUse, Value}
+import sigmastate.Values.{BlockValue, ByteArrayConstant, ConcreteCollection, IntConstant, LongConstant, ShortConstant, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
@@ -160,7 +161,6 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val pr2 = tokenSeller.prove(sellerProp, sellerCtx, fakeMessage).get
     verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
 
-    println("total cost: " + (buyerProp.cost(buyerCtx) + sellerProp.cost(sellerCtx)))
   }
 
   /**
@@ -266,6 +266,5 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val pr2 = tokenSeller.withContextExtender(Byte.MaxValue, ShortConstant(1)).prove(sellerProp, sellerCtx, fakeMessage).get
     verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
 
-    println("total cost: " + (buyerProp.cost(buyerCtx) + sellerProp.cost(sellerCtx)))
   }
 }

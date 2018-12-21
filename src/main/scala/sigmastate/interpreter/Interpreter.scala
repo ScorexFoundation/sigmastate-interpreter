@@ -21,7 +21,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
 import sigmastate.basics.{BcDlogFp, Curve25519, DiffieHellmanTupleInteractiveProver, FirstDiffieHellmanTupleProverMessage}
 import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers

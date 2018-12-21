@@ -2,10 +2,8 @@ package sigmastate
 
 import java.math.BigInteger
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDHTuple
-import sigmastate.SType.{TypeCode, AnyOps}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import sigmastate.SType.{AnyOps, TypeCode}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utils.Extensions._
@@ -24,6 +22,8 @@ import scala.reflect.ClassTag
 import scalan.meta.ScalanAst.STypeArgAnnotation
 import sigmastate.SBoolean.typeCode
 import sigmastate.SByte.typeCode
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDHTuple
 //import sigmastate.SNumericType._
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 

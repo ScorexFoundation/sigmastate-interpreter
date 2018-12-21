@@ -1,15 +1,15 @@
 package sigmastate.eval
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
-import scapi.sigma.DLogProtocol
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.Values.{LongConstant, FuncValue, FalseLeaf, TrueLeaf, BlockValue, SigmaPropConstant, IntConstant, ValDef, GroupElementConstant, ValUse, TaggedVariable}
+import sigmastate.Values.{BlockValue, FalseLeaf, FuncValue, GroupElementConstant, IntConstant, LongConstant, SigmaPropConstant, TaggedVariable, TrueLeaf, ValDef, ValUse}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.serialization.OpCodes._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
+import sigmastate.basics.DLogProtocol
 import sigmastate.lang.LangTests
 import sigmastate.lang.Terms.Apply
 import sigmastate.utxo._

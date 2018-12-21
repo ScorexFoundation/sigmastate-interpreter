@@ -4,20 +4,20 @@ import java.math.BigInteger
 
 import com.google.common.base.Strings
 import org.bouncycastle.math.ec.ECPoint
-import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.Values.{ConstantPlaceholder, _}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
+import sigmastate.lang.{LangTests, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{SigmaPropBytes, ExtractCreationInfo, SizeOf, SelectField}
+import sigmastate.utxo.{ExtractCreationInfo, SelectField, SigmaPropBytes, SizeOf}
 import SType._
-import org.ergoplatform.{Height, Self, MinerPubkey}
+import org.ergoplatform.{Height, MinerPubkey, Self}
 import scalan.util.BenchmarkUtil._
 import scalan.BaseCtxTests
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
+import sigmastate.basics.DLogProtocol
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.lang.Terms.ValueOps
 
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>

@@ -4,15 +4,13 @@ import com.google.common.primitives.Bytes
 import org.ergoplatform.ErgoLikeContext._
 import org.ergoplatform._
 import org.scalatest.TryValues._
-import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDHTuple
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDiffieHellmanTuple
+import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer

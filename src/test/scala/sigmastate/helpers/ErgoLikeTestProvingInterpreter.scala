@@ -1,7 +1,5 @@
 package sigmastate.helpers
 
-import scapi.sigma.DLogProtocol.DLogProverInput
-import scapi.sigma.{SigmaProtocolPrivateInput, DiffieHellmanTupleProverInput}
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import scorex.utils.Random
 import sigmastate.SType

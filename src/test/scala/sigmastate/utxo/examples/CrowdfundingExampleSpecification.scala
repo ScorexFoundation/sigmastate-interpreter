@@ -1,7 +1,6 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.Values.{BlockValue, ByteArrayConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, LongConstant, SigmaPropConstant, TaggedBox, ValDef, ValUse}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}

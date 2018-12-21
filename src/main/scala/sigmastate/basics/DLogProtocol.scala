@@ -6,7 +6,6 @@ import org.bouncycastle.util.BigIntegers
 import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
 import Value.PropositionCode
-import scapi.sigma.VerifierMessage.Challenge
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}

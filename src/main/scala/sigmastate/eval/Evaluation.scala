@@ -4,7 +4,6 @@ import java.lang.reflect.Method
 import java.math.BigInteger
 
 import org.ergoplatform._
-import scapi.sigma.{DLogProtocol, ProveDHTuple}
 import sigmastate._
 import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, CollectionConstant, ConcreteCollection, Constant, EvaluatedValue, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
@@ -18,11 +17,12 @@ import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import SType._
 import org.bouncycastle.math.ec.ECPoint
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoFunctions
 import special.sigma.InvalidType
 import scalan.Nullable
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.{DLogProtocol, ProveDHTuple}
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
