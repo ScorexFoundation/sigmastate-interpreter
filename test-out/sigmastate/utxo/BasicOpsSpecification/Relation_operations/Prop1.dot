@@ -1,0 +1,70 @@
+digraph "Prop1" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s19285" [
+label="s19285: Byte = Const(10)"
+shape=box, color=gray, tooltip="s19285:Byte", style=filled, fillcolor=white
+]
+subgraph cluster_s19338 {
+style=dashed; color="#FFCCFF"
+"s19336" [
+label="s19336: Context"
+shape=oval, color=gray, tooltip="s19336:Context", style=filled, fillcolor=white
+]
+"s19338" [
+label="s19338: Context => SigmaProp = s19336 => s19343.WOption.get()"
+shape=box, color=magenta, tooltip="s19338:Context => SigmaProp", style=filled, fillcolor=white
+]
+{rank=source; s19336}
+"s19343" [
+label="s19343: WOption[SigmaProp] =\ls19336.Context.getVar(s19285, SigmaPropElem<SigmaProp>)\l"
+shape=box, color=darkblue, tooltip="s19343:WOption[SigmaProp]", style=filled, fillcolor=white
+]
+{rank=sink; s19338}
+}
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s44" [
+label="s44: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s44:CostModel", style=filled, fillcolor=white
+]
+"s46" [
+label="s46: Int = s44.CostModel.GetVar()"
+shape=box, color=darkblue, tooltip="s46:Int", style=filled, fillcolor=white
+]
+"s19331" [
+label="s19331: Int = CostOf(SigmaPropIsValid:(SSigmaProp) => SBoolean)"
+shape=box, color=gray, tooltip="s19331:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s19395 {
+style=dashed; color="#FFCCFF"
+"s19393" [
+label="s19393: Context"
+shape=oval, color=gray, tooltip="s19393:Context", style=filled, fillcolor=white
+]
+"s19395" [
+label="s19395: Context => Int = s19393 => s46 + s19331"
+shape=box, color=magenta, tooltip="s19395:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s19393}
+{rank=sink; s19395}
+}
+"s19448" [
+label="s19448: (Context => SigmaProp, Context => Int) = (s19338, s19395)"
+shape=box, color=gray, tooltip="s19448:(Context => SigmaProp, Context => Int)", style=filled, fillcolor=white
+]
+"s44" -> "s46" [style=solid]
+"s19336" -> "s19338" [style=dashed, color=lightgray, weight=0]
+"s19343" -> "s19338" [style=solid]
+"s28" -> "s44" [style=solid]
+"s19338" -> "s19448" [style=solid]
+"s19395" -> "s19448" [style=solid]
+"s19393" -> "s19395" [style=dashed, color=lightgray, weight=0]
+"s46" -> "s19395" [style=solid]
+"s19331" -> "s19395" [style=solid]
+"s19336" -> "s19343" [style=solid]
+"s19285" -> "s19343" [style=solid]
+}

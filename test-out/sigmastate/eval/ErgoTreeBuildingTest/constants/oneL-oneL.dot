@@ -1,0 +1,69 @@
+digraph "oneL-oneL" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s84" [
+label="s84: Long = Const(1l)"
+shape=box, color=gray, tooltip="s84:Long", style=filled, fillcolor=white
+]
+subgraph cluster_s244 {
+style=dashed; color="#FFCCFF"
+"s242" [
+label="s242: Context"
+shape=oval, color=gray, tooltip="s242:Context", style=filled, fillcolor=white
+]
+"s244" [
+label="s244: Context => Long = s242 => s84 - s84"
+shape=box, color=magenta, tooltip="s244:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s242}
+{rank=sink; s244}
+}
+"s85" [
+label="s85: Int = CostOf(Const:() => SLong)"
+shape=box, color=gray, tooltip="s85:Int", style=filled, fillcolor=white
+]
+"s235" [
+label="s235: Int = s85 + s85"
+shape=box, color=gray, tooltip="s235:Int", style=filled, fillcolor=white
+]
+"s236" [
+label="s236: Int = CostOf(-:(SLong,SLong) => SLong)"
+shape=box, color=gray, tooltip="s236:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s267 {
+style=dashed; color="#FFCCFF"
+"s265" [
+label="s265: Context"
+shape=oval, color=gray, tooltip="s265:Context", style=filled, fillcolor=white
+]
+"s267" [
+label="s267: Context => Int = s265 => s235 + s236"
+shape=box, color=magenta, tooltip="s267:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s265}
+{rank=sink; s267}
+}
+subgraph cluster_s114 {
+style=dashed; color="#FFCCFF"
+"s112" [
+label="s112: Context"
+shape=oval, color=gray, tooltip="s112:Context", style=filled, fillcolor=white
+]
+"s114" [
+label="s114: Context => Long = s112 => TypeSize(SLong)"
+shape=box, color=magenta, tooltip="s114:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s112}
+{rank=sink; s114}
+}
+"s242" -> "s244" [style=dashed, color=lightgray, weight=0]
+"s84" -> "s244" [style=solid]
+"s84" -> "s244" [style=solid]
+"s265" -> "s267" [style=dashed, color=lightgray, weight=0]
+"s235" -> "s267" [style=solid]
+"s236" -> "s267" [style=solid]
+"s112" -> "s114" [style=dashed, color=lightgray, weight=0]
+"s85" -> "s235" [style=solid]
+"s85" -> "s235" [style=solid]
+}

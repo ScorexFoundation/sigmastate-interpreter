@@ -12,6 +12,8 @@ import scorex.crypto.hash.Digest32
 import scorex.util._
 import sigmastate._
 import sigmastate.Values._
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDiffieHellmanTuple
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
 
 import scala.collection.JavaConverters._

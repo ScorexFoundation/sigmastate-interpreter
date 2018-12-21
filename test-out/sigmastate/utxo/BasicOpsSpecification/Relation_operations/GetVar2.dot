@@ -1,0 +1,50 @@
+digraph "GetVar2" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s1679" [
+label="s1679: Byte = Const(2)"
+shape=box, color=gray, tooltip="s1679:Byte", style=filled, fillcolor=white
+]
+subgraph cluster_s68117 {
+style=dashed; color="#FFCCFF"
+"s68115" [
+label="s68115: Context"
+shape=oval, color=gray, tooltip="s68115:Context", style=filled, fillcolor=white
+]
+"s68117" [
+label="s68117: Context => Boolean = s68115 => s68122.WOption.isDefined()"
+shape=box, color=magenta, tooltip="s68117:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s68115}
+"s68122" [
+label="s68122: WOption[Byte] = s68115.Context.getVar(s1679, anon$5<Byte>)"
+shape=box, color=darkblue, tooltip="s68122:WOption[Byte]", style=filled, fillcolor=white
+]
+{rank=sink; s68117}
+}
+subgraph cluster_s68161 {
+style=dashed; color="#FFCCFF"
+"s68159" [
+label="s68159: Context"
+shape=oval, color=gray, tooltip="s68159:Context", style=filled, fillcolor=white
+]
+"s68161" [
+label="s68161: Context => Int = s68159 => Const(1)"
+shape=box, color=magenta, tooltip="s68161:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s68159}
+{rank=sink; s68161}
+}
+"s68202" [
+label="s68202: (Context => Boolean, Context => Int) = (s68117, s68161)"
+shape=box, color=gray, tooltip="s68202:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s68115" -> "s68122" [style=solid]
+"s1679" -> "s68122" [style=solid]
+"s68159" -> "s68161" [style=dashed, color=lightgray, weight=0]
+"s68115" -> "s68117" [style=dashed, color=lightgray, weight=0]
+"s68122" -> "s68117" [style=solid]
+"s68117" -> "s68202" [style=solid]
+"s68161" -> "s68202" [style=solid]
+}

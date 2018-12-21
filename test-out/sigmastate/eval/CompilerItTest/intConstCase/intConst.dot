@@ -1,0 +1,54 @@
+digraph "intConst" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+subgraph cluster_s46 {
+style=dashed; color="#FFCCFF"
+"s44" [
+label="s44: Context"
+shape=oval, color=gray, tooltip="s44:Context", style=filled, fillcolor=white
+]
+"s46" [
+label="s46: Context => Int = s44 => Const(1)"
+shape=box, color=magenta, tooltip="s46:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s44}
+{rank=sink; s46}
+}
+subgraph cluster_s57 {
+style=dashed; color="#FFCCFF"
+"s55" [
+label="s55: Context"
+shape=oval, color=gray, tooltip="s55:Context", style=filled, fillcolor=white
+]
+"s57" [
+label="s57: Context => Int = s55 => CostOf(Const:() => SInt)"
+shape=box, color=magenta, tooltip="s57:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s55}
+{rank=sink; s57}
+}
+subgraph cluster_s68 {
+style=dashed; color="#FFCCFF"
+"s66" [
+label="s66: Context"
+shape=oval, color=gray, tooltip="s66:Context", style=filled, fillcolor=white
+]
+"s68" [
+label="s68: Context => Long = s66 => TypeSize(SInt)"
+shape=box, color=magenta, tooltip="s68:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s66}
+{rank=sink; s68}
+}
+"s78" [
+label="s78: {calc: Context => Int; cost: Context => Int; size: Context => Long} = {calc:s46; cost:s57; size:s68}"
+shape=box, color=gray, tooltip="s78:{calc: Context => Int; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s44" -> "s46" [style=dashed, color=lightgray, weight=0]
+"s55" -> "s57" [style=dashed, color=lightgray, weight=0]
+"s46" -> "s78" [style=solid]
+"s57" -> "s78" [style=solid]
+"s68" -> "s78" [style=solid]
+"s66" -> "s68" [style=dashed, color=lightgray, weight=0]
+}

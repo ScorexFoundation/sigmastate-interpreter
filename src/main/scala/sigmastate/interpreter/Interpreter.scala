@@ -7,8 +7,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywh
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import scapi.sigma.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
-import scapi.sigma._
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
@@ -20,6 +19,10 @@ import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
+import sigmastate.basics.{BcDlogFp, Curve25519, DiffieHellmanTupleInteractiveProver, FirstDiffieHellmanTupleProverMessage}
+import sigmastate.interpreter.Interpreter.VerificationResult
+import sigmastate.lang.exceptions.{InterpreterException, InvalidType}
+import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}

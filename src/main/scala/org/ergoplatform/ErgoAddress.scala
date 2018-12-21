@@ -3,7 +3,7 @@ package org.ergoplatform
 import java.util
 
 import com.google.common.primitives.Ints
-import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
 import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, Value, GetVarByteArray}

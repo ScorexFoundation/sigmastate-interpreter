@@ -2,7 +2,7 @@ package sigmastate
 
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Matchers}
-import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._

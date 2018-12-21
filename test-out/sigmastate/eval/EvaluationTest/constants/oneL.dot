@@ -1,0 +1,58 @@
+digraph "oneL" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+subgraph cluster_s172 {
+style=dashed; color="#FFCCFF"
+"s170" [
+label="s170: Context"
+shape=oval, color=gray, tooltip="s170:Context", style=filled, fillcolor=white
+]
+"s172" [
+label="s172: Context => Long = s170 => Const(1l)"
+shape=box, color=magenta, tooltip="s172:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s170}
+{rank=sink; s172}
+}
+subgraph cluster_s183 {
+style=dashed; color="#FFCCFF"
+"s181" [
+label="s181: Context"
+shape=oval, color=gray, tooltip="s181:Context", style=filled, fillcolor=white
+]
+"s183" [
+label="s183: Context => Int = s181 => CostOf(Const:() => SLong)"
+shape=box, color=magenta, tooltip="s183:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s181}
+{rank=sink; s183}
+}
+subgraph cluster_s194 {
+style=dashed; color="#FFCCFF"
+"s192" [
+label="s192: Context"
+shape=oval, color=gray, tooltip="s192:Context", style=filled, fillcolor=white
+]
+"s194" [
+label="s194: Context => Long = s192 => TypeSize(SLong)"
+shape=box, color=magenta, tooltip="s194:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s192}
+{rank=sink; s194}
+}
+"s204" [
+label="s204: {calc: Context => Long; cost: Context => Int; size: Context => Long} = {calc:s172; cost:s183; size:s194}"
+shape=box, color=gray, tooltip="s204:{calc: Context => Long; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s79" [
+label="s79: {} = {}"
+shape=box, color=gray, tooltip="s79:{}", style=filled, fillcolor=white
+]
+"s172" -> "s204" [style=solid]
+"s183" -> "s204" [style=solid]
+"s194" -> "s204" [style=solid]
+"s170" -> "s172" [style=dashed, color=lightgray, weight=0]
+"s192" -> "s194" [style=dashed, color=lightgray, weight=0]
+"s181" -> "s183" [style=dashed, color=lightgray, weight=0]
+}

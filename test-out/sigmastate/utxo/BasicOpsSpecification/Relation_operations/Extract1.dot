@@ -1,0 +1,75 @@
+digraph "Extract1" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s28493" [
+label="s28493: Int = Const(4)"
+shape=box, color=gray, tooltip="s28493:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s28547 {
+style=dashed; color="#FFCCFF"
+"s28545" [
+label="s28545: Context"
+shape=oval, color=gray, tooltip="s28545:Context", style=filled, fillcolor=white
+]
+"s28547" [
+label="s28547: Context => SigmaProp = s28545 => s28561.WOption.get()"
+shape=box, color=magenta, tooltip="s28547:Context => SigmaProp", style=filled, fillcolor=white
+]
+{rank=source; s28545}
+"s28551" [
+label="s28551: Box = s28545.Context.SELF()"
+shape=box, color=darkblue, tooltip="s28551:Box", style=filled, fillcolor=white
+]
+"s28561" [
+label="s28561: WOption[SigmaProp] =\ls28551.Box.getReg(s28493, SigmaPropElem<SigmaProp>)\l"
+shape=box, color=darkblue, tooltip="s28561:WOption[SigmaProp]", style=filled, fillcolor=white
+]
+{rank=sink; s28547}
+}
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s44" [
+label="s44: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s44:CostModel", style=filled, fillcolor=white
+]
+"s28502" [
+label="s28502: Int = s44.CostModel.GetRegister()"
+shape=box, color=darkblue, tooltip="s28502:Int", style=filled, fillcolor=white
+]
+"s19331" [
+label="s19331: Int = CostOf(SigmaPropIsValid:(SSigmaProp) => SBoolean)"
+shape=box, color=gray, tooltip="s19331:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s28612 {
+style=dashed; color="#FFCCFF"
+"s28610" [
+label="s28610: Context"
+shape=oval, color=gray, tooltip="s28610:Context", style=filled, fillcolor=white
+]
+"s28612" [
+label="s28612: Context => Int = s28610 => s28502 + s19331"
+shape=box, color=magenta, tooltip="s28612:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s28610}
+{rank=sink; s28612}
+}
+"s28674" [
+label="s28674: (Context => SigmaProp, Context => Int) = (s28547, s28612)"
+shape=box, color=gray, tooltip="s28674:(Context => SigmaProp, Context => Int)", style=filled, fillcolor=white
+]
+"s28547" -> "s28674" [style=solid]
+"s28612" -> "s28674" [style=solid]
+"s28545" -> "s28551" [style=solid]
+"s28545" -> "s28547" [style=dashed, color=lightgray, weight=0]
+"s28561" -> "s28547" [style=solid]
+"s28" -> "s44" [style=solid]
+"s28610" -> "s28612" [style=dashed, color=lightgray, weight=0]
+"s28502" -> "s28612" [style=solid]
+"s19331" -> "s28612" [style=solid]
+"s28551" -> "s28561" [style=solid]
+"s28493" -> "s28561" [style=solid]
+"s44" -> "s28502" [style=solid]
+}

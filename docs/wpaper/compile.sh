@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 pdflatex sigma
-bibtext sigma
+bibtex sigma
 pdflatex sigma
 pdflatex sigma
 rm sigma.aux

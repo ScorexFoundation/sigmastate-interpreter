@@ -1,0 +1,82 @@
+digraph "one+one" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s37" [
+label="s37: Int = Const(1)"
+shape=box, color=gray, tooltip="s37:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s941 {
+style=dashed; color="#FFCCFF"
+"s939" [
+label="s939: Context"
+shape=oval, color=gray, tooltip="s939:Context", style=filled, fillcolor=white
+]
+"s941" [
+label="s941: Context => Int = s939 => s37 + s37"
+shape=box, color=magenta, tooltip="s941:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s939}
+{rank=sink; s941}
+}
+"s38" [
+label="s38: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s38:Int", style=filled, fillcolor=white
+]
+"s932" [
+label="s932: Int = s38 + s38"
+shape=box, color=gray, tooltip="s932:Int", style=filled, fillcolor=white
+]
+"s933" [
+label="s933: Int = CostOf(+:(SInt,SInt) => SInt)"
+shape=box, color=gray, tooltip="s933:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s964 {
+style=dashed; color="#FFCCFF"
+"s962" [
+label="s962: Context"
+shape=oval, color=gray, tooltip="s962:Context", style=filled, fillcolor=white
+]
+"s964" [
+label="s964: Context => Int = s962 => s932 + s933"
+shape=box, color=magenta, tooltip="s964:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s962}
+{rank=sink; s964}
+}
+subgraph cluster_s68 {
+style=dashed; color="#FFCCFF"
+"s66" [
+label="s66: Context"
+shape=oval, color=gray, tooltip="s66:Context", style=filled, fillcolor=white
+]
+"s68" [
+label="s68: Context => Long = s66 => TypeSize(SInt)"
+shape=box, color=magenta, tooltip="s68:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s66}
+{rank=sink; s68}
+}
+"s1009" [
+label="s1009: {calc: Context => Int; cost: Context => Int; size: Context => Long} = {calc:s941; cost:s964; size:s68}"
+shape=box, color=gray, tooltip="s1009:{calc: Context => Int; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s1026" [
+label="s1026: {calc: Context => Int; cost: Context => Int} = {calc:s941; cost:s964}"
+shape=box, color=gray, tooltip="s1026:{calc: Context => Int; cost: Context => Int}", style=filled, fillcolor=white
+]
+"s939" -> "s941" [style=dashed, color=lightgray, weight=0]
+"s37" -> "s941" [style=solid]
+"s37" -> "s941" [style=solid]
+"s941" -> "s1026" [style=solid]
+"s964" -> "s1026" [style=solid]
+"s962" -> "s964" [style=dashed, color=lightgray, weight=0]
+"s932" -> "s964" [style=solid]
+"s933" -> "s964" [style=solid]
+"s38" -> "s932" [style=solid]
+"s38" -> "s932" [style=solid]
+"s66" -> "s68" [style=dashed, color=lightgray, weight=0]
+"s941" -> "s1009" [style=solid]
+"s964" -> "s1009" [style=solid]
+"s68" -> "s1009" [style=solid]
+}

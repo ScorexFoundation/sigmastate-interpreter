@@ -10,6 +10,8 @@ import scapi.sigma.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDHTuple
 import sigmastate.Values.{TrueLeaf, Value}
 import sigmastate._
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDiffieHellmanTuple
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.Transformer

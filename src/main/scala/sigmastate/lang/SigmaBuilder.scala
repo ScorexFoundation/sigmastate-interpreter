@@ -11,6 +11,9 @@ import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, Bloc
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDiffieHellmanTuple
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes

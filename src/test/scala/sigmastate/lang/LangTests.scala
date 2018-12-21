@@ -6,7 +6,7 @@ import sigmastate._
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.basics.DLogProtocol.ProveDlog
 import scapi.sigma.ProveDHTuple
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants

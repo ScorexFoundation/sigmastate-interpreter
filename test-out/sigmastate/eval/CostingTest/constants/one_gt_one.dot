@@ -1,0 +1,72 @@
+digraph "one_gt_one" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s37" [
+label="s37: Int = Const(1)"
+shape=box, color=gray, tooltip="s37:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s1178 {
+style=dashed; color="#FFCCFF"
+"s1176" [
+label="s1176: Context"
+shape=oval, color=gray, tooltip="s1176:Context", style=filled, fillcolor=white
+]
+"s1178" [
+label="s1178: Context => Boolean = s1176 => s37 > s37"
+shape=box, color=magenta, tooltip="s1178:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s1176}
+{rank=sink; s1178}
+}
+"s38" [
+label="s38: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s38:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s1199 {
+style=dashed; color="#FFCCFF"
+"s1197" [
+label="s1197: Context"
+shape=oval, color=gray, tooltip="s1197:Context", style=filled, fillcolor=white
+]
+"s1199" [
+label="s1199: Context => Int = s1197 => s38 + s38"
+shape=box, color=magenta, tooltip="s1199:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s1197}
+{rank=sink; s1199}
+}
+subgraph cluster_s196 {
+style=dashed; color="#FFCCFF"
+"s194" [
+label="s194: Context"
+shape=oval, color=gray, tooltip="s194:Context", style=filled, fillcolor=white
+]
+"s196" [
+label="s196: Context => Long = s194 => TypeSize(SBoolean)"
+shape=box, color=magenta, tooltip="s196:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s194}
+{rank=sink; s196}
+}
+"s1240" [
+label="s1240: {calc: Context => Boolean; cost: Context => Int; size: Context => Long} = {calc:s1178; cost:s1199; size:s196}"
+shape=box, color=gray, tooltip="s1240:{calc: Context => Boolean; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s1255" [
+label="s1255: {calc: Context => Boolean; cost: Context => Int} = {calc:s1178; cost:s1199}"
+shape=box, color=gray, tooltip="s1255:{calc: Context => Boolean; cost: Context => Int}", style=filled, fillcolor=white
+]
+"s194" -> "s196" [style=dashed, color=lightgray, weight=0]
+"s1197" -> "s1199" [style=dashed, color=lightgray, weight=0]
+"s38" -> "s1199" [style=solid]
+"s38" -> "s1199" [style=solid]
+"s1178" -> "s1255" [style=solid]
+"s1199" -> "s1255" [style=solid]
+"s1176" -> "s1178" [style=dashed, color=lightgray, weight=0]
+"s37" -> "s1178" [style=solid]
+"s37" -> "s1178" [style=solid]
+"s1178" -> "s1240" [style=solid]
+"s1199" -> "s1240" [style=solid]
+"s196" -> "s1240" [style=solid]
+}

@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import scapi.sigma.ProveDHTuple
+import sigmastate.basics.ProveDHTuple
 import sigmastate.utxo.CostTableStat
 
 class PDHTSerializerSpecification extends SerializationSpecification {

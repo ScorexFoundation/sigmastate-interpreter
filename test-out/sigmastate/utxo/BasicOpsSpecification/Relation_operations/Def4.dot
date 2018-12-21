@@ -1,0 +1,65 @@
+digraph "Def4" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s70376" [
+label="s70376: Byte = Const(99)"
+shape=box, color=gray, tooltip="s70376:Byte", style=filled, fillcolor=white
+]
+subgraph cluster_s74752 {
+style=dashed; color="#FFCCFF"
+"s74750" [
+label="s74750: Context"
+shape=oval, color=gray, tooltip="s74750:Context", style=filled, fillcolor=white
+]
+"s74752" [
+label="s74752: Context => Boolean = s74750 => ! s74789"
+shape=box, color=magenta, tooltip="s74752:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s74750}
+"s74757" [
+label="s74757: WOption[Int] = s74750.Context.getVar(s70376, anon$7<Int>)"
+shape=box, color=darkblue, tooltip="s74757:WOption[Int]", style=filled, fillcolor=white
+]
+"s74789" [
+label="s74789: Boolean = s74757.WOption.isDefined()"
+shape=box, color=darkblue, tooltip="s74789:Boolean", style=filled, fillcolor=white
+]
+{rank=sink; s74752}
+}
+"s25151" [
+label="s25151: Int = Const(1)"
+shape=box, color=gray, tooltip="s25151:Int", style=filled, fillcolor=white
+]
+"s86" [
+label="s86: Int = CostOf(Const:() => SBoolean)"
+shape=box, color=gray, tooltip="s86:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s73966 {
+style=dashed; color="#FFCCFF"
+"s73964" [
+label="s73964: Context"
+shape=oval, color=gray, tooltip="s73964:Context", style=filled, fillcolor=white
+]
+"s73966" [
+label="s73966: Context => Int = s73964 => s25151 + s86"
+shape=box, color=magenta, tooltip="s73966:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s73964}
+{rank=sink; s73966}
+}
+"s74857" [
+label="s74857: (Context => Boolean, Context => Int) = (s74752, s73966)"
+shape=box, color=gray, tooltip="s74857:(Context => Boolean, Context => Int)", style=filled, fillcolor=white
+]
+"s74752" -> "s74857" [style=solid]
+"s73966" -> "s74857" [style=solid]
+"s74750" -> "s74752" [style=dashed, color=lightgray, weight=0]
+"s74789" -> "s74752" [style=solid]
+"s73964" -> "s73966" [style=dashed, color=lightgray, weight=0]
+"s25151" -> "s73966" [style=solid]
+"s86" -> "s73966" [style=solid]
+"s74757" -> "s74789" [style=solid]
+"s74750" -> "s74757" [style=solid]
+"s70376" -> "s74757" [style=solid]
+}

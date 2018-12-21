@@ -3,6 +3,7 @@ package sigmastate.serialization.transformers
 import scapi.sigma.ProveDHTuple
 import sigmastate.SGroupElement
 import sigmastate.Values.{Constant, GroupElementConstant, SigmaBoolean, Value}
+import sigmastate.basics.ProveDiffieHellmanTuple
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{DataSerializer, OpCodes, ValueSerializer}

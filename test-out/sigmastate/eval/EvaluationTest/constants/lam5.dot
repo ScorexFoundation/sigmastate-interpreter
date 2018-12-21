@@ -1,0 +1,349 @@
+digraph "lam5" {
+concentrate=true
+node [style=filled, fillcolor=orangered]
+
+"s15" [
+label="s15: Long = Const(0l)"
+shape=box, color=gray, tooltip="s15:Long", style=filled, fillcolor=white
+]
+subgraph cluster_s9255 {
+style=dashed; color="#FFCCFF"
+"s9253" [
+label="s9253: Box"
+shape=oval, color=gray, tooltip="s9253:Box", style=filled, fillcolor=white
+]
+"s9255" [
+label="s9255: Box => Boolean = s9253 => s9262 >= s15"
+shape=box, color=magenta, tooltip="s9255:Box => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s9253}
+"s9262" [
+label="s9262: Long = s9253.Box.value()"
+shape=box, color=darkblue, tooltip="s9262:Long", style=filled, fillcolor=white
+]
+{rank=sink; s9255}
+}
+"s11" [
+label="s11: Int = Const(0)"
+shape=box, color=gray, tooltip="s11:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s11996 {
+style=dashed; color="#FFCCFF"
+"s11994" [
+label="s11994: Col[Int]"
+shape=oval, color=gray, tooltip="s11994:Col[Int]", style=filled, fillcolor=white
+]
+"s11996" [
+label="s11996: Col[Int] => Boolean = s11994 => s12001 > s11"
+shape=box, color=magenta, tooltip="s11996:Col[Int] => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s11994}
+"s12001" [
+label="s12001: Int = s11994.Col.length()"
+shape=box, color=darkblue, tooltip="s12001:Int", style=filled, fillcolor=white
+]
+{rank=sink; s11996}
+}
+"s5522" [
+label="s5522: Int = Const(5)"
+shape=box, color=gray, tooltip="s5522:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s12189 {
+style=dashed; color="#FFCCFF"
+"s12187" [
+label="s12187: Context"
+shape=oval, color=gray, tooltip="s12187:Context", style=filled, fillcolor=white
+]
+"s12189" [
+label="s12189: Context => Boolean = s12187 => s12367 || { s12378 }"
+shape=box, color=magenta, tooltip="s12189:Context => Boolean", style=filled, fillcolor=white
+]
+{rank=source; s12187}
+"s12284" [
+label="s12284: Box = s12187.Context.SELF()"
+shape=box, color=darkblue, tooltip="s12284:Box", style=filled, fillcolor=white
+]
+"s12367" [
+label="s12367: Boolean = s9255(s12284)"
+shape=box, color=gray, tooltip="s12367:Boolean", style=filled, fillcolor=white
+]
+subgraph cluster_s12378 {
+style=dashed; color="#FFCCCC"
+"s12378" [
+label="s12378: Thunk[Boolean] = Thunk(s12592, [s12390,s12432,s12592])"
+shape=box, color=red, tooltip="s12378:Thunk[Boolean]", style=filled, fillcolor=white
+]
+"s12390" [
+label="s12390: WOption[Col[Int]] = s12284.Box.getReg(s5522, ColElem<Col[Int]>)"
+shape=box, color=darkblue, tooltip="s12390:WOption[Col[Int]]", style=filled, fillcolor=white
+]
+"s12432" [
+label="s12432: Col[Int] = s12390.WOption.get()"
+shape=box, color=darkblue, tooltip="s12432:Col[Int]", style=filled, fillcolor=white
+]
+"s12592" [
+label="s12592: Boolean = s11996(s12432)"
+shape=box, color=gray, tooltip="s12592:Boolean", style=filled, fillcolor=white
+]
+{rank=sink; s12378}
+}
+{rank=sink; s12189}
+}
+"s1636" [
+label="s1636: Int = CostOf(SizeOf:(Col[IV]) => SInt)"
+shape=box, color=gray, tooltip="s1636:Int", style=filled, fillcolor=white
+]
+"s38" [
+label="s38: Int = CostOf(Const:() => SInt)"
+shape=box, color=gray, tooltip="s38:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s12041 {
+style=dashed; color="#FFCCFF"
+"s12039" [
+label="s12039: (Col[Int], (Int, Long))"
+shape=oval, color=gray, tooltip="s12039:(Col[Int], (Int, Long))", style=filled, fillcolor=white
+]
+"s12041" [
+label="s12041: (Col[Int], (Int, Long)) => Int = s12039 => s12073 + s38"
+shape=box, color=magenta, tooltip="s12041:(Col[Int], (Int, Long)) => Int", style=filled, fillcolor=white
+]
+{rank=source; s12039}
+"s12043" [
+label="s12043: (Int, Long) = s12039._2"
+shape=box, color=gray, tooltip="s12043:(Int, Long)", style=filled, fillcolor=white
+]
+"s12044" [
+label="s12044: Int = s12043._1"
+shape=box, color=gray, tooltip="s12044:Int", style=filled, fillcolor=white
+]
+"s12073" [
+label="s12073: Int = s12044 + s1636"
+shape=box, color=gray, tooltip="s12073:Int", style=filled, fillcolor=white
+]
+{rank=sink; s12041}
+}
+"s849" [
+label="s849: Int = CostOf(BinOr:(SBoolean,SBoolean) => SBoolean)"
+shape=box, color=gray, tooltip="s849:Int", style=filled, fillcolor=white
+]
+"s28" [
+label="s28: TestSigmaDslBuilder = TestSigmaDslBuilderCtor()"
+shape=box, color=green, tooltip="s28:TestSigmaDslBuilder", style=filled, fillcolor=white
+]
+"s1597" [
+label="s1597: CostModel = s28.SigmaDslBuilder.CostModel()"
+shape=box, color=darkblue, tooltip="s1597:CostModel", style=filled, fillcolor=white
+]
+"s4698" [
+label="s4698: Int = s1597.CostModel.GetRegister()"
+shape=box, color=darkblue, tooltip="s4698:Int", style=filled, fillcolor=white
+]
+"s11960" [
+label="s11960: Int = CostOf(Const:() => Col[IV])"
+shape=box, color=gray, tooltip="s11960:Int", style=filled, fillcolor=white
+]
+"s11961" [
+label="s11961: Int = s4698 + s11960"
+shape=box, color=gray, tooltip="s11961:Int", style=filled, fillcolor=white
+]
+"s1599" [
+label="s1599: Int = s1597.CostModel.AccessBox()"
+shape=box, color=darkblue, tooltip="s1599:Int", style=filled, fillcolor=white
+]
+"s165" [
+label="s165: Int = CostOf(Const:() => SLong)"
+shape=box, color=gray, tooltip="s165:Int", style=filled, fillcolor=white
+]
+"s9011" [
+label="s9011: Int = CostOf(ExtractAmount:(SBox) => SLong)"
+shape=box, color=gray, tooltip="s9011:Int", style=filled, fillcolor=white
+]
+subgraph cluster_s9280 {
+style=dashed; color="#FFCCFF"
+"s9278" [
+label="s9278: (Box, (Int, Long))"
+shape=oval, color=gray, tooltip="s9278:(Box, (Int, Long))", style=filled, fillcolor=white
+]
+"s9280" [
+label="s9280: (Box, (Int, Long)) => Int = s9278 => s9291 + s165"
+shape=box, color=magenta, tooltip="s9280:(Box, (Int, Long)) => Int", style=filled, fillcolor=white
+]
+{rank=source; s9278}
+"s9282" [
+label="s9282: (Int, Long) = s9278._2"
+shape=box, color=gray, tooltip="s9282:(Int, Long)", style=filled, fillcolor=white
+]
+"s9283" [
+label="s9283: Int = s9282._1"
+shape=box, color=gray, tooltip="s9283:Int", style=filled, fillcolor=white
+]
+"s9291" [
+label="s9291: Int = s9283 + s9011"
+shape=box, color=gray, tooltip="s9291:Int", style=filled, fillcolor=white
+]
+{rank=sink; s9280}
+}
+"s40" [
+label="s40: Long = TypeSize(SInt)"
+shape=box, color=gray, tooltip="s40:Long", style=filled, fillcolor=white
+]
+subgraph cluster_s12910 {
+style=dashed; color="#FFCCFF"
+"s12908" [
+label="s12908: Context"
+shape=oval, color=gray, tooltip="s12908:Context", style=filled, fillcolor=white
+]
+"s12910" [
+label="s12910: Context => Int = s12908 => s13623 + s849"
+shape=box, color=magenta, tooltip="s12910:Context => Int", style=filled, fillcolor=white
+]
+{rank=source; s12908}
+"s13005" [
+label="s13005: Box = s12908.Context.SELF()"
+shape=box, color=darkblue, tooltip="s13005:Box", style=filled, fillcolor=white
+]
+"s13090" [
+label="s13090: Long = s13005.Box.dataSize()"
+shape=box, color=darkblue, tooltip="s13090:Long", style=filled, fillcolor=white
+]
+"s13091" [
+label="s13091: (Int, Long) = (s1599, s13090)"
+shape=box, color=gray, tooltip="s13091:(Int, Long)", style=filled, fillcolor=white
+]
+"s13092" [
+label="s13092: (Box, (Int, Long)) = (s13005, s13091)"
+shape=box, color=gray, tooltip="s13092:(Box, (Int, Long))", style=filled, fillcolor=white
+]
+"s13093" [
+label="s13093: Int = s9280(s13092)"
+shape=box, color=gray, tooltip="s13093:Int", style=filled, fillcolor=white
+]
+"s13372" [
+label="s13372: WOption[Col[Int]] = s13005.Box.getReg(s5522, ColElem<Col[Int]>)"
+shape=box, color=darkblue, tooltip="s13372:WOption[Col[Int]]", style=filled, fillcolor=white
+]
+"s13414" [
+label="s13414: Col[Int] = s13372.WOption.get()"
+shape=box, color=darkblue, tooltip="s13414:Col[Int]", style=filled, fillcolor=white
+]
+"s13422" [
+label="s13422: Int = s13414.Col.length()"
+shape=box, color=darkblue, tooltip="s13422:Int", style=filled, fillcolor=white
+]
+"s13601" [
+label="s13601: Long = ToLong s13422"
+shape=box, color=gray, tooltip="s13601:Long", style=filled, fillcolor=white
+]
+"s13602" [
+label="s13602: Long = s40 * s13601"
+shape=box, color=gray, tooltip="s13602:Long", style=filled, fillcolor=white
+]
+"s13603" [
+label="s13603: (Int, Long) = (s11961, s13602)"
+shape=box, color=gray, tooltip="s13603:(Int, Long)", style=filled, fillcolor=white
+]
+"s13604" [
+label="s13604: (Col[Int], (Int, Long)) = (s13414, s13603)"
+shape=box, color=gray, tooltip="s13604:(Col[Int], (Int, Long))", style=filled, fillcolor=white
+]
+"s13605" [
+label="s13605: Int = s12041(s13604)"
+shape=box, color=gray, tooltip="s13605:Int", style=filled, fillcolor=white
+]
+"s13623" [
+label="s13623: Int = s13093 + s13605"
+shape=box, color=gray, tooltip="s13623:Int", style=filled, fillcolor=white
+]
+{rank=sink; s12910}
+}
+subgraph cluster_s698 {
+style=dashed; color="#FFCCFF"
+"s696" [
+label="s696: Context"
+shape=oval, color=gray, tooltip="s696:Context", style=filled, fillcolor=white
+]
+"s698" [
+label="s698: Context => Long = s696 => TypeSize(SBoolean)"
+shape=box, color=magenta, tooltip="s698:Context => Long", style=filled, fillcolor=white
+]
+{rank=source; s696}
+{rank=sink; s698}
+}
+"s14351" [
+label="s14351: {calc: Context => Boolean; cost: Context => Int; size: Context => Long} = {calc:s12189; cost:s12910; size:s698}"
+shape=box, color=gray, tooltip="s14351:{calc: Context => Boolean; cost: Context => Int; size: Context => Long}", style=filled, fillcolor=white
+]
+"s79" [
+label="s79: {} = {}"
+shape=box, color=gray, tooltip="s79:{}", style=filled, fillcolor=white
+]
+"s12187" -> "s12189" [style=dashed, color=lightgray, weight=0]
+"s12367" -> "s12189" [style=solid]
+"s12378" -> "s12189" [style=solid]
+"s13093" -> "s13623" [style=solid]
+"s13605" -> "s13623" [style=solid]
+"s696" -> "s698" [style=dashed, color=lightgray, weight=0]
+"s1599" -> "s13091" [style=solid]
+"s13090" -> "s13091" [style=solid]
+"s12189" -> "s14351" [style=solid]
+"s12910" -> "s14351" [style=solid]
+"s698" -> "s14351" [style=solid]
+"s9282" -> "s9283" [style=solid]
+"s13372" -> "s13414" [style=solid]
+"s13414" -> "s13604" [style=solid]
+"s13603" -> "s13604" [style=solid]
+"s12039" -> "s12041" [style=dashed, color=lightgray, weight=0]
+"s12073" -> "s12041" [style=solid]
+"s38" -> "s12041" [style=solid]
+"s9253" -> "s9255" [style=dashed, color=lightgray, weight=0]
+"s9262" -> "s9255" [style=solid]
+"s15" -> "s9255" [style=solid]
+"s12044" -> "s12073" [style=solid]
+"s1636" -> "s12073" [style=solid]
+"s12908" -> "s12910" [style=dashed, color=lightgray, weight=0]
+"s13623" -> "s12910" [style=solid]
+"s849" -> "s12910" [style=solid]
+"s9283" -> "s9291" [style=solid]
+"s9011" -> "s9291" [style=solid]
+"s4698" -> "s11961" [style=solid]
+"s11960" -> "s11961" [style=solid]
+"s12592" -> "s12378" [style=solid]
+"s1597" -> "s1599" [style=solid]
+"s11961" -> "s13603" [style=solid]
+"s13602" -> "s13603" [style=solid]
+"s13005" -> "s13372" [style=solid]
+"s5522" -> "s13372" [style=solid]
+"s13005" -> "s13090" [style=solid]
+"s11996" -> "s12592" [style=solid]
+"s12432" -> "s12592" [style=solid]
+"s9280" -> "s13093" [style=solid]
+"s13092" -> "s13093" [style=solid]
+"s11994" -> "s11996" [style=dashed, color=lightgray, weight=0]
+"s12001" -> "s11996" [style=solid]
+"s11" -> "s11996" [style=solid]
+"s12908" -> "s13005" [style=solid]
+"s13414" -> "s13422" [style=solid]
+"s12187" -> "s12284" [style=solid]
+"s12043" -> "s12044" [style=solid]
+"s9278" -> "s9280" [style=dashed, color=lightgray, weight=0]
+"s9291" -> "s9280" [style=solid]
+"s165" -> "s9280" [style=solid]
+"s12390" -> "s12432" [style=solid]
+"s12039" -> "s12043" [style=solid]
+"s12284" -> "s12390" [style=solid]
+"s5522" -> "s12390" [style=solid]
+"s11994" -> "s12001" [style=solid]
+"s40" -> "s13602" [style=solid]
+"s13601" -> "s13602" [style=solid]
+"s12041" -> "s13605" [style=solid]
+"s13604" -> "s13605" [style=solid]
+"s1597" -> "s4698" [style=solid]
+"s9253" -> "s9262" [style=solid]
+"s9255" -> "s12367" [style=solid]
+"s12284" -> "s12367" [style=solid]
+"s9278" -> "s9282" [style=solid]
+"s13422" -> "s13601" [style=solid]
+"s28" -> "s1597" [style=solid]
+"s13005" -> "s13092" [style=solid]
+"s13091" -> "s13092" [style=solid]
+}
