@@ -89,7 +89,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |      tokenData._1 == token1,
         |      tokenData._2 >= 60L,
         |      OUTPUTS(0).propositionBytes == pkA.propBytes,
-        |      OUTPUTS(0).R4[Array[Byte]].get == SELF.id
+        |      OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
         |  ))
         |}
       """.stripMargin).asBoolValue
@@ -119,7 +119,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       """ (HEIGHT > deadline && pkB) ||
         | allOf(Coll(
         |        OUTPUTS(1).value >= 100,
-        |        OUTPUTS(1).R4[Array[Byte]].get == SELF.id,
+        |        OUTPUTS(1).R4[Coll[Byte]].get == SELF.id,
         |        OUTPUTS(1).propositionBytes == pkB.propBytes
         | ))
       """.stripMargin).asBoolValue
@@ -184,18 +184,18 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |
         |  val outIdx = getVar[Short](127).get
         |  val out = OUTPUTS(outIdx)
-        |  val tokenData = out.R2[Array[(Array[Byte], Long)]].get(0)
+        |  val tokenData = out.R2[Coll[(Coll[Byte], Long)]].get(0)
         |  val tokenId = tokenData._1
         |  val tokenValue = tokenData._2
         |  val outValue = out.value
         |  val price = 500
         |
-        |  allOf(Array(
+        |  allOf(Coll(
         |      tokenId == token1,
         |      tokenValue >= 1,
         |      (SELF.value - outValue) <= tokenValue * price,
         |      out.propositionBytes == pkA.propBytes,
-        |      out.R4[Array[Byte]].get == SELF.id
+        |      out.R4[Coll[Byte]].get == SELF.id
         |  ))
         |}
       """.stripMargin).asBoolValue
@@ -206,9 +206,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |   val outIdx = getVar[Short](127).get
         |   val out = OUTPUTS(outIdx)
         |
-        |   val tokenData = out.R2[Array[(Array[Byte], Long)]].get(0)
+        |   val tokenData = out.R2[Coll[(Coll[Byte], Long)]].get(0)
         |   val tokenId = tokenData._1
-        |   val selfTokenData = SELF.R2[Array[(Array[Byte], Long)]].get(0)
+        |   val selfTokenData = SELF.R2[Coll[(Coll[Byte], Long)]].get(0)
         |   val selfTokenId = selfTokenData._1
         |   val tokenValue = tokenData._2
         |   val selfTokenValue = selfTokenData._2
@@ -220,10 +220,10 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |
         |   val price = 495
         |
-        |   allOf(Array(
+        |   allOf(Coll(
         |        sold >= 1,
         |        (outValue - selfValue) >= sold*price,
-        |        out.R4[Array[Byte]].get == SELF.id,
+        |        out.R4[Coll[Byte]].get == SELF.id,
         |        out.propositionBytes == pkB.propBytes
         |   ))
         | }
