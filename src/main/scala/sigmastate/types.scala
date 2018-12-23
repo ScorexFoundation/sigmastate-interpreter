@@ -595,8 +595,8 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
         arr.map(x => elemType.dataSize(x)).sum
     res
   }
-  val typeParams = Seq(STypeParam(tIV.name))
-  val tparamSubst = Map(tIV.name -> elemType)
+  def typeParams = SCollectionType.typeParams
+  def tparamSubst = Map(tIV.name -> elemType)
   override def methods = SCollection.methods
   override def toString = s"Coll[$elemType]"
 }
@@ -606,6 +606,7 @@ object SCollectionType {
   val CollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * CollectionTypeConstrId).toByte
   val NestedCollectionTypeConstrId = 2
   val NestedCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * NestedCollectionTypeConstrId).toByte
+  val typeParams = Seq(STypeParam(tIV.name))
 }
 
 object SCollection extends STypeCompanion {
