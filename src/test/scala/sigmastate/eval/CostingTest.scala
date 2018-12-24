@@ -159,29 +159,9 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
   }
 
-  /**
-    * Required script of the box, that collects mining rewards
-    */
-  def rewardOutputScript(delta: Int, minerPk: ProveDlog): ErgoTree = {
-    import ErgoTree._
-    val createdAtHeight = SelectField(ExtractCreationInfo(Self), 1).asLongValue
-    val root = AND(
-      GE(Height, Plus(createdAtHeight, LongConstant(delta))),
-      ProveDlog(DecodePoint(Values.ConstantPlaceholder(0, SByteArray)))
-    )
-    ErgoTree(ConstantSegregationHeader, Vector(ByteArrayConstant(minerPk.pkBytes)), root)
-  }
-
-  def rewardOutputScriptForCurrentMiner(delta: Int): Value[SByteArray] = {
-    val expectedBytes = rewardOutputScript(delta, ProveDlog(CryptoConstants.dlogGroup.generator)).bytes
-    val currentMinerScript = SubstConstants(
-      ByteArrayConstant(expectedBytes),
-      ConcreteCollection(IntConstant(0)),
-      ConcreteCollection(MinerPubkey))
-    currentMinerScript
-  }
 
   test("substConstants") {
+    import org.ergoplatform.ErgoScriptPredef._
     val minerRewardDelay = 720
     val prop = rewardOutputScriptForCurrentMiner(minerRewardDelay)
     val costed = cost(env, prop)

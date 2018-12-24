@@ -32,15 +32,14 @@ trait IRContext extends Evaluation with TreeBuilding {
 
 /** IR context to be used by blockchain nodes to validate transactions. */
 class RuntimeIRContext extends IRContext with CompiletimeCosting {
-  override def invokeAll: Boolean = true
-  override def isInvokeEnabled(d: Def[_], m: Method): Boolean = invokeAll
-  override def shouldUnpack(e: Elem[_]): Boolean = true
+//  override def isInvokeEnabled(d: Def[_], m: Method): Boolean = invokeAll
+//  override def shouldUnpack(e: Elem[_]): Boolean = true
 }
 
 /** IR context to be used by script development tools to compile ErgoScript into ErgoTree bytecode. */
 class CompiletimeIRContext extends IRContext with CompiletimeCosting {
-  override def invokeAll: Boolean = true
-  override def isInvokeEnabled(d: Def[_], m: Method): Boolean = invokeAll
-  override def shouldUnpack(e: Elem[_]): Boolean = true
+//  override def invokeAll: Boolean = true
+//  override def isInvokeEnabled(d: Def[_], m: Method): Boolean = invokeAll
+//  override def shouldUnpack(e: Elem[_]): Boolean = true
 }
 

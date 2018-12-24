@@ -8,15 +8,15 @@ import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, EvaluatedValue, NoneValue, SomeValue}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, AvlTreeConstant, ConstantNode, SomeValue, NoneValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{OperationSerializer, Serializer}
+import sigmastate.serialization.{Serializer, OperationSerializer}
 import special.collection.{CCostedBuilder, Col, Types}
 import special.sigma._
 
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 import scalan.meta.RType
 
 case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree {
@@ -94,12 +94,21 @@ object CostingBox {
   def colBytes(b: Array[Byte])(implicit IR: Evaluation): Col[Byte] = IR.sigmaDslBuilderValue.Cols.fromArray(b)
 
   def regs(ebox: ErgoBox)(implicit IR: Evaluation): Col[AnyValue] = {
-    val m: Map[Byte, Any] = (ebox.additionalRegisters ++ ErgoBox.mandatoryRegisters.map(id => (id, ebox.get(id).get)))
-      .map({ case (k, v) => k.number -> v })
-    val res = new Array[AnyValue](10)
-    for ((id, v) <- m) {
-      assert(res(id) == null, s"register $id is defined more then once")
-      res(id) = new TestValue(v)
+    val res = new Array[AnyValue](ErgoBox.maxRegisters)
+
+    def checkNotYetDefined(id: Int, newValue: SValue) =
+      require(res(id) == null, s"register $id is defined more then once: previous value ${res(id)}, new value $newValue")
+
+    for ((k, v) <- ebox.additionalRegisters) {
+      checkNotYetDefined(k.number, v)
+      res(k.number) = new TestValue(v)
+    }
+
+    for (r <- ErgoBox.mandatoryRegisters) {
+      val regId = r.number
+      val v = ebox.get(r).get
+      checkNotYetDefined(regId, v)
+      res(regId) = new TestValue(v)
     }
     IR.sigmaDslBuilderValue.Cols.fromArray(res)
   }

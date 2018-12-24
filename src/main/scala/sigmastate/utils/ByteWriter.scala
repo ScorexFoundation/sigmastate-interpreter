@@ -152,7 +152,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     *          see note above)
     */
   @inline override def putULong(x: Long): this.type = {
-    val buffer = new Array[Byte](10)
+    val buffer = new Array[Byte](10)  // TODO optimize allocation by removing this buffer, it seems to not necessary
     var position = 0
     var value = x
     // should be fast if java -> scala conversion did not botched it
