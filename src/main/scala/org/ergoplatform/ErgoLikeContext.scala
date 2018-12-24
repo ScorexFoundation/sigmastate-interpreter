@@ -51,7 +51,7 @@ class ErgoLikeContext(val currentHeight: Height,
 }
 
 object ErgoLikeContext {
-  type Height = Long
+  type Height = Int
 
   val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
 
@@ -140,7 +140,7 @@ case object MinerPubkey extends NotReadyValueByteArray {
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
-case object Height extends NotReadyValueLong {
+case object Height extends NotReadyValueInt {
   override val opCode: OpCode = OpCodes.HeightCode
   def opType = SFunc(SContext, SInt)
 }

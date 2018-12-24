@@ -27,7 +27,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
 
 
 
-  def newErgoContext(height: Long, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
+  def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())
     val ergoCtx = ErgoLikeContext(
       currentHeight = height,
@@ -50,7 +50,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   lazy val bigSym = liftConst(big)
   lazy val n1Sym = liftConst(n1)
 
-  val timeout = 100L
+  val timeout = 100
   val minToRaise = 1000L
   val backerPubKeyId = 1.toByte
   val projectPubKeyId = 2.toByte

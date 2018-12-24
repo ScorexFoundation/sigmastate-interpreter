@@ -37,26 +37,26 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
 
         val ctx = TestingContext(h)
-        reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1 should(
+        reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1 should(
           matchPattern { case sb: SigmaBoolean => })
-        reduceToCrypto(ctx, AND(GE(Height, LongConstant(h)), dk1)).get._1 should (
+        reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1 should (
           matchPattern { case sb: SigmaBoolean => })
 
         {
-          val res = reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1
+          val res = reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
           res should matchPattern { case FalseProp => }
         }
 
         {
-          val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1
+          val res = reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get._1
           res should matchPattern { case TrueProp => }
         }
 
         {
-          val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1
+          val res = reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get._1
           res should matchPattern { case TrueProp => }
         }
-        reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1 should(
+        reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1 should(
           matchPattern { case sb: SigmaBoolean => })
       }
     }
@@ -73,28 +73,28 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         val ctx = TestingContext(h)
 
         assert(reduceToCrypto(ctx, OR(
-                  AND(LE(Height, LongConstant(h + 1)), AND(dk1, dk2)),
-                  AND(GT(Height, LongConstant(h + 1)), dk1)
+                  AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h + 1)), dk1)
                 )).get._1.isInstanceOf[CAND])
 
 
         assert(reduceToCrypto(ctx, OR(
-                  AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, LongConstant(h - 1)), dk1)
+                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h - 1)), dk1)
                 )).get._1.isInstanceOf[ProveDlog])
 
         reduceToCrypto(ctx, OR(
-          AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, LongConstant(h + 1)), dk1)
+          AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntConstant(h + 1)), dk1)
         )).get._1 shouldBe FalseProp
 
         reduceToCrypto(ctx,
           OR(
             OR(
-              AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-              AND(GT(Height, LongConstant(h + 1)), dk1)
+              AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+              AND(GT(Height, IntConstant(h + 1)), dk1)
             ),
-            AND(GT(Height, LongConstant(h - 1)), LE(Height, LongConstant(h + 1)))
+            AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1)))
           )
         ).get._1 shouldBe TrueProp
 
@@ -259,8 +259,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val env2 = TestingContext(101)
 
     val prop = OR(
-      AND(LE(Height, LongConstant(100)), AND(dk1, dk2)),
-      AND(GT(Height, LongConstant(100)), dk1)
+      AND(LE(Height, IntConstant(100)), AND(dk1, dk2)),
+      AND(GT(Height, IntConstant(100)), dk1)
     )
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -287,7 +287,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val prop3 = AND(TrueLeaf, TrueLeaf)
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop4 = GT(Height, LongConstant(90))
+    val prop4 = GT(Height, IntConstant(90))
     verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 

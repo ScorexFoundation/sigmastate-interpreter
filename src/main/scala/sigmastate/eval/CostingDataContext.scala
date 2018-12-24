@@ -174,7 +174,7 @@ class CostingDataContext(
     val IR: Evaluation,
     inputs: Array[Box],
     outputs: Array[Box],
-    height: Long,
+    height: Int,
     selfBox: Box,
     lastBlockUtxoRootHash: AvlTree,
     minerPubKey: Array[Byte],

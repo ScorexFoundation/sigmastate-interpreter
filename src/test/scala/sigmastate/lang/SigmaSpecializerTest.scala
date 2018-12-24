@@ -169,7 +169,7 @@ class SigmaSpecializerTest extends PropSpec
     spec("1.toByte") shouldBe ByteConstant(1)
     spec("1.toLong") shouldBe LongConstant(1)
     spec("1.toBigInt") shouldBe BigIntConstant(1)
-    spec("HEIGHT.toLong") shouldBe Height
+    spec("HEIGHT.toLong") shouldBe Upcast(Height, SLong)
     spec("HEIGHT.toByte") shouldBe Downcast(Height, SByte)
     spec("INPUTS.size.toLong") shouldBe Upcast(SizeOf(Inputs), SLong)
     spec("INPUTS.size.toBigInt") shouldBe Upcast(SizeOf(Inputs), SBigInt)
@@ -243,10 +243,10 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("sigmaProp") {
-    spec("sigmaProp(HEIGHT > 1000)") shouldBe BoolToSigmaProp(GT(Height, LongConstant(1000)))
+    spec("sigmaProp(HEIGHT > 1000)") shouldBe BoolToSigmaProp(GT(Height, IntConstant(1000)))
   }
 
   property("ZKProof") {
-    spec("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe ZKProofBlock(BoolToSigmaProp(GT(Height, LongConstant(1000))))
+    spec("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe ZKProofBlock(BoolToSigmaProp(GT(Height, IntConstant(1000))))
   }
 }

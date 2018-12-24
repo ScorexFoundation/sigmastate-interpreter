@@ -135,7 +135,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
     def genCoinbaseLikeTransaction(state: ValidationState,
                                    emissionBox: ErgoBox,
-                                   height: Long): ErgoLikeTransaction = {
+                                   height: Int): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
       val ut = if (emissionBox.value > s.oneEpochReduction) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, height, Seq(), Map())

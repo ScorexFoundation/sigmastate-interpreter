@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, Height}
 import org.scalacheck.Gen
-import sigmastate.Values.LongConstant
+import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -440,7 +440,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA, pubkeyB, HEIGHT > 500))""").asBoolValue
 
     // rewritten by http://github.com/aslesarenko/sigma/blob/2740b51c86bdf1917f688d4ccdb1a0eae9755e0c/sigma-library/src/main/scala/scalan/SigmaLibrary.scala#L91
-    val prop = SigmaOr(GT(Height, LongConstant(500)).toSigmaProp, SigmaOr(pubkeyA, pubkeyB))
+    val prop = SigmaOr(GT(Height, IntConstant(500)).toSigmaProp, SigmaOr(pubkeyA, pubkeyB))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
@@ -482,7 +482,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val compiledProp = compileWithCosting(env,
       """anyOf(Coll(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""").asBoolValue
 
-    val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, LongConstant(500)).toSigmaProp))
+    val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, IntConstant(500)).toSigmaProp))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(
@@ -530,7 +530,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB ||  (pubkeyC && HEIGHT > 500)""").asBoolValue
 
-    val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, LongConstant(500)).toSigmaProp))
+    val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, IntConstant(500)).toSigmaProp))
     compiledProp shouldBe prop
 
     val ctx1 = ErgoLikeContext(

@@ -27,7 +27,7 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
      | }
     """.stripMargin
 
-  val demurragePeriod = 100L
+  val demurragePeriod = 100
   val demurrageCost = 2L
   val regScriptId = 1.toByte
   val envDem = Map(
@@ -39,7 +39,7 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
   val demurrageScript =
     """{
      | val c2 = allOf(Coll(
-     |   HEIGHT >= SELF.R4[Long].get + demurragePeriod,
+     |   HEIGHT >= SELF.R4[Int].get + demurragePeriod,
      |   OUTPUTS.exists { (out: Box) =>
      |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
      |   }

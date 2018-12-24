@@ -31,11 +31,11 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     val hx = ByteArrayConstant(Blake2b256(x))
 
-    val height1 = 100000L
-    val height2 = 50000L
+    val height1 = 100000
+    val height2 = 50000
 
-    val deadlineA = 1000L
-    val deadlineB = 500L
+    val deadlineA = 1000
+    val deadlineB = 500
 
     val env = Map(
       ScriptNameProp -> "atomic",
@@ -52,7 +52,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
 
     //chain1 script
     val prop1Tree = SigmaOr(
-      SigmaAnd(GT(Height, Plus(LongConstant(height1), LongConstant(deadlineA))).toSigmaProp, pubkeyA),
+      SigmaAnd(GT(Height, Plus(IntConstant(height1), IntConstant(deadlineA))).toSigmaProp, pubkeyA),
       SigmaAnd(pubkeyB, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx).toSigmaProp)
     )
     prop1 shouldBe prop1Tree
@@ -76,7 +76,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       Vector(ValDef(1, GetVarByteArray(1).get)),
       SigmaOr(
         SigmaAnd(
-          GT(Height, Plus(LongConstant(height2), LongConstant(deadlineB))).toSigmaProp,
+          GT(Height, Plus(IntConstant(height2), IntConstant(deadlineB))).toSigmaProp,
           pubkeyB),
         SigmaAnd(
           AND(

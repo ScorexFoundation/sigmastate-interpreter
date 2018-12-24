@@ -59,8 +59,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "x % y") shouldBe SInt
     typecheck(env, "c1 && c2", BinAnd(TrueLeaf, FalseLeaf)) shouldBe SBoolean
     typecheck(env, "arr1", ByteArrayConstant(Array[Byte](1,2))) shouldBe SByteArray
-    typecheck(env, "HEIGHT", Height) shouldBe SLong
-    typecheck(env, "HEIGHT + 1") shouldBe SLong
+    typecheck(env, "HEIGHT", Height) shouldBe SInt
+    typecheck(env, "HEIGHT + 1") shouldBe SInt
     typecheck(env, "INPUTS", Inputs) shouldBe SCollection(SBox)
     typecheck(env, "INPUTS.size") shouldBe SInt
     typecheck(env, "INPUTS.size > 1", GT(Select(Inputs, "size", Some(SInt)), 1)) shouldBe SBoolean
@@ -98,7 +98,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "Coll(true, getVar[SigmaProp](11).get)") shouldBe SCollection(SBoolean)
     typecheck(env, "min(1, 2)") shouldBe SInt
     typecheck(env, "min(1L, 2)") shouldBe SLong
-    typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SLong
+    typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SInt
     typecheck(env, "max(1, 2)") shouldBe SInt
     typecheck(env, "max(1L, 2)") shouldBe SLong
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
