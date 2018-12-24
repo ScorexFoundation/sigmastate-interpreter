@@ -460,9 +460,9 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("sigmaProp") {
     test("prop1", env, ext, "sigmaProp(HEIGHT >= 0)",
-      BoolToSigmaProp(GE(Height, LongConstant(0))), true)
+      BoolToSigmaProp(GE(Height, IntConstant(0))), true)
     test("prop2", env, ext, "sigmaProp(HEIGHT >= 0) && getVar[SigmaProp](proofVar1).get",
-      SigmaAnd(Vector(BoolToSigmaProp(GE(Height, LongConstant(0))), GetVarSigmaProp(propVar1).get)), true)
+      SigmaAnd(Vector(BoolToSigmaProp(GE(Height, IntConstant(0))), GetVarSigmaProp(propVar1).get)), true)
 //    println(CostTableStat.costTableString)
   }
 

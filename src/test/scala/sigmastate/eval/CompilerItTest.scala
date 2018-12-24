@@ -259,10 +259,10 @@ class CompilerItTest extends BaseCtxTests
       tree = BlockValue(Vector(
         ValDef(1,List(),SigmaPropConstant(projectPK))),
         SigmaOr(Seq(
-          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,LongConstant(100))),SigmaPropConstant(backerPK))),
+          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,IntConstant(100))),SigmaPropConstant(backerPK))),
           SigmaAnd(Seq(
             BoolToSigmaProp(AND(Vector(
-              LT(Height,LongConstant(100)),
+              LT(Height,IntConstant(100)),
               Exists(Outputs,
                 FuncValue(Vector((2,SBox)),
                   BinAnd(

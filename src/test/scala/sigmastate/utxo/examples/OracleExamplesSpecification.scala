@@ -126,8 +126,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
                         fallback: Value[SBoolean.type])(script: Value[SBoolean.type]) =
-      OR(AND(GE(Height, LongConstant(sinceHeight)), LT(Height, LongConstant(timeoutHeight)), script),
-        AND(GE(Height, LongConstant(timeoutHeight)), fallback))
+      OR(AND(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
+        AND(GE(Height, IntConstant(timeoutHeight)), fallback))
 
     val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey),
       AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey))

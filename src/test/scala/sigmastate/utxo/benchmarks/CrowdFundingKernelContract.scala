@@ -15,7 +15,7 @@ import sigmastate.utils.Helpers
 import scala.util.Try
 
 class CrowdFundingKernelContract(
-                                  timeout: Long,
+                                  timeout: Int,
                                   minToRaise: Long,
                                   override val backerProver: ErgoLikeTestProvingInterpreter,
                                   override val projectProver: ErgoLikeTestProvingInterpreter

@@ -12,7 +12,7 @@ import sigmastate.lang.Terms._
 import scala.util.Try
 
 class CrowdFundingScriptContract(
-                                  timeout: Long,
+                                  timeout: Int,
                                   minToRaise: Long,
                                   override val backerProver: ErgoLikeTestProvingInterpreter,
                                   override val projectProver: ErgoLikeTestProvingInterpreter

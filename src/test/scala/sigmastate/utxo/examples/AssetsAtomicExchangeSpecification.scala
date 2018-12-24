@@ -48,7 +48,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
 
     val tokenId = Blake2b256("token1")
-    val deadline = 70L
+    val deadline = 70
     val tokenBuyerKey = tokenBuyer.dlogSecrets.head.publicImage
     val tokenSellerKey = tokenBuyer.dlogSecrets.head.publicImage
 

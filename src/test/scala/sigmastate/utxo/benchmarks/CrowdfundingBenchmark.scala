@@ -26,7 +26,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons {
     ctx
   }
 
-  val timeout = 100L
+  val timeout = 100
   val minToRaise = 1000L
   val nIters = 10000
   val nTasks = 1

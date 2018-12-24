@@ -128,8 +128,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("context data") {
 //    check("var1", "getVar[BigInt](1)", ctx => ctx.getVar[BigInteger](1.toByte), _ => 1)
-    check("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L)
-    check("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L)
+    check("height1", "HEIGHT + 1", ctx => ctx.HEIGHT + 1)
+    check("height2", "HEIGHT > 1", ctx => ctx.HEIGHT > 1)
     check("size", "INPUTS.size + OUTPUTS.size", ctx => { ctx.INPUTS.length + ctx.OUTPUTS.length })
     check("value", "SELF.value + 1L", ctx => ctx.SELF.value + 1L)
   }
@@ -226,7 +226,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     { ctx: Rep[Context] =>
       val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp]
       val c2 = dsl.allOf(colBuilder.fromItems(
-        ctx.HEIGHT >= ctx.SELF.getReg[Long](4).get + demurragePeriod,
+        ctx.HEIGHT >= ctx.SELF.getReg[Int](4).get + demurragePeriod,
         ctx.OUTPUTS.exists(fun { out =>
           val selfBytes = ctx.SELF.propositionBytes
           (out.value >= ctx.SELF.value - demurrageCost) lazy_&& Thunk{out.propositionBytes === selfBytes}

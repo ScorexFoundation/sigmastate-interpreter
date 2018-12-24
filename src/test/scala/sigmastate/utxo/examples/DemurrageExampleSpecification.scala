@@ -33,7 +33,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     * )
     */
   property("Evaluation - Demurrage Example") {
-    val demurragePeriod = 100L
+    val demurragePeriod = 100
     val demurrageCoeff = 2
 
     val outIdxVarId = Byte.MaxValue
