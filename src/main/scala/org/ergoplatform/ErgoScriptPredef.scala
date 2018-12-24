@@ -9,7 +9,7 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.lang.Terms.ValueOps
 
-object ErgoPredefScripts {
+object ErgoScriptPredef {
 
   /**
     * Required script of the box, that collects mining rewards

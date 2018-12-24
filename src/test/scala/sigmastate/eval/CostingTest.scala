@@ -161,7 +161,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
 
   test("substConstants") {
-    import org.ergoplatform.ErgoPredefScripts._
+    import org.ergoplatform.ErgoScriptPredef._
     val minerRewardDelay = 720
     val prop = rewardOutputScriptForCurrentMiner(minerRewardDelay)
     val costed = cost(env, prop)
