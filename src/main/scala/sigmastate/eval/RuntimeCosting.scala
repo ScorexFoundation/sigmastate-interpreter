@@ -70,6 +70,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import WSpecialPredef._
   import TestSigmaDslBuilder._
 
+  override val performViewsLifting = false
+  val okMeasureOperationTime: Boolean = false
+
   //this.keepOriginalFunc = false  // original lambda contains invocations of evalNode and we don't want that
 
   def createSliceAnalyzer = new SliceAnalyzer
@@ -319,8 +322,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case _ => Nullable.None
     }
   }
-
-  override val performViewsLifting = false
 
   implicit class ElemOpsForCosting(e: Elem[_]) {
     def isConstantSize: Boolean = elemToSType(e).isConstantSize
@@ -761,8 +762,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   type CostingEnv = Map[Any, RCosted[_]]
 
   import sigmastate._
-
-  val okMeasureOperationTime: Boolean = true
 
   val OperationIdKey = MetaKey[AnyRef]("OperationId")(AnyRefElement)
 
