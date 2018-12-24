@@ -6,18 +6,22 @@ import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox.RegisterId
 import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import org.ergoplatform.ErgoBox.{RegisterId, R1, MandatoryRegisterId}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
+import org.ergoplatform._
+import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptNameProp}
 import sigmastate.utxo._
 
 
 class OracleExamplesSpecification extends SigmaTestingCommons {
-
+  implicit lazy val IR = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
@@ -74,10 +78,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
-    val oraclePubKey = oraclePrivKey.publicImage
+    val oraclePubImage = oraclePrivKey.publicImage
+    val oraclePubKey = oraclePubImage.isProven
 
-    val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage
-    val bobPubKey = bob.dlogSecrets.head.publicImage
+    val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage.isProven
+    val bobPubKey = bob.dlogSecrets.head.publicImage.isProven
 
     val group = CryptoConstants.dlogGroup
 
@@ -88,13 +93,15 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val ts = System.currentTimeMillis()
 
-    val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature) ++ Longs.toByteArray(ts)))
+    // we need to fit the resulted BigInt in group order
+    val reducedHashSize = 31
+    val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature) ++ Longs.toByteArray(ts)).take(reducedHashSize))
 
     val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger // todo : check
 
     val oracleBox = ErgoBox(
       value = 1L,
-      proposition = oraclePubKey,
+      ergoTree = oraclePubKey,
       creationHeight = 0,
       additionalRegisters = Map(
         reg1 -> LongConstant(temperature),
@@ -114,7 +121,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
 
     def extract[T <: SType](Rn: RegisterId)(implicit tT: T) =
-      ExtractRegisterAs[T](TaggedBox(22: Byte), Rn)(tT).get
+      ExtractRegisterAs[T](GetVarBox(22: Byte).get, Rn)(tT).get
 
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
@@ -125,13 +132,20 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey),
       AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey))
 
-    val oracleProp = AND(OptionIsDefined(TreeLookup(LastBlockUtxoRootHash, ExtractId(TaggedBox(22: Byte)), TaggedByteArray(23: Byte))),
+    val oracleProp = AND(OptionIsDefined(TreeLookup(LastBlockUtxoRootHash, ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)),
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(oraclePubKey.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
-          Exponentiate(oraclePubKey.value,
-            ByteArrayToBigInt(CalcBlake2b256(
-              Append(LongToByteArray(extract[SLong.type](reg1)), LongToByteArray(extract[SLong.type](reg4)))))))
+          Exponentiate(oraclePubImage.value,
+            ByteArrayToBigInt(
+              Slice(
+                CalcBlake2b256(
+                  Append(LongToByteArray(extract[SLong.type](reg1)), LongToByteArray(extract[SLong.type](reg4)))),
+                IntConstant(0), IntConstant(reducedHashSize)
+              )
+            )
+          )
+        )
       ),
       contractLogic)
 
@@ -156,7 +170,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
     val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxId = 4)
 
-    val ctx = ErgoLikeContext(
+   val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
       ErgoLikeContext.dummyPubkey,
@@ -167,14 +181,14 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val alice = aliceTemplate
       .withContextExtender(22: Byte, BoxConstant(oracleBox))
       .withContextExtender(23: Byte, ByteArrayConstant(proof))
-    val prA = alice.prove(propAlice, ctx, fakeMessage).get
+    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), propAlice, ctx, fakeMessage).fold(t => throw t, x => x)
 
-    val prB = bob.prove(propBob, ctx, fakeMessage).get
+    val prB = bob.prove(emptyEnv + (ScriptNameProp -> "bob_prove"), propBob, ctx, fakeMessage).fold(t => throw t, x => x)
 
     val ctxv = ctx.withExtension(prA.extension)
-    verifier.verify(propAlice, ctxv, prA, fakeMessage).get._1 shouldBe true
+    verifier.verify(emptyEnv + (ScriptNameProp -> "alice_verify"), propAlice, ctxv, prA, fakeMessage).get._1 shouldBe true
 
-    verifier.verify(propBob, ctx, prB, fakeMessage).get._1 shouldBe true
+    verifier.verify(emptyEnv + (ScriptNameProp -> "bob_verify"), propBob, ctx, prB, fakeMessage).get._1 shouldBe true
 
     //todo: check timing conditions - write tests for height  < 40 and >= 60
   }
@@ -200,16 +214,16 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
-    val oraclePubKey = oraclePrivKey.publicImage
+    val oraclePubKey = oraclePrivKey.publicImage.isProven
 
-    val alicePubKey = alice.dlogSecrets.head.publicImage
-    val bobPubKey = bob.dlogSecrets.head.publicImage
+    val alicePubKey = alice.dlogSecrets.head.publicImage.isProven
+    val bobPubKey = bob.dlogSecrets.head.publicImage.isProven
 
     val temperature: Long = 18
 
     val oracleBox = ErgoBox(
       value = 1L,
-      proposition = oraclePubKey,
+      ergoTree = oraclePubKey,
       creationHeight = 0,
       additionalRegisters = Map(reg1 -> LongConstant(temperature))
     )
@@ -238,7 +252,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = null)
 
-    val prA = alice.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, prA, fakeMessage).get._1 shouldBe true
   }
 }

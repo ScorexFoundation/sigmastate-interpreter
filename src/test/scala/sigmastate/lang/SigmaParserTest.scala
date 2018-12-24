@@ -9,6 +9,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
+import sigmastate.serialization.OpCodes
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
@@ -24,8 +25,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   def parseType(x: String): SType = {
-    val res = SigmaParser.parseType(x).get.value
-    res
+    SigmaParser.parseType(x)
   }
 
   def fail(x: String, index: Int): Unit = {
@@ -41,8 +41,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     }
   }
 
-  def and(l: SValue, r: SValue) = MethodCall(l, "&&", IndexedSeq(r))
-  def or(l: SValue, r: SValue) = MethodCall(l, "||", IndexedSeq(r))
+  def and(l: SValue, r: SValue) = MethodCallLike(l, "&&", IndexedSeq(r))
+  def or(l: SValue, r: SValue) = MethodCallLike(l, "||", IndexedSeq(r))
 
   property("simple expressions") {
     parse("10") shouldBe IntConstant(10)
@@ -55,6 +55,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("0x10l") shouldBe LongConstant(0x10)
     parse("10L-11L") shouldBe Minus(10L, 11L)
     parse("(10-11)") shouldBe Minus(10, 11)
+    parse("(-10-11)") shouldBe Minus(-10, 11)
     parse("(10+11)") shouldBe plus(10, 11)
     parse("(10-11) - 12") shouldBe Minus(Minus(10, 11), 12)
     parse("10   - 11 - 12") shouldBe Minus(Minus(10, 11), 12)
@@ -69,12 +70,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("true || (true && false)") shouldBe or(TrueLeaf, and(TrueLeaf, FalseLeaf))
     parse("false || false || false") shouldBe or(or(FalseLeaf, FalseLeaf), FalseLeaf)
     parse("(1>= 0)||(3L >2L)") shouldBe or(GE(1, 0), GT(3L, 2L))
-    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
-    parse("arr1 ++ arr2") shouldBe MethodCall(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
-    parse("col1 ++ col2") shouldBe MethodCall(Ident("col1"), "++", IndexedSeq(Ident("col2")))
-    parse("ge ^ n") shouldBe Exponentiate(GEIdent("ge"), BigIntIdent("n"))
-    parse("g1 * g2") shouldBe MethodCall(Ident("g1"), "*", IndexedSeq(Ident("g2")))
-    parse("g1 + g2") shouldBe MethodCall(Ident("g1"), "+", IndexedSeq(Ident("g2")))
+    // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+//    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
+    parse("arr1 ++ arr2") shouldBe MethodCallLike(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
+    parse("col1 ++ col2") shouldBe MethodCallLike(Ident("col1"), "++", IndexedSeq(Ident("col2")))
+    parse("ge.exp(n)") shouldBe Apply(Select(GEIdent("ge"), "exp"), Vector(BigIntIdent("n")))
+    parse("g1 * g2") shouldBe MethodCallLike(Ident("g1"), "*", IndexedSeq(Ident("g2")))
+    parse("g1 + g2") shouldBe MethodCallLike(Ident("g1"), "+", IndexedSeq(Ident("g2")))
   }
 
   property("precedence of binary operations") {
@@ -158,11 +160,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("{val X: Int = 10; 3 > 2}") shouldBe Block(Seq(Val("X", SInt, IntConstant(10))), GT(3, 2))
     parse("""{val X: (Int, Boolean) = (10, true); 3 > 2}""") shouldBe
       Block(Seq(Val("X", STuple(SInt, SBoolean), Tuple(IntConstant(10), TrueLeaf))), GT(3, 2))
-    parse("""{val X: Array[Int] = Array(1,2,3); X.size}""") shouldBe
-      Block(Seq(Val("X", SCollection(SInt), Apply(Ident("Array"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
+    parse("""{val X: Coll[Int] = Coll(1,2,3); X.size}""") shouldBe
+      Block(Seq(Val("X", SCollection(SInt), Apply(Ident("Coll"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))))),
             Select(Ident("X"), "size"))
-    parse("""{val X: (Array[Int], Box) = (Array(1,2,3), INPUT); X._1}""") shouldBe
-        Block(Seq(Val("X", STuple(SCollection(SInt), SBox), Tuple(Apply(Ident("Array"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
+    parse("""{val X: (Coll[Int], Box) = (Coll(1,2,3), INPUT); X._1}""") shouldBe
+        Block(Seq(Val("X", STuple(SCollection(SInt), SBox), Tuple(Apply(Ident("Coll"), IndexedSeq(IntConstant(1), IntConstant(2), IntConstant(3))), Ident("INPUT")))),
           Select(Ident("X"), "_1"))
   }
 
@@ -226,31 +228,31 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("array literals") {
-    val emptyCol = Apply(Ident("Array"), IndexedSeq.empty)
-    parse("Array()") shouldBe emptyCol
-    val emptyCol2 = Apply(Ident("Array"), IndexedSeq(emptyCol))
-    parse("Array(Array())") shouldBe emptyCol2
-    parse("Array(Array(Array()))") shouldBe Apply(Ident("Array"), IndexedSeq(emptyCol2))
+    val emptyCol = Apply(Ident("Coll"), IndexedSeq.empty)
+    parse("Coll()") shouldBe emptyCol
+    val emptyCol2 = Apply(Ident("Coll"), IndexedSeq(emptyCol))
+    parse("Coll(Coll())") shouldBe emptyCol2
+    parse("Coll(Coll(Coll()))") shouldBe Apply(Ident("Coll"), IndexedSeq(emptyCol2))
 
-    parse("Array(1)") shouldBe Apply(Ident("Array"), IndexedSeq(IntConstant(1)))
-    parse("Array(1, X)") shouldBe Apply(Ident("Array"), IndexedSeq(IntConstant(1), Ident("X")))
-    parse("Array(1, X - 1, Array())") shouldBe
-    Apply(Ident("Array"),
+    parse("Coll(1)") shouldBe Apply(Ident("Coll"), IndexedSeq(IntConstant(1)))
+    parse("Coll(1, X)") shouldBe Apply(Ident("Coll"), IndexedSeq(IntConstant(1), Ident("X")))
+    parse("Coll(1, X - 1, Coll())") shouldBe
+    Apply(Ident("Coll"),
       IndexedSeq(
         IntConstant(1),
         mkMinus(Ident("X").asValue[SLong.type], IntConstant(1)),
-        Apply(Ident("Array"), IndexedSeq.empty)))
-    parse("Array(1, X + 1, Array())") shouldBe
-      Apply(Ident("Array"),
+        Apply(Ident("Coll"), IndexedSeq.empty)))
+    parse("Coll(1, X + 1, Coll())") shouldBe
+      Apply(Ident("Coll"),
         IndexedSeq(
           IntConstant(1),
           plus(Ident("X").asValue[SLong.type], IntConstant(1)),
-          Apply(Ident("Array"), IndexedSeq.empty)))
-    parse("Array(Array(X - 1))") shouldBe Apply(Ident("Array"),
-      IndexedSeq(Apply(Ident("Array"), IndexedSeq(
+          Apply(Ident("Coll"), IndexedSeq.empty)))
+    parse("Coll(Coll(X - 1))") shouldBe Apply(Ident("Coll"),
+      IndexedSeq(Apply(Ident("Coll"), IndexedSeq(
                   mkMinus(Ident("X").asValue[SLong.type], IntConstant(1))))))
-    parse("Array(Array(X + 1))") shouldBe Apply(Ident("Array"),
-      IndexedSeq(Apply(Ident("Array"), IndexedSeq(
+    parse("Coll(Coll(X + 1))") shouldBe Apply(Ident("Coll"),
+      IndexedSeq(Apply(Ident("Coll"), IndexedSeq(
         plus(Ident("X").asValue[SLong.type], IntConstant(1))))))
   }
 
@@ -268,7 +270,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("array indexed access") {
-    parse("Array()") shouldBe Apply(Ident("Array"), IndexedSeq.empty)
+    parse("Coll()") shouldBe Apply(Ident("Coll"), IndexedSeq.empty)
     parse("Array()(0)") shouldBe Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0)))
     parse("Array()(0)(0)") shouldBe Apply(Apply(Apply(Ident("Array"), IndexedSeq.empty), IndexedSeq(IntConstant(0))), IndexedSeq(IntConstant(0)))
   }
@@ -316,7 +318,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("f(x, y).size") shouldBe Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "size")
     parse("f(x, y).get(1)") shouldBe Apply(Select(Apply(Ident("f"), IndexedSeq(Ident("x"), Ident("y"))), "get"), IndexedSeq(IntConstant(1)))
     parse("{val y = f(x); y}") shouldBe Block(Seq(Val("y", Apply(Ident("f"), IndexedSeq(Ident("x"))))), Ident("y"))
-    parse("getVar[Array[Byte]](10).get") shouldBe Select(Apply(ApplyTypes(Ident("getVar"), Seq(SByteArray)), IndexedSeq(IntConstant(10))), "get")
+    parse("getVar[Coll[Byte]](10).get") shouldBe Select(Apply(ApplyTypes(Ident("getVar"), Seq(SByteArray)), IndexedSeq(IntConstant(10))), "get")
     parse("min(x, y)") shouldBe Apply(Ident("min"), IndexedSeq(Ident("x"), Ident("y")))
     parse("min(1, 2)") shouldBe Apply(Ident("min"), IndexedSeq(IntConstant(1), IntConstant(2)))
     parse("max(x, y)") shouldBe Apply(Ident("max"), IndexedSeq(Ident("x"), Ident("y")))
@@ -344,11 +346,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
             Select(Select(Ident("p"), "_2"), "isIdentity").asValue[SBoolean.type]
             )
         )
-    parse("{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isValid }") shouldBe
+    parse("{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isProven }") shouldBe
         Lambda(IndexedSeq("p" -> STuple(SInt, SSigmaProp), "box" -> SBox), NoType,
           and(
             GT(Select(Ident("p"), "_1").asValue[SInt.type], Select(Ident("box"), "value").asValue[SLong.type]),
-            Select(Select(Ident("p"), "_2"), "isValid").asValue[SBoolean.type]
+            Select(Select(Ident("p"), "_2"), "isProven").asValue[SBoolean.type]
             )
         )
 
@@ -447,16 +449,16 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
     parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt))
     parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
-    parse("Array[Int]()") shouldBe Apply(ApplyTypes(Ident("Array"), Seq(SInt)), IndexedSeq.empty)
+    parse("Coll[Int]()") shouldBe Apply(ApplyTypes(Ident("Coll"), Seq(SInt)), IndexedSeq.empty)
   }
 
   property("type tests") {
     parseType("Int") shouldBe SInt
     parseType("(Int, Long)") shouldBe STuple(SInt, SLong)
-    parseType("Array[(Int, Long)]") shouldBe SCollection(STuple(SInt, SLong))
-    parseType("Array[(Array[Byte], Long)]") shouldBe SCollection(STuple(SCollection(SByte), SLong))
-    parseType("Array[(Array[Byte], Array[Long])]") shouldBe SCollection(STuple(SCollection(SByte), SCollection(SLong)))
-    parseType("Array[(Array[Byte], (Array[Long], Long))]") shouldBe SCollection(STuple(SCollection(SByte), STuple(SCollection(SLong), SLong)))
+    parseType("Coll[(Int, Long)]") shouldBe SCollection(STuple(SInt, SLong))
+    parseType("Coll[(Coll[Byte], Long)]") shouldBe SCollection(STuple(SCollection(SByte), SLong))
+    parseType("Coll[(Coll[Byte], Coll[Long])]") shouldBe SCollection(STuple(SCollection(SByte), SCollection(SLong)))
+    parseType("Coll[(Coll[Byte], (Coll[Long], Long))]") shouldBe SCollection(STuple(SCollection(SByte), STuple(SCollection(SLong), SLong)))
   }
 
   property("negative tests") {
@@ -497,7 +499,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("string concat") {
     parse(""" "hello" + "hello" """) shouldBe
-      MethodCall(StringConstant("hello"), "+", IndexedSeq(StringConstant("hello")))
+      MethodCallLike(StringConstant("hello"), "+", IndexedSeq(StringConstant("hello")))
   }
 
   property("fromBaseX string decoding") {
@@ -512,7 +514,202 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   property("deserialize") {
     parse("""deserialize[GroupElement]("12345")""") shouldBe
       Apply(ApplyTypes(Ident("deserialize"), Seq(SGroupElement)), IndexedSeq(StringConstant("12345")))
-    parse("""deserialize[(GroupElement, Array[(Int, Byte)])]("12345")""") shouldBe
+    parse("""deserialize[(GroupElement, Coll[(Int, Byte)])]("12345")""") shouldBe
       Apply(ApplyTypes(Ident("deserialize"), Seq(STuple(SGroupElement, SCollection(STuple(SInt, SByte))))), IndexedSeq(StringConstant("12345")))
   }
+
+  property("ZKProof") {
+    parse("ZKProof { condition }") shouldBe Apply(SigmaPredef.ZKProofSym, IndexedSeq(Ident("condition")))
+    parse("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe
+      Apply(SigmaPredef.ZKProofSym,
+        IndexedSeq(Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))))
+  }
+
+  property("invalid ZKProof (non block parameter)") {
+    an[ParserException] should be thrownBy  parse("ZKProof HEIGHT > 1000 ")
+  }
+
+  property("sigmaProp") {
+    parse("sigmaProp(HEIGHT > 1000)") shouldBe Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))
+  }
+
+  property("SBigInt.toBytes") {
+    parse("10.toBigInt.toBytes") shouldBe Select(Select(IntConstant(10), "toBigInt"), "toBytes")
+  }
+
+  property("SBigInt.modQ") {
+    parse("10.toBigInt.modQ") shouldBe Select(Select(IntConstant(10), "toBigInt"), "modQ")
+  }
+
+  property("SBigInt.plusModQ") {
+    parse("10.toBigInt.plusModQ(1.toBigInt)") shouldBe
+      Apply(Select(Select(IntConstant(10), "toBigInt"), "plusModQ"), Vector(Select(IntConstant(1), "toBigInt")))
+  }
+
+  property("SBigInt.minusModQ") {
+    parse("10.toBigInt.minusModQ(1.toBigInt)") shouldBe
+      Apply(Select(Select(IntConstant(10), "toBigInt"), "minusModQ"), Vector(Select(IntConstant(1), "toBigInt")))
+  }
+
+  property("SBigInt.multModQ") {
+    parse("10.toBigInt.multModQ(1.toBigInt)") shouldBe
+      Apply(Select(Select(IntConstant(10), "toBigInt"), "multModQ"), Vector(Select(IntConstant(1), "toBigInt")))
+  }
+
+  property("byteArrayToLong") {
+    parse("byteArrayToLong(Coll[Byte](1.toByte))") shouldBe
+      Apply(Ident("byteArrayToLong"), Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
+          Vector(Select(IntConstant(1), "toByte", None)))
+      ))
+  }
+
+  property("decodePoint") {
+    parse("decodePoint(Coll[Byte](1.toByte))") shouldBe
+      Apply(Ident("decodePoint"), Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
+          Vector(Select(IntConstant(1), "toByte", None)))
+      ))
+  }
+
+  property("xorOf") {
+    parse("xorOf(Coll[Boolean](true, false))") shouldBe
+      Apply(Ident("xorOf"), Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(SBoolean)),
+          Vector(TrueLeaf, FalseLeaf))
+      ))
+  }
+
+  property("SBoolean.toByte") {
+    parse("true.toByte") shouldBe Select(TrueLeaf, "toByte")
+  }
+
+  property("SOption.map") {
+    parse("Some(1).map { (b: Int) => b}") shouldBe
+      Apply(Select(Apply(Ident("Some", NoType), Vector(IntConstant(1))), "map", None),
+        Vector(Lambda(List(), Vector(("b", SInt)), NoType, Some(Ident("b", NoType)))))
+  }
+
+  property("SCollection.zip") {
+    parse("OUTPUTS.zip(Coll(1, 2))") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "zip"),
+        Vector(Apply(Ident("Coll"), Vector(IntConstant(1), IntConstant(2)))))
+  }
+
+  property("SCollection.zipWith") {
+    parse("OUTPUTS.zipWith(Coll(1, 2), { (box: Box, i: Int) => i })") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "zipWith"),
+        Vector(Apply(Ident("Coll"), Vector(IntConstant(1), IntConstant(2))),
+          Lambda(List(), Vector(("box", SBox), ("i", SInt)), NoType, Some(Ident("i", NoType)))))
+  }
+
+  property("SCollection.flatMap") {
+    parse("OUTPUTS.flatMap({ (box: Box) => Coll(box) })") shouldBe
+      Apply(Select(Ident("OUTPUTS"), "flatMap"),
+        Vector(Lambda(List(), Vector(("box", SBox)), NoType,
+          Some(Apply(Ident("Coll"), Vector(Ident("box", NoType)))))))
+  }
+
+  property("SGroupElement.exp") {
+    parse("{ (g: GroupElement) => g.exp(1.toBigInt) }") shouldBe
+      Lambda(List(), Vector(("g", SGroupElement)), NoType,
+        Some(Apply(Select(Ident("g", NoType), "exp", None),
+          Vector(Select(IntConstant(1), "toBigInt", None)))))
+  }
+
+  property("SNumeric.toBytes") {
+    parse("1.toBytes") shouldBe Select(IntConstant(1), "toBytes")
+    parse("1L.toBytes") shouldBe Select(LongConstant(1), "toBytes")
+  }
+
+  property("SNumeric.toBits") {
+    parse("1.toBits") shouldBe Select(IntConstant(1), "toBits")
+    parse("1L.toBits") shouldBe Select(LongConstant(1), "toBits")
+  }
+
+  property("SNumeric.abs") {
+    parse("1.abs") shouldBe Select(IntConstant(1), "abs")
+  }
+
+  property("SNumeric.compare") {
+    parse("1.compare(2)") shouldBe Apply(Select(IntConstant(1), "compare", None), Vector(IntConstant(2)))
+  }
+
+  property("numeric constant negation") {
+    parse("-3") shouldBe IntConstant(-3)
+    parse("-3.toByte") shouldBe Select(IntConstant(-3), "toByte")
+  }
+
+  property("numeric negation unary op") {
+    parse("-OUTPUTS.size") shouldBe Negation(Select(Ident("OUTPUTS"), "size").asIntValue)
+    parse("- (3 - 2)") shouldBe Negation(Minus(IntConstant(3), IntConstant(2)))
+  }
+
+  property("bitwise inversion unary op ~") {
+    parse("~OUTPUTS.size") shouldBe BitInversion(Select(Ident("OUTPUTS"), "size").asIntValue)
+  }
+
+  property("HEADERS and SHeader methods") {
+    parse("HEADERS") shouldBe Ident("HEADERS")
+    parse("HEADERS(0).version") shouldBe Select(Apply(Ident("HEADERS"), Vector(IntConstant(0))), "version")
+    parse("HEADERS(0).parentId") shouldBe Select(Apply(Ident("HEADERS"), Vector(IntConstant(0))), "parentId")
+  }
+
+  property("logical not unary op") {
+    parse("!true") shouldBe LogicalNot(TrueLeaf)
+    parse("! (1 == 0)") shouldBe LogicalNot(EQ(IntConstant(1), IntConstant(0)))
+  }
+
+  property("logical XOR") {
+    parse("true ^ false") shouldBe MethodCallLike(TrueLeaf, "^", Vector(FalseLeaf))
+  }
+
+  property("BitAnd: bitwise AND for numeric types") {
+    parse("1 & 2") shouldBe BitOp(IntConstant(1), IntConstant(2), OpCodes.BitAndCode)
+  }
+
+  property("BitOr: bitwise OR for numeric types") {
+    parse("1 | 2") shouldBe BitOp(IntConstant(1), IntConstant(2), OpCodes.BitOrCode)
+  }
+
+  property("BitShiftRight: bit-shifted right for numeric types") {
+    parse("128 >> 2") shouldBe MethodCallLike(IntConstant(128), ">>", Vector(IntConstant(2)))
+  }
+
+  property("BitShiftLeft: bit-shifted left for numeric types") {
+    parse("128 << 2") shouldBe MethodCallLike(IntConstant(128), "<<",  Vector(IntConstant(2)))
+  }
+
+  property("BitShiftRightZeroed: bit-shifted right(zeroed) for numeric types") {
+    parse("128 >>> 2") shouldBe MethodCallLike(IntConstant(128), ">>>", Vector(IntConstant(2)))
+  }
+
+  property("CollShiftRight: shift collection right") {
+    parse("Coll(true, false) >> 2") shouldBe
+      MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), ">>", Vector(IntConstant(2)))
+  }
+
+  property("CollShiftLeft: shift collection left") {
+    parse("Coll(true, false) << 2") shouldBe
+      MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "<<", Vector(IntConstant(2)))
+  }
+
+  property("CollShiftRightZeroed: shift collection right(zeroed)") {
+    parse("Coll(true, false) >>> 2") shouldBe
+      MethodCallLike(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), ">>>", Vector(IntConstant(2)))
+  }
+
+  property("Coll.rotateLeft: shift collection left") {
+    parse("Coll(true, false).rotateLeft(2)") shouldBe
+      Apply(Select(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "rotateLeft", None), Vector(IntConstant(2)))
+  }
+
+  property("Coll.rotateRight: shift collection right") {
+    parse("Coll(true, false).rotateRight(2)") shouldBe
+      Apply(Select(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "rotateRight", None), Vector(IntConstant(2)))
+  }
+
 }

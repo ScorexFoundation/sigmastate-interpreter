@@ -2,13 +2,12 @@ package org.ergoplatform
 
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoLikeContext.Metadata
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Assertion, Matchers, PropSpec, TryValues}
 import sigmastate.Values
 import sigmastate.basics.DLogProtocol
 import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.serialization.generators.ValueGenerators
 
 class ErgoAddressSpecification extends PropSpec
@@ -17,7 +16,8 @@ class ErgoAddressSpecification extends PropSpec
   with Matchers
   with TryValues {
 
-  private implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(Metadata.TestnetNetworkPrefix)
+  private implicit val ergoAddressEncoder: ErgoAddressEncoder =
+    new ErgoAddressEncoder(ErgoAddressEncoder.TestnetNetworkPrefix)
 
   def addressRoundtrip(addr: ErgoAddress): Assertion = {
     ergoAddressEncoder.fromString(ergoAddressEncoder.toString(addr)).get shouldBe addr
@@ -46,7 +46,7 @@ class ErgoAddressSpecification extends PropSpec
       val p2sh = Pay2SHAddress(s)
 
       //search we're doing to find a box potentially corresponding to some address
-      ValueSerializer.serialize(p2sh.script).containsSlice(p2sh.contentBytes) shouldBe true
+      ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(p2sh.script).containsSlice(p2sh.contentBytes) shouldBe true
     }
   }
 
@@ -55,7 +55,7 @@ class ErgoAddressSpecification extends PropSpec
       val p2s = Pay2SAddress(s)
 
       //search we're doing to find a box potentially corresponding to some address
-      ValueSerializer.serialize(p2s.script).containsSlice(p2s.contentBytes) shouldBe true
+      ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(p2s.script).containsSlice(p2s.contentBytes) shouldBe true
     }
   }
 

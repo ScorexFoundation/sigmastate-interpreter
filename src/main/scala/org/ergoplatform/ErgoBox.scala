@@ -4,13 +4,14 @@ import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.Values._
+import sigmastate.SType.AnyOps
 import sigmastate._
 import sigmastate.serialization.Serializer
 import sigmastate.SCollection.SByteArray
-import sigmastate.utils.{ByteWriter, ByteReader}
+import sigmastate.utils.{SigmaByteWriter, SigmaByteReader, Helpers}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -20,7 +21,7 @@ import scala.runtime.ScalaRunTime
   * is associated with some monetary value (arbitrary, but with predefined precision, so we use integer arithmetic to
   * work with the value), and also a guarding script (aka proposition) to protect the box from unauthorized opening.
   *
-  * In other way, a box is a state element locked by some proposition.
+  * In other way, a box is a state element locked by some proposition (ErgoTree).
   *
   * In Ergo, box is just a collection of registers, some with mandatory types and semantics, others could be used by
   * applications in any way.
@@ -34,7 +35,7 @@ import scala.runtime.ScalaRunTime
   * to the same box.
   *
   * @param value         - amount of money associated with the box
-  * @param proposition   guarding script, which should be evaluated to true in order to open this box
+  * @param ergoTree   guarding script, which should be evaluated to true in order to open this box
   * @param additionalTokens - secondary tokens the box contains
   * @param additionalRegisters - additional registers the box can carry over
   * @param transactionId - id of transaction which created the box
@@ -43,29 +44,29 @@ import scala.runtime.ScalaRunTime
   */
 class ErgoBox private(
                        override val value: Long,
-                       override val proposition: Value[SBoolean.type],
+                       override val ergoTree: ErgoTree,
                        override val additionalTokens: Seq[(TokenId, Long)] = Seq(),
                        override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
                        val transactionId: ModifierId,
                        val index: Short,
                        override val creationHeight: Long
-) extends ErgoBoxCandidate(value, proposition, creationHeight, additionalTokens, additionalRegisters) {
+) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
 
   import ErgoBox._
 
+  lazy val bytes: Array[Byte] = ErgoBox.serializer.toBytes(this)
   lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
-  override lazy val cost: Int = (bytesWithNoRef.length / 1024 + 1) * Cost.BoxPerKilobyte
+  override def dataSize: Long = bytes.length
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ReferenceRegId =>
-        Some(Tuple(LongConstant(creationHeight), ByteArrayConstant(transactionId.toBytes ++ Shorts.toByteArray(index))))
+        val tupleVal = Array(creationHeight, Helpers.concatArrays(Seq(transactionId.toBytes, Shorts.toByteArray(index))))
+        Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
       case _ => super.get(identifier)
     }
   }
-
-  lazy val bytes: Array[Byte] = ErgoBox.serializer.toBytes(this)
 
   override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox => java.util.Arrays.equals(id, x.id)
@@ -73,12 +74,12 @@ class ErgoBox private(
   }
 
   override def hashCode(): Int =
-    ScalaRunTime._hashCode((value, proposition, additionalTokens, additionalRegisters, index, creationHeight))
+    ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, index, creationHeight))
 
   def toCandidate: ErgoBoxCandidate =
-    new ErgoBoxCandidate(value, proposition, creationHeight, additionalTokens, additionalRegisters)
+    new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
-  override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$proposition," +
+  override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$ergoTree," +
     s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2)}), $transactionId, " +
     s"$index, $additionalRegisters, $creationHeight)"
 }
@@ -93,8 +94,12 @@ object ErgoBox {
   object TokenId {
     val size: Short = 32
   }
+
+  val MaxBoxSize: Int = 64 * 1024
+
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
+  val SReferenceRegType = STuple(SLong, SCollection.SByteArray)
 
   type Amount = Long
 
@@ -136,17 +141,17 @@ object ErgoBox {
   def findRegisterByIndex(i: Byte): Option[RegisterId] = registerByIndex.get(i)
 
   def apply(value: Long,
-            proposition: Value[SBoolean.type],
+            ergoTree: ErgoTree,
             creationHeight: Long,
             additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId,
             boxId: Short = 0): ErgoBox =
-    new ErgoBox(value, proposition, additionalTokens, additionalRegisters, transactionId, boxId, creationHeight)
+    new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, transactionId, boxId, creationHeight)
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
 
-    override def serializeBody(obj: ErgoBox, w: ByteWriter): Unit = {
+    override def serializeBody(obj: ErgoBox, w: SigmaByteWriter): Unit = {
       ErgoBoxCandidate.serializer.serializeBody(obj, w)
       val txIdBytes = obj.transactionId.toBytes
       val txIdBytesSize = txIdBytes.length
@@ -156,7 +161,7 @@ object ErgoBox {
       w.putUShort(obj.index)
     }
 
-    override def parseBody(r: ByteReader): ErgoBox = {
+    override def parseBody(r: SigmaByteReader): ErgoBox = {
       val ergoBoxCandidate = ErgoBoxCandidate.serializer.parseBody(r)
       val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdBytesSize).toModifierId
       val index = r.getUShort()

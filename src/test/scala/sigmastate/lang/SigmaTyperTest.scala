@@ -1,17 +1,21 @@
 package sigmastate.lang
 
+import org.ergoplatform.{Height, Inputs}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, NonApplicableMethod, TyperException}
+import sigmastate.lang.Terms.{Select, Ident}
+import sigmastate.lang.exceptions.{NonApplicableMethod, TyperException, InvalidBinaryOperationParameters, MethodNotFound}
 import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.utxo.{SizeOf, Append}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
-  def typecheck(env: Map[String, Any], x: String): SType = {
+  def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
@@ -20,13 +24,14 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder)
       val typed = typer.typecheck(bound)
-     typed.tpe
+      if (expected != null) typed shouldBe expected
+      typed.tpe
     } catch {
       case e: Exception => throw e
     }
   }
 
-  def typefail(env: Map[String, Any], x: String, messageSubstr: String = ""): Unit = {
+  def typefail(env: ScriptEnv, x: String, messageSubstr: String = ""): Unit = {
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
@@ -46,25 +51,29 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("simple expressions") {
-    typecheck(env, "x") shouldBe SInt
-    typecheck(env, "x + y") shouldBe SInt
+    typecheck(env, "x", IntConstant(10)) shouldBe SInt   // constants are substituted from env
+    typecheck(env, "x + y", Plus(10, 11)) shouldBe SInt
+    typecheck(env, "x + height1", Plus(Upcast(10, SLong), 100L)) shouldBe SLong
     typecheck(env, "x - y") shouldBe SInt
     typecheck(env, "x / y") shouldBe SInt
     typecheck(env, "x % y") shouldBe SInt
-    typecheck(env, "c1 && c2") shouldBe SBoolean
-    typecheck(env, "arr1") shouldBe SByteArray
-    typecheck(env, "HEIGHT") shouldBe SLong
+    typecheck(env, "c1 && c2", BinAnd(TrueLeaf, FalseLeaf)) shouldBe SBoolean
+    typecheck(env, "arr1", ByteArrayConstant(Array[Byte](1,2))) shouldBe SByteArray
+    typecheck(env, "HEIGHT", Height) shouldBe SLong
     typecheck(env, "HEIGHT + 1") shouldBe SLong
-    typecheck(env, "INPUTS") shouldBe SCollection(SBox)
+    typecheck(env, "INPUTS", Inputs) shouldBe SCollection(SBox)
     typecheck(env, "INPUTS.size") shouldBe SInt
-    typecheck(env, "INPUTS.size > 1") shouldBe SBoolean
-    typecheck(env, "arr1 | arr2") shouldBe SByteArray
-    typecheck(env, "arr1 ++ arr2") shouldBe SByteArray
+    typecheck(env, "INPUTS.size > 1", GT(Select(Inputs, "size", Some(SInt)), 1)) shouldBe SBoolean
+    // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+//    typecheck(env, "arr1 | arr2", Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
+    typecheck(env, "arr1 ++ arr2", Append(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
     typecheck(env, "col1 ++ col2") shouldBe SCollection(SLong)
-    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
+    // todo should be g1.exp(n1)
+    // ( see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 )
+//    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
     typecheck(env, "g1 * g2") shouldBe SGroupElement
-    typecheck(env, "p1 || p2") shouldBe SBoolean
-    typecheck(env, "p1 && p2") shouldBe SBoolean
+    typecheck(env, "p1 || p2") shouldBe SSigmaProp
+    typecheck(env, "p1 && p2") shouldBe SSigmaProp
     typecheck(env, "b1 < b2") shouldBe SBoolean
     typecheck(env, "b1 > b2") shouldBe SBoolean
     typecheck(env, "b1 <= b2") shouldBe SBoolean
@@ -79,14 +88,14 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("predefined functions") {
     typecheck(env, "allOf") shouldBe AllSym.tpe
-    typecheck(env, "allOf(Array(c1, c2))") shouldBe SBoolean
+    typecheck(env, "allOf(Coll(c1, c2))") shouldBe SBoolean
     typecheck(env, "getVar[Byte](10).get") shouldBe SByte
-    typecheck(env, "getVar[Array[Byte]](10).get") shouldBe SByteArray
+    typecheck(env, "getVar[Coll[Byte]](10).get") shouldBe SByteArray
     typecheck(env, "getVar[SigmaProp](10).get") shouldBe SSigmaProp
-    typecheck(env, "p1 && getVar[SigmaProp](10).get") shouldBe SBoolean
-    typecheck(env, "getVar[SigmaProp](10).get || p2") shouldBe SBoolean
-    typecheck(env, "getVar[SigmaProp](10).get && getVar[SigmaProp](11).get") shouldBe SBoolean
-    typecheck(env, "Array(true, getVar[SigmaProp](11).get)") shouldBe SCollection(SBoolean)
+    typecheck(env, "p1 && getVar[SigmaProp](10).get") shouldBe SSigmaProp
+    typecheck(env, "getVar[SigmaProp](10).get || p2") shouldBe SSigmaProp
+    typecheck(env, "getVar[SigmaProp](10).get && getVar[SigmaProp](11).get") shouldBe SSigmaProp
+    typecheck(env, "Coll(true, getVar[SigmaProp](11).get)") shouldBe SCollection(SBoolean)
     typecheck(env, "min(1, 2)") shouldBe SInt
     typecheck(env, "min(1L, 2)") shouldBe SLong
     typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SLong
@@ -95,6 +104,9 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
     typecheck(env, """PK("111")""") shouldBe SSigmaProp
+    typecheck(env, """PK("111")""") shouldBe SSigmaProp
+    typecheck(env, "sigmaProp(HEIGHT > 1000)") shouldBe SSigmaProp
+    typecheck(env, "ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe SBoolean
   }
 
   property("val constructs") {
@@ -107,7 +119,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
        |X < Y}
       """.stripMargin) shouldBe SBoolean
     typecheck(env, "{val X = (10, true); X._1 > 2 && X._2}") shouldBe SBoolean
-    typecheck(env, "{val X = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
+    typecheck(env, "{val X = (Coll(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
   }
 
   property("generic methods of arrays") {
@@ -115,12 +127,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     val env = this.env ++ Map(
       "minToRaise" -> minToRaise
     )
-    typecheck(env, "OUTPUTS.map({ (out: Box) => out.value >= minToRaise })") shouldBe ty("Array[Boolean]")
+    typecheck(env, "OUTPUTS.map({ (out: Box) => out.value >= minToRaise })") shouldBe ty("Coll[Boolean]")
     typecheck(env, "OUTPUTS.exists({ (out: Box) => out.value >= minToRaise })") shouldBe SBoolean
     typecheck(env, "OUTPUTS.forall({ (out: Box) => out.value >= minToRaise })") shouldBe SBoolean
-    typecheck(env, "{ val arr = Array(1,2,3); arr.fold(0, { (i1: Int, i2: Int) => i1 + i2 })}") shouldBe SInt
-    typecheck(env, "OUTPUTS.slice(0, 10)") shouldBe ty("Array[Box]")
-    typecheck(env, "OUTPUTS.filter({ (out: Box) => out.value >= minToRaise })") shouldBe ty("Array[Box]")
+    typecheck(env, "{ val arr = Coll(1,2,3); arr.fold(0, { (i1: Int, i2: Int) => i1 + i2 })}") shouldBe SInt
+    typecheck(env, "OUTPUTS.slice(0, 10)") shouldBe ty("Coll[Box]")
+    typecheck(env, "OUTPUTS.filter({ (out: Box) => out.value >= minToRaise })") shouldBe ty("Coll[Box]")
   }
 
   property("tuple constructor") {
@@ -149,10 +161,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("types") {
     typecheck(env, "{val X: Int = 10; 3 > 2}") shouldBe SBoolean
     typecheck(env, "{val X: (Int, Boolean) = (10, true); 3 > 2}") shouldBe SBoolean
-    typecheck(env, "{val X: Array[Int] = Array(1,2,3); X.size}") shouldBe SInt
-    typecheck(env, "{val X: (Array[Int], Int) = (Array(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
-    typecheck(env, "{val X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
-    typecheck(env, "{val X: (Array[Int], Int) = (Array(1,2,3), x); X._1}") shouldBe SCollection(SInt)
+    typecheck(env, "{val X: Coll[Int] = Coll(1,2,3); X.size}") shouldBe SInt
+    typecheck(env, "{val X: (Coll[Int], Int) = (Coll(1,2,3), 1); X}") shouldBe STuple(SCollection(SInt), SInt)
+    typecheck(env, "{val X: (Coll[Int], Int) = (Coll(1,2,3), x); X._1}") shouldBe SCollection(SInt)
+    typecheck(env, "{val X: (Coll[Int], Int) = (Coll(1,2,3), x); X._1}") shouldBe SCollection(SInt)
   }
 
   property("if") {
@@ -167,16 +179,16 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("array literals") {
-    typefail(env, "Array()", "Undefined type of empty collection")
-    typefail(env, "Array(Array())", "Undefined type of empty collection")
-    typefail(env, "Array(Array(Array()))", "Undefined type of empty collection")
+    typefail(env, "Coll()", "Undefined type of empty collection")
+    typefail(env, "Coll(Coll())", "Undefined type of empty collection")
+    typefail(env, "Coll(Coll(Coll()))", "Undefined type of empty collection")
 
-    typecheck(env, "Array(1)") shouldBe SCollection(SInt)
-    typecheck(env, "Array(1, x)") shouldBe SCollection(SInt)
-    typecheck(env, "Array(Array(x + 1))") shouldBe SCollection(SCollection(SInt))
+    typecheck(env, "Coll(1)") shouldBe SCollection(SInt)
+    typecheck(env, "Coll(1, x)") shouldBe SCollection(SInt)
+    typecheck(env, "Coll(Coll(x + 1))") shouldBe SCollection(SCollection(SInt))
 
-    typefail(env, "Array(1, x + 1, Array())")
-    typefail(env, "Array(1, false)")
+    typefail(env, "Coll(1, x + 1, Coll())")
+    typefail(env, "Coll(1, false)")
   }
 
   property("Option constructors") {
@@ -192,27 +204,27 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("array indexed access") {
-    typefail(env, "Array()(0)", "Undefined type of empty collection")
-    typecheck(env, "Array(0)(0)") shouldBe SInt
-    typefail(env, "Array(0)(0)(0)", "array type is expected")
+    typefail(env, "Coll()(0)", "Undefined type of empty collection")
+    typecheck(env, "Coll(0)(0)") shouldBe SInt
+    typefail(env, "Coll(0)(0)(0)", "array type is expected")
   }
 
   property("array indexed access with evaluation") {
-    typecheck(env, "Array(0)(1 - 1)") shouldBe SInt
-    typecheck(env, "Array(0)((1 - 1) + 0)") shouldBe SInt
-    typefail(env, "Array(0)(0 == 0)", "Invalid argument type of array application")
-    typefail(env, "Array(0)(1,1,1)", "Invalid argument of array application")
+    typecheck(env, "Coll(0)(1 - 1)") shouldBe SInt
+    typecheck(env, "Coll(0)((1 - 1) + 0)") shouldBe SInt
+    typefail(env, "Coll(0)(0 == 0)", "Invalid argument type of array application")
+    typefail(env, "Coll(0)(1,1,1)", "Invalid argument of array application")
   }
 
   property("array indexed access with default value") {
-    typecheck(env, "Array(0).getOrElse(0, 1)") shouldBe SInt
-    typefail(env, "Array(0).getOrElse(true, 1)", "Invalid argument type of application")
-    typefail(env, "Array(true).getOrElse(0, 1)", "Invalid argument type of application")
-    typefail(env, "Array(0).getOrElse(0, Array(1))", "Invalid argument type of application")
+    typecheck(env, "Coll(0).getOrElse(0, 1)") shouldBe SInt
+    typefail(env, "Coll(0).getOrElse(true, 1)", "Invalid argument type of application")
+    typefail(env, "Coll(true).getOrElse(0, 1)", "Invalid argument type of application")
+    typefail(env, "Coll(0).getOrElse(0, Coll(1))", "Invalid argument type of application")
   }
 
   property("array indexed access with default value with evaluation") {
-    typecheck(env, "Array(0).getOrElse(0, (2 - 1) + 0)") shouldBe SInt
+    typecheck(env, "Coll(0).getOrElse(0, (2 - 1) + 0)") shouldBe SInt
   }
 
   property("lambdas") {
@@ -224,7 +236,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       SFunc(IndexedSeq(SInt, SBox), SLong)
     typecheck(env, "{ (p: (Int, GroupElement), box: Box) => p._1 > box.value && p._2.isIdentity }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
-    typecheck(env, "{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isValid }") shouldBe
+    typecheck(env, "{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isProven }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SSigmaProp), SBox), SBoolean)
 
     typefail(env, "{ (a) => a + 1 }", "undefined type of argument")
@@ -251,7 +263,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))
     typecheck(env, "SELF.R1[(Int,Boolean)].get") shouldBe STuple(SInt, SBoolean)
     an[IllegalArgumentException] should be thrownBy typecheck(env, "SELF.R1[Int,Boolean].get")
-    typecheck(env, "Array[Int]()") shouldBe SCollection(SInt)
+    typecheck(env, "Coll[Int]()") shouldBe SCollection(SInt)
   }
 
 
@@ -293,14 +305,14 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     check("(Int, Box)", "(Int, Box)")
     check("(Int, Box)", "(Int, Box, Boolean)", None)
 
-    check("Array[Any]", "(Int, Long)")  // tuple as array
-    check("Array[Array[Any]]", "Array[(Int, Long)]")
+    check("Coll[Any]", "(Int, Long)")  // tuple as array
+    check("Coll[Coll[Any]]", "Coll[(Int, Long)]")
 
-    check("Array[Int]", "Array[Boolean]", None)
-    check("Array[Int]", "Array[Int]")
-    check("Array[(Int,Box)]", "Array[Int]", None)
-    check("Array[(Int,Box)]", "Array[(Int,Box)]")
-    check("Array[Array[Int]]", "Array[Array[Int]]")
+    check("Coll[Int]", "Coll[Boolean]", None)
+    check("Coll[Int]", "Coll[Int]")
+    check("Coll[(Int,Box)]", "Coll[Int]", None)
+    check("Coll[(Int,Box)]", "Coll[(Int,Box)]")
+    check("Coll[Coll[Int]]", "Coll[Coll[Int]]")
     
     check("Option[Int]", "Option[Boolean]", None)
     check("Option[Int]", "Option[Int]")
@@ -325,13 +337,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     check("(A, Boolean)", "(Int, B)", None)
     check("(A, Int)", "(B, Int)", None)
 
-    unify("A", "Array[Boolean]", ("A", ty("Array[Boolean]")))
-    unify("Array[A]", "Array[Int]", ("A", SInt))
-    unify("Array[A]", "Array[(Int, Box)]", ("A", ty("(Int, Box)")))
-    unify("Array[(Int, A)]", "Array[(Int, Box)]", ("A", SBox))
-    unify("Array[Array[A]]", "Array[Array[Int]]", ("A", SInt))
-    unify("Array[Array[A]]", "Array[Array[A]]")
-    check("Array[Array[A]]", "Array[Array[B]]", None)
+    unify("A", "Coll[Boolean]", ("A", ty("Coll[Boolean]")))
+    unify("Coll[A]", "Coll[Int]", ("A", SInt))
+    unify("Coll[A]", "Coll[(Int, Box)]", ("A", ty("(Int, Box)")))
+    unify("Coll[(Int, A)]", "Coll[(Int, Box)]", ("A", SBox))
+    unify("Coll[Coll[A]]", "Coll[Coll[Int]]", ("A", SInt))
+    unify("Coll[Coll[A]]", "Coll[Coll[A]]")
+    check("Coll[Coll[A]]", "Coll[Coll[B]]", None)
 
     unify("A", "Option[Boolean]", ("A", ty("Option[Boolean]")))
     unify("Option[A]", "Option[Int]", ("A", SInt))
@@ -350,17 +362,17 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     unify("(Int, A) => A", "(Int, Boolean) => Boolean", ("A", SBoolean))
 
     unify(
-      "((A,Int), Array[B] => Array[(Array[C], B)]) => A",
-      "((Int,Int), Array[Boolean] => Array[(Array[C], Boolean)]) => Int",
+      "((A,Int), Coll[B] => Coll[(Coll[C], B)]) => A",
+      "((Int,Int), Coll[Boolean] => Coll[(Coll[C], Boolean)]) => Int",
       ("A", SInt), ("B", SBoolean))
 
     unifyTypes(SBoolean, SSigmaProp) shouldBe Some(emptySubst)
     unifyTypes(SSigmaProp, SBoolean) shouldBe None
     check("(Int, Boolean)", "(Int, SigmaProp)")
     check("(Int, Boolean, Boolean)", "(Int, SigmaProp, SigmaProp)")
-    check("Array[Boolean]", "Array[SigmaProp]")
-    check("Array[(Int,Boolean)]", "Array[(Int,SigmaProp)]")
-    check("Array[Array[Boolean]]", "Array[Array[SigmaProp]]")
+    check("Coll[Boolean]", "Coll[SigmaProp]")
+    check("Coll[(Int,Boolean)]", "Coll[(Int,SigmaProp)]")
+    check("Coll[Coll[Boolean]]", "Coll[Coll[SigmaProp]]")
     check("Option[Boolean]", "Option[SigmaProp]")
     check("Option[(Int,Boolean)]", "Option[(Int,SigmaProp)]")
     check("Option[Option[Boolean]]", "Option[Option[SigmaProp]]")
@@ -393,12 +405,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
     check("(Int, Boolean)", "(Int, SigmaProp)", Some(ty("(Int, Boolean)")))
     check("(Int, SigmaProp)", "(Int, Boolean)", Some(ty("(Int, Boolean)")))
-    check("Array[Boolean]", "Array[SigmaProp]", Some(ty("Array[Boolean]")))
-    check("Array[SigmaProp]", "Array[Boolean]", Some(ty("Array[Boolean]")))
-    check("Array[(Int,Boolean)]", "Array[(Int,SigmaProp)]", Some(ty("Array[(Int,Boolean)]")))
-    check("Array[(Int,SigmaProp)]", "Array[(Int,Boolean)]", Some(ty("Array[(Int,Boolean)]")))
-    check("Array[Array[Boolean]]", "Array[Array[SigmaProp]]", Some(ty("Array[Array[Boolean]]")))
-    check("Array[Array[SigmaProp]]", "Array[Array[Boolean]]", Some(ty("Array[Array[Boolean]]")))
+    check("Coll[Boolean]", "Coll[SigmaProp]", Some(ty("Coll[Boolean]")))
+    check("Coll[SigmaProp]", "Coll[Boolean]", Some(ty("Coll[Boolean]")))
+    check("Coll[(Int,Boolean)]", "Coll[(Int,SigmaProp)]", Some(ty("Coll[(Int,Boolean)]")))
+    check("Coll[(Int,SigmaProp)]", "Coll[(Int,Boolean)]", Some(ty("Coll[(Int,Boolean)]")))
+    check("Coll[Coll[Boolean]]", "Coll[Coll[SigmaProp]]", Some(ty("Coll[Coll[Boolean]]")))
+    check("Coll[Coll[SigmaProp]]", "Coll[Coll[Boolean]]", Some(ty("Coll[Coll[Boolean]]")))
     check("Option[(Int,Boolean)]", "Option[(Int,SigmaProp)]", Some(ty("Option[(Int,Boolean)]")))
     check("Option[(Int,SigmaProp)]", "Option[(Int,Boolean)]", Some(ty("Option[(Int,Boolean)]")))
     check("Option[Option[Boolean]]", "Option[Option[SigmaProp]]", Some(ty("Option[Option[Boolean]]")))
@@ -464,5 +476,14 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("string concat") {
     typecheck(env, """ "a" + "b" """) shouldBe SString
+  }
+
+  property("modular arith ops") {
+    typecheck(env, "10.toBigInt.modQ") shouldBe SBigInt
+    typecheck(env, "10.toBigInt.plusModQ(2.toBigInt)") shouldBe SBigInt
+    typecheck(env, "10.toBigInt.minusModQ(2.toBigInt)") shouldBe SBigInt
+    an[MethodNotFound] should be thrownBy typecheck(env, "10.modQ")
+    an[TyperException] should be thrownBy typecheck(env, "10.toBigInt.plusModQ(1)")
+    an[TyperException] should be thrownBy typecheck(env, "10.toBigInt.minusModQ(1)")
   }
 }

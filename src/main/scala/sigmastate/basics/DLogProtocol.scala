@@ -5,6 +5,7 @@ import java.math.BigInteger
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
+import Value.PropositionCode
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
@@ -24,9 +25,6 @@ object DLogProtocol {
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
     override val opCode: OpCode = OpCodes.ProveDlogCode
-
-    override def cost[C <: Context](context: C): Long = Cost.Dlog
-
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
     lazy val pkBytes: Array[Byte] = h.getEncoded(true)
@@ -47,7 +45,6 @@ object DLogProtocol {
       ProveDlog(h)
     }
   }
-
 
   case class DLogProverInput(w: BigInteger)
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol, ProveDlog] {

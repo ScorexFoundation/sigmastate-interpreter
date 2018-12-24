@@ -149,20 +149,6 @@ class TransformersSerializationSpec extends SerializationSpecification {
     forAll(downcastGen) { v => roundTripTest(v) }
   }
 
-  property("Base58ToByteArray: Serializer round trip") {
-    forAll(base58ToByteArrayGen) { v => roundTripTest(v) }
-  }
-
-  property("Base64ToByteArray: Serializer round trip") {
-    forAll(base64ToByteArrayGen) { v => roundTripTest(v) }
-  }
-
-  property("PK(P2PK): Serializer round trip") {
-    forAll(p2pkAddressGen(ErgoLikeContext.Metadata.TestnetNetworkPrefix)) { p2pk =>
-      roundTripTest(ErgoAddressToSigmaProp(StringConstant(p2pk.toString)))
-    }
-  }
-
   property("GetVar: Serializer round trip") {
     forAll(getVarIntGen) { v => roundTripTest(v) }
   }
@@ -177,5 +163,17 @@ class TransformersSerializationSpec extends SerializationSpecification {
 
   property("OptionIsDefined: Serializer round trip") {
     forAll(optionIsDefinedGen) { v => roundTripTest(v) }
+  }
+
+  property("SigmaAnd: Serializer round trip") {
+    forAll(sigmaAndGen) { v => roundTripTest(v) }
+  }
+
+  property("SigmaOr: Serializer round trip") {
+    forAll(sigmaOrGen) { v => roundTripTest(v) }
+  }
+
+  property("BoolToSigmaProp: Serializer round trip") {
+    forAll(boolToSigmaPropGen) { v => roundTripTest(v) }
   }
 }

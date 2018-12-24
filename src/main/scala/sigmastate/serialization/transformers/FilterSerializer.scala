@@ -5,7 +5,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utils.Extensions._
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Filter
 import sigmastate.{SBoolean, SCollection, SType}
 
@@ -13,12 +13,12 @@ case class FilterSerializer(cons: (Value[SCollection[SType]], Byte, Value[SBoole
 
   override val opCode: OpCode = OpCodes.FilterCode
 
-  override def serializeBody(obj: Filter[SType], w: ByteWriter): Unit =
+  override def serializeBody(obj: Filter[SType], w: SigmaByteWriter): Unit =
     w.put(obj.id)
     .putValue(obj.input)
     .putValue(obj.condition)
 
-  override def parseBody(r: ByteReader): Value[SCollection[SType]] = {
+  override def parseBody(r: SigmaByteReader): Value[SCollection[SType]] = {
     val id = r.getByte()
     val input = r.getValue().asCollection[SType]
     val condition = r.getValue().asValue[SBoolean.type]

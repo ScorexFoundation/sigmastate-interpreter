@@ -1,21 +1,23 @@
 package sigmastate.lang
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.syntax.ParserException
 import sigmastate.utxo.ByIndex
 
 class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with LangTests {
-  val compiler = new SigmaCompiler
+  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
 
-  def comp(env: Map[String, Any], x: String) = compiler.compile(env, x)
+  def comp(env: ScriptEnv, x: String) = compiler.compile(env, x, TestnetNetworkPrefix)
 
-  def fail(env: Map[String, Any], x: String, index: Int, expected: Any): Unit = {
+  def fail(env: ScriptEnv, x: String, index: Int, expected: Any): Unit = {
     try {
-      val res = compiler.compile(env, x)
+      val res = compiler.compile(env, x, TestnetNetworkPrefix)
       assert(false, s"Error expected")
     } catch {
       case e: TestFailedException =>
@@ -30,17 +32,17 @@ class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with 
   }
 
   property("array indexed access") {
-    comp(env, "Array(1)(0)") shouldBe
+    comp(env, "Coll(1)(0)") shouldBe
       ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0)
-    comp(env, "Array(Array(1))(0)(0)") shouldBe
+    comp(env, "Coll(Coll(1))(0)(0)") shouldBe
         ByIndex(ByIndex(ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)), 0), 0)
     comp(env, "arr1(0)") shouldBe ByIndex(ByteArrayConstant(Array(1, 2)), 0)
   }
 
   property("array indexed access with default value") {
-    comp(env, "Array(1).getOrElse(0, 1)") shouldBe
+    comp(env, "Coll(1).getOrElse(0, 1)") shouldBe
       ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0, Some(IntConstant(1)))
-    comp(env, "Array(Array(1)).getOrElse(0, Array(2))(0)") shouldBe
+    comp(env, "Coll(Coll(1)).getOrElse(0, Coll(2))(0)") shouldBe
       ByIndex(
         ByIndex(
           ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)),
@@ -52,14 +54,14 @@ class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with 
   }
 
   property("predefined functions") {
-    comp(env, "anyOf(Array(c1, c2))") shouldBe OR(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
-    comp(env, "blake2b256(getVar[Array[Byte]](10).get)") shouldBe CalcBlake2b256(GetVarByteArray(10).get)
+    comp(env, "anyOf(Coll(c1, c2))") shouldBe OR(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
+    comp(env, "blake2b256(getVar[Coll[Byte]](10).get)") shouldBe CalcBlake2b256(GetVarByteArray(10).get)
     comp(env, "10.toByte") shouldBe ByteConstant(10)
-    comp(env, "Array(1)(0).toByte") shouldBe
+    comp(env, "Coll(1)(0).toByte") shouldBe
       Downcast(ByIndex(ConcreteCollection(Vector(IntConstant(1)),SInt),IntConstant(0),None), SByte)
-    comp(env, "allOf(Array(c1, c2))") shouldBe AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
+    comp(env, "allOf(Coll(c1, c2))") shouldBe AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
     comp(env, "getVar[Byte](10).get") shouldBe GetVarByte(10).get
-    comp(env, "getVar[Array[Byte]](10).get") shouldBe GetVarByteArray(10).get
+    comp(env, "getVar[Coll[Byte]](10).get") shouldBe GetVarByteArray(10).get
   }
 
   property("negative tests") {

@@ -6,7 +6,7 @@ import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog, Second
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.SigmaBoolean
 import gf2t.GF2_192_Poly
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
 
 sealed trait UncheckedTree extends ProofTree
 
@@ -45,11 +45,11 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 }
 
 
-case class UncheckedDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
+case class UncheckedDiffieHellmanTuple(override val proposition: ProveDHTuple,
                                        override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                        override val challenge: Challenge,
                                        secondMessage: SecondDiffieHellmanTupleProverMessage)
-  extends UncheckedLeaf[ProveDiffieHellmanTuple] {
+  extends UncheckedLeaf[ProveDHTuple] {
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedDiffieHellmanTuple =>

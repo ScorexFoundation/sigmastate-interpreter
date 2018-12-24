@@ -1,7 +1,7 @@
 package sigmastate.serialization.generators
 
 import org.scalacheck.{Arbitrary, Gen}
-import sigmastate.{SInt, SBoolean, SLong, SType}
+import sigmastate._
 import sigmastate.Values.{ConcreteCollection, EvaluatedValue, Value}
 
 trait ConcreteCollectionGenerators { self: ValueGenerators =>
@@ -22,4 +22,5 @@ trait ConcreteCollectionGenerators { self: ValueGenerators =>
 
   implicit val arbCCOfIntConstant: Arbitrary[ConcreteCollection[SInt.type]] = Arbitrary(intConstCollectionGen)
   implicit val arbCCOfBoolConstant: Arbitrary[ConcreteCollection[SBoolean.type]] = Arbitrary(concreteCollectionGen[SBoolean.type](booleanConstGen))
+  implicit val arbCCOfSigmaPropConstant: Arbitrary[ConcreteCollection[SSigmaProp.type]] = Arbitrary(concreteCollectionGen[SSigmaProp.type](sigmaPropGen))
 }

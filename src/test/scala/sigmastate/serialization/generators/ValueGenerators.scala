@@ -11,7 +11,7 @@ import scorex.util._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDiffieHellmanTuple
+import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
 
 import scala.collection.JavaConverters._
@@ -37,13 +37,14 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbTaggedAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedAvlTreeGen)
 
   implicit val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
-  implicit val arbProveDHT: Arbitrary[ProveDiffieHellmanTuple] = Arbitrary(proveDHTGen)
+  implicit val arbProveDHT: Arbitrary[ProveDHTuple] = Arbitrary(proveDHTGen)
   implicit val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
 
 
   implicit val arbBigInteger = Arbitrary(arbBigInt.arbitrary.map(_.bigInteger))
   implicit val arbGroupElement = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
-  implicit val arbSigmaProp: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
+  implicit val arbSigmaBoolean: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
+  implicit val arbSigmaProp: Arbitrary[SigmaPropValue] = Arbitrary(sigmaPropGen)
   implicit val arbBox = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
@@ -87,14 +88,16 @@ trait ValueGenerators extends TypeGenerators {
 
   val proveDlogGen: Gen[ProveDlog] =
     arbGroupElementConstant.arbitrary.map(v => mkProveDlog(v).asInstanceOf[ProveDlog])
-  val proveDHTGen: Gen[ProveDiffieHellmanTuple] = for {
+  val proveDHTGen: Gen[ProveDHTuple] = for {
     gv: Value[SGroupElement.type] <- groupElementConstGen
     hv: Value[SGroupElement.type] <- groupElementConstGen
     uv: Value[SGroupElement.type] <- groupElementConstGen
     vv: Value[SGroupElement.type] <- groupElementConstGen
-  } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDiffieHellmanTuple]
+  } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDHTuple]
 
   val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
+  val sigmaPropGen: Gen[SigmaPropValue] =
+    Gen.oneOf(proveDlogGen.map(SigmaPropConstant(_)), proveDHTGen.map(SigmaPropConstant(_)))
 
   val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
@@ -187,7 +190,7 @@ trait ValueGenerators extends TypeGenerators {
     case SLong => arbLong
     case SBigInt => arbBigInteger
     case SGroupElement => arbGroupElement
-    case SSigmaProp => arbSigmaProp
+    case SSigmaProp => arbSigmaBoolean
     case SBox => arbBox
     case SAvlTree => arbAvlTreeData
     case SAny => arbAnyVal

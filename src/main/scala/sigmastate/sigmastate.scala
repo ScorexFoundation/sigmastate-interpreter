@@ -39,4 +39,10 @@ package object sigmastate {
 
   def Max[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkMax(left, right)
+
+  def PlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
+    mkPlusModQ(left, right)
+
+  def MinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
+    mkMinusModQ(left, right)
 }

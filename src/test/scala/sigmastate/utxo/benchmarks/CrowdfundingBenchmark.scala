@@ -5,10 +5,10 @@ import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import scalan.util.BenchmarkUtil._
 
-
-class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons {
-
+class CrowdfundingBenchmark extends SigmaTestingCommons {
+  implicit lazy val IR = new TestingIRContext
   def createTestContext(contract: CrowdFundingContract): ErgoLikeContext = {
     val outputToSpend = ErgoBox(10, TrueLeaf, 0)
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
@@ -31,7 +31,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
   val nIters = 10000
   val nTasks = 1
 
-  ignore("Evaluation by Precompiled Kernel") {
+  ignore("Evaluation by Precompiled Kernel(!!! ignore)") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
       val backerProver = new ErgoLikeTestProvingInterpreter
@@ -54,7 +54,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
     }
   }
 
-  ignore("Evaluation by Script Interpretation") {
+  ignore("Evaluation by Script Interpretation(!!! ignore)") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
       val backerProver = new ErgoLikeTestProvingInterpreter

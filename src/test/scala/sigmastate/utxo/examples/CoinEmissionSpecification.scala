@@ -1,14 +1,15 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoLikeContext.Metadata
-import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform.{ErgoLikeContext, Height, _}
 import scorex.util.ScorexLogging
+import sigmastate.Values.{IntConstant, LongConstant, SValue}
 import sigmastate.Values.{ConcreteCollection, IntConstant, LongConstant}
+import sigmastate.eval.RuntimeIRContext
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes
+import sigmastate.serialization.{ErgoTreeSerializer, OpCodes}
 import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
 import sigmastate.utxo._
 import sigmastate.{SLong, _}
@@ -19,6 +20,8 @@ import sigmastate.{SLong, _}
   * that controls emission rules
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
+  // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
+  implicit lazy val IR = new RuntimeIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
@@ -55,7 +58,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
-  property("emission specification") {
+  ignore("emission specification") {
     val register = reg1
     val prover = new ErgoLikeTestProvingInterpreter()
 
@@ -73,13 +76,15 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(rewardOut)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
     val outputsNum = EQ(SizeOf(Outputs), 2)
-    val correctMinerProposition = EQ(ExtractScriptBytes(minerOut),
-      Append(ConcreteCollection(OpCodes.ProveDlogCode, SGroupElement.typeCode), MinerPubkey))
+    val correctMinerProposition = EQ(
+      ExtractScriptBytes(minerOut),
+      ErgoTreeSerializer.DefaultSerializer.serializedPubkeyPropValue(MinerPubkey)
+    )
 
     val prop = AND(
       heightIncreased,
       correctMinerProposition,
-      OR(AND(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins)
+      BinOr(AND(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins)
     )
 
     val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
@@ -99,14 +104,16 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    val heightCorrect = out.R4[Long].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
         |    val outputsNum = OUTPUTS.size == 2
-        |    val correctMinerProposition = minerOut.propositionBytes == Array[Byte](-51.toByte, 7.toByte) ++ MinerPubkey
-        |    allOf(Array(heightIncreased, correctMinerProposition, allOf(Array(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect)) || lastCoins))
+        |    val correctMinerProposition = minerOut.propositionBytes ==
+        |      Coll[Byte](0.toByte, 1.toByte, 7.toByte) ++ MinerPubkey ++ Coll[Byte](-51.toByte, 115.toByte, 0.toByte)
+        |    allOf(Coll(heightIncreased, correctMinerProposition, allOf(Coll(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect)) || lastCoins))
         |}""".stripMargin).asBoolValue
 
     prop1 shouldEqual prop
 
-    val minerProp = prover.dlogSecrets.head.publicImage
-    val minerPubkey = minerProp.pkBytes
+    val minerImage = prover.dlogSecrets.head.publicImage
+    val minerPubkey = minerImage.pkBytes
+    val minerProp = minerImage
 
     val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, 0, Seq(), Map(register -> LongConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block(
@@ -152,9 +159,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         IndexedSeq(emissionBox),
         ut,
         emissionBox,
-        metadata = Metadata(MainnetNetworkPrefix),
         ContextExtension.empty)
-      val proverResult = prover.prove(prop, context, ut.messageToSign).get
+      val proverResult = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, context, ut.messageToSign).get
       ut.toSigned(IndexedSeq(proverResult))
     }
 
@@ -166,6 +172,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
                  hLimit: Int): Unit = if (height < hLimit) {
       if (height % 1000 == 0) {
         println(s"block $height in ${System.currentTimeMillis() - st} ms, ${emissionBox.value} coins remain")
+        IR.resetContext()
       }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
       val block = Block(IndexedSeq(tx), minerPubkey)
@@ -178,6 +185,6 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       }
     }
 
-    chainGen(genesisState, initialBox, 0, 100000000)
+    chainGen(genesisState, initialBox, 0, 1000000)
   }
 }

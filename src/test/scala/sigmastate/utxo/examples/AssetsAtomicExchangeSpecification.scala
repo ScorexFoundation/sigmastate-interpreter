@@ -4,10 +4,12 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant, ShortConstant, Value}
+import sigmastate.Values.{BlockValue, ByteArrayConstant, ConcreteCollection, IntConstant, LongConstant, ShortConstant, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.utxo._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 
@@ -35,6 +37,7 @@ import sigmastate.utxo._
   * //todo: make an example of multiple orders being matched
   */
 class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
+  implicit lazy val IR = new TestingIRContext
 
   /**
     * A simpler example with single-chain atomic exchange contracts.
@@ -49,67 +52,80 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val tokenBuyerKey = tokenBuyer.dlogSecrets.head.publicImage
     val tokenSellerKey = tokenBuyer.dlogSecrets.head.publicImage
 
-    val buyerKeyBytes = tokenBuyerKey.bytes
-    val sellerKeyBytes = tokenSellerKey.bytes
-
     def extractToken(box: Value[SBox.type]) = ByIndex(
       ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType).get, 0)
 
-    def extractTokenId(box: Value[SBox.type]) =
-      SelectField(extractToken(box), 1).asInstanceOf[Value[SByteArray]]
+    val buyerProp = BlockValue(
+      Vector(
+        ValDef(1, SigmaPropConstant(tokenSellerKey)),
+        ValDef(2, ByIndex(Outputs, 0)),
+        // token
+        ValDef(3, extractToken(ValUse(2, SBox)))
+      ),
+      SigmaOr(List(
+        SigmaAnd(List(
+          GT(Height, deadline).toSigmaProp,
+          ValUse(1, SSigmaProp))
+        ),
+        AND(
+          // extract toked id
+          EQ(SelectField(ValUse(3, STuple(SByteArray, SLong)), 1), ByteArrayConstant(tokenId)),
+          // extract token amount
+          GE(SelectField(ValUse(3, STuple(SByteArray, SLong)), 2), LongConstant(60)),
+          // right protection buyer
+          EQ(ExtractScriptBytes(ValUse(2, SBox)), ValUse(1, SSigmaProp).propBytes),
+          EQ(ExtractRegisterAs(ValUse(2, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self))
+        ).toSigmaProp
+      ))
+    ).asBoolValue
 
-    def extractTokenAmount(box: Value[SBox.type]) =
-      SelectField(extractToken(box), 2).asInstanceOf[Value[SLong.type]]
-
-    val rightProtectionBuyer =
-      EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(buyerKeyBytes))
-
-    val rightProtectionSeller =
-      EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.One)), ByteArrayConstant(sellerKeyBytes))
-
-    val buyerProp = OR(
-      AND(GT(Height, deadline), tokenSellerKey),
-      AND(
-        EQ(extractTokenId(ByIndex(Outputs, IntConstant.Zero)), ByteArrayConstant(tokenId)),
-        GE(extractTokenAmount(ByIndex(Outputs, IntConstant.Zero)), LongConstant(60)),
-        rightProtectionBuyer,
-        EQ(OptionGet(ExtractRegisterAs[SByteArray](ByIndex(Outputs, IntConstant.Zero), R4)), ExtractId(Self))
-      )
-    )
-
-    val buyerEnv = Map("pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
-    val altBuyerProp = compile(buyerEnv,
+    val buyerEnv = Map(
+      ScriptNameProp -> "buyer",
+      "pkA" -> tokenBuyerKey, "deadline" -> deadline, "token1" -> tokenId)
+    val altBuyerProp = compileWithCosting(buyerEnv,
       """(HEIGHT > deadline && pkA) || {
-        |  val tokenData = OUTPUTS(0).R2[Array[(Array[Byte], Long)]].get(0)
-        |  allOf(Array(
+        |  val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
+        |  allOf(Coll(
         |      tokenData._1 == token1,
         |      tokenData._2 >= 60L,
         |      OUTPUTS(0).propositionBytes == pkA.propBytes,
-        |      OUTPUTS(0).R4[Array[Byte]].get == SELF.id
+        |      OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
         |  ))
         |}
       """.stripMargin).asBoolValue
    altBuyerProp shouldBe buyerProp
 
-    val sellerProp = OR(
-      AND(GT(Height, deadline), tokenSellerKey),
-      AND(
-        GE(ExtractAmount(ByIndex(Outputs, IntConstant.One)), LongConstant(100)),
-        EQ(OptionGet(ExtractRegisterAs[SByteArray](ByIndex(Outputs, IntConstant.One), R4)), ExtractId(Self)),
-        rightProtectionSeller
+    val sellerProp = BlockValue(
+      Vector(
+        ValDef(1, SigmaPropConstant(tokenSellerKey)),
+        ValDef(2, ByIndex(Outputs, 1))
+      ),
+      SigmaOr(
+        SigmaAnd(
+          GT(Height, deadline).toSigmaProp,
+          ValUse(1, SSigmaProp)),
+        AND(
+          GE(ExtractAmount(ValUse(2, SBox)), LongConstant(100)),
+          EQ(ExtractRegisterAs(ValUse(2, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self)),
+          // right protection seller
+          EQ(ExtractScriptBytes(ValUse(2, SBox)), ValUse(1, SSigmaProp).propBytes)
+        ).toSigmaProp
       )
-    )
-    val sellerEnv = Map("pkB" -> tokenSellerKey, "deadline" -> deadline)
-    val altSellerProp = compile(sellerEnv,
+    ).asBoolValue
+
+    val sellerEnv = Map(
+      ScriptNameProp -> "seller",
+      "pkB" -> tokenSellerKey, "deadline" -> deadline)
+    val altSellerProp = compileWithCosting(sellerEnv,
       """ (HEIGHT > deadline && pkB) ||
-        | allOf(Array(
+        | allOf(Coll(
         |        OUTPUTS(1).value >= 100,
-        |        OUTPUTS(1).R4[Array[Byte]].get == SELF.id,
+        |        OUTPUTS(1).R4[Coll[Byte]].get == SELF.id,
         |        OUTPUTS(1).propositionBytes == pkB.propBytes
         | ))
       """.stripMargin).asBoolValue
 
-    sellerProp shouldBe altSellerProp
+    altSellerProp shouldBe sellerProp
 
     //tx inputs
     val input0 = ErgoBox(100, buyerProp, 0)
@@ -132,8 +148,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
     //Though we use separate provers below, both inputs do not contain any secrets, thus
     //a spending transaction could be created and posted by anyone.
-    val pr = tokenBuyer.prove(buyerProp, buyerCtx, fakeMessage).get
-    verifier.verify(buyerProp, buyerCtx, pr, fakeMessage).get._1 shouldBe true
+    val pr = tokenBuyer.prove(emptyEnv + (ScriptNameProp -> "tokenBuyer_prove"), buyerProp, buyerCtx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "tokenBuyer_verify"), buyerProp, buyerCtx, pr, fakeMessage).get._1 shouldBe true
 
     val sellerCtx = ErgoLikeContext(
       currentHeight = 50,
@@ -146,7 +162,6 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val pr2 = tokenSeller.prove(sellerProp, sellerCtx, fakeMessage).get
     verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
 
-    println("total cost: " + (buyerProp.cost(buyerCtx) + sellerProp.cost(sellerCtx)))
   }
 
   /**
@@ -170,18 +185,18 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |
         |  val outIdx = getVar[Short](127).get
         |  val out = OUTPUTS(outIdx)
-        |  val tokenData = out.R2[Array[(Array[Byte], Long)]].get(0)
+        |  val tokenData = out.R2[Coll[(Coll[Byte], Long)]].get(0)
         |  val tokenId = tokenData._1
         |  val tokenValue = tokenData._2
         |  val outValue = out.value
         |  val price = 500
         |
-        |  allOf(Array(
+        |  allOf(Coll(
         |      tokenId == token1,
         |      tokenValue >= 1,
         |      (SELF.value - outValue) <= tokenValue * price,
         |      out.propositionBytes == pkA.propBytes,
-        |      out.R4[Array[Byte]].get == SELF.id
+        |      out.R4[Coll[Byte]].get == SELF.id
         |  ))
         |}
       """.stripMargin).asBoolValue
@@ -192,9 +207,9 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |   val outIdx = getVar[Short](127).get
         |   val out = OUTPUTS(outIdx)
         |
-        |   val tokenData = out.R2[Array[(Array[Byte], Long)]].get(0)
+        |   val tokenData = out.R2[Coll[(Coll[Byte], Long)]].get(0)
         |   val tokenId = tokenData._1
-        |   val selfTokenData = SELF.R2[Array[(Array[Byte], Long)]].get(0)
+        |   val selfTokenData = SELF.R2[Coll[(Coll[Byte], Long)]].get(0)
         |   val selfTokenId = selfTokenData._1
         |   val tokenValue = tokenData._2
         |   val selfTokenValue = selfTokenData._2
@@ -206,10 +221,10 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
         |
         |   val price = 495
         |
-        |   allOf(Array(
+        |   allOf(Coll(
         |        sold >= 1,
         |        (outValue - selfValue) >= sold*price,
-        |        out.R4[Array[Byte]].get == SELF.id,
+        |        out.R4[Coll[Byte]].get == SELF.id,
         |        out.propositionBytes == pkB.propBytes
         |   ))
         | }
@@ -252,6 +267,5 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val pr2 = tokenSeller.withContextExtender(Byte.MaxValue, ShortConstant(1)).prove(sellerProp, sellerCtx, fakeMessage).get
     verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
 
-    println("total cost: " + (buyerProp.cost(buyerCtx) + sellerProp.cost(sellerCtx)))
   }
 }

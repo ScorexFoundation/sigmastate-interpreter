@@ -7,8 +7,8 @@ import gf2t.GF2_192_Poly
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDiffieHellmanTuple}
-import sigmastate.serialization.ValueSerializer
+import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
+import sigmastate.serialization.ErgoTreeSerializer
 
 import scala.language.existentials
 
@@ -107,7 +107,7 @@ case class UnprovenSchnorr(override val proposition: ProveDlog,
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 }
 
-case class UnprovenDiffieHellmanTuple(override val proposition: ProveDiffieHellmanTuple,
+case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
                                       override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Challenge] = None,
@@ -138,7 +138,7 @@ object FiatShamirTree {
 
     def traverseNode(node: ProofTree): Array[Byte] = node match {
       case l: ProofTreeLeaf =>
-        val propBytes = ValueSerializer.serialize(l.proposition)
+        val propBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(l.proposition)
         val commitmentBytes = l.commitmentOpt.get.bytes
         leafPrefix +:
           ((Shorts.toByteArray(propBytes.length.toShort) ++ propBytes) ++

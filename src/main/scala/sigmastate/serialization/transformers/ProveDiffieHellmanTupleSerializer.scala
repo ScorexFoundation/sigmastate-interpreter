@@ -2,26 +2,26 @@ package sigmastate.serialization.transformers
 
 import sigmastate.SGroupElement
 import sigmastate.Values.{Constant, GroupElementConstant, SigmaBoolean, Value}
-import sigmastate.basics.ProveDiffieHellmanTuple
+import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{DataSerializer, OpCodes, ValueSerializer}
 import sigmastate.utils.Extensions._
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ProveDiffieHellmanTupleSerializer(cons:
                                              (Value[SGroupElement.type],
                                                Value[SGroupElement.type],
                                                Value[SGroupElement.type],
                                                Value[SGroupElement.type]) => SigmaBoolean)
-  extends ValueSerializer[ProveDiffieHellmanTuple] {
+  extends ValueSerializer[ProveDHTuple] {
 
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 
   private val constCodePrefix: Byte = 0
 
-  override def serializeBody(obj: ProveDiffieHellmanTuple, w: ByteWriter): Unit = obj match {
-    case ProveDiffieHellmanTuple(
+  override def serializeBody(obj: ProveDHTuple, w: SigmaByteWriter): Unit = obj match {
+    case ProveDHTuple(
     gv @ Constant(_, SGroupElement),
     hv @ Constant(_, SGroupElement),
     uv @ Constant(_, SGroupElement),
@@ -39,7 +39,7 @@ case class ProveDiffieHellmanTupleSerializer(cons:
       w.putValue(obj.vv)
   }
 
-  override def parseBody(r: ByteReader): SigmaBoolean = {
+  override def parseBody(r: SigmaByteReader): SigmaBoolean = {
     if (r.peekByte() == constCodePrefix) {
       val _ = r.getByte() // skip prefix code
       r.getType() match {

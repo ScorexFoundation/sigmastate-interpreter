@@ -10,6 +10,7 @@ sigma.synctex.gz
 sigma.fdb_latexmk
 
 *.log
+test-out/
 
 # sbt specific
 .cache

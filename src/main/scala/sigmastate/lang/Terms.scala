@@ -1,5 +1,6 @@
 package sigmastate.lang
 
+import org.ergoplatform.Self
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
@@ -9,20 +10,41 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsProven, Slice}
 
 object Terms {
 
+  /** Frontend representation of a block of Val definitions.
+    * { val x = ...; val y = ... }
+    * This node is not part of ErgoTree and hence have Undefined opCode. */
   case class Block(bindings: Seq[Val], result: SValue) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
+    override def tpe: SType = result.tpe
 
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = false
-    def tpe: SType = result.tpe
+    /** This is not used as operation, but rather to form a program structure */
+    override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Block {
     def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
       Block(Seq(let), result)
+  }
+
+  /** IR node to represent explicit Zero Knowledge scope in ErgoTree.
+    * Compiler checks Zero Knowledge properties and issue error message is case of violations.
+    * ZK-scoping is optional, it can be used when the user want to ensure Zero Knowledge of
+    * specific set of operations.
+    * Usually it will require simple restructuring of the code to make the scope body explicit.
+    * Invariants checked by the compiler:
+    *  - single ZKProof in ErgoTree in a root position
+    *  - no boolean operations in the body, because otherwise the result may be disclosed
+    *  - all the operations are over SigmaProp values
+    *
+    * For motivation and details see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
+    * */
+  case class ZKProofBlock(body: SigmaPropValue) extends BoolValue {
+    override val opCode: OpCode = OpCodes.Undefined
+    override def tpe = SBoolean
+    override def opType: SFunc = SFunc(SSigmaProp, SBoolean)
   }
 
   trait Val extends Value[SType] {
@@ -33,11 +55,9 @@ object Terms {
 
   case class ValNode(name: String, givenType: SType, body: SValue) extends Val {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = ???
-    def tpe: SType = givenType ?: body.tpe
+    override def tpe: SType = givenType ?: body.tpe
+    /** This is not used as operation, but rather to form a program structure */
+    override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Val {
     def apply(name: String, body: SValue): Val = ValNode(name, NoType, body)
@@ -48,76 +68,85 @@ object Terms {
     }
   }
 
+  /** Frontend node to select a field from an object. Should be transformed to SelectField*/
   case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = obj.cost(context) + Cost.SelectFieldDeclaration
-
-    override def evaluated: Boolean = ???
-    val tpe: SType = resType.getOrElse(obj.tpe match {
+    override val tpe: SType = resType.getOrElse(obj.tpe match {
       case p: SProduct =>
         val i = p.methodIndex(field)
         if (i == -1) NoType
         else p.methods(i).stype
       case _ => NoType
     })
+    override def opType: SFunc = SFunc(obj.tpe, tpe)
   }
 
+  /** Frontend node to represent variable names parsed in a source code.
+    * Should be resolved during compilation to lambda argument, Val definition or
+    * compilation environment value. */
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = ???
+    override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Ident {
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
-    override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = false
-    lazy val tpe: SType = func.tpe match {
+    override val opCode: OpCode = OpCodes.FuncApplyCode
+    override lazy val tpe: SType = func.tpe match {
       case SFunc(_, r, _) => r
       case tCol: SCollectionType[_] => tCol.elemType
       case _ => NoType
     }
+    override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
   }
 
   /** Apply types for type parameters of input value. */
   case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] { node =>
-
     override val opCode: OpCode = OpCodes.Undefined
-
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = false
-    lazy val tpe: SType = input.tpe match {
+    override lazy val tpe: SType = input.tpe match {
       case funcType: SFunc =>
         require(funcType.tpeParams.length == tpeArgs.length, s"Invalid number of type parameters in $node")
         val subst = funcType.tpeParams.map(_.ident).zip(tpeArgs).toMap
         SigmaTyper.applySubst(input.tpe, subst)
       case _ => input.tpe
     }
+    /** This is not used as operation, but rather to form a program structure */
+    override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
-  case class MethodCall(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
-
+  /** Frontend node to represent potential method call in a source code.
+    * Should be resolved during compilation to MethodCall.
+    * Cannot be serialized to ErgoTree. */
+  case class MethodCallLike(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
     override val opCode: OpCode = OpCodes.Undefined
+    override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
+  }
 
-    override def cost[C <: Context](context: C): Long = ???
-
-    override def evaluated: Boolean = false
+  /** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.*/
+  case class MethodCall(obj: Value[SType], method: SMethod, args: IndexedSeq[Value[SType]]) extends Value[SType] {
+    override val opCode: OpCode = if (args.isEmpty) OpCodes.PropertyCallCode else OpCodes.MethodCallCode
+    override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
+    override val tpe: SType = method.stype match {
+      case f: SFunc => f.tRange
+      case t => t
+    }
+  }
+  object MethodCall {
+    def fromIds(typeId: Byte, methodId: Byte): SMethod = {
+      val typeCompanion = SType.types.getOrElse(typeId, sys.error(s"Cannot find STypeCompanion instance for typeId=$typeId"))
+      val method = typeCompanion.getMethodById(methodId)
+      method
+    }
   }
 
   case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
     assert(upperBound.isEmpty && lowerBound.isEmpty, s"Type parameters with bounds are not supported, but found $this")
     override def toString = ident.toString + upperBound.fold("")(u => s" <: $u") + lowerBound.fold("")(l => s" >: $l")
   }
-  
+
+  /** Frontend implementation of lambdas. Should be transformed to FuncValue. */
   case class Lambda(
         tpeParams: Seq[STypeParam],
         args: IndexedSeq[(String,SType)],
@@ -126,9 +155,12 @@ object Terms {
   {
     require(!(tpeParams.nonEmpty && body.nonEmpty), s"Generic function definitions are not supported, but found $this")
     override val opCode: OpCode = OpCodes.Undefined
-    override def cost[C <: Context](context: C): Long = ???
-    override def evaluated: Boolean = false
-    lazy val tpe: SFunc = SFunc(args.map(_._2), givenResType ?: body.fold(NoType: SType)(_.tpe), tpeParams)
+    override lazy val tpe: SFunc = {
+      val sRange = givenResType ?: body.fold(NoType: SType)(_.tpe)
+      SFunc(args.map(_._2), sRange, tpeParams)
+    }
+    /** This is not used as operation, but rather to form a program structure */
+    override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
@@ -136,14 +168,16 @@ object Terms {
     def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(Nil, args, NoType, Some(body))
   }
 
-  implicit class ValueOps(v: Value[SType]) {
+  case class OperationId(name: String, opType: SFunc)
+
+  implicit class ValueOps(val v: Value[SType]) extends AnyVal {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
     def asNumValue: Value[SNumericType] = v.asInstanceOf[Value[SNumericType]]
     def asStringValue: Value[SString.type] = v.asInstanceOf[Value[SString.type]]
     def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
     def asIntValue: Value[SInt.type] = v.asInstanceOf[Value[SInt.type]]
     def asLongValue: Value[SLong.type] = v.asInstanceOf[Value[SLong.type]]
-    def asSigmaValue: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
+    def asSigmaBoolean: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
     def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
     def asSigmaProp: Value[SSigmaProp.type] = v.asInstanceOf[Value[SSigmaProp.type]]
@@ -151,6 +185,7 @@ object Terms {
     def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
     def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]
     def asTuple: Value[STuple] = v.asInstanceOf[Value[STuple]]
+    def asFunc: Value[SFunc] = v.asInstanceOf[Value[SFunc]]
     def asConcreteCollection[T <: SType]: ConcreteCollection[T] = v.asInstanceOf[ConcreteCollection[T]]
     def upcastTo[T <: SNumericType](targetType: T): Value[T] = {
       assert(v.tpe.isInstanceOf[SNumericType],

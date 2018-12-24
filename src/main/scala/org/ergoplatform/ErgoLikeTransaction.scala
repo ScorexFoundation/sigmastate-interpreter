@@ -8,7 +8,7 @@ import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
 
 import scala.util.Try
-import sigmastate.utils.{ByteReader, ByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
 
@@ -119,7 +119,7 @@ object ErgoLikeTransaction {
     def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] =
       bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
-    override def serializeBody(ftx: FlattenedTransaction, w: ByteWriter): Unit = {
+    override def serializeBody(ftx: FlattenedTransaction, w: SigmaByteWriter): Unit = {
       w.putUShort(ftx.inputs.length)
       for (input <- ftx.inputs) {
         Input.serializer.serializeBody(input, w)
@@ -135,7 +135,7 @@ object ErgoLikeTransaction {
       }
     }
 
-    override def parseBody(r: ByteReader): FlattenedTransaction = {
+    override def parseBody(r: SigmaByteReader): FlattenedTransaction = {
       val inputsCount = r.getUShort()
       val inputsBuilder = mutable.ArrayBuilder.make[Input]()
       for (_ <- 0 until inputsCount) {
@@ -158,10 +158,10 @@ object ErgoLikeTransaction {
 
   object serializer extends Serializer[ErgoLikeTransaction, ErgoLikeTransaction] {
 
-    override def serializeBody(tx: ErgoLikeTransaction, w: ByteWriter): Unit =
+    override def serializeBody(tx: ErgoLikeTransaction, w: SigmaByteWriter): Unit =
       flattenedTxSerializer.serializeBody(FlattenedTransaction(tx), w)
 
-    override def parseBody(r: ByteReader): ErgoLikeTransaction =
+    override def parseBody(r: SigmaByteReader): ErgoLikeTransaction =
       ErgoLikeTransaction(flattenedTxSerializer.parseBody(r))
   }
 }

@@ -1,9 +1,9 @@
 package sigmastate.serialization
 
-import sigmastate.utils.{ByteWriter, ByteReader}
+import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 
 /** Interface of serializers which use ByteWriter to serialize and ByteReader to deserialize. */
 trait ByteBufferSerializer[T] {
-  def serialize(value: T, w: ByteWriter): Unit
-  def deserialize(r: ByteReader): T
+  def serialize(value: T, w: SigmaByteWriter): Unit
+  def deserialize(r: SigmaByteReader): T
 }

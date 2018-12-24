@@ -1,27 +1,32 @@
 package sigmastate
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
-import sigmastate.lang.SigmaCompiler
+import Interpreter._
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
-import org.ergoplatform.{ErgoBox, Height}
+import sigmastate.eval.{IRContext, CostingDataContext, Evaluation, CostingBox}
+import special.sigma
+import org.ergoplatform.{Height, ErgoBox, ErgoLikeContext}
 import scorex.util.encode.Base58
+import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.ValueSerializer
+import special.sigma.{AnyValue, Box, TestAvlTree}
+import TrivialProp._
 
 import scala.util.Random
 
 
 
-class TestingInterpreterSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
+class TestingInterpreterSpecification extends SigmaTestingCommons {
+  implicit lazy val IR = new TestingIRContext
 
+  lazy val TestingInterpreter = new TestingInterpreter
   import TestingInterpreter._
 
   implicit val soundness = CryptoConstants.soundnessBits
@@ -29,16 +34,30 @@ class TestingInterpreterSpecification extends PropSpec
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
-        val dk1 = DLogProverInput.random().publicImage
+        val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
 
         val ctx = TestingContext(h)
-        assert(reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(ctx, AND(GE(Height, LongConstant(h)), dk1)).get._1.isInstanceOf[ProveDlog])
-        assert(reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1.isInstanceOf[FalseLeaf.type])
+        reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1 should(
+          matchPattern { case sb: SigmaBoolean => })
+        reduceToCrypto(ctx, AND(GE(Height, LongConstant(h)), dk1)).get._1 should (
+          matchPattern { case sb: SigmaBoolean => })
 
-        assert(reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1.isInstanceOf[TrueLeaf.type])
-        assert(reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1.isInstanceOf[ProveDlog])
+        {
+          val res = reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1
+          res should matchPattern { case FalseProp => }
+        }
+
+        {
+          val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1
+          res should matchPattern { case TrueProp => }
+        }
+
+        {
+          val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1
+          res should matchPattern { case TrueProp => }
+        }
+        reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1 should(
+          matchPattern { case sb: SigmaBoolean => })
       }
     }
   }
@@ -48,8 +67,8 @@ class TestingInterpreterSpecification extends PropSpec
 
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
-        val dk1 = DLogProverInput.random().publicImage
-        val dk2 = DLogProverInput.random().publicImage
+        val dk1 = DLogProverInput.random().publicImage.isProven
+        val dk2 = DLogProverInput.random().publicImage.isProven
 
         val ctx = TestingContext(h)
 
@@ -64,24 +83,23 @@ class TestingInterpreterSpecification extends PropSpec
                   AND(GT(Height, LongConstant(h - 1)), dk1)
                 )).get._1.isInstanceOf[ProveDlog])
 
+        reduceToCrypto(ctx, OR(
+          AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, LongConstant(h + 1)), dk1)
+        )).get._1 shouldBe FalseProp
 
-        assert(reduceToCrypto(ctx, OR(
-                  AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, LongConstant(h + 1)), dk1)
-                )).get._1.isInstanceOf[FalseLeaf.type])
-
-        assert(reduceToCrypto(ctx, OR(OR(
-                  AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, LongConstant(h + 1)), dk1)
-                ), AND(GT(Height, LongConstant(h - 1)), LE(Height, LongConstant(h + 1))))).get._1.isInstanceOf[TrueLeaf.type])
+        reduceToCrypto(ctx,
+          OR(
+            OR(
+              AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
+              AND(GT(Height, LongConstant(h + 1)), dk1)
+            ),
+            AND(GT(Height, LongConstant(h - 1)), LE(Height, LongConstant(h + 1)))
+          )
+        ).get._1 shouldBe TrueProp
 
       }
     }
-  }
-
-  val compiler = new SigmaCompiler
-  def compile(env: Map[String, Any], code: String): Value[SType] = {
-    compiler.compile(env, code)
   }
 
   def testEval(code: String) = {
@@ -99,55 +117,81 @@ class TestingInterpreterSpecification extends PropSpec
       "box1" -> ErgoBox(10, TrueLeaf, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
-    val prop = compile(env, code).asBoolValue
+    val prop = compileWithCosting(env, code).asBoolValue
     println(code)
     println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
-    verify(prop, ctx, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
+    verify(Interpreter.emptyEnv, prop, ctx, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 
   property("Evaluate array ops") {
-    testEval("""{
-              |  val arr = Array(1, 2) ++ Array(3, 4)
-              |  arr.size == 4
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = Array(1, 2, 3)
-              |  arr.slice(1, 3) == Array(2, 3)
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = bytes1 ++ bytes2
-              |  arr.size == 6
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = bytes1 ++ Array[Byte]()
-              |  arr.size == 3
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = Array[Byte]() ++ bytes1
-              |  arr.size == 3
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = box1.R4[Array[Int]].get
-              |  arr.size == 3
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = box1.R5[Array[Boolean]].get
-              |  anyOf(arr)
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = box1.R5[Array[Boolean]].get
-              |  allOf(arr) == false
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = Array(1, 2, 3)
-              |  arr.map {(i: Int) => i + 1} == Array(2, 3, 4)
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = Array(1, 2, 3)
-              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
-              |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2) ++ Coll(3, 4)
+        |  arr.size == 4
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.slice(1, 3) == Coll(2, 3)
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = bytes1 ++ bytes2
+        |  arr.size == 6
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = bytes1 ++ Coll[Byte]()
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll[Byte]() ++ bytes1
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = box1.R4[Coll[Int]].get
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = box1.R5[Coll[Boolean]].get
+        |  anyOf(arr)
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = box1.R5[Coll[Boolean]].get
+        |  allOf(arr) == false
+        |}""".stripMargin)
+
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(true, false)
+        |  anyOf(arr)
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(true, false)
+        |  allOf(arr) == false
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
+        |}""".stripMargin)
+    //    // TODO uncomment when Costing for where is implemented
+    //    testEval("""{
+    //              |  val arr = Array(1, 2, 3)
+    //              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
+    //              |}""".stripMargin)
   }
 
 //  property("Evaluate sigma in lambdas") {
@@ -156,6 +200,20 @@ class TestingInterpreterSpecification extends PropSpec
 //              |  allOf(arr.map(fun (d: Boolean) = d && true))
 //              |}""".stripMargin)
 //  }
+
+  property("Evaluate numeric casting ops") {
+    def testWithCasting(castSuffix: String): Unit = {
+      testEval(s"Coll(1).size.toByte.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toShort.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toInt.$castSuffix == 1.$castSuffix")
+      testEval(s"Coll(1).size.toLong.$castSuffix == 1.$castSuffix")
+    }
+    testWithCasting("toByte")
+    testWithCasting("toShort")
+    testWithCasting("toInt")
+    testWithCasting("toLong")
+    testWithCasting("toBigInt")
+  }
 
   property("Evaluate arithmetic ops") {
     def testWithCasting(castSuffix: String): Unit = {
@@ -174,47 +232,28 @@ class TestingInterpreterSpecification extends PropSpec
     testWithCasting("toBigInt")
   }
 
-  property("numeric casts") {
-    // downcast
-    testEval("Array(1).size.toByte > 0")
-    // upcast
-    testEval("Array(1).size.toLong > 0")
-  }
-
   property("failed numeric downcast (overflow)") {
-    an[ArithmeticException] should be thrownBy testEval("Array(999)(0).toByte > 0")
-    an[ArithmeticException] should be thrownBy testEval("Array(999)(0).toShort.toByte > 0")
-    an[ArithmeticException] should be thrownBy testEval(s"Array(${Int.MaxValue})(0).toShort > 0")
-    an[ArithmeticException] should be thrownBy testEval(s"Array(${Long.MaxValue}L)(0).toInt > 0")
+    assertExceptionThrown(testEval("Coll(999)(0).toByte > 0"),
+      _.getCause.isInstanceOf[ArithmeticException])
+    assertExceptionThrown(testEval("Coll(999)(0).toShort.toByte > 0"),
+      _.getCause.isInstanceOf[ArithmeticException])
+    assertExceptionThrown(testEval(s"Coll(${Int.MaxValue})(0).toShort > 0"),
+      _.getCause.isInstanceOf[ArithmeticException])
+    assertExceptionThrown(testEval(s"Coll(${Long.MaxValue}L)(0).toInt > 0"),
+      _.getCause.isInstanceOf[ArithmeticException])
   }
 
-  property("string concat") {
-    testEval(""" "a" + "b" == "ab" """)
-    testEval(""" "a" + "b" != "cb" """)
+  property("Coll indexing (out of bounds with const default value)") {
+    testEval("Coll(1, 2).getOrElse(3, 0) == 0")
   }
 
-  property("fromBaseX") {
-    testEval(""" fromBase58("r") == Array[Byte](49.toByte) """)
-    testEval(""" fromBase64("MQ") == Array[Byte](49.toByte) """)
-    testEval(""" fromBase64("M" + "Q") == Array[Byte](49.toByte) """)
-  }
-
-  property("failed fromBaseX (invalid input)") {
-    an[AssertionError] should be thrownBy testEval(""" fromBase58("^%$#@").size == 3 """)
-    an[IllegalArgumentException] should be thrownBy testEval(""" fromBase64("^%$#@").size == 3 """)
-  }
-
-  property("Array indexing (out of bounds with const default value)") {
-    testEval("Array(1, 2).getOrElse(3, 0) == 0")
-  }
-
-  property("Array indexing (out of bounds with evaluated default value)") {
-    testEval("Array(1, 1).getOrElse(3, 1 + 1) == 2")
+  property("Coll indexing (out of bounds with evaluated default value)") {
+    testEval("Coll(1, 1).getOrElse(3, 1 + 1) == 2")
   }
 
   property("Evaluation example #1") {
-    val dk1 = ProveDlog(secrets(0).publicImage.h)
-    val dk2 = ProveDlog(secrets(1).publicImage.h)
+    val dk1 = ProveDlog(secrets(0).publicImage.h).isProven
+    val dk2 = ProveDlog(secrets(1).publicImage.h).isProven
 
     val env1 = TestingContext(99)
     val env2 = TestingContext(101)
@@ -228,9 +267,9 @@ class TestingInterpreterSpecification extends PropSpec
 
     val proof1 = TestingInterpreter.prove(prop, env1, challenge).get.proof
 
-    verify(prop, env1, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
+    verify(emptyEnv, prop, env1, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    verify(prop, env2, proof1, challenge).map(_._1).getOrElse(false) shouldBe false
+    verify(emptyEnv, prop, env2, proof1, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
   property("Evaluation - no real proving - true case") {
@@ -295,33 +334,35 @@ class TestingInterpreterSpecification extends PropSpec
   property("passing a lambda argument") {
     // single expression
     testEval(
-      """ Array[Int](1,2,3).map { (a: Int) =>
+      """ Coll[Int](1,2,3).map { (a: Int) =>
         |   a + 1
-        | } == Array[Int](2,3,4) """.stripMargin)
+        | } == Coll[Int](2,3,4) """.stripMargin)
     // block
     testEval(
-      """ Array[Int](1,2,3).map { (a: Int) =>
+      """ Coll[Int](1,2,3).map { (a: Int) =>
         |   val b = a - 1
         |   b + 2
-        | } == Array[Int](2,3,4) """.stripMargin)
+        | } == Coll[Int](2,3,4) """.stripMargin)
+  }
+
+  property("nested lambdas argument") {
     // block with nested lambda
     testEval(
-      """ Array[Int](1,2,3).exists { (a: Int) =>
-        |   Array[Int](1).exists{ (c: Int) => c == 1 }
+      """ Coll[Int](1,2,3).exists { (a: Int) =>
+        |   Coll[Int](1).exists{ (c: Int) => c == 1 }
         | } == true """.stripMargin)
 
     // block with nested lambda (assigned to a val)
     testEval(
-      """ Array[Int](1,2,3).exists { (a: Int) =>
+      """ Coll[Int](1,2,3).exists { (a: Int) =>
         |   val g = { (c: Int) => c == 1 }
-        |   Array[Int](1).exists(g)
+        |   Coll[Int](1).exists(g)
         | } == true """.stripMargin)
   }
 
   property("deserialize") {
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
-    testEval(s"""deserialize[Array[Byte]]("$str").size == 1""")
-    testEval(s"""deserialize[Array[Byte]]("$str")(0) == 2""")
+    testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
   }
 }
 
@@ -330,21 +371,26 @@ case class TestingContext(height: Int,
                           override val extension: ContextExtension = ContextExtension(values = Map())
                          ) extends Context {
   override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
+
+  override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
+    val inputs = Array[Box]()
+    val outputs = Array[Box]()
+    val vars = Array[AnyValue]()
+    val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
+    val emptyAvlTree = TestAvlTree(noBytes, 0, None, None, None)
+    new CostingDataContext(IR, inputs, outputs, height, selfBox = null,
+      lastBlockUtxoRootHash = emptyAvlTree, minerPubKey = ErgoLikeContext.dummyPubkey,
+      vars = vars, isCost = isCost)
+  }
+
 }
 
 /** An interpreter for tests with 2 random secrets*/
-object TestingInterpreter extends Interpreter with ProverInterpreter {
+class TestingInterpreter(implicit val IR: IRContext) extends Interpreter with ProverInterpreter {
   override type CTX = TestingContext
 
   override val maxCost = CostTable.ScriptLimit
 
   override lazy val secrets: Seq[DLogProverInput] =
     Seq(DLogProverInput.random(), DLogProverInput.random())
-
-//  override val contextExtenders: Map[Byte, CollectionConstant[SByte.type]] = Map[Byte, CollectionConstant[SByte.type]]()
-
-  override def evaluateNode(context: TestingContext, tree: SValue): SValue = tree match {
-    case Height => LongConstant(context.height)
-    case _ => super.evaluateNode(context, tree)
-  }
 }

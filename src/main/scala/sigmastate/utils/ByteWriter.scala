@@ -6,19 +6,19 @@ import sigmastate.utils.ByteArrayWriter.{encodeZigZagInt, encodeZigZagLong}
 import sigmastate.utils.Extensions._
 
 trait ByteWriter {
-  def put(x: Byte): ByteWriter
+  def put(x: Byte): this.type
 
   /** Encode integer as an unsigned byte asserting the range check
     * @param x integer value to encode
     * @return
     * @throws AssertionError if x is outside of the unsigned byte range
     */
-  def putUByte(x: Int): ByteWriter = {
+  def putUByte(x: Int): this.type = {
     assert(x >= 0 && x <= 0xFF, s"$x is out of unsigned byte range")
     put(x.toByte)
   }
-  def putBoolean(x: Boolean): ByteWriter
-  def putShort(x: Short): ByteWriter
+  def putBoolean(x: Boolean): this.type
+  def putShort(x: Short): this.type
 
   /**
     * Encode Short that are positive
@@ -26,7 +26,7 @@ trait ByteWriter {
     * Use [[putShort]] to encode values that might be negative.
     * @param x Short
     */
-  def putUShort(x: Int): ByteWriter
+  def putUShort(x: Int): this.type
 
   /**
     * Encode signed Int.
@@ -34,7 +34,7 @@ trait ByteWriter {
     *
     * @param x Int
     */
-  def putInt(x: Int): ByteWriter
+  def putInt(x: Int): this.type
 
   /**
     * Encode Int that are positive.
@@ -42,7 +42,7 @@ trait ByteWriter {
     *
     * @param x Int
     */
-  def putUInt(x: Long): ByteWriter
+  def putUInt(x: Long): this.type
 
   /**
     * Encode signed Long.
@@ -50,7 +50,7 @@ trait ByteWriter {
     *
     * @param x Long
     */
-  def putLong(x: Long): ByteWriter
+  def putLong(x: Long): this.type
 
   /**
     * Encode Long that are positive.
@@ -58,17 +58,17 @@ trait ByteWriter {
     *
     * @param x Long
     */
-  def putULong(x: Long): ByteWriter
+  def putULong(x: Long): this.type
 
-  def putBytes(xs: Array[Byte]): ByteWriter
+  def putBytes(xs: Array[Byte]): this.type
 
   /**
     * Encode an array of boolean values as a bit array
     *
     * @param xs array of boolean values
     */
-  def putBits(xs: Array[Boolean]): ByteWriter
-  def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter
+  def putBits(xs: Array[Boolean]): this.type
+  def putOption[T](x: Option[T])(putValue: (this.type, T) => Unit): this.type
   def toBytes: Array[Byte]
 }
 
@@ -76,9 +76,9 @@ trait ByteWriter {
   * Not thread safe
   */
 class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
-  @inline override def put(x: Byte): ByteWriter = { b.append(x); this }
-  @inline override def putBoolean(x: Boolean): ByteWriter = { b.append(x); this }
-  @inline override def putShort(x: Short): ByteWriter = { b.append(x); this }
+  @inline override def put(x: Byte): this.type = { b.append(x); this }
+  @inline override def putBoolean(x: Boolean): this.type = { b.append(x); this }
+  @inline override def putShort(x: Short): this.type = { b.append(x); this }
 
   /**
     * Encode unsigned Short value using VLQ.
@@ -89,7 +89,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     * @param x unsigned Short
     * @throws AssertionError for values not in unsigned Short range
     */
-  @inline override def putUShort(x: Int): ByteWriter = {
+  @inline override def putUShort(x: Int): this.type = {
     assert(x >= 0 && x <= 0xFFFF, s"$x is out of unsigned short range")
     putUInt(x)
   }
@@ -107,7 +107,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     *       encoding negative values than pure VLQ.
     * @param x prefer signed Int
     */
-  @inline override def putInt(x: Int): ByteWriter = putULong(encodeZigZagInt(x))
+  @inline override def putInt(x: Int): this.type = putULong(encodeZigZagInt(x))
 
   /**
     * Encode unsigned Int value using VLQ.
@@ -118,7 +118,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     * @param x unsigned Int
     * @throws AssertionError for values not in unsigned Int range
     */
-  @inline override def putUInt(x: Long): ByteWriter = {
+  @inline override def putUInt(x: Long): this.type = {
     assert(x >= 0 && x <= 0xFFFFFFFFL, s"$x is out of unsigned int range")
     putULong(x)
   }
@@ -135,7 +135,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     *       encoding negative values than pure VLQ.
     * @param x prefer signed Long
     */
-  @inline override def putLong(x: Long): ByteWriter = putULong(encodeZigZagLong(x))
+  @inline override def putLong(x: Long): this.type = putULong(encodeZigZagLong(x))
 
   /**
     * Encode signed Long value using VLQ.
@@ -151,7 +151,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     * @param x prefer unsigned Long (signed value will produce a significant overhead,
     *          see note above)
     */
-  @inline override def putULong(x: Long): ByteWriter = {
+  @inline override def putULong(x: Long): this.type = {
     val buffer = new Array[Byte](10)
     var position = 0
     var value = x
@@ -173,9 +173,9 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     // see https://rosettacode.org/wiki/Variable-length_quantity for implementations in other languages
   }
 
-  @inline override def putBytes(xs: Array[Byte]): ByteWriter = { b.append(xs); this }
+  @inline override def putBytes(xs: Array[Byte]): this.type = { b.append(xs); this }
 
-  @inline override def putBits(xs: Array[Boolean]): ByteWriter = {
+  @inline override def putBits(xs: Array[Boolean]): this.type = {
     if (xs.isEmpty) return this
     val bitSet = new BitSet(xs.length)
     xs.zipWithIndex.foreach { case (bool, i) => bitSet.set(i, bool)}
@@ -186,7 +186,7 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     this
   }
 
-  @inline override def putOption[T](x: Option[T])(putValue: (ByteWriter, T) => Unit): ByteWriter = { b.appendOption(x)(v => putValue(this, v)); this }
+  @inline override def putOption[T](x: Option[T])(putValue: (this.type, T) => Unit): this.type = { b.appendOption(x)(v => putValue(this, v)); this }
 
   @inline override def toBytes: Array[Byte] = b.toBytes
 }

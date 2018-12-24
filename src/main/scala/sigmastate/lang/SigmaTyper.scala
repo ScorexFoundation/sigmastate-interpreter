@@ -15,11 +15,7 @@ import sigmastate.utxo._
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * Analyses for typed lambda calculus expressions.  A simple free variable
-  * analysis plus name and type analysis.  There are two versions of the
-  * latter here: one (tipe) that constructs an explicit environment separate
-  * from the AST, and one (tipe2) that represents names by references to the
-  * nodes of their binding lambda expressions.
+  * Type inference and analysis for Sigma expressions.
   */
 class SigmaTyper(val builder: SigmaBuilder) {
   import SigmaTyper._
@@ -60,7 +56,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       }
 
     case sel @ Select(obj: SigmaBoolean, n, None) =>
-      val newObj = assignType(env, obj).asSigmaValue
+      val newObj = assignType(env, obj).asSigmaBoolean
       val iField = newObj.fields.indexWhere(_._1 == n)
       val tRes = if (iField != -1) {
         obj.fields(iField)._2
@@ -129,9 +125,6 @@ class SigmaTyper(val builder: SigmaBuilder) {
           val newArgs = new_f match {
             case AllSym | AnySym =>
               adaptSigmaPropToBoolean(new_args, argTypes)
-            case AtLeastSym =>
-              // In new_args the first item is `bound`, the second - collection of logical values
-              new_args.head +: adaptSigmaPropToBoolean(new_args.tail, argTypes.tail)
             case _ => new_args
           }
           val actualTypes = newArgs.map(_.tpe)
@@ -175,7 +168,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
           error(s"Invalid array application $app: array type is expected but was $t")
       }
 
-    case mc @ MethodCall(obj, m, args, _) =>
+    case mc @ MethodCallLike(obj, m, args, _) =>
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       newObj.tpe match {
@@ -197,23 +190,6 @@ class SigmaTyper(val builder: SigmaBuilder) {
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
-        case SSigmaProp => (m, newArgs) match {
-          case ("||" | "&&", Seq(r)) => r.tpe match {
-            case SBoolean =>
-              val (a,b) = (Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue, r.asBoolValue)
-              val res = if (m == "||") OR(a,b) else AND(a,b)
-              res
-            case SSigmaProp =>
-              val a = Select(newObj, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
-              val b = Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue
-              val res = if (m == "||") OR(a,b) else AND(a,b)
-              res
-            case _ =>
-              error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}")
-          }
-          case _ =>
-            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
-        }
         case _: SNumericType => (m, newArgs) match {
           case("+" | "*", Seq(r)) => r.tpe match {
             case _: SNumericType => m match {
@@ -227,19 +203,34 @@ class SigmaTyper(val builder: SigmaBuilder) {
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
 
+        case SSigmaProp => (m, newArgs) match {
+          case ("||" | "&&", Seq(r)) => r.tpe match {
+            case SBoolean =>
+              val (a,b) = (Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              res
+            case SSigmaProp =>
+              val (a,b) = (newObj.asSigmaProp, r.asSigmaProp)
+              val res = if (m == "||") mkSigmaOr(Seq(a,b)) else mkSigmaAnd(Seq(a,b))
+              res
+            case _ =>
+              error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}")
+          }
+          case _ =>
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
+        }
         case SBoolean => (m, newArgs) match {
           case ("||" | "&&", Seq(r)) => r.tpe match {
             case SBoolean =>
-              val res = if (m == "||") OR(newObj.asBoolValue, r.asBoolValue) else AND(newObj.asBoolValue, r.asBoolValue)
+              val res = if (m == "||") mkBinOr(newObj.asBoolValue, r.asBoolValue) else mkBinAnd(newObj.asBoolValue, r.asBoolValue)
               res
             case SSigmaProp =>
-              val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsValid, Some(SBoolean)).asBoolValue)
-              val res = if (m == "||") OR(a,b) else AND(a,b)
+              val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
+              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
               res
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }
-
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
@@ -273,6 +264,11 @@ class SigmaTyper(val builder: SigmaBuilder) {
         case _ =>
           error(s"Invalid application of type arguments $app: function $input doesn't have type parameters")
       }
+
+//    case app @ ApplyTypes(in, targs) =>
+//      val newIn = assignType(env, in)
+//      ApplyTypes(newIn, targs)
+//      error(s"Invalid application of type arguments $app: expression doesn't have type parameters")
 
     case If(c, t, e) =>
       val c1 = assignType(env, c).asValue[SBoolean.type]
@@ -338,11 +334,11 @@ class SigmaTyper(val builder: SigmaBuilder) {
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})")
       mkSizeOf(c1)
 
-    case SigmaPropIsValid(p) =>
+    case SigmaPropIsProven(p) =>
       val p1 = assignType(env, p)
       if (!p1.tpe.isSigmaProp)
         error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})")
-      SigmaPropIsValid(p1.asSigmaProp)
+      SigmaPropIsProven(p1.asSigmaProp)
 
     case SigmaPropBytes(p) =>
       val p1 = assignType(env, p)
@@ -351,6 +347,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       SigmaPropBytes(p1.asSigmaProp)
 
     case SomeValue(x) => SomeValue(assignType(env, x))
+    case v: NoneValue[_] => v
 
     case Height => Height
     case MinerPubkey => MinerPubkey
@@ -390,7 +387,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
       case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
         val items = adaptSigmaPropToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
         assignConcreteCollection(cc, items.toIndexedSeq)
-      case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsValid(it.asSigmaProp)
+      case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsProven(it.asSigmaProp)
       case (it,_) => it
     }
     res

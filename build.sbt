@@ -4,9 +4,11 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
+lazy val allConfigDependency = "compile->compile;test->test"
+
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  scalaVersion := "2.12.7",
+  scalaVersion := "2.12.8",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -55,12 +57,26 @@ version in ThisBuild := {
 
 git.gitUncommittedChanges in ThisBuild := true
 
+val specialVersion = "master-c19564fd-SNAPSHOT"
+val specialCommon = "io.github.scalan" %% "common" % specialVersion
+val specialCore = "io.github.scalan" %% "core" % specialVersion
+val specialLibrary = "io.github.scalan" %% "library" % specialVersion
+
+val specialSigmaVersion = "master-2e83859e-SNAPSHOT"
+val sigmaImpl = "io.github.scalan" %% "sigma-impl" % specialSigmaVersion
+val sigmaLibrary = "io.github.scalan" %% "sigma-library" % specialSigmaVersion
+
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
   "junit" % "junit" % "4.12" % "test",
-  "com.novocode" % "junit-interface" % "0.11" % "test"
+  "com.novocode" % "junit-interface" % "0.11" % "test",
+  specialCommon, (specialCommon % Test).classifier("tests"),
+  specialCore, (specialCore % Test).classifier("tests"),
+  specialLibrary, (specialLibrary % Test).classifier("tests"),
+  sigmaImpl, (sigmaImpl % Test).classifier("tests"),
+  sigmaLibrary, (sigmaLibrary % Test).classifier("tests"),
 )
 
 libraryDependencies ++= Seq(
@@ -69,7 +85,9 @@ libraryDependencies ++= Seq(
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
-  "com.lihaoyi" %% "fastparse" % "1.0.0"
+  "com.lihaoyi" %% "fastparse" % "1.0.0",
+  sigmaImpl,
+  sigmaLibrary,
 ) ++ testingDependencies
 
 

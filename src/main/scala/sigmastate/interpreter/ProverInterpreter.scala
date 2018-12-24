@@ -5,7 +5,7 @@ import java.util
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import sigmastate.basics.DLogProtocol._
 import sigmastate._
-import sigmastate.utils.{ByteReader, ByteWriter, Helpers}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utils.Extensions._
 import Values._
 
@@ -16,7 +16,7 @@ import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.serialization.Serializer
 import gf2t.GF2_192
 import gf2t.GF2_192_Poly
-import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDiffieHellmanTuple, SigmaProtocolPrivateInput}
+import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDHTuple, SigmaProtocolPrivateInput}
 import sigmastate.lang.exceptions.InterpreterException
 
 /**
@@ -39,13 +39,13 @@ object ProverResult {
 
   object serializer extends Serializer[ProverResult, ProverResult] {
 
-    override def serializeBody(obj: ProverResult, w: ByteWriter): Unit = {
+    override def serializeBody(obj: ProverResult, w: SigmaByteWriter): Unit = {
       w.putUShort(obj.proof.length)
       w.putBytes(obj.proof)
       ContextExtension.serializer.serializeBody(obj.extension, w)
     }
 
-    override def parseBody(r: ByteReader): ProverResult = {
+    override def parseBody(r: SigmaByteReader): ProverResult = {
       val sigBytesCount = r.getUShort()
       val proofBytes = r.getBytes(sigBytesCount)
       val ce = ContextExtension.serializer.parseBody(r)
@@ -118,17 +118,31 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     convertToUnchecked(step9)
   }
 
-  def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+  def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] =
+    prove(emptyEnv, exp, context, message)
 
-    val (reducedProp, cost) = reduceToCrypto(context.withExtension(knownExtensions).asInstanceOf[CTX], exp).get
+  def prove(env: ScriptEnv, exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+    import TrivialProp._
+    val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
+    val propTree = applyDeserializeContext(ctx, exp)
+    val (reducedProp, cost) = reduceToCrypto(ctx, env, propTree).get
+
+    def errorReducedToFalse = Interpreter.error("Script reduced to false")
 
     val proofTree = reducedProp match {
-      case bool: BooleanConstant =>
-        bool match {
-          case TrueLeaf => NoProof
-          case _ => ???
+      case BooleanConstant(boolResult) =>
+        if (boolResult) NoProof
+        else errorReducedToFalse
+      case sigmaBoolean: SigmaBoolean =>
+        sigmaBoolean match {
+          case TrueProp => NoProof
+          case FalseProp => errorReducedToFalse
+          case _ =>
+            val ct = convertToUnproven(sigmaBoolean)
+            prove(ct, message)
         }
       case _ =>
+        // TODO this case should be removed, because above cases should cover all possible variants
         val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }
           .recover { case _ => throw new InterpreterException(s"failed to cast to SigmaBoolean: $reducedProp") }
           .get
@@ -462,7 +476,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       CThresholdUnproven(CTHRESHOLD(k, children), None, simulated = false, k, children.map(convertToUnproven), None)
     case ci: ProveDlog =>
       UnprovenSchnorr(ci, None, None, None, simulated = false)
-    case dh: ProveDiffieHellmanTuple =>
+    case dh: ProveDHTuple =>
       UnprovenDiffieHellmanTuple(dh, None, None, None, simulated = false)
   }
 

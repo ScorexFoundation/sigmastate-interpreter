@@ -3,11 +3,11 @@
 
 Sigma frontend implements the following pipeline:
 
-SourceCode --> `Parser` --> `Binder` -> `Typer` -> `Specializer` -> SigmaIR
+SourceCode --> `Parser` --> `Binder` -> `Typer` -> `Specializer` -> ErgoTree
 
 Here:
 - SourceCode  is a string of unicode characters
-- SigmaIR is an intermediate representation which can be processed by Sigma [Interpreter](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/src/main/scala/sigmastate/interpreter/Interpreter.scala)
+- ErgoTree is an intermediate representation which can be processed by Sigma [Interpreter](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/src/main/scala/sigmastate/interpreter/Interpreter.scala)
  
 ## Parser
 `SigmaParser` takes a string and produces abstract syntax tree, AST, of a Sigma expression.
@@ -17,8 +17,8 @@ In case of any errors it throws `ParserException`
 ## Binder
 `SigmaBinder` takes an AST of successfully parsed Sigma expression and resolves 
 global variables and predefined functions be looking up in the provided environment.
-Binder transforms objects of predefined Scala types (such as Int, Boolean, Box, etc.)
-into constant nodes (IntConstant, BoxConstant, etc) of SigmaIR of the correspodning type.
+Binder transforms environment values of predefined Scala types (such as Int, Boolean, Box, etc.)
+into constant nodes (IntConstant, BoxConstant, etc) of ErgoTree of the corresponding type.
 
 In case of any error it throws `BinderException`
 

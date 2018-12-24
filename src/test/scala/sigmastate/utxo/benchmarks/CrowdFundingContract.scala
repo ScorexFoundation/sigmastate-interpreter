@@ -14,7 +14,7 @@ abstract class CrowdFundingContract(
                                      val projectProver: ErgoLikeTestProvingInterpreter
 ) extends SigmaContract {
   //a blockchain node verifying a block containing a spending transaction
-  val verifier = new ErgoLikeTestInterpreter
+  val verifier = new ErgoLikeTestInterpreter()(backerProver.IR)
   val backerPubKey = backerProver.dlogSecrets.head.publicImage
   val projectPubKey = projectProver.dlogSecrets.head.publicImage
 

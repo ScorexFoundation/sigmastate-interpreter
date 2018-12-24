@@ -22,14 +22,19 @@ trait Types extends Core {
   /** This map should be in sync with SType.allPredefTypes*/
   val predefTypes = Map(
     "Boolean" -> SBoolean, "Byte" -> SByte, "Short" -> SShort, "Int" -> SInt,"Long" -> SLong, "BigInt" -> SBigInt,  "ByteArray" -> SByteArray,
-    "AvlTree" -> SAvlTree, "GroupElement" -> SGroupElement, "SigmaProp" -> SSigmaProp, "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
+    "AvlTree" -> SAvlTree, "Context" -> SContext, "GroupElement" -> SGroupElement, "SigmaProp" -> SSigmaProp, "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
   )
 
   def typeFromName(tn: String): Option[SType] = predefTypes.get(tn)
 
   val PostfixType = P( InfixType ~ (`=>` ~/ Type ).? ).map {
     case (t, None) => t
-    case (d, Some(r)) => SFunc(IndexedSeq(d), r)
+    case (d, Some(r)) => d match {
+      case STuple(items) =>
+        SFunc(items, r)
+      case _ =>
+        SFunc(IndexedSeq(d), r)
+    }
   }
   val Type: P[SType] = P( `=>`.? ~~ PostfixType ~ TypeBounds ~ `*`.? )
 
@@ -91,7 +96,7 @@ trait Types extends Core {
     val BasicType = P( TupleType | TypeId )
     P( BasicType ~ TypeArgs.rep ).map {
       case (t: STuple, Seq()) => t
-      case (STypeApply("Array", IndexedSeq()), Seq(Seq(t))) => SCollection(t)
+      case (STypeApply("Coll", IndexedSeq()), Seq(Seq(t))) => SCollection(t)
       case (STypeApply("Option", IndexedSeq()), Seq(Seq(t))) => SOption(t)
       case (SPrimType(t), Seq()) => t
       case (STypeApply(tn, IndexedSeq()), args) if args.isEmpty => STypeIdent(tn)

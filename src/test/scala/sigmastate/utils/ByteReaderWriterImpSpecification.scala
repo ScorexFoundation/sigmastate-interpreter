@@ -239,7 +239,7 @@ class ByteReaderWriterImpSpecification extends PropSpec
     }
   }
 
-  property("Array[Boolean] bit encoding format") {
+  property("Coll[Boolean] bit encoding format") {
     val expectations = Seq[(Array[Boolean], Array[Byte])](
       Array[Boolean]() -> Array[Byte](),
       Array(false) -> Array(0),

@@ -1,22 +1,25 @@
 package sigmastate.utxo
 
-import java.io.{File, FileWriter}
+import java.io.{FileWriter, File}
 
 import org.ergoplatform
 import org.ergoplatform.ErgoLikeContext.Metadata
 import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.Values.LongConstant
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.helpers.{SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.{AvlTreeData, GE}
+import sigmastate.eval.IRContext
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.{GE, AvlTreeData}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -24,12 +27,9 @@ import scala.collection.mutable
 import scala.util.Try
 
 
-class BlockchainSimulationSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
-  with Matchers {
-
+class BlockchainSimulationSpecification extends SigmaTestingCommons {
   import BlockchainSimulationSpecification._
+  implicit lazy val IR = new TestingIRContext
 
   def generateBlock(state: ValidationState, miner: ErgoLikeTestProvingInterpreter, height: Int): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
@@ -46,9 +46,9 @@ class BlockchainSimulationSpecification extends PropSpec
         IndexedSeq(box),
         tx,
         box,
-        Metadata(TestnetNetworkPrefix),
         ContextExtension.empty)
-      val proverResult = miner.prove(box.proposition, context, tx.messageToSign).get
+      val env = emptyEnv + (ScriptNameProp -> s"height_${state.state.currentHeight}_prove")
+      val proverResult = miner.prove(env, box.proposition, context, tx.messageToSign).get
 
       tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq.ensuring(_.nonEmpty, s"Failed to create txs from boxes $boxesToSpend at height $height")
@@ -93,7 +93,7 @@ class BlockchainSimulationSpecification extends PropSpec
     checkState(state, miner, 0, randomDeepness)
   }
 
-  ignore(s"benchmarking applying many blocks") {
+  ignore(s"benchmarking applying many blocks (!!! ignored)") {
     val results = new TrieMap[Int, Long]
 
     def bench(numberOfBlocks: Int): Unit = {
@@ -188,15 +188,15 @@ object BlockchainSimulationSpecification {
   }
 
 
-  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader) {
+  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader)(implicit IR: IRContext) {
+    val validator = new ErgoTransactionValidator
     def applyBlock(block: Block, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
 
       val blockCost = block.txs.foldLeft(0L) { case (accCost, tx) =>
-        ErgoTransactionValidator.validate(tx, state.copy(currentHeight = height),
+        validator.validate(tx, state.copy(currentHeight = height),
           block.minerPubkey,
-          boxesReader,
-          Metadata(TestnetNetworkPrefix)) match {
+          boxesReader) match {
           case Left(throwable) => throw throwable
           case Right(cost) => accCost + cost
         }
@@ -222,7 +222,7 @@ object BlockchainSimulationSpecification {
       ErgoLikeContext.dummyPubkey
     )
 
-    def initialState(block: Block = initBlock): ValidationState = {
+    def initialState(block: Block = initBlock)(implicit IR: IRContext): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 

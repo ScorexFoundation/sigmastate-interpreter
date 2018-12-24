@@ -1,15 +1,17 @@
 package sigmastate.lang
 
+import org.ergoplatform.ErgoAddressEncoder.{NetworkPrefix, TestnetNetworkPrefix}
 import org.ergoplatform.ErgoBox.R4
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.Terms.Ident
+import sigmastate.lang.Terms.{Ident, ZKProofBlock}
 import sigmastate.lang.exceptions.SpecializerException
-import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ValueGenerators}
+import sigmastate.serialization.generators.{ValueGenerators, TransformerGenerators, ConcreteCollectionGenerators}
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
 class SigmaSpecializerTest extends PropSpec
   with PropertyChecks
@@ -37,8 +39,8 @@ class SigmaSpecializerTest extends PropSpec
     val typed = typer.typecheck(bound)
     typed
   }
-  def spec(env: Map[String, SValue], typed: SValue): SValue = {
-    val spec = new SigmaSpecializer(TransformingSigmaBuilder)
+  def spec(env: Map[String, SValue], typed: SValue, networkPrefix: NetworkPrefix = TestnetNetworkPrefix): SValue = {
+    val spec = new SigmaSpecializer(TransformingSigmaBuilder, networkPrefix)
     spec.specialize(env, typed)
   }
   def spec(code: String): SValue = {
@@ -88,7 +90,7 @@ class SigmaSpecializerTest extends PropSpec
 //    spec(env, "(1, 2L).slice(0, 2)") shouldBe SCollection(SAny)
 //    spec(env, "fun (a: Int) = (1, 2L)(a)") shouldBe SFunc(IndexedSeq(SInt), SAny)
   }
-  
+
   property("Option constructors") {
     fail(Map(), "None", "Option constructors are not supported")
     fail(Map(), "Some(10)", "Option constructors are not supported")
@@ -96,31 +98,35 @@ class SigmaSpecializerTest extends PropSpec
 
   property("generic methods of arrays") {
     spec("OUTPUTS.map({ (out: Box) => out.value >= 10 })") shouldBe
-      MapCollection(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      MapCollection(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("OUTPUTS.exists({ (out: Box) => out.value >= 10 })") shouldBe
-        Exists(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      Exists(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("OUTPUTS.forall({ (out: Box) => out.value >= 10 })") shouldBe
-        ForAll(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
-    spec("{ val arr = Array(1,2); arr.fold(0, { (n1: Int, n2: Int) => n1 + n2 })}") shouldBe
-        Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
-             22, IntConstant(0), 21, Plus(TaggedInt(21), TaggedInt(22)))
-    spec("{ val arr = Array(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
+      ForAll(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
+    spec("{ val arr = Coll(1,2); arr.fold(0, { (n1: Int, n2: Int) => n1 + n2 })}") shouldBe
       Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
-        22, TrueLeaf, 21, AND(TaggedBoolean(21), GT(TaggedInt(22), IntConstant(1))))
+        IntConstant(0),
+        Lambda(Vector(("n1", SInt), ("n2", SInt)), SInt, Plus(Ident("n1", SInt).asNumValue, Ident("n2", SInt).asNumValue)))
+    spec("{ val arr = Coll(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
+      Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
+        TrueLeaf,
+        Lambda(Vector(("n1", SBoolean), ("n2", SInt)), SBoolean,
+          BinAnd(Ident("n1", SBoolean).asBoolValue, GT(Ident("n2", SInt), IntConstant(1))))
+      )
     spec("OUTPUTS.slice(0, 10)") shouldBe
-        Slice(Outputs, IntConstant(0), IntConstant(10))
+      Slice(Outputs, IntConstant(0), IntConstant(10))
     spec("OUTPUTS.filter({ (out: Box) => out.value >= 10 })") shouldBe
-        Filter(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      Filter(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
   }
 
   property("AND flattening predefined") {
-    spec("true && true") shouldBe AND(TrueLeaf, TrueLeaf)
-    spec("true && false") shouldBe AND(TrueLeaf, FalseLeaf)
+    spec("true && true") shouldBe BinAnd(TrueLeaf, TrueLeaf)
+    spec("true && false") shouldBe BinAnd(TrueLeaf, FalseLeaf)
     spec("true && (true && 10 == 10)") shouldBe
-      AND(TrueLeaf, TrueLeaf, EQ(IntConstant(10), IntConstant(10)))
-    spec("true && true && true") shouldBe AND(TrueLeaf, TrueLeaf, TrueLeaf)
+      BinAnd(TrueLeaf, BinAnd(TrueLeaf, EQ(IntConstant(10), IntConstant(10))))
+    spec("true && true && true") shouldBe BinAnd(BinAnd(TrueLeaf, TrueLeaf), TrueLeaf)
     spec("true && (true && (true && true)) && true") shouldBe
-      AND(TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf)
+      BinAnd(BinAnd(TrueLeaf, BinAnd(TrueLeaf, BinAnd(TrueLeaf, TrueLeaf))), TrueLeaf)
   }
 
   property("AND flattening, CAND/COR untouched") {
@@ -139,9 +145,9 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("OR flattening predefined") {
-    spec("true || true || true") shouldBe OR(TrueLeaf, TrueLeaf, TrueLeaf)
+    spec("true || true || true") shouldBe BinOr(BinOr(TrueLeaf, TrueLeaf), TrueLeaf)
     spec("true || (true || true) || true") shouldBe
-      OR(TrueLeaf, TrueLeaf, TrueLeaf, TrueLeaf)
+      BinOr(BinOr(TrueLeaf, BinOr(TrueLeaf, TrueLeaf)), TrueLeaf)
   }
 
   property("OR flattening, CAND/COR untouched") {
@@ -181,12 +187,30 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("fromBaseX") {
-    spec("""fromBase58("111")""") shouldBe Base58ToByteArray(StringConstant("111"))
-    spec("""fromBase64("111")""") shouldBe Base64ToByteArray(StringConstant("111"))
+    spec(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array(49))
+    spec(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array(49))
+    spec(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array(49))
   }
 
-  property("PK") {
-    spec("""PK("111")""") shouldBe ErgoAddressToSigmaProp(StringConstant("111"))
+  property("failed fromBaseX (invalid input)") {
+    an[AssertionError] should be thrownBy spec(""" fromBase58("^%$#@")""")
+    an[IllegalArgumentException] should be thrownBy spec(""" fromBase64("^%$#@")""")
+  }
+
+  private def testPK(networkPrefix: NetworkPrefix) = {
+    implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(networkPrefix)
+    val dk1 = proveDlogGen.sample.get
+    val encodedP2PK = P2PKAddress(dk1).toString
+    val code = s"""PK("$encodedP2PK")"""
+    spec(Map(), typed(Map(), code), networkPrefix) shouldEqual dk1
+  }
+
+  property("PK (testnet network prefix)") {
+    testPK(TestnetNetworkPrefix)
+  }
+
+  property("PK (mainnet network prefix)") {
+    testPK(ErgoAddressEncoder.MainnetNetworkPrefix)
   }
 
   property("ExtractRegisterAs") {
@@ -208,9 +232,21 @@ class SigmaSpecializerTest extends PropSpec
     spec("getVar[Int](1).getOrElse(0)") shouldBe GetVarInt(1).getOrElse(IntConstant(0))
   }
 
+  property("string concat") {
+    spec(""" "a" + "b" """) shouldBe StringConstant("ab")
+  }
+
   property("ExtractCreationInfo") {
     spec("SELF.creationInfo") shouldBe ExtractCreationInfo(Self)
     spec("SELF.creationInfo._1") shouldBe SelectField(ExtractCreationInfo(Self), 1)
     spec("SELF.creationInfo._2") shouldBe SelectField(ExtractCreationInfo(Self), 2)
+  }
+
+  property("sigmaProp") {
+    spec("sigmaProp(HEIGHT > 1000)") shouldBe BoolToSigmaProp(GT(Height, LongConstant(1000)))
+  }
+
+  property("ZKProof") {
+    spec("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe ZKProofBlock(BoolToSigmaProp(GT(Height, LongConstant(1000))))
   }
 }

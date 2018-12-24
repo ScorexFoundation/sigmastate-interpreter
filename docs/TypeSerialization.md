@@ -2,7 +2,7 @@
 
 This document defines a binary format, which is used to store Sigma scripts in persistent stores, 
 to transfer them over wire and to enable cross-platform interoperation.
-It organized as the following: first we describe how the types (like `Int`, `Array[Byte]`, etc.) are serialized, 
+It organized as the following: first we describe how the types (like `Int`, `Col[Byte]`, etc.) are serialized, 
 then we define serialization of typed data. This will give us a basis to describe serialization of 
 Constant nodes of SigmaIR. From that we proceed to serialization of arbitrary SigmaIR trees.
 
@@ -22,9 +22,9 @@ However, we use special encoding schema to save bytes for the types that are use
 
 We assume the most frequently used types are:
 - primitive types - Int, Byte, Boolean, BigInt, GroupElement, Box, AvlTree
-- Arrays of primitive types - `Array[Byte]` etc
+- Collections of primitive types - `Col[Byte]` etc
 - Options of primitive types - `Option[Int]` etc.
-- Nested arrays of primitive types - `Array[Array[Int]]` etc.
+- Nested arrays of primitive types - `Col[Col[Int]]` etc.
 - Functions of primitive types - `Box => Boolean` etc. 
 - First biased pair of types - `(_, Int)` when we know the first component is a primitive type.
 - Second biased pair of types - `(Int, _)` when we know the second component is a primitive type.
@@ -61,11 +61,11 @@ Id    |   Type
 10    |   reserved for String 
 11    |   reserved for Double
 
-For each type constructor like Array or Option we use the encoding schema defined below.
-Type constructor has associated _base code_ (e.g. 12 for `Array[_]`, 24 for `Array[Array[_]]` etc. ), which is multiple of 12.
-Base code can be added to primitive type id to produce code of constructed type, for example 12 + 1 = 13 is a code of `Array[Byte]`.
+For each type constructor like Col or Option we use the encoding schema defined below.
+Type constructor has associated _base code_ (e.g. 12 for `Col[_]`, 24 for `Col[Col[_]]` etc. ), which is multiple of 12.
+Base code can be added to primitive type id to produce code of constructed type, for example 12 + 1 = 13 is a code of `Col[Byte]`.
 The code of type constructor (12 in this example) is used when type parameter is non-primitive type 
-(e.g. `Array[(Byte, Int)]`), is which case recursive descent is performed.
+(e.g. `Col[(Byte, Int)]`), is which case recursive descent is performed.
 This encoding allows very simple and quick decoding by using div and mod operations.
 
 The interval of codes for data types is divided as the following:
@@ -73,14 +73,14 @@ The interval of codes for data types is divided as the following:
 Interval            | Type constructor   | Description
 --------------------|------------------  |------------
 0x01 - 0x0B(11)     |                    | primitive types (including 2 reserved)
-0x0C(12)            | `Array[_]`         | Array of non-primivite types (`Array[(Int,Boolean)]`)
-0x0D(13) - 0x17(23) | `Array[_]`         | Array of primitive types (`Array[Byte]`, `Array[Int]`, etc.)
-0x18(24)            | `Array[Array[_]]`  | Nested array of non-primitive types (`Array[Array[(Int,Boolean)]]`)
-0x19(25) - 0x23(35) | `Array[Array[_]]`  | Nested array of primitive types (`Array[Array[Byte]]`, `Array[Array[Int]]`)
+0x0C(12)            | `Col[_]`           | Collection of non-primivite types (`Col[(Int,Boolean)]`)
+0x0D(13) - 0x17(23) | `Col[_]`           | Collection of primitive types (`Col[Byte]`, `Col[Int]`, etc.)
+0x18(24)            | `Col[Col[_]]`      | Nested collection of non-primitive types (`Col[Col[(Int,Boolean)]]`)
+0x19(25) - 0x23(35) | `Col[Col[_]]`      | Nested collection of primitive types (`Col[Col[Byte]]`, `Col[Col[Int]]`)
 0x24(36)            | `Option[_]`        | Option of non-primitive type (`Option[(Int, Byte)]`)
 0x25(37) - 0x2F(47) | `Option[_]`        | Option of primitive type (`Option[Int]`)
-0x30(48)            | `Option[Array[_]]` | Option of Array of non-primitive type (`Option[Array[(Int, Boolean)]]`)
-0x31(49) - 0x3B(59) | `Option[Array[_]]` | Option of Array of primitive type (`Option[Array[Int]]`)
+0x30(48)            | `Option[Col[_]]` | Option of Col of non-primitive type (`Option[Col[(Int, Boolean)]]`)
+0x31(49) - 0x3B(59) | `Option[Col[_]]` | Option of Col of primitive type (`Option[Col[Int]]`)
 0x3C(60)            | `(_,_)`            | Pair of non-primitive types (`((Int, Byte), (Boolean,Box))`, etc.)
 0x3D(61) - 0x47(71) | `(_, Int)`         | Pair of types where first is primitive (`(_, Int)`)
 0x48(72)            | `(_,_,_)`          | Triple of types 
@@ -92,8 +92,9 @@ Interval            | Type constructor   | Description
 0x62(98)            |  `Unit`            | Unit type
 0x63(99)            |  `Box`             | Box type 
 0x64(100)           |  `AvlTree`         | AvlTree type 
-0x65(101)           |                    | reserved for String type
-0x66(102) - 0x6E(110)|                   | reserved for future use 
+0x65(101)           |  `Context`         | Context type 
+0x65(102)           |                    | reserved for String type
+0x66(103) - 0x6E(110)|                   | reserved for future use 
 0x6F(111)           |                    | Reserved for future `Class` type (e.g. user-defined types) 
 
 
@@ -117,8 +118,8 @@ When argument of the type constructor is not primitive type we fallback to simpl
 In such a case we emit special code for the type constructor according to the table above and descend recursively 
 to every child node of the type tree.
 We do this descend only for those children whose code cannot be embedded in parent code.
-For example, serialization of `Array[(Int,Boolean)]` proceeds as the following:
-1) emit 0x0C because element of array is not primitive 
+For example, serialization of `Col[(Int,Boolean)]` proceeds as the following:
+1) emit 0x0C because element of collection is not primitive 
 2) recursively serialize `(Int, Boolean)`
 3) emit 0x3D because first item in the pair is primitive
 4) recursivley serialize `Boolean`
@@ -129,10 +130,10 @@ For example, serialization of `Array[(Int,Boolean)]` proceeds as the following:
 Type                 | D   | R   | Bytes             | #Bytes  | Comments
 ---------------------|-----|-----|-------------------|--------|---------
 `Byte`               |     |     |  1                |  1     |
-`Array[Byte]`        |     |     |  12 + 1 = 13      |  1     |
-`Array[Array[Byte]]` |     |     |  24 + 1 = 25      |  1     | 
+`Col[Byte]`        |     |     |  12 + 1 = 13      |  1     |
+`Col[Col[Byte]]` |     |     |  24 + 1 = 25      |  1     | 
 `Option[Byte]`       |     |     |  36 + 1 = 37      |  1     | register
-`Option[Array[Byte]]`|     |     |  48 + 1 = 49      |  1     | register
+`Option[Col[Byte]]`|     |     |  48 + 1 = 49      |  1     | register
 `(Int,Int)`          |     |     |  84 + 3 = 87      |  1     | fold
 `Box=>Boolean`       | 7   | 2   |  198 = 7*12+2+112 |  1     | exist, forall
 `(Int,Int)=>Int`     | 0   | 3   |  115=0*12+3+112, 87  |  2     |  fold
@@ -142,8 +143,8 @@ Type                 | D   | R   | Bytes             | #Bytes  | Comments
 ## Data and Constant serialization
 
 The contents of a typed data structure can be fully described by a type tree.
-For example having a typed data object `d: (Int, Array[Byte], Boolean)` we can tell that `d` has 3 items, 
-the first item contain 64-bit integer, the second - array of bytes, and the third - logical true/false value. 
+For example having a typed data object `d: (Int, Col[Byte], Boolean)` we can tell that `d` has 3 items, 
+the first item contain 64-bit integer, the second - collection of bytes, and the third - logical true/false value. 
 
 To serialize/deserialize typed data we need to know its type descriptor (type tree).
 Serialization procedure is recursive over type tree and the corresponding subcomponents of an object.
@@ -152,10 +153,10 @@ using predefined function shown in the following table
 
 Value: Type    | Function                      | Format
 -------------- |------------------------------ |-------
-`x: Byte`      | `byte: Byte => Array[Byte]`   |  `[x & 0xFF]` - one byte storing value x 
-`x: Short`     | `short: Short => Array[Byte]` |  `[x & 0xFFFF]` - two bytes in big-endian order storing value x
-`x: Int`       | `int: Int => Array[Byte]`     |  `[x & 0xFFFFFFFF]` - four bytes in big-endian order storing value x
-`x: Long`      | `long: Int => Array[Byte]`    |  `[x & 0xFFFFFFFFFFFFFFFF]` - eight bytes in big-endian order storing value x
+`x: Byte`      | `byte: Byte => Col[Byte]`   |  `[x & 0xFF]` - one byte storing value x 
+`x: Short`     | `short: Short => Col[Byte]` |  `[x & 0xFFFF]` - two bytes in big-endian order storing value x
+`x: Int`       | `int: Int => Col[Byte]`     |  `[x & 0xFFFFFFFF]` - four bytes in big-endian order storing value x
+`x: Long`      | `long: Int => Col[Byte]`    |  `[x & 0xFFFFFFFFFFFFFFFF]` - eight bytes in big-endian order storing value x
 
 Thus, serialization format is defined recursively as shown in the following table
 
@@ -164,8 +165,8 @@ Object        | Type             | Format
 x = 0xXX      | `Byte`           |  `byte(x)` - one byte storing value x 
 b = false/true| `Boolean`        |  `if (b) byte(0x01) else byte(0x00)]` - one byte storing 0 or 1
 n = 0xXXXXXXXXXXXXXXXX  |  `Int`              |  `[XX,XX,XX,XX,XX,XX,XX,XX]` - big endian 8 bytes
-N = new BigInteger()    |  `BigInt`           |  xs = N.toByteArray, `[serialize(xs)]` - serialize as `Array[Byte]`, see also BigInteger.toByteArray
+N = new BigInteger()    |  `BigInt`           |  xs = N.toByteArray, `[serialize(xs)]` - serialize as `Col[Byte]`, see also BigInteger.toByteArray
 e = new EcPoint()       |  `GroupElement`     |  `[e.getEncoded(true)]` see also org.bouncycastle.math.ec.EcPoint.getEncoded(true)
 box = new ErgoBox()     |  `Box`              |  `[putLong(box.value), putValue(box.proposition), putArray[Any](box.registers), 32, putBytes(box.transactionId), putShort(box.boxId)]`
 t = new AvlTree()       |  `AvlTree`          |  `[serialize(t.startingDigest), putInt(t.keyLength), putOpt(t.valueLengthOpt), putOpt(t.maxNumOperations), putOpt(t.maxDeletes)]`
-xs = Array(x1, .., xN)  |  `Array[T]`      |  `[xs.length & 0xXXXX, serialize(x1), ..., serialize(xN)]` - 2 bytes of length and recursive bytes of all the elements
+xs = Col(x1, .., xN)  |  `Col[T]`      |  `[xs.length & 0xXXXX, serialize(x1), ..., serialize(xN)]` - 2 bytes of length and recursive bytes of all the elements

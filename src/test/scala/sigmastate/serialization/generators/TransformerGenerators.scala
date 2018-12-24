@@ -9,6 +9,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
+import sigmastate.lang.Terms._
 
 trait TransformerGenerators {
   self: ValueGenerators with ConcreteCollectionGenerators =>
@@ -41,26 +42,24 @@ trait TransformerGenerators {
 
   val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-    idByte <- arbByte.arbitrary
-    mapper <- arbIntConstants.arbitrary
-  } yield mkMapCollection(input, idByte, mapper).asInstanceOf[MapCollection[SInt.type, SInt.type]]
+    mapper <- funcValueGen
+  } yield mkMapCollection(input, mapper).asInstanceOf[MapCollection[SInt.type, SInt.type]]
 
   val existsGen: Gen[Exists[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-    idByte <- arbByte.arbitrary
-    condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield mkExists(input, idByte, condition).asInstanceOf[Exists[SInt.type]]
+    condition <- funcValueGen
+  } yield mkExists(input, condition).asInstanceOf[Exists[SInt.type]]
 
   val forAllGen: Gen[ForAll[SInt.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-    idByte <- arbByte.arbitrary
-    condition <- Gen.oneOf(TrueLeaf, FalseLeaf)
-  } yield mkForAll(input, idByte, condition).asInstanceOf[ForAll[SInt.type]]
+    condition <- funcValueGen
+  } yield mkForAll(input, condition).asInstanceOf[ForAll[SInt.type]]
 
   val foldGen: Gen[Fold[SInt.type, SBoolean.type]] = for {
     input <- arbCCOfIntConstant.arbitrary
-  } yield mkFold(input, 21, TrueLeaf, 22, AND(TaggedBoolean(21), GT(TaggedInt(21), IntConstant(1))))
-    .asInstanceOf[Fold[SInt.type, SBoolean.type]]
+    foldOp <- funcValueGen
+  } yield
+    mkFold(input, TrueLeaf, foldOp).asInstanceOf[Fold[SInt.type, SBoolean.type]]
 
   val sliceGen: Gen[Slice[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
@@ -70,7 +69,7 @@ trait TransformerGenerators {
 
   val atLeastGen: Gen[AtLeast] = for {
     bound <- intConstGen
-    input <- arbCCOfBoolConstant.arbitrary
+    input <- arbCCOfSigmaPropConstant.arbitrary
   } yield mkAtLeast(bound, input).asInstanceOf[AtLeast]
 
   val filterGen: Gen[Filter[SInt.type]] = for {
@@ -139,8 +138,7 @@ trait TransformerGenerators {
         EQ(IntConstant(1), IntConstant(1)), // true
         EQ(IntConstant(1), IntConstant(2))  // false
       ),
-      proveDlogGen,
-      proveDHTGen
+      booleanConstGen
     )
 
   private type LogicalTransformerCons =
@@ -197,17 +195,9 @@ trait TransformerGenerators {
     s <- Gen.someOf(Base58.Alphabet).suchThat(_.nonEmpty)
   } yield s.toString
 
-  val base58ToByteArrayGen: Gen[Base58ToByteArray] = for {
-    s <- base58StringGen
-  } yield mkBase58ToByteArray(StringConstant(s)).asInstanceOf[Base58ToByteArray]
-
   val base64StringGen: Gen[String] = for {
     s <- Gen.someOf(Base64.Alphabet).suchThat(_.length > 1)
   } yield s.toString
-
-  val base64ToByteArrayGen: Gen[Base64ToByteArray] = for {
-    s <- base64StringGen
-  } yield mkBase64ToByteArray(StringConstant(s)).asInstanceOf[Base64ToByteArray]
 
   def p2pkAddressGen(networkPrefix: Byte): Gen[P2PKAddress] = for {
     pd <- proveDlogGen
@@ -228,4 +218,64 @@ trait TransformerGenerators {
   val optionIsDefinedGen: Gen[OptionIsDefined[SInt.type]] = for {
     getVar <- getVarIntGen
   } yield OptionIsDefined(getVar)
+
+  val valDefGen: Gen[ValDef] = for {
+    id <- unsignedIntGen
+    rhs <- booleanExprGen
+  } yield ValDef(id, Seq(), rhs)
+
+  val funDefGen: Gen[ValDef] = for {
+    id <- unsignedIntGen
+    tpeArgs <- Gen.nonEmptyListOf(sTypeIdentGen)
+    rhs <- booleanExprGen
+  } yield ValDef(id, tpeArgs, rhs)
+
+  val valOrFunDefGen: Gen[ValDef] = for {
+    v <- Gen.oneOf(valDefGen, funDefGen)
+  } yield v
+
+  val valUseGen: Gen[ValUse[SType]] = for {
+    id <- unsignedIntGen
+    tpe <- predefTypeGen
+  } yield ValUse(id, tpe)
+
+  val blockValueGen: Gen[BlockValue] = for {
+    items <- Gen.nonEmptyListOf(valDefGen)
+  } yield BlockValue(items.toIndexedSeq,
+    EQ(
+      SizeOf(Tuple(items.toIndexedSeq.map(valDef => ValUse(valDef.id, valDef.tpe)))),
+      IntConstant(items.length)))
+
+  val constantPlaceholderGen: Gen[ConstantPlaceholder[SType]] = for {
+    id <- unsignedIntGen
+    tpe <- predefTypeGen
+  } yield ConstantPlaceholder(id, tpe)
+
+  val funcValueArgsGen: Gen[IndexedSeq[(Int, SType)]] = for {
+    num <- Gen.chooseNum(1, 10)
+    indices <- Gen.listOfN(num, unsignedIntGen)
+    tpes <- Gen.listOfN(num, predefTypeGen)
+  } yield indices.zip(tpes).toIndexedSeq
+
+  val funcValueGen: Gen[FuncValue] = for {
+    args <- funcValueArgsGen
+    body <- logicalExprTreeNodeGen(Seq(AND.apply))
+  } yield FuncValue(args, body)
+
+  val sigmaPropValueGen: Gen[SigmaPropValue] = sigmaBooleanGen.map(SigmaPropConstant(_))
+
+  val sigmaAndGen: Gen[SigmaAnd] = for {
+    num <- Gen.chooseNum(1, 10)
+    items <- Gen.listOfN(num, sigmaPropValueGen)
+  } yield mkSigmaAnd(items).asInstanceOf[SigmaAnd]
+
+  val sigmaOrGen: Gen[SigmaOr] = for {
+    num <- Gen.chooseNum(1, 10)
+    items <- Gen.listOfN(num, sigmaPropValueGen)
+  } yield mkSigmaOr(items).asInstanceOf[SigmaOr]
+
+  val boolToSigmaPropGen: Gen[BoolToSigmaProp] = for {
+    b <- booleanConstGen
+  } yield mkBoolToSigmaProp(b)
+
 }

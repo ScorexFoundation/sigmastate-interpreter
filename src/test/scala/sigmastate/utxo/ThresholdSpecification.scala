@@ -1,14 +1,18 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.Values.{ConcreteCollection, Value}
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.CosterException
 
 
 class ThresholdSpecification extends SigmaTestingCommons {
+  implicit lazy val IR = new TestingIRContext {
+    override val okPrintEvaluatedEntries: Boolean = false
+  }
 
   property("basic threshold compilation/execution") {
     val proverA = new ErgoLikeTestProvingInterpreter
@@ -34,26 +38,27 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
 
     // Basic compilation
-    val compiledProp1 = compile(env, """atLeast(2, Array(pubkeyA, pubkeyB, pubkeyC))""")
+    val compiledProp1 = compileWithCosting(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""")
     val prop1 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
     compiledProp1 shouldBe prop1
 
     // this example is from the white paper
-    val compiledProp2 = compile(env,
+    val compiledProp2 = compileWithCosting(env,
       """{
-        |    val array = Array(pubkeyA, pubkeyB, pubkeyC)
+        |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(array.size, array)
         |}""".stripMargin).asBoolValue
 
 
-    val prop2 = AtLeast(SizeOf(ConcreteCollection(Vector(pubkeyA, pubkeyB, pubkeyC))), pubkeyA, pubkeyB, pubkeyC)
+    val prop2 = AtLeast(IntConstant(3),
+      ConcreteCollection(Vector[SigmaPropValue](pubkeyA, pubkeyB, pubkeyC), SSigmaProp))
     compiledProp2 shouldBe prop2
 
     val proof = proverABC.prove(compiledProp2, ctx, fakeMessage).get
@@ -68,9 +73,9 @@ class ThresholdSpecification extends SigmaTestingCommons {
     proverA.reduceToCrypto(ctx, compiledProp2).get._1 shouldBe proverA.reduceToCrypto(ctx, prop2And).get._1
 
     // this example is from the white paper
-    val compiledProp3 = compile(env,
+    val compiledProp3 = compileWithCosting(env,
       """{
-        |    val array = Array(pubkeyA, pubkeyB, pubkeyC)
+        |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(1, array)
         |}""".stripMargin).asBoolValue
     val prop3 = AtLeast(1, pubkeyA, pubkeyB, pubkeyC)
@@ -86,9 +91,9 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val prop3Or = OR(pubkeyA, pubkeyB, pubkeyC)
     proverA.reduceToCrypto(ctx, compiledProp3).get._1 shouldBe proverA.reduceToCrypto(ctx, prop3Or).get._1
 
-    val compiledProp4 = compile(env,
+    val compiledProp4 = compileWithCosting(env,
       """{
-        |    val array = Array(pubkeyA, pubkeyB, pubkeyC)
+        |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(2, array)
         |}""".stripMargin).asBoolValue
     val prop4 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
@@ -105,28 +110,28 @@ class ThresholdSpecification extends SigmaTestingCommons {
     }
   }
 
-
   property("threshold reduce to crypto") {
+    import TrivialProp._
     val prover = new ErgoLikeTestProvingInterpreter
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
-    case class TestCase(numTrue: Int, vector: Seq[Value[SBoolean.type]], dlogOnlyVector: DlogOnlyVector)
-    case class DlogOnlyVector(v: Seq[Value[SBoolean.type]]) {
-      lazy val orVersion = prover.reduceToCrypto(ctx, OR(v)).get._1
-      lazy val andVersion = prover.reduceToCrypto(ctx, AND(v)).get._1
+    case class TestCase(numTrue: Int, vector: Seq[SigmaPropValue], dlogOnlyVector: DlogOnlyVector)
+    case class DlogOnlyVector(v: Seq[SigmaPropValue]) {
+      lazy val orVersion = prover.reduceToCrypto(ctx, SigmaOr(v)).get._1
+      lazy val andVersion = prover.reduceToCrypto(ctx, SigmaAnd(v)).get._1
     }
 
     // Sequence of three secrets, in order to build test cases with 0, 1, 2, or 3 ProveDlogs inputs
-    val secrets = Seq[DLogProverInput](DLogProverInput.random(), DLogProverInput.random(), DLogProverInput.random())
+    val secrets = Seq[DLogProverInput](DLogProverInput.random(), DLogProverInput.random()/*, DLogProverInput.random()*/)
 
-    val fls = SBoolean.mkConstant(false)
-    val tr = SBoolean.mkConstant(true)
+    val fls = BoolToSigmaProp(FalseLeaf)
+    val tr = BoolToSigmaProp(TrueLeaf)
     val emptyDlogOnlyVector = DlogOnlyVector(Seq())
 
     // build test cases of length 0 to 3 ProveDlogs with all possible inbetweens: nothing, false, true
@@ -135,7 +140,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       TestCase(0, Seq(fls), emptyDlogOnlyVector),
       TestCase(1, Seq(tr), emptyDlogOnlyVector))
     for (sk <- secrets) {
-      val pk = sk.publicImage
+      val pk = SigmaPropConstant(sk.publicImage)
       var newTestCaseSeq = Seq[TestCase]()
       for (t <- testCaseSeq) {
         val dlogOnly = DlogOnlyVector(t.dlogOnlyVector.v :+ pk)
@@ -164,43 +169,43 @@ class ThresholdSpecification extends SigmaTestingCommons {
     for (t <- testCaseSeq) {
       for (bound <- 0 to testCaseSeq.length + 1) {
         val pReduced = prover.reduceToCrypto(ctx, AtLeast(bound, t.vector))
-        pReduced.isSuccess shouldBe true
+        pReduced.fold(t => throw t, x => true) shouldBe true
         if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe tr
+            pReduced.get._1 shouldBe TrueProp
             case0TrueHit = true
           }
           else {
-            pReduced.get._1 shouldBe fls
+            pReduced.get._1 shouldBe FalseProp
             case0FalseHit = true
           }
         }
         else if (t.dlogOnlyVector.v.length == 1) { // Case 1: 1 ProveDlog in the test vector
           // Should be just true if numTrue>=bound
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe tr
+            pReduced.get._1 shouldBe TrueProp
             case1TrueHit = true
           }
           // Should be false if bound>numTrue + 1
           else if (bound > t.numTrue + 1) {
-            pReduced.get._1 shouldBe fls
+            pReduced.get._1 shouldBe FalseProp
             case1FalseHit = true
           }
           // if bound is exactly numTrue+1, should be just dlog
           else if (bound == t.numTrue + 1) {
-            pReduced.get._1 shouldBe t.dlogOnlyVector.v.head
+            SigmaPropConstant(pReduced.get._1.asInstanceOf[ProveDlog]) shouldBe t.dlogOnlyVector.v.head
             case1DLogHit = true
           }
         }
         else { // Case 2: more than 1 ProveDlogs in the test vector
           // Should be just true if numTrue>=bound
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe tr
+            pReduced.get._1 shouldBe TrueProp
             case2TrueHit = true
           }
           // Should be false if bound>numTrue + dlogOnlyVector.length
           else if (bound > t.numTrue + t.dlogOnlyVector.v.length) {
-            pReduced.get._1 shouldBe fls
+            pReduced.get._1 shouldBe FalseProp
             case2FalseHit = true
           }
           // if bound is exactly numTrue+dlogOnlyVector, should be just AND of all dlogs
@@ -225,7 +230,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     }
     case0FalseHit && case0TrueHit shouldBe true
     case1FalseHit && case1TrueHit && case1DLogHit shouldBe true
-    case2FalseHit && case2TrueHit && case2AndHit && case2OrHit && case2AtLeastHit shouldBe true
+    case2FalseHit && case2TrueHit && case2AndHit && case2OrHit/* && case2AtLeastHit */ shouldBe true
   }
 
   property("3-out-of-6 threshold") {
@@ -264,8 +269,9 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val env = Map("pkA" -> pkA, "pkB" -> pkB, "pkC" -> pkC,
       "pkD" -> pkD, "pkE" -> pkE, "pkF" -> pkF,
       "pkG" -> pkG, "pkH" -> pkH, "pkI" -> pkI)
-    val compiledProp = compile(env, """atLeast(3, Array (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""")
-    val prop = AtLeast(3, pkA, pkB, pkC, AND(pkD, pkE), AND(pkF, pkG), AND(pkH, pkI))
+    val compiledProp = compileWithCosting(env,
+      """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""").asBoolValue
+    val prop = AtLeast(3, pkA, pkB, pkC, SigmaAnd(pkD, pkE), SigmaAnd(pkF, pkG), SigmaAnd(pkH, pkI))
 
     compiledProp shouldBe prop
 
@@ -281,7 +287,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
@@ -289,11 +295,11 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
 
     for (prover <- goodProvers) {
-      val proof = prover.prove(prop, ctx, fakeMessage).get
-      verifier.verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+      val proof = prover.prove(compiledProp, ctx, fakeMessage).get
+      verifier.verify(compiledProp, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    badProver.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+    badProver.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
 
   }
 
@@ -304,17 +310,17 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val subProp2 = secret2.publicImage
     val secret31 = DLogProverInput.random()
     val secret32 = DLogProverInput.random()
-    val subProp3 = OR(secret31.publicImage, secret32.publicImage)
+    val subProp3 = SigmaOr(secret31.publicImage, secret32.publicImage)
     val secret41 = DLogProverInput.random()
     val secret42 = DLogProverInput.random()
-    val subProp4 = AND(secret41.publicImage, secret42.publicImage)
+    val subProp4 = SigmaAnd(secret41.publicImage, secret42.publicImage)
     val secret51 = DLogProverInput.random()
     val secret52 = DLogProverInput.random()
     val secret53 = DLogProverInput.random()
     val subProp5 = AtLeast(2, secret51.publicImage, secret52.publicImage, secret53.publicImage)
     val secret6 = DLogProverInput.random()
 
-    val propComponents = Seq(subProp1, subProp2, subProp3, subProp4, subProp5)
+    val propComponents = Seq[SigmaPropValue](subProp1, subProp2, subProp3, subProp4, subProp5)
     val secrets = Seq(Seq(secret1), Seq(secret2), Seq(secret31), Seq(secret41, secret42), Seq(secret51, secret53))
 
 
@@ -328,19 +334,19 @@ class ThresholdSpecification extends SigmaTestingCommons {
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = null,
       self = fakeSelf)
 
     val verifier = new ErgoLikeTestInterpreter
 
-    def canProve(prover: ErgoLikeTestProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
-      val proof = prover.prove(proposition, ctx, fakeMessage).get
-      verifier.verify(proposition, ctx, proof, fakeMessage).get._1 shouldBe true
+    def canProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
+      val proof = prover.prove(proposition.isProven, ctx, fakeMessage).get
+      verifier.verify(proposition.isProven, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    def cannotProve(prover: ErgoLikeTestProvingInterpreter, proposition: Value[SBoolean.type]): Unit = {
-      prover.prove(proposition, ctx, fakeMessage).isFailure shouldBe true
+    def cannotProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
+      prover.prove(proposition.isProven, ctx, fakeMessage).isFailure shouldBe true
     }
 
 
@@ -350,10 +356,10 @@ class ThresholdSpecification extends SigmaTestingCommons {
         // don't go beyond i -- "threshold reduce to crypto" tests that atLeast then becomes false
         // don't test bound 0 -- "threshold reduce to crypto" tests that atLeast then becomes true
         val pureAtLeastProp = AtLeast(bound, propComponents.slice(0, i))
-        val OrPlusAtLeastOnRightProp = OR(secret6.publicImage, pureAtLeastProp)
-        val OrPlusAtLeastOnLeftProp = OR(pureAtLeastProp, secret6.publicImage)
-        val AndPlusAtLeastOnLeftProp = AND(pureAtLeastProp, secret6.publicImage)
-        val AndPlusAtLeastOnRightProp = AND(secret6.publicImage, pureAtLeastProp)
+        val OrPlusAtLeastOnRightProp = SigmaOr(secret6.publicImage, pureAtLeastProp)
+        val OrPlusAtLeastOnLeftProp = SigmaOr(pureAtLeastProp, secret6.publicImage)
+        val AndPlusAtLeastOnLeftProp = SigmaAnd(pureAtLeastProp, secret6.publicImage)
+        val AndPlusAtLeastOnRightProp = SigmaAnd(secret6.publicImage, pureAtLeastProp)
 
         for (p <- provers.slice(0, twoToi)) {
           val pWithSecret6 = p._2.withSecrets(Seq(secret6))
@@ -394,5 +400,25 @@ class ThresholdSpecification extends SigmaTestingCommons {
       }
       twoToi *= 2
     }
+  }
+
+  property("fail compilation when input limit exceeded") {
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val skA = proverA.dlogSecrets.head
+    val pubkeyA = skA.publicImage
+    val keyName = "pubkeyA"
+    val env = Map(keyName -> pubkeyA)
+    val pubKeysStrExceeding = Array.fill[String](AtLeast.MaxChildrenCount + 1)(keyName).mkString(",")
+    an[CosterException] should be thrownBy compileWithCosting(env, s"""atLeast(2, Coll($pubKeysStrExceeding))""")
+    an[CosterException] should be thrownBy
+      compileWithCosting(env, s"""{ val arr = Coll($pubKeysStrExceeding); atLeast(2, arr) }""")
+
+    // max children should work fine
+    val pubKeysStrMax = Array.fill[String](AtLeast.MaxChildrenCount)(keyName).mkString(",")
+    compileWithCosting(env, s"""atLeast(2, Coll($pubKeysStrMax))""")
+    compileWithCosting(env, s"""{ val arr = Coll($pubKeysStrMax); atLeast(2, arr) }""")
+
+    // collection with unknown items should pass
+    compileWithCosting(env, s"""atLeast(2, getVar[Coll[SigmaProp]](1).get)""")
   }
 }

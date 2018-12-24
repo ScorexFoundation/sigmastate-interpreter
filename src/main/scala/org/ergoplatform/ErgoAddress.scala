@@ -6,9 +6,9 @@ import com.google.common.primitives.Ints
 import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
-import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, TaggedByteArray, Value}
+import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, Value, GetVarByteArray}
 import sigmastate._
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.utxo.{DeserializeContext, Slice}
 
 import scala.util.Try
@@ -108,7 +108,7 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
   //see ErgoLikeInterpreterSpecification."P2SH - 160 bits" test
   override val script: Value[SBoolean.type] = {
     val scriptId = 1: Byte
-    val hashEquals = EQ(Slice(CalcBlake2b256(TaggedByteArray(scriptId)), IntConstant(0), IntConstant(24)),
+    val hashEquals = EQ(Slice(CalcBlake2b256(GetVarByteArray(scriptId).get), IntConstant(0), IntConstant(24)),
       scriptHash)
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     AND(hashEquals, scriptIsCorrect)
@@ -127,7 +127,7 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
 object Pay2SHAddress {
 
   def apply(script: Value[SBoolean.type])(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = {
-    val sb = ValueSerializer.serialize(script)
+    val sb = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script)
     val sbh = ErgoAddressEncoder.hash192(sb)
     new Pay2SHAddress(sbh)
   }
@@ -154,7 +154,7 @@ class Pay2SAddress(override val script: Value[SBoolean.type],
 
 object Pay2SAddress {
   def apply(script: Value[SBoolean.type])(implicit encoder: ErgoAddressEncoder): Pay2SAddress = {
-    val sb = ValueSerializer.serialize(script)
+    val sb = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script)
     new Pay2SAddress(script, sb)
   }
 
@@ -197,7 +197,7 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
         case Pay2SHAddress.addressTypePrefix =>
           new Pay2SHAddress(bs)
         case Pay2SAddress.addressTypePrefix =>
-          new Pay2SAddress(ValueSerializer.deserialize(bs).asInstanceOf[Value[SBoolean.type]], bs)
+          new Pay2SAddress(ErgoTreeSerializer.DefaultSerializer.deserialize(bs).asInstanceOf[Value[SBoolean.type]], bs)
         case _ => throw new Exception("Unsupported address type: " + addressType)
       }
     }
@@ -206,6 +206,7 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
   def fromProposition(proposition: Value[SType]): Try[ErgoAddress] = Try {
     proposition match {
       case d @ ProveDlog(_) => P2PKAddress(d)
+      //TODO move this pattern to PredefScripts
       case a @ AND(ConcreteCollection(Vector(EQ(Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)), _), _), _)) =>
         Pay2SHAddress(a)
       case b: Value[SBoolean.type]@unchecked if b.tpe == SBoolean => Pay2SAddress(b)
@@ -215,6 +216,11 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
 }
 
 object ErgoAddressEncoder {
+
+  type NetworkPrefix = Byte
+  val MainnetNetworkPrefix: NetworkPrefix = 0.toByte
+  val TestnetNetworkPrefix: NetworkPrefix = 16.toByte
+
   def hash256(input: Array[Byte]): Digest32 = Blake2b256(input)
 
   def hash192(input: Array[Byte]): Array[Byte] = hash256(input).take(24)

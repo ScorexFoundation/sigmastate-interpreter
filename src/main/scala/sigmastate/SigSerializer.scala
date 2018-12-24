@@ -8,7 +8,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers
 import Helpers.xor
 import gf2t.GF2_192_Poly
-import sigmastate.basics.{ProveDiffieHellmanTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
 
 
 object SigSerializer {
@@ -93,7 +93,7 @@ object SigSerializer {
           val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + chalLen, pos + chalLen + order))
           UncheckedSchnorr(dl, None, challenge, SecondDLogProverMessage(z)) -> (chalLen + order)
 
-        case dh: ProveDiffieHellmanTuple =>
+        case dh: ProveDHTuple =>
           // Verifier Step 3: For every leaf node, read the response z provided in the proof.
           val z = BigIntegers.fromUnsignedByteArray(bytes.slice(pos + chalLen, pos + chalLen + order))
           UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z)) -> (chalLen + order)
