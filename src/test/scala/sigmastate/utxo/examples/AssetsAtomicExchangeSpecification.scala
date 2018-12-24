@@ -74,7 +74,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
           GE(SelectField(ValUse(3, STuple(SByteArray, SLong)), 2), LongConstant(60)),
           // right protection buyer
           EQ(ExtractScriptBytes(ValUse(2, SBox)), ValUse(1, SSigmaProp).propBytes),
-          GE(ExtractAmount(ValUse(2, SBox)), LongConstant(1))
+          EQ(ExtractRegisterAs(ValUse(2, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self))
         ).toSigmaProp
       ))
     ).asBoolValue
@@ -106,6 +106,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
           ValUse(1, SSigmaProp)),
         AND(
           GE(ExtractAmount(ValUse(2, SBox)), LongConstant(100)),
+          EQ(ExtractRegisterAs(ValUse(2, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self)),
           // right protection seller
           EQ(ExtractScriptBytes(ValUse(2, SBox)), ValUse(1, SSigmaProp).propBytes)
         ).toSigmaProp
