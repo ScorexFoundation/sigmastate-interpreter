@@ -243,7 +243,7 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("sigmaProp") {
-    spec("sigmaProp(HEIGHT > 1000)") shouldBe BoolToSigmaProp(GT(Height, LongConstant(1000)))
+    spec("sigmaProp(HEIGHT > 1000)") shouldBe BoolToSigmaProp(GT(Height, IntConstant(1000)))
   }
 
   property("ZKProof") {
