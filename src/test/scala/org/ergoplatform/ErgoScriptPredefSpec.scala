@@ -10,7 +10,9 @@ import sigmastate.utxo.ErgoLikeTestInterpreter
 import scala.util.Try
 
 class ErgoScriptPredefSpec extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR = new TestingIRContext {
+    override val okPrintEvaluatedEntries: Boolean = true
+  }
   val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
 
   property("tokenThreshold") {
@@ -45,26 +47,32 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
 
     // transaction with the only input with enough token should pass
-    check(IndexedSeq(ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map()))) shouldBe 'success
+    val inputs0 = IndexedSeq(
+      ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())
+    )
+    check(inputs0) shouldBe 'success
 
     // transaction with the only input with insufficient token should fail
-    check(IndexedSeq(ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount - 1)), Map()))) shouldBe 'failure
+    val inputs1 = IndexedSeq(
+      ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount - 1)), Map())
+    )
+    check(inputs1) shouldBe 'failure
 
     // transaction with multiple inputs with insufficient token should fail
-    val inputs = IndexedSeq(
+    val inputs2 = IndexedSeq(
       ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount - 2)), Map()),
       ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount)), Map()),
       ErgoBox(20, prop, 0, Seq((tokenId, 1), (wrongId2, tokenAmount)), Map())
     )
-    check(inputs) shouldBe 'failure
+    check(inputs2) shouldBe 'failure
 
     // transaction with multiple inputs with enough token should pass
-    val inputs2 = IndexedSeq(
+    val inputs3 = IndexedSeq(
       ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount)), Map()),
       ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount)), Map()),
       ErgoBox(20, prop, 0, Seq((tokenId, 1), (wrongId2, tokenAmount)), Map())
     )
-    check(inputs2) shouldBe 'success
+    check(inputs3) shouldBe 'success
 
   }
 
