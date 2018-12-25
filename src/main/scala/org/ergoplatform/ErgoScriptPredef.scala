@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ErgoTree, FuncValue, IntConstant, LongConstant, SValue, ValUse, Value}
+import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ErgoTree, FuncValue, IntConstant, LongConstant, ValUse, Value}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo.{ExtractRegisterAs, _}
@@ -43,10 +43,14 @@ object ErgoScriptPredef {
   /**
     * Return amount of token with id `tokenId` in the box
     */
-  def getTokenAmount(box: Value[SBox.type], tokenId: Array[Byte]) = {
+  def getTokenAmount(box: Value[SBox.type], tokenId: Array[Byte]): Fold[SLong.type, SLong.type] = {
     val tokens = getTokens(box)
     val tokenPair = ValUse(3, STuple(SByteArray, SLong))
-    val ourTokenAmount: SValue = If(EQ(SelectField(tokenPair, 1), tokenId), SelectField(tokenPair, 2).asLongValue, 0)
+    val ourTokenAmount: Value[SLong.type] = If(
+      EQ(SelectField(tokenPair, 1), tokenId),
+      SelectField(tokenPair, 2).asLongValue,
+      LongConstant(0)
+    )
     val mapper: Value[SFunc] = FuncValue(3, STuple(SByteArray, SLong), ourTokenAmount)
     Fold.sum[SLong.type](MapCollection(tokens, mapper))
   }
