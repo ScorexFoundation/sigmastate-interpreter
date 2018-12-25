@@ -48,6 +48,8 @@ trait Evaluation extends RuntimeCosting { IR =>
   import WECPoint._
   import Liftables._
 
+  val okPrintEvaluatedEntries: Boolean = false
+
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val ColM = ColMethods
@@ -155,8 +157,6 @@ trait Evaluation extends RuntimeCosting { IR =>
       case _ => s"$sym -> ${show(value)}"
     }
   }
-
-  val okPrintEvaluatedEntries: Boolean = false
 
   def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
     if (okPrintEvaluatedEntries)

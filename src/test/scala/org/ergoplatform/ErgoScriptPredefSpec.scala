@@ -26,7 +26,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val wrongId2: Digest32 = Blake2b256(wrongId)
     val tokenAmount: Int = 50
 
-    val prop = ErgoScriptPredef.tokenThreshold(tokenId, tokenAmount)
+    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount)
 
     def check(inputBoxes:IndexedSeq[ErgoBox]): Try[Unit] = Try {
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
