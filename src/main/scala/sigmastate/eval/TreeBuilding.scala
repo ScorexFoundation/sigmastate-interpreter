@@ -329,6 +329,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(Upcast(inputSym, toSym)) =>
         mkUpcast(recurse(inputSym).asNumValue, elemToSType(toSym).asNumType)
 
+      case Def(SimpleStruct(_, fields)) =>
+        val items = fields.map { case (n, v) => recurse(v) }
+        mkTuple(items)
+
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
     }

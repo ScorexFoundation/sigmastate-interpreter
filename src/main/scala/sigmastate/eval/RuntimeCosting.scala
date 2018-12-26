@@ -254,7 +254,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       val colC = f(RCCostedPrim(x, c, s))
       Pair(colC.costs, colC.valuesCost)
     }
-    def sliceSizes: Rep[Long => Col[Long]] = fun { x: Rep[Long] => f(RCCostedPrim(variable[A], 0, x)).sizes }
+    def sliceSizes: Rep[((A, Long)) => Col[Long]] = fun { in: Rep[(A, Long)] =>
+      val Pair(x, s) = in
+      f(RCCostedPrim(x, 0, s)).sizes
+    }
   }
 
   implicit def extendCostedFuncElem[E,A,B](e: Elem[CostedFunc[E,A,B]]): CostedFuncElem[E,A,B,_] = e.asInstanceOf[CostedFuncElem[E,A,B,_]]
@@ -285,7 +288,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     (calcF, costF, sizeF)
   }
 
-  def splitCostedColFunc[A,B](f: RCostedColFunc[A,B]): (Rep[A=>Col[B]], Rep[((A, (Int, Long))) => (Col[Int], Int)], Rep[Long => Col[Long]]) = {
+  def splitCostedColFunc[A,B](f: RCostedColFunc[A,B]): (Rep[A=>Col[B]], Rep[((A, (Int, Long))) => (Col[Int], Int)], Rep[((A, Long)) => Col[Long]]) = {
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceValues
     val costF = f.sliceCosts
@@ -1122,7 +1125,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           val value = xC.value
           val values: Rep[Col[Any]] = Apply(calcF, value, false)
           val costRes: Rep[(Col[Int], Int)] = Apply(costF, Pair(value, Pair(xC.cost, xC.dataSize)), false)
-          val sizes: Rep[Col[Long]]= Apply(sizeF, xC.dataSize, false)
+          val sizes: Rep[Col[Long]]= Apply(sizeF, Pair(value, xC.dataSize), false)
           RCCostedCol(values, costRes._1, sizes, costRes._2)
         }
         else {
