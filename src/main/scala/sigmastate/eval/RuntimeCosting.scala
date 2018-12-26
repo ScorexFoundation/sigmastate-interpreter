@@ -700,9 +700,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   /** For a given data type returns the corresponding specific descendant of CostedElem[T] */
   def elemToCostedElem[T](implicit e: Elem[T]): Elem[Costed[T]] = (e match {
-    case ce: BoxElem[_] => costedBoxElement
-    case _ =>
-      element[Costed[T]]
+    case e: AvlTreeElem[_] => costedAvlTreeElement
+    case e: BoxElem[_] => costedBoxElement
+    case oe: WOptionElem[a,_] => costedOptionElement(oe.eItem)
+    case ce: ColElem[a,_] => costedColElement(ce.eItem)
+    case fe: FuncElem[_, _] => costedFuncElement(UnitElement, fe.eDom, fe.eRange)
+    case pe: PairElem[_, _] => costedPairElement(pe.eFst, pe.eSnd)
+    case _ => costedElement(e)
   }).asInstanceOf[Elem[Costed[T]]]
 
   import Liftables._
