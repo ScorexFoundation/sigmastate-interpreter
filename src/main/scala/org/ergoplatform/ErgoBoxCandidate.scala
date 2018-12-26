@@ -19,7 +19,7 @@ import scala.runtime.ScalaRunTime
 
 class ErgoBoxCandidate(val value: Long,
                        val ergoTree: ErgoTree,
-                       val creationHeight: Long,
+                       val creationHeight: Int,
                        val additionalTokens: Seq[(TokenId, Long)] = Seq(),
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
@@ -77,7 +77,7 @@ object ErgoBoxCandidate {
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
       w.putBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(obj.ergoTree))
-      w.putULong(obj.creationHeight)
+      w.putUInt(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
         if (digestsInTx.isDefined) {
@@ -116,7 +116,7 @@ object ErgoBoxCandidate {
     def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: SigmaByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
       val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
-      val creationHeight = r.getULong()
+      val creationHeight = r.getUInt().toInt
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
         val tokenId = if (digestsInTx.isDefined) {

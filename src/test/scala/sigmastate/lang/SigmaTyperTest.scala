@@ -251,6 +251,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "{ (box: Box) => box.propositionBytes }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
     typecheck(env, "{ (box: Box) => box.bytes }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
     typecheck(env, "{ (box: Box) => box.id }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
+    typecheck(env, "{ (box: Box) => box.creationInfo }") shouldBe SFunc(IndexedSeq(SBox), STuple(SInt, SByteArray))
   }
 
   property("type parameters") {

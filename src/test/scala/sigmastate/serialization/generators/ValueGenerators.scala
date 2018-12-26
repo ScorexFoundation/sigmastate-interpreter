@@ -225,7 +225,7 @@ trait ValueGenerators extends TypeGenerators {
     tokens <- Gen.sequence(additionalTokensGen(tokensCount))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-    creationHeight <- Gen.choose(-1, Long.MaxValue)
+    creationHeight <- Gen.choose(-1, Int.MaxValue)
   } yield ergoplatform.ErgoBox(l, b, creationHeight, tokens.asScala, ar.asScala.toMap, tId.toArray.toModifierId, boxId)
 
   def ergoBoxCandidateGen(availableTokens: Seq[TokenId]): Gen[ErgoBoxCandidate] = for {

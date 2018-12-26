@@ -423,7 +423,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case CostedBoxM.creationInfo(boxC) =>
         val info = boxC.value.creationInfo
-        val l = RCCostedPrim(info._1, 0, 8L)
+        val l = RCCostedPrim(info._1, 0, 4L)
         val r = mkCostedCol(info._2, 34, boxC.cost)
         RCCostedPair(l, r)
 

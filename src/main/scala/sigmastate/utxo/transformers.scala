@@ -184,6 +184,10 @@ object ExtractRegisterAs {
     ExtractRegisterAs(input, registerId, SOption(tpe))
 }
 
+/**
+  * Tuple of height when block got included into the blockchain and transaction identifier with box index in the transaction outputs serialized to the byte array.
+  * @param input box
+  */
 case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] with NotReadyValue[STuple] {
   import ExtractCreationInfo._
   override def tpe: STuple = ResultType
@@ -191,7 +195,7 @@ case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] 
   override def opType = OpType
 }
 object ExtractCreationInfo {
-  val ResultType = STuple(SLong, SByteArray)
+  val ResultType = STuple(SInt, SByteArray)
   val OpType = SFunc(SBox, ResultType)
 }
 
