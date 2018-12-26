@@ -11,7 +11,7 @@ import scala.util.Try
 
 class ErgoScriptPredefSpec extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = true
+    override val okPrintEvaluatedEntries: Boolean = false
   }
   val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
 
@@ -50,7 +50,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val inputs0 = IndexedSeq(
       ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())
     )
-    check(inputs0) shouldBe 'success
+    check(inputs0).fold(t => throw t, x => true) shouldBe true
 
     // transaction with the only input with insufficient token should fail
     val inputs1 = IndexedSeq(

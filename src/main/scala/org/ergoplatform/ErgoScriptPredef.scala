@@ -47,16 +47,14 @@ object ErgoScriptPredef {
     val res = compileWithCosting(env,
       """{
        |  val sumValues = { (xs: Coll[Long]) => xs.fold(0L, { (acc: Long, amt: Long) => acc + amt }) }
-       |  val getTokens = { (box: Box) => box.R2[Coll[(Coll[Byte], Long)]].get }
        |
-       |  val getTokenAmount = { (in: (Box, Coll[Byte])) =>
-       |    val tokens = getTokens(in._1)
+       |  val tokenAmounts = INPUTS.map({ (box: Box) =>
+       |    val tokens = box.R2[Coll[(Coll[Byte], Long)]].get
        |    sumValues(tokens.map { (tokenPair: (Coll[Byte], Long)) =>
-       |      val ourTokenAmount = if (tokenPair._1 == in._2) tokenPair._2 else 0L
+       |      val ourTokenAmount = if (tokenPair._1 == tokenId) tokenPair._2 else 0L
        |      ourTokenAmount
        |    })
-       |  }
-       |  val tokenAmounts = INPUTS.map({ (box: Box) => getTokenAmount((box, tokenId)) })
+       |  })
        |  val total = sumValues(tokenAmounts)
        |  total >= thresholdAmount
        |}
