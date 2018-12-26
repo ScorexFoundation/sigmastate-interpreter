@@ -80,7 +80,7 @@ class CostingBox(val IR: Evaluation,
   override def creationInfo: (Int, Col[Byte]) = {
     import Types._
     this.R3[(Int, Col[Byte])].get.asInstanceOf[Any] match {
-      case ConstantNode(arr: Array[Any], STuple(IndexedSeq(SLong, SByteArray))) if arr.length == 2 =>
+      case ConstantNode(arr: Array[Any], STuple(IndexedSeq(SInt, SByteArray))) if arr.length == 2 =>
         (arr(0).asInstanceOf[Int], builder.Cols.fromArray(arr(1).asInstanceOf[Array[Byte]]))
       case v =>
         sys.error(s"Invalid value $v of creationInfo register R3")
