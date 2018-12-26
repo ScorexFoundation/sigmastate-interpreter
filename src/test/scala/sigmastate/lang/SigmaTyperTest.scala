@@ -2,16 +2,16 @@ package sigmastate.lang
 
 import org.ergoplatform.{Height, Inputs}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Select, Ident}
-import sigmastate.lang.exceptions.{NonApplicableMethod, TyperException, InvalidBinaryOperationParameters, MethodNotFound}
+import sigmastate.lang.Terms.{Ident, Select}
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, NonApplicableMethod, TyperException}
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utxo.{SizeOf, Append}
+import sigmastate.utxo.{Append, ExtractCreationInfo, SizeOf}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
@@ -251,6 +251,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "{ (box: Box) => box.propositionBytes }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
     typecheck(env, "{ (box: Box) => box.bytes }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
     typecheck(env, "{ (box: Box) => box.id }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
+    typecheck(env, "{ (box: Box) => box.creationInfo }") shouldBe
+      SFunc(IndexedSeq(SBox), ExtractCreationInfo.ResultType)
   }
 
   property("type parameters") {
