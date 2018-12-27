@@ -11,7 +11,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.{R3, RegisterId}
-import sigmastate.lang.exceptions.OptionUnwrapNone
+import sigmastate.lang.exceptions.{OptionUnwrapNone, InterpreterException}
 import special.sigma.InvalidType
 
 
@@ -201,12 +201,20 @@ object ExtractCreationInfo {
 
 trait Deserialize[V <: SType] extends NotReadyValue[V]
 
+/** Extracts context variable as Coll[Byte], deserializes it to script and then executes this script in the current context.
+  * The original `Coll[Byte]` of the script is available as `getVar[Coll[Byte]](id)`
+  * @param id identifier of the context variable
+  * @tparam T result type of the deserialized script.
+  * @throws InterpreterException if the actual script type doesn't conform to T
+  * @return result of the script execution in the current context
+  * @since 2.0
+  */
 case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[V] {
   override val opCode: OpCode = OpCodes.DeserializeContextCode
   override val opType = SFunc(Vector(SContext, SByte), tpe)
 }
 
-//todo: write test for this class
+//todo: make it method of SBox and write test for this class
 case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
   override val opCode: OpCode = OpCodes.DeserializeRegisterCode
   override val opType = SFunc(Vector(SBox, SByte, SOption(tpe)), tpe)
