@@ -50,7 +50,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val inputs0 = IndexedSeq(
       ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())
     )
-    check(inputs0).fold(t => throw t, x => true) shouldBe true
+    check(inputs0) shouldBe 'success
 
     // transaction with the only input with insufficient token should fail
     val inputs1 = IndexedSeq(

@@ -42,6 +42,10 @@ object ErgoScriptPredef {
     currentMinerScript
   }
 
+  /**
+    * Proposition of the box, that may be taken by a transaction,
+    * which inputs contains at least `thresholdAmount` of token with id `tokenId`.
+    */
   def tokenThresholdScript(tokenId: Array[Byte], thresholdAmount: Long)(implicit IR: IRContext): Value[SBoolean.type] = {
     val env = emptyEnv + ("tokenId" -> tokenId, "thresholdAmount" -> thresholdAmount)
     val res = compileWithCosting(env,
@@ -60,37 +64,6 @@ object ErgoScriptPredef {
        |}
       """.stripMargin )
     res.asBoolValue
-  }
-
-  /**
-    * Proposition of the box, that may be taken by such transaction,
-    * which inputs contains at least `tokenAmount` of token with id `tokenId`.
-    */
-  def tokenThreshold(tokenId: Array[Byte], tokenAmount: Long): Value[SBoolean.type] = {
-    val mapper: Value[SFunc] = FuncValue(Vector((1, SBox)), getTokenAmount(ValUse(1, SBox), tokenId))
-    GE(Fold.sum[SLong.type](MapCollection(Inputs, mapper)), tokenAmount)
-  }
-
-  /**
-    * Return amount of token with id `tokenId` in the box
-    */
-  def getTokenAmount(box: Value[SBox.type], tokenId: Array[Byte]): Fold[SLong.type, SLong.type] = {
-    val tokens = getTokens(box)
-    val tokenPair = ValUse(3, STuple(SByteArray, SLong))
-    val ourTokenAmount: Value[SLong.type] = If(
-      EQ(SelectField(tokenPair, 1), tokenId),
-      SelectField(tokenPair, 2).asLongValue,
-      LongConstant(0)
-    )
-    val mapper: Value[SFunc] = FuncValue(3, STuple(SByteArray, SLong), ourTokenAmount)
-    Fold.sum[SLong.type](MapCollection(tokens, mapper))
-  }
-
-  /**
-    * Return collection with all tokens of the box
-    */
-  def getTokens(box: Value[SBox.type]): Value[SCollection[STuple]] = {
-    ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType).get
   }
 
 }
