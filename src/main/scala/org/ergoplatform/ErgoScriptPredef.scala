@@ -12,7 +12,9 @@ import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utxo._
 
 object ErgoScriptPredef {
+
   import sigmastate.interpreter.Interpreter._
+
   val compiler = new SigmaCompiler(TransformingSigmaBuilder)
 
   def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
@@ -25,12 +27,12 @@ object ErgoScriptPredef {
     * Byte array value of the serialized reward output script proposition with pk being substituted
     * with given pk
     *
-    * @param delta - number of blocks miner should hold this box before spending it
+    * @param delta           - number of blocks miner should hold this box before spending it
     * @param minerPkBytesVal - byte array val for pk to substitute in the reward script
     */
   def expectedMinerOutScriptBytesVal(delta: Int, minerPkBytesVal: Value[SByteArray]): Value[SByteArray] = {
     val genericPk = ProveDlog(CryptoConstants.dlogGroup.generator)
-    val genericMinerProp = rewardOutputScriptWithPk(delta, genericPk)
+    val genericMinerProp = rewardOutputScript(delta, genericPk)
     val genericMinerPropBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(genericMinerProp)
     val expectedGenericMinerProp = AND(
       GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))),
@@ -47,7 +49,7 @@ object ErgoScriptPredef {
   /**
     * Required script of the box, that collects mining rewards
     */
-  def rewardOutputScript(delta: Int): ErgoTree = {
+  def rewardOutputScriptWithPlaceholder(delta: Int): ErgoTree = {
     import ErgoTree._
     val createdAtHeight = SelectField(ExtractCreationInfo(Self), 1).asLongValue
     val root = AND(
@@ -58,19 +60,19 @@ object ErgoScriptPredef {
   }
 
   /**
-    * TODO leave one of rewardOutputScript and rewardOutputScriptWithPk
+    * TODO leave one of rewardOutputScript and rewardOutputScriptWithSubsitution
     *
     * Required script of the box, that collects mining rewards
     */
-  def rewardOutputScriptWithPk(delta: Int, minerPk: ProveDlog): Value[SBoolean.type] = {
+  def rewardOutputScript(delta: Int, minerPk: ProveDlog): Value[SBoolean.type] = {
     AND(
-      GE(Height, Plus(SelectField(ExtractCreationInfo(Self), 1).asLongValue, LongConstant(delta))),
+      GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))),
       minerPk
     )
   }
 
   def rewardOutputScriptForCurrentMiner(delta: Int): Value[SByteArray] = {
-    val expectedBytes = rewardOutputScript(delta).bytes
+    val expectedBytes = rewardOutputScriptWithPlaceholder(delta).bytes
     val currentMinerScript = SubstConstants(
       ByteArrayConstant(expectedBytes),
       ConcreteCollection(IntConstant(0)),
@@ -129,7 +131,8 @@ object ErgoScriptPredef {
   /**
     * Creation height of a box
     */
-  def boxCreationHeight(box: Value[SBox.type]): Value[SInt.type] = SelectField(ExtractCreationInfo(box), 1).asIntValue
+  private def boxCreationHeight(box: Value[SBox.type]): Value[SInt.type] =
+    SelectField(ExtractCreationInfo(box), 1).asIntValue
 
   /**
     * Proposition of the box, that may be taken by a transaction,
@@ -139,19 +142,19 @@ object ErgoScriptPredef {
     val env = emptyEnv + ("tokenId" -> tokenId, "thresholdAmount" -> thresholdAmount)
     val res = compileWithCosting(env,
       """{
-       |  val sumValues = { (xs: Coll[Long]) => xs.fold(0L, { (acc: Long, amt: Long) => acc + amt }) }
-       |
-       |  val tokenAmounts = INPUTS.map({ (box: Box) =>
-       |    val tokens = box.R2[Coll[(Coll[Byte], Long)]].get
-       |    sumValues(tokens.map { (tokenPair: (Coll[Byte], Long)) =>
-       |      val ourTokenAmount = if (tokenPair._1 == tokenId) tokenPair._2 else 0L
-       |      ourTokenAmount
-       |    })
-       |  })
-       |  val total = sumValues(tokenAmounts)
-       |  total >= thresholdAmount
-       |}
-      """.stripMargin )
+        |  val sumValues = { (xs: Coll[Long]) => xs.fold(0L, { (acc: Long, amt: Long) => acc + amt }) }
+        |
+        |  val tokenAmounts = INPUTS.map({ (box: Box) =>
+        |    val tokens = box.R2[Coll[(Coll[Byte], Long)]].get
+        |    sumValues(tokens.map { (tokenPair: (Coll[Byte], Long)) =>
+        |      val ourTokenAmount = if (tokenPair._1 == tokenId) tokenPair._2 else 0L
+        |      ourTokenAmount
+        |    })
+        |  })
+        |  val total = sumValues(tokenAmounts)
+        |  total >= thresholdAmount
+        |}
+      """.stripMargin)
     res.asBoolValue
   }
 
