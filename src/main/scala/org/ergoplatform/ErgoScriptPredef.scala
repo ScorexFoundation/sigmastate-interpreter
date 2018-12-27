@@ -1,15 +1,24 @@
 package org.ergoplatform
 
-import sigmastate.Values.ErgoTree.ConstantSegregationHeader
-import sigmastate.interpreter.CryptoConstants
-import sigmastate.utxo.{ExtractCreationInfo, SelectField}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{LongConstant, Value, ByteArrayConstant, IntConstant, ErgoTree, ConcreteCollection}
-import sigmastate._
+import sigmastate.Values.{LongConstant, FuncValue, Value, ByteArrayConstant, IntConstant, ErgoTree, ValUse, ConcreteCollection}
 import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.eval.IRContext
+import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.utxo.{ExtractRegisterAs, _}
+import sigmastate.{SLong, _}
 
 object ErgoScriptPredef {
+  import sigmastate.interpreter.Interpreter._
+  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
+
+  def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+    val interProp = compiler.typecheck(env, code)
+    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
+    IR.buildTree(calcF)
+  }
 
   /**
     * Required script of the box, that collects mining rewards
@@ -33,5 +42,28 @@ object ErgoScriptPredef {
     currentMinerScript
   }
 
+  /**
+    * Proposition of the box, that may be taken by a transaction,
+    * which inputs contains at least `thresholdAmount` of token with id `tokenId`.
+    */
+  def tokenThresholdScript(tokenId: Array[Byte], thresholdAmount: Long)(implicit IR: IRContext): Value[SBoolean.type] = {
+    val env = emptyEnv + ("tokenId" -> tokenId, "thresholdAmount" -> thresholdAmount)
+    val res = compileWithCosting(env,
+      """{
+       |  val sumValues = { (xs: Coll[Long]) => xs.fold(0L, { (acc: Long, amt: Long) => acc + amt }) }
+       |
+       |  val tokenAmounts = INPUTS.map({ (box: Box) =>
+       |    val tokens = box.R2[Coll[(Coll[Byte], Long)]].get
+       |    sumValues(tokens.map { (tokenPair: (Coll[Byte], Long)) =>
+       |      val ourTokenAmount = if (tokenPair._1 == tokenId) tokenPair._2 else 0L
+       |      ourTokenAmount
+       |    })
+       |  })
+       |  val total = sumValues(tokenAmounts)
+       |  total >= thresholdAmount
+       |}
+      """.stripMargin )
+    res.asBoolValue
+  }
 
 }
