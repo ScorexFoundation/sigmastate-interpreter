@@ -1,9 +1,9 @@
 package sigmastate.lang
 
 import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{IntConstant, SValue, Value}
 import sigmastate._
-import sigmastate.lang.Terms.{Lambda, STypeParam}
+import sigmastate.lang.Terms._
 import sigmastate.lang.TransformingSigmaBuilder._
 
 object SigmaPredef {
@@ -18,7 +18,41 @@ object SigmaPredef {
     irBuilder: (SValue, Seq[SValue]) => SValue
   )
 
-  /** Type variable used in the signatures of global functions below.*/
+  class PredefinedFuncRegistry(builder: SigmaBuilder) {
+
+    import builder._
+
+    /** Type variable used in the signatures of global functions below. */
+    private val tK = STypeIdent("K")
+    private val tL = STypeIdent("L")
+    private val tR = STypeIdent("R")
+    private val tO = STypeIdent("O")
+
+    val funcs: Seq[PredefinedFunc] = Seq(
+
+      PredefinedFunc(
+        "allOf",
+        Lambda(IndexedSeq("conditions" -> SCollection(SBoolean)), SBoolean, None),
+        { (_, args) => mkAND(args.head.asCollection) }
+      ),
+
+      PredefinedFunc(
+        "outerJoin",
+        Lambda(
+          Seq(STypeParam(tK), STypeParam(tL), STypeParam(tR), STypeParam(tO)),
+          Vector(
+            "left" -> SCollection(STuple(tK, tL)),
+            "right" -> SCollection(STuple(tK, tR)),
+            "l" -> SFunc(IndexedSeq(tK, tL), tO),
+            "r" -> SFunc(IndexedSeq(tK, tR), tO),
+            "inner" -> SFunc(IndexedSeq(tK, tL, tR), tO),
+          ),
+          SCollection(STuple(tK, tO)), None),
+        { (_, args) => IntConstant(1) }
+      ),
+    )
+  }
+
   private val tT = STypeIdent("T")
 
   val predefinedEnv: Map[String, SValue] = Seq(
@@ -52,6 +86,7 @@ object SigmaPredef {
       Seq(STypeParam(tT)),
       Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
       SByteArray, None),
+    "xorOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
   ).toMap
 
   def PredefIdent(name: String): Value[SType] = {
@@ -88,4 +123,6 @@ object SigmaPredef {
   val PKSym = PredefIdent("PK")
 
   val DeserializeSym = PredefIdent("deserialize")
+
+  val XorOf = PredefIdent("xorOf")
 }

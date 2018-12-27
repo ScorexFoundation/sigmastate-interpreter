@@ -23,6 +23,10 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
   private val tT = STypeIdent("T") // to be used in typing rules
 
+  private val predefinedEnv: Map[String, SType] =
+    SigmaPredef.predefinedEnv.mapValues(_.tpe) ++
+      new PredefinedFuncRegistry(builder).funcs.map(f => f.name -> f.declaration.tpe).toMap
+
   /**
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
     * the env map to resolve bound variables and their types.
@@ -249,9 +253,6 @@ class SigmaTyper(val builder: SigmaBuilder) {
       }
 
     case app @ ApplyTypes(input, targs) =>
-      def update(input: SValue, newTpe: SType) = input match {
-        case Select(obj, n, _) => mkSelect(obj, n, Some(newTpe))
-      }
       val newInput = assignType(env, input)
       newInput.tpe match {
         case genFunTpe @ SFunc(_, _, tpeParams) =>
@@ -260,7 +261,10 @@ class SigmaTyper(val builder: SigmaBuilder) {
                   s"Note that partial application of type parameters is not supported.")
           val subst = tpeParams.map(_.ident).zip(targs).toMap
           val concrFunTpe = applySubst(genFunTpe, subst).asFunc
-          update(newInput, concrFunTpe.tRange)
+          newInput match {
+            case Select(obj, n, _) => mkSelect(obj, n, Some(concrFunTpe.tRange))
+            case Ident(name, _) => mkIdent(name, concrFunTpe)
+          }
         case _ =>
           error(s"Invalid application of type arguments $app: function $input doesn't have type parameters")
       }
@@ -434,7 +438,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
   }
 
   def typecheck(bound: SValue): SValue = {
-    val assigned = assignType(SigmaPredef.predefinedEnv.mapValues(_.tpe), bound)
+    val assigned = assignType(predefinedEnv, bound)
     if (assigned.tpe == NoType) error(s"No type can be assigned to expression $assigned")
 
     // traverse the tree bottom-up checking that all the nodes have a type

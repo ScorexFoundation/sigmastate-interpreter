@@ -488,4 +488,30 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     an[TyperException] should be thrownBy typecheck(env, "10.toBigInt.plusModQ(1)")
     an[TyperException] should be thrownBy typecheck(env, "10.toBigInt.minusModQ(1)")
   }
+
+  property("byteArrayToLong") {
+    typecheck(env, "byteArrayToLong(Coll[Byte](1.toByte))") shouldBe SLong
+    an[TyperException] should be thrownBy typecheck(env, "byteArrayToLong(Coll[Int](1))")
+  }
+
+  property("decodePoint") {
+    typecheck(env, "decodePoint(Coll[Byte](1.toByte))") shouldBe SGroupElement
+    an[TyperException] should be thrownBy typecheck(env, "decodePoint(Coll[Int](1))")
+  }
+
+  property("xorOf") {
+    typecheck(env, "xorOf(Coll[Boolean](true, false))") shouldBe SBoolean
+    an[TyperException] should be thrownBy typecheck(env, "xorOf(Coll[Int](1))")
+  }
+
+  property("outerJoin") {
+    typecheck(env,
+      """outerJoin[Byte, Short, Int, Long](
+        | Coll[(Byte, Short)]((1.toByte, 2.toShort)),
+        | Coll[(Byte, Int)]((1.toByte, 3.toInt)),
+        | { (b: Byte, s: Short) => (b + s).toLong },
+        | { (b: Byte, i: Int) => (b + i).toLong },
+        | { (b: Byte, s: Short, i: Int) => (b + s + i).toLong }
+        | )""".stripMargin) shouldBe SCollection(STuple(SByte, SLong))
+  }
 }
