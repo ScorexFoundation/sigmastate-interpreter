@@ -712,4 +712,49 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       Apply(Select(Apply(Ident("Coll"), Vector(TrueLeaf, FalseLeaf)), "rotateRight", None), Vector(IntConstant(2)))
   }
 
+  property("outerJoin") {
+    parse("""outerJoin[Byte, Short, Int, Long](
+        | Coll[(Byte, Short)]((1.toByte, 2.toShort)),
+        | Coll[(Byte, Int)]((1.toByte, 3.toInt)),
+        | { (b, s) => (b + s).toLong },
+        | { (b, i) => (b + i).toLong },
+        | { (b, s, i) => (b + s + i).toLong }
+        | )""".stripMargin) shouldBe Apply(
+      ApplyTypes(Ident("outerJoin", NoType), Vector(SByte, SShort, SInt, SLong)),
+      Vector(
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(STuple(SByte, SShort))),
+          Vector(Tuple(Vector(Select(IntConstant(1), "toByte", None), Select(IntConstant(2), "toShort", None))))
+        ),
+        Apply(
+          ApplyTypes(Ident("Coll", NoType), Vector(STuple(SByte, SInt))),
+          Vector(Tuple(Vector(Select(IntConstant(1), "toByte", None), Select(IntConstant(3), "toInt", None))))
+        ),
+        Lambda(List(),
+          Vector(("b", NoType), ("s", NoType)),
+          NoType,
+          Some(Select(MethodCallLike(Ident("b", NoType), "+", Vector(Ident("s", NoType)), NoType), "toLong", None))
+        ),
+        Lambda(List(),
+          Vector(("b", NoType), ("i", NoType)),
+          NoType,
+          Some(Select(MethodCallLike(Ident("b", NoType), "+", Vector(Ident("i", NoType)), NoType), "toLong", None))
+        ),
+        Lambda(List(),
+          Vector(("b", NoType), ("s", NoType), ("i", NoType)),
+          NoType,
+          Some(
+            Select(
+              MethodCallLike(
+                MethodCallLike(Ident("b", NoType), "+", Vector(Ident("s", NoType)), NoType),
+                "+",
+                Vector(Ident("i", NoType)), NoType),
+              "toLong",
+              None)
+          )
+        )
+      )
+    )
+  }
+
 }
