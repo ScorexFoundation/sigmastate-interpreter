@@ -28,7 +28,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     val prop = ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount)
 
-    def check(inputBoxes:IndexedSeq[ErgoBox]): Try[Unit] = Try {
+    def check(inputBoxes: IndexedSeq[ErgoBox]): Try[Unit] = Try {
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
       val amount = inputBoxes.map(_.value).sum
       val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(ErgoBox(amount, pubkey, 0)))
@@ -68,9 +68,9 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     // transaction with multiple inputs with enough token should pass
     val inputs3 = IndexedSeq(
-      ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount)), Map()),
-      ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount)), Map()),
-      ErgoBox(20, prop, 0, Seq((tokenId, 1), (wrongId2, tokenAmount)), Map())
+      ErgoBox(20, prop, 0, Seq((wrongId, 1), (tokenId, tokenAmount / 2)), Map()),
+      ErgoBox(20, prop, 0, Seq((wrongId, 1)), Map()),
+      ErgoBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
     )
     check(inputs3) shouldBe 'success
 

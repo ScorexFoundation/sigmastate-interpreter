@@ -246,10 +246,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       f(arg).dataSize
     }
 
-//    def sliceSize: Rep[((A, Long)) => Long] = fun { in: Rep[(A,Long)] =>
-//      val Pair(x, s) = in
-//      f(RCCostedPrim(x, 0, s)).dataSize
-//    }
   }
 
   type CostedColFunc[A,B] = Costed[A] => CostedCol[B]
