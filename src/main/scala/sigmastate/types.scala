@@ -811,7 +811,7 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
     SMethod(this, Bytes, SCollectionType(SByte), 3), // see ExtractBytes
     SMethod(this, BytesWithNoRef, SCollectionType(SByte), 4), // see ExtractBytesWithNoRef
     SMethod(this, Id, SCollectionType(SByte), 5), // see ExtractId
-    SMethod(this, CreationInfo, STuple(SLong, SCollectionType(SByte)), 6) // see ExtractCreationInfo
+    SMethod(this, CreationInfo, STuple(SInt, SCollectionType(SByte)), 6) // see ExtractCreationInfo
   ) ++ registers(6)
 }
 

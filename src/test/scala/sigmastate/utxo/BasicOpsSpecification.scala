@@ -64,7 +64,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(
       reg1 -> SigmaPropConstant(p3),
       reg2 -> IntConstant(1)),
-      creationHeight = 5L)
+      creationHeight = 5)
 
     val ctx = ErgoLikeContext.dummy(outputToSpend)
 
@@ -446,8 +446,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("ExtractCreationInfo") {
     test("Info1", env, ext,
-      "SELF.creationInfo._1 == 5L",
-      EQ(SelectField(ExtractCreationInfo(Self),1),LongConstant(5)),
+      "SELF.creationInfo._1 == 5",
+      EQ(SelectField(ExtractCreationInfo(Self),1),IntConstant(5)),
       true
     )
     // suppose to be tx.id + box index

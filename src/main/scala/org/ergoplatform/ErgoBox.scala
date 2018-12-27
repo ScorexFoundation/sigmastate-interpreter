@@ -4,15 +4,16 @@ import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate._
 import sigmastate.serialization.Serializer
 import sigmastate.SCollection.SByteArray
-import sigmastate.utils.{SigmaByteWriter, SigmaByteReader, Helpers}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.ExtractCreationInfo
 
 import scala.runtime.ScalaRunTime
 
@@ -49,7 +50,7 @@ class ErgoBox private(
                        override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
                        val transactionId: ModifierId,
                        val index: Short,
-                       override val creationHeight: Long
+                       override val creationHeight: Int
 ) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
 
   import ErgoBox._
@@ -99,7 +100,7 @@ object ErgoBox {
 
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
-  val SReferenceRegType = STuple(SLong, SCollection.SByteArray)
+  val SReferenceRegType = ExtractCreationInfo.ResultType
 
   type Amount = Long
 
@@ -145,7 +146,7 @@ object ErgoBox {
 
   def apply(value: Long,
             ergoTree: ErgoTree,
-            creationHeight: Long,
+            creationHeight: Int,
             additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId,

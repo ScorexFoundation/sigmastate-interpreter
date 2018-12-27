@@ -27,7 +27,7 @@ object ErgoScriptPredef {
     import ErgoTree._
     val createdAtHeight = SelectField(ExtractCreationInfo(Self), 1).asLongValue
     val root = AND(
-      GE(Height, Plus(createdAtHeight, LongConstant(delta))),
+      GE(Height, Plus(createdAtHeight, IntConstant(delta))),
       ProveDlog(DecodePoint(Values.ConstantPlaceholder(0, SByteArray)))
     )
     ErgoTree(ConstantSegregationHeader, Vector(ByteArrayConstant(Array.emptyByteArray)), root)
