@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.AvlTreeData
+import sigmastate.{AND, AvlTreeData}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
@@ -14,6 +14,29 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     override val okPrintEvaluatedEntries: Boolean = false
   }
   val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
+
+  ignore("feeProposition") {
+    // TODO
+  }
+
+  property("emission specification") {
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
+    val genesisHeight = 1
+    val fixedRatePeriod = 525600
+    val epochLength = 64800
+    val fixedRate = 7500000000L
+    val oneEpochReduction = 300000000
+    val minerRewardDelay = 720
+
+    val prop = ErgoScriptPredef.emissionBoxProp(fixedRatePeriod, epochLength, oneEpochReduction, fixedRate, minerRewardDelay)
+    val minerImage = prover.dlogSecrets.head.publicImage
+    val minerPubkey = minerImage.pkBytes
+
+    // collect enough coins at fixed rate period
+
+
+  }
 
   property("tokenThreshold") {
     val prover = new ErgoLikeTestProvingInterpreter
