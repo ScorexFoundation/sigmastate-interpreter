@@ -60,7 +60,8 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger)
   override def bytes: Array[PropositionCode] = ???
 }
 
-// Common input: (g,h,u,v)
+/** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.
+  * Common input: (g,h,u,v)*/
 case class ProveDHTuple(gv: Value[SGroupElement.type],
                                    hv: Value[SGroupElement.type],
                                    uv: Value[SGroupElement.type],

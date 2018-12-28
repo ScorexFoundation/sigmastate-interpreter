@@ -79,6 +79,18 @@ Every box has the following properties:
 - `propositionBytes: ByteArray` - guarding script, which should be evaluated to true in order to open this box 
 - `creationInfo: (Long, ByteArray)` - height when block got included into the blockchain and also transaction identifier and box index in the transaction outputs
 
+```scala
+/** Extracts register as Coll[Byte], deserializes it to script and then executes this script in the current context. 
+  * The original Coll[Byte] of the script is available as getReg[Coll[Byte]](id)
+  * @param id identifier of the register 
+  * @tparam T result type of the deserialized script. 
+  * @throws InterpreterException if the actual script type doesn't conform to T
+  * @return result of the script execution in the current context
+  * @since 2.0
+  */
+def deserializeFromRegister[T](id: Byte): T
+```
+
 Besides properties, every box can have up to 10 numbered registers.
 The following syntax is supported to access registers on box objects:
 ```
@@ -138,37 +150,167 @@ without prior declaration.
 
 The following function declarations are automatically imported into any script:
 
-```
-/** Returns true if all the conditions are true */
+```scala 
+/** Returns true if all the elements in collection are true. */
 def allOf(conditions: Coll[Boolean]): Boolean
 
-/** Returns true if any of the conditions is true */
+/** Returns true if at least on element of the conditions is true */
 def anyOf(conditions: Coll[Boolean]): Boolean
 
-/** Cryptographic hash function Blake2b */
+/** Similar to allOf, but performing logical XOR operation instead of `||` 
+  * @since 2.0
+  */
+def xorOf(conditions: Coll[Boolean]): Boolean 
+
+/** Returns SigmaProp value which can be ZK proven to be true 
+ * if at least k properties can be proven to be true. 
+ */
+def atLeast(k: Int, properties: Coll[SigmaProp]): SigmaProp
+    
+/** Special function to represent explicit Zero Knowledge Scope in ErgoScript code.
+ * Compiler checks Zero Knowledge properties and issue error message is case of violations.
+ * ZK-scoping is optional, it can be used when the user want to ensure Zero Knowledge of
+ * specific set of operations.
+ * Usually it will require simple restructuring of the code to make the scope body explicit.
+ * Invariants checked by the compiler:
+ *  - single ZKProof in ErgoTree in a root position
+ *  - no boolean operations in the body, because otherwise the result may be disclosed
+ *  - all the operations are over SigmaProp values
+ *
+ * For motivation and details see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
+ * @since 1.9 
+ */
+def ZKProof(block: SSigmaProp): Boolean
+
+/** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions 
+ * to be used as arguments of `atLeast(..., sigmaProp(myCondition), ...)` operation.
+ */
+def sigmaProp(condition: Boolean): SigmaProp
+        
+/** Cryptographic hash function Blake2b256 (See scorex.crypto.hash.Blake2b256) */
 def blake2b256(input: Coll[Byte]): Coll[Byte]
 
-/** Cryptographic hash function Sha256 */
+/** Cryptographic hash function Sha256 (See scorex.crypto.hash.Sha256) */
 def sha256(input: Coll[Byte]): Coll[Byte]
 
-/** Create BigInt from a collection of bytes representation. */
+/** Create BigInt from a collection of bytes. */
 def byteArrayToBigInt(input: Coll[Byte]): BigInt
 
-/** Returns bytes representation of integer value. */
-def intToByteArray(input: Int): Coll[Byte]
+/** Create Long from a collection of bytes. */
+def byteArrayToLong(input: Coll[Byte]): Long  
 
-/** Returns value of the given type from the environment by its tag.*/
+/** Returns bytes representation of Long value. 
+  * @since 2.0
+  */
+def longToByteArray(input: Long): Coll[Byte]
+
+/**
+  * Convert bytes representation of group element (ECPoint) 
+  * to a new value of GroupElement (using org.bouncycastle.math.ec.ECCurve.decodePoint())
+  * @since 1.9 
+  */
+def decodePoint(bytes: Coll[Byte]): GroupElement 
+
+
+/** Returns value of the given type from the context by its tag.*/
 def getVar[T](tag: Int): Option[T]
 
+/** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol. 
+  * When executed as part of Sigma protocol allow to provide for a verifier a zero-knowledge proof 
+  * of secret knowledge.
+  */
 def proveDHTuple(g: GroupElement, h: GroupElement, 
                  u: GroupElement, v: GroupElement): SigmaProp
+                 
+/** Construct a new SigmaProp value representing public key of discrete logarithm signature protocol. 
+  * When executed as part of Sigma protocol allow to provide for a verifier a zero-knowledge proof 
+  * of secret knowledge.
+  */
 def proveDlog(value: GroupElement): SigmaProp
 
-/** Predicate which checks whether a key is in a tree, by using a membership proof. */
+/** Predicate function which checks whether a key is in a tree, by using a membership proof. */
 def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
 
+/**
+  * Perform a lookup of key `key` in a tree with root `tree` using proof `proof`.
+  * Throws exception if proof is incorrect
+  * Return Some(bytes) of leaf with key `key` if it exists
+  * Return None if leaf with provided key does not exist.
+  */
+def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
+
+/** Perform modification of in the tree with root `tree` using proof `proof`.
+  * Return Some(newTree) if successfull
+  * Return None if the proof was not correct 
+  * @since 2.0
+  */
+def treeModifications(tree: AvlTree, ops: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
+
+/**
+  * Transforms Base58 encoded string litereal into constant of type Coll[Byte].
+  * It is a compile-time operation and only string literal (constant) can be its argument.
+  */
+def fromBase58(input: String): Coll[Byte]
+
+/**
+  * Transforms Base64 encoded string litereal into constant of type Coll[Byte].
+  * It is a compile-time operation and only string literal (constant) can be its argument.
+  */
+def fromBase64(input: String): Coll[Byte]
+
+/**
+  * It is executed in compile time.
+  * The compiler takes Base64 encoding of public key as String literal and create GroupElement constant. 
+  * Then the compiler used this constant to construct proveDlog public key out of it.
+  * @since 1.9
+  */
+def PK(input: String): SigmaProp
+    
 /** Deserializes values from Base58 encoded binary data at compile time */
 def deserialize[T](string: String): T
+
+/** Extracts context variable as Coll[Byte], deserializes it to script and then executes this script in the current context. 
+  * The original `Coll[Byte]` of the script is available as `getVar[Coll[Byte]](id)`
+  * @param id identifier of the context variable
+  * @tparam T result type of the deserialized script. 
+  * @throws InterpreterException if the actual script type doesn't conform to T
+  * @return result of the script execution in the current context
+  * @since 2.0
+  */
+def executeFromVar[T](id: Byte): T
+
+/**
+  * Transforms serialized bytes of ErgoTree with segregated constants by replacing constants
+  * at given positions with new values. This operation allow to use serialized scripts as
+  * pre-defined templates.
+  * The typical usage is "check that output box have proposition equal to given script bytes,
+  * where minerPk (constants(0)) is replaced with currentMinerPk".
+  * Each constant in original scriptBytes have SType serialized before actual data (see ConstantSerializer).
+  * During substitution each value from newValues is checked to be an instance of the corresponding type.
+  * This means, the constants during substitution cannot change their types.
+  *
+  * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
+  * @param positions zero based indexes in ErgoTree.constants array which should be replaced with new values
+  * @param newValues new values to be injected into the corresponding positions in ErgoTree.constants array
+  * @return original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same
+  * @since 1.9
+  */
+def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
+      
+/** Performs outer join operation between left and right collections.
+  * This is a restricted version of relational join operation. 
+  * It expects `left` and `right` collections have distinct K values in pairs (otherwise exception is thrown). 
+  * Under this condition resulting collection has size <= left.size + right.size. 
+  * @param l projection function executed for each element of `left`
+  * @param r projection function executed for each element of `right`
+  * @param inner projection function which is executed for matching items (K, L) and (K, R) with the same K 
+  * @return collection of (K, O) pairs, where each key comes form either left or right collection and values are produced by projections
+  * @since 2.0
+  */
+def outerJoin[K, L, R, O]
+    (left: Coll[(K, L)], right: Coll[(K, R)])
+    (l: (K,L) => O, r: (K,R) => O, inner: (K,L,R) => O): Coll[(K,O)]  // Mainnet
+    
 ```
 
 ## Examples

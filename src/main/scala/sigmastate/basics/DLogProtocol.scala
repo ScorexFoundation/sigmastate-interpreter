@@ -21,6 +21,7 @@ object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
+  /** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
   case class ProveDlog(value: Value[SGroupElement.type])
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
