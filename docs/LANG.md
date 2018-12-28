@@ -10,13 +10,13 @@ Here:
 - ErgoTree is an intermediate representation which can be processed by Sigma [Interpreter](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/src/main/scala/sigmastate/interpreter/Interpreter.scala)
  
 ## Parser
-`SigmaParser` takes a string and produces abstract syntax tree, AST, of a Sigma expression represent by `Value` type in Scala.
+`SigmaParser` takes a string and produces abstract syntax tree, AST, of a Sigma expression represented by `Value` type in Scala.
 
 In case of any errors it throws `ParserException`
 
 ## Binder
 `SigmaBinder` takes an AST of successfully parsed Sigma expression and resolves 
-global variables and predefined functions be looking up in the provided environment.
+global variables and predefined functions that are looked up in the provided environment..
 Binder transforms environment values of predefined Scala types (such as Int, Boolean, Box, etc.)
 into constant nodes (IntConstant, BoxConstant, etc) of the corresponding type. (See also `Constant` class)
 
