@@ -4,14 +4,14 @@
 
 #### ErgoScript language features
 
-- syntax borrowed from Scala and TypeScript
-- standard semantics for well known constructs
-- high-order with first-class lambdas
+- syntax borrowed from Scala and Kotlin
+- standard syntax and semantics for well known constructs (operations, code blocks, if branches etc.)
+- high-order with first-class lambdas that are used in collection operations
 - call-by-value (eager evaluation)
 - statically typed with local type inference
 - blocks are expressions 
 - semicolon inference in blocks
-- type constructors: Tuple, Col, Option
+- type constructors: Tuple, Coll, Option
 
 #### Operations and constructs
 
@@ -23,25 +23,34 @@
 - generic high-order collection operations: `map`, `fold`, `exists`, `forall`, etc.
 - accessing fields of any predefined structured objects: `box.value`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
-- user defined functions: `def isValid(pk: GroupElement) = proveDlog(pk)`
+- user defined functions: `def isProven(pk: GroupElement) = proveDlog(pk).isProven`
 - lambdas and high-order methods: `OUTPUTS.exists { (out: Box) => out.value >= minToRaise }`
 
 #### Data types 
 
-- `Any` - a supertype of any other type
-- `Unit` - a type with a single value `()`
-- `Int` - 64 bit signed integer
-- `Boolean` - a type with two logical values `true` and `false`
-- `SigmaProp`  - a type which represent a logical value which can be be obtained by 
-             executing a Sigma protocol with zero-knowledge proof of knowledge
-- `BigInt`  - immutable arbitrary-precision integers
-- `ByteArray` - arbitrary sequence of bytes
-- `AvlTree`
-- `GroupElement` - elliptic curve points
-- `Box` - a box containing a value with guarding proposition
-- `Option[T]` - a container which either have some value of type `T` or none.
-- `Col[T]` - a collection of arbitrary length with all values of type `T` 
-- `(T1, ..., Tn)` - tuples
+In ErgoScript, everything is an object in the sense that we can call member functions and properties on any variable.
+Some of the types can have a special internal representation - for example, numbers and booleans can be
+represented as primitive values at runtime - but to the user they look like ordinary classes.
+NOTE: in ErgoScript we use *type* and *class* as synonyms, we prefer *type* when talking about primitive values and
+*class* when talking about methods.
+
+Type Name        |   Description
+-----------------|------------------------------
+`Any`            | a supertype of any other type
+`Unit`           | a type with a single value `()`
+`Boolean`        | a type with two logical values `true` and `false`
+`Byte`           | 8 bit signed integer
+`Short`          | 16 bit signed integer
+`Int`            | 32 bit signed integer
+`Long`           | 64 bit signed integer
+`BigInt`         | immutable 256 bit integers
+`SigmaProp`      | a type which represent a logical value which can be be obtained by executing a Sigma protocol with zero-knowledge proof of knowledge
+`AvlTree`        | authenticated dynamic dictionary
+`GroupElement`   | elliptic curve points
+`Box`            | a box containing a value, tokens and registers along with a guarding proposition
+`Option[T]`      | a container which either have some value of type `T` or none.
+`Col[T]`         | a collection of arbitrary length with all values of type `T` 
+`(T1, ..., Tn)`  | tuples
 
 #### Literal syntax and Constants
 
@@ -51,26 +60,138 @@ of some types directly in program text like the following examples:
  val unit: Unit = ()       // unit constant
  val long: Int = 10        // interger value literal
  val bool: Boolean = true  // logical literal
- val arr = Coll(1, 2, 3)    // constructs a collection with given items
+ val arr = Coll(1, 2, 3)   // constructs a collection with given items
+ val str = "abc"           // string of characters 
 ```
 Note that many types don't have literal syntax and their values are introduced 
-by applying operations.
-
-#### Context Data 
-
-The following data objects available in every script using predefined variables 
-
-- `HEIGHT: Int` - height (block number) of the current block
-- `SELF: Box` - block to be opened when currently executing script evaluates to `true`
-- `INPUTS: Col[Box]` - a collection of inputs of the current spending transaction
-- `OUTPUTS: Col[Box]` - a collection of outputs of current spending transaction
-- `LastBlockUtxoRootHash: AvlTree` - last block UTXO root 
+by applying operations, for example `deserialize` function can be used to introduce
+a constant of any type by using Base64 encoded string (See [predefined function](#PredefinedFunctions)).
 
 ## Data Types
+<a name="DataTypes"></a>
 
 ### Predefined data structures
 
+#### Primitive Types
+
+```scala
+class Boolean {
+  /** Convert true to 1 and false to 0
+   * @since 2.0
+   */
+  def toByte: Byte
+}
+
+class Numeric {
+  def toBytes: Coll[Byte]  // Testnet2
+  def toBits: Coll[Boolean] // Testnet2
+  def abs: SNumeric // Testnet2
+  def compare(y: SNumeric): Int // Testnet2
+}
+```
+
+#### Context Data 
+
+Every script is executed in a context, which is a collection of data available for operations in the script.
+The context data is available using variable `CONTEXT` which is of class `Context` defined below.
+
+```scala
+/**
+  * Represents data available in ErgoScript using `CONTEXT` global variable
+  * @since 2.0
+  */
+class Context {
+  /** Height (block number) of the block which is currently being validated. */
+  def height: Int
+  
+  /** Box whose proposition is being currently executing */
+  def selfBox: Int
+  
+  /** Zero based index in `inputs` of `selfBox`. */
+  def selfBoxIndex: Int
+  
+  /** A collection of inputs of the current transaction, the transaction where selfBox is one of the inputs. */
+  def inputs: Coll[Box]
+  
+  /** A collection of data inputs of the current transaction. Data inputs are not going to be spent and thus don't
+   * participate in transaction validation as `inputs`, but data boxes are available in guarding propositions of 
+   * `inputs` and thus can be used in spending logic. 
+   * @since 2.0
+   */
+  def dataInputs: Coll[Box]
+  
+  /** A collection of outputs of the current transaction. */
+  def outputs: Coll[Box]
+  
+  /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
+  def lastBlockUtxoRoot: AvlTree
+  
+  /**
+    * @since 2.0
+    */
+  def headers: Coll[SHeader] 
+  /**
+    * @since 2.0
+    */
+  def preheader: SPreheader  
+}
+
+/**
+ * @since 2.0
+ */
+class Header {  
+  def version: Byte
+  def parentId: Coll[Byte] // bytes representation of ModifierId
+  def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it? 
+  def stateRoot: Coll[Byte]  // ADDigest  //33 bytes! extra byte with tree height here!
+  def transactionsRoot: Coll[Byte]  // Digest32
+  def timestamp: Long
+  def nBits: Long  // actually it is unsigned Int 
+  def height: Int
+  def extensionRoot: Coll[Byte] // Digest32
+  def minerPk: GroupElement    // pk
+  def powOnetimePk: GroupElement  // w
+  def powNonce: Coll[Byte]        // n
+  def powDistance: SBigInt        // d
+}
+
+/**
+ * @since 2.0
+ */
+class PreHeader { // Testnet2
+  def version: Byte
+  def parentId: Coll[Byte] // ModifierId
+  def timestamp: Long
+  def nBits: Long  // actually it is unsigned Int 
+  def height: Int
+  def minerPk: GroupElement
+}
+
+SAvlTree {
+  def digest: Coll[Byte]
+}
+```
+
+The following shortcut variables are available in every script to simplify access to context data. 
+
+Variable          |  Type        | Shortcut for ...
+------------------|--------------|----------------------
+`HEIGHT`          | `Int`        | `CONTEXT.height`
+`SELF`            | `Box`        | `CONTEXT.selfBox` 
+`INPUTS`          | `Col[Box]`   | `CONTEXT.inputs`  
+`OUTPUTS`         | `Col[Box]`   | `CONTEXT.outputs` 
+
 #### Box
+
+```scala
+class Box {
+  def id: Coll[Byte] // Blake2b256 hash of this box's content 
+  def value: Long // boxed value
+  def propositionBytes: Coll[Byte] // guarding script, which should be evaluated to true in order to open this box 
+  def creationInfo: (Long, Coll[Byte]) // height when block got included into the blockchain and also transaction identifier and box index in the transaction outputs
+  def tokens: Coll[(Coll[Byte], Long)] // Mainnet // implement as ErgoScript syntactic sugar over R2
+}
+```
 
 Every box has the following properties: 
 
@@ -104,9 +225,192 @@ Note, that Option[T] is introduced at frontend to represent the type of register
 SELF.R3: Option[Any]   // where Any is the supertype of all types
 SELF.R3[Int]: Option[Int]   
 ```
-However, Option is not supported by `Interpreter`, so all `Option` operations are eliminated during compilation.
+#### Option[T]
+
+```scala
+/** Represents optional values. Instances of `Option`
+ *  are either an instance of `Some(x)` or the value `None`.
+ */
+class Option[A] {
+  def fold[B](ifEmpty: =>B, f: A => B): B
+  def isEmpty: Boolean;
+  def isDefined: Boolean;
+  def filter(p: A => Boolean): Option[A]
+  def flatMap[B](f: A => Option[B]): Option[B]
+  /**
+   * @since  2.0
+   */
+  def map[B](f: A => B): Option[B]
+  def getOrElse[B](default: =>B): B
+  def get: A
+}
+```
 
 #### Col[T]
+
+```scala
+/** Indexed (zero-based) collection of elements of type `A` 
+  * @define Coll `Col`
+  * @define coll collection
+  * @tparam A the collection element type
+  */
+class Coll[A] {
+  /** The length of the collection */
+  def length: Int
+  
+  /** The element at given index.
+   *  Indices start at `0`; `xs.apply(0)` is the first element of collection `xs`.
+   *  Note the indexing syntax `xs(i)` is a shorthand for `xs.apply(i)`.
+   *
+   *  @param    i   the index
+   *  @return       the element at the given index
+   *  @throws       ArrayIndexOutOfBoundsException if `i < 0` or `length <= i`
+   */
+  def apply(i: Int): A
+  
+  def getOrElse(i: Int, default: A): A
+  def map[B: ClassTag](f: A => B): Col[B]
+
+  /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
+    * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
+  def zip[B](ys: Col[B]): PairCol[A, B]
+
+  def foreach(f: A => Unit): Unit
+  def exists(p: A => Boolean): Boolean
+  def forall(p: A => Boolean): Boolean
+  def filter(p: A => Boolean): Col[A]
+  def where(p: A => Boolean): Col[A] = this.filter(p)
+  def fold[B](zero: B, op: ((B, A)) => B): B
+
+  /** Produces the range of all indices of this collection [0 .. size-1] */
+  def indices: Col[Int]
+
+  /**
+    * Builds a new collection by applying a function to all elements of this $coll
+    * and using the elements of the resulting collections.
+    *
+    * @param f the function to apply to each element.
+    * @tparam B the element type of the returned collection.
+    * @return a new collection of type `Col[B]` resulting from applying the given collection-valued function
+    *         `f` to each element of this $coll and concatenating the results.
+    */
+  def flatMap[B: ClassTag](f: A => Col[B]): Col[B]
+
+  /** Computes length of longest segment whose elements all satisfy some predicate.
+    *
+    *  $mayNotTerminateInf
+    *
+    *  @param   p     the predicate used to test elements.
+    *  @param   from  the index where the search starts.
+    *  @return  the length of the longest segment of this $coll starting from index `from`
+    *           such that every element of the segment satisfies the predicate `p`.
+    */
+  def segmentLength(p: A => Boolean, from: Int): Int
+
+  /** Finds index of the first element satisfying some predicate after or at some start index.
+    *
+    *  $mayNotTerminateInf
+    *
+    *  @param   p     the predicate used to test elements.
+    *  @param   from   the start index
+    *  @return  the index `>= from` of the first element of this $coll that satisfies the predicate `p`,
+    *           or `-1`, if none exists.
+    */
+  def indexWhere(p: A => Boolean, from: Int): Int
+
+  /** Finds index of last element satisfying some predicate before or at given end index.
+    *
+    *  @param   p     the predicate used to test elements.
+    *  @return  the index `<= end` of the last element of this $coll that satisfies the predicate `p`,
+    *           or `-1`, if none exists.
+    */
+  def lastIndexWhere(p: A => Boolean, end: Int): Int
+
+
+  /** Partitions this $coll in two ${coll}s according to a predicate.
+    *
+    *  @param pred the predicate on which to partition.
+    *  @return     a pair of ${coll}s: the first $coll consists of all elements that
+    *              satisfy the predicate `p` and the second $coll consists of all elements
+    *              that don't. The relative order of the elements in the resulting ${coll}s
+    *              will BE preserved (this is different from Scala's version of this method).
+    */
+  def partition(pred: A => Boolean): (Col[A], Col[A])
+
+  /** Produces a new $coll where a slice of elements in this $coll is replaced by another sequence.
+    *
+    *  @param  from     the index of the first replaced element
+    *  @param  patch    the replacement sequence
+    *  @param  replaced the number of elements to drop in the original $coll
+    *  @return          a new $coll consisting of all elements of this $coll
+    *                   except that `replaced` elements starting from `from` are replaced by `patch`.
+    */
+  def patch(from: Int, patch: Col[A], replaced: Int): Col[A]
+
+  /** A copy of this $coll with one single replaced element.
+    *  @param  index  the position of the replacement
+    *  @param  elem   the replacing element
+    *  @return a new $coll which is a copy of this $coll with the element at position `index` replaced by `elem`.
+    *  @throws IndexOutOfBoundsException if `index` does not satisfy `0 <= index < length`.
+    */
+  def updated(index: Int, elem: A): Col[A]
+
+  /** Returns a copy of this collection where elements at `indexes` are replaced with `values`. */
+  def updateMany(indexes: Col[Int], values: Col[A]): Col[A]
+
+  /** Apply m for each element of this collection, group by key and reduce each group using r.
+    * @returns one item for each group in a new collection of (K,V) pairs. */
+  def mapReduce[K: ClassTag, V: ClassTag](m: A => (K,V), r: (V,V) => V): Col[(K,V)]
+
+  /** Produces a new collection which contains all distinct elements of this $coll and also all elements of
+    *  a given collection that are not in this collection.
+    *  This is order preserving operation considering only first occurrences of each distinct elements.
+    *  Any collection `xs` can be transformed to a sequence with distinct elements by using xs.unionSet(Col()).
+    *
+    *  NOTE: Use append if you don't need set semantics.
+    *
+    *  @param that   the collection to add.
+    */
+  def unionSets(that: Col[A]): Col[A]
+
+  /** Computes the multiset difference between this $coll and another sequence.
+    *
+    *  @param that   the sequence of elements to remove
+    *  @tparam B     the element type of the returned $coll.
+    *  @return       a new collection which contains all elements of this $coll
+    *                except some of occurrences of elements that also appear in `that`.
+    *                If an element value `x` appears
+    *                ''n'' times in `that`, then the first ''n'' occurrences of `x` will not form
+    *                part of the result, but any following occurrences will.
+    */
+  def diff(that: Col[A]): Col[A]
+
+  /** Computes the multiset intersection between this $coll and another sequence.
+    *
+    *  @param that   the sequence of elements to intersect with.
+    *  @return       a new collection which contains all elements of this $coll
+    *                which also appear in `that`.
+    *                If an element value `x` appears
+    *                ''n'' times in `that`, then the first ''n'' occurrences of `x` will be retained
+    *                in the result, but any following occurrences will be omitted.
+    */
+  def intersect(that: Col[A]): Col[A]
+
+  def sum(m: Monoid[A]): A
+  /** Selects an interval of elements.  The returned collection is made up
+    *  of all elements `x` which satisfy the invariant:
+    *  {{{
+    *    from <= indexOf(x) < until
+    *  }}}
+    *  @param from   the lowest index to include from this $coll.
+    *  @param until  the lowest index to EXCLUDE from this $coll.
+    */
+  def slice(from: Int, until: Int): Col[A]
+  
+  /** Puts the elements of other collection after the elements of this collection (concatenation of 2 collections) */
+  def append(other: Col[A]): Col[A]
+}
+```
 
 As in many languages Array is a collection of items of the same type. 
 `Col[T]` - is a collection of items of type `T`.
@@ -140,10 +444,47 @@ Function  | Description
 `def Col[T].map[R](f: T => R): Col[R] ` | Applies function `f` for each element of the collection gathering results in a new collection of type `R`. 
 `def Col[T].reduce(f: (T, T) => T): T ` | For a collection `Col(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
 
+
+
+#### BigInt
+
+```scala
+class BigInt {
+  // ...
+  def toBytes: Coll[Byte] // Testnet2
+  def modQ: BigInt  // Testnet2
+  def plusModQ(other: BigInt): BigInt // Testnet2
+  def minusModQ(other: BigInt): BigInt // Testnet2
+  def multModQ(other: BigInt): BigInt // Testnet2
+  def multInverseModQ: BigInt // ??? @kushti do we need it  // Mainnet
+}
+```
+ 
+#### GroupElement
+```scala
+class GroupElement {
+  // ...
+  /**
+  * // this should replace the currently used ^ 
+   * @since 2.0
+   */
+  def exp(n: BigInt): GroupElement // Testnet2 
+}
+```
+
 #### AvlTree
-TBD
+
+```scala
+class AvlTree {
+  /**
+   * @since 2.0
+   */
+  def digest: Coll[Byte]
+}
+```
 
 ### Predefined global functions
+<a name="PredefinedFunctions"></a>
 
 ErgoScript standard library include predefined functions that can be called 
 without prior declaration. 
