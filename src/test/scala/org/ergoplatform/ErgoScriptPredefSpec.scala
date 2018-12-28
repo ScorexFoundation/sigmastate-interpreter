@@ -1,7 +1,8 @@
 package org.ergoplatform
 
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.{AND, AvlTreeData}
+import sigmastate.AvlTreeData
+import sigmastate.Values.LongConstant
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
@@ -11,7 +12,7 @@ import scala.util.Try
 
 class ErgoScriptPredefSpec extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
+    override val okPrintEvaluatedEntries: Boolean = true
   }
   val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
 
@@ -28,14 +29,36 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val fixedRate = 7500000000L
     val oneEpochReduction = 300000000
     val minerRewardDelay = 720
+    val coinsTotal = 9773992500000000L
 
     val prop = ErgoScriptPredef.emissionBoxProp(fixedRatePeriod, epochLength, oneEpochReduction, fixedRate, minerRewardDelay)
-    val minerImage = prover.dlogSecrets.head.publicImage
-    val minerPubkey = minerImage.pkBytes
+    val minerProp = prover.dlogSecrets.head.publicImage
+    val pk = minerProp.pkBytes
 
-    // collect enough coins at fixed rate period
+    val emissionBox = ErgoBox(coinsTotal, prop, 0, Seq(), Map(ErgoBox.nonMandatoryRegisters.head -> LongConstant(-1)))
+    val inputBoxes = IndexedSeq(emissionBox)
+    val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
 
+    // collect fixedRate coins at the first step
+    check(fixedRate, 1)
 
+    def check(emissionAmount: Long, nextHeight: Int): Unit = {
+      val newEmissionBox: ErgoBoxCandidate = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop,
+        nextHeight, Seq(), Map())
+      val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight, Seq(), Map())
+
+      val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newEmissionBox, minerBox))
+
+      val ctx = ErgoLikeContext(
+        currentHeight = nextHeight,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = pk,
+        boxesToSpend = inputBoxes,
+        spendingTransaction,
+        self = inputBoxes.head)
+      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    }
   }
 
   property("tokenThreshold") {
