@@ -60,7 +60,7 @@ object SigmaPredef {
       case Ident(name, _) => registry.funcs
         .find(_.name == name)
         .map(f => f.irBuilder(apply.func, apply.args))
-      case _ => sys.error(s"expected Ident, got ${apply.func}")
+      case _ => None
     }
   }
 
