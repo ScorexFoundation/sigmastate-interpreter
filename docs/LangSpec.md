@@ -1,6 +1,6 @@
 # ErgoScript Language Description
 
-## Introduction
+### Introduction
 
 #### ErgoScript language features
 
@@ -43,19 +43,18 @@ Type Name        |   Description
 `Short`          | 16 bit signed integer
 `Int`            | 32 bit signed integer
 `Long`           | 64 bit signed integer
-`BigInt`         | immutable 256 bit integers
+`BigInt`         | 256 bit signed integer
 `SigmaProp`      | a type which represent a logical value which can be be obtained by executing a Sigma protocol with zero-knowledge proof of knowledge
 `AvlTree`        | authenticated dynamic dictionary
 `GroupElement`   | elliptic curve points
 `Box`            | a box containing a value, tokens and registers along with a guarding proposition
 `Option[T]`      | a container which either have some value of type `T` or none.
-`Col[T]`         | a collection of arbitrary length with all values of type `T` 
-`(T1, ..., Tn)`  | tuples
+`Coll[T]`        | a collection of arbitrary length with all values of type `T` 
+`(T1,...,Tn)`    | tuples, a collection of element where T1, ..., Tn can be different types
 
 #### Literal syntax and Constants
 
-There is a syntax for literals, which can be used to introduce values 
-of some types directly in program text like the following examples:
+Literals are used to introduce values of some types directly in program text like the following examples:
 ```
  val unit: Unit = ()       // unit constant
  val long: Int = 10        // interger value literal
@@ -67,10 +66,8 @@ Note that many types don't have literal syntax and their values are introduced
 by applying operations, for example `deserialize` function can be used to introduce
 a constant of any type by using Base64 encoded string (See [predefined function](#PredefinedFunctions)).
 
-## Data Types
+### Data Types
 <a name="DataTypes"></a>
-
-### Predefined data structures
 
 #### Primitive Types
 
@@ -82,11 +79,85 @@ class Boolean {
   def toByte: Byte
 }
 
+/** Base supertype for all numeric types. */
 class Numeric {
-  def toBytes: Coll[Byte]  // Testnet2
-  def toBits: Coll[Boolean] // Testnet2
-  def abs: SNumeric // Testnet2
-  def compare(y: SNumeric): Int // Testnet2
+  /** Convert this Numeric value to Byte. 
+   * @throws ArithmeticException if overflow happens. 
+   */
+  def toByte: Byte
+  
+  /** Convert this Numeric value to Short. 
+   * @throws ArithmeticException if overflow happens. 
+   */
+  def toShort: Short
+  
+  /** Convert this Numeric value to Int. 
+   * @throws ArithmeticException if overflow happens. 
+   */
+  def toInt: Int
+  
+  /** Convert this Numeric value to Int. 
+   * @throws ArithmeticException if overflow happens. 
+   */
+  def toLong: Long
+  
+  /** Convert this Numeric value to Int. */
+  def toBigInt: BigInt
+  
+  /** Returns a big-endian representation of this numeric in a collection of bytes.
+   * For example, the long value {@code 0x1213141516171819L} would yield the
+   * byte array {@code {0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19}}.
+   * @since 2.0
+   */ 
+  def toBytes: Coll[Byte]
+  
+  /** Returns a big-endian representation of this numeric in a collection of Booleans.
+   * Each boolean corresponds to one bit.
+   * @since 2.0
+   */ 
+  def toBits: Coll[Boolean] 
+  
+   /** Absolute value of this numeric value. 
+    * @since 2.0
+    */  
+  def abs: Numeric 
+  
+  /** Compares this numeric with that numeric for order.  Returns a negative integer, zero, or a positive integer as the
+   * `this` is less than, equal to, or greater than `that`.
+   */
+  def compare(that: SNumeric): Int 
+}
+
+class Short extends Numeric
+class Int extends Numeric
+class Long extends Numeric
+
+/**
+* All `modQ` operations assume that Q is a global constant (an order of the only one cryptographically strong group
+* which is used for all cryptographic operations). 
+* So it is globally and implicitly used in all methods.
+* */
+class BigInt extends Numeric {
+  /** Returns this `mod` Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.
+   * @since 2.0
+   */  
+  def modQ: BigInt 
+  /** Adds this number with `other` by module Q.
+   * @since 2.0
+   */  
+  def plusModQ(other: BigInt): BigInt // Testnet2
+  /** Subracts this number with `other` by module Q.
+   * @since 2.0
+   */  
+  def minusModQ(other: BigInt): BigInt // Testnet2
+  /** Multiply this number with `other` by module Q.
+   * @since 2.0
+   */  
+  def multModQ(other: BigInt): BigInt // Testnet2
+   /** Multiply this number with `other` by module Q.
+    * @since Mainnet
+    */   
+  def multInverseModQ: BigInt // ??? @kushti do we need it 
 }
 ```
 
@@ -94,6 +165,15 @@ class Numeric {
 
 Every script is executed in a context, which is a collection of data available for operations in the script.
 The context data is available using variable `CONTEXT` which is of class `Context` defined below.
+The following shortcut variables are available in every script to simplify access to the most commonly used context
+data.
+
+Variable          |  Type               | Shortcut for ...
+------------------|---------------------|----------------------
+`HEIGHT`          | `Int`               | `CONTEXT.height`
+`SELF`            | `Box`               | `CONTEXT.selfBox` 
+`INPUTS`          | `Coll[Box]`         | `CONTEXT.inputs`  
+`OUTPUTS`         | `Coll[Box]`         | `CONTEXT.outputs` 
 
 ```scala
 /**
@@ -136,12 +216,15 @@ class Context {
   def preheader: SPreheader  
 }
 
-/**
+/** Represents data of the block headers available in scripts.
  * @since 2.0
  */
 class Header {  
   def version: Byte
-  def parentId: Coll[Byte] // bytes representation of ModifierId
+  
+  /** Bytes representation of ModifierId of the previous block in the blockchain */
+  def parentId: Coll[Byte] // 
+  
   def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it? 
   def stateRoot: Coll[Byte]  // ADDigest  //33 bytes! extra byte with tree height here!
   def transactionsRoot: Coll[Byte]  // Digest32
@@ -152,10 +235,10 @@ class Header {
   def minerPk: GroupElement    // pk
   def powOnetimePk: GroupElement  // w
   def powNonce: Coll[Byte]        // n
-  def powDistance: SBigInt        // d
+  def powDistance: BigInt        // d
 }
 
-/**
+/** Only header fields that can be predicted by a miner
  * @since 2.0
  */
 class PreHeader { // Testnet2
@@ -167,299 +250,73 @@ class PreHeader { // Testnet2
   def minerPk: GroupElement
 }
 
-SAvlTree {
+class AvlTree {
+  /** Returns digest of the state represent by this tree. 
+   * @since 2.0
+   */
   def digest: Coll[Byte]
 }
 ```
 
-The following shortcut variables are available in every script to simplify access to context data. 
-
-Variable          |  Type        | Shortcut for ...
-------------------|--------------|----------------------
-`HEIGHT`          | `Int`        | `CONTEXT.height`
-`SELF`            | `Box`        | `CONTEXT.selfBox` 
-`INPUTS`          | `Col[Box]`   | `CONTEXT.inputs`  
-`OUTPUTS`         | `Col[Box]`   | `CONTEXT.outputs` 
-
-#### Box
+#### Box type
 
 ```scala
 class Box {
-  def id: Coll[Byte] // Blake2b256 hash of this box's content 
-  def value: Long // boxed value
-  def propositionBytes: Coll[Byte] // guarding script, which should be evaluated to true in order to open this box 
-  def creationInfo: (Long, Coll[Byte]) // height when block got included into the blockchain and also transaction identifier and box index in the transaction outputs
-  def tokens: Coll[(Coll[Byte], Long)] // Mainnet // implement as ErgoScript syntactic sugar over R2
+  /** Box monetary value in NanoErg */
+  def value: Long 
+  
+  /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
+  def id: Coll[Byte] 
+
+  /** Serialized bytes of guarding script, which should be evaluated to true in order to open this box. */
+  def propositionBytes: Coll[Byte] 
+  
+  /** Serialized bytes of this box's content, including proposition bytes. */
+  def bytes: Coll[Byte] 
+  
+  /** Serialized bytes of this box's content, excluding transactionId and index of output. */
+  def bytesWithoutRef: Coll[Byte]
+    
+  /** If `tx` is a transaction which generated this box, then `creationInfo._1` is a height of the tx's block.
+   *  The `creationInfo._2` is a serialized transaction identifier followed by box index in the transaction outputs. 
+   */
+  def creationInfo: (Int, Coll[Byte]) 
+  
+  /** Synonym of R2 obligatory register
+   * @since 2.0
+   */
+  def tokens: Coll[(Coll[Byte], Long)] 
+  
+  /** Extracts register by id and type. 
+   * @param regId zero-based identifier of the register.
+   * @tparam T expected type of the register.
+   * @return Some(value) if the register is defined and has given type.
+   *         None otherwise
+   * @since 2.0
+   */
+  def getReg[T](regId: Int): Option[T]
+
+  /** Extracts register as Coll[Byte], deserializes it to script and then executes this script in the current context. 
+    * The original Coll[Byte] of the script is available as getReg[Coll[Byte]](id)
+    * @param regId identifier of the register 
+    * @tparam T result type of the deserialized script. 
+    * @throws InterpreterException if the actual script type doesn't conform to T
+    * @return result of the script execution in the current context
+    * @since Mainnet
+    */
+  def executeFromRegister[T](regId: Byte): T
 }
-```
-
-Every box has the following properties: 
-
-- `id: ByteArray` - Blake2b256 hash of this box's content 
-- `value: Int` - boxed value
-- `propositionBytes: ByteArray` - guarding script, which should be evaluated to true in order to open this box 
-- `creationInfo: (Long, ByteArray)` - height when block got included into the blockchain and also transaction identifier and box index in the transaction outputs
-
-```scala
-/** Extracts register as Coll[Byte], deserializes it to script and then executes this script in the current context. 
-  * The original Coll[Byte] of the script is available as getReg[Coll[Byte]](id)
-  * @param id identifier of the register 
-  * @tparam T result type of the deserialized script. 
-  * @throws InterpreterException if the actual script type doesn't conform to T
-  * @return result of the script execution in the current context
-  * @since 2.0
-  */
-def deserializeFromRegister[T](id: Byte): T
 ```
 
 Besides properties, every box can have up to 10 numbered registers.
 The following syntax is supported to access registers on box objects:
 ```
-SELF.R3[Int].get            // access R3 register, cast its value to Int and return it
-SELF.R3[Int].isDefined      // check that value of R3  is defined and has type Int
-SELF.R3[Int].isEmpty        // check that value of R3  is undefined 
-SELF.R3[Int].getOrElse(def) // access R3 value if defined, otherwise return def
-```
-Note, that Option[T] is introduced at frontend to represent the type of register value
-```
-SELF.R3: Option[Any]   // where Any is the supertype of all types
-SELF.R3[Int]: Option[Int]   
-```
-#### Option[T]
-
-```scala
-/** Represents optional values. Instances of `Option`
- *  are either an instance of `Some(x)` or the value `None`.
- */
-class Option[A] {
-  def fold[B](ifEmpty: =>B, f: A => B): B
-  def isEmpty: Boolean;
-  def isDefined: Boolean;
-  def filter(p: A => Boolean): Option[A]
-  def flatMap[B](f: A => Option[B]): Option[B]
-  /**
-   * @since  2.0
-   */
-  def map[B](f: A => B): Option[B]
-  def getOrElse[B](default: =>B): B
-  def get: A
-}
+box.getReg[Int](3).get     // access R3 register, cast its value to Int and return it
+box.getReg[Int](3).isDefined  // check that value of R3  is defined and has type Int
+box.getReg[Int](3).isEmpty    // check that value of R3 is either undefined or have not Int type
+box.getReg[Int](3).getOrElse(def) // access R3 value if defined, otherwise return def
 ```
 
-#### Col[T]
-
-```scala
-/** Indexed (zero-based) collection of elements of type `A` 
-  * @define Coll `Col`
-  * @define coll collection
-  * @tparam A the collection element type
-  */
-class Coll[A] {
-  /** The length of the collection */
-  def length: Int
-  
-  /** The element at given index.
-   *  Indices start at `0`; `xs.apply(0)` is the first element of collection `xs`.
-   *  Note the indexing syntax `xs(i)` is a shorthand for `xs.apply(i)`.
-   *
-   *  @param    i   the index
-   *  @return       the element at the given index
-   *  @throws       ArrayIndexOutOfBoundsException if `i < 0` or `length <= i`
-   */
-  def apply(i: Int): A
-  
-  def getOrElse(i: Int, default: A): A
-  def map[B: ClassTag](f: A => B): Col[B]
-
-  /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
-    * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
-  def zip[B](ys: Col[B]): PairCol[A, B]
-
-  def foreach(f: A => Unit): Unit
-  def exists(p: A => Boolean): Boolean
-  def forall(p: A => Boolean): Boolean
-  def filter(p: A => Boolean): Col[A]
-  def where(p: A => Boolean): Col[A] = this.filter(p)
-  def fold[B](zero: B, op: ((B, A)) => B): B
-
-  /** Produces the range of all indices of this collection [0 .. size-1] */
-  def indices: Col[Int]
-
-  /**
-    * Builds a new collection by applying a function to all elements of this $coll
-    * and using the elements of the resulting collections.
-    *
-    * @param f the function to apply to each element.
-    * @tparam B the element type of the returned collection.
-    * @return a new collection of type `Col[B]` resulting from applying the given collection-valued function
-    *         `f` to each element of this $coll and concatenating the results.
-    */
-  def flatMap[B: ClassTag](f: A => Col[B]): Col[B]
-
-  /** Computes length of longest segment whose elements all satisfy some predicate.
-    *
-    *  $mayNotTerminateInf
-    *
-    *  @param   p     the predicate used to test elements.
-    *  @param   from  the index where the search starts.
-    *  @return  the length of the longest segment of this $coll starting from index `from`
-    *           such that every element of the segment satisfies the predicate `p`.
-    */
-  def segmentLength(p: A => Boolean, from: Int): Int
-
-  /** Finds index of the first element satisfying some predicate after or at some start index.
-    *
-    *  $mayNotTerminateInf
-    *
-    *  @param   p     the predicate used to test elements.
-    *  @param   from   the start index
-    *  @return  the index `>= from` of the first element of this $coll that satisfies the predicate `p`,
-    *           or `-1`, if none exists.
-    */
-  def indexWhere(p: A => Boolean, from: Int): Int
-
-  /** Finds index of last element satisfying some predicate before or at given end index.
-    *
-    *  @param   p     the predicate used to test elements.
-    *  @return  the index `<= end` of the last element of this $coll that satisfies the predicate `p`,
-    *           or `-1`, if none exists.
-    */
-  def lastIndexWhere(p: A => Boolean, end: Int): Int
-
-
-  /** Partitions this $coll in two ${coll}s according to a predicate.
-    *
-    *  @param pred the predicate on which to partition.
-    *  @return     a pair of ${coll}s: the first $coll consists of all elements that
-    *              satisfy the predicate `p` and the second $coll consists of all elements
-    *              that don't. The relative order of the elements in the resulting ${coll}s
-    *              will BE preserved (this is different from Scala's version of this method).
-    */
-  def partition(pred: A => Boolean): (Col[A], Col[A])
-
-  /** Produces a new $coll where a slice of elements in this $coll is replaced by another sequence.
-    *
-    *  @param  from     the index of the first replaced element
-    *  @param  patch    the replacement sequence
-    *  @param  replaced the number of elements to drop in the original $coll
-    *  @return          a new $coll consisting of all elements of this $coll
-    *                   except that `replaced` elements starting from `from` are replaced by `patch`.
-    */
-  def patch(from: Int, patch: Col[A], replaced: Int): Col[A]
-
-  /** A copy of this $coll with one single replaced element.
-    *  @param  index  the position of the replacement
-    *  @param  elem   the replacing element
-    *  @return a new $coll which is a copy of this $coll with the element at position `index` replaced by `elem`.
-    *  @throws IndexOutOfBoundsException if `index` does not satisfy `0 <= index < length`.
-    */
-  def updated(index: Int, elem: A): Col[A]
-
-  /** Returns a copy of this collection where elements at `indexes` are replaced with `values`. */
-  def updateMany(indexes: Col[Int], values: Col[A]): Col[A]
-
-  /** Apply m for each element of this collection, group by key and reduce each group using r.
-    * @returns one item for each group in a new collection of (K,V) pairs. */
-  def mapReduce[K: ClassTag, V: ClassTag](m: A => (K,V), r: (V,V) => V): Col[(K,V)]
-
-  /** Produces a new collection which contains all distinct elements of this $coll and also all elements of
-    *  a given collection that are not in this collection.
-    *  This is order preserving operation considering only first occurrences of each distinct elements.
-    *  Any collection `xs` can be transformed to a sequence with distinct elements by using xs.unionSet(Col()).
-    *
-    *  NOTE: Use append if you don't need set semantics.
-    *
-    *  @param that   the collection to add.
-    */
-  def unionSets(that: Col[A]): Col[A]
-
-  /** Computes the multiset difference between this $coll and another sequence.
-    *
-    *  @param that   the sequence of elements to remove
-    *  @tparam B     the element type of the returned $coll.
-    *  @return       a new collection which contains all elements of this $coll
-    *                except some of occurrences of elements that also appear in `that`.
-    *                If an element value `x` appears
-    *                ''n'' times in `that`, then the first ''n'' occurrences of `x` will not form
-    *                part of the result, but any following occurrences will.
-    */
-  def diff(that: Col[A]): Col[A]
-
-  /** Computes the multiset intersection between this $coll and another sequence.
-    *
-    *  @param that   the sequence of elements to intersect with.
-    *  @return       a new collection which contains all elements of this $coll
-    *                which also appear in `that`.
-    *                If an element value `x` appears
-    *                ''n'' times in `that`, then the first ''n'' occurrences of `x` will be retained
-    *                in the result, but any following occurrences will be omitted.
-    */
-  def intersect(that: Col[A]): Col[A]
-
-  def sum(m: Monoid[A]): A
-  /** Selects an interval of elements.  The returned collection is made up
-    *  of all elements `x` which satisfy the invariant:
-    *  {{{
-    *    from <= indexOf(x) < until
-    *  }}}
-    *  @param from   the lowest index to include from this $coll.
-    *  @param until  the lowest index to EXCLUDE from this $coll.
-    */
-  def slice(from: Int, until: Int): Col[A]
-  
-  /** Puts the elements of other collection after the elements of this collection (concatenation of 2 collections) */
-  def append(other: Col[A]): Col[A]
-}
-```
-
-As in many languages Array is a collection of items of the same type. 
-`Col[T]` - is a collection of items of type `T`.
-
-Each item can be accessed by constant index, for example:
-```
-val myOutput = OUTPUTS(0)
-val myInput = INPUTS(0)
-```
-
-Any collection have a `size` property which returns number of elements in a collection. 
-
-```
-val size = OUTPUTS.size
-```
-
-Even though ErgoScript is not an object-oriented language, Col operations use the syntax of method invocations. 
-For example the following script check an existence of some element in the collection satisfying some predicate (condition)
-
-```
-val ok = OUTPUTS.exists { (box: Box) => box.value > 1000 }
-``` 
-
-The following properties and methods can be used with arrays
-
-Function  | Description
---------- | ------------
-`Col[T].size` |  a number of items in the collection
-`def Col[T].exists(p: T => Boolean): Boolean ` | Returns true if there exists an item `x` in the collection for which `p(x) == true`  
-`def Col[T].forall(f: T => Boolean): Boolean ` | Returns true if for all items `x` in the collection `p(x) == true`   
-`def Col[T].map[R](f: T => R): Col[R] ` | Applies function `f` for each element of the collection gathering results in a new collection of type `R`. 
-`def Col[T].reduce(f: (T, T) => T): T ` | For a collection `Col(a0, ..., aN)` computes `f(f( ...f(f(a0, a1), a2) ...), aN)`. 
-
-
-
-#### BigInt
-
-```scala
-class BigInt {
-  // ...
-  def toBytes: Coll[Byte] // Testnet2
-  def modQ: BigInt  // Testnet2
-  def plusModQ(other: BigInt): BigInt // Testnet2
-  def minusModQ(other: BigInt): BigInt // Testnet2
-  def multModQ(other: BigInt): BigInt // Testnet2
-  def multInverseModQ: BigInt // ??? @kushti do we need it  // Mainnet
-}
-```
- 
 #### GroupElement
 ```scala
 class GroupElement {
@@ -482,6 +339,378 @@ class AvlTree {
   def digest: Coll[Byte]
 }
 ```
+
+#### Option[T]
+
+```scala
+/** Represents optional values. Instances of `Option`
+ *  are either an instance of `Some(x)` or the value `None`.
+ */
+class Option[A] {
+  /** Returns true if the option is None, false otherwise. 
+   */  
+  def isEmpty: Boolean;
+  
+  /** Returns true if the option is an instance of Some(value), false otherwise. 
+   */
+  def isDefined: Boolean;
+  
+  /** Returns the option's value if the option is nonempty, otherwise
+   * return the result of evaluating `default`.
+   *
+   * @param default  the default expression, which is evaluated only if option is None.
+   */
+  def getOrElse[B](default: =>B): B
+  
+  /** Returns the option's value.
+   *  @note The option must be nonempty.
+   *  @throws InterpreterException if the option is empty.
+   */
+  def get: A
+
+  /** Returns a singleton collection containing the $option's value
+   * if it is nonempty, or the empty collection if the $option is empty.
+   * @since  2.0
+   */
+  def toColl: Coll[A]
+  
+  /** Returns a Some containing the result of applying $f to this option's
+   * value if this option is nonempty.
+   * Otherwise return None.
+   *
+   * @note This is similar to `flatMap` except here, $f does not need to wrap its result in an $option.
+   *
+   * @param  f   the function to apply
+   * @since  2.0
+   * @see flatMap
+   */
+  def map[B](f: A => B): Option[B]
+
+  
+  /** Returns this option if it is nonempty '''and''' applying the predicate $p to
+   * this option's value returns true. Otherwise, return $none.
+   *
+   * @param  p   the predicate used for testing.
+   * @since  2.0
+   */
+  def filter(p: A => Boolean): Option[A]
+  
+  /** Returns the result of applying $f to this option's value if
+   * this option is nonempty.
+   * Returns None if this option is empty.
+   * Slightly different from `map` in that $f is expected to
+   * return an option (which could be None).
+   *
+   *  @param  f   the function to apply
+   *  @see map
+   *  @since 2.0
+   */
+  def flatMap[B](f: A => Option[B]): Option[B]
+}
+```
+
+#### Coll[T]
+
+```scala
+/** Indexed (zero-based) collection of elements of type `A` 
+  * @define Coll `Coll`
+  * @define coll collection
+  * @tparam A the collection element type
+  */
+class Coll[A] {
+  /** The length of the collection */
+  def length: Int
+  
+  /** The element at given index.
+   *  Indices start at `0`; `xs.apply(0)` is the first element of collection `xs`.
+   *  Note the indexing syntax `xs(i)` is a shorthand for `xs.apply(i)`.
+   *
+   *  @param    i   the index
+   *  @return       the element at the given index
+   *  @throws       ArrayIndexOutOfBoundsException if `i < 0` or `length <= i`
+   */
+  def apply(i: Int): A
+  
+  /** The element of the collection or default value. 
+   * If an index is out of bounds (`i < 0 || i >= length`) then `default` value is returned.
+   *  @param    i   the index
+   *  @return       the element at the given index or default value if index is out or bounds
+   *  @since 2.0
+   */
+  def getOrElse(i: Int, default: A): A
+  
+  /** Builds a new collection by applying a function to all elements of this collection.
+   *
+   *  @param f      the function to apply to each element.
+   *  @tparam B     the element type of the returned collection.
+   *  @return       a new collection of type `Coll[B]` resulting from applying the given function
+   *                `f` to each element of this collection and collecting the results.
+  def map[B](f: A => B): Coll[B]
+
+  /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
+   * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) 
+   * @since 2.0
+   */
+  def zip[B](ys: Coll[B]): PairColl[A, B]
+
+  /** Tests whether a predicate holds for at least one element of this collection.
+   *  @param   p     the predicate used to test elements.
+   *  @return        `true` if the given predicate `p` is satisfied by at least one element of this collection, otherwise `false`
+   */
+  def exists(p: A => Boolean): Boolean
+  
+  /** Tests whether a predicate holds for all elements of this collection.
+   *  @param   p   the predicate used to test elements.
+   *  @return      `true` if this collection is empty or the given predicate `p`
+   *               holds for all elements of this collection, otherwise `false`.
+   */
+  def forall(p: A => Boolean): Boolean
+  
+  /** Selects all elements of this collection which satisfy a predicate.
+   *  @param p     the predicate used to test elements.
+   *  @return      a new collection consisting of all elements of this collection that satisfy the given
+   *               predicate `p`. The order of the elements is preserved.
+   *  @since 2.0
+   */
+  def filter(p: A => Boolean): Coll[A]
+  
+  /** Applies a binary operator to a start value and all elements of this collection,
+   *  going left to right.
+   *
+   *  @param   z    the start value.
+   *  @param   op   the binary operator.
+   *  @tparam  B    the result type of the binary operator.
+   *  @return  the result of inserting `op` between consecutive elements of this collection,
+   *           going left to right with the start value `z` on the left:
+   *           {{{
+   *             op(...op(z, x_1), x_2, ..., x_n)
+   *           }}}
+   *           where `x,,1,,, ..., x,,n,,` are the elements of this collection.
+   *           Returns `z` if this collection is empty.
+   */
+  def fold[B](z: B)(op: (B, A) => B): B
+
+  /** Produces the range of all indices of this collection [0 .. size-1] 
+   *  @since 2.0
+   */
+  def indices: Coll[Int]
+
+  /**
+    * Builds a new collection by applying a function to all elements of this collection
+    * and using the elements of the resulting collections.
+    *
+    * @param f the function to apply to each element.
+    * @tparam B the element type of the returned collection.
+    * @return a new collection of type `Coll[B]` resulting from applying the given collection-valued function
+    *         `f` to each element of this collection and concatenating the results.
+    * @since 2.0
+    */
+  def flatMap[B](f: A => Coll[B]): Coll[B]
+
+  /** Computes length of longest segment whose elements all satisfy some predicate.
+    *
+    *  @param   p     the predicate used to test elements.
+    *  @param   from  the index where the search starts.
+    *  @return  the length of the longest segment of this collection starting from index `from`
+    *           such that every element of the segment satisfies the predicate `p`.
+    *  @since 2.0
+    */
+  def segmentLength(p: A => Boolean, from: Int): Int
+
+  /** Finds index of the first element satisfying some predicate after or at some start index.
+    *
+    *  @param   p     the predicate used to test elements.
+    *  @param   from   the start index
+    *  @return  the index `>= from` of the first element of this collection that satisfies the predicate `p`,
+    *           or `-1`, if none exists.
+    *  @since 2.0
+    */
+  def indexWhere(p: A => Boolean, from: Int): Int
+
+  /** Finds index of last element satisfying some predicate before or at given end index.
+    *
+    *  @param   p     the predicate used to test elements.
+    *  @return  the index `<= end` of the last element of this collection that satisfies the predicate `p`,
+    *           or `-1`, if none exists.
+    *  @since 2.0
+    */
+  def lastIndexWhere(p: A => Boolean, end: Int): Int
+
+
+  /** Partitions this collection in two collectionss according to a predicate.
+    *
+    *  @param      pred the predicate on which to partition.
+    *  @return     a pair of collections: the first collection consists of all elements that
+    *              satisfy the predicate `p` and the second collection consists of all elements
+    *              that don't. The relative order of the elements in the resulting collections
+    *              will BE preserved (this is different from Scala's version of this method).
+    *  @since 2.0
+    */
+  def partition(pred: A => Boolean): (Coll[A], Coll[A])
+
+  /** Produces a new collection where a slice of elements in this collection is replaced by another sequence.
+    *
+    *  @param  from     the index of the first replaced element
+    *  @param  patch    the replacement sequence
+    *  @param  replaced the number of elements to drop in the original collection
+    *  @return          a new collection consisting of all elements of this collection
+    *                   except that `replaced` elements starting from `from` are replaced by `patch`.
+    *  @since 2.0
+    */
+  def patch(from: Int, patch: Coll[A], replaced: Int): Coll[A]
+
+  /** A copy of this collection with one single replaced element.
+    *  @param  index  the position of the replacement
+    *  @param  elem   the replacing element
+    *  @return a new collection which is a copy of this collection with the element at position `index` replaced by `elem`.
+    *  @throws IndexOutOfBoundsException if `index` does not satisfy `0 <= index < length`.
+    *  @since 2.0
+    */
+  def updated(index: Int, elem: A): Coll[A]
+
+  /** Returns a copy of this collection where elements at `indexes` are replaced with `values`. 
+   *  @since 2.0
+   */
+  def updateMany(indexes: Coll[Int], values: Coll[A]): Coll[A]
+
+  /** Apply m for each element of this collection, group by key and reduce each group using r.
+   *  @returns one item for each group in a new collection of (K,V) pairs. 
+   *  @since 2.0
+   */
+  def mapReduce[K, V](m: A => (K,V), r: (V,V) => V): Coll[(K,V)]
+
+  /** Produces a new collection which contains all distinct elements of this collection and also all elements of
+   *  a given collection that are not in this collection.
+   *  This is order preserving operation considering only first occurrences of each distinct elements.
+   *  Any collection `xs` can be transformed to a sequence with distinct elements by using xs.unionSet(Col()).
+   *
+   *  NOTE: Use append if you don't need set semantics.
+   *
+   *  @param that   the collection to add.
+   *  @since 2.0
+   */
+  def unionSets(that: Coll[A]): Coll[A]
+
+  /** Computes the multiset difference between this collection and another sequence.
+   *
+   *  @param that   the sequence of elements to remove
+   *  @tparam B     the element type of the returned collection.
+   *  @return       a new collection which contains all elements of this collection
+   *                except some of occurrences of elements that also appear in `that`.
+   *                If an element value `x` appears
+   *                ''n'' times in `that`, then the first ''n'' occurrences of `x` will not form
+   *                part of the result, but any following occurrences will.
+   *  @since 2.0
+   */
+  def diff(that: Coll[A]): Coll[A]
+
+  /** Computes the multiset intersection between this collection and another sequence.
+   *  @param that   the sequence of elements to intersect with.
+   *  @return       a new collection which contains all elements of this collection
+   *                which also appear in `that`.
+   *                If an element value `x` appears
+   *                ''n'' times in `that`, then the first ''n'' occurrences of `x` will be retained
+   *                in the result, but any following occurrences will be omitted.
+   *  @since 2.0
+   */
+  def intersect(that: Coll[A]): Coll[A]
+
+  /** Selects an interval of elements.  The returned collection is made up
+   *  of all elements `x` which satisfy the invariant:
+   *  {{{
+   *    from <= indexOf(x) < until
+   *  }}}
+   *  @param from   the lowest index to include from this collection.
+   *  @param until  the lowest index to EXCLUDE from this collection.
+   */
+  def slice(from: Int, until: Int): Coll[A]
+  
+  /** Puts the elements of other collection after the elements of this collection (concatenation of 2 collections)
+   */
+  def append(other: Coll[A]): Coll[A]
+  
+  /** Returns the length of the longest prefix whose elements all satisfy some predicate.
+   *  @param   p     the predicate used to test elements.
+   *  @return  the length of the longest prefix of this collection
+   *           such that every element of the segment satisfies the predicate `p`.
+   *  @since 2.0
+   */
+  def prefixLength(p: A => Boolean): Int
+
+  /** Finds index of first occurrence of some value in this collection after or at some start index.
+   *  @param   elem   the element value to search for.
+   *  @param   from   the start index
+   *  @return  the index `>= from` of the first element of this collection that is equal (as determined by `==`)
+   *           to `elem`, or `-1`, if none exists.
+   *  @since 2.0
+   */
+  def indexOf(elem: A, from: Int): Int
+
+  /** Finds index of last occurrence of some value in this collection before or at a given end index.
+   *
+   *  @param   elem   the element value to search for.
+   *  @param   end    the end index.
+   *  @return  the index `<= end` of the last element of this collection that is equal (as determined by `==`)
+   *           to `elem`, or `-1`, if none exists.
+   *  @since 2.0
+   */
+  def lastIndexOf(elem: A, end: Int): Int
+
+  /** Finds the first element of the collection satisfying a predicate, if any.
+   *  @param p       the predicate used to test elements.
+   *  @return        an option value containing the first element in the collection
+   *                 that satisfies `p`, or `None` if none exists.
+   *  @since 2.0
+   */
+  def find(p: A => Boolean): Option[A]
+
+  /** Builds a new collection from this collection without any duplicate elements.
+   *  @return  A new collection which contains the first occurrence of every element of this collection.
+   *  @since 2.0
+   */
+  def distinct: Col[A]
+
+  /** Tests whether this collection contains the given sequence at a given index.
+   *
+   * '''Note''': If the both the receiver object `this` and the argument
+   * `that` are infinite sequences this method may not terminate.
+   *
+   * @param  that    the sequence to test
+   * @param  offset  the index where the sequence is searched.
+   * @return `true` if the sequence `that` is contained in this collection at
+   *         index `offset`, otherwise `false`.
+   * @since 2.0
+   */
+  def startsWith[B](that: GenSeq[B], offset: Int): Boolean
+
+  /** Tests whether this collection ends with the given collection.
+    *  @param  that   the collection to test
+    *  @return `true` if this collection has `that` as a suffix, `false` otherwise.
+    *  @since 2.0
+    */
+  def endsWith(that: Col[A]): Boolean
+
+}
+```
+
+Each item can be accessed by constant index, for example:
+```
+val myOutput = OUTPUTS(0)
+val myInput = INPUTS(0)
+```
+
+Any collection have a `length` property which returns number of elements in a collection. 
+
+```
+val l = OUTPUTS.length
+```
+
+The following script check an existence of some element in the collection satisfying some
+predicate (condition)
+
+```
+val ok = OUTPUTS.exists { (box: Box) => box.value > 1000 }
+``` 
 
 ### Predefined global functions
 <a name="PredefinedFunctions"></a>
@@ -656,64 +885,4 @@ def outerJoin[K, L, R, O]
 
 ## Examples
 
-#### Crowd Funding
-
-A project declares a need to raise "minToRaise" amount of tokens until some "timeout" 
-height. A backer then creates an output which is spendable by with project's public key
-until timeout and only if a spending transaction creates an output to project's 
-public key with amount >= minToRaise. 
-After the timeout output could be spent by backer only.
-    
-```
-guard CrowdFunding(timeout: Int, minToRaise: Int, 
-                   backerPubKey: SigmaProp, projectPubKey: SigmaProp) {
-  val c1 = HEIGHT >= timeout && backerPubKey
-  val c2 = allOf(Coll(
-    HEIGHT < timeout,
-    projectPubKey,
-    OUTPUTS.exists { (out: Box) => 
-      out.value >= minToRaise && out.propositionBytes == projectPubKey.propBytes
-    }
-  ))
-  c1 || c2
-}
-```
-
-#### Demurrage Currency
-
-The idea is that miners enforce users to combine a guarding script of a user 
-(`regularScript` parameter) with a condition that anyone (presumably, a miner) 
-can spend no more `demurrageCost` amount of tokens from an output of the user
-after `demurragePeriod` blocks since output creation. 
-
-If the user is relocating the money from the output before that height, 
-the miner can charge according to output lifetime.
-
-We assume that it is enforced by a consensus protocol to store height when 
-an input got into a block in the register R3 (if the transaction is not included 
-into the blockchain yet, then R3 contains the current height of the blockchain).
-    
-```
-guard DemurrageCurrency(demurragePeriod: Int, demurrageCost: Int, regularScript: SigmaProp) {
-  val c2 = allOf(Coll(
-   HEIGHT >= SELF.R3[Int].get + demurragePeriod,
-   OUTPUTS.exists { (out: Box) => 
-     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
-   }
- ))
- regularScript || c2
-}
-```
-
-#### Ring Signature
-
-Simplest linear-sized ring signature (1-out-of-N OR). 
-The ring is a collection of public keys which correspond to some secret keys (of some parties).
-The script below checks that at least one party provided the signature WITHOUT disclosing this party.
-
-```
-guard RingSignature(ring: Coll[SigmaProp]) {
-  anyOf(ring)
-}
-```
-
+See [white paper for example](wpaper/sigma.tex)
