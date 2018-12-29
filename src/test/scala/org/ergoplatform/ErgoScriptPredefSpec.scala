@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import org.scalacheck.Gen
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -13,7 +14,7 @@ import scala.util.Try
 
 class ErgoScriptPredefSpec extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = true
+    override val okPrintEvaluatedEntries: Boolean = false
   }
   val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
 
@@ -52,27 +53,40 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   property("emission specification") {
     val verifier = new ErgoLikeTestInterpreter
     val prover = new ErgoLikeTestProvingInterpreter
-    val minerProp = prover.dlogSecrets.head.publicImage
-    val pk = minerProp.pkBytes
+    val minerPk = prover.dlogSecrets.head.publicImage
+    val pkBytes = minerPk.pkBytes
 
-    val genesisHeight = 1
+    val blocksTotal = 2080799
     val fixedRatePeriod = 525600
     val epochLength = 64800
     val fixedRate = 7500000000L
     val oneEpochReduction = 300000000
     val minerRewardDelay = 720
     val coinsTotal = 9773992500000000L
+    val minerProp = ErgoScriptPredef.rewardOutputScript(minerRewardDelay, minerPk)
 
-    val prop = ErgoScriptPredef.emissionBoxProp(fixedRatePeriod, epochLength, oneEpochReduction, fixedRate, minerRewardDelay)
-
+    val prop = ErgoScriptPredef.emissionBoxProp(fixedRatePeriod, epochLength, fixedRate, oneEpochReduction, minerRewardDelay)
     val emissionBox = ErgoBox(coinsTotal, prop, 0, Seq(), Map(ErgoBox.nonMandatoryRegisters.head -> LongConstant(-1)))
     val inputBoxes = IndexedSeq(emissionBox)
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
 
-    // collect fixedRate coins at the first step
-    check(fixedRate, 1)
+    // collect fixedRate coins during the fixed rate period
+    forAll(Gen.choose(1, fixedRatePeriod)) { height =>
+      check(fixedRate, height) shouldBe 'success
+      check(fixedRate + 1, height) shouldBe 'failure
+      check(fixedRate - 1, height) shouldBe 'failure
+    }
 
-    def check(emissionAmount: Long, nextHeight: Int): Unit = {
+    // collect correct amount after the fixed rate period
+    forAll(Gen.choose(1, blocksTotal - 1)) { height =>
+      val currentRate = Algos.emissionAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
+      check(currentRate, height) shouldBe 'success
+      check(currentRate + 1, height) shouldBe 'failure
+      check(currentRate - 1, height) shouldBe 'failure
+    }
+
+
+    def check(emissionAmount: Long, nextHeight: Int): Try[Unit] = Try {
       val newEmissionBox: ErgoBoxCandidate = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop,
         nextHeight, Seq(), Map())
       val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight, Seq(), Map())
@@ -82,7 +96,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       val ctx = ErgoLikeContext(
         currentHeight = nextHeight,
         lastBlockUtxoRoot = AvlTreeData.dummy,
-        minerPubkey = pk,
+        minerPubkey = pkBytes,
         boxesToSpend = inputBoxes,
         spendingTransaction,
         self = inputBoxes.head)

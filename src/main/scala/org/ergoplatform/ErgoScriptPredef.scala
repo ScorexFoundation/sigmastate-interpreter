@@ -97,7 +97,7 @@ object ErgoScriptPredef {
     * Proposition box, that only allows to collect a part of all coins
     * to a box with miner proposition.
     */
-  def emissionBoxProp(fixedRatePeriod: Long,
+  def emissionBoxProp(fixedRatePeriod: Int,
                       epochLength: Int,
                       fixedRate: Long,
                       oneEpochReduction: Long,
@@ -105,8 +105,8 @@ object ErgoScriptPredef {
     val rewardOut = ByIndex(Outputs, IntConstant(0))
     val minerOut = ByIndex(Outputs, IntConstant(1))
 
-    val epoch = Plus(IntConstant(1), Divide(Minus(Height, IntConstant(fixedRatePeriod.toInt)), IntConstant(epochLength)))
-    val coinsToIssue = If(LT(Height, IntConstant(fixedRatePeriod.toInt)),
+    val epoch = Plus(IntConstant(1), Divide(Minus(Height, IntConstant(fixedRatePeriod)), IntConstant(epochLength)))
+    val coinsToIssue = If(LT(Height, IntConstant(fixedRatePeriod)),
       fixedRate,
       Minus(fixedRate, Multiply(oneEpochReduction, epoch.upcastTo(SLong)))
     )
