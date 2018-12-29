@@ -131,7 +131,7 @@ object ErgoScriptPredef {
   /**
     * Creation height of a box
     */
-  private def boxCreationHeight(box: Value[SBox.type]): Value[SInt.type] =
+  def boxCreationHeight(box: Value[SBox.type]): Value[SInt.type] =
     SelectField(ExtractCreationInfo(box), 1).asIntValue
 
   /**

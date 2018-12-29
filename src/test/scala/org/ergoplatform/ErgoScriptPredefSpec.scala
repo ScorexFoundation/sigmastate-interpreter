@@ -1,12 +1,13 @@
 package org.ergoplatform
 
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.AvlTreeData
-import sigmastate.Values.LongConstant
+import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.utxo.ErgoLikeTestInterpreter
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.utxo.{ByIndex, ErgoLikeTestInterpreter, ExtractCreationInfo, SelectField}
+import sigmastate.{AvlTreeData, EQ}
 
 import scala.util.Try
 
@@ -16,13 +17,44 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
   val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
 
+  property("boxCreationHeight") {
+    val verifier = new ErgoLikeTestInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val minerProp = prover.dlogSecrets.head.publicImage
+    val pk = minerProp.pkBytes
+
+    val nextHeight = 1
+    val prop = EQ(Height, ErgoScriptPredef.boxCreationHeight(ByIndex(Outputs, IntConstant(0))))
+    val propInlined = EQ(Height, SelectField(ExtractCreationInfo(ByIndex(Outputs, IntConstant(0))), 1).asIntValue)
+    prop shouldBe propInlined
+    val inputBox = ErgoBox(1, prop, nextHeight, Seq(), Map())
+    val inputBoxes = IndexedSeq(inputBox)
+    val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
+    val minerBox = new ErgoBoxCandidate(1, minerProp, nextHeight, Seq(), Map())
+
+    val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(minerBox))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = nextHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = pk,
+      boxesToSpend = inputBoxes,
+      spendingTransaction,
+      self = inputBox)
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
+
   ignore("feeProposition") {
     // TODO
   }
 
   property("emission specification") {
-    val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
+    val prover = new ErgoLikeTestProvingInterpreter
+    val minerProp = prover.dlogSecrets.head.publicImage
+    val pk = minerProp.pkBytes
+
     val genesisHeight = 1
     val fixedRatePeriod = 525600
     val epochLength = 64800
@@ -32,8 +64,6 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val coinsTotal = 9773992500000000L
 
     val prop = ErgoScriptPredef.emissionBoxProp(fixedRatePeriod, epochLength, oneEpochReduction, fixedRate, minerRewardDelay)
-    val minerProp = prover.dlogSecrets.head.publicImage
-    val pk = minerProp.pkBytes
 
     val emissionBox = ErgoBox(coinsTotal, prop, 0, Seq(), Map(ErgoBox.nonMandatoryRegisters.head -> LongConstant(-1)))
     val inputBoxes = IndexedSeq(emissionBox)
