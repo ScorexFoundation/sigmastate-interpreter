@@ -15,8 +15,10 @@ object SigmaPredef {
     declaration: Lambda,
     /** Builder of SigmaIR node which is equivalent to function application
       * Rule: Apply(f, args) -->  irBuilder(f, args) */
-    irBuilder: (SValue, Seq[SValue]) => SValue
-  )
+    irBuilder: (SValue, Seq[SValue]) => SValue) {
+
+    val sym: Ident = Ident(name, declaration.tpe)
+  }
 
   class PredefinedFuncRegistry(builder: SigmaBuilder) {
 
@@ -28,14 +30,14 @@ object SigmaPredef {
     private val tR = STypeIdent("R")
     private val tO = STypeIdent("O")
 
+    val AllOfFunc = PredefinedFunc(
+      "allOf",
+      Lambda(IndexedSeq("conditions" -> SCollection(SBoolean)), SBoolean, None),
+      { (_, args) => mkAND(args.head.asCollection) }
+    )
+
     val funcs: Seq[PredefinedFunc] = Seq(
-
-      PredefinedFunc(
-        "allOf",
-        Lambda(IndexedSeq("conditions" -> SCollection(SBoolean)), SBoolean, None),
-        { (_, args) => mkAND(args.head.asCollection) }
-      ),
-
+      AllOfFunc,
       PredefinedFunc(
         "outerJoin",
         Lambda(
@@ -53,10 +55,18 @@ object SigmaPredef {
     )
   }
 
+  object PredefinedFuncApply {
+    def unapply(apply: Apply)(implicit registry: PredefinedFuncRegistry): Option[SValue] = apply.func match {
+      case Ident(name, _) => registry.funcs
+        .find(_.name == name)
+        .map(f => f.irBuilder(apply.func, apply.args))
+      case _ => sys.error(s"expected Ident, got ${apply.func}")
+    }
+  }
+
   private val tT = STypeIdent("T")
 
   val predefinedEnv: Map[String, SValue] = Seq(
-    "allOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "anyOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "atLeast" -> mkLambda(Vector("k" -> SInt, "conditions" -> SCollection(SSigmaProp)), SSigmaProp, None),
     "ZKProof" -> mkLambda(Vector("block" -> SSigmaProp), SBoolean, None),
@@ -94,7 +104,6 @@ object SigmaPredef {
     mkIdent(name, v.tpe)
   }
 
-  val AllSym = PredefIdent("allOf")
   val AnySym = PredefIdent("anyOf")
   val AtLeastSym = PredefIdent("atLeast")
   val ZKProofSym = PredefIdent("ZKProof")

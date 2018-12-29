@@ -18,6 +18,8 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
   import SigmaSpecializer._
   import builder._
 
+  private implicit val predefFuncRegistry: PredefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
   def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
     val tagged = mkTaggedVariable(tag, tpe)
@@ -38,10 +40,6 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
       }
       val res1 = eval(curEnv, res)
       Some(res1)
-
-    // Rule: allOf(arr) --> AND(arr)
-    case Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-      Some(mkAND(arr))
 
     // Rule: anyOf(arr) --> OR(arr)
     case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
@@ -228,6 +226,9 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
 
     case StringConcat(StringConstant(l), StringConstant(r)) =>
       Some(StringConstant(l + r))
+
+    case PredefinedFuncApply(irNode) =>
+      Some(irNode)
 
   })))(e)
 

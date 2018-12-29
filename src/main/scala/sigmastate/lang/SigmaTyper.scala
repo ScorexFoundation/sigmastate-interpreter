@@ -23,9 +23,12 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
   private val tT = STypeIdent("T") // to be used in typing rules
 
+  private val predefFuncRegistry = new PredefinedFuncRegistry(builder)
+  import predefFuncRegistry._
+
   private val predefinedEnv: Map[String, SType] =
     SigmaPredef.predefinedEnv.mapValues(_.tpe) ++
-      new PredefinedFuncRegistry(builder).funcs.map(f => f.name -> f.declaration.tpe).toMap
+      predefFuncRegistry.funcs.map(f => f.name -> f.declaration.tpe).toMap
 
   /**
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
@@ -127,7 +130,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
             case (arg, expectedType) => assignType(env, arg, Some(expectedType))
           }
           val newArgs = new_f match {
-            case AllSym | AnySym =>
+            case AllOfFunc.sym | AnySym =>
               adaptSigmaPropToBoolean(new_args, argTypes)
             case _ => new_args
           }
