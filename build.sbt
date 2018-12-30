@@ -1,4 +1,6 @@
+import scala.language.postfixOps
 import scala.util.Try
+import scala.sys.process._
 
 organization := "org.scorexfoundation"
 
@@ -118,3 +120,24 @@ credentials ++= (for {
 } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 
 lazy val sigma = (project in file(".")).settings(commonSettings: _*)
+
+lazy val ergoTest = TaskKey[Unit]("ergoTest", "tests current build in Ergo")
+
+ergoTest := {
+  val ergoBranch = "voting"
+  val cwd = new File("").absolutePath
+  val ergoPath = new File(cwd + "/ergo-tests/")
+  println(s"Cleaning $ergoPath")
+  s"rm -rf $ergoPath" !
+  
+  println(s"Cloning Ergo branch $ergoBranch")
+  s"git clone -b $ergoBranch --single-branch git@github.com:ergoplatform/ergo.git ${ergoPath.absolutePath}" !
+  
+  val sigmastateVersion = version.value
+  println(s"Sigmastate version: $sigmastateVersion")
+  
+  println(s"Running Ergo tests in $ergoPath")
+  // todo pass sigmastate version 
+  Process(Seq("sbt", "test"), ergoPath) !
+}
+
