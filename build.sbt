@@ -133,7 +133,8 @@ ergoTest := {
   s"rm -rf ${ergoPath.absolutePath}" !
 
   log.info(s"Cloning Ergo branch $ergoBranch into ${ergoPath.absolutePath}")
-  s"git clone -b $ergoBranch --single-branch git@github.com:ergoplatform/ergo.git ${ergoPath.absolutePath}" !
+//  s"git clone -b $ergoBranch --single-branch git@github.com:ergoplatform/ergo.git ${ergoPath.absolutePath}" !
+  s"git clone -b $ergoBranch --single-branch https://github.com/ergoplatform/ergo.git ${ergoPath.absolutePath}" !
 
   val sigmastateVersion = version.value
   log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
