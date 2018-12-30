@@ -138,6 +138,7 @@ ergoTest := {
 
   val sigmastateVersion = version.value
   log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
+  // todo add it:test and set label for jenkins job
   Process(Seq("sbt", "unlock", "reload", "lock", "test"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
 }
 
