@@ -124,19 +124,19 @@ lazy val sigma = (project in file(".")).settings(commonSettings: _*)
 lazy val ergoTest = TaskKey[Unit]("ergoTest", "tests current build in Ergo")
 
 ergoTest := {
+  val log = streams.value.log
   val ergoBranch = "voting"
+  log.info(s"Testing current build in Ergo (branch $ergoBranch):")
   val cwd = new File("").absolutePath
   val ergoPath = new File(cwd + "/ergo-tests/")
-  println(s"Cleaning $ergoPath")
-  s"rm -rf $ergoPath" !
+  log.info(s"Cleaning $ergoPath")
+  s"rm -rf ${ergoPath.absolutePath}" !
   
-  println(s"Cloning Ergo branch $ergoBranch")
+  log.info(s"Cloning Ergo branch $ergoBranch into ${ergoPath.absolutePath}")
   s"git clone -b $ergoBranch --single-branch git@github.com:ergoplatform/ergo.git ${ergoPath.absolutePath}" !
   
   val sigmastateVersion = version.value
-  println(s"Sigmastate version: $sigmastateVersion")
-  
-  println(s"Running Ergo tests in $ergoPath")
+  log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
   // todo pass sigmastate version 
   Process(Seq("sbt", "test"), ergoPath) !
 }
