@@ -1,4 +1,6 @@
+import scala.language.postfixOps
 import scala.util.Try
+import scala.sys.process._
 
 organization := "org.scorexfoundation"
 
@@ -118,3 +120,30 @@ credentials ++= (for {
 } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 
 lazy val sigma = (project in file(".")).settings(commonSettings: _*)
+
+lazy val ergoTest = TaskKey[Unit]("ergoTest", "tests current build in Ergo")
+
+ergoTest := {
+  val ergoBranch = "external-sigmastate-version"
+  val log = streams.value.log
+  log.info(s"Testing current build in Ergo (branch $ergoBranch):")
+  val cwd = new File("").absolutePath
+  val ergoPath = new File(cwd + "/ergo-tests/")
+  log.info(s"Cleaning $ergoPath")
+  s"rm -rf ${ergoPath.absolutePath}" !
+
+  log.info(s"Cloning Ergo branch $ergoBranch into ${ergoPath.absolutePath}")
+  s"git clone -b $ergoBranch --single-branch https://github.com/ergoplatform/ergo.git ${ergoPath.absolutePath}" !
+
+  val sigmastateVersion = version.value
+  log.info(s"Updating Ergo in $ergoPath with Sigmastate version $sigmastateVersion")
+  Process(Seq("sbt", "unlock", "reload", "lock"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
+
+  log.info("Updated Ergo lock.sbt:")
+  Process(Seq("git", "diff", "-U0", "lock.sbt"), ergoPath) !
+
+  log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
+  Process(Seq("sbt", "test"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
+  // todo run it:test and set label for jenkins job
+}
+
