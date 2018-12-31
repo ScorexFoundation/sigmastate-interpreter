@@ -142,14 +142,14 @@ def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Int = {
   Process(Seq("sbt", task), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
 }
 
-lazy val ergoUnitTest = TaskKey[Unit]("ergoUnitTest", "run ergo unit tests with current build")
+lazy val ergoUnitTest = TaskKey[Unit]("ergoUnitTest", "run ergo unit tests with current version")
 ergoUnitTest := {
   val log = streams.value.log
   val sigmastateVersion = version.value
   runErgoTask("test", sigmastateVersion, log) 
 }
 
-lazy val ergoItTest = TaskKey[Unit]("ergoItTest", "run ergo it:test with current build")
+lazy val ergoItTest = TaskKey[Unit]("ergoItTest", "run ergo it:test with current version")
 ergoItTest := {
   val log = streams.value.log
   val sigmastateVersion = version.value
