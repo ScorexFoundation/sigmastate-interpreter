@@ -144,6 +144,8 @@ ergoTest := {
 
   log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
   Process(Seq("sbt", "test"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
-  // todo run it:test and set label for jenkins job
+
+  log.info(s"Running Ergo it:tests in $ergoPath with Sigmastate version $sigmastateVersion")
+  Process(Seq("sbt", "it:test"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
 }
 
