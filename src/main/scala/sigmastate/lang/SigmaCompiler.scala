@@ -8,7 +8,12 @@ import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigmastate.Values.{SValue, SigmaTree, Value}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
-class SigmaCompiler(builder: SigmaBuilder) {
+/**
+  * @param builder
+  * @param networkPrefix network prefix to decode an ergo address from string (PK op),
+  *                      if None compilation of any script with PK will fail
+  */
+class SigmaCompiler(builder: SigmaBuilder, networkPrefix: Option[NetworkPrefix]) {
 
   def parse(x: String): SValue = {
     SigmaParser(x, builder) match {
@@ -19,7 +24,7 @@ class SigmaCompiler(builder: SigmaBuilder) {
   }
 
   def typecheck(env: ScriptEnv, parsed: SValue): Value[SType] = {
-    val binder = new SigmaBinder(env, builder)
+    val binder = new SigmaBinder(env, builder, networkPrefix)
     val bound = binder.bind(parsed)
     val typer = new SigmaTyper(builder)
     val typed = typer.typecheck(bound)
@@ -31,14 +36,15 @@ class SigmaCompiler(builder: SigmaBuilder) {
     typecheck(env, parsed)
   }
 
-  def compile(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix): Value[SType] = {
+  def compile(env: ScriptEnv, code: String): Value[SType] = {
     val typed = typecheck(env, code)
-    val spec = new SigmaSpecializer(builder, networkPrefix)
+    val spec = new SigmaSpecializer(builder)
     val ir = spec.specialize(typed)
     ir
   }
 }
 
 object SigmaCompiler {
-  def apply(builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler = new SigmaCompiler(builder)
+  def apply(builder: SigmaBuilder, networkPrefix: NetworkPrefix): SigmaCompiler =
+    new SigmaCompiler(builder, Some(networkPrefix))
 }

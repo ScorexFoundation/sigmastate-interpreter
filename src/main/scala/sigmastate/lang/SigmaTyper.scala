@@ -126,18 +126,20 @@ class SigmaTyper(val builder: SigmaBuilder) {
           // If it's a pre-defined function application
           if (args.length != argTypes.length)
             error(s"Invalid argument type of application $app: invalid number of arguments")
-          val new_args = args.zip(argTypes).map {
+          val typedArgs = args.zip(argTypes).map {
             case (arg, expectedType) => assignType(env, arg, Some(expectedType))
           }
-          val newArgs = new_f match {
-            case AllOfFunc.sym | AnySym =>
-              adaptSigmaPropToBoolean(new_args, argTypes)
-            case _ => new_args
+          val adaptedTypedArgs = (new_f, typedArgs) match {
+            case (AllOfFunc.sym | AnyOfFunc.sym, _) =>
+              adaptSigmaPropToBoolean(typedArgs, argTypes)
+            case (Ident(GetVarFunc.name, _), Seq(id: Constant[SNumericType]@unchecked)) if id.tpe.isNumType =>
+                Seq(ByteConstant(SByte.downcast(id.value.asInstanceOf[AnyVal])))
+            case _ => typedArgs
           }
-          val actualTypes = newArgs.map(_.tpe)
+          val actualTypes = adaptedTypedArgs.map(_.tpe)
           if (actualTypes != argTypes)
             error(s"Invalid argument type of application $app: expected $argTypes; actual after typing: $actualTypes")
-          mkApply(new_f, newArgs.toIndexedSeq)
+          mkApply(new_f, adaptedTypedArgs.toIndexedSeq)
         case _: SCollectionType[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {

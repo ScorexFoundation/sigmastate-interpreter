@@ -1,10 +1,15 @@
 package sigmastate.lang
 
+import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
+import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
+import scorex.util.encode.Base58
 import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.Values.{IntConstant, SValue, Value}
+import sigmastate.Values.{BoolValue, Constant, EvaluatedValue, IntConstant, IntValue, SValue, SigmaPropValue, StringConstant, Value}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.lang.TransformingSigmaBuilder._
+import sigmastate.lang.exceptions.InvalidArguments
+import sigmastate.serialization.ValueSerializer
 
 object SigmaPredef {
 
@@ -15,9 +20,10 @@ object SigmaPredef {
     declaration: Lambda,
     /** Builder of SigmaIR node which is equivalent to function application
       * Rule: Apply(f, args) -->  irBuilder(f, args) */
-    irBuilder: (SValue, Seq[SValue]) => SValue) {
+    irBuilder: PartialFunction[(SValue, Seq[SValue]), SValue]) {
 
     val sym: Ident = Ident(name, declaration.tpe)
+    val symNoType: Ident = Ident(name, NoType)
   }
 
   class PredefinedFuncRegistry(builder: SigmaBuilder) {
@@ -25,33 +31,102 @@ object SigmaPredef {
     import builder._
 
     /** Type variable used in the signatures of global functions below. */
+    private val tT = STypeIdent("T")
     private val tK = STypeIdent("K")
     private val tL = STypeIdent("L")
     private val tR = STypeIdent("R")
     private val tO = STypeIdent("O")
 
-    val AllOfFunc = PredefinedFunc(
-      "allOf",
+    val AllOfFunc = PredefinedFunc("allOf",
       Lambda(IndexedSeq("conditions" -> SCollection(SBoolean)), SBoolean, None),
-      { (_, args) => mkAND(args.head.asCollection) }
+      { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkAND(col) }
+    )
+
+    val AnyOfFunc = PredefinedFunc("anyOf",
+      Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+      { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkOR(col) }
+    )
+
+    val AtLeastFunc = PredefinedFunc("atLeast",
+      Lambda(Vector("k" -> SInt, "conditions" -> SCollection(SSigmaProp)), SSigmaProp, None),
+      { case (_, Seq(bound: IntValue@unchecked, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
+        mkAtLeast(bound, arr)
+      }
+    )
+
+    val OuterJoinFunc = PredefinedFunc(
+      "outerJoin",
+      Lambda(
+        Seq(STypeParam(tK), STypeParam(tL), STypeParam(tR), STypeParam(tO)),
+        Vector(
+          "left" -> SCollection(STuple(tK, tL)),
+          "right" -> SCollection(STuple(tK, tR)),
+          "l" -> SFunc(IndexedSeq(tK, tL), tO),
+          "r" -> SFunc(IndexedSeq(tK, tR), tO),
+          "inner" -> SFunc(IndexedSeq(tK, tL, tR), tO),
+        ),
+        SCollection(STuple(tK, tO)), None),
+      { case (_, args) => IntConstant(1) }
+    )
+
+    val ZKProofFunc = PredefinedFunc("ZKProof",
+      Lambda(Vector("block" -> SSigmaProp), SBoolean, None),
+      { case (_, Seq(block: SigmaPropValue@unchecked)) => mkZKProofBlock(block) }
+    )
+
+    val SigmaPropFunc = PredefinedFunc("sigmaProp",
+      Lambda(Vector("condition" -> SBoolean), SSigmaProp, None),
+      { case (_, Seq(b: BoolValue@unchecked)) => mkBoolToSigmaProp(b) }
+    )
+
+    val GetVarFunc = PredefinedFunc("getVar",
+      Lambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), SOption(tT), None),
+      { case (Ident(_, SFunc(_, SOption(rtpe), _)), Seq(id: Constant[SNumericType]@unchecked)) =>
+        mkGetVar(SByte.downcast(id.value.asInstanceOf[AnyVal]), rtpe)
+      }
+    )
+
+    def PKFunc(networkPrefix: Option[NetworkPrefix]) = PredefinedFunc("PK",
+      Lambda(Vector("input" -> SString), SSigmaProp, None),
+      { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+        val np = networkPrefix match {
+          case Some(value) => value
+          case None => sys.error("Expected network prefix to decode address")
+        }
+        ErgoAddressEncoder(np).fromString(arg.value).get match {
+          case a: P2PKAddress => mkConstant[SSigmaProp.type](a.pubkey, SSigmaProp)
+          case a@_ => sys.error(s"unsupported address $a")
+        }
+      }
+    )
+
+    val DeserializeFunc = PredefinedFunc("deserialize",
+      Lambda(Seq(STypeParam(tT)), Vector("str" -> SString), SOption(tT), None),
+      { case (Ident(_, tpe), args) =>
+        if (args.length != 1)
+          throw new InvalidArguments(s"Wrong number of arguments in $args: expected one argument")
+        val str = args.head match {
+          case StringConstant(s) => s
+          case _ =>
+            throw new InvalidArguments(s"invalid argument in $args: expected a string constant")
+        }
+        val bytes = Base58.decode(str).get
+        val res = ValueSerializer.deserialize(bytes)
+        if (res.tpe != tpe)
+          throw new InvalidArguments(s"Wrong type after deserialization, expected $tpe, got ${res.tpe}")
+        res
+      }
     )
 
     val funcs: Seq[PredefinedFunc] = Seq(
       AllOfFunc,
-      PredefinedFunc(
-        "outerJoin",
-        Lambda(
-          Seq(STypeParam(tK), STypeParam(tL), STypeParam(tR), STypeParam(tO)),
-          Vector(
-            "left" -> SCollection(STuple(tK, tL)),
-            "right" -> SCollection(STuple(tK, tR)),
-            "l" -> SFunc(IndexedSeq(tK, tL), tO),
-            "r" -> SFunc(IndexedSeq(tK, tR), tO),
-            "inner" -> SFunc(IndexedSeq(tK, tL, tR), tO),
-          ),
-          SCollection(STuple(tK, tO)), None),
-        { (_, args) => IntConstant(1) }
-      ),
+      AnyOfFunc,
+      AtLeastFunc,
+      OuterJoinFunc,
+      ZKProofFunc,
+      SigmaPropFunc,
+      GetVarFunc,
+      DeserializeFunc,
     )
   }
 
@@ -67,10 +142,6 @@ object SigmaPredef {
   private val tT = STypeIdent("T")
 
   val predefinedEnv: Map[String, SValue] = Seq(
-    "anyOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-    "atLeast" -> mkLambda(Vector("k" -> SInt, "conditions" -> SCollection(SSigmaProp)), SSigmaProp, None),
-    "ZKProof" -> mkLambda(Vector("block" -> SSigmaProp), SBoolean, None),
-    "sigmaProp" -> mkLambda(Vector("condition" -> SBoolean), SSigmaProp, None),
 
     "blake2b256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
     "sha256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
@@ -79,7 +150,6 @@ object SigmaPredef {
     "decodePoint" -> mkLambda(Vector("input" -> SByteArray), SGroupElement, None),
     "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
 
-    "getVar" -> mkGenLambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), SOption(tT), None),
 
     "proveDHTuple" -> mkLambda(Vector("g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
     "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SSigmaProp, None),
@@ -90,8 +160,6 @@ object SigmaPredef {
 
     "fromBase58" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
-    "PK" -> mkLambda(Vector("input" -> SString), SSigmaProp, None),
-    "deserialize" -> mkGenLambda(Seq(STypeParam(tT)), Vector("str" -> SString), SOption(tT), None),
     "substConstants" -> mkGenLambda(
       Seq(STypeParam(tT)),
       Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
@@ -103,13 +171,6 @@ object SigmaPredef {
     val v = predefinedEnv(name)
     mkIdent(name, v.tpe)
   }
-
-  val AnySym = PredefIdent("anyOf")
-  val AtLeastSym = PredefIdent("atLeast")
-  val ZKProofSym = PredefIdent("ZKProof")
-  val SigmaPropSym = PredefIdent("sigmaProp")
-
-  val GetVarSym = PredefIdent("getVar")
 
   val Blake2b256Sym = PredefIdent("blake2b256")
   val Sha256Sym = PredefIdent("sha256")
@@ -128,10 +189,6 @@ object SigmaPredef {
 
   val FromBase58Sym = PredefIdent("fromBase58")
   val FromBase64Sym = PredefIdent("fromBase64")
-
-  val PKSym = PredefIdent("PK")
-
-  val DeserializeSym = PredefIdent("deserialize")
 
   val XorOf = PredefIdent("xorOf")
 }

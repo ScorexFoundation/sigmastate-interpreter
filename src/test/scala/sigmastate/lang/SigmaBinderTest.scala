@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform.ErgoAddressEncoder._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import scorex.util.encode.Base58
@@ -18,7 +19,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   def bind(env: ScriptEnv, x: String): SValue = {
     val builder = TransformingSigmaBuilder
     val ast = SigmaParser(x, builder).get.value
-    val binder = new SigmaBinder(env, builder)
+    val binder = new SigmaBinder(env, builder, Some(TestnetNetworkPrefix))
     binder.bind(ast)
   }
 
@@ -46,9 +47,6 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("predefined functions") {
-    bind(env, "getVar[Byte](10)") shouldBe GetVar(10.toByte, SByte)
-    bind(env, "getVar[Byte](10L)") shouldBe GetVar(10.toByte, SByte)
-    an[BinderException] should be thrownBy bind(env, "getVar[Byte](\"ha\")")
     bind(env, "min(1, 2)") shouldBe Min(IntConstant(1), IntConstant(2))
     bind(env, "max(1, 2)") shouldBe Max(IntConstant(1), IntConstant(2))
     bind(env, "min(1, 2L)") shouldBe Min(Upcast(IntConstant(1), SLong), LongConstant(2))
@@ -186,6 +184,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     }
     roundtrip(ByteArrayConstant(Array[Byte](2)), "Coll[Byte]")
     roundtrip(Tuple(ByteArrayConstant(Array[Byte](2)), LongConstant(4)), "(Coll[Byte], Long)")
+    an[InvalidArguments] should be thrownBy roundtrip(ByteArrayConstant(Array[Byte](2)), "Coll[Long]")
   }
 
   property("deserialize fails") {

@@ -33,14 +33,14 @@ class SigmaSpecializerTest extends PropSpec
   def typed(env: Map[String, SValue], x: String): SValue = {
     val builder = TransformingSigmaBuilder
     val parsed = SigmaParser(x, builder).get.value
-    val binder = new SigmaBinder(env, builder)
+    val binder = new SigmaBinder(env, builder, networkPrefix = None)
     val bound = binder.bind(parsed)
     val typer = new SigmaTyper(builder)
     val typed = typer.typecheck(bound)
     typed
   }
   def spec(env: Map[String, SValue], typed: SValue, networkPrefix: NetworkPrefix = TestnetNetworkPrefix): SValue = {
-    val spec = new SigmaSpecializer(TransformingSigmaBuilder, networkPrefix)
+    val spec = new SigmaSpecializer(TransformingSigmaBuilder)
     spec.specialize(env, typed)
   }
   def spec(code: String): SValue = {
@@ -195,22 +195,6 @@ class SigmaSpecializerTest extends PropSpec
   property("failed fromBaseX (invalid input)") {
     an[AssertionError] should be thrownBy spec(""" fromBase58("^%$#@")""")
     an[IllegalArgumentException] should be thrownBy spec(""" fromBase64("^%$#@")""")
-  }
-
-  private def testPK(networkPrefix: NetworkPrefix) = {
-    implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(networkPrefix)
-    val dk1 = proveDlogGen.sample.get
-    val encodedP2PK = P2PKAddress(dk1).toString
-    val code = s"""PK("$encodedP2PK")"""
-    spec(Map(), typed(Map(), code), networkPrefix) shouldEqual dk1
-  }
-
-  property("PK (testnet network prefix)") {
-    testPK(TestnetNetworkPrefix)
-  }
-
-  property("PK (mainnet network prefix)") {
-    testPK(ErgoAddressEncoder.MainnetNetworkPrefix)
   }
 
   property("ExtractRegisterAs") {

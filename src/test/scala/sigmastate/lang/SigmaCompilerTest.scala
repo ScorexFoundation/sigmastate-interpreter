@@ -1,23 +1,29 @@
 package sigmastate.lang
 
-import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, NetworkPrefix, TestnetNetworkPrefix}
+import org.ergoplatform.{ErgoAddressEncoder, Height, P2PKAddress}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
 import sigmastate._
 import sigmastate.Values._
+import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.Terms.ZKProofBlock
+import sigmastate.lang.exceptions.TyperException
 import sigmastate.lang.syntax.ParserException
-import sigmastate.utxo.ByIndex
+import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.utxo.{ByIndex, GetVar}
 
-class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with LangTests {
-  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
+class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
+  implicit lazy val IR = new TestingIRContext
 
-  def comp(env: ScriptEnv, x: String) = compiler.compile(env, x, TestnetNetworkPrefix)
+  private def comp(env: ScriptEnv, x: String): Value[SType] = compileWithCosting(env, x)
+  private def comp(x: String): Value[SType] = compileWithCosting(env, x)
 
-  def fail(env: ScriptEnv, x: String, index: Int, expected: Any): Unit = {
+  private def fail(env: ScriptEnv, x: String, index: Int, expected: Any): Unit = {
     try {
-      val res = compiler.compile(env, x, TestnetNetworkPrefix)
+      val res = compiler.compile(env, x)
       assert(false, s"Error expected")
     } catch {
       case e: TestFailedException =>
@@ -72,4 +78,39 @@ class SigmaCompilerTest extends PropSpec with PropertyChecks with Matchers with 
     fail(env, "{ X", 3, "\"}\"")
     fail(env, "{ val X", 7, "\"=\"")
   }
+
+  property("allOf") {
+    comp("allOf(Coll[Boolean](true, false))") shouldBe AND(TrueLeaf, FalseLeaf)
+  }
+
+  property("anyOf") {
+    comp("anyOf(Coll[Boolean](true, false))") shouldBe OR(TrueLeaf, FalseLeaf)
+  }
+
+  property("atLeast") {
+    comp("atLeast(2, Coll[SigmaProp](p1, p2))") shouldBe AtLeast(2, p1, p2)
+  }
+
+  ignore("ZKProof") { // costing is missing
+    comp("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe ZKProofBlock(BoolToSigmaProp(GT(Height, IntConstant(1000))))
+  }
+
+  property("sigmaProp") {
+    comp("sigmaProp(HEIGHT > 1000)") shouldBe BoolToSigmaProp(GT(Height, IntConstant(1000)))
+  }
+
+  property("getVar") {
+    comp("getVar[Byte](10).get") shouldBe GetVar(10.toByte, SByte).get
+    comp("getVar[Byte](10L).get") shouldBe GetVar(10.toByte, SByte).get
+    an[TyperException] should be thrownBy comp("getVar[Byte](\"ha\")")
+  }
+
+  property("PK (testnet network prefix)") {
+    implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)
+    val dk1 = proveDlogGen.sample.get
+    val encodedP2PK = P2PKAddress(dk1).toString
+    val code = s"""PK("$encodedP2PK")"""
+    comp(code) shouldEqual SigmaPropConstant(dk1)
+  }
+
 }

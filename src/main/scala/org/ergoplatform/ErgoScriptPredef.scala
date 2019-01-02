@@ -12,7 +12,7 @@ import sigmastate.{SLong, _}
 
 object ErgoScriptPredef {
   import sigmastate.interpreter.Interpreter._
-  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
+  val compiler = new SigmaCompiler(TransformingSigmaBuilder, networkPrefix = None)
 
   def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
     val interProp = compiler.typecheck(env, code)

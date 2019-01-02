@@ -7,7 +7,7 @@ import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.utxo.CostTable
 import special.sigma.{ContractsTestkit, Box => DBox, Context => DContext, SigmaContract => DContract, TestBox => DTestBox, TestContext => DTestContext}
 import scalan.BaseCtxTests
-import sigmastate.lang.LangTests
+import sigmastate.lang.{LangTests, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -25,7 +25,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   import Context._
   import WBigInteger._
 
-
+  lazy val compiler = new SigmaCompiler(IR.builder, networkPrefix = None)
 
   def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())
@@ -128,7 +128,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
 
     def doCosting: Rep[(Context => Any, (Context => Int, Context => Long))] = {
       val costed = script match {
-        case Code(code) => cost(env, code)
+        case Code(code) => compileAndCost(env, code)
         case Tree(tree) => cost(env, tree)
       }
       val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
@@ -254,8 +254,13 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     tcase.doReduce()
   }
 
+  def compileAndCost(env: ScriptEnv, code: String): Rep[Context => Costed[SType#WrappedType]] = {
+    val typed = compiler.typecheck(env, code)
+    cost(env, typed)
+  }
+
   def build(env: ScriptEnv, name: String, script: String, expected: SValue): Unit = {
-    val costed = cost(env, script)
+    val costed = compileAndCost(env, script)
     val Tuple(valueF, costF, sizeF) = split3(costed)
     emit(name, valueF, costF, sizeF)
     verifyCostFunc(costF) shouldBe(Success(()))

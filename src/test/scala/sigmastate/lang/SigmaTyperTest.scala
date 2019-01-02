@@ -1,6 +1,7 @@
 package sigmastate.lang
 
-import org.ergoplatform.{Height, Inputs}
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+import org.ergoplatform.{ErgoAddressEncoder, Height, Inputs}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection.SByteArray
@@ -22,7 +23,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
-      val binder = new SigmaBinder(env, builder)
+      val binder = new SigmaBinder(env, builder, networkPrefix = Some(TestnetNetworkPrefix))
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder)
@@ -38,7 +39,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
-      val binder = new SigmaBinder(env, builder)
+      val binder = new SigmaBinder(env, builder, networkPrefix = Some(TestnetNetworkPrefix))
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder)
@@ -106,8 +107,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "max(1L, 2)") shouldBe SLong
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
-    typecheck(env, """PK("111")""") shouldBe SSigmaProp
-    typecheck(env, """PK("111")""") shouldBe SSigmaProp
+    typecheck(env, """PK("tJPvNjccEZZF2Cwb6WNsRFmUa79Dy3npbmnfUKnBRREq2cuaULCo2R")""") shouldBe SSigmaProp
     typecheck(env, "sigmaProp(HEIGHT > 1000)") shouldBe SSigmaProp
     typecheck(env, "ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe SBoolean
   }
@@ -516,5 +516,9 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
         | { (b: Byte, i: Int) => (b + i).toLong },
         | { (b: Byte, s: Short, i: Int) => (b + s + i).toLong }
         | )""".stripMargin) shouldBe SCollection(STuple(SByte, SLong))
+  }
+
+  property("AtLeast (invalid parameters)") {
+    an [TyperException] should be thrownBy typecheck(env, "atLeast(2, 2)")
   }
 }

@@ -33,10 +33,10 @@ trait SigmaTestingCommons extends PropSpec
 
   implicit def grLeafConvert(elem: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 
-  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
+  val compiler = SigmaCompiler(TransformingSigmaBuilder, TestnetNetworkPrefix)
 
   def compile(env: ScriptEnv, code: String): Value[SType] = {
-    compiler.compile(env, code, TestnetNetworkPrefix)
+    compiler.compile(env, code)
   }
 
   def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {

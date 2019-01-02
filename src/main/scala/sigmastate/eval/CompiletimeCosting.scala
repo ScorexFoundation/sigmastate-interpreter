@@ -31,14 +31,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case _: DLogProtocol.ProveDlog | _: ProveDHTuple =>
         eval(SigmaPropConstant(node.asSigmaBoolean))
 
-      // Rule: anyOf(arr) --> OR(arr)
-      case Terms.Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-        eval(mkOR(arr))
-
-      // Rule: atLeast(bound, arr) --> AtLeast(bound, arr)
-      case Terms.Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
-        eval(mkAtLeast(bound.asIntValue, arr))
-
       case Terms.Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
         eval(mkCalcBlake2b256(arg))
 
@@ -56,9 +48,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
 
       case Terms.Apply(ByteArrayToBigIntSym, Seq(arr: Value[SByteArray]@unchecked)) =>
         eval(mkByteArrayToBigInt(arr))
-
-      case Terms.Apply(SigmaPropSym, Seq(bool: Value[SBoolean.type]@unchecked)) =>
-        eval(mkBoolToSigmaProp(bool))
 
       case Terms.Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
         eval(SigmaPropConstant(

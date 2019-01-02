@@ -180,8 +180,9 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
   def fromString(addrStr: String): Try[ErgoAddress] = Base58.decode(addrStr).flatMap { bytes =>
     Try {
       val headByte = bytes.head
-      require(headByte >= networkPrefix)
       val addressType = (headByte - networkPrefix).toByte
+      require(addressType > 0, "Trying to decode mainnet address in testnet")
+      require(addressType <= Pay2SAddress.addressTypePrefix, "Trying to decode testnet address in mainnet")
       val (withoutChecksum, checksum) = bytes.splitAt(bytes.length - ChecksumLength)
 
       if (!util.Arrays.equals(hash256(withoutChecksum).take(ChecksumLength), checksum)) {
