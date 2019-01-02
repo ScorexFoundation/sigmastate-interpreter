@@ -2,13 +2,14 @@ package org.ergoplatform
 
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.Values.{BoolValue, IntConstant, LongConstant, Value}
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo.{ByIndex, ErgoLikeTestInterpreter, ExtractCreationInfo, SelectField}
-import sigmastate.{AvlTreeData, EQ}
+import sigmastate.{AvlTreeData, EQ, SBoolean, Values}
 
 import scala.util.Try
 
@@ -17,8 +18,15 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     override val okPrintEvaluatedEntries: Boolean = false
   }
   val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
+  val blocksTotal = 2080799
+  val fixedRatePeriod = 525600
+  val epochLength = 64800
+  val fixedRate = 7500000000L
+  val oneEpochReduction = 300000000
+  val minerRewardDelay = 720
+  val coinsTotal = 9773992500000000L
 
-  property("boxCreationHeight") {
+  ignore("boxCreationHeight") {
     val verifier = new ErgoLikeTestInterpreter
     val prover = new ErgoLikeTestProvingInterpreter
     val minerProp = prover.dlogSecrets.head.publicImage
@@ -46,63 +54,77 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
-  ignore("feeProposition") {
-    // TODO
-  }
-
-  property("emission specification") {
-    val verifier = new ErgoLikeTestInterpreter
+  property("collect coins from rewardOutputScript") {
     val prover = new ErgoLikeTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
-    val pkBytes = minerPk.pkBytes
+    val prop = ErgoScriptPredef.rewardOutputScript(minerRewardDelay, minerPk)
+    val verifier = new ErgoLikeTestInterpreter
+    val inputBoxes = IndexedSeq(ErgoBox(20, prop, 0, Seq(), Map()))
+    val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
+    val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(ErgoBox(inputBoxes.head.value, Values.TrueLeaf, 0)))
 
-    val blocksTotal = 2080799
-    val fixedRatePeriod = 525600
-    val epochLength = 64800
-    val fixedRate = 7500000000L
-    val oneEpochReduction = 300000000
-    val minerRewardDelay = 720
-    val coinsTotal = 9773992500000000L
-    val minerProp = ErgoScriptPredef.rewardOutputScript(minerRewardDelay, minerPk)
+    val ctx = ErgoLikeContext(
+      currentHeight = inputBoxes.head.creationHeight + minerRewardDelay,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = inputBoxes,
+      spendingTransaction,
+      self = inputBoxes.head)
+    val prevBlockCtx = ErgoLikeContext(
+      currentHeight = inputBoxes.head.creationHeight + minerRewardDelay - 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = inputBoxes,
+      spendingTransaction,
+      self = inputBoxes.head)
 
+    // should not be able to collect before minerRewardDelay
+    val prove = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, prevBlockCtx, prove, fakeMessage) shouldBe 'failure
+
+    // should be able to collect after minerRewardDelay
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
+
+  property("create transaction collecting the result") {
+    val prover = new ErgoLikeTestProvingInterpreter
+    val minerPk = prover.dlogSecrets.head.publicImage
     val prop = ErgoScriptPredef.emissionBoxProp(fixedRatePeriod, epochLength, fixedRate, oneEpochReduction, minerRewardDelay)
     val emissionBox = ErgoBox(coinsTotal, prop, 0, Seq(), Map(ErgoBox.nonMandatoryRegisters.head -> LongConstant(-1)))
-    val inputBoxes = IndexedSeq(emissionBox)
-    val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
+    val minerProp = ErgoScriptPredef.rewardOutputScript(minerRewardDelay, minerPk)
 
-    // collect fixedRate coins during the fixed rate period
+    // collect coins during the fixed rate period
     forAll(Gen.choose(1, fixedRatePeriod)) { height =>
-      check(fixedRate, height) shouldBe 'success
-      check(fixedRate + 1, height) shouldBe 'failure
-      check(fixedRate - 1, height) shouldBe 'failure
+      createRewardTx(fixedRate, height, minerProp) shouldBe 'success
+      createRewardTx(fixedRate + 1, height, minerProp) shouldBe 'failure
+      createRewardTx(fixedRate - 1, height, minerProp) shouldBe 'failure
     }
 
-    // collect correct amount after the fixed rate period
+    // collect coins after the fixed rate period
     forAll(Gen.choose(1, blocksTotal - 1)) { height =>
       val currentRate = Algos.emissionAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
-      check(currentRate, height) shouldBe 'success
-      check(currentRate + 1, height) shouldBe 'failure
-      check(currentRate - 1, height) shouldBe 'failure
+      createRewardTx(currentRate, height, minerProp) shouldBe 'success
+      createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
+      createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
     }
 
-
-    def check(emissionAmount: Long, nextHeight: Int): Try[Unit] = Try {
-      val newEmissionBox: ErgoBoxCandidate = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop,
-        nextHeight, Seq(), Map())
-      val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight, Seq(), Map())
-
-      val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newEmissionBox, minerBox))
-
-      val ctx = ErgoLikeContext(
-        currentHeight = nextHeight,
-        lastBlockUtxoRoot = AvlTreeData.dummy,
-        minerPubkey = pkBytes,
-        boxesToSpend = inputBoxes,
-        spendingTransaction,
-        self = inputBoxes.head)
-      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    // collect coins to incorrect proposition
+    forAll(Gen.choose(1, blocksTotal - 1)) { height =>
+      val currentRate = Algos.emissionAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
+      val minerProp2 = ErgoScriptPredef.rewardOutputScript(minerRewardDelay + 1, minerPk)
+      createRewardTx(currentRate, height, minerProp2) shouldBe 'failure
+      createRewardTx(currentRate, height, minerPk) shouldBe 'failure
     }
+
+    def createRewardTx(emissionAmount: Long, nextHeight: Int, minerProp: Value[SBoolean.type]): Try[ErgoLikeTransaction] = {
+      checkRewardTx(minerPk: ProveDlog,
+        minerProp: Value[SBoolean.type],
+        emissionBox: ErgoBox,
+        emissionAmount: Long,
+        nextHeight: Int)(prover)
+    }
+
   }
 
   property("tokenThreshold") {
@@ -164,6 +186,35 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     )
     check(inputs3) shouldBe 'success
 
+  }
+
+  def checkRewardTx(minerPk: ProveDlog,
+                    minerProp: Value[SBoolean.type],
+                    emissionBox: ErgoBox,
+                    emissionAmount: Long,
+                    nextHeight: Int)(prover: ErgoLikeTestProvingInterpreter): Try[ErgoLikeTransaction] = Try {
+    val verifier = new ErgoLikeTestInterpreter
+    val prop = emissionBox.proposition
+    val inputBoxes = IndexedSeq(emissionBox)
+    val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
+    val pkBytes = minerPk.pkBytes
+
+    val newEmissionBox: ErgoBoxCandidate = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop,
+      nextHeight, Seq(), Map())
+    val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight, Seq(), Map())
+
+    val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newEmissionBox, minerBox))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = nextHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = pkBytes,
+      boxesToSpend = inputBoxes,
+      spendingTransaction,
+      self = inputBoxes.head)
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    spendingTransaction
   }
 
 }

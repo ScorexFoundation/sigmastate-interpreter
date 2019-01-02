@@ -10,9 +10,8 @@ class AlgosSpec extends SigmaTestingCommons {
     val genesisHeight = 1
     val fixedRatePeriod = 525600
     val epochLength = 64800
-    val fixedRate = 7500000000L
-    val oneEpochReduction = 300000000
-    val minerRewardDelay = 720
+    val fixedRate = 75L * Algos.CoinsInOneErgo
+    val oneEpochReduction = 3 * Algos.CoinsInOneErgo
 
     val (coinsTotal, blocksTotal) = {
       @tailrec
@@ -28,7 +27,7 @@ class AlgosSpec extends SigmaTestingCommons {
       loop(genesisHeight, 0)
     }
     // check total emission
-    coinsTotal shouldBe 9773992500000000L
+    coinsTotal shouldBe 97739925L * Algos.CoinsInOneErgo
     val ct2 = Algos.issuedCoinsAfterHeight(blocksTotal, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
     ct2 shouldBe coinsTotal
 

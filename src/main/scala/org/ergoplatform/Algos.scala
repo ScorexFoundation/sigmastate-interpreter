@@ -2,6 +2,8 @@ package org.ergoplatform
 
 object Algos {
 
+  val CoinsInOneErgo: Long = 1000000000
+
   /**
     * Emission rules.
     * Return number of coins, issued at height `h` and all previous heights
