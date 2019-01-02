@@ -151,6 +151,8 @@ ergoUnitTest := {
   runErgoTask("test", sigmastateVersion, log) 
 }
 
+ergoUnitTest := ergoUnitTest.dependsOn(publishLocal).value
+
 lazy val ergoItTest = TaskKey[Unit]("ergoItTest", "run ergo it:test with current version")
 ergoItTest := {
   val log = streams.value.log
@@ -158,3 +160,4 @@ ergoItTest := {
   runErgoTask("it:test", sigmastateVersion, log)
 }
 
+ergoItTest := ergoItTest.dependsOn(publishLocal).value
