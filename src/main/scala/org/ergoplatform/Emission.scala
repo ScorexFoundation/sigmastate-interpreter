@@ -1,6 +1,6 @@
 package org.ergoplatform
 
-object Algos {
+object Emission {
 
   val CoinsInOneErgo: Long = 1000000000
 

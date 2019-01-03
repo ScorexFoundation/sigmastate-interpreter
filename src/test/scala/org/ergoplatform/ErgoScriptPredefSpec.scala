@@ -103,7 +103,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     // collect coins after the fixed rate period
     forAll(Gen.choose(1, blocksTotal - 1)) { height =>
-      val currentRate = Algos.emissionAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
+      val currentRate = Emission.emissionAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
       createRewardTx(currentRate, height, minerProp) shouldBe 'success
       createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
       createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
@@ -111,7 +111,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     // collect coins to incorrect proposition
     forAll(Gen.choose(1, blocksTotal - 1)) { height =>
-      val currentRate = Algos.emissionAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
+      val currentRate = Emission.emissionAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
       val minerProp2 = ErgoScriptPredef.rewardOutputScript(minerRewardDelay + 1, minerPk)
       createRewardTx(currentRate, height, minerProp2) shouldBe 'failure
       createRewardTx(currentRate, height, minerPk) shouldBe 'failure
