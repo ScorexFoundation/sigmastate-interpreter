@@ -30,6 +30,43 @@ object Emission {
   }
 
   /**
+    * Return number of coins, issued at height `h` in favour of a miner
+    */
+  def minersRewardAtHeight(h: Long,
+                           fixedRatePeriod: Int,
+                           fixedRate: Long,
+                           epochLength: Int,
+                           oneEpochReduction: Long,
+                           foundersInitialReward: Long): Long = {
+    if (h < fixedRatePeriod + 2 * epochLength) {
+      fixedRate - foundersInitialReward
+    } else {
+      val epoch = 1 + (h - fixedRatePeriod) / epochLength
+      Math.max(fixedRate - oneEpochReduction * epoch, 0)
+    }
+  }
+
+  /**
+    * Return number of coins, issued at height `h` in favour of the foundation
+    */
+  def foundationRewardAtHeight(h: Long,
+                               fixedRatePeriod: Int,
+                               fixedRate: Long,
+                               epochLength: Int,
+                               oneEpochReduction: Long,
+                               foundersInitialReward: Long): Long = {
+    if (h < fixedRatePeriod) {
+      foundersInitialReward
+    } else if (h < fixedRatePeriod + epochLength) {
+      foundersInitialReward - oneEpochReduction
+    } else if (h < fixedRatePeriod + (2 * epochLength)) {
+      foundersInitialReward - 2 * oneEpochReduction
+    } else {
+      0
+    }
+  }
+
+  /**
     * Return number of coins, issued at height `h`
     */
   def emissionAtHeight(h: Long,
