@@ -121,11 +121,8 @@ credentials ++= (for {
 
 lazy val sigma = (project in file(".")).settings(commonSettings: _*)
 
-lazy val ergoTest = TaskKey[Unit]("ergoTest", "tests current build in Ergo")
-
-ergoTest := {
+def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "external-sigmastate-version"
-  val log = streams.value.log
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
   val cwd = new File("").absolutePath
   val ergoPath = new File(cwd + "/ergo-tests/")
@@ -135,7 +132,6 @@ ergoTest := {
   log.info(s"Cloning Ergo branch $ergoBranch into ${ergoPath.absolutePath}")
   s"git clone -b $ergoBranch --single-branch https://github.com/ergoplatform/ergo.git ${ergoPath.absolutePath}" !
 
-  val sigmastateVersion = version.value
   log.info(s"Updating Ergo in $ergoPath with Sigmastate version $sigmastateVersion")
   Process(Seq("sbt", "unlock", "reload", "lock"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
 
@@ -143,7 +139,25 @@ ergoTest := {
   Process(Seq("git", "diff", "-U0", "lock.sbt"), ergoPath) !
 
   log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
-  Process(Seq("sbt", "test"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
-  // todo run it:test and set label for jenkins job
+  val res = Process(Seq("sbt", task), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
+  
+  if (res != 0) sys.error(s"Ergo $task failed!")
 }
 
+lazy val ergoUnitTest = TaskKey[Unit]("ergoUnitTest", "run ergo unit tests with current version")
+ergoUnitTest := {
+  val log = streams.value.log
+  val sigmastateVersion = version.value
+  runErgoTask("test", sigmastateVersion, log) 
+}
+
+ergoUnitTest := ergoUnitTest.dependsOn(publishLocal).value
+
+lazy val ergoItTest = TaskKey[Unit]("ergoItTest", "run ergo it:test with current version")
+ergoItTest := {
+  val log = streams.value.log
+  val sigmastateVersion = version.value
+  runErgoTask("it:test", sigmastateVersion, log)
+}
+
+ergoItTest := ergoItTest.dependsOn(publishLocal).value
