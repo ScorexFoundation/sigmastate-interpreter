@@ -185,7 +185,7 @@ class Context {
   def height: Int
   
   /** Box whose proposition is being currently executing */
-  def selfBox: Int
+  def selfBox: Box
   
   /** Zero based index in `inputs` of `selfBox`. */
   def selfBoxIndex: Int
@@ -360,7 +360,7 @@ class Option[A] {
    *
    * @param default  the default expression, which is evaluated only if option is None.
    */
-  def getOrElse[B](default: =>B): B
+  def getOrElse[B](default: => B): B
   
   /** Returns the option's value.
    *  @note The option must be nonempty.
