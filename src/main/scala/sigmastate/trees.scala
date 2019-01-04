@@ -72,6 +72,9 @@ case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoo
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
   extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
+/** Represents boolean values (true/false) in SigmaBoolean tree.
+  * Participates in evaluation of CAND, COR, THRESHOLD connectives over SigmaBoolean values.
+  * See CAND.normalized, COR.normalized and AtLeast.reduce. */
 case class TrivialProp(condition: Boolean) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.TrivialProofCode
 }
@@ -80,6 +83,10 @@ object TrivialProp {
   val FalseProp = TrivialProp(false)
 }
 
+/** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions
+  * to be used as arguments of `atLeast(..., sigmaProp(boolExpr), ...)` operation.
+  * During execution results to either `TrueProp` or `FalseProp` values of SigmaBoolean type.
+  */
 case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
   def tpe = SSigmaProp
@@ -548,8 +555,8 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
 /**
   * Perform a lookup of key `key` in a tree with root `tree` using proof `proof`.
   * Throws exception if proof is incorrect
-  * Return SomeValue(SByteArray) of leaf with key `key` if it exists
-  * Return NoneValue if leaf with provided key does not exist.
+  * Return Some(bytes) of leaf with key `key` if it exists
+  * Return None if leaf with provided key does not exist.
   */
 case class TreeLookup(tree: Value[SAvlTree.type],
                       key: Value[SByteArray],
@@ -564,6 +571,12 @@ case class TreeLookup(tree: Value[SAvlTree.type],
   override lazy val third = proof
 }
 
+/**
+  * Perform modification of in the tree with root `tree` using proof `proof`.
+  * Throws exception if proof is incorrect
+  * Return Some(newTree) if successfull
+  * Return None if operations were not performed.
+  */
 case class TreeModifications(tree: Value[SAvlTree.type],
                              operations: Value[SByteArray],
                              proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {

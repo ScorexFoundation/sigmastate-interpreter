@@ -3,14 +3,14 @@
 
 Sigma frontend implements the following pipeline:
 
-SourceCode --> `Parser` --> `Binder` -> `Typer` -> `Specializer` -> ErgoTree
+SourceCode --> `Parser` --> `Binder` -> `Typer` -> `CompiletimeCosting` -> `TreeBuilding` -> ErgoTree
 
 Here:
 - SourceCode  is a string of unicode characters
 - ErgoTree is an intermediate representation which can be processed by Sigma [Interpreter](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/src/main/scala/sigmastate/interpreter/Interpreter.scala)
  
 ## Parser
-`SigmaParser` takes a string and produces abstract syntax tree, AST, of a Sigma expression.
+`SigmaParser` takes a string and produces abstract syntax tree, AST, of a Sigma expression represent by `Value` type in Scala.
 
 In case of any errors it throws `ParserException`
 
@@ -18,12 +18,12 @@ In case of any errors it throws `ParserException`
 `SigmaBinder` takes an AST of successfully parsed Sigma expression and resolves 
 global variables and predefined functions be looking up in the provided environment.
 Binder transforms environment values of predefined Scala types (such as Int, Boolean, Box, etc.)
-into constant nodes (IntConstant, BoxConstant, etc) of ErgoTree of the corresponding type.
+into constant nodes (IntConstant, BoxConstant, etc) of the corresponding type. (See also `Constant` class)
 
 In case of any error it throws `BinderException`
 
 ## Typer
-`SigmaTyper` takes a bound AST from the output of `SigmaBinder` and assigns types
+`SigmaTyper` takes an AST from the output of `SigmaBinder` and assigns types
 to all tree nodes. Since AST is immutable data structure the typer produces a new tree. 
 
 Type assignment is performed by `assignType` tree transformation which assign correct types for all 
@@ -31,23 +31,25 @@ tree nodes.
 
 In case of any error it throws `TyperException`
 
-## Specializer
+## Costing
 
-`SigmaSpecializer` takes a typed AST from the output of `SigmaTyper` and performs a final preparation
-of AST for interpretation by `Interpreter`. This step is necessary because of the limitations imposed 
-by sigma-protocols on SigmaIR which can be processed by `Interpreter`.
+See Costing.md for detailed description of costing process. 
 
-The following transformations are performed by `Specializer`:
-1) Elimination of Let nodes by substituting its bodes in all places of the referring variables 
-(this may lead to duplication of subtrees).
-2) Elimination of Lambda nodes by inlining its bodies as the arguments of combinators 
-(like Fold, Map, Exists, etc). This may also lead to duplication of subtrees.
-3) Replacing of Select nodes with special operations of SigmaIR 
-(e.g. box.value --> ExtractAmount(box))
-4) Replacement of Apply nodes with special operations of SigmaIR 
-(e.g. arr(0) --> ByIndex(arr, 0), etc) 
+## TreeBuilding
 
-As result of specialization the following AST nodes should be eliminated:
- Block, Val, Ident, Select, Lambda, Apply 
+ 
+## IR contexts
+There are following IR contexts.
 
-In case of any error it throws `SpecializerException`
+Context class         | Description
+----------------------|------------
+ IRContext            | Generic context which includes extends Evaluation, RuntimeCosting and TreeBuilding
+ RuntimeIRContext     | context which should be used during transaction validation
+ CompiletimeIRContext | context which should be used during ErgoScript compilation
+
+The reason to have different contexts is to limit RuntimeIRContext to support only those nodes which can be serialized as part of ErgoTree.
+This doesn't include all ErgoScript nodes which CompiletimeIRContext can handle.
+For example, compileWithCosting should use IR context with CompiletimeCosting mixed in.
+However, Interpreter takes as input compiled or deserialized ErgoTree, so it can work without CompiletimeCosting mixed in into IR context.
+
+

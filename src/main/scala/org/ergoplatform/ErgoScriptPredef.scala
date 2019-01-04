@@ -137,6 +137,10 @@ object ErgoScriptPredef {
   /**
     * Proposition of the box, that may be taken by a transaction,
     * which inputs contains at least `thresholdAmount` of token with id `tokenId`.
+    * The logic of this script is the following
+    * (v1) INPUTS.flatMap(box => box.tokens.filter(t => t._1 == tokenId).map(t => t._2)).sum >= thresholdAmount
+    * (v2) INPUTS.flatMap(box => box.tokens).filter(t => t._1 == tokenId).sum >= thresholdAmount
+    * (v3) INPUTS.map(box => box.tokens.find(t => t._1 == tokenId).map(t => t._2).getOrElse(0)).sum >= thresholdAmount
     */
   def tokenThresholdScript(tokenId: Array[Byte], thresholdAmount: Long)(implicit IR: IRContext): Value[SBoolean.type] = {
     val env = emptyEnv + ("tokenId" -> tokenId, "thresholdAmount" -> thresholdAmount)
