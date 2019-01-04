@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BigIntValue, BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
+import sigmastate.Values.{BigIntValue, BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, StringConstant, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
@@ -179,7 +179,7 @@ trait SigmaBuilder {
   def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType]
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
-  def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type]
+  def mkStringConcat(left: Constant[SString.type], right: Constant[SString.type]): Value[SString.type]
 
   def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]]
   def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T]
@@ -520,8 +520,8 @@ class StdSigmaBuilder extends SigmaBuilder {
                                                 elementType: T): Constant[SCollection[T]] =
     ConstantNode[SCollection[T]](values, SCollection(elementType))
 
-  override def mkStringConcat(left: Value[SString.type], right: Value[SString.type]): Value[SString.type] =
-    StringConcat(left, right)
+  override def mkStringConcat(left: Constant[SString.type], right: Constant[SString.type]): Value[SString.type] =
+    StringConstant(left.value + right.value)
 
   override def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]] =
     GetVar(varId, tpe)

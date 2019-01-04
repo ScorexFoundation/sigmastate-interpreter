@@ -1,17 +1,17 @@
 package sigmastate.lang
 
-import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, NetworkPrefix, TestnetNetworkPrefix}
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, Height, P2PKAddress}
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatest.prop.PropertyChecks
-import sigmastate._
+import scorex.util.encode.Base58
 import sigmastate.Values._
+import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.ZKProofBlock
-import sigmastate.lang.exceptions.TyperException
+import sigmastate.lang.exceptions.{InvalidArguments, TyperException}
 import sigmastate.lang.syntax.ParserException
+import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.{ByIndex, GetVar}
 
@@ -113,4 +113,31 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp(code) shouldEqual SigmaPropConstant(dk1)
   }
 
+  property("fromBaseX") {
+    comp(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array(49))
+    comp(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array(49))
+    comp(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array(49))
+  }
+
+  property("deserialize") {
+    def roundtrip[T <: SType](c: EvaluatedValue[T], typeSig: String) = {
+      val bytes = ValueSerializer.serialize(c)
+      val str = Base58.encode(bytes)
+      comp(env, s"deserialize[$typeSig](" + "\"" + str + "\")") shouldBe c
+    }
+    roundtrip(ByteArrayConstant(Array[Byte](2)), "Coll[Byte]")
+    roundtrip(Tuple(ByteArrayConstant(Array[Byte](2)), LongConstant(4)), "(Coll[Byte], Long)")
+    an[InvalidArguments] should be thrownBy roundtrip(ByteArrayConstant(Array[Byte](2)), "Coll[Long]")
+  }
+
+  property("deserialize fails") {
+    // more then one argument
+    an[TyperException] should be thrownBy comp(env, """deserialize[Int]("test", "extra argument")""")
+    // invalid chat in Base58 string
+    an[AssertionError] should be thrownBy comp(env, """deserialize[Int]("0")""")
+    // more than one type
+    an[TyperException] should be thrownBy comp(env, """deserialize[Int, Byte]("test")""")
+    // not a string constant
+    an[TyperException] should be thrownBy comp(env, """deserialize[Int](1)""")
+  }
 }

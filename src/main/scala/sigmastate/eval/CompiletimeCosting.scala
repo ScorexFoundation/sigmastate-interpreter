@@ -20,8 +20,6 @@ import sigmastate.lang.{Terms, TransformingSigmaBuilder}
 trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
   import builder._
 
-  private implicit val predefFuncRegistry: PredefinedFuncRegistry = new PredefinedFuncRegistry(builder)
-
   override def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     val res: Sym = node match {
@@ -159,9 +157,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
 
       case Select(input, ModQMethod.name, _) =>
         eval(mkModQ(input.asBigInt))
-
-      case PredefinedFuncApply(irNode) =>
-        eval(irNode)
 
       case _ =>
         super.evalNode(ctx, env, node)

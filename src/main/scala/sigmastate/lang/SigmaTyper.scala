@@ -23,7 +23,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
   private val tT = STypeIdent("T") // to be used in typing rules
 
-  private val predefFuncRegistry = new PredefinedFuncRegistry(builder)
+  private implicit val predefFuncRegistry: PredefinedFuncRegistry = new PredefinedFuncRegistry(builder)
   import predefFuncRegistry._
 
   private val predefinedEnv: Map[String, SType] =
@@ -121,7 +121,7 @@ class SigmaTyper(val builder: SigmaBuilder) {
 
     case app @ Apply(f, args) =>
       val new_f = assignType(env, f)
-      new_f.tpe match {
+      (new_f.tpe match {
         case SFunc(argTypes, tRes, _) =>
           // If it's a pre-defined function application
           if (args.length != argTypes.length)
@@ -175,6 +175,9 @@ class SigmaTyper(val builder: SigmaBuilder) {
           }
         case t =>
           error(s"Invalid array application $app: array type is expected but was $t")
+      }) match {
+        case PredefinedFuncApply(irNode) => irNode
+        case v => v
       }
 
     case mc @ MethodCallLike(obj, m, args, _) =>
@@ -244,9 +247,9 @@ class SigmaTyper(val builder: SigmaBuilder) {
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
         case _: SString.type => (m, newArgs) match {
-          case ("+", Seq(r)) => r.tpe match {
-            case _: SString.type =>
-              bimap(env, "+", newObj.asStringValue, r.asStringValue)(mkStringConcat)(tT, tT)
+          case ("+", Seq(r)) => (newObj, r) match {
+            case (cl : Constant[SString.type]@unchecked, cr : Constant[SString.type]@unchecked) =>
+              mkStringConcat(cl, cr)
             case _ =>
               throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
           }

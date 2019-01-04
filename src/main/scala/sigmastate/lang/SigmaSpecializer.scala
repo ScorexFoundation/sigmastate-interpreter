@@ -65,12 +65,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
       Some(mkLongToByteArray(arg))
 
-    case Apply(FromBase58Sym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-      Some(ByteArrayConstant(Base58.decode(arg.value).get))
-
-    case Apply(FromBase64Sym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-      Some(ByteArrayConstant(Base64.decode(arg.value).get))
-
     case Apply(ByteArrayToBigIntSym, Seq(arg: Value[SByteArray]@unchecked)) =>
       Some(mkByteArrayToBigInt(arg))
 
@@ -189,9 +183,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
             case OR(ConcreteCollection(innerItems, SBoolean)) => innerItems
             case v => IndexedSeq(v)
           }, SBoolean)))
-
-    case StringConcat(StringConstant(l), StringConstant(r)) =>
-      Some(StringConstant(l + r))
 
     case PredefinedFuncApply(irNode) =>
       Some(irNode)

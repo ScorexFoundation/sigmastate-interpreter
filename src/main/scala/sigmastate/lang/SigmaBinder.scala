@@ -111,10 +111,6 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder, networkPrefix: Option[N
         Some(newBlock)
       else
         None
-    case e @ Apply(ApplyTypes(DeserializeFunc.symNoType, targs), args) =>
-      if (targs.length != 1)
-        throw new InvalidTypeArguments(s"Wrong number of type arguments in $e: expected one type argument")
-      Some(DeserializeFunc.irBuilder(Ident(DeserializeFunc.name, targs.head), args))
 
     case Apply(PKFunc.symNoType, args) =>
       Some(PKFunc.irBuilder(PKFunc.sym, args))

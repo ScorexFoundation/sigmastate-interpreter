@@ -2,9 +2,9 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
-import scorex.util.encode.Base58
+import scorex.util.encode.{Base58, Base64}
 import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.Values.{BoolValue, Constant, EvaluatedValue, IntConstant, IntValue, SValue, SigmaPropValue, StringConstant, Value}
+import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, EvaluatedValue, IntConstant, IntValue, SValue, SigmaPropValue, StringConstant, Value}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.lang.TransformingSigmaBuilder._
@@ -66,7 +66,7 @@ object SigmaPredef {
           "inner" -> SFunc(IndexedSeq(tK, tL, tR), tO),
         ),
         SCollection(STuple(tK, tO)), None),
-      { case (_, args) => IntConstant(1) }
+      PartialFunction.empty[(SValue, Seq[SValue]), SValue]
     )
 
     val ZKProofFunc = PredefinedFunc("ZKProof",
@@ -102,7 +102,7 @@ object SigmaPredef {
 
     val DeserializeFunc = PredefinedFunc("deserialize",
       Lambda(Seq(STypeParam(tT)), Vector("str" -> SString), SOption(tT), None),
-      { case (Ident(_, tpe), args) =>
+      { case (Ident(_, SFunc(_, SOption(tpe), _)), args) =>
         if (args.length != 1)
           throw new InvalidArguments(s"Wrong number of arguments in $args: expected one argument")
         val str = args.head match {
@@ -118,6 +118,20 @@ object SigmaPredef {
       }
     )
 
+    val FromBase58Func = PredefinedFunc("fromBase58",
+      Lambda(Vector("input" -> SString), SByteArray, None),
+      { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+        ByteArrayConstant(Base58.decode(arg.value).get)
+      }
+    )
+
+    val FromBase64Func = PredefinedFunc("fromBase64",
+      Lambda(Vector("input" -> SString), SByteArray, None),
+      { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+        ByteArrayConstant(Base64.decode(arg.value).get)
+      }
+    )
+
     val funcs: Seq[PredefinedFunc] = Seq(
       AllOfFunc,
       AnyOfFunc,
@@ -127,6 +141,8 @@ object SigmaPredef {
       SigmaPropFunc,
       GetVarFunc,
       DeserializeFunc,
+      FromBase64Func,
+      FromBase58Func,
     )
   }
 
@@ -134,7 +150,10 @@ object SigmaPredef {
     def unapply(apply: Apply)(implicit registry: PredefinedFuncRegistry): Option[SValue] = apply.func match {
       case Ident(name, _) => registry.funcs
         .find(_.name == name)
-        .map(f => f.irBuilder(apply.func, apply.args))
+        .flatMap {
+          case f if f.irBuilder.isDefinedAt(apply.func, apply.args) => Some(f.irBuilder(apply.func, apply.args))
+          case _ => None
+        }
       case _ => None
     }
   }
@@ -150,7 +169,6 @@ object SigmaPredef {
     "decodePoint" -> mkLambda(Vector("input" -> SByteArray), SGroupElement, None),
     "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
 
-
     "proveDHTuple" -> mkLambda(Vector("g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
     "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SSigmaProp, None),
 
@@ -158,8 +176,6 @@ object SigmaPredef {
     "treeLookup" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
     "treeModifications" -> mkLambda(Vector("tree" -> SAvlTree, "ops" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
 
-    "fromBase58" -> mkLambda(Vector("input" -> SString), SByteArray, None),
-    "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "substConstants" -> mkGenLambda(
       Seq(STypeParam(tT)),
       Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
@@ -186,9 +202,6 @@ object SigmaPredef {
 
   /** Implemented as CryptoConstants.dlogGroup.curve.decodePoint(bytes)*/
   val DecodePointSym = PredefIdent("decodePoint")
-
-  val FromBase58Sym = PredefIdent("fromBase58")
-  val FromBase64Sym = PredefIdent("fromBase64")
 
   val XorOf = PredefIdent("xorOf")
 }

@@ -176,25 +176,4 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Coll[Int]()") shouldBe ConcreteCollection()(SInt)
   }
 
-  property("deserialize") {
-    def roundtrip[T <: SType](c: EvaluatedValue[T], typeSig: String) = {
-      val bytes = ValueSerializer.serialize(c)
-      val str = Base58.encode(bytes)
-      bind(env, s"deserialize[$typeSig](" + "\"" + str + "\")") shouldBe c
-    }
-    roundtrip(ByteArrayConstant(Array[Byte](2)), "Coll[Byte]")
-    roundtrip(Tuple(ByteArrayConstant(Array[Byte](2)), LongConstant(4)), "(Coll[Byte], Long)")
-    an[InvalidArguments] should be thrownBy roundtrip(ByteArrayConstant(Array[Byte](2)), "Coll[Long]")
-  }
-
-  property("deserialize fails") {
-    // more than one type
-    an[InvalidTypeArguments] should be thrownBy bind(env, """deserialize[Int, Byte]("test")""")
-    // more then one argument
-    an[InvalidArguments] should be thrownBy bind(env, """deserialize[Int]("test", "extra argument")""")
-    // not a string constant
-    an[InvalidArguments] should be thrownBy bind(env, """deserialize[Int]("a" + "b")""")
-    // invalid chat in Base58 string
-    an[AssertionError] should be thrownBy bind(env, """deserialize[Int]("0")""")
-  }
 }
