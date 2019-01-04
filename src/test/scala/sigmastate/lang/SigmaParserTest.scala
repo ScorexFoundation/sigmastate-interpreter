@@ -7,16 +7,12 @@ import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.OpCodes
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
-
-  private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
-  import predefFuncRegistry._
 
   def parse(x: String): SValue = {
     SigmaParser(x, TransformingSigmaBuilder) match {
@@ -523,9 +519,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("ZKProof") {
-    parse("ZKProof { condition }") shouldBe Apply(ZKProofFunc.sym, IndexedSeq(Ident("condition")))
+    parse("ZKProof { condition }") shouldBe Apply(Ident("ZKProof", SFunc(SSigmaProp, SBoolean)), IndexedSeq(Ident("condition")))
     parse("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe
-      Apply(ZKProofFunc.sym,
+      Apply(Ident("ZKProof", SFunc(SSigmaProp, SBoolean)),
         IndexedSeq(Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))))
   }
 

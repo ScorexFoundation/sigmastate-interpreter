@@ -17,14 +17,14 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * Type inference and analysis for Sigma expressions.
   */
-class SigmaTyper(val builder: SigmaBuilder) {
+class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRegistry) {
   import SigmaTyper._
   import builder._
+  import predefFuncRegistry._
+
+  private implicit val implicitPredefFuncRegistry: PredefinedFuncRegistry = predefFuncRegistry
 
   private val tT = STypeIdent("T") // to be used in typing rules
-
-  private implicit val predefFuncRegistry: PredefinedFuncRegistry = new PredefinedFuncRegistry(builder)
-  import predefFuncRegistry._
 
   private val predefinedEnv: Map[String, SType] =
     SigmaPredef.predefinedEnv.mapValues(_.tpe) ++

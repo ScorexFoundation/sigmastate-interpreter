@@ -4,12 +4,13 @@ import org.ergoplatform.ErgoAddressEncoder.{NetworkPrefix, TestnetNetworkPrefix}
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms.{Ident, ZKProofBlock}
 import sigmastate.lang.exceptions.SpecializerException
-import sigmastate.serialization.generators.{ValueGenerators, TransformerGenerators, ConcreteCollectionGenerators}
+import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ValueGenerators}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -33,9 +34,10 @@ class SigmaSpecializerTest extends PropSpec
   def typed(env: Map[String, SValue], x: String): SValue = {
     val builder = TransformingSigmaBuilder
     val parsed = SigmaParser(x, builder).get.value
-    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix)
+    val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder)
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
     val typed = typer.typecheck(bound)
     typed
   }

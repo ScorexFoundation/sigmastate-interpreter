@@ -16,17 +16,15 @@ import sigmastate.utxo.{Append, ExtractCreationInfo, SizeOf}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
-  private val predefFuncRegistry = new PredefinedFuncRegistry(DefaultSigmaBuilder)
-  import predefFuncRegistry._
-
   def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
-      val binder = new SigmaBinder(env, builder, networkPrefix = TestnetNetworkPrefix)
+      val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+      val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper(builder)
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry)
       val typed = typer.typecheck(bound)
       if (expected != null) typed shouldBe expected
       typed.tpe
@@ -39,10 +37,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
-      val binder = new SigmaBinder(env, builder, networkPrefix = TestnetNetworkPrefix)
+      val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+      val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper(builder)
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry)
       val typed = typer.typecheck(bound)
       assert(false, s"Should not typecheck: $x")
     } catch {
@@ -91,7 +90,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("predefined functions") {
-    typecheck(env, "allOf") shouldBe AllOfFunc.declaration.tpe
+    typecheck(env, "allOf") shouldBe SFunc(SCollection[SBoolean.type], SBoolean)
     typecheck(env, "allOf(Coll(c1, c2))") shouldBe SBoolean
     typecheck(env, "getVar[Byte](10).get") shouldBe SByte
     typecheck(env, "getVar[Coll[Byte]](10).get") shouldBe SByteArray

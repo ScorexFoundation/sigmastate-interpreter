@@ -7,6 +7,7 @@ import fastparse.core.Parsed.Success
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigmastate.Values.{SValue, SigmaTree, Value}
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 
 /**
   * @param builder
@@ -24,9 +25,10 @@ class SigmaCompiler(builder: SigmaBuilder, networkPrefix: NetworkPrefix) {
   }
 
   def typecheck(env: ScriptEnv, parsed: SValue): Value[SType] = {
-    val binder = new SigmaBinder(env, builder, networkPrefix)
+    val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+    val binder = new SigmaBinder(env, builder, networkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder)
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
     val typed = typer.typecheck(bound)
     typed
   }

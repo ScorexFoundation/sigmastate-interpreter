@@ -11,6 +11,7 @@ import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
 import scorex.util.encode.Base58
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.exceptions.{BinderException, InvalidArguments, InvalidTypeArguments}
 import sigmastate.serialization.ValueSerializer
 
@@ -20,13 +21,13 @@ import sigmastate.serialization.ValueSerializer
   * @param networkPrefix network prefix to decode an ergo address from string (PK op),
   *                      if None compilation of any script with PK will fail
   */
-class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder, networkPrefix: NetworkPrefix) {
+class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
+                  networkPrefix: NetworkPrefix,
+                  predefFuncRegistry: PredefinedFuncRegistry) {
   import SigmaBinder._
   import SigmaPredef._
   import builder._
 
-  private val predefFuncRegistry: PredefinedFuncRegistry = new PredefinedFuncRegistry(builder)
-  import predefFuncRegistry._
   private val PKFunc = predefFuncRegistry.PKFunc(networkPrefix)
 
   /** Rewriting of AST with respect to environment to resolve all references to global names
