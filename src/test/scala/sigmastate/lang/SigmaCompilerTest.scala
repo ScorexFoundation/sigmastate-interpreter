@@ -62,6 +62,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   property("predefined functions") {
     comp(env, "anyOf(Coll(c1, c2))") shouldBe OR(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
     comp(env, "blake2b256(getVar[Coll[Byte]](10).get)") shouldBe CalcBlake2b256(GetVarByteArray(10).get)
+    comp(env, "sha256(getVar[Coll[Byte]](10).get)") shouldBe CalcSha256(GetVarByteArray(10).get)
     comp(env, "10.toByte") shouldBe ByteConstant(10)
     comp(env, "Coll(1)(0).toByte") shouldBe
       Downcast(ByIndex(ConcreteCollection(Vector(IntConstant(1)),SInt),IntConstant(0),None), SByte)
@@ -139,5 +140,22 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     an[TyperException] should be thrownBy comp(env, """deserialize[Int, Byte]("test")""")
     // not a string constant
     an[TyperException] should be thrownBy comp(env, """deserialize[Int](1)""")
+  }
+
+  property("longToByteArray") {
+    comp("longToByteArray(1L)") shouldBe LongToByteArray(LongConstant(1))
+  }
+
+  property("byteArrayToBigInt") {
+    comp("byteArrayToBigInt(longToByteArray(1L))") shouldBe ByteArrayToBigInt(LongToByteArray(LongConstant(1)))
+  }
+
+  property("failed fromBaseX (invalid input)") {
+    an[AssertionError] should be thrownBy comp(""" fromBase58("^%$#@")""")
+    an[IllegalArgumentException] should be thrownBy comp(""" fromBase64("^%$#@")""")
+  }
+
+  property("decodePoint") {
+    comp(env, "decodePoint(Coll[Byte](1.toByte))") shouldBe DecodePoint(ConcreteCollection(ByteConstant(1)))
   }
 }

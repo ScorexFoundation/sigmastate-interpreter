@@ -33,7 +33,7 @@ class SigmaSpecializerTest extends PropSpec
   def typed(env: Map[String, SValue], x: String): SValue = {
     val builder = TransformingSigmaBuilder
     val parsed = SigmaParser(x, builder).get.value
-    val binder = new SigmaBinder(env, builder, networkPrefix = None)
+    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix)
     val bound = binder.bind(parsed)
     val typer = new SigmaTyper(builder)
     val typed = typer.typecheck(bound)
@@ -180,15 +180,6 @@ class SigmaSpecializerTest extends PropSpec
     an[ArithmeticException] should be thrownBy spec("999.toShort.toByte")
     an[ArithmeticException] should be thrownBy spec(s"${Int.MaxValue}.toShort")
     an[ArithmeticException] should be thrownBy spec(s"${Long.MaxValue}L.toInt")
-  }
-
-  property("byteArrayToBigInt") {
-    spec("byteArrayToBigInt(longToByteArray(1L))") shouldBe ByteArrayToBigInt(LongToByteArray(LongConstant(1)))
-  }
-
-  property("failed fromBaseX (invalid input)") {
-    an[AssertionError] should be thrownBy spec(""" fromBase58("^%$#@")""")
-    an[IllegalArgumentException] should be thrownBy spec(""" fromBase64("^%$#@")""")
   }
 
   property("ExtractRegisterAs") {

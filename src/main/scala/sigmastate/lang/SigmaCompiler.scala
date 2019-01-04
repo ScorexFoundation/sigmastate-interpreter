@@ -13,7 +13,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
   * @param networkPrefix network prefix to decode an ergo address from string (PK op),
   *                      if None compilation of any script with PK will fail
   */
-class SigmaCompiler(builder: SigmaBuilder, networkPrefix: Option[NetworkPrefix]) {
+class SigmaCompiler(builder: SigmaBuilder, networkPrefix: NetworkPrefix) {
 
   def parse(x: String): SValue = {
     SigmaParser(x, builder) match {
@@ -46,5 +46,5 @@ class SigmaCompiler(builder: SigmaBuilder, networkPrefix: Option[NetworkPrefix])
 
 object SigmaCompiler {
   def apply(builder: SigmaBuilder, networkPrefix: NetworkPrefix): SigmaCompiler =
-    new SigmaCompiler(builder, Some(networkPrefix))
+    new SigmaCompiler(builder, networkPrefix)
 }

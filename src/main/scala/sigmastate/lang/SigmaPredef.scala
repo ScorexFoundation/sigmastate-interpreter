@@ -4,12 +4,13 @@ import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scorex.util.encode.{Base58, Base64}
 import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, EvaluatedValue, IntConstant, IntValue, SValue, SigmaPropValue, StringConstant, Value}
+import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, EvaluatedValue, IntConstant, IntValue, SValue, SigmaPropConstant, SigmaPropValue, StringConstant, Value}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.lang.exceptions.InvalidArguments
 import sigmastate.serialization.ValueSerializer
+import special.sigma.SigmaProp
 
 object SigmaPredef {
 
@@ -36,6 +37,9 @@ object SigmaPredef {
     private val tL = STypeIdent("L")
     private val tR = STypeIdent("R")
     private val tO = STypeIdent("O")
+
+    private val undefined: PartialFunction[(SValue, Seq[SValue]), SValue] =
+      PartialFunction.empty[(SValue, Seq[SValue]), SValue]
 
     val AllOfFunc = PredefinedFunc("allOf",
       Lambda(IndexedSeq("conditions" -> SCollection(SBoolean)), SBoolean, None),
@@ -66,7 +70,7 @@ object SigmaPredef {
           "inner" -> SFunc(IndexedSeq(tK, tL, tR), tO),
         ),
         SCollection(STuple(tK, tO)), None),
-      PartialFunction.empty[(SValue, Seq[SValue]), SValue]
+      undefined
     )
 
     val ZKProofFunc = PredefinedFunc("ZKProof",
@@ -86,14 +90,10 @@ object SigmaPredef {
       }
     )
 
-    def PKFunc(networkPrefix: Option[NetworkPrefix]) = PredefinedFunc("PK",
+    def PKFunc(networkPrefix: NetworkPrefix) = PredefinedFunc("PK",
       Lambda(Vector("input" -> SString), SSigmaProp, None),
       { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-        val np = networkPrefix match {
-          case Some(value) => value
-          case None => sys.error("Expected network prefix to decode address")
-        }
-        ErgoAddressEncoder(np).fromString(arg.value).get match {
+        ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
           case a: P2PKAddress => mkConstant[SSigmaProp.type](a.pubkey, SSigmaProp)
           case a@_ => sys.error(s"unsupported address $a")
         }
@@ -132,6 +132,59 @@ object SigmaPredef {
       }
     )
 
+    val Blake2b256Func = PredefinedFunc("blake2b256",
+      Lambda(Vector("input" -> SByteArray), SByteArray, None),
+      { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
+        mkCalcBlake2b256(arg)
+      }
+    )
+
+    val Sha256Func = PredefinedFunc("sha256",
+      Lambda(Vector("input" -> SByteArray), SByteArray, None),
+      { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
+        mkCalcSha256(arg)
+      }
+    )
+
+    val ByteArrayToBigIntFunc = PredefinedFunc("byteArrayToBigInt",
+      Lambda(Vector("input" -> SByteArray), SBigInt, None),
+      { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
+        mkByteArrayToBigInt(arg)
+      }
+    )
+
+    val ByteArrayToLongFunc = PredefinedFunc("byteArrayToLong",
+      Lambda(Vector("input" -> SByteArray), SLong, None),
+      undefined
+    )
+
+    val DecodePointFunc = PredefinedFunc("decodePoint",
+      Lambda(Vector("input" -> SByteArray), SGroupElement, None),
+      { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
+        mkDecodePoint(arg)
+      }
+    )
+
+    val LongToByteArrayFunc = PredefinedFunc("longToByteArray",
+      Lambda(Vector("input" -> SLong), SByteArray, None),
+      { case (_, Seq(arg: Value[SLong.type]@unchecked)) =>
+        mkLongToByteArray(arg)
+      }
+    )
+
+    val ProveDHTupleFunc = PredefinedFunc("proveDHTuple",
+      Lambda(Vector("g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
+      { case (_, Seq(g, h, u, v)) =>
+        mkConstant[SSigmaProp.type](
+          mkProveDiffieHellmanTuple(
+            g.asGroupElement,
+            h.asGroupElement,
+            u.asGroupElement,
+            v.asGroupElement),
+          SSigmaProp)
+      }
+    )
+
     val funcs: Seq[PredefinedFunc] = Seq(
       AllOfFunc,
       AnyOfFunc,
@@ -143,12 +196,20 @@ object SigmaPredef {
       DeserializeFunc,
       FromBase64Func,
       FromBase58Func,
+      Blake2b256Func,
+      Sha256Func,
+      ByteArrayToBigIntFunc,
+      ByteArrayToLongFunc,
+      DecodePointFunc,
+      LongToByteArrayFunc,
+      ProveDHTupleFunc,
     )
   }
 
   object PredefinedFuncApply {
     def unapply(apply: Apply)(implicit registry: PredefinedFuncRegistry): Option[SValue] = apply.func match {
       case Ident(name, _) => registry.funcs
+        // todo make funcs into a map of name -> irBuilder and get rid of find and flatMap
         .find(_.name == name)
         .flatMap {
           case f if f.irBuilder.isDefinedAt(apply.func, apply.args) => Some(f.irBuilder(apply.func, apply.args))
@@ -162,14 +223,7 @@ object SigmaPredef {
 
   val predefinedEnv: Map[String, SValue] = Seq(
 
-    "blake2b256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
-    "sha256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
-    "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
-    "byteArrayToLong" -> mkLambda(Vector("input" -> SByteArray), SLong, None),
-    "decodePoint" -> mkLambda(Vector("input" -> SByteArray), SGroupElement, None),
-    "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
 
-    "proveDHTuple" -> mkLambda(Vector("g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
     "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SSigmaProp, None),
 
     "isMember" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
@@ -188,20 +242,10 @@ object SigmaPredef {
     mkIdent(name, v.tpe)
   }
 
-  val Blake2b256Sym = PredefIdent("blake2b256")
-  val Sha256Sym = PredefIdent("sha256")
   val IsMemberSym = PredefIdent("isMember")
   val TreeLookupSym = PredefIdent("treeLookup")
   val TreeModificationsSym = PredefIdent("treeModifications")
   val ProveDlogSym = PredefIdent("proveDlog")
-  val ProveDHTupleSym = PredefIdent("proveDHTuple")
-
-  val LongToByteArraySym = PredefIdent("longToByteArray")
-  val ByteArrayToBigIntSym = PredefIdent("byteArrayToBigInt")
-  val ByteArrayToLongSym = PredefIdent("byteArrayToLong")  // mutually inverse to longToByteArray
-
-  /** Implemented as CryptoConstants.dlogGroup.curve.decodePoint(bytes)*/
-  val DecodePointSym = PredefIdent("decodePoint")
 
   val XorOf = PredefIdent("xorOf")
 }

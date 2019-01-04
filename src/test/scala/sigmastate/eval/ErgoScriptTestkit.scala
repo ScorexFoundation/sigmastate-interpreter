@@ -1,9 +1,11 @@
 package sigmastate.eval
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+
 import scala.util.Success
 import sigmastate.{AvlTreeData, SInt, SLong, SType}
 import sigmastate.Values.{BigIntArrayConstant, Constant, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, TrueLeaf, Value}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.utxo.CostTable
 import special.sigma.{ContractsTestkit, Box => DBox, Context => DContext, SigmaContract => DContract, TestBox => DTestBox, TestContext => DTestContext}
 import scalan.BaseCtxTests
@@ -25,7 +27,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   import Context._
   import WBigInteger._
 
-  lazy val compiler = new SigmaCompiler(IR.builder, networkPrefix = None)
+  lazy val compiler = new SigmaCompiler(IR.builder, TestnetNetworkPrefix)
 
   def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())

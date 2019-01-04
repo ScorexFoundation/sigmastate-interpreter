@@ -41,12 +41,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       val res1 = eval(curEnv, res)
       Some(res1)
 
-    case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(mkCalcBlake2b256(arg))
-
-    case Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(mkCalcSha256(arg))
-
     case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
       Some(mkIsMember(tree, key, proof))
 
@@ -58,15 +52,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
       Some(SigmaPropConstant(mkProveDlog(g)))
-
-    case Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
-      Some(SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)))
-
-    case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
-      Some(mkLongToByteArray(arg))
-
-    case Apply(ByteArrayToBigIntSym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(mkByteArrayToBigInt(arg))
 
     case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
       Some(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))

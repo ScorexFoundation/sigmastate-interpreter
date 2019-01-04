@@ -23,7 +23,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
-      val binder = new SigmaBinder(env, builder, networkPrefix = Some(TestnetNetworkPrefix))
+      val binder = new SigmaBinder(env, builder, networkPrefix = TestnetNetworkPrefix)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder)
@@ -39,7 +39,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
-      val binder = new SigmaBinder(env, builder, networkPrefix = Some(TestnetNetworkPrefix))
+      val binder = new SigmaBinder(env, builder, networkPrefix = TestnetNetworkPrefix)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder)

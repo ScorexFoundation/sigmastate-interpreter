@@ -29,31 +29,11 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case _: DLogProtocol.ProveDlog | _: ProveDHTuple =>
         eval(SigmaPropConstant(node.asSigmaBoolean))
 
-      case Terms.Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-        eval(mkCalcBlake2b256(arg))
-
-      case Terms.Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-        eval(mkCalcSha256(arg))
-
       case Terms.Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
         eval(mkIsMember(tree, key, proof))
 
       case Terms.Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
         eval(mkProveDlog(g))
-
-      case Terms.Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
-        eval(mkLongToByteArray(arg))
-
-      case Terms.Apply(ByteArrayToBigIntSym, Seq(arr: Value[SByteArray]@unchecked)) =>
-        eval(mkByteArrayToBigInt(arr))
-
-      case Terms.Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
-        eval(SigmaPropConstant(
-          mkProveDiffieHellmanTuple(
-            g.asGroupElement,
-            h.asGroupElement,
-            u.asGroupElement,
-            v.asGroupElement)))
 
       case Terms.Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
         eval(mkTreeModifications(tree, operations, proof))

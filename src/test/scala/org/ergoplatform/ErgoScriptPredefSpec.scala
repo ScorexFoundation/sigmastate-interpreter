@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.AvlTreeData
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -26,7 +27,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val wrongId2: Digest32 = Blake2b256(wrongId)
     val tokenAmount: Int = 50
 
-    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount)
+    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount, TestnetNetworkPrefix)
 
     def check(inputBoxes: IndexedSeq[ErgoBox]): Try[Unit] = Try {
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
