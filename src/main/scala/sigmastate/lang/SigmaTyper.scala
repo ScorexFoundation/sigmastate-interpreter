@@ -27,7 +27,6 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
   private val tT = STypeIdent("T") // to be used in typing rules
 
   private val predefinedEnv: Map[String, SType] =
-    SigmaPredef.predefinedEnv.mapValues(_.tpe) ++
       predefFuncRegistry.funcs.map(f => f.name -> f.declaration.tpe).toMap
 
   /**
@@ -132,7 +131,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
           val adaptedTypedArgs = (new_f, typedArgs) match {
             case (AllOfFunc.sym | AnyOfFunc.sym, _) =>
               adaptSigmaPropToBoolean(typedArgs, argTypes)
-            case (Ident(GetVarFunc.name, _), Seq(id: Constant[SNumericType]@unchecked)) if id.tpe.isNumType =>
+            case (Ident(GetVarFunc.name | ExecuteFromVarFunc.name, _), Seq(id: Constant[SNumericType]@unchecked))
+              if id.tpe.isNumType =>
                 Seq(ByteConstant(SByte.downcast(id.value.asInstanceOf[AnyVal])))
             case _ => typedArgs
           }

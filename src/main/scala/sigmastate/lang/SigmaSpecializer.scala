@@ -41,18 +41,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       val res1 = eval(curEnv, res)
       Some(res1)
 
-    case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-      Some(mkIsMember(tree, key, proof))
-
-    case Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-      Some(mkTreeLookup(tree, key, proof))
-
-    case Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-      Some(mkTreeModifications(tree, operations, proof))
-
-    case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
-      Some(SigmaPropConstant(mkProveDlog(g)))
-
     case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
       Some(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 

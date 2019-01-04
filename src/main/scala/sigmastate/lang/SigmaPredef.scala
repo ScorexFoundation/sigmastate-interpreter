@@ -187,6 +187,60 @@ object SigmaPredef {
       }
     )
 
+    val ProveDlogFunc = PredefinedFunc("proveDlog",
+      Lambda(Vector("value" -> SGroupElement), SSigmaProp, None),
+      { case (_, Seq(arg: Value[SGroupElement.type]@unchecked)) =>
+        SigmaPropConstant(mkProveDlog(arg))
+      }
+    )
+
+    val IsMemberFunc = PredefinedFunc("isMember",
+      Lambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
+      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked,
+          proof: Value[SByteArray]@unchecked)) =>
+        mkIsMember(tree, key, proof)
+      }
+    )
+
+    val TreeLookupFunc = PredefinedFunc("treeLookup",
+      Lambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
+      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked,
+          proof: Value[SByteArray]@unchecked)) =>
+        mkTreeLookup(tree, key, proof)
+      }
+    )
+
+    val TreeModificationsFunc = PredefinedFunc("treeModifications",
+      Lambda(Vector("tree" -> SAvlTree, "ops" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
+      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked,
+          proof: Value[SByteArray]@unchecked)) =>
+        mkTreeModifications(tree, operations, proof)
+      }
+    )
+
+    val XorOfFunc = PredefinedFunc("xorOf",
+      Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+      undefined
+    )
+
+    val SubstConstantsFunc = PredefinedFunc("substConstants",
+      Lambda(
+        Seq(STypeParam(tT)),
+        Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
+        SByteArray, None
+      ),
+      undefined
+    )
+
+    val ExecuteFromVarFunc = PredefinedFunc("executeFromVar",
+      Lambda(
+        Seq(STypeParam(tT)),
+        Vector("id" -> SByte),
+        tT, None
+      ),
+      undefined
+    )
+
     val funcs: Seq[PredefinedFunc] = Seq(
       AllOfFunc,
       AnyOfFunc,
@@ -205,6 +259,13 @@ object SigmaPredef {
       DecodePointFunc,
       LongToByteArrayFunc,
       ProveDHTupleFunc,
+      ProveDlogFunc,
+      IsMemberFunc,
+      TreeLookupFunc,
+      TreeModificationsFunc,
+      XorOfFunc,
+      SubstConstantsFunc,
+      ExecuteFromVarFunc,
     )
 
     private val funcNameToIrBuilderMap: Map[String, IrBuilderFunc] =
@@ -224,32 +285,4 @@ object SigmaPredef {
       case _ => None
     }
   }
-
-  private val tT = STypeIdent("T")
-
-  val predefinedEnv: Map[String, SValue] = Seq(
-    "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SSigmaProp, None),
-
-    "isMember" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
-    "treeLookup" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
-    "treeModifications" -> mkLambda(Vector("tree" -> SAvlTree, "ops" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
-
-    "substConstants" -> mkGenLambda(
-      Seq(STypeParam(tT)),
-      Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
-      SByteArray, None),
-    "xorOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-  ).toMap
-
-  def PredefIdent(name: String): Value[SType] = {
-    val v = predefinedEnv(name)
-    mkIdent(name, v.tpe)
-  }
-
-  val IsMemberSym = PredefIdent("isMember")
-  val TreeLookupSym = PredefIdent("treeLookup")
-  val TreeModificationsSym = PredefIdent("treeModifications")
-  val ProveDlogSym = PredefIdent("proveDlog")
-
-  val XorOf = PredefIdent("xorOf")
 }

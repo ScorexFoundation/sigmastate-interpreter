@@ -29,18 +29,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case _: DLogProtocol.ProveDlog | _: ProveDHTuple =>
         eval(SigmaPropConstant(node.asSigmaBoolean))
 
-      case Terms.Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkIsMember(tree, key, proof))
-
-      case Terms.Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
-        eval(mkProveDlog(g))
-
-      case Terms.Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkTreeModifications(tree, operations, proof))
-
-      case Terms.Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkTreeLookup(tree, key, proof))
-
       case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 

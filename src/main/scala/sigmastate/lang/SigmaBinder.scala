@@ -35,19 +35,16 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
   private def eval(e: SValue, env: ScriptEnv): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => Option(liftAny(v).get)
-      case None => predefinedEnv.get(n) match {
-        case Some(v) => Some(Ident(n, v.tpe))
-        case None => n match {
-          case "HEIGHT" => Some(Height)
-          case "MinerPubkey" => Some(MinerPubkey)
-          case "INPUTS" => Some(Inputs)
-          case "OUTPUTS" => Some(Outputs)
-          case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
-          case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
-          case "SELF" => Some(Self)
-          case "None" => Some(mkNoneValue(NoType))
-          case _ => None
-        }
+      case None => n match {
+        case "HEIGHT" => Some(Height)
+        case "MinerPubkey" => Some(MinerPubkey)
+        case "INPUTS" => Some(Inputs)
+        case "OUTPUTS" => Some(Outputs)
+        case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
+        case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
+        case "SELF" => Some(Self)
+        case "None" => Some(mkNoneValue(NoType))
+        case _ => None
       }
     }
 

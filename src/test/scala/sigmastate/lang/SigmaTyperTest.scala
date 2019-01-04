@@ -520,4 +520,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("AtLeast (invalid parameters)") {
     an [TyperException] should be thrownBy typecheck(env, "atLeast(2, 2)")
   }
+
+  property("substConstants") {
+    typecheck(env, "substConstants[Long](Coll[Byte](1.toByte), Coll[Int](1), Coll[Long](1L))") shouldBe SByteArray
+  }
+
+  property("executeFromVar") {
+    typecheck(env, "executeFromVar[Boolean](1)") shouldBe SBoolean
+  }
 }

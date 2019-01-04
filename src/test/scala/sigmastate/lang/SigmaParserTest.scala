@@ -761,4 +761,21 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     )
   }
 
+  property("substConstants") {
+    parse("substConstants[Long](Coll[Byte](1.toByte), Coll[Int](1), Coll[Long](1L))") shouldBe Apply(
+      ApplyTypes(Ident("substConstants", NoType), Vector(SLong)),
+      Vector(
+        Apply(ApplyTypes(Ident("Coll", NoType), Vector(SByte)), Vector(Select(IntConstant(1), "toByte", None))),
+        Apply(ApplyTypes(Ident("Coll", NoType), Vector(SInt)), Vector(IntConstant(1))),
+        Apply(ApplyTypes(Ident("Coll", NoType), Vector(SLong)), Vector(LongConstant(1)))
+      )
+    )
+  }
+
+  property("executeFromVar") {
+    parse("executeFromVar[Boolean](1)") shouldBe Apply(
+      ApplyTypes(Ident("executeFromVar", NoType), Vector(SBoolean)), Vector(IntConstant(1))
+    )
+  }
+
 }
