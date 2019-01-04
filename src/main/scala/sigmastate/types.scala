@@ -2,8 +2,8 @@ package sigmastate
 
 import java.math.BigInteger
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
-import sigmastate.SType.{AnyOps, TypeCode}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utils.Extensions._
@@ -811,8 +811,9 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
     SMethod(this, Bytes, SCollectionType(SByte), 3), // see ExtractBytes
     SMethod(this, BytesWithNoRef, SCollectionType(SByte), 4), // see ExtractBytesWithNoRef
     SMethod(this, Id, SCollectionType(SByte), 5), // see ExtractId
-    SMethod(this, CreationInfo, STuple(SInt, SCollectionType(SByte)), 6) // see ExtractCreationInfo
-  ) ++ registers(6)
+    SMethod(this, CreationInfo, STuple(SInt, SCollectionType(SByte)), 6), // see ExtractCreationInfo
+    SMethod(this, s"getReg", SFunc(IndexedSeq(SByte), SOption(tT), Seq(STypeParam(tT))), 7)
+  ) ++ registers(7)
 }
 
 case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
