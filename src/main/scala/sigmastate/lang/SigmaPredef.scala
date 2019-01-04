@@ -103,8 +103,8 @@ object SigmaPredef {
     )
 
     val DeserializeFunc = PredefinedFunc("deserialize",
-      Lambda(Seq(STypeParam(tT)), Vector("str" -> SString), SOption(tT), None),
-      { case (Ident(_, SFunc(_, SOption(tpe), _)), args) =>
+      Lambda(Seq(STypeParam(tT)), Vector("str" -> SString), tT, None),
+      { case (Ident(_, SFunc(_, tpe, _)), args) =>
         if (args.length != 1)
           throw new InvalidArguments(s"Wrong number of arguments in $args: expected one argument")
         val str = args.head match {
