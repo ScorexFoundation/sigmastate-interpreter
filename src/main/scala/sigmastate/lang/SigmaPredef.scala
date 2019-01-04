@@ -14,6 +14,8 @@ import special.sigma.SigmaProp
 
 object SigmaPredef {
 
+  type IrBuilderFunc = PartialFunction[(SValue, Seq[SValue]), SValue]
+
   case class PredefinedFunc(
     /** A name which is used in scripts */
     name: String,
@@ -21,7 +23,7 @@ object SigmaPredef {
     declaration: Lambda,
     /** Builder of SigmaIR node which is equivalent to function application
       * Rule: Apply(f, args) -->  irBuilder(f, args) */
-    irBuilder: PartialFunction[(SValue, Seq[SValue]), SValue]) {
+    irBuilder: IrBuilderFunc) {
 
     val sym: Ident = Ident(name, declaration.tpe)
     val symNoType: Ident = Ident(name, NoType)
@@ -38,7 +40,7 @@ object SigmaPredef {
     private val tR = STypeIdent("R")
     private val tO = STypeIdent("O")
 
-    private val undefined: PartialFunction[(SValue, Seq[SValue]), SValue] =
+    private val undefined: IrBuilderFunc =
       PartialFunction.empty[(SValue, Seq[SValue]), SValue]
 
     val AllOfFunc = PredefinedFunc("allOf",
@@ -204,17 +206,21 @@ object SigmaPredef {
       LongToByteArrayFunc,
       ProveDHTupleFunc,
     )
+
+    private val funcNameToIrBuilderMap: Map[String, IrBuilderFunc] =
+      funcs.filter(_.irBuilder != undefined)
+        .map(f => f.name -> f.irBuilder)
+        .toMap
+
+    def irBuilderForFunc(name: String): Option[IrBuilderFunc] = funcNameToIrBuilderMap.get(name)
   }
 
   object PredefinedFuncApply {
     def unapply(apply: Apply)(implicit registry: PredefinedFuncRegistry): Option[SValue] = apply.func match {
-      case Ident(name, _) => registry.funcs
-        // todo make funcs into a map of name -> irBuilder and get rid of find and flatMap
-        .find(_.name == name)
-        .flatMap {
-          case f if f.irBuilder.isDefinedAt(apply.func, apply.args) => Some(f.irBuilder(apply.func, apply.args))
-          case _ => None
-        }
+      case Ident(name, _) =>
+        registry.irBuilderForFunc(name)
+          .filter(_.isDefinedAt(apply.func, apply.args))
+          .map(_(apply.func, apply.args))
       case _ => None
     }
   }
@@ -222,8 +228,6 @@ object SigmaPredef {
   private val tT = STypeIdent("T")
 
   val predefinedEnv: Map[String, SValue] = Seq(
-
-
     "proveDlog" -> mkLambda(Vector("value" -> SGroupElement), SSigmaProp, None),
 
     "isMember" -> mkLambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
