@@ -10,11 +10,10 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 
 /**
+  * @param networkPrefix network prefix to decode an ergo address from string (PK op)
   * @param builder
-  * @param networkPrefix network prefix to decode an ergo address from string (PK op),
-  *                      if None compilation of any script with PK will fail
   */
-class SigmaCompiler(builder: SigmaBuilder, networkPrefix: NetworkPrefix) {
+class SigmaCompiler(networkPrefix: NetworkPrefix, builder: SigmaBuilder) {
 
   def parse(x: String): SValue = {
     SigmaParser(x, builder) match {
@@ -47,6 +46,6 @@ class SigmaCompiler(builder: SigmaBuilder, networkPrefix: NetworkPrefix) {
 }
 
 object SigmaCompiler {
-  def apply(builder: SigmaBuilder, networkPrefix: NetworkPrefix): SigmaCompiler =
-    new SigmaCompiler(builder, networkPrefix)
+  def apply(networkPrefix: NetworkPrefix, builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler =
+    new SigmaCompiler(networkPrefix, builder)
 }

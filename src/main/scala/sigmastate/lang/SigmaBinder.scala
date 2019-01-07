@@ -18,8 +18,7 @@ import sigmastate.serialization.ValueSerializer
 /**
   * @param env
   * @param builder
-  * @param networkPrefix network prefix to decode an ergo address from string (PK op),
-  *                      if None compilation of any script with PK will fail
+  * @param networkPrefix network prefix to decode an ergo address from string (PK op)
   */
 class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
                   networkPrefix: NetworkPrefix,
