@@ -528,4 +528,53 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("executeFromVar") {
     typecheck(env, "executeFromVar[Boolean](1)") shouldBe SBoolean
   }
+
+  property("LogicalNot") {
+    typecheck(env, "!true") shouldBe SBoolean
+    an [TyperException] should be thrownBy typecheck(env, "!getVar[SigmaProp](1).get")
+  }
+
+  property("Negation") {
+    typecheck(env, "-HEIGHT") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "-true")
+  }
+
+  property("BitInversion") {
+    typecheck(env, "~1") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "~true")
+  }
+
+  property("LogicalXor") {
+    typecheck(env, "true ^ false") shouldBe SBoolean
+  }
+
+  property("BitwiseOr") {
+    typecheck(env, "1 | 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true | false")
+  }
+
+  property("BitwiseAnd") {
+    typecheck(env, "1 & 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true & false")
+  }
+
+  property("BitwiseXor") {
+    typecheck(env, "1 ^ 2") shouldBe SInt
+  }
+
+  property("BitShiftRight") {
+    typecheck(env, "1 >> 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true >> false")
+  }
+
+  property("BitShiftLeft") {
+    typecheck(env, "1 << 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true << false")
+  }
+
+  property("BitShiftRightZeroed") {
+    typecheck(env, "1 >>> 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true >>> false")
+  }
+
 }

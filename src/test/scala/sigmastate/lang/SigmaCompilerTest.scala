@@ -9,17 +9,20 @@ import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.ZKProofBlock
-import sigmastate.lang.exceptions.{InvalidArguments, TyperException}
+import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.{ByIndex, GetVar}
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
+  import CheckingSigmaBuilder._
   implicit lazy val IR = new TestingIRContext
 
   private def comp(env: ScriptEnv, x: String): Value[SType] = compileWithCosting(env, x)
   private def comp(x: String): Value[SType] = compileWithCosting(env, x)
+  private def compWOCosting(x: String): Value[SType] = compile(env, x)
+  private def compWOCosting(env: ScriptEnv, x: String): Value[SType] = compile(env, x)
 
   private def fail(env: ScriptEnv, x: String, index: Int, expected: Any): Unit = {
     try {
@@ -35,6 +38,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         i shouldBe index
         l.toString shouldBe expected.toString
     }
+  }
+
+  private def testMissingCosting(script: String, expected: SValue): Unit = {
+    compWOCosting(script) shouldBe expected
+    // when implemented in coster this should be changed to a positive expectation
+    an [CosterException] should be thrownBy comp(env, script)
   }
 
   property("array indexed access") {
@@ -92,8 +101,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp("atLeast(2, Coll[SigmaProp](p1, p2))") shouldBe AtLeast(2, p1, p2)
   }
 
-  ignore("ZKProof") { // costing is missing
-    comp("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe ZKProofBlock(BoolToSigmaProp(GT(Height, IntConstant(1000))))
+  property("ZKProof") {
+    testMissingCosting("ZKProof { sigmaProp(HEIGHT > 1000) }",
+      ZKProofBlock(BoolToSigmaProp(GT(Height, IntConstant(1000)))))
   }
 
   property("sigmaProp") {
@@ -158,4 +168,45 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   property("decodePoint") {
     comp(env, "decodePoint(Coll[Byte](1.toByte))") shouldBe DecodePoint(ConcreteCollection(ByteConstant(1)))
   }
+
+  property("logicalNot") {
+    testMissingCosting("!true", LogicalNot(TrueLeaf))
+  }
+
+  property("Negation") {
+    testMissingCosting("-HEIGHT", Negation(Height))
+  }
+
+  property("BitInversion") {
+    testMissingCosting("~1", BitInversion(IntConstant(1)))
+  }
+
+  property("LogicalXor") {
+    testMissingCosting("true ^ false", BinXor(TrueLeaf, FalseLeaf))
+  }
+
+  property("BitwiseOr") {
+    testMissingCosting("1 | 2", mkBitOr(IntConstant(1), IntConstant(2)))
+  }
+
+  property("BitwiseAnd") {
+    testMissingCosting("1 & 2", mkBitAnd(IntConstant(1), IntConstant(2)))
+  }
+
+  property("BitwiseXor") {
+    testMissingCosting("1 ^ 2", mkBitXor(IntConstant(1), IntConstant(2)))
+  }
+
+  property("BitShiftRight") {
+    testMissingCosting("1 >> 2", mkBitShiftRight(IntConstant(1), IntConstant(2)))
+  }
+
+  property("BitShiftLeft") {
+    testMissingCosting("1 << 2", mkBitShiftLeft(IntConstant(1), IntConstant(2)))
+  }
+
+  property("BitShiftRightZeroed") {
+    testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
+  }
+
 }

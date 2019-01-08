@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate._
 import SCollection.SBooleanArray
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, TyperException, NonApplicableMethod}
+import sigmastate.lang.exceptions._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
@@ -203,10 +203,14 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
         case _: SNumericType => (m, newArgs) match {
-          case("+" | "*", Seq(r)) => r.tpe match {
+          case("+" | "*" | "^" | ">>" | "<<" | ">>>", Seq(r)) => r.tpe match {
             case _: SNumericType => m match {
               case "*" => bimap(env, "*", newObj.asNumValue, r.asNumValue)(mkMultiply)(tT, tT)
               case "+" => bimap(env, "+", newObj.asNumValue, r.asNumValue)(mkPlus)(tT, tT)
+              case "^" => bimap(env, "^", newObj.asNumValue, r.asNumValue)(mkBitXor)(tT, tT)
+              case ">>" => bimap(env, ">>", newObj.asNumValue, r.asNumValue)(mkBitShiftRight)(tT, tT)
+              case "<<" => bimap(env, "<<", newObj.asNumValue, r.asNumValue)(mkBitShiftLeft)(tT, tT)
+              case ">>>" => bimap(env, ">>>", newObj.asNumValue, r.asNumValue)(mkBitShiftRightZeroed)(tT, tT)
             }
             case _ =>
               throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}")
@@ -232,10 +236,13 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)")
         }
         case SBoolean => (m, newArgs) match {
-          case ("||" | "&&", Seq(r)) => r.tpe match {
-            case SBoolean =>
-              val res = if (m == "||") mkBinOr(newObj.asBoolValue, r.asBoolValue) else mkBinAnd(newObj.asBoolValue, r.asBoolValue)
-              res
+          case ("||" | "&&" | "^", Seq(r)) => r.tpe match {
+            case SBoolean => m match {
+              case "||" => mkBinOr(newObj.asBoolValue, r.asBoolValue)
+              case "&&" => mkBinAnd(newObj.asBoolValue, r.asBoolValue)
+              case "^" => mkBinXor(newObj.asBoolValue, r.asBoolValue)
+
+            }
             case SSigmaProp =>
               val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
               val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
@@ -320,6 +327,10 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case ArithOp(l, r, OpCodes.MinCode) => bimap(env, "min", l.asNumValue, r.asNumValue)(mkMin)(tT, tT)
     case ArithOp(l, r, OpCodes.MaxCode) => bimap(env, "max", l.asNumValue, r.asNumValue)(mkMax)(tT, tT)
 
+    case BitOp(l, r, OpCodes.BitOrCode) => bimap(env, "|", l.asNumValue, r.asNumValue)(mkBitOr)(tT, tT)
+    case BitOp(l, r, OpCodes.BitAndCode) => bimap(env, "&", l.asNumValue, r.asNumValue)(mkBitAnd)(tT, tT)
+    case BitOp(l, r, OpCodes.BitXorCode) => bimap(env, "^", l.asNumValue, r.asNumValue)(mkBitXor)(tT, tT)
+
     case Xor(l, r) => bimap(env, "|", l, r)(mkXor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(mkMultiplyGroup)(SGroupElement, SGroupElement)
 
@@ -357,6 +368,10 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       if (!p1.tpe.isSigmaProp)
         error(s"Invalid operation ProofBytes: expected argument types ($SSigmaProp); actual: (${p.tpe})")
       SigmaPropBytes(p1.asSigmaProp)
+
+    case LogicalNot(i) => unmap(env, "!", i.asBoolValue)(mkLogicalNot)(SBoolean)
+    case Negation(i) => unmap[SNumericType](env, "-", i.asNumValue)(mkNegation)(tT)
+    case BitInversion(i) => unmap[SNumericType](env, "~", i.asNumValue)(mkBitInversion)(tT)
 
     case SomeValue(x) => SomeValue(assignType(env, x))
     case v: NoneValue[_] => v
@@ -413,7 +428,10 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     val r1 = assignType(env, r).asValue[T]
     val safeMkNode = { (left: Value[T], right: Value[T]) =>
       try {
-        mkNode(left, right)
+        val node = mkNode(left, right)
+        if (node.tpe == NoType)
+          error("No type can be assigned to expression")
+        node
       } catch {
         case e: Throwable =>
           throw new InvalidBinaryOperationParameters(s"operation: $op: $e")
@@ -442,6 +460,20 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     } catch {
       case e: Throwable =>
         throw new InvalidBinaryOperationParameters(s"operation $op: $e")
+    }
+  }
+
+  def unmap[T <: SType](env: Map[String, SType], op: String, i: Value[T])
+                       (newNode: Value[T] => SValue)
+                       (tArg: SType): SValue = {
+    val i1 = assignType(env, i).asValue[T]
+    if (!i1.tpe.isNumType && i1.tpe != tArg)
+      throw new InvalidUnaryOperationParameters(s"Invalid unary op $op: expected argument type $tArg, actual: ${i1.tpe}")
+    try {
+      newNode(i1)
+    } catch {
+      case e: Throwable =>
+        throw new InvalidUnaryOperationParameters(s"operation $op error: $e")
     }
   }
 
