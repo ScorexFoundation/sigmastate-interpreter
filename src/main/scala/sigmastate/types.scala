@@ -194,6 +194,10 @@ trait STypeCompanion {
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 }
 
+trait MethodByNameUnapply extends STypeCompanion {
+  def unapply(methodName: String): Option[SMethod] = methods.find(_.name == methodName)
+}
+
 /** Base trait for all types which have methods (and properties) */
 trait SProduct extends SType {
   def ancestors: Seq[SType]
@@ -225,6 +229,11 @@ trait SGenericType {
 /** Method info including name, arg type and result type.
   * When stype is SFunc, then tDom - arg type and tRange - result type. */
 case class SMethod(objType: STypeCompanion, name: String, stype: SType, methodId: Byte) {
+
+  def withSType(newSType: SType): SMethod = copy(stype = newSType)
+
+  def withConcreteTypes(subst: Map[STypeIdent, SType]): SMethod =
+    withSType(stype.asFunc.withSubstTypes(subst))
 }
 
 /** Special type to represent untyped values.
@@ -623,7 +632,7 @@ object SCollectionType {
   val typeParams = Seq(STypeParam(tIV.name))
 }
 
-object SCollection extends STypeCompanion {
+object SCollection extends STypeCompanion with MethodByNameUnapply {
   override def typeId = SCollectionType.CollectionTypeCode
 
   val tIV = STypeIdent("IV")
@@ -638,6 +647,12 @@ object SCollection extends STypeCompanion {
   val FilterMethod = SMethod(this, "filter", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(STypeParam(tIV))), 8)
   val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SCollection(tIV), Seq(STypeParam(tIV))), 9)
   val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(SCollection(tIV), SInt), tIV, Seq(STypeParam(tIV))), 10)
+  val BitShiftLeftMethod = SMethod(this, "<<",
+    SFunc(IndexedSeq(SCollection(tIV), SInt), SCollection(tIV), Seq(STypeParam(tIV))), 11)
+  val BitShiftRightMethod = SMethod(this, ">>",
+    SFunc(IndexedSeq(SCollection(tIV), SInt), SCollection(tIV), Seq(STypeParam(tIV))), 12)
+  val BitShiftRightZeroedMethod = SMethod(this, ">>>",
+    SFunc(IndexedSeq(SCollection(SBoolean), SInt), SCollection(SBoolean)), 13)
 
   val methods = Seq(
     SizeMethod,
@@ -649,7 +664,10 @@ object SCollection extends STypeCompanion {
     SliceMethod,
     FilterMethod,
     AppendMethod,
-    ApplyMethod
+    ApplyMethod,
+    BitShiftLeftMethod,
+    BitShiftRightMethod,
+    BitShiftRightZeroedMethod,
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
@@ -770,6 +788,9 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
     val ts = typeParams.map(_.ident)
     SFunc(ts.init.toIndexedSeq, ts.last, Nil)
   }
+
+  def withSubstTypes(subst: Map[STypeIdent, SType]): SFunc =
+    SigmaTyper.applySubst(this, subst).asFunc
 }
 
 object SFunc {

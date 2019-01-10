@@ -122,7 +122,7 @@ object Values {
     val value: S#WrappedType
     def opType: SFunc = {
       val resType = tpe match {
-        case ct @ SCollection(tItem) =>
+        case ct : SCollection[_] =>
           SCollection(ct.typeParams.head.ident)
         case ft @ SFunc(tD, tR, _) =>
           ft.getGenericType

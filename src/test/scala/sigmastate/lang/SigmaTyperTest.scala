@@ -577,4 +577,24 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "true >>> false", 1, 1)
   }
 
+  property("Collection.BitShiftLeft") {
+    typecheck(env, "Coll(1,2) << 2") shouldBe SCollection(SInt)
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << true")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << 2L")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << (2L, 3)")
+  }
+
+  property("Collection.BitShiftRight") {
+    typecheck(env, "Coll(1,2) >> 2") shouldBe SCollection(SInt)
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> 2L")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> true")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> (2L, 3)")
+  }
+
+  property("Collection.BitShiftRightZeroed") {
+    typecheck(env, "Coll(true, false) >>> 2") shouldBe SCollection(SBoolean)
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >>> 2")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(true, false) >>> true")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(true, false) >>> (2L, 3)")
+  }
 }

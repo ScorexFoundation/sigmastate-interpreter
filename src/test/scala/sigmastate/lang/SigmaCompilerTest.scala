@@ -203,6 +203,36 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
   }
 
+  property("Collection.BitShiftLeft") {
+    testMissingCosting("Coll(1,2) << 2",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(2))
+      )
+    )
+  }
+
+  property("Collection.BitShiftRight") {
+    testMissingCosting("Coll(1,2) >> 2",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.BitShiftRightMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(2))
+      )
+    )
+  }
+
+  property("Collection.BitShiftRightZeroed") {
+    testMissingCosting("Coll(true, false) >>> 2",
+      mkMethodCall(
+        ConcreteCollection(TrueLeaf, FalseLeaf),
+        SCollection.BitShiftRightZeroedMethod,
+        Vector(IntConstant(2))
+      )
+    )
+  }
+
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
     costerFail("Some(10)", 1, 1)
