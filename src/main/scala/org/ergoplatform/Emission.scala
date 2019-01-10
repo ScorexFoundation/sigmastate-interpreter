@@ -8,11 +8,11 @@ object Emission {
     * Emission rules.
     * Return number of coins, issued at height `h` and all previous heights
     */
-  def issuedCoinsAfterHeight(h: Int,
-                             fixedRatePeriod: Int,
-                             fixedRate: Long,
-                             epochLength: Int,
-                             oneEpochReduction: Long): Long = {
+  def issuedCoinsAtHeight(h: Int,
+                          fixedRatePeriod: Int,
+                          fixedRate: Long,
+                          epochLength: Int,
+                          oneEpochReduction: Long): Long = {
     if (h < fixedRatePeriod) {
       fixedRate * h
     } else {

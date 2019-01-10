@@ -7,22 +7,21 @@ import scala.annotation.tailrec
 
 class EmissionSpec extends SigmaTestingCommons {
 
-  val genesisHeight = 1
-  val blocksTotal = 2080799
-  val fixedRatePeriod = 525600
-  val epochLength = 64800
-  val fixedRate = 75L * Emission.CoinsInOneErgo
-  val oneEpochReduction = 3 * Emission.CoinsInOneErgo
-  val foundersInitialReward: Long = fixedRate / 10
-  val minerRewardDelay = 720
-  val coinsTotal = 97739925L * Emission.CoinsInOneErgo
+  private val GenesisHeight = 1
+  private val BlocksTotal = 2080799
+  private val FixedRatePeriod = 525600
+  private val EpochLength = 64800
+  private val fixedRate = 75L * Emission.CoinsInOneErgo
+  private val oneEpochReduction = 3 * Emission.CoinsInOneErgo
+  private val foundersInitialReward: Long = fixedRate / 10
+  private val coinsTotal = 97739925L * Emission.CoinsInOneErgo
 
   property("correct sum from miner and foundation parts") {
     // collect coins after the fixed rate period
-    forAll(Gen.choose(1, blocksTotal)) { height =>
-      val currentRate = Emission.emissionAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
-      val minerPart = Emission.minersRewardAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction, foundersInitialReward)
-      val foundationPart = Emission.foundationRewardAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction, foundersInitialReward)
+    forAll(Gen.choose(1, BlocksTotal)) { height =>
+      val currentRate = Emission.emissionAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction)
+      val minerPart = Emission.minersRewardAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction, foundersInitialReward)
+      val foundationPart = Emission.foundationRewardAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction, foundersInitialReward)
       foundationPart + minerPart shouldBe currentRate
     }
   }
@@ -31,7 +30,7 @@ class EmissionSpec extends SigmaTestingCommons {
     val (coinsTotalCalced, blocksTotalCalced) = {
       @tailrec
       def loop(height: Int, acc: Long): (Long, Int) = {
-        val currentRate = Emission.emissionAtHeight(height, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
+        val currentRate = Emission.emissionAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction)
         if (currentRate > 0) {
           loop(height + 1, acc + currentRate)
         } else {
@@ -39,16 +38,16 @@ class EmissionSpec extends SigmaTestingCommons {
         }
       }
 
-      loop(genesisHeight, 0)
+      loop(GenesisHeight, 0)
     }
     // check total emission
     coinsTotalCalced shouldBe coinsTotal
-    blocksTotalCalced shouldBe blocksTotal
-    val ct2 = Emission.issuedCoinsAfterHeight(blocksTotal, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction)
+    blocksTotalCalced shouldBe BlocksTotal
+    val ct2 = Emission.issuedCoinsAtHeight(BlocksTotal, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction)
     ct2 shouldBe coinsTotal
 
     // first block issue
-    Emission.issuedCoinsAfterHeight(1, fixedRatePeriod, fixedRate, epochLength, oneEpochReduction) shouldBe fixedRate
+    Emission.issuedCoinsAtHeight(1, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction) shouldBe fixedRate
 
   }
 
