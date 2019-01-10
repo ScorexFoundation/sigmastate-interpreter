@@ -19,9 +19,15 @@ class EmissionSpec extends SigmaTestingCommons {
   private val foundersInitialReward: Long = fixedRate / 10
   private val coinsTotal = 97739925L * Emission.CoinsInOneErgo
 
+  def collectedFoundationReward(height: Int): Long = {
+    (1 to height).map { h =>
+      Emission.foundationRewardAtHeight(h, FixedRatePeriod, EpochLength, oneEpochReduction, foundersInitialReward)
+    }.sum
+  }
+
   property("Emission boxes") {
-    val minersRewardTotal = Emission.minersRewardAtHeight(BlocksTotal, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction, foundersInitialReward)
-    val foundationRewardTotal = Emission.foundationRewardAtHeight(BlocksTotal, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction, foundersInitialReward)
+    val foundationRewardTotal: Long = collectedFoundationReward(BlocksTotal)
+    val minersRewardTotal: Long = coinsTotal - foundationRewardTotal
     val noPremineProofs = Array("The Guardian Headline", "Last BTC block id", "another source of randomness")
       .map(_.getBytes("UTF-8"))
     val boxes = Emission.emissionBoxes(FixedRatePeriod: Int,
@@ -42,6 +48,10 @@ class EmissionSpec extends SigmaTestingCommons {
     noPremineProofs.foreach { p =>
       noPremineBox.additionalRegisters.values.exists(_ == ByteArrayConstant(p)) shouldBe true
     }
+
+    // todo foundation reward boxes
+    boxes.map(_.value).sum shouldBe coinsTotal
+
   }
 
   property("correct sum from miner and foundation parts") {
@@ -49,9 +59,27 @@ class EmissionSpec extends SigmaTestingCommons {
     forAll(Gen.choose(1, BlocksTotal)) { height =>
       val currentRate = Emission.emissionAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction)
       val minerPart = Emission.minersRewardAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction, foundersInitialReward)
-      val foundationPart = Emission.foundationRewardAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction, foundersInitialReward)
+      val foundationPart = Emission.foundationRewardAtHeight(height, FixedRatePeriod, EpochLength, oneEpochReduction, foundersInitialReward)
       foundationPart + minerPart shouldBe currentRate
     }
+  }
+
+  property("correct remainingFoundationRewardAtHeight") {
+    val totalFoundersReward = collectedFoundationReward(BlocksTotal)
+
+    def checkHeight(height: Int) = {
+      val collectedFoundersPart = collectedFoundationReward(height)
+      val remainingFoundersPart = Emission.remainingFoundationRewardAtHeight(height, FixedRatePeriod, EpochLength, oneEpochReduction, foundersInitialReward)
+      remainingFoundersPart + collectedFoundersPart shouldBe totalFoundersReward
+
+    }
+    // collect coins after the fixed rate period
+    forAll(Gen.choose(1, BlocksTotal)) { height =>
+      checkHeight(height)
+    }
+    checkHeight(FixedRatePeriod)
+    checkHeight(FixedRatePeriod + EpochLength)
+    checkHeight(FixedRatePeriod + 2 * EpochLength)
   }
 
   property("issuedCoinsAfterHeight corresponds to emissionAtHeight") {

@@ -1,8 +1,9 @@
 package org.ergoplatform
 
+import org.ergoplatform.ErgoBox.R4
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{BoolValue, IntConstant, LongConstant, Value}
+import sigmastate.Values.{IntConstant, LongConstant, Value}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -22,6 +23,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   val fixedRatePeriod = 525600
   val epochLength = 64800
   val fixedRate = 7500000000L
+  val foundersInitialReward = fixedRate / 10
   val oneEpochReduction = 300000000
   val minerRewardDelay = 720
   val coinsTotal = 9773992500000000L
@@ -52,6 +54,49 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       self = inputBox)
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
+
+  property("collect coins from founders box") {
+    def remaining(h: Int) = Emission.remainingFoundationRewardAtHeight(h, fixedRatePeriod, epochLength, oneEpochReduction, foundersInitialReward)
+
+    val foundersCoinsTotal = remaining(0)
+    val prover = new ErgoLikeTestProvingInterpreter
+    val prop = ErgoScriptPredef.foundationScript(fixedRatePeriod, epochLength, oneEpochReduction, foundersInitialReward)
+
+    val verifier = new ErgoLikeTestInterpreter
+
+    checkAtHeight(1)
+    checkAtHeight(fixedRatePeriod)
+    checkAtHeight(fixedRatePeriod + 1)
+    checkAtHeight(fixedRatePeriod + epochLength)
+    checkAtHeight(fixedRatePeriod + epochLength + 1)
+    checkAtHeight(fixedRatePeriod + 2 * epochLength)
+    checkAtHeight(fixedRatePeriod + 2 * epochLength + 1)
+
+    def checkAtHeight(height: Int) = {
+      checkSpending(remaining(height), height, prop) shouldBe 'success
+      checkSpending(remaining(height), height, Values.TrueLeaf) shouldBe 'failure
+      checkSpending(remaining(height) + 1, height, prop) shouldBe 'success
+      checkSpending(remaining(height) - 1, height, prop) shouldBe 'failure
+    }
+
+    def checkSpending(remainingAmount: Long, height: Int, newProp: Value[SBoolean.type]): Try[Unit] = Try {
+      val inputBoxes = IndexedSeq(ErgoBox(foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> Values.TrueLeaf)))
+      val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
+      val newFoundersBox = ErgoBox(remainingAmount, newProp, 0)
+      val collectedBox = ErgoBox(inputBoxes.head.value - remainingAmount, Values.TrueLeaf, 0)
+      val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newFoundersBox, collectedBox))
+      val ctx = ErgoLikeContext(
+        currentHeight = height,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
+        boxesToSpend = inputBoxes,
+        spendingTransaction,
+        self = inputBoxes.head)
+      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    }
+
   }
 
   property("collect coins from rewardOutputScript") {

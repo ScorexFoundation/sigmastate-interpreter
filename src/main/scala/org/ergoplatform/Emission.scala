@@ -77,11 +77,32 @@ object Emission {
   }
 
   /**
+    * Return number of coins, that should be kept in the foundation box at height `h`
+    */
+  def remainingFoundationRewardAtHeight(h: Long,
+                                        fixedRatePeriod: Int,
+                                        epochLength: Int,
+                                        oneEpochReduction: Long,
+                                        foundersInitialReward: Long): Long = {
+    val full15reward = (foundersInitialReward - 2 * oneEpochReduction) * epochLength
+    val full45reward = (foundersInitialReward - oneEpochReduction) * epochLength
+    if (h < fixedRatePeriod) {
+      full15reward + full45reward + (fixedRatePeriod - h - 1) * foundersInitialReward
+    } else if (h < fixedRatePeriod + epochLength) {
+      full15reward + (foundersInitialReward - oneEpochReduction) * (fixedRatePeriod + epochLength - h - 1)
+    } else if (h < fixedRatePeriod + (2 * epochLength)) {
+      (foundersInitialReward - 2 * oneEpochReduction) * (fixedRatePeriod + (2 * epochLength) - h - 1)
+    } else {
+      0
+    }
+  }
+
+
+  /**
     * Return number of coins, issued at height `h` in favour of the foundation
     */
   def foundationRewardAtHeight(h: Long,
                                fixedRatePeriod: Int,
-                               fixedRate: Long,
                                epochLength: Int,
                                oneEpochReduction: Long,
                                foundersInitialReward: Long): Long = {

@@ -129,6 +129,43 @@ object ErgoScriptPredef {
   }
 
   /**
+    * Script for Ergo foundation box.
+    *
+    * The script allows to collect coins, if:
+    * - First transaction output contains at least Emission.remainingFoundationAtHeight coins in it
+    * and is protected by the same script AND
+    * - satisfies conditions from the first non-mandatory register
+    */
+  def foundationScript(fixedRatePeriod: Int,
+                       epochLength: Int,
+                       oneEpochReduction: Long,
+                       foundersInitialReward: Long)(implicit IR: IRContext): Value[SBoolean.type] = {
+    val rewardOut = ByIndex(Outputs, IntConstant(0))
+    val remainingAmount = {
+      // Emission.remainingFoundationRewardAtHeight in Ergo script
+      val full15reward = (foundersInitialReward - 2 * oneEpochReduction) * epochLength
+      val full45reward = (foundersInitialReward - oneEpochReduction) * epochLength
+      val fixedRatePeriodMinus1: Int = fixedRatePeriod - 1
+
+      If(LT(Height, IntConstant(fixedRatePeriod)),
+        Plus(LongConstant(full15reward + full45reward), Multiply(foundersInitialReward, Upcast(Minus(fixedRatePeriodMinus1, Height), SLong))),
+        If(LT(Height, IntConstant(fixedRatePeriod + epochLength)),
+          Plus(full15reward, Multiply(foundersInitialReward - oneEpochReduction, Upcast(Minus(fixedRatePeriodMinus1 + epochLength, Height), SLong))),
+          If(LT(Height, IntConstant(fixedRatePeriod + 2 * epochLength)),
+            Multiply(foundersInitialReward - 2 * oneEpochReduction, Upcast(Minus(fixedRatePeriodMinus1 + 2 * epochLength, Height), SLong)),
+            LongConstant(0)
+          )
+        )
+      )
+    }
+    val amountCorrect = GE(ExtractAmount(rewardOut), remainingAmount)
+    val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(rewardOut))
+    //    TODO add DeserializeRegister when it will be ready
+    //    AND(amountCorrect, sameScriptRule, DeserializeRegister(ErgoBox.R4, SBoolean))
+    AND(amountCorrect, sameScriptRule)
+  }
+
+  /**
     * Creation height of a box
     */
   def boxCreationHeight(box: Value[SBox.type]): Value[SInt.type] =
