@@ -198,20 +198,26 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             else
               error(s"Invalid argument type for $m, expected $tColl but was ${r.tpe}", r.sourceContext)
           case (SCollection(method), _) =>
-            val argTypes = method.stype.asFunc.tDom
-            val newArgsTypes = newArgs.map(_.tpe)
-            val actualTypes = newObj.tpe +: newArgsTypes
-            unifyTypeLists(argTypes, actualTypes) match {
-              case Some(subst) =>
-                val concrFunTpe = applySubst(method.stype.asFunc, subst)
-                val newMethod = method.withSType(concrFunTpe)
-                val concrFunArgsTypes = concrFunTpe.asFunc.tDom.tail
-                if (newArgsTypes != concrFunArgsTypes)
-                  error(s"Invalid method $newMethod argument type: expected $concrFunArgsTypes; actual: $newArgsTypes")
-                mkMethodCall(newObj, newMethod, newArgs)
-              case None =>
-                error(s"Invalid argument type of method call $mc : expected $argTypes; actual: $actualTypes")
+            val methodConcrType = method.stype match {
+              case sfunc @ SFunc(_, _, _) =>
+                val newArgsTypes = newArgs.map(_.tpe)
+                val actualTypes = newObj.tpe +: newArgsTypes
+                unifyTypeLists(sfunc.tDom, actualTypes) match {
+                  case Some(subst) =>
+                    val concrFunTpe = applySubst(sfunc, subst)
+                    val newMethod = method.withSType(concrFunTpe)
+                    val concrFunArgsTypes = concrFunTpe.asFunc.tDom.tail
+                    if (newArgsTypes != concrFunArgsTypes)
+                      error(s"Invalid method $newMethod argument type: expected $concrFunArgsTypes; actual: $newArgsTypes")
+                    newMethod
+                  case None =>
+                    error(s"Invalid argument type of method call $mc : expected ${sfunc.tDom}; actual: $actualTypes")
+                }
+              case _ => method
             }
+            methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs))
+              .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs))
+
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs", mc.sourceContext.toOption)
         }

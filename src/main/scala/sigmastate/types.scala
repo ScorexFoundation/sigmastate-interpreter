@@ -2,15 +2,15 @@ package sigmastate
 
 import java.math.BigInteger
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import scalan.RType
-import sigmastate.SType.{TypeCode, AnyOps}
+import sigmastate.SType.{AnyOps, TypeCode}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
 import sigma.util.Extensions._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.lang.SigmaTyper
+import sigmastate.lang.{SigmaBuilder, SigmaTyper}
 import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
@@ -23,8 +23,10 @@ import scala.reflect.{ClassTag, classTag}
 import scalan.meta.ScalanAst.STypeArgAnnotation
 import sigmastate.SBoolean.typeCode
 import sigmastate.SByte.typeCode
+import sigmastate.SMethod.MethodCallIrBuilder
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
+import sigmastate.utxo.ByIndex
 import special.sigma.{Box, AvlTree, SigmaProp, wrapperType}
 //import sigmastate.SNumericType._
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
@@ -228,12 +230,26 @@ trait SGenericType {
 
 /** Method info including name, arg type and result type.
   * When stype is SFunc, then tDom - arg type and tRange - result type. */
-case class SMethod(objType: STypeCompanion, name: String, stype: SType, methodId: Byte) {
+case class SMethod(objType: STypeCompanion,
+                   name: String,
+                   stype: SType,
+                   methodId: Byte,
+                   irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]]) {
 
   def withSType(newSType: SType): SMethod = copy(stype = newSType)
 
   def withConcreteTypes(subst: Map[STypeIdent, SType]): SMethod =
     withSType(stype.asFunc.withSubstTypes(subst))
+}
+
+object SMethod {
+
+  val MethodCallIrBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]] = Some {
+    case (builder, obj, method, args) => builder.mkMethodCall(obj, method, args.toIndexedSeq)
+  }
+
+  def apply(objType: STypeCompanion, name: String, stype: SType, methodId: Byte): SMethod =
+    SMethod(objType, name, stype, methodId, None)
 }
 
 /** Special type to represent untyped values.
@@ -638,7 +654,13 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val tIV = STypeIdent("IV")
   val tOV = STypeIdent("OV")
   val SizeMethod = SMethod(this, "size", SInt, 1)
-  val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(STypeParam(tIV))), 2)
+  val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(STypeParam(tIV))), 2, Some {
+    case (builder, obj, method, Seq(index, defaultValue)) =>
+      val index1 = index.asValue[SInt.type]
+      val defaultValue1 = defaultValue.asValue[SType]
+      builder.mkByIndex(obj.asValue[SCollection[SType]], index1, Some(defaultValue1))
+  }
+  )
   val MapMethod = SMethod(this, "map", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, tOV)), SCollection(tOV), Seq(STypeParam(tIV), STypeParam(tOV))), 3)
   val ExistsMethod = SMethod(this, "exists", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SBoolean, Seq(STypeParam(tIV))), 4)
   val FoldMethod = SMethod(this, "fold", SFunc(IndexedSeq(SCollection(tIV), tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV, Seq(STypeParam(tIV), STypeParam(tOV))), 5)
@@ -653,6 +675,13 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     SFunc(IndexedSeq(SCollection(tIV), SInt), SCollection(tIV), Seq(STypeParam(tIV))), 12)
   val BitShiftRightZeroedMethod = SMethod(this, ">>>",
     SFunc(IndexedSeq(SCollection(SBoolean), SInt), SCollection(SBoolean)), 13)
+  val IndicesMethod = SMethod(this, "indices", SCollection(SInt), 14, MethodCallIrBuilder)
+  val FlatMapMethod = SMethod(this, "flatMap",
+    SFunc(
+      IndexedSeq(SCollection(tIV), SFunc(tIV, SCollection(tOV))),
+      SCollection(tOV),
+      Seq(STypeParam(tIV), STypeParam(tOV))),
+    15, MethodCallIrBuilder)
 
   val methods = Seq(
     SizeMethod,
@@ -668,6 +697,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     BitShiftLeftMethod,
     BitShiftRightMethod,
     BitShiftRightZeroedMethod,
+    IndicesMethod,
+    FlatMapMethod,
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)

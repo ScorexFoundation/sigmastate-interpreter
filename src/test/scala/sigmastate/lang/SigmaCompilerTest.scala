@@ -1,19 +1,19 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, Height, P2PKAddress}
+import org.ergoplatform.{ErgoAddressEncoder, Height, Outputs, P2PKAddress}
 import org.scalatest.exceptions.TestFailedException
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Apply, ZKProofBlock}
+import sigmastate.lang.Terms.{Ident, Lambda, ZKProofBlock}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utxo.{ByIndex, GetVar}
+import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar}
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
   import CheckingSigmaBuilder._
@@ -230,6 +230,27 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         SCollection.BitShiftRightZeroedMethod,
         Vector(IntConstant(2))
       )
+    )
+  }
+
+  property("Collection.indices") {
+    testMissingCosting("Coll(true, false).indices",
+      mkMethodCall(
+        ConcreteCollection(TrueLeaf, FalseLeaf),
+        SCollection.IndicesMethod,
+        Vector()
+      )
+    )
+  }
+
+  property("SCollection.flatMap") {
+    testMissingCosting("OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })",
+      mkMethodCall(Outputs,
+        SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean)),
+        Vector(Terms.Lambda(
+          Vector(("out",SBox)),
+          SCollection(SBoolean),
+          Some(ConcreteCollection(Vector(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))),SBoolean)))))
     )
   }
 

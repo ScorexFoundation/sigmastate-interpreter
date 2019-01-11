@@ -118,6 +118,17 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
     case a @ Apply(PKFunc.symNoType, args) =>
       Some(PKFunc.irBuilder(PKFunc.sym, args).withPropagatedSrcCtx(a.sourceContext))
 
+    case Apply(Select(obj, SCollection(method), optTpe), args)
+      if obj.tpe.isCollection
+        && method.irBuilder.isDefined =>
+      Some(MethodCallLike(obj, method.name, args, optTpe.getOrElse(NoType)))
+
+    case Select(obj, SCollection(method), optTpe)
+      if obj.tpe.isCollection
+        && !method.stype.isFunc
+        && method.irBuilder.isDefined =>
+      Some(MethodCallLike(obj, method.name, IndexedSeq(), optTpe.getOrElse(NoType)))
+
   })))(e)
 
   def bind(e: SValue): SValue =

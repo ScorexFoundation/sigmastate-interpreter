@@ -597,4 +597,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     an [TyperException] should be thrownBy typecheck(env, "Coll(true, false) >>> true")
     an [TyperException] should be thrownBy typecheck(env, "Coll(true, false) >>> (2L, 3)")
   }
+
+  property("SCollection.indices") {
+    typecheck(env, "Coll(1).indices") shouldBe SCollection(SInt)
+    typecheck(env, "INPUTS.indices") shouldBe SCollection(SInt)
+  }
+
+  property("SCollection.flatMap") {
+    typecheck(env, "OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })") shouldBe SCollection(SBoolean)
+  }
 }

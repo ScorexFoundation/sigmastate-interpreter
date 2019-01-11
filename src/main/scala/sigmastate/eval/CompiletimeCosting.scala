@@ -54,12 +54,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
           error(s"Invalid register name $regName in expression $sel", sel.sourceContext.toOption))
         eval(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
 
-      // col.getOrElse(i, default) =>
-      case Terms.Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
-        val index1 = index.asValue[SInt.type]
-        val defaultValue1 = defaultValue.asValue[SType]
-        eval(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
-
       // opt.get =>
       case Select(nrv: Value[SOption[SType]]@unchecked, SOption.Get, _) =>
         eval(mkOptionGet(nrv))
