@@ -174,7 +174,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case d @ ContextM.getVar(ctx @ In(ctxObj: CostingDataContext), _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
-            val valueInCtx = ctx.elem.invokeUnlifted(mc, dataEnv)
+            val valueInCtx = invokeUnlifted(ctx.elem, mc, dataEnv)
             val data = valueInCtx match {
               case Some(Constant(v, `declaredTpe`)) =>
                 Some(ErgoLikeContext.toTestData(v, declaredTpe, ctxObj.isCost)(IR))
@@ -186,7 +186,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val ctxObj = dataEnv(ctxSym).asInstanceOf[CostingDataContext]
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
-            val valueInReg = box.elem.invokeUnlifted(mc, dataEnv)
+            val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) =>
                 Some(ErgoLikeContext.toTestData(v, declaredTpe, ctxObj.isCost)(IR))
@@ -259,7 +259,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           // NOTE: This is a fallback rule which should be places AFTER all other MethodCall patterns
           case mc @ MethodCall(obj, m, args, _) =>
-            val dataRes = obj.elem.invokeUnlifted(mc, dataEnv)
+            val dataRes = invokeUnlifted(obj.elem, mc, dataEnv)
             val res = dataRes match {
               case Constant(v, _) => v
               case v => v
