@@ -160,9 +160,7 @@ object ErgoScriptPredef {
     }
     val amountCorrect = GE(ExtractAmount(rewardOut), remainingAmount)
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(rewardOut))
-    //    TODO add DeserializeRegister when it will be ready
-    //    AND(amountCorrect, sameScriptRule, DeserializeRegister(ErgoBox.R4, SBoolean))
-    AND(amountCorrect, sameScriptRule)
+    AND(amountCorrect, sameScriptRule, DeserializeRegister(ErgoBox.R4, SBoolean))
   }
 
   /**
