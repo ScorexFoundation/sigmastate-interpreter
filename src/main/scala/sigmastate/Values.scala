@@ -345,6 +345,19 @@ object Values {
     def elementType: T
   }
 
+  type OptionConstant[T <: SType] = Constant[SOption[T]]
+  object OptionConstant {
+    def apply[T <: SType](value: Option[T#WrappedType], elementType: T): Constant[SOption[T]] =
+      Constant[SOption[T]](value, SOption(elementType))
+    def unapply[T <: SType](node: Value[SOption[T]]): Option[(Option[T#WrappedType], T)] = node match {
+      case opt: Constant[SOption[a]] @unchecked if opt.tpe.isOption =>
+        val v = opt.value.asInstanceOf[Option[T#WrappedType]]
+        val t = opt.tpe.elemType.asInstanceOf[T]
+        Some((v, t))
+      case _ => None
+    }
+  }
+
   type CollectionConstant[T <: SType] = Constant[SCollection[T]]
 
   object CollectionConstant {

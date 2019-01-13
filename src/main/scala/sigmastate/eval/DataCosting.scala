@@ -1,7 +1,6 @@
 package sigmastate.eval
 
-import sigmastate.Values.{CollectionConstant, Constant}
-
+import sigmastate.Values.{CollectionConstant, Constant, OptionConstant}
 import scalan.SigmaLibrary
 import scalan.Lazy
 import sigmastate.utxo.CostTable.Cost.BoxConstantDeclaration
@@ -22,6 +21,7 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
   import CostedOption._;
   import CostedCol._;
   import CCostedCol._;
+  import CCostedOption._;
   import CostedNestedCol._; import CostedPairCol._
   import CostedBuilder._
   import WSpecialPredef._
@@ -34,10 +34,16 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
         val l = dataCost(asRep[(a,b)](x)._1, None)
         val r = dataCost(asRep[(a,b)](x)._2, optCost)
         RCCostedPair(l, r)
-//      case optE: WOptionElem[a,_] =>
-//        val optX = asRep[WOption[a]](x)
-//        val cost = optX.getOrElse()
-//        RCostedOption(optX)
+      case optE: WOptionElem[a,_] =>
+        val optX = asRep[WOption[a]](x)
+        implicit val e = optE.eItem
+        val tpe = elemToSType(e)
+        val costOpt = optX.map(fun(x => 0))
+        val sizeOpt =
+          if (tpe.isConstantSize) optX.map(fun(x => typeSize(tpe)))
+          else optX.map(fun(sizeOf(_)))
+        val cost = costOf(OptionConstant(null, tpe))
+        RCCostedOption(optX, costOpt, sizeOpt, optCost.fold(cost)(c => c + cost))
       case ce: ColElem[_,_] =>
         ce.eA match {
           case e: Elem[a] =>
@@ -46,8 +52,7 @@ trait DataCosting extends SigmaLibrary { self: RuntimeCosting =>
             val costs = colBuilder.replicate(xs.length, 0)
             val tpe = elemToSType(e)
             val sizes = if (tpe.isConstantSize)
-              colBuilder.replicate(xs.length,
-              typeSize(tpe))
+              colBuilder.replicate(xs.length, typeSize(tpe))
             else
               xs.map(fun(sizeOf(_)))
             val colCost = costOf(CollectionConstant(null, tpe))

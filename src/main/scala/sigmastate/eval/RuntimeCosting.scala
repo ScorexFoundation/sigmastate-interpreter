@@ -74,7 +74,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   override val performViewsLifting = false
   val okMeasureOperationTime: Boolean = false
 
-  //this.keepOriginalFunc = false  // original lambda contains invocations of evalNode and we don't want that
+  this.keepOriginalFunc = false  // original lambda contains invocations of evalNode and we don't want that
+//  this.useAlphaEquality = false
+//  unfoldWithOriginalFunc = unfoldWithOrig
 
   def createSliceAnalyzer = new SliceAnalyzer
 
@@ -147,6 +149,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   trait CostedStruct extends Costed[Struct] { }
   case class CostedStructCtor(costedFields: Rep[Struct], structCost: Rep[Int]) extends CostedStruct {
+    override def transform(t: Transformer) = CostedStructCtor(t(costedFields), t(structCost))
+
     implicit val eVal: Elem[Struct] = {
       val fields = costedFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[CostedElem[_, _]].eVal) }
       structElement(fields)
@@ -383,6 +387,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case CM.length(CBM.fromArray(_, arr)) => arr.length
       case CM.length(CBM.fromItems(_, items, _)) => items.length
       case IsNumericToLong(Def(IsNumericToInt(x))) if x.elem == LongElement => x
+      case CM.zip(CBM.replicate(b1, l1, v1), CBM.replicate(b2, l2, v2)) if b1 == b2 && l1 == l2 =>
+        colBuilder.replicate(l1, Pair(v1, v2))
+      case CM.map(CBM.replicate(b, l, v: Rep[a]), _f) =>
+        val f = asRep[a => Any](_f)
+        colBuilder.replicate(l, f(v))
 
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict
@@ -482,6 +491,23 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //      case CostedFoldExtractors.IsGetDataSize(opt: RWOption[a], th: CostedThunk[b]@unchecked, f) =>
 //        implicit val eA = opt.elem.eItem
 //        opt.fold(Thunk { forceThunkByMirror(th).dataSize }, fun { x: Rep[a] => asRep[a => Costed[b]](f)(x).dataSize })
+
+      // Rule: opt.fold(default, f).cost ==> opt.fold(default.cost, x => f(x).cost)
+      case CostedM.cost(WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f)) =>
+        implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+        val th = asRep[Thunk[Costed[Any]]](_th)
+        val f = asRep[Any => Costed[Any]](_f)
+        opt.fold(Thunk(forceThunkByMirror(th).cost), fun { x: Rep[Any] => f(x).cost })
+
+      // Rule: opt.fold(default, f).value ==> opt.fold(default.value, x => f(x).value)
+      case CostedM.value(WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f)) =>
+        implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+        val th = asRep[Thunk[Costed[Any]]](_th)
+        val f = asRep[Any => Costed[Any]](_f)
+        opt.fold(Thunk(forceThunkByMirror(th).value), fun { x: Rep[Any] => f(x).value })
+
+      // Rule: opt.fold(None, x => Some(x)) ==> opt
+      case WOptionM.fold(opt, Def(ThunkDef(SPCM.none(_), _)), Def(Lambda(_, _, x, SPCM.some(y)))) if x == y => opt
 
       case CostedFoldExtractors.IsGet(opt: RWOption[a], _, _f) =>
         implicit val eA = opt.elem.eItem

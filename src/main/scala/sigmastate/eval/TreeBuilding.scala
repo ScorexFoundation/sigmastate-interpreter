@@ -107,7 +107,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
   object IsInternalDef {
     def unapply(d: Def[_]): Option[Def[_]] = d match {
-      case _: SigmaDslBuilder | _: ColBuilder => Some(d)
+      case _: SigmaDslBuilder | _: ColBuilder | _: WSpecialPredefCompanion => Some(d)
       case _ => None
     }
   }
@@ -139,7 +139,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         ValUse(id, tpe) // recursion base
       case Def(Lambda(lam, _, x, y)) =>
         val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
-      val env1 = env + (x -> (varId, elemToSType(x.elem)))
+        val env1 = env + (x -> (varId, elemToSType(x.elem)))
         val block = processAstGraph(mainG, env1, lam, varId + 1, constantsProcessing)
         val rhs = mkFuncValue(Vector((varId, elemToSType(x.elem))), block)
         rhs
