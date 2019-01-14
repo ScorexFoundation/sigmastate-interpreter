@@ -12,6 +12,11 @@ object MeasureIRContext extends App {
     ctx = new RuntimeIRContext
   }
   println(s"Def count: ${ctx.defCount}")
+  /*
+  Total time: 2485 ms
+  Total time: 2714 ms
+  Def count: 20
+  */
 }
 
 class SigmaLibraryTests extends BaseCtxTests {
@@ -23,5 +28,9 @@ class SigmaLibraryTests extends BaseCtxTests {
 
 object MeasureSigmaLibraryCreate extends App {
   new Benchmark(new RuntimeIRContext).run()
+  /*
+  Total time: 12932 ms
+  Def count: 20, total: 15774 msec
+  */
 }
 
