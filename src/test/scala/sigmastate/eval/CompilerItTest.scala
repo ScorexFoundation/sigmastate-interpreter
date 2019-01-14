@@ -200,6 +200,14 @@ class CompilerItTest extends BaseCtxTests
     measure(5) { i =>
       register_BigIntArr_Case.doReduce()
     }
+    /*
+    Iter 0: 3074 ms
+    Iter 1: 29 ms
+    Iter 2: 31 ms
+    Iter 3: 26 ms
+    Iter 4: 24 ms
+    Total time: 3184 ms
+    */
   }
 
   def register_BigIntArr_Map_Case = {

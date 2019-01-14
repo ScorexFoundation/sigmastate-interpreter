@@ -85,7 +85,18 @@ class EvaluationTest extends BaseCtxTests
       ctx = new RuntimeIRContext
     }
     println(s"Def count: ${ctx.defCount}")
+    /*
+    Iter 0: 4 ms
+        ...
+    Iter 96: 2 ms
+    Iter 97: 1 ms
+    Iter 98: 2 ms
+    Iter 99: 2 ms
+    Total time: 244 ms
+    Def count: 20
+    */
   }
+  
 //  test("Crowd Funding") {
 //    val backerProver = new ErgoLikeProvingInterpreter
 //    val projectProver = new ErgoLikeProvingInterpreter

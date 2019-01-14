@@ -211,12 +211,20 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       res = eval(i)
 
     println("Processing ...")
-    measure(1) { k =>
-      for (i <- 1 to 2000)
+    measure(3) { k =>
+      for (i <- 1 to 1000)
         res = eval(i)
     }
     
     emit("Crowd_Funding_measure", res)
+    /*
+    Warming up ...
+    Processing ...
+    Iter 0: 2138 ms
+    Iter 1: 1864 ms
+    Iter 2: 1864 ms
+    Total time: 5866 ms
+    */
   }
 
   test("Demurrage") {
@@ -242,11 +250,19 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   test("measure: costed context data") {
     var res: Rep[Any] = null
     measure(2) { j => // 10 warm up iterations when j == 0
-      measure(j*500 + 10, false) { i =>
+      measure(j*1000 + 10, false) { i =>
         res = check("", s"INPUTS.size + OUTPUTS.size + $i", null
-          /*ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i*/)
+          /*ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i*/, printGraphs = false)
       }
     }
+    emit("costed_context_data", res)
+    /*
+    Total time: 2676 ms
+    Iter 0: 2676 ms
+    Total time: 6966 ms
+    Iter 1: 6970 ms
+    Total time: 9646 ms
+    */
   }
 
 
