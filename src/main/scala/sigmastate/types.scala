@@ -104,6 +104,7 @@ object SType {
   implicit class STypeOps(val tpe: SType) extends AnyVal {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
+    def isOption: Boolean = tpe.isInstanceOf[SOption[_]]
     def isSigmaProp: Boolean = tpe.isInstanceOf[SSigmaProp.type]
     def isFunc : Boolean = tpe.isInstanceOf[SFunc]
     def isTuple: Boolean = tpe.isInstanceOf[STuple]
@@ -559,13 +560,16 @@ object SOption extends STypeCompanion {
   val IsDefined = "isDefined"
   val Get = "get"
   val GetOrElse = "getOrElse"
+  val Fold = "fold"
 
   private val tT = STypeIdent("T")
+  private val tR = STypeIdent("R")
   val IsEmptyMethod   = SMethod(this, IsEmpty, SBoolean, 1)
   val IsDefinedMethod = SMethod(this, IsDefined, SBoolean, 2)
   val GetMethod       = SMethod(this, Get, tT, 3)
   val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(SOption(tT), tT), tT, Seq(STypeParam(tT))), 4)
-  val methods: Seq[SMethod] = Seq(IsEmptyMethod, IsDefinedMethod, GetMethod, GetOrElseMethod)
+  val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(SOption(tT), tR, SFunc(tT, tR)), tR, Seq(STypeParam(tT), STypeParam(tR))), 5)
+  val methods: Seq[SMethod] = Seq(IsEmptyMethod, IsDefinedMethod, GetMethod, GetOrElseMethod, FoldMethod)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
