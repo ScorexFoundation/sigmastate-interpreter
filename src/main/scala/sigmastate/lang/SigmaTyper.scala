@@ -85,7 +85,13 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             s.methods(iField).stype
           } else
             throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}", obj.sourceContext.toOption)
-          mkSelect(newObj, n, Some(tRes))
+          s.method(n) match {
+            case Some(method) if method.irBuilder.isDefined && !method.stype.isFunc =>
+              method.irBuilder.flatMap(_.lift(builder, newObj, method, IndexedSeq()))
+                .getOrElse(mkMethodCall(newObj, method, IndexedSeq()))
+            case _ =>
+              mkSelect(newObj, n, Some(tRes))
+          }
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t", sel.sourceContext)
       }
@@ -114,9 +120,15 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
-              val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
-              val newApply = mkApply(newSelect, newArgs)
-              newApply
+              newObj.tpe.asInstanceOf[SProduct].method(n) match {
+                case Some(method) if method.irBuilder.isDefined =>
+                  val methodConcrType = method.withSType(concrFunTpe)
+                  methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs))
+                    .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs))
+                case _ =>
+                  val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
+                  mkApply(newSelect, newArgs)
+              }
             case None =>
               error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes", sel.sourceContext)
           }
@@ -243,9 +255,6 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             case _ =>
               throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext.toOption)
           }
-          case (SNumericType(method), _) =>
-            method.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs))
-              .getOrElse(mkMethodCall(newObj, method, newArgs))
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext.toOption)
         }

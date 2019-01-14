@@ -264,6 +264,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       mkMethodCall(IntConstant(4), SNumericType.ToBitsMethod, IndexedSeq()))
   }
 
+  property("SBigInt.multModQ") {
+    testMissingCosting("1.toBigInt.multModQ(2.toBigInt)",
+      mkMethodCall(BigIntConstant(1), SBigInt.MultModQMethod, IndexedSeq(BigIntConstant(2))))
+  }
+
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
     costerFail("Some(10)", 1, 1)

@@ -219,6 +219,8 @@ trait SProduct extends SType {
     }
     true
   }
+
+  def method(methodName: String): Option[SMethod] = methods.find(_.name == methodName)
 }
 
 /** Base trait implemented by all generic types (those which has type parameters,
@@ -314,7 +316,7 @@ trait SNumericType extends SProduct {
   /** Number of bytes to store values of this type. */
   @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
 }
-object SNumericType extends STypeCompanion with MethodByNameUnapply {
+object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
   def typeId: TypeCode = 1: Byte
   val ToByte = "toByte"
@@ -479,10 +481,12 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with ST
   val ModQMethod = SMethod(this, "modQ", SBigInt, 1)
   val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 2)
   val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 3)
+  val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 4, MethodCallIrBuilder)
   override val methods: Vector[SMethod] = Vector(
     ModQMethod,
     PlusModQMethod,
     MinusModQMethod,
+    MultModQMethod,
   )
 }
 
