@@ -314,7 +314,7 @@ trait SNumericType extends SProduct {
   /** Number of bytes to store values of this type. */
   @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
 }
-object SNumericType extends STypeCompanion {
+object SNumericType extends STypeCompanion with MethodByNameUnapply {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
   def typeId: TypeCode = 1: Byte
   val ToByte = "toByte"
@@ -322,12 +322,17 @@ object SNumericType extends STypeCompanion {
   val ToInt = "toInt"
   val ToLong = "toLong"
   val ToBigInt = "toBigInt"
+
+  val ToBytesMethod = SMethod(this, "toBytes", SByteArray, 6, MethodCallIrBuilder)
+  val ToBitsMethod = SMethod(this, "toBits", SBooleanArray, 7, MethodCallIrBuilder)
   val methods = Vector(
     SMethod(this, ToByte, SByte, 1),    // see Downcast
     SMethod(this, ToShort, SShort, 2),  // see Downcast
     SMethod(this, ToInt, SInt, 3),      // see Downcast
     SMethod(this, ToLong, SLong, 4),    // see Downcast
-    SMethod(this, ToBigInt, SBigInt, 5) // see Downcast
+    SMethod(this, ToBigInt, SBigInt, 5), // see Downcast
+    ToBytesMethod,
+    ToBitsMethod,
   )
   val castMethods: Array[String] = Array(ToByte, ToShort, ToInt, ToLong, ToBigInt)
 }

@@ -243,6 +243,9 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             case _ =>
               throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext.toOption)
           }
+          case (SNumericType(method), _) =>
+            method.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs))
+              .getOrElse(mkMethodCall(newObj, method, newArgs))
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext.toOption)
         }

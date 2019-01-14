@@ -129,6 +129,13 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
         && method.irBuilder.isDefined =>
       Some(MethodCallLike(obj, method.name, IndexedSeq(), optTpe.getOrElse(NoType)))
 
+    case Select(obj, SNumericType(method), optTpe)
+      if obj.tpe.isNumType
+        && !method.stype.isFunc
+        && method.irBuilder.isDefined =>
+      Some(MethodCallLike(obj, method.name, IndexedSeq(), optTpe.getOrElse(NoType)))
+
+
   })))(e)
 
   def bind(e: SValue): SValue =

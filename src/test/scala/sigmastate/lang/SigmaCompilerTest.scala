@@ -254,6 +254,16 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     )
   }
 
+  property("SNumeric.toBytes") {
+    testMissingCosting("4.toBytes",
+      mkMethodCall(IntConstant(4), SNumericType.ToBytesMethod, IndexedSeq()))
+  }
+
+  property("SNumeric.toBits") {
+    testMissingCosting("4.toBits",
+      mkMethodCall(IntConstant(4), SNumericType.ToBitsMethod, IndexedSeq()))
+  }
+
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
     costerFail("Some(10)", 1, 1)

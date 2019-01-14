@@ -202,6 +202,10 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "INPUTS.indices") shouldBe MethodCallLike(Inputs, "indices", IndexedSeq())
   }
 
+  property("SNumeric.toBytes") {
+    bind(env, "4.toBytes") shouldBe MethodCallLike(IntConstant(4), "toBytes", IndexedSeq())
+  }
+
   property("val fails (already defined in env)") {
     val script= "{ val x = 10; x > 2 }"
     (the[BinderException] thrownBy bind(env, script)).source shouldBe
