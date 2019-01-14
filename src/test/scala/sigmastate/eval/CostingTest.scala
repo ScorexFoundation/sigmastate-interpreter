@@ -226,11 +226,12 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
       val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp]
+      val selfBytes = ctx.SELF.propositionBytes
+      val selfValue = ctx.SELF.value
       val c2 = dsl.allOf(colBuilder.fromItems(
         ctx.HEIGHT >= ctx.SELF.getReg[Int](4).get + demurragePeriod,
         ctx.OUTPUTS.exists(fun { out =>
-          val selfBytes = ctx.SELF.propositionBytes
-          (out.value >= ctx.SELF.value - demurrageCost) lazy_&& Thunk{out.propositionBytes === selfBytes}
+          (out.value >= selfValue - demurrageCost) lazy_&& Thunk{out.propositionBytes === selfBytes}
         })
       ))
       regScript.isValid lazy_|| Thunk{c2}

@@ -57,24 +57,23 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
     val buyerProp = BlockValue(
       Vector(
-        ValDef(1, SigmaPropConstant(tokenSellerKey)),
-        ValDef(2, ByIndex(Outputs, 0)),
+        ValDef(1, ByIndex(Outputs, 0)),
         // token
-        ValDef(3, extractToken(ValUse(2, SBox)))
+        ValDef(2, extractToken(ValUse(1, SBox)))
       ),
       SigmaOr(List(
         SigmaAnd(List(
           GT(Height, deadline).toSigmaProp,
-          ValUse(1, SSigmaProp))
+          SigmaPropConstant(tokenSellerKey))
         ),
         AND(
           // extract toked id
-          EQ(SelectField(ValUse(3, STuple(SByteArray, SLong)), 1), ByteArrayConstant(tokenId)),
+          EQ(SelectField(ValUse(2, STuple(SByteArray, SLong)), 1), ByteArrayConstant(tokenId)),
           // extract token amount
-          GE(SelectField(ValUse(3, STuple(SByteArray, SLong)), 2), LongConstant(60)),
+          GE(SelectField(ValUse(2, STuple(SByteArray, SLong)), 2), LongConstant(60)),
           // right protection buyer
-          EQ(ExtractScriptBytes(ValUse(2, SBox)), ValUse(1, SSigmaProp).propBytes),
-          EQ(ExtractRegisterAs(ValUse(2, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self))
+          EQ(ExtractScriptBytes(ValUse(1, SBox)), SigmaPropConstant(tokenSellerKey).propBytes),
+          EQ(ExtractRegisterAs(ValUse(1, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self))
         ).toSigmaProp
       ))
     ).asBoolValue

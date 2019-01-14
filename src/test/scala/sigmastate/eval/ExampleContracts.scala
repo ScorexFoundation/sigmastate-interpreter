@@ -39,10 +39,12 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
 
   val demurrageScript =
     """{
+     | val selfBytes = SELF.propositionBytes
+     | val selfValue = SELF.value
      | val c2 = allOf(Coll(
      |   HEIGHT >= SELF.R4[Int].get + demurragePeriod,
      |   OUTPUTS.exists { (out: Box) =>
-     |     out.value >= SELF.value - demurrageCost && out.propositionBytes == SELF.propositionBytes
+     |     out.value >= selfValue - demurrageCost && out.propositionBytes == selfBytes
      |   }
      | ))
      | //getVar[SigmaProp](regScriptId) || c2
