@@ -8,33 +8,6 @@ object Emission {
   val CoinsInOneErgo: Long = 1000000000
 
   /**
-    * Genesis state boxes
-    */
-  def emissionBoxes(fixedRatePeriod: Int,
-                    epochLength: Int,
-                    fixedRate: Long,
-                    oneEpochReduction: Long,
-                    minerRewardDelay: Int,
-                    emptyHeight: Int,
-                    minersRewardTotal: Long,
-                    foundationTotal: Long,
-                    noPremineProofs: Seq[Array[Byte]]): Seq[ErgoBox] = {
-    assert(noPremineProofs.length <= ErgoBox.nonMandatoryRegisters.length)
-    val minersProp = ErgoScriptPredef.emissionBoxProp(fixedRatePeriod: Int,
-      epochLength: Int,
-      fixedRate: Long,
-      oneEpochReduction: Long,
-      minerRewardDelay: Int)
-    // Box with total miners reward, protected by emission script
-    val minersBox = ErgoBox(minersRewardTotal, minersProp, emptyHeight, Seq(), Map())
-    // Long-living box with proofs of no premine in it's registers
-    val regs = ErgoBox.nonMandatoryRegisters.zip(noPremineProofs.map(ByteArrayConstant.apply)).toMap
-    val noPremineBox = ErgoBox(CoinsInOneErgo, Values.FalseLeaf, emptyHeight, Seq(), regs)
-
-    Seq(minersBox, noPremineBox)
-  }
-
-  /**
     * Emission rules.
     * Return number of coins, issued at height `h` and all previous heights
     */

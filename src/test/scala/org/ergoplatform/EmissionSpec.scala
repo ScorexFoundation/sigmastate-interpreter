@@ -25,35 +25,6 @@ class EmissionSpec extends SigmaTestingCommons {
     }.sum
   }
 
-  property("Emission boxes") {
-    val foundationRewardTotal: Long = collectedFoundationReward(BlocksTotal)
-    val minersRewardTotal: Long = coinsTotal - foundationRewardTotal
-    val noPremineProofs = Array("The Guardian Headline", "Last BTC block id", "another source of randomness")
-      .map(_.getBytes("UTF-8"))
-    val boxes = Emission.emissionBoxes(FixedRatePeriod: Int,
-      EpochLength: Int,
-      fixedRate: Long,
-      oneEpochReduction: Long,
-      MinerRewardDelay: Int,
-      EmptyHeight: Int,
-      minersRewardTotal: Long,
-      foundationRewardTotal: Long,
-      noPremineProofs: Seq[Array[Byte]])
-    val emissionBox = boxes.head
-    emissionBox.value shouldBe minersRewardTotal
-    val prop = ErgoScriptPredef.emissionBoxProp(FixedRatePeriod, EpochLength, fixedRate, oneEpochReduction, MinerRewardDelay)
-    emissionBox.proposition shouldBe prop
-
-    val noPremineBox = boxes(1)
-    noPremineProofs.foreach { p =>
-      noPremineBox.additionalRegisters.values.exists(_ == ByteArrayConstant(p)) shouldBe true
-    }
-
-    // todo foundation reward boxes
-    boxes.map(_.value).sum shouldBe coinsTotal
-
-  }
-
   property("correct sum from miner and foundation parts") {
     // collect coins after the fixed rate period
     forAll(Gen.choose(1, BlocksTotal)) { height =>
