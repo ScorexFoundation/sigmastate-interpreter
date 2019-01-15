@@ -5,7 +5,8 @@ import org.ergoplatform.mining.emission.EmissionRules
 import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant, Value}
+import scorex.util.Random
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ConcreteCollection, IntConstant, LongConstant, SigmaPropValue, Value}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -13,7 +14,7 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{ByIndex, ErgoLikeTestInterpreter, ExtractCreationInfo, SelectField}
-import sigmastate.{AvlTreeData, EQ, SBoolean, Values}
+import sigmastate._
 
 import scala.util.Try
 
@@ -21,11 +22,10 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
-  val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
+  private val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
   private val settings = MonetarySettings(30 * 2 * 24 * 365, 90 * 24 * 30, 75L * EmissionRules.CoinsInOneErgo,
     3L * EmissionRules.CoinsInOneErgo, 720, 75L * EmissionRules.CoinsInOneErgo / 10, "")
   private val emission = new EmissionRules(settings)
-
 
   ignore("boxCreationHeight") {
     val verifier = new ErgoLikeTestInterpreter
@@ -63,6 +63,17 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val prop = ErgoScriptPredef.foundationScript(settings.fixedRatePeriod, settings.epochLength,
       settings.oneEpochReduction, settings.foundersInitialReward)
 
+    def thresholdProp(atLeast: Int = 2): CollectionConstant[SByte.type] = {
+      // 2-of-3 multisignature
+      val pubkeyA = prover.dlogSecrets.head.publicImage
+      val pubkeyB = prover.dlogSecrets(1).publicImage
+      val pubkeyC = (new ErgoLikeTestProvingInterpreter).dlogSecrets.head.publicImage
+      val prop = AtLeast(IntConstant(atLeast),
+        ConcreteCollection(Vector[SigmaPropValue](pubkeyA, pubkeyB, pubkeyC), SSigmaProp))
+
+      ByteArrayConstant(ValueSerializer.serialize(prop))
+    }
+
     val verifier = new ErgoLikeTestInterpreter
 
     checkAtHeight(1)
@@ -74,17 +85,26 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     checkAtHeight(settings.fixedRatePeriod + 2 * settings.epochLength + 1)
 
     def checkAtHeight(height: Int) = {
-      checkSpending(remaining(height), height, prop) shouldBe 'success
-      checkSpending(remaining(height), height, Values.TrueLeaf) shouldBe 'failure
-      checkSpending(remaining(height) + 1, height, prop) shouldBe 'success
-      checkSpending(remaining(height) - 1, height, prop) shouldBe 'failure
+      // collect correct amount of coins, correct new script, able to satisfy R4 conditions
+      checkSpending(remaining(height), height, prop, thresholdProp(2)) shouldBe 'success
+      // unable to satisfy R4 conditions
+      checkSpending(remaining(height), height, prop, thresholdProp(3)) shouldBe 'failure
+      // incorrect new script
+      checkSpending(remaining(height), height, Values.TrueLeaf, thresholdProp(2)) shouldBe 'failure
+      // collect less coins then possible
+      checkSpending(remaining(height) + 1, height, prop, thresholdProp(2)) shouldBe 'success
+      // collect more coins then possible
+      checkSpending(remaining(height) - 1, height, prop, thresholdProp(2)) shouldBe 'failure
     }
 
-    def checkSpending(remainingAmount: Long, height: Int, newProp: Value[SBoolean.type]): Try[Unit] = Try {
-      val serializedR4Val = ByteArrayConstant(ValueSerializer.serialize(Values.TrueLeaf))
-      val inputBoxes = IndexedSeq(ErgoBox(foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> serializedR4Val)))
+    def checkSpending(remainingAmount: Long,
+                      height: Int,
+                      newProp: Value[SBoolean.type],
+                      inputR4Val: CollectionConstant[SByte.type]): Try[Unit] = Try {
+      val outputR4Val: CollectionConstant[SByte.type] = ByteArrayConstant(Random.randomBytes())
+      val inputBoxes = IndexedSeq(ErgoBox(foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> inputR4Val)))
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
-      val newFoundersBox = ErgoBox(remainingAmount, newProp, 0)
+      val newFoundersBox = ErgoBox(remainingAmount, newProp, 0, Seq(), Map(R4 -> outputR4Val))
       val collectedBox = ErgoBox(inputBoxes.head.value - remainingAmount, Values.TrueLeaf, 0)
       val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newFoundersBox, collectedBox))
       val ctx = ErgoLikeContext(
