@@ -49,6 +49,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
         case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
         case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
         case "SELF" => Some(Self)
+        case "CONTEXT" => Some(Context)
         case "None" => Some(mkNoneValue(NoType))
         case _ => None
       }

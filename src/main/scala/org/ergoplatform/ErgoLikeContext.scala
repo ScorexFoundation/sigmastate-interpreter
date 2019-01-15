@@ -163,3 +163,9 @@ case object Self extends NotReadyValueBox {
   override val opCode: OpCode = OpCodes.SelfCode
   def opType = SFunc(SContext, SBox)
 }
+
+case object Context extends NotReadyValue[SContext.type] {
+  override val opCode: OpCode = OpCodes.ContextCode
+  override def tpe: SContext.type = SContext
+  override def opType: SFunc = SFunc(SUnit, SContext)
+}

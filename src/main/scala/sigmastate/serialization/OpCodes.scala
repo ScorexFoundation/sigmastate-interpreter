@@ -185,5 +185,6 @@ object OpCodes extends ValueCodes {
   val CollRotateLeftCode     : OpCode = (LastConstantCode + 140).toByte
   val CollRotateRightCode     : OpCode = (LastConstantCode + 141).toByte
 
-  // reserved 142 - 143 (2)
+  val ContextCode             : OpCode = (LastConstantCode + 142).toByte
+  // reserved 143 (1)
 }

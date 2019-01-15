@@ -280,6 +280,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         SOption.ToCollMethod.withConcreteTypes(Map(SOption.tT -> SInt)), IndexedSeq()))
   }
 
+  property("SContext.dataInputs") {
+    testMissingCosting("CONTEXT.dataInputs",
+      mkMethodCall(Context, SContext.DataInputsMethod, IndexedSeq()))
+  }
+
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
     costerFail("Some(10)", 1, 1)

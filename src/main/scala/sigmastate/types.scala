@@ -949,5 +949,9 @@ case object SContext extends SProduct with SPredefType with STypeCompanion {
   }
   override def isConstantSize = false
   def ancestors = Nil
-  val methods = Nil
+
+  val DataInputsMethod = SMethod(this, "dataInputs", SCollection(SBox), 1, MethodCallIrBuilder)
+  val methods = Seq(
+    DataInputsMethod,
+  )
 }
