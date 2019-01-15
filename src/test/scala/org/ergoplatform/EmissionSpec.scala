@@ -1,81 +1,55 @@
 package org.ergoplatform
 
+import org.ergoplatform.mining.emission.EmissionRules
+import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
-import sigmastate.Values.ByteArrayConstant
 import sigmastate.helpers.SigmaTestingCommons
-
-import scala.annotation.tailrec
 
 class EmissionSpec extends SigmaTestingCommons {
 
-  private val EmptyHeight = 0
-  private val GenesisHeight = EmptyHeight + 1
-  private val BlocksTotal = 2080799
-  private val FixedRatePeriod = 525600
-  private val EpochLength = 64800
-  private val MinerRewardDelay = 720
-  private val fixedRate = 75L * Emission.CoinsInOneErgo
-  private val oneEpochReduction = 3 * Emission.CoinsInOneErgo
-  private val foundersInitialReward: Long = fixedRate / 10
-  private val coinsTotal = 97739925L * Emission.CoinsInOneErgo
+  private val settings = MonetarySettings(30 * 2 * 24 * 365, 90 * 24 * 30, 75L * EmissionRules.CoinsInOneErgo,
+    3L * EmissionRules.CoinsInOneErgo, 720, 75L * EmissionRules.CoinsInOneErgo / 10, "")
+  private val emission = new EmissionRules(settings)
 
   def collectedFoundationReward(height: Int): Long = {
     (1 to height).map { h =>
-      Emission.foundationRewardAtHeight(h, FixedRatePeriod, EpochLength, oneEpochReduction, foundersInitialReward)
+      emission.foundationRewardAtHeight(h)
     }.sum
+  }
+
+  property("emission rules vectors") {
+    emission.blocksTotal shouldBe 2080799
+    emission.coinsTotal shouldBe 97739925L * EmissionRules.CoinsInOneErgo
+    emission.issuedCoinsAfterHeight(emission.blocksTotal) shouldBe emission.coinsTotal
+    emission.issuedCoinsAfterHeight(1) shouldBe settings.fixedRate
   }
 
   property("correct sum from miner and foundation parts") {
     // collect coins after the fixed rate period
-    forAll(Gen.choose(1, BlocksTotal)) { height =>
-      val currentRate = Emission.emissionAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction)
-      val minerPart = Emission.minersRewardAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction, foundersInitialReward)
-      val foundationPart = Emission.foundationRewardAtHeight(height, FixedRatePeriod, EpochLength, oneEpochReduction, foundersInitialReward)
+    forAll(Gen.choose(1, emission.blocksTotal)) { height =>
+      val currentRate = emission.emissionAtHeight(height)
+      val minerPart = emission.minersRewardAtHeight(height)
+      val foundationPart = emission.foundationRewardAtHeight(height)
       foundationPart + minerPart shouldBe currentRate
     }
   }
 
   property("correct remainingFoundationRewardAtHeight") {
-    val totalFoundersReward = collectedFoundationReward(BlocksTotal)
+    val totalFoundersReward = collectedFoundationReward(emission.blocksTotal)
 
     def checkHeight(height: Int) = {
       val collectedFoundersPart = collectedFoundationReward(height)
-      val remainingFoundersPart = Emission.remainingFoundationRewardAtHeight(height, FixedRatePeriod, EpochLength, oneEpochReduction, foundersInitialReward)
+      val remainingFoundersPart = emission.remainingFoundationRewardAtHeight(height)
       remainingFoundersPart + collectedFoundersPart shouldBe totalFoundersReward
 
     }
     // collect coins after the fixed rate period
-    forAll(Gen.choose(1, BlocksTotal)) { height =>
+    forAll(Gen.choose(1, emission.blocksTotal)) { height =>
       checkHeight(height)
     }
-    checkHeight(FixedRatePeriod)
-    checkHeight(FixedRatePeriod + EpochLength)
-    checkHeight(FixedRatePeriod + 2 * EpochLength)
-  }
-
-  property("issuedCoinsAfterHeight corresponds to emissionAtHeight") {
-    val (coinsTotalCalced, blocksTotalCalced) = {
-      @tailrec
-      def loop(height: Int, acc: Long): (Long, Int) = {
-        val currentRate = Emission.emissionAtHeight(height, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction)
-        if (currentRate > 0) {
-          loop(height + 1, acc + currentRate)
-        } else {
-          (acc, height - 1)
-        }
-      }
-
-      loop(GenesisHeight, 0)
-    }
-    // check total emission
-    coinsTotalCalced shouldBe coinsTotal
-    blocksTotalCalced shouldBe BlocksTotal
-    val ct2 = Emission.issuedCoinsAtHeight(BlocksTotal, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction)
-    ct2 shouldBe coinsTotal
-
-    // first block issue
-    Emission.issuedCoinsAtHeight(1, FixedRatePeriod, fixedRate, EpochLength, oneEpochReduction) shouldBe fixedRate
-
+    checkHeight(settings.fixedRatePeriod)
+    checkHeight(settings.fixedRatePeriod + settings.epochLength)
+    checkHeight(settings.fixedRatePeriod + 2 * settings.epochLength)
   }
 
 }
