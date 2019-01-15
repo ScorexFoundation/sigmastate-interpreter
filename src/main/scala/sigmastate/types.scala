@@ -891,6 +891,7 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   val Bytes = "bytes"
   val BytesWithNoRef = "bytesWithNoRef"
   val CreationInfo = "creationInfo"
+  val TokensMethod = SMethod(this, "tokens", SCollectionType(STuple(SCollectionType(SByte), SLong)), 8, MethodCallIrBuilder)
   // should be lazy to solve resursive initialization
   lazy val methods = Vector(
     SMethod(this, Value, SLong, 1), // see ExtractAmount
@@ -899,8 +900,9 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
     SMethod(this, BytesWithNoRef, SCollectionType(SByte), 4), // see ExtractBytesWithNoRef
     SMethod(this, Id, SCollectionType(SByte), 5), // see ExtractId
     SMethod(this, CreationInfo, STuple(SInt, SCollectionType(SByte)), 6), // see ExtractCreationInfo
-    SMethod(this, s"getReg", SFunc(IndexedSeq(SByte), SOption(tT), Seq(STypeParam(tT))), 7)
-  ) ++ registers(7)
+    SMethod(this, s"getReg", SFunc(IndexedSeq(SByte), SOption(tT), Seq(STypeParam(tT))), 7),
+    TokensMethod,
+  ) ++ registers(8)
 }
 
 case object SAvlTree extends SProduct with SPredefType with STypeCompanion {

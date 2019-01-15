@@ -606,4 +606,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("SCollection.flatMap") {
     typecheck(env, "OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })") shouldBe SCollection(SBoolean)
   }
+
+  property("SBox.tokens") {
+    typecheck(env, "SELF.tokens") shouldBe SCollection(STuple(SCollection(SByte), SLong))
+  }
 }

@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, Height, Outputs, P2PKAddress}
+import org.ergoplatform._
 import org.scalatest.exceptions.TestFailedException
 import scorex.util.encode.Base58
 import sigmastate.Values._
@@ -267,6 +267,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   property("SBigInt.multModQ") {
     testMissingCosting("1.toBigInt.multModQ(2.toBigInt)",
       mkMethodCall(BigIntConstant(1), SBigInt.MultModQMethod, IndexedSeq(BigIntConstant(2))))
+  }
+
+  property("SBox.tokens") {
+    testMissingCosting("SELF.tokens",
+      mkMethodCall(Self, SBox.TokensMethod, IndexedSeq()))
   }
 
   property("failed option constructors (not supported)") {
