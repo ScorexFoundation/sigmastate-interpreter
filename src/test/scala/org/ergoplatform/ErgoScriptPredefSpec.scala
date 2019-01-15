@@ -3,12 +3,13 @@ package org.ergoplatform
 import org.ergoplatform.ErgoBox.R4
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{IntConstant, LongConstant, Value}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant, Value}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{ByIndex, ErgoLikeTestInterpreter, ExtractCreationInfo, SelectField}
 import sigmastate.{AvlTreeData, EQ, SBoolean, Values}
 
@@ -81,7 +82,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     }
 
     def checkSpending(remainingAmount: Long, height: Int, newProp: Value[SBoolean.type]): Try[Unit] = Try {
-      val inputBoxes = IndexedSeq(ErgoBox(foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> Values.TrueLeaf)))
+      val serializedR4Val = ByteArrayConstant(ValueSerializer.serialize(Values.TrueLeaf))
+      val inputBoxes = IndexedSeq(ErgoBox(foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> serializedR4Val)))
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
       val newFoundersBox = ErgoBox(remainingAmount, newProp, 0)
       val collectedBox = ErgoBox(inputBoxes.head.value - remainingAmount, Values.TrueLeaf, 0)
