@@ -71,6 +71,10 @@ sealed trait SType extends SigmaNode {
   /** Construct tree node Constant for a given data object. */
   def mkConstant(v: WrappedType): Value[this.type] =
     sys.error(s"Don't know how mkConstant for data value $v with T = $this")
+
+  def withSubstTypes(subst: Map[STypeIdent, SType]): SType =
+    SigmaTyper.applySubst(this, subst)
+
 }
 
 object SType {
@@ -241,7 +245,7 @@ case class SMethod(objType: STypeCompanion,
   def withSType(newSType: SType): SMethod = copy(stype = newSType)
 
   def withConcreteTypes(subst: Map[STypeIdent, SType]): SMethod =
-    withSType(stype.asFunc.withSubstTypes(subst))
+    withSType(stype.withSubstTypes(subst))
 }
 
 object SMethod {
@@ -606,14 +610,22 @@ object SOption extends STypeCompanion {
   val GetOrElse = "getOrElse"
   val Fold = "fold"
 
-  private val tT = STypeIdent("T")
-  private val tR = STypeIdent("R")
+  val tT = STypeIdent("T")
+  val tR = STypeIdent("R")
   val IsEmptyMethod   = SMethod(this, IsEmpty, SBoolean, 1)
   val IsDefinedMethod = SMethod(this, IsDefined, SBoolean, 2)
   val GetMethod       = SMethod(this, Get, tT, 3)
   val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(SOption(tT), tT), tT, Seq(STypeParam(tT))), 4)
   val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(SOption(tT), tR, SFunc(tT, tR)), tR, Seq(STypeParam(tT), STypeParam(tR))), 5)
-  val methods: Seq[SMethod] = Seq(IsEmptyMethod, IsDefinedMethod, GetMethod, GetOrElseMethod, FoldMethod)
+  val ToCollMethod    = SMethod(this, "toColl", SCollection(tT), 6, MethodCallIrBuilder)
+  val methods: Seq[SMethod] = Seq(
+    IsEmptyMethod,
+    IsDefinedMethod,
+    GetMethod,
+    GetOrElseMethod,
+    FoldMethod,
+    ToCollMethod
+  )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
@@ -828,9 +840,6 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
     val ts = typeParams.map(_.ident)
     SFunc(ts.init.toIndexedSeq, ts.last, Nil)
   }
-
-  def withSubstTypes(subst: Map[STypeIdent, SType]): SFunc =
-    SigmaTyper.applySubst(this, subst).asFunc
 }
 
 object SFunc {

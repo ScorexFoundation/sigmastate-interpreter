@@ -274,6 +274,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       mkMethodCall(Self, SBox.TokensMethod, IndexedSeq()))
   }
 
+  property("SOption.toColl") {
+    testMissingCosting("getVar[Int](1).toColl",
+      mkMethodCall(GetVarInt(1),
+        SOption.ToCollMethod.withConcreteTypes(Map(SOption.tT -> SInt)), IndexedSeq()))
+  }
+
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
     costerFail("Some(10)", 1, 1)
