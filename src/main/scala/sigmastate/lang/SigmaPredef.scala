@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
+import scalan.Nullable
 import scorex.util.encode.{Base58, Base64}
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, EvaluatedValue, IntConstant, IntValue, SValue, SigmaPropConstant, SigmaPropValue, StringConstant, Value}
@@ -277,12 +278,12 @@ object SigmaPredef {
   }
 
   object PredefinedFuncApply {
-    def unapply(apply: Apply)(implicit registry: PredefinedFuncRegistry): Option[SValue] = apply.func match {
+    def unapply(apply: Apply)(implicit registry: PredefinedFuncRegistry): Nullable[SValue] = apply.func match {
       case Ident(name, _) =>
         registry.irBuilderForFunc(name)
           .filter(_.isDefinedAt(apply.func, apply.args))
-          .map(_(apply.func, apply.args))
-      case _ => None
+          .map(b => Nullable(b(apply.func, apply.args))).getOrElse(Nullable.None)
+      case _ => Nullable.None
     }
   }
 }
