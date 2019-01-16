@@ -622,4 +622,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("SAvlTree.digest") {
     typecheck(env, "getVar[AvlTree](1).get.digest") shouldBe SCollection(SByte)
   }
+
+  property("SGroupElement.exp") {
+    typecheck(env, "g1.exp(1.toBigInt)") shouldBe SGroupElement
+  }
 }

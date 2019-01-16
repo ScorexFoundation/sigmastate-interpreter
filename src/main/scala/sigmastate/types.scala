@@ -511,10 +511,12 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override type WrappedType = EcPointType
   override val typeCode: TypeCode = 7: Byte
   override def typeId = typeCode
+  val ExpMethod = SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, MethodCallIrBuilder)
   override val methods: Seq[SMethod] = Seq(
     SMethod(this, "isIdentity", SBoolean, 1),
     SMethod(this, "nonce", SByteArray, 2),
-    SMethod(this, "getEncoded", SFunc(IndexedSeq(this, SBoolean), SByteArray), 3)
+    SMethod(this, "getEncoded", SFunc(IndexedSeq(this, SBoolean), SByteArray), 3),
+    ExpMethod
   )
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 32

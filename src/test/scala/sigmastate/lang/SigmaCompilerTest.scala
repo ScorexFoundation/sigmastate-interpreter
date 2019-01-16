@@ -291,6 +291,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     )
   }
 
+  property("SGroupElement.exp") {
+    testMissingCosting("g1.exp(1.toBigInt)",
+      mkMethodCall(GroupElementConstant(g1), SGroupElement.ExpMethod, IndexedSeq(BigIntConstant(1)))
+    )
+  }
 
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
