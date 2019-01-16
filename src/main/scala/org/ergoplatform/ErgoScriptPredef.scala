@@ -137,7 +137,7 @@ object ErgoScriptPredef {
   def foundationScript(fixedRatePeriod: Int,
                        epochLength: Int,
                        oneEpochReduction: Long,
-                       foundersInitialReward: Long)(implicit IR: IRContext): Value[SBoolean.type] = {
+                       foundersInitialReward: Long): Value[SBoolean.type] = {
     val rewardOut = ByIndex(Outputs, IntConstant(0))
     val remainingAmount = {
       // Emission.remainingFoundationRewardAtHeight in Ergo script
