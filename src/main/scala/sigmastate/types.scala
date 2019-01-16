@@ -620,13 +620,21 @@ object SOption extends STypeCompanion {
   val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(SOption(tT), tT), tT, Seq(STypeParam(tT))), 4)
   val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(SOption(tT), tR, SFunc(tT, tR)), tR, Seq(STypeParam(tT), STypeParam(tR))), 5)
   val ToCollMethod    = SMethod(this, "toColl", SCollection(tT), 6, MethodCallIrBuilder)
+  val MapMethod       = SMethod(this, "map",
+    SFunc(IndexedSeq(SOption(tT), SFunc(tT, tR)), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))),
+    7, MethodCallIrBuilder)
+  val FilterMethod    = SMethod(this, "filter",
+    SFunc(IndexedSeq(SOption(tT), SFunc(tT, SBoolean)), SOption(tT), Seq(STypeParam(tT))),
+    8, MethodCallIrBuilder)
   val methods: Seq[SMethod] = Seq(
     IsEmptyMethod,
     IsDefinedMethod,
     GetMethod,
     GetOrElseMethod,
     FoldMethod,
-    ToCollMethod
+    ToCollMethod,
+    MapMethod,
+    FilterMethod,
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)

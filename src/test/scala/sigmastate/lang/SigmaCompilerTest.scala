@@ -297,6 +297,30 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     )
   }
 
+  property("SOption.map") {
+    testMissingCosting("getVar[Int](1).map({(i: Int) => i + 1})",
+      mkMethodCall(GetVarInt(1),
+        SOption.MapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
+        IndexedSeq(Terms.Lambda(
+          Vector(("i", SInt)),
+          SInt,
+          Some(Plus(Ident("i", SInt).asIntValue, IntConstant(1)))))
+      )
+    )
+  }
+
+  property("SOption.filter") {
+    testMissingCosting("getVar[Int](1).filter({(i: Int) => i > 0})",
+      mkMethodCall(GetVarInt(1),
+        SOption.FilterMethod.withConcreteTypes(Map(SOption.tT -> SInt)),
+        IndexedSeq(Terms.Lambda(
+          Vector(("i", SInt)),
+          SBoolean,
+          Some(GT(Ident("i", SInt).asIntValue, IntConstant(0)))))
+      )
+    )
+  }
+
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
     costerFail("Some(10)", 1, 1)
