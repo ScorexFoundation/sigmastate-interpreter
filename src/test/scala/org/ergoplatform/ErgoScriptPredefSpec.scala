@@ -63,15 +63,10 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val prop = ErgoScriptPredef.foundationScript(settings.fixedRatePeriod, settings.epochLength,
       settings.oneEpochReduction, settings.foundersInitialReward)
 
-    def thresholdProp(atLeast: Int = 2): CollectionConstant[SByte.type] = {
-      // 2-of-3 multisignature
-      val pubkeyA = prover.dlogSecrets.head.publicImage
-      val pubkeyB = prover.dlogSecrets(1).publicImage
-      val pubkeyC = (new ErgoLikeTestProvingInterpreter).dlogSecrets.head.publicImage
-      val prop = AtLeast(IntConstant(atLeast),
-        ConcreteCollection(Vector[SigmaPropValue](pubkeyA, pubkeyB, pubkeyC), SSigmaProp))
-
-      ByteArrayConstant(ValueSerializer.serialize(prop))
+    def R4Prop(ableToProve: Boolean): CollectionConstant[SByte.type] = if(ableToProve){
+      ByteArrayConstant(ValueSerializer.serialize(prover.dlogSecrets.head.publicImage))
+    } else {
+      ByteArrayConstant(ValueSerializer.serialize((new ErgoLikeTestProvingInterpreter).dlogSecrets.head.publicImage))
     }
 
     val verifier = new ErgoLikeTestInterpreter
@@ -86,15 +81,15 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     def checkAtHeight(height: Int) = {
       // collect correct amount of coins, correct new script, able to satisfy R4 conditions
-      checkSpending(remaining(height), height, prop, thresholdProp(2)) shouldBe 'success
+      checkSpending(remaining(height), height, prop, R4Prop(true)) shouldBe 'success
       // unable to satisfy R4 conditions
-      checkSpending(remaining(height), height, prop, thresholdProp(3)) shouldBe 'failure
+      checkSpending(remaining(height), height, prop, R4Prop(false)) shouldBe 'failure
       // incorrect new script
-      checkSpending(remaining(height), height, Values.TrueLeaf, thresholdProp(2)) shouldBe 'failure
+      checkSpending(remaining(height), height, Values.TrueLeaf, R4Prop(true)) shouldBe 'failure
       // collect less coins then possible
-      checkSpending(remaining(height) + 1, height, prop, thresholdProp(2)) shouldBe 'success
+      checkSpending(remaining(height) + 1, height, prop, R4Prop(true)) shouldBe 'success
       // collect more coins then possible
-      checkSpending(remaining(height) - 1, height, prop, thresholdProp(2)) shouldBe 'failure
+      checkSpending(remaining(height) - 1, height, prop, R4Prop(true)) shouldBe 'failure
     }
 
     def checkSpending(remainingAmount: Long,
