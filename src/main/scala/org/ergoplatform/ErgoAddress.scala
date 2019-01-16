@@ -3,10 +3,11 @@ package org.ergoplatform
 import java.util
 
 import com.google.common.primitives.Ints
+import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
-import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, Value, GetVarByteArray}
+import sigmastate.Values.{ConcreteCollection, ConstantNode, GetVarByteArray, IntConstant, Value}
 import sigmastate._
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.utxo.{DeserializeContext, Slice}
@@ -162,7 +163,7 @@ object Pay2SAddress {
 }
 
 
-case class ErgoAddressEncoder(networkPrefix: Byte) {
+case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
   import ErgoAddressEncoder._
 
@@ -177,12 +178,17 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
     Base58.encode(withNetworkByte ++ checksum)
   }
 
+  def isTestnetAddress(addrHeadByte: Byte): Boolean = addrHeadByte > TestnetNetworkPrefix
+  def isMainnetAddress(addrHeadByte: Byte): Boolean = addrHeadByte < TestnetNetworkPrefix
+
   def fromString(addrStr: String): Try[ErgoAddress] = Base58.decode(addrStr).flatMap { bytes =>
     Try {
       val headByte = bytes.head
+      networkPrefix match {
+        case TestnetNetworkPrefix => require(isTestnetAddress(headByte), "Trying to decode mainnet address in testnet")
+        case MainnetNetworkPrefix => require(isMainnetAddress(headByte), "Trying to decode testnet address in mainnet")
+      }
       val addressType = (headByte - networkPrefix).toByte
-      require(addressType > 0, "Trying to decode mainnet address in testnet")
-      require(addressType <= Pay2SAddress.addressTypePrefix, "Trying to decode testnet address in mainnet")
       val (withoutChecksum, checksum) = bytes.splitAt(bytes.length - ChecksumLength)
 
       if (!util.Arrays.equals(hash256(withoutChecksum).take(ChecksumLength), checksum)) {
