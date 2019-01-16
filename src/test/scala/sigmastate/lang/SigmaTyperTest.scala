@@ -16,6 +16,9 @@ import sigmastate.utxo.{Append, ExtractCreationInfo, SizeOf}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
+  private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
+  import predefFuncRegistry._
+
   def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
@@ -90,7 +93,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("predefined functions") {
-    typecheck(env, "allOf") shouldBe SFunc(SCollection[SBoolean.type], SBoolean)
+    typecheck(env, "allOf") shouldBe AllOfFunc.declaration.tpe
     typecheck(env, "allOf(Coll(c1, c2))") shouldBe SBoolean
     typecheck(env, "getVar[Byte](10).get") shouldBe SByte
     typecheck(env, "getVar[Coll[Byte]](10).get") shouldBe SByteArray

@@ -7,12 +7,16 @@ import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.OpCodes
 
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
+
+  private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
+  import predefFuncRegistry._
 
   def parse(x: String): SValue = {
     SigmaParser(x, TransformingSigmaBuilder) match {
@@ -503,8 +507,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("fromBaseX string decoding") {
-    parse("""fromBase58("111")""") shouldBe Apply(Ident("fromBase58"), IndexedSeq(StringConstant("111")))
-    parse("""fromBase64("111")""") shouldBe Apply(Ident("fromBase64"), IndexedSeq(StringConstant("111")))
+    parse("""fromBase58("111")""") shouldBe Apply(FromBase58Func.symNoType, IndexedSeq(StringConstant("111")))
+    parse("""fromBase64("111")""") shouldBe Apply(FromBase64Func.symNoType, IndexedSeq(StringConstant("111")))
   }
 
   property("PK") {
@@ -513,16 +517,16 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("deserialize") {
     parse("""deserialize[GroupElement]("12345")""") shouldBe
-      Apply(ApplyTypes(Ident("deserialize"), Seq(SGroupElement)), IndexedSeq(StringConstant("12345")))
+      Apply(ApplyTypes(DeserializeFunc.symNoType, Seq(SGroupElement)), IndexedSeq(StringConstant("12345")))
     parse("""deserialize[(GroupElement, Coll[(Int, Byte)])]("12345")""") shouldBe
-      Apply(ApplyTypes(Ident("deserialize"), Seq(STuple(SGroupElement, SCollection(STuple(SInt, SByte))))), IndexedSeq(StringConstant("12345")))
+      Apply(ApplyTypes(DeserializeFunc.symNoType, Seq(STuple(SGroupElement, SCollection(STuple(SInt, SByte))))), IndexedSeq(StringConstant("12345")))
   }
 
   property("ZKProof") {
-    parse("ZKProof { condition }") shouldBe Apply(Ident("ZKProof", SFunc(SSigmaProp, SBoolean)), IndexedSeq(Ident("condition")))
+    parse("ZKProof { condition }") shouldBe Apply(ZKProofFunc.sym, IndexedSeq(Ident("condition")))
     parse("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe
-      Apply(Ident("ZKProof", SFunc(SSigmaProp, SBoolean)),
-        IndexedSeq(Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))))
+      Apply(ZKProofFunc.sym,
+        IndexedSeq(Apply(SigmaPropFunc.symNoType, IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))))
   }
 
   property("invalid ZKProof (non block parameter)") {
@@ -530,7 +534,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("sigmaProp") {
-    parse("sigmaProp(HEIGHT > 1000)") shouldBe Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))
+    parse("sigmaProp(HEIGHT > 1000)") shouldBe Apply(SigmaPropFunc.symNoType,
+      IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))
   }
 
   property("SBigInt.toBytes") {
@@ -558,7 +563,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("byteArrayToLong") {
     parse("byteArrayToLong(Coll[Byte](1.toByte))") shouldBe
-      Apply(Ident("byteArrayToLong"), Vector(
+      Apply(ByteArrayToLongFunc.symNoType, Vector(
         Apply(
           ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
           Vector(Select(IntConstant(1), "toByte", None)))
@@ -567,7 +572,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("decodePoint") {
     parse("decodePoint(Coll[Byte](1.toByte))") shouldBe
-      Apply(Ident("decodePoint"), Vector(
+      Apply(DecodePointFunc.symNoType, Vector(
         Apply(
           ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
           Vector(Select(IntConstant(1), "toByte", None)))
@@ -576,7 +581,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("xorOf") {
     parse("xorOf(Coll[Boolean](true, false))") shouldBe
-      Apply(Ident("xorOf"), Vector(
+      Apply(XorOfFunc.symNoType, Vector(
         Apply(
           ApplyTypes(Ident("Coll", NoType), Vector(SBoolean)),
           Vector(TrueLeaf, FalseLeaf))
@@ -724,7 +729,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         | { (b, i) => (b + i).toLong },
         | { (b, s, i) => (b + s + i).toLong }
         | )""".stripMargin) shouldBe Apply(
-      ApplyTypes(Ident("outerJoin", NoType), Vector(SByte, SShort, SInt, SLong)),
+      ApplyTypes(OuterJoinFunc.symNoType, Vector(SByte, SShort, SInt, SLong)),
       Vector(
         Apply(
           ApplyTypes(Ident("Coll", NoType), Vector(STuple(SByte, SShort))),
@@ -763,7 +768,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("substConstants") {
     parse("substConstants[Long](Coll[Byte](1.toByte), Coll[Int](1), Coll[Long](1L))") shouldBe Apply(
-      ApplyTypes(Ident("substConstants", NoType), Vector(SLong)),
+      ApplyTypes(SubstConstantsFunc.symNoType, Vector(SLong)),
       Vector(
         Apply(ApplyTypes(Ident("Coll", NoType), Vector(SByte)), Vector(Select(IntConstant(1), "toByte", None))),
         Apply(ApplyTypes(Ident("Coll", NoType), Vector(SInt)), Vector(IntConstant(1))),
@@ -774,7 +779,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("executeFromVar") {
     parse("executeFromVar[Boolean](1)") shouldBe Apply(
-      ApplyTypes(Ident("executeFromVar", NoType), Vector(SBoolean)), Vector(IntConstant(1))
+      ApplyTypes(ExecuteFromVarFunc.symNoType, Vector(SBoolean)), Vector(IntConstant(1))
     )
   }
 
