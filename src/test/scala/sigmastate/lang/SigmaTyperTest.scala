@@ -618,4 +618,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("SContext.dataInputs") {
     typecheck(env, "CONTEXT.dataInputs") shouldBe SCollection(SBox)
   }
+
+  property("SAvlTree.digest") {
+    typecheck(env, "getVar[AvlTree](1).get.digest") shouldBe SCollection(SByte)
+  }
 }

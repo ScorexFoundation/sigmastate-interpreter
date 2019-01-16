@@ -929,7 +929,11 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
   }
   override def isConstantSize = false
   def ancestors = Nil
-  val methods = Nil
+
+  val DigestMethod = SMethod(this, "digest", SCollection(SByte), 1, MethodCallIrBuilder)
+  override val methods: Seq[SMethod] = Seq(
+    DigestMethod
+  )
 }
 
 case object SContext extends SProduct with SPredefType with STypeCompanion {

@@ -285,6 +285,13 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       mkMethodCall(Context, SContext.DataInputsMethod, IndexedSeq()))
   }
 
+  property("SAvlTree.digest") {
+    testMissingCosting("getVar[AvlTree](1).get.digest",
+      mkMethodCall(GetVar(1.toByte, SAvlTree).get, SAvlTree.DigestMethod, IndexedSeq())
+    )
+  }
+
+
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
     costerFail("Some(10)", 1, 1)
