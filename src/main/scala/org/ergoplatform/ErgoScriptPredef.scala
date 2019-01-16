@@ -60,8 +60,6 @@ object ErgoScriptPredef {
   }
 
   /**
-    * TODO leave one of rewardOutputScript and rewardOutputScriptWithSubsitution
-    *
     * Required script of the box, that collects mining rewards
     */
   def rewardOutputScript(delta: Int, minerPk: ProveDlog): Value[SBoolean.type] = {
