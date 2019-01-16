@@ -33,6 +33,9 @@ class EmissionRules(val settings: MonetarySettings) {
     loop(1, 0)
   }
 
+  val foundersCoinsTotal: Long = remainingFoundationRewardAtHeight(0)
+  val minersCoinsTotal: Long = coinsTotal - foundersCoinsTotal
+
   /**
     * Emission rules.
     * Return number of coins, issued at height `h` and all previous heights

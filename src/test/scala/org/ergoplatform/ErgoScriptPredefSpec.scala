@@ -58,7 +58,6 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   property("collect coins from founders box") {
     def remaining(h: Int) = emission.remainingFoundationRewardAtHeight(h)
 
-    val foundersCoinsTotal = remaining(0)
     val prover = new ErgoLikeTestProvingInterpreter
     val prop = ErgoScriptPredef.foundationScript(settings.fixedRatePeriod, settings.epochLength,
       settings.oneEpochReduction, settings.foundersInitialReward)
@@ -97,7 +96,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
                       newProp: Value[SBoolean.type],
                       inputR4Val: CollectionConstant[SByte.type]): Try[Unit] = Try {
       val outputR4Val: CollectionConstant[SByte.type] = ByteArrayConstant(Random.randomBytes())
-      val inputBoxes = IndexedSeq(ErgoBox(foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> inputR4Val)))
+      val inputBoxes = IndexedSeq(ErgoBox(emission.foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> inputR4Val)))
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
       val newFoundersBox = ErgoBox(remainingAmount, newProp, 0, Seq(), Map(R4 -> outputR4Val))
       val collectedBox = ErgoBox(inputBoxes.head.value - remainingAmount, Values.TrueLeaf, 0)

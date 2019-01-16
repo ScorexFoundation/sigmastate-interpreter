@@ -20,6 +20,9 @@ class EmissionSpec extends SigmaTestingCommons {
   property("emission rules vectors") {
     emission.blocksTotal shouldBe 2080799
     emission.coinsTotal shouldBe 97739925L * EmissionRules.CoinsInOneErgo
+    emission.foundersCoinsTotal shouldBe 4330792.5 * EmissionRules.CoinsInOneErgo
+    emission.minersCoinsTotal shouldBe 93409132.5 * EmissionRules.CoinsInOneErgo
+
     emission.issuedCoinsAfterHeight(emission.blocksTotal) shouldBe emission.coinsTotal
     emission.issuedCoinsAfterHeight(1) shouldBe settings.fixedRate
   }
