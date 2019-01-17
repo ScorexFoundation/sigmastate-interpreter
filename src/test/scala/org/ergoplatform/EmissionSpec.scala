@@ -8,7 +8,7 @@ import sigmastate.helpers.SigmaTestingCommons
 class EmissionSpec extends SigmaTestingCommons {
 
   private val settings = MonetarySettings(30 * 2 * 24 * 365, 90 * 24 * 30, 75L * EmissionRules.CoinsInOneErgo,
-    3L * EmissionRules.CoinsInOneErgo, 720, 75L * EmissionRules.CoinsInOneErgo / 10, "")
+    3L * EmissionRules.CoinsInOneErgo, 720, 75L * EmissionRules.CoinsInOneErgo / 10)
   private val emission = new EmissionRules(settings)
 
   def collectedFoundationReward(height: Int): Long = {
