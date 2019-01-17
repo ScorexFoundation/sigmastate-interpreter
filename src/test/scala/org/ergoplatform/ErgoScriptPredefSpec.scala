@@ -147,12 +147,12 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
-  property("create transaction collecting the result") {
+  property("create transaction collecting the emission box") {
     val prover = new ErgoLikeTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
     val prop = ErgoScriptPredef.emissionBoxProp(settings.fixedRatePeriod, settings.epochLength, settings.fixedRate,
       settings.oneEpochReduction, settings.minerRewardDelay)
-    val emissionBox = ErgoBox(emission.coinsTotal, prop, 0, Seq(), Map(ErgoBox.nonMandatoryRegisters.head -> LongConstant(-1)))
+    val emissionBox = ErgoBox(emission.coinsTotal, prop, 0, Seq(), Map())
     val minerProp = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
 
     // collect coins during the fixed rate period
