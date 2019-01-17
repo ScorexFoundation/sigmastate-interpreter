@@ -57,8 +57,6 @@ version in ThisBuild := {
   }
 }
 
-git.gitUncommittedChanges in ThisBuild := true
-
 val specialVersion = "master-6eca3f22-SNAPSHOT"
 val specialCommon = "io.github.scalan" %% "common" % specialVersion
 val specialCore = "io.github.scalan" %% "core" % specialVersion
@@ -69,7 +67,7 @@ val sigmaImpl = "io.github.scalan" %% "sigma-impl" % specialSigmaVersion
 val sigmaLibrary = "io.github.scalan" %% "sigma-library" % specialSigmaVersion
 
 val testingDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.0.+" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
   "junit" % "junit" % "4.12" % "test",
