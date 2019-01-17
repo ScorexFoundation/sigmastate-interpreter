@@ -2,7 +2,6 @@ package sigmastate.utxo
 
 import sigmastate.eval.{RuntimeIRContext, IRContext}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import org.ergoplatform.ErgoLikeContext.Metadata
 import org.ergoplatform._
 
 import scala.util.{Success, Failure}

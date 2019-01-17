@@ -3,9 +3,9 @@ package sigmastate.lang.syntax
 import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.SigmaPredef.ZKProofSym
 import sigmastate.lang.Terms.{Lambda, ApplyTypes, MethodCallLike, Apply, Val, ValueOps, Select, Ident}
 import sigmastate.lang._
+import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec
@@ -29,6 +29,9 @@ trait Exprs extends Core with Types {
   object FreeCtx extends WsCtx(semiInference=true, arrowTypeAscriptions=true)
 
   val TypeExpr = ExprCtx.Expr
+
+  private val predefFuncRegistry = new PredefinedFuncRegistry(builder)
+  import predefFuncRegistry._
 
   //noinspection TypeAnnotation,ForwardReference
   class WsCtx(semiInference: Boolean, arrowTypeAscriptions: Boolean){
@@ -192,7 +195,7 @@ trait Exprs extends Core with Types {
       case STypeApply("", targs) => mkApplyTypes(acc, targs)
       case arg: SValue => acc match {
         case Ident(name, _) if name == "ZKProof" => arg match {
-          case Terms.Block(_, body) => Apply(ZKProofSym, IndexedSeq(body))
+          case Terms.Block(_, body) => Apply(ZKProofFunc.sym, IndexedSeq(body))
           case nonBlock => error(s"expected block parameter for ZKProof, got $nonBlock")
         }
         case _ => mkApply(acc, IndexedSeq(arg))

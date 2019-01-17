@@ -1,6 +1,5 @@
 package sigmastate.utxo.benchmarks
 
-import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoLikeContext
 import sigmastate.SBoolean
 import sigmastate.Values.Value
@@ -37,8 +36,7 @@ class CrowdFundingScriptContract(
        | ))
        | c1 || c2
        | }
-      """.stripMargin,
-      TestnetNetworkPrefix).asBoolValue
+      """.stripMargin).asBoolValue
     compiledScript
   }
 

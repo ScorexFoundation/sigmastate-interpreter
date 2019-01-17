@@ -3,8 +3,6 @@ package sigmastate.utxo
 import java.io.{FileWriter, File}
 
 import org.ergoplatform
-import org.ergoplatform.ErgoLikeContext.Metadata
-import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}

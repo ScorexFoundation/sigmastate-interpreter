@@ -1,14 +1,16 @@
 package sigmastate.lang
 
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.ergoplatform.ErgoAddressEncoder._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{BinderException, InvalidTypeArguments, InvalidArguments}
+import sigmastate.lang.exceptions.{BinderException, InvalidArguments, InvalidTypeArguments}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -18,7 +20,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   def bind(env: ScriptEnv, x: String): SValue = {
     val builder = TransformingSigmaBuilder
     val ast = SigmaParser(x, builder).get.value
-    val binder = new SigmaBinder(env, builder)
+    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
+      new PredefinedFuncRegistry(builder))
     binder.bind(ast)
   }
 
@@ -46,9 +49,6 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("predefined functions") {
-    bind(env, "getVar[Byte](10)") shouldBe GetVar(10.toByte, SByte)
-    bind(env, "getVar[Byte](10L)") shouldBe GetVar(10.toByte, SByte)
-    an[BinderException] should be thrownBy bind(env, "getVar[Byte](\"ha\")")
     bind(env, "min(1, 2)") shouldBe Min(IntConstant(1), IntConstant(2))
     bind(env, "max(1, 2)") shouldBe Max(IntConstant(1), IntConstant(2))
     bind(env, "min(1, 2L)") shouldBe Min(Upcast(IntConstant(1), SLong), LongConstant(2))
@@ -178,24 +178,4 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Coll[Int]()") shouldBe ConcreteCollection()(SInt)
   }
 
-  property("deserialize") {
-    def roundtrip[T <: SType](c: EvaluatedValue[T], typeSig: String) = {
-      val bytes = ValueSerializer.serialize(c)
-      val str = Base58.encode(bytes)
-      bind(env, s"deserialize[$typeSig](" + "\"" + str + "\")") shouldBe c
-    }
-    roundtrip(ByteArrayConstant(Array[Byte](2)), "Coll[Byte]")
-    roundtrip(Tuple(ByteArrayConstant(Array[Byte](2)), LongConstant(4)), "(Coll[Byte], Long)")
-  }
-
-  property("deserialize fails") {
-    // more than one type
-    an[InvalidTypeArguments] should be thrownBy bind(env, """deserialize[Int, Byte]("test")""")
-    // more then one argument
-    an[InvalidArguments] should be thrownBy bind(env, """deserialize[Int]("test", "extra argument")""")
-    // not a string constant
-    an[InvalidArguments] should be thrownBy bind(env, """deserialize[Int]("a" + "b")""")
-    // invalid chat in Base58 string
-    an[AssertionError] should be thrownBy bind(env, """deserialize[Int]("0")""")
-  }
 }

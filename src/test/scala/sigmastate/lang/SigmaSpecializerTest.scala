@@ -4,12 +4,13 @@ import org.ergoplatform.ErgoAddressEncoder.{NetworkPrefix, TestnetNetworkPrefix}
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms.{Ident, ZKProofBlock}
 import sigmastate.lang.exceptions.SpecializerException
-import sigmastate.serialization.generators.{ValueGenerators, TransformerGenerators, ConcreteCollectionGenerators}
+import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ValueGenerators}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -33,14 +34,15 @@ class SigmaSpecializerTest extends PropSpec
   def typed(env: Map[String, SValue], x: String): SValue = {
     val builder = TransformingSigmaBuilder
     val parsed = SigmaParser(x, builder).get.value
-    val binder = new SigmaBinder(env, builder)
+    val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder)
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
     val typed = typer.typecheck(bound)
     typed
   }
   def spec(env: Map[String, SValue], typed: SValue, networkPrefix: NetworkPrefix = TestnetNetworkPrefix): SValue = {
-    val spec = new SigmaSpecializer(TransformingSigmaBuilder, networkPrefix)
+    val spec = new SigmaSpecializer(TransformingSigmaBuilder)
     spec.specialize(env, typed)
   }
   def spec(code: String): SValue = {
@@ -180,37 +182,6 @@ class SigmaSpecializerTest extends PropSpec
     an[ArithmeticException] should be thrownBy spec("999.toShort.toByte")
     an[ArithmeticException] should be thrownBy spec(s"${Int.MaxValue}.toShort")
     an[ArithmeticException] should be thrownBy spec(s"${Long.MaxValue}L.toInt")
-  }
-
-  property("byteArrayToBigInt") {
-    spec("byteArrayToBigInt(longToByteArray(1L))") shouldBe ByteArrayToBigInt(LongToByteArray(LongConstant(1)))
-  }
-
-  property("fromBaseX") {
-    spec(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array(49))
-    spec(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array(49))
-    spec(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array(49))
-  }
-
-  property("failed fromBaseX (invalid input)") {
-    an[AssertionError] should be thrownBy spec(""" fromBase58("^%$#@")""")
-    an[IllegalArgumentException] should be thrownBy spec(""" fromBase64("^%$#@")""")
-  }
-
-  private def testPK(networkPrefix: NetworkPrefix) = {
-    implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(networkPrefix)
-    val dk1 = proveDlogGen.sample.get
-    val encodedP2PK = P2PKAddress(dk1).toString
-    val code = s"""PK("$encodedP2PK")"""
-    spec(Map(), typed(Map(), code), networkPrefix) shouldEqual dk1
-  }
-
-  property("PK (testnet network prefix)") {
-    testPK(TestnetNetworkPrefix)
-  }
-
-  property("PK (mainnet network prefix)") {
-    testPK(ErgoAddressEncoder.MainnetNetworkPrefix)
   }
 
   property("ExtractRegisterAs") {
