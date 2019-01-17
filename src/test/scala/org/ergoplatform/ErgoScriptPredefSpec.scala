@@ -59,8 +59,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     def remaining(h: Int) = emission.remainingFoundationRewardAtHeight(h)
 
     val prover = new ErgoLikeTestProvingInterpreter
-    val prop = ErgoScriptPredef.foundationScript(settings.fixedRatePeriod, settings.epochLength,
-      settings.oneEpochReduction, settings.foundersInitialReward)
+    val prop = ErgoScriptPredef.foundationScript(settings)
 
     def R4Prop(ableToProve: Boolean): CollectionConstant[SByte.type] = if(ableToProve){
       ByteArrayConstant(ValueSerializer.serialize(prover.dlogSecrets.head.publicImage))
@@ -150,21 +149,21 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   property("create transaction collecting the emission box") {
     val prover = new ErgoLikeTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
-    val prop = ErgoScriptPredef.emissionBoxProp(settings.fixedRatePeriod, settings.epochLength, settings.fixedRate,
-      settings.oneEpochReduction, settings.minerRewardDelay)
+    val prop = ErgoScriptPredef.emissionBoxProp(settings)
     val emissionBox = ErgoBox(emission.coinsTotal, prop, 0, Seq(), Map())
     val minerProp = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
 
     // collect coins during the fixed rate period
     forAll(Gen.choose(1, settings.fixedRatePeriod)) { height =>
-      createRewardTx(settings.fixedRate, height, minerProp) shouldBe 'success
-      createRewardTx(settings.fixedRate + 1, height, minerProp) shouldBe 'failure
-      createRewardTx(settings.fixedRate - 1, height, minerProp) shouldBe 'failure
+      val currentRate = emission.minersRewardAtHeight(height)
+      createRewardTx(currentRate, height, minerProp) shouldBe 'success
+      createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
+      createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
     }
 
     // collect coins after the fixed rate period
     forAll(Gen.choose(1, emission.blocksTotal - 1)) { height =>
-      val currentRate = emission.emissionAtHeight(height)
+      val currentRate = emission.minersRewardAtHeight(height)
       createRewardTx(currentRate, height, minerProp) shouldBe 'success
       createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
       createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
@@ -172,9 +171,14 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     // collect coins to incorrect proposition
     forAll(Gen.choose(1, emission.blocksTotal - 1)) { height =>
-      val currentRate = emission.emissionAtHeight(height)
-      val minerProp2 = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay + 1, minerPk)
-      createRewardTx(currentRate, height, minerProp2) shouldBe 'failure
+      val currentRate = emission.minersRewardAtHeight(height)
+      val pk2 = prover.dlogSecrets(1).publicImage
+      val correctProp = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
+      val incorrectDelay = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay + 1, minerPk)
+      val incorrectPk = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, pk2)
+      createRewardTx(currentRate, height, correctProp) shouldBe 'success
+      createRewardTx(currentRate, height, incorrectDelay) shouldBe 'failure
+      createRewardTx(currentRate, height, incorrectPk) shouldBe 'failure
       createRewardTx(currentRate, height, minerPk) shouldBe 'failure
     }
 

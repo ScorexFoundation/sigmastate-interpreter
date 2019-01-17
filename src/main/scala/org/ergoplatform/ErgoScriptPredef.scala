@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import org.ergoplatform.settings.MonetarySettings
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ErgoTree, IntArrayConstant, IntConstant, LongConstant, SigmaPropValue, Value}
 import sigmastate._
@@ -95,28 +96,26 @@ object ErgoScriptPredef {
     * Proposition box, that only allows to collect a part of all coins
     * to a box with miner proposition.
     */
-  def emissionBoxProp(fixedRatePeriod: Int,
-                      epochLength: Int,
-                      fixedRate: Long,
-                      oneEpochReduction: Long,
-                      minerRewardDelay: Int): Value[SBoolean.type] = {
+  def emissionBoxProp(s: MonetarySettings): Value[SBoolean.type] = {
     val rewardOut = ByIndex(Outputs, IntConstant(0))
     val minerOut = ByIndex(Outputs, IntConstant(1))
 
-    val epoch = Plus(IntConstant(1), Divide(Minus(Height, IntConstant(fixedRatePeriod)), IntConstant(epochLength)))
-    val coinsToIssue = If(LT(Height, IntConstant(fixedRatePeriod)),
-      fixedRate,
-      Minus(fixedRate, Multiply(oneEpochReduction, epoch.upcastTo(SLong)))
+    val minersReward = s.fixedRate - s.foundersInitialReward
+    val minersFixedRatePeriod = s.fixedRatePeriod + 2 * s.epochLength
+    val epoch = Plus(IntConstant(1), Divide(Minus(Height, IntConstant(s.fixedRatePeriod)), IntConstant(s.epochLength)))
+    val coinsToIssue = If(LT(Height, IntConstant(minersFixedRatePeriod)),
+      minersReward,
+      Minus(s.fixedRate, Multiply(s.oneEpochReduction, epoch.upcastTo(SLong)))
     )
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(rewardOut))
     val heightCorrect = EQ(boxCreationHeight(rewardOut), Height)
     val heightIncreased = GT(Height, boxCreationHeight(Self))
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(rewardOut)))
-    val lastCoins = LE(ExtractAmount(Self), oneEpochReduction)
+    val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
     val outputsNum = EQ(SizeOf(Outputs), 2)
 
     val correctMinerOutput = AND(
-      EQ(ExtractScriptBytes(minerOut), expectedMinerOutScriptBytesVal(minerRewardDelay, MinerPubkey)),
+      EQ(ExtractScriptBytes(minerOut), expectedMinerOutScriptBytesVal(s.minerRewardDelay, MinerPubkey)),
       EQ(Height, boxCreationHeight(minerOut))
     )
     AND(
@@ -134,23 +133,32 @@ object ErgoScriptPredef {
     * and is protected by the same script AND
     * - satisfies conditions from the first non-mandatory register
     */
-  def foundationScript(fixedRatePeriod: Int,
-                       epochLength: Int,
-                       oneEpochReduction: Long,
-                       foundersInitialReward: Long): Value[SBoolean.type] = {
+  def foundationScript(s: MonetarySettings): Value[SBoolean.type] = {
     val rewardOut = ByIndex(Outputs, IntConstant(0))
     val remainingAmount = {
       // Emission.remainingFoundationRewardAtHeight in Ergo script
-      val full15reward = (foundersInitialReward - 2 * oneEpochReduction) * epochLength
-      val full45reward = (foundersInitialReward - oneEpochReduction) * epochLength
-      val fixedRatePeriodMinus1: Int = fixedRatePeriod - 1
+      val full15reward = (s.foundersInitialReward - 2 * s.oneEpochReduction) * s.epochLength
+      val full45reward = (s.foundersInitialReward - s.oneEpochReduction) * s.epochLength
+      val fixedRatePeriodMinus1: Int = s.fixedRatePeriod - 1
 
-      If(LT(Height, IntConstant(fixedRatePeriod)),
-        Plus(LongConstant(full15reward + full45reward), Multiply(foundersInitialReward, Upcast(Minus(fixedRatePeriodMinus1, Height), SLong))),
-        If(LT(Height, IntConstant(fixedRatePeriod + epochLength)),
-          Plus(full15reward, Multiply(foundersInitialReward - oneEpochReduction, Upcast(Minus(fixedRatePeriodMinus1 + epochLength, Height), SLong))),
-          If(LT(Height, IntConstant(fixedRatePeriod + 2 * epochLength)),
-            Multiply(foundersInitialReward - 2 * oneEpochReduction, Upcast(Minus(fixedRatePeriodMinus1 + 2 * epochLength, Height), SLong)),
+      If(LT(Height, IntConstant(s.fixedRatePeriod)),
+        Plus(
+          LongConstant(full15reward + full45reward),
+          Multiply(s.foundersInitialReward, Upcast(Minus(fixedRatePeriodMinus1, Height), SLong))
+        ),
+        If(LT(Height, IntConstant(s.fixedRatePeriod + s.epochLength)),
+          Plus(
+            full15reward,
+            Multiply(
+              s.foundersInitialReward - s.oneEpochReduction,
+              Upcast(Minus(fixedRatePeriodMinus1 + s.epochLength, Height), SLong)
+            )
+          ),
+          If(LT(Height, IntConstant(s.fixedRatePeriod + 2 * s.epochLength)),
+            Multiply(
+              s.foundersInitialReward - 2 * s.oneEpochReduction,
+              Upcast(Minus(fixedRatePeriodMinus1 + 2 * s.epochLength, Height), SLong)
+            ),
             LongConstant(0)
           )
         )
