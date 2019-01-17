@@ -57,8 +57,6 @@ version in ThisBuild := {
   }
 }
 
-git.gitUncommittedChanges in ThisBuild := true
-
 val specialVersion = "master-6eca3f22-SNAPSHOT"
 val specialCommon = "io.github.scalan" %% "common" % specialVersion
 val specialCore = "io.github.scalan" %% "core" % specialVersion
